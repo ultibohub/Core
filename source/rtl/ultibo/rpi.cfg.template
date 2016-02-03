@@ -1,0 +1,8 @@
+#
+# Raspberry Pi (A/B/A+/B+/Zero) specific config file
+#
+-CfVFPV2
+-CIARM
+-OoFASTMATH
+-Fu%INSTALLDIRECTORY%/units/armv6-ultibo/rtl
+-Fu%INSTALLDIRECTORY%/units/armv6-ultibo/packages

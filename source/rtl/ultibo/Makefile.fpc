@@ -1,0 +1,487 @@
+#
+#   Makefile.fpc for Free Pascal Ultibo RTL
+#
+
+[package]
+main=rtl
+
+[target]
+units=$(SYSTEMUNIT) \
+       $(CPU_UNITS) \
+       uuchar \
+       objpas \
+       iso7185 \
+       extpas \
+       strings \
+       sysutils \
+       math \
+       classes \
+       fgl \
+       macpas \
+       typinfo \
+       types \
+       rtlconsts \
+       getopts \
+       lineinfo \
+       $(ULTIBO_UNITS) \
+       $(ULTIBO_CPU_UNITS) \
+       dos \
+       ctypes \
+       charset \
+       cpall \
+       sysconst \
+       $(ULTIBO_EXTRAS) \
+       $(ULTIBO_CPU_EXTRAS)
+
+[require]
+nortl=y
+
+[install]
+fpcpackage=y
+
+[default]
+fpcdir=../..
+target=ultibo
+
+[compiler]
+includedir=$(INC) $(PROCINC)
+sourcedir=$(INC) $(PROCINC) $(COMMON) $(ARCH)
+
+[prerules]
+RTL=..
+INC=$(RTL)/inc
+COMMON=$(RTL)/common
+PROCINC=$(RTL)/$(CPU_TARGET)
+UNITPREFIX=rtl
+SYSTEMUNIT=system
+override FPCOPT+=@rtl.cfg
+
+ifdef RELEASE
+override FPCOPT+=-Ur
+endif
+
+CPU_UNITS=
+SYSINIT_UNITS=
+
+ULTIBO_UNITS=globalconfig \
+             globalconst \
+             globaltypes \
+             globalstrings \
+             globalsock \
+             heapmanager \
+             platform \
+             locale \
+             unicode \
+             threads \
+             devices \
+             framebuffer \
+             dma \
+             font \
+             console \
+             logging \
+             serial \
+             i2c \
+             spi \
+             i2s \
+             pwm \
+             usb \
+             mmc \
+             mmcspi \
+             bluetooth \
+             gpio \
+             wiring \
+             ahci \
+             ehci \
+             xhci \
+             dwcotg \
+             keymap \
+             keyboard \
+             mouse \
+             ataoe \
+             atapi \
+             scsi \
+             audio \
+             video \
+             mpeg \
+             dvb \
+             dab \
+             dfu \
+             vc4 \
+             gc880 \
+             gc2000 \
+             mali400 \
+             mali450 \
+             crypto \
+             ssl \
+             security \
+             authentication \
+             timezone \
+             ultibo \
+             ultiboutils \
+             ultiboclasses \
+             network \
+             loopback \
+             transport \
+             protocol \
+             arp \
+             ip \
+             ipv6 \
+             icmp \
+             icmpv6 \
+             raw \
+             udp \
+             tcp \
+             igmp \
+             dhcp \
+             dns \
+             vpn \
+             wifi \
+             smsc95xx \
+             sockets \
+             winsock \
+             winsock2 \
+             iphlpapi \
+             ftp \
+             http \
+             imap4 \
+             ldap \
+             pop3 \
+             smtp \
+             sip \
+             xmpp \
+             storage \
+             filesystem \
+             extfs \
+             fatfs \
+             cdfs \
+             ntfsconst \
+             ntfstypes \
+             ntfsutils \
+             ntfsclass \
+             ntfs \
+             virtualdisk \
+             iscsi \
+             nfs \
+             cifs \
+             services \
+             shell
+             
+ULTIBO_EXTRAS=consoleshell \
+              remoteshell \
+              shellfilesystem \
+              shellupdate \
+              webstatus
+              
+ULTIBO_CPU_UNITS=
+ULTIBO_CPU_EXTRAS=
+
+ifeq ($(ARCH),arm)
+override ULTIBO_UNITS+=platformarm
+ifeq ($(SUBARCH),armv6)
+CPU_UNITS=
+CPU_UNITS_DEFINED=1
+override ULTIBO_UNITS+=bcm2835 \
+                       bcm2708 \
+                       platformarmv6 \
+                       platformrpi
+ULTIBO_CPU_UNITS=bootrpi
+ULTIBO_CPU_EXTRAS=raspberrypi
+endif
+ifeq ($(SUBARCH),armv7a)
+CPU_UNITS=
+CPU_UNITS_DEFINED=1
+override ULTIBO_UNITS+=bcm2836 \
+                       bcm2709 \
+                       allwinnera20 \
+                       allwinnerh3 \
+                       freescaleimx6 \
+                       platformarmv7 \
+                       platformrpi2 \
+                       platformbpi \
+                       platformbpro \
+                       platformbbb \
+                       platformcuboxi \
+                       platformodroidc1 \
+                       platformodroidu3 \
+                       platformodroidxu3 \
+                       platformpcduino
+ULTIBO_CPU_UNITS=bootrpi2 \
+                 bootbpi \
+                 bootbpro \
+                 bootbbb \
+                 bootcuboxi \
+                 bootodroidc1 \
+                 bootodroidu3 \
+                 bootodroidxu3 \
+                 bootpcduino
+ULTIBO_CPU_EXTRAS=raspberrypi2
+endif
+ifeq ($(CPU_UNITS_DEFINED),)
+$(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
+endif
+endif
+
+ifeq ($(ARCH),mips)
+override ULTIBO_UNITS+=platformmips \
+                       platformmips32 \
+                       platformci20
+CPU_UNITS=
+CPU_UNITS_DEFINED=1
+ULTIBO_CPU_UNITS=bootci20
+ifeq ($(CPU_UNITS_DEFINED),)
+$(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
+endif
+endif
+
+ifeq ($(ARCH),i386)
+override ULTIBO_UNITS+=platformx86 \
+                       platformpc
+CPU_UNITS=
+CPU_UNITS_DEFINED=1
+ULTIBO_CPU_UNITS=bootpcx86
+ifeq ($(CPU_UNITS_DEFINED),)
+$(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
+endif
+endif
+
+ifeq ($(ARCH),x86_64)
+override ULTIBO_UNITS+=platformx86_64 \
+                       platformpc
+CPU_UNITS=
+CPU_UNITS_DEFINED=1
+ULTIBO_CPU_UNITS=bootpcx86_64
+ifeq ($(CPU_UNITS_DEFINED),)
+$(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
+endif
+endif
+
+# Paths
+OBJPASDIR=$(RTL)/objpas
+GRAPHDIR=$(INC)/graph
+
+[rules]
+# .NOTPARALLEL:
+# Get the system independent include file names.
+# This will set the following variables :
+# SYSINCNAMES
+include $(INC)/makefile.inc
+SYSINCDEPS=$(addprefix $(INC)/,$(SYSINCNAMES))
+
+# Get the processor dependent include file names.
+# This will set the following variables :
+# CPUINCNAMES
+include $(PROCINC)/makefile.cpu
+SYSCPUDEPS=$(addprefix $(PROCINC)/,$(CPUINCNAMES))
+
+# Put system unit dependencies together.
+SYSDEPS=$(SYSINCDEPS) $(SYSCPUDEPS)
+
+#
+# Base Units (System, strings, os-dependent-base-unit)
+#
+
+$(SYSTEMUNIT)$(PPUEXT) : $(SYSTEMUNIT).pp $(SYSDEPS) $(INC)/softfpu.pp
+        $(COMPILER) -Us -Sg $(SYSTEMUNIT).pp $(REDIR)
+
+uuchar$(PPUEXT): $(INC)/uuchar.pp $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $<
+
+objpas$(PPUEXT): $(OBJPASDIR)/objpas.pp $(INC)/except.inc $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) -I$(OBJPASDIR) $(OBJPASDIR)/objpas.pp $(REDIR)
+
+strings$(PPUEXT) : $(INC)/strings.pp $(INC)/stringsi.inc \
+                   $(PROCINC)/strings.inc $(PROCINC)/stringss.inc \
+                   $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $<
+
+
+#
+# System Dependent Units
+#
+
+#ports$(PPUEXT) : ports.pas objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+#        $(COMPILER) $<
+
+#doscalls$(PPUEXT) : doscalls.pas strings$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+#        $(COMPILER) $<
+
+
+#
+# TP7 Compatible RTL Units
+#
+
+dos$(PPUEXT) : dos.pp $(INC)/filerec.inc $(INC)/textrec.inc strings$(PPUEXT) \
+               $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $<
+
+#crt$(PPUEXT) : crt.pas $(INC)/textrec.inc $(SYSTEMUNIT)$(PPUEXT)
+#        $(COMPILER) $<
+
+objects$(PPUEXT) : $(INC)/objects.pp dos$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $<
+
+#printer$(PPUEXT) : printer.pas $(INC)/textrec.inc $(SYSTEMUNIT)$(PPUEXT)
+#        $(COMPILER) $<
+
+#graph$(PPUEXT) : graph.pp
+#        $(COMPILER) $<
+
+#
+# Delphi Compatible Units
+#
+
+sysutils$(PPUEXT) : sysutils.pp $(wildcard $(OBJPASDIR)/sysutils/*.inc) \
+                    objpas$(PPUEXT) sysconst$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) -Fi$(OBJPASDIR)/sysutils sysutils.pp
+
+classes$(PPUEXT) : classes.pp $(wildcard $(OBJPASDIR)/classes/*.inc) \
+                   sysutils$(PPUEXT) typinfo$(PPUEXT) rtlconsts$(PPUEXT) types$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) -Fi$(OBJPASDIR)/classes classes.pp
+
+typinfo$(PPUEXT): $(OBJPASDIR)/typinfo.pp objpas$(PPUEXT) sysutils$(PPUEXT) rtlconsts$(PPUEXT)
+        $(COMPILER) -Sg $(OBJPASDIR)/typinfo.pp $(REDIR)
+
+math$(PPUEXT): $(OBJPASDIR)/math.pp objpas$(PPUEXT) sysutils$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(OBJPASDIR)/math.pp $(REDIR)
+
+varutils$(PPUEXT) : $(OBJPASDIR)/cvarutil.inc $(OBJPASDIR)/varutils.inc \
+                    $(OBJPASDIR)/varutilh.inc varutils.pp $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) -I$(OBJPASDIR) varutils.pp $(REDIR)
+
+fmtbcd$(PPUEXT) : $(OBJPASDIR)/fmtbcd.pp objpas$(PPUEXT) sysutils$(PPUEXT) variants$(PPUEXT) classes$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(OBJPASDIR)/fmtbcd.pp
+
+types$(PPUEXT) : $(OBJPASDIR)/types.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(OBJPASDIR)/types.pp
+
+rtlconsts$(PPUEXT) : $(OBJPASDIR)/rtlconsts.pp $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(OBJPASDIR)/rtlconsts.pp
+
+sysconst$(PPUEXT) : $(OBJPASDIR)/sysconst.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(OBJPASDIR)/sysconst.pp
+
+fgl$(PPUEXT): $(OBJPASDIR)/fgl.pp objpas$(PPUEXT) types$(PPUEXT) system$(PPUEXT) sysutils$(PPUEXT)
+        $(COMPILER) -Sg $(OBJPASDIR)/fgl.pp $(REDIR)
+
+dateutil$(PPUEXT) : $(OBJPASDIR)/dateutil.pp $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) -I$(OBJPASDIR) $(OBJPASDIR)/dateutil.pp
+
+#
+# Mac Pascal Model
+#
+
+macpas$(PPUEXT) : $(INC)/macpas.pp objpas$(PPUEXT) math$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(INC)/macpas.pp $(REDIR)
+
+#
+# Other system-independent RTL Units
+#
+
+ucomplex$(PPUEXT): $(INC)/ucomplex.pp math$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $<
+
+getopts$(PPUEXT) : $(INC)/getopts.pp $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $<
+
+heaptrc$(PPUEXT) : $(INC)/heaptrc.pp $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) -Sg $(INC)/heaptrc.pp $(REDIR)
+
+lineinfo$(PPUEXT) : $(INC)/lineinfo.pp strings$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $(INC)/lineinfo.pp
+
+charset$(PPUEXT) : $(INC)/charset.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $<
+
+cpall$(PPUEXT): $(RTL)/charmaps/cpall.pas system$(PPUEXT) charset$(PPUEXT)
+        $(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cpall.pas
+
+iso7185$(PPUEXT) : $(INC)/iso7185.pp $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(INC)/iso7185.pp
+
+extpas$(PPUEXT) : $(INC)/extpas.pp dos$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+        $(COMPILER) $(INC)/extpas.pp
+
+#
+# Unit specific rules
+#
+
+define CPU_UNITS_RULE
+$(1)$(PPUEXT): $(ARCH)/$(1).pp $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(CPU_UNITS),$(eval $(call CPU_UNITS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(CPU_UNITS)):
+	$(COMPILER) $<
+
+    
+#
+# Ultibo specific rules
+#
+
+define ULTIBO_UNITS_RULE
+$(1)$(PPUEXT): core/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(ULTIBO_UNITS),$(eval $(call ULTIBO_UNITS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(ULTIBO_UNITS)):
+	$(COMPILER) $<
+
+
+define ULTIBO_EXTRAS_RULE
+$(1)$(PPUEXT): extra/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(ULTIBO_EXTRAS),$(eval $(call ULTIBO_EXTRAS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(ULTIBO_EXTRAS)):
+	$(COMPILER) $<
+    
+#
+# Ultibo CPU specific rules
+#
+
+define ULTIBO_CPU_UNITS_RULE
+$(1)$(PPUEXT): core/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(ULTIBO_CPU_UNITS),$(eval $(call ULTIBO_CPU_UNITS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(ULTIBO_CPU_UNITS)):
+	$(COMPILER) $<
+
+
+define ULTIBO_CPU_EXTRAS_RULE
+$(1)$(PPUEXT): extra/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(ULTIBO_CPU_EXTRAS),$(eval $(call ULTIBO_CPU_EXTRAS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(ULTIBO_CPU_EXTRAS)):
+	$(COMPILER) $<
+    
+#
+# Other $(SYSTEMUNIT)-dependent RTL Units
+#
+
+#errors$(PPUEXT) : $(UNIXINC)/errors.pp strings$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+#	$(COMPILER) $(UNIXINC)/errors.pp
+
+#callspec$(PPUEXT) : $(INC)/callspec.pp $(SYSTEMUNIT)$(PPUEXT)
+#	$(COMPILER) $(INC)/callspec.pp
+
+#cmem$(PPUEXT) : $(INC)/cmem.pp $(SYSTEMUNIT)$(PPUEXT)
+#	$(COMPILER) $(INC)/cmem.pp
+
+#cthreads$(PPUEXT) : $(UNIXINC)/cthreads.pp $(SYSTEMUNIT)$(PPUEXT) unix$(PPUEXT) sysutils$(PPUEXT) baseunix$(PPUEXT) initc$(PPUEXT) dl$(PPUEXT)
+#	$(COMPILER) $(UNIXINC)/cthreads.pp
+
+#cwstring$(PPUEXT) : $(UNIXINC)/cwstring.pp $(SYSTEMUNIT)$(PPUEXT) sysutils$(PPUEXT) baseunix$(PPUEXT) unix$(PPUEXT) unixtype$(PPUEXT) ctypes$(PPUEXT) dynlibs$(PPUEXT) unixcp$(PPUEXT)
+#	$(COMPILER) $(UNIXINC)/cwstring.pp
+
+ctypes$(PPUEXT) :  $(INC)/ctypes.pp $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $(INC)/ctypes.pp
+
+#fpcylix$(PPUEXT) : fpcylix.pp cthreads$(PPUEXT) cwstring$(PPUEXT) dynlibs$(PPUEXT) objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+#	$(COMPILER) fpcylix.pp
