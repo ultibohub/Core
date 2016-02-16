@@ -77,7 +77,7 @@ unit PlatformARMv7;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,Devices,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,{Devices,}SysUtils; //TestingRPi
 
 //To Do //For handling of barriers (DMB/DSB/ISB) after cache maintenance etc see:
         //ARM.Reference_Manual_1.pdf - Appendix G Barrier Litmus Tests

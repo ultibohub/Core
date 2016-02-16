@@ -38,15 +38,6 @@ Web Status
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-{Debug definitions}
-{$DEFINE LOCK_DEBUG}
-{--$DEFINE SPIN_DEBUG}
-{--$DEFINE MUTEX_DEBUG}
-{$DEFINE CLOCK_DEBUG}
-{$DEFINE SCHEDULER_DEBUG}
-{--$DEFINE INTERRUPT_DEBUG}
-{$DEFINE EXCEPTION_DEBUG}
-
 unit WebStatus;
 
 interface
@@ -57,6 +48,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$
 //To Do //Look for:
 
 //--
+     
+{==============================================================================}
+{Global definitions}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
 const
@@ -2098,7 +2093,9 @@ function TWebStatusMemory.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARes
 var
  Status:THeapStatus;
  FPCStatus:TFPCHeapStatus;
+ {$IFDEF HEAP_STATISTICS}
  Statistics:THeapStatistics;
+ {$ENDIF}
 begin
  {}
  Result:=False;
@@ -2150,8 +2147,11 @@ begin
  AddBlank(AResponse);
 
  {Add Heap Statistics}
+ {$IFDEF HEAP_STATISTICS}
  Statistics:=GetHeapStatistics;
+ {$ENDIF}
  AddBold(AResponse,'Heap Statistics','');
+ {$IFDEF HEAP_STATISTICS}
  {Get/Alloc/Realloc}
  AddBlank(AResponse);
  AddItemEx(AResponse,'GetCount:',IntToStr(Statistics.GetCount),3);
@@ -2276,7 +2276,7 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'MergePrevCount:',IntToStr(Statistics.MergePrevCount),3);
  AddItemEx(AResponse,'MergeNextCount:',IntToStr(Statistics.MergeNextCount),3);
-  {Block Internal}
+ {Block Internal}
  AddBlank(AResponse);
  AddItemEx(AResponse,'GetSmallCount:',IntToStr(Statistics.GetSmallCount),3);
  AddItemEx(AResponse,'GetLargeCount:',IntToStr(Statistics.GetLargeCount),3);
@@ -2285,6 +2285,11 @@ begin
  AddItemEx(AResponse,'RemoveSmallCount:',IntToStr(Statistics.RemoveSmallCount),3);
  AddItemEx(AResponse,'RemoveLargeCount:',IntToStr(Statistics.RemoveLargeCount),3);
  AddItemEx(AResponse,'SmallUnavailableCount:',IntToStr(Statistics.SmallUnavailableCount),3);
+ {$ELSE}
+ {Not Defined} 
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'HEAP_STATISTICS not defined','',3);
+ {$ENDIF}
  AddBlank(AResponse);
  
  {Add Heap Blocks}

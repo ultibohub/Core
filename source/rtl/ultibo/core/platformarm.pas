@@ -54,7 +54,7 @@ unit PlatformARM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,Devices,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,{Devices,}SysUtils; //TestingRPi
 
 {==============================================================================}
 {Global definitions}

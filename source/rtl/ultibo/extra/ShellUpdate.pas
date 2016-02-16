@@ -49,6 +49,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
 //--
 
 {==============================================================================}
+{Global definitions}
+{$INCLUDE ..\core\GlobalDefines.inc}
+
+{==============================================================================}
 const
  {Shell Update specific constants}
  SHELL_UPDATE_HTTP_SEPARATOR = '/';  
@@ -230,39 +234,46 @@ begin
      {Create Client}
      HTTPClient:=THTTPClient.Create;
      try
-      {Create Temp File}
-      FileStream:=TFSFileStream.Create(TempName,fmCreate);
       try
-       {GET Request}
-       if HTTPClient.GetStream(ARemote,FileStream) then
-        begin
-         {Check Status}
-         case HTTPClient.ResponseStatus of
-          HTTP_STATUS_OK:begin
-            AUpdate:=True;
-            
-            {Set Date/Time}
-            FSFileSetDate(FileStream.Handle,FileTimeToFileDate(HTTPDateToFileTime(HTTPClient.GetResponseHeader(HTTP_ENTITY_HEADER_LAST_MODIFIED))));
-           end;
-          else
-           begin
-            AUpdate:=False;
-            
-            AShell.DoOutput(ASession,'  HTTP GET request not successful (Status=' + HTTPStatusToString(HTTPClient.ResponseStatus) + ' Reason=' + HTTPClient.ResponseReason + ')'); 
-            AShell.DoOutput(ASession,''); 
-           end;
-         end;
-        end
-       else
-        begin
-         AUpdate:=False;
-         
-         AShell.DoOutput(ASession,'  HTTP GET request failed (Status=' + HTTPStatusToString(HTTPClient.ResponseStatus) + ' Reason=' + HTTPClient.ResponseReason + ')'); 
-         AShell.DoOutput(ASession,''); 
-        end;     
-      finally
-       FileStream.Free;
-      end;
+       {Create Temp File}
+       FileStream:=TFSFileStream.Create(TempName,fmCreate);
+       try
+        {GET Request}
+        if HTTPClient.GetStream(ARemote,FileStream) then
+         begin
+          {Check Status}
+          case HTTPClient.ResponseStatus of
+           HTTP_STATUS_OK:begin
+             AUpdate:=True;
+             
+             {Set Date/Time}
+             FSFileSetDate(FileStream.Handle,FileTimeToFileDate(RoundFileTime(HTTPDateToFileTime(HTTPClient.GetResponseHeader(HTTP_ENTITY_HEADER_LAST_MODIFIED)))));
+            end;
+           else
+            begin
+             AUpdate:=False;
+             
+             AShell.DoOutput(ASession,'  HTTP GET request not successful (Status=' + HTTPStatusToString(HTTPClient.ResponseStatus) + ' Reason=' + HTTPClient.ResponseReason + ')'); 
+             AShell.DoOutput(ASession,''); 
+            end;
+          end;
+         end
+        else
+         begin
+          AUpdate:=False;
+          
+          AShell.DoOutput(ASession,'  HTTP GET request failed (Status=' + HTTPStatusToString(HTTPClient.ResponseStatus) + ' Reason=' + HTTPClient.ResponseReason + ')'); 
+          AShell.DoOutput(ASession,''); 
+         end;     
+       finally
+        FileStream.Free;
+       end;
+      except
+       AUpdate:=False;
+       
+       AShell.DoOutput(ASession,'  Failed to create temporary file ' + TempName);
+       AShell.DoOutput(ASession,''); 
+      end;      
      finally
       HTTPClient.Free;
      end;
@@ -376,7 +387,7 @@ begin
          
          {Get Size/Time}
          RemoteSize:=HTTPClient.ResponseContentSize;
-         RemoteTime:=FileTimeToDateTime(HTTPDateToFileTime(HTTPClient.GetResponseHeader(HTTP_ENTITY_HEADER_LAST_MODIFIED)));
+         RemoteTime:=FileTimeToDateTime(RoundFileTime(HTTPDateToFileTime(HTTPClient.GetResponseHeader(HTTP_ENTITY_HEADER_LAST_MODIFIED))));
 
          AShell.DoOutput(ASession,'  Size: ' + IntToStr(RemoteSize)); 
          AShell.DoOutput(ASession,'  Modified: ' + DateTimeToStr(RemoteTime)); 

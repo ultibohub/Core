@@ -1481,6 +1481,9 @@ function VirtualUnlock(lpAddress:LPVOID;dwSize:SIZE_T):BOOL;
 
 function FlushInstructionCache(hProcess:HANDLE;lpBaseAddress:LPCVOID;dwSize:DWORD):BOOL;
 
+function GetNumaHighestNodeNumber(var HighestNodeNumber:ULONG):BOOL;
+function GetNumaProcessorNode(const Processor:Byte;var NodeNumber:Byte):BOOL; 
+
 {==============================================================================}
 {Tls Functions (Compatibility)}
 function TlsAlloc:DWORD;
@@ -6424,7 +6427,7 @@ end;
 
 function VirtualAlloc(lpAddress:LPVOID;dwSize:SIZE_T;flAllocationType:DWORD;flProtect:DWORD):LPVOID;
 {Note: The value of lpAddress on entry is currently ignored by Ultibo}
-{Note: flAllocationType and flProtect are currently ignored by Ultibo}
+{Note: The value of flProtect is currently ignored by Ultibo}
 {Note: As per Win32, the value of dwSize is rounded to the next page multiple}
 var
  Size:LongWord;
@@ -6548,6 +6551,24 @@ begin
    Platform.InvalidateInstructionCacheRange(LongWord(lpBaseAddress),dwSize);
   end;  
   
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function GetNumaHighestNodeNumber(var HighestNodeNumber:ULONG):BOOL;
+begin
+ {Not implemented, compatibility only}
+ HighestNodeNumber:=1;
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function GetNumaProcessorNode(const Processor:Byte;var NodeNumber:Byte):BOOL; 
+begin
+ {Not implemented, compatibility only}
+ NodeNumber:=0;
  Result:=True;
 end;
 

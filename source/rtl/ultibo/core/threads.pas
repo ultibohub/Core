@@ -68,7 +68,7 @@ Threads
          lock. On a Multiprocessor system however interrupt handlers can execute on one processor while a thread is executing on another (which will not deadlock), to correctly
          synchronise data access both threads and interrupt handlers should call the appropriate lock/unlock before and after access to the data.
   
-         Lock Heirachy:
+         Lock Hierachy:
          --------------
          It is safe to acquire one lock using SpinLock() then another lock using SpinLock() and then release them in reverse order.
          
@@ -779,7 +779,8 @@ type
   {Statistics Properties}
   CreateTime:Int64;                          {The time when this thread was created}
   ExitTime:Int64;                            {The time when this thread exited or was terminated}
-  KernelTime:Int64;                          {The total amount of time this thread has been running}
+  KernelTime:Int64;                          {The total amount of time this thread has been in the running state (ie CPU time consumed)}
+  SwitchCount:Int64;                         {The number of times this thread has been selected to run by a context switch}
  end;
 
  {Thread snapshot} {Data returned by ThreadSnapshotCreate}
@@ -803,7 +804,8 @@ type
   TargetPriority:LongWord;                   {Target Priority of the Thread for next ContextSwitch (eg THREAD_PRIORITY_NORMAL)}
   CreateTime:Int64;                          {The time when this thread was created}
   ExitTime:Int64;                            {The time when this thread exited or was terminated}
-  KernelTime:Int64;                          {The total amount of time this thread has been running}
+  KernelTime:Int64;                          {The total amount of time this thread has been in the running state (ie CPU time consumed)}
+  SwitchCount:Int64;                         {The number of times this thread has been selected to run by a context switch}
   {Internal Properties}
   Next:PThreadSnapshot;                      {Next entry in Thread snapshot}
  end; 
@@ -1554,6 +1556,7 @@ function ThreadGetLocale(Thread:TThreadHandle):LCID;
 function ThreadSetLocale(Thread:TThreadHandle;Locale:LCID):LongWord;
 
 function ThreadGetTimes(Thread:TThreadHandle;var CreateTime,ExitTime,KernelTime:Int64):LongWord;
+function ThreadGetSwitchCount(Thread:TThreadHandle;var SwitchCount:Int64):LongWord;
 
 function ThreadGetStackSize(Thread:TThreadHandle):LongWord;
 function ThreadGetStackBase(Thread:TThreadHandle):PtrUInt;
@@ -2213,6 +2216,7 @@ begin
      ThreadTable.CreateTime:=ClockGetTime;
      ThreadTable.ExitTime:=TIME_TICKS_TO_1899;
      ThreadTable.KernelTime:=TIME_TICKS_TO_1899;
+     ThreadTable.SwitchCount:=0;
      
      {Set Boot Thread}
      BOOT_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=TThreadHandle(ThreadTable);
@@ -2262,6 +2266,7 @@ begin
      ThreadTable.CreateTime:=ClockGetTime;
      ThreadTable.ExitTime:=TIME_TICKS_TO_1899;
      ThreadTable.KernelTime:=TIME_TICKS_TO_1899;
+     ThreadTable.SwitchCount:=0;
 
      {Set Boot Thread}
      BOOT_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=TThreadHandle(ThreadTable);
@@ -3096,6 +3101,7 @@ begin
            ThreadEntry.CreateTime:=ClockGetTime;
            ThreadEntry.ExitTime:=TIME_TICKS_TO_1899;
            ThreadEntry.KernelTime:=TIME_TICKS_TO_1899;
+           ThreadEntry.SwitchCount:=0;
            
            {Insert Thread entry}
            if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
@@ -3168,6 +3174,7 @@ begin
            ThreadEntry.CreateTime:=ClockGetTime;
            ThreadEntry.ExitTime:=TIME_TICKS_TO_1899;
            ThreadEntry.KernelTime:=TIME_TICKS_TO_1899;
+           ThreadEntry.SwitchCount:=0;
       
            {Insert Thread entry}
            if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
@@ -10555,6 +10562,7 @@ begin
  ThreadEntry.CreateTime:=ClockGetTime;
  ThreadEntry.ExitTime:=TIME_TICKS_TO_1899;
  ThreadEntry.KernelTime:=TIME_TICKS_TO_1899;
+ ThreadEntry.SwitchCount:=0;
  
  {Setup Thread Stack}
  ThreadEntry.StackPointer:=ThreadSetupStack(StackBase,StartProc,ThreadEnd,Parameter);
@@ -11267,6 +11275,70 @@ begin
     CreateTime:=ThreadEntry.CreateTime;
     ExitTime:=ThreadEntry.ExitTime;
     KernelTime:=ThreadEntry.KernelTime;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    if SCHEDULER_FIQ_ENABLED then
+     begin
+      SpinUnlockIRQFIQ(ThreadEntry.Lock);
+     end
+    else
+     begin
+      SpinUnlockIRQ(ThreadEntry.Lock);
+     end;     
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+    
+{==============================================================================}
+    
+function ThreadGetSwitchCount(Thread:TThreadHandle;var SwitchCount:Int64):LongWord;
+{Get the current context switch count of a thread (How many times the thread has been scheduled)}
+{Thread: Handle of thread to get}
+{SwitchCount: Buffer to receive the SwitchCount value}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ ResultCode:LongWord;
+ ThreadEntry:PThreadEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IFDEF THREAD_DEBUG}
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Switch Count (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ {$ENDIF}
+ 
+ {Check Thread}
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ThreadEntry:=PThreadEntry(Thread);
+ if ThreadEntry = nil then Exit;
+ if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+ {Acquire the Lock}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   ResultCode:=SpinLockIRQFIQ(ThreadEntry.Lock);
+  end
+ else
+  begin
+   ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
+  end;  
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+    {Get Count}
+    SwitchCount:=ThreadEntry.SwitchCount;
     
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -12123,10 +12195,16 @@ begin
     if ThreadEntry.State = THREAD_STATE_TERMINATED then
      begin
       Exit;
+     end
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+     begin
+      Exit;
      end;
-
+    
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
+  
+    {Do not update Kernel Time}
   
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
@@ -12175,9 +12253,6 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-  
-    {Update Kernel Time}
-    //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
     
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -12249,6 +12324,10 @@ begin
     if ThreadEntry.State = THREAD_STATE_TERMINATED then
      begin
       Exit;
+     end
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+     begin
+      Exit;
      end;
 
     {Check State}
@@ -12271,6 +12350,8 @@ begin
      
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
+  
+    {Do not update Kernel Time}
   
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
@@ -12319,9 +12400,6 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-
-    {Update Kernel Time}
-    //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
      
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -12394,6 +12472,10 @@ begin
     if ThreadEntry.State = THREAD_STATE_TERMINATED then
      begin
       Exit;
+     end
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+     begin
+      Exit;
      end;
 
     {Check State}
@@ -12447,6 +12529,8 @@ begin
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
      
+    {Do not update Kernel Time}
+     
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
      begin
@@ -12494,9 +12578,6 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-
-    {Update Kernel Time}
-    //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
      
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -12606,7 +12687,15 @@ begin
     
     {Set State}
     ThreadEntry.State:=THREAD_STATE_HALTED;
-      
+    
+    {$IFDEF THREAD_STATISTICS}
+    {Update Kernel Time}
+    if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+     begin
+      Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+     end; 
+    {$ENDIF}
+    
     {Reschedule}
     Reschedule:=True;
    
@@ -12756,6 +12845,17 @@ begin
     {Set State}
     ThreadEntry.State:=THREAD_STATE_TERMINATED;
     
+    {$IFDEF THREAD_STATISTICS}
+    {Update Kernel Time}
+    if Thread = ThreadGetCurrent then //To Do //What about running thread on another CPU
+     begin
+      if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+       begin
+        Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+       end; 
+     end;
+    {$ENDIF}
+    
     {Insert in Queue}
     Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TERMINATION),Thread,SCHEDULER_TERMINATION_QUANTUM);
     if Result <> ERROR_SUCCESS then Exit;
@@ -12853,6 +12953,14 @@ begin
       
       {Set State}
       ThreadEntry.State:=THREAD_STATE_SLEEP;
+      
+      {$IFDEF THREAD_STATISTICS}
+      {Update Kernel Time}
+      if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+       begin
+        Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+       end; 
+      {$ENDIF} 
       
       {Insert in Queue (Current CPU)}
       Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_SLEEP),Thread,Ticks);
@@ -12979,6 +13087,14 @@ begin
       {Set State}
       ThreadEntry.State:=THREAD_STATE_WAIT;
       
+      {$IFDEF THREAD_STATISTICS}
+      {Update Kernel Time}
+      if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+       begin
+        Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+       end; 
+      {$ENDIF}
+      
       {Reschedule}
       Reschedule:=True;
         
@@ -12999,6 +13115,14 @@ begin
       
       {Set State}
       ThreadEntry.State:=THREAD_STATE_WAIT_TIMEOUT;
+      
+      {$IFDEF THREAD_STATISTICS}
+      {Update Kernel Time}
+      if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+       begin
+        Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+       end; 
+      {$ENDIF}
       
       {Insert in Queue (Current CPU)}
       Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TIMEOUT),Thread,Ticks);
@@ -13135,6 +13259,10 @@ begin
       if ThreadEntry.State = THREAD_STATE_TERMINATED then
        begin
         Exit;
+       end
+      else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+       begin
+        Exit;
        end;
        
       {Check State}
@@ -13162,6 +13290,8 @@ begin
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
 
+      {Do not update Kernel Time}
+      
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -13209,9 +13339,6 @@ begin
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-
-      {Update Kernel Time}
-      //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
        
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -13291,6 +13418,10 @@ begin
       if ThreadEntry.State = THREAD_STATE_TERMINATED then
        begin
         Exit;
+       end
+      else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+       begin
+        Exit;
        end;
        
       {Check State}
@@ -13317,7 +13448,9 @@ begin
       
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
-  
+
+      {Do not update Kernel Time}
+      
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -13365,9 +13498,6 @@ begin
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-  
-      {Update Kernel Time}
-      //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
   
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -13608,11 +13738,24 @@ begin
       
       {Set State}
       ThreadEntry.State:=THREAD_STATE_SUSPENDED;
+      
+      {Do not update Kernel Time}
      end
     else
      begin
       {Set State}
       ThreadEntry.State:=THREAD_STATE_SUSPENDED;
+      
+      {$IFDEF THREAD_STATISTICS}
+      {Update Kernel Time}
+      if Thread = ThreadGetCurrent then //To Do  //To Do //What about running thread on another CPU
+       begin
+        if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+         begin
+          Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+         end; 
+       end; 
+      {$ENDIF}
       
       {Reschedule}
       Reschedule:=True;
@@ -13697,6 +13840,8 @@ begin
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
   
+    {Do not update Kernel Time}
+  
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
      begin
@@ -13744,9 +13889,6 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-  
-    {Update Kernel Time}
-    //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
   
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -13852,6 +13994,8 @@ begin
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
   
+      {Do not update Kernel Time}
+  
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -13899,9 +14043,6 @@ begin
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-
-      {Update Kernel Time}
-      //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
        
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -13919,6 +14060,8 @@ begin
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
     
+      {Do not update Kernel Time}
+    
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -13966,9 +14109,6 @@ begin
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-    
-      {Update Kernel Time}
-      //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
     
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -14096,6 +14236,14 @@ begin
         {Set State}
         ThreadEntry.State:=THREAD_STATE_RECEIVE;
       
+        {$IFDEF THREAD_STATISTICS}
+        {Update Kernel Time}
+        if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+         begin
+          Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+         end; 
+        {$ENDIF}
+        
         {Reschedule}
         Reschedule:=True;
        end
@@ -14108,6 +14256,14 @@ begin
         {Set State}
         ThreadEntry.State:=THREAD_STATE_RECEIVE_TIMEOUT;
       
+        {$IFDEF THREAD_STATISTICS}
+        {Update Kernel Time}
+        if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+         begin
+          Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+         end; 
+        {$ENDIF}
+        
         {Insert in Queue (Current CPU)}
         if QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TIMEOUT),Thread,Ticks) <> ERROR_SUCCESS then Exit;
         
@@ -14207,6 +14363,10 @@ begin
     if ThreadEntry.State = THREAD_STATE_TERMINATED then
      begin
       Exit;
+     end
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+     begin
+      Exit;
      end;
 
     {Check State}
@@ -14217,7 +14377,9 @@ begin
 
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
-  
+
+      {Do not update Kernel Time}
+      
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -14265,9 +14427,6 @@ begin
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-  
-      {Update Kernel Time}
-      //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
   
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -14285,6 +14444,8 @@ begin
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
   
+      {Do not update Kernel Time}
+  
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -14332,9 +14493,6 @@ begin
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-  
-      {Update Kernel Time}
-      //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
    
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
@@ -14716,6 +14874,11 @@ begin
            {Set CPU}
            NewThreadEntry.CurrentCPU:=CPUID;
      
+           {$IFDEF THREAD_STATISTICS}
+           {Update Switch Count}
+           Inc(NewThreadEntry.SwitchCount);
+           {$ENDIF}
+           
            if SCHEDULER_FIQ_ENABLED then
             begin
              {Perform a Context Switch (FIQ)}
@@ -14839,6 +15002,14 @@ begin
      {Set State}
      ThreadEntry.State:=THREAD_STATE_READY;
      
+     {$IFDEF THREAD_STATISTICS}
+     {Update Kernel Time}
+     if SchedulerThreadQuantum[CPUID] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
+      begin
+       Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[CPUID]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
+      end; 
+     {$ENDIF}
+     
      {Check CPU}
      if SCHEDULER_CPU_COUNT > 1 then
       begin
@@ -14886,9 +15057,6 @@ begin
        {Update Priority}
        ThreadEntry.Priority:=ThreadEntry.TargetPriority;
       end;
-     
-     {Update Kernel Time}
-     //To Do //Inc(ThreadEntry.KernelTime  remaining Quamtum * TIME_TICKS_PER_SCHEDULER_INTERRUPT
      
      {Enqueue Thread (Current CPU and Priority)} 
      if QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread) <> ERROR_SUCCESS then
@@ -15277,6 +15445,11 @@ begin
   
       {Set CPU}
       NewThreadEntry.CurrentCPU:=CurrentCPU;
+      
+      {$IFDEF THREAD_STATISTICS}
+      {Update Switch Count}
+      Inc(NewThreadEntry.SwitchCount);
+      {$ENDIF}
       
       if SCHEDULER_SWI_ENABLED then
        begin
@@ -20252,6 +20425,7 @@ begin
       Current.CreateTime:=ThreadEntry.CreateTime;
       Current.ExitTime:=ThreadEntry.ExitTime;
       Current.KernelTime:=ThreadEntry.KernelTime;
+      Current.SwitchCount:=ThreadEntry.SwitchCount;
       
       {Add Next}
       if Previous <> nil then Previous.Next:=Current;

@@ -51,6 +51,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
 //To Do //Change some of the direct calls to use FileSysDriver instead (eg Device.ActivatePartition etc)
 
 {==============================================================================}
+{Global definitions}
+{$INCLUDE ..\core\GlobalDefines.inc}
+
+{==============================================================================}
 const
  {Shell FileSystem specific constants}
  

@@ -42,72 +42,8 @@ unit HeapManager;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes;
-
-//To Do //Memory manager notes. 
-              //Either need to port all of this back into HeapMgr unit (Best option ?) or don't use the HeapMgr unit.
-              //In any case the HeapMgr unit needs to be expanded to handling Threads/Locks etc as per the FPC standards (TLS and NeedLock etc)
-              
-              //For now we just use this unit instead, currently the RegisterMemoryManager call in the initialization block of HeapMgr is commented out
-              //because SysUtils includes the HeapMgr unit by default (reason why we might back port these changes).
-              
-              //Could handle locking by having a RegisterLockManager / SetMemoryLock (TMemoryLock) structure that we pass to HeapMgr, could then be done by Threads as part of ThreadsInit etc
-              
-              
-//To Do //Notes about the changes made here from HeapMgr due to bugs etc.
-              //The default behaviour of HeapMgr is to place the HeapBlock size for an allocated block in the PtrUInt (4 bytes) prior to the Pointer passed to the caller.
-              //The handling of this did not seem to be consistent across the entire unit and therefore it caused some odd behaviour.
-              
-              //Some of the changes (marked with //Testing) may not be required and were made while trying to determine the issues involved.
-              //For example the change in SysFreeMem (removing Align) has not been completely analysed and the Align may actually be required for some case.
-              
-              //The GetAlignedMem function still has a bug where the remaining allocated block (after the offset is freed) does not have the size marked on it ?
-              
-              //Much of the problem seemed to be to do with SysGetMem not checking if the Remaining amount of was > 0 and not marking the block with the AllocSize,
-              //instead using the original requested Size.
-              
-              //Similar issues for GetAlignedMem not checking if the aligned pointer was the same as the allocated pointer.  
-              
-              //The behaviour of InternalFreeMem is still to be fully analysed and checked.
-              
-
-//To Do //Consider a whole new memory manager that uses a single list of HeapBlocks (Free and Used) all in one so that no Concatenation is required when freeing a block.
-              //Change the heap Block structure to be something like this:
-              //THeapBlock = record
-              // State:LongWord;  {Free/Used}
-              // Size:PtrUInt;
-              // Next:PHeapBlock;
-              // NextLink:PHeapBlock;
-              //end;
-
-              // or
-              
-              //THeapBlock = record
-              // Size:PtrUInt;
-              // Prev:PHeapBlock;
-              // Next:PHeapBlock;
-              // NextLink:PHeapBlock; {Also indicates State: 00000000 = Used, anything else = Free, FFFFFFFF = Last Free}
-              //end;
-              
-              //So each block (Free or Used) has a 32 byte header, when allocating a block simply find the first Free block that is large enough, split the block if it is at least
-              //32 bytes larger than the required size and return the pointer to the start of usable memory (next byte after the header). The splitting automatically updates the
-              //Prev,Next,NextLink etc
-              
-              //When a block is freed simply mark as Free, check Prev and Next blocks and concatenate with Prev and/or Next if they are also Free.
-              
-              //Also maintain a linked list of Free blocks var FreeBlocks:PHeapBlock = nil; that allows quick search for a free block. The does not consume memory but uses the 
-              //.NextLink pointers in the THeapBlocks to link it together.
-
-              //When a block is allocated it is unlinked from the free list, when it is freed it is linked to the free list. //Also used list
-              
-              //Only item to remember is to check if the Block Address plus/minus the Size equals the Block Address of the Prev/Next block because non contiguous blocks may be registered.
-                   
                      
-//To Do 
-
-
-//Look for:
-
-//To Do 
+//To Do //Look for:
 
 //Critical
              
@@ -190,6 +126,7 @@ type
   ReleaseFIQLock:function(Handle:THandle):LongWord;
  end;
  
+ {$IFDEF HEAP_STATISTICS}
  PHeapStatistics = ^THeapStatistics;
  THeapStatistics = record 
   {Get/Alloc/Realloc}
@@ -309,6 +246,7 @@ type
   RemoveLargeCount:LongWord;
   SmallUnavailableCount:LongWord;
  end;
+ {$ENDIF}
  
  PHeapSnapshot = ^THeapSnapshot;
  THeapSnapshot = record 
@@ -447,9 +385,9 @@ function SizeFIQMem(Addr:Pointer):PtrUInt;
 function MemFlags(Addr:Pointer):LongWord;
 function MemFlagsIRQ(Addr:Pointer):LongWord;
 function MemFlagsFIQ(Addr:Pointer):LongWord;
-
+{$IFDEF HEAP_STATISTICS}
 function GetHeapStatistics:THeapStatistics;
-
+{$ENDIF}
 function GetHeapBlockCount(State:LongWord):LongWord;
 function GetHeapBlockCountEx(State,Flags,Affinity:LongWord):LongWord;
 
@@ -583,8 +521,10 @@ var
  
  HeapStatus:THeapStatus;
  FPCHeapStatus:TFPCHeapStatus;
+ {$IFDEF HEAP_STATISTICS}
  HeapStatistics:THeapStatistics;
-
+ {$ENDIF}
+ 
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -608,7 +548,9 @@ begin
  {Initialize Status and Statistics}
  FillChar(HeapStatus,SizeOf(THeapStatus),0);
  FillChar(FPCHeapStatus,SizeOf(TFPCHeapStatus),0);
+ {$IFDEF HEAP_STATISTICS}
  FillChar(HeapStatistics,SizeOf(THeapStatistics),0);
+ {$ENDIF}
  
  {Register the RTL Memory Manager}
  SetMemoryManager(MyMemoryManager);
@@ -632,14 +574,18 @@ begin
  {}
  AcquireHeapLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.RegisterCount);
+  {$ENDIF}
   
   {Check Size}
   if Size < HEAP_MIN_BLOCK then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RegisterInvalidCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -655,24 +601,30 @@ begin
   {Get Block}
   if GetHeapBlock(Block) <> nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RegisterInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
   {Add Block}
   if not AddHeapBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RegisterAddFailCount);
+    {$ENDIF}
     Exit;
    end;
 
   {Add Free Block}
   if not AddFreeBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RegisterAddFailCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -726,14 +678,18 @@ begin
 
  AcquireHeapLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.RequestCount);
+  {$ENDIF}
 
   {Check Flags}
   if Flags = HEAP_FLAG_NORMAL then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RequestInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -743,8 +699,10 @@ begin
   {Check Size}
   if Size < HEAP_MIN_BLOCK then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RequestInvalidCount);
+    {$ENDIF}
     Exit;
    end;
 
@@ -758,16 +716,20 @@ begin
    end;   
   if Value <> Size then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RequestInvalidCount);
+    {$ENDIF}
     Exit;
    end;
   
   {Check Alignment}
   if HEAP_REQUEST_ALIGNMENT = 0 then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RequestInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -775,8 +737,10 @@ begin
   Mask:=(HEAP_REQUEST_ALIGNMENT - 1); 
   if (PtrUInt(Hint) and Mask) <> 0 then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.RequestInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -800,8 +764,10 @@ begin
             {Remove Free Block}
             if not RemoveFreeBlock(Block) then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestRemoveFailCount);
+              {$ENDIF}
               Exit;
              end;
              
@@ -809,24 +775,30 @@ begin
             Split:=SplitHeapBlock(Block,Offset);
             if Split = nil then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestSplitFailCount);
+              {$ENDIF}
               Exit;
              end;
             
             {Add Free Block}
             if not AddFreeBlock(Block) then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestAddFailCount);
+              {$ENDIF}
               Exit;
              end;
              
             {Add Free Block}
             if not AddFreeBlock(Split) then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestAddFailCount);
+              {$ENDIF}
               Exit;
              end;
              
@@ -851,8 +823,10 @@ begin
               {Remove Free Block}
               if not RemoveFreeBlock(Block) then
                begin
+                {$IFDEF HEAP_STATISTICS}
                 {Update Heap Statistics}
                 Inc(HeapStatistics.RequestRemoveFailCount);
+                {$ENDIF}
                 Exit;
                end;
                
@@ -860,24 +834,30 @@ begin
               Split:=SplitHeapBlock(Block,Size);
               if Split = nil then
                begin
+                {$IFDEF HEAP_STATISTICS}
                 {Update Heap Statistics}
                 Inc(HeapStatistics.RequestSplitFailCount);
+                {$ENDIF}
                 Exit;
                end;
               
               {Add Free Block}
               if not AddFreeBlock(Block) then
                begin
+                {$IFDEF HEAP_STATISTICS}
                 {Update Heap Statistics}
                 Inc(HeapStatistics.RequestAddFailCount);
+                {$ENDIF}
                 Exit;
                end;
              
               {Add Free Block}
               if not AddFreeBlock(Split) then
                begin
+                {$IFDEF HEAP_STATISTICS}
                 {Update Heap Statistics}
                 Inc(HeapStatistics.RequestAddFailCount);
+                {$ENDIF}
                 Exit;
                end;
              end
@@ -915,8 +895,10 @@ begin
   {Check Block}
   if Block = nil then
    begin  
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     if Hint <> nil then Inc(HeapStatistics.RequestUnavailableCount);
+    {$ENDIF}
     
     {Find Free (Also checks Flags and Affinity)}
     Block:=FindFreeBlock(Size);
@@ -934,8 +916,10 @@ begin
           {Remove Free Block}
           if not RemoveFreeBlock(Block) then
            begin
+            {$IFDEF HEAP_STATISTICS}
             {Update Heap Statistics}
             Inc(HeapStatistics.RequestRemoveFailCount);
+            {$ENDIF}
             Exit;
            end;
       
@@ -943,24 +927,30 @@ begin
           Split:=SplitHeapBlock(Block,Offset);
           if Split = nil then
            begin
+            {$IFDEF HEAP_STATISTICS}
             {Update Heap Statistics}
             Inc(HeapStatistics.RequestSplitFailCount);
+            {$ENDIF}
             Exit;
            end;
             
           {Add Free Block}
           if not AddFreeBlock(Block) then
            begin
+            {$IFDEF HEAP_STATISTICS}
             {Update Heap Statistics}
             Inc(HeapStatistics.RequestAddFailCount);
+            {$ENDIF}
             Exit;
            end;
              
           {Add Free Block}
           if not AddFreeBlock(Split) then
            begin
+            {$IFDEF HEAP_STATISTICS}
             {Update Heap Statistics}
             Inc(HeapStatistics.RequestAddFailCount);
+            {$ENDIF}
             Exit;
            end;
           
@@ -969,8 +959,10 @@ begin
          end
         else
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.RequestUnavailableCount);
+          {$ENDIF}
           Exit;
          end;           
        end;
@@ -986,8 +978,10 @@ begin
             {Remove Free Block}
             if not RemoveFreeBlock(Block) then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestRemoveFailCount);
+              {$ENDIF}
               Exit;
              end;
              
@@ -995,31 +989,39 @@ begin
             Split:=SplitHeapBlock(Block,Size);
             if Split = nil then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestSplitFailCount);
+              {$ENDIF}
               Exit;
              end;
              
             {Add Free Block}
             if not AddFreeBlock(Block) then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestAddFailCount);
+              {$ENDIF}
               Exit;
              end;
              
             {Add Free Block}
             if not AddFreeBlock(Split) then
              begin
+              {$IFDEF HEAP_STATISTICS}
               {Update Heap Statistics}
               Inc(HeapStatistics.RequestAddFailCount);
+              {$ENDIF}
               Exit;
              end;
            end
           else
            begin
+            {$IFDEF HEAP_STATISTICS}
             {Update Heap Statistics}
             Inc(HeapStatistics.RequestUnavailableCount);
+            {$ENDIF}
             Exit;
            end;           
          end;
@@ -1037,8 +1039,10 @@ begin
      end
     else
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestUnavailableCount);
+      {$ENDIF}
      end;     
    end;   
  finally
@@ -1067,8 +1071,10 @@ var
  Flags:LongWord;       
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestSharedCount);
+ {$ENDIF}
  
  {Get Flags}
  Flags:=HEAP_FLAG_SHARED;
@@ -1099,14 +1105,18 @@ function RequestLocalHeapBlock(Hint:Pointer;Size:PtrUInt;Affinity:LongWord):Poin
        by the heap block you must add SizeOf(THeapBlock) to this value}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestLocalCount);
+ {$ENDIF}
  
  {Check Affinity}
  if (Affinity = CPU_AFFINITY_ALL) or (Affinity = CPU_AFFINITY_NONE) or ((Affinity and not(CPU_MASK)) <> 0) then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RequestInvalidCount);
+   {$ENDIF}
    Exit;
   end;
  
@@ -1135,14 +1145,18 @@ function RequestCodeHeapBlock(Hint:Pointer;Size:PtrUInt;Affinity:LongWord):Point
        by the heap block you must add SizeOf(THeapBlock) to this value}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestCodeCount);
+ {$ENDIF}
 
  {Check Affinity}
  if (Affinity = CPU_AFFINITY_ALL) or (Affinity = CPU_AFFINITY_NONE) or ((Affinity and not(CPU_MASK)) <> 0) then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RequestInvalidCount);
+   {$ENDIF}
    Exit;
   end;
  
@@ -1169,8 +1183,10 @@ function RequestDeviceHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
        by the heap block you must add SizeOf(THeapBlock) to this value}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestDeviceCount);
+ {$ENDIF}
  
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
@@ -1195,8 +1211,10 @@ function RequestNoCacheHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
        by the heap block you must add SizeOf(THeapBlock) to this value}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestNoCacheCount);
+ {$ENDIF}
  
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
@@ -1221,8 +1239,10 @@ function RequestNonSharedHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
        by the heap block you must add SizeOf(THeapBlock) to this value}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestNonSharedCount);
+ {$ENDIF}
  
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
@@ -1250,14 +1270,18 @@ var
  Block:PHeapBlock;       
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestIRQCount);
+ {$ENDIF}
 
  {Check Affinity}
  if (Affinity = CPU_AFFINITY_ALL) or (Affinity = CPU_AFFINITY_NONE) or ((Affinity and not(CPU_MASK)) <> 0) then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RequestInvalidCount);
+   {$ENDIF}
    Exit;
   end;
  
@@ -1281,24 +1305,30 @@ begin
     {Get Block}
     if GetIRQBlock(Block) <> nil then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestInvalidCount);
+      {$ENDIF}
       Exit;
      end;
    
     {Add Block}
     if not AddIRQBlock(Block) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    
     {Add Free Block}
     if not AddFreeIRQBlock(Block) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    
@@ -1346,14 +1376,18 @@ var
  Block:PHeapBlock;       
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestFIQCount);
+ {$ENDIF}
 
  {Check Affinity}
  if (Affinity = CPU_AFFINITY_ALL) or (Affinity = CPU_AFFINITY_NONE) or ((Affinity and not(CPU_MASK)) <> 0) then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RequestInvalidCount);
+   {$ENDIF}
    Exit;
   end;
  
@@ -1377,24 +1411,30 @@ begin
     {Get Block}
     if GetFIQBlock(Block) <> nil then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestInvalidCount);
+      {$ENDIF}
       Exit;
      end;
 
     {Add Block}
     if not AddFIQBlock(Block) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    
     {Add Free Block}
     if not AddFreeFIQBlock(Block) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    
@@ -1436,22 +1476,28 @@ begin
  
  AcquireHeapLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.GetCount);
+  {$ENDIF}
 
   {Check Size}
   if Size = 0 then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetZeroCount);
+    {$ENDIF}
     Size:=4;
    end;
    
   {Check Flags}
   if (Flags and (HEAP_FLAG_IRQ or HEAP_FLAG_FIQ)) <> 0 then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetInvalidCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -1462,16 +1508,20 @@ begin
   Block:=GetFreeBlockEx(AllocSize,Flags,Affinity);
   if Block = nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetUnavailableCount);
+    {$ENDIF}
     Exit;
    end;
  
   {Remove Free Block}
   if not RemoveFreeBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemoveFailCount);
+    {$ENDIF}
     Exit;
    end;
     
@@ -1489,23 +1539,29 @@ begin
   {Check Remain Size}
   if RemainSize > 0 then 
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemainCount); 
+    {$ENDIF}
     
     {Split Block}
     Split:=SplitHeapBlock(Block,AllocSize);
     if Split = nil then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetSplitFailCount);
+      {$ENDIF}
       Exit;
      end; 
     
     {Add Free Block}
     if not AddFreeBlock(Split) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    end; 
@@ -1513,8 +1569,10 @@ begin
   {Add Used Block}
   if not AddUsedBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetAddFailCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -1556,21 +1614,27 @@ begin
  {}
  Result:=nil;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetAlignedCount);
+ {$ENDIF}
  
  {Check Alignment}
  if (Alignment and (HEAP_MIN_ALIGNMENT - 1)) <> 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedInvalidCount);
+   {$ENDIF}
    Exit;
   end;
   
  if Alignment <= HEAP_MIN_ALIGNMENT then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedUndersizeCount);
+   {$ENDIF}
    {Get Memory}
    Result:=SysGetMem(Size);
   end 
@@ -1583,8 +1647,10 @@ begin
    AllocMemory:=SysGetMem(Size + Alignment + (Alignment - 1));
    if AllocMemory = nil then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.GetAlignedUnavailableCount);
+     {$ENDIF}
      Exit;
     end;
     
@@ -1594,30 +1660,38 @@ begin
     begin
      AcquireHeapLock;
      try
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedRemainCount);
+      {$ENDIF}
      
       {Check Size}
       if (PtrUInt(AllocMemory) + SizeOf(THeapBlock)) > AlignedMemory then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedOrphanCount); 
         Inc(HeapStatistics.GetAlignedOrphanBytes,AlignedMemory - PtrUInt(AllocMemory));
+        {$ENDIF}
         Exit;
        end;
 
       {Get Block} 
       Block:=PHeapBlock(PtrUInt(PtrUInt(AllocMemory) - SizeOf(THeapBlock)));
       
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedReleaseCount); 
       Inc(HeapStatistics.GetAlignedReleaseBytes,AlignedMemory - PtrUInt(AllocMemory)); 
+      {$ENDIF}
       
       {Remove Used Block}
       if not RemoveUsedBlock(Block) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedRemoveFailCount);
+        {$ENDIF}
         Exit;
        end;
       
@@ -1625,24 +1699,30 @@ begin
       Split:=SplitHeapBlock(Block,AlignedMemory - PtrUInt(AllocMemory));
       if Split = nil then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedSplitFailCount);
+        {$ENDIF}
         Exit;
        end;
       
       {Add Free Block}
       if not AddFreeBlock(Block) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedAddFailCount);
+        {$ENDIF}
         Exit;
        end;
       
       {Add Used Block}
       if not AddUsedBlock(Split) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedAddFailCount);
+        {$ENDIF}
         Exit;
        end;
       
@@ -1687,21 +1767,27 @@ begin
  {}
  Result:=nil;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetAlignedCount);
+ {$ENDIF}
 
  {Check Alignment}
  if (Alignment and (HEAP_MIN_ALIGNMENT - 1)) <> 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedInvalidCount);
+   {$ENDIF}
    Exit;
   end;
  
  if Alignment <= HEAP_MIN_ALIGNMENT then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedUndersizeCount);
+   {$ENDIF}
    {Get Memory}
    Result:=GetMemEx(Size,Flags,Affinity);
   end 
@@ -1714,8 +1800,10 @@ begin
    AllocMemory:=GetMemEx(Size + Alignment + (Alignment - 1),Flags,Affinity);
    if AllocMemory = nil then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.GetAlignedUnavailableCount);
+     {$ENDIF}
      Exit;
     end;
  
@@ -1725,30 +1813,38 @@ begin
     begin
      AcquireHeapLock;
      try
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedRemainCount);
+      {$ENDIF}
      
       {Check Size}
       if (PtrUInt(AllocMemory) + SizeOf(THeapBlock)) > AlignedMemory then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedOrphanCount); 
         Inc(HeapStatistics.GetAlignedOrphanBytes,AlignedMemory - PtrUInt(AllocMemory));
+        {$ENDIF}
         Exit;
        end;
 
       {Get Block} 
       Block:=PHeapBlock(PtrUInt(PtrUInt(AllocMemory) - SizeOf(THeapBlock)));
       
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedReleaseCount); 
       Inc(HeapStatistics.GetAlignedReleaseBytes,AlignedMemory - PtrUInt(AllocMemory)); 
+      {$ENDIF}
       
       {Remove Used Block}
       if not RemoveUsedBlock(Block) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedRemoveFailCount);
+        {$ENDIF}
         Exit;
        end;
       
@@ -1756,24 +1852,30 @@ begin
       Split:=SplitHeapBlock(Block,AlignedMemory - PtrUInt(AllocMemory));
       if Split = nil then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedSplitFailCount);
+        {$ENDIF}
         Exit;
        end;
       
       {Add Free Block}
       if not AddFreeBlock(Block) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedAddFailCount);
+        {$ENDIF}
         Exit;
        end;
       
       {Add Used Block}
       if not AddUsedBlock(Split) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedAddFailCount);
+        {$ENDIF}
         Exit;
        end;
       
@@ -1809,8 +1911,10 @@ function GetSharedMem(Size:PtrUInt):Pointer;
 {Allocate a block of shared memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetSharedCount);
+ {$ENDIF}
  
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_SHARED,CPU_AFFINITY_NONE);
@@ -1823,8 +1927,10 @@ function GetSharedAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetSharedCount);
+ {$ENDIF}
 
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,HEAP_FLAG_SHARED,CPU_AFFINITY_NONE);
@@ -1836,8 +1942,10 @@ function GetLocalMem(Size:PtrUInt;Affinity:LongWord):Pointer;
 {Allocate a block of local memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetLocalCount);
+ {$ENDIF}
 
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_LOCAL,Affinity);
@@ -1850,8 +1958,10 @@ function GetLocalAlignedMem(Size,Alignment:PtrUInt;Affinity:LongWord):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetLocalCount);
+ {$ENDIF}
 
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,HEAP_FLAG_LOCAL,Affinity);
@@ -1863,8 +1973,10 @@ function GetCodeMem(Size:PtrUInt;Affinity:LongWord):Pointer;
 {Allocate a block of code memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetCodeCount);
+ {$ENDIF}
 
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_CODE,Affinity);
@@ -1879,8 +1991,10 @@ begin
  {}
  Result:=nil;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetCodeCount);
+ {$ENDIF}
 
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,HEAP_FLAG_CODE,Affinity);
@@ -1892,8 +2006,10 @@ function GetDeviceMem(Size:PtrUInt):Pointer;
 {Allocate a block of device memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetDeviceCount);
+ {$ENDIF}
  
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
@@ -1906,8 +2022,10 @@ function GetDeviceAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetDeviceCount);
+ {$ENDIF}
 
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
@@ -1919,8 +2037,10 @@ function GetNoCacheMem(Size:PtrUInt):Pointer;
 {Allocate a block of non cached memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetNoCacheCount);
+ {$ENDIF}
  
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
@@ -1933,8 +2053,10 @@ function GetNoCacheAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetNoCacheCount);
+ {$ENDIF}
 
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
@@ -1946,8 +2068,10 @@ function GetNonSharedMem(Size:PtrUInt):Pointer;
 {Allocate a block of non shared memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetNonSharedCount);
+ {$ENDIF}
  
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
@@ -1960,8 +2084,10 @@ function GetNonSharedAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetNonSharedCount);
+ {$ENDIF}
 
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
@@ -1982,14 +2108,18 @@ begin
  
  AcquireHeapIRQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.GetIRQCount);
+  {$ENDIF}
 
   {Check Size}
   if Size = 0 then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetZeroCount);
+    {$ENDIF}
     Size:=4;
    end;
   
@@ -2000,16 +2130,20 @@ begin
   Block:=GetFreeIRQBlock(AllocSize,Affinity);
   if Block = nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetUnavailableCount);
+    {$ENDIF}
     Exit;
    end;
   
   {Remove Free Block}
   if not RemoveFreeIRQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemoveFailCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -2027,23 +2161,29 @@ begin
   {Check Remain Size}
   if RemainSize > 0 then 
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemainCount); 
+    {$ENDIF}
     
     {Split Block}
     Split:=SplitIRQBlock(Block,AllocSize);
     if Split = nil then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetSplitFailCount);
+      {$ENDIF}
       Exit;
      end; 
     
     {Add Free Block}
     if not AddFreeIRQBlock(Split) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    end; 
@@ -2086,21 +2226,27 @@ begin
  {}
  Result:=nil;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetIRQCount);
+ {$ENDIF}
  
  {Check Alignment}
  if (Alignment and (HEAP_MIN_ALIGNMENT - 1)) <> 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedInvalidCount);
+   {$ENDIF}
    Exit;
   end;
  
  if Alignment <= HEAP_MIN_ALIGNMENT then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedUndersizeCount);
+   {$ENDIF}
    {Get Memory}
    Result:=GetIRQMem(Size,Affinity);
   end 
@@ -2113,8 +2259,10 @@ begin
    AllocMemory:=GetIRQMem(Size + Alignment + (Alignment - 1),Affinity);
    if AllocMemory = nil then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.GetAlignedUnavailableCount);
+     {$ENDIF}
      Exit;
     end;
 
@@ -2124,39 +2272,49 @@ begin
     begin
      AcquireHeapIRQLock;
      try
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedRemainCount);
+      {$ENDIF}
      
       {Check Size}
       if (PtrUInt(AllocMemory) + SizeOf(THeapBlock)) > AlignedMemory then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedOrphanCount); 
         Inc(HeapStatistics.GetAlignedOrphanBytes,AlignedMemory - PtrUInt(AllocMemory));
+        {$ENDIF}
         Exit;
        end;
 
       {Get Block} 
       Block:=PHeapBlock(PtrUInt(PtrUInt(AllocMemory) - SizeOf(THeapBlock)));
       
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedReleaseCount); 
       Inc(HeapStatistics.GetAlignedReleaseBytes,AlignedMemory - PtrUInt(AllocMemory)); 
+      {$ENDIF}
       
       {Split Block}
       Split:=SplitIRQBlock(Block,AlignedMemory - PtrUInt(AllocMemory));
       if Split = nil then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedSplitFailCount);
+        {$ENDIF}
         Exit;
        end;
       
       {Add Free Block}
       if not AddFreeIRQBlock(Block) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedAddFailCount);
+        {$ENDIF}
         Exit;
        end;
       
@@ -2201,14 +2359,18 @@ begin
  
  AcquireHeapFIQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.GetFIQCount);
+  {$ENDIF}
 
   {Check Size}
   if Size = 0 then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetZeroCount);
+    {$ENDIF}
     Size:=4;
    end;
   
@@ -2219,16 +2381,20 @@ begin
   Block:=GetFreeFIQBlock(AllocSize,Affinity);
   if Block = nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetUnavailableCount);
+    {$ENDIF}
     Exit;
    end;
  
   {Remove Free Block}
   if not RemoveFreeFIQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemoveFailCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -2246,23 +2412,29 @@ begin
   {Check Remain Size}
   if RemainSize > 0 then 
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemainCount); 
+    {$ENDIF}
     
     {Split Block}
     Split:=SplitFIQBlock(Block,AllocSize);
     if Split = nil then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetSplitFailCount);
+      {$ENDIF}
       Exit;
      end; 
     
     {Add Free Block}
     if not AddFreeFIQBlock(Split) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    end; 
@@ -2305,21 +2477,27 @@ begin
  {}
  Result:=nil;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetFIQCount);
+ {$ENDIF}
  
  {Check Alignment}
  if (Alignment and (HEAP_MIN_ALIGNMENT - 1)) <> 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedInvalidCount);
+   {$ENDIF}
    Exit;
   end;
  
  if Alignment <= HEAP_MIN_ALIGNMENT then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.GetAlignedUndersizeCount);
+   {$ENDIF}
    {Get Memory}
    Result:=GetFIQMem(Size,Affinity);
   end 
@@ -2332,8 +2510,10 @@ begin
    AllocMemory:=GetFIQMem(Size + Alignment + (Alignment - 1),Affinity);
    if AllocMemory = nil then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.GetAlignedUnavailableCount);
+     {$ENDIF}
      Exit;
     end;
  
@@ -2343,39 +2523,49 @@ begin
     begin
      AcquireHeapFIQLock;
      try
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedRemainCount);
+      {$ENDIF}
      
       {Check Size}
       if (PtrUInt(AllocMemory) + SizeOf(THeapBlock)) > AlignedMemory then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedOrphanCount); 
         Inc(HeapStatistics.GetAlignedOrphanBytes,AlignedMemory - PtrUInt(AllocMemory));
+        {$ENDIF}
         Exit;
        end;
 
       {Get Block} 
       Block:=PHeapBlock(PtrUInt(PtrUInt(AllocMemory) - SizeOf(THeapBlock)));
       
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAlignedReleaseCount); 
       Inc(HeapStatistics.GetAlignedReleaseBytes,AlignedMemory - PtrUInt(AllocMemory)); 
+      {$ENDIF}
       
       {Split Block}
       Split:=SplitFIQBlock(Block,AlignedMemory - PtrUInt(AllocMemory));
       if Split = nil then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedSplitFailCount);
+        {$ENDIF}
         Exit;
        end;
       
       {Add Free Block}
       if not AddFreeFIQBlock(Block) then
        begin
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.GetAlignedAddFailCount);
+        {$ENDIF}
         Exit;
        end;
       
@@ -2419,8 +2609,10 @@ begin
  
  AcquireHeapIRQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.FreeIRQCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -2432,8 +2624,10 @@ begin
   {if GetIRQBlock(Block) <> Block then}
   if not CheckIRQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeInvalidCount);
+    {$ENDIF}
     Exit;
    end;
  
@@ -2444,16 +2638,20 @@ begin
   Merge:=MergeIRQBlock(Block);
   if Merge = nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeMergeFailCount);
+    {$ENDIF}
     Exit;
    end;
   
   {Add Free Block}
   if not AddFreeIRQBlock(Merge) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeAddFailCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -2493,8 +2691,10 @@ begin
  
  AcquireHeapFIQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.FreeFIQCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -2506,8 +2706,10 @@ begin
   {if GetFIQBlock(Block) <> Block then}
   if not CheckFIQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeInvalidCount);
+    {$ENDIF}
     Exit;
    end;
  
@@ -2518,16 +2720,20 @@ begin
   Merge:=MergeFIQBlock(Block);
   if Merge = nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeMergeFailCount);
+    {$ENDIF}
     Exit;
    end;
   
   {Add Free Block}
   if not AddFreeFIQBlock(Merge) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeAddFailCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -2559,8 +2765,10 @@ function AllocMemEx(Size:PtrUInt;Flags,Affinity:LongWord):Pointer;
 {Allocate and clear a block of memory with the flags and affinity requested}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocCount); 
+ {$ENDIF}
  
  {Get Memory}
  Result:=GetMemEx(Size,Flags,Affinity);
@@ -2584,14 +2792,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocCount);
+ {$ENDIF}
  
  {Check Size}
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -2609,8 +2821,10 @@ begin
    CurrentSize:=SysSizeMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -2623,15 +2837,19 @@ begin
       begin
        AcquireHeapLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        {$ENDIF}
         
         {Remove Used Block}
         if not RemoveUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocRemoveFailCount);
+          {$ENDIF}
           Exit;
          end;
   
@@ -2639,24 +2857,30 @@ begin
         Split:=SplitHeapBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Used Block}
         if not AddUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
@@ -2684,8 +2908,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Memory}
      Result:=AllocMemEx(Size,Flags,Affinity); 
@@ -2720,8 +2946,10 @@ function AllocAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocAlignedCount); 
+ {$ENDIF}
  
  {Get Aligned Memory}
  Result:=GetAlignedMem(Size,Alignment);
@@ -2740,8 +2968,10 @@ function AllocAlignedMemEx(Size,Alignment:PtrUInt;Flags,Affinity:LongWord):Point
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocAlignedCount); 
+ {$ENDIF}
  
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,Flags,Affinity);
@@ -2766,14 +2996,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocAlignedCount);
+ {$ENDIF}
  
  {Check Size}
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -2791,8 +3025,10 @@ begin
    CurrentSize:=SysSizeMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -2805,15 +3041,19 @@ begin
       begin
        AcquireHeapLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        {$ENDIF}
         
         {Remove Used Block}
         if not RemoveUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocRemoveFailCount);
+          {$ENDIF}
           Exit;
          end;
   
@@ -2821,24 +3061,30 @@ begin
         Split:=SplitHeapBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Used Block}
         if not AddUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
@@ -2866,8 +3112,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Aligned Memory}
      Result:=AllocAlignedMem(Size,Alignment); 
@@ -2909,14 +3157,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocAlignedCount);
+ {$ENDIF}
 
  {Check Size}
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -2934,8 +3186,10 @@ begin
    CurrentSize:=SysSizeMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -2948,15 +3202,19 @@ begin
       begin
        AcquireHeapLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
+        {$ENDIF}
         
         {Remove Used Block}
         if not RemoveUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocRemoveFailCount);
+          {$ENDIF}
           Exit;
          end;
   
@@ -2964,24 +3222,30 @@ begin
         Split:=SplitHeapBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Used Block}
         if not AddUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
@@ -3009,8 +3273,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Aligned Memory}
      Result:=AllocAlignedMemEx(Size,Alignment,Flags,Affinity); 
@@ -3043,8 +3309,10 @@ function AllocSharedMem(Size:PtrUInt):Pointer;
 {Allocate and clear a block of shared memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocSharedCount); 
+ {$ENDIF}
  
  {Get Shared Memory}
  Result:=GetSharedMem(Size);
@@ -3063,8 +3331,10 @@ function AllocSharedAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocSharedCount); 
+ {$ENDIF}
  
  {Get Shared Memory}
  Result:=GetSharedAlignedMem(Size,Alignment);
@@ -3081,8 +3351,10 @@ function ReAllocSharedMem(var Addr:Pointer;Size:PtrUInt):Pointer;
 {Reallocate a block of shared memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocSharedCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_SHARED,CPU_AFFINITY_NONE);
@@ -3095,8 +3367,10 @@ function ReAllocSharedAlignedMem(var Addr:Pointer;Size,Alignment:PtrUInt):Pointe
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocSharedCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_SHARED,CPU_AFFINITY_NONE);
@@ -3108,8 +3382,10 @@ function AllocLocalMem(Size:PtrUInt;Affinity:LongWord):Pointer;
 {Allocate and clear a block of local memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocLocalCount); 
+ {$ENDIF}
  
  {Get Local Memory}
  Result:=GetLocalMem(Size,Affinity);
@@ -3128,8 +3404,10 @@ function AllocLocalAlignedMem(Size,Alignment:PtrUInt;Affinity:LongWord):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocLocalCount); 
+ {$ENDIF}
  
  {Get Local Memory}
  Result:=GetLocalAlignedMem(Size,Alignment,Affinity);
@@ -3146,8 +3424,10 @@ function ReAllocLocalMem(var Addr:Pointer;Size:PtrUInt;Affinity:LongWord):Pointe
 {Reallocate a block of local memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocLocalCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_LOCAL,Affinity);
@@ -3160,8 +3440,10 @@ function ReAllocLocalAlignedMem(var Addr:Pointer;Size,Alignment:PtrUInt;Affinity
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocLocalCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_LOCAL,Affinity);
@@ -3173,8 +3455,10 @@ function AllocCodeMem(Size:PtrUInt;Affinity:LongWord):Pointer;
 {Allocate and clear a block of code memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocCodeCount); 
+ {$ENDIF}
  
  {Get Code Memory}
  Result:=GetCodeMem(Size,Affinity);
@@ -3193,8 +3477,10 @@ function AllocCodeAlignedMem(Size,Alignment:PtrUInt;Affinity:LongWord):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocCodeCount); 
+ {$ENDIF}
  
  {Get Code Memory}
  Result:=GetCodeAlignedMem(Size,Alignment,Affinity);
@@ -3211,8 +3497,10 @@ function ReAllocCodeMem(var Addr:Pointer;Size:PtrUInt;Affinity:LongWord):Pointer
 {Reallocate a block of code memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocCodeCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_CODE,Affinity);
@@ -3225,8 +3513,10 @@ function ReAllocCodeAlignedMem(var Addr:Pointer;Size,Alignment:PtrUInt;Affinity:
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocCodeCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_CODE,Affinity);
@@ -3238,8 +3528,10 @@ function AllocDeviceMem(Size:PtrUInt):Pointer;
 {Allocate and clear a block of device memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocDeviceCount); 
+ {$ENDIF}
  
  {Get Device Memory}
  Result:=GetDeviceMem(Size);
@@ -3258,8 +3550,10 @@ function AllocDeviceAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocDeviceCount); 
+ {$ENDIF}
  
  {Get Device Memory}
  Result:=GetDeviceAlignedMem(Size,Alignment);
@@ -3276,8 +3570,10 @@ function ReAllocDeviceMem(var Addr:Pointer;Size:PtrUInt):Pointer;
 {Reallocate a block of device memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocDeviceCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
@@ -3290,8 +3586,10 @@ function ReAllocDeviceAlignedMem(var Addr:Pointer;Size,Alignment:PtrUInt):Pointe
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocDeviceCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
@@ -3303,8 +3601,10 @@ function AllocNoCacheMem(Size:PtrUInt):Pointer;
 {Allocate and clear a block of non cached memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocNoCacheCount); 
+ {$ENDIF}
  
  {Get Non Cached Memory}
  Result:=GetNoCacheMem(Size);
@@ -3323,8 +3623,10 @@ function AllocNoCacheAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocNoCacheCount); 
+ {$ENDIF}
  
  {Get Non Cached Memory}
  Result:=GetNoCacheAlignedMem(Size,Alignment);
@@ -3341,8 +3643,10 @@ function ReAllocNoCacheMem(var Addr:Pointer;Size:PtrUInt):Pointer;
 {Reallocate a block of non cached memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocNoCacheCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
@@ -3355,8 +3659,10 @@ function ReAllocNoCacheAlignedMem(var Addr:Pointer;Size,Alignment:PtrUInt):Point
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocNoCacheCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
@@ -3368,8 +3674,10 @@ function AllocNonSharedMem(Size:PtrUInt):Pointer;
 {Allocate and clear a block of non shared memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocNonSharedCount); 
+ {$ENDIF}
  
  {Get Non Shared Memory}
  Result:=GetNonSharedMem(Size);
@@ -3388,8 +3696,10 @@ function AllocNonSharedAlignedMem(Size,Alignment:PtrUInt):Pointer;
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocNonSharedCount); 
+ {$ENDIF}
  
  {Get Non Shared Memory}
  Result:=GetNonSharedAlignedMem(Size,Alignment);
@@ -3406,8 +3716,10 @@ function ReAllocNonSharedMem(var Addr:Pointer;Size:PtrUInt):Pointer;
 {Reallocate a block of non shared memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocNonSharedCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
@@ -3420,8 +3732,10 @@ function ReAllocNonSharedAlignedMem(var Addr:Pointer;Size,Alignment:PtrUInt):Poi
  (Alignment must be a multiple of the minimum alignment configuration)}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocNonSharedCount); 
+ {$ENDIF}
 
  {Realloc Memory} 
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
@@ -3434,8 +3748,10 @@ function AllocIRQMem(Size:PtrUInt;Affinity:LongWord):Pointer;
 {Note: The memory must be freed using FreeIRQMem}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocIRQCount); 
+ {$ENDIF}
  
  {Get IRQ Memory}
  Result:=GetIRQMem(Size,Affinity);
@@ -3455,8 +3771,10 @@ function AllocIRQAlignedMem(Size,Alignment:PtrUInt;Affinity:LongWord):Pointer;
 {Note: The memory must be freed using FreeIRQMem}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocIRQCount); 
+ {$ENDIF}
  
  {Get IRQ Memory}
  Result:=GetIRQAlignedMem(Size,Alignment,Affinity);
@@ -3480,14 +3798,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocIRQCount);
+ {$ENDIF}
 
  {Check Size}
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -3505,8 +3827,10 @@ begin
    CurrentSize:=SizeIRQMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -3519,24 +3843,30 @@ begin
       begin
        AcquireHeapIRQLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        {$ENDIF}
   
         {Split Block}
         Split:=SplitIRQBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeIRQBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
         
@@ -3564,8 +3894,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Memory}
      Result:=AllocIRQMem(Size,Affinity); 
@@ -3606,14 +3938,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocIRQCount);
+ {$ENDIF}
 
  {Check Size}
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -3631,8 +3967,10 @@ begin
    CurrentSize:=SizeIRQMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -3645,24 +3983,30 @@ begin
       begin
        AcquireHeapIRQLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
+        {$ENDIF}
   
         {Split Block}
         Split:=SplitIRQBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeIRQBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
@@ -3690,8 +4034,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Aligned Memory}
      Result:=AllocIRQAlignedMem(Size,Alignment,Affinity); 
@@ -3725,8 +4071,10 @@ function AllocFIQMem(Size:PtrUInt;Affinity:LongWord):Pointer;
 {Note: The memory must be freed using FreeFIQMem}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocFIQCount); 
+ {$ENDIF}
  
  {Get FIQ Memory}
  Result:=GetFIQMem(Size,Affinity);
@@ -3746,8 +4094,10 @@ function AllocFIQAlignedMem(Size,Alignment:PtrUInt;Affinity:LongWord):Pointer;
 {Note: The memory must be freed using FreeFIQMem}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocFIQCount); 
+ {$ENDIF}
  
  {Get FIQ Memory}
  Result:=GetFIQAlignedMem(Size,Alignment,Affinity);
@@ -3771,14 +4121,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocFIQCount);
+ {$ENDIF}
 
  {Check Size} 
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -3796,8 +4150,10 @@ begin
    CurrentSize:=SizeFIQMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -3810,24 +4166,30 @@ begin
       begin
        AcquireHeapFIQLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        {$ENDIF}
   
         {Split Block}
         Split:=SplitFIQBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeFIQBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
@@ -3855,8 +4217,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Memory}
      Result:=AllocFIQMem(Size,Affinity); 
@@ -3897,14 +4261,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocFIQCount);
+ {$ENDIF}
 
  {Check Size} 
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -3922,8 +4290,10 @@ begin
    CurrentSize:=SizeFIQMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -3936,24 +4306,30 @@ begin
       begin
        AcquireHeapFIQLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
+        {$ENDIF}
         
         {Split Block}
         Split:=SplitFIQBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeFIQBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
@@ -3981,8 +4357,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Aligned Memory}
      Result:=AllocFIQAlignedMem(Size,Alignment,Affinity); 
@@ -4021,8 +4399,10 @@ begin
  
  AcquireHeapIRQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.SizeIRQCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -4034,8 +4414,10 @@ begin
   {if GetIRQBlock(Block) <> Block then}
   if not CheckIRQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.SizeInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -4058,8 +4440,10 @@ begin
  
  AcquireHeapFIQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.SizeFIQCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -4071,8 +4455,10 @@ begin
   {if GetFIQBlock(Block) <> Block then}
   if not CheckFIQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.SizeInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -4095,8 +4481,10 @@ begin
  
  AcquireHeapLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.FlagsCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -4108,8 +4496,10 @@ begin
   {if GetUsedBlock(Block) <> Block then}
   if not CheckUsedBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FlagsInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -4132,8 +4522,10 @@ begin
  
  AcquireHeapIRQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.FlagsIRQCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -4145,8 +4537,10 @@ begin
   {if GetIRQBlock(Block) <> Block then}
   if not CheckIRQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FlagsInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -4169,8 +4563,10 @@ begin
  
  AcquireHeapFIQLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.FlagsFIQCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -4182,8 +4578,10 @@ begin
   {if GetFIQBlock(Block) <> Block then}
   if not CheckFIQBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FlagsInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    
@@ -4195,7 +4593,7 @@ begin
 end;
 
 {==============================================================================}
-
+{$IFDEF HEAP_STATISTICS}
 function GetHeapStatistics:THeapStatistics; 
 {Return detailed statistics for the heap manager}
 begin
@@ -4210,7 +4608,7 @@ begin
   ReleaseHeapLock;
  end; 
 end;
- 
+{$ENDIF}
 {==============================================================================}
 
 function GetHeapBlockCount(State:LongWord):LongWord;
@@ -4672,8 +5070,10 @@ begin
  {Link Block (Before Split)}
  Block^.Next:=Split;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.SplitCount);
+ {$ENDIF}
  
  {Return Result}
  Result:=Split;
@@ -4730,8 +5130,10 @@ begin
            {Get Merge}
            Merge:=Prev;
            
+           {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergePrevCount);
+           {$ENDIF}
           end; 
         end; 
       end;
@@ -4765,8 +5167,10 @@ begin
              Next^.Prev:=Merge;
             end;
             
+           {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergeNextCount);
+           {$ENDIF}
           end;
         end;
       end;
@@ -4801,8 +5205,10 @@ begin
     begin
      if Block^.Flags = HEAP_FLAG_NORMAL then
       begin
+       {$IFDEF HEAP_STATISTICS}
        {Update Heap Statistics}
        Inc(HeapStatistics.GetSmallCount);
+       {$ENDIF}
        
        {Return Block}
        Result:=Block;
@@ -4813,8 +5219,10 @@ begin
      Block:=Block^.NextLink; 
     end;
     
+   {$IFDEF HEAP_STATISTICS} 
    {Update Heap Statistics}
    Inc(HeapStatistics.SmallUnavailableCount);
+   {$ENDIF}
   end;
   
  {Large Block}
@@ -4823,8 +5231,10 @@ begin
   begin
    if (Block^.Size >= Size) and (Block^.Flags = HEAP_FLAG_NORMAL) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.GetLargeCount);
+     {$ENDIF}
      
      {Return Block}
      Result:=Block;
@@ -4862,8 +5272,10 @@ begin
       begin
        if Block^.Flags = Flags then
         begin
+         {$IFDEF HEAP_STATISTICS}
          {Update Heap Statistics}
          Inc(HeapStatistics.GetSmallCount);
+         {$ENDIF}
          
          {Return Block}
          Result:=Block;
@@ -4874,8 +5286,10 @@ begin
       begin
        if (Block^.Flags = Flags) and (Block^.Affinity = Affinity) then
         begin
+         {$IFDEF HEAP_STATISTICS}
          {Update Heap Statistics}
          Inc(HeapStatistics.GetSmallCount);
+         {$ENDIF}
          
          {Return Block}
          Result:=Block;
@@ -4887,8 +5301,10 @@ begin
      Block:=Block^.NextLink; 
     end;
     
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.SmallUnavailableCount);
+   {$ENDIF}
   end;
  
  {Large Block}
@@ -4899,8 +5315,10 @@ begin
     begin
      if (Block^.Size >= Size) and (Block^.Flags = Flags) then
       begin
+       {$IFDEF HEAP_STATISTICS}
        {Update Heap Statistics}
        Inc(HeapStatistics.GetLargeCount);
+       {$ENDIF}
        
        {Return Block}
        Result:=Block;
@@ -4917,8 +5335,10 @@ begin
     begin
      if (Block^.Size >= Size) and (Block^.Flags = Flags) and (Block^.Affinity = Affinity) then
       begin
+       {$IFDEF HEAP_STATISTICS}
        {Update Heap Statistics}
        Inc(HeapStatistics.GetLargeCount);
+       {$ENDIF}
        
        {Return Block}
        Result:=Block;
@@ -5004,8 +5424,10 @@ begin
      Block^.NextLink:=nil;
     end;  
     
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.AddSmallCount);
+   {$ENDIF}
   end
  else
   begin 
@@ -5056,8 +5478,10 @@ begin
      Block^.NextLink:=nil; 
     end;
     
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.AddLargeCount);
+   {$ENDIF}
   end;  
  
  {Mark as Free}
@@ -5122,8 +5546,10 @@ begin
    Block^.PrevLink:=nil;
    Block^.NextLink:=nil;
    
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RemoveSmallCount);
+   {$ENDIF}
   end
  else
   begin 
@@ -5165,8 +5591,10 @@ begin
    Block^.PrevLink:=nil;
    Block^.NextLink:=nil;
    
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RemoveLargeCount);
+   {$ENDIF}
   end;
   
  {Mark as Used}
@@ -5490,8 +5918,10 @@ begin
  {Link Block (Before Split)}
  Block^.Next:=Split;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.SplitCount);     
+ {$ENDIF}
  
  {Return Result}
  Result:=Split;
@@ -5548,8 +5978,10 @@ begin
            {Get Merge}
            Merge:=Prev;
            
+           {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergePrevCount);               
+           {$ENDIF}
           end; 
         end; 
       end;
@@ -5583,8 +6015,10 @@ begin
              Next^.Prev:=Merge;
             end;
             
+           {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergeNextCount);               
+           {$ENDIF}
           end;
         end;
       end;
@@ -5925,8 +6359,10 @@ begin
  {Link Block (Before Split)}
  Block^.Next:=Split;
  
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.SplitCount);     
+ {$ENDIF}
  
  {Return Result}
  Result:=Split;
@@ -5983,8 +6419,10 @@ begin
            {Get Merge}
            Merge:=Prev;
            
+           {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergePrevCount);               
+           {$ENDIF}
           end; 
         end; 
       end;
@@ -6018,8 +6456,10 @@ begin
              Next^.Prev:=Merge;
             end;
             
+           {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergeNextCount);               
+           {$ENDIF}
           end;
         end;
       end;
@@ -6213,14 +6653,18 @@ begin
  
  AcquireHeapLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.GetCount);
+  {$ENDIF}
 
   {Check Size}
   if Size = 0 then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetZeroCount);
+    {$ENDIF}
     Size:=4;
    end;
   
@@ -6231,16 +6675,20 @@ begin
   Block:=GetFreeBlock(AllocSize);
   if Block = nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetUnavailableCount);
+    {$ENDIF}
     Exit;
    end;
 
   {Remove Free Block}
   if not RemoveFreeBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemoveFailCount);
+    {$ENDIF}
     Exit;
    end;
     
@@ -6258,23 +6706,29 @@ begin
   {Check Remain Size}
   if RemainSize > 0 then 
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetRemainCount); 
+    {$ENDIF}
     
     {Split Block}
     Split:=SplitHeapBlock(Block,AllocSize);
     if Split = nil then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetSplitFailCount);
+      {$ENDIF}
       Exit;
      end; 
     
     {Add Free Block}
     if not AddFreeBlock(Split) then
      begin
+      {$IFDEF HEAP_STATISTICS}
       {Update Heap Statistics}
       Inc(HeapStatistics.GetAddFailCount);
+      {$ENDIF}
       Exit;
      end;
    end; 
@@ -6282,8 +6736,10 @@ begin
   {Add Used Block}
   if not AddUsedBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.GetAddFailCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -6325,8 +6781,10 @@ begin
  
  AcquireHeapLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.FreeCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -6338,8 +6796,10 @@ begin
   {if GetUsedBlock(Block) <> Block then}
   if not CheckUsedBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeInvalidCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -6349,8 +6809,10 @@ begin
   {Remove Used Block}
   if not RemoveUsedBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeRemoveFailCount);
+    {$ENDIF}
     Exit;
    end; 
   
@@ -6358,16 +6820,20 @@ begin
   Merge:=MergeHeapBlock(Block);
   if Merge = nil then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeMergeFailCount);
+    {$ENDIF}
     Exit;
    end;
   
   {Add Free Block}
   if not AddFreeBlock(Merge) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.FreeAddFailCount);
+    {$ENDIF}
     Exit;
    end;
   
@@ -6400,8 +6866,10 @@ function SysFreeMemSize(Addr:Pointer;Size:PtrUInt):PtrUInt;
 {Note: Size is not currently used}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.FreeSizeCount);  
+ {$ENDIF}
  
  {Return Result}
  Result:=SysFreeMem(Addr);
@@ -6413,8 +6881,10 @@ function SysAllocMem(Size:PtrUInt):Pointer;
 {Allocate and clear a block of normal memory}
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.AllocCount); 
+ {$ENDIF}
  
  {Get Memory}
  Result:=SysGetMem(Size);
@@ -6438,14 +6908,18 @@ var
  CurrentSize:PtrUInt;
 begin
  {}
+ {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocCount);
+ {$ENDIF}
  
  {Check Size}
  if Size = 0 then
   begin
+   {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
+   {$ENDIF}
    
    {Free Memory}
    if Addr <> nil then
@@ -6463,8 +6937,10 @@ begin
    CurrentSize:=SysSizeMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocSmallerCount); 
+     {$ENDIF}
   
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
@@ -6477,15 +6953,19 @@ begin
       begin
        AcquireHeapLock;
        try
+        {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
         Inc(HeapStatistics.ReallocReleaseCount); 
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        {$ENDIF}
         
         {Remove Used Block}
         if not RemoveUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocRemoveFailCount);
+          {$ENDIF}
           Exit;
          end;
   
@@ -6493,24 +6973,30 @@ begin
         Split:=SplitHeapBlock(Block,AllocSize);
         if Split = nil then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocSplitFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Free Block}
         if not AddFreeBlock(Split) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
         {Add Used Block}
         if not AddUsedBlock(Block) then
          begin
+          {$IFDEF HEAP_STATISTICS}
           {Update Heap Statistics}
           Inc(HeapStatistics.ReallocAddFailCount);
+          {$ENDIF}
           Exit;
          end;
          
@@ -6538,8 +7024,10 @@ begin
     end
    else
     begin 
+     {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
      Inc(HeapStatistics.ReallocLargerCount); 
+     {$ENDIF}
   
      {Alloc Memory}
      Result:=SysAllocMem(Size); 
@@ -6578,8 +7066,10 @@ begin
  
  AcquireHeapLock;
  try
+  {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
   Inc(HeapStatistics.SizeCount); 
+  {$ENDIF}
  
   {Check Addr}
   if Addr = nil then Exit;
@@ -6591,8 +7081,10 @@ begin
   {if GetUsedBlock(Block) <> Block then}
   if not CheckUsedBlock(Block) then
    begin
+    {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     Inc(HeapStatistics.SizeInvalidCount);
+    {$ENDIF}
     Exit;
    end;
    

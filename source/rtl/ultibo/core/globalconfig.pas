@@ -243,6 +243,8 @@ var
  
  CLOCK_FIQ_ENABLED:LongBool;               {The Clock uses Fast Interrupt Requests (FIQ) instead of IRQ}
  
+ TIME_TICKS_PER_CLOCK_INTERRUPT:LongWord;  {How many 100 nanosecond time ticks per clock interrupt}
+ 
 {==============================================================================}
 var
  {Timer configuration}
@@ -411,6 +413,8 @@ var
  SCHEDULER_IDLE_WAIT:LongBool;                      {If True then the idle loop will wait in low power state on each iteration (May affect utilization calculation)}
  SCHEDULER_IDLE_OFFSET:LongWord;                    {Idle loop delay per iteration (Milliseconds)}
  SCHEDULER_IDLE_PER_SECOND:LongWord;                {How many idle loops complete in one second when no other tasks are running (Set by threads initialization)}
+ 
+ TIME_TICKS_PER_SCHEDULER_INTERRUPT:LongWord;       {How many 100 nanosecond time ticks per scheduler interrupt}
  
 {==============================================================================}
 {Peripheral configuration (Set by PeripheralInit)}
@@ -918,11 +922,20 @@ function MAKEWORD(A,B:LongInt):Word; inline;
 function WordNtoBE(Value:Word):Word; inline;
 function WordBEtoN(Value:Word):Word; inline;
 
+function WordNtoLE(Value:Word):Word; inline;
+function WordLEtoN(Value:Word):Word; inline;
+
 function LongWordNtoBE(Value:LongWord):LongWord; inline;
 function LongWordBEtoN(Value:LongWord):LongWord; inline;
 
+function LongWordNtoLE(Value:LongWord):LongWord; inline;
+function LongWordLEtoN(Value:LongWord):LongWord; inline;
+
 function Int64NtoBE(const Value:Int64):Int64; inline;
 function Int64BEtoN(const Value:Int64):Int64; inline;
+
+function Int64NtoLE(const Value:Int64):Int64; inline;
+function Int64LEtoN(const Value:Int64):Int64; inline;
 
 function GetLastError:LongWord; inline;
 procedure SetLastError(LastError:LongWord); inline;
@@ -1077,6 +1090,7 @@ end;
 {==============================================================================}
 
 function WordNtoBE(Value:Word):Word; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
 begin
  {}
  Result:=NtoBE(Value);
@@ -1085,6 +1099,7 @@ end;
 {==============================================================================}
 
 function WordBEtoN(Value:Word):Word; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
 begin
  {}
  Result:=BEtoN(Value);
@@ -1092,7 +1107,26 @@ end;
 
 {==============================================================================}
 
+function WordNtoLE(Value:Word):Word; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
+begin
+ {}
+ Result:=NtoLE(Value);
+end;
+
+{==============================================================================}
+
+function WordLEtoN(Value:Word):Word; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
+begin
+ {}
+ Result:=LEtoN(Value);
+end;
+
+{==============================================================================}
+
 function LongWordNtoBE(Value:LongWord):LongWord; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
 begin
  {}
  Result:=NtoBE(Value);
@@ -1101,6 +1135,7 @@ end;
 {==============================================================================}
 
 function LongWordBEtoN(Value:LongWord):LongWord; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
 begin
  {}
  Result:=BEtoN(Value);
@@ -1108,7 +1143,26 @@ end;
 
 {==============================================================================}
 
+function LongWordNtoLE(Value:LongWord):LongWord; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
+begin
+ {}
+ Result:=NtoLE(Value);
+end;
+
+{==============================================================================}
+
+function LongWordLEtoN(Value:LongWord):LongWord; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
+begin
+ {}
+ Result:=LEtoN(Value);
+end;
+
+{==============================================================================}
+
 function Int64NtoBE(const Value:Int64):Int64; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
 begin
  {}
  Result:=NtoBE(Value);
@@ -1117,9 +1171,28 @@ end;
 {==============================================================================}
 
 function Int64BEtoN(const Value:Int64):Int64; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
 begin
  {}
  Result:=BEtoN(Value);
+end;
+
+{==============================================================================}
+
+function Int64NtoLE(const Value:Int64):Int64; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
+begin
+ {}
+ Result:=NtoLE(Value);
+end;
+
+{==============================================================================}
+
+function Int64LEtoN(const Value:Int64):Int64; inline;
+{These functions are simply wrappers to force the compiler to select the correct function without typecasting}
+begin
+ {}
+ Result:=LEtoN(Value);
 end;
 
 {==============================================================================}

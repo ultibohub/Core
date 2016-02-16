@@ -23,10 +23,13 @@ Credits
 
  Information for this unit was obtained from:
 
- 
+  \wpa_supplicant-2.5\src\tls
+  
+  
 References
 ==========
 
+ Based on information from sources of OpenSSL, WPA supplicant, the Linux kernel and others
 
 SSL
 ===
@@ -34,6 +37,7 @@ SSL
 
 TLS
 ===
+
 
 }
 

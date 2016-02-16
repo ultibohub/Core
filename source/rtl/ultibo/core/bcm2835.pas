@@ -487,6 +487,8 @@ const
  BCM2835_PM_RSTS_HADDRF_SET        = $00000002;
  BCM2835_PM_RSTS_HADDRQ_SET        = $00000001;
  
+ BCM2835_PM_RSTS_RASPBERRYPI_HALT  = $00000555; {Special value to tell the Raspberry Pi firmware not to reboot}
+ 
  BCM2835_PM_WDOG_RESET	     	   = $00000000;
  BCM2835_PM_WDOG_TIME_MASK		   = $000FFFFF;
  

@@ -35,10 +35,10 @@ Raspberry Pi 2
  This unit has no functionality other than to include all units relevant to the Raspberry Pi 2.
  
  This includes standard interfaces such as network, filesystem and storage as well as drivers
- that are specific to the BCM2836 and ae not included by aything else.
+ that are specific to the BCM2836 and are not included by anything else.
  
  Additional units can be included anywhere within a program and they will be linked during the
- compile process. This unit simply provides a convenient wat to ensure all relevant units have
+ compile process. This unit simply provides a convenient way to ensure all relevant units have
  been included.
  
 }

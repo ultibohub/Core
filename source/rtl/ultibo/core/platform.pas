@@ -280,6 +280,10 @@ type
  TWorkerTask = procedure(Data:Pointer); 
  TWorkerCallback = procedure(Data:Pointer); 
 
+type 
+ {Prototype for GPIO Event Handlers}
+ TGPIOEvent = procedure(Data:Pointer);
+ 
 type
  {Prototypes for Blink Handlers}
  TBootBlink = procedure;
@@ -306,6 +310,8 @@ type
 
 type
  {Prototypes for Random Handlers}
+ TRandomAvailable = function:Boolean;
+ 
  TRandomSeed = procedure(Seed:LongWord);
 
  TRandomReadLongInt = function(Limit:LongInt):LongInt;
@@ -314,6 +320,8 @@ type
 
 type
  {Prototypes for Watchdog Handlers}
+ TWatchdogAvailable = function:Boolean;
+ 
  TWatchdogStart = function(Milliseconds:LongWord):LongWord; 
  TWatchdogStop = function:LongWord;
  TWatchdogRefresh = function(Milliseconds:LongWord):LongWord;
@@ -458,6 +466,8 @@ type
 
 type
  {Prototypes for Framebuffer Handlers}
+ TFramebufferAvailable = function:Boolean;
+ 
  TFramebufferAllocate = function(Alignment:LongWord;var Address,Length:LongWord):LongWord;
  TFramebufferRelease = function:LongWord;
  TFramebufferSetState = function(State:LongWord):LongWord;
@@ -506,6 +516,7 @@ type
 type
  {Prototypes for DMA Handlers}
  TDMAAvailable = function:Boolean;
+ 
  TDMAGetChannels = function:LongWord;
  
  //To Do //More //Basic DMA Allocate/Submit/Release etc (FillMemory/CopyMemory/ReadMemory/WriteMemory etc)
@@ -514,9 +525,27 @@ type
  {Prototypes for GPIO Handlers}
  TGPIORead = function(Reg:LongWord):LongWord;
  TGPIOWrite = procedure(Reg,Value:LongWord);
- TGPIOOutputSet = procedure(Reg,Value:LongWord);
- TGPIOOutputClear = procedure(Reg,Value:LongWord);
- TGPIOFunctionSelect = procedure(Reg,Value:LongWord);
+ 
+ TGPIOInputGet = function(Pin:LongWord):LongWord;
+ TGPIOInputWait = function(Pin,Timeout:LongWord):LongWord;
+ TGPIOInputEvent = function(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+ 
+ TGPIOPullSelect = function(Pin,Mode:LongWord):LongWord;
+ 
+ TGPIOOutputSet = procedure(Reg,Value:LongWord);      //To Do //Change from Reg,Value to Pin //Change to function
+ TGPIOOutputClear = procedure(Reg,Value:LongWord);    //To Do //Change from Reg,Value to Pin //Change to function
+ TGPIOFunctionSelect = procedure(Reg,Value:LongWord); //To Do //Change from Reg,Value to Pin,Mode //Change to function
+ 
+//type
+ {Prototypes for PWM Handlers}
+ //To Do
+ 
+type
+ {Prototypes for RTC Handlers}
+ TRTCAvailable = function:Boolean;
+ 
+ TRTCGetTime = function:Int64;
+ TRTCSetTime = function(const Time:Int64):LongWord;
  
 type
  {Prototypes for Peripheral Handlers}
@@ -822,6 +851,8 @@ var
  
 var
  {Random Handlers}
+ RandomAvailableHandler:TRandomAvailable;
+ 
  RandomSeedHandler:TRandomSeed;
 
  RandomReadLongIntHandler:TRandomReadLongInt;
@@ -830,6 +861,8 @@ var
  
 var
  {Watchdog Handlers}
+ WatchdogAvailableHandler:TWatchdogAvailable;
+ 
  WatchdogStartHandler:TWatchdogStart;
  WatchdogStopHandler:TWatchdogStop;
  WatchdogRefreshHandler:TWatchdogRefresh;
@@ -974,6 +1007,8 @@ var
  
 var
  {Framebuffer Handlers}
+ FramebufferAvailableHandler:TFramebufferAvailable;
+ 
  FramebufferAllocateHandler:TFramebufferAllocate;
  FramebufferReleaseHandler:TFramebufferRelease;
  FramebufferSetStateHandler:TFramebufferSetState;
@@ -1030,9 +1065,26 @@ var
  {GPIO Handlers} 
  GPIOReadHandler:TGPIORead;
  GPIOWriteHandler:TGPIOWrite;
+ 
+ GPIOInputGetHandler:TGPIOInputGet;
+ GPIOInputWaitHandler:TGPIOInputWait;
+ GPIOInputEventHandler:TGPIOInputEvent;
+ 
+ GPIOPullSelectHandler:TGPIOPullSelect;
+ 
  GPIOOutputSetHandler:TGPIOOutputSet;
  GPIOOutputClearHandler:TGPIOOutputClear;
  GPIOFunctionSelectHandler:TGPIOFunctionSelect;
+ 
+//var
+ {PWM Handlers}
+ //To Do
+ 
+var
+ {RTC Handlers} 
+ RTCAvailableHandler:TRTCAvailable;
+ RTCGetTimeHandler:TRTCGetTime;
+ RTCSetTimeHandler:TRTCSetTime;
  
 var
  {Peripheral Handlers}
@@ -1247,6 +1299,8 @@ function MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Respons
 
 {==============================================================================}
 {Random Number Functions}
+function RandomAvailable:Boolean; inline;
+
 procedure RandomSeed(Seed:LongWord); inline;
 
 function RandomReadLongInt(Limit:LongInt):LongInt; inline;
@@ -1255,6 +1309,8 @@ function RandomReadExtended:Extended; inline;
 
 {==============================================================================}
 {Watchdog Functions}
+function WatchdogAvailable:Boolean; inline; 
+
 function WatchdogStart(Milliseconds:LongWord):LongWord; inline; 
 function WatchdogStop:LongWord; inline;
 function WatchdogRefresh(Milliseconds:LongWord):LongWord; inline;
@@ -1411,6 +1467,8 @@ function EDIDBlockGet(Block:LongWord;Buffer:Pointer;Length:LongWord):LongWord; i
 
 {==============================================================================}
 {Framebuffer Functions}
+function FramebufferAvailable:Boolean; inline;
+
 function FramebufferAllocate(Alignment:LongWord;var Address,Length:LongWord):LongWord; inline;
 function FramebufferRelease:LongWord; inline;
 function FramebufferSetState(State:LongWord):LongWord; inline;
@@ -1459,6 +1517,7 @@ function CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
 {==============================================================================}
 {DMA Functions}
 function DMAAvailable:Boolean; inline;
+
 function DMAGetChannels:LongWord; inline;
 
 //To Do //More //Basic DMA Allocate/Submit/Release etc (FillMemory/CopyMemory/ReadMemory/WriteMemory etc)
@@ -1481,14 +1540,26 @@ function DMAGetChannels:LongWord; inline;
 function GPIORead(Reg:LongWord):LongWord; inline;
 procedure GPIOWrite(Reg,Value:LongWord); inline;
 
-//To Do //GPIOInputGet
-//To Do //GPIOInputWait
-//To Do //Change these to all use a Pin value not a Reg (Platform agnostic)
+function GPIOInputGet(Pin:LongWord):LongWord; inline;
+function GPIOInputWait(Pin,Timeout:LongWord):LongWord; inline;
+function GPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord; inline;
+ 
+function GPIOPullSelect(Pin,Mode:LongWord):LongWord; inline;
 
-procedure GPIOOutputSet(Reg,Value:LongWord); inline;
-procedure GPIOOutputClear(Reg,Value:LongWord); inline;
+procedure GPIOOutputSet(Reg,Value:LongWord); inline;       //To Do //Change from Reg,Value to Pin //Change to function
+procedure GPIOOutputClear(Reg,Value:LongWord); inline;     //To Do //Change from Reg,Value to Pin //Change to function
+procedure GPIOFunctionSelect(Reg,Value:LongWord); inline;  //To Do //Change from Reg,Value to Pin,Mode //Change to function
 
-procedure GPIOFunctionSelect(Reg,Value:LongWord); inline;
+{==============================================================================}
+{PWM Functions}
+//To Do
+
+{==============================================================================}
+{RTC Functions}
+function RTCAvailable:Boolean; inline;
+
+function RTCGetTime:Int64; inline;
+function RTCSetTime(const Time:Int64):LongWord; inline;
 
 {==============================================================================}
 {Peripheral Functions}
@@ -2356,6 +2427,23 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Random Number Functions}
+function RandomAvailable:Boolean; inline;
+{Check if a hardware random number generator is currently available}
+{The software random number generator from the RTL is always available}
+begin
+ {}
+ if Assigned(RandomAvailableHandler) then
+  begin
+   Result:=RandomAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
 procedure RandomSeed(Seed:LongWord); inline;
 begin
  {}
@@ -2413,6 +2501,22 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Watchdog Timer Functions}
+function WatchdogAvailable:Boolean; inline; 
+{Check if a watchdog timer is currently available}
+begin
+ {}
+ if Assigned(WatchdogAvailableHandler) then
+  begin
+   Result:=WatchdogAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
 function WatchdogStart(Milliseconds:LongWord):LongWord; inline;
 begin
  {}
@@ -3494,6 +3598,8 @@ begin
  
  {Get Current Time}
  Result:=ClockBase + (Result * TIME_TICKS_PER_SECOND);
+ 
+ //To Do //Add RTC support //RTCAvailable/RTCGetTime etc //Initialization of clock as well
 end;
 
 {==============================================================================}
@@ -3539,6 +3645,8 @@ begin
   
  {Release Lock}
  if ClockLock.Lock <> INVALID_HANDLE_VALUE then ClockLock.ReleaseLock(ClockLock.Lock);
+ 
+ //To Do //Add RTC support //RTCAvailable/RTCSetTime
 end;
 
 {==============================================================================}
@@ -3941,6 +4049,22 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Framebuffer Functions}
+function FramebufferAvailable:Boolean; inline;
+{Check if a framebuffer device is currently available}
+begin
+ {}
+ if Assigned(FramebufferAvailableHandler) then
+  begin
+   Result:=FramebufferAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
 function FramebufferAllocate(Alignment:LongWord;var Address,Length:LongWord):LongWord; inline;
 {Allocate a new Framebuffer}
 begin
@@ -4520,6 +4644,66 @@ end;
 
 {==============================================================================}
 
+function GPIOInputGet(Pin:LongWord):LongWord; inline;
+begin
+ {}
+ if Assigned(GPIOInputGetHandler) then
+  begin
+   Result:=GPIOInputGetHandler(Pin);
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function GPIOInputWait(Pin,Timeout:LongWord):LongWord; inline;
+begin
+ {}
+ if Assigned(GPIOInputWaitHandler) then
+  begin
+   Result:=GPIOInputWaitHandler(Pin,Timeout);
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function GPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord; inline;
+begin
+ {}
+ if Assigned(GPIOInputEventHandler) then
+  begin
+   Result:=GPIOInputEventHandler(Pin,Timeout,Callback,Data);
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+ 
+function GPIOPullSelect(Pin,Mode:LongWord):LongWord; inline;
+begin
+ {}
+ if Assigned(GPIOPullSelectHandler) then
+  begin
+   Result:=GPIOPullSelectHandler(Pin,Mode);
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
 procedure GPIOOutputSet(Reg,Value:LongWord); inline;
 begin
  {}
@@ -4573,6 +4757,61 @@ begin
    {Write Value}
    PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
   end; 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{RTC Functions}
+function RTCAvailable:Boolean; inline;
+{Check if a Real Time Clock (RTC) device is available}
+begin
+ {}
+ if Assigned(RTCAvailableHandler) then
+  begin
+   Result:=RTCAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
+function RTCGetTime:Int64; inline;
+{Get the current time from a Real Time Clock device}
+{Returned time is 100 nanosecond ticks since 1 January 1601}
+{The same format as the ClockGetTime function}
+begin
+ {}
+ if Assigned(RTCGetTimeHandler) then
+  begin
+   Result:=RTCGetTimeHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function RTCSetTime(const Time:Int64):LongWord; inline;
+{Set the current time for a Real Time Clock device}
+{Time: The time to be set}
+{Return: The device time after setting}
+{Time and returned time is 100 nanosecond ticks since 1 January 1601}
+{The same format as the ClockSetTime function}
+begin
+ {}
+ if Assigned(RTCSetTimeHandler) then
+  begin
+   Result:=RTCSetTimeHandler(Time);
+  end
+ else
+  begin
+   Result:=0;
+  end;
 end;
 
 {==============================================================================}

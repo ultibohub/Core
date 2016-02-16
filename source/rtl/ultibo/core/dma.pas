@@ -144,8 +144,15 @@ function DMAHostEnumerate(Callback:TDMAEnumerate;Data:Pointer):LongWord;
 function DMAHostNotification(DMA:PDMAHost;Callback:TDMANotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
  
 {==============================================================================}
+{RTL DMA Functions}
+function SysDMAAvailable:Boolean; 
+
+//To Do
+
+{==============================================================================}
 {DMA Helper Functions}
 function DMAGetCount:LongWord; inline;
+function DMAHostGetDefault:PDMAHost; inline;
 
 function DMAHostCheck(DMA:PDMAHost):PDMAHost;
 
@@ -169,6 +176,8 @@ var
  DMAHostTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  DMAHostTableCount:LongWord;
 
+ DMAHostDefault:PDMAHost;
+ 
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -189,6 +198,10 @@ begin
   begin
    if DMA_LOG_ENABLED then DMALogError(nil,'Failed to create DMA host table lock');
   end;
+ DMAHostDefault:=nil;
+ 
+ {Register Platform DMA Handlers}
+ DMAAvailableHandler:=SysDMAAvailable;
  
  DMAInitialized:=True;
 end;
@@ -322,6 +335,12 @@ begin
     {Increment Count}
     Inc(DMAHostTableCount);
     
+    {Check Default}
+    if DMAHostDefault = nil then
+     begin
+      DMAHostDefault:=DMA;
+     end;
+    
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -387,6 +406,12 @@ begin
  
     {Decrement Count}
     Dec(DMAHostTableCount);
+ 
+    {Check Default}
+    if DMAHostDefault = DMA then
+     begin
+      DMAHostDefault:=DMAHostTable;
+     end;
  
     {Update DMA}
     DMA.DMAId:=DEVICE_ID_ANY;
@@ -510,12 +535,31 @@ end;
  
 {==============================================================================}
 {==============================================================================}
+{RTL DMA Functions}
+function SysDMAAvailable:Boolean; 
+{Check if a DMA host is available}
+begin
+ {}
+ Result:=(DMAHostDefault <> nil);
+end;
+
+{==============================================================================}
+{==============================================================================}
 {DMA Helper Functions}
 function DMAGetCount:LongWord; inline;
-{Get the current DMA count}
+{Get the current DMA host count}
 begin
  {}
  Result:=DMAHostTableCount;
+end;
+
+{==============================================================================}
+
+function DMAHostGetDefault:PDMAHost; inline;
+{Get the current default DMA host}
+begin
+ {}
+ Result:=DMAHostDefault;
 end;
 
 {==============================================================================}

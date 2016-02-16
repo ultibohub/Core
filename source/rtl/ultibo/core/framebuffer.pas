@@ -174,6 +174,10 @@ function FramebufferDeviceEnumerate(Callback:TFramebufferEnumerate;Data:Pointer)
 function FramebufferDeviceNotification(Framebuffer:PFramebufferDevice;Callback:TFramebufferNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
+{RTL Framebuffer Functions}
+function SysFramebufferAvailable:Boolean;
+
+{==============================================================================}
 {Framebuffer Helper Functions}
 function FramebufferDeviceGetCount:LongWord; inline;
 function FramebufferDeviceGetDefault:PFramebufferDevice; inline;
@@ -224,7 +228,10 @@ begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create framebuffer device table lock');
   end;
  FramebufferDeviceDefault:=nil;
-  
+
+ {Register Platform Framebuffer Handlers}
+ FramebufferAvailableHandler:=SysFramebufferAvailable;
+ 
  {Setup Framebuffer Width / Height}
  if (FRAMEBUFFER_DEFAULT_WIDTH = 0) or (FRAMEBUFFER_DEFAULT_HEIGHT = 0) then
   begin
@@ -234,9 +241,11 @@ begin
     begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'FramebufferGetDimensions failed: ' + ErrorToString(Status));
      
+     {$IFDEF CONSOLE_EARLY_INIT}
      {Set Dimension Defaults}
      FRAMEBUFFER_DEFAULT_WIDTH:=640;
      FRAMEBUFFER_DEFAULT_HEIGHT:=480;
+     {$ENDIF}
     end;
   end;
  
@@ -778,6 +787,16 @@ begin
 
    Result:=DeviceNotification(@Framebuffer.Device,DEVICE_CLASS_FRAMEBUFFER,Callback,Data,Notification,Flags);
   end; 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{RTL Framebuffer Functions}
+function SysFramebufferAvailable:Boolean;
+{Check if a framebuffer device is available}
+begin
+ {}
+ Result:=(FramebufferDeviceDefault <> nil);
 end;
 
 {==============================================================================}

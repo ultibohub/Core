@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="7"/>
+    <General>
+      <Flags>
+        <MainUnitHasUsesSectionForAllUnits Value="False"/>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasTitleStatement Value="False"/>
+        <Runnable Value="False"/>
+        <LRSInOutputDirectory Value="False"/>
+      </Flags>
+      <SessionStorage Value="InProjectDir"/>
+      <MainUnit Value="0"/>
+      <TargetFileExt Value=".exe"/>
+      <Title Value="buildrtl"/>
+    </General>
+    <VersionInfo>
+      <ProjectVersion Value=""/>
+    </VersionInfo>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|ppw|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <Units Count="1">
+      <Unit0>
+        <Filename Value="buildrtl.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="buildrtl"/>
+      </Unit0>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="8"/>
+    <SearchPaths>
+      <IncludeFiles Value="../inc/;../$(TargetCPU)/;../objpas/classes/;../objpas/sysutils/;../objpas/;$(TargetCPU)/"/>
+      <OtherUnitFiles Value="../objpas/;../objpas/classes/;../objpas/sysutils/;../inc/;../$(TargetCPU)/"/>
+      <UnitOutputDirectory Value="../units/$(TargetCPU)-ultibo"/>
+    </SearchPaths>
+    <Parsing>
+      <Style Value="2"/>
+    </Parsing>
+    <Other>
+      <Verbosity>
+        <ShowNotes Value="False"/>
+        <ShowHints Value="False"/>
+      </Verbosity>
+      <CompilerPath Value="$(CompPath)"/>
+      <ExecuteBefore>
+        <Command Value="cmd.exe /c &quot;if not exist ../units/$(TargetCPU)-ultibo mkdir ../units/$(TargetCPU)-ultibo&quot;"/>
+        <ShowAllMessages Value="True"/>
+      </ExecuteBefore>
+    </Other>
+  </CompilerOptions>
+</CONFIG>

@@ -49,6 +49,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,Ulti
 //--
 
 {==============================================================================}
+{Global definitions}
+{$INCLUDE ..\core\GlobalDefines.inc}
+
+{==============================================================================}
 const
  {Remote Shell specific constants}
  REMOTE_SHELL_DEFAULT_WELCOME = ' (Type HELP for a list of available commands)';

@@ -27,6 +27,7 @@ Credits
 References
 ==========
 
+ Based on information from sources of WPA supplicant, the Linux kernel and others
 
 WiFi
 ====
@@ -44,15 +45,15 @@ interface
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Network,Crypto;
 
 //To Do //See: http://w1.fi/wpa_supplicant/
-                      //See: http://w1.fi/wpa_supplicant/devel/
-                      //See: http://w1.fi/wpa_supplicant/devel/porting.html
-                      //See: http://w1.fi/wpa_supplicant/devel/driver_wrapper.html
-                      //See: http://w1.fi/wpa_supplicant/devel/code_structure.html
-                      //See: http://w1.fi/cgit
+        //See: http://w1.fi/wpa_supplicant/devel/
+        //See: http://w1.fi/wpa_supplicant/devel/porting.html
+        //See: http://w1.fi/wpa_supplicant/devel/driver_wrapper.html
+        //See: http://w1.fi/wpa_supplicant/devel/code_structure.html
+        //See: http://w1.fi/cgit
                       
 //To Do //In general terms WPA appears to the network stack as a Transport layer
-                      //sending and receiving 2 specific packet types:
-                      //EAP-over-LAN (EAPOL) $888E and RSN pre-authentication $88C7
+        //sending and receiving 2 specific packet types:
+        //EAP-over-LAN (EAPOL) $888E and RSN pre-authentication $88C7
                       
 {==============================================================================}
 {Global definitions}

@@ -59,7 +59,7 @@ unit PlatformARMv6;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,Devices,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,{Devices,}SysUtils; //TestingRPi
 
 //To Do //FIQ Handling - see: \linux-rpi-3.18.y\arch\arm\kernel\fiq.c
         //                    \linux-rpi-3.18.y\arch\arm\kernel\fiqasm.S

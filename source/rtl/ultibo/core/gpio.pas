@@ -43,6 +43,8 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 
+//To Do
+
 //See: \u-boot-HEAD-5745f8c\drivers\gpio\bcm2835_gpio.c
 
 {==============================================================================}
@@ -66,9 +68,9 @@ const
  
  {GPIO logging}
  GPIO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {GPIO debugging messages}
- GPIO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;  {GPIO informational messages, such as a device being attached or detached}
+ GPIO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {GPIO informational messages, such as a device being attached or detached}
  GPIO_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {GPIO error messages}
- GPIO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;  {No GPIO messages}
+ GPIO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No GPIO messages}
 
 var 
  GPIO_DEFAULT_LOG_LEVEL:LongWord = GPIO_LOG_LEVEL_INFO; {Minimum level for GPIO messages.  Only messages with level greater than or equal to this will be printed}
@@ -100,6 +102,12 @@ type
  TGPIODeviceRead = function(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
  TGPIODeviceWrite = procedure(GPIO:PGPIODevice;Reg,Value:LongWord);
  
+ TGPIODeviceInputGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+ TGPIODeviceInputWait = function(GPIO:PGPIODevice;Pin,Timeout:LongWord):LongWord;
+ TGPIODeviceInputEvent = function(GPIO:PGPIODevice;Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+ 
+ TGPIODevicePullSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+ 
  TGPIODeviceOutputSet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
  TGPIODeviceOutputClear = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
  TGPIODeviceFunctionSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
@@ -114,6 +122,10 @@ type
   GPIOState:LongWord;                             {GPIO state (eg GPIO_STATE_ENABLED)}
   DeviceRead:TGPIODeviceRead;                     {A Device specific DeviceRead method implementing the standard GPIO device interface}
   DeviceWrite:TGPIODeviceWrite;                   {A Device specific DeviceWrite method implementing the standard GPIO device interface}
+  DeviceInputGet:TGPIODeviceInputGet;             {A Device specific DeviceInputGet method implementing the standard GPIO device interface}
+  DeviceInputWait:TGPIODeviceInputWait;           {A Device specific DeviceInputWait method implementing the standard GPIO device interface}
+  DeviceInputEvent:TGPIODeviceInputEvent;         {A Device specific DeviceInputEvent method implementing the standard GPIO device interface}
+  DevicePullSelect:TGPIODevicePullSelect;         {A Device specific DevicePullSelect method implementing the standard GPIO device interface}
   DeviceOutputSet:TGPIODeviceOutputSet;           {A Device specific DeviceOutputSet method implementing the standard GPIO device interface}
   DeviceOutputClear:TGPIODeviceOutputClear;       {A Device specific DeviceOutputClear method implementing the standard GPIO device interface}
   DeviceFunctionSelect:TGPIODeviceFunctionSelect; {A Device specific DeviceFunctionSelect method implementing the standard GPIO device interface}
@@ -142,6 +154,12 @@ procedure GPIOInit;
 function GPIODeviceRead(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
 procedure GPIODeviceWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
  
+function GPIODeviceInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+function GPIODeviceInputWait(GPIO:PGPIODevice;Pin,Timeout:LongWord):LongWord;
+function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+ 
+function GPIODevicePullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+
 function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODeviceOutputClear(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODeviceFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
@@ -161,8 +179,21 @@ function GPIODeviceEnumerate(Callback:TGPIOEnumerate;Data:Pointer):LongWord;
 function GPIODeviceNotification(GPIO:PGPIODevice;Callback:TGPIONotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
+{RTL GPIO Functions}
+function SysGPIOInputGet(Pin:LongWord):LongWord;
+function SysGPIOInputWait(Pin,Timeout:LongWord):LongWord;
+function SysGPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+ 
+function SysGPIOPullSelect(Pin,Mode:LongWord):LongWord;
+ 
+function SysGPIOOutputSet(Pin:LongWord):LongWord;   
+function SysGPIOOutputClear(Pin:LongWord):LongWord; 
+function SysGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
+
+{==============================================================================}
 {GPIO Helper Functions}
 function GPIOGetCount:LongWord; inline;
+function GPIODeviceGetDefault:PGPIODevice; inline;
 
 function GPIODeviceCheck(GPIO:PGPIODevice):PGPIODevice;
 
@@ -186,6 +217,8 @@ var
  GPIODeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  GPIODeviceTableCount:LongWord;
 
+ GPIODeviceDefault:PGPIODevice;
+ 
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -206,6 +239,16 @@ begin
   begin
    if GPIO_LOG_ENABLED then GPIOLogError(nil,'Failed to create GPIO table lock');
   end;
+ GPIODeviceDefault:=nil;
+ 
+ {Register Platform GPIO Handlers}
+ GPIOInputGetHandler:=SysGPIOInputGet;
+ GPIOInputWaitHandler:=SysGPIOInputWait;
+ GPIOInputEventHandler:=SysGPIOInputEvent;
+ GPIOPullSelectHandler:=SysGPIOPullSelect;
+ //GPIOOutputSetHandler:=SysGPIOOutputSet; //To Do //Change definition in Platform
+ //GPIOOutputClearHandler:=SysGPIOOutputClear; //To Do //Change definition in Platform
+ //GPIOFunctionSelectHandler:=SysGPIOFunctionSelect; //To Do //Change definition in Platform
  
  GPIOInitialized:=True;
 end;
@@ -226,6 +269,50 @@ end;
 procedure GPIODeviceWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
 begin
  {}
+ //To Do
+ 
+end;
+
+{==============================================================================}
+
+function GPIODeviceInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ //To Do
+ 
+end;
+
+{==============================================================================}
+
+function GPIODeviceInputWait(GPIO:PGPIODevice;Pin,Timeout:LongWord):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ //To Do
+ 
+end;
+
+{==============================================================================}
+
+function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ //To Do
+ 
+end;
+
+{==============================================================================}
+ 
+function GPIODevicePullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
  //To Do
  
 end;
@@ -419,6 +506,12 @@ begin
     {Increment Count}
     Inc(GPIODeviceTableCount);
     
+    {Check Default}
+    if GPIODeviceDefault = nil then
+     begin
+      GPIODeviceDefault:=GPIO;
+     end;
+    
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -484,6 +577,12 @@ begin
  
     {Decrement Count}
     Dec(GPIODeviceTableCount);
+ 
+    {Check Default}
+    if GPIODeviceDefault = GPIO then
+     begin
+      GPIODeviceDefault:=GPIODeviceTable;
+     end;
  
     {Update GPIO}
     GPIO.GPIOId:=DEVICE_ID_ANY;
@@ -607,12 +706,106 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{RTL GPIO Functions}
+function SysGPIOInputGet(Pin:LongWord):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODeviceInputGet(GPIODeviceDefault,Pin);
+end;
+
+{==============================================================================}
+
+function SysGPIOInputWait(Pin,Timeout:LongWord):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODeviceInputWait(GPIODeviceDefault,Pin,Timeout);
+end;
+
+{==============================================================================}
+
+function SysGPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODeviceInputEvent(GPIODeviceDefault,Pin,Timeout,Callback,Data);
+end;
+
+{==============================================================================}
+ 
+function SysGPIOPullSelect(Pin,Mode:LongWord):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODevicePullSelect(GPIODeviceDefault,Pin,Mode);
+end;
+
+{==============================================================================}
+ 
+function SysGPIOOutputSet(Pin:LongWord):LongWord;   
+begin
+ {}
+ Result:=0;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODeviceOutputSet(GPIODeviceDefault,Pin);
+end;
+
+{==============================================================================}
+
+function SysGPIOOutputClear(Pin:LongWord):LongWord; 
+begin
+ {}
+ Result:=0;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODeviceOutputClear(GPIODeviceDefault,Pin);
+end;
+
+{==============================================================================}
+
+function SysGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODeviceFunctionSelect(GPIODeviceDefault,Pin,Mode);
+end;
+
+{==============================================================================}
+{==============================================================================}
 {GPIO Helper Functions}
 function GPIOGetCount:LongWord; inline;
 {Get the current GPIO count}
 begin
  {}
  Result:=GPIODeviceTableCount;
+end;
+
+{==============================================================================}
+
+function GPIODeviceGetDefault:PGPIODevice; inline;
+{Get the current default GPIO device}
+begin
+ {}
+ Result:=GPIODeviceDefault;
 end;
 
 {==============================================================================}

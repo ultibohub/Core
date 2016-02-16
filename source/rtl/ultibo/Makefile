@@ -373,6 +373,7 @@ ULTIBO_UNITS=globalconfig \
 	     spi \
 	     i2s \
 	     pwm \
+	     rtc \
 	     usb \
 	     mmc \
 	     mmcspi \

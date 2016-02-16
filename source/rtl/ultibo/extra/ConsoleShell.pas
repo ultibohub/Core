@@ -49,6 +49,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils,Clas
 //--
 
 {==============================================================================}
+{Global definitions}
+{$INCLUDE ..\core\GlobalDefines.inc}
+
+{==============================================================================}
 const
  {Console Shell specific constants}
  CONSOLE_SHELL_DEFAULT_WELCOME = ' (Type HELP for a list of available commands)';

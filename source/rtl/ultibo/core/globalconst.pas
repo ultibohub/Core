@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '3/2/2016';
+ ULTIBO_RELEASE_DATE             = '16/2/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.1.015';
+ ULTIBO_RELEASE_VERSION          = '1.1.029';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 1;
- ULTIBO_RELEASE_VERSION_REVISION = 015;
+ ULTIBO_RELEASE_VERSION_REVISION = 029;
  
 {==============================================================================}
 const
@@ -694,7 +694,14 @@ const
  LOGGING_FACILITY_SHELL      = 21; {Shell log messages}
  LOGGING_FACILITY_NTP        = 22; {NTP log messages}
  LOGGING_FACILITY_FTP        = 23; {FTP log messages}
- LOGGING_FACILITY_USER       = 24; {User log messages}
+ LOGGING_FACILITY_RTC        = 24; {RTC log messages}
+ LOGGING_FACILITY_I2C        = 25; {I2C log messages}
+ LOGGING_FACILITY_I2S        = 26; {I2S log messages}
+ LOGGING_FACILITY_PWM        = 27; {PWM log messages}
+ LOGGING_FACILITY_SERIAL     = 28; {Serial log messages}
+ LOGGING_FACILITY_SPI        = 29; {SPI log messages}
+ 
+ LOGGING_FACILITY_USER       = 1000; {User log messages}
 
  LOGGING_FACILITY_INVALID    = $FFFFFFFF;
  

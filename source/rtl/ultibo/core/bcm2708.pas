@@ -209,7 +209,7 @@ unit BCM2708;
  
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform,Threads,HeapManager,Devices,SPI,I2C,DMA,GPIO,MMC,Framebuffer,SysUtils; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,MMC,Framebuffer,SysUtils; 
 
 {==============================================================================}
 {Global definitions}
@@ -445,6 +445,64 @@ begin
  
  {Initialize BCM2708SDHCI_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2708SDHCI_FIQ_ENABLED:=False;
+ 
+ {$IFNDEF CONSOLE_EARLY_INIT}
+ {Register Platform GPU Memory Handlers}
+ GPUMemoryAllocateHandler:=RPiGPUMemoryAllocate;
+ GPUMemoryReleaseHandler:=RPiGPUMemoryRelease;
+ GPUMemoryLockHandler:=RPiGPUMemoryLock;
+ GPUMemoryUnlockHandler:=RPiGPUMemoryUnlock;
+ 
+ {Register Platform GPU Misc Handlers}
+ GPUExecuteCodeHandler:=RPiGPUExecuteCode;
+ DispmanxHandleGetHandler:=RPiDispmanxHandleGet;
+ EDIDBlockGetHandler:=RPiEDIDBlockGet;
+
+ {Register Platform Framebuffer Handlers}
+ FramebufferAllocateHandler:=RPiFramebufferAllocate;
+ FramebufferReleaseHandler:=RPiFramebufferRelease;
+ FramebufferSetStateHandler:=RPiFramebufferSetState;
+
+ FramebufferGetDimensionsHandler:=RPiFramebufferGetDimensions;
+ 
+ FramebufferGetPhysicalHandler:=RPiFramebufferGetPhysical;
+ FramebufferSetPhysicalHandler:=RPiFramebufferSetPhysical;
+ FramebufferTestPhysicalHandler:=RPiFramebufferTestPhysical;
+ 
+ FramebufferGetVirtualHandler:=RPiFramebufferGetVirtual;
+ FramebufferSetVirtualHandler:=RPiFramebufferSetVirtual;
+ FramebufferTestVirtualHandler:=RPiFramebufferTestVirtual;
+ 
+ FramebufferGetDepthHandler:=RPiFramebufferGetDepth;
+ FramebufferSetDepthHandler:=RPiFramebufferSetDepth;
+ FramebufferTestDepthHandler:=RPiFramebufferTestDepth;
+ 
+ FramebufferGetPixelOrderHandler:=RPiFramebufferGetPixelOrder;
+ FramebufferSetPixelOrderHandler:=RPiFramebufferSetPixelOrder;
+ FramebufferTestPixelOrderHandler:=RPiFramebufferTestPixelOrder;
+ 
+ FramebufferGetAlphaModeHandler:=RPiFramebufferGetAlphaMode;
+ FramebufferSetAlphaModeHandler:=RPiFramebufferSetAlphaMode;
+ FramebufferTestAlphaModeHandler:=RPiFramebufferTestAlphaMode;
+ 
+ FramebufferGetPitchHandler:=RPiFramebufferGetPitch;
+ 
+ FramebufferGetOffsetHandler:=RPiFramebufferGetOffset;
+ FramebufferSetOffsetHandler:=RPiFramebufferSetOffset;
+ FramebufferTestOffsetHandler:=RPiFramebufferTestOffset;
+ 
+ FramebufferGetOverscanHandler:=RPiFramebufferGetOverscan;
+ FramebufferSetOverscanHandler:=RPiFramebufferSetOverscan;
+ FramebufferTestOverscanHandler:=RPiFramebufferTestOverscan;
+ 
+ FramebufferGetPaletteHandler:=RPiFramebufferGetPalette;
+ FramebufferSetPaletteHandler:=RPiFramebufferSetPalette;
+ FramebufferTestPaletteHandler:=RPiFramebufferTestPalette;
+
+ {Register Platform Cursor Handlers}
+ CursorSetInfoHandler:=RPiCursorSetInfo;
+ CursorSetStateHandler:=RPiCursorSetState;
+ {$ENDIF}
  
  {Create SPI}
  if BCM2708_REGISTER_SPI then

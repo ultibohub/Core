@@ -99,7 +99,7 @@ Watchdog Devices
 //for the platform if needed ?
 
 //Question: How do we get the compiler to set a DEFINE based on the ControllerType ?
-//          We know there is one for the Target (EMBEDDED) but what about the ControllerType ?
+//          We know there is one for the Target (ULTIBO) but what about the ControllerType ?
 
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -235,8 +235,9 @@ const
  DEVICE_CLASS_LOGGING         = 48; {A Logging Device (Implementing a standard Logging device interface)}          
  DEVICE_CLASS_PCM             = 49; {A PCM Sound Device (Implementing a standard PCM device interface)}
  DEVICE_CLASS_I2S             = DEVICE_CLASS_PCM;
+ DEVICE_CLASS_PWM             = 50; {A Pulse Width Modulation (PWM) Device}
 
- DEVICE_CLASS_MAX             = 49;
+ DEVICE_CLASS_MAX             = 50;
  
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
  
@@ -291,7 +292,8 @@ const
   'DEVICE_CLASS_RTC',
   'DEVICE_CLASS_USBHUB',
   'DEVICE_CLASS_LOGGING',
-  'DEVICE_CLASS_PCM');
+  'DEVICE_CLASS_PCM',
+  'DEVICE_CLASS_PWM');
  
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
@@ -1019,6 +1021,8 @@ function SysClockRead64:Int64;
 
 {==============================================================================}
 {RTL Random Functions}
+function SysRandomAvailable:Boolean;
+
 procedure SysRandomize;
 procedure SysRandomSeed(Seed:LongWord);
 
@@ -1032,6 +1036,8 @@ function SysRandomReadExtended:Extended;
 
 {==============================================================================}
 {RTL Watchdog Functions}
+function SysWatchdogAvailable:Boolean; 
+
 function SysWatchdogStart(Milliseconds:LongWord):LongWord; 
 function SysWatchdogStop:LongWord;
 function SysWatchdogRefresh(Milliseconds:LongWord):LongWord;
@@ -1277,6 +1283,7 @@ begin
  {Register Platform Random Handlers}
  if DEVICE_REGISTER_RANDOM then
   begin
+   RandomAvailableHandler:=SysRandomAvailable;
    RandomSeedHandler:=SysRandomSeed;
    RandomReadLongIntHandler:=SysRandomReadLongInt;
    RandomReadInt64Handler:=SysRandomReadInt64;
@@ -1292,6 +1299,7 @@ begin
  {Register Platform Watchdog Handlers}
  if DEVICE_REGISTER_WATCHDOG then
   begin
+   WatchdogAvailableHandler:=SysWatchdogAvailable;
    WatchdogStartHandler:=SysWatchdogStart;
    WatchdogStopHandler:=SysWatchdogStop;
    WatchdogRefreshHandler:=SysWatchdogRefresh;
@@ -5347,6 +5355,15 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL Random Functions}
+function SysRandomAvailable:Boolean;
+{Check if a random (RNG) device is available}
+begin
+ {}
+ Result:=(RandomDeviceDefault <> nil);
+end;
+
+{==============================================================================}
+
 procedure SysRandomize;
 begin
  {}
@@ -5412,6 +5429,15 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL Watchdog Functions}
+function SysWatchdogAvailable:Boolean; 
+{Check if a watchdog timer device is available}
+begin
+ {}
+ Result:=(WatchdogDeviceDefault <> nil);
+end;
+
+{==============================================================================}
+
 function SysWatchdogStart(Milliseconds:LongWord):LongWord; 
 begin
  {}
