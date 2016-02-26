@@ -24,6 +24,7 @@ interface
 {$DEFINE HAS_OSERROR}
 {$DEFINE HAS_GETTICKCOUNT}
 {$DEFINE HAS_GETTICKCOUNT64}
+{$DEFINE HAS_LOCALTIMEZONEOFFSET}
 {$modeswitch typehelpers}
 {$modeswitch advancedrecords}
 
@@ -96,6 +97,7 @@ type
  TSysUtilsGetLastError = function:LongWord;
  {Locale Functions}
  TSysUtilsGetLocalTime = procedure(var SystemTime:TSystemTime);
+ TSysUtilsGetLocalTimeOffset = function:Integer;
  TSysUtilsSysErrorMessage = function(ErrorCode:Integer):String;
  
 var
@@ -133,6 +135,7 @@ var
  SysUtilsGetLastErrorHandler:TSysUtilsGetLastError;
  {Locale Functions}
  SysUtilsGetLocalTimeHandler:TSysUtilsGetLocalTime;
+ SysUtilsGetLocalTimeOffsetHandler:TSysUtilsGetLocalTimeOffset;
  SysUtilsSysErrorMessageHandler:TSysUtilsSysErrorMessage;
  
  procedure SysUtilsInitExceptions;
@@ -517,6 +520,18 @@ begin
   begin
    SysUtilsGetLocalTimeHandler(SystemTime);
   end;
+end;
+
+function GetLocalTimeOffset: Integer;
+begin
+ if Assigned(SysUtilsGetLocalTimeOffsetHandler) then
+  begin
+   Result:=SysUtilsGetLocalTimeOffsetHandler();
+  end
+ else
+  begin
+   Result:=0;
+  end;  
 end;
 
 function SysErrorMessage(ErrorCode: Integer): String;

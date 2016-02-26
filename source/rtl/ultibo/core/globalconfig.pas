@@ -682,7 +682,7 @@ var
  CODEPAGE_CONSOLE_INPUT:LongWord = 1252;   {The current console input code page}
  CODEPAGE_CONSOLE_OUTPUT:LongWord = 1252;  {The current console output code page}
  
- LOCALE_DEFAULT:LongWord; {LCID}           {The current defailt locale}
+ LOCALE_DEFAULT:LongWord; {LCID}           {The current default locale}
  
 {==============================================================================}
 {Disk, Controller, Filesystem and Cache configuration}

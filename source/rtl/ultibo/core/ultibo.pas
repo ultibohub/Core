@@ -1343,14 +1343,21 @@ function GeneratePasswordHash(const Password:String):LongWord;
 
 {==============================================================================}
 {Locale Functions (Compatibility)}
-function GetThreadLocale:LCID; 
-function SetThreadLocale(Locale:LCID):BOOL; 
+function IsValidLocale(LocaleID:LCID;dwFlags:DWORD):BOOL; inline;
+
+function GetSystemDefaultLCID:LCID; inline;
+function GetUserDefaultLCID:LCID; inline;
 
 //GetLocaleInfo //To Do
 //SetLocaleInfo //To Do
 
+function GetThreadLocale:LCID; 
+function SetThreadLocale(LocaleID:LCID):BOOL; 
+
 {==============================================================================}
 {Locale Functions (Ultibo)}
+function SetSystemDefaultLCID(LocaleID:LCID):BOOL; inline; 
+
 function WideCharToString(ABuffer:PWideChar):String;
 function WideCharLenToString(ABuffer:PWideChar;ALength:Integer):String;
 function StringToWideChar(const AString:String;ABuffer:PWideChar;ASize:Integer):Boolean;
@@ -1375,6 +1382,11 @@ function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL
 function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; inline; 
 
 {==============================================================================}
+{Code Page Functions (Ultibo)}
+function SetACP(CodePage:UINT):BOOL; inline;
+function SetOEMCP(CodePage:UINT):BOOL; inline;
+
+{==============================================================================}
 {Translation Functions (Compatibility)}
 function MultiByteToWideChar(CodePage:UINT;dwFlags:DWORD;lpMultiByteStr:LPCSTR;cbMultiByte:Integer;lpWideCharStr:LPWSTR;cchWideChar:Integer):Integer; inline;
 function WideCharToMultiByte(CodePage:UINT;dwFlags:DWORD;lpWideCharStr:LPCWSTR;cchWideChar:Integer;lpMultiByteStr:LPSTR;cbMultiByte:Integer;lpDefaultChar:LPCSTR;lpUsedDefaultChar:LPBOOL):Integer; inline;
@@ -1383,9 +1395,17 @@ function CompareString(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:I
 function CompareStringA(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer; inline;
 function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer; inline; 
   
+function CharUpper(lpsz:LPSTR):LPSTR; inline;
+function CharUpperA(lpsz:LPSTR):LPSTR; inline;
+function CharUpperW(lpsz:LPWSTR):LPWSTR; inline;
+
 function CharUpperBuff(lpsz:LPSTR;cchLength:DWORD):DWORD; inline;
 function CharUpperBuffA(lpsz:LPSTR;cchLength:DWORD):DWORD; inline;
 function CharUpperBuffW(lpsz:LPWSTR;cchLength:DWORD):DWORD; inline;
+
+function CharLower(lpsz:LPSTR):LPSTR; inline;
+function CharLowerA(lpsz:LPSTR):LPSTR; inline;
+function CharLowerW(lpsz:LPWSTR):LPWSTR; inline;
 
 function CharLowerBuff(lpsz:LPSTR;cchLength:DWORD):DWORD; inline;
 function CharLowerBuffA(lpsz:LPSTR;cchLength:DWORD):DWORD; inline;
@@ -5635,6 +5655,30 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Locale Functions (Compatibility)}
+function IsValidLocale(LocaleID:LCID;dwFlags:DWORD):BOOL; inline;
+begin
+ {}
+ Result:=Locale.IsValidLocale(LocaleID,dwFlags);
+end;
+
+{==============================================================================}
+
+function GetSystemDefaultLCID:LCID; inline;
+begin
+ {}
+ Result:=Locale.GetSystemDefaultLCID;
+end;
+
+{==============================================================================}
+
+function GetUserDefaultLCID:LCID; inline;
+begin
+ {}
+ Result:=Locale.GetUserDefaultLCID;
+end;
+
+{==============================================================================}
+
 function GetThreadLocale:LCID; 
 begin
  {}
@@ -5643,15 +5687,23 @@ end;
 
 {==============================================================================}
 
-function SetThreadLocale(Locale:LCID):BOOL; 
+function SetThreadLocale(LocaleID:LCID):BOOL; 
 begin
  {}
- Result:=(Threads.ThreadSetLocale(Threads.ThreadGetCurrent,Locale) = ERROR_SUCCESS);
+ Result:=(Threads.ThreadSetLocale(Threads.ThreadGetCurrent,LocaleID) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
 {==============================================================================}
 {Locale Functions (Ultibo)}
+function SetSystemDefaultLCID(LocaleID:LCID):BOOL; inline; 
+begin
+ {}
+ Result:=Locale.SetSystemDefaultLCID(LocaleID);
+end;
+
+{==============================================================================}
+
 function WideCharToString(ABuffer:PWideChar):String;
 {A replacement for WideCharToString in System unit to allow cross platform compatibility}
 {Note: The WideStringManager installed by the Unicode unit should make the System version equivalent}
@@ -5829,6 +5881,23 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{Code Page Functions (Ultibo)}
+function SetACP(CodePage:UINT):BOOL; inline;
+begin
+ {}
+ Result:=Locale.SetACP(CodePage);
+end;
+
+{==============================================================================}
+
+function SetOEMCP(CodePage:UINT):BOOL; inline;
+begin
+ {}
+ Result:=Locale.SetOEMCP(CodePage);
+end;
+
+{==============================================================================}
+{==============================================================================}
 {Translation Functions (Compatibility)}
 function MultiByteToWideChar(CodePage:UINT;dwFlags:DWORD;lpMultiByteStr:LPCSTR;cbMultiByte:Integer;lpWideCharStr:LPWSTR;cchWideChar:Integer):Integer; inline;
 begin
@@ -5869,6 +5938,30 @@ begin
 end;
 
 {==============================================================================}
+
+function CharUpper(lpsz:LPSTR):LPSTR; inline;
+begin
+ {}
+ Result:=Unicode.CharUpper(lpsz);
+end;
+
+{==============================================================================}
+
+function CharUpperA(lpsz:LPSTR):LPSTR; inline;
+begin
+ {}
+ Result:=Unicode.CharUpperA(lpsz);
+end;
+
+{==============================================================================}
+
+function CharUpperW(lpsz:LPWSTR):LPWSTR; inline;
+begin
+ {}
+ Result:=Unicode.CharUpperW(lpsz);
+end;
+
+{==============================================================================}
   
 function CharUpperBuff(lpsz:LPSTR;cchLength:DWORD):DWORD; inline;
 begin
@@ -5890,6 +5983,30 @@ function CharUpperBuffW(lpsz:LPWSTR;cchLength:DWORD):DWORD; inline;
 begin
  {}
  Result:=Unicode.CharUpperBuffW(lpsz,cchLength);
+end;
+
+{==============================================================================}
+
+function CharLower(lpsz:LPSTR):LPSTR; inline;
+begin
+ {}
+ Result:=Unicode.CharLower(lpsz);
+end;
+
+{==============================================================================}
+
+function CharLowerA(lpsz:LPSTR):LPSTR; inline;
+begin
+ {}
+ Result:=Unicode.CharLowerA(lpsz);
+end;
+
+{==============================================================================}
+
+function CharLowerW(lpsz:LPWSTR):LPWSTR; inline;
+begin
+ {}
+ Result:=Unicode.CharLowerW(lpsz);
 end;
 
 {==============================================================================}

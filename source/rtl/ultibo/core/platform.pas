@@ -1725,6 +1725,7 @@ procedure MillisecondDelayEx(Milliseconds:LongWord;Wait:Boolean);
 function SysGetTickCount:DWORD;
 function SysGetTickCount64:ULONGLONG;
 procedure SysGetLocalTime(var SystemTime:TSystemTime);
+function SysGetLocalTimeOffset:Integer;
 
 {==============================================================================}
 {Platform Helper Functions}
@@ -1801,6 +1802,7 @@ begin
  {Setup SysUtils Handlers}
  {Locale Functions}
  SysUtilsGetLocalTimeHandler:=SysGetLocalTime;
+ SysUtilsGetLocalTimeOffsetHandler:=SysGetLocalTimeOffset;
  {Tick Functions}
  SysUtilsGetTickCountHandler:=SysGetTickCount;
  SysUtilsGetTickCount64Handler:=SysGetTickCount64;
@@ -6618,6 +6620,15 @@ begin
  {Convert to SystemTime}
  DecodeDate(DateTime,SystemTime.Year,SystemTime.Month,SystemTime.Day);
  DecodeTime(DateTime,SystemTime.Hour,SystemTime.Minute,SystemTime.Second,SystemTime.MilliSecond);
+end;
+
+{==============================================================================}
+
+function SysGetLocalTimeOffset:Integer;
+{Get the current local time offset value}
+begin
+ {}
+ Result:=TIMEZONE_TIME_OFFSET;
 end;
 
 {==============================================================================}

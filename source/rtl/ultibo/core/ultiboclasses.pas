@@ -41,7 +41,7 @@ unit UltiboClasses;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Threads,Unicode,Ultibo,SysUtils,Classes;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Unicode,Ultibo,SysUtils,Classes;
 
 //To Do //FPC supports TStream with 64bit interaces, check and confirm and remove TStreamEx etc
                       //Retain TMemoryStreamEx because it is for a different purpose (Grow without Realloc)
@@ -110,6 +110,37 @@ type
   procedure TerminateAndWaitFor;
  end;
   
+{==============================================================================}
+{Ultibo Class types (Timers)}
+type
+ {TTimerEx  - TTimer/TFPTimer equivalent for Ultibo specific timers}
+ TTimerEx = class(TObject)
+  constructor Create;
+  destructor Destroy; override;
+ private
+  {}
+  FInterval:Integer;
+  FEnabled:Boolean;
+  FWorker:Boolean;  {If True then use a Worker thread for the timer event}
+  FOnTimer:TNotifyEvent;
+  FTimerHandle:TTimerHandle;
+  
+  {}
+  procedure SetEnabled(Value:Boolean);
+ protected
+  {}
+  procedure Timer; virtual;
+  procedure StartTimer; virtual;
+  procedure StopTimer; virtual;
+ public
+  {}
+  property Interval:Integer read FInterval write FInterval;
+  property Enabled:Boolean read FEnabled write SetEnabled;
+  property Worker:Boolean read FWorker write FWorker;
+  
+  property OnTimer:TNotifyEvent read FOnTimer write FOnTimer;
+ end;
+ 
 {==============================================================================}
 {Ultibo Class types (Object Lists)}
 type
@@ -1036,6 +1067,17 @@ implementation
 
 {==============================================================================}
 {==============================================================================}
+
+procedure TimerExEvent(TimerEx:TTimerEx); 
+begin
+ {}
+ if TimerEx = nil then Exit;
+ 
+ TimerEx.Timer;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {TThreadEx}
 procedure TThreadEx.Execution;
 begin
@@ -1087,6 +1129,96 @@ begin
  if not Terminated then Terminate;
  if Suspended then Start; {Resume is Deprecated}
  WaitFor;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TTimerEx}
+constructor TTimerEx.Create;
+begin
+ {}
+ inherited Create;
+ FTimerHandle:=INVALID_HANDLE_VALUE;
+end;
+
+{==============================================================================}
+
+destructor TTimerEx.Destroy; 
+begin
+ {}
+ if FEnabled then StopTimer;
+ inherited Destroy;
+end;
+
+{==============================================================================}
+
+procedure TTimerEx.SetEnabled(Value:Boolean);
+begin
+ {}
+ if Value <> FEnabled then
+  begin
+   if Value then
+    begin
+     StartTimer;
+    end  
+   else
+    begin
+     StopTimer;
+    end;
+  end;  
+end;
+
+{==============================================================================}
+
+procedure TTimerEx.Timer; 
+begin
+ {}
+ {Check enabled in case the event fires once more after being set to false}
+ if FEnabled and Assigned(FOnTimer) then
+  begin
+   FOnTimer(Self);
+  end; 
+end;
+
+{==============================================================================}
+
+procedure TTimerEx.StartTimer; 
+var
+ Flags:LongWord;
+begin
+ {}
+ if FEnabled then Exit;
+ 
+ FEnabled:=True;
+ 
+ {Check Interval}
+ if FInterval < 1 then FInterval:=1000;
+ 
+ {Get Flags}
+ Flags:=TIMER_FLAG_RESCHEDULE; {Rescheduled Automatically}
+ if FWorker then Flags:=Flags or TIMER_FLAG_WORKER;
+ 
+ {Create Timer}
+ FTimerHandle:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,Flags,TTimerEvent(TimerExEvent),Self);
+ if FTimerHandle = INVALID_HANDLE_VALUE then
+  begin
+   FEnabled:=False;
+  end;
+end;
+
+{==============================================================================}
+
+procedure TTimerEx.StopTimer; 
+begin
+ {}
+ if not FEnabled then Exit;
+
+ FEnabled:=False;
+
+ {Destroy Timer}
+ TimerDestroy(FTimerHandle);
+ 
+ FTimerHandle:=INVALID_HANDLE_VALUE;
 end;
 
 {==============================================================================}

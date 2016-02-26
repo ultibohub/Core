@@ -221,3 +221,9 @@ Global Defines
 
 {==============================================================================}
 {==============================================================================}
+{Crypto definitions}
+{--$DEFINE CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}  {Enable precomputed permutations (IP/FP) for DES cipher (Faster but bigger) (Default: Off)}
+{--$DEFINE CRYPTO_AES_PRECOMPUTED_TABLES}        {Enable precomputed tables (TE1/TE2/TE3/TE4/TD1/TD2/TD3/TD4 etc) for AES cipher (Faster but bigger) (Default: Off)}
+
+{==============================================================================}
+{==============================================================================}

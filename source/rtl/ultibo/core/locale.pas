@@ -81,8 +81,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,SysUtils;
 //To Do //See if any of this can be reworked to use the existing charset unit
         //\source\rtl\inc\charset.pp
         //and the units in \source\rtl\charmaps
-                      
-//To Do //Locks around LinkPage/UnlinkPage etc
         
 {==============================================================================}
 {Global definitions}
@@ -104,13 +102,36 @@ const
  CP_UTF16_BE   = 1201;  {UTF-16 (unicodeFFFE) translation}
  CP_UTF7       = 65000; {UTF-7 translation}
  CP_UTF8       = 65001; {UTF-8 translation}
- //CP_NONE       = $FFFF; // rawbytestring encoding
+ //CP_ASCII      = 20127; {US-ASCII}
+ //CP_NONE       = $FFFF; {FPC RawByteString}
 
- {Code Page Identifiers}
- CP_OEM_437    = 437;
- CP_ANSI_1252  = 1252;
+ {Code Page Identifiers (See: https://en.wikipedia.org/wiki/Code_page)}
+ CP_OEM_437    = 437;  {US}
+ CP_OEM_720    = 720;  {Arabic}
+ CP_OEM_737    = 737;  {Greek}
+ CP_OEM_775    = 775;  {Baltic}
+ CP_OEM_850    = 850;  {Latin I}
+ CP_OEM_852    = 852;  {Latin II}
+ CP_OEM_857    = 857;  {Turkish}
+ CP_OEM_862    = 862;  {Hebrew}
+ CP_OEM_866    = 866;  {Russian}
+ CP_OEM_874    = 874;  {Thai}
+ CP_OEM_1258   = 1258; {Vietnam}
  
- //To Do //More
+ CP_ANSI_1250  = 1250;  {Central Europe}
+ CP_ANSI_1251  = 1251;  {Cyrillic}
+ CP_ANSI_1252  = 1252;  {Latin I}
+ CP_ANSI_1253  = 1253;  {Greek}
+ CP_ANSI_1254  = 1254;  {Turkish}
+ CP_ANSI_1255  = 1255;  {Hebrew}
+ CP_ANSI_1256  = 1256;  {Arabic}
+ CP_ANSI_1257  = 1257;  {Baltic}
+ CP_ANSI_1258  = 1258;  {Vietnam}
+ CP_ANSI_874   = 874;   {Thai}
+
+ {Default Locales}
+ LOCALE_SYSTEM_DEFAULT = $800;
+ LOCALE_USER_DEFAULT   = $400;
  
  {String Length Maximums}
  MAX_LEADBYTES = 12;  {5 ranges, 2 bytes each, 0 terminated}
@@ -476,6 +497,22 @@ type
   Values:array[$00..$FF] of Word;  {Word to allow for DBCS}
  end;
 
+ {Lower Table - Upper to Lower case values of a Code Page}
+ PLowerTable = ^TLowerTable;
+ TLowerTable = record
+  LowerID:Word;                    {Lowercase Code Page}
+  Values:array[$00..$FF] of Word;  {Word to allow for DBCS}
+ end;
+ 
+ {Upper Table - Lower to Upper case values of a Code Page}
+ PUpperTable = ^TUpperTable;
+ TUpperTable = record
+  UpperID:Word;                    {Uppercase Code Page}
+  Values:array[$00..$FF] of Word;  {Word to allow for DBCS}
+ end;
+ 
+ //To Do //SortTable
+ 
  {Unicode Table - The UNICODE to OEM/ANSI Values of a Code Page}
  PUnicodeTable = ^TUnicodeTable;
  TUnicodeTable = record
@@ -499,6 +536,8 @@ type
   CodeTable:PCodeTable;        {The OEM/ANSI Values}
   LeadBytes:PLeadBytes;        {The Lead Byte Tables}
   TransTable:PTransTable;      {The OEM <-> ANSI Values}
+  LowerTable:PLowerTable;      {The Upper to Lower Values}
+  UpperTable:PUpperTable;      {The Lower to Upper Values}
   UnicodeTable:PUnicodeTable;  {The UNICODE Values}
   PrevPage:PCodePage;          {Prev Code Page}
   NextPage:PCodePage;          {Next Code Page}
@@ -524,6 +563,9 @@ function IsValidCodePage(CodePage:UINT):BOOL;
 function GetACP:UINT; 
 function GetOEMCP:UINT; 
 
+function SetACP(CodePage:UINT):BOOL;
+function SetOEMCP(CodePage:UINT):BOOL;
+
 function GetConsoleCP:UINT; 
 function SetConsoleCP(wCodePageID:UINT):BOOL; 
 
@@ -535,6 +577,20 @@ function GetCPInfo(CodePage:UINT;var lpCPInfo:TCPInfo):BOOL;
 function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; 
 function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; 
 function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; 
+
+//EnumSystemCodePages //To Do 
+
+function IsValidLocale(Locale:LCID;dwFlags:DWORD):BOOL;
+
+function GetSystemDefaultLCID:LCID; 
+function GetUserDefaultLCID:LCID; 
+
+function SetSystemDefaultLCID(Locale:LCID):BOOL;
+
+//GetLocaleInfo //To Do 
+//SetLocaleInfo //To Do 
+
+//EnumSystemLocales //To Do 
 
 {==============================================================================}
 {RTL Unicode String Manager Functions}
@@ -549,7 +605,7 @@ function CheckPage(Page:PCodePage):Boolean;
 function LinkPage(Page:PCodePage):Boolean;
 function UnlinkPage(Page:PCodePage):Boolean;
 
-function LoadPage(PageID:Word;Table:PCodeTable):Boolean;
+function LoadPage(PageID:Word;Table:PCodeTable;Lower:PLowerTable;Upper:PUpperTable):Boolean;
 function UnloadPage(PageID:Word;Page:PCodePage):Boolean;
 
 function DefaultTrans(PageID,TransID:Word):Boolean;
@@ -611,7 +667,7 @@ var
   $2261,$00B1,$2265,$2264,$2320,$2321,$00F7,$2248,
   $00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$00A0)
  );
-
+ 
  CPANSI1252:TCodeTable = (
   MaxCharSize:1;
   DefaultChar:(
@@ -653,6 +709,48 @@ var
   $00F8,$00F9,$00FA,$00FB,$00FC,$00FD,$00FE,$00FF)
  );
 
+ CP1252Lower:TLowerTable = (
+  LowerID:1252;
+  Values:(
+  $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0A,$0B,$0C,$0D,$0E,$0F,
+  $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$1A,$1B,$1C,$1D,$1E,$1F,
+  $20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$2A,$2B,$2C,$2D,$2E,$2F,
+  $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$3F,
+  $40,$61,$62,$63,$64,$65,$66,$67,$68,$69,$6A,$6B,$6C,$6D,$6E,$6F,
+  $70,$71,$72,$73,$74,$75,$76,$77,$78,$79,$7A,$5B,$5C,$5D,$5E,$5F,
+  $60,$61,$62,$63,$64,$65,$66,$67,$68,$69,$6A,$6B,$6C,$6D,$6E,$6F,
+  $70,$71,$72,$73,$74,$75,$76,$77,$78,$79,$7A,$7B,$7C,$7D,$7E,$7F,
+  $80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$9A,$8B,$9C,$8D,$9E,$8F,
+  $90,$91,$92,$93,$94,$95,$96,$97,$98,$99,$9A,$9B,$9C,$9D,$9E,$FF,
+  $A0,$A1,$A2,$A3,$A4,$A5,$A6,$A7,$A8,$A9,$AA,$AB,$AC,$AD,$AE,$AF,
+  $B0,$B1,$B2,$B3,$B4,$B5,$B6,$B7,$B8,$B9,$BA,$BB,$BC,$BD,$BE,$BF,
+  $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
+  $F0,$F1,$F2,$F3,$F4,$F5,$F6,$D7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$DF,
+  $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
+  $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
+ );
+ 
+ CP1252Upper:TUpperTable = (
+  UpperID:1252;
+  Values:(
+  $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0A,$0B,$0C,$0D,$0E,$0F,
+  $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$1A,$1B,$1C,$1D,$1E,$1F,
+  $20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$2A,$2B,$2C,$2D,$2E,$2F,
+  $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$3F,
+  $40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$4A,$4B,$4C,$4D,$4E,$4F,
+  $50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$5A,$5B,$5C,$5D,$5E,$5F,
+  $60,$41,$42,$43,$44,$45,$46,$47,$48,$49,$4A,$4B,$4C,$4D,$4E,$4F,
+  $50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$5A,$7B,$7C,$7D,$7E,$7F,
+  $80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8A,$8B,$8C,$8D,$8E,$8F,
+  $90,$91,$92,$93,$94,$95,$96,$97,$98,$99,$8A,$9B,$8C,$9D,$8E,$9F,
+  $A0,$A1,$A2,$A3,$A4,$A5,$A6,$A7,$A8,$A9,$AA,$AB,$AC,$AD,$AE,$AF,
+  $B0,$B1,$B2,$B3,$B4,$B5,$B6,$B7,$B8,$B9,$BA,$BB,$BC,$BD,$BE,$BF,
+  $C0,$C1,$C2,$C3,$C4,$C5,$C6,$C7,$C8,$C9,$CA,$CB,$CC,$CD,$CE,$CF,
+  $D0,$D1,$D2,$D3,$D4,$D5,$D6,$D7,$D8,$D9,$DA,$DB,$DC,$DD,$DE,$DF,
+  $C0,$C1,$C2,$C3,$C4,$C5,$C6,$C7,$C8,$C9,$CA,$CB,$CC,$CD,$CE,$CF,
+  $D0,$D1,$D2,$D3,$D4,$D5,$D6,$F7,$D8,$D9,$DA,$DB,$DC,$DD,$DE,$9F)
+ );
+ 
  CP437TO1252:TTransTable = (
   TransID:1252;
   Values:(
@@ -709,15 +807,21 @@ begin
  CodePageLock.AcquireLock:=nil;
  CodePageLock.ReleaseLock:=nil;
  
+ {Setup Default Country}
+ //COUNTRY_DEFAULT:= //To Do
+ 
  {Setup Default Code Pages}
  CODEPAGE_OEM_DEFAULT:=CP_OEM_437;
  CODEPAGE_ANSI_DEFAULT:=CP_ANSI_1252;
  CODEPAGE_CONSOLE_INPUT:=CODEPAGE_ANSI_DEFAULT;
  CODEPAGE_CONSOLE_OUTPUT:=CODEPAGE_ANSI_DEFAULT;
  
+ {Setup Default Locale}
+ //LOCALE_DEFAULT:= //To Do
+ 
  {Load Default Code Pages}
- LoadPage(CP_OEM_437,@CPOEM437);
- LoadPage(CP_ANSI_1252,@CPANSI1252);
+ LoadPage(CP_OEM_437,@CPOEM437,nil,nil);
+ LoadPage(CP_ANSI_1252,@CPANSI1252,@CP1252Lower,@CP1252Upper);
  InstallTrans(CP_OEM_437,@CP437TO1252);
  InstallTrans(CP_ANSI_1252,@CP1252TO437);
  
@@ -729,7 +833,7 @@ begin
  {Initialize Code Page Defaults}
  DefaultSystemCodePage:=GetACP;
  DefaultUnicodeCodePage:=CP_UTF16;
- DefaultFileSystemCodePage:=CP_UTF8;
+ DefaultFileSystemCodePage:=DefaultSystemCodePage; //CP_UTF8; //To Do //When filesystem APIs support native Unicode calling
  DefaultRTLFileSystemCodePage:=DefaultSystemCodePage;
  
  LocaleInitialized:=True;
@@ -763,6 +867,136 @@ function GetOEMCP:UINT;
 begin
  {}
  Result:=CODEPAGE_OEM_DEFAULT;
+end;
+
+{==============================================================================}
+
+function SetACP(CodePage:UINT):BOOL;
+var
+ AnsiID:Word;
+ Ansi:PCodePage;
+ OemID:Word;
+ Oem:PCodePage;
+begin
+ {}
+ Result:=False;
+ 
+ {Map Page}
+ AnsiID:=MapPage(CodePage);
+ 
+ {Get Page}
+ Ansi:=GetPage(AnsiID);
+ if Ansi = nil then Exit;
+
+ {Check Page}
+ if AnsiID <> CODEPAGE_ANSI_DEFAULT then
+  begin
+   {Check ANSI Page}
+   case AnsiID of
+    CP_ANSI_1250,CP_ANSI_1251,CP_ANSI_1252,CP_ANSI_1253,CP_ANSI_1254,
+    CP_ANSI_1255,CP_ANSI_1256,CP_ANSI_1257,CP_ANSI_1258,CP_ANSI_874:begin
+      {Get OEM ID}
+      OemID:=Ansi.TransTable.TransID;
+       
+      {Get OEM Page}
+      Oem:=GetPage(OemID);
+      if Oem = nil then Exit;
+    
+      {Update Code Page Defaults}
+      if DefaultSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultSystemCodePage:=AnsiID;
+      if DefaultFileSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultFileSystemCodePage:=AnsiID;
+      if DefaultRTLFileSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultRTLFileSystemCodePage:=AnsiID;
+
+      {Set Default Code Pages}
+      OemPage:=Oem;
+      AnsiPage:=Ansi;
+      DefaultPage:=Ansi;
+      
+      {Update Default Code Pages}
+      if CODEPAGE_CONSOLE_INPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_INPUT:=AnsiID;
+      if CODEPAGE_CONSOLE_OUTPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_OUTPUT:=AnsiID;
+      CODEPAGE_OEM_DEFAULT:=OemID;
+      CODEPAGE_ANSI_DEFAULT:=AnsiID;
+      
+      Result:=True;
+     end;
+   end;
+  end
+ else
+  begin
+   Result:=True;
+  end;  
+end;
+
+{==============================================================================}
+
+function SetOEMCP(CodePage:UINT):BOOL;
+var
+ OemID:Word;
+ Oem:PCodePage;
+ AnsiID:Word;
+ Ansi:PCodePage;
+begin
+ {}
+ Result:=False;
+ 
+ {Map Page}
+ OemID:=MapPage(CodePage);
+ 
+ {Get Page}
+ Oem:=GetPage(OemID);
+ if Oem = nil then Exit;
+
+ {Check Page}
+ if OemID <> CODEPAGE_OEM_DEFAULT then
+  begin
+   {Check OEM Page}
+   case OemID of
+    CP_OEM_437,CP_OEM_720,CP_OEM_737,CP_OEM_775,CP_OEM_850,CP_OEM_852,
+    CP_OEM_857,CP_OEM_862,CP_OEM_866,CP_OEM_874,CP_OEM_1258:begin
+      {Get ANSI ID}
+      AnsiID:=Oem.TransTable.TransID;
+       
+      {Get ANSI Page}
+      Ansi:=GetPage(AnsiID);
+      if Ansi = nil then Exit;
+   
+      {Update Code Page Defaults}
+      if DefaultSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultSystemCodePage:=AnsiID;
+      if DefaultFileSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultFileSystemCodePage:=AnsiID;
+      if DefaultRTLFileSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultRTLFileSystemCodePage:=AnsiID;
+
+      {Set Default Code Pages}
+      OemPage:=Oem;
+      AnsiPage:=Ansi;
+      DefaultPage:=Ansi;
+      
+      {Update Default Code Pages}
+      if CODEPAGE_CONSOLE_INPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_INPUT:=AnsiID;
+      if CODEPAGE_CONSOLE_OUTPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_OUTPUT:=AnsiID;
+      CODEPAGE_OEM_DEFAULT:=OemID;
+      CODEPAGE_ANSI_DEFAULT:=AnsiID;
+   
+      {Check translation}
+      if OemID = CP_OEM_437 then
+       begin
+        {Reinstall CP1252 to CP437 Trans table}
+        InstallTrans(CP_ANSI_1252,@CP1252TO437);
+       end
+      else if OemID = CP_OEM_850 then 
+       begin
+        {Reinstall CP1252 to CP850 Trans table}
+        //InstallTrans(CP_ANSI_1252,@CP1252TO850); //To Do //Move CP1252TO850 to this unit ?
+       end;
+       
+      Result:=True;
+     end;
+   end;
+  end
+ else
+  begin
+   Result:=True;
+  end;  
 end;
 
 {==============================================================================}
@@ -891,6 +1125,46 @@ begin
  lpCPInfoEx.CodePage:=CodePage;
  //To Do //CodePageName
  
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function IsValidLocale(Locale:LCID;dwFlags:DWORD):BOOL;
+begin
+ {}
+ Result:=False;
+ 
+ //To Do 
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function GetSystemDefaultLCID:LCID; 
+begin
+ {}
+ Result:=LOCALE_DEFAULT;
+end;
+
+{==============================================================================}
+
+function GetUserDefaultLCID:LCID; 
+begin
+ {}
+ Result:=LOCALE_DEFAULT;
+end;
+
+{==============================================================================}
+
+function SetSystemDefaultLCID(Locale:LCID):BOOL;
+begin
+ {}
+ Result:=False;
+ 
+ LOCALE_DEFAULT:=Locale; //To Do 
+
  Result:=True;
 end;
 
@@ -1093,7 +1367,7 @@ end;
 
 {==============================================================================}
 
-function LoadPage(PageID:Word;Table:PCodeTable):Boolean;
+function LoadPage(PageID:Word;Table:PCodeTable;Lower:PLowerTable;Upper:PUpperTable):Boolean;
 {Load a code table and allocate memory to create a code page}
 var
  Count:Word;
@@ -1102,18 +1376,24 @@ begin
  {}
  Result:=False;
  
- if Table = nil then Exit;
+ if Table = nil then Exit; {Lower and Upper may be nil}
  if GetPage(PageID) <> nil then Exit;
 
  {Create Page}
  Page:=AllocMem(SizeOf(TCodePage));
  if Page = nil then Exit;
  
- {Load Page Table}
+ {Load Code Table}
  Page.PageID:=PageID;
  Page.Handle:=INVALID_HANDLE_VALUE;
  Page.CodeTable:=Table;
 
+ {Load Lower Table}
+ Page.LowerTable:=Lower;
+ 
+ {Load Upper Table}
+ Page.UpperTable:=Upper;
+ 
  {Create Lead Bytes}
  Page.LeadBytes:=AllocMem(SizeOf(TLeadBytes));
  if Page.LeadBytes = nil then Exit;

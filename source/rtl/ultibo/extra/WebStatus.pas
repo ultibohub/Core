@@ -43,7 +43,7 @@ unit WebStatus;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
-     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Mouse,Console,Framebuffer,Font,Logging,Timezone;
+     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Mouse,Console,Framebuffer,Font,Logging,Timezone,Locale,Unicode;
 
 //To Do //Look for:
 
@@ -332,6 +332,26 @@ type
  end;
  
  TWebStatusClock = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  
+ protected
+  {Internal Variables}
+ 
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
+
+ TWebStatusLocale = class(TWebStatusSub)
  public
   {}
   constructor Create(AMain:TWebStatusMain);
@@ -805,6 +825,7 @@ var
  WebStatusGPU:TWebStatusGPU;
  WebStatusRTL:TWebStatusRTL;
  WebStatusClock:TWebStatusClock;
+ WebStatusLocale:TWebStatusLocale;
  WebStatusThreading:TWebStatusThreading;
  WebStatusThreadList:TWebStatusThreadList;
  WebStatusScheduler:TWebStatusScheduler;
@@ -2758,7 +2779,7 @@ begin
  if Table <> nil then
   begin
    AddBlank(AResponse);
-   AddItem(AResponse,'InitFinalTable (0x' + IntToHex(LongWord(Table),8) + '):','');
+   AddItem(AResponse,'InitFinalTable:','');
    AddItemEx(AResponse,'TableCount:',IntToStr(Table.TableCount),2);
    AddItemEx(AResponse,'InitCount:',IntToStr(Table.InitCount),2);
    for Count:=1 to Table.InitCount do
@@ -2896,6 +2917,63 @@ begin
  {Add Current Time}
  AddBlank(AResponse);
  AddItem(AResponse,'Current Time (UTC):',DateTimeToStr(SystemFileTimeToDateTime(GetCurrentTime)));
+ 
+ {Add Footer}
+ AddFooter(AResponse); 
+ 
+ {Return Result}
+ Result:=True;
+end;
+ 
+{==============================================================================}
+{==============================================================================}
+{TWebStatusLocale}
+constructor TWebStatusLocale.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='Locale'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/locale';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusLocale.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Add Header}
+ AddHeader(AResponse,GetTitle,Self); 
+ 
+ {Add Country Code}
+ AddItem(AResponse,'Country Code:',IntToStr(COUNTRY_DEFAULT));
+ AddBlank(AResponse);
+ 
+ {Add ANSI Code Page}
+ AddItem(AResponse,'ANSI Code Page:',IntToStr(GetACP));
+ AddBlank(AResponse);
+ 
+ {Add OEM Code Page}
+ AddItem(AResponse,'OEM Code Page:',IntToStr(GetOEMCP));
+ AddBlank(AResponse);
+ 
+ {Add Default Locale}
+ AddItem(AResponse,'Default Locale:',IntToStr(GetSystemDefaultLCID));
+ AddBlank(AResponse);
+ 
+ //To Do
  
  {Add Footer}
  AddFooter(AResponse); 
@@ -4735,6 +4813,12 @@ begin
  AddItemEx(AResponse,'RtlErrorBase:','0x' + IntToHex(LongWord(RtlErrorBase),8),2);
  AddBlank(AResponse);
  
+ {Add RTL Initialization}
+ AddBold(AResponse,'RTL Initialization','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'RtlInitFinalTable:','0x' + IntToHex(LongWord(@RtlInitFinalTable),8),2);
+ AddBlank(AResponse);
+ 
  {Add Memory and Peripheral Mapping}
  AddBold(AResponse,'Memory and Peripheral Mapping','');
  AddBlank(AResponse);
@@ -5519,6 +5603,10 @@ begin
  {Register Clock Page}
  WebStatusClock:=TWebStatusClock.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusClock);
+
+ {Register Locale Page}
+ WebStatusLocale:=TWebStatusLocale.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusLocale);
  
  {Register Threading Page}
  WebStatusThreading:=TWebStatusThreading.Create(WebStatusMain);
@@ -5708,6 +5796,10 @@ begin
  AListener.DeregisterDocument(AHost,WebStatusThreading);
  WebStatusThreading.Free;
 
+ {Deregister Locale Page}
+ AListener.DeregisterDocument(AHost,WebStatusLocale);
+ WebStatusLocale.Free;
+ 
  {Deregister Clock Page}
  AListener.DeregisterDocument(AHost,WebStatusClock);
  WebStatusClock.Free;

@@ -1,4 +1,4 @@
-{This unit has no function and is only used for editing the RTL with Lazarus}
+{This unit has no function and is only used for editing (not building) the RTL with Lazarus}
 unit buildrtl;
 
 interface
@@ -22,6 +22,12 @@ uses
  getopts,
  lineinfo,
   
+ dos,
+ ctypes,
+ charset,
+ cpall,
+ sysconst,
+ 
  {Ultibo Boot/Platform Units (ARMv6)}
  bootrpi,
  bcm2835,
