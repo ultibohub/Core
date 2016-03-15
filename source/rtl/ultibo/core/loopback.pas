@@ -138,7 +138,7 @@ begin
  {}
  inherited Create(AManager,ADevice,AName);
  {Set Defaults}
- FMediaType:=ETHER_TYPE;
+ FMediaType:=MEDIA_TYPE_ETHERNET;
  FAdapterType:=ADAPTER_TYPE_LOOPBACK;
  FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
 end;

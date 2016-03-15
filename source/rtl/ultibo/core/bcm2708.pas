@@ -373,6 +373,8 @@ procedure BCM2708SDHCIHostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord
  
 procedure BCM2708SDHCIInterruptHandler(SDHCI:PSDHCIHost);
 function BCM2708SDHCISetupInterrupts(SDHCI:PSDHCIHost):LongWord;
+
+function BCM2708MMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
  
 {==============================================================================}
 {BCM2708 Clock Functions}
@@ -565,7 +567,8 @@ begin
      BCM2708SDHCIHost.SDHCI.HostSetClockDivider:=nil;
      BCM2708SDHCIHost.SDHCI.HostSetControlRegister:=nil;
      BCM2708SDHCIHost.SDHCI.DeviceInitialize:=nil;
-     BCM2708SDHCIHost.SDHCI.DeviceGetCardDetect:=nil;
+     BCM2708SDHCIHost.SDHCI.DeviceDeinitialize:=nil;
+     BCM2708SDHCIHost.SDHCI.DeviceGetCardDetect:=BCM2708MMCDeviceGetCardDetect;
      BCM2708SDHCIHost.SDHCI.DeviceGetWriteProtect:=nil;
      BCM2708SDHCIHost.SDHCI.DeviceSendCommand:=nil;
      BCM2708SDHCIHost.SDHCI.DeviceSetIOS:=nil;
@@ -804,13 +807,13 @@ begin
  {Check SDHCI}
  if SDHCI = nil then Exit;
  
- if MMC_LOG_ENABLED then MMCLogInfo(nil,'BCM2708 Powering on Arasan SD Host Controller');
+ if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2708 Powering on Arasan SD Host Controller');
 
  {Power On SD}
  Status:=PowerOn(POWER_ID_MMC0);
  if Status <> ERROR_SUCCESS then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'Failed to power on Arasan SD Host Controller');
+   if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI BCM2708 Failed to power on Arasan SD Host Controller');
    
    Result:=Status;
    Exit;
@@ -836,7 +839,7 @@ begin
  SDHCI.ClockMaximum:=BCM2708_EMMC_MAX_FREQ; //To Do //Get from somewhere //See above
  
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCM2708 host version = ' + IntToHex(SDHCIGetVersion(SDHCI),4));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2708 host version = ' + IntToHex(SDHCIGetVersion(SDHCI),4));
  {$ENDIF}
  
  {Update BCM2708}
@@ -844,14 +847,14 @@ begin
  PBCM2708SDHCIHost(SDHCI).LastWrite:=0;
  
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCM2708 host write delay =  ' + IntToStr(PBCM2708SDHCIHost(SDHCI).WriteDelay));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2708 host write delay =  ' + IntToStr(PBCM2708SDHCIHost(SDHCI).WriteDelay));
  {$ENDIF}
  
  {Reset Host}
  SDHCIHostReset(SDHCI,SDHCI_RESET_ALL);
  
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCM2708 host reset completed');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2708 host reset completed');
  {$ENDIF}
  
  {Setup Interrupts}
@@ -882,11 +885,14 @@ begin
    ReleaseIRQ(IRQ_ROUTING,BCM2835_IRQ_SDHCI,TInterruptHandler(BCM2708SDHCIInterruptHandler),SDHCI);
   end;  
  
+ {Clear Interrupts}
+ SDHCI.Interrupts:=0;
+ 
  {Reset Host}
  SDHCIHostReset(SDHCI,SDHCI_RESET_ALL);
  
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCM2708 host reset completed');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2708 host reset completed');
  {$ENDIF}
  
  {Update SDHCI}
@@ -894,13 +900,13 @@ begin
  SemaphoreDestroy(SDHCI.Wait);
  SDHCI.Wait:=INVALID_HANDLE_VALUE;
  
- if MMC_LOG_ENABLED then MMCLogInfo(nil,'BCM2708 Powering off Arasan SD Host Controller');
+ if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2708 Powering off Arasan SD Host Controller');
 
  {Power Off SD}
  Status:=PowerOff(POWER_ID_MMC0);
  if Status <> ERROR_SUCCESS then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'Failed to power off Arasan SD Host Controller');
+   if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI BCM2708 Failed to power off Arasan SD Host Controller');
    
    Result:=Status;
    Exit;
@@ -1271,12 +1277,12 @@ begin
  {Check SDHCI}
  if SDHCI = nil then Exit;
  
- {Setup the Interrupts to handle}
+ {Setup Interrupts}
  SDHCI.Interrupts:=SDHCI_INT_BUS_POWER or SDHCI_INT_DATA_END_BIT or SDHCI_INT_DATA_CRC or SDHCI_INT_DATA_TIMEOUT or SDHCI_INT_INDEX or SDHCI_INT_END_BIT or SDHCI_INT_CRC or SDHCI_INT_TIMEOUT or SDHCI_INT_DATA_END or SDHCI_INT_RESPONSE;
                    //SDHCI_INT_CARD_INSERT or SDHCI_INT_CARD_REMOVE or //See sdhci_set_card_detection in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
-                   //Note: SDHCI_INT_CARD_INSERT seems to hang everything, why?
+                   //Note: SDHCI_INT_CARD_INSERT seems to hang everything, why? //Because the SDHCI_CARD_PRESENT bit is never updated !
                    
- {Enable the Interrupts to handle}
+ {Enable Interrupts}
  SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
  SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
 
@@ -1294,6 +1300,75 @@ begin
  Result:=ERROR_SUCCESS;
  
  //See: \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
+end;
+ 
+{==============================================================================}
+ 
+function BCM2708MMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
+{Implementation of MMC GetCardDetect for the BCM2708 which does not update the
+ bits in the SDHCI_PRESENT_STATE register to reflect card insertion or removal}
+var
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC BCM2708 Get Card Detect');
+ {$ENDIF}
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC BCM2708 Get Card Detect (SDHCI_PRESENT_STATE=' + IntToHex(SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE),8) + ')');
+ {$ENDIF}
+ 
+ {Check MMC State}
+ if MMC.MMCState = MMC_STATE_INSERTED then
+  begin
+   {Get Card Status}
+   if MMCDeviceSendCardStatus(MMC) <> MMC_STATUS_SUCCESS then
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_CARD_PRESENT);
+     
+     {Reset Host}
+     SDHCIHostReset(SDHCI,SDHCI_RESET_ALL);
+
+     {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC BCM2708 Get Card Detect (Flags=not MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end;
+  end
+ else
+  begin
+   {Get Card Present}
+   if (SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE) and SDHCI_CARD_PRESENT) <> 0 then
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
+     
+     {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC BCM2708 Get Card Detect (Flags=MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end
+   else
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_CARD_PRESENT);
+     
+     {$IF DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC BCM2708 Get Card Detect (Flags=not MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end;    
+  end;
+
+ Result:=MMC_STATUS_SUCCESS;  
 end;
  
 {==============================================================================}

@@ -2090,7 +2090,7 @@ begin
   if Manager = nil then Exit;
  
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Add Transport}
@@ -2101,7 +2101,7 @@ begin
    end; 
  
   {Register with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -2141,7 +2141,7 @@ begin
   FlushSockets(True);
  
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -2152,7 +2152,7 @@ begin
    end; 
  
   {Deregister with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}

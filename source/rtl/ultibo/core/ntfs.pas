@@ -1028,7 +1028,8 @@ begin
   if FDriver = nil then Exit;
   if AVolume = nil then Exit;
   if AVolume.Device = nil then Exit;
-
+  if AVolume.Device.Controller = nil then Exit;
+  
   {$IFDEF NTFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSRecognizer.RecognizeVolume - Volume = ' + AVolume.Name);
   {$ENDIF}
@@ -1067,7 +1068,7 @@ begin
        if not AllowDefault then
         begin
          {Check Media}
-         if not AVolume.Device.MediaReady then Exit;
+         if not AVolume.Device.Controller.MediaReady(AVolume.Device) then Exit; {was Volume.Device.MediaReady}
          
          {Init Device}
          if not AVolume.Device.DeviceInit then Exit;
@@ -1271,7 +1272,10 @@ begin
     if ADevice = nil then Exit;
     
     {Check Device}
-    if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit; //To Do //Critical //mtREMOVABLE //Should it be mtFIXED only for NTFS ?
+    if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
+    
+    {Check Partition and Volume}
+    if (FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil) and (FDriver.GetVolumeByDevice(ADevice,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
     
     {Check Parent}
     if AParent <> nil then
@@ -1357,7 +1361,7 @@ begin
  if AVolume.Device = nil then Exit;
 
  case AVolume.Device.MediaType of
-  mtFIXED:begin {NTFS only supported on FIXED media} //To Do //Critical //mtREMOVABLE
+  mtFIXED,mtREMOVABLE:begin {NTFS was only supported on FIXED media but Microsoft now allow on REMOVABLE for Windows IoT etc}
     if AFloppyType <> ftUNKNOWN then Exit;
     if not AVolume.Device.Writeable then Exit;
     
@@ -1412,7 +1416,7 @@ begin
 
  {Check Device}
  case AVolume.Device.MediaType of
-  mtFIXED:begin {NTFS only supported on FIXED media} //To Do //Critical //mtREMOVABLE
+  mtFIXED,mtREMOVABLE:begin {NTFS was only supported on FIXED media but Microsoft now allow on REMOVABLE for Windows IoT etc}
     if AFloppyType <> ftUNKNOWN then Exit;
     
     {Check NTFS}

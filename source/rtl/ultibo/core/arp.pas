@@ -313,7 +313,7 @@ begin
  {}
  inherited Create(AManager,AName);
  FFamily:=AF_UNSPEC;
- FPacketType:=ARP_TYPE;
+ FPacketType:=PACKET_TYPE_ARP;
 
  FAddresses:=TNetworkList.Create;
  FAddressAdd:=EventCreate(True,False);
@@ -370,7 +370,7 @@ begin
  
   {Check Packet Type}
   case Adapter.PacketType of
-   ARP_TYPE:begin
+   PACKET_TYPE_ARP:begin
      {Check ARP Packet}
      if CheckARP(APacket) then
       begin
@@ -386,7 +386,7 @@ begin
         ARP_REQUEST:begin
           {Check Protocol Type}
           case WordBEtoN(ARP.ProtocolType) of 
-           IP_TYPE:begin
+           PACKET_TYPE_IP:begin
              {Get Local Address}
              Local:=GetAddressByAddress(ARP.TargetIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
              if Local <> nil then
@@ -419,7 +419,7 @@ begin
         ARP_REPLY:begin
           {Check Protocol Type}
           case WordBEtoN(ARP.ProtocolType) of
-           IP_TYPE:begin
+           PACKET_TYPE_IP:begin
              {Get Local Address}
              Local:=GetAddressByAddress(ARP.TargetIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
              if Local <> nil then
@@ -443,7 +443,7 @@ begin
         INARP_REQUEST:begin
           {Check Protocol Type}
           case WordBEtoN(ARP.ProtocolType) of
-           IP_TYPE:begin
+           PACKET_TYPE_IP:begin
              {Get Local Address}
              Local:=GetAddressByHardware(ARP.TargetHardware,Adapter.Adapter,True,NETWORK_LOCK_READ);
              if Local <> nil then
@@ -476,7 +476,7 @@ begin
         INARP_REPLY:begin
           {Check Protocol Type}
           case WordBEtoN(ARP.ProtocolType) of 
-           IP_TYPE:begin
+           PACKET_TYPE_IP:begin
              {Get Local Address}
              Local:=GetAddressByAddress(ARP.TargetIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
              if Local <> nil then
@@ -534,7 +534,7 @@ begin
 
  {Create ARP Request}
  ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType); 
- ARP.ProtocolType:=WordNtoBE(IP_TYPE); 
+ ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP); 
  ARP.HardwareLength:=SizeOf(THardwareAddress);
  ARP.ProtocolLength:=SizeOf(TInAddr);
  ARP.Opcode:=WordNtoBE(ARP_REQUEST); 
@@ -587,7 +587,7 @@ begin
   
  {Create ARP Reply}
  ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
- ARP.ProtocolType:=WordNtoBE(IP_TYPE);
+ ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
  ARP.HardwareLength:=SizeOf(THardwareAddress);
  ARP.ProtocolLength:=SizeOf(TInAddr);
  ARP.Opcode:=WordNtoBE(ARP_REPLY);
@@ -637,7 +637,7 @@ begin
   
  {Create INARP Request}
  ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
- ARP.ProtocolType:=WordNtoBE(IP_TYPE); 
+ ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP); 
  ARP.HardwareLength:=SizeOf(THardwareAddress);
  ARP.ProtocolLength:=SizeOf(TInAddr);
  ARP.Opcode:=WordNtoBE(INARP_REQUEST); 
@@ -690,7 +690,7 @@ begin
   
  {Create INARP Reply}
  ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
- ARP.ProtocolType:=WordNtoBE(IP_TYPE);
+ ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
  ARP.HardwareLength:=SizeOf(THardwareAddress);
  ARP.ProtocolLength:=SizeOf(TInAddr);
  ARP.Opcode:=WordNtoBE(INARP_REPLY); 
@@ -1097,7 +1097,7 @@ begin
   if Adapter = nil then
    begin
     {Add ARP Type}
-    Handle:=AAdapter.AddTransport(ARP_TYPE,FRAME_TYPE_ETHERNET_II,ARP_TRANSPORT_NAME,PacketHandler);
+    Handle:=AAdapter.AddTransport(PACKET_TYPE_ARP,FRAME_TYPE_ETHERNET_II,ARP_TRANSPORT_NAME,PacketHandler);
     if Handle <> INVALID_HANDLE_VALUE then
      begin
       {Create Adapter}
@@ -1105,7 +1105,7 @@ begin
       Adapter.UseCount:=1;
       Adapter.Name:=AAdapter.Name;
       Adapter.Handle:=Handle;
-      Adapter.PacketType:=ARP_TYPE;
+      Adapter.PacketType:=PACKET_TYPE_ARP;
       Adapter.Adapter:=AAdapter;
       Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
       Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
@@ -1858,7 +1858,7 @@ begin
  FLength:=SizeOf(TInAddr);
  
  FAddress.S_addr:=INADDR_ANY;
- FProtocolType:=IP_TYPE;
+ FProtocolType:=PACKET_TYPE_IP;
  FillChar(FHardware,SizeOf(THardwareAddress),0);
 end;
 
@@ -1916,7 +1916,7 @@ begin
  {}
  inherited Create(AManager,AName);
  FFamily:=AF_UNSPEC;
- FPacketType:=RARP_TYPE;
+ FPacketType:=PACKET_TYPE_RARP;
 
  FAddresses:=TNetworkList.Create;
  FAddressAdd:=EventCreate(True,False);
@@ -1968,7 +1968,7 @@ begin
  try
   {Check Packet Type}
   case Adapter.PacketType of
-   RARP_TYPE:begin
+   PACKET_TYPE_RARP:begin
      {Check RARP Packet}
      if CheckRARP(APacket) then
       begin
@@ -1984,7 +1984,7 @@ begin
         RARP_REQUEST:begin
           {Check Protocol Type}
           case WordBEtoN(RARP.ProtocolType) of
-           IP_TYPE:begin
+           PACKET_TYPE_IP:begin
              {Get Remote Address}
              Remote:=GetAddressByHardware(RARP.TargetHardware,Adapter.Adapter,True,NETWORK_LOCK_READ);
              if Remote <> nil then
@@ -2017,7 +2017,7 @@ begin
         RARP_REPLY:begin
           {Check Protocol Type}
           case WordBEtoN(RARP.ProtocolType) of
-           IP_TYPE:begin
+           PACKET_TYPE_IP:begin
              {Compare Local Address}
              if Adapter.Adapter.CompareAddress(RARP.TargetHardware,Adapter.Hardware) then
               begin
@@ -2062,7 +2062,7 @@ begin
   
  {Create RARP Request}
  RARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
- RARP.ProtocolType:=WordNtoBE(IP_TYPE);
+ RARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
  RARP.HardwareLength:=SizeOf(THardwareAddress);
  RARP.ProtocolLength:=SizeOf(TInAddr);
  RARP.Opcode:=WordNtoBE(RARP_REQUEST);
@@ -2115,7 +2115,7 @@ begin
   
  {Create RARP Reply}
  RARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
- RARP.ProtocolType:=WordNtoBE(IP_TYPE);
+ RARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
  RARP.HardwareLength:=SizeOf(THardwareAddress);
  RARP.ProtocolLength:=SizeOf(TInAddr);
  RARP.Opcode:=WordNtoBE(RARP_REPLY);
@@ -2521,7 +2521,7 @@ begin
   if Adapter = nil then
    begin
     {Add RARP Type}
-    Handle:=AAdapter.AddTransport(RARP_TYPE,FRAME_TYPE_ETHERNET_II,RARP_TRANSPORT_NAME,PacketHandler);
+    Handle:=AAdapter.AddTransport(PACKET_TYPE_RARP,FRAME_TYPE_ETHERNET_II,RARP_TRANSPORT_NAME,PacketHandler);
     if Handle <> INVALID_HANDLE_VALUE then
      begin
       {Create Adapter}
@@ -2529,7 +2529,7 @@ begin
       Adapter.UseCount:=1;
       Adapter.Name:=AAdapter.Name;
       Adapter.Handle:=Handle;
-      Adapter.PacketType:=RARP_TYPE;
+      Adapter.PacketType:=PACKET_TYPE_RARP;
       Adapter.Adapter:=AAdapter;
       Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
       Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
@@ -2990,7 +2990,7 @@ begin
  FLength:=SizeOf(TInAddr);
  
  FAddress.S_addr:=INADDR_ANY;
- FProtocolType:=IP_TYPE;
+ FProtocolType:=PACKET_TYPE_IP;
  FillChar(FHardware,SizeOf(THardwareAddress),0);
 end;
  
@@ -3077,13 +3077,13 @@ begin
  
  {Check Hardware Type}
  case WordBEtoN(PARPHeader(ABuffer).HardwareType) of
-  ETHER_TYPE,TOKEN_TYPE:begin
+  MEDIA_TYPE_ETHERNET,MEDIA_TYPE_TOKENRING:begin
     {Check Hardware Length}
     if PARPHeader(ABuffer).HardwareLength <> SizeOf(THardwareAddress) then Exit;
     
     {Check Protocol Type}
     case WordBEtoN(PARPHeader(ABuffer).ProtocolType) of
-     IP_TYPE:begin
+     PACKET_TYPE_IP:begin
        {Check Protocol Length}
        if PARPHeader(ABuffer).ProtocolLength <> SizeOf(TInAddr) then Exit;
        
@@ -3110,13 +3110,13 @@ begin
  
  {Check Hardware Type}
  case WordBEtoN(PRARPHeader(ABuffer).HardwareType) of
-  ETHER_TYPE,TOKEN_TYPE:begin
+  MEDIA_TYPE_ETHERNET,MEDIA_TYPE_TOKENRING:begin
     {Check Hardware Length}
     if PRARPHeader(ABuffer).HardwareLength <> SizeOf(THardwareAddress) then Exit;
     
     {Check Protocol Type}
     case WordBEtoN(PRARPHeader(ABuffer).ProtocolType) of
-     IP_TYPE:begin
+     PACKET_TYPE_IP:begin
        {Check Protocol Length}
        if PRARPHeader(ABuffer).ProtocolLength <> SizeOf(TInAddr) then Exit;
        

@@ -8,13 +8,15 @@ Arch
 
  ARMv6 (ARM1176)
  ARMv7 (Cortex A5/A7/A8/A9/A15/A17)
-
+ ARMv8 (Cortex A53/A57/A72)
+ 
 Boards
 ======
 
  Raspberry Pi - Model A/B/A+/B+
  Raspberry Pi - Model Zero
  Raspberry Pi 2 - Model B
+ Raspberry Pi 3 - Model B
  BeagleBone Black
  Banana Pi
  Banana Pro
@@ -110,7 +112,8 @@ const
 const
  {Definitions of ARM Machine Types}
  ARM_MACHINE_BCM2708 = $00000C42;
- ARM_MACHINE_BCM2709 = $00000C42; {00000C43} {BCM2709 uses the same Machine Type as BCM2708}
+ ARM_MACHINE_BCM2709 = $00000C42; {BCM2709 uses the same Machine Type as BCM2708}
+ ARM_MACHINE_BCM2710 = $00000C42; {BCM2710 uses the same Machine Type as BCM2708}
  
 {==============================================================================}
 type

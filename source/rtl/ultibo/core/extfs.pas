@@ -411,7 +411,10 @@ begin
     if ADevice = nil then Exit;
     
     {Check Device}
-    if ADevice.MediaType <> mtFIXED then Exit; //To Do //Critical //mtREMOVABLE
+    if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
+    
+    {Check Partition and Volume}
+    if (FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil) and (FDriver.GetVolumeByDevice(ADevice,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
     
     {Check Parent}
     if AParent <> nil then

@@ -13,7 +13,8 @@ Boards
 
  Raspberry Pi - Model A/B/A+/B+
  Raspberry Pi 2 - Model B
-
+ Raspberry Pi 3 - Model B
+ 
 Licence
 =======
 
@@ -77,6 +78,13 @@ const
  SMSC95XX_DRIVER_NAME = 'SMSC LAN95XX USB Ethernet Adapter Driver'; {Name of SMSC95XX driver}
 
  SMSC95XX_DEVICE_ID_COUNT = 5; {Number of supported Device IDs}
+ 
+ SMSC95XX_DEVICE_ID:array[0..SMSC95XX_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
+  (idVendor:$0424;idProduct:$ec00),  {LAN9512/LAN9514 Ethernet}
+  (idVendor:$0424;idProduct:$9500),  {LAN9500 Ethernet}
+  (idVendor:$0424;idProduct:$9730),  {LAN9730 Ethernet (HSIC)}
+  (idVendor:$0424;idProduct:$9900),  {SMSC9500 USB Ethernet Device (SAL10)}
+  (idVendor:$0424;idProduct:$9e00)); {LAN9500A Ethernet}
  
  SMSC95XX_TX_OVERHEAD = 8;
  SMSC95XX_RX_OVERHEAD = 4;
@@ -466,25 +474,10 @@ type
   PendingCount:LongWord;                                                  {Number of USB requests pending for this network}
   WaiterThread:TThreadId;                                                 {Thread waiting for pending requests to complete (for network close)}
  end; 
-
- {SMSC95XX Device IDs} 
- PSMSC95XXDeviceId = ^TSMSC95XXDeviceId;
- TSMSC95XXDeviceId = record
-  idVendor:Word;
-  idProduct:Word;
- end;
  
 {==============================================================================}
 {var}
  {SMSC95XX specific variables}
-
-const 
- SMSC95XXDeviceId:array[0..SMSC95XX_DEVICE_ID_COUNT - 1] of TSMSC95XXDeviceId = (
-  (idVendor:$0424;idProduct:$ec00),  {LAN9512/LAN9514 Ethernet}
-  (idVendor:$0424;idProduct:$9500),  {LAN9500 Ethernet}
-  (idVendor:$0424;idProduct:$9730),  {LAN9730 Ethernet (HSIC)}
-  (idVendor:$0424;idProduct:$9900),  {SMSC9500 USB Ethernet Device (SAL10)}
-  (idVendor:$0424;idProduct:$9e00)); {LAN9500A Ethernet}
  
 {==============================================================================}
 {Initialization Functions}
@@ -494,10 +487,11 @@ procedure SMSC95XXInit;
 {SMSC95XX Network Functions}
 function SMSC95XXDeviceOpen(Network:PNetworkDevice):LongWord;
 function SMSC95XXDeviceClose(Network:PNetworkDevice):LongWord;
-//Critical //DeviceAllocate/DeviceRelease
 function SMSC95XXDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function SMSC95XXDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+
+//To Do //BufferAllocate/BufferRelease/BufferReceive/BufferTransmit
 
 {==============================================================================}
 {SMSC95XX USB Functions}
@@ -1729,7 +1723,7 @@ begin
  {Check Device IDs}
  for Count:=0 to SMSC95XX_DEVICE_ID_COUNT - 1 do
   begin
-   if (SMSC95XXDeviceId[Count].idVendor = Device.Descriptor.idVendor) and (SMSC95XXDeviceId[Count].idProduct = Device.Descriptor.idProduct) then
+   if (SMSC95XX_DEVICE_ID[Count].idVendor = Device.Descriptor.idVendor) and (SMSC95XX_DEVICE_ID[Count].idProduct = Device.Descriptor.idProduct) then
     begin
      Result:=USB_STATUS_SUCCESS;
      Exit;
@@ -1774,7 +1768,7 @@ begin
  if Device = nil then Exit;
  
  {Send Write Register Request}
- Result:=USBControlRequest(Device,nil,SMSC95XX_VENDOR_REQUEST_WRITE_REGISTER,USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_TYPE_VENDOR or  USB_BMREQUESTTYPE_RECIPIENT_DEVICE,0,Index,@Data,SizeOf(LongWord));
+ Result:=USBControlRequest(Device,nil,SMSC95XX_VENDOR_REQUEST_WRITE_REGISTER,USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_TYPE_VENDOR or USB_BMREQUESTTYPE_RECIPIENT_DEVICE,0,Index,@Data,SizeOf(LongWord));
 end;
 
 {==============================================================================}

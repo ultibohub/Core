@@ -1037,7 +1037,7 @@ begin
  {}
  inherited Create(AManager,AName);
  FFamily:=AF_INET6;
- FPacketType:=IP6_TYPE;
+ FPacketType:=PACKET_TYPE_IP6;
 
  FNextIP6Id:=1;
  FNextIP6Lock:=MutexCreate;
@@ -1129,7 +1129,7 @@ begin
   
   {Check Packet Type}
   case Adapter.PacketType of
-   IP6_TYPE:begin
+   PACKET_TYPE_IP6:begin
      {Check IP6 Packet}
      if CheckIP6(APacket) then
       begin
@@ -1350,14 +1350,14 @@ begin
   if Adapter = nil then
    begin
     {Add IP6 Type}
-    Handle:=AAdapter.AddTransport(IP6_TYPE,FRAME_TYPE_ETHERNET_II,IP6_TRANSPORT_NAME,PacketHandler);
+    Handle:=AAdapter.AddTransport(PACKET_TYPE_IP6,FRAME_TYPE_ETHERNET_II,IP6_TRANSPORT_NAME,PacketHandler);
     if Handle <> INVALID_HANDLE_VALUE then
      begin
       {Create Adapter}
       Adapter:=TIP6TransportAdapter.Create;
       Adapter.Name:=AAdapter.Name;
       Adapter.Handle:=Handle;
-      Adapter.PacketType:=IP6_TYPE;
+      Adapter.PacketType:=PACKET_TYPE_IP6;
       Adapter.Adapter:=AAdapter;
       Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
       Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
@@ -2210,7 +2210,7 @@ begin
   Result:=True;
   
   {Check Media}
-  if AAdapter.MediaType <> ETHER_TYPE then Exit;
+  if AAdapter.MediaType <> MEDIA_TYPE_ETHERNET then Exit;
   
   {Check Type}
   if AAdapter.AdapterType = ADAPTER_TYPE_UNKNOWN then Exit;
@@ -2227,7 +2227,11 @@ begin
        {Add Adapter}
        Result:=AddAdapter(AAdapter,CONFIG_TYPE_LOOPBACK,nil,nil,nil,nil);
       end;
-     ADAPTER_TYPE_DEVICE:begin
+     ADAPTER_TYPE_WIRED:begin
+       {Add Adapter}
+       Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
+      end;     
+     ADAPTER_TYPE_WIRELESS:begin
        {Add Adapter}
        Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
       end;     

@@ -351,6 +351,7 @@ type
  
 type
  {Prototypes for CPU Handlers}
+ TCPUGetArch = function:LongWord;
  TCPUGetType = function:LongWord;
  TCPUGetBoot = function:LongWord;
  TCPUGetMask = function:LongWord;
@@ -535,6 +536,13 @@ type
  TGPIOOutputSet = procedure(Reg,Value:LongWord);      //To Do //Change from Reg,Value to Pin //Change to function
  TGPIOOutputClear = procedure(Reg,Value:LongWord);    //To Do //Change from Reg,Value to Pin //Change to function
  TGPIOFunctionSelect = procedure(Reg,Value:LongWord); //To Do //Change from Reg,Value to Pin,Mode //Change to function
+
+type
+ {Prototypes for Virtual GPIO Handlers}
+ TVirtualGPIOInputGet = function(Pin:LongWord):LongWord;
+ TVirtualGPIOOutputSet = function(Pin:LongWord):LongWord;
+ TVirtualGPIOOutputClear = function(Pin:LongWord):LongWord; 
+ TVirtualGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
  
 //type
  {Prototypes for PWM Handlers}
@@ -892,6 +900,7 @@ var
  
 var
  {CPU Handlers}
+ CPUGetArchHandler:TCPUGetArch;
  CPUGetTypeHandler:TCPUGetType;
  CPUGetBootHandler:TCPUGetBoot;
  CPUGetMaskHandler:TCPUGetMask;
@@ -1075,6 +1084,13 @@ var
  GPIOOutputSetHandler:TGPIOOutputSet;
  GPIOOutputClearHandler:TGPIOOutputClear;
  GPIOFunctionSelectHandler:TGPIOFunctionSelect;
+ 
+var
+ {Virtual GPIO Handlers} 
+ VirtualGPIOInputGetHandler:TVirtualGPIOInputGet;
+ VirtualGPIOOutputSetHandler:TVirtualGPIOOutputSet;
+ VirtualGPIOOutputClearHandler:TVirtualGPIOOutputClear;
+ VirtualGPIOFunctionSelectHandler:TVirtualGPIOFunctionSelect;
  
 //var
  {PWM Handlers}
@@ -1343,6 +1359,7 @@ procedure SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); inline;
 
 {==============================================================================}
 {CPU Functions}
+function CPUGetArch:LongWord; inline;
 function CPUGetType:LongWord; inline;
 function CPUGetBoot:LongWord; inline;
 function CPUGetMask:LongWord; inline;
@@ -1549,6 +1566,13 @@ function GPIOPullSelect(Pin,Mode:LongWord):LongWord; inline;
 procedure GPIOOutputSet(Reg,Value:LongWord); inline;       //To Do //Change from Reg,Value to Pin //Change to function
 procedure GPIOOutputClear(Reg,Value:LongWord); inline;     //To Do //Change from Reg,Value to Pin //Change to function
 procedure GPIOFunctionSelect(Reg,Value:LongWord); inline;  //To Do //Change from Reg,Value to Pin,Mode //Change to function
+
+{==============================================================================}
+{Virtual GPIO Functions}
+function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
+function VirtualGPIOOutputSet(Pin:LongWord):LongWord; inline;
+function VirtualGPIOOutputClear(Pin:LongWord):LongWord; inline;
+function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 
 {==============================================================================}
 {PWM Functions}
@@ -2814,6 +2838,22 @@ end;
 {==============================================================================}
 {==============================================================================}
 {CPU Functions}
+function CPUGetArch:LongWord; inline;
+{Get the CPU architecture for this board}
+begin
+ {}
+ if Assigned(CPUGetArchHandler) then
+  begin
+   Result:=CPUGetArchHandler;
+  end
+ else
+  begin
+   Result:=CPU_ARCH;
+  end;
+end;
+
+{==============================================================================}
+
 function CPUGetType:LongWord; inline;
 {Get the CPU type for this board}
 begin
@@ -4759,6 +4799,67 @@ begin
    {Write Value}
    PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
   end; 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Virtual GPIO Functions}
+function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
+begin
+ {}
+ if Assigned(VirtualGPIOInputGetHandler) then
+  begin
+   Result:=VirtualGPIOInputGetHandler(Pin);
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function VirtualGPIOOutputSet(Pin:LongWord):LongWord; inline;
+begin
+ {}
+ if Assigned(VirtualGPIOOutputSetHandler) then
+  begin
+   Result:=VirtualGPIOOutputSetHandler(Pin);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function VirtualGPIOOutputClear(Pin:LongWord):LongWord; inline; 
+begin
+ {}
+ if Assigned(VirtualGPIOOutputClearHandler) then
+  begin
+   Result:=VirtualGPIOOutputClearHandler(Pin);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline; 
+begin
+ {}
+ if Assigned(VirtualGPIOFunctionSelectHandler) then
+  begin
+   Result:=VirtualGPIOFunctionSelectHandler(Pin,Mode);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
 end;
 
 {==============================================================================}

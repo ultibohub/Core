@@ -73,8 +73,6 @@ interface
 uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform,PlatformARM,PlatformARMv6,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
                    
 //To Do //Look for:
-
-//TestingRpi1
  
 //Remove
 
@@ -453,7 +451,8 @@ begin
  {Setup BOARD_TYPE}
  {Done by RPiBoardInit}
  
- {Setup CPU_TYPE and COUNT}
+ {Setup CPU_ARCH, TYPE and COUNT}
+ CPU_ARCH:=CPU_ARCH_ARM32;
  CPU_TYPE:=CPU_TYPE_ARMV6;
  CPU_COUNT:=RPI_CPU_COUNT;
  CPU_BOOT:=RPI_CPU_BOOT;
@@ -1192,9 +1191,8 @@ begin
  
  {Set the 4KB zero page to ARMV6_L2D_SMALL_CACHE_NORMAL_NONCACHED (Non Shared)(Non Executable)(No Access)}
  Address:=$00000000;
- //--ARMv6SetPageTableSmall(Address,Address,ARMV6_L2D_SMALL_CACHE_NORMAL_NONCACHED or ARMV6_L2D_FLAG_SMALL_XN or ARMV6_L2D_ACCESS_NONE); //To Do  //Critical
- //ARMv6SetPageTableSmall(Address,Address,ARMV6_L2D_SMALL_CACHE_NORMAL_WRITE_THROUGH or ARMV6_L2D_ACCESS_READONLY); //To Do  //Critical //Temporary until change to VBAR
- ARMv6SetPageTableSmall(Address,Address,ARMV6_L2D_SMALL_CACHE_NORMAL_NONCACHED or ARMV6_L2D_FLAG_SMALL_XN or ARMV6_L2D_ACCESS_READONLY); //To Do  //TestingRPi1 //This works (Read Only not No Access)
+ //--ARMv6SetPageTableSmall(Address,Address,ARMV6_L2D_SMALL_CACHE_NORMAL_NONCACHED or ARMV6_L2D_FLAG_SMALL_XN or ARMV6_L2D_ACCESS_NONE); //To Do
+ ARMv6SetPageTableSmall(Address,Address,ARMV6_L2D_SMALL_CACHE_NORMAL_NONCACHED or ARMV6_L2D_FLAG_SMALL_XN or ARMV6_L2D_ACCESS_READONLY); //To Do  //Need to complete SetPageTableEntry so it can be called after copying commandline and environment from ATAGs
  
  {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV6_L2D_SMALL_CACHE_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
  Address:=(VECTOR_TABLE_BASE and ARMV6_L2D_SMALL_BASE_MASK);
@@ -6693,7 +6691,6 @@ end;
 procedure RPiWait; assembler; nostackframe; 
 asm
  //Wait for a period of time in a loop
- //mov r0,#0x3F0000 //To Do //TestingRPi1
  mov r0,#0x8F00000
 .LWait:
  sub r0,#1
@@ -6706,7 +6703,6 @@ end;
 procedure RPiLongWait; assembler; nostackframe; 
 asm
  //Wait for a long period of time in a loop
- //mov r0,#0x3F00000 //To Do //TestingRPi1
  ldr r0,=0x2FF00000
 .LWait:
  sub r0,#1
@@ -6810,7 +6806,7 @@ function RPiConvertPowerIdRequest(PowerId:LongWord):LongWord;
 {Convert Ultibo Power Id to BCM2835 Power Id}
 begin
  {}
- Result:=BCM2835_MBOX_POWER_DEVID_SDHCI;
+ Result:=BCM2835_MBOX_POWER_DEVID_UNKNOWN;
  
  case PowerId of 
   POWER_ID_MMC0:Result:=BCM2835_MBOX_POWER_DEVID_SDHCI;
@@ -6859,7 +6855,7 @@ function RPiConvertClockIdRequest(ClockId:LongWord):LongWord;
 {Convert Ultibo Clock Id to BCM2835 Clock Id}
 begin
  {}
- Result:=BCM2835_MBOX_CLOCK_ID_RESERVED;
+ Result:=BCM2835_MBOX_CLOCK_ID_UNKNOWN;
  
  case ClockId of 
   CLOCK_ID_MMC0:Result:=BCM2835_MBOX_CLOCK_ID_EMMC;

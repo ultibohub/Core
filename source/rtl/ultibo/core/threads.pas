@@ -23,12 +23,10 @@ Credits
 
  Information for this unit was obtained from:
 
- ??????
  
 References
 ==========
 
- ??????
 
 Threads
 =======
@@ -1917,7 +1915,7 @@ const
 {==============================================================================}
 
 implementation
-
+ 
 {==============================================================================}
 {==============================================================================}
 var
@@ -2077,7 +2075,7 @@ begin
  {}
  {Check Initialized}
  if ThreadsInitialized then Exit;
-
+ 
  {Initialize Logging}
  THREAD_LOG_ENABLED:=(THREAD_DEFAULT_LOG_LEVEL <> THREAD_LOG_LEVEL_NONE);
  

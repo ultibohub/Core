@@ -142,8 +142,9 @@ const
  DEVICE_BUS_SERIAL           = 13;
  DEVICE_BUS_SPI              = 14; {Serial Peripheral Interface device}
  DEVICE_BUS_MMIO             = 15; {Memory Mapped IO device (No Bus)}
+ DEVICE_BUS_PCIE             = 16;
  
- DEVICE_BUS_MAX              = 15;
+ DEVICE_BUS_MAX              = 16;
  
  {Device Bus Names}
  DEVICE_BUS_NAMES:array[DEVICE_BUS_NONE..DEVICE_BUS_MAX] of String = (
@@ -162,7 +163,8 @@ const
   'DEVICE_BUS_SATA',
   'DEVICE_BUS_SERIAL',
   'DEVICE_BUS_SPI',
-  'DEVICE_BUS_MMIO');
+  'DEVICE_BUS_MMIO',
+  'DEVICE_BUS_PCIE');
  
  {Device States}
  DEVICE_STATE_UNREGISTERED   = 0;

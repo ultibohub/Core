@@ -1648,6 +1648,7 @@ begin
   if FDriver = nil then Exit;
   if AVolume = nil then Exit;
   if AVolume.Device = nil then Exit;
+  if AVolume.Device.Controller = nil then Exit;
  
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSRecognizer.RecognizeVolume - Volume = ' + AVolume.Name);
@@ -1668,7 +1669,7 @@ begin
      if not AllowDefault then
       begin
        {Check Media}
-       if not AVolume.Device.MediaReady then Exit;
+       if not AVolume.Device.Controller.MediaReady(AVolume.Device) then Exit; {was Volume.Device.MediaReady}
        
        {Init Device}
        if not AVolume.Device.DeviceInit then Exit;

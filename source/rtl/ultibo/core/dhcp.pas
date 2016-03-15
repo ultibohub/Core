@@ -1004,7 +1004,7 @@ begin
  
  {Set the BOOTP Fields}
  AHeader.Opcode:=BOOTP_REQUEST;
- AHeader.HardwareType:=ETHER_TYPE; 
+ AHeader.HardwareType:=MEDIA_TYPE_ETHERNET; 
  AHeader.HardwareLength:=SizeOf(THardwareAddress);
  AHeader.Hops:=0;
  AHeader.Identifier:=LongWordNtoBE(AIdentifier);
@@ -1052,7 +1052,7 @@ begin
  
  {Check the BOOTP Fields}
  if AHeader.Opcode <> BOOTP_REPLY then Exit;
- if AHeader.HardwareType <> ETHER_TYPE then Exit;
+ if AHeader.HardwareType <> MEDIA_TYPE_ETHERNET then Exit;
  if AHeader.HardwareLength <> SizeOf(THardwareAddress) then Exit;
  if LongWordBEtoN(AHeader.Identifier) <> AIdentifier then Exit;
  if not AAdapter.Adapter.CompareAddress(AHeader.ClientHardware,AAdapter.Hardware) then Exit;
@@ -2394,7 +2394,7 @@ begin
   if Manager = nil then Exit;
  
   {Locate ARP Transport}
-  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,ARP_TYPE,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
+  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FARP = nil then Exit;
  
   {Locate UDP Protocol}
@@ -2402,7 +2402,7 @@ begin
   if FUDP = nil then Exit;
  
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -2413,7 +2413,7 @@ begin
    end; 
  
   {Register with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Add Transport}
@@ -2450,7 +2450,7 @@ begin
   if Manager = nil then Exit;
  
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -2461,7 +2461,7 @@ begin
    end; 
  
   {Deregister with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -2718,7 +2718,7 @@ begin
  
  {Set the BOOTP Fields}
  AHeader.Opcode:=BOOTP_REQUEST;
- AHeader.HardwareType:=ETHER_TYPE;
+ AHeader.HardwareType:=MEDIA_TYPE_ETHERNET;
  AHeader.HardwareLength:=SizeOf(THardwareAddress);
  AHeader.Hops:=0;
  AHeader.Identifier:=LongWordNtoBE(AIdentifier);
@@ -2762,7 +2762,7 @@ begin
  
  {Check the BOOTP Fields}
  if AHeader.Opcode <> BOOTP_REPLY then Exit;
- if AHeader.HardwareType <> ETHER_TYPE then Exit;
+ if AHeader.HardwareType <> MEDIA_TYPE_ETHERNET then Exit;
  if AHeader.HardwareLength <> SizeOf(THardwareAddress) then Exit;
  if LongWordBEtoN(AHeader.Identifier) <> AIdentifier then Exit;
  if not AAdapter.Adapter.CompareAddress(AHeader.ClientHardware,AAdapter.Hardware) then Exit;
@@ -3167,7 +3167,7 @@ begin
   if Manager = nil then Exit;
 
   {Locate ARP Transport}
-  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,ARP_TYPE,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
+  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FARP = nil then Exit;
 
   {Locate UDP Protocol}
@@ -3175,7 +3175,7 @@ begin
   if FUDP = nil then Exit;
   
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Add Transport}
@@ -3211,7 +3211,7 @@ begin
   if Manager = nil then Exit;
   
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -3549,11 +3549,11 @@ begin
   if Manager = nil then Exit;
   
   {Locate ARP Transport}
-  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,ARP_TYPE,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
+  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FARP = nil then Exit;
   
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Add Transport}
@@ -3590,7 +3590,7 @@ begin
   if Manager = nil then Exit;
   
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -3876,11 +3876,11 @@ begin
   if Manager = nil then Exit;
   
   {Locate RARP Transport}
-  FRARP:=TRARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,RARP_TYPE,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
+  FRARP:=TRARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_RARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FRARP = nil then Exit;
   
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -3917,7 +3917,7 @@ begin
   if Manager = nil then Exit;
   
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -4263,11 +4263,11 @@ begin
   if Manager = nil then Exit;
   
   {Locate ARP Transport}
-  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,ARP_TYPE,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
+  FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FARP = nil then Exit;
   
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -4278,7 +4278,7 @@ begin
    end; 
   
   {Register with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -4315,7 +4315,7 @@ begin
   if Manager = nil then Exit;
   
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -4326,7 +4326,7 @@ begin
    end; 
   
   {Deregister with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -4652,7 +4652,7 @@ begin
   if Manager = nil then Exit;
   
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -4663,7 +4663,7 @@ begin
    end; 
   
   {Register with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -4700,7 +4700,7 @@ begin
   if Manager = nil then Exit;
   
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Remove Transport}
@@ -4711,7 +4711,7 @@ begin
    end; 
   
   {Deregister with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,IP6_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}

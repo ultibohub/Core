@@ -733,6 +733,9 @@ const
  USB_LANGID_VENDOR3_HID           = (USB_LANG_HID or (USB_SUBLANG_HID_VENDOR_DEFINED_3 shl 10)); 
  USB_LANGID_VENDOR4_HID           = (USB_LANG_HID or (USB_SUBLANG_HID_VENDOR_DEFINED_4 shl 10)); 
  
+ {USB Vendor IDs} {Not a complete list}
+ USB_VENDORID_REALTEK = $0BDA;  {Realtek}
+ 
  {USB tree output}
  USB_TREE_SPACES_PER_LEVEL = 6;
  USB_TREE_LINES_PER_PORT   = 2;
@@ -843,6 +846,11 @@ const
 {==============================================================================}
 type
  {USB Device, Driver and Host specific types}
+ PUSBDeviceId = ^TUSBDeviceId;
+ TUSBDeviceId = record
+  idVendor:Word;
+  idProduct:Word;
+ end;
 
  {USB Control Request SETUP data (See Table 9-2 in Section 9.3 of the USB 2.0 specification)}
  PUSBControlSetupData = ^TUSBControlSetupData;
@@ -1323,6 +1331,7 @@ function USBRequestRelease(Request:PUSBRequest):LongWord;
 function USBRequestInitialize(Request:PUSBRequest):LongWord; //Remove
 
 function USBRequestSubmit(Request:PUSBRequest):LongWord;
+function USBRequestCancel(Request:PUSBRequest):LongWord;
 procedure USBRequestComplete(Request:PUSBRequest);
 
 //Control Methods
@@ -5366,6 +5375,26 @@ begin
     MutexUnlock(Request.Device.Lock);
    end;   
   end; 
+end;
+
+{==============================================================================}
+
+function USBRequestCancel(Request:PUSBRequest):LongWord;
+{Cancel a USB request previously submitted to a host controller}
+{Request: The request to be cancelled}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Request}
+ if (Request = nil) or (Request.Device = nil) or (Request.Device.Host = nil) or not(Assigned(Request.Callback)) then
+  begin
+   if USB_LOG_ENABLED then USBLogError(nil,'Bad USB request, device, host or completion callback function not specified');
+   Exit;
+  end;
+ 
+ //To Do
 end;
 
 {==============================================================================}

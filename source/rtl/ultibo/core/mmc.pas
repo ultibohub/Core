@@ -154,6 +154,8 @@ const
  {MMC specific constants}
  MMC_NAME_PREFIX = 'MMC';    {Name prefix for MMC Devices}
  
+ MMC_STATUS_TIMER_INTERVAL = 1000;
+ 
  MMC_DEFAULT_BLOCKSIZE = 512;
  MMC_DEFAULT_BLOCKSHIFT = 9;
  
@@ -196,9 +198,6 @@ const
  MMC_FLAG_BLOCK_ADDRESSED = $00000040;  {Block Addressed (SDHC/SDXC and others)}
  MMC_FLAG_DDR_MODE        = $00000080;  //To Do //Should this go in MMC.Capabilities ? //Maybe not
  //To Do //More
- 
- {MMC Device Control Codes}
- //To Do //Stats/Info/Reset/Disable/Eject etc
 
  {MMC/SD Status Codes} 
  MMC_STATUS_SUCCESS                   = 0;  {Function successful}
@@ -1226,7 +1225,7 @@ const
  SDHCI_CARD_PRESENT	         = $00010000;
  SDHCI_CARD_STATE_STABLE	 = $00020000;
  SDHCI_CARD_DETECT_PIN_LEVEL = $00040000;
- SDHCI_WRITE_PROTECT	     = $00080000;
+ SDHCI_WRITE_PROTECT	     = $00080000; {Set if Write Enabled / Clear if Write Protected}
  
  {SDHCI Host Control Values}
  SDHCI_CTRL_LED		    = $01;
@@ -1592,6 +1591,7 @@ type
  
  {MMC Device Methods}
  TMMCDeviceInitialize = function(MMC:PMMCDevice):LongWord;
+ TMMCDeviceDeinitialize = function(MMC:PMMCDevice):LongWord;
  TMMCDeviceGetCardDetect = function(MMC:PMMCDevice):LongWord;
  TMMCDeviceGetWriteProtect = function(MMC:PMMCDevice):LongWord;
  TMMCDeviceSendCommand = function(MMC:PMMCDevice;Command:PMMCCommand):LongWord; 
@@ -1604,6 +1604,7 @@ type
   MMCId:LongWord;                                  {Unique Id of this MMC in the MMC table}
   MMCState:LongWord;                               {MMC state (eg MMC_STATE_INSERTED)}
   DeviceInitialize:TMMCDeviceInitialize;           {A Device specific DeviceInitialize method implementing a standard MMC device interface (Or nil if the default method is suitable)}
+  DeviceDeinitialize:TMMCDeviceDeinitialize;       {A Device specific DeviceDeinitialize method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceGetCardDetect:TMMCDeviceGetCardDetect;     {A Device specific DeviceGetCardDetect method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceGetWriteProtect:TMMCDeviceGetWriteProtect; {A Device specific DeviceGetWriteProtect method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceSendCommand:TMMCDeviceSendCommand;         {A Device specific DeviceSendCommand method implementing a standard MMC device interface (Or nil if the default method is suitable)}
@@ -1636,21 +1637,19 @@ type
   SDSwitchData:TSDSwitchData;
   SDConfigurationData:TSDConfigurationData;
   {Storage Properties}
-  Storage:PStorageDevice;
+  Storage:PStorageDevice;                          {The Storage entry for this MMC (Where Applicable)}
   {Internal Properties}                                                                        
   Prev:PMMCDevice;                                 {Previous entry in MMC table}
   Next:PMMCDevice;                                 {Next entry in MMC table}
  end;
 
 {==============================================================================}
-//type
+{type}
  {SD specific types}
- //To Do
  
 {==============================================================================}
-//type
+{type}
  {SDIO specific types}
- //To Do
  
 {==============================================================================}
 type
@@ -1692,6 +1691,7 @@ type
   HostSetClockDivider:TSDHCIHostSetClockDivider;
   HostSetControlRegister:TSDHCIHostSetControlRegister;
   DeviceInitialize:TMMCDeviceInitialize;           {A Device specific DeviceInitialize method implementing a standard MMC device interface (Or nil if the default method is suitable)}
+  DeviceDeinitialize:TMMCDeviceDeinitialize;       {A Device specific DeviceDeinitialize method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceGetCardDetect:TMMCDeviceGetCardDetect;     {A Device specific DeviceGetCardDetect method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceGetWriteProtect:TMMCDeviceGetWriteProtect; {A Device specific DeviceGetWriteProtect method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceSendCommand:TMMCDeviceSendCommand;         {A Device specific DeviceSendCommand method implementing a standard MMC device interface (Or nil if the default method is suitable)}
@@ -1816,6 +1816,8 @@ function MMCDeviceInsert(MMC:PMMCDevice):LongWord;
 function MMCDeviceRemove(MMC:PMMCDevice):LongWord;
 
 function MMCDeviceInitialize(MMC:PMMCDevice):LongWord;
+function MMCDeviceDeinitialize(MMC:PMMCDevice):LongWord;
+
 function MMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 function MMCDeviceGetWriteProtect(MMC:PMMCDevice):LongWord;
 function MMCDeviceSendCommand(MMC:PMMCDevice;Command:PMMCCommand):LongWord; 
@@ -1955,7 +1957,6 @@ function SDGetSwitchValue(MMC:PMMCDevice;Value:LongWord):LongWord;
 
 {==============================================================================}
 {SDIO Helper Functions}
-//To Do
 
 {==============================================================================}
 {SDHCI Helper Functions}
@@ -2723,6 +2724,7 @@ begin
    if Timeout = 0 then
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Operation Condition Busy Status Timeout');
+     Result:=MMC_STATUS_TIMEOUT;
      Exit;
     end;
    MillisecondDelay(10); 
@@ -3425,6 +3427,20 @@ begin
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize');
    {$ENDIF}
   
+   {Get Card Detect}
+   Result:=MMCDeviceGetCardDetect(MMC);
+   if Result <> MMC_STATUS_SUCCESS then
+    begin
+     Exit;
+    end;
+   
+   {Check Card Detect}
+   if (MMC.Device.DeviceFlags and MMC_FLAG_CARD_PRESENT) = 0 then
+    begin
+     Result:=MMC_STATUS_NO_MEDIA;
+     Exit;
+    end; 
+   
    {Set Initial Power}
    Result:=SDHCIHostSetPower(SDHCI,FirstBitSet(SDHCI.Voltages) - 1);
    if Result <> MMC_STATUS_SUCCESS then
@@ -3483,6 +3499,7 @@ begin
      //To Do
 
      {Update Storage}
+     MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
      //To Do
      
      Result:=MMC_STATUS_SUCCESS;
@@ -3618,7 +3635,12 @@ begin
         end;
       end;
      
-     //To Do //Check Read only
+     {Check Write Protect}
+     Result:=MMCDeviceGetWriteProtect(MMC);
+     if Result <> MMC_STATUS_SUCCESS then
+      begin
+       Exit;
+      end;
   
      //To Do //Check for UHS-I and do UHS-I init
      
@@ -3652,8 +3674,12 @@ begin
       end;
     
      {Update Storage}
+     {Device}
+     MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
+     MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags and not(STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA);
+     if (MMC.Device.DeviceFlags and MMC_FLAG_WRITE_PROTECT) <> 0 then MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags or STORAGE_FLAG_READ_ONLY;
      {Storage}
-     MMC.Storage.StorageState:=STORAGE_STATE_INSERTED; 
+     {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
      {Driver}
      MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
      MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
@@ -3793,16 +3819,20 @@ begin
      
      //Setup Erase Size
      
-     //To Do //Continuing //See: mmc_init_card etc
+     //To Do //See: mmc_init_card etc
 
      //SetClock/SetBusWidth etc
      
      {Update Storage}
+     MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
      //To Do
      
      Result:=MMC_STATUS_SUCCESS;
      Exit;
     end;
+    
+   {Return Result}
+   Result:=MMC_STATUS_NO_MEDIA;
   end; 
   
  //See: U-Boot mmc_start_init / mmc_complete_init / mmc_init / mmc_startup in mmc.c
@@ -3817,6 +3847,91 @@ begin
  
  //     mmc_sdio_init_card in \linux-rpi-3.18.y\drivers\mmc\core\sdio.c
  //     mmc_attach_sdio in \linux-rpi-3.18.y\drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceDeinitialize(MMC:PMMCDevice):LongWord;
+var
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {Check Initialize}
+ if Assigned(MMC.DeviceDeinitialize) then
+  begin
+   Result:=MMC.DeviceDeinitialize(MMC);
+  end
+ else
+  begin
+   {Default Method}
+   {Get SDHCI}
+   SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+   if SDHCI = nil then Exit;
+ 
+   {$IFDEF MMC_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Deinitialize');
+   {$ENDIF}
+ 
+   {Update MMC}
+   {Device}
+   MMC.Device.DeviceBus:=DEVICE_BUS_MMC;
+   MMC.Device.DeviceType:=MMC_TYPE_MMC;
+   MMC.Device.DeviceFlags:=MMC_FLAG_NONE;
+   {MMC}
+   MMC.MMCState:=MMC_STATE_EJECTED;
+   {Driver}
+   MMC.Version:=0;
+   MMC.Clock:=0;
+   MMC.BusWidth:=0;
+   MMC.Voltages:=0;
+   MMC.Capabilities:=0;
+   {Register}
+   MMC.InterfaceCondition:=0;
+   MMC.OperationCondition:=0;
+   MMC.RelativeCardAddress:=0;
+   FillChar(MMC.CardSpecific,SizeOf(MMC.CardSpecific),0);
+   FillChar(MMC.CardIdentification,SizeOf(MMC.CardIdentification),0);
+   MMC.CardStatus:=0;
+   MMC.DriverStage:=0;
+   FillChar(MMC.SDStatus,SizeOf(MMC.SDStatus),0);
+   FillChar(MMC.SDSwitch,SizeOf(MMC.SDSwitch),0);
+   FillChar(MMC.SDConfiguration,SizeOf(MMC.SDConfiguration),0);
+   {Configuration}
+   FillChar(MMC.CardSpecificData,SizeOf(TMMCCardSpecificData),0);
+   FillChar(MMC.CardIdentificationData,SizeOf(TMMCCardIdentificationData),0);
+   FillChar(MMC.SDStatusData,SizeOf(TSDStatusData),0);
+   FillChar(MMC.SDSwitchData,SizeOf(TSDSwitchData),0);
+   FillChar(MMC.SDConfigurationData,SizeOf(TSDConfigurationData),0);
+   
+   {Check Storage}
+   if MMC.Storage <> nil then
+    begin
+     {Update Storage}
+     {Device}
+     MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
+     MMC.Storage.Device.DeviceType:=STORAGE_TYPE_REMOVABLE;
+     MMC.Storage.Device.DeviceFlags:=STORAGE_FLAG_REMOVABLE or STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA;
+     {Storage}
+     {MMC.Storage.StorageState:=STORAGE_STATE_EJECTED;} {Handled by caller during notification}
+     {Driver}
+     MMC.Storage.BlockSize:=0;
+     MMC.Storage.BlockShift:=0;
+     MMC.Storage.BlockCount:=0;
+     if MMC.Storage.Vendor <> nil then FreeMem(MMC.Storage.Vendor);
+     if MMC.Storage.Product <> nil then FreeMem(MMC.Storage.Product);
+     if MMC.Storage.Revision <> nil then FreeMem(MMC.Storage.Revision);
+     MMC.Storage.Vendor:=nil;
+     MMC.Storage.Product:=nil;
+     MMC.Storage.Revision:=nil;
+    end; 
+   
+   Result:=MMC_STATUS_SUCCESS;
+  end; 
 end;
 
 {==============================================================================}
@@ -3843,24 +3958,38 @@ begin
  else
   begin
    {Default Method}
-   Result:=0;
-   
    {Get SDHCI}
    SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
    if SDHCI = nil then Exit;
    
    //To Do //Check MMC_CAP_NONREMOVABLE and SDHCI_QUIRK_BROKEN_CARD_DETECTION //See: sdhci_do_get_cd in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
 
-   {Get Card Present}
-   Result:=SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE) and SDHCI_CARD_PRESENT;
-   
    {$IFDEF MMC_DEBUG}
-   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Card Detect (Result=' + IntToHex(Result,8) + ')');
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Card Detect (SDHCI_PRESENT_STATE=' + IntToHex(SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE),8) + ')');
    {$ENDIF}
+   
+   {Get Card Present}
+   if (SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE) and SDHCI_CARD_PRESENT) <> 0 then
+    begin
+     MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
+     
+     {$IFDEF MMC_DEBUG}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Card Detect (Flags=MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end
+   else
+    begin
+     MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_CARD_PRESENT);
+     
+     {$IFDEF MMC_DEBUG}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Card Detect (Flags=not MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end;    
+   
+   Result:=MMC_STATUS_SUCCESS;
   end;  
  
  //See: mmc_getcd in mmc.c
- //     
 end;
 
 {==============================================================================}
@@ -3887,22 +4016,36 @@ begin
  else
   begin
    {Default Method}
-   Result:=0;
-   
    {Get SDHCI}
    SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
    if SDHCI = nil then Exit;
 
-   {Get Write Protect}
-   Result:=SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE) and SDHCI_WRITE_PROTECT;
-   
    {$IFDEF MMC_DEBUG}
-   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Write Protect (Result=' + IntToHex(Result,8) + ')');
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Write Protect (SDHCI_PRESENT_STATE=' + IntToHex(SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE),8) + ')');
    {$ENDIF}
+   
+   {Get Write Protect}
+   if (SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE) and SDHCI_WRITE_PROTECT) = 0 then
+    begin
+     MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_WRITE_PROTECT);
+     
+     {$IFDEF MMC_DEBUG}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Write Protect (Flags=MMC_FLAG_WRITE_PROTECT)');
+     {$ENDIF}
+    end
+   else
+    begin
+     MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_WRITE_PROTECT);
+     
+     {$IFDEF MMC_DEBUG}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Write Protectt (Flags=not MMC_FLAG_WRITE_PROTECT)');
+     {$ENDIF}
+    end;    
+   
+   Result:=MMC_STATUS_SUCCESS;
   end;  
  
  //See: mmc_getwp in mmc.c
- //
 end;
 
 {==============================================================================}
@@ -3942,269 +4085,244 @@ begin
    SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
    if SDHCI = nil then Exit;
    
-   {Setup Status}
-   Command.Status:=MMC_STATUS_NOT_PROCESSED;
-   try
-    {Wait Timeout (10ms)}
-    Timeout:=1000;
-    Mask:=SDHCI_CMD_INHIBIT;
-    if (Command.Data <> nil) or ((Command.ResponseType and MMC_RSP_BUSY) <> 0) then
-     begin
-      Mask:=Mask or SDHCI_DATA_INHIBIT;
-     end;
-
-    {We shouldn't wait for data inihibit for stop commands, even though they might use busy signaling}
-    if Command.Command = MMC_CMD_STOP_TRANSMISSION then
-     begin
-      Mask:=Mask and not(SDHCI_DATA_INHIBIT);
-     end;
-
-    {Wait for Command Inhibit and optionally Data Inhibit to be clear}
-    while (SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE) and Mask) <> 0 do
-     begin
-      if Timeout = 0 then
-       begin
-        if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Inhibit Timeout');
-        Command.Status:=MMC_STATUS_TIMEOUT;
-        Exit;
-       end;
-       
-      Dec(Timeout);
-      MicrosecondDelay(10);
-     end;
-   
-    {Check Response Type}
-    if ((Command.ResponseType and MMC_RSP_136) <> 0) and ((Command.ResponseType and MMC_RSP_BUSY) <> 0) then
-     begin
-      if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Invalid Response Type');
-      Command.Status:=MMC_STATUS_INVALID_PARAMETER;
-      Exit;
-     end;
-     
-    {Setup Command Flags}
-    if (Command.ResponseType and MMC_RSP_PRESENT) = 0 then
-     begin
-      Flags:=SDHCI_CMD_RESP_NONE;
-     end
-    else if (Command.ResponseType and MMC_RSP_136) <> 0 then
-     begin
-      Flags:=SDHCI_CMD_RESP_LONG;
-     end
-    else if (Command.ResponseType and MMC_RSP_BUSY) <> 0 then  
-     begin
-      Flags:=SDHCI_CMD_RESP_SHORT_BUSY;
-     end
-    else
-     begin
-      Flags:=SDHCI_CMD_RESP_SHORT;
-     end;    
-   
-    if (Command.ResponseType and MMC_RSP_CRC) <> 0 then  
-     begin
-      Flags:=Flags or SDHCI_CMD_CRC;
-     end;
-    if (Command.ResponseType and MMC_RSP_OPCODE) <> 0 then  
-     begin
-      Flags:=Flags or SDHCI_CMD_INDEX;
-     end;
-    {CMD19 is special in that the Data Present Select should be set}
-    if (Command.Data <> nil) or (Command.Command = MMC_CMD_SEND_TUNING_BLOCK) or (Command.Command = MMC_CMD_SEND_TUNING_BLOCK_HS200) then
-     begin
-      Flags:=Flags or SDHCI_CMD_DATA;
-     end;
-    
-    {Write Timeout Control}
-    if (Command.Data <> nil) or ((Command.ResponseType and MMC_RSP_BUSY) <> 0) then
-     begin
-      {$IFDEF MMC_DEBUG}
-      if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_TIMEOUT_CONTROL (Value=' + IntToHex(SDHCI_TIMEOUT_VALUE,8) + ')');
-      {$ENDIF}
-      SDHCIHostWriteByte(SDHCI,SDHCI_TIMEOUT_CONTROL,SDHCI_TIMEOUT_VALUE);
-     end;
-   
-    {Check Data}
-    if Command.Data = nil then
-     begin
-      {Setup Transfer Mode}
-      Mode:=SDHCIHostReadWord(SDHCI,SDHCI_TRANSFER_MODE);
-      
-      {Clear Auto CMD settings for non data CMDs}
-      Mode:=Mode and not(SDHCI_TRNS_AUTO_CMD12 or SDHCI_TRNS_AUTO_CMD23);
-      
-      {Clear Block Count, Multi, Read and DMA for non data CMDs}
-      Mode:=Mode and not(SDHCI_TRNS_BLK_CNT_EN or SDHCI_TRNS_MULTI or SDHCI_TRNS_READ or SDHCI_TRNS_DMA); 
-      
-      {Write Argument}
-      {$IFDEF MMC_DEBUG}
-      if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_ARGUMENT (Value=' + IntToHex(Command.Argument,8) + ')');
-      {$ENDIF}
-      SDHCIHostWriteLong(SDHCI,SDHCI_ARGUMENT,Command.Argument);
-      
-      {Write Transfer Mode}
-      {$IFDEF MMC_DEBUG}
-      if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_TRANSFER_MODE (Value=' + IntToHex(Mode,8) + ')');
-      {$ENDIF}
-      SDHCIHostWriteWord(SDHCI,SDHCI_TRANSFER_MODE,Mode);
-     end
-    else 
-     begin
-      {Setup Data}
-      Command.Data.BlockOffset:=0;
-      Command.Data.BlocksRemaining:=Command.Data.BlockCount;
-      Command.Data.BytesTransfered:=0;
-      
-      {Setup Transfer Mode}
-      Mode:=SDHCI_TRNS_BLK_CNT_EN;
-      if MMCIsMultiCommand(Command.Command) or (Command.Data.BlockCount > 1) then
-       begin
-        Mode:=Mode or SDHCI_TRNS_MULTI;
-        
-        Mode:=Mode or SDHCI_TRNS_AUTO_CMD12; //To Do //Testing (This works, need to sort out properly where it fits, plus SDHCI_TRNS_AUTO_CMD23)
-        
-        //To Do //SDHCI_TRNS_AUTO_CMD12 //SDHCI_TRNS_AUTO_CMD23 //SDHCI_ARGUMENT2 //See: sdhci_set_transfer_mode
-       end;
-      if (Command.Data.Flags and MMC_DATA_READ) <> 0 then
-       begin
-        Mode:=Mode or SDHCI_TRNS_READ;
-       end;
-      
-      {Setup DMA Address}
-      //mode |= SDHCI_TRNS_DMA;
-      //Address:=
-      //To Do
-            
-      {Setup Interrupts}
-      SDHCI.Interrupts:=SDHCI.Interrupts or (SDHCI_INT_DATA_AVAIL or SDHCI_INT_SPACE_AVAIL);
-      SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
-      SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts); 
-      //To Do //Different for DMA
-      
-      {Write DMA Address}
-      //To Do
-      //SDHCIHostWriteLong(SDHCI,SDHCI_DMA_ADDRESS,Address);
-     
-      {Write Block Size}
-      {$IFDEF MMC_DEBUG}
-      if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_BLOCK_SIZE (Value=' + IntToStr(Command.Data.BlockSize) + ')');
-      {$ENDIF}
-      SDHCIHostWriteWord(SDHCI,SDHCI_BLOCK_SIZE,SDHCIMakeBlockSize(SDHCI_DEFAULT_BOUNDARY_ARG,Command.Data.BlockSize));
-   
-      {Write Block Count}
-      {$IFDEF MMC_DEBUG}
-      if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_BLOCK_COUNT (Value=' + IntToStr(Command.Data.BlockCount) + ')');
-      {$ENDIF}
-      SDHCIHostWriteWord(SDHCI,SDHCI_BLOCK_COUNT,Command.Data.BlockCount);
-   
-      {Write Argument}
-      {$IFDEF MMC_DEBUG}
-      if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_ARGUMENT (Value=' + IntToHex(Command.Argument,8) + ')');
-      {$ENDIF}
-      SDHCIHostWriteLong(SDHCI,SDHCI_ARGUMENT,Command.Argument);
-   
-      {Write Transfer Mode}
-      {$IFDEF MMC_DEBUG}
-      if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_TRANSFER_MODE (Value=' + IntToHex(Mode,8) + ')');
-      {$ENDIF}
-      SDHCIHostWriteWord(SDHCI,SDHCI_TRANSFER_MODE,Mode);
-     end;     
-   
-    {Setup Command}
-    SDHCI.Command:=Command;
-    try
-     {Write Command}
-     {$IFDEF MMC_DEBUG}
-     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_COMMAND (Value=' + IntToHex(SDHCIMakeCommand(Command.Command,Flags),8) + ')');
-     {$ENDIF}
-     SDHCIHostWriteWord(SDHCI,SDHCI_COMMAND,SDHCIMakeCommand(Command.Command,Flags));
-   
-     {Wait for Completion}
-     if Command.Data = nil then
-      begin
-       {Wait for Signal with Timeout (100ms)}
-       Status:=SemaphoreWaitEx(SDHCI.Wait,100);
-       if Status <> ERROR_SUCCESS then
+   {Acquire the Lock}
+   if MutexLock(MMC.Lock) = ERROR_SUCCESS then
+    begin
+     try
+      {Setup Status}
+      Command.Status:=MMC_STATUS_NOT_PROCESSED;
+      try
+       {Wait Timeout (10ms)}
+       Timeout:=1000;
+       Mask:=SDHCI_CMD_INHIBIT;
+       if (Command.Data <> nil) or ((Command.ResponseType and MMC_RSP_BUSY) <> 0) then
         begin
-         if Status = ERROR_WAIT_TIMEOUT then
-          begin
-           if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Response Timeout');
-           Command.Status:=MMC_STATUS_TIMEOUT;
-           Exit;
-          end
-         else
-          begin
-           if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Response Failure');
-           Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-           Exit;
-          end;          
+         Mask:=Mask or SDHCI_DATA_INHIBIT;
         end;
-        
-       (*{Wait with Timeout (100ms)}    
-       Timeout:=10000;
-       while Command.Status = MMC_STATUS_NOT_PROCESSED do
+   
+       {We shouldn't wait for data inihibit for stop commands, even though they might use busy signaling}
+       if Command.Command = MMC_CMD_STOP_TRANSMISSION then
+        begin
+         Mask:=Mask and not(SDHCI_DATA_INHIBIT);
+        end;
+   
+       {Wait for Command Inhibit and optionally Data Inhibit to be clear}
+       while (SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE) and Mask) <> 0 do
         begin
          if Timeout = 0 then
           begin
-           if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Response Timeout');
+           if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Inhibit Timeout');
            Command.Status:=MMC_STATUS_TIMEOUT;
            Exit;
           end;
           
          Dec(Timeout);
          MicrosecondDelay(10);
-        end;*)
-      end
-     else
-      begin
-       {Wait for Signal with Timeout (5000ms)}
-       Status:=SemaphoreWaitEx(SDHCI.Wait,5000);
-       if Status <> ERROR_SUCCESS then
-        begin
-         if Status = ERROR_WAIT_TIMEOUT then
-          begin
-           if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Data Response Timeout');
-           Command.Status:=MMC_STATUS_TIMEOUT;
-           Exit;
-          end
-         else
-          begin
-           if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Data Response Failure');
-           Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-           Exit;
-          end;          
         end;
       
-       //To Do
-
-       //Temporary
-       (*Timeout:=1000000; {10000ms}
-       while Command.Status = MMC_STATUS_NOT_PROCESSED do
+       {Check Response Type}
+       if ((Command.ResponseType and MMC_RSP_136) <> 0) and ((Command.ResponseType and MMC_RSP_BUSY) <> 0) then
         begin
-         if Timeout = 0 then
+         if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Invalid Response Type');
+         Command.Status:=MMC_STATUS_INVALID_PARAMETER;
+         Exit;
+        end;
+        
+       {Setup Command Flags}
+       if (Command.ResponseType and MMC_RSP_PRESENT) = 0 then
+        begin
+         Flags:=SDHCI_CMD_RESP_NONE;
+        end
+       else if (Command.ResponseType and MMC_RSP_136) <> 0 then
+        begin
+         Flags:=SDHCI_CMD_RESP_LONG;
+        end
+       else if (Command.ResponseType and MMC_RSP_BUSY) <> 0 then  
+        begin
+         Flags:=SDHCI_CMD_RESP_SHORT_BUSY;
+        end
+       else
+        begin
+         Flags:=SDHCI_CMD_RESP_SHORT;
+        end;    
+      
+       if (Command.ResponseType and MMC_RSP_CRC) <> 0 then  
+        begin
+         Flags:=Flags or SDHCI_CMD_CRC;
+        end;
+       if (Command.ResponseType and MMC_RSP_OPCODE) <> 0 then  
+        begin
+         Flags:=Flags or SDHCI_CMD_INDEX;
+        end;
+       {CMD19 is special in that the Data Present Select should be set}
+       if (Command.Data <> nil) or (Command.Command = MMC_CMD_SEND_TUNING_BLOCK) or (Command.Command = MMC_CMD_SEND_TUNING_BLOCK_HS200) then
+        begin
+         Flags:=Flags or SDHCI_CMD_DATA;
+        end;
+       
+       {Write Timeout Control}
+       if (Command.Data <> nil) or ((Command.ResponseType and MMC_RSP_BUSY) <> 0) then
+        begin
+         {$IFDEF MMC_DEBUG}
+         if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_TIMEOUT_CONTROL (Value=' + IntToHex(SDHCI_TIMEOUT_VALUE,8) + ')');
+         {$ENDIF}
+         SDHCIHostWriteByte(SDHCI,SDHCI_TIMEOUT_CONTROL,SDHCI_TIMEOUT_VALUE);
+        end;
+      
+       {Check Data}
+       if Command.Data = nil then
+        begin
+         {Setup Transfer Mode}
+         Mode:=SDHCIHostReadWord(SDHCI,SDHCI_TRANSFER_MODE);
+         
+         {Clear Auto CMD settings for non data CMDs}
+         Mode:=Mode and not(SDHCI_TRNS_AUTO_CMD12 or SDHCI_TRNS_AUTO_CMD23);
+         
+         {Clear Block Count, Multi, Read and DMA for non data CMDs}
+         Mode:=Mode and not(SDHCI_TRNS_BLK_CNT_EN or SDHCI_TRNS_MULTI or SDHCI_TRNS_READ or SDHCI_TRNS_DMA); 
+         
+         {Write Argument}
+         {$IFDEF MMC_DEBUG}
+         if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_ARGUMENT (Value=' + IntToHex(Command.Argument,8) + ')');
+         {$ENDIF}
+         SDHCIHostWriteLong(SDHCI,SDHCI_ARGUMENT,Command.Argument);
+         
+         {Write Transfer Mode}
+         {$IFDEF MMC_DEBUG}
+         if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_TRANSFER_MODE (Value=' + IntToHex(Mode,8) + ')');
+         {$ENDIF}
+         SDHCIHostWriteWord(SDHCI,SDHCI_TRANSFER_MODE,Mode);
+        end
+       else 
+        begin
+         {Setup Data}
+         Command.Data.BlockOffset:=0;
+         Command.Data.BlocksRemaining:=Command.Data.BlockCount;
+         Command.Data.BytesTransfered:=0;
+         
+         {Setup Transfer Mode}
+         Mode:=SDHCI_TRNS_BLK_CNT_EN;
+         if MMCIsMultiCommand(Command.Command) or (Command.Data.BlockCount > 1) then
           begin
-           if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Data Response Timeout');
-           Command.Status:=MMC_STATUS_TIMEOUT;
-           Exit;
+           Mode:=Mode or SDHCI_TRNS_MULTI;
+           
+           Mode:=Mode or SDHCI_TRNS_AUTO_CMD12; //To Do //Testing (This works, need to sort out properly where it fits, plus SDHCI_TRNS_AUTO_CMD23)
+           
+           //To Do //SDHCI_TRNS_AUTO_CMD12 //SDHCI_TRNS_AUTO_CMD23 //SDHCI_ARGUMENT2 //See: sdhci_set_transfer_mode
+          end;
+         if (Command.Data.Flags and MMC_DATA_READ) <> 0 then
+          begin
+           Mode:=Mode or SDHCI_TRNS_READ;
           end;
          
-         Dec(Timeout);
-         MicrosecondDelay(10);
-        end;*)
-       //Temporary
-       
-       
+         {Setup DMA Address}
+         //mode |= SDHCI_TRNS_DMA;
+         //Address:=
+         //To Do
+               
+         {Setup Interrupts}
+         SDHCI.Interrupts:=SDHCI.Interrupts or (SDHCI_INT_DATA_AVAIL or SDHCI_INT_SPACE_AVAIL);
+         SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
+         SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts); 
+         //To Do //Different for DMA //Should we disable these again after the command ? //Yes, probably
+         
+         {Write DMA Address}
+         //To Do
+         //SDHCIHostWriteLong(SDHCI,SDHCI_DMA_ADDRESS,Address);
+        
+         {Write Block Size}
+         {$IFDEF MMC_DEBUG}
+         if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_BLOCK_SIZE (Value=' + IntToStr(Command.Data.BlockSize) + ')');
+         {$ENDIF}
+         SDHCIHostWriteWord(SDHCI,SDHCI_BLOCK_SIZE,SDHCIMakeBlockSize(SDHCI_DEFAULT_BOUNDARY_ARG,Command.Data.BlockSize));
+      
+         {Write Block Count}
+         {$IFDEF MMC_DEBUG}
+         if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_BLOCK_COUNT (Value=' + IntToStr(Command.Data.BlockCount) + ')');
+         {$ENDIF}
+         SDHCIHostWriteWord(SDHCI,SDHCI_BLOCK_COUNT,Command.Data.BlockCount);
+      
+         {Write Argument}
+         {$IFDEF MMC_DEBUG}
+         if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_ARGUMENT (Value=' + IntToHex(Command.Argument,8) + ')');
+         {$ENDIF}
+         SDHCIHostWriteLong(SDHCI,SDHCI_ARGUMENT,Command.Argument);
+      
+         {Write Transfer Mode}
+         {$IFDEF MMC_DEBUG}
+         if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_TRANSFER_MODE (Value=' + IntToHex(Mode,8) + ')');
+         {$ENDIF}
+         SDHCIHostWriteWord(SDHCI,SDHCI_TRANSFER_MODE,Mode);
+        end;     
+      
+       {Setup Command}
+       SDHCI.Command:=Command;
+       try
+        {Write Command}
+        {$IFDEF MMC_DEBUG}
+        if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command SDHCI_COMMAND (Value=' + IntToHex(SDHCIMakeCommand(Command.Command,Flags),8) + ')');
+        {$ENDIF}
+        SDHCIHostWriteWord(SDHCI,SDHCI_COMMAND,SDHCIMakeCommand(Command.Command,Flags));
+      
+        {Wait for Completion}
+        if Command.Data = nil then
+         begin
+          {Wait for Signal with Timeout (100ms)}
+          Status:=SemaphoreWaitEx(SDHCI.Wait,100);
+          if Status <> ERROR_SUCCESS then
+           begin
+            if Status = ERROR_WAIT_TIMEOUT then
+             begin
+              if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Response Timeout');
+              Command.Status:=MMC_STATUS_TIMEOUT;
+              Exit;
+             end
+            else
+             begin
+              if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Response Failure');
+              Command.Status:=MMC_STATUS_HARDWARE_ERROR;
+              Exit;
+             end;          
+           end;
+         end
+        else
+         begin
+          {Wait for Signal with Timeout (5000ms)}
+          Status:=SemaphoreWaitEx(SDHCI.Wait,5000);
+          if Status <> ERROR_SUCCESS then
+           begin
+            if Status = ERROR_WAIT_TIMEOUT then
+             begin
+              if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Data Response Timeout');
+              Command.Status:=MMC_STATUS_TIMEOUT;
+              Exit;
+             end
+            else
+             begin
+              if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Data Response Failure');
+              Command.Status:=MMC_STATUS_HARDWARE_ERROR;
+              Exit;
+             end;          
+           end;
+         end;
+       finally
+        {Reset Command}
+        SDHCI.Command:=nil; 
+       end;
+      finally
+       {Check Status}
+       if Command.Status <> MMC_STATUS_SUCCESS then //To Do //More see: sdhci_tasklet_finish //SDHCI_QUIRK_RESET_AFTER_REQUEST and SDHCI_QUIRK_CLOCK_BEFORE_RESET
+        begin
+         SDHCIHostReset(SDHCI,SDHCI_RESET_CMD);
+         SDHCIHostReset(SDHCI,SDHCI_RESET_DATA);
+        end;
       end;
-    finally
-     {Reset Command}
-     SDHCI.Command:=nil; 
-    end;
-   finally
-    {Check Status}
-    if Command.Status <> MMC_STATUS_SUCCESS then //To Do //More see: sdhci_tasklet_finish //SDHCI_QUIRK_RESET_AFTER_REQUEST and SDHCI_QUIRK_CLOCK_BEFORE_RESET
-     begin
-      SDHCIHostReset(SDHCI,SDHCI_RESET_CMD);
-      SDHCIHostReset(SDHCI,SDHCI_RESET_DATA);
+   
+     finally
+      {Release the Lock}
+      MutexUnlock(MMC.Lock);
      end;
-   end;
+    end;
 
    {$IFDEF MMC_DEBUG}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Command completed: ' + MMCStatusToString(Command.Status));
@@ -4349,6 +4467,7 @@ begin
  Result.MMCId:=DEVICE_ID_ANY;
  Result.MMCState:=MMC_STATE_EJECTED;
  Result.DeviceInitialize:=nil;
+ Result.DeviceDeinitialize:=nil;
  Result.DeviceGetCardDetect:=nil;
  Result.DeviceGetWriteProtect:=nil;
  Result.DeviceSendCommand:=nil;
@@ -4364,8 +4483,6 @@ begin
    Result:=nil;
    Exit;
   end;
-  
- //To Do //Create Storage ? 
 end;
 
 {==============================================================================}
@@ -4392,8 +4509,6 @@ begin
   begin
    MutexDestroy(MMC.Lock);
   end;
- 
- //To Do //Destroy Storage ? 
  
  {Destroy MMC} 
  Result:=DeviceDestroy(@MMC.Device);
@@ -4445,14 +4560,18 @@ begin
       Exit;
      end; 
     
-    {Register Storage}
-    Result:=StorageDeviceRegister(MMC.Storage); {Already a PStorageDevice}
-    if Result <> ERROR_SUCCESS then
+    {Check Storage}
+    if MMC.Storage <> nil then
      begin
-      DeviceDeregister(@MMC.Device);
-      MMC.MMCId:=DEVICE_ID_ANY;
-      Exit;
-     end; 
+      {Register Storage}
+      Result:=StorageDeviceRegister(MMC.Storage); {Already a PStorageDevice}
+      if Result <> ERROR_SUCCESS then
+       begin
+        DeviceDeregister(@MMC.Device);
+        MMC.MMCId:=DEVICE_ID_ANY;
+        Exit;
+       end; 
+     end;  
     
     {Link MMC}
     if MMCDeviceTable = nil then
@@ -4508,9 +4627,13 @@ begin
  if CriticalSectionLock(MMCDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
-    {Deregister Storage}
-    Result:=StorageDeviceDeregister(MMC.Storage); {Already a PStorageDevice}
-    if Result <> ERROR_SUCCESS then Exit;
+    {Check Storage}
+    if MMC.Storage <> nil then
+     begin
+      {Deregister Storage}
+      Result:=StorageDeviceDeregister(MMC.Storage); {Already a PStorageDevice}
+      if Result <> ERROR_SUCCESS then Exit;
+     end; 
     
     {Deregister Device}
     Result:=DeviceDeregister(@MMC.Device);
@@ -6220,6 +6343,13 @@ begin
    MicrosecondDelay(1000);   
   end;
  
+ {Reset Interrupts}
+ if (Mask and SDHCI_RESET_ALL) <> 0 then
+  begin
+   SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
+   SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts); 
+  end;
+  
  Result:=MMC_STATUS_SUCCESS;
  
  //See: sdhci_reset in sdhci.c
@@ -6902,6 +7032,7 @@ end;
 function SDHCIHostStart(SDHCI:PSDHCIHost):LongWord;
 var
  MMC:PMMCDevice;
+ Status:LongWord;
  Capabilities:LongWord;
 begin
  {}
@@ -7034,11 +7165,7 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Host maximum blocks = ' + IntToStr(SDHCI.MaximumBlockCount));
  {$ENDIF}
  
- {Reset Host} {Done by Host Start}
- {SDHCIHostReset(SDHCI,SDHCI_RESET_ALL);}
- {$IFDEF MMC_DEBUG}
- {if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Host reset completed');}
- {$ENDIF}
+ {Host reset done by host start}
  
  {Create MMC}
  MMC:=MMCDeviceCreate;
@@ -7058,12 +7185,13 @@ begin
  {MMC}
  MMC.MMCState:=MMC_STATE_EJECTED;
  MMC.DeviceInitialize:=SDHCI.DeviceInitialize;
+ MMC.DeviceDeinitialize:=SDHCI.DeviceDeinitialize;
  MMC.DeviceGetCardDetect:=SDHCI.DeviceGetCardDetect;
  MMC.DeviceGetWriteProtect:=SDHCI.DeviceGetWriteProtect;
  MMC.DeviceSendCommand:=SDHCI.DeviceSendCommand;
  MMC.DeviceSetIOS:=SDHCI.DeviceSetIOS;
  
- {Create Storage} //To Do //Could this be done as part of MMCDeviceCreate ?
+ {Create Storage}
  MMC.Storage:=StorageDeviceCreate;
  if MMC.Storage = nil then
   begin
@@ -7073,11 +7201,11 @@ begin
    Exit;
   end;
  
- {Update Storage} //To Do //Could this be done as part of MMCDeviceCreate ?
+ {Update Storage}
  {Device}
  MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
  MMC.Storage.Device.DeviceType:=STORAGE_TYPE_REMOVABLE;
- MMC.Storage.Device.DeviceFlags:=STORAGE_FLAG_REMOVABLE;
+ MMC.Storage.Device.DeviceFlags:=STORAGE_FLAG_REMOVABLE or STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA;
  MMC.Storage.Device.DeviceData:=MMC;
  {Storage}
  MMC.Storage.StorageState:=STORAGE_STATE_EJECTED;
@@ -7087,7 +7215,8 @@ begin
  MMC.Storage.DeviceControl:=MMCStorageDeviceControl;
  
  {Initialize MMC}
- if MMCDeviceInitialize(MMC) <> MMC_STATUS_SUCCESS then
+ Status:=MMCDeviceInitialize(MMC);
+ if (Status <> MMC_STATUS_SUCCESS) and (Status <> MMC_STATUS_NO_MEDIA) then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Failed to initialize new MMC device');
    StorageDeviceDestroy(MMC.Storage);
@@ -7095,6 +7224,14 @@ begin
    SDHCI.HostStop(SDHCI);
    Exit;
   end;
+ 
+ {Check MMC Type}
+ if MMC.Device.DeviceType = MMC_TYPE_SDIO then
+  begin
+   {Destroy Storage}
+   StorageDeviceDestroy(MMC.Storage);
+   MMC.Storage:=nil;
+  end;  
  
  {Register MMC}
  if MMCDeviceRegister(MMC) <> MMC_STATUS_SUCCESS then
@@ -7118,12 +7255,22 @@ begin
    NotifierNotify(@MMC.Device,DEVICE_NOTIFICATION_INSERT);
   end;
  
- {Notify Insert Storage}
- if MMC.Storage.StorageState = STORAGE_STATE_INSERTED then
+ {Check Storage}
+ if MMC.Storage <> nil then
   begin
-   NotifierNotify(@MMC.Storage.Device,DEVICE_NOTIFICATION_INSERT);
-  end;
-
+   {Set Storage State to Inserted}
+   if MMC.MMCState = MMC_STATE_INSERTED then
+    begin
+     StorageDeviceSetState(MMC.Storage,STORAGE_STATE_INSERTED);
+    end; 
+   
+   {Start Storage Status Checking}
+   if StorageDeviceStartStatus(MMC.Storage,MMC_STATUS_TIMER_INTERVAL) <> ERROR_SUCCESS then
+    begin
+     if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Failed start status for new MMC device');
+    end;
+  end;  
+ 
  Result:=ERROR_SUCCESS;
  
  //See: add_sdhci in sdhci.c
@@ -7348,6 +7495,7 @@ begin
  Result.HostSetClockDivider:=nil;
  Result.HostSetControlRegister:=nil;
  Result.DeviceInitialize:=nil;
+ Result.DeviceDeinitialize:=nil;
  Result.DeviceGetCardDetect:=nil;
  Result.DeviceGetWriteProtect:=nil;
  Result.DeviceSendCommand:=nil;
@@ -8428,9 +8576,14 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMCStorageDeviceRead (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
+ {$ENDIF}
+ 
  {Check Storage}
  if Storage = nil then Exit;
-
+ if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
  {Check Count}
  Result:=ERROR_SUCCESS;
  if Count = 0 then Exit;
@@ -8450,36 +8603,47 @@ begin
  {Check State}
  if Storage.StorageState <> STORAGE_STATE_INSERTED then Exit;
  
- {Set Block Length}
- Status:=MMCDeviceSetBlockLength(MMC,Storage.BlockSize);
- if Status <> MMC_STATUS_SUCCESS then
+ {Acquire the Lock}
+ if MutexLock(Storage.Lock) = ERROR_SUCCESS then
   begin
-   Exit;
-  end;
- 
- {Start Read}
- ReadOffset:=0;
- ReadRemain:=Count;
- while ReadRemain > 0 do
+   try
+    {Set Block Length}
+    Status:=MMCDeviceSetBlockLength(MMC,Storage.BlockSize);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Exit;
+     end;
+    
+    {Start Read}
+    ReadOffset:=0;
+    ReadRemain:=Count;
+    while ReadRemain > 0 do
+     begin
+      {Get Count}
+      BlockCount:=ReadRemain;
+      if ReadRemain > MMC_MAX_BLOCK_COUNT then BlockCount:=MMC_MAX_BLOCK_COUNT;
+           
+      {Read Blocks}
+      Status:=MMCDeviceReadBlocks(MMC,(Start + ReadOffset),BlockCount,Pointer(PtrUInt(Buffer) + (ReadOffset shl Storage.BlockShift))); 
+      if Status <> MMC_STATUS_SUCCESS then
+       begin
+        Exit;
+       end;
+          
+      Inc(ReadOffset,BlockCount);
+      Dec(ReadRemain,BlockCount);
+     end;
+         
+    Result:=ERROR_SUCCESS; 
+   finally
+    {Release the Lock}
+    MutexUnlock(Storage.Lock);
+   end;
+  end
+ else
   begin
-   {Get Count}
-   BlockCount:=ReadRemain;
-   if ReadRemain > MMC_MAX_BLOCK_COUNT then BlockCount:=MMC_MAX_BLOCK_COUNT;
-        
-   {Read Blocks}
-   Status:=MMCDeviceReadBlocks(MMC,(Start + ReadOffset),BlockCount,Pointer(PtrUInt(Buffer) + (ReadOffset shl Storage.BlockShift))); 
-   if Status <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
-       
-   Inc(ReadOffset,BlockCount);
-   Dec(ReadRemain,BlockCount);
+   Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-      
- Result:=ERROR_SUCCESS; 
- 
- //See: mmc_bread in mmc.c
 end;
  
 {==============================================================================}
@@ -8495,9 +8659,14 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMCStorageDeviceWrite (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
+ {$ENDIF}
+ 
  {Check Storage}
  if Storage = nil then Exit;
-
+ if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
  {Check Count}
  Result:=ERROR_SUCCESS;
  if Count = 0 then Exit;
@@ -8517,36 +8686,47 @@ begin
  {Check State}
  if Storage.StorageState <> STORAGE_STATE_INSERTED then Exit;
  
- {Set Block Length}
- Status:=MMCDeviceSetBlockLength(MMC,Storage.BlockSize);
- if Status <> MMC_STATUS_SUCCESS then
+ {Acquire the Lock}
+ if MutexLock(Storage.Lock) = ERROR_SUCCESS then
   begin
-   Exit;
-  end;
- 
- {Start Write}
- WriteOffset:=0;
- WriteRemain:=Count;
- while WriteRemain > 0 do
+   try
+    {Set Block Length}
+    Status:=MMCDeviceSetBlockLength(MMC,Storage.BlockSize);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Exit;
+     end;
+    
+    {Start Write}
+    WriteOffset:=0;
+    WriteRemain:=Count;
+    while WriteRemain > 0 do
+     begin
+      {Get Count}
+      BlockCount:=WriteRemain;
+      if WriteRemain > MMC_MAX_BLOCK_COUNT then BlockCount:=MMC_MAX_BLOCK_COUNT;
+           
+      {Write Blocks}
+      Status:=MMCDeviceWriteBlocks(MMC,(Start + WriteOffset),BlockCount,Pointer(PtrUInt(Buffer) + (WriteOffset shl Storage.BlockShift))); 
+      if Status <> MMC_STATUS_SUCCESS then
+       begin
+        Exit;
+       end;
+          
+      Inc(WriteOffset,BlockCount);
+      Dec(WriteRemain,BlockCount);
+     end;
+         
+    Result:=ERROR_SUCCESS; 
+   finally
+    {Release the Lock}
+    MutexUnlock(Storage.Lock);
+   end;
+  end
+ else
   begin
-   {Get Count}
-   BlockCount:=WriteRemain;
-   if WriteRemain > MMC_MAX_BLOCK_COUNT then BlockCount:=MMC_MAX_BLOCK_COUNT;
-        
-   {Write Blocks}
-   Status:=MMCDeviceWriteBlocks(MMC,(Start + WriteOffset),BlockCount,Pointer(PtrUInt(Buffer) + (WriteOffset shl Storage.BlockShift))); 
-   if Status <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
-       
-   Inc(WriteOffset,BlockCount);
-   Dec(WriteRemain,BlockCount);
-  end;
-      
- Result:=ERROR_SUCCESS; 
- 
- //See: mmc_bwrite in mmc_write.c
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end;
  
 {==============================================================================}
@@ -8562,9 +8742,14 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMCStorageDeviceErase (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
+ {$ENDIF}
+ 
  {Check Storage}
  if Storage = nil then Exit;
-
+ if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
  {Check Count}
  Result:=ERROR_SUCCESS;
  if Count = 0 then Exit;
@@ -8574,9 +8759,29 @@ begin
  MMC:=PMMCDevice(Storage.Device.DeviceData);
  if MMC = nil then Exit;
 
- //To Do //See USBStorageDeviceWrite and above
+ {Check Storage}
+ if Storage.BlockSize = 0 then Exit;
+ if Storage.BlockCount = 0 then Exit;
+ 
+ {Check State}
+ if Storage.StorageState <> STORAGE_STATE_INSERTED then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(Storage.Lock) = ERROR_SUCCESS then
+  begin
+   try
+     //To Do //See USBStorageDeviceWrite and above
 
- //See: mmc_berase in mmc_write.c
+     //See: mmc_berase in mmc_write.c
+   finally
+    {Release the Lock}
+    MutexUnlock(Storage.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end; 
  
 {==============================================================================}
@@ -8584,18 +8789,190 @@ end;
 function MMCStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 var
  MMC:PMMCDevice;
+ SDHCI:PSDHCIHost;
+ Status:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMCStorageDeviceControl (Request=' + IntToStr(Request) + ' Argument1=' + IntToStr(Argument1) + ' Argument2=' + IntToStr(Argument2) + ')');
+ {$ENDIF}
+ 
  {Check Storage}
  if Storage = nil then Exit;
-
+ if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
  {Get MMC}
  MMC:=PMMCDevice(Storage.Device.DeviceData);
  if MMC = nil then Exit;
  
- //To Do //See USBStorageDeviceControl
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(Storage.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Request}
+    case Request of
+     STORAGE_CONTROL_TEST_READY,STORAGE_CONTROL_TEST_MEDIA:begin
+       {Check Flags}
+       if (Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) = 0 then
+        begin
+         {Ready}
+         Status:=MMCDeviceGetCardDetect(MMC);
+         
+         {Check Status and Flags}
+         if (Status <> MMC_STATUS_SUCCESS) or ((MMC.Device.DeviceFlags and MMC_FLAG_CARD_PRESENT) = 0) then
+          begin
+           {Not Ready}
+           {Reset Host}
+           SDHCIHostReset(SDHCI,SDHCI_RESET_ALL);
+           
+           {Deinitialize Device}
+           Status:=MMCDeviceDeinitialize(MMC);
+           if Status = MMC_STATUS_SUCCESS then
+            begin
+             {Notify Ejected}
+             if MMC.MMCState = MMC_STATE_EJECTED then
+              begin
+               NotifierNotify(@MMC.Device,DEVICE_NOTIFICATION_EJECT);
+              end;
+             
+             {Set Storage State to Ejected}
+             if MMC.MMCState = MMC_STATE_EJECTED then
+              begin
+               StorageDeviceSetState(Storage,STORAGE_STATE_EJECTED);
+              end; 
+           
+             Result:=ERROR_NOT_READY;
+             Exit;
+            end; 
+          end;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS; 
+        end
+       else
+        begin
+         {Not Ready}
+         Status:=MMCDeviceGetCardDetect(MMC);
+
+         {Check Status and Flags}
+         if (Status = MMC_STATUS_SUCCESS) and ((MMC.Device.DeviceFlags and MMC_FLAG_CARD_PRESENT) <> 0) then
+          begin
+           {Ready}
+           {Reset Host}
+           SDHCIHostReset(SDHCI,SDHCI_RESET_ALL);
+
+           {Initialize Device}
+           Status:=MMCDeviceInitialize(MMC);
+           if Status = MMC_STATUS_SUCCESS then
+            begin
+             {Notify Inserted}
+             if MMC.MMCState = MMC_STATE_INSERTED then
+              begin
+               NotifierNotify(@MMC.Device,DEVICE_NOTIFICATION_INSERT);
+              end;
+             
+             {Set Storage State to Inserted}
+             if MMC.MMCState = MMC_STATE_INSERTED then
+              begin
+               StorageDeviceSetState(Storage,STORAGE_STATE_INSERTED);
+              end; 
+           
+             Result:=ERROR_SUCCESS;
+             Exit;
+            end; 
+          end; 
+          
+         {Return Result}
+         Result:=ERROR_NOT_READY; 
+        end;
+      end;
+     STORAGE_CONTROL_RESET:begin
+       {Not Supported}
+       Result:=ERROR_NOT_SUPPORTED; 
+      end;
+     STORAGE_CONTROL_LOCK:begin
+       {Not Supported}
+       Result:=ERROR_NOT_SUPPORTED; 
+      end;
+     STORAGE_CONTROL_UNLOCK:begin
+       {Not Supported}
+       Result:=ERROR_NOT_SUPPORTED; 
+      end;
+     STORAGE_CONTROL_EJECT:begin
+       {Not Supported}
+       Result:=ERROR_NOT_SUPPORTED; 
+      end;
+     STORAGE_CONTROL_TEST_LOCKED:begin
+       {Not Supported}
+       Result:=ERROR_NOT_SUPPORTED; 
+      end;
+     STORAGE_CONTROL_TEST_CHANGED:begin
+       {Not Supported}
+       Result:=ERROR_NOT_SUPPORTED; 
+      end;
+     STORAGE_CONTROL_GET_VENDORID:begin
+       {Get Vendor ID}
+       Argument2:=0;
+       //To Do 
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS; 
+      end;
+     STORAGE_CONTROL_GET_PRODUCTID:begin
+       {Get Product ID}
+       Argument2:=0;
+       //To Do 
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS; 
+      end;
+     STORAGE_CONTROL_GET_SERIAL:begin
+       {Get Serial No}
+       Argument2:=0;
+       //To Do 
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS; 
+      end;
+     STORAGE_CONTROL_GET_REVISION:begin
+       {Get Revision No}
+       Argument2:=0;
+       //To Do 
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS; 
+      end;
+     STORAGE_CONTROL_GET_PRODUCT:begin
+       {Get Product Name}
+       Argument2:=0;
+       //To Do 
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS; 
+      end;
+     STORAGE_CONTROL_GET_MANUFACTURER:begin
+       {Get Manufacturer Name}
+       //To Do 
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS; 
+      end;
+    end;
+   finally
+    {Release the Lock}
+    MutexUnlock(Storage.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end;
  
 {==============================================================================}

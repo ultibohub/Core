@@ -25,6 +25,7 @@ units=$(SYSTEMUNIT) \
        lineinfo \
        $(ULTIBO_UNITS) \
        $(ULTIBO_CPU_UNITS) \
+       $(ULTIBO_DRIVER_UNITS) \
        $(ULTIBO_CODEPAGE_UNITS) \
        dos \
        ctypes \
@@ -196,6 +197,12 @@ ULTIBO_EXTRAS=consoleshell \
 ULTIBO_CPU_UNITS=
 ULTIBO_CPU_EXTRAS=
 
+ULTIBO_DRIVER_UNITS=rtl8192cu \
+                    rt2x00lib \
+                    rt2800lib \
+                    rt2x00usb \
+                    rt2800usb
+
 ULTIBO_CODEPAGE_UNITS=cp720oem \
                       cp737oem \
                       cp775oem \
@@ -230,12 +237,16 @@ ifeq ($(SUBARCH),armv7a)
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
 override ULTIBO_UNITS+=bcm2836 \
+                       bcm2837 \
                        bcm2709 \
+                       bcm2710 \
                        allwinnera20 \
                        allwinnerh3 \
                        freescaleimx6 \
                        platformarmv7 \
+                       platformarmv8 \
                        platformrpi2 \
+                       platformrpi3 \
                        platformbpi \
                        platformbpro \
                        platformbbb \
@@ -245,6 +256,7 @@ override ULTIBO_UNITS+=bcm2836 \
                        platformodroidxu3 \
                        platformpcduino
 ULTIBO_CPU_UNITS=bootrpi2 \
+                 bootrpi3 \
                  bootbpi \
                  bootbpro \
                  bootbbb \
@@ -253,7 +265,8 @@ ULTIBO_CPU_UNITS=bootrpi2 \
                  bootodroidu3 \
                  bootodroidxu3 \
                  bootpcduino
-ULTIBO_CPU_EXTRAS=raspberrypi2
+ULTIBO_CPU_EXTRAS=raspberrypi2 \
+                  raspberrypi3
 endif
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
@@ -557,6 +570,19 @@ $(foreach unit,$(ULTIBO_CPU_EXTRAS),$(eval $(call ULTIBO_CPU_EXTRAS_RULE,$(unit)
 $(addsuffix $(PPUEXT),$(ULTIBO_CPU_EXTRAS)):
 	$(COMPILER) $<
 
+#
+# Ultibo Driver specific rules
+#
+
+define ULTIBO_DRIVER_UNITS_RULE
+$(1)$(PPUEXT): drivers/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(ULTIBO_DRIVER_UNITS),$(eval $(call ULTIBO_DRIVER_UNITS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(ULTIBO_DRIVER_UNITS)):
+	$(COMPILER) $<
+    
 #
 # Ultibo Code Page specific rules
 #

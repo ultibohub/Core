@@ -1207,7 +1207,7 @@ begin
  {}
  inherited Create(AManager,AName);
  FFamily:=AF_INET;
- FPacketType:=IP_TYPE;
+ FPacketType:=PACKET_TYPE_IP;
 
  FNextIPId:=1;
  FNextIPLock:=MutexCreate;
@@ -1306,7 +1306,7 @@ begin
   
   {Check Packet Type}
   case Adapter.PacketType of
-   IP_TYPE:begin
+   PACKET_TYPE_IP:begin
      {Check IP Packet}
      if CheckIP(APacket) then
       begin
@@ -1867,7 +1867,7 @@ begin
     if FRARP = nil then Exit;
     
     {Add IP Type}
-    Handle:=AAdapter.AddTransport(IP_TYPE,FRAME_TYPE_ETHERNET_II,IP_TRANSPORT_NAME,PacketHandler);
+    Handle:=AAdapter.AddTransport(PACKET_TYPE_IP,FRAME_TYPE_ETHERNET_II,IP_TRANSPORT_NAME,PacketHandler);
     if Handle <> INVALID_HANDLE_VALUE then
      begin
       {Add to ARP}
@@ -1880,7 +1880,7 @@ begin
       Adapter:=TIPTransportAdapter.Create;
       Adapter.Name:=AAdapter.Name;
       Adapter.Handle:=Handle;
-      Adapter.PacketType:=IP_TYPE;
+      Adapter.PacketType:=PACKET_TYPE_IP;
       Adapter.Adapter:=AAdapter;
       Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
       Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
@@ -3129,11 +3129,11 @@ begin
   if Manager = nil then Exit;
  
   {Locate ARP Transport}
-  FARP:=TARPTransport(Manager.GetTransportByType(AF_UNSPEC,ARP_TYPE,False,NETWORK_LOCK_NONE)); {Do not lock} //To Do //AddTransport (TTransportTransport/TIPTransportTransport ?) //Client ?
+  FARP:=TARPTransport(Manager.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); {Do not lock} //To Do //AddTransport (TTransportTransport/TIPTransportTransport ?) //Client ?
   if FARP = nil then Exit;
   
   {Locate RARP Transport}
-  FRARP:=TRARPTransport(Manager.GetTransportByType(AF_UNSPEC,RARP_TYPE,False,NETWORK_LOCK_NONE)); {Do not lock} //To Do //AddTransport (TTransportTransport/TIPTransportTransport ?) //Client ?
+  FRARP:=TRARPTransport(Manager.GetTransportByType(AF_UNSPEC,PACKET_TYPE_RARP,False,NETWORK_LOCK_NONE)); {Do not lock} //To Do //AddTransport (TTransportTransport/TIPTransportTransport ?) //Client ?
   if FRARP = nil then Exit;
   
   {Return Result}
@@ -3631,7 +3631,7 @@ begin
   Result:=True;
   
   {Check Media}
-  if AAdapter.MediaType <> ETHER_TYPE then Exit;
+  if AAdapter.MediaType <> MEDIA_TYPE_ETHERNET then Exit;
   
   {Check Type}
   if AAdapter.AdapterType = ADAPTER_TYPE_UNKNOWN then Exit;
@@ -3648,7 +3648,11 @@ begin
        {Add Adapter}
        Result:=AddAdapter(AAdapter,CONFIG_TYPE_LOOPBACK,nil,nil,nil,nil);
       end;
-     ADAPTER_TYPE_DEVICE:begin
+     ADAPTER_TYPE_WIRED:begin
+       {Add Adapter}
+       Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
+      end;     
+     ADAPTER_TYPE_WIRELESS:begin 
        {Add Adapter}
        Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
       end;     

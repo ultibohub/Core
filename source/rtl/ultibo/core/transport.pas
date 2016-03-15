@@ -1748,7 +1748,7 @@ begin
  Name:='';
  Index:=LongWord(Self);
  Handle:=INVALID_HANDLE_VALUE;
- PacketType:=RAW_TYPE;
+ PacketType:=PACKET_TYPE_RAW;
  Adapter:=nil;
  Hardware:=HARDWARE_DEFAULT;
  Broadcast:=HARDWARE_BROADCAST;
@@ -2068,7 +2068,7 @@ begin
  FName:=AName;
  
  FFamily:=AF_UNSPEC;
- FPacketType:=RAW_TYPE;
+ FPacketType:=PACKET_TYPE_RAW;
  FAdapters:=TNetworkList.Create;
  FBindings:=TNetworkList.Create;
  FProtocols:=TNetworkList.Create;
@@ -2091,7 +2091,7 @@ begin
   FProtocols.Free;
   FBindings.Free;
   FAdapters.Free;
-  FPacketType:=RAW_TYPE;
+  FPacketType:=PACKET_TYPE_RAW;
   FFamily:=AF_UNSPEC;
   FManager:=nil;
   inherited Destroy;

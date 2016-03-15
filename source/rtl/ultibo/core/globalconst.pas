@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '25/2/2016';
+ ULTIBO_RELEASE_DATE             = '15/3/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.1.043';
+ ULTIBO_RELEASE_VERSION          = '1.1.069';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 1;
- ULTIBO_RELEASE_VERSION_REVISION = 043;
+ ULTIBO_RELEASE_VERSION_REVISION = 069;
  
 {==============================================================================}
 const
@@ -355,6 +355,7 @@ const
  MACHINE_TYPE_UNKNOWN = 0;
  MACHINE_TYPE_BCM2708 = 1;  {Broadcom BCM2708 (Raspberry Pi)}
  MACHINE_TYPE_BCM2709 = 2;  {Broadcom BCM2709 (Raspberry Pi 2)}
+ MACHINE_TYPE_BCM2710 = 3;  {Broadcom BCM2710 (Raspberry Pi 3)}
  
 {==============================================================================}
 const
@@ -383,8 +384,15 @@ const
  BOARD_TYPE_ODROID_XU4   = 21; {Odroid XU4}
  BOARD_TYPE_PC_X86       = 22; {PC x86}
  BOARD_TYPE_PC_X86_64    = 23; {PC x86 64bit}
-   
+ BOARD_TYPE_RPI3B        = 24; {Raspberry Pi 3 Model B}
+ 
 {==============================================================================}
+const 
+ {CPU Arch constants}
+ CPU_ARCH_UNKNOWN   = 0;
+ CPU_ARCH_ARM32     = 1; {ARM Arch 32 (ARMv6/ARMv7)(ARMv8 in 32bit mode)}
+ CPU_ARCH_ARM64     = 2; {ARM Arch 64 (ARMv8}
+ 
 const 
  {CPU Type constants}
  CPU_TYPE_UNKNOWN   = 0;
@@ -395,13 +403,16 @@ const
 const
  {CPU Model constants}
  CPU_MODEL_UNKNOWN     = 0;
- CPU_MODEL_ARM1176JZFS = 1; {ARM1176JZF-S}
- CPU_MODEL_CORTEX_A5   = 2; {ARM Cortex-A5}
- CPU_MODEL_CORTEX_A7   = 3; {ARM Cortex-A7}
- CPU_MODEL_CORTEX_A8   = 4; {ARM Cortex-A8}
- CPU_MODEL_CORTEX_A9   = 5; {ARM Cortex-A9}
- CPU_MODEL_CORTEX_A15  = 6; {ARM Cortex-A15}
- CPU_MODEL_CORTEX_A17  = 7; {ARM Cortex-A17}
+ CPU_MODEL_ARM1176JZFS = 1;  {ARM1176JZF-S}
+ CPU_MODEL_CORTEX_A5   = 2;  {ARM Cortex-A5}
+ CPU_MODEL_CORTEX_A7   = 3;  {ARM Cortex-A7}
+ CPU_MODEL_CORTEX_A8   = 4;  {ARM Cortex-A8}
+ CPU_MODEL_CORTEX_A9   = 5;  {ARM Cortex-A9}
+ CPU_MODEL_CORTEX_A15  = 6;  {ARM Cortex-A15}
+ CPU_MODEL_CORTEX_A17  = 7;  {ARM Cortex-A17}
+ CPU_MODEL_CORTEX_A53  = 8;  {ARM Cortex-A53}
+ CPU_MODEL_CORTEX_A57  = 9;  {ARM Cortex-A57}
+ CPU_MODEL_CORTEX_A72  = 10; {ARM Cortex-A72}
  
 const
  {CPU Description constants}
@@ -415,6 +426,9 @@ const
  CPU_DESCRIPTION_CORTEX_A9_MP = 'ARM Cortex-A9 MPCore'; 
  CPU_DESCRIPTION_CORTEX_A15   = 'ARM Cortex-A15 MPCore';
  CPU_DESCRIPTION_CORTEX_A17   = 'ARM Cortex-A17 MPCore'; 
+ CPU_DESCRIPTION_CORTEX_A53   = 'ARM Cortex-A53 MPCore'; 
+ CPU_DESCRIPTION_CORTEX_A57   = 'ARM Cortex-A57 MPCore'; 
+ CPU_DESCRIPTION_CORTEX_A72   = 'ARM Cortex-A72 MPCore'; 
  
 const 
  {CPU State constants}
@@ -538,9 +552,119 @@ const
  CACHE_TYPE_UNIFIED     = 4; {Unified Data and Instruction Cache}
  
 {==============================================================================}
-//const
+const
  {DMA DREQ ID constants}
+ DMA_DREQ_ID_NONE          =  0;
+ DMA_DREQ_ID_UART_TX       =  1;
+ DMA_DREQ_ID_UART_RX       =  2;
+ DMA_DREQ_ID_SPI_TX        =  3;
+ DMA_DREQ_ID_SPI_RX        =  4;
+ DMA_DREQ_ID_SPI_SLAVE_TX  =  5;
+ DMA_DREQ_ID_SPI_SLAVE_RX  =  6;
+ DMA_DREQ_ID_PCM_TX        =  7;
+ DMA_DREQ_ID_PCM_RX        =  8;
+ DMA_DREQ_ID_PWM           =  9;
+ DMA_DREQ_ID_MMC           =  10;
+ DMA_DREQ_ID_SDHOST        =  11;
  //To Do
+ 
+{==============================================================================}
+const
+ {GPIO Pin constants}
+ GPIO_PIN_0   =  0;
+ GPIO_PIN_1   =  1;
+ GPIO_PIN_2   =  2;
+ GPIO_PIN_3   =  3;
+ GPIO_PIN_4   =  4;
+ GPIO_PIN_5   =  5;
+ GPIO_PIN_6   =  6;
+ GPIO_PIN_7   =  7;
+ GPIO_PIN_8   =  8;
+ GPIO_PIN_9   =  9;
+ GPIO_PIN_10  =  10;
+ GPIO_PIN_11  =  11;
+ GPIO_PIN_12  =  12;
+ GPIO_PIN_13  =  13;
+ GPIO_PIN_14  =  14;
+ GPIO_PIN_15  =  15;
+ GPIO_PIN_16  =  16;
+ GPIO_PIN_17  =  17;
+ GPIO_PIN_18  =  18;
+ GPIO_PIN_19  =  19;
+ GPIO_PIN_20  =  20;
+ GPIO_PIN_21  =  21;
+ GPIO_PIN_22  =  22;
+ GPIO_PIN_23  =  23;
+ GPIO_PIN_24  =  24;
+ GPIO_PIN_25  =  25;
+ GPIO_PIN_26  =  26;
+ GPIO_PIN_27  =  27;
+ GPIO_PIN_28  =  28;
+ GPIO_PIN_29  =  29;
+ GPIO_PIN_30  =  30;
+ GPIO_PIN_31  =  31;
+ GPIO_PIN_32  =  32;
+ GPIO_PIN_33  =  33;
+ GPIO_PIN_34  =  34;
+ GPIO_PIN_35  =  35;
+ GPIO_PIN_36  =  36;
+ GPIO_PIN_37  =  37;
+ GPIO_PIN_38  =  38;
+ GPIO_PIN_39  =  39;
+ GPIO_PIN_40  =  40;
+ GPIO_PIN_41  =  41;
+ GPIO_PIN_42  =  42;
+ GPIO_PIN_43  =  43;
+ GPIO_PIN_44  =  44;
+ GPIO_PIN_45  =  45;
+ GPIO_PIN_46  =  46;
+ GPIO_PIN_47  =  47;
+ GPIO_PIN_48  =  48;
+ GPIO_PIN_49  =  49;
+ GPIO_PIN_50  =  50;
+ GPIO_PIN_51  =  51;
+ GPIO_PIN_52  =  52;
+ GPIO_PIN_53  =  53;
+ GPIO_PIN_54  =  54;
+ GPIO_PIN_55  =  55;
+ GPIO_PIN_56  =  56;
+ GPIO_PIN_57  =  57;
+ GPIO_PIN_58  =  58;
+ GPIO_PIN_59  =  59;
+ GPIO_PIN_60  =  60;
+ 
+const
+ {GPIO Function constants}
+ GPIO_FUNCTION_IN    =  0;
+ GPIO_FUNCTION_OUT   =  1;
+ GPIO_FUNCTION_ALT0  =  2;
+ GPIO_FUNCTION_ALT1  =  3;
+ GPIO_FUNCTION_ALT2  =  4;
+ GPIO_FUNCTION_ALT3  =  5;
+ GPIO_FUNCTION_ALT4  =  6;
+ GPIO_FUNCTION_ALT5  =  7;
+ 
+const
+ {GPIO Level constants}
+ GPIO_LEVEL_LOW  =  0;
+ GPIO_LEVEL_HIGH =  1;
+
+const
+ {GPIO Pull constants}
+ GPIO_PULL_NONE  =  0;
+ GPIO_PULL_UP    =  1;
+ GPIO_PULL_DOWN  =  2;
+ 
+{==============================================================================}
+const
+ {Virtual GPIO Pin constants}
+ VIRTUAL_GPIO_PIN_0  =  0;
+ VIRTUAL_GPIO_PIN_1  =  1;
+ 
+const
+ {Virtual GPIO Function constants}
+ VIRTUAL_GPIO_FUNCTION_IN  =  0;
+ VIRTUAL_GPIO_FUNCTION_OUT =  1;
  
 {==============================================================================}
 const

@@ -2197,22 +2197,27 @@ begin
     {Check Started}
     if SocketsStartupCount > 0 then
      begin
-      {Check Adapter}
-      Adapter:=AdapterManager.GetAdapterByDevice(Event.Device,False,NETWORK_LOCK_NONE); {Do not lock}
-      if Adapter = nil then
-       begin
-        {Create Adapter}
-        if DEVICE_NETWORK_ENABLED then
-         begin
-          Adapter:=TDeviceAdapter.Create(AdapterManager,Event.Device,DeviceGetName(@Event.Device.Device));
- 
-          {Start Adapter}
-          Adapter.StartAdapter;
- 
-          {Bind Transports}
-          TransportManager.BindTransports(Adapter);
-         end; 
-       end; 
+      {Check Type}
+      case Event.Device.Device.DeviceType of
+       NETWORK_TYPE_ETHERNET,NETWORK_TYPE_TOKENRING:begin
+         {Check Adapter}
+         Adapter:=AdapterManager.GetAdapterByDevice(Event.Device,False,NETWORK_LOCK_NONE); {Do not lock}
+         if Adapter = nil then
+          begin
+           {Create Adapter}
+           if WIRED_NETWORK_ENABLED then
+            begin
+             Adapter:=TWiredAdapter.Create(AdapterManager,Event.Device,DeviceGetName(@Event.Device.Device));
+         
+             {Start Adapter}
+             Adapter.StartAdapter;
+         
+             {Bind Transports}
+             TransportManager.BindTransports(Adapter);
+            end; 
+          end; 
+        end;
+      end; 
      end;  
    finally
     {Release the Lock}
@@ -2256,22 +2261,27 @@ begin
     {Check Started}
     if SocketsStartupCount > 0 then
      begin
-      {Check Adapter}
-      Adapter:=AdapterManager.GetAdapterByDevice(Network,True,NETWORK_LOCK_READ);
-      if Adapter <> nil then
-       begin
-        {Unbind Transports}
-        TransportManager.UnbindTransports(Adapter);
-        
-        {Stop Adapter}
-        Adapter.StopAdapter;
-        
-        {Unlock Adapter}
-        Adapter.ReaderUnlock;
-        
-        {Free Adapter}
-        Adapter.Free;
-       end; 
+      {Check Type}
+      case Network.Device.DeviceType of
+       NETWORK_TYPE_ETHERNET,NETWORK_TYPE_TOKENRING:begin
+         {Check Adapter}
+         Adapter:=AdapterManager.GetAdapterByDevice(Network,True,NETWORK_LOCK_READ);
+         if Adapter <> nil then
+          begin
+           {Unbind Transports}
+           TransportManager.UnbindTransports(Adapter);
+           
+           {Stop Adapter}
+           Adapter.StopAdapter;
+           
+           {Unlock Adapter}
+           Adapter.ReaderUnlock;
+           
+           {Free Adapter}
+           Adapter.Free;
+          end; 
+        end;
+      end; 
      end;  
      
     {Return Result}
@@ -2313,16 +2323,21 @@ begin
     {Check Started}
     if SocketsStartupCount > 0 then
      begin
-      {Check Adapter}
-      Adapter:=AdapterManager.GetAdapterByDevice(Network,False,NETWORK_LOCK_NONE); {Do not lock}
-      if Adapter = nil then
-       begin
-        {Create Adapter}
-        if DEVICE_NETWORK_ENABLED then
-         begin
-          TDeviceAdapter.Create(AdapterManager,Network,DeviceGetName(@Network.Device));
-         end; 
-       end; 
+      {Check Type}
+      case Network.Device.DeviceType of
+       NETWORK_TYPE_ETHERNET,NETWORK_TYPE_TOKENRING:begin
+         {Check Adapter}
+         Adapter:=AdapterManager.GetAdapterByDevice(Network,False,NETWORK_LOCK_NONE); {Do not lock}
+         if Adapter = nil then
+          begin
+           {Create Adapter}
+           if WIRED_NETWORK_ENABLED then
+            begin
+             TWiredAdapter.Create(AdapterManager,Network,DeviceGetName(@Network.Device));
+            end; 
+          end; 
+        end;
+      end; 
      end;  
    finally
     {Release the Lock}

@@ -1,17 +1,16 @@
 {
-Ultibo Initialization code for Raspberry Pi 2.
+Ultibo Initialization code for Raspberry Pi 3.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2016 - SoftOz Pty Ltd.
 
 Arch
 ====
 
- ARMv7 (Cortex A7)
+ ARMv8 (Cortex A53)
 
 Boards
 ======
 
- Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B
  
 Licence
@@ -44,16 +43,16 @@ References
 
  QA7 Rev3.4
  
- Cortex-A7 MPCore Technical Reference Manual (Revision: r0p5)
+ Cortex-A8 MPCore Technical Reference Manual (Revision: r0p4)
  
- ARM v7 Architecture Reference Manual
+ ARM v8 Architecture Reference Manual
  
- ARM Architecture Reference Manual (ARMv7-A and ARMv7-R edition)
+ ARM Architecture Reference Manual (ARMv8-A)
  
  Linux Device Tree files in /arch/arm/boot/dts
  
-  bcm2709.dtsi
-  bcm2709-rpi-2-b.dts
+  bcm2710.dtsi
+  bcm2710-rpi-3-b.dts
 
  RPi Configuration
   
@@ -69,12 +68,12 @@ References
  
   https://github.com/slp/rpi2-hyp-boot/blob/master/rpi2-hyp-boot.S
     
-Raspberry Pi 2
+Raspberry Pi 3
 ==============
 
- SoC: Broadcom BCM2836
+ SoC: Broadcom BCM2837
  
- CPU: Cortex A7 (ARMv7) (4 @ 900MHz)
+ CPU: Cortex A53 (ARMv8) (4 @ 1200MHz)
 
  Cache: L1 32KB (Per Core) / L2 512KB (Shared by all Cores)
  
@@ -88,22 +87,22 @@ Raspberry Pi 2
  
  LAN: SMSC LAN9514 (SMSC95XX)
   
- SD/MMC: Arasan (BCM2709)
+ SD/MMC: Arasan (BCM2710)
  
- WiFi: (None)
+ WiFi: Broadcom (BCM43438)
  
- Bluetooth: (None)
+ Bluetooth: Broadcom (BCM43438)
 
  Other: GPIO / SPI / I2C / I2S / PL011 (UART) / PWM / SMI / Watchdog (PM) / Random (RNG) / Timer ???
  
-Boot RPi2
+Boot RPi3
 =========
 
- The boot loader on the Raspberry Pi 2 will load this code at address 0x00008000 onwards and set the
+ The boot loader on the Raspberry Pi 3 will load this code at address 0x00008000 onwards and set the
  following registers before jumping to this code.
 
  R0 - Zero
- R1 - Machine Type (Raspberry Pi 2 or BCM2709 = 0x0C42) 
+ R1 - Machine Type (Raspberry Pi 3 or BCM2710 = 0x0C42) 
  R2 - Address of the ARM Tags structure (Normally 0x0100)
 
  On entry to this code the processor will be in the following state:
@@ -115,13 +114,13 @@ Boot RPi2
  L1 Data Cache - Enabled (Firmware enabled prior to Non Secure switch) 
  L1 Instruction Cache - Enabled (Firmware enabled prior to Non Secure switch) 
  Branch Predication - Disabled
- Unaligned Data Access - Enabled (Always enabled on ARMv7)
+ Unaligned Data Access - Enabled (Always enabled on ARMv8)
  SMP Coherence - Enabled (Firmware enabled prior to Non Secure switch) 
  
  If the processor is in Hypervisor mode (Firmware behaviour after 2/10/2015) then Ultibo switches
  it to Supervisor mode during initial boot.
  
- If the configuration option RPI2_SECURE_BOOT is set to 1 then Ultibo switches the processor back
+ If the configuration option RPI3_SECURE_BOOT is set to 1 then Ultibo switches the processor back
  to Secure world during initial boot (see note below).
  
  Ultibo then switches the processor to System mode for all operations and remains in either the
@@ -129,10 +128,37 @@ Boot RPi2
 
  The initialization process enables the MMU, FPU, L1 Cache and other performance optimizations.
  
+ Note that this code is currently identical to the Raspberry Pi 2 boot code but has been separated 
+ to allow for supporting 64 bit mode on the ARMv8 in future. Ultibo currently runs the RPi3 in 32 bit
+ mode which is almost identical to ARMv7.
+
+ ARM64 support on Raspberry Pi 3
+ -------------------------------
+
+ Very little is known so far about the implementation of 64 bit mode by the RPi firmware, however
+ some details have started to appear.
+ 
+ There is a config.txt switch (arm_control=0x200) which causes the firmware to boot all 4 cores in
+ 64 bit mode instead of 32 bit mode. It appears that currently the firmware does not supply any
+ loader code when booting in 64 bit mode and the switch kernel_old=1 also needs to be used to
+ load the kernel image at address 0x00000000. This also means that the kernel image must deal with 
+ the startup of all 4 cores and holding the secondaries until the primary has completed the system
+ initialization. No ATAG parameters are provided when using kernel_old=1 so command line parameters
+ would not be available.
+ 
+ See this post for known information:
+ 
+  https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=137963
+  
+ It is likely that a 64 bit loader will be included in the firmware at some point in order to support
+ Linux boot in 64 bit mode. Without it device tree support etc would not be available and therefore
+ make Linux use the old style device setup.
+  
+ 
  Returning to Secure World:
  --------------------------
  
- The Raspberry Pi 2 firmware always switches to Non Secure world in order to:
+ The Raspberry Pi 3 firmware always switches to Non Secure world in order to:
  
   a) Reset CNTVOFF (Virtual Offset register) to zero
   
@@ -172,7 +198,7 @@ Boot RPi2
 {$H+}          {Default to AnsiString} 
 {$inline on}   {Allow use of Inline procedures}
 
-unit BootRPi2;
+unit BootRPi3;
 
 interface
 
@@ -180,7 +206,7 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform,PlatformRPi2,PlatformARM,PlatformARMv7,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,PlatformRPi3,PlatformARM,PlatformARMv8,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
 
 {==============================================================================}
 {Boot Functions}
@@ -204,7 +230,7 @@ implementation
 {==============================================================================}
 {Boot Functions}
 procedure Startup; assembler; nostackframe; [public, alias: '_START'];
-{Entry point of Ultibo on Raspberry Pi 2, this will be the very first byte executed
+{Entry point of Ultibo on Raspberry Pi 3, this will be the very first byte executed
  and will be loaded by the GPU at address 0x00008000}
 asm
  //Save the pointer to the ARM Tags that the bootloader should have passed
@@ -260,21 +286,21 @@ asm
  ldr pc, .Lfiq_addr	      //FIQ (Fast Interrupt Request) Handler 
 
 .Lreset_addr:
-  .long ARMv7ResetHandler   
+  .long ARMv8ResetHandler   
 .Lundef_addr:     
-  .long ARMv7UndefinedInstructionHandler      
+  .long ARMv8UndefinedInstructionHandler      
 .Lswi_addr:       
-  .long ARMv7SoftwareInterruptHandler        
+  .long ARMv8SoftwareInterruptHandler        
 .Lprefetch_addr:  
-  .long ARMv7PrefetchAbortHandler   
+  .long ARMv8PrefetchAbortHandler   
 .Labort_addr:     
-  .long ARMv7DataAbortHandler      
+  .long ARMv8DataAbortHandler      
 .Lreserved_addr:  
-  .long ARMv7ReservedHandler  
+  .long ARMv8ReservedHandler  
 .Lirq_addr:       
-  .long ARMv7IRQHandler      
+  .long ARMv8IRQHandler      
 .Lfiq_addr:       
-  .long ARMv7FIQHandler        
+  .long ARMv8FIQHandler        
 end;
 
 {==============================================================================}
@@ -293,7 +319,7 @@ asm
  ldr pc, .Lreset_addr	  //FIQ (Fast Interrupt Request) Handler 
 
 .Lreset_addr:
-  .long ARMv7ResetHandler   
+  .long ARMv8ResetHandler   
 .Lsmc_addr:       
   .long SecureMonitor        
 end;
@@ -307,7 +333,7 @@ asm
  mrc p15, #0, r1, cr1, cr1, #0
 
  //Clear the NS bit 
- bic r1, r1, #ARMV7_CP15_C1_SCR_NS  
+ bic r1, r1, #ARMV8_CP15_C1_SCR_NS  
   
  //Write the SCR (with NS bit clear) 
  mcr p15, #0, r1, cr1, cr1, #0           
@@ -355,7 +381,7 @@ procedure StartupSecure; assembler; nostackframe;
 {Startup handler routine to switch to secure mode}
 asm
  //Check the secure boot configuration
- mov r0, #RPI2_SECURE_BOOT
+ mov r0, #RPI3_SECURE_BOOT
  cmp r0, #0
  beq .LNoSecure
   
@@ -417,17 +443,17 @@ asm
  bl StartupSecure
   
  //Invalidate all Caches before starting the boot process
- bl ARMv7InvalidateCache
+ bl ARMv8InvalidateCache
  
  //Invalidate the TLB before starting the boot process
- bl ARMv7InvalidateTLB
+ bl ARMv8InvalidateTLB
  
  //Change to SYS mode and ensure all interrupts are disabled
  //so the ARM processor is in a known state.
  cpsid if, #ARM_MODE_SYS
 
  //Copy the ARM exception table from Vectors to the vector base address.
- mov r0, #RPI2_VECTOR_TABLE_BASE
+ mov r0, #RPI3_VECTOR_TABLE_BASE
  ldr r1, .L_vectors
  ldmia r1!, {r2-r9}
  stmia r0!, {r2-r9}
@@ -436,16 +462,16 @@ asm
 
  //Set the Vector Base Address register in the System Control
  //register to the address of the vector table base above.
- mov r0, #RPI2_VECTOR_TABLE_BASE
+ mov r0, #RPI3_VECTOR_TABLE_BASE
  mcr p15, #0, r0, cr12, cr0, #0
  
  //Enable Unaligned Memory Accesses (U Bit) in the System Control
  //Register to simplify memory access routines from Pascal code.
  //
  //This would normally occur in CPUInit but is done here to allow
- //calls to Pascal code for during initialization. (Always enabled in ARMv7)
+ //calls to Pascal code for during initialization. (Always enabled in ARMv8)
  //mrc p15, #0, r0, cr1, cr0, #0
- //orr r0, #ARMV7_CP15_C1_U_BIT
+ //orr r0, #ARMV8_CP15_C1_U_BIT
  //mcr p15, #0, r0, cr1, cr0, #0
  
  //Clear the entire .bss section of the kernel image.
@@ -553,14 +579,14 @@ asm
  //Move the initial stack away from the initial heap but remain 8 byte aligned.
  sub sp, sp, #8
   
- //Initialize the RPi2 Platform specific behaviour (Memory, Peripherals, Interrupts etc).
- bl RPi2Init
+ //Initialize the RPi3 Platform specific behaviour (Memory, Peripherals, Interrupts etc).
+ bl RPi3Init
   
  //Initialize the ARM Platform specific behaviour (IRQ, FIQ, Abort etc).
  bl ARMInit
 
- //Initialize the ARMv7 Platform specific behaviour (Halt, Pause, Locks, Barriers, ContextSwitch, ThreadStack etc).
- bl ARMv7Init
+ //Initialize the ARMv8 Platform specific behaviour (Halt, Pause, Locks, Barriers, ContextSwitch, ThreadStack etc).
+ bl ARMv8Init
 
  //Initialize the Ultibo Platform (CPU, FPU, MMU, Heap, Clock, Interrupts, ATAGS, Power etc).
  bl PlatformInit
@@ -585,7 +611,7 @@ asm
  bl ThreadsInit 
   
  //If ThreadsInit returns then halt the CPU
- b ARMv7Halt
+ b ARMv8Halt
   
 .L_vectors:
   .long Vectors

@@ -108,6 +108,10 @@ const
  SHELL_FILESYS_ACTION_SIGNATURE  = 'SIGNATURE';
  SHELL_FILESYS_ACTION_INITIALIZE = 'INITIALIZE';
 
+ SHELL_FILESYS_ACTION_EJECT      = 'EJECT';
+ SHELL_FILESYS_ACTION_LOCK       = 'LOCK';
+ SHELL_FILESYS_ACTION_UNLOCK     = 'UNLOCK';
+ 
  SHELL_FILESYS_ACTION_ADD        = 'ADD';
  SHELL_FILESYS_ACTION_DELETE     = 'DELETE';
  SHELL_FILESYS_ACTION_ACTIVATE   = 'ACTIVATE';
@@ -977,10 +981,15 @@ begin
  AShell.DoOutput(ASession,' ' + Name + ' SIGNATURE <DISK>  (Display or modify signature for the specified disk)');
  AShell.DoOutput(ASession,' ' + Name + ' INITIALIZE <DISK> (Remove all partitions and initialize specified disk)');
  AShell.DoOutput(ASession,'');
+ AShell.DoOutput(ASession,' ' + Name + ' EJECT <DISK>      (Eject the disk media from the drive if supported)');
+ AShell.DoOutput(ASession,' ' + Name + ' LOCK <DISK>       (Lock the disk media in the drive if supported)');
+ AShell.DoOutput(ASession,' ' + Name + ' UNLOCK <DISK>     (Unlock the disk media in the drive if supported)');
+ AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Examples:');
  AShell.DoOutput(ASession,'    ' + Name + ' SHOW \Harddisk0');
  AShell.DoOutput(ASession,'    ' + Name + ' SIGNATURE \Harddisk0 12345678');
  AShell.DoOutput(ASession,'    ' + Name + ' INITIALIZE \Harddisk0');
+ AShell.DoOutput(ASession,'    ' + Name + ' EJECT \Cdrom0');
  AShell.DoOutput(ASession,'');
  
  {Return Result}
@@ -1082,12 +1091,25 @@ begin
          AShell.DoOutput(ASession,'  Name:        ' + Device.Name);
          AShell.DoOutput(ASession,'  Description: ' + Device.Information);
          AShell.DoOutput(ASession,'');
+         AShell.DoOutput(ASession,'  VendorId:    0x' + IntToHex(Device.VendorId,4));
+         AShell.DoOutput(ASession,'  DeviceId:    0x' + IntToHex(Device.DeviceId,4));
+         AShell.DoOutput(ASession,'');
+         AShell.DoOutput(ASession,'  Manufacturer: ' + Device.Manufacturer);
+         AShell.DoOutput(ASession,'  Product:      ' + Device.Product);
+         AShell.DoOutput(ASession,'  SerialNumber: ' + Device.SerialNumber);
+         AShell.DoOutput(ASession,'');
          AShell.DoOutput(ASession,'  Media Type:  ' + MediaTypeToString(Device.MediaType));
          AShell.DoOutput(ASession,'  Floppy Type: ' + FloppyTypeToString(Device.FloppyType));
          AShell.DoOutput(ASession,'');
          AShell.DoOutput(ASession,'  LBA:         ' + BooleanToString(Device.LBA));
          AShell.DoOutput(ASession,'  Ready:       ' + BooleanToString(Device.Ready));
          AShell.DoOutput(ASession,'  Locked:      ' + BooleanToString(Device.Locked));
+
+         AShell.DoOutput(ASession,'  Lockable:    ' + BooleanToString(Device.Lockable));
+         AShell.DoOutput(ASession,'  Ejectable:   ' + BooleanToString(Device.Ejectable));
+         AShell.DoOutput(ASession,'  Readable:    ' + BooleanToString(Device.Readable));
+         AShell.DoOutput(ASession,'  Writeable:   ' + BooleanToString(Device.Writeable));
+         AShell.DoOutput(ASession,'  Eraseable:   ' + BooleanToString(Device.Eraseable));
          AShell.DoOutput(ASession,'  Removable:   ' + BooleanToString(Device.Removable));
          AShell.DoOutput(ASession,'  Change Line: ' + BooleanToString(Device.ChangeLine));
          AShell.DoOutput(ASession,'');
@@ -1294,6 +1316,148 @@ begin
           FreeMem(Buffer);
          end;
          
+         Device.ReaderUnlock;
+        end
+       else
+        begin
+         AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
+        end;        
+      end
+     else
+      begin
+       AShell.DoOutput(ASession,'Disk name not supplied');
+      end;      
+    end;
+  
+   {Return Result}
+   Result:=True;
+  end
+ else if Uppercase(Parameter) = SHELL_FILESYS_ACTION_EJECT then
+  begin
+   {Check Driver}
+   if FileSysDriver <> nil then
+    begin
+     {Get Name}
+     Name:=AddLeadingSlash(StripTrailingSlash(AShell.ParameterIndex(1,AParameters)));
+     if Length(Name) > 0 then
+      begin
+       {Get Device}
+       Device:=FileSysDriver.GetDeviceByName(Name,True,FILESYS_LOCK_READ);
+       if Device <> nil then
+        begin
+         {Check Ejectable}
+         if Device.Ejectable then
+          begin
+           if not Device.EjectMedia then
+            begin
+             AShell.DoOutput(ASession,'Disk ' + Name + ' eject failed');
+            end;
+          end
+         else
+          begin
+           AShell.DoOutput(ASession,'Disk ' + Name + ' is not ejectable');
+          end;          
+  
+         Device.ReaderUnlock;
+        end
+       else
+        begin
+         AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
+        end;        
+      end
+     else
+      begin
+       AShell.DoOutput(ASession,'Disk name not supplied');
+      end;      
+    end;
+  
+   {Return Result}
+   Result:=True;
+  end
+ else if Uppercase(Parameter) = SHELL_FILESYS_ACTION_LOCK then
+  begin
+   {Check Driver}
+   if FileSysDriver <> nil then
+    begin
+     {Get Name}
+     Name:=AddLeadingSlash(StripTrailingSlash(AShell.ParameterIndex(1,AParameters)));
+     if Length(Name) > 0 then
+      begin
+       {Get Device}
+       Device:=FileSysDriver.GetDeviceByName(Name,True,FILESYS_LOCK_READ);
+       if Device <> nil then
+        begin
+         {Check Lockable}
+         if Device.Lockable then
+          begin
+           {Check Locked}
+           if not Device.Locked then
+            begin
+             if not Device.LockMedia then
+              begin
+               AShell.DoOutput(ASession,'Disk ' + Name + ' lock failed');
+              end;
+            end
+           else
+            begin
+             AShell.DoOutput(ASession,'Disk ' + Name + ' is already locked');
+            end;
+          end
+         else
+          begin
+           AShell.DoOutput(ASession,'Disk ' + Name + ' is not lockable');
+          end;          
+  
+         Device.ReaderUnlock;
+        end
+       else
+        begin
+         AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
+        end;        
+      end
+     else
+      begin
+       AShell.DoOutput(ASession,'Disk name not supplied');
+      end;      
+    end;
+
+   {Return Result}
+   Result:=True;
+  end
+ else if Uppercase(Parameter) = SHELL_FILESYS_ACTION_UNLOCK then
+  begin
+   {Check Driver}
+   if FileSysDriver <> nil then
+    begin
+     {Get Name}
+     Name:=AddLeadingSlash(StripTrailingSlash(AShell.ParameterIndex(1,AParameters)));
+     if Length(Name) > 0 then
+      begin
+       {Get Device}
+       Device:=FileSysDriver.GetDeviceByName(Name,True,FILESYS_LOCK_READ);
+       if Device <> nil then
+        begin
+         {Check Lockable}
+         if Device.Lockable then
+          begin
+           {Check Locked}
+           if Device.Locked then
+            begin
+             if not Device.UnlockMedia then
+              begin
+               AShell.DoOutput(ASession,'Disk ' + Name + ' unlock failed');
+              end;
+            end
+           else
+            begin
+             AShell.DoOutput(ASession,'Disk ' + Name + ' is not locked');
+            end;
+          end
+         else
+          begin
+           AShell.DoOutput(ASession,'Disk ' + Name + ' is not lockable');
+          end;          
+  
          Device.ReaderUnlock;
         end
        else

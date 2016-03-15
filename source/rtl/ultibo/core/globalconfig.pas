@@ -175,6 +175,7 @@ var
 {CPU / FPU / GPU configuration}
 var
  {CPU configuration}
+ CPU_ARCH:LongWord;                   {The current CPU architecture for this board}
  CPU_TYPE:LongWord;                   {The current CPU model for this board}
  CPU_COUNT:LongWord;                  {The current CPU count for this board}
  
@@ -572,6 +573,10 @@ var
  //GPIO_FUNCTION_VALUES:array of LongWord;
  //To Do //More
  
+ {Virtual GPIO}
+ VIRTUAL_GPIO_PIN_COUNT:LongWord;      {The number of Virtual GPIO pins available on this board}
+ //To Do 
+ 
  {USB}
  USB_AUTOSTART:LongBool = True;        {If True then auto start the USB subsystem on boot (Only if USB unit included)}
  USB_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
@@ -670,6 +675,27 @@ var
  BCM2709_REGISTER_MAILBOX:LongBool = True;  {If True then register the BCM2709 Mailbox device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_WATCHDOG:LongBool = True; {If True then register the BCM2709 Watchdog device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2709 Framebuffer device during boot (Only if BCM2709 unit included)}
+
+ {BCM2710}
+ BCM2710SDHCI_FIQ_ENABLED:LongBool;         {The BCM2710 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+
+ BCM2710FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2710 Framebuffer device}
+ BCM2710FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2710 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
+ 
+ BCM2710_REGISTER_SPI:LongBool = True;      {If True then register the BCM2710 SPI device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_I2C:LongBool = True;      {If True then register the BCM2710 I2C device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_DMA:LongBool = True;      {If True then register the BCM2710 DMA host during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_PWM:LongBool = True;      {If True then register the BCM2710 PWM device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_PCM:LongBool = True;      {If True then register the BCM2710 PCM device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2710 GPIO device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
+
+ BCM2710_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2710 Clock device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2710 Timer device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2710 Random device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_MAILBOX:LongBool = True;  {If True then register the BCM2710 Mailbox device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_WATCHDOG:LongBool = True; {If True then register the BCM2710 Watchdog device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2710 Framebuffer device during boot (Only if BCM2710 unit included)}
  
 {==============================================================================}
 {Country, CodePage, Locale and Language configuration}
@@ -815,9 +841,13 @@ var
  ARP_TRANSPORT_ENABLED:LongBool = True;         {ARP transport is enabled if True}
  RARP_TRANSPORT_ENABLED:LongBool = True;        {RARP transport is enabled if True}
  
+ RSN_TRANSPORT_ENABLED:LongBool = True;         {RSN transport is enabled if True}
+ EAPOL_TRANSPORT_ENABLED:LongBool = True;       {EAPOL transport is enabled if True}
+ 
  {Network configuration}
- DEVICE_NETWORK_ENABLED:LongBool = True;        {Device network adapters are enabled if True}
+ WIRED_NETWORK_ENABLED:LongBool = True;         {Wired network adapters are enabled if True}
  LOOPBACK_NETWORK_ENABLED:LongBool = True;      {Loopback network adapter is enabled if True}
+ WIRELESS_NETWORK_ENABLED:LongBool = True;      {Wireless network adapters are enabled if True}
  
 {==============================================================================}
 {Shell configuration}
@@ -947,6 +977,7 @@ function SysErrorToString(ErrorCode:Integer):String;
 
 function BooleanToString(Value:Boolean):String;
 
+function CPUArchToString(CPUArch:LongWord):String;
 function CPUTypeToString(CPUType:LongWord):String;
 function CPUModelToString(CPUModel:LongWord):String;
 function CPUIDToString(CPUID:LongWord):String;
@@ -1329,6 +1360,19 @@ end;
 
 {==============================================================================}
 
+function CPUArchToString(CPUArch:LongWord):String;
+begin
+ {}
+ Result:='CPU_ARCH_UNKNOWN';
+ 
+ case CPUArch of
+  CPU_ARCH_ARM32:Result:='CPU_ARCH_ARM32';
+  CPU_ARCH_ARM64:Result:='CPU_ARCH_ARM64';
+ end;
+end;
+
+{==============================================================================}
+
 function CPUTypeToString(CPUType:LongWord):String;
 begin
  {}
@@ -1356,6 +1400,9 @@ begin
   CPU_MODEL_CORTEX_A9:Result:='CPU_MODEL_CORTEX_A9';
   CPU_MODEL_CORTEX_A15:Result:='CPU_MODEL_CORTEX_A15';
   CPU_MODEL_CORTEX_A17:Result:='CPU_MODEL_CORTEX_A17';
+  CPU_MODEL_CORTEX_A53:Result:='CPU_MODEL_CORTEX_A53';
+  CPU_MODEL_CORTEX_A57:Result:='CPU_MODEL_CORTEX_A57';
+  CPU_MODEL_CORTEX_A72:Result:='CPU_MODEL_CORTEX_A72';
  end;
 end;
 
@@ -1479,6 +1526,7 @@ begin
   BOARD_TYPE_ODROID_XU4:Result:='BOARD_TYPE_ODROID_XU4'; 
   BOARD_TYPE_PC_X86:Result:='BOARD_TYPE_PC_X86'; 
   BOARD_TYPE_PC_X86_64:Result:='BOARD_TYPE_PC_X86_64'; 
+  BOARD_TYPE_RPI3B:Result:='BOARD_TYPE_RPI3B';
  end;
 end;
 
@@ -1492,6 +1540,7 @@ begin
  case MachineType of
   MACHINE_TYPE_BCM2708:Result:='MACHINE_TYPE_BCM2708';
   MACHINE_TYPE_BCM2709:Result:='MACHINE_TYPE_BCM2709';
+  MACHINE_TYPE_BCM2710:Result:='MACHINE_TYPE_BCM2710';
  end;
 end;
 

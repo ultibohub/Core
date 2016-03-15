@@ -375,7 +375,7 @@ type
  PSCSIStandardInquiryData = ^TSCSIStandardInquiryData;
  TSCSIStandardInquiryData = packed record
   DeviceType:Byte;                  {Peripheral Device Type (Bits 4..0)}
-  RemovableMediaBit:Byte;           {Removable Meia Bit (Bit 7) ($80)}
+  RemovableMediaBit:Byte;           {Removable Media Bit (Bit 7) ($80)}
   Version:Byte;                     {ISO/ECMA/ANSI Version (ISO Bits 7..6)(ECMA Bits 5..3)(ANSI Bits 2..0)}
   ResponseFormat:Byte;              {Response Data Format (Bits 3..0)}
   AdditionalLength:Byte;            {Additional Length}

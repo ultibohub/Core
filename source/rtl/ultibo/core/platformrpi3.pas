@@ -1,17 +1,16 @@
 {
-Ultibo Platform interface unit for Raspberry Pi 2.
+Ultibo Platform interface unit for Raspberry Pi 3.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2016 - SoftOz Pty Ltd.
 
 Arch
 ====
 
- ARMv7 (Cortex A7)
+ ARMv8 (Cortex A53)
 
 Boards
 ======
 
- Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B
  
 Licence
@@ -47,11 +46,11 @@ References
  
  QA7 Rev3.4
 
- Cortex-A7 MPCore Technical Reference Manual (Revision: r0p5)
+ Cortex-A8 MPCore Technical Reference Manual (Revision: r0p4)
  
- ARM v7 Architecture Reference Manual
+ ARM v8 Architecture Reference Manual
  
- ARM Architecture Reference Manual (ARMv7-A and ARMv7-R edition)
+ ARM Architecture Reference Manual (ARMv8-A)
  
  Raspberry Pi Mailboxes
  
@@ -61,11 +60,10 @@ References
  
   http://elinux.org/RPi_Framebuffer
  
-Platform RPi2
+Platform RPi3
 =============
 
- Notes: The RPi2 B has the Power LED connected to GPIO Pin 35 (Activity LED is now on GPIO Pin 47)
-        The RPi3 B has the Activity LED connected to the GPU, access is via a Virtual GPIO (Power LED appears to be unavailable)
+ Notes: The RPi3 B has the Activity LED connected to the GPU, access is via a Virtual GPIO (Power LED appears to be unavailable)
 
 }
 
@@ -73,16 +71,16 @@ Platform RPi2
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PlatformRPi2; 
+unit PlatformRPi3; 
 
 interface
 
 {==============================================================================}
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
-{--$DEFINE RPI2_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer}
+{--$DEFINE RPI3_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform,PlatformARM,PlatformARMv7,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,PlatformARM,PlatformARMv8,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
 
 //To Do //Look for:
 
@@ -90,146 +88,114 @@ uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform,PlatformARM,PlatformA
 
 {==============================================================================}
 const
- {RPi2 specific constants}
+ {RPi3 specific constants}
 
  {ARM Physical to VC IO Mapping}
- RPI2_VCIO_ALIAS = BCM2836_VCIO_ALIAS;     {The VCIO Alias (For ARM Physcial to VC IO translation)}
+ RPI3_VCIO_ALIAS = BCM2837_VCIO_ALIAS;     {The VCIO Alias (For ARM Physcial to VC IO translation)}
  
  {ARM Physical to VC Bus Mapping}
- RPI2_VCBUS_ALIAS = BCM2836_VCBUS_C_ALIAS; {The currently selected VCBUS Alias (For ARM Physcial to VC Bus translation)}
+ RPI3_VCBUS_ALIAS = BCM2837_VCBUS_C_ALIAS; {The currently selected VCBUS Alias (For ARM Physcial to VC Bus translation)}
 
 const
  {Secure World Boot} 
- RPI2_SECURE_BOOT = $00000001;         {If 1 then startup will attempt to switch back to secure world during boot process}
+ RPI3_SECURE_BOOT = $00000001;         {If 1 then startup will attempt to switch back to secure world during boot process}
  
 const 
  {Address of StartupHandler on Reset}
- RPI2_STARTUP_ADDRESS = $00008000;
+ RPI3_STARTUP_ADDRESS = $00008000;
  
 const
  {Page Table Address and Size}
- RPI2_PAGE_TABLE_BASE = $00004000;     {Place the first level Page Table after the interrupt vectors at 0x00001000 and before the code start at 0x00008000}
- RPI2_PAGE_TABLE_SIZE = SIZE_16K;      {ARM Cortex A7 first level Page Table is exactly 16KB in size (4096 32 bit (4 byte) entries)}
+ RPI3_PAGE_TABLE_BASE = $00004000;     {Place the first level Page Table after the interrupt vectors at 0x00001000 and before the code start at 0x00008000}
+ RPI3_PAGE_TABLE_SIZE = SIZE_16K;      {ARM Cortex A7 first level Page Table is exactly 16KB in size (4096 32 bit (4 byte) entries)}
  
 const
  {Vector Table Address and Size} 
- RPI2_VECTOR_TABLE_BASE = $00001000;   {Place the Interrupt Vector Table at 0x00001000 before the code start at 0x00008000}
- RPI2_VECTOR_TABLE_SIZE = SIZE_64;     {The Interrupt Vector Table is exactly 64 bytes (16 32 bit (4 byte) entries)}
+ RPI3_VECTOR_TABLE_BASE = $00001000;   {Place the Interrupt Vector Table at 0x00001000 before the code start at 0x00008000}
+ RPI3_VECTOR_TABLE_SIZE = SIZE_64;     {The Interrupt Vector Table is exactly 64 bytes (16 32 bit (4 byte) entries)}
  
 const
  {CPU Count}
- RPI2_CPU_COUNT = BCM2836_CPU_COUNT;
- RPI2_CPU_BOOT = CPU_ID_0;
- RPI2_CPU_MASK = CPU_AFFINITY_0 or CPU_AFFINITY_1 or CPU_AFFINITY_2 or CPU_AFFINITY_3;
+ RPI3_CPU_COUNT = BCM2837_CPU_COUNT;
+ RPI3_CPU_BOOT = CPU_ID_0;
+ RPI3_CPU_MASK = CPU_AFFINITY_0 or CPU_AFFINITY_1 or CPU_AFFINITY_2 or CPU_AFFINITY_3;
 
 const
  {IRQ/FIQ Start/Routing}
- RPI2_IRQ_START = 0;                   {System wide IRQs start at zero}
+ RPI3_IRQ_START = 0;                   {System wide IRQs start at zero}
  
- RPI2_IRQ_ROUTING = CPU_ID_0;          {Route system wide IRQs to CPU0}
- RPI2_FIQ_ROUTING = CPU_ID_0;          {Route system wide FIQs to CPU0}
+ RPI3_IRQ_ROUTING = CPU_ID_0;          {Route system wide IRQs to CPU0}
+ RPI3_FIQ_ROUTING = CPU_ID_0;          {Route system wide FIQs to CPU0}
 
- RPI2_IRQ_LOCAL_START = BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT; {Local IRQs start after GPU and ARM IRQs}
+ RPI3_IRQ_LOCAL_START = BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT; {Local IRQs start after GPU and ARM IRQs}
  
 const
  {Core Timer Prescaler}
- RPI2_CORE_TIMER_PRESCALER    = $06AAAAAB; {Divide the Crystal Clock by 19.2 to give a 1MHz Core Timer}
- RPI2_CORE_TIMER_FREQUENCY    = 1000000;   {The Core Timer frequency from the prescaler setting above}
- RPI2_GENERIC_TIMER_FREQUENCY = 1000000;   {The ARM Generic Timer frequency from the prescaler setting above}
+ RPI3_CORE_TIMER_PRESCALER    = $06AAAAAB; {Divide the Crystal Clock by 19.2 to give a 1MHz Core Timer}
+ RPI3_CORE_TIMER_FREQUENCY    = 1000000;   {The Core Timer frequency from the prescaler setting above}
+ RPI3_GENERIC_TIMER_FREQUENCY = 1000000;   {The ARM Generic Timer frequency from the prescaler setting above}
  
 const
  {Kernel Image Name}
- RPI2_KERNEL_NAME = 'kernel7.img';
- RPI2_KERNEL_CONFIG = 'config.txt';
- RPI2_KERNEL_COMMAND = 'cmdline.txt';
- 
-const
- {GPIO Power LED constants (GPIO Pin 35)} 
- {Note: GPIO Pin 35 on the RPi2 is set on boot to Pull Up/Down Enable which must be cleared before using the pin}
- RPI2_GPIO_PWRLED_GPFSEL = BCM2836_GPFSEL3;          {GPFSEL register for PWR LED}
- RPI2_GPIO_PWRLED_GPSET = BCM2836_GPSET1;            {GPSET register for PWR LED}
- RPI2_GPIO_PWRLED_GPCLR = BCM2836_GPCLR1;            {GPCLR register for PWR LED}
- 
- RPI2_GPIO_PWRLED_GPFSHIFT = 15;                     {GPFSEL register shift for PWR LED}
- RPI2_GPIO_PWRLED_GPFMASK = BCM2836_GPFSEL_MASK;     {GPFSEL register mask for PWR LED}
- //To Do RPI2_GPIO_PWRLED_GPFVALUE = ALT0/1/2/3 etc
- 
- RPI2_GPIO_PWRLED_GPSHIFT = (35 - 32);               {GPSET/GPCLR register shift for PWR LED}
- RPI2_GPIO_PWRLED_GPMASK = BCM2836_GPSET_MASK;       {GPSET/GPCLR register mask for PWR LED}
- 
- //GPIO Pin 35 on RPi2
- //See: http://www.raspberrypi.org/forums/viewtopic.php?t=72260
- //See also for how to control GPPUD etc: http://wiki.osdev.org/Raspberry_Pi_Bare_Bones 
- 
-const 
- {GPIO Activity LED constants (GPIO Pin 47)} 
- {Note: GPIO Pin 47 on the RPi2 is Pull High instead of Pull Low, to turn on the LED use RPI2_GPIO_ACTLED_GPSET instead of RPI2_GPIO_ACTLED_GPCLR}
- RPI2_GPIO_ACTLED_GPFSEL = BCM2836_GPFSEL4;          {GPFSEL register for ACT LED}
- RPI2_GPIO_ACTLED_GPSET = BCM2836_GPSET1;            {GPSET register for ACT LED}
- RPI2_GPIO_ACTLED_GPCLR = BCM2836_GPCLR1;            {GPCLR register for ACT LED}
- 
- RPI2_GPIO_ACTLED_GPFSHIFT = 21;                     {GPFSEL register shift for ACT LED}
- RPI2_GPIO_ACTLED_GPFMASK = BCM2836_GPFSEL_MASK;     {GPFSEL register mask for ACT LED}
- //To Do RPI2_GPIO_ACTLED_GPFVALUE = ALT0/1/2/3 etc
-
- RPI2_GPIO_ACTLED_GPSHIFT = (47 - 32);               {GPSET/GPCLR register shift for ACT LED}
- RPI2_GPIO_ACTLED_GPMASK = BCM2836_GPSET_MASK;       {GPSET/GPCLR register mask for ACT LED}
+ RPI3_KERNEL_NAME = 'kernel7.img';
+ RPI3_KERNEL_CONFIG = 'config.txt';
+ RPI3_KERNEL_COMMAND = 'cmdline.txt';
  
 const
  {Mailbox constants}
- RPI2_MAILBOX_TIMEOUT = 100;                         {Default timeout to wait for mailbox calls to complete (Milliseconds)}
- RPI2_MAILBOX_TIMEOUT_EX = 1000;                     {Extended timeout to wait for mailbox calls to complete (Milliseconds)}
+ RPI3_MAILBOX_TIMEOUT = 100;                         {Default timeout to wait for mailbox calls to complete (Milliseconds)}
+ RPI3_MAILBOX_TIMEOUT_EX = 1000;                     {Extended timeout to wait for mailbox calls to complete (Milliseconds)}
  
 const
  {Mailbox constants}
- RPI2_LOCAL_MAILBOX_TIMEOUT = 100;                   {Default timeout to wait for local mailbox calls to complete (Milliseconds)}
+ RPI3_LOCAL_MAILBOX_TIMEOUT = 100;                   {Default timeout to wait for local mailbox calls to complete (Milliseconds)}
  
 {==============================================================================}
 {type}
- {RPi2 specific types}
+ {RPi3 specific types}
  
 {==============================================================================}
 var
- {RPi2 specific Ultibo variables}
- RPi2Initialized:Boolean;
+ {RPi3 specific Ultibo variables}
+ RPi3Initialized:Boolean;
 
 var
  {Timer Variables}
- TimerRegisters:PBCM2836SystemTimerRegisters;
+ TimerRegisters:PBCM2837SystemTimerRegisters;
  
 var
  {Mailbox Variables}
- Mailbox0Registers:PBCM2836Mailbox0Registers;
+ Mailbox0Registers:PBCM2837Mailbox0Registers;
  
 var
  {Interrupt Variables}
- InterruptRegisters:PBCM2836InterruptRegisters;
+ InterruptRegisters:PBCM2837InterruptRegisters;
  
- InterruptEntries:array[0..(BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1)] of TInterruptEntry;
- LocalInterruptEntries:array[RPI2_IRQ_LOCAL_START..(BCM2836_IRQ_COUNT - 1),0..(RPI2_CPU_COUNT - 1)] of TInterruptEntry;
+ InterruptEntries:array[0..(BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1)] of TInterruptEntry;
+ LocalInterruptEntries:array[RPI3_IRQ_LOCAL_START..(BCM2837_IRQ_COUNT - 1),0..(RPI3_CPU_COUNT - 1)] of TInterruptEntry;
  //To Do //Critical //Need to store the CPUID as well against the Handler, maybe an InterruptEntry structure in Platform ? //Yes, to do
  
- InterruptHandlers:array[0..(BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1)] of TInterruptHandler;
- InterruptExHandlers:array[0..(BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1)] of TInterruptExHandler;
- InterruptParameters:array[0..(BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1)] of Pointer; 
+ InterruptHandlers:array[0..(BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1)] of TInterruptHandler;
+ InterruptExHandlers:array[0..(BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1)] of TInterruptExHandler;
+ InterruptParameters:array[0..(BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1)] of Pointer; 
 
- LocalInterruptHandlers:array[RPI2_IRQ_LOCAL_START..(BCM2836_IRQ_COUNT - 1),0..(RPI2_CPU_COUNT - 1)] of TInterruptHandler;
- LocalInterruptExHandlers:array[RPI2_IRQ_LOCAL_START..(BCM2836_IRQ_COUNT - 1),0..(RPI2_CPU_COUNT - 1)] of TInterruptExHandler;
- LocalInterruptParameters:array[RPI2_IRQ_LOCAL_START..(BCM2836_IRQ_COUNT - 1),0..(RPI2_CPU_COUNT - 1)] of Pointer; 
+ LocalInterruptHandlers:array[RPI3_IRQ_LOCAL_START..(BCM2837_IRQ_COUNT - 1),0..(RPI3_CPU_COUNT - 1)] of TInterruptHandler;
+ LocalInterruptExHandlers:array[RPI3_IRQ_LOCAL_START..(BCM2837_IRQ_COUNT - 1),0..(RPI3_CPU_COUNT - 1)] of TInterruptExHandler;
+ LocalInterruptParameters:array[RPI3_IRQ_LOCAL_START..(BCM2837_IRQ_COUNT - 1),0..(RPI3_CPU_COUNT - 1)] of Pointer; 
  
- IRQEnabled:array[0..2] of LongWord; {3 groups of IRQs to Enable/Disable (See: TBCM2836InterruptRegisters)}
- FIQEnabled:LongWord;                {The single IRQ number to Enable as FIQ instead (See: TBCM2836InterruptRegisters)}
+ IRQEnabled:array[0..2] of LongWord; {3 groups of IRQs to Enable/Disable (See: TBCM2837InterruptRegisters)}
+ FIQEnabled:LongWord;                {The single IRQ number to Enable as FIQ instead (See: TBCM2837InterruptRegisters)}
  
- IRQLocalEnabled:array[0..(RPI2_CPU_COUNT - 1)] of LongWord; {1 group of local IRQs to Enable/Disable per CPU (See: TBCM2836ARMLocalRegisters)}
- FIQLocalEnabled:array[0..(RPI2_CPU_COUNT - 1)] of LongWord; {1 group of local FIQs to Enable/Disable per CPU (See: TBCM2836ARMLocalRegisters)}
+ IRQLocalEnabled:array[0..(RPI3_CPU_COUNT - 1)] of LongWord; {1 group of local IRQs to Enable/Disable per CPU (See: TBCM2837ARMLocalRegisters)}
+ FIQLocalEnabled:array[0..(RPI3_CPU_COUNT - 1)] of LongWord; {1 group of local FIQs to Enable/Disable per CPU (See: TBCM2837ARMLocalRegisters)}
  
 var
  {Watchdog Variables}
- WatchdogRegisters:PBCM2836PMWatchdogRegisters;
+ WatchdogRegisters:PBCM2837PMWatchdogRegisters;
  
 var
  {ARM Local Variables}
- ARMLocalRegisters:PBCM2836ARMLocalRegisters;
+ ARMLocalRegisters:PBCM2837ARMLocalRegisters;
  
 var
  {Virtual GPIO Variables}
@@ -237,219 +203,219 @@ var
  
 {==============================================================================}
 {Initialization Functions}
-procedure RPi2Init;
+procedure RPi3Init;
 
-procedure RPi2SecondarySwitch;
-procedure RPi2SecondarySecure;
-procedure RPi2SecondaryHandler;
+procedure RPi3SecondarySwitch;
+procedure RPi3SecondarySecure;
+procedure RPi3SecondaryHandler;
 
 {==============================================================================}
-{RPi2 Platform Functions}
-procedure RPi2SMPInit;
-procedure RPi2BoardInit;
-procedure RPi2MemoryInit;
-procedure RPi2ClockInit;
-procedure RPi2PowerInit;
-procedure RPi2MailboxInit;
-procedure RPi2InterruptInit;
-procedure RPi2PeripheralInit;
+{RPi3 Platform Functions}
+procedure RPi3SMPInit;
+procedure RPi3BoardInit;
+procedure RPi3MemoryInit;
+procedure RPi3ClockInit;
+procedure RPi3PowerInit;
+procedure RPi3MailboxInit;
+procedure RPi3InterruptInit;
+procedure RPi3PeripheralInit;
 {$IFDEF CONSOLE_EARLY_INIT}
-procedure RPi2FramebufferInit;
+procedure RPi3FramebufferInit;
 {$ENDIF}
-procedure RPi2PageTableInit;
+procedure RPi3PageTableInit;
 
-procedure RPi2PowerLEDEnable;
-procedure RPi2PowerLEDOn;
-procedure RPi2PowerLEDOff;
+procedure RPi3PowerLEDEnable;
+procedure RPi3PowerLEDOn;
+procedure RPi3PowerLEDOff;
 
-procedure RPi2ActivityLEDEnable;
-procedure RPi2ActivityLEDOn;
-procedure RPi2ActivityLEDOff;
+procedure RPi3ActivityLEDEnable;
+procedure RPi3ActivityLEDOn;
+procedure RPi3ActivityLEDOff;
 
-function RPi2MailboxReceive(Mailbox,Channel:LongWord):LongWord;
-procedure RPi2MailboxSend(Mailbox,Channel,Data:LongWord);
+function RPi3MailboxReceive(Mailbox,Channel:LongWord):LongWord;
+procedure RPi3MailboxSend(Mailbox,Channel,Data:LongWord);
 
-function RPi2MailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWord;
-function RPi2MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord;
-function RPi2MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
-function RPi2MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord;
+function RPi3MailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWord;
+function RPi3MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord;
+function RPi3MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
+function RPi3MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord;
 
-function RPi2RequestIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
-function RPi2ReleaseIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
-function RPi2RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
-function RPi2ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
+function RPi3RequestIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
+function RPi3ReleaseIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
+function RPi3RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
+function RPi3ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 
-function RPi2RequestFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
-function RPi2ReleaseFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
-function RPi2RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
-function RPi2ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function RPi3RequestFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
+function RPi3ReleaseFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
+function RPi3RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function RPi3ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 
-function RPi2SystemRestart(Delay:LongWord):LongWord; 
-function RPi2SystemShutdown(Delay:LongWord):LongWord;
-function RPi2SystemGetCommandLine:String;
+function RPi3SystemRestart(Delay:LongWord):LongWord; 
+function RPi3SystemShutdown(Delay:LongWord):LongWord;
+function RPi3SystemGetCommandLine:String;
 
-function RPi2CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
 
-function RPi2GPUGetState:LongWord;
-function RPi2GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3GPUGetState:LongWord;
+function RPi3GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
 
-function RPi2BoardGetModel:LongWord;
-function RPi2BoardGetSerial:Int64;
-function RPi2BoardGetRevision:LongWord;
-function RPi2BoardGetMACAddress:String;
+function RPi3BoardGetModel:LongWord;
+function RPi3BoardGetSerial:Int64;
+function RPi3BoardGetRevision:LongWord;
+function RPi3BoardGetMACAddress:String;
 
-function RPi2FirmwareGetRevision:LongWord;
+function RPi3FirmwareGetRevision:LongWord;
 
-function RPi2PowerGetWait(PowerId:LongWord):LongWord;
-function RPi2PowerGetState(PowerId:LongWord):LongWord;
-function RPi2PowerSetState(PowerId,State:LongWord;Wait:Boolean):LongWord;
+function RPi3PowerGetWait(PowerId:LongWord):LongWord;
+function RPi3PowerGetState(PowerId:LongWord):LongWord;
+function RPi3PowerSetState(PowerId,State:LongWord;Wait:Boolean):LongWord;
 
-function RPi2ClockGetCount:LongWord;
-function RPi2ClockGetTotal:Int64; 
+function RPi3ClockGetCount:LongWord;
+function RPi3ClockGetTotal:Int64; 
 
-function RPi2ClockGetRate(ClockId:LongWord):LongWord;
-function RPi2ClockSetRate(ClockId,Rate:LongWord;Turbo:Boolean):LongWord;
+function RPi3ClockGetRate(ClockId:LongWord):LongWord;
+function RPi3ClockSetRate(ClockId,Rate:LongWord;Turbo:Boolean):LongWord;
 
-function RPi2ClockGetState(ClockId:LongWord):LongWord;
-function RPi2ClockSetState(ClockId,State:LongWord):LongWord;
+function RPi3ClockGetState(ClockId:LongWord):LongWord;
+function RPi3ClockSetState(ClockId,State:LongWord):LongWord;
 
-function RPi2ClockGetMinRate(ClockId:LongWord):LongWord;
-function RPi2ClockGetMaxRate(ClockId:LongWord):LongWord;
+function RPi3ClockGetMinRate(ClockId:LongWord):LongWord;
+function RPi3ClockGetMaxRate(ClockId:LongWord):LongWord;
 
-function RPi2TurboGetState(TurboId:LongWord):LongWord;
-function RPi2TurboSetState(TurboId,State:LongWord):LongWord;
+function RPi3TurboGetState(TurboId:LongWord):LongWord;
+function RPi3TurboSetState(TurboId,State:LongWord):LongWord;
 
-function RPi2VoltageGetValue(VoltageId:LongWord):LongWord;
-function RPi2VoltageSetValue(VoltageId,Value:LongWord):LongWord;
+function RPi3VoltageGetValue(VoltageId:LongWord):LongWord;
+function RPi3VoltageSetValue(VoltageId,Value:LongWord):LongWord;
 
-function RPi2VoltageGetMinValue(VoltageId:LongWord):LongWord;
-function RPi2VoltageGetMaxValue(VoltageId:LongWord):LongWord;
+function RPi3VoltageGetMinValue(VoltageId:LongWord):LongWord;
+function RPi3VoltageGetMaxValue(VoltageId:LongWord):LongWord;
 
-function RPi2TemperatureGetCurrent(TemperatureId:LongWord):LongWord;
-function RPi2TemperatureGetMaximum(TemperatureId:LongWord):LongWord;
+function RPi3TemperatureGetCurrent(TemperatureId:LongWord):LongWord;
+function RPi3TemperatureGetMaximum(TemperatureId:LongWord):LongWord;
 
-function RPi2GPUMemoryAllocate(Length,Alignment,Flags:LongWord):THandle;
-function RPi2GPUMemoryRelease(Handle:THandle):LongWord;
-function RPi2GPUMemoryLock(Handle:THandle):LongWord;
-function RPi2GPUMemoryUnlock(Handle:THandle):LongWord;
+function RPi3GPUMemoryAllocate(Length,Alignment,Flags:LongWord):THandle;
+function RPi3GPUMemoryRelease(Handle:THandle):LongWord;
+function RPi3GPUMemoryLock(Handle:THandle):LongWord;
+function RPi3GPUMemoryUnlock(Handle:THandle):LongWord;
 
-function RPi2GPUExecuteCode(Address:Pointer;R0,R1,R2,R3,R4,R5:LongWord):LongWord;
+function RPi3GPUExecuteCode(Address:Pointer;R0,R1,R2,R3,R4,R5:LongWord):LongWord;
 
-function RPi2DispmanxHandleGet(Resource:THandle):THandle;
-function RPi2EDIDBlockGet(Block:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3DispmanxHandleGet(Resource:THandle):THandle;
+function RPi3EDIDBlockGet(Block:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 
-function RPi2FramebufferAllocate(Alignment:LongWord;var Address,Length:LongWord):LongWord;
-function RPi2FramebufferRelease:LongWord;
-function RPi2FramebufferSetState(State:LongWord):LongWord;
+function RPi3FramebufferAllocate(Alignment:LongWord;var Address,Length:LongWord):LongWord;
+function RPi3FramebufferRelease:LongWord;
+function RPi3FramebufferSetState(State:LongWord):LongWord;
 
-function RPi2FramebufferGetDimensions(var Width,Height,Top,Bottom,Left,Right:LongWord):LongWord; 
+function RPi3FramebufferGetDimensions(var Width,Height,Top,Bottom,Left,Right:LongWord):LongWord; 
 
-function RPi2FramebufferGetPhysical(var Width,Height:LongWord):LongWord;
-function RPi2FramebufferSetPhysical(var Width,Height:LongWord):LongWord;
-function RPi2FramebufferTestPhysical(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferGetPhysical(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferSetPhysical(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferTestPhysical(var Width,Height:LongWord):LongWord;
 
-function RPi2FramebufferGetVirtual(var Width,Height:LongWord):LongWord;
-function RPi2FramebufferSetVirtual(var Width,Height:LongWord):LongWord;
-function RPi2FramebufferTestVirtual(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferGetVirtual(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferSetVirtual(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferTestVirtual(var Width,Height:LongWord):LongWord;
 
-function RPi2FramebufferGetDepth(var Depth:LongWord):LongWord;
-function RPi2FramebufferSetDepth(var Depth:LongWord):LongWord;
-function RPi2FramebufferTestDepth(var Depth:LongWord):LongWord;
+function RPi3FramebufferGetDepth(var Depth:LongWord):LongWord;
+function RPi3FramebufferSetDepth(var Depth:LongWord):LongWord;
+function RPi3FramebufferTestDepth(var Depth:LongWord):LongWord;
 
-function RPi2FramebufferGetPixelOrder(var Order:LongWord):LongWord;
-function RPi2FramebufferSetPixelOrder(var Order:LongWord):LongWord;
-function RPi2FramebufferTestPixelOrder(var Order:LongWord):LongWord;
+function RPi3FramebufferGetPixelOrder(var Order:LongWord):LongWord;
+function RPi3FramebufferSetPixelOrder(var Order:LongWord):LongWord;
+function RPi3FramebufferTestPixelOrder(var Order:LongWord):LongWord;
 
-function RPi2FramebufferGetAlphaMode(var Mode:LongWord):LongWord;
-function RPi2FramebufferSetAlphaMode(var Mode:LongWord):LongWord;
-function RPi2FramebufferTestAlphaMode(var Mode:LongWord):LongWord;
+function RPi3FramebufferGetAlphaMode(var Mode:LongWord):LongWord;
+function RPi3FramebufferSetAlphaMode(var Mode:LongWord):LongWord;
+function RPi3FramebufferTestAlphaMode(var Mode:LongWord):LongWord;
 
-function RPi2FramebufferGetPitch:LongWord;
+function RPi3FramebufferGetPitch:LongWord;
 
-function RPi2FramebufferGetOffset(var X,Y:LongWord):LongWord;
-function RPi2FramebufferSetOffset(var X,Y:LongWord):LongWord;
-function RPi2FramebufferTestOffset(var X,Y:LongWord):LongWord;
+function RPi3FramebufferGetOffset(var X,Y:LongWord):LongWord;
+function RPi3FramebufferSetOffset(var X,Y:LongWord):LongWord;
+function RPi3FramebufferTestOffset(var X,Y:LongWord):LongWord;
 
-function RPi2FramebufferGetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
-function RPi2FramebufferSetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
-function RPi2FramebufferTestOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
+function RPi3FramebufferGetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
+function RPi3FramebufferSetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
+function RPi3FramebufferTestOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
 
-function RPi2FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord;
-function RPi2FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
-function RPi2FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 
-function RPi2VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
+function RPi3VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
 
-function RPi2CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
-function RPi2CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
+function RPi3CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
+function RPi3CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
 
-function RPi2DMAGetChannels:LongWord;
+function RPi3DMAGetChannels:LongWord;
 
-function RPi2VirtualGPIOInputGet(Pin:LongWord):LongWord; 
-function RPi2VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
-function RPi2VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
-function RPi2VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
-
-{==============================================================================}
-{RPi2 Thread Functions}
-procedure RPi2SchedulerInit;
-procedure RPi2SchedulerStart(CPUID:LongWord);
-
-procedure RPi2SecondaryBoot(CPUID:LongWord);
+function RPi3VirtualGPIOInputGet(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
 
 {==============================================================================}
-{RPi2 IRQ Functions}
-function RPi2DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{RPi3 Thread Functions}
+procedure RPi3SchedulerInit;
+procedure RPi3SchedulerStart(CPUID:LongWord);
 
-function RPi2HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-{==============================================================================}
-{RPi2 FIQ Functions}
-function RPi2DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-function RPi2HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+procedure RPi3SecondaryBoot(CPUID:LongWord);
 
 {==============================================================================}
-{RPi2 Clock Functions}
-procedure RPi2ClockInterrupt(Parameter:Pointer);
-procedure RPi2ClockUpdate(Cycles:LongWord;var Last:LongWord);
+{RPi3 IRQ Functions}
+function RPi3DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+
+function RPi3HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 
 {==============================================================================}
-{RPi2 Scheduler Functions}
-function RPi2SchedulerInterrupt(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;
-procedure RPi2SchedulerUpdate(Cycles:LongWord;var Last:LongWord);
+{RPi3 FIQ Functions}
+function RPi3DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+
+function RPi3HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 
 {==============================================================================}
-{RPi2 Framebuffer Functions}
+{RPi3 Clock Functions}
+procedure RPi3ClockInterrupt(Parameter:Pointer);
+procedure RPi3ClockUpdate(Cycles:LongWord;var Last:LongWord);
+
+{==============================================================================}
+{RPi3 Scheduler Functions}
+function RPi3SchedulerInterrupt(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;
+procedure RPi3SchedulerUpdate(Cycles:LongWord;var Last:LongWord);
+
+{==============================================================================}
+{RPi3 Framebuffer Functions}
 {$IFDEF CONSOLE_EARLY_INIT}
-function RPi2FramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-function RPi2FramebufferDeviceAllocateAlt(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-function RPi2FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
+function RPi3FramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+function RPi3FramebufferDeviceAllocateAlt(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+function RPi3FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
 
-function RPi2FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+function RPi3FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {$ENDIF}
 {==============================================================================}
-{RPi2 Helper Functions}
-procedure RPi2Wait;
-procedure RPi2LongWait;
-procedure RPi2ShortWait;
+{RPi3 Helper Functions}
+procedure RPi3Wait;
+procedure RPi3LongWait;
+procedure RPi3ShortWait;
 
-procedure RPi2SlowBlink;
-procedure RPi2FastBlink;
+procedure RPi3SlowBlink;
+procedure RPi3FastBlink;
 
-procedure RPi2BootBlink;
+procedure RPi3BootBlink;
 
-function RPi2ConvertPowerIdRequest(PowerId:LongWord):LongWord;
-function RPi2ConvertPowerStateRequest(PowerState:LongWord):LongWord;
-function RPi2ConvertPowerStateResponse(PowerState:LongWord):LongWord;
+function RPi3ConvertPowerIdRequest(PowerId:LongWord):LongWord;
+function RPi3ConvertPowerStateRequest(PowerState:LongWord):LongWord;
+function RPi3ConvertPowerStateResponse(PowerState:LongWord):LongWord;
 
-function RPi2ConvertClockIdRequest(ClockId:LongWord):LongWord;
-function RPi2ConvertClockStateRequest(ClockState:LongWord):LongWord;
-function RPi2ConvertClockStateResponse(ClockState:LongWord):LongWord;
+function RPi3ConvertClockIdRequest(ClockId:LongWord):LongWord;
+function RPi3ConvertClockStateRequest(ClockState:LongWord):LongWord;
+function RPi3ConvertClockStateResponse(ClockState:LongWord):LongWord;
 
-function RPi2ConvertVoltageIdRequest(VoltageId:LongWord):LongWord;
+function RPi3ConvertVoltageIdRequest(VoltageId:LongWord):LongWord;
 
-function RPi2ConvertTemperatureIdRequest(TemperatureId:LongWord):LongWord;
+function RPi3ConvertTemperatureIdRequest(TemperatureId:LongWord):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -459,64 +425,64 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
-procedure RPi2Init;
+procedure RPi3Init;
 begin
  {}
- if RPi2Initialized then Exit;
+ if RPi3Initialized then Exit;
 
  {Setup IO_BASE/IO_ALIAS}
- IO_BASE:=BCM2836_PERIPHERALS_BASE;
- IO_ALIAS:=RPI2_VCIO_ALIAS;
+ IO_BASE:=BCM2837_PERIPHERALS_BASE;
+ IO_ALIAS:=RPI3_VCIO_ALIAS;
 
  {Setup BUS_ALIAS}
- BUS_ALIAS:=RPI2_VCBUS_ALIAS;
+ BUS_ALIAS:=RPI3_VCBUS_ALIAS;
  
  {Setup SECURE_BOOT}
- SECURE_BOOT:=(RPI2_SECURE_BOOT <> 0);
+ SECURE_BOOT:=(RPI3_SECURE_BOOT <> 0);
  
  {Setup STARTUP_ADDRESS}
- STARTUP_ADDRESS:=RPI2_STARTUP_ADDRESS;
+ STARTUP_ADDRESS:=RPI3_STARTUP_ADDRESS;
  
  {Setup PERIPHERALS_BASE and SIZE}
- PERIPHERALS_BASE:=BCM2836_PERIPHERALS_BASE;
- PERIPHERALS_SIZE:=BCM2836_PERIPHERALS_SIZE;
+ PERIPHERALS_BASE:=BCM2837_PERIPHERALS_BASE;
+ PERIPHERALS_SIZE:=BCM2837_PERIPHERALS_SIZE;
 
  {Setup LOCAL_PERIPHERALS_BASE and SIZE}
- LOCAL_PERIPHERALS_BASE:=BCM2836_ARM_LOCAL_BASE;
- LOCAL_PERIPHERALS_SIZE:=BCM2836_ARM_LOCAL_SIZE;
+ LOCAL_PERIPHERALS_BASE:=BCM2837_ARM_LOCAL_BASE;
+ LOCAL_PERIPHERALS_SIZE:=BCM2837_ARM_LOCAL_SIZE;
  
  {Setup MEMORY_BASE and SIZE}
- {Done by RPi2MemoryInit}
+ {Done by RPi3MemoryInit}
  
  {Setup MEMORY_IRQ/FIQ/LOCAL/SHARED/DEVICE/NOCACHE/NONSHARED_SIZE}
- {Done by RPi2MemoryInit}
+ {Done by RPi3MemoryInit}
  
  {Setup PAGE_TABLE_BASE and SIZE}
- PAGE_TABLE_BASE:=RPI2_PAGE_TABLE_BASE;
- PAGE_TABLE_SIZE:=RPI2_PAGE_TABLE_SIZE;
+ PAGE_TABLE_BASE:=RPI3_PAGE_TABLE_BASE;
+ PAGE_TABLE_SIZE:=RPI3_PAGE_TABLE_SIZE;
  
  {Setup VECTOR_TABLE_BASE and SIZE}
- VECTOR_TABLE_BASE:=RPI2_VECTOR_TABLE_BASE;
- VECTOR_TABLE_SIZE:=RPI2_VECTOR_TABLE_SIZE;
+ VECTOR_TABLE_BASE:=RPI3_VECTOR_TABLE_BASE;
+ VECTOR_TABLE_SIZE:=RPI3_VECTOR_TABLE_SIZE;
  
  {Setup MACHINE_TYPE} 
  MACHINE_TYPE:=MACHINE_TYPE_UNKNOWN;
  case ARMMachineType of 
-  ARM_MACHINE_BCM2709:MACHINE_TYPE:=MACHINE_TYPE_BCM2709;
+  ARM_MACHINE_BCM2710:MACHINE_TYPE:=MACHINE_TYPE_BCM2710;
  end;
  
  {Setup BOARD_TYPE}
- {Done by RPi2BoardInit}
+ {Done by RPi3BoardInit}
  
  {Setup CPU_ARCH, TYPE and COUNT}
  CPU_ARCH:=CPU_ARCH_ARM32;
- CPU_TYPE:=CPU_TYPE_ARMV7;
- CPU_COUNT:=RPI2_CPU_COUNT;
- CPU_BOOT:=RPI2_CPU_BOOT;
- CPU_MASK:=RPI2_CPU_MASK;
+ CPU_TYPE:=CPU_TYPE_ARMV8;
+ CPU_COUNT:=RPI3_CPU_COUNT;
+ CPU_BOOT:=RPI3_CPU_BOOT;
+ CPU_MASK:=RPI3_CPU_MASK;
  
  {Setup CPU_MEMORY_BASE and SIZE}
- {Done by RPi2MemoryInit}
+ {Done by RPi3MemoryInit}
  
  {Setup FPU_TYPE}
  FPU_TYPE:=FPU_TYPE_VFPV3;
@@ -525,21 +491,21 @@ begin
  GPU_TYPE:=GPU_TYPE_VC4;
  
  {Setup GPU_MEMORY_BASE and SIZE}
- {Done by RPi2MemoryInit}
+ {Done by RPi3MemoryInit}
  
  {Setup IRQ/FIQ_COUNT/START/ROUTING}
- IRQ_COUNT:=BCM2836_IRQ_COUNT;
- FIQ_COUNT:=BCM2836_FIQ_COUNT;
+ IRQ_COUNT:=BCM2837_IRQ_COUNT;
+ FIQ_COUNT:=BCM2837_FIQ_COUNT;
  
- IRQ_START:=RPI2_IRQ_START; 
+ IRQ_START:=RPI3_IRQ_START; 
 
- IRQ_ROUTING:=RPI2_IRQ_ROUTING;
- FIQ_ROUTING:=RPI2_FIQ_ROUTING; 
+ IRQ_ROUTING:=RPI3_IRQ_ROUTING;
+ FIQ_ROUTING:=RPI3_FIQ_ROUTING; 
 
- IRQ_LOCAL_COUNT:=BCM2836_ARM_LOCAL_IRQ_COUNT;
- FIQ_LOCAL_COUNT:=BCM2836_ARM_LOCAL_IRQ_COUNT;
+ IRQ_LOCAL_COUNT:=BCM2837_ARM_LOCAL_IRQ_COUNT;
+ FIQ_LOCAL_COUNT:=BCM2837_ARM_LOCAL_IRQ_COUNT;
  
- IRQ_LOCAL_START:=RPI2_IRQ_LOCAL_START;
+ IRQ_LOCAL_START:=RPI3_IRQ_LOCAL_START;
  
  {Setup IRQ/FIQ/SWI/UNDEF/ABORT_ENABLED}
  IRQ_ENABLED:=True;
@@ -556,7 +522,7 @@ begin
  UNDEFINED_STACK_ENABLED:=True;
  
  {Setup CLOCK_FREQUENCY/TICKS/CYCLES}
- CLOCK_FREQUENCY:={$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}RPI2_GENERIC_TIMER_FREQUENCY{$ELSE}BCM2836_SYSTEM_TIMER_FREQUENCY{$ENDIF};
+ CLOCK_FREQUENCY:={$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}RPI3_GENERIC_TIMER_FREQUENCY{$ELSE}BCM2837_SYSTEM_TIMER_FREQUENCY{$ENDIF};
  CLOCK_TICKS_PER_SECOND:=1000;
  CLOCK_TICKS_PER_MILLISECOND:=1;
  CLOCK_CYCLES_PER_TICK:=CLOCK_FREQUENCY div CLOCK_TICKS_PER_SECOND;
@@ -572,7 +538,7 @@ begin
  {Setup SCHEDULER_INTERRUPTS/CLOCKS}
  SCHEDULER_INTERRUPTS_PER_SECOND:=2000;
  SCHEDULER_INTERRUPTS_PER_MILLISECOND:=2;
- SCHEDULER_CLOCKS_PER_INTERRUPT:=RPI2_GENERIC_TIMER_FREQUENCY div SCHEDULER_INTERRUPTS_PER_SECOND;
+ SCHEDULER_CLOCKS_PER_INTERRUPT:=RPI3_GENERIC_TIMER_FREQUENCY div SCHEDULER_INTERRUPTS_PER_SECOND;
  SCHEDULER_CLOCKS_TOLERANCE:=SCHEDULER_CLOCKS_PER_INTERRUPT div 10;
  TIME_TICKS_PER_SCHEDULER_INTERRUPT:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * TIME_TICKS_PER_MILLISECOND;
  
@@ -582,218 +548,218 @@ begin
  SCHEDULER_IDLE_PER_SECOND:=SCHEDULER_INTERRUPTS_PER_SECOND;
  
  {Setup KERNEL_NAME/CONFIG/COMMAND}
- KERNEL_NAME:=RPI2_KERNEL_NAME;
- KERNEL_CONFIG:=RPI2_KERNEL_CONFIG;
- KERNEL_COMMAND:=RPI2_KERNEL_COMMAND;
+ KERNEL_NAME:=RPI3_KERNEL_NAME;
+ KERNEL_CONFIG:=RPI3_KERNEL_CONFIG;
+ KERNEL_COMMAND:=RPI3_KERNEL_COMMAND;
 
  {Setup GPIO (Set early to support activity LED)}
- GPIO_REGS_BASE:=BCM2836_GPIO_REGS_BASE;
+ GPIO_REGS_BASE:=BCM2837_GPIO_REGS_BASE;
  
  {Register Platform SMPInit Handler}
- SMPInitHandler:=RPi2SMPInit;
+ SMPInitHandler:=RPi3SMPInit;
  
  {Register Platform BoardInit Handler}
- BoardInitHandler:=RPi2BoardInit;
+ BoardInitHandler:=RPi3BoardInit;
  
  {Register Platform MemoryInit Handler}
- MemoryInitHandler:=RPi2MemoryInit;
+ MemoryInitHandler:=RPi3MemoryInit;
  
  {Register Platform ClockInit Handler}
- ClockInitHandler:=RPi2ClockInit;
+ ClockInitHandler:=RPi3ClockInit;
  
  {Register Platform PowerInit Handler}
- PowerInitHandler:=RPi2PowerInit;
+ PowerInitHandler:=RPi3PowerInit;
  
  {Register Platform MailboxInit Handler}
- MailboxInitHandler:=RPi2MailboxInit;
+ MailboxInitHandler:=RPi3MailboxInit;
  
  {Register Platform InterruptInit Handler}
- InterruptInitHandler:=RPi2InterruptInit;
+ InterruptInitHandler:=RPi3InterruptInit;
  
  {Register Platform PeripheralInit Handler}
- PeripheralInitHandler:=RPi2PeripheralInit;
+ PeripheralInitHandler:=RPi3PeripheralInit;
  {$IFDEF CONSOLE_EARLY_INIT}
  {Register Framebuffer FramebufferInit Handler}
- FramebufferInitHandler:=RPi2FramebufferInit;
+ FramebufferInitHandler:=RPi3FramebufferInit;
  {$ENDIF}
- {Register PlatformARMv7 PageTableInit Handler}
- ARMv7PageTableInitHandler:=RPi2PageTableInit;
+ {Register PlatformARMv8 PageTableInit Handler}
+ ARMv8PageTableInitHandler:=RPi3PageTableInit;
 
  {Register Platform Blink Handlers}
- BootBlinkHandler:=RPi2BootBlink;
+ BootBlinkHandler:=RPi3BootBlink;
  
  {Register Platform LED Handlers}
- PowerLEDEnableHandler:=RPi2PowerLEDEnable;
- PowerLEDOnHandler:=RPi2PowerLEDOn;
- PowerLEDOffHandler:=RPi2PowerLEDOff;
- ActivityLEDEnableHandler:=RPi2ActivityLEDEnable;
- ActivityLEDOnHandler:=RPi2ActivityLEDOn;
- ActivityLEDOffHandler:=RPi2ActivityLEDOff;
+ PowerLEDEnableHandler:=RPi3PowerLEDEnable;
+ PowerLEDOnHandler:=RPi3PowerLEDOn;
+ PowerLEDOffHandler:=RPi3PowerLEDOff;
+ ActivityLEDEnableHandler:=RPi3ActivityLEDEnable;
+ ActivityLEDOnHandler:=RPi3ActivityLEDOn;
+ ActivityLEDOffHandler:=RPi3ActivityLEDOff;
  
  {Register Platform Mailbox Handlers}
- MailboxReceiveHandler:=RPi2MailboxReceive;
- MailboxSendHandler:=RPi2MailboxSend;
- MailboxCallHandler:=RPi2MailboxCall;
- MailboxCallExHandler:=RPi2MailboxCallEx;
- MailboxPropertyCallHandler:=RPi2MailboxPropertyCall;
- MailboxPropertyCallExHandler:=RPi2MailboxPropertyCallEx;
+ MailboxReceiveHandler:=RPi3MailboxReceive;
+ MailboxSendHandler:=RPi3MailboxSend;
+ MailboxCallHandler:=RPi3MailboxCall;
+ MailboxCallExHandler:=RPi3MailboxCallEx;
+ MailboxPropertyCallHandler:=RPi3MailboxPropertyCall;
+ MailboxPropertyCallExHandler:=RPi3MailboxPropertyCallEx;
 
  {Register Platform IRQ Handlers}
- RequestIRQHandler:=RPi2RequestIRQ;
- ReleaseIRQHandler:=RPi2ReleaseIRQ;
- RequestExIRQHandler:=RPi2RequestExIRQ;
- ReleaseExIRQHandler:=RPi2ReleaseExIRQ;
+ RequestIRQHandler:=RPi3RequestIRQ;
+ ReleaseIRQHandler:=RPi3ReleaseIRQ;
+ RequestExIRQHandler:=RPi3RequestExIRQ;
+ ReleaseExIRQHandler:=RPi3ReleaseExIRQ;
 
  {Register Platform FIQ Handlers}
- RequestFIQHandler:=RPi2RequestFIQ;
- ReleaseFIQHandler:=RPi2ReleaseFIQ;
- RequestExFIQHandler:=RPi2RequestExFIQ;
- ReleaseExFIQHandler:=RPi2ReleaseExFIQ;
+ RequestFIQHandler:=RPi3RequestFIQ;
+ ReleaseFIQHandler:=RPi3ReleaseFIQ;
+ RequestExFIQHandler:=RPi3RequestExFIQ;
+ ReleaseExFIQHandler:=RPi3ReleaseExFIQ;
 
  {Register Platform System Handlers}
- SystemRestartHandler:=RPi2SystemRestart;
- SystemShutdownHandler:=RPi2SystemShutdown;
- SystemGetCommandLineHandler:=RPi2SystemGetCommandLine;
+ SystemRestartHandler:=RPi3SystemRestart;
+ SystemShutdownHandler:=RPi3SystemShutdown;
+ SystemGetCommandLineHandler:=RPi3SystemGetCommandLine;
 
  {Register Platform CPU Handlers}
- CPUGetMemoryHandler:=RPi2CPUGetMemory;
+ CPUGetMemoryHandler:=RPi3CPUGetMemory;
 
  {Register Platform GPU Handlers}
- GPUGetStateHandler:=RPi2GPUGetState;
- GPUGetMemoryHandler:=RPi2GPUGetMemory;
+ GPUGetStateHandler:=RPi3GPUGetState;
+ GPUGetMemoryHandler:=RPi3GPUGetMemory;
 
  {Register Platform Board Handlers}
- BoardGetModelHandler:=RPi2BoardGetModel;
- BoardGetSerialHandler:=RPi2BoardGetSerial;
- BoardGetRevisionHandler:=RPi2BoardGetRevision;
- BoardGetMACAddressHandler:=RPi2BoardGetMACAddress;
+ BoardGetModelHandler:=RPi3BoardGetModel;
+ BoardGetSerialHandler:=RPi3BoardGetSerial;
+ BoardGetRevisionHandler:=RPi3BoardGetRevision;
+ BoardGetMACAddressHandler:=RPi3BoardGetMACAddress;
 
  {Register Platform Firmware Handlers}
- FirmwareGetRevisionHandler:=RPi2FirmwareGetRevision;
+ FirmwareGetRevisionHandler:=RPi3FirmwareGetRevision;
 
  {Register Platform Power Handlers}
- PowerGetWaitHandler:=RPi2PowerGetWait;
- PowerGetStateHandler:=RPi2PowerGetState;
- PowerSetStateHandler:=RPi2PowerSetState;
+ PowerGetWaitHandler:=RPi3PowerGetWait;
+ PowerGetStateHandler:=RPi3PowerGetState;
+ PowerSetStateHandler:=RPi3PowerSetState;
 
  {Register Platform Clock Handlers}
- ClockGetCountHandler:=RPi2ClockGetCount;
- ClockGetTotalHandler:=RPi2ClockGetTotal;
+ ClockGetCountHandler:=RPi3ClockGetCount;
+ ClockGetTotalHandler:=RPi3ClockGetTotal;
 
- ClockGetRateHandler:=RPi2ClockGetRate;
- ClockSetRateHandler:=RPi2ClockSetRate;
+ ClockGetRateHandler:=RPi3ClockGetRate;
+ ClockSetRateHandler:=RPi3ClockSetRate;
 
- ClockGetStateHandler:=RPi2ClockGetState;
- ClockSetStateHandler:=RPi2ClockSetState;
+ ClockGetStateHandler:=RPi3ClockGetState;
+ ClockSetStateHandler:=RPi3ClockSetState;
 
- ClockGetMinRateHandler:=RPi2ClockGetMinRate;
- ClockGetMaxRateHandler:=RPi2ClockGetMaxRate;
+ ClockGetMinRateHandler:=RPi3ClockGetMinRate;
+ ClockGetMaxRateHandler:=RPi3ClockGetMaxRate;
 
  {Register Platform Turbo Handlers}
- TurboGetStateHandler:=RPi2TurboGetState;
- TurboSetStateHandler:=RPi2TurboSetState;
+ TurboGetStateHandler:=RPi3TurboGetState;
+ TurboSetStateHandler:=RPi3TurboSetState;
 
  {Register Platform Voltage Handlers}
- VoltageGetValueHandler:=RPi2VoltageGetValue;
- VoltageSetValueHandler:=RPi2VoltageSetValue;
- VoltageGetMinValueHandler:=RPi2VoltageGetMinValue;
- VoltageGetMaxValueHandler:=RPi2VoltageGetMaxValue;
+ VoltageGetValueHandler:=RPi3VoltageGetValue;
+ VoltageSetValueHandler:=RPi3VoltageSetValue;
+ VoltageGetMinValueHandler:=RPi3VoltageGetMinValue;
+ VoltageGetMaxValueHandler:=RPi3VoltageGetMaxValue;
  
  {Register Platform Temperature Handlers}
- TemperatureGetCurrentHandler:=RPi2TemperatureGetCurrent;
- TemperatureGetMaximumHandler:=RPi2TemperatureGetMaximum;
+ TemperatureGetCurrentHandler:=RPi3TemperatureGetCurrent;
+ TemperatureGetMaximumHandler:=RPi3TemperatureGetMaximum;
  {$IFDEF CONSOLE_EARLY_INIT}
  {Register Platform GPU Memory Handlers}
- GPUMemoryAllocateHandler:=RPi2GPUMemoryAllocate;
- GPUMemoryReleaseHandler:=RPi2GPUMemoryRelease;
- GPUMemoryLockHandler:=RPi2GPUMemoryLock;
- GPUMemoryUnlockHandler:=RPi2GPUMemoryUnlock;
+ GPUMemoryAllocateHandler:=RPi3GPUMemoryAllocate;
+ GPUMemoryReleaseHandler:=RPi3GPUMemoryRelease;
+ GPUMemoryLockHandler:=RPi3GPUMemoryLock;
+ GPUMemoryUnlockHandler:=RPi3GPUMemoryUnlock;
  
  {Register Platform GPU Misc Handlers}
- GPUExecuteCodeHandler:=RPi2GPUExecuteCode;
- DispmanxHandleGetHandler:=RPi2DispmanxHandleGet;
- EDIDBlockGetHandler:=RPi2EDIDBlockGet;
+ GPUExecuteCodeHandler:=RPi3GPUExecuteCode;
+ DispmanxHandleGetHandler:=RPi3DispmanxHandleGet;
+ EDIDBlockGetHandler:=RPi3EDIDBlockGet;
 
  {Register Platform Framebuffer Handlers}
- FramebufferAllocateHandler:=RPi2FramebufferAllocate;
- FramebufferReleaseHandler:=RPi2FramebufferRelease;
- FramebufferSetStateHandler:=RPi2FramebufferSetState;
+ FramebufferAllocateHandler:=RPi3FramebufferAllocate;
+ FramebufferReleaseHandler:=RPi3FramebufferRelease;
+ FramebufferSetStateHandler:=RPi3FramebufferSetState;
 
- FramebufferGetDimensionsHandler:=RPi2FramebufferGetDimensions;
+ FramebufferGetDimensionsHandler:=RPi3FramebufferGetDimensions;
  
- FramebufferGetPhysicalHandler:=RPi2FramebufferGetPhysical;
- FramebufferSetPhysicalHandler:=RPi2FramebufferSetPhysical;
- FramebufferTestPhysicalHandler:=RPi2FramebufferTestPhysical;
+ FramebufferGetPhysicalHandler:=RPi3FramebufferGetPhysical;
+ FramebufferSetPhysicalHandler:=RPi3FramebufferSetPhysical;
+ FramebufferTestPhysicalHandler:=RPi3FramebufferTestPhysical;
  
- FramebufferGetVirtualHandler:=RPi2FramebufferGetVirtual;
- FramebufferSetVirtualHandler:=RPi2FramebufferSetVirtual;
- FramebufferTestVirtualHandler:=RPi2FramebufferTestVirtual;
+ FramebufferGetVirtualHandler:=RPi3FramebufferGetVirtual;
+ FramebufferSetVirtualHandler:=RPi3FramebufferSetVirtual;
+ FramebufferTestVirtualHandler:=RPi3FramebufferTestVirtual;
  
- FramebufferGetDepthHandler:=RPi2FramebufferGetDepth;
- FramebufferSetDepthHandler:=RPi2FramebufferSetDepth;
- FramebufferTestDepthHandler:=RPi2FramebufferTestDepth;
+ FramebufferGetDepthHandler:=RPi3FramebufferGetDepth;
+ FramebufferSetDepthHandler:=RPi3FramebufferSetDepth;
+ FramebufferTestDepthHandler:=RPi3FramebufferTestDepth;
  
- FramebufferGetPixelOrderHandler:=RPi2FramebufferGetPixelOrder;
- FramebufferSetPixelOrderHandler:=RPi2FramebufferSetPixelOrder;
- FramebufferTestPixelOrderHandler:=RPi2FramebufferTestPixelOrder;
+ FramebufferGetPixelOrderHandler:=RPi3FramebufferGetPixelOrder;
+ FramebufferSetPixelOrderHandler:=RPi3FramebufferSetPixelOrder;
+ FramebufferTestPixelOrderHandler:=RPi3FramebufferTestPixelOrder;
  
- FramebufferGetAlphaModeHandler:=RPi2FramebufferGetAlphaMode;
- FramebufferSetAlphaModeHandler:=RPi2FramebufferSetAlphaMode;
- FramebufferTestAlphaModeHandler:=RPi2FramebufferTestAlphaMode;
+ FramebufferGetAlphaModeHandler:=RPi3FramebufferGetAlphaMode;
+ FramebufferSetAlphaModeHandler:=RPi3FramebufferSetAlphaMode;
+ FramebufferTestAlphaModeHandler:=RPi3FramebufferTestAlphaMode;
  
- FramebufferGetPitchHandler:=RPi2FramebufferGetPitch;
+ FramebufferGetPitchHandler:=RPi3FramebufferGetPitch;
  
- FramebufferGetOffsetHandler:=RPi2FramebufferGetOffset;
- FramebufferSetOffsetHandler:=RPi2FramebufferSetOffset;
- FramebufferTestOffsetHandler:=RPi2FramebufferTestOffset;
+ FramebufferGetOffsetHandler:=RPi3FramebufferGetOffset;
+ FramebufferSetOffsetHandler:=RPi3FramebufferSetOffset;
+ FramebufferTestOffsetHandler:=RPi3FramebufferTestOffset;
  
- FramebufferGetOverscanHandler:=RPi2FramebufferGetOverscan;
- FramebufferSetOverscanHandler:=RPi2FramebufferSetOverscan;
- FramebufferTestOverscanHandler:=RPi2FramebufferTestOverscan;
+ FramebufferGetOverscanHandler:=RPi3FramebufferGetOverscan;
+ FramebufferSetOverscanHandler:=RPi3FramebufferSetOverscan;
+ FramebufferTestOverscanHandler:=RPi3FramebufferTestOverscan;
  
- FramebufferGetPaletteHandler:=RPi2FramebufferGetPalette;
- FramebufferSetPaletteHandler:=RPi2FramebufferSetPalette;
- FramebufferTestPaletteHandler:=RPi2FramebufferTestPalette;
+ FramebufferGetPaletteHandler:=RPi3FramebufferGetPalette;
+ FramebufferSetPaletteHandler:=RPi3FramebufferSetPalette;
+ FramebufferTestPaletteHandler:=RPi3FramebufferTestPalette;
 
  {Register Platform Cursor Handlers}
- CursorSetInfoHandler:=RPi2CursorSetInfo;
- CursorSetStateHandler:=RPi2CursorSetState;
+ CursorSetInfoHandler:=RPi3CursorSetInfo;
+ CursorSetStateHandler:=RPi3CursorSetState;
  {$ENDIF}
  {Register Platform DMA Handlers}
- DMAGetChannelsHandler:=RPi2DMAGetChannels;
+ DMAGetChannelsHandler:=RPi3DMAGetChannels;
  
  {Register Platform Virtual GPIO Handlers}
- VirtualGPIOInputGetHandler:=RPi2VirtualGPIOInputGet;
- VirtualGPIOOutputSetHandler:=RPi2VirtualGPIOOutputSet;
- VirtualGPIOOutputClearHandler:=RPi2VirtualGPIOOutputClear;
- VirtualGPIOFunctionSelectHandler:=RPi2VirtualGPIOFunctionSelect;
+ VirtualGPIOInputGetHandler:=RPi3VirtualGPIOInputGet;
+ VirtualGPIOOutputSetHandler:=RPi3VirtualGPIOOutputSet;
+ VirtualGPIOOutputClearHandler:=RPi3VirtualGPIOOutputClear;
+ VirtualGPIOFunctionSelectHandler:=RPi3VirtualGPIOFunctionSelect;
  
  {Register Threads SchedulerInit Handler}
- SchedulerInitHandler:=RPi2SchedulerInit;
- SchedulerStartHandler:=RPi2SchedulerStart;
+ SchedulerInitHandler:=RPi3SchedulerInit;
+ SchedulerStartHandler:=RPi3SchedulerStart;
  
  {Register Threads SecondaryBoot Handler}
- SecondaryBootHandler:=RPi2SecondaryBoot;
+ SecondaryBootHandler:=RPi3SecondaryBoot;
  
- {Register PlatformARMv7 IRQ Handlers}
- ARMv7DispatchIRQHandler:=RPi2DispatchIRQ;
+ {Register PlatformARMv8 IRQ Handlers}
+ ARMv8DispatchIRQHandler:=RPi3DispatchIRQ;
 
- {Register PlatformARMv7 FIQ Handlers}
- ARMv7DispatchFIQHandler:=RPi2DispatchFIQ;
+ {Register PlatformARMv8 FIQ Handlers}
+ ARMv8DispatchFIQHandler:=RPi3DispatchFIQ;
  
  {Register PlatformARM Helper Handlers}
- ARMWaitHandler:=RPi2Wait;
- ARMLongWaitHandler:=RPi2LongWait;
- ARMShortWaitHandler:=RPi2ShortWait;
- ARMSlowBlinkHandler:=RPi2SlowBlink;
- ARMFastBlinkHandler:=RPi2FastBlink;
+ ARMWaitHandler:=RPi3Wait;
+ ARMLongWaitHandler:=RPi3LongWait;
+ ARMShortWaitHandler:=RPi3ShortWait;
+ ARMSlowBlinkHandler:=RPi3SlowBlink;
+ ARMFastBlinkHandler:=RPi3FastBlink;
  
- RPi2Initialized:=True;
+ RPi3Initialized:=True;
 end;
 
 {==============================================================================}
 
-procedure RPi2SecondarySwitch; assembler; nostackframe; 
+procedure RPi3SecondarySwitch; assembler; nostackframe; 
 {Secondary CPU switch from HYP mode handler}
 asm
  //Get the CPSR
@@ -826,11 +792,11 @@ end;
 
 {==============================================================================}
 
-procedure RPi2SecondarySecure; assembler; nostackframe; 
+procedure RPi3SecondarySecure; assembler; nostackframe; 
 {Secondary CPU switch to secure mode handler}
 asm
  //Check the secure boot configuration
- mov r0, #RPI2_SECURE_BOOT
+ mov r0, #RPI3_SECURE_BOOT
  cmp r0, #0
  beq .LNoSecure
   
@@ -869,23 +835,23 @@ end;
 
 {==============================================================================}
 
-procedure RPi2SecondaryHandler; assembler; nostackframe; 
+procedure RPi3SecondaryHandler; assembler; nostackframe; 
 {Secondary CPU startup handler routine}
 asm
  //Call the HYP mode switch handler in case the CPU is in HYP mode
- bl RPi2SecondarySwitch
+ bl RPi3SecondarySwitch
  
  //Call the secure mode switch handler to return to secure mode
- bl RPi2SecondarySecure
+ bl RPi3SecondarySecure
  
  //Invalidate Instruction Cache before starting the boot process
- bl ARMv7InvalidateInstructionCache
+ bl ARMv8InvalidateInstructionCache
  
  //Invalidate L1 Data Cache before starting the boot process
- bl ARMv7InvalidateL1DataCache
+ bl ARMv8InvalidateL1DataCache
  
  //Invalidate the TLB before starting the boot process
- bl ARMv7InvalidateTLB
+ bl ARMv8InvalidateTLB
  
  //Change to SYS mode and ensure all interrupts are disabled
  //so the ARM processor is in a known state.
@@ -893,23 +859,23 @@ asm
  
  //Set the Vector Base Address register in the System Control
  //register to the address of the vector table base above.
- mov r0, #RPI2_VECTOR_TABLE_BASE
+ mov r0, #RPI3_VECTOR_TABLE_BASE
  mcr p15, #0, r0, cr12, cr0, #0
  
  //Enable Unaligned Memory Accesses (U Bit) in the System Control
  //Register to simplify memory access routines from Pascal code.
  //
  //This would normally occur in CPUInit but is done here to allow
- //calls to Pascal code for during initialization. (Always enabled in ARMv7)
+ //calls to Pascal code for during initialization. (Always enabled in ARMv8)
  //mrc p15, #0, r0, cr1, cr0, #0
- //orr r0, #ARMV7_CP15_C1_U_BIT
+ //orr r0, #ARMV8_CP15_C1_U_BIT
  //mcr p15, #0, r0, cr1, cr0, #0
  
  //Get the current CPU
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
  mrc p15, #0, r1, cr0, cr0, #5;
  //Mask off the CPUID value
- and r1, #ARMV7_CP15_C0_MPID_CPUID_MASK
+ and r1, #ARMV8_CP15_C0_MPID_CPUID_MASK
  //Multiply by 4 to get the offset in the array
  lsl r1, #2
  
@@ -969,25 +935,25 @@ asm
  cpsid if, #ARM_MODE_SYS
  
  //Initialize the CPU
- bl ARMv7CPUInit
+ bl ARMv8CPUInit
  
  //Initialize the FPU
- bl ARMv7FPUInit
+ bl ARMv8FPUInit
  
  //Start the MMU
- bl ARMv7StartMMU
+ bl ARMv8StartMMU
  
  //Initialize the Caches
- bl ARMv7CacheInit
+ bl ARMv8CacheInit
  
  //Check the secure boot configuration
- mov r0, #RPI2_SECURE_BOOT
+ mov r0, #RPI3_SECURE_BOOT
  cmp r0, #0
  beq .LNoTimer
  
  //Set the ARM Generic Timer Frequency
- ldr r0, =RPI2_GENERIC_TIMER_FREQUENCY
- bl ARMv7TimerInit
+ ldr r0, =RPI3_GENERIC_TIMER_FREQUENCY
+ bl ARMv8TimerInit
  
 .LNoTimer:
  
@@ -995,7 +961,7 @@ asm
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15 CP15
  mrc p15, #0, r1, cr0, cr0, #5;
  //Mask off the CPUID value
- and r1, #ARMV7_CP15_C0_MPID_CPUID_MASK
+ and r1, #ARMV8_CP15_C0_MPID_CPUID_MASK
  //Multiply by 4 to get the offset in the array
  lsl r1, #2
  
@@ -1018,13 +984,13 @@ asm
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5;
  //Mask off the CPUID value
- and r0, #ARMV7_CP15_C0_MPID_CPUID_MASK
+ and r0, #ARMV8_CP15_C0_MPID_CPUID_MASK
 
  //Branch to the CPU Start function (Current CPU in R0)
  bl SecondaryStart
  
  //If startup fails halt the CPU
- b ARMv7Halt
+ b ARMv8Halt
  
 .LBOOT_STACK_SIZE:
   .long BOOT_STACK_SIZE 
@@ -1047,116 +1013,98 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 Platform Functions}
-procedure RPi2SMPInit;
+{RPi3 Platform Functions}
+procedure RPi3SMPInit;
 var
  Control:LongWord;
  GPUInterruptRouting:LongWord;
 begin
  {}
  {Setup ARM Local Registers}
- ARMLocalRegisters:=PBCM2836ARMLocalRegisters(BCM2836_ARM_LOCAL_REGS_BASE);
+ ARMLocalRegisters:=PBCM2837ARMLocalRegisters(BCM2837_ARM_LOCAL_REGS_BASE);
 
  {Setup Core Timer Clock}
  Control:=ARMLocalRegisters.Control;
- Control:=Control and not(BCM2836_ARM_LOCAL_CONTROL_APB_CLOCK or BCM2836_ARM_LOCAL_CONTROL_INCREMENT_2); {Disable APB Clock and Increment 2}
- Control:=Control or BCM2836_ARM_LOCAL_CONTROL_CRYSTAL_CLOCK or BCM2836_ARM_LOCAL_CONTROL_INCREMENT_1;   {Enable Crystal Clock and Increment 1}
+ Control:=Control and not(BCM2837_ARM_LOCAL_CONTROL_APB_CLOCK or BCM2837_ARM_LOCAL_CONTROL_INCREMENT_2); {Disable APB Clock and Increment 2}
+ Control:=Control or BCM2837_ARM_LOCAL_CONTROL_CRYSTAL_CLOCK or BCM2837_ARM_LOCAL_CONTROL_INCREMENT_1;   {Enable Crystal Clock and Increment 1}
  ARMLocalRegisters.Control:=Control;
  
  {Setup Core Timer Prescaler}
- ARMLocalRegisters.CoreTimerPrescaler:=RPI2_CORE_TIMER_PRESCALER;
+ ARMLocalRegisters.CoreTimerPrescaler:=RPI3_CORE_TIMER_PRESCALER;
  
  {Setup GPU IRQ/FIQ Routing}
  GPUInterruptRouting:=ARMLocalRegisters.GPUInterruptRouting;
- GPUInterruptRouting:=GPUInterruptRouting and not(BCM2836_ARM_LOCAL_GPU_INT_ROUTING_IRQ_MASK or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_FIQ_MASK); {Clear all routing}
+ GPUInterruptRouting:=GPUInterruptRouting and not(BCM2837_ARM_LOCAL_GPU_INT_ROUTING_IRQ_MASK or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_FIQ_MASK); {Clear all routing}
  case IRQ_ROUTING of {Setup IRQ Routing}
-  CPU_ID_0:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_IRQ0;
-  CPU_ID_1:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_IRQ1;
-  CPU_ID_2:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_IRQ2;
-  CPU_ID_3:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_IRQ3;
+  CPU_ID_0:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_IRQ0;
+  CPU_ID_1:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_IRQ1;
+  CPU_ID_2:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_IRQ2;
+  CPU_ID_3:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_IRQ3;
  end;
  case FIQ_ROUTING of {Setup FIQ Routing}
-  CPU_ID_0:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_FIQ0;
-  CPU_ID_1:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_FIQ1;
-  CPU_ID_2:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_FIQ2;
-  CPU_ID_3:GPUInterruptRouting:=GPUInterruptRouting or BCM2836_ARM_LOCAL_GPU_INT_ROUTING_FIQ3;
+  CPU_ID_0:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_FIQ0;
+  CPU_ID_1:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_FIQ1;
+  CPU_ID_2:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_FIQ2;
+  CPU_ID_3:GPUInterruptRouting:=GPUInterruptRouting or BCM2837_ARM_LOCAL_GPU_INT_ROUTING_FIQ3;
  end;
  ARMLocalRegisters.GPUInterruptRouting:=GPUInterruptRouting;
  
  {Setup ARM Generic Timer}
- if SECURE_BOOT then ARMv7TimerInit(RPI2_GENERIC_TIMER_FREQUENCY);
+ if SECURE_BOOT then ARMv8TimerInit(RPI3_GENERIC_TIMER_FREQUENCY);
 end;
 
 {==============================================================================}
 
-procedure RPi2BoardInit;
+procedure RPi3BoardInit;
 var
  Revision:LongWord;
  ClockCPUMax:LongWord;
 begin
  {}
  {Initialize Interrupts (Used by ClockInit}
- if not(InterruptsInitialized) then RPi2InterruptInit;
+ if not(InterruptsInitialized) then RPi3InterruptInit;
  
  {Initialize Clock (Used by BoardGetRevision)}
- if not(ClockInitialized) then RPi2ClockInit;
+ if not(ClockInitialized) then RPi3ClockInit;
  
  {Initialize Mailbox (Used by BoardGetRevision)}
- if not(MailboxInitialized) then RPi2MailboxInit;
+ if not(MailboxInitialized) then RPi3MailboxInit;
  
  {Get Board Revision}
- Revision:=RPi2BoardGetRevision;
+ Revision:=RPi3BoardGetRevision;
  
  {Get Board Type}
- if (Revision and BCM2836_BOARD_REVISION_ENCODED_FLAG) <> 0 then
+ if (Revision and BCM2837_BOARD_REVISION_ENCODED_FLAG) <> 0 then
   begin
    {New Style Revision}
-   case (Revision and BCM2836_BOARD_REVISION_MODEL_MASK) of
-    BCM2836_BOARD_REVISION_MODEL_2B:begin
-      BOARD_TYPE:=BOARD_TYPE_RPI2B;
-     end; 
-    BCM2836_BOARD_REVISION_MODEL_3B:begin
+   case (Revision and BCM2837_BOARD_REVISION_MODEL_MASK) of
+    BCM2837_BOARD_REVISION_MODEL_3B:begin
       BOARD_TYPE:=BOARD_TYPE_RPI3B;
-      
-      {Adjust CPU Type}
-      CPU_TYPE:=CPU_TYPE_ARMV8;
-      
-      {Adjust Machine Type}
-      MACHINE_TYPE:=MACHINE_TYPE_BCM2710;
      end; 
    end;
   end
  else
   begin 
    {Old Style Revision}
-   case (Revision and BCM2836_BOARD_REV_MASK) of
-    BCM2836_BOARD_REV_2B_1,BCM2836_BOARD_REV_2B_2:begin
-      BOARD_TYPE:=BOARD_TYPE_RPI2B;
-     end;
-    BCM2836_BOARD_REV_3B_1:begin
+   case (Revision and BCM2837_BOARD_REV_MASK) of
+    BCM2837_BOARD_REV_3B_1:begin
       BOARD_TYPE:=BOARD_TYPE_RPI3B;
-
-      {Adjust CPU Type}
-      CPU_TYPE:=CPU_TYPE_ARMV8;
-      
-      {Adjust Machine Type}
-      MACHINE_TYPE:=MACHINE_TYPE_BCM2710;
-     end;    
+     end; 
    end;
   end; 
  
  {Get CPU Clock Maximum}
- ClockCPUMax:=RPi2ClockGetMaxRate(CLOCK_ID_CPU);
+ ClockCPUMax:=RPi3ClockGetMaxRate(CLOCK_ID_CPU);
  if ClockCPUMax > 0 then
   begin
    {Set CPU Clock}
-   RPi2ClockSetRate(CLOCK_ID_CPU,ClockCPUMax,True); 
+   RPi3ClockSetRate(CLOCK_ID_CPU,ClockCPUMax,True); 
   end;
 end;
 
 {==============================================================================}
 
-procedure RPi2MemoryInit;
+procedure RPi3MemoryInit;
 var
  Address:PtrUInt;
  Length:LongWord;
@@ -1164,39 +1112,23 @@ var
 begin
  {}
  {Initialize Interrupts (Used by ClockInit}
- if not(InterruptsInitialized) then RPi2InterruptInit;
+ if not(InterruptsInitialized) then RPi3InterruptInit;
  
  {Initialize Clock (Used by BoardGetRevision)}
- if not(ClockInitialized) then RPi2ClockInit;
+ if not(ClockInitialized) then RPi3ClockInit;
  
  {Initialize Mailbox (Used by BoardGetRevision)}
- if not(MailboxInitialized) then RPi2MailboxInit;
+ if not(MailboxInitialized) then RPi3MailboxInit;
  
  {Get Board Revision}
- Revision:=RPi2BoardGetRevision;
+ Revision:=RPi3BoardGetRevision;
  
  {Check Board Revision}
- if (Revision and BCM2836_BOARD_REVISION_ENCODED_FLAG) <> 0 then
+ if (Revision and BCM2837_BOARD_REVISION_ENCODED_FLAG) <> 0 then
   begin
    {New Style Revision}
-   case (Revision and BCM2836_BOARD_REVISION_MODEL_MASK) of
-    BCM2836_BOARD_REVISION_MODEL_2B:begin
-      {Get Memory Base/Size}
-      MEMORY_BASE:=$00000000;
-      MEMORY_SIZE:=SIZE_1G;
-      {Get Memory Page Size}
-      MEMORY_PAGE_SIZE:=SIZE_4K;
-      MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
-      {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
-      MEMORY_IRQ_SIZE:=SIZE_8M;
-      MEMORY_FIQ_SIZE:=SIZE_8M;
-      MEMORY_LOCAL_SIZE:=SIZE_8M;
-      MEMORY_SHARED_SIZE:=SIZE_32M;
-      MEMORY_DEVICE_SIZE:=SIZE_8M;
-      MEMORY_NOCACHE_SIZE:=SIZE_16M;
-      MEMORY_NONSHARED_SIZE:=SIZE_8M;
-     end;
-    BCM2836_BOARD_REVISION_MODEL_3B:begin
+   case (Revision and BCM2837_BOARD_REVISION_MODEL_MASK) of
+    BCM2837_BOARD_REVISION_MODEL_3B:begin
       {Get Memory Base/Size}
       MEMORY_BASE:=$00000000;
       MEMORY_SIZE:=SIZE_1G;
@@ -1217,24 +1149,8 @@ begin
  else
   begin 
    {Old Style Revision}
-   case (Revision and BCM2836_BOARD_REV_MASK) of
-    BCM2836_BOARD_REV_2B_1,BCM2836_BOARD_REV_2B_2:begin
-      {Get Memory Base/Size}
-      MEMORY_BASE:=$00000000;
-      MEMORY_SIZE:=SIZE_1G;
-      {Get Memory Page Size}
-      MEMORY_PAGE_SIZE:=SIZE_4K;
-      MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
-      {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
-      MEMORY_IRQ_SIZE:=SIZE_8M;
-      MEMORY_FIQ_SIZE:=SIZE_8M;
-      MEMORY_LOCAL_SIZE:=SIZE_8M;
-      MEMORY_SHARED_SIZE:=SIZE_32M;
-      MEMORY_DEVICE_SIZE:=SIZE_8M;
-      MEMORY_NOCACHE_SIZE:=SIZE_16M;
-      MEMORY_NONSHARED_SIZE:=SIZE_8M;
-     end;
-    BCM2836_BOARD_REV_3B_1:begin 
+   case (Revision and BCM2837_BOARD_REV_MASK) of
+    BCM2837_BOARD_REV_3B_1:begin 
       {Get Memory Base/Size}
       MEMORY_BASE:=$00000000;
       MEMORY_SIZE:=SIZE_1G;
@@ -1254,14 +1170,14 @@ begin
   end;
  
  {Get CPU Memory}
- if RPi2CPUGetMemory(Address,Length) = ERROR_SUCCESS then
+ if RPi3CPUGetMemory(Address,Length) = ERROR_SUCCESS then
   begin
    CPU_MEMORY_BASE:=Address;
    CPU_MEMORY_SIZE:=Length;
   end;
   
  {Get GPU Memory}
- if RPi2GPUGetMemory(Address,Length) = ERROR_SUCCESS then
+ if RPi3GPUGetMemory(Address,Length) = ERROR_SUCCESS then
   begin
    GPU_MEMORY_BASE:=Address;
    GPU_MEMORY_SIZE:=Length;
@@ -1270,15 +1186,15 @@ end;
 
 {==============================================================================}
 
-procedure RPi2ClockInit;
-{$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
+procedure RPi3ClockInit;
+{$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
 var
  State:LongWord;
 {$ENDIF}
 begin
  {}
  {Setup Timer Registers}
- TimerRegisters:=PBCM2836SystemTimerRegisters(BCM2836_SYSTEM_TIMER_REGS_BASE);
+ TimerRegisters:=PBCM2837SystemTimerRegisters(BCM2837_SYSTEM_TIMER_REGS_BASE);
  
  {Setup Clock Variables}
  ClockBase:=TIME_TICKS_TO_1899;
@@ -1289,64 +1205,64 @@ begin
  {Request the Clock IRQ/FIQ}
  if CLOCK_FIQ_ENABLED then
   begin
-   {$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
-   RequestFIQ(RPI2_CPU_BOOT,BCM2836_IRQ_LOCAL_ARM_CNTVIRQ,RPi2ClockInterrupt,nil); 
+   {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
+   RequestFIQ(RPI3_CPU_BOOT,BCM2837_IRQ_LOCAL_ARM_CNTVIRQ,RPi3ClockInterrupt,nil); 
    {$ELSE}
-   RequestFIQ(RPI2_CPU_BOOT,BCM2836_IRQ_SYSTEM_TIMER_3,RPi2ClockInterrupt,nil); 
+   RequestFIQ(RPI3_CPU_BOOT,BCM2837_IRQ_SYSTEM_TIMER_3,RPi3ClockInterrupt,nil); 
    {$ENDIF}
   end
  else
   begin
-   {$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
-   RequestIRQ(RPI2_CPU_BOOT,BCM2836_IRQ_LOCAL_ARM_CNTVIRQ,RPi2ClockInterrupt,nil); 
+   {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
+   RequestIRQ(RPI3_CPU_BOOT,BCM2837_IRQ_LOCAL_ARM_CNTVIRQ,RPi3ClockInterrupt,nil); 
    {$ELSE}
-   RequestIRQ(RPI2_CPU_BOOT,BCM2836_IRQ_SYSTEM_TIMER_3,RPi2ClockInterrupt,nil); 
+   RequestIRQ(RPI3_CPU_BOOT,BCM2837_IRQ_SYSTEM_TIMER_3,RPi3ClockInterrupt,nil); 
    {$ENDIF}
   end;
 
- {$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
+ {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Setup the Generic Timer}
- State:=ARMv7GetTimerState(ARMV7_CP15_C14_CNTV);
- State:=State and not(ARMV7_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
- State:=State or ARMV7_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
- ARMv7SetTimerState(ARMV7_CP15_C14_CNTV,State); 
+ State:=ARMv8GetTimerState(ARMV8_CP15_C14_CNTV);
+ State:=State and not(ARMV8_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
+ State:=State or ARMV8_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
+ ARMv8SetTimerState(ARMV8_CP15_C14_CNTV,State); 
  {$ENDIF}
  
  {Setup the first Clock Interrupt}
- RPi2ClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
+ RPi3ClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
 end;
 
 {==============================================================================}
 
-procedure RPi2PowerInit;
+procedure RPi3PowerInit;
 begin
  {}
  {Setup Watchdog Registers}
- WatchdogRegisters:=PBCM2836PMWatchdogRegisters(BCM2836_PM_REGS_BASE);
+ WatchdogRegisters:=PBCM2837PMWatchdogRegisters(BCM2837_PM_REGS_BASE);
 end;
 
 {==============================================================================}
 
-procedure RPi2MailboxInit;
+procedure RPi3MailboxInit;
 begin
  {}
  {Setup Mailbox0 Registers}
- Mailbox0Registers:=PBCM2836Mailbox0Registers(BCM2836_MAILBOX0_REGS_BASE);
+ Mailbox0Registers:=PBCM2837Mailbox0Registers(BCM2837_MAILBOX0_REGS_BASE);
 end;
 
 {==============================================================================}
 
-procedure RPi2InterruptInit;
+procedure RPi3InterruptInit;
 var
  Count:LongWord;
  Counter:LongWord;
 begin
  {}
  {Setup Interrupt Registers}
- InterruptRegisters:=PBCM2836InterruptRegisters(BCM2836_INTERRUPT_REGS_BASE);
+ InterruptRegisters:=PBCM2837InterruptRegisters(BCM2837_INTERRUPT_REGS_BASE);
  
  {Setup Interrupt Handlers}
- for Count:=0 to BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1 do
+ for Count:=0 to BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1 do
   begin
    InterruptHandlers[Count]:=nil;
    InterruptExHandlers[Count]:=nil;
@@ -1354,9 +1270,9 @@ begin
   end; 
 
  {Setup Local Interrupt Handlers}
- for Count:=RPI2_IRQ_LOCAL_START to BCM2836_IRQ_COUNT - 1 do
+ for Count:=RPI3_IRQ_LOCAL_START to BCM2837_IRQ_COUNT - 1 do
   begin
-   for Counter:=0 to RPI2_CPU_COUNT - 1 do
+   for Counter:=0 to RPI3_CPU_COUNT - 1 do
     begin
      LocalInterruptHandlers[Count,Counter]:=nil;
      LocalInterruptExHandlers[Count,Counter]:=nil;
@@ -1374,13 +1290,13 @@ begin
  FIQEnabled:=0;
  
  {Setup Local Enabled IRQs}
- for Count:=0 to RPI2_CPU_COUNT - 1 do
+ for Count:=0 to RPI3_CPU_COUNT - 1 do
   begin
    IRQLocalEnabled[Count]:=0;
   end;
   
  {Setup Local Enabled FIQs}
- for Count:=0 to RPI2_CPU_COUNT - 1 do
+ for Count:=0 to RPI3_CPU_COUNT - 1 do
   begin
    FIQLocalEnabled[Count]:=0;
   end;
@@ -1388,7 +1304,7 @@ end;
 
 {==============================================================================}
 
-procedure RPi2PeripheralInit;
+procedure RPi3PeripheralInit;
 var
  CacheLineSize:LongWord;
 begin
@@ -1397,11 +1313,11 @@ begin
  CacheLineSize:=Max(L1DataCacheGetLineSize,L2CacheGetLineSize);
  
  {Setup Peripherals}
- INTERRUPT_REGS_BASE:=BCM2836_INTERRUPT_REGS_BASE;
- SYSTEMTIMER_REGS_BASE:=BCM2836_SYSTEM_TIMER_REGS_BASE;
- TIMER_REGS_BASE:=BCM2836_TIMER_REGS_BASE;
- GPIO_REGS_BASE:=BCM2836_GPIO_REGS_BASE;
- UART_REGS_BASE:=BCM2836_PL011_REGS_BASE;
+ INTERRUPT_REGS_BASE:=BCM2837_INTERRUPT_REGS_BASE;
+ SYSTEMTIMER_REGS_BASE:=BCM2837_SYSTEM_TIMER_REGS_BASE;
+ TIMER_REGS_BASE:=BCM2837_TIMER_REGS_BASE;
+ GPIO_REGS_BASE:=BCM2837_GPIO_REGS_BASE;
+ UART_REGS_BASE:=BCM2837_PL011_REGS_BASE;
 
  {Setup Interrupts}
  //To Do 
@@ -1416,11 +1332,11 @@ begin
  if CacheLineSize > DMA_MULTIPLIER then DMA_MULTIPLIER:=CacheLineSize;
  
  {Setup GPIO}
- GPIO_PIN_COUNT:=BCM2836_GPIO_PIN_COUNT;
+ GPIO_PIN_COUNT:=BCM2837_GPIO_PIN_COUNT;
  //To Do //More
  
  {Setup Virtual GPIO}
- if BOARD_TYPE = BOARD_TYPE_RPI3B then VIRTUAL_GPIO_PIN_COUNT:=BCM2837_VIRTUAL_GPIO_PIN_COUNT;
+ VIRTUAL_GPIO_PIN_COUNT:=BCM2837_VIRTUAL_GPIO_PIN_COUNT;
  //To Do //More
  
  {Setup USB}
@@ -1441,14 +1357,14 @@ begin
  if CacheLineSize > MMC_DMA_ALIGNMENT then MMC_DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > MMC_DMA_MULTIPLIER then MMC_DMA_MULTIPLIER:=CacheLineSize;
  
- {Setup BCM2709}
- BCM2709FRAMEBUFFER_ALIGNEMENT:=SIZE_256;
- BCM2709FRAMEBUFFER_CACHED:=True;
+ {Setup BCM2710}
+ BCM2710FRAMEBUFFER_ALIGNEMENT:=SIZE_256;
+ BCM2710FRAMEBUFFER_CACHED:=True;
  
  {Setup DWCOTG}
- DWCOTG_IRQ:=BCM2836_IRQ_USB;
+ DWCOTG_IRQ:=BCM2837_IRQ_USB;
  DWCOTG_POWER_ID:=POWER_ID_USB0;
- DWCOTG_REGS_BASE:=BCM2836_USB_REGS_BASE;
+ DWCOTG_REGS_BASE:=BCM2837_USB_REGS_BASE;
  DWCOTG_DMA_ALIGNMENT:=SizeOf(LongWord);
  DWCOTG_DMA_MULTIPLIER:=SizeOf(LongWord);
  DWCOTG_DMA_SHARED_MEMORY:=False;
@@ -1459,7 +1375,7 @@ begin
  
  {Setup SMSC95XX}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B:begin
+  BOARD_TYPE_RPI3B:begin
     SMSC95XX_MAC_ADDRESS:=BoardGetMACAddress;
    end;
  else
@@ -1471,39 +1387,39 @@ end;
 
 {==============================================================================}
 {$IFDEF CONSOLE_EARLY_INIT}
-procedure RPi2FramebufferInit;
+procedure RPi3FramebufferInit;
 var
  Status:LongWord;
  
- RPi2Framebuffer:PFramebufferDevice;
+ RPi3Framebuffer:PFramebufferDevice;
 begin
  {}
  {Create Framebuffer}
- RPi2Framebuffer:=PFramebufferDevice(FramebufferDeviceCreateEx(SizeOf(TFramebufferDevice)));
- if RPi2Framebuffer <> nil then
+ RPi3Framebuffer:=PFramebufferDevice(FramebufferDeviceCreateEx(SizeOf(TFramebufferDevice)));
+ if RPi3Framebuffer <> nil then
   begin
    {Device}
-   RPi2Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-   RPi2Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-   RPi2Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_NONE;
-   RPi2Framebuffer.Device.DeviceData:=nil;
+   RPi3Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   RPi3Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
+   RPi3Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_NONE;
+   RPi3Framebuffer.Device.DeviceData:=nil;
    {Framebuffer}
-   RPi2Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
-   RPi2Framebuffer.DeviceAllocate:=RPi2FramebufferDeviceAllocate;
-   RPi2Framebuffer.DeviceRelease:=RPi2FramebufferDeviceRelease;
-   RPi2Framebuffer.DeviceSetProperties:=RPi2FramebufferDeviceSetProperties;
+   RPi3Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
+   RPi3Framebuffer.DeviceAllocate:=RPi3FramebufferDeviceAllocate;
+   RPi3Framebuffer.DeviceRelease:=RPi3FramebufferDeviceRelease;
+   RPi3Framebuffer.DeviceSetProperties:=RPi3FramebufferDeviceSetProperties;
    {Driver}
  
    {Setup Flags}
-   if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-   if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;
+   if BCM2710FRAMEBUFFER_CACHED then RPi3Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
+   if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi3Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;
    
    {Register Framebuffer}
-   Status:=FramebufferDeviceRegister(RPi2Framebuffer);
+   Status:=FramebufferDeviceRegister(RPi3Framebuffer);
    if Status = ERROR_SUCCESS then
     begin
      {Allocate Framebuffer}
-     Status:=FramebufferDeviceAllocate(RPi2Framebuffer,nil);
+     Status:=FramebufferDeviceAllocate(RPi3Framebuffer,nil);
      if Status <> ERROR_SUCCESS then
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
@@ -1522,7 +1438,7 @@ end;
 {$ENDIF}
 {==============================================================================}
 
-procedure RPi2PageTableInit;
+procedure RPi3PageTableInit;
 {Initialize the Hardware Page Tables before enabling the MMU
  See ??????}
 var
@@ -1534,133 +1450,133 @@ var
 begin
  {}
  {Initialize Memory (Required for CPU_MEMORY_BASE/SIZE)}
- if not(MemoryInitialized) then RPi2MemoryInit;
+ if not(MemoryInitialized) then RPi3MemoryInit;
  
  {Parse Boot Tags (Register all memory with Heap manager)}
  if not(ParseBootTagsCompleted) then ARMParseBootTags;
  
  {Create the first level page table}
  {Setup 1MB sections covering the entire 4GB address space with a default layout}
- {Set the 1MB sections in the first 1GB as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections in the first 1GB as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
  Address:=$00000000;
  for Count:=0 to 1023 do
   begin
-   ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+   ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
    Inc(Address,SIZE_1M);
   end;
 
- {Set the 1MB sections in the second 1GB as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections in the second 1GB as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH (Shared)(Non Executable)(Read Write)}
  for Count:=1024 to 2047 do
   begin
-   ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+   ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
    Inc(Address,SIZE_1M);
   end;
   
- {Set the 1MB sections in the remaining 2GB as ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections in the remaining 2GB as ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(Read Write)}
  for Count:=2048 to 4095 do
   begin
-   ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+   ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
    Inc(Address,SIZE_1M);
   end;
    
- {Set the 1MB sections containing the PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
+ {Set the 1MB sections containing the PERIPHERALS_BASE to ARMV8_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
  if PERIPHERALS_SIZE > 0 then
   begin
-   Address:=(PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK);
+   Address:=(PERIPHERALS_BASE and ARMV8_L1D_SECTION_BASE_MASK);
    while Address < (PERIPHERALS_BASE + PERIPHERALS_SIZE) do
     begin
-     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_DEVICE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
      Inc(Address,SIZE_1M);
     end;
   end;  
  
- {Set the 1MB sections containing the LOCAL_PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
+ {Set the 1MB sections containing the LOCAL_PERIPHERALS_BASE to ARMV8_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
  if LOCAL_PERIPHERALS_SIZE > 0 then
   begin
-   Address:=(LOCAL_PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK);
+   Address:=(LOCAL_PERIPHERALS_BASE and ARMV8_L1D_SECTION_BASE_MASK);
    while Address < (LOCAL_PERIPHERALS_BASE + LOCAL_PERIPHERALS_SIZE) do
     begin
-     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE); 
+     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_DEVICE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE); 
      Inc(Address,SIZE_1M);
     end;
   end;  
 
  {Create the second level (Coarse) page tables}
- Table:=(PAGE_TABLES_ADDRESS and ARMV7_L1D_COARSE_BASE_MASK);
+ Table:=(PAGE_TABLES_ADDRESS and ARMV8_L1D_COARSE_BASE_MASK);
  Address:=$00000000;
  for Count:=0 to PAGE_TABLES_COUNT - 1 do
   begin
-   ARMv7SetPageTableCoarse(Address,Table,0);
+   ARMv8SetPageTableCoarse(Address,Table,0);
    Inc(Table,SIZE_1K);
    Inc(Address,SIZE_1M);
   end;
  
- {Set the 4KB zero page to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(No Access)}
+ {Set the 4KB zero page to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(No Access)}
  Address:=$00000000;
- //--ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_NONE); //To Do  
- ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READONLY); //To Do  //Need to complete SetPageTableEntry so it can be called after copying commandline and environment from ATAGs
+ //--ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_NONE); //To Do  
+ ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READONLY); //To Do  //Need to complete SetPageTableEntry so it can be called after copying commandline and environment from ATAGs
  
- {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
- Address:=(VECTOR_TABLE_BASE and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+ Address:=(VECTOR_TABLE_BASE and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (VECTOR_TABLE_BASE + VECTOR_TABLE_SIZE) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV8_L2D_ACCESS_READONLY); 
    Inc(Address,SIZE_4K);
   end; 
  
- {Set the 4KB pages containing the first level page table to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)} 
- Address:=(PAGE_TABLE_BASE and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the first level page table to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)} 
+ Address:=(PAGE_TABLE_BASE and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (PAGE_TABLE_BASE + PAGE_TABLE_SIZE) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
  
- {Set the 4KB pages containing the TEXT (Code) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
- Address:=(LongWord(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the TEXT (Code) section to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+ Address:=(LongWord(@_text_start) and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (LongWord(@_data)) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV8_L2D_ACCESS_READONLY);
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the DATA (Initialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the DATA (Initialized) section to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(LongWord(@_data) and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (LongWord(@_bss_start)) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE); 
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE); 
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the BSS (Uninitialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_bss_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the BSS (Uninitialized) section to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(LongWord(@_bss_start) and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (LongWord(@_bss_end)) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the second level page tables to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(PAGE_TABLES_ADDRESS and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the second level page tables to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(PAGE_TABLES_ADDRESS and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (PAGE_TABLES_ADDRESS + PAGE_TABLES_LENGTH) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
  
- {Set the 4KB pages containing the initial stack to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(INITIAL_STACK_BASE and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the initial stack to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(INITIAL_STACK_BASE and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (INITIAL_STACK_BASE + INITIAL_STACK_SIZE) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the initial heap to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(INITIAL_HEAP_BASE and ARMV7_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the initial heap to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(INITIAL_HEAP_BASE and ARMV8_L2D_SMALL_BASE_MASK);
  while Address < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
+   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
  
@@ -1688,11 +1604,11 @@ begin
      Dec(RequestAddress,MEMORY_NOCACHE_SIZE);
      Dec(RequestAddress,MEMORY_DEVICE_SIZE);
      Dec(RequestAddress,MEMORY_SHARED_SIZE);
-     Dec(RequestAddress,MEMORY_LOCAL_SIZE * RPI2_CPU_COUNT); {Local memory is per CPU}
-     if IRQ_ENABLED then Dec(RequestAddress,MEMORY_IRQ_SIZE * RPI2_CPU_COUNT); {IRQ memory is per CPU}
-     if FIQ_ENABLED then Dec(RequestAddress,MEMORY_FIQ_SIZE * RPI2_CPU_COUNT); {FIQ memory is per CPU}
+     Dec(RequestAddress,MEMORY_LOCAL_SIZE * RPI3_CPU_COUNT); {Local memory is per CPU}
+     if IRQ_ENABLED then Dec(RequestAddress,MEMORY_IRQ_SIZE * RPI3_CPU_COUNT); {IRQ memory is per CPU}
+     if FIQ_ENABLED then Dec(RequestAddress,MEMORY_FIQ_SIZE * RPI3_CPU_COUNT); {FIQ memory is per CPU}
      
-     {Register 1MB Non Shared Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Non Shared Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_NONSHARED_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestNonSharedHeapBlock(Pointer(RequestAddress),MEMORY_NONSHARED_SIZE));
@@ -1701,14 +1617,14 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_NONSHARED_SIZE) do
           begin
-           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_NONSHARED_SIZE);
         end;
       end;
      
-     {Register 1MB Non Cached Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Non Cached Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_NOCACHE_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestNoCacheHeapBlock(Pointer(RequestAddress),MEMORY_NOCACHE_SIZE));
@@ -1717,14 +1633,14 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_NOCACHE_SIZE) do
           begin
-           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_NOCACHE_SIZE);
         end;
       end;
   
-     {Register 1MB Device Memory Blocks as ARMV7_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Device Memory Blocks as ARMV8_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_DEVICE_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestDeviceHeapBlock(Pointer(RequestAddress),MEMORY_DEVICE_SIZE));
@@ -1733,14 +1649,14 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_DEVICE_SIZE) do
           begin
-           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_DEVICE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_DEVICE_SIZE);
         end;
       end;
      
-     {Register 1MB Shared Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+     {Register 1MB Shared Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
      if MEMORY_SHARED_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestSharedHeapBlock(Pointer(RequestAddress),MEMORY_SHARED_SIZE));
@@ -1749,17 +1665,17 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_SHARED_SIZE) do
           begin
-           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_SHARED_SIZE);
         end;
       end;
    
-     {Register 1MB Local Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Local Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_LOCAL_SIZE > 0 then
       begin
-       for Count:=0 to (RPI2_CPU_COUNT - 1) do
+       for Count:=0 to (RPI3_CPU_COUNT - 1) do
         begin
          ActualAddress:=PtrUInt(RequestLocalHeapBlock(Pointer(RequestAddress),MEMORY_LOCAL_SIZE,(1 shl Count)));
          if ActualAddress > 0 then
@@ -1767,7 +1683,7 @@ begin
            Address:=ActualAddress;
            while Address < (ActualAddress + MEMORY_LOCAL_SIZE) do
             begin
-             ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+             ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
              Inc(Address,SIZE_1M);
             end;
            Inc(RequestAddress,MEMORY_LOCAL_SIZE);
@@ -1775,10 +1691,10 @@ begin
         end;
       end;
    
-     {Register 1MB IRQ Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB IRQ Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if IRQ_ENABLED and (MEMORY_IRQ_SIZE > 0) then
       begin
-       for Count:=0 to (RPI2_CPU_COUNT - 1) do
+       for Count:=0 to (RPI3_CPU_COUNT - 1) do
         begin
          ActualAddress:=PtrUInt(RequestIRQHeapBlock(Pointer(RequestAddress),MEMORY_IRQ_SIZE,(1 shl Count)));
          if ActualAddress > 0 then
@@ -1786,7 +1702,7 @@ begin
            Address:=ActualAddress;
            while Address < (ActualAddress + MEMORY_IRQ_SIZE) do
             begin
-             ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+             ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
              Inc(Address,SIZE_1M);
             end;
            Inc(RequestAddress,MEMORY_IRQ_SIZE);
@@ -1794,10 +1710,10 @@ begin
         end;  
       end; 
    
-     {Register 1MB FIQ Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB FIQ Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if FIQ_ENABLED and (MEMORY_FIQ_SIZE > 0) then
       begin
-       for Count:=0 to (RPI2_CPU_COUNT - 1) do
+       for Count:=0 to (RPI3_CPU_COUNT - 1) do
         begin
          ActualAddress:=PtrUInt(RequestFIQHeapBlock(Pointer(RequestAddress),MEMORY_FIQ_SIZE,(1 shl Count)));
          if ActualAddress > 0 then
@@ -1805,7 +1721,7 @@ begin
            Address:=ActualAddress;
            while Address < (ActualAddress + MEMORY_FIQ_SIZE) do
             begin
-             ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+             ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
              Inc(Address,SIZE_1M);
             end;
            Inc(RequestAddress,MEMORY_FIQ_SIZE);
@@ -1815,13 +1731,13 @@ begin
     end; 
   end;
   
- {Set the 1MB sections containing the GPU_MEMORY to ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections containing the GPU_MEMORY to ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
  if GPU_MEMORY_SIZE > 0 then
   begin
-   Address:=(GPU_MEMORY_BASE and ARMV7_L1D_SECTION_BASE_MASK);
+   Address:=(GPU_MEMORY_BASE and ARMV8_L1D_SECTION_BASE_MASK);
    while Address < (GPU_MEMORY_BASE + GPU_MEMORY_SIZE) do
     begin
-     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
      Inc(Address,SIZE_1M);
     end;
   end;  
@@ -1832,67 +1748,48 @@ end;
 
 {==============================================================================}
 
-procedure RPi2PowerLEDEnable;
+procedure RPi3PowerLEDEnable;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI2B:begin
-    //To Do
-   end;
   BOARD_TYPE_RPI3B:begin
-    //To Do //Not supported ? //See BCM2710.dts
+    {Not Supported}
    end;  
  end;
 end;
 
 {==============================================================================}
 
-procedure RPi2PowerLEDOn;
+procedure RPi3PowerLEDOn;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI2B:begin
-    //To Do
-   end;
   BOARD_TYPE_RPI3B:begin
-    //To Do //Not supported ? //See BCM2710.dts
+    {Not Supported}
    end;  
  end;
 end;
 
 {==============================================================================}
 
-procedure RPi2PowerLEDOff;
+procedure RPi3PowerLEDOff;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI2B:begin
-    //To Do
-   end;
   BOARD_TYPE_RPI3B:begin 
-    //To Do //Not supported ? //See BCM2710.dts
+    {Not Supported}
    end;
  end;
 end;
 
 {==============================================================================}
 
-procedure RPi2ActivityLEDEnable;
+procedure RPi3ActivityLEDEnable;
 var
  Value:LongWord;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI2B:begin
-    {Read current value of GPFSEL}
-    Value:=GPIORead(RPI2_GPIO_ACTLED_GPFSEL);
-    {Mask off relevant bits}
-    Value:=Value and not(RPI2_GPIO_ACTLED_GPFMASK shl RPI2_GPIO_ACTLED_GPFSHIFT);
-    {Include required bits}
-    Value:=Value or (1 shl RPI2_GPIO_ACTLED_GPFSHIFT);
-    {Write new value to GPFSEL} 
-    GPIOFunctionSelect(RPI2_GPIO_ACTLED_GPFSEL,Value);
-   end;
   BOARD_TYPE_RPI3B:begin 
     {Virtual GPIO}
     VirtualGPIOFunctionSelect(VIRTUAL_GPIO_PIN_0,VIRTUAL_GPIO_FUNCTION_OUT);
@@ -1902,14 +1799,10 @@ end;
 
 {==============================================================================}
 
-procedure RPi2ActivityLEDOn;
+procedure RPi3ActivityLEDOn;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI2B:begin
-    {LED On}
-    GPIOOutputSet(RPI2_GPIO_ACTLED_GPSET,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));
-   end;
   BOARD_TYPE_RPI3B:begin 
     {LED On}
     VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0);
@@ -1919,14 +1812,10 @@ end;
 
 {==============================================================================}
 
-procedure RPi2ActivityLEDOff;
+procedure RPi3ActivityLEDOff;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI2B:begin
-    {LED Off}
-    GPIOOutputClear(RPI2_GPIO_ACTLED_GPCLR,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));
-   end;
   BOARD_TYPE_RPI3B:begin 
     {LED Off}
     VirtualGPIOOutputClear(VIRTUAL_GPIO_PIN_0);
@@ -1936,7 +1825,7 @@ end;
 
 {==============================================================================}
 
-function RPi2MailboxReceive(Mailbox,Channel:LongWord):LongWord;
+function RPi3MailboxReceive(Mailbox,Channel:LongWord):LongWord;
 {Receive from specifed mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 var
@@ -1946,22 +1835,22 @@ begin
  {}
  Result:=0;
  {Check Mailbox}
- if Mailbox = BCM2836_MAILBOX_0 then
+ if Mailbox = BCM2837_MAILBOX_0 then
   begin 
    {Acquire Lock}
    if MailboxLock.Lock <> INVALID_HANDLE_VALUE then MailboxLock.AcquireLock(MailboxLock.Lock);
    try 
     {Setup Timeout}
-    Timeout:=RPI2_MAILBOX_TIMEOUT;
+    Timeout:=RPI3_MAILBOX_TIMEOUT;
    
     {Setup Result}
-    ResultCode:=BCM2836_MAILBOX_CHANNEL_MASK; {Start with all channel bits set}
+    ResultCode:=BCM2837_MAILBOX_CHANNEL_MASK; {Start with all channel bits set}
    
     {Check Channel}
-    while ((ResultCode and BCM2836_MAILBOX_CHANNEL_MASK) <> Channel) do
+    while ((ResultCode and BCM2837_MAILBOX_CHANNEL_MASK) <> Channel) do
      begin
       {Check Status}
-      while (Mailbox0Registers.Status and BCM2836_MAILBOX_STATUS_EMPTY) = BCM2836_MAILBOX_STATUS_EMPTY do
+      while (Mailbox0Registers.Status and BCM2837_MAILBOX_STATUS_EMPTY) = BCM2837_MAILBOX_STATUS_EMPTY do
        begin
         {Memory Barrier}
         DataMemoryBarrier; {After the Last Read (MicrosecondDelay also Reads)}
@@ -1983,7 +1872,7 @@ begin
     DataMemoryBarrier; {After the Last Read}
    
     {Return Result}
-    Result:=ResultCode and BCM2836_MAILBOX_DATA_MASK; {Account for channel offset}
+    Result:=ResultCode and BCM2837_MAILBOX_DATA_MASK; {Account for channel offset}
    finally
     {Release Lock}
     if MailboxLock.Lock <> INVALID_HANDLE_VALUE then MailboxLock.ReleaseLock(MailboxLock.Lock);
@@ -1993,7 +1882,7 @@ end;
 
 {==============================================================================}
 
-procedure RPi2MailboxSend(Mailbox,Channel,Data:LongWord);
+procedure RPi3MailboxSend(Mailbox,Channel,Data:LongWord);
 {Send to specifed mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 var
@@ -2002,19 +1891,19 @@ var
 begin
  {}
  {Check Mailbox}
- if Mailbox = BCM2836_MAILBOX_0 then
+ if Mailbox = BCM2837_MAILBOX_0 then
   begin 
    {Acquire Lock}
    if MailboxLock.Lock <> INVALID_HANDLE_VALUE then MailboxLock.AcquireLock(MailboxLock.Lock);
    try 
     {Setup Timeout}
-    Timeout:=RPI2_MAILBOX_TIMEOUT;
+    Timeout:=RPI3_MAILBOX_TIMEOUT;
    
     {Setup Data}
-    WriteData:=Channel or (Data and BCM2836_MAILBOX_DATA_MASK);
+    WriteData:=Channel or (Data and BCM2837_MAILBOX_DATA_MASK);
    
     {Check Status}
-    while (Mailbox0Registers.Status and BCM2836_MAILBOX_STATUS_FULL) = BCM2836_MAILBOX_STATUS_FULL do
+    while (Mailbox0Registers.Status and BCM2837_MAILBOX_STATUS_FULL) = BCM2837_MAILBOX_STATUS_FULL do
      begin
       {Memory Barrier}
       DataMemoryBarrier; {After the Last Read (MicrosecondDelay also Reads)}
@@ -2042,18 +1931,18 @@ end;
 
 {==============================================================================}
 
-function RPi2MailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWord;
+function RPi3MailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWord;
 {Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 begin
  {}
- Result:=RPi2MailboxCallEx(Mailbox,Channel,Data,Response,RPI2_MAILBOX_TIMEOUT);
+ Result:=RPi3MailboxCallEx(Mailbox,Channel,Data,Response,RPI3_MAILBOX_TIMEOUT);
 end;
 
 {==============================================================================}
 
-function RPi2MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord; 
+function RPi3MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord; 
 {Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
@@ -2066,10 +1955,10 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Mailbox}
- if Mailbox = BCM2836_MAILBOX_0 then
+ if Mailbox = BCM2837_MAILBOX_0 then
   begin 
    {Check the Data (Must not use the lowest 4 bits)}
-   if (Data and BCM2836_MAILBOX_CHANNEL_MASK) <> 0 then Exit;
+   if (Data and BCM2837_MAILBOX_CHANNEL_MASK) <> 0 then Exit;
 
    {Acquire Lock}
    if MailboxLock.Lock <> INVALID_HANDLE_VALUE then MailboxLock.AcquireLock(MailboxLock.Lock);
@@ -2078,7 +1967,7 @@ begin
     Retries:=Timeout;
     
     {Wait for Mailbox Empty} 
-    while (Mailbox0Registers.Status and BCM2836_MAILBOX_STATUS_EMPTY) <> BCM2836_MAILBOX_STATUS_EMPTY do
+    while (Mailbox0Registers.Status and BCM2837_MAILBOX_STATUS_EMPTY) <> BCM2837_MAILBOX_STATUS_EMPTY do
      begin
       {Read Data from the Mailbox}
       ResultCode:=Mailbox0Registers.Read;
@@ -2103,7 +1992,7 @@ begin
     Retries:=Timeout;
     
     {Wait for Mailbox not Full}
-    while (Mailbox0Registers.Status and BCM2836_MAILBOX_STATUS_FULL) = BCM2836_MAILBOX_STATUS_FULL do
+    while (Mailbox0Registers.Status and BCM2837_MAILBOX_STATUS_FULL) = BCM2837_MAILBOX_STATUS_FULL do
      begin
       {Memory Barrier}
       DataMemoryBarrier; {After the Last Read (MicrosecondDelay also Reads)}
@@ -2122,14 +2011,14 @@ begin
     DataMemoryBarrier; {After the Last Read / Before the First Write}
  
     {Write Data to the Mailbox}
-    WriteData:=Channel or (Data and BCM2836_MAILBOX_DATA_MASK);
+    WriteData:=Channel or (Data and BCM2837_MAILBOX_DATA_MASK);
     Mailbox0Registers.Write:=WriteData; 
  
     {Setup Timeout}
     Retries:=Timeout;
     
     {Wait for Mailbox not Empty}
-    while (Mailbox0Registers.Status and BCM2836_MAILBOX_STATUS_EMPTY) = BCM2836_MAILBOX_STATUS_EMPTY do
+    while (Mailbox0Registers.Status and BCM2837_MAILBOX_STATUS_EMPTY) = BCM2837_MAILBOX_STATUS_EMPTY do
      begin
       {Memory Barrier}
       DataMemoryBarrier; {After the Last Read (MicrosecondDelay also Reads)}
@@ -2154,14 +2043,14 @@ begin
     DataMemoryBarrier; {After the Last Read}
   
     {Check the Response}
-    if (ResultCode and BCM2836_MAILBOX_CHANNEL_MASK) <> Channel then
+    if (ResultCode and BCM2837_MAILBOX_CHANNEL_MASK) <> Channel then
      begin
       Result:=ERROR_INVALID_DATA;
       Exit;
      end; 
   
     {Return the Response}
-    Response:=ResultCode and BCM2836_MAILBOX_DATA_MASK; {Account for channel offset}
+    Response:=ResultCode and BCM2837_MAILBOX_DATA_MASK; {Account for channel offset}
     
     Result:=ERROR_SUCCESS;
    finally
@@ -2173,23 +2062,23 @@ end;
 
 {==============================================================================}
 
-function RPi2MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
+function RPi3MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
 {Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 begin
  {}
- Result:=RPi2MailboxPropertyCallEx(Mailbox,Channel,Data,Response,RPI2_MAILBOX_TIMEOUT);
+ Result:=RPi3MailboxPropertyCallEx(Mailbox,Channel,Data,Response,RPI3_MAILBOX_TIMEOUT);
 end;
 
 {==============================================================================}
 
-function RPi2MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord; 
+function RPi3MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord; 
 {Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 var
- Tag:PBCM2836MailboxTagHeader;
+ Tag:PBCM2837MailboxTagHeader;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2199,7 +2088,7 @@ begin
  {$ENDIF}
  
  {Check Mailbox}
- if Mailbox = BCM2836_MAILBOX_0 then
+ if Mailbox = BCM2837_MAILBOX_0 then
   begin 
    {Check the Data}
    if Data = nil then Exit;
@@ -2221,27 +2110,27 @@ begin
     end;
  
    {Check the Response Code}
-   if PBCM2836MailboxHeader(Data).Code <> BCM2836_MBOX_RESPONSE_CODE_SUCCESS then
+   if PBCM2837MailboxHeader(Data).Code <> BCM2837_MBOX_RESPONSE_CODE_SUCCESS then
     begin
      Result:=ERROR_FUNCTION_FAILED;
-     if PLATFORM_LOG_ENABLED then PlatformLogError('MailboxPropertyCallEx - Response Code Failed: (Code=' + IntToHex(PBCM2836MailboxHeader(Data).Code,8) + ')');
+     if PLATFORM_LOG_ENABLED then PlatformLogError('MailboxPropertyCallEx - Response Code Failed: (Code=' + IntToHex(PBCM2837MailboxHeader(Data).Code,8) + ')');
      Exit;
     end;
  
    {Check each tags Response Code}
-   Tag:=PBCM2836MailboxTagHeader(PtrUInt(Data) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-   while Tag.Tag <> BCM2836_MBOX_TAG_END do
+   Tag:=PBCM2837MailboxTagHeader(PtrUInt(Data) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+   while Tag.Tag <> BCM2837_MBOX_TAG_END do
     begin
-     if (Tag.Length and BCM2836_MBOX_TAG_RESPONSE_CODE) = 0 then
+     if (Tag.Length and BCM2837_MBOX_TAG_RESPONSE_CODE) = 0 then
       begin
        Result:=ERROR_FUNCTION_FAILED;
        if PLATFORM_LOG_ENABLED then PlatformLogError('MailboxPropertyCallEx - Tag Response Code Failed');
        Exit;
       end;
      {Clear the Response bit so callers can read the length field without extra processing}
-     Tag.Length:=Tag.Length and not(BCM2836_MBOX_TAG_RESPONSE_CODE);
+     Tag.Length:=Tag.Length and not(BCM2837_MBOX_TAG_RESPONSE_CODE);
      {Get Next Tag}
-     Tag:=PBCM2836MailboxTagHeader(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagHeader)) + Tag.Size);
+     Tag:=PBCM2837MailboxTagHeader(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagHeader)) + Tag.Size);
     end;
  
    Result:=ERROR_SUCCESS;
@@ -2250,31 +2139,31 @@ end;
 
 {==============================================================================}
 
-function RPi2RequestIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord;
+function RPi3RequestIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord;
 {Request registration of the supplied handler to the specified IRQ number}
 {CPUID: CPU to route IRQ to}
 {Number: IRQ number to register}
 {Handler: Interrupt handler function to register}
 begin
  {}
- Result:=RPi2RequestExIRQ(CPUID,Number,Handler,nil,Parameter);
+ Result:=RPi3RequestExIRQ(CPUID,Number,Handler,nil,Parameter);
 end;
 
 {==============================================================================}
 
-function RPi2ReleaseIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord;
+function RPi3ReleaseIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord;
 {Request deregistration of the supplied handler from the specified IRQ number}
 {CPUID: CPU to route IRQ to}
 {Number: IRQ number to deregister}
 {Handler: Interrupt handler function to deregister}
 begin
  {}
- Result:=RPi2ReleaseExIRQ(CPUID,Number,Handler,nil,Parameter);
+ Result:=RPi3ReleaseExIRQ(CPUID,Number,Handler,nil,Parameter);
 end;
 
 {==============================================================================}
 
-function RPi2RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
+function RPi3RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request registration of the supplied handler to the specified IRQ number}
 {CPUID: CPU to route IRQ to}
 {Number: IRQ number to register}
@@ -2393,96 +2282,96 @@ begin
 
     {Check Number}
     case Number of
-     BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
        {Enable Physical Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
        {Enable Physical Non Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
        {Enable Hypervisor Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
        {Enable Virtual Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
        {Enable Mailbox0 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
        {Enable Mailbox1 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
        {Enable Mailbox2 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
        {Enable Mailbox3 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
       end;
-     BCM2836_IRQ_LOCAL_ARM_GPU:begin
+     BCM2837_IRQ_LOCAL_ARM_GPU:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PMU:begin
+     BCM2837_IRQ_LOCAL_ARM_PMU:begin
        {}
        //To Do //Critical
       end;
-     BCM2836_IRQ_LOCAL_ARM_AXI:begin
+     BCM2837_IRQ_LOCAL_ARM_AXI:begin
        {}
        //To Do //Critical
       end;
-     BCM2836_IRQ_LOCAL_ARM_TIMER:begin
+     BCM2837_IRQ_LOCAL_ARM_TIMER:begin
        {}
        //To Do //Critical
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
        {Nothing}
       end;
     else
@@ -2517,7 +2406,7 @@ end;
 
 {==============================================================================}
 
-function RPi2ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
+function RPi3ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request deregistration of the supplied handler from the specified IRQ number}
 {CPUID: CPU to route IRQ to}
 {Number: IRQ number to deregister}
@@ -2636,96 +2525,96 @@ begin
 
     {Check Number}
     case Number of
-     BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
        {Disable Physical Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ);
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
        {Disable Physical Non Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ);
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
        {Disable Hypervisor Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ);
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
+     BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
        {Disable Virtual Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ);
+       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
        {Disable Mailbox0 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ);
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
        {Disable Mailbox1 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ);
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
        {Disable Mailbox2 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ);
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
+     BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
        {Disable Mailbox3 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ);
+       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ);
       end;
-     BCM2836_IRQ_LOCAL_ARM_GPU:begin
+     BCM2837_IRQ_LOCAL_ARM_GPU:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PMU:begin
+     BCM2837_IRQ_LOCAL_ARM_PMU:begin
        {}
        //To Do //Critical
       end;
-     BCM2836_IRQ_LOCAL_ARM_AXI:begin
+     BCM2837_IRQ_LOCAL_ARM_AXI:begin
        {}
        //To Do //Critical
       end;
-     BCM2836_IRQ_LOCAL_ARM_TIMER:begin
+     BCM2837_IRQ_LOCAL_ARM_TIMER:begin
        {}
        //To Do //Critical
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
        {Nothing}
       end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
+     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
        {Nothing}
       end;
     else
@@ -2760,31 +2649,31 @@ end;
 
 {==============================================================================}
 
-function RPi2RequestFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
+function RPi3RequestFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
 {Request registration of the supplied handler to the specified FIQ number}
 {CPUID: CPU to route FIQ to}
 {Number: FIQ number to register}
 {Handler: Interrupt handler function to register}
 begin
  {}
- Result:=RPi2RequestExFIQ(CPUID,Number,Handler,nil,Parameter);
+ Result:=RPi3RequestExFIQ(CPUID,Number,Handler,nil,Parameter);
 end;
 
 {==============================================================================}
 
-function RPi2ReleaseFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
+function RPi3ReleaseFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; 
 {Request deregistration of the supplied handler from the specified FIQ number}
 {CPUID: CPU to route FIQ to}
 {Number: FIQ number to deregister}
 {Handler: Interrupt handler function to deregister}
 begin
  {}
- Result:=RPi2ReleaseExFIQ(CPUID,Number,Handler,nil,Parameter);
+ Result:=RPi3ReleaseExFIQ(CPUID,Number,Handler,nil,Parameter);
 end;
 
 {==============================================================================}
 
-function RPi2RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function RPi3RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request registration of the supplied handler to the specified FIQ number}
 {CPUID: CPU to route FIQ to}
 {Number: FIQ number to register}
@@ -2818,7 +2707,7 @@ end;
 
 {==============================================================================}
 
-function RPi2ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function RPi3ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request deregistration of the supplied handler from the specified FIQ number}
 {CPUID: CPU to route FIQ to}
 {Number: FIQ number to deregister}
@@ -2852,7 +2741,7 @@ end;
 
 {==============================================================================}
 
-function RPi2SystemRestart(Delay:LongWord):LongWord; 
+function RPi3SystemRestart(Delay:LongWord):LongWord; 
 var
  Current:LongWord;
 begin
@@ -2869,11 +2758,11 @@ begin
   DataMemoryBarrier; {Before the First Write}
  
   {Enable Watchdog}
-  WatchdogRegisters.WDOG:=BCM2836_PM_PASSWORD or ((Delay * BCM2836_PM_WDOG_TICKS_PER_MILLISECOND) and BCM2836_PM_WDOG_TIME_MASK);
+  WatchdogRegisters.WDOG:=BCM2837_PM_PASSWORD or ((Delay * BCM2837_PM_WDOG_TICKS_PER_MILLISECOND) and BCM2837_PM_WDOG_TIME_MASK);
   
   {Enable Restart}  
   Current:=WatchdogRegisters.RSTC;
-  WatchdogRegisters.RSTC:=BCM2836_PM_PASSWORD or (Current and BCM2836_PM_RSTC_WRCFG_CLR) or BCM2836_PM_RSTC_WRCFG_FULL_RESET;
+  WatchdogRegisters.RSTC:=BCM2837_PM_PASSWORD or (Current and BCM2837_PM_RSTC_WRCFG_CLR) or BCM2837_PM_RSTC_WRCFG_FULL_RESET;
 
   {Memory Barrier}
   DataMemoryBarrier; {After the Last Read} 
@@ -2882,9 +2771,6 @@ begin
   MillisecondDelay(1000);
 
   Result:=ERROR_SUCCESS;
-  
-  //See: bcm2709_restart in \linux-rpi-3.18.y\arch\arm\mach-bcm2709\bcm2709.c
-  //     bcm2708_restart in \linux-rpi-3.18.y\arch\arm\mach-bcm2708\bcm2708.c
  finally
   {Release Lock}
   if ShutdownLock.Lock <> INVALID_HANDLE_VALUE then ShutdownLock.ReleaseLock(ShutdownLock.Lock);
@@ -2893,7 +2779,7 @@ end;
 
 {==============================================================================}
 
-function RPi2SystemShutdown(Delay:LongWord):LongWord;
+function RPi3SystemShutdown(Delay:LongWord):LongWord;
 var
  Current:LongWord;
 begin
@@ -2911,15 +2797,15 @@ begin
  
   {Enable Hard Reset}  
   Current:=WatchdogRegisters.RSTS;
-  {WatchdogRegisters.RSTS:=BCM2836_PM_PASSWORD or (Current and BCM2836_PM_RSTC_WRCFG_CLR) or BCM2836_PM_RSTS_HADWRH_SET;} {RPi firmware changed to use a different value}
-  WatchdogRegisters.RSTS:=Current or BCM2836_PM_PASSWORD or BCM2836_PM_RSTS_RASPBERRYPI_HALT;
+  {WatchdogRegisters.RSTS:=BCM2837_PM_PASSWORD or (Current and BCM2837_PM_RSTC_WRCFG_CLR) or BCM2837_PM_RSTS_HADWRH_SET;} {RPi firmware changed to use a different value}
+  WatchdogRegisters.RSTS:=Current or BCM2837_PM_PASSWORD or BCM2837_PM_RSTS_RASPBERRYPI_HALT;
   
   {Enable Watchdog}
-  WatchdogRegisters.WDOG:=BCM2836_PM_PASSWORD or ((Delay * BCM2836_PM_WDOG_TICKS_PER_MILLISECOND) and BCM2836_PM_WDOG_TIME_MASK);
+  WatchdogRegisters.WDOG:=BCM2837_PM_PASSWORD or ((Delay * BCM2837_PM_WDOG_TICKS_PER_MILLISECOND) and BCM2837_PM_WDOG_TIME_MASK);
   
   {Enable Restart}  
   Current:=WatchdogRegisters.RSTC;
-  WatchdogRegisters.RSTC:=BCM2836_PM_PASSWORD or (Current and BCM2836_PM_RSTC_WRCFG_CLR) or BCM2836_PM_RSTC_WRCFG_FULL_RESET;
+  WatchdogRegisters.RSTC:=BCM2837_PM_PASSWORD or (Current and BCM2837_PM_RSTC_WRCFG_CLR) or BCM2837_PM_RSTC_WRCFG_FULL_RESET;
 
   {Memory Barrier}
   DataMemoryBarrier; {After the Last Read} 
@@ -2928,9 +2814,6 @@ begin
   MillisecondDelay(1000);
 
   Result:=ERROR_SUCCESS;
- 
-  //See: bcm2709_power_off in \linux-rpi-3.18.y\arch\arm\mach-bcm2709\bcm2709.c
-  //     bcm2708_power_off in \linux-rpi-3.18.y\arch\arm\mach-bcm2708\bcm2708.c
  finally
   {Release Lock}
   if ShutdownLock.Lock <> INVALID_HANDLE_VALUE then ShutdownLock.ReleaseLock(ShutdownLock.Lock);
@@ -2939,21 +2822,21 @@ end;
 
 {==============================================================================}
 
-function RPi2SystemGetCommandLine:String;
+function RPi3SystemGetCommandLine:String;
 {Get the Command Line from the Mailbox property tags channel}
 var
  Size:LongWord;
  Count:Integer;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetCommandLine;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetCommandLine;
 begin
  {}
  Result:='';
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetCommandLine) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetCommandLine) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -2965,20 +2848,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetCommandLine(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_COMMAND_LINE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetCommandLine) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetCommandLine(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_COMMAND_LINE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetCommandLine) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetCommandLine)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetCommandLine)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('SystemGetCommandLine - MailboxPropertyCall Failed');
     Exit;
@@ -2999,20 +2882,20 @@ end;
 
 {==============================================================================}
 
-function RPi2CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
 {Get the CPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetARMMemory;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetARMMemory;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetARMMemory) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetARMMemory) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3024,20 +2907,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetARMMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_ARM_MEMORY;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetARMMemory) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetARMMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_ARM_MEMORY;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetARMMemory) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetARMMemory)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetARMMemory)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('CPUGetMemory - MailboxPropertyCall Failed');
@@ -3056,7 +2939,7 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUGetState:LongWord;
+function RPi3GPUGetState:LongWord;
 begin
  {}
  Result:=GPU_STATE_NONE;
@@ -3066,20 +2949,20 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
 {Get the GPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetVCMemory;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetVCMemory;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetVCMemory) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetVCMemory) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3091,20 +2974,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetVCMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_VC_MEMORY;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetVCMemory) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetVCMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_VC_MEMORY;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetVCMemory) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetVCMemory)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetVCMemory)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('GPUGetMemory - MailboxPropertyCall Failed');
@@ -3123,21 +3006,21 @@ end;
 
 {==============================================================================}
 
-function RPi2BoardGetModel:LongWord;
+function RPi3BoardGetModel:LongWord;
 {Get the Board Model from the Mailbox property tags channel}
 var
  Size:LongWord;
  Model:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetBoardModel;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetBoardModel;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetBoardModel) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetBoardModel) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3149,20 +3032,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetBoardModel(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_BOARD_MODEL;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetBoardModel) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetBoardModel(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_BOARD_MODEL;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetBoardModel) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetBoardModel)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetBoardModel)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('BoardGetModel - MailboxPropertyCall Failed');
     Exit;
@@ -3180,20 +3063,20 @@ end;
 
 {==============================================================================}
 
-function RPi2BoardGetSerial:Int64;
+function RPi3BoardGetSerial:Int64;
 {Get the Board Serial from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetBoardSerial;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetBoardSerial;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetBoardSerial) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetBoardSerial) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3205,20 +3088,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetBoardSerial(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_BOARD_SERIAL;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetBoardSerial) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetBoardSerial(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_BOARD_SERIAL;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetBoardSerial) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetBoardSerial)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetBoardSerial)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('BoardGetSerial - MailboxPropertyCall Failed');
     Exit;
@@ -3233,20 +3116,20 @@ end;
 
 {==============================================================================}
 
-function RPi2BoardGetRevision:LongWord;
+function RPi3BoardGetRevision:LongWord;
 {Get the Board Revision from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetBoardRevision;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetBoardRevision;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetBoardRevision) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetBoardRevision) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3258,20 +3141,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetBoardRevision(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_BOARD_REV;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetBoardRevision) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetBoardRevision(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_BOARD_REV;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetBoardRevision) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetBoardRevision)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetBoardRevision)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('BoardGetRevision - MailboxPropertyCall Failed');
     Exit;
@@ -3286,21 +3169,21 @@ end;
 
 {==============================================================================}
 
-function RPi2BoardGetMACAddress:String;
+function RPi3BoardGetMACAddress:String;
 {Get the Board MAC Address from the Mailbox property tags channel}
 var
  Size:LongWord;
  Count:Integer;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetMACAddress;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetMACAddress;
 begin
  {}
  Result:='';
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetMACAddress) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetMACAddress) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3312,20 +3195,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetMACAddress(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_MAC_ADDRESS;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetMACAddress) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetMACAddress(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_MAC_ADDRESS;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetMACAddress) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetMACAddress)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetMACAddress)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('BoardGetMACAddress - MailboxPropertyCall Failed');
     Exit;
@@ -3343,20 +3226,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FirmwareGetRevision:LongWord;
+function RPi3FirmwareGetRevision:LongWord;
 {Get the Firmware Revision from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetFirmwareRevision;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetFirmwareRevision;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetFirmwareRevision) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetFirmwareRevision) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3368,20 +3251,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetFirmwareRevision(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_FIRMWARE_REV;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetFirmwareRevision) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetFirmwareRevision(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_FIRMWARE_REV;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetFirmwareRevision) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetFirmwareRevision)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetFirmwareRevision)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FirmwareGetRevision - MailboxPropertyCall Failed');
     Exit;
@@ -3396,20 +3279,20 @@ end;
 
 {==============================================================================}
 
-function RPi2PowerGetWait(PowerId:LongWord):LongWord;
+function RPi3PowerGetWait(PowerId:LongWord):LongWord;
 {Get the Power Wait from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetTiming;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetTiming;
 begin
  {}
  Result:=0;
 
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetTiming) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetTiming) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3421,21 +3304,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetTiming(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_TIMING;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetTiming) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetTiming(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_TIMING;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetTiming) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.DeviceId:=RPi2ConvertPowerIdRequest(PowerId);
+  Tag.Request.DeviceId:=RPi3ConvertPowerIdRequest(PowerId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetTiming)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetTiming)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('PowerGetWait - MailboxPropertyCall Failed');
     Exit;
@@ -3450,20 +3333,20 @@ end;
 
 {==============================================================================}
 
-function RPi2PowerGetState(PowerId:LongWord):LongWord;
+function RPi3PowerGetState(PowerId:LongWord):LongWord;
 {Get the Power State from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetPowerState;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetPowerState;
 begin
  {}
  Result:=0;
 
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetPowerState) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetPowerState) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3475,28 +3358,28 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetPowerState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_POWER_STATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetPowerState) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetPowerState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_POWER_STATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetPowerState) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.DeviceId:=RPi2ConvertPowerIdRequest(PowerId);
+  Tag.Request.DeviceId:=RPi3ConvertPowerIdRequest(PowerId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetPowerState)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetPowerState)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('PowerGetState - MailboxPropertyCall Failed');
     Exit;
    end; 
 
   {Get Power State}
-  Result:=RPi2ConvertPowerStateResponse(Tag.Response.State);
+  Result:=RPi3ConvertPowerStateResponse(Tag.Response.State);
  finally
   FreeMem(Header);
  end;
@@ -3504,21 +3387,21 @@ end;
 
 {==============================================================================}
 
-function RPi2PowerSetState(PowerId,State:LongWord;Wait:Boolean):LongWord;
+function RPi3PowerSetState(PowerId,State:LongWord;Wait:Boolean):LongWord;
 {Set the Power State in the Mailbox property tags channel}
 {Note: Power Lock not required due to Mailbox Property Call serialization}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetPowerState;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetPowerState;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetPowerState) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetPowerState) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3530,29 +3413,29 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetPowerState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_POWER_STATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetPowerState) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetPowerState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_POWER_STATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetPowerState) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.DeviceId:=RPi2ConvertPowerIdRequest(PowerId);
-  Tag.Request.State:=RPi2ConvertPowerStateRequest(State);
-  if Wait then Tag.Request.State:=(Tag.Request.State or BCM2836_MBOX_SET_POWER_STATE_REQ_WAIT);
+  Tag.Request.DeviceId:=RPi3ConvertPowerIdRequest(PowerId);
+  Tag.Request.State:=RPi3ConvertPowerStateRequest(State);
+  if Wait then Tag.Request.State:=(Tag.Request.State or BCM2837_MBOX_SET_POWER_STATE_REQ_WAIT);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetPowerState)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetPowerState)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
   if Wait then
    begin
-    Result:=MailboxPropertyCallEx(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response,RPI2_MAILBOX_TIMEOUT_EX);
+    Result:=MailboxPropertyCallEx(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response,RPI3_MAILBOX_TIMEOUT_EX);
    end
   else
    begin  
-    Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+    Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
    end; 
   if Result <> ERROR_SUCCESS then
    begin
@@ -3563,13 +3446,13 @@ begin
   {Check Power State}
   if Wait then
    begin
-    if RPi2ConvertPowerStateRequest(State) = BCM2836_MBOX_SET_POWER_STATE_REQ_ON then
+    if RPi3ConvertPowerStateRequest(State) = BCM2837_MBOX_SET_POWER_STATE_REQ_ON then
      begin
-      if (Tag.Response.State and BCM2836_MBOX_POWER_STATE_RESP_ON) <> 0 then Result:=ERROR_SUCCESS;
+      if (Tag.Response.State and BCM2837_MBOX_POWER_STATE_RESP_ON) <> 0 then Result:=ERROR_SUCCESS;
      end
     else
      begin
-      if (Tag.Response.State and BCM2836_MBOX_POWER_STATE_RESP_ON) = 0 then Result:=ERROR_SUCCESS;
+      if (Tag.Response.State and BCM2837_MBOX_POWER_STATE_RESP_ON) = 0 then Result:=ERROR_SUCCESS;
      end;
    end
   else
@@ -3583,15 +3466,15 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockGetCount:LongWord;
+function RPi3ClockGetCount:LongWord;
 {Gets the current system clock count (32 least significant bits of total)}
 {Note: On the Raspberry Pi this comes from the System Timer free running
  counter which runs at 1MHz and therefore overflows every 4295 seconds}
 begin
  {}
- {$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
+ {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Get Value}
- Result:=ARMv7GetTimerCount(ARMV7_CP15_C14_CNTV);
+ Result:=ARMv8GetTimerCount(ARMV8_CP15_C14_CNTV);
  {$ELSE}
  {Get Value}
  Result:=TimerRegisters.CLO;
@@ -3603,20 +3486,20 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockGetTotal:Int64; 
+function RPi3ClockGetTotal:Int64; 
 {Gets the total system clock count}
 {Note: On the Raspberry Pi this comes from the System Timer free running
  counter which runs at 1MHz, the clock interrupt also uses this timer to
  increment the clock every second and therefore keep time}
-{$IFDEF RPI2_CLOCK_SYSTEM_TIMER}
+{$IFDEF RPI3_CLOCK_SYSTEM_TIMER}
 var
  Check:LongWord;
 {$ENDIF}
 begin
  {}
- {$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
+ {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Get Value}
- Result:=ARMv7GetTimerCount(ARMV7_CP15_C14_CNTV);
+ Result:=ARMv8GetTimerCount(ARMV8_CP15_C14_CNTV);
  {$ELSE}
  {Get High Value}
  Int64Rec(Result).Hi:=TimerRegisters.CHI;
@@ -3640,20 +3523,20 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockGetRate(ClockId:LongWord):LongWord;
+function RPi3ClockGetRate(ClockId:LongWord):LongWord;
 {Get the Clock Rate from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetClockRate;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetClockRate;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetClockRate) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetClockRate) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3665,21 +3548,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetClockRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_CLOCK_RATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetClockRate) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetClockRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_CLOCK_RATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetClockRate) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.ClockId:=RPi2ConvertClockIdRequest(ClockId);
+  Tag.Request.ClockId:=RPi3ConvertClockIdRequest(ClockId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetClockRate)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetClockRate)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('ClockGetRate - MailboxPropertyCall Failed');
     Exit;
@@ -3694,14 +3577,14 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockSetRate(ClockId,Rate:LongWord;Turbo:Boolean):LongWord;
+function RPi3ClockSetRate(ClockId,Rate:LongWord;Turbo:Boolean):LongWord;
 {Set the Clock Rate in the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetClockRate;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetClockRate;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3710,7 +3593,7 @@ begin
  if Rate = 0 then Exit;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetClockRate) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetClockRate) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3722,24 +3605,24 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetClockRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_CLOCK_RATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetClockRate) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetClockRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_CLOCK_RATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetClockRate) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.ClockId:=RPi2ConvertClockIdRequest(ClockId);
+  Tag.Request.ClockId:=RPi3ConvertClockIdRequest(ClockId);
   Tag.Request.Rate:=Rate;
   Tag.Request.SkipTurbo:=0;
-  if not(Turbo) then Tag.Request.SkipTurbo:=BCM2836_MBOX_CLOCK_RATE_REQ_SKIP_TURBO;
+  if not(Turbo) then Tag.Request.SkipTurbo:=BCM2837_MBOX_CLOCK_RATE_REQ_SKIP_TURBO;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetClockRate)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetClockRate)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('ClockSetRate - MailboxPropertyCall Failed');
@@ -3755,20 +3638,20 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockGetState(ClockId:LongWord):LongWord;
+function RPi3ClockGetState(ClockId:LongWord):LongWord;
 {Get the Clock State from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetClockState;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetClockState;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetClockState) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetClockState) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3780,28 +3663,28 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetClockState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_CLOCK_STATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetClockState) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetClockState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_CLOCK_STATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetClockState) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.ClockId:=RPi2ConvertClockIdRequest(ClockId);
+  Tag.Request.ClockId:=RPi3ConvertClockIdRequest(ClockId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetClockState)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetClockState)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('ClockGetState - MailboxPropertyCall Failed');
     Exit;
    end; 
 
   {Get Clock State}
-  Result:=RPi2ConvertClockStateResponse(Tag.Response.State);
+  Result:=RPi3ConvertClockStateResponse(Tag.Response.State);
  finally
   FreeMem(Header);
  end;
@@ -3809,20 +3692,20 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockSetState(ClockId,State:LongWord):LongWord;
+function RPi3ClockSetState(ClockId,State:LongWord):LongWord;
 {Set the Clock State in the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetClockState;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetClockState;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetClockState) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetClockState) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3834,22 +3717,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetClockState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_CLOCK_STATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetClockState) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetClockState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_CLOCK_STATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetClockState) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.ClockId:=RPi2ConvertClockIdRequest(ClockId);
-  Tag.Request.State:=RPi2ConvertClockStateRequest(State);
+  Tag.Request.ClockId:=RPi3ConvertClockIdRequest(ClockId);
+  Tag.Request.State:=RPi3ConvertClockStateRequest(State);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetClockState)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetClockState)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('ClockSetState - MailboxPropertyCall Failed');
@@ -3857,13 +3740,13 @@ begin
    end; 
   
   {Check Clock State}
-  if RPi2ConvertClockStateRequest(State) = BCM2836_MBOX_SET_CLOCK_STATE_REQ_ON then
+  if RPi3ConvertClockStateRequest(State) = BCM2837_MBOX_SET_CLOCK_STATE_REQ_ON then
    begin
-    if (Tag.Response.State and BCM2836_MBOX_CLOCK_STATE_RESP_ON) <> 0 then Result:=ERROR_SUCCESS;
+    if (Tag.Response.State and BCM2837_MBOX_CLOCK_STATE_RESP_ON) <> 0 then Result:=ERROR_SUCCESS;
    end
   else
    begin
-    if (Tag.Response.State and BCM2836_MBOX_CLOCK_STATE_RESP_ON) = 0 then Result:=ERROR_SUCCESS;
+    if (Tag.Response.State and BCM2837_MBOX_CLOCK_STATE_RESP_ON) = 0 then Result:=ERROR_SUCCESS;
    end;
  finally
   FreeMem(Header);
@@ -3872,20 +3755,20 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockGetMinRate(ClockId:LongWord):LongWord;
+function RPi3ClockGetMinRate(ClockId:LongWord):LongWord;
 {Get the Clock Min Rate from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetClockMinRate;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetClockMinRate;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetClockMinRate) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetClockMinRate) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3897,21 +3780,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetClockMinRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_CLOCK_MIN_RATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetClockMinRate) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetClockMinRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_CLOCK_MIN_RATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetClockMinRate) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.ClockId:=RPi2ConvertClockIdRequest(ClockId);
+  Tag.Request.ClockId:=RPi3ConvertClockIdRequest(ClockId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetClockMinRate)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetClockMinRate)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('ClockGetMinRate - MailboxPropertyCall Failed');
     Exit;
@@ -3926,20 +3809,20 @@ end;
 
 {==============================================================================}
 
-function RPi2ClockGetMaxRate(ClockId:LongWord):LongWord;
+function RPi3ClockGetMaxRate(ClockId:LongWord):LongWord;
 {Get the Clock Max Rate from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetClockMaxRate;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetClockMaxRate;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetClockMaxRate) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetClockMaxRate) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -3951,21 +3834,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetClockMaxRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_CLOCK_MAX_RATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetClockMaxRate) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetClockMaxRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_CLOCK_MAX_RATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetClockMaxRate) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.ClockId:=RPi2ConvertClockIdRequest(ClockId);
+  Tag.Request.ClockId:=RPi3ConvertClockIdRequest(ClockId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetClockMaxRate)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetClockMaxRate)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('ClockGetMaxRate - MailboxPropertyCall Failed');
     Exit;
@@ -3980,20 +3863,20 @@ end;
 
 {==============================================================================}
 
-function RPi2TurboGetState(TurboId:LongWord):LongWord;
+function RPi3TurboGetState(TurboId:LongWord):LongWord;
 {Get the Turbo State from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetTurbo;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetTurbo;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetTurbo) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetTurbo) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4005,21 +3888,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetTurbo(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_TURBO;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetTurbo) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetTurbo(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_TURBO;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetTurbo) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Id:=0; {Must be zero}
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetTurbo)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetTurbo)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('TurboGetState - MailboxPropertyCall Failed');
     Exit;
@@ -4034,20 +3917,20 @@ end;
 
 {==============================================================================}
 
-function RPi2TurboSetState(TurboId,State:LongWord):LongWord;
+function RPi3TurboSetState(TurboId,State:LongWord):LongWord;
 {Set the Turbo State in the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetTurbo;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetTurbo;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetTurbo) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetTurbo) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4059,22 +3942,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetTurbo(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_TURBO;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetTurbo) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetTurbo(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_TURBO;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetTurbo) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Id:=0; {Must be zero}
   Tag.Request.Level:=State; {0 to Off / 1 for On}
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetTurbo)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetTurbo)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('TurboSetState - MailboxPropertyCall Failed');
@@ -4091,20 +3974,20 @@ end;
 
 {==============================================================================}
 
-function RPi2VoltageGetValue(VoltageId:LongWord):LongWord;
+function RPi3VoltageGetValue(VoltageId:LongWord):LongWord;
 {Get the Voltage Value from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetVoltage;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetVoltage;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetVoltage) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetVoltage) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4116,28 +3999,28 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_VOLTAGE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetVoltage) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_VOLTAGE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetVoltage) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.VoltageId:=RPi2ConvertVoltageIdRequest(VoltageId);
+  Tag.Request.VoltageId:=RPi3ConvertVoltageIdRequest(VoltageId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetVoltage)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetVoltage)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('VoltageGetValue - MailboxPropertyCall Failed');
     Exit;
    end; 
 
   {Get Voltage Value}
-  if (Tag.Response.Value <> BCM2836_MBOX_VOLTAGE_INVALID) then Result:=Tag.Response.Value; {Offset from 1.2V in units of 0.025V}
+  if (Tag.Response.Value <> BCM2837_MBOX_VOLTAGE_INVALID) then Result:=Tag.Response.Value; {Offset from 1.2V in units of 0.025V}
  finally
   FreeMem(Header);
  end;
@@ -4145,14 +4028,14 @@ end;
 
 {==============================================================================}
 
-function RPi2VoltageSetValue(VoltageId,Value:LongWord):LongWord;
+function RPi3VoltageSetValue(VoltageId,Value:LongWord):LongWord;
 {Set the Voltage Value in the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetVoltage;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetVoltage;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -4161,7 +4044,7 @@ begin
  if Value = 0 then Exit;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetVoltage) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetVoltage) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4173,22 +4056,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_VOLTAGE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetVoltage) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_VOLTAGE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetVoltage) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.VoltageId:=RPi2ConvertVoltageIdRequest(VoltageId);
+  Tag.Request.VoltageId:=RPi3ConvertVoltageIdRequest(VoltageId);
   Tag.Request.Value:=Value; {Offset from 1.2V in units of 0.025V}
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetVoltage)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetVoltage)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('VoltageSetValue - MailboxPropertyCall Failed');
@@ -4196,7 +4079,7 @@ begin
    end; 
   
   {Check Voltage Value}
-  if (Tag.Response.Value <> BCM2836_MBOX_VOLTAGE_INVALID) and (Tag.Response.Value = Value) then Result:=ERROR_SUCCESS;
+  if (Tag.Response.Value <> BCM2837_MBOX_VOLTAGE_INVALID) and (Tag.Response.Value = Value) then Result:=ERROR_SUCCESS;
  finally
   FreeMem(Header);
  end;
@@ -4204,20 +4087,20 @@ end;
 
 {==============================================================================}
 
-function RPi2VoltageGetMinValue(VoltageId:LongWord):LongWord;
+function RPi3VoltageGetMinValue(VoltageId:LongWord):LongWord;
 {Get the Voltage Min Value from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetMinVoltage;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetMinVoltage;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetMinVoltage) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetMinVoltage) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4229,28 +4112,28 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetMinVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_MIN_VOLTAGE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetMinVoltage) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetMinVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_MIN_VOLTAGE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetMinVoltage) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.VoltageId:=RPi2ConvertVoltageIdRequest(VoltageId);
+  Tag.Request.VoltageId:=RPi3ConvertVoltageIdRequest(VoltageId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetMinVoltage)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetMinVoltage)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('VoltageGetMinValue - MailboxPropertyCall Failed');
     Exit;
    end; 
 
   {Get Voltage Min Value}
-  if (Tag.Response.Value <> BCM2836_MBOX_VOLTAGE_INVALID) then Result:=Tag.Response.Value; {Offset from 1.2V in units of 0.025V}
+  if (Tag.Response.Value <> BCM2837_MBOX_VOLTAGE_INVALID) then Result:=Tag.Response.Value; {Offset from 1.2V in units of 0.025V}
  finally
   FreeMem(Header);
  end;
@@ -4258,20 +4141,20 @@ end;
  
 {==============================================================================}
 
-function RPi2VoltageGetMaxValue(VoltageId:LongWord):LongWord;
+function RPi3VoltageGetMaxValue(VoltageId:LongWord):LongWord;
 {Get the Voltage Max Value from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetMaxVoltage;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetMaxVoltage;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetMaxVoltage) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetMaxVoltage) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4283,28 +4166,28 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetMaxVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_MAX_VOLTAGE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetMaxVoltage) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetMaxVoltage(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_MAX_VOLTAGE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetMaxVoltage) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.VoltageId:=RPi2ConvertVoltageIdRequest(VoltageId);
+  Tag.Request.VoltageId:=RPi3ConvertVoltageIdRequest(VoltageId);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetMaxVoltage)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetMaxVoltage)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('VoltageGetMaxValue - MailboxPropertyCall Failed');
     Exit;
    end; 
 
   {Get Voltage Max Value}
-  if (Tag.Response.Value <> BCM2836_MBOX_VOLTAGE_INVALID) then Result:=Tag.Response.Value; {Offset from 1.2V in units of 0.025V}
+  if (Tag.Response.Value <> BCM2837_MBOX_VOLTAGE_INVALID) then Result:=Tag.Response.Value; {Offset from 1.2V in units of 0.025V}
  finally
   FreeMem(Header);
  end;
@@ -4312,20 +4195,20 @@ end;
 
 {==============================================================================}
 
-function RPi2TemperatureGetCurrent(TemperatureId:LongWord):LongWord;
+function RPi3TemperatureGetCurrent(TemperatureId:LongWord):LongWord;
 {Get the Temperature Current from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetTemperature;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetTemperature;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetTemperature) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetTemperature) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4337,21 +4220,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetTemperature(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_TEMP;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetTemperature) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetTemperature(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_TEMP;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetTemperature) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.TemperatureId:=RPi2ConvertTemperatureIdRequest(TemperatureId);
+  Tag.Request.TemperatureId:=RPi3ConvertTemperatureIdRequest(TemperatureId);
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetTemperature)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetTemperature)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('TemperatureGetCurrent - MailboxPropertyCall Failed');
     Exit;
@@ -4366,20 +4249,20 @@ end;
 
 {==============================================================================}
 
-function RPi2TemperatureGetMaximum(TemperatureId:LongWord):LongWord;
+function RPi3TemperatureGetMaximum(TemperatureId:LongWord):LongWord;
 {Get the Temperature Maximum Model from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetMaxTemperature;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetMaxTemperature;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetMaxTemperature) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetMaxTemperature) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4391,21 +4274,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetMaxTemperature(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_MAX_TEMP;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetMaxTemperature) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetMaxTemperature(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_MAX_TEMP;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetMaxTemperature) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.TemperatureId:=RPi2ConvertTemperatureIdRequest(TemperatureId);
+  Tag.Request.TemperatureId:=RPi3ConvertTemperatureIdRequest(TemperatureId);
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetMaxTemperature)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetMaxTemperature)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('TemperatureGetMaximum - MailboxPropertyCall Failed');
     Exit;
@@ -4420,20 +4303,20 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUMemoryAllocate(Length,Alignment,Flags:LongWord):THandle;
+function RPi3GPUMemoryAllocate(Length,Alignment,Flags:LongWord):THandle;
 {Allocate GPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagAllocateMemory;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagAllocateMemory;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagAllocateMemory) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagAllocateMemory) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4445,23 +4328,23 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagAllocateMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_ALLOCATE_MEMORY;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagAllocateMemory) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagAllocateMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_ALLOCATE_MEMORY;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagAllocateMemory) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Size:=Length;
   Tag.Request.Alignment:=Alignment;
   Tag.Request.Flags:=Flags;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagAllocateMemory)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagAllocateMemory)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('GPUMemoryAllocate - MailboxPropertyCall Failed');
     Exit;
@@ -4476,20 +4359,20 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUMemoryRelease(Handle:THandle):LongWord;
+function RPi3GPUMemoryRelease(Handle:THandle):LongWord;
 {Release GPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagReleaseMemory;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagReleaseMemory;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagReleaseMemory) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagReleaseMemory) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4501,21 +4384,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagReleaseMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_RELEASE_MEMORY;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagReleaseMemory) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagReleaseMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_RELEASE_MEMORY;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagReleaseMemory) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Handle:=Handle;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagReleaseMemory)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagReleaseMemory)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('GPUMemoryRelease - MailboxPropertyCall Failed');
@@ -4531,20 +4414,20 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUMemoryLock(Handle:THandle):LongWord;
+function RPi3GPUMemoryLock(Handle:THandle):LongWord;
 {Lock GPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagLockMemory;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagLockMemory;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagLockMemory) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagLockMemory) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4556,21 +4439,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagLockMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_LOCK_MEMORY;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagLockMemory) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagLockMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_LOCK_MEMORY;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagLockMemory) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Handle:=Handle;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagLockMemory)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagLockMemory)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('GPUMemoryLock - MailboxPropertyCall Failed');
     Exit;
@@ -4585,20 +4468,20 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUMemoryUnlock(Handle:THandle):LongWord;
+function RPi3GPUMemoryUnlock(Handle:THandle):LongWord;
 {Unlock GPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagUnlockMemory;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagUnlockMemory;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagUnlockMemory) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagUnlockMemory) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4610,21 +4493,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagUnlockMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_UNLOCK_MEMORY;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagUnlockMemory) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagUnlockMemory(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_UNLOCK_MEMORY;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagUnlockMemory) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Handle:=Handle;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagUnlockMemory)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagUnlockMemory)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('GPUMemoryUnlock - MailboxPropertyCall Failed');
@@ -4640,20 +4523,20 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUExecuteCode(Address:Pointer;R0,R1,R2,R3,R4,R5:LongWord):LongWord;
+function RPi3GPUExecuteCode(Address:Pointer;R0,R1,R2,R3,R4,R5:LongWord):LongWord;
 {Execute GPU Code from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagExecuteCode;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagExecuteCode;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagExecuteCode) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagExecuteCode) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4665,12 +4548,12 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagExecuteCode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_EXECUTE_CODE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagExecuteCode) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagExecuteCode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_EXECUTE_CODE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagExecuteCode) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Address:=Address;
   Tag.Request.R0:=R0;
@@ -4681,11 +4564,11 @@ begin
   Tag.Request.R5:=R5;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagExecuteCode)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagExecuteCode)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('GPUExecuteCode - MailboxPropertyCall Failed');
     Exit;
@@ -4700,20 +4583,20 @@ end;
 
 {==============================================================================}
 
-function RPi2DispmanxHandleGet(Resource:THandle):THandle;
+function RPi3DispmanxHandleGet(Resource:THandle):THandle;
 {Get Dispmanx Memory Handle from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetDispmanxHandle;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetDispmanxHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetDispmanxHandle) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetDispmanxHandle) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4725,21 +4608,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetDispmanxHandle(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_DISPMANX_HANDLE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetDispmanxHandle) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetDispmanxHandle(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_DISPMANX_HANDLE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetDispmanxHandle) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Resource:=Resource;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetDispmanxHandle)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetDispmanxHandle)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('DispmanxHandleGet - MailboxPropertyCall Failed');
     Exit;
@@ -4754,14 +4637,14 @@ end;
 
 {==============================================================================}
 
-function RPi2EDIDBlockGet(Block:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3EDIDBlockGet(Block:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 {Get EDID Block from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetEDIDBlock;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetEDIDBlock;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -4773,7 +4656,7 @@ begin
  if Length < 128 then Exit;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetEDIDBlock) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetEDIDBlock) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4785,21 +4668,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetEDIDBlock(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_EDID_BLOCK;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetEDIDBlock) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetEDIDBlock(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_EDID_BLOCK;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetEDIDBlock) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Block:=Block;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetEDIDBlock)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetEDIDBlock)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('EDIDBlockGet - MailboxPropertyCall Failed');
@@ -4820,20 +4703,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferAllocate(Alignment:LongWord;var Address,Length:LongWord):LongWord;
+function RPi3FramebufferAllocate(Alignment:LongWord;var Address,Length:LongWord):LongWord;
 {Allocate Framebuffer from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagAllocateBuffer;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagAllocateBuffer;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagAllocateBuffer) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagAllocateBuffer) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4845,21 +4728,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagAllocateBuffer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_ALLOCATE_BUFFER;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagAllocateBuffer) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagAllocateBuffer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_ALLOCATE_BUFFER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagAllocateBuffer) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Alignment:=Alignment;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagAllocateBuffer)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagAllocateBuffer)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferAllocate - MailboxPropertyCall Failed');
@@ -4878,20 +4761,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferRelease:LongWord;
+function RPi3FramebufferRelease:LongWord;
 {Release Framebuffer from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagReleaseBuffer;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagReleaseBuffer;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagReleaseBuffer) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagReleaseBuffer) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4903,20 +4786,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagReleaseBuffer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_RELEASE_BUFFER;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagReleaseBuffer) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagReleaseBuffer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_RELEASE_BUFFER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagReleaseBuffer) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagReleaseBuffer)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagReleaseBuffer)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferRelease - MailboxPropertyCall Failed');
@@ -4932,20 +4815,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetState(State:LongWord):LongWord;
+function RPi3FramebufferSetState(State:LongWord):LongWord;
 {Set Framebuffer State (Blank Screen) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagBlankScreen;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagBlankScreen;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagBlankScreen) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagBlankScreen) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -4957,21 +4840,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagBlankScreen(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_BLANK_SCREEN;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagBlankScreen) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagBlankScreen(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_BLANK_SCREEN;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagBlankScreen) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.State:=State; {BCM2836_MBOX_BLANK_SCREEN_REQ_ON}
+  Tag.Request.State:=State; {BCM2837_MBOX_BLANK_SCREEN_REQ_ON}
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagBlankScreen)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagBlankScreen)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetState - MailboxPropertyCall Failed');
@@ -4987,35 +4870,35 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetDimensions(var Width,Height,Top,Bottom,Left,Right:LongWord):LongWord; 
+function RPi3FramebufferGetDimensions(var Width,Height,Top,Bottom,Left,Right:LongWord):LongWord; 
 {Get Framebuffer Dimensions from the Mailbox property tags channel}
 begin
  {}
  {Get Physical}
- Result:=RPi2FramebufferGetPhysical(Width,Height);
+ Result:=RPi3FramebufferGetPhysical(Width,Height);
  if Result = ERROR_SUCCESS then
   begin
    {Get Overscan}
-   Result:=RPi2FramebufferGetOverscan(Top,Bottom,Left,Right);
+   Result:=RPi3FramebufferGetOverscan(Top,Bottom,Left,Right);
   end;
 end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetPhysical(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferGetPhysical(var Width,Height:LongWord):LongWord;
 {Get Framebuffer Physical size from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetPhysical;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetPhysical;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetPhysical) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetPhysical) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5027,20 +4910,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetPhysical(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_PHYSICAL_W_H;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetPhysical) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetPhysical(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_PHYSICAL_W_H;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetPhysical) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetPhysical)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetPhysical)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetPhysical - MailboxPropertyCall Failed');
@@ -5059,20 +4942,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetPhysical(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferSetPhysical(var Width,Height:LongWord):LongWord;
 {Set Framebuffer Physical size from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetPhysical;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetPhysical;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetPhysical) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetPhysical) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5084,22 +4967,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetPhysical(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_PHYSICAL_W_H;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetPhysical) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetPhysical(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_PHYSICAL_W_H;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetPhysical) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Width:=Width;
   Tag.Request.Height:=Height;
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetPhysical)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetPhysical)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetPhysical - MailboxPropertyCall Failed');
@@ -5118,20 +5001,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestPhysical(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferTestPhysical(var Width,Height:LongWord):LongWord;
 {Test Framebuffer Physical size from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestPhysical;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestPhysical;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestPhysical) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestPhysical) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5143,22 +5026,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestPhysical(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_PHYSICAL_W_H;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestPhysical) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestPhysical(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_PHYSICAL_W_H;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestPhysical) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Width:=Width;
   Tag.Request.Height:=Height;
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestPhysical)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestPhysical)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestPhysical - MailboxPropertyCall Failed');
@@ -5177,20 +5060,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetVirtual(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferGetVirtual(var Width,Height:LongWord):LongWord;
 {Get Framebuffer Virtual size from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetVirtual;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetVirtual;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetVirtual) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetVirtual) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5202,20 +5085,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetVirtual(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_VIRTUAL_W_H;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetVirtual) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetVirtual(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_VIRTUAL_W_H;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetVirtual) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetVirtual)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetVirtual)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetVirtual - MailboxPropertyCall Failed');
@@ -5234,20 +5117,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetVirtual(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferSetVirtual(var Width,Height:LongWord):LongWord;
 {Set Framebuffer Virtual size from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetVirtual;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetVirtual;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetVirtual) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetVirtual) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5259,22 +5142,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetVirtual(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_VIRTUAL_W_H;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetVirtual) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetVirtual(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_VIRTUAL_W_H;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetVirtual) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Width:=Width;
   Tag.Request.Height:=Height;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetVirtual)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetVirtual)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetVirtual - MailboxPropertyCall Failed');
@@ -5293,20 +5176,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestVirtual(var Width,Height:LongWord):LongWord;
+function RPi3FramebufferTestVirtual(var Width,Height:LongWord):LongWord;
 {Test Framebuffer Virtual size from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestVirtual;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestVirtual;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestVirtual) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestVirtual) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5318,22 +5201,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestVirtual(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_VIRTUAL_W_H;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestVirtual) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestVirtual(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_VIRTUAL_W_H;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestVirtual) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Width:=Width;
   Tag.Request.Height:=Height;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestVirtual)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestVirtual)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestVirtual - MailboxPropertyCall Failed');
@@ -5352,20 +5235,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetDepth(var Depth:LongWord):LongWord;
+function RPi3FramebufferGetDepth(var Depth:LongWord):LongWord;
 {Get Framebuffer Depth (Bits per pixel) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetDepth;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetDepth;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetDepth) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetDepth) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5377,20 +5260,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetDepth(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_DEPTH;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetDepth) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetDepth(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_DEPTH;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetDepth) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetDepth)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetDepth)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetDepth - MailboxPropertyCall Failed');
@@ -5408,20 +5291,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetDepth(var Depth:LongWord):LongWord;
+function RPi3FramebufferSetDepth(var Depth:LongWord):LongWord;
 {Set Framebuffer Depth (Bits per pixel) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetDepth;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetDepth;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetDepth) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetDepth) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5433,21 +5316,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetDepth(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_DEPTH;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetDepth) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetDepth(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_DEPTH;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetDepth) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Depth:=Depth;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetDepth)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetDepth)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetDepth - MailboxPropertyCall Failed');
@@ -5465,20 +5348,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestDepth(var Depth:LongWord):LongWord;
+function RPi3FramebufferTestDepth(var Depth:LongWord):LongWord;
 {Test Framebuffer Depth (Bits per pixel) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestDepth;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestDepth;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestDepth) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestDepth) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5490,21 +5373,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestDepth(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_DEPTH;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestDepth) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestDepth(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_DEPTH;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestDepth) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Depth:=Depth;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestDepth)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestDepth)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestDepth - MailboxPropertyCall Failed');
@@ -5522,20 +5405,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetPixelOrder(var Order:LongWord):LongWord;
+function RPi3FramebufferGetPixelOrder(var Order:LongWord):LongWord;
 {Get Framebuffer Pixel Order (RGB) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetPixelOrder;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetPixelOrder;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetPixelOrder) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetPixelOrder) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5547,20 +5430,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetPixelOrder(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_PIXEL_ORDER;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetPixelOrder) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetPixelOrder(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_PIXEL_ORDER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetPixelOrder) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetPixelOrder)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetPixelOrder)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetPixelOrder - MailboxPropertyCall Failed');
@@ -5578,20 +5461,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetPixelOrder(var Order:LongWord):LongWord;
+function RPi3FramebufferSetPixelOrder(var Order:LongWord):LongWord;
 {Set Framebuffer Pixel Order (RGB) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetPixelOrder;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetPixelOrder;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetPixelOrder) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetPixelOrder) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5603,21 +5486,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetPixelOrder(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_PIXEL_ORDER;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetPixelOrder) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetPixelOrder(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_PIXEL_ORDER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetPixelOrder) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Order:=Order;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetPixelOrder)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetPixelOrder)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetPixelOrder - MailboxPropertyCall Failed');
@@ -5635,20 +5518,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestPixelOrder(var Order:LongWord):LongWord;
+function RPi3FramebufferTestPixelOrder(var Order:LongWord):LongWord;
 {Test Framebuffer Pixel Order (RGB) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestPixelOrder;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestPixelOrder;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestPixelOrder) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestPixelOrder) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5660,21 +5543,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestPixelOrder(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_PIXEL_ORDER;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestPixelOrder) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestPixelOrder(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_PIXEL_ORDER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestPixelOrder) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Order:=Order;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestPixelOrder)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestPixelOrder)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestPixelOrder - MailboxPropertyCall Failed');
@@ -5692,20 +5575,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetAlphaMode(var Mode:LongWord):LongWord;
+function RPi3FramebufferGetAlphaMode(var Mode:LongWord):LongWord;
 {Get Framebuffer Alpha Mode from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetAlphaMode;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetAlphaMode;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetAlphaMode) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetAlphaMode) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5717,20 +5600,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetAlphaMode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_ALPHA_MODE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetAlphaMode) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetAlphaMode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_ALPHA_MODE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetAlphaMode) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetAlphaMode)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetAlphaMode)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetAlphaMode - MailboxPropertyCall Failed');
@@ -5748,20 +5631,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetAlphaMode(var Mode:LongWord):LongWord;
+function RPi3FramebufferSetAlphaMode(var Mode:LongWord):LongWord;
 {Set Framebuffer Alpha Mode from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetAlphaMode;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetAlphaMode;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetAlphaMode) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetAlphaMode) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5773,21 +5656,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetAlphaMode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_ALPHA_MODE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetAlphaMode) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetAlphaMode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_ALPHA_MODE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetAlphaMode) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Mode:=Mode;
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetAlphaMode)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetAlphaMode)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetAlphaMode - MailboxPropertyCall Failed');
@@ -5805,20 +5688,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestAlphaMode(var Mode:LongWord):LongWord;
+function RPi3FramebufferTestAlphaMode(var Mode:LongWord):LongWord;
 {Test Framebuffer Alpha Mode from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestAlphaMode;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestAlphaMode;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestAlphaMode) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestAlphaMode) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5830,21 +5713,21 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestAlphaMode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_ALPHA_MODE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestAlphaMode) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestAlphaMode(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_ALPHA_MODE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestAlphaMode) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Mode:=Mode;
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestAlphaMode)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestAlphaMode)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestAlphaMode - MailboxPropertyCall Failed');
@@ -5862,20 +5745,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetPitch:LongWord;
+function RPi3FramebufferGetPitch:LongWord;
 {Get Framebuffer Pitch (Bytes per line) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetPitch;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetPitch;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetPitch) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetPitch) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5887,20 +5770,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetPitch(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_PITCH;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetPitch) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetPitch(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_PITCH;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetPitch) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetPitch)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetPitch)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetPitch - MailboxPropertyCall Failed');
     Exit;
@@ -5915,20 +5798,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetOffset(var X,Y:LongWord):LongWord;
+function RPi3FramebufferGetOffset(var X,Y:LongWord):LongWord;
 {Get Framebuffer Virtual Offset from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetVirtualOffset;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetVirtualOffset;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetVirtualOffset) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetVirtualOffset) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5940,20 +5823,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetVirtualOffset(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_VIRTUAL_OFFSET;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetVirtualOffset) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetVirtualOffset(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_VIRTUAL_OFFSET;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetVirtualOffset) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetVirtualOffset)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetVirtualOffset)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetOffset - MailboxPropertyCall Failed');
@@ -5972,20 +5855,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetOffset(var X,Y:LongWord):LongWord;
+function RPi3FramebufferSetOffset(var X,Y:LongWord):LongWord;
 {Set Framebuffer Virtual Offset from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetVirtualOffset;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetVirtualOffset;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetVirtualOffset) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetVirtualOffset) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -5997,22 +5880,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetVirtualOffset(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_VIRTUAL_OFFSET;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetVirtualOffset) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetVirtualOffset(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_VIRTUAL_OFFSET;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetVirtualOffset) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.X:=X;
   Tag.Request.Y:=Y;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetVirtualOffset)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetVirtualOffset)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetOffset - MailboxPropertyCall Failed');
@@ -6031,20 +5914,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestOffset(var X,Y:LongWord):LongWord;
+function RPi3FramebufferTestOffset(var X,Y:LongWord):LongWord;
 {Test Framebuffer Virtual Offset from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestVirtualOffset;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestVirtualOffset;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestVirtualOffset) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestVirtualOffset) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6056,22 +5939,22 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestVirtualOffset(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_VIRTUAL_OFFSET;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestVirtualOffset) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestVirtualOffset(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_VIRTUAL_OFFSET;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestVirtualOffset) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.X:=X;
   Tag.Request.Y:=Y;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestVirtualOffset)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestVirtualOffset)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestOffset - MailboxPropertyCall Failed');
@@ -6090,20 +5973,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
+function RPi3FramebufferGetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
 {Get Framebuffer Overscan from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetOverscan;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetOverscan;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetOverscan) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetOverscan) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6115,20 +5998,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetOverscan(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_OVERSCAN;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetOverscan) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetOverscan(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_OVERSCAN;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetOverscan) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetOverscan)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetOverscan)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetOverscan - MailboxPropertyCall Failed');
@@ -6149,20 +6032,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
+function RPi3FramebufferSetOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
 {Set Framebuffer Overscan from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetOverscan;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetOverscan;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetOverscan) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetOverscan) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6174,12 +6057,12 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetOverscan(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_OVERSCAN;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetOverscan) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetOverscan(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_OVERSCAN;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetOverscan) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Top:=Top;
   Tag.Request.Bottom:=Bottom;
@@ -6187,11 +6070,11 @@ begin
   Tag.Request.Right:=Right;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetOverscan)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetOverscan)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetOverscan - MailboxPropertyCall Failed');
@@ -6212,20 +6095,20 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
+function RPi3FramebufferTestOverscan(var Top,Bottom,Left,Right:LongWord):LongWord;
 {Test Framebuffer Overscan from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestOverscan;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestOverscan;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestOverscan) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestOverscan) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6237,12 +6120,12 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestOverscan(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_OVERSCAN;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestOverscan) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestOverscan(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_OVERSCAN;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestOverscan) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Top:=Top;
   Tag.Request.Bottom:=Bottom;
@@ -6250,11 +6133,11 @@ begin
   Tag.Request.Right:=Right;
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestOverscan)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestOverscan)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestOverscan - MailboxPropertyCall Failed');
@@ -6275,14 +6158,14 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord;
 {Get Framebuffer Palette from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetPalette;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetPalette;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -6294,7 +6177,7 @@ begin
  if Length < 1024 then Exit;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetPalette) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetPalette) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6306,20 +6189,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetPalette(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_PALETTE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetPalette) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetPalette(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_PALETTE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetPalette) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetPalette)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetPalette)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetPalette - MailboxPropertyCall Failed');
@@ -6337,14 +6220,14 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 {Set Framebuffer Palette from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetPalette;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetPalette;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -6363,7 +6246,7 @@ begin
  if Length < (Count * SizeOf(LongWord)) then Exit;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetPalette) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetPalette) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6375,23 +6258,23 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetPalette(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_PALETTE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetPalette) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetPalette(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_PALETTE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetPalette) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Offset:=Start;
   Tag.Request.Length:=Count;
   System.Move(Buffer^,Tag.Request.Values,Count * SizeOf(LongWord));
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetPalette)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetPalette)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetPalette - MailboxPropertyCall Failed');
@@ -6407,14 +6290,14 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
+function RPi3FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 {Test Framebuffer Palette from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagTestPalette;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestPalette;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -6433,7 +6316,7 @@ begin
  if Length < (Count * SizeOf(LongWord)) then Exit;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagTestPalette) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestPalette) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6445,23 +6328,23 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagTestPalette(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_TEST_PALETTE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagTestPalette) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagTestPalette(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_PALETTE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestPalette) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Offset:=Start;
   Tag.Request.Length:=Count;
   System.Move(Buffer^,Tag.Request.Values,Count * SizeOf(LongWord));
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagTestPalette)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestPalette)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestPalette - MailboxPropertyCall Failed');
@@ -6477,20 +6360,20 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
+function RPi3VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
 {Get the Virtual GPIO buffer from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetVirtualGPIO;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetVirtualGPIO;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetVirtualGPIO) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetVirtualGPIO) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6502,20 +6385,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetVirtualGPIO(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_GPIOVIRTBUF;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetVirtualGPIO) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetVirtualGPIO(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_GPIOVIRTBUF;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetVirtualGPIO) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetVirtualGPIO)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetVirtualGPIO)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('VirtualGPIOGetBuffer - MailboxPropertyCall Failed');
@@ -6533,14 +6416,14 @@ end;
 
 {==============================================================================}
 
-function RPi2CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
+function RPi3CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
 {Set Cursor Info (Pixels) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetCursorInfo;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetCursorInfo;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -6552,7 +6435,7 @@ begin
  if Length < 1 then Exit;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetCursorInfo) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetCursorInfo) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6564,12 +6447,12 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetCursorInfo(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_CURSOR_INFO;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetCursorInfo) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetCursorInfo(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_CURSOR_INFO;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetCursorInfo) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Width:=Width;
   Tag.Request.Height:=Height;
@@ -6578,11 +6461,11 @@ begin
   Tag.Request.HotspotY:=HotspotY;
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetCursorInfo)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetCursorInfo)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('CursorSetInfo - MailboxPropertyCall Failed');
@@ -6598,21 +6481,21 @@ end;
 
 {==============================================================================}
 
-function RPi2CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
+function RPi3CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
 {Set Cursor State (Enable, X, Y) from the Mailbox property tags channel}
 {Relative: X, Y is relative to Display (Virtual) not Framebuffer (Physical)}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagSetCursorState;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetCursorState;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetCursorState) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetCursorState) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6624,26 +6507,26 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagSetCursorState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_CURSOR_STATE;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetCursorState) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagSetCursorState(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_CURSOR_STATE;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetCursorState) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.Enable:=BCM2836_MBOX_CURSOR_INVISIBLE;
-  if Enabled then Tag.Request.Enable:=BCM2836_MBOX_CURSOR_VISIBLE;
+  Tag.Request.Enable:=BCM2837_MBOX_CURSOR_INVISIBLE;
+  if Enabled then Tag.Request.Enable:=BCM2837_MBOX_CURSOR_VISIBLE;
   Tag.Request.X:=X;
   Tag.Request.Y:=Y;
-  Tag.Request.Flags:=BCM2836_MBOX_CURSOR_STATE_FRAMEBUFFER_COORDS;
-  if Relative then Tag.Request.Flags:=BCM2836_MBOX_CURSOR_STATE_DISPLAY_COORDS;
+  Tag.Request.Flags:=BCM2837_MBOX_CURSOR_STATE_FRAMEBUFFER_COORDS;
+  if Relative then Tag.Request.Flags:=BCM2837_MBOX_CURSOR_STATE_DISPLAY_COORDS;
   
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetCursorState)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetCursorState)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Result <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('CursorSetState - MailboxPropertyCall Failed');
@@ -6659,20 +6542,20 @@ end;
 
 {==============================================================================}
 
-function RPi2DMAGetChannels:LongWord;
+function RPi3DMAGetChannels:LongWord;
 {Get the available DMA Channels from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
- Tag:PBCM2836MailboxTagGetDMAChannels;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetDMAChannels;
 begin
  {}
  Result:=0;
  
  {Calculate Size}
- Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetDMAChannels) + SizeOf(TBCM2836MailboxFooter);
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetDMAChannels) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -6684,20 +6567,20 @@ begin
  
   {Setup Header}
   Header.Size:=Size;
-  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
  
   {Setup Tag}
-  Tag:=PBCM2836MailboxTagGetDMAChannels(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
-  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_DMA_CHANNELS;
-  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetDMAChannels) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag:=PBCM2837MailboxTagGetDMAChannels(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_DMA_CHANNELS;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetDMAChannels) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
  
   {Setup Footer}
-  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetDMAChannels)));
-  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetDMAChannels)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
   
   {Call Mailbox}
-  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('DMAGetChannels - MailboxPropertyCall Failed');
     Exit;
@@ -6712,7 +6595,7 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOInputGet(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOInputGet(Pin:LongWord):LongWord; 
 var
  Address:LongWord;
 begin
@@ -6726,7 +6609,7 @@ begin
  if VirtualGPIOBuffer.Address = 0 then
   begin
    {Get Buffer}
-   if RPi2VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
+   if RPi3VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
    
    {Update Address}
    VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
@@ -6742,7 +6625,7 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
 var
  Address:LongWord;
  Enable:Word;
@@ -6759,7 +6642,7 @@ begin
  if VirtualGPIOBuffer.Address = 0 then
   begin
    {Get Buffer}
-   if RPi2VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
+   if RPi3VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
    
    {Update Address}
    VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
@@ -6797,7 +6680,7 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
 var
  Address:LongWord;
  Enable:Word;
@@ -6814,7 +6697,7 @@ begin
  if VirtualGPIOBuffer.Address = 0 then
   begin
    {Get Buffer}
-   if RPi2VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
+   if RPi3VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
    
    {Update Address}
    VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
@@ -6852,7 +6735,7 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
+function RPi3VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -6870,8 +6753,8 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 Thread Functions}
-procedure RPi2SchedulerInit;
+{RPi3 Thread Functions}
+procedure RPi3SchedulerInit;
 {Initialize the scheduler interrupt on the boot CPU}
 var
  State:LongWord;
@@ -6883,12 +6766,12 @@ begin
    if SECURE_BOOT then
     begin
      {Physical Secure Timer FIQ}
-     RequestExFIQ(RPI2_CPU_BOOT,BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExFIQ(RPI3_CPU_BOOT,BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end
    else
     begin   
      {Physical Non Secure Timer FIQ}
-     RequestExFIQ(RPI2_CPU_BOOT,BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExFIQ(RPI3_CPU_BOOT,BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end; 
   end
  else
@@ -6896,28 +6779,28 @@ begin
    if SECURE_BOOT then
     begin
      {Physical Secure Timer IRQ}
-     RequestExIRQ(RPI2_CPU_BOOT,BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExIRQ(RPI3_CPU_BOOT,BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end
    else
     begin
      {Physical Non Secure Timer IRQ}
-     RequestExIRQ(RPI2_CPU_BOOT,BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExIRQ(RPI3_CPU_BOOT,BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end; 
   end;
 
  {Setup the Generic Timer}
- State:=ARMv7GetTimerState(ARMV7_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
- State:=State and not(ARMV7_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
- State:=State or ARMV7_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
- ARMv7SetTimerState(ARMV7_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
+ State:=ARMv8GetTimerState(ARMV8_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
+ State:=State and not(ARMV8_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
+ State:=State or ARMV8_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
+ ARMv8SetTimerState(ARMV8_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
   
  {Setup the first Scheduler Interrupt}
- RPi2SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[RPI2_CPU_BOOT]);
+ RPi3SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[RPI3_CPU_BOOT]);
 end;
 
 {==============================================================================}
 
-procedure RPi2SchedulerStart(CPUID:LongWord);
+procedure RPi3SchedulerStart(CPUID:LongWord);
 {Initialize the scheduler interrupt on the specified secondary CPU}
 var
  State:LongWord;
@@ -6935,12 +6818,12 @@ begin
    if SECURE_BOOT then
     begin
      {Physical Secure Timer FIQ}
-     RequestExFIQ(CPUID,BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExFIQ(CPUID,BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end
    else
     begin   
      {Physical Non Secure Timer FIQ}
-     RequestExFIQ(CPUID,BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExFIQ(CPUID,BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end; 
   end
  else
@@ -6948,28 +6831,28 @@ begin
    if SECURE_BOOT then
     begin
      {Physical Secure Timer IRQ}
-     RequestExIRQ(CPUID,BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExIRQ(CPUID,BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end
    else
     begin
      {Physical Non Secure Timer IRQ}
-     RequestExIRQ(CPUID,BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi2SchedulerInterrupt,nil);
+     RequestExIRQ(CPUID,BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ,nil,RPi3SchedulerInterrupt,nil);
     end; 
   end;
  
  {Setup the Generic Timer}
- State:=ARMv7GetTimerState(ARMV7_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
- State:=State and not(ARMV7_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
- State:=State or ARMV7_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
- ARMv7SetTimerState(ARMV7_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
+ State:=ARMv8GetTimerState(ARMV8_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
+ State:=State and not(ARMV8_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
+ State:=State or ARMV8_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
+ ARMv8SetTimerState(ARMV8_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
  
  {Setup the first Scheduler Interrupt}
- RPi2SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[CPUID]);
+ RPi3SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[CPUID]);
 end;
 
 {==============================================================================}
 
-procedure RPi2SecondaryBoot(CPUID:LongWord);
+procedure RPi3SecondaryBoot(CPUID:LongWord);
 var
  Timeout:LongWord;
 begin
@@ -6978,7 +6861,7 @@ begin
  if CPUID > (CPUGetCount - 1) then Exit;
 
  {Setup Timeout}
- Timeout:=RPI2_LOCAL_MAILBOX_TIMEOUT;
+ Timeout:=RPI3_LOCAL_MAILBOX_TIMEOUT;
  
  {Wait for Mailbox 3 Clear}
  while ARMLocalRegisters.MailboxReadClear[CPUID].Mailbox3ReadClear <> 0 do
@@ -7000,10 +6883,10 @@ begin
  DataMemoryBarrier; {After the Last Read / Before the First Write}
  
  {Write the Handler Address to Mailbox 3}
- ARMLocalRegisters.MailboxWrite[CPUID].Mailbox3Write:=LongWord(@RPi2SecondaryHandler);
+ ARMLocalRegisters.MailboxWrite[CPUID].Mailbox3Write:=LongWord(@RPi3SecondaryHandler);
  
  {Setup Timeout}
- Timeout:=RPI2_LOCAL_MAILBOX_TIMEOUT;
+ Timeout:=RPI3_LOCAL_MAILBOX_TIMEOUT;
  
  {Wait for Mailbox 3 Clear}
  while ARMLocalRegisters.MailboxReadClear[CPUID].Mailbox3ReadClear <> 0 do
@@ -7027,10 +6910,10 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 IRQ Functions}
-function RPi2DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{RPi3 IRQ Functions}
+function RPi3DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 {Process any pending IRQ requests}
-{Called by ARMv7IRQHandler in PlatformARMv7}
+{Called by ARMv8IRQHandler in PlatformARMv8}
 {Note: A DataMemoryBarrier is executed before and after calling this function} 
 var
  Group:LongWord;
@@ -7059,7 +6942,7 @@ begin
      IRQMatch:=IRQMatch xor (1 shl IRQBit);
    
      {Call IRQ Handler}
-     Result:=RPi2HandleIRQ(IRQBit + IRQ_LOCAL_START,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+     Result:=RPi3HandleIRQ(IRQBit + IRQ_LOCAL_START,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
     end; 
   end;
  
@@ -7090,7 +6973,7 @@ begin
          IRQMatch:=IRQMatch xor (1 shl IRQBit);
            
          {Call IRQ Handler}
-         Result:=RPi2HandleIRQ(IRQBit + (Group shl 5),CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+         Result:=RPi3HandleIRQ(IRQBit + (Group shl 5),CPUID,Result); {Pass Result as Thread to allow for multiple calls}
         end; 
       end;
     end;  
@@ -7099,7 +6982,7 @@ end;
 
 {==============================================================================}
 
-function RPi2HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+function RPi3HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 {Call the handler function for an IRQ that was received, or halt if it doesn't exist}
 var
  Handler:TInterruptHandler; 
@@ -7164,8 +7047,8 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 FIQ Functions}
-function RPi2DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{RPi3 FIQ Functions}
+function RPi3DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 begin
  {}
  Result:=Thread;
@@ -7179,7 +7062,7 @@ end;
 
 {==============================================================================}
 
-function RPi2HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+function RPi3HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 var
  Handler:TInterruptHandler; 
  HandlerEx:TInterruptExHandler; 
@@ -7239,8 +7122,8 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 Clock Functions}
-procedure RPi2ClockInterrupt(Parameter:Pointer);
+{RPi3 Clock Functions}
+procedure RPi3ClockInterrupt(Parameter:Pointer);
 {Interrupt handler function for the clock interrupt. This schedules another clock
  interrupt to occur CLOCK_CYCLES_PER_TICK in the future, then updates ClockTicks
  and ClockSeconds and checks for timers to trigger}
@@ -7261,7 +7144,7 @@ begin
   end;
 
  {Schedule the next Clock Interrupt}
- RPi2ClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
+ RPi3ClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
   
  {Check Timer Queue}
  if TimerCheck = ERROR_SUCCESS then
@@ -7273,21 +7156,21 @@ end;
 
 {==============================================================================}
 
-procedure RPi2ClockUpdate(Cycles:LongWord;var Last:LongWord);
+procedure RPi3ClockUpdate(Cycles:LongWord;var Last:LongWord);
 {Setup a clock interrupt to trigger after the specified number of clock cycles}
 {Cycles: Number of cycles after which the timer interrupt is to be triggered}
 {Note: This refers to native clock cycles as specified by CLOCK_FREQUENCY}
 var
- {$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
+ {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  Current:LongInt;
  {$ELSE}
  Current:LongWord;
  {$ENDIF}
 begin
  {}
- {$IFNDEF RPI2_CLOCK_SYSTEM_TIMER}
+ {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Get Timer Value}
- Current:=ARMv7GetTimerValue(ARMV7_CP15_C14_CNTV); 
+ Current:=ARMv8GetTimerValue(ARMV8_CP15_C14_CNTV); 
  
  {Set Last}
  if Current < 0 then
@@ -7301,7 +7184,7 @@ begin
   end;  
  
  {Set Timer Value}
- ARMv7SetTimerValue(ARMV7_CP15_C14_CNTV,Last);
+ ARMv8SetTimerValue(ARMV8_CP15_C14_CNTV,Last);
 
  {$IFDEF CLOCK_DEBUG}
  ClockInterruptOffset:=Last;
@@ -7314,7 +7197,7 @@ begin
  DataMemoryBarrier; {Before the First Write}
  
  {Clear the Interrupt (C3)}
- TimerRegisters.CS:=BCM2836_SYSTEM_TIMER_CS_3; 
+ TimerRegisters.CS:=BCM2837_SYSTEM_TIMER_CS_3; 
  
  {Get CLO Register}
  Current:=TimerRegisters.CLO;
@@ -7359,8 +7242,8 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 Scheduler Functions}
-function RPi2SchedulerInterrupt(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;
+{RPi3 Scheduler Functions}
+function RPi3SchedulerInterrupt(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;
 {Interrupt handler function for the scheduler interrupt. This schedules another 
  scheduler interrupt to occur SCHEDULER_CLOCKS_PER_INTERRUPT in the future, then
  checks for threads to wakeup or timeout and the next thread to schedule}
@@ -7388,7 +7271,7 @@ begin
   end;
  
  {Schedule the next Scheduler Interrupt}
- RPi2SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[CPUID]);
+ RPi3SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[CPUID]);
  
  {Check Sleep and Timeout Queues}
  if SchedulerCheck(CPUID) = ERROR_SUCCESS then
@@ -7409,10 +7292,10 @@ end;
 
 {==============================================================================}
 
-procedure RPi2SchedulerUpdate(Cycles:LongWord;var Last:LongWord);
+procedure RPi3SchedulerUpdate(Cycles:LongWord;var Last:LongWord);
 {Setup a scheduler interrupt to trigger after the specified number of clock cycles}
 {Cycles: Number of cycles after which the scheduler interrupt is to be triggered}
-{Note: This refers to native clock cycles as specified by RPI2_GENERIC_TIMER_FREQUENCY}
+{Note: This refers to native clock cycles as specified by RPI3_GENERIC_TIMER_FREQUENCY}
 var
  Current:LongInt;
  {$IFDEF SCHEDULER_DEBUG}
@@ -7421,7 +7304,7 @@ var
 begin
  {}
  {Get Timer Value} 
- Current:=ARMv7GetTimerValue(ARMV7_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode} 
+ Current:=ARMv8GetTimerValue(ARMV8_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode} 
   
  {Set Last}
  if Current < 0 then
@@ -7435,7 +7318,7 @@ begin
   end;  
  
  {Set Timer Value}
- ARMv7SetTimerValue(ARMV7_CP15_C14_CNTP,Last); {Will set Secure or Non Secure depending on current mode}
+ ARMv8SetTimerValue(ARMV8_CP15_C14_CNTP,Last); {Will set Secure or Non Secure depending on current mode}
   
  {$IFDEF SCHEDULER_DEBUG}
  CurrentCPU:=CPUGetCurrent;
@@ -7448,17 +7331,17 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 Framebuffer Functions}
+{RPi3 Framebuffer Functions}
 {$IFDEF CONSOLE_EARLY_INIT}
-function RPi2FramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+function RPi3FramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {Allocate a framebuffer using the Mailbox Property Tags}
 var
  Size:LongWord;
  Response:LongWord;
- Header:PBCM2836MailboxHeader;
- Footer:PBCM2836MailboxFooter;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
  Defaults:TFramebufferProperties;
- Tag:PBCM2836MailboxTagCreateBuffer;
+ Tag:PBCM2837MailboxTagCreateBuffer;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7510,7 +7393,7 @@ begin
     if (Defaults.PhysicalWidth = 0) or (Defaults.PhysicalHeight = 0) then
      begin
       {Get Dimensions Width and Height}
-      Result:=RPi2FramebufferGetDimensions(Defaults.PhysicalWidth,Defaults.PhysicalHeight,Defaults.OverscanTop,Defaults.OverscanBottom,Defaults.OverscanLeft,Defaults.OverscanRight);
+      Result:=RPi3FramebufferGetDimensions(Defaults.PhysicalWidth,Defaults.PhysicalHeight,Defaults.OverscanTop,Defaults.OverscanBottom,Defaults.OverscanLeft,Defaults.OverscanRight);
       if Result <> ERROR_SUCCESS then
        begin
         if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: FramebufferAllocate - FramebufferGetDimensions failed: ' + ErrorToString(Result));
@@ -7527,7 +7410,7 @@ begin
      end;
     
     {Calculate Size}
-    Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagCreateBuffer) + SizeOf(TBCM2836MailboxFooter);
+    Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagCreateBuffer) + SizeOf(TBCM2837MailboxFooter);
     
     {Allocate Mailbox Buffer}
     Result:=ERROR_NOT_ENOUGH_MEMORY;
@@ -7540,53 +7423,53 @@ begin
     
      {Setup Header}
      Header.Size:=Size;
-     Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+     Header.Code:=BCM2837_MBOX_REQUEST_CODE;
     
      {Setup Tag}
-     Tag:=PBCM2836MailboxTagCreateBuffer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
+     Tag:=PBCM2837MailboxTagCreateBuffer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
      
      {Setup Tag (Physical)}
-     Tag.Physical.Header.Tag:=BCM2836_MBOX_TAG_SET_PHYSICAL_W_H;
-     Tag.Physical.Header.Size:=SizeOf(TBCM2836MailboxTagSetPhysical) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Physical.Header.Tag:=BCM2837_MBOX_TAG_SET_PHYSICAL_W_H;
+     Tag.Physical.Header.Size:=SizeOf(TBCM2837MailboxTagSetPhysical) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Physical.Header.Length:=SizeOf(Tag.Physical.Request);
      Tag.Physical.Request.Width:=Defaults.PhysicalWidth;
      Tag.Physical.Request.Height:=Defaults.PhysicalHeight;
      
      {Setup Tag (Virtual)}
-     Tag.Vertual.Header.Tag:=BCM2836_MBOX_TAG_SET_VIRTUAL_W_H;
-     Tag.Vertual.Header.Size:=SizeOf(TBCM2836MailboxTagSetVirtual) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Vertual.Header.Tag:=BCM2837_MBOX_TAG_SET_VIRTUAL_W_H;
+     Tag.Vertual.Header.Size:=SizeOf(TBCM2837MailboxTagSetVirtual) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Vertual.Header.Length:=SizeOf(Tag.Vertual.Request);
      Tag.Vertual.Request.Width:=Defaults.VirtualWidth;
      Tag.Vertual.Request.Height:=Defaults.VirtualHeight;
 
      {Setup Tag (Depth)}
-     Tag.Depth.Header.Tag:=BCM2836_MBOX_TAG_SET_DEPTH;
-     Tag.Depth.Header.Size:=SizeOf(TBCM2836MailboxTagSetDepth) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Depth.Header.Tag:=BCM2837_MBOX_TAG_SET_DEPTH;
+     Tag.Depth.Header.Size:=SizeOf(TBCM2837MailboxTagSetDepth) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Depth.Header.Length:=SizeOf(Tag.Depth.Request);
      Tag.Depth.Request.Depth:=Defaults.Depth;
      
      {Setup Tag (Order)}
-     Tag.Order.Header.Tag:=BCM2836_MBOX_TAG_SET_PIXEL_ORDER;
-     Tag.Order.Header.Size:=SizeOf(TBCM2836MailboxTagSetPixelOrder) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Order.Header.Tag:=BCM2837_MBOX_TAG_SET_PIXEL_ORDER;
+     Tag.Order.Header.Size:=SizeOf(TBCM2837MailboxTagSetPixelOrder) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Order.Header.Length:=SizeOf(Tag.Order.Request);
      Tag.Order.Request.Order:=Defaults.Order;
      
      {Setup Tag (Mode)}
-     Tag.Mode.Header.Tag:=BCM2836_MBOX_TAG_SET_ALPHA_MODE;
-     Tag.Mode.Header.Size:=SizeOf(TBCM2836MailboxTagSetAlphaMode) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Mode.Header.Tag:=BCM2837_MBOX_TAG_SET_ALPHA_MODE;
+     Tag.Mode.Header.Size:=SizeOf(TBCM2837MailboxTagSetAlphaMode) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Mode.Header.Length:=SizeOf(Tag.Mode.Request);
      Tag.Mode.Request.Mode:=Defaults.Mode;
      
      {Setup Tag (Offset)}
-     Tag.Offset.Header.Tag:=BCM2836_MBOX_TAG_SET_VIRTUAL_OFFSET;
-     Tag.Offset.Header.Size:=SizeOf(TBCM2836MailboxTagSetVirtualOffset) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Offset.Header.Tag:=BCM2837_MBOX_TAG_SET_VIRTUAL_OFFSET;
+     Tag.Offset.Header.Size:=SizeOf(TBCM2837MailboxTagSetVirtualOffset) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Offset.Header.Length:=SizeOf(Tag.Offset.Request);
      Tag.Offset.Request.X:=Defaults.OffsetX;
      Tag.Offset.Request.Y:=Defaults.OffsetY;
      
      {Setup Tag (Overscan)}
-     Tag.Overscan.Header.Tag:=BCM2836_MBOX_TAG_SET_OVERSCAN;
-     Tag.Overscan.Header.Size:=SizeOf(TBCM2836MailboxTagSetOverscan) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Overscan.Header.Tag:=BCM2837_MBOX_TAG_SET_OVERSCAN;
+     Tag.Overscan.Header.Size:=SizeOf(TBCM2837MailboxTagSetOverscan) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Overscan.Header.Length:=SizeOf(Tag.Overscan.Request);
      Tag.Overscan.Request.Top:=Defaults.OverscanTop;
      Tag.Overscan.Request.Bottom:=Defaults.OverscanBottom;
@@ -7594,22 +7477,22 @@ begin
      Tag.Overscan.Request.Right:=Defaults.OverscanRight;
      
      {Setup Tag (Allocate)}
-     Tag.Allocate.Header.Tag:=BCM2836_MBOX_TAG_ALLOCATE_BUFFER;
-     Tag.Allocate.Header.Size:=SizeOf(TBCM2836MailboxTagAllocateBuffer) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Allocate.Header.Tag:=BCM2837_MBOX_TAG_ALLOCATE_BUFFER;
+     Tag.Allocate.Header.Size:=SizeOf(TBCM2837MailboxTagAllocateBuffer) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Allocate.Header.Length:=SizeOf(Tag.Allocate.Request);
-     Tag.Allocate.Request.Alignment:=BCM2709FRAMEBUFFER_ALIGNEMENT;
+     Tag.Allocate.Request.Alignment:=BCM2710FRAMEBUFFER_ALIGNEMENT;
      
      {Setup Tag (Pitch)}
-     Tag.Pitch.Header.Tag:=BCM2836_MBOX_TAG_GET_PITCH;
-     Tag.Pitch.Header.Size:=SizeOf(TBCM2836MailboxTagGetPitch) - SizeOf(TBCM2836MailboxTagHeader);
+     Tag.Pitch.Header.Tag:=BCM2837_MBOX_TAG_GET_PITCH;
+     Tag.Pitch.Header.Size:=SizeOf(TBCM2837MailboxTagGetPitch) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Pitch.Header.Length:=SizeOf(Tag.Pitch.Request);
      
      {Setup Footer}
-     Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagCreateBuffer)));
-     Footer.Tag:=BCM2836_MBOX_TAG_END;
+     Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagCreateBuffer)));
+     Footer.Tag:=BCM2837_MBOX_TAG_END;
     
      {Call Mailbox} 
-     Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+     Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
      if Result <> ERROR_SUCCESS then
       begin
        if PLATFORM_LOG_ENABLED then PlatformLogError('Platform: FramebufferAllocate - MailboxPropertyCall failed: ' + ErrorToString(Result));
@@ -7654,12 +7537,12 @@ end;
 
 {==============================================================================}
 
-function RPi2FramebufferDeviceAllocateAlt(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+function RPi3FramebufferDeviceAllocateAlt(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {Allocate a framebuffer using a simple Mailbox Call}
 var
  Response:LongWord;
  Defaults:TFramebufferProperties;
- MailboxFramebuffer:PBCM2836MailboxFramebuffer;
+ MailboxFramebuffer:PBCM2837MailboxFramebuffer;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7711,7 +7594,7 @@ begin
     if (Defaults.PhysicalWidth = 0) or (Defaults.PhysicalHeight = 0) then
      begin
       {Get Dimensions Width and Height}
-      Result:=RPi2FramebufferGetDimensions(Defaults.PhysicalWidth,Defaults.PhysicalHeight,Defaults.OverscanTop,Defaults.OverscanBottom,Defaults.OverscanLeft,Defaults.OverscanRight);
+      Result:=RPi3FramebufferGetDimensions(Defaults.PhysicalWidth,Defaults.PhysicalHeight,Defaults.OverscanTop,Defaults.OverscanBottom,Defaults.OverscanLeft,Defaults.OverscanRight);
       if Result <> ERROR_SUCCESS then
        begin
         if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: FramebufferAllocate - FramebufferGetDimensions failed: ' + ErrorToString(Result));
@@ -7728,8 +7611,8 @@ begin
      end;
 
     {Allocate Mailbox Framebuffer}
-    MailboxFramebuffer:=GetNoCacheAlignedMem(SizeOf(TBCM2836MailboxFramebuffer),SIZE_16); {Must be 16 byte aligned}
-    if MailboxFramebuffer = nil then MailboxFramebuffer:=GetAlignedMem(SizeOf(TBCM2836MailboxFramebuffer),SIZE_16); {Must be 16 byte aligned}
+    MailboxFramebuffer:=GetNoCacheAlignedMem(SizeOf(TBCM2837MailboxFramebuffer),SIZE_16); {Must be 16 byte aligned}
+    if MailboxFramebuffer = nil then MailboxFramebuffer:=GetAlignedMem(SizeOf(TBCM2837MailboxFramebuffer),SIZE_16); {Must be 16 byte aligned}
     if MailboxFramebuffer = nil then Exit;
     try
      {Setup Mailbox Framebuffer}
@@ -7745,7 +7628,7 @@ begin
      MailboxFramebuffer.Size:=0;    {Pass zero on request}
      
      {Call Mailbox}
-     Result:=MailboxCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_FRAMEBUFFER,PhysicalToBusAddress(MailboxFramebuffer),Response);
+     Result:=MailboxCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_FRAMEBUFFER,PhysicalToBusAddress(MailboxFramebuffer),Response);
      if Result <> ERROR_SUCCESS then
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: FramebufferAllocate: MailboxCall failed: ' + ErrorToString(Result));
@@ -7765,9 +7648,9 @@ begin
      Framebuffer.OffsetY:=MailboxFramebuffer.OffsetY;
      
      {Update Framebuffer} 
-     RPi2FramebufferGetPixelOrder(Framebuffer.Order);
-     RPi2FramebufferGetAlphaMode(Framebuffer.Mode);
-     RPi2FramebufferGetOverscan(Framebuffer.OverscanTop,Framebuffer.OverscanBottom,Framebuffer.OverscanLeft,Framebuffer.OverscanRight);
+     RPi3FramebufferGetPixelOrder(Framebuffer.Order);
+     RPi3FramebufferGetAlphaMode(Framebuffer.Mode);
+     RPi3FramebufferGetOverscan(Framebuffer.OverscanTop,Framebuffer.OverscanBottom,Framebuffer.OverscanLeft,Framebuffer.OverscanRight);
       
      {Update Statistics}
      Inc(Framebuffer.AllocateCount);
@@ -7789,7 +7672,7 @@ end;
    
 {==============================================================================}
 
-function RPi2FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
+function RPi3FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7822,7 +7705,7 @@ end;
    
 {==============================================================================}
 
-function RPi2FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+function RPi3FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7851,8 +7734,8 @@ end;
 {$ENDIF}
 {==============================================================================}
 {==============================================================================}
-{RPi2 Helper Functions}
-procedure RPi2Wait; assembler; nostackframe; 
+{RPi3 Helper Functions}
+procedure RPi3Wait; assembler; nostackframe; 
 asm
  //Wait for a period of time in a loop
  mov r0,#0x9F00000
@@ -7864,7 +7747,7 @@ end;
 
 {==============================================================================}
 
-procedure RPi2LongWait; assembler; nostackframe; 
+procedure RPi3LongWait; assembler; nostackframe; 
 asm
  //Wait for a long period of time in a loop
  ldr r0,=0x3FF00000
@@ -7876,7 +7759,7 @@ end;
 
 {==============================================================================}
 
-procedure RPi2ShortWait; assembler; nostackframe; 
+procedure RPi3ShortWait; assembler; nostackframe; 
 asm
  //Wait for a short period of time in a loop
  mov r0,#0x1F0000
@@ -7888,219 +7771,187 @@ end;
 
 {==============================================================================}
 
-procedure RPi2SlowBlink; assembler; nostackframe; 
+procedure RPi3SlowBlink; assembler; nostackframe; 
 asm
  //Slow blink the Activity LED in a loop
- bl RPi2ActivityLEDEnable
+ bl RPi3ActivityLEDEnable
 .LLoop:
- bl RPi2ActivityLEDOn
- bl RPi2Wait
- bl RPi2ActivityLEDOff
- bl RPi2Wait
+ bl RPi3ActivityLEDOn
+ bl RPi3Wait
+ bl RPi3ActivityLEDOff
+ bl RPi3Wait
  b .LLoop
 end;
 
 {==============================================================================}
 
-procedure RPi2FastBlink; assembler; nostackframe; 
+procedure RPi3FastBlink; assembler; nostackframe; 
 asm
  //Fast blink the Activity LED in a loop
- bl RPi2ActivityLEDEnable
+ bl RPi3ActivityLEDEnable
 .LLoop:
- bl RPi2ActivityLEDOn
- bl RPi2ShortWait
- bl RPi2ActivityLEDOff
- bl RPi2ShortWait
+ bl RPi3ActivityLEDOn
+ bl RPi3ShortWait
+ bl RPi3ActivityLEDOff
+ bl RPi3ShortWait
  b .LLoop
 end;
 
 {==============================================================================}
 
-procedure RPi2BootBlink; assembler; nostackframe;
+procedure RPi3BootBlink; assembler; nostackframe;
 {Blink the Activity LED without dependancy on any other RTL setup}
 asm
  //Blink the Activity LED in a loop
  //Enable the Activity LED
- ldr r0,=BCM2836_GPIO_REGS_BASE
- 
- //Get the GPIO function select
- ldr r2, [r0,#RPI2_GPIO_ACTLED_GPFSEL]
- 
- //Mask of the relevant bits
- mov r1, #RPI2_GPIO_ACTLED_GPFMASK
- lsl r1, #RPI2_GPIO_ACTLED_GPFSHIFT
- bic r2, r1
- 
- //Set the 21st bit of r1
- mov r1,#1
- lsl r1,#RPI2_GPIO_ACTLED_GPFSHIFT
-
- //Add the new bits
- orr r2, r1
- 
- //Set the GPIO function select
- str r2,[r0,#RPI2_GPIO_ACTLED_GPFSEL]
+ //To Do //Virtual GPIO on RPi3
  
 .LLoop:
  //Turn on the Activity LED
- ldr r0,=BCM2836_GPIO_REGS_BASE 
- 
- //Set the 15th bit of r1
- mov r1,#1
- lsl r1,#RPI2_GPIO_ACTLED_GPSHIFT
- 
- //Set GPIO 47 to high, causing the LED to turn on
- str r1,[r0,#RPI2_GPIO_ACTLED_GPSET]
+ //To Do //Virtual GPIO on RPi3
  
  //Wait
- //--bl RPi2ShortWait
- bl RPi2Wait
- //--bl RPi2LongWait
+ //--bl RPi3ShortWait
+ bl RPi3Wait
+ //--bl RPi3LongWait
  
  //Turn off the Activity LED
- ldr r0,=BCM2836_GPIO_REGS_BASE 
+ //To Do //Virtual GPIO on RPi3
  
- //Set the 15th bit of r1
- mov r1,#1
- lsl r1,#RPI2_GPIO_ACTLED_GPSHIFT
- 
- //Set GPIO 47 to low, causing the LED to turn off
- str r1,[r0,#RPI2_GPIO_ACTLED_GPCLR]
-
  //Wait
- //--bl RPi2ShortWait
- bl RPi2Wait
- //--bl RPi2LongWait
+ //--bl RPi3ShortWait
+ bl RPi3Wait
+ //--bl RPi3LongWait
  b .LLoop
 end;
 
 {==============================================================================}
 
-function RPi2ConvertPowerIdRequest(PowerId:LongWord):LongWord;
-{Convert Ultibo Power Id to BCM2836 Power Id}
+function RPi3ConvertPowerIdRequest(PowerId:LongWord):LongWord;
+{Convert Ultibo Power Id to BCM2837 Power Id}
 begin
  {}
- Result:=BCM2836_MBOX_POWER_DEVID_UNKNOWN;
+ Result:=BCM2837_MBOX_POWER_DEVID_UNKNOWN;
  
  case PowerId of 
-  POWER_ID_MMC0:Result:=BCM2836_MBOX_POWER_DEVID_SDHCI;
-  POWER_ID_UART0:Result:=BCM2836_MBOX_POWER_DEVID_UART0;
-  POWER_ID_UART1:Result:=BCM2836_MBOX_POWER_DEVID_UART1;
-  POWER_ID_USB0:Result:=BCM2836_MBOX_POWER_DEVID_USB_HCD;
-  POWER_ID_I2C0:Result:=BCM2836_MBOX_POWER_DEVID_I2C0;
-  POWER_ID_I2C1:Result:=BCM2836_MBOX_POWER_DEVID_I2C1;
-  POWER_ID_I2C2:Result:=BCM2836_MBOX_POWER_DEVID_I2C2;
-  POWER_ID_SPI0:Result:=BCM2836_MBOX_POWER_DEVID_SPI;
-  POWER_ID_CCP2TX:Result:=BCM2836_MBOX_POWER_DEVID_CCP2TX;
+  POWER_ID_MMC0:Result:=BCM2837_MBOX_POWER_DEVID_SDHCI;
+  POWER_ID_UART0:Result:=BCM2837_MBOX_POWER_DEVID_UART0;
+  POWER_ID_UART1:Result:=BCM2837_MBOX_POWER_DEVID_UART1;
+  POWER_ID_USB0:Result:=BCM2837_MBOX_POWER_DEVID_USB_HCD;
+  POWER_ID_I2C0:Result:=BCM2837_MBOX_POWER_DEVID_I2C0;
+  POWER_ID_I2C1:Result:=BCM2837_MBOX_POWER_DEVID_I2C1;
+  POWER_ID_I2C2:Result:=BCM2837_MBOX_POWER_DEVID_I2C2;
+  POWER_ID_SPI0:Result:=BCM2837_MBOX_POWER_DEVID_SPI;
+  POWER_ID_CCP2TX:Result:=BCM2837_MBOX_POWER_DEVID_CCP2TX;
  end;
 end;
 
 {==============================================================================}
 
-function RPi2ConvertPowerStateRequest(PowerState:LongWord):LongWord;
-{Convert Ultibo Power State to BCM2836 Power State}
+function RPi3ConvertPowerStateRequest(PowerState:LongWord):LongWord;
+{Convert Ultibo Power State to BCM2837 Power State}
 begin
  {}
- Result:=BCM2836_MBOX_SET_POWER_STATE_REQ_OFF;
+ Result:=BCM2837_MBOX_SET_POWER_STATE_REQ_OFF;
  
  case PowerState of 
-  POWER_STATE_OFF:Result:=BCM2836_MBOX_SET_POWER_STATE_REQ_OFF;
-  POWER_STATE_ON:Result:=BCM2836_MBOX_SET_POWER_STATE_REQ_ON;
+  POWER_STATE_OFF:Result:=BCM2837_MBOX_SET_POWER_STATE_REQ_OFF;
+  POWER_STATE_ON:Result:=BCM2837_MBOX_SET_POWER_STATE_REQ_ON;
  end;
 end;
 
 {==============================================================================}
 
-function RPi2ConvertPowerStateResponse(PowerState:LongWord):LongWord;
-{Convert BCM2836 Power State to Ultibo Power State}
+function RPi3ConvertPowerStateResponse(PowerState:LongWord):LongWord;
+{Convert BCM2837 Power State to Ultibo Power State}
 begin
  {}
  Result:=POWER_STATE_OFF;
  
  case PowerState of 
-  BCM2836_MBOX_POWER_STATE_RESP_OFF:Result:=POWER_STATE_OFF;
-  BCM2836_MBOX_POWER_STATE_RESP_ON:Result:=POWER_STATE_ON;
+  BCM2837_MBOX_POWER_STATE_RESP_OFF:Result:=POWER_STATE_OFF;
+  BCM2837_MBOX_POWER_STATE_RESP_ON:Result:=POWER_STATE_ON;
  end;
 end;
 
 {==============================================================================}
 
-function RPi2ConvertClockIdRequest(ClockId:LongWord):LongWord;
-{Convert Ultibo Clock Id to BCM2836 Clock Id}
+function RPi3ConvertClockIdRequest(ClockId:LongWord):LongWord;
+{Convert Ultibo Clock Id to BCM2837 Clock Id}
 begin
  {}
- Result:=BCM2836_MBOX_CLOCK_ID_UNKNOWN;
+ Result:=BCM2837_MBOX_CLOCK_ID_UNKNOWN;
  
  case ClockId of 
-  CLOCK_ID_MMC0:Result:=BCM2836_MBOX_CLOCK_ID_EMMC;
-  CLOCK_ID_UART0:Result:=BCM2836_MBOX_CLOCK_ID_UART;
-  CLOCK_ID_UART1:Result:=BCM2836_MBOX_CLOCK_ID_UART;
-  CLOCK_ID_CPU:Result:=BCM2836_MBOX_CLOCK_ID_ARM;
-  CLOCK_ID_CORE:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
-  CLOCK_ID_GPU:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
-  CLOCK_ID_V3D:Result:=BCM2836_MBOX_CLOCK_ID_V3D;
-  CLOCK_ID_H264:Result:=BCM2836_MBOX_CLOCK_ID_H264;
-  CLOCK_ID_ISP:Result:=BCM2836_MBOX_CLOCK_ID_ISP;
-  CLOCK_ID_SDRAM:Result:=BCM2836_MBOX_CLOCK_ID_SDRAM;
-  CLOCK_ID_PIXEL:Result:=BCM2836_MBOX_CLOCK_ID_PIXEL;
-  CLOCK_ID_PWM:Result:=BCM2836_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_MMC0:Result:=BCM2837_MBOX_CLOCK_ID_EMMC;
+  CLOCK_ID_UART0:Result:=BCM2837_MBOX_CLOCK_ID_UART;
+  CLOCK_ID_UART1:Result:=BCM2837_MBOX_CLOCK_ID_UART;
+  CLOCK_ID_CPU:Result:=BCM2837_MBOX_CLOCK_ID_ARM;
+  CLOCK_ID_CORE:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_GPU:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_V3D:Result:=BCM2837_MBOX_CLOCK_ID_V3D;
+  CLOCK_ID_H264:Result:=BCM2837_MBOX_CLOCK_ID_H264;
+  CLOCK_ID_ISP:Result:=BCM2837_MBOX_CLOCK_ID_ISP;
+  CLOCK_ID_SDRAM:Result:=BCM2837_MBOX_CLOCK_ID_SDRAM;
+  CLOCK_ID_PIXEL:Result:=BCM2837_MBOX_CLOCK_ID_PIXEL;
+  CLOCK_ID_PWM:Result:=BCM2837_MBOX_CLOCK_ID_PWM;
  end; 
 end;
 
 {==============================================================================}
 
-function RPi2ConvertClockStateRequest(ClockState:LongWord):LongWord;
-{Convert Ultibo Clock State to BCM2836 Clock State}
+function RPi3ConvertClockStateRequest(ClockState:LongWord):LongWord;
+{Convert Ultibo Clock State to BCM2837 Clock State}
 begin
  {}
- Result:=BCM2836_MBOX_SET_CLOCK_STATE_REQ_OFF;
+ Result:=BCM2837_MBOX_SET_CLOCK_STATE_REQ_OFF;
  
  case ClockState of 
-  CLOCK_STATE_OFF:Result:=BCM2836_MBOX_SET_CLOCK_STATE_REQ_OFF;
-  CLOCK_STATE_ON:Result:=BCM2836_MBOX_SET_CLOCK_STATE_REQ_ON;
+  CLOCK_STATE_OFF:Result:=BCM2837_MBOX_SET_CLOCK_STATE_REQ_OFF;
+  CLOCK_STATE_ON:Result:=BCM2837_MBOX_SET_CLOCK_STATE_REQ_ON;
  end;
 end;
 
 {==============================================================================}
 
-function RPi2ConvertClockStateResponse(ClockState:LongWord):LongWord;
-{Convert BCM2836 Clock State to Ultibo Clock State}
+function RPi3ConvertClockStateResponse(ClockState:LongWord):LongWord;
+{Convert BCM2837 Clock State to Ultibo Clock State}
 begin
  {}
  Result:=CLOCK_STATE_OFF;
  
  case ClockState of 
-  BCM2836_MBOX_CLOCK_STATE_RESP_OFF:Result:=CLOCK_STATE_OFF;
-  BCM2836_MBOX_CLOCK_STATE_RESP_ON:Result:=CLOCK_STATE_ON;
+  BCM2837_MBOX_CLOCK_STATE_RESP_OFF:Result:=CLOCK_STATE_OFF;
+  BCM2837_MBOX_CLOCK_STATE_RESP_ON:Result:=CLOCK_STATE_ON;
  end; 
 end;
 
 {==============================================================================}
 
-function RPi2ConvertVoltageIdRequest(VoltageId:LongWord):LongWord;
-{Convert Ultibo Voltage Id to BCM2836 Voltage Id}
+function RPi3ConvertVoltageIdRequest(VoltageId:LongWord):LongWord;
+{Convert Ultibo Voltage Id to BCM2837 Voltage Id}
 begin
  {}
- Result:=BCM2836_MBOX_VOLTAGE_ID_RESERVED;
+ Result:=BCM2837_MBOX_VOLTAGE_ID_RESERVED;
  
  case VoltageId of 
-  VOLTAGE_ID_CORE:Result:=BCM2836_MBOX_VOLTAGE_ID_CORE;
-  VOLTAGE_ID_SDRAM_C:Result:=BCM2836_MBOX_VOLTAGE_ID_SDRAM_C;
-  VOLTAGE_ID_SDRAM_P:Result:=BCM2836_MBOX_VOLTAGE_ID_SDRAM_P;
-  VOLTAGE_ID_SDRAM_I:Result:=BCM2836_MBOX_VOLTAGE_ID_SDRAM_I;
+  VOLTAGE_ID_CORE:Result:=BCM2837_MBOX_VOLTAGE_ID_CORE;
+  VOLTAGE_ID_SDRAM_C:Result:=BCM2837_MBOX_VOLTAGE_ID_SDRAM_C;
+  VOLTAGE_ID_SDRAM_P:Result:=BCM2837_MBOX_VOLTAGE_ID_SDRAM_P;
+  VOLTAGE_ID_SDRAM_I:Result:=BCM2837_MBOX_VOLTAGE_ID_SDRAM_I;
  end;
 end;
 
 {==============================================================================}
 
-function RPi2ConvertTemperatureIdRequest(TemperatureId:LongWord):LongWord;
-{Convert Ultibo Temperature Id to BCM2836 Temperature Id}
+function RPi3ConvertTemperatureIdRequest(TemperatureId:LongWord):LongWord;
+{Convert Ultibo Temperature Id to BCM2837 Temperature Id}
 begin
  {}
- Result:=BCM2836_MBOX_TEMP_ID_SOC;
+ Result:=BCM2837_MBOX_TEMP_ID_SOC;
  
  case TemperatureId of 
-  TEMPERATURE_ID_SOC:Result:=BCM2836_MBOX_TEMP_ID_SOC;
+  TEMPERATURE_ID_SOC:Result:=BCM2837_MBOX_TEMP_ID_SOC;
  end;
 end;
 

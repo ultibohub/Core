@@ -1315,7 +1315,7 @@ begin
   AddContent(AResponse,'               <tr>');
   if ASub = nil then
    begin
-    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(0, 0, 0)"><span style="color: rgb(255, 255, 255);"><a href="' + Name + '">' + GetCaption + '</a></span><br>');
+    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(130, 130, 130)"><span style="color: rgb(255, 255, 255);"><a href="' + Name + '">' + GetCaption + '</a></span><br>');
    end
   else
    begin
@@ -1333,7 +1333,7 @@ begin
       AddContent(AResponse,'               <tr>');
       if Sub = ASub then
        begin
-        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(0, 0, 0)"><span style="color: rgb(255, 255, 255);"><a href="' + Sub.Name + '">' + Sub.Caption + '</a></span><br>');
+        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(130, 130, 130)"><span style="color: rgb(255, 255, 255);"><a href="' + Sub.Name + '">' + Sub.Caption + '</a></span><br>');
        end
       else
        begin      
@@ -2536,6 +2536,9 @@ begin
  {Add Header}
  AddHeader(AResponse,GetTitle,Self); 
 
+ {Add CPU Arch}
+ AddItem(AResponse,'CPU Arch:',CPUArchToString(CPUGetArch));
+ 
  {Add CPU Type}
  AddItem(AResponse,'CPU Type:',CPUTypeToString(CPUGetType));
 

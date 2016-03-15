@@ -2711,7 +2711,7 @@ begin
      case Action of
       WSA_GETIFTABLE:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
         
         {Get IfTable}
@@ -2750,7 +2750,7 @@ begin
        end;
       WSA_GETIPADDRTABLE:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
         
         {Get IpAddrTable}
@@ -2787,7 +2787,7 @@ begin
        end;
       WSA_SETIPSTATISTICS:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
         
         {Get IpStats}
@@ -2818,7 +2818,7 @@ begin
        end;
       WSA_SETIPTTL:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
 
         {Get Value}
@@ -2837,7 +2837,7 @@ begin
        end;
       WSA_GETINTERFACEINFO:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
         
         {Get IpInterfaceInfo}
@@ -2871,7 +2871,7 @@ begin
        end;
       WSA_GETNETWORKPARAMS:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
         
         {Get FixedInfo}
@@ -2890,7 +2890,7 @@ begin
        end;
       WSA_GETADAPTERSINFO:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
         
         {Get IpAdapterInfo}
@@ -2944,7 +2944,7 @@ begin
        end;
       WSA_IPRELEASEADDRESS:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
 
         {Get IpAdapterIndexMap}
@@ -2962,7 +2962,7 @@ begin
        end;
       WSA_IPRENEWADDRESS:begin
         {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,IP_TYPE,False,NETWORK_LOCK_READ); //To Do
+        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
         if Transport = nil then Exit;
 
         {Get IpAdapterIndexMap}

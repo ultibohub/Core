@@ -2695,7 +2695,7 @@ begin
   if Manager = nil then Exit;
  
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ);
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
@@ -2735,7 +2735,7 @@ begin
   FlushSockets(True);
  
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
   if Transport <> nil then
    begin
     {Remove Transport}

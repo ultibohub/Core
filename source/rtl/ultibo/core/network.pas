@@ -60,14 +60,16 @@ const
  NETWORK_TYPE_NONE      = 0;
  NETWORK_TYPE_ETHERNET  = 1;
  NETWORK_TYPE_TOKENRING = 2;
+ NETWORK_TYPE_80211     = 3;  {IEEE 802.11 Wireless (WiFi) network}
  
- NETWORK_TYPE_MAX       = 2;
+ NETWORK_TYPE_MAX       = 3;
  
  {Network Type Names}
  NETWORK_TYPE_NAMES:array[NETWORK_TYPE_NONE..NETWORK_TYPE_MAX] of String = (
   'NETWORK_TYPE_NONE',
   'NETWORK_TYPE_ETHERNET',
-  'NETWORK_TYPE_TOKENRING');
+  'NETWORK_TYPE_TOKENRING',
+  'NETWORK_TYPE_80211');
  
  {Network Device States}
  NETWORK_STATE_CLOSED  = 0;
@@ -125,13 +127,35 @@ const
  {Network Buffer Size}
  NETWORK_BUFFER_SIZE = 1024; 
  
+ {Network Events}
+ NETWORK_EVENT_NONE             = $00000000;
+ NETWORK_EVENT_SYSTEM_START     = $00000001; {The network sub system is starting}
+ NETWORK_EVENT_SYSTEM_STOP      = $00000002; {The network sub system has stopped}
+ NETWORK_EVENT_ADAPTERS_START   = $00000004; {All network adapters are being started}
+ NETWORK_EVENT_ADAPTERS_STOP    = $00000008; {All network adapters have been stopped}
+ NETWORK_EVENT_TRANSPORTS_START = $00000010; {All network transports are being started}
+ NETWORK_EVENT_TRANSPORTS_STOP  = $00000020; {All network transports have been stopped}
+ NETWORK_EVENT_PROTOCOLS_START  = $00000040; {All network protocols are being started}
+ NETWORK_EVENT_PROTOCOLS_STOP   = $00000080; {All network protocols have been stopped}
+
+ {Network Event Signature}
+ NETWORK_EVENT_SIGNATURE = $BE1D50C2;
+ 
+ {Network Event States}
+ NETWORK_EVENT_STATE_UNREGISTERED = 0;
+ NETWORK_EVENT_STATE_REGISTERED   = 1;
+ 
+ {Network Event Flags}
+ NETWORK_EVENT_FLAG_NONE = $00000000;
+ 
  //To Do //////////////////////////////////////////////////////////////
  
 const
  {These items must also be included in Winsock.pas/Winsock2.pas} //To Do //No longer true since the addition of GlobalSock ? and other structure changes ?
  ADAPTER_TYPE_UNKNOWN  = 0;
- ADAPTER_TYPE_DEVICE   = 1;
+ ADAPTER_TYPE_WIRED    = 1;
  ADAPTER_TYPE_LOOPBACK = 2; 
+ ADAPTER_TYPE_WIRELESS = 3;
  
  ADAPTER_THREAD_NAME     = 'Network Adapter';       {Thread name for Network adapter threads}
  ADAPTER_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER;  {Thread priority for Network adapter threads}
@@ -191,23 +215,26 @@ const
  {Hardare Addressing}
  HARDWARE_ADDRESS_SIZE = 6;   {SizeOf(THardwareAddress)}
 
- {Media Types} //To Do //Change to MEDIA_TYPE_
+ {Media Types}
  MEDIA_TYPE_UNKNOWN  = $0000;
  
- ETHER_TYPE = $0001;       {ARP type of Ethernet Hardware}
- TOKEN_TYPE = $0006;       {ARP type of Token-Ring Hardware}
+ MEDIA_TYPE_ETHERNET  = $0001;  {ARP type of Ethernet Hardware (These values must not change, they are the actual values used by ARP packets)}
+ MEDIA_TYPE_TOKENRING = $0006;  {ARP type of Token-Ring Hardware (These values must not change, they are the actual values used by ARP packets)}
 
- {Packet Types} //To Do //Change to PACKET_TYPE_ //Merge these with "Ethernet Packet Types" below
- PACKET_MIN_TYPE = $0600;
+ {Packet Types}
+ PACKET_MIN_TYPE   = $0600;
+                   
+ PACKET_TYPE_IP    = $0800;
+ PACKET_TYPE_IP6   = $86DD;
+ PACKET_TYPE_ARP   = $0806;
+ PACKET_TYPE_RARP  = $8035;
+ PACKET_TYPE_IPX   = $8137;  {IPX on EII}
  
- IP_TYPE   = $0800;
- IP6_TYPE  = $86DD;
- ARP_TYPE  = $0806;
- RARP_TYPE = $8035;
- IPX_TYPE  = $8137;  {IPX on EII}
+ PACKET_TYPE_EAPOL = $888E;  {EAP-over-LAN (EAPOL)}
+ PACKET_TYPE_RSN   = $88C7;  {RSN pre-authentication}
  
- RAW_TYPE  = $FFFF;  {IPX on 802.3}  //To Do //$00     //See: https://en.wikipedia.org/wiki/Ethernet_frame
- LLC_TYPE  = $0001;  {IPX on 802.2}  //To Do //$E0 ??  //See: https://en.wikipedia.org/wiki/Ethernet_frame
+ PACKET_TYPE_RAW   = $FFFF;  {IPX on 802.3}  //To Do //$00     //See: https://en.wikipedia.org/wiki/Ethernet_frame
+ PACKET_TYPE_LLC   = $0001;  {IPX on 802.2}  //To Do //$E0 ??  //See: https://en.wikipedia.org/wiki/Ethernet_frame
  
  {Ehternet Network} //To Do //Move to Ethernet constants below
  MIN_ETHERNET_PACKET = 60;
@@ -236,7 +263,7 @@ const
  NETWORK_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Network messages}
 
 var 
- NETWORK_DEFAULT_LOG_LEVEL:LongWord = NETWORK_LOG_LEVEL_DEBUG; //NETWORK_LOG_LEVEL_INFO; {Minimum level for Network messages.  Only messages with level greater than or equal to this will be printed}
+ NETWORK_DEFAULT_LOG_LEVEL:LongWord = NETWORK_LOG_LEVEL_INFO; {Minimum level for Network messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {Network logging}
@@ -249,11 +276,6 @@ const
  ETHERNET_HEADER_SIZE  = 14;  {SizeOf(TEthernetHeader);}
  ETHERNET_VLAN_SIZE    = 4;   {Length of Ethernet VLAN tag}
  ETHERNET_CRC_SIZE     = 4;   {Length of Ethernet CRC}
-  
- {Ethernet Packet Types}
- ETHERNET_TYPE_IPV4  = $0800;
- ETHERNET_TYPE_IPV6  = $86DD;
- ETHERNET_TYPE_ARP   = $0806;
 
  {Ethernet specific sizes}
  ETHERNET_MTU                  = 1500;
@@ -331,6 +353,25 @@ type
   Next:PNetworkDevice;                 {Next entry in Network table}
  end; 
  
+ {Network Event}
+ PNetworkEvent = ^TNetworkEvent;
+ 
+ {Network Event Callback}
+ TNetworkEventCallback = function(Data:Pointer;Event:LongWord):LongWord;
+ 
+ TNetworkEvent = record
+  {Event Properties}
+  Signature:LongWord;             {Signature for entry validation}
+  EventState:LongWord;            {Event state (eg Registered/Unregistered)}
+  EventFlags:LongWord;            {Event flags (eg NETWORK_EVENT_FLAG_NONE)}
+  Callback:TNetworkEventCallback; {The callback for network events}
+  Data:Pointer;                   {A pointer to callback specific data to be passed with events (Optional)}
+  Event:LongWord;                 {The mask of events to notify on (eg NETWORK_EVENT_SYSTEM_START etc)}
+  {Internal Properties}
+  Prev:PNetworkEvent;             {Previous entry in Event table}
+  Next:PNetworkEvent;             {Next entry in Event table}
+ end; 
+  
 //To Do ///////////////////////////////////////////////////////////////////////////
  
 type
@@ -700,7 +741,7 @@ type
    function WriteNext:Pointer;
  end;
  
- TDeviceAdapter = class(TNetworkAdapter)
+ TWiredAdapter = class(TNetworkAdapter)
    constructor Create(AManager:TAdapterManager;ADevice:PNetworkDevice;const AName:String);
   private
    {Internal Variables}
@@ -751,6 +792,8 @@ procedure NetworkInit;
 function NetworkStart:LongWord;
 function NetworkStop:LongWord;
  
+function NetworkStartCompleted:Boolean;
+ 
 {==============================================================================}
 {Network Functions}
 function NetworkDeviceOpen(Network:PNetworkDevice):LongWord;
@@ -758,6 +801,8 @@ function NetworkDeviceClose(Network:PNetworkDevice):LongWord;
 function NetworkDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
 function NetworkDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
 function NetworkDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+
+//To Do //BufferAllocate/BufferRelease/BufferReceive/BufferTransmit
 
 function NetworkDeviceSetState(Network:PNetworkDevice;State:LongWord):LongWord;
 function NetworkDeviceSetStatus(Network:PNetworkDevice;Status:LongWord):LongWord;
@@ -773,6 +818,14 @@ function NetworkDeviceFind(NetworkId:LongWord):PNetworkDevice;
 function NetworkDeviceEnumerate(Callback:TNetworkEnumerate;Data:Pointer):LongWord;
 
 function NetworkDeviceNotification(Network:PNetworkDevice;Callback:TNetworkNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+
+function NetworkEventAllocate(Callback:TNetworkEventCallback;Data:Pointer;Event:LongWord):PNetworkEvent;
+function NetworkEventRelease(Event:PNetworkEvent):LongWord;
+
+function NetworkEventRegister(Callback:TNetworkEventCallback;Data:Pointer;Event:LongWord):THandle;
+function NetworkEventDeregister(Handle:THandle):LongWord;
+
+function NetworkEventNotify(Event:LongWord):LongWord;
 
 {==============================================================================}
 {Ethernet Functions}
@@ -790,6 +843,8 @@ function NetworkDeviceStatusToString(NetworkStatus:LongWord):String;
 function NetworkDeviceStateToNotification(State:LongWord):LongWord;
 function NetworkDeviceStatusToNotification(Status:LongWord):LongWord;
 
+function NetworkEventCheck(Event:PNetworkEvent):PNetworkEvent;
+
 procedure NetworkLog(Level:LongWord;Network:PNetworkDevice;const AText:String);
 procedure NetworkLogInfo(Network:PNetworkDevice;const AText:String);
 procedure NetworkLogError(Network:PNetworkDevice;const AText:String);
@@ -801,6 +856,7 @@ function StringToHardwareAddress(const AAddress:String):THardwareAddress;
 function CompareHardwareAddress(const AAddress1,AAddress2:THardwareAddress):Boolean; 
 function CompareHardwareDefault(const AAddress:THardwareAddress):Boolean; 
 function CompareHardwareBroadcast(const AAddress:THardwareAddress):Boolean; 
+function CompareHardwareMulticast(const AAddress:THardwareAddress):Boolean; 
 
 function AdapterTypeToString(AType:Word):String;
 function AdapterModeToString(AMode:Word):String;
@@ -833,6 +889,11 @@ var
  NetworkTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  NetworkTableCount:LongWord;
 
+ NetworkEventTable:PNetworkEvent;
+ NetworkEventLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
+ NetworkEventCount:LongWord;
+ 
+ 
 {==============================================================================}
 {==============================================================================}
 {var}
@@ -1260,7 +1321,7 @@ begin
  FLock:=SynchronizerCreate;
  
  FrameType:=FRAME_TYPE_UNKNOWN;
- PacketType:=RAW_TYPE;
+ PacketType:=PACKET_TYPE_RAW;
  PacketName:='';
  PacketHandler:=nil;
 end;
@@ -1322,7 +1383,7 @@ begin
  FLock:=SynchronizerCreate;
  
  FrameType:=FRAME_TYPE_UNKNOWN;
- PacketType:=RAW_TYPE;
+ PacketType:=PACKET_TYPE_RAW;
  Transport:=ATransport
 end;
 
@@ -2388,13 +2449,13 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{TDeviceAdapter}
-constructor TDeviceAdapter.Create(AManager:TAdapterManager;ADevice:PNetworkDevice;const AName:String);
+{TWiredAdapter}
+constructor TWiredAdapter.Create(AManager:TAdapterManager;ADevice:PNetworkDevice;const AName:String);
 begin
  {}
  inherited Create(AManager,ADevice,AName);
  {Set Defaults}
- FAdapterType:=ADAPTER_TYPE_DEVICE;
+ FAdapterType:=ADAPTER_TYPE_WIRED;
  FillChar(FDefaultAddress,SizeOf(THardwareAddress),0);
  FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
  FillChar(FBroadcastAddress,SizeOf(THardwareAddress),0);
@@ -2403,7 +2464,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle;
+function TWiredAdapter.AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle;
 var
  Transport:TAdapterTransport;
 begin
@@ -2413,10 +2474,10 @@ begin
   Result:=INVALID_HANDLE_VALUE;
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: AddTransport (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Packet = ' + PacketTypeToString(APacketType));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Frame = ' + FrameTypeToString(AFrameType));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Name = ' + APacketName);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: AddTransport (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(APacketType));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(AFrameType));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Name = ' + APacketName);
   {$ENDIF}
   
   {Check Status}
@@ -2433,11 +2494,11 @@ begin
   case AFrameType of 
    FRAME_TYPE_ETHERNET_II,FRAME_TYPE_ETHERNET_8022,FRAME_TYPE_ETHERNET_SNAP,FRAME_TYPE_ETHERNET_8023:begin
      {Check Media Type}
-     if FMediaType <> ETHER_TYPE then Exit;
+     if FMediaType <> MEDIA_TYPE_ETHERNET then Exit;
     end;
    FRAME_TYPE_TOKEN_RING:begin
      {Check Media Type}
-     if FMediaType <> TOKEN_TYPE then Exit;
+     if FMediaType <> MEDIA_TYPE_TOKENRING then Exit;
     end;
   end;
   
@@ -2467,7 +2528,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.RemoveTransport(AHandle:THandle;APacketType:Word):Boolean;
+function TWiredAdapter.RemoveTransport(AHandle:THandle;APacketType:Word):Boolean;
 var
  Transport:TAdapterTransport;
 begin
@@ -2477,9 +2538,9 @@ begin
   Result:=False;
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: RemoveTransport (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Packet = ' + PacketTypeToString(APacketType));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: RemoveTransport (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(APacketType));
   {$ENDIF}
   
   {Check Status}
@@ -2522,7 +2583,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.GetMTU(AHandle:THandle):Word;
+function TWiredAdapter.GetMTU(AHandle:THandle):Word;
 var
  Value:LongWord;
 begin
@@ -2532,8 +2593,8 @@ begin
   Result:=0;
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: GetMTU (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetMTU (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
  
   {Check Status}
@@ -2554,7 +2615,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.SendPacket(AHandle:THandle;ADest:Pointer;APacket:PPacketFragment;ASize:Integer):Boolean;
+function TWiredAdapter.SendPacket(AHandle:THandle;ADest:Pointer;APacket:PPacketFragment;ASize:Integer):Boolean;
 var
  Size:Integer;
  Length:LongWord;
@@ -2569,9 +2630,9 @@ begin
  Result:=False;
   
  {$IFDEF NETWORK_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: SendPacket (' + Name + ')');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Size = ' + IntToStr(ASize));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: SendPacket (' + Name + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(ASize));
  {$ENDIF}
   
  {Check Dest}
@@ -2591,13 +2652,13 @@ begin
  if Transport = nil then Exit;
  try
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Media = ' + MediaTypeToString(FMediaType));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Media = ' + MediaTypeToString(FMediaType));
   {$ENDIF}
   {Check Media Type}
   case FMediaType of
-   ETHER_TYPE:begin
+   MEDIA_TYPE_ETHERNET:begin
      {$IFDEF NETWORK_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
      {$ENDIF}
      {Check Frame Type}
      case Transport.FrameType of
@@ -2636,9 +2697,9 @@ begin
        end;
      end;
     end;
-   TOKEN_TYPE:begin
+   MEDIA_TYPE_TOKENRING:begin
      {$IFDEF NETWORK_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
      {$ENDIF}
      {Check Frame Type}
      case Transport.FrameType of
@@ -2675,7 +2736,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress; 
+function TWiredAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress; 
 begin
  {}
  ReaderLock;
@@ -2683,8 +2744,8 @@ begin
   FillChar(Result,SizeOf(THardwareAddress),0);
  
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: GetDefaultAddress (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetDefaultAddress (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
  
   {Check Status}
@@ -2702,7 +2763,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.GetHardwareAddress(AHandle:THandle):THardwareAddress;
+function TWiredAdapter.GetHardwareAddress(AHandle:THandle):THardwareAddress;
 var
  Value:LongWord;
 begin
@@ -2712,8 +2773,8 @@ begin
   FillChar(Result,SizeOf(THardwareAddress),0);
  
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: GetHardwareAddress (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetHardwareAddress (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
  
   {Check Status}
@@ -2731,7 +2792,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
+function TWiredAdapter.SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 var
  Value:LongWord;
 begin
@@ -2741,9 +2802,9 @@ begin
   Result:=False;
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: SetHardwareAddress (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Address = ' + HardwareAddressToString(AAddress));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: SetHardwareAddress (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Address = ' + HardwareAddressToString(AAddress));
   {$ENDIF}
   
   {Check Status}
@@ -2767,7 +2828,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.GetBroadcastAddress(AHandle:THandle):THardwareAddress;
+function TWiredAdapter.GetBroadcastAddress(AHandle:THandle):THardwareAddress;
 var
  Value:LongWord;
 begin
@@ -2777,8 +2838,8 @@ begin
   FillChar(Result,SizeOf(THardwareAddress),0);
  
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: GetBroadcastAddress (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetBroadcastAddress (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
  
   {Check Status}
@@ -2796,7 +2857,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.GetMulticastAddresses(AHandle:THandle):TMulticastAddresses;
+function TWiredAdapter.GetMulticastAddresses(AHandle:THandle):TMulticastAddresses;
 begin
  {}
  ReaderLock;
@@ -2804,8 +2865,8 @@ begin
   FillChar(Result,SizeOf(TMulticastAddresses),0);
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: GetMulticastAddresses (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetMulticastAddresses (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
   
   {Check Status}
@@ -2822,7 +2883,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.AddMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
+function TWiredAdapter.AddMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  WriterLock;
@@ -2830,9 +2891,9 @@ begin
   Result:=False;
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: AddMulticastAddress (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Address = ' + HardwareAddressToString(AAddress));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: AddMulticastAddress (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Address = ' + HardwareAddressToString(AAddress));
   {$ENDIF}
   
   {Check Status}
@@ -2849,7 +2910,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.RemoveMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
+function TWiredAdapter.RemoveMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  WriterLock;
@@ -2857,9 +2918,9 @@ begin
   Result:=False;
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: RemoveMulticastAddress (' + Name + ')');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Handle = ' + IntToHex(AHandle,8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Address = ' + HardwareAddressToString(AAddress));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: RemoveMulticastAddress (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Address = ' + HardwareAddressToString(AAddress));
   {$ENDIF}
   
   {Check Status}
@@ -2876,7 +2937,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.StartAdapter:Boolean;
+function TWiredAdapter.StartAdapter:Boolean;
 begin
  {}
  ReaderLock;
@@ -2884,7 +2945,7 @@ begin
   Result:=False;
   
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: StartAdapter (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: StartAdapter (' + Name + ')');
   {$ENDIF}
   
   {Check Status} 
@@ -2895,8 +2956,8 @@ begin
 
   {Check Media Type}
   case FDevice.Device.DeviceType of
-   NETWORK_TYPE_ETHERNET:FMediaType:=ETHER_TYPE;
-   NETWORK_TYPE_TOKENRING:FMediaType:=TOKEN_TYPE;
+   NETWORK_TYPE_ETHERNET:FMediaType:=MEDIA_TYPE_ETHERNET;
+   NETWORK_TYPE_TOKENRING:FMediaType:=MEDIA_TYPE_TOKENRING;
   end;
   if FMediaType = MEDIA_TYPE_UNKNOWN then Exit;   
   
@@ -2929,7 +2990,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.StopAdapter:Boolean;
+function TWiredAdapter.StopAdapter:Boolean;
 var
  ResultCode:LongWord;
  Current:TAdapterTransport;
@@ -2941,7 +3002,7 @@ begin
   Result:=False;
    
   {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: StopAdapter (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: StopAdapter (' + Name + ')');
   {$ENDIF}
 
   {Check Status} 
@@ -2998,7 +3059,7 @@ end;
 
 {==============================================================================}
 
-function TDeviceAdapter.ProcessAdapter:Boolean;
+function TWiredAdapter.ProcessAdapter:Boolean;
 var
  Data:Pointer;
  Size:LongWord;
@@ -3027,11 +3088,11 @@ begin
  
  {Check Media Type}
  case FMediaType of
-  ETHER_TYPE:begin
+  MEDIA_TYPE_ETHERNET:begin
     {Get Size}
     Size:=ETHERNET_MAX_PACKET_SIZE;
    end;
-  TOKEN_TYPE:begin
+  MEDIA_TYPE_TOKENRING:begin
     
     Size:=0;
     Exit; //To Do
@@ -3046,12 +3107,12 @@ begin
   if FDevice.DeviceRead(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
    begin
     {$IFDEF NETWORK_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter: ProcessAdapter (' + Name + ')');
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: ProcessAdapter (' + Name + ')');
     {$ENDIF}
    
     {Check Media Type}
     case FMediaType of
-     ETHER_TYPE:begin
+     MEDIA_TYPE_ETHERNET:begin
        {Check Length}
        if Length < ETHERNET_HEADER_SIZE then Exit;
         
@@ -3065,7 +3126,7 @@ begin
        if WordBEtoN(Ethernet.TypeLength) > PACKET_MIN_TYPE then
         begin
          {$IFDEF NETWORK_DEBUG}
-         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_II));
+         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_II));
          {$ENDIF}
           
          {Get Frame Type}
@@ -3091,7 +3152,7 @@ begin
          if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_SNAP then
           begin
            {$IFDEF NETWORK_DEBUG}
-           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_SNAP));
+           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_SNAP));
            {$ENDIF}
             
            {Get Frame Type}
@@ -3105,7 +3166,7 @@ begin
          else if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_8023 then 
           begin
            {$IFDEF NETWORK_DEBUG}
-           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8023));
+           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8023));
            {$ENDIF}
            
            {Get Frame Type}
@@ -3116,7 +3177,7 @@ begin
          else
           begin
            {$IFDEF NETWORK_DEBUG}
-           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8022));
+           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8022));
            {$ENDIF}
             
            {Get Frame Type}
@@ -3129,14 +3190,14 @@ begin
           end;           
         end;         
       end; 
-     TOKEN_TYPE:begin
+     MEDIA_TYPE_TOKENRING:begin
        Exit; //To Do
       end;
     end; 
      
     {$IFDEF NETWORK_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Packet = ' + PacketTypeToString(PacketType));
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DeviceAdapter:  Size = ' + IntToStr(Size));
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(PacketType));
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(Size));
     {$ENDIF}
      
     {Get Transport}
@@ -3183,7 +3244,16 @@ begin
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to create network table lock');
   end;
- 
+
+ {Initialize Event Table}
+ NetworkEventTable:=nil;
+ NetworkEventLock:=CriticalSectionCreate; 
+ NetworkEventCount:=0;
+ if NetworkEventLock = INVALID_HANDLE_VALUE then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to create event table lock');
+  end;
+  
  {Create Adapter Manager}
  AdapterManager:=TAdapterManager.Create;
  
@@ -3213,14 +3283,15 @@ begin
 
  {Check Manager}
  if AdapterManager = nil then Exit;
+
+ {Notify Event}
+ NetworkEventNotify(NETWORK_EVENT_SYSTEM_START);
  
  {Start Adapters}
  if not AdapterManager.StartAdapters then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network adapters');
   end;
- 
- //To Do
  
  {Set Started} 
  NetworkStarted:=True;
@@ -3250,13 +3321,23 @@ begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to stop one or more network adapters');
   end;
 
- //To Do
-
+ {Notify Event}
+ NetworkEventNotify(NETWORK_EVENT_SYSTEM_STOP);
+  
  {Set Started}
  NetworkStarted:=False;    
  
  {Return Result} 
  Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function NetworkStartCompleted:Boolean;
+{Returns True if the network sub system has been started}
+begin
+ {}
+ Result:=NetworkStarted;
 end;
 
 {==============================================================================}
@@ -3802,6 +3883,245 @@ begin
 end;
 
 {==============================================================================}
+
+function NetworkEventAllocate(Callback:TNetworkEventCallback;Data:Pointer;Event:LongWord):PNetworkEvent;
+{Create and Register a new Event entry in the Event table}
+var
+ NetworkEvent:PNetworkEvent;
+begin
+ {}
+ Result:=nil;
+
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Create Event}
+ NetworkEvent:=AllocMem(SizeOf(TNetworkEvent));
+ if NetworkEvent = nil then Exit;
+
+ {Update Event}
+ NetworkEvent.Signature:=NETWORK_EVENT_SIGNATURE;
+ NetworkEvent.EventState:=NETWORK_EVENT_STATE_UNREGISTERED;
+ NetworkEvent.EventFlags:=NETWORK_EVENT_FLAG_NONE;
+ NetworkEvent.Callback:=Callback;
+ NetworkEvent.Data:=Data;
+ NetworkEvent.Event:=Event;
+ 
+ {Insert Event}
+ if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Link Event}
+    if NetworkEventTable = nil then
+     begin
+      NetworkEventTable:=NetworkEvent;
+     end
+    else
+     begin
+      NetworkEvent.Next:=NetworkEventTable;
+      NetworkEventTable.Prev:=NetworkEvent;
+      NetworkEventTable:=NetworkEvent;
+     end;
+    
+    {Increment Count}
+    Inc(NetworkEventCount);
+
+    {Return Result}
+    Result:=NetworkEvent;
+   finally
+    CriticalSectionUnlock(NetworkEventLock);
+   end;
+  end;
+end;
+    
+{==============================================================================}
+
+function NetworkEventRelease(Event:PNetworkEvent):LongWord;
+{Deregister and Destroy a Event from the Event table}
+var
+ Prev:PNetworkEvent;
+ Next:PNetworkEvent;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Event}
+ if Event = nil then Exit;
+ if Event.Signature <> NETWORK_EVENT_SIGNATURE then Exit;
+ 
+ {Check Event}
+ if NetworkEventCheck(Event) <> Event then Exit;
+
+ {Check State}
+ if Event.EventState <> NETWORK_EVENT_STATE_UNREGISTERED then Exit;
+ 
+ {Remove Event}
+ if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Unlink Event}
+    Prev:=Event.Prev;
+    Next:=Event.Next;
+    if Prev = nil then
+     begin
+      NetworkEventTable:=Next;
+      if Next <> nil then
+       begin
+        Next.Prev:=nil;
+       end;       
+     end
+    else
+     begin
+      Prev.Next:=Next;
+      if Next <> nil then
+       begin
+        Next.Prev:=Prev;
+       end;       
+     end;     
+    
+    {Decrement Count}
+    Dec(NetworkEventCount);
+
+    {Invalidate Event}
+    Event.Signature:=0;
+ 
+    {Free Event}
+    FreeMem(Event);
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    CriticalSectionUnlock(NetworkEventLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
+
+function NetworkEventRegister(Callback:TNetworkEventCallback;Data:Pointer;Event:LongWord):THandle;
+{Register a callback for one or more network events}
+var
+ NetworkEvent:PNetworkEvent;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+ 
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Check Event}
+ if Event = NETWORK_EVENT_NONE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Allocate Event}
+    NetworkEvent:=NetworkEventAllocate(Callback,Data,Event);
+    if NetworkEvent = nil then Exit;
+    
+    {Register Event}
+    NetworkEvent.EventState:=NETWORK_EVENT_STATE_REGISTERED;
+ 
+    {Return Result}
+    Result:=THandle(NetworkEvent);
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(NetworkEventLock);
+   end;
+  end;  
+end;
+
+{==============================================================================}
+
+function NetworkEventDeregister(Handle:THandle):LongWord;
+{Deregister a network event callback}
+var
+ NetworkEvent:PNetworkEvent;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {Check Event}
+ NetworkEvent:=PNetworkEvent(Handle);
+ if NetworkEvent = nil then Exit;
+ if NetworkEvent.Signature <> NETWORK_EVENT_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Deregister Event}
+    NetworkEvent.EventState:=NETWORK_EVENT_STATE_UNREGISTERED;
+   
+    {Release Event}
+    Result:=NetworkEventRelease(NetworkEvent);
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(NetworkEventLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+{==============================================================================}
+
+function NetworkEventNotify(Event:LongWord):LongWord;
+var
+ Status:LongWord;
+ NetworkEvent:PNetworkEvent;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Event}
+ if Event = NETWORK_EVENT_NONE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
+  begin
+   try
+    Result:=ERROR_SUCCESS;
+ 
+    {Get Event}
+    NetworkEvent:=NetworkEventTable;
+    while NetworkEvent <> nil do
+     begin
+      {Check State}
+      if NetworkEvent.EventState = NETWORK_EVENT_STATE_REGISTERED then
+       begin
+        {Check Event}
+        if (NetworkEvent.Event and Event) <> 0 then
+         begin
+          Status:=NetworkEvent.Callback(NetworkEvent.Data,Event);
+          if Status <> ERROR_SUCCESS then Result:=Status;
+         end;
+       end;
+       
+      {Get Next}
+      NetworkEvent:=NetworkEvent.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(NetworkEventLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Ethernet Functions}
 
@@ -3925,6 +4245,45 @@ begin
  end;
 end;
 
+{==============================================================================}
+
+function NetworkEventCheck(Event:PNetworkEvent):PNetworkEvent;
+{Check if the supplied Event is in the event table}
+var
+ Current:PNetworkEvent;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Event}
+ if Event = nil then Exit;
+ if Event.Signature <> NETWORK_EVENT_SIGNATURE then Exit;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Event}
+    Current:=NetworkEventTable;
+    while Current <> nil do
+     begin
+      {Check Event}
+      if Current = Event then
+       begin
+        Result:=Event;
+        Exit;
+       end;
+      
+      {Get Next}
+      Current:=Current.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(NetworkEventLock);
+   end;
+  end;
+end;
+ 
 {==============================================================================}
 
 procedure NetworkLog(Level:LongWord;Network:PNetworkDevice;const AText:String);
@@ -4051,6 +4410,14 @@ end;
 
 {==============================================================================}
 
+function CompareHardwareMulticast(const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=(AAddress[0] and $01) <> 0;
+end;
+
+{==============================================================================}
+
 function AdapterTypeToString(AType:Word):String;
 begin
  {}
@@ -4059,8 +4426,9 @@ begin
  {Check Type}
  case AType of
   ADAPTER_TYPE_UNKNOWN:Result:='ADAPTER_TYPE_UNKNOWN';
-  ADAPTER_TYPE_DEVICE:Result:='ADAPTER_TYPE_DEVICE';
+  ADAPTER_TYPE_WIRED:Result:='ADAPTER_TYPE_WIRED';
   ADAPTER_TYPE_LOOPBACK:Result:='ADAPTER_TYPE_LOOPBACK';
+  ADAPTER_TYPE_WIRELESS:Result:='ADAPTER_TYPE_WIRELESS';
  end; 
 end;
 
@@ -4145,8 +4513,8 @@ begin
  
  {Check Type}
  case AType of
-  ETHER_TYPE:Result:='ETHER_TYPE';
-  TOKEN_TYPE:Result:='TOKEN_TYPE';
+  MEDIA_TYPE_ETHERNET:Result:='MEDIA_TYPE_ETHERNET';
+  MEDIA_TYPE_TOKENRING:Result:='MEDIA_TYPE_TOKENRING';
  end; 
 end;
 
@@ -4159,11 +4527,11 @@ begin
  
  {Check Type}
  case AType of
-  IP_TYPE:Result:='IP_TYPE';
-  IP6_TYPE:Result:='IP6_TYPE';
-  ARP_TYPE:Result:='ARP_TYPE';
-  RARP_TYPE:Result:='RARP_TYPE';
-  IPX_TYPE:Result:='IPX_TYPE';
+  PACKET_TYPE_IP:Result:='PACKET_TYPE_IP';
+  PACKET_TYPE_IP6:Result:='PACKET_TYPE_IP6';
+  PACKET_TYPE_ARP:Result:='PACKET_TYPE_ARP';
+  PACKET_TYPE_RARP:Result:='PACKET_TYPE_RARP';
+  PACKET_TYPE_IPX:Result:='PACKET_TYPE_IPX';
  end; 
 end;
 

@@ -85,8 +85,7 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,SysUtils;
 
-//To Do //Storage Logging
-                      //USB Storage Read Protect / Write Protect
+//To Do               //USB Storage Read Protect / Write Protect
                       //USB Storage CBI Transport
                       //MMC-5 Command set extensions (For CD/DVD)
            
@@ -98,6 +97,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,SysUtils;
 const
  {Storage specific constants}
  STORAGE_NAME_PREFIX = 'Storage';  {Name prefix for Storage Devices}
+ 
+ STORAGE_STATUS_TIMER_INTERVAL = 1000;
  
  {Storage Device Types}
  STORAGE_TYPE_NONE      = 0;
@@ -144,11 +145,27 @@ const
  STORAGE_FLAG_READ_ONLY  = $00000010;
  STORAGE_FLAG_WRITE_ONLY = $00000020;
  STORAGE_FLAG_ERASEABLE  = $00000040;
+ STORAGE_FLAG_LOCKABLE   = $00000080;
+ STORAGE_FLAG_LOCKED     = $00000100;
+ STORAGE_FLAG_EJECTABLE  = $00000200;
+ STORAGE_FLAG_CHANGABLE  = $00000400;
  
  {Storage Device Control Codes}
- STORAGE_CONTROL_TEST_READY = 1; {Test Unit Ready}
- STORAGE_CONTROL_RESET      = 2; {Reset Device}
- //To Do //Stats/Info/Reset/Disable/Eject etc
+ STORAGE_CONTROL_TEST_READY       = 1;  {Test Unit Ready}
+ STORAGE_CONTROL_RESET            = 2;  {Reset Device}
+ STORAGE_CONTROL_TEST_MEDIA       = 3;  {Test No Media}
+ STORAGE_CONTROL_LOCK             = 4;  {Lock Media}
+ STORAGE_CONTROL_UNLOCK           = 5;  {Unlock Media}
+ STORAGE_CONTROL_EJECT            = 6;  {Eject Media}
+ STORAGE_CONTROL_TEST_LOCKED      = 7;  {Test Media Locked}
+ STORAGE_CONTROL_TEST_CHANGED     = 8;  {Test Media Changed}
+ STORAGE_CONTROL_GET_VENDORID     = 9;  {Get Vendor ID}
+ STORAGE_CONTROL_GET_PRODUCTID    = 10; {Get Product ID} 
+ STORAGE_CONTROL_GET_SERIAL       = 11; {Get Serial No}
+ STORAGE_CONTROL_GET_REVISION     = 12; {Get Revision No}
+ STORAGE_CONTROL_GET_PRODUCT      = 13; {Get Product Name}
+ STORAGE_CONTROL_GET_MANUFACTURER = 14; {Get Manufacturer Name}
+ //To Do //Stats/Info/Disable etc
 
  {Storage logging}
  STORAGE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Storage debugging messages}
@@ -203,7 +220,7 @@ const
  USB_STORAGE_STATUS_RETRIES          = 2;
  USB_STORAGE_INQUIRY_RETRIES         = 5;
  USB_STORAGE_READ_CAPACITY_RETRIES   = 3;
- USB_STORAGE_TEST_UNIT_READY_RETRIES = 10;
+ USB_STORAGE_TEST_UNIT_READY_RETRIES = 5; //10; TestingRPi
  
  {Peripheral Device Types}
  {These are a subset of the SCSI Peripheral Device Types}
@@ -250,6 +267,7 @@ type
   Vendor:PChar;                        {ATA Model, SCSI Vendor}
   Product:PChar;                       {ATA Serial No, SCSI Product}
   Revision:PChar;                      {Firmware Revision}
+  StatusTimer:TTimerHandle;            {Timer for status change detection}
   {Statistics Properties}
   ReadCount:LongWord;
   ReadErrors:LongWord;
@@ -368,6 +386,9 @@ function StorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:L
 
 function StorageDeviceSetState(Storage:PStorageDevice;State:LongWord):LongWord;
 
+function StorageDeviceStartStatus(Storage:PStorageDevice;Interval:LongWord):LongWord;
+function StorageDeviceStopStatus(Storage:PStorageDevice):LongWord;
+
 function StorageDeviceCreate:PStorageDevice;
 function StorageDeviceCreateEx(Size:LongWord):PStorageDevice;
 function StorageDeviceDestroy(Storage:PStorageDevice):LongWord;
@@ -409,6 +430,8 @@ procedure StorageLogInfo(Storage:PStorageDevice;const AText:String);
 procedure StorageLogError(Storage:PStorageDevice;const AText:String);
 procedure StorageLogDebug(Storage:PStorageDevice;const AText:String);
 
+procedure StorageStatusTimer(Storage:PStorageDevice);
+
 {==============================================================================}
 {USB Storage Helper Functions}
 function USBStorageCheckSubclass(Subclass:Byte):Boolean;
@@ -418,6 +441,12 @@ function USBStorageBlockSizeToBlockShift(BlockSize:LongWord):LongWord;
 
 function USBStoragePatchDevice(Device:PUSBDevice;var Subclass,Protocol:Byte):LongWord;
 function USBStorageFixupDevice(Device:PUSBDevice;var Vendor,Product:String):LongWord;
+
+function USBStorageDeviceLock(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
+function USBStorageDeviceUnlock(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
+
+function USBStorageDeviceLoad(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
+function USBStorageDeviceEject(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
 
 function USBStorageDeviceReset(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
 
@@ -637,6 +666,101 @@ end;
 
 {==============================================================================}
 
+function StorageDeviceStartStatus(Storage:PStorageDevice;Interval:LongWord):LongWord;
+{Start status monitoring on the specified storage for insert/eject notifications}
+{Storage: The storage to start status monitoring for}
+{Interval: The status monitoring interval in milliseconds}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Storage}
+ if Storage = nil then Exit;
+ if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Timer}
+ if Storage.StatusTimer <> INVALID_HANDLE_VALUE then
+  begin
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+  end
+ else
+  begin
+   {Acquire the Lock}
+   if MutexLock(Storage.Lock) = ERROR_SUCCESS then
+    begin
+     try 
+      {Check Interval}
+      if Interval < 1 then Interval:=STORAGE_STATUS_TIMER_INTERVAL;
+       
+      {Create Timer}
+      Storage.StatusTimer:=TimerCreateEx(Interval,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(StorageStatusTimer),Storage); {Rescheduled by Timer Event}
+      if Storage.StatusTimer = INVALID_HANDLE_VALUE then
+       begin
+        Result:=ERROR_OPERATION_FAILED;
+        Exit;
+       end;
+      
+      {Return Result}
+      Result:=ERROR_SUCCESS;
+     finally
+      {Release the Lock}
+      MutexUnlock(Storage.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;
+  end;  
+end;
+
+{==============================================================================}
+
+function StorageDeviceStopStatus(Storage:PStorageDevice):LongWord;
+{Stop status monitoring on the specified storage for insert/eject notifications}
+{Storage: The storage to stop status monitoring for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Storage}
+ if Storage = nil then Exit;
+ if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Timer}
+ if Storage.StatusTimer = INVALID_HANDLE_VALUE then
+  begin
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+  end
+ else
+  begin
+   {Acquire the Lock}
+   if MutexLock(Storage.Lock) = ERROR_SUCCESS then
+    begin
+     try 
+      {Destroy Timer}
+      Result:=TimerDestroy(Storage.StatusTimer);
+      if Result <> ERROR_SUCCESS then Exit;
+      
+      Storage.StatusTimer:=INVALID_HANDLE_VALUE;
+     finally
+      {Release the Lock}
+      MutexUnlock(Storage.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;
+  end;  
+end;
+
+{==============================================================================}
+
 function StorageDeviceCreate:PStorageDevice;
 {Create a new Storage entry}
 {Return: Pointer to new Storage entry or nil if storage could not be created}
@@ -679,9 +803,10 @@ begin
  Result.Vendor:=nil;
  Result.Product:=nil;
  Result.Revision:=nil;
+ Result.StatusTimer:=INVALID_HANDLE_VALUE;
  
  {Create Lock}
- Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);  //Mutex Recursion //TestingRPi2
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if STORAGE_LOG_ENABLED then StorageLogError(nil,'Failed to create lock for storage device');
@@ -718,6 +843,12 @@ begin
  if Storage.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Storage.Lock);
+  end;
+ 
+ {Destroy Timer}
+ if Storage.StatusTimer <> INVALID_HANDLE_VALUE then
+  begin
+   TimerDestroy(Storage.StatusTimer);
   end;
  
  {Update Storage}
@@ -992,7 +1123,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF STORAGE_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceRead (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
+ if USB_LOG_ENABLED then USBLogDebug(nil,'USBStorageDeviceRead (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
  {$ENDIF}
  
  {Check Storage}
@@ -1095,7 +1226,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF STORAGE_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceWrite (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
+ if USB_LOG_ENABLED then USBLogDebug(nil,'USBStorageDeviceWrite (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
  {$ENDIF}
  
  {Check Storage}
@@ -1195,7 +1326,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF STORAGE_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceControl (Request=' + IntToStr(Request) + ' Argument1=' + IntToStr(Argument1) + ' Argument2=' + IntToStr(Argument2) + ')');
+ if USB_LOG_ENABLED then USBLogDebug(nil,'USBStorageDeviceControl (Request=' + IntToStr(Request) + ' Argument1=' + IntToStr(Argument1) + ' Argument2=' + IntToStr(Argument2) + ')');
  {$ENDIF}
  
  {Check Storage}
@@ -1215,81 +1346,225 @@ begin
      USB_SUBCLASS_MASS_STORAGE_UFI,USB_SUBCLASS_MASS_STORAGE_SFF8070I,USB_SUBCLASS_MASS_STORAGE_SCSI:begin
        {Check Request}
        case Request of
-        STORAGE_CONTROL_TEST_READY:begin
+        STORAGE_CONTROL_TEST_READY,STORAGE_CONTROL_TEST_MEDIA:begin
           {Check Flags}
           if (Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) = 0 then
            begin
             {Ready}
             {Test Unit Ready}
             Status:=USBStorageDeviceTestUnitReady(Device,PUSBStorageDevice(Storage),Storage.Device.DeviceFlags);
-            if Status <> USB_STATUS_SUCCESS then
-             begin
-              //To Do
-              
-              {Return Result}
-              Result:=ERROR_OPERATION_FAILED;
-              Exit;
-             end; 
              
-            {Check Flags}
-            if (Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) <> 0 then
+            {Check Status and Flags}
+            if (Status <> USB_STATUS_SUCCESS) or ((Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) <> 0) then
              begin
               {Not Ready}
               Storage.BlockSize:=0;
               Storage.BlockShift:=0;
               Storage.BlockCount:=0;
+              //To Do //Vendor etc
               
               {Set State to Ejected}
-              //To Do //Change State
+              StorageDeviceSetState(Storage,STORAGE_STATE_EJECTED);
+              
+              Result:=ERROR_NOT_READY;
+              Exit;
              end;
+           
+            {Return Result}
+            Result:=ERROR_SUCCESS; 
            end
           else
            begin
             {Not Ready}
             {Test Unit Ready}
             Status:=USBStorageDeviceTestUnitReady(Device,PUSBStorageDevice(Storage),Storage.Device.DeviceFlags);
-            if Status <> USB_STATUS_SUCCESS then
-             begin
-              {Return Result}
-              Result:=ERROR_OPERATION_FAILED;
-              Exit;
-             end; 
             
-            {Check Flags}
-            if (Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) = 0 then
+            {Check Status and Flags}
+            if (Status = USB_STATUS_SUCCESS) and ((Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) = 0) then
              begin
               {Ready}
-              {Read Capacity}
-              Status:=USBStorageDeviceReadCapacity(Device,PUSBStorageDevice(Storage),Storage.BlockSize,Storage.BlockShift,Storage.BlockCount);
-              if Status <> USB_STATUS_SUCCESS then
+              {Get Info}
+              Status:=USBStorageDeviceGetInfo(Device,PUSBStorageDevice(Storage));
+              if Status = USB_STATUS_SUCCESS then
                begin
-                {Return Result}
-                Result:=ERROR_OPERATION_FAILED;
-                Exit;
+               
+                {Set State to Inserted}
+                StorageDeviceSetState(Storage,STORAGE_STATE_INSERTED);
                end;
                
-              {Set State to Inserted}
-              if StorageDeviceSetState(Storage,STORAGE_STATE_INSERTED) <> ERROR_SUCCESS then
-               begin
-                {Return Result}
-                Result:=ERROR_OPERATION_FAILED;
-                Exit;
-               end;
+              Result:=ERROR_SUCCESS;
+              Exit;
              end;
+
+            {Return Result}
+            Result:=ERROR_NOT_READY; 
            end;
-           
-          {Return Result}
-          Result:=ERROR_SUCCESS; 
          end;
         STORAGE_CONTROL_RESET:begin
           {Reset Device}
           Status:=USBStorageDeviceReset(Device,PUSBStorageDevice(Storage));
           if Status <> USB_STATUS_SUCCESS then
            begin
-           {Return Result}
-           Result:=ERROR_OPERATION_FAILED;
-           Exit;
-          end; 
+            {Return Result}
+            Result:=ERROR_OPERATION_FAILED;
+            Exit;
+           end; 
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_LOCK:begin
+          {Check Flags}
+          if (Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKABLE) <> 0 then
+           begin
+            if (Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKED) = 0 then
+             begin
+              {Lock Media}
+              Status:=USBStorageDeviceLock(Device,PUSBStorageDevice(Storage));
+              if Status <> USB_STATUS_SUCCESS then
+               begin
+                {Return Result}
+                Result:=ERROR_OPERATION_FAILED;
+                Exit;
+               end; 
+              
+              {Set Flag}
+              Storage.Device.DeviceFlags:=Storage.Device.DeviceFlags or STORAGE_FLAG_LOCKED;
+             end;
+           end; 
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_UNLOCK:begin
+          {Check Flags}
+          if (Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKABLE) <> 0 then
+           begin
+            if (Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKED) <> 0 then
+             begin
+              {Unlock Media}
+              Status:=USBStorageDeviceUnlock(Device,PUSBStorageDevice(Storage));
+              if Status <> USB_STATUS_SUCCESS then
+               begin
+                {Return Result}
+                Result:=ERROR_OPERATION_FAILED;
+                Exit;
+               end;  
+
+              {Clear Flag}
+              Storage.Device.DeviceFlags:=Storage.Device.DeviceFlags and not(STORAGE_FLAG_LOCKED);
+             end;
+           end; 
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_EJECT:begin
+          {Check Flags}
+          if (Storage.Device.DeviceFlags and STORAGE_FLAG_EJECTABLE) <> 0 then
+           begin
+            {Eject Media}
+            Status:=USBStorageDeviceEject(Device,PUSBStorageDevice(Storage));
+            if Status <> USB_STATUS_SUCCESS then
+             begin
+              {Return Result}
+              Result:=ERROR_OPERATION_FAILED;
+              Exit;
+             end;  
+           end; 
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_TEST_LOCKED:begin
+          {Test Media Locked}
+          if (Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKED) = 0 then
+           begin
+            {Return Result}
+            Result:=ERROR_NOT_LOCKED; 
+            Exit;
+           end;
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_TEST_CHANGED:begin
+          {Not Supported}
+          Result:=ERROR_NOT_SUPPORTED; 
+         end;
+        STORAGE_CONTROL_GET_VENDORID:begin
+          {Get Vendor ID}
+          if Device.Descriptor = nil then
+           begin
+            {Return Result}
+            Result:=ERROR_OPERATION_FAILED; 
+            Exit;
+           end;
+           
+          Argument2:=Device.Descriptor.idVendor;
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_GET_PRODUCTID:begin
+          {Get Product ID}
+          if Device.Descriptor = nil then
+           begin
+            {Return Result}
+            Result:=ERROR_OPERATION_FAILED; 
+            Exit;
+           end;
+
+          Argument2:=Device.Descriptor.idProduct;
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_GET_SERIAL:begin
+          {Get Serial No}
+          Argument2:=LongWord(@Device.SerialNumber);
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_GET_REVISION:begin
+          {Get Revision No}
+          if Storage.Revision = nil then
+           begin
+            {Return Result}
+            Result:=ERROR_OPERATION_FAILED; 
+            Exit;
+           end;
+           
+          Argument2:=LongWord(Storage.Revision);
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_GET_PRODUCT:begin
+          {Get Product Name}
+          if Storage.Product = nil then
+           begin
+            {Return Result}
+            Result:=ERROR_OPERATION_FAILED; 
+            Exit;
+           end;
+           
+          Argument2:=LongWord(Storage.Product);
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS; 
+         end;
+        STORAGE_CONTROL_GET_MANUFACTURER:begin
+          {Get Manufacturer Name}
+          if Storage.Vendor = nil then
+           begin
+            {Return Result}
+            Result:=ERROR_OPERATION_FAILED; 
+            Exit;
+           end;
+
+          Argument2:=LongWord(Storage.Vendor);
           
           {Return Result}
           Result:=ERROR_SUCCESS; 
@@ -1650,12 +1925,21 @@ begin
  {Update Interface}
  Interrface.DriverData:=Storage;
  
- {Check Removable}
- if ((Storage.Storage.Device.DeviceFlags and STORAGE_FLAG_REMOVABLE) = 0) or ((Storage.Storage.Device.DeviceFlags and STORAGE_FLAG_NOT_READY) = 0) then
+ {Check Flags}
+ if (Storage.Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) = 0 then
   begin
    {Set State to Inserted}
-   if StorageDeviceSetState(@Storage.Storage,STORAGE_STATE_INSERTED) <> ERROR_SUCCESS then Exit;
+   if StorageDeviceSetState(@Storage.Storage,STORAGE_STATE_INSERTED) <> ERROR_SUCCESS then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to set state for new storage device');
+    end;
   end; 
+  
+ {Start Status Checking}
+ if StorageDeviceStartStatus(@Storage.Storage,STORAGE_STATUS_TIMER_INTERVAL) <> ERROR_SUCCESS then
+  begin
+   if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed start status for new storage device');
+  end;
   
  {Check Max LUN}
  if Storage.MaxLUN > 0 then
@@ -1674,21 +1958,19 @@ begin
      Storage:=PUSBStorageDevice(StorageDeviceCreateEx(SizeOf(TUSBStorageDevice)));
      if Storage = nil then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to create new storage device');
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to create new storage device (LUN=' + IntToStr(LUN) + ')');
        
-       {Return Result}
-       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-       Exit;
+       Break; {Do not fail the primary LUN}
       end;
      
      {Update Storage} 
      {Device}
-     Storage.Storage.Device.DeviceBus:=Current.Storage.Device.DeviceBus;
-     Storage.Storage.Device.DeviceType:=Current.Storage.Device.DeviceType;
-     Storage.Storage.Device.DeviceFlags:=Current.Storage.Device.DeviceFlags;
+     Storage.Storage.Device.DeviceBus:=DEVICE_BUS_USB;
+     Storage.Storage.Device.DeviceType:=STORAGE_TYPE_HDD;
+     Storage.Storage.Device.DeviceFlags:=STORAGE_FLAG_NONE;
      Storage.Storage.Device.DeviceData:=Device;
      {Storage}
-     Storage.Storage.StorageState:=Current.Storage.StorageState;
+     Storage.Storage.StorageState:=STORAGE_STATE_EJECTED;
      Storage.Storage.DeviceRead:=USBStorageDeviceRead;
      Storage.Storage.DeviceWrite:=USBStorageDeviceWrite;
      Storage.Storage.DeviceErase:=nil;
@@ -1717,21 +1999,19 @@ begin
      Storage.ReadWait:=SemaphoreCreate(0);
      if Storage.ReadWait = INVALID_HANDLE_VALUE then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device read semaphore');
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device read semaphore (LUN=' + IntToStr(LUN) + ')');
    
        {Destroy Storage}
        StorageDeviceDestroy(@Storage.Storage);
      
-       {Return Result}
-       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-       Exit;
+       Break; {Do not fail the primary LUN}
       end;
      
      {Create Write Semaphore}
      Storage.WriteWait:=SemaphoreCreate(0);
      if Storage.WriteWait = INVALID_HANDLE_VALUE then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device write semaphore');
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device write semaphore (LUN=' + IntToStr(LUN) + ')');
    
        {Destroy Read Semaphore}
        SemaphoreDestroy(Storage.ReadWait);
@@ -1739,9 +2019,7 @@ begin
        {Destroy Storage}
        StorageDeviceDestroy(@Storage.Storage);
      
-       {Return Result}
-       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-       Exit;
+       Break; {Do not fail the primary LUN}
       end;
      
      {Create Interrupt Semaphore} 
@@ -1754,7 +2032,7 @@ begin
      Storage.ReadRequest:=USBRequestAllocate(Device,Storage.ReadEndpoint,USBStorageReadComplete,0,Storage);
      if Storage.ReadRequest = nil then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device read request');
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device read request (LUN=' + IntToStr(LUN) + ')');
        
        {Destroy Read Semaphore}
        SemaphoreDestroy(Storage.ReadWait);
@@ -1765,16 +2043,14 @@ begin
        {Destroy Storage}
        StorageDeviceDestroy(@Storage.Storage);
        
-       {Return Result}
-       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-       Exit;
+       Break; {Do not fail the primary LUN}
       end;
      
      {Allocate Write Request}
      Storage.WriteRequest:=USBRequestAllocate(Device,Storage.WriteEndpoint,USBStorageWriteComplete,0,Storage);
      if Storage.WriteRequest = nil then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device write request');
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to allocate storage device write request (LUN=' + IntToStr(LUN) + ')');
         
        {Release Read Request}
        USBRequestRelease(Storage.ReadRequest);
@@ -1788,9 +2064,7 @@ begin
        {Destroy Storage}
        StorageDeviceDestroy(@Storage.Storage);
         
-       {Return Result}
-       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-       Exit;
+       Break; {Do not fail the primary LUN}
       end;
      
      {Allocate Interrupt Request}
@@ -1804,7 +2078,7 @@ begin
      Status:=USBStorageDeviceGetInfo(Device,Storage);
      if Status <> USB_STATUS_SUCCESS then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to get storage device info');
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to get storage device info (LUN=' + IntToStr(LUN) + ')');
        
        {Release Read Request}
        USBRequestRelease(Storage.ReadRequest);
@@ -1821,15 +2095,13 @@ begin
        {Destroy Storage}
        StorageDeviceDestroy(@Storage.Storage);
        
-       {Return Result}
-       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-       Exit;
+       Break; {Do not fail the primary LUN}
       end;
     
      {Register Storage} 
      if StorageDeviceRegister(@Storage.Storage) <> ERROR_SUCCESS then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to register new storage device');
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to register new storage device (LUN=' + IntToStr(LUN) + ')');
        
        {Release Read Request}
        USBRequestRelease(Storage.ReadRequest);
@@ -1846,21 +2118,28 @@ begin
        {Destroy Storage}
        StorageDeviceDestroy(@Storage.Storage);
        
-       {Return Result}
-       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-       Exit;
+       Break; {Do not fail the primary LUN}
       end;
  
      {Update Interface}
-     {Interrface.DriverData:=Storage;} {Only on primary device} //To Do //Critical //This will overwrite previous storage device, how do we deal with this ? //Perhaps Storage.Primary:=Current and only set this for the parent ? //Yes
+     {Interrface.DriverData:=Storage;} {Only on primary device}
  
-     {Check Removable}
-     if ((Storage.Storage.Device.DeviceFlags and STORAGE_FLAG_REMOVABLE) = 0) or ((Storage.Storage.Device.DeviceFlags and STORAGE_FLAG_NOT_READY) = 0) then
+     {Check Flags}
+     if (Storage.Storage.Device.DeviceFlags and (STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA)) = 0 then
       begin
        {Set State to Inserted}
-       if StorageDeviceSetState(@Storage.Storage,STORAGE_STATE_INSERTED) <> ERROR_SUCCESS then Exit;
-      end;
+       if StorageDeviceSetState(@Storage.Storage,STORAGE_STATE_INSERTED) <> ERROR_SUCCESS then
+        begin
+         if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed to set state for new storage device (LUN=' + IntToStr(LUN) + ')');
+        end;
+      end; 
       
+     {Start Status Checking}
+     if StorageDeviceStartStatus(@Storage.Storage,STORAGE_STATUS_TIMER_INTERVAL) <> ERROR_SUCCESS then
+      begin
+       if USB_LOG_ENABLED then USBLogError(Device,'Storage: Failed start status for new storage device (LUN=' + IntToStr(LUN) + ')');
+      end;
+     
      {Increment LUN}
      Inc(LUN);
     end;
@@ -1902,7 +2181,7 @@ begin
  if Storage = nil then Exit;
  if Storage.Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
- //To Do //Check MaxLUN
+ //To Do //Check MaxLUN //Find Primary etc
  
  {Set State to Ejecting}
  Result:=USB_STATUS_OPERATION_FAILED;
@@ -2277,6 +2556,24 @@ begin
 end;
 
 {==============================================================================}
+
+procedure StorageStatusTimer(Storage:PStorageDevice);
+var
+ Argument:LongWord;
+begin
+ {}
+ {Check Storage}
+ if Storage = nil then Exit;
+ if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Status}
+ StorageDeviceControl(Storage,STORAGE_CONTROL_TEST_READY,Argument,Argument);
+
+ {Enable Timer}
+ TimerEnable(Storage.StatusTimer);
+end;
+
+{==============================================================================}
 {==============================================================================}
 {USB Storage Helper Functions}
 function USBStorageCheckSubclass(Subclass:Byte):Boolean;
@@ -2392,6 +2689,166 @@ begin
  {Return Result}
  Result:=USB_STATUS_DEVICE_UNSUPPORTED;
 end; 
+
+{==============================================================================}
+
+function USBStorageDeviceLock(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
+{Issue a Prevent Media Removal request to a storage device}
+var
+ Status:LongWord;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+
+ {Check Storage}
+ if Storage = nil then Exit;
+ 
+ {$IFDEF STORAGE_DEBUG}
+ if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceLock'); 
+ {$ENDIF}
+ 
+ FillChar(Storage.CommandBlock.Command[0],SizeOf(Storage.CommandBlock.Command),0);
+ Storage.CommandBlock.Command[0]:=SCSI_COMMAND_MED_REMOVL;           {Command}
+ Storage.CommandBlock.Command[1]:=(Storage.Storage.TargetLUN shl 5); {LUN}
+ Storage.CommandBlock.Command[4]:=1;                                 {Prevent Media Removal}
+ Storage.CommandBlock.CommandLength:=12;
+ Storage.CommandBlock.DataLength:=0;
+ Storage.CommandBlock.Data:=nil;
+ Storage.CommandBlock.Direction:=USB_DIRECTION_OUT;
+ Status:=USBStorageDeviceTransport(Device,Storage,@Storage.CommandBlock);
+ if Status = USB_STATUS_SUCCESS then
+  begin
+   {Return Result}
+   Result:=USB_STATUS_SUCCESS;
+   Exit;
+  end;   
+   
+ {Return Result}
+ Result:=USB_STATUS_HARDWARE_ERROR;
+end;
+
+{==============================================================================}
+
+function USBStorageDeviceUnlock(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
+{Issue a Allow Media Removal request to a storage device}
+var
+ Status:LongWord;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+
+ {Check Storage}
+ if Storage = nil then Exit;
+ 
+ {$IFDEF STORAGE_DEBUG}
+ if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceUnlock'); 
+ {$ENDIF}
+ 
+ FillChar(Storage.CommandBlock.Command[0],SizeOf(Storage.CommandBlock.Command),0);
+ Storage.CommandBlock.Command[0]:=SCSI_COMMAND_MED_REMOVL;           {Command}
+ Storage.CommandBlock.Command[1]:=(Storage.Storage.TargetLUN shl 5); {LUN}
+ Storage.CommandBlock.Command[4]:=0;                                 {Allow Media Removal}
+ Storage.CommandBlock.CommandLength:=12;
+ Storage.CommandBlock.DataLength:=0;
+ Storage.CommandBlock.Data:=nil;
+ Storage.CommandBlock.Direction:=USB_DIRECTION_OUT;
+ Status:=USBStorageDeviceTransport(Device,Storage,@Storage.CommandBlock);
+ if Status = USB_STATUS_SUCCESS then
+  begin
+   {Return Result}
+   Result:=USB_STATUS_SUCCESS;
+   Exit;
+  end;   
+   
+ {Return Result}
+ Result:=USB_STATUS_HARDWARE_ERROR;
+end;
+
+{==============================================================================}
+
+function USBStorageDeviceLoad(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
+{Issue a Start Stop request to a storage device}
+var
+ Status:LongWord;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+
+ {Check Storage}
+ if Storage = nil then Exit;
+ 
+ {$IFDEF STORAGE_DEBUG}
+ if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceLoad'); 
+ {$ENDIF}
+ 
+ FillChar(Storage.CommandBlock.Command[0],SizeOf(Storage.CommandBlock.Command),0);
+ Storage.CommandBlock.Command[0]:=SCSI_COMMAND_START_STP;            {Command}
+ Storage.CommandBlock.Command[1]:=(Storage.Storage.TargetLUN shl 5); {LUN}
+ Storage.CommandBlock.Command[4]:=3;                                 {LoEj = 1 / Start = 1 (Load)}
+ Storage.CommandBlock.CommandLength:=12;
+ Storage.CommandBlock.DataLength:=0;
+ Storage.CommandBlock.Data:=nil;
+ Storage.CommandBlock.Direction:=USB_DIRECTION_OUT;
+ Status:=USBStorageDeviceTransport(Device,Storage,@Storage.CommandBlock);
+ if Status = USB_STATUS_SUCCESS then
+  begin
+   {Return Result}
+   Result:=USB_STATUS_SUCCESS;
+   Exit;
+  end;   
+   
+ {Return Result}
+ Result:=USB_STATUS_HARDWARE_ERROR;
+end;
+
+{==============================================================================}
+
+function USBStorageDeviceEject(Device:PUSBDevice;Storage:PUSBStorageDevice):LongWord;
+{Issue a Start Stop request to a storage device}
+var
+ Status:LongWord;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+
+ {Check Storage}
+ if Storage = nil then Exit;
+ 
+ {$IFDEF STORAGE_DEBUG}
+ if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceEject'); 
+ {$ENDIF}
+ 
+ FillChar(Storage.CommandBlock.Command[0],SizeOf(Storage.CommandBlock.Command),0);
+ Storage.CommandBlock.Command[0]:=SCSI_COMMAND_START_STP;            {Command}
+ Storage.CommandBlock.Command[1]:=(Storage.Storage.TargetLUN shl 5); {LUN}
+ Storage.CommandBlock.Command[4]:=2;                                 {LoEj = 1 / Start = 0 (Eject)}
+ Storage.CommandBlock.CommandLength:=12;
+ Storage.CommandBlock.DataLength:=0;
+ Storage.CommandBlock.Data:=nil;
+ Storage.CommandBlock.Direction:=USB_DIRECTION_OUT;
+ Status:=USBStorageDeviceTransport(Device,Storage,@Storage.CommandBlock);
+ if Status = USB_STATUS_SUCCESS then
+  begin
+   {Return Result}
+   Result:=USB_STATUS_SUCCESS;
+   Exit;
+  end;   
+   
+ {Return Result}
+ Result:=USB_STATUS_HARDWARE_ERROR;
+end;
 
 {==============================================================================}
 
@@ -2821,6 +3278,21 @@ begin
      
      {Device Type}
      DeviceType:=SCSIDeviceTypeToStorageType(Inquiry.DeviceType,((DeviceFlags and STORAGE_FLAG_REMOVABLE) <> 0),(Storage.Subclass = USB_SUBCLASS_MASS_STORAGE_UFI));
+     
+     {Device Flags}
+     case DeviceType of
+      STORAGE_TYPE_HDD,STORAGE_TYPE_REMOVABLE:begin
+        {Nothing}
+       end;
+      STORAGE_TYPE_CDROM,STORAGE_TYPE_OPTICAL,STORAGE_TYPE_TAPE:begin
+        {Lockable / Ejectable}
+        DeviceFlags:=DeviceFlags or STORAGE_FLAG_LOCKABLE or STORAGE_FLAG_EJECTABLE;
+       end;
+      STORAGE_TYPE_FDD:begin
+        {Lockable}
+        DeviceFlags:=DeviceFlags or STORAGE_FLAG_LOCKABLE;
+       end;
+     end;
      
      {Vendor}
      Vendor:=AllocMem(SizeOf(Inquiry.Vendor) + 1);
@@ -3383,10 +3855,6 @@ begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
  
- {$IFDEF STORAGE_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceTransport'); 
- {$ENDIF}
- 
  {Check Device}
  if Device = nil then Exit;
 
@@ -3395,6 +3863,10 @@ begin
  
  {Check Command}
  if Command = nil then Exit;
+ 
+ {$IFDEF STORAGE_DEBUG}
+ if USB_LOG_ENABLED then USBLogDebug(Device,'USBStorageDeviceTransport'); 
+ {$ENDIF}
  
  {Check Protocol}
  case Storage.Protocol of
@@ -3665,7 +4137,9 @@ begin
      end
     else if (CommandStatus.bCSWStatus = USB_STORAGE_CSW_STATUS_FAILED) then
      begin
+      {$IFDEF STORAGE_DEBUG}
       if USB_LOG_ENABLED then USBLogError(Device,'USBStorageDeviceTransport - Status Phase status failure (bCSWStatus=' + IntToHex(CommandStatus.bCSWStatus,2) + ' dCSWDataResidue=' + IntToStr(CommandStatus.dCSWDataResidue) + ')');
+      {$ENDIF}
       
       {Return Result}
       Result:=USB_STATUS_HARDWARE_ERROR;

@@ -12,7 +12,8 @@ Boards
 ======
 
  Raspberry Pi 2 - Model B
-
+ Raspberry Pi 3 - Model B
+ 
 Licence
 =======
 
@@ -169,6 +170,9 @@ const
  {USB (Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller)(See Section 15)}
  BCM2836_USB_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $980000;
 
+ {V3D}
+ BCM2836_V3D_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $C00000;
+ 
  {DMA controller (Channel 15 (See Section 4))}
  BCM2836_DMA15_REGS_BASE        = BCM2836_PERIPHERALS_BASE + $E05000;
  
@@ -640,6 +644,9 @@ const
  BCM2836_MBOX_TAG_TEST_PALETTE		= $0004400b;
  BCM2836_MBOX_TAG_SET_PALETTE		= $0004800b;
 
+ BCM2836_MBOX_TAG_GET_TOUCHBUF      = $0004000f;
+ BCM2836_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
+ 
  BCM2836_MBOX_TAG_GET_LAYER         = $0004000c;
  BCM2836_MBOX_TAG_TST_LAYER         = $0004400c;
  BCM2836_MBOX_TAG_SET_LAYER         = $0004800c;
@@ -651,8 +658,12 @@ const
  BCM2836_MBOX_TAG_TST_VSYNC         = $0004400e;
  BCM2836_MBOX_TAG_SET_VSYNC         = $0004800e;
  
+ BCM2836_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
+ 
  BCM2836_MBOX_TAG_SET_CURSOR_INFO   = $00008011;
  BCM2836_MBOX_TAG_SET_CURSOR_STATE  = $00008010;
+ {VCHIQ}
+ BCM2836_MBOX_TAG_VCHIQ_INIT        = $00048010;
  {Config}
  BCM2836_MBOX_TAG_GET_COMMAND_LINE  = $00050001;
  {Shared Resource Management} 
@@ -663,6 +674,7 @@ const
  {BCM2836 mailbox tag Get Board Revision values (See: http://elinux.org/RPi_HardwareHistory)}
  BCM2836_BOARD_REV_2B_1	    = $00A01041;
  BCM2836_BOARD_REV_2B_2	    = $00A21041;
+ BCM2836_BOARD_REV_3B_1     = $00A02082;
  
  BCM2836_BOARD_REV_MASK     = $00FFFFFF; {Mask off the warranty bit}
  
@@ -678,12 +690,13 @@ const
  BCM2836_BOARD_REVISION_MODEL_ALPHA          = (5 shl 4);   {Unknown}
  BCM2836_BOARD_REVISION_MODEL_COMPUTE        = (6 shl 4);   {Compute Module (Cannot occur on BCM2836)}
  BCM2836_BOARD_REVISION_MODEL_UNKNOWN        = (7 shl 4);   {Unknown}
- BCM2836_BOARD_REVISION_MODEL_UNKNOWN2       = (8 shl 4);   {Unknown}
+ BCM2836_BOARD_REVISION_MODEL_3B             = (8 shl 4);   {Model 3B}
  BCM2836_BOARD_REVISION_MODEL_ZERO           = (9 shl 4);   {Model Zero (Cannot occur on BCM2836)}
                                              
  BCM2836_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2836_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835 (Cannot occur on BCM2836)}
  BCM2836_BOARD_REVISION_PROCESSOR_BCM2836    = (1 shl 12);  {BCM2836}
+ BCM2836_BOARD_REVISION_PROCESSOR_BCM2837    = (2 shl 12);  {BCM2837}
  
  BCM2836_BOARD_REVISION_MANUFACTURER_MASK    = ($F shl 16); {Manufacturer}
  BCM2836_BOARD_REVISION_MANUFACTURER_SONY    = (0 shl 16);  {Sony}
@@ -712,6 +725,8 @@ const
  BCM2836_MBOX_POWER_DEVID_SPI		= 7;
  BCM2836_MBOX_POWER_DEVID_CCP2TX	= 8;
 
+ BCM2836_MBOX_POWER_DEVID_UNKNOWN   = $FFFFFFFF;
+ 
  {BCM2836 mailbox tag Power State requests}
  BCM2836_MBOX_SET_POWER_STATE_REQ_OFF	= (0 shl 0);
  BCM2836_MBOX_SET_POWER_STATE_REQ_ON	= (1 shl 0);
@@ -735,6 +750,8 @@ const
  BCM2836_MBOX_CLOCK_ID_PIXEL = 9;
  BCM2836_MBOX_CLOCK_ID_PWM	= 10;
 
+ BCM2836_MBOX_CLOCK_ID_UNKNOWN   = $FFFFFFFF;
+ 
  {BCM2836 mailbox tag Clock State requests}
  BCM2836_MBOX_SET_CLOCK_STATE_REQ_OFF	  = (0 shl 0);
  BCM2836_MBOX_SET_CLOCK_STATE_REQ_ON	  = (1 shl 0);
@@ -810,6 +827,9 @@ const
  {BCM2836 GPIO constants}
  BCM2836_GPIO_PIN_COUNT = 54;
 
+ {BCM2837 Virtual GPIO constants}
+ BCM2837_VIRTUAL_GPIO_PIN_COUNT = 2;  {Raspberry Pi 3B only}
+ 
  {Function Select Registers} //To Do  //these are not needed, see PBCM2836GPIORegisters
  BCM2836_GPFSEL0 = $00000000; {GPIO Function Select 0}
  BCM2836_GPFSEL1 = $00000004; {GPIO Function Select 1}
@@ -1992,7 +2012,6 @@ type
   0:(Request:TBCM2836MailboxTagNoRequest);
   1:(Response:TBCM2836MailboxTagNoResponse);
  end;
- 
 
  {Blank Screen}
  TBCM2836MailboxTagBlankScreenRequest = record
@@ -2322,6 +2341,19 @@ type
   1:(Response:TBCM2836MailboxTagPaletteResponse);
  end;
  
+ {Get Virtual GPIO Buffer}
+ TBCM2836MailboxTagGetVirtualGPIOResponse = record
+  Address:LongWord; 
+ end;
+ 
+ PBCM2836MailboxTagGetVirtualGPIO = ^TBCM2836MailboxTagGetVirtualGPIO;
+ TBCM2836MailboxTagGetVirtualGPIO = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagNoRequest);
+  1:(Response:TBCM2836MailboxTagGetVirtualGPIOResponse);
+ end;
+ 
  {Set Cursor Info}
  TBCM2836MailboxTagSetCursorInfoRequest = record
   Width:LongWord;    {Pixels}
@@ -2456,6 +2488,12 @@ type
   FIQPending:array[0..BCM2836_CPU_COUNT - 1] of LongWord;          {Core0-3 FIQ Source $0070-007C}
   MailboxWrite:array[0..BCM2836_CPU_COUNT - 1] of TBCM2836ARMLocalMailboxWriteRegisters;          {Core0-3 Mailbox 0-3 write-set (WO) $0080-00BC}
   MailboxReadClear:array[0..BCM2836_CPU_COUNT - 1] of TBCM2836ARMLocalMailboxReadClearRegisters;  {Core0-3 Mailbox 0-3 read & write-high-to-clear $00C0-00FC}
+ end;
+ 
+ PBCM2837VirtualGPIOBuffer = ^TBCM2837VirtualGPIOBuffer;
+ TBCM2837VirtualGPIOBuffer = record
+  Address:LongWord;
+  EnableDisable:array[0..BCM2837_VIRTUAL_GPIO_PIN_COUNT - 1] of LongWord; {Two packed 16-bit counts of enabled and disabled / Allows host to detect a brief enable that was missed}
  end;
  
 {==============================================================================}

@@ -113,7 +113,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,Stora
  
 //Reader
  
-//Critical //mtREMOVABLE  //In all modules
+//Critical //mtREMOVABLE  //VirtualDisk remaining
 
 //AddRef
 
@@ -865,7 +865,7 @@ const
  FILESYS_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FileSystem messages}
 
 var 
- FILESYS_DEFAULT_LOG_LEVEL:LongWord = FILESYS_LOG_LEVEL_DEBUG; //FILESYS_LOG_LEVEL_INFO; {Minimum level for FileSystem messages.  Only messages with level greater than or equal to this will be printed}
+ FILESYS_DEFAULT_LOG_LEVEL:LongWord = FILESYS_LOG_LEVEL_INFO; {Minimum level for FileSystem messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {FileSystem logging}
@@ -1519,6 +1519,9 @@ type
    function MediaChanged(const AName:String):Boolean;
    function MediaLocked(const AName:String):Boolean;
 
+   function InsertDevice(const AName:String):Boolean;
+   function EjectDevice(const AName:String):Boolean;
+   
    function OpenDevice(const AName:String;AMode:Integer):Integer;
    procedure CloseDevice(AHandle:Integer);
    function ReadDevice(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
@@ -2288,6 +2291,7 @@ type
    function Ready(ADevice:TDiskDevice):Boolean; virtual;
    function Locked(ADevice:TDiskDevice):Boolean; virtual;
    function Lockable(ADevice:TDiskDevice):Boolean; virtual;
+   function Ejectable(ADevice:TDiskDevice):Boolean; virtual;
    function Readable(ADevice:TDiskDevice):Boolean; virtual;
    function Writeable(ADevice:TDiskDevice):Boolean; virtual;
    function Eraseable(ADevice:TDiskDevice):Boolean; virtual;
@@ -2362,6 +2366,7 @@ type
    FReady:Boolean;          {Media is Inserted in Drive}
    FLocked:Boolean;         {Media is Locked in Drive}
    FLockable:Boolean;       {Media is Lockable}
+   FEjectable:Boolean;      {Media is Ejectable}
    FReadable:Boolean;       {Media is Readable}
    FWriteable:Boolean;      {Media is Writeable}
    FEraseable:Boolean;      {Media is Eraseable}
@@ -2454,6 +2459,7 @@ type
    property Ready:Boolean read FReady;
    property Locked:Boolean read FLocked;
    property Lockable:Boolean read FLockable;
+   property Ejectable:Boolean read FEjectable;
    property Readable:Boolean read FReadable;
    property Writeable:Boolean read FWriteable;
    property Eraseable:Boolean read FEraseable;
@@ -2513,6 +2519,9 @@ type
    function MediaLocked:Boolean;
 
    {Device Methods}
+   function InsertDevice:Boolean; virtual;
+   function EjectDevice:Boolean; virtual;
+   
    function OpenDevice(AMode:Integer):Integer; virtual;
    procedure CloseDevice(AHandle:Integer); virtual;
    function ReadDevice(AHandle:Integer;var ABuffer;ACount:Integer):Integer; virtual;
@@ -4912,6 +4921,7 @@ type
    function Ready(ADevice:TDiskDevice):Boolean; override;
    function Locked(ADevice:TDiskDevice):Boolean; override;
    function Lockable(ADevice:TDiskDevice):Boolean; override;
+   function Ejectable(ADevice:TDiskDevice):Boolean; override;
    function Readable(ADevice:TDiskDevice):Boolean; override;
    function Writeable(ADevice:TDiskDevice):Boolean; override;
    function Removable(ADevice:TDiskDevice):Boolean; override;
@@ -4945,7 +4955,7 @@ type
 
    function Read(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;var ABuffer):Boolean; override;
    function Write(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;const ABuffer):Boolean; override;
-   //To do //Remember to include Erase method for MMC
+   function Erase(ADevice:TDiskDevice;ASector:LongWord;ACount:Word):Boolean; override;
 
    function Reset(ADevice:TDiskDevice):Boolean; override;
 
@@ -4976,9 +4986,10 @@ type
    function Ready(ADevice:TDiskDevice):Boolean; override;
    function Locked(ADevice:TDiskDevice):Boolean; override;
    function Lockable(ADevice:TDiskDevice):Boolean; override;
+   function Ejectable(ADevice:TDiskDevice):Boolean; override;
    function Readable(ADevice:TDiskDevice):Boolean; override;
    function Writeable(ADevice:TDiskDevice):Boolean; override;
-   //To do //Remember to include Eraseable method for MMC
+   function Eraseable(ADevice:TDiskDevice):Boolean; override;
    function Removable(ADevice:TDiskDevice):Boolean; override;
    function ChangeLine(ADevice:TDiskDevice):Boolean; override;
 
@@ -9021,11 +9032,11 @@ begin
   {Scan for Fixed Devices (Active or First Primary Partitions)}
   for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do {GetMaxDeviceNo(mtFIXED) includes mtREMOVABLE}
    begin
-    Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_READ);
+    Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_WRITE);
     if Device <> nil then
      begin
       case Device.MediaType of
-       mtFIXED,mtREMOVABLE:begin //To Do //Critical //mtREMOVABLE
+       mtFIXED,mtREMOVABLE:begin
          {Scan for Active Primary Partition}
          for PartitionCount:=1 to GetMaxPartitionNo(Device,False) do
           begin
@@ -9083,18 +9094,18 @@ begin
       end;
      
       {Unlock Device}
-      Device.ReaderUnlock;
+      Device.WriterUnlock;
      end;
    end;
      
   {Scan for Fixed Devices (Extended Partitions)}
-  for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do //To Do //Critical //mtREMOVABLE
+  for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do {GetMaxDeviceNo(mtFIXED) includes mtREMOVABLE}
    begin
-    Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_READ);
+    Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_WRITE);
     if Device <> nil then
      begin
       case Device.MediaType of
-       mtFIXED,mtREMOVABLE:begin //To Do //Critical //mtREMOVABLE
+       mtFIXED,mtREMOVABLE:begin
          {Scan for Extended Partitions}
          for PartitionCount:=1 to GetMaxPartitionNo(Device,False) do
           begin
@@ -9126,18 +9137,18 @@ begin
      
      
       {Unlock Device}
-      Device.ReaderUnlock;
+      Device.WriterUnlock;
      end;
    end;
      
   {Scan for Fixed Devices (Primary Partitions)}
-  for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do //To Do //Critical //mtREMOVABLE
+  for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do {GetMaxDeviceNo(mtFIXED) includes mtREMOVABLE}
    begin
-    Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_READ);
+    Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_WRITE);
     if Device <> nil then
      begin
       case Device.MediaType of
-       mtFIXED,mtREMOVABLE:begin //To Do //Critical //mtREMOVABLE
+       mtFIXED,mtREMOVABLE:begin
          {Scan for Primary Partitions}
          for PartitionCount:=1 to GetMaxPartitionNo(Device,False) do
           begin
@@ -9168,12 +9179,12 @@ begin
       end;
      
       {Unlock Device}
-      Device.ReaderUnlock;
+      Device.WriterUnlock;
      end;
    end;
   
   {Scan for Removable Devices}
-  for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtREMOVABLE) do
+  for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtREMOVABLE) do {GetMaxDeviceNo(mtREMOVABLE) includes mtFIXED}
    begin
     Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_WRITE);
     if Device <> nil then
@@ -9191,7 +9202,7 @@ begin
    end;
     
   {Scan for CDROM and DVD Devices}
-  for DeviceCount:=MIN_CDROM_DEVICE to GetMaxDeviceNo(mtCDROM) do
+  for DeviceCount:=MIN_CDROM_DEVICE to GetMaxDeviceNo(mtCDROM) do {GetMaxDeviceNo(mtCDROM) includes mtDVD}
    begin
     Device:=GetDeviceByNo(DeviceCount,True,FILESYS_LOCK_WRITE);
     if Device <> nil then
@@ -9225,6 +9236,10 @@ begin
       Device.WriterUnlock;
      end;
    end;
+    
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.LocateVolumes completed');
+  {$ENDIF}
     
   Result:=True;
  finally  
@@ -9272,15 +9287,27 @@ begin
             DriveCount:=GetNextDriveNo(Volume.Device.MediaType);
             if (FAllowDrives) and (Recognizer.AllowDrive) and (DriveCount <> INVALID_DRIVE) then
              begin
+              {$IFDEF FILESYS_DEBUG}
+              if FILESYS_LOG_ENABLED then FileSysLogDebug(' Creating Drive ' + DRIVE_NAMES[DriveCount] + ' on Volume ' + Volume.Name);
+              {$ENDIF}
+              
               {Create Drive}
               Drive:=TDiskDrive.Create(Self,Volume,DriveCount);
               Drive.DriveInit;
+              
+              {$IFDEF FILESYS_DEBUG}
+              if FILESYS_LOG_ENABLED then FileSysLogDebug(' Mounting Volume ' + Volume.Name);
+              {$ENDIF}
               
               {Mount Volume}
               Recognizer.MountVolume(Volume,Drive);
              end
             else
              begin
+              {$IFDEF FILESYS_DEBUG}
+              if FILESYS_LOG_ENABLED then FileSysLogDebug(' Mounting Volume ' + Volume.Name);
+              {$ENDIF}
+              
               {Mount Volume}
               Recognizer.MountVolume(Volume,nil);
              end;
@@ -9305,6 +9332,10 @@ begin
     Redirector:=GetRedirectorByNext(Redirector,True,True,FILESYS_LOCK_READ); 
    end;
 
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.LocateDrives completed');
+  {$ENDIF}
+  
   Result:=True;
  finally  
   ReaderUnlock;
@@ -10737,6 +10768,68 @@ begin
 
   {Unlock Device}
   Device.ReaderUnlock;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.InsertDevice(const AName:String):Boolean;
+var
+ Device:TDiskDevice;
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.InsertDevice');
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Name = ' + AName);
+  {$ENDIF}
+
+  if TrimRight(AName) = '' then Exit;
+  
+  {Get the Device}
+  Device:=GetDeviceByName(AName,True,FILESYS_LOCK_WRITE);
+  if Device = nil then Exit;
+  
+  Result:=Device.InsertDevice;
+
+  {Unlock Device}
+  Device.WriterUnlock;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.EjectDevice(const AName:String):Boolean;
+var
+ Device:TDiskDevice;
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EjectDevice');
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Name = ' + AName);
+  {$ENDIF}
+
+  if TrimRight(AName) = '' then Exit;
+  
+  {Get the Device}
+  Device:=GetDeviceByName(AName,True,FILESYS_LOCK_WRITE);
+  if Device = nil then Exit;
+  
+  Result:=Device.EjectDevice;
+
+  {Unlock Device}
+  Device.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -22285,6 +22378,14 @@ end;
 
 {==============================================================================}
 
+function TDiskController.Ejectable(ADevice:TDiskDevice):Boolean; 
+begin
+ {Virtual Base Method - No Function}
+ Result:=False;
+end;
+
+{==============================================================================}
+
 function TDiskController.Readable(ADevice:TDiskDevice):Boolean;
 begin
  {Virtual Base Method - No Function}
@@ -22624,8 +22725,8 @@ begin
   if FDeviceNo = -1 then Exit;
   if FSectorCount = 0 then Exit;
   
-  {If not a "Fixed Disk" then nothing Free}
-  if FMediaType <> mtFIXED then Exit; //To Do //Critical //mtREMOVABLE
+  {If not a "Fixed Disk" or "Removable Disk" then nothing Free}
+  if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
   
   Result:=(FSectorCount - 1); {Minus one to allow for Master Boot}
   
@@ -22684,8 +22785,8 @@ begin
   if FDeviceNo = -1 then Exit;
   if FSectorCount = 0 then Exit;
 
-  {If not a "Fixed Disk" then nothing Available}
-  if FMediaType <> mtFIXED then Exit; //To Do //Critical //mtREMOVABLE
+  {If not a "Fixed Disk" or "Removable Disk" then nothing Available}
+  if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
   
   {Get the Minimum Block}
   MinimumCount:=(FPhysicalSectors * FPhysicalHeads);
@@ -22793,8 +22894,11 @@ begin
   if FSectorSize = 0 then Exit;
   if FSectorCount = 0 then Exit;
 
-  {If not a "Fixed Disk" then no Signature}
-  if FMediaType <> mtFIXED then Exit; //To Do //Critical //mtREMOVABLE
+  {If not a "Fixed Disk" or "Removable Disk" then no Signature}
+  if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
+  
+  {If not partitioned then no Signature}
+  if FDriver.GetPartitionByDevice(Self,False,FILESYS_LOCK_NONE) = nil then Exit; {Do not lock}
   
   {Allocate Boot Record}
   BootRecord:=GetMem(FSectorSize);
@@ -22831,8 +22935,11 @@ begin
   if FSectorSize = 0 then Exit;
   if FSectorCount = 0 then Exit;
 
-  {If not a "Fixed Disk" then no Signature}
-  if FMediaType <> mtFIXED then Exit; //To Do //Critical //mtREMOVABLE
+  {If not a "Fixed Disk" or "Removable Disk" then no Signature}
+  if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
+  
+  {If not partitioned then no Signature}
+  if FDriver.GetPartitionByDevice(Self,False,FILESYS_LOCK_NONE) = nil then Exit; {Do not lock}
   
   {Allocate Boot Record}
   BootRecord:=GetMem(FSectorSize);
@@ -22920,6 +23027,7 @@ begin
   FReady:=FController.Ready(Self);
   FLocked:=FController.Locked(Self);
   FLockable:=FController.Lockable(Self);
+  FEjectable:=FController.Ejectable(Self);
   FReadable:=FController.Readable(Self);
   FWriteable:=FController.Writeable(Self);
   FEraseable:=FController.Eraseable(Self);
@@ -23006,7 +23114,7 @@ begin
      if BootRecord = nil then Exit;
      try
       {Check Media and Read Boot Record}
-      if not FController.MediaReady(Self) then Exit; //To Do //Critical //was MediaReady //But that would deadlock due to WriterLock
+      if not FController.MediaReady(Self) then Exit; {was MediaReady}
       if not FDriver.Cache.DeviceRead(Self,0,1,BootRecord^) then Exit;
       
       {Check Boot Record}
@@ -23055,14 +23163,12 @@ begin
      {"Removable Disk" Device}
      if FSectorSize = 0 then Exit;
 
-     //To Do //To Do //Critical //mtREMOVABLE
-     
      {Allocate Boot Record}
      BootRecord:=GetMem(FSectorSize);
      if BootRecord = nil then Exit;
      try
       {Check Media and Read Boot Record}
-      if not FController.MediaReady(Self) then Exit; //To Do //Critical //was MediaReady //But that would deadlock due to WriterLock
+      if not FController.MediaReady(Self) then Exit; {was MediaReady}
       if not FDriver.Cache.DeviceRead(Self,0,1,BootRecord^) then Exit;
       
       {Check Boot Record}
@@ -23109,7 +23215,7 @@ begin
     end;   
    else
     begin
-     {"Floppy Disk" Device (including Removable, CDROM, DVD, Other)}
+     {"Floppy Disk" Device (including CDROM, DVD, Other)}
      Result:=True;
     end;
   end;
@@ -23145,13 +23251,17 @@ begin
 
   case FMediaType of
    mtFLOPPY,mtCDROM,mtDVD,mtOTHER:begin
-     {"Floppy Disk" Device (including Removable, CDROM, DVD, Other)}
+     {"Floppy Disk" Device (including CDROM, DVD, Other)}
      {Create a Volume}
      Volume:=FDriver.GetVolumeByDevice(Self,False,FILESYS_LOCK_NONE); {Do not lock}
      if Volume = nil then
       begin
-       Volume:=TDiskVolume.Create(FDriver,Self,nil,FDriver.GetNextVolumeNo);
-       Volume.VolumeInit;
+       {Check Media}
+       if FController.MediaReady(Self) then
+        begin
+         Volume:=TDiskVolume.Create(FDriver,Self,nil,FDriver.GetNextVolumeNo);
+         Volume.VolumeInit;
+        end; 
       end;
      
      Result:=True;
@@ -23165,8 +23275,12 @@ begin
        Volume:=FDriver.GetVolumeByDevice(Self,False,FILESYS_LOCK_NONE); {Do not lock}
        if Volume = nil then
         begin
-         Volume:=TDiskVolume.Create(FDriver,Self,nil,FDriver.GetNextVolumeNo);
-         Volume.VolumeInit;
+         {Check Media}
+         if FController.MediaReady(Self) then
+          begin
+           Volume:=TDiskVolume.Create(FDriver,Self,nil,FDriver.GetNextVolumeNo);
+           Volume.VolumeInit;
+          end; 
         end;
      
        Result:=True;
@@ -23538,6 +23652,7 @@ begin
   if FController = nil then Exit;
   
   Result:=FController.LockMedia(Self);
+  if Result then FLocked:=FController.Locked(Self);
  finally  
   ReaderUnlock;
  end; 
@@ -23560,6 +23675,7 @@ begin
   if FController = nil then Exit;
   
   Result:=FController.UnlockMedia(Self);
+  if Result then FLocked:=FController.Locked(Self);
  finally  
   ReaderUnlock;
  end; 
@@ -23657,6 +23773,88 @@ begin
  end; 
 end;
 
+{==============================================================================}
+
+function TDiskDevice.InsertDevice:Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not WriterLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.InsertDevice (Name=' + Name + ')'); 
+  {$ENDIF}
+
+  if FDriver = nil then Exit;
+
+  {Init Device}
+  DeviceInit;
+  
+  {Locate Partitions}
+  LocatePartitions;
+  
+  {Locate Volumes and Drives}
+  FDriver.LocateVolumes;
+  FDriver.LocateDrives;
+
+  Result:=True;  
+ finally  
+  WriterUnlock;
+ end; 
+end;
+  
+{==============================================================================}
+
+function TDiskDevice.EjectDevice:Boolean; 
+var
+ Volume:TDiskVolume;
+ Partition:TDiskPartition;
+begin
+ {}
+ Result:=False;
+
+ if not WriterLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EjectDevice (Name=' + Name + ')'); 
+  {$ENDIF}
+
+  if FDriver = nil then Exit;
+
+  {Release any Raw Handles on the Device}
+  FDriver.ReleaseRawHandles(Self,nil,nil,nil);
+
+  {Release any CachePages on the Device}
+  FDriver.Cache.ReleaseDevicePages(Self);
+  
+  {Init Device}
+  DeviceInit;
+  
+  {Remove any Volume on the Device}
+  Volume:=FDriver.GetVolumeByDevice(Self,True,FILESYS_LOCK_WRITE);
+  while Volume <> nil do
+   begin
+    Volume.Free;
+    
+    Volume:=FDriver.GetVolumeByDevice(Self,True,FILESYS_LOCK_WRITE);
+   end;
+  
+  {Remove any Partition on the Device}
+  Partition:=FDriver.GetPartitionByDevice(Self,True,FILESYS_LOCK_WRITE);
+  while Partition <> nil do
+   begin
+    Partition.Free;
+    
+    Partition:=FDriver.GetPartitionByDevice(Self,True,FILESYS_LOCK_WRITE);
+   end;
+  
+  Result:=True;  
+ finally  
+  WriterUnlock;
+ end; 
+end;
+  
 {==============================================================================}
 
 function TDiskDevice.OpenDevice(AMode:Integer):Integer;
@@ -24563,7 +24761,7 @@ begin
     if PartitionRecord = nil then Exit;
     try
      {Check Media and Read Partition Record}
-     if not FDevice.MediaReady then Exit;
+     if not FDevice.Controller.MediaReady(FDevice) then Exit; {was Device.MediaReady}
      if not FDriver.Cache.DeviceRead(FDevice,FStartSector,1,PartitionRecord^) then Exit;
      
      {Check Partition Record}
@@ -24646,6 +24844,7 @@ begin
     Volume:=FDriver.GetVolumeByPartition(Self,False,FILESYS_LOCK_NONE); {Do not lock}
     if Volume = nil then
      begin
+      {No meed to check MediaReady}
       Volume:=TDiskVolume.Create(FDriver,FDevice,Self,FDriver.GetNextVolumeNo);
       Volume.VolumeInit;
      end;
@@ -46510,7 +46709,10 @@ begin
     if ADevice = nil then Exit;
     
     {Check Device}
-    if ADevice.MediaType <> mtFIXED then Exit; //To Do //Critical //mtREMOVABLE
+    if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
+    
+    {Check Partition and Volume}
+    if (FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil) and (FDriver.GetVolumeByDevice(ADevice,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
     
     {Check Parent}
     if AParent <> nil then Exit;
@@ -47113,6 +47315,8 @@ end;
 
 function TUSBDiskController.LockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -47129,7 +47333,8 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Lock Media}
-  //To Do //StorageDeviceControl
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_LOCK,Argument,Argument) = ERROR_SUCCESS);
+  if Result then ADevice.FLocked:=Locked(ADevice);
  finally  
   ReaderUnlock;
  end; 
@@ -47139,6 +47344,8 @@ end;
 
 function TUSBDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -47155,7 +47362,8 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Unlock Media}
-  //To Do //StorageDeviceControl
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_UNLOCK,Argument,Argument) = ERROR_SUCCESS);
+  if Result then ADevice.FLocked:=Locked(ADevice);
  finally  
   ReaderUnlock;
  end; 
@@ -47165,6 +47373,8 @@ end;
 
 function TUSBDiskController.EjectMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -47181,7 +47391,7 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Eject Media}
-  //To Do //StorageDeviceControl
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_EJECT,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -47219,6 +47429,8 @@ end;
 
 function TUSBDiskController.MediaChanged(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -47235,7 +47447,7 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Check Changed}
-  //To Do //StorageDeviceControl
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_CHANGED,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -47245,6 +47457,8 @@ end;
 
 function TUSBDiskController.MediaLocked(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -47261,7 +47475,7 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Check Locked}
-  //To Do //StorageDeviceControl 
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_LOCKED,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -47297,6 +47511,8 @@ end;
 
 function TUSBDiskController.VendorId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=0;
@@ -47313,7 +47529,10 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get VendorId}
-  //To Do
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_VENDORID,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Result:=Argument;
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -47323,6 +47542,8 @@ end;
 
 function TUSBDiskController.DeviceId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=0;
@@ -47339,7 +47560,10 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get DeviceId}
-  //To Do
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_PRODUCTID,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Result:=Argument;
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -47349,6 +47573,9 @@ end;
    
 function TUSBDiskController.Manufacturer(ADevice:TDiskDevice):String; 
 {Note: Caller must hold the device lock}
+var
+ Len:LongWord;
+ Argument:LongWord;
 begin
  {}
  Result:='';
@@ -47365,7 +47592,15 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get Manufacturer}
-  //To Do
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_MANUFACTURER,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Len:=StrLen(PChar(Argument));
+    if Len > 0 then
+     begin
+      SetLength(Result,Len);
+      StrLCopy(PChar(Result),PChar(Argument),Len);
+     end; 
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -47375,6 +47610,9 @@ end;
 
 function TUSBDiskController.Product(ADevice:TDiskDevice):String; 
 {Note: Caller must hold the device lock}
+var
+ Len:LongWord;
+ Argument:LongWord;
 begin
  {}
  Result:='';
@@ -47391,7 +47629,15 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get Product}
-  //To Do
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_PRODUCT,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Len:=StrLen(PChar(Argument));
+    if Len > 0 then
+     begin
+      SetLength(Result,Len);
+      StrLCopy(PChar(Result),PChar(Argument),Len);
+     end; 
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -47401,6 +47647,9 @@ end;
 
 function TUSBDiskController.SerialNumber(ADevice:TDiskDevice):String; 
 {Note: Caller must hold the device lock}
+var
+ Len:LongWord;
+ Argument:LongWord;
 begin
  {}
  Result:='';
@@ -47417,7 +47666,15 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get Serial Number}
-  //To Do
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_SERIAL,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Len:=StrLen(PChar(Argument));
+    if Len > 0 then
+     begin
+      SetLength(Result,Len);
+      StrLCopy(PChar(Result),PChar(Argument),Len);
+     end; 
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -47579,7 +47836,7 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get Locked}
-  //To Do //STORAGE_FLAG_LOCKED
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKED) = STORAGE_FLAG_LOCKED);
  finally  
   ReaderUnlock;
  end; 
@@ -47605,7 +47862,33 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get Lockable}
-  //To Do //STORAGE_FLAG_LOCKABLE
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKABLE) = STORAGE_FLAG_LOCKABLE);
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TUSBDiskController.Ejectable(ADevice:TDiskDevice):Boolean; 
+{Note: Caller must hold the device lock}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {Check Driver}
+  if FDriver = nil then Exit;
+
+  {Check Device}
+  if ADevice = nil then Exit;
+
+  {Check Storage}
+  if ADevice.Storage = nil then Exit;
+
+  {Get Ejectable}
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_EJECTABLE) = STORAGE_FLAG_EJECTABLE);
  finally  
   ReaderUnlock;
  end; 
@@ -47709,7 +47992,7 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Get Change Line}
-  //To Do //STORAGE_FLAG_CHANGE_LINE ?
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_CHANGABLE) = STORAGE_FLAG_CHANGABLE);
  finally  
   ReaderUnlock;
  end; 
@@ -48045,8 +48328,42 @@ end;
 
 {==============================================================================}
 
+function TMMCDiskController.Erase(ADevice:TDiskDevice;ASector:LongWord;ACount:Word):Boolean; 
+{Note: Caller must hold the device lock}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {Check Driver}
+  if FDriver = nil then Exit;
+
+  {Check Device}
+  if ADevice = nil then Exit;
+
+  {Check Count} 
+  if ACount = 0 then Exit;
+
+  {Check Writeable}
+  if not ADevice.Writeable then Exit;
+ 
+  {Check Storage}
+  if ADevice.Storage = nil then Exit;
+ 
+  {Erase Storage}
+  Result:=(StorageDeviceErase(ADevice.Storage,ASector,ACount) = ERROR_SUCCESS);
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TMMCDiskController.Reset(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -48062,7 +48379,8 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
  
-  //To Do
+  {Reset Storage}
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_RESET,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -48072,6 +48390,8 @@ end;
 
 function TMMCDiskController.LockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -48087,7 +48407,9 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Lock Media}
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_LOCK,Argument,Argument) = ERROR_SUCCESS);
+  if Result then ADevice.FLocked:=Locked(ADevice);
  finally  
   ReaderUnlock;
  end; 
@@ -48097,6 +48419,8 @@ end;
 
 function TMMCDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -48112,7 +48436,9 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Unlock Media}
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_UNLOCK,Argument,Argument) = ERROR_SUCCESS);
+  if Result then ADevice.FLocked:=Locked(ADevice);
  finally  
   ReaderUnlock;
  end; 
@@ -48122,6 +48448,8 @@ end;
 
 function TMMCDiskController.EjectMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -48137,7 +48465,8 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
- //To Do
+  {Eject Media}
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_EJECT,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -48147,6 +48476,8 @@ end;
 
 function TMMCDiskController.MediaReady(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -48162,7 +48493,8 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  Result:=True; //To Do //Check Flags and Call to DeviceControl to determine ready //See also .Ready()
+  {Check Ready}
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_READY,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -48172,6 +48504,8 @@ end;
 
 function TMMCDiskController.MediaChanged(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -48187,7 +48521,8 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Check Changed}
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_CHANGED,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -48197,6 +48532,8 @@ end;
 
 function TMMCDiskController.MediaLocked(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=False;
@@ -48212,7 +48549,8 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Check Locked}
+  Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_LOCKED,Argument,Argument) = ERROR_SUCCESS);
  finally  
   ReaderUnlock;
  end; 
@@ -48248,6 +48586,8 @@ end;
 
 function TMMCDiskController.VendorId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=0;
@@ -48263,7 +48603,11 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get VendorId}
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_VENDORID,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Result:=Argument;
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -48273,6 +48617,8 @@ end;
 
 function TMMCDiskController.DeviceId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
+var
+ Argument:LongWord;
 begin
  {}
  Result:=0;
@@ -48288,7 +48634,11 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get DeviceId}
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_PRODUCTID,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Result:=Argument;
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -48298,6 +48648,9 @@ end;
    
 function TMMCDiskController.Manufacturer(ADevice:TDiskDevice):String; 
 {Note: Caller must hold the device lock}
+var
+ Len:LongWord;
+ Argument:LongWord;
 begin
  {}
  Result:='';
@@ -48313,7 +48666,16 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get Manufacturer}
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_MANUFACTURER,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Len:=StrLen(PChar(Argument));
+    if Len > 0 then
+     begin
+      SetLength(Result,Len);
+      StrLCopy(PChar(Result),PChar(Argument),Len);
+     end; 
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -48323,6 +48685,9 @@ end;
 
 function TMMCDiskController.Product(ADevice:TDiskDevice):String; 
 {Note: Caller must hold the device lock}
+var
+ Len:LongWord;
+ Argument:LongWord;
 begin
  {}
  Result:='';
@@ -48338,7 +48703,16 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get Product}
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_PRODUCT,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Len:=StrLen(PChar(Argument));
+    if Len > 0 then
+     begin
+      SetLength(Result,Len);
+      StrLCopy(PChar(Result),PChar(Argument),Len);
+     end; 
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -48348,6 +48722,9 @@ end;
 
 function TMMCDiskController.SerialNumber(ADevice:TDiskDevice):String; 
 {Note: Caller must hold the device lock}
+var
+ Len:LongWord;
+ Argument:LongWord;
 begin
  {}
  Result:='';
@@ -48363,7 +48740,16 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get Serial Number}
+  if StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_GET_SERIAL,Argument,Argument) = ERROR_SUCCESS then
+   begin
+    Len:=StrLen(PChar(Argument));
+    if Len > 0 then
+     begin
+      SetLength(Result,Len);
+      StrLCopy(PChar(Result),PChar(Argument),Len);
+     end; 
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -48472,6 +48858,7 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
+  {Get Floppy Type}
   //To Do
  finally  
   ReaderUnlock;
@@ -48523,7 +48910,8 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get Locked}
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKED) = STORAGE_FLAG_LOCKED);
  finally  
   ReaderUnlock;
  end; 
@@ -48548,7 +48936,34 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get Lockable}
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKABLE) = STORAGE_FLAG_LOCKABLE);
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TMMCDiskController.Ejectable(ADevice:TDiskDevice):Boolean; 
+{Note: Caller must hold the device lock}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {Check Driver}
+  if FDriver = nil then Exit;
+
+  {Check Device}
+  if ADevice = nil then Exit;
+
+  {Check Storage}
+  if ADevice.Storage = nil then Exit;
+
+  {Get Ejectable}
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_EJECTABLE) = STORAGE_FLAG_EJECTABLE);
  finally  
   ReaderUnlock;
  end; 
@@ -48608,6 +49023,32 @@ end;
 
 {==============================================================================}
 
+function TMMCDiskController.Eraseable(ADevice:TDiskDevice):Boolean; 
+{Note: Caller must hold the device lock}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {Check Driver}
+  if FDriver = nil then Exit;
+
+  {Check Device}
+  if ADevice = nil then Exit;
+
+  {Check Storage}
+  if ADevice.Storage = nil then Exit;
+
+  {Get Writeable}
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_ERASEABLE) = STORAGE_FLAG_ERASEABLE);
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TMMCDiskController.Removable(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 begin
@@ -48651,7 +49092,8 @@ begin
   {Check Storage}
   if ADevice.Storage = nil then Exit;
 
-  //To Do
+  {Get Change Line}
+  Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_CHANGABLE) = STORAGE_FLAG_CHANGABLE);
  finally  
   ReaderUnlock;
  end; 
@@ -49351,7 +49793,7 @@ begin
       FileSysDriver.LocateDrives;
       
       {Register Notification}
-      StorageDeviceNotification(nil,FileSysStorageDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_EJECTING or DEVICE_NOTIFICATION_INSERT,NOTIFIER_FLAG_NONE);
+      StorageDeviceNotification(nil,FileSysStorageDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_EJECTING or DEVICE_NOTIFICATION_EJECT or DEVICE_NOTIFICATION_INSERT,NOTIFIER_FLAG_NONE);
  
       {Register Shutdown}
       //To Do
@@ -52031,7 +52473,8 @@ begin
       DiskDevice:=FileSysDriver.GetDeviceByStorage(Event.Device,True,FILESYS_LOCK_WRITE);
       if DiskDevice <> nil then
        begin
-        //To Do //Mount Volume
+        {Insert Device}
+        DiskDevice.InsertDevice;
         
         {Unlock Device}
         DiskDevice.WriterUnlock;
@@ -52081,8 +52524,6 @@ begin
       DiskDevice:=FileSysDriver.GetDeviceByStorage(Storage,True,FILESYS_LOCK_WRITE);
       if DiskDevice <> nil then
        begin
-        //To Do //Dismount Volume
-
         {Destroy Device}
         DiskDevice.Free;
        end; 
@@ -52131,8 +52572,8 @@ begin
       DiskDevice:=FileSysDriver.GetDeviceByStorage(Storage,True,FILESYS_LOCK_WRITE);
       if DiskDevice <> nil then
        begin
-       
-        //To Do //Shutdown / Dismount ?
+        {Eject Device}
+        DiskDevice.EjectDevice;
         
         {Unlock Device}
         DiskDevice.WriterUnlock;
@@ -52301,7 +52742,7 @@ begin
      end;
     end;
   end
- else if (Notification and DEVICE_NOTIFICATION_EJECTING) <> 0 then
+ else if (Notification and (DEVICE_NOTIFICATION_EJECTING or DEVICE_NOTIFICATION_EJECT)) <> 0 then
   begin
    {Acquire the Lock}
    if CriticalSectionLock(FileSysLock) = ERROR_SUCCESS then

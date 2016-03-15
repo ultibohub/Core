@@ -93,7 +93,7 @@ Global Defines
 {$ENDIF}
 
 {--$DEFINE FILESYS_DEBUG}         {Enable debug output/counters for Filesystem services (Default: Off)}
-{$IFDEF FILESYS_DEBUG}
+{$IFDEF FILESYS_DEBUG} 
  {$DEFINE FAT_DEBUG}
  {$DEFINE CDFS_DEBUG}
  {$DEFINE NTFS_DEBUG}
@@ -128,7 +128,7 @@ Global Defines
 {--$DEFINE KEYBOARD_DEBUG}        {Enable debug output/counters for Keyboard devices (Default: Off)}
 {--$DEFINE MOUSE_DEBUG}           {Enable debug output/counters for Mouse devices (Default: Off)}
 
-{--$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
+{$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
 {--$DEFINE VPN_DEBUG}             {Enable debug output/counters for VPN devices (Default: Off)}
 
 {--$DEFINE SERIAL_DEBUG}          {Enable debug output/counters for Serial devices (Default: Off)}
@@ -153,6 +153,7 @@ Global Defines
 {--$DEFINE MUTEX_DEBUG}           {Enable debug output/counters for Mutex handling (Default: Off)}
 {--$DEFINE CLOCK_DEBUG}           {Enable debug output/counters for Clock handling (Default: Off)}
 {--$DEFINE SCHEDULER_DEBUG}       {Enable debug output/counters for Scheduler internals (Default: Off)}
+{--$DEFINE INTERRUPT_DEBUG}       {Enable debug output/counters for Interrupt handling (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}
@@ -164,6 +165,10 @@ Global Defines
 {--$DEFINE SMSC95XX_DEBUG}        {Enable debug output/counters for SMSC95XX driver (Default: Off)}
 {--$DEFINE BCM2708_DEBUG}         {Enable debug output/counters for BCM2708 drivers (Default: Off)}
 {--$DEFINE BCM2709_DEBUG}         {Enable debug output/counters for BCM2709 drivers (Default: Off)}
+{--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
+
+{$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
+{$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

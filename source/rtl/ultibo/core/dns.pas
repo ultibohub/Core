@@ -1067,7 +1067,7 @@ begin
  if FProtocol = nil then Exit;
  
  {Get the Transport} //To Do //IPv6 //Maybe get Transport on each Answer ?
- Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ)); 
+ Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ)); 
  if Transport = nil then Exit;
  try
   {Create the Buffers}
@@ -1675,7 +1675,7 @@ begin
   //To Do //IPv6 //Check ALength/AFamily for AF_INET/AF_INET6 etc
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ));
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
   try
    {Check the Params}
@@ -1803,7 +1803,7 @@ begin
   //To Do //IPv6 //AAAA etc 
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ)); 
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ)); 
   if Transport = nil then Exit;
   try
    {Check the Params}
@@ -1975,7 +1975,7 @@ begin
   //To Do //IPv6 
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ));
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
   try
    {Get the Host Name}
@@ -2019,7 +2019,7 @@ begin
   //To Do //IPv6 
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ));
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
   try
    {Check the Params}
@@ -2068,7 +2068,7 @@ begin
   //To Do //IPv6 
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ)); 
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ)); 
   if Transport = nil then Exit;
   try
    {Check the Params}
@@ -2119,7 +2119,7 @@ begin
   //To Do //IPv6 
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ));
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
   try
    {Get the Protocol}
@@ -2164,7 +2164,7 @@ begin
   //To Do //IPv6 
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ));
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
   try 
    {Check the Params}
@@ -2214,7 +2214,7 @@ begin
   //To Do //IPv6 //Check Struct etc
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ));
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
   try
    {Check the Params}
@@ -2265,7 +2265,7 @@ begin
   //To Do //IPv6 
   
   {Get the Transport}
-  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,IP_TYPE,True,NETWORK_LOCK_READ));
+  Transport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
   try
    {Check the Params}
