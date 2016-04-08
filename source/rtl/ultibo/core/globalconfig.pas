@@ -481,6 +481,8 @@ var
  
 var
  {Framebuffer Console}
+ FRAMEBUFFER_CONSOLE_AUTOCREATE:LongBool = True;       {If True then auto create a console on any framebuffer device (Only if Console unit included)}
+ 
  FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET:LongWord;   {The default desktop offset for the framebuffer console}
  FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR:LongWord;    {The default desktop color for the framebuffer console}
  
@@ -597,6 +599,9 @@ var
  MMC_DMA_NOCACHE_MEMORY:LongBool;      {MMC DMA buffers are allocated from Non Cached memory regions if True}
  MMC_DMA_BUS_ADDRESSES:LongBool;       {MMC DMA buffers are referenced by Bus addresses if True}
  
+ {USB Hub}
+ USB_HUB_MESSAGESLOT_MAXIMUM:LongWord = SIZE_512; {Maximum number of messages for the USB hub messageslot}
+ 
  {USB Keyboard}
  USB_KEYBOARD_POLLING_INTERVAL:LongWord = 10; {Override the default polling interval for a USB keyboard (Milliseconds)}
  
@@ -620,15 +625,16 @@ var
  {AHCI}
  
  {DWCOTG (Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller)}
- DWCOTG_IRQ:LongWord;                {The IRQ number of the DWCOTG device}
- DWCOTG_POWER_ID:LongWord;           {The power id of the DWCOTG device}
- DWCOTG_REGS_BASE:LongWord;          {The base address of the DWCOTG registers}
- DWCOTG_FIQ_ENABLED:LongBool;        {The DWCOTG device uses Fast Interrupt Requests (FIQ) instead of IRQ}
- DWCOTG_DMA_ALIGNMENT:LongWord;      {The default alignment for DWCOTG DMA memory allocations}
- DWCOTG_DMA_MULTIPLIER:LongWord;     {The default multiplier for DWCOTG DMA memory allocations}
- DWCOTG_DMA_SHARED_MEMORY:LongBool;  {DWCOTG DMA buffers are allocated from Shared memory regions if True}
- DWCOTG_DMA_NOCACHE_MEMORY:LongBool; {DWCOTG DMA buffers are allocated from Non Cached memory regions if True}
- DWCOTG_DMA_BUS_ADDRESSES:LongBool;  {DWCOTG DMA buffers are referenced by Bus addresses if True}
+ DWCOTG_IRQ:LongWord;                 {The IRQ number of the DWCOTG device}
+ DWCOTG_POWER_ID:LongWord;            {The power id of the DWCOTG device}
+ DWCOTG_REGS_BASE:LongWord;           {The base address of the DWCOTG registers}
+ DWCOTG_FIQ_ENABLED:LongBool;         {The DWCOTG device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ DWCOTG_DMA_ALIGNMENT:LongWord;       {The default alignment for DWCOTG DMA memory allocations}
+ DWCOTG_DMA_MULTIPLIER:LongWord;      {The default multiplier for DWCOTG DMA memory allocations}
+ DWCOTG_DMA_SHARED_MEMORY:LongBool;   {DWCOTG DMA buffers are allocated from Shared memory regions if True}
+ DWCOTG_DMA_NOCACHE_MEMORY:LongBool;  {DWCOTG DMA buffers are allocated from Non Cached memory regions if True}
+ DWCOTG_DMA_BUS_ADDRESSES:LongBool;   {DWCOTG DMA buffers are referenced by Bus addresses if True}
+ DWCOTG_HOST_FRAME_INTERVAL:LongBool; {Update the host frame interval register on root port enable if True}
  //To Do //Number of Channels ?
  
  {SMSC95XX (SMSC LAN95xx USB Ethernet Driver)}
@@ -925,6 +931,11 @@ var
  
  NFS_CLIENT_AUTOSTART:LongBool = True;          {If True then auto start the NFS client on boot (Only if NFS unit included)}
  NFS_SERVER_AUTOSTART:LongBool = True;          {If True then auto start the NFS server on boot (Only if NFS unit included)}
+ 
+{==============================================================================}
+{Specific Driver configuration}
+var
+ RT2800USB_HARDWARE_ENCRYPTION_DISABLED:LongBool; {If True then use software only encryption for RT2800USB}
  
 {==============================================================================}
 {Global handlers}

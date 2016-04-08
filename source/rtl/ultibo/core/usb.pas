@@ -26,7 +26,6 @@ Credits
   Embedded XINU - Copyright, Douglas Comer and Dennis Brylow
                    http://xinu.mscs.mu.edu/USB
  
- 
   USPI (rsta2) - https://github.com/rsta2/uspi
   
   Circle (rsta2) - https://github.com/rsta2/circle/tree/master/lib/usb
@@ -36,39 +35,41 @@ Credits
 References
 ==========
  
- ?????
+ Universal Serial Bus Specification Revision 2.0 - http://www.usb.org/developers/docs/usb20_docs/
  
  USB in a NutShell - http://www.beyondlogic.org/usbnutshell/usb5.shtml
  
 USB  
 ===
 
-It implements the USB system software that does not depend on the specific
+This unit implements the USB core software that does not depend on the specific
 host controller hardware and is not specific to any single USB device or platform.
 
 Features and limitations:
 
  - This driver is written to be compatible with USB 2.0.  USB 3.0 devices
-   are untested.
+   work correctly when operating in USB 2.0 compatible mode, actual support
+   for USB 3.0 host controllers and native super speed modes will require
+   some modification to this driver.
 
- - Not all USB transfer types and speeds are necessarily supported.  This
-   depends on the Host Controller Driver; see USBRequestSubmit.
+ - Not all USB transfer types and speeds are supported yet.  This depends on
+   the Host Controller Driver, see USBRequestSubmit.
 
  - This driver does not attempt to do any intelligent power management,
    bandwidth allocation, or transfer scheduling.  Devices are always set to
    their first listed configuration regardless of power requirements.
    Requests are simply passed to the Host Controller Driver in the
-   order submitted; thus, the Host Controller Driver is responsible for doing
+   order submitted, the Host Controller Driver is responsible for doing
    any more intelligent scheduling if desired.
 
  - This driver does not support multiple configurations per USB device.  If
    a device happens to have multiple configurations, the first one will be
-   assigned.
+   assigned (see devices below for more information).
 
  - By design, it is possible to implement a host controller driver for
    different host controller hardware without changing any of this code, as
    long as the host controller driver provides the functions declared in
-   usb_hcdi.h.
+   TUSBHost (Start, Stop, Reset, Submit and Cancel).
 
  - By design, this driver has a hard-coded dependency on the USB hub driver
    because USB is useless without hubs.
@@ -82,24 +83,94 @@ the USB core.  See that function for details.
 The other functions exported by this core USB driver are mostly intended to
 be used by USB device drivers.
 
-Debugging messages in this driver and in the rest of the USB code can be
-enabled by changing the definitions of the minimum, initial, and/or
-background log priorities in usb_util.h.
+Debugging messages in this driver can be enabled by changing the value of
+USB_DEFAULT_LOG_LEVEL and by enabling the USB_DEBUG define in GlobalDefines.
+Be careful when enabling USB debugging as the USB core can generate a lot 
+of messages due to constant polling of interrupt endpoints on devices such
+as hubs, keyboards and mice.
 
 USB Device
 ==========
 
- //To Do //Information about devices
+USB devices are the generic implementation of anything that can be connected
+to the USB bus. All USB devices require a driver to implement the specific
+behaviour of the device but at the generic level each device will have:
+
+ - One or more configurations available. The USB core will first offer the device
+   to drivers without a configuration being selected, the driver may choose a 
+   specific configuration if required otherwise the core will simply select the
+   first available configuration.
+   
+ - One or more interfaces available. On devices with multiple interfaces, the USB
+   core supports different drivers binding to different interfaces. This way
+   combination devices are supported.
+   
+ - One or more endpoints available. All devices must have a control endpoint
+   and most devices will have one or more bulk, interrupt or isochronous endpoints
+   as well. The USB core will only communicate with the control endpoint to perform
+   generic operations like reading the desriptors and assigning a device addresss.
+   
+   Drivers are expected to understand which endpoints they need to communicate with
+   to provide the device specific functionality.
+
+Devices are considered dynamic by the USB core and can be connected or disconnected 
+at any time. The hub driver is responsible for attaching and detaching devices in
+response to hub status change events and for binding or unbinding drivers as devices
+are added or removed.
  
 USB Driver
 ==========
 
- //To Do //Information about drivers and the Bind/Unbind interfaces
+USB drivers implement support for specific devices or specific device classes
+and provide the interfaces to present those devices to other parts of the system.
+
+For example the USB Mass Storage driver accepts devices of the mass storage class
+and presents them to the file system as a disk device.
+
+All drivers must implement the functions defined in TUSBDriver (Bind and Unbind)
+and must register themselves with the USB core by calling USBDriverRegister.
+
+When a new device is detected the hub driver will enumerate all drivers and call
+their Bind functions until either one of the drivers accepts the device or all
+drivers have rejected the device. The hub driver first attempts to bind each driver
+to the device itself and then offers each driver the option to bind to a single
+interface on the device. In this way devices that have multiple interfaces of 
+different classes (such as a wireless mouse and keyboard dongle) can actually be
+bound to multiple drivers which each service a specific interface.
+
+When a new driver is registered the USB core will call the drivers Bind function
+for each device already present to allow the driver an opportunity to bind to
+any existing devices that are not serviced by other drivers.
  
+When a device is disconnected the hub driver will first call the Unbind function 
+of any driver that is servicing the device to allow the driver to clean up allocated
+resources and cancel outstanding requests. Drivers must be careful not to block the
+hub driver during this process, for example trying to send a USB control message to
+the device at this time will likely be pointless as in many cases the device will have
+already been disconnected from the system.
+
 USB Host
 ========
  
- //To Do //Information about hosts and the Start/Stop/Submit interfaces
+USB hosts implement the hardware level interface that supports sending USB requests
+to the hardware and receiving responses. All handling of interrupts, DMA, transaction
+sequence, errors and resubmitting/retrying requests is done by the USB host driver.
+
+All host drivers must implement the functions defined in TUSBHost (Start, Stop, Reset,
+Submit and Cancel) and must register themselves with the USB core by calling USBHostRegister.
+
+When the USB core is started each registered host driver will be called via the Start
+function so it can initialize itself and allocate locks, buffers and other resources
+required to interact with the hardware.
+
+A host driver can also be registered after the USB core has been started and it will
+be given the opportunity to start itself immediately. In this way USB hosts can potentially
+be hot pluggable.
+
+Each host driver must also implement a root hub which respresents the port or ports that
+are directly connected to the controller hardware. In many cases this will not be a real
+hub but will be simulated in the host driver so that the hub driver can interact with it
+as though it was a standard hub device.
  
 USB Hub
 =======
@@ -112,32 +183,35 @@ That is, a USB is a tree of devices where the root node and all non-leaf
 nodes are hubs.  A port on a USB hub may correspond to a port you can
 physically plug a device into or may correspond to an internal port.
 
+USB hubs are commonly based around a design that has 4 ports per hub, so
+a standard 7 port hub will most often appear as 2 hubs to this driver with
+one hub connected to a port on the other.
+
 This hub driver is an example of a USB device driver, but it is somewhat
 special as it mandatory to include this driver if USB is supported at all.
 This is because it would be impossible to access any USB devices if a hub
 driver were not available.  This hub driver also uses some interfaces in the
-core driver, such as usb_attach_device(), that are not useful to any other
+core driver, such as USBDeviceAttach, that are not useful to any other
 USB device driver.
 
-The initial entry point of this USB hub driver is hub_bind_device(), which is
+The initial entry point of this USB hub driver is USBHubDriverBind, which is
 called when the USB core has configured a newly attached USB device that may
-be a hub.  hub_bind_device() is responsible for checking if the device is a
-hub, and if so, then doing hub-specific setup, including one-time driver
-initialization, reading the hub descriptor, powering on the ports, and
-submitting an asynchronous USB interrupt request to the hub's status
-change endpoint.
+be a hub.  USBHubDriverBind is responsible for checking if the device is a
+hub, and if so, doing hub-specific setup, reading the hub descriptor, powering
+on the ports, and submitting an asynchronous USB interrupt request to the hub's
+status change endpoint.
 
 Everything else this hub driver does happens asynchronously as a response to
 a status change request being completed.  Every USB hub has exactly one IN
 interrupt endpoint called the "status change endpoint".  The hub responds on
 this endpoint whenever the status of the hub or one of the hub's ports has
-changed--- for example, when a USB device has been connected or disconnected
+changed, for example when a USB device has been connected or disconnected
 from a port.
 
 At the hardware level, when a hub has data to send on its status change
 endpoint, an interrupt will come in from the USB host controller.  This
 eventually will result in the status change transfer being completed and
-hub_status_changed() being called.  Thus, the detection of status changes is
+USBHubStatusComplete being called.  Thus, the detection of status changes is
 interrupt-driven and is not implemented by polling at the software level.
 (At the hardware level, USB is still a polled bus, but the host controller
 hardware handles that for us)  Upon detecting a status change on one or more
@@ -163,15 +237,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,U
         
 //Critical
         
-//To Do //Continuing //Think about making Requests a list where they are allocated and released by the Core only
-                         //Then allow requests to be Cancelled so that the completion handler won't be called ?
-                         
-                         //Also include looking at the DETACHING timing of a device, currently doing Unbind first, is that ok ?
-                     
-                         //Move global variables in each module to local only ? - 
-                         
-                         //Control request timeouts ? How ? When ?
-                         
+//To Do  //Move global variables in each module to local only ? - 
+                                                  
                          
 {==============================================================================}
 {Global definitions}
@@ -264,7 +331,7 @@ const
  USB_STATUS_HARDWARE_ERROR            = 3;  {Hardware error of some form occurred}
  USB_STATUS_INVALID_DATA              = 4;  {Invalid data was received}
  USB_STATUS_INVALID_PARAMETER         = 5;  {An invalid parameter was passed to the function}
- USB_STATUS_NOT_PROCESSED             = 6;  {The USB transfer has not yet been processed}
+ USB_STATUS_NOT_PROCESSED             = 6;  {The USB request has been submitted but not yet processed}
  USB_STATUS_OUT_OF_MEMORY             = 7;  {Failed to allocate memory}
  USB_STATUS_TIMEOUT                   = 8;  {The operation timed out}
  USB_STATUS_UNSUPPORTED_REQUEST       = 9;  {The request is unsupported}
@@ -273,6 +340,9 @@ const
  USB_STATUS_NOT_BOUND                 = 12; {USB device is not bound to a driver}
  USB_STATUS_ALREADY_BOUND             = 13; {USB device is already bound to a driver}
  USB_STATUS_NOT_READY                 = 14; {USB device is not in a ready state}
+ USB_STATUS_NOT_COMPLETED             = 15; {The USB request has been scheduled but not yet completed}
+ USB_STATUS_CANCELLED                 = 16; {The USB request was cancelled}
+ USB_STATUS_NOT_VALID                 = 17; {The USB request is not valid}
  
  {USB Request Flags}
  USB_REQUEST_FLAG_NONE       = $00000000;
@@ -1068,6 +1138,7 @@ type
  TUSBHostStop = function(Host:PUSBHost):LongWord;
  TUSBHostReset = function(Host:PUSBHost):LongWord;
  TUSBHostSubmit = function(Host:PUSBHost;Request:PUSBRequest):LongWord;
+ TUSBHostCancel = function(Host:PUSBHost;Request:PUSBRequest):LongWord;
  
  TUSBHost = record
   {Device Properties}
@@ -1079,6 +1150,7 @@ type
   HostStop:TUSBHostStop;       {A Host specific HostStop method implementing the standard USB host interface}
   HostReset:TUSBHostReset;     {A Host specific HostReset method implementing the standard USB host interface}
   HostSubmit:TUSBHostSubmit;   {A Host specific HostSubmit method implementing the standard USB host interface}
+  HostCancel:TUSBHostCancel;   {A Host specific HostCancel method implementing the standard USB host interface}
   {Driver Properties}
   Lock:TMutexHandle;           {Host lock}
   RootHub:PUSBDevice;          {The Root hub for this Host (or nil if the Host has not yet been started)}
@@ -1328,7 +1400,7 @@ function USBBufferRelease(Buffer:Pointer):LongWord;
 function USBRequestAllocate(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Callback:TUSBRequestCompleted;Size:LongWord;DriverData:Pointer):PUSBRequest; inline;
 function USBRequestAllocateEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Callback:TUSBRequestCompleted;var Data:Pointer;Size:LongWord;DriverData:Pointer):PUSBRequest;
 function USBRequestRelease(Request:PUSBRequest):LongWord;
-function USBRequestInitialize(Request:PUSBRequest):LongWord; //Remove
+function USBRequestInitialize(Request:PUSBRequest):LongWord; //To Do //Remove (Modify SMSC95XX first)
 
 function USBRequestSubmit(Request:PUSBRequest):LongWord;
 function USBRequestCancel(Request:PUSBRequest):LongWord;
@@ -1336,7 +1408,7 @@ procedure USBRequestComplete(Request:PUSBRequest);
 
 //Control Methods
 function USBControlRequest(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word):LongWord; inline;
-function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;AllowShort:Boolean):LongWord;
+function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;Timeout:LongWord;AllowShort:Boolean):LongWord;
 procedure USBControlRequestComplete(Request:PUSBRequest);
 
 {==============================================================================}
@@ -1495,6 +1567,7 @@ var
  USBHubTableCount:LongWord;
 
  USBHubThread:TThreadId = INVALID_HANDLE_VALUE; {Thread ID of the hub thread (USBHubExecute)}
+ USBHubMessageslot:TMessageslotHandle = INVALID_HANDLE_VALUE;
  
  USBHubDriver:PUSBDriver;  {USB Hub Driver interface (Set by USBStart)} 
 
@@ -1594,6 +1667,14 @@ begin
  if USBStarted then Exit;
  
  Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Create Hub Messageslot}
+ USBHubMessageslot:=MessageslotCreateEx(USB_HUB_MESSAGESLOT_MAXIMUM,MESSAGESLOT_FLAG_NONE);
+ if USBHubMessageslot = INVALID_HANDLE_VALUE then
+  begin
+   Result:=ERROR_FUNCTION_FAILED;
+   Exit;
+  end;
  
  {Create Hub Thread}
  USBHubThread:=BeginThread(USBHubExecute,nil,USBHubThread,USBHUB_THREAD_STACK_SIZE);
@@ -1708,6 +1789,8 @@ begin
 
  
  //To Do //Terminate USBHubThread
+ 
+ //To DO //Destroy USBHubMessageslot
  
  //To Do
 
@@ -2019,7 +2102,7 @@ begin
  if Device.Descriptor = nil then Exit;
  
  {Get Descriptor}
- Result:=USBControlRequestEx(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_RECIPIENT_DEVICE,(USB_DESCRIPTOR_TYPE_DEVICE shl 8),0,Device.Descriptor,Length,AllowShort);
+ Result:=USBControlRequestEx(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_RECIPIENT_DEVICE,(USB_DESCRIPTOR_TYPE_DEVICE shl 8),0,Device.Descriptor,Length,INFINITE,AllowShort);
 end;
 
 {==============================================================================}
@@ -3422,7 +3505,7 @@ begin
      {$IFDEF USB_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'Unbinding ' + DriverGetName(@Device.Driver.Driver));
      {$ENDIF}
-    
+     
      {Unbind Driver (Device)}
      Device.Driver.DriverUnbind(Device,nil);
      
@@ -3513,54 +3596,49 @@ begin
  if USB_LOG_ENABLED then USBLogDebug(Device,'Getting maximum packet size');
  {$ENDIF}
  
- //To Do //Critical //May need to retry this because some devices fail on the first attempt
- 
- {Setup Retry} //TestingRpi
+ {Setup Retry}
  Count:=3;
  while Count > 0 do
   begin
-  
- {Read Device Descriptor (Starting with 8 byte maximum)}
- Device.Descriptor.bMaxPacketSize0:=USB_DEFAULT_MAX_PACKET_SIZE;
- Status:=USBDeviceReadDeviceDescriptor(Device,Device.Descriptor.bMaxPacketSize0);
- if Status <> USB_STATUS_SUCCESS then
-  begin
-   {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Device,'Retrying with maximum packet size ' + IntToStr(USB_ALTERNATE_MAX_PACKET_SIZE) + ' bytes');
-   {$ENDIF}
-   
-   {Read Device Descriptor (Retry with 64 byte maximum)}
-   Device.Descriptor.bMaxPacketSize0:=USB_ALTERNATE_MAX_PACKET_SIZE;
-   Status:=USBDeviceReadDeviceDescriptorEx(Device,Device.Descriptor.bMaxPacketSize0,True);
+   {Read Device Descriptor (Starting with 8 byte maximum)}
+   Device.Descriptor.bMaxPacketSize0:=USB_DEFAULT_MAX_PACKET_SIZE; 
+   Status:=USBDeviceReadDeviceDescriptor(Device,Device.Descriptor.bMaxPacketSize0);
    if Status <> USB_STATUS_SUCCESS then
     begin
-     if USB_LOG_ENABLED then USBLogError(Device,'Failed to read start of device descriptor: ' + USBStatusToString(Status));
- 
-     ThreadSleep(50);
+     {$IFDEF USB_DEBUG}
+     if USB_LOG_ENABLED then USBLogDebug(Device,'Retrying with maximum packet size ' + IntToStr(USB_ALTERNATE_MAX_PACKET_SIZE) + ' bytes');
+     {$ENDIF}
      
-     {Update Count}
-     Dec(Count);
-     if Count < 1 then
+     {Read Device Descriptor (Retry with 64 byte maximum)}
+     Device.Descriptor.bMaxPacketSize0:=USB_ALTERNATE_MAX_PACKET_SIZE;
+     Status:=USBDeviceReadDeviceDescriptorEx(Device,Device.Descriptor.bMaxPacketSize0,True);
+     if Status <> USB_STATUS_SUCCESS then
       begin
-       {Return Result}
-       Result:=Status;
-       Exit;
-      end; 
+       if USB_LOG_ENABLED then USBLogError(Device,'Failed to read start of device descriptor: ' + USBStatusToString(Status));
+   
+       ThreadSleep(50);
+       
+       {Update Count}
+       Dec(Count);
+       if Count < 1 then
+        begin
+         {Return Result}
+         Result:=Status;
+         Exit;
+        end; 
+      end
+     else
+      begin
+       {Continue}
+       Break;
+      end;    
     end
    else
     begin
      {Continue}
      Break;
-    end;    
-  end
- else
-  begin
-   {Continue}
-   Break;
-  end;  
- 
-   
-  end; //TestingRpi
+    end;  
+  end;
  
  {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Using bMaxPacketSize0=' + IntToStr(Device.Descriptor.bMaxPacketSize0));
@@ -3745,7 +3823,7 @@ begin
    {$IFDEF USB_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Device,'Waiting for ' + IntToStr(Device.PendingCount) + ' pending requests to complete');
    {$ENDIF}
-
+   
    {Wait for Pending}
    
    {Setup Waiter}
@@ -4564,6 +4642,7 @@ begin
  Result.HostStop:=nil;
  Result.HostReset:=nil;
  Result.HostSubmit:=nil;
+ Result.HostCancel:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.RootHub:=nil;
  Result.Alignment:=1;
@@ -4647,6 +4726,13 @@ begin
    Exit;
   end;
   
+ {Check Cancel}
+ if not(Assigned(Host.HostCancel)) then
+  begin
+   if USB_LOG_ENABLED then USBLogError(nil,'Cannot register host, Cancel function must be implemented');
+   Exit;
+  end;
+ 
  {Check Host}
  Result:=ERROR_ALREADY_EXISTS;
  if USBHostCheck(Host) = Host then
@@ -5189,6 +5275,7 @@ begin
  Request.Size:=Size;
  Request.Callback:=Callback;
  Request.DriverData:=DriverData;
+ Request.Status:=USB_STATUS_NOT_VALID;
  Request.ResubmitThread:=INVALID_HANDLE_VALUE; 
  Request.ResubmitSemaphore:=INVALID_HANDLE_VALUE;
  
@@ -5269,7 +5356,7 @@ begin
 end;
 
 {==============================================================================}
-//Remove
+//To Do //Remove (Modify SMSC95XX first)
 function USBRequestInitialize(Request:PUSBRequest):LongWord;
 {Initialize a USB request}
 {Request: The request to be initialized}
@@ -5288,7 +5375,7 @@ begin
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
 end;
-//Remove
+//To Do //Remove (Modify SMSC95XX first)
 {==============================================================================}
 
 function USBRequestSubmit(Request:PUSBRequest):LongWord;
@@ -5318,7 +5405,7 @@ begin
  if Request.Device.USBState = USB_STATE_DETACHING then
   begin
    {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detaching, refusing new request');
+   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detaching, refusing request submit');
    {$ENDIF}
    
    Result:=USB_STATUS_DEVICE_DETACHED;
@@ -5394,7 +5481,50 @@ begin
    Exit;
   end;
  
- //To Do
+ {Check State}
+ if Request.Device.USBState = USB_STATE_DETACHING then
+  begin
+   {$IFDEF USB_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detaching, refusing request cancel');
+   {$ENDIF}
+   
+   Result:=USB_STATUS_DEVICE_DETACHED;
+   Exit;
+  end;
+ 
+ {$IFDEF USB_DEBUG}
+ {Log Request}
+ if USB_LOG_ENABLED then 
+  begin
+   if Request.Endpoint <> nil then
+    begin
+     TransferType:=Request.Endpoint.bmAttributes and $03;
+     Direction:=Request.Endpoint.bEndpointAddress shr 7;
+    end
+   else
+    begin
+     TransferType:=USB_TRANSFER_TYPE_CONTROL;
+     Direction:=Request.SetupData.bmRequestType shr 7;
+    end;
+   USBLogDebug(Request.Device,'Cancelling request (' + IntToStr(Request.Size) + ' bytes, type=' + USBTransferTypeToString(TransferType) + ', dir=' + USBDirectionToString(Direction) + ')');
+   if TransferType = USB_TRANSFER_TYPE_CONTROL then
+    begin
+     USBLogDebug(Request.Device,'Control message: bmRequestType=' + IntToHex(Request.SetupData.bmRequestType,2) + ', bRequest=' + IntToHex(Request.SetupData.bRequest,2) + ', wValue=' + IntToHex(Request.SetupData.wValue,4) + ', wIndex=' + IntToHex(Request.SetupData.wIndex,4) + ', wLength=' + IntToHex(Request.SetupData.wLength,4));
+    end;
+  end;  
+ {$ENDIF}
+ 
+ {Acquire the Lock}
+ if MutexLock(Request.Device.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Cancel Request}
+    Result:=Request.Device.Host.HostCancel(Request.Device.Host,Request);
+   finally
+    {Release the Lock}
+    MutexUnlock(Request.Device.Lock);
+   end;   
+  end; 
 end;
 
 {==============================================================================}
@@ -5472,13 +5602,18 @@ begin
     {Check State and Pending Requests}
     if (Request.Device.USBState = USB_STATE_DETACHING) and (Request.Device.PendingCount = 0) then
      begin
-      {$IFDEF USB_DEBUG}
-      if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detachment pending, sending message to waiter thread (Thread=' + IntToHex(Request.Device.WaiterThread,8) + ')');
-      {$ENDIF}
-      
-      {Send Message}
-      FillChar(Message,SizeOf(TMessage),0);
-      ThreadSendMessage(Request.Device.WaiterThread,Message);
+      {Check Waiter}
+      if Request.Device.WaiterThread <> INVALID_HANDLE_VALUE then
+       begin
+        {$IFDEF USB_DEBUG}
+        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detachment pending, sending message to waiter thread (Thread=' + IntToHex(Request.Device.WaiterThread,8) + ')');
+        {$ENDIF}
+        
+        {Send Message}
+        FillChar(Message,SizeOf(TMessage),0);
+        ThreadSendMessage(Request.Device.WaiterThread,Message);
+        Request.Device.WaiterThread:=INVALID_HANDLE_VALUE;
+       end; 
      end;
    finally
     {Release the Lock}
@@ -5502,12 +5637,12 @@ function USBControlRequest(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRe
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
- Result:=USBControlRequestEx(Device,Endpoint,bRequest,bmRequestType,wValue,wIndex,Data,wLength,False);
+ Result:=USBControlRequestEx(Device,Endpoint,bRequest,bmRequestType,wValue,wIndex,Data,wLength,INFINITE,False);
 end;
 
 {==============================================================================}
 
-function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;AllowShort:Boolean):LongWord;
+function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;Timeout:LongWord;AllowShort:Boolean):LongWord;
 {Send of USB control request to the specified device and wait for the request to complete}
 {Device: The USB device to send the control request to}
 {Endpoint: The Endpoint to use for the control request (or nil for the default control endpoint)}
@@ -5517,6 +5652,7 @@ function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;b
 {wIndex: Request specific data}
 {Data: Buffer for the data to be sent or received from the request (Ignored if wLength is 0)}
 {wLength: Length of the Data buffer in bytes}
+{Timeout: Milliseconds to wait for request to complete (INFINITE to wait forever)}
 {AllowShort: Allow the return size to be less than the requested size}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
@@ -5530,6 +5666,12 @@ begin
  {Check Device}
  if Device = nil then Exit;
  
+ {Check Timeout}
+ if Timeout = 0 then
+  begin
+   Timeout:=INFINITE;
+  end;
+  
  {Create Semaphore}
  Semaphore:=SemaphoreCreate(0);
  if Semaphore = INVALID_HANDLE_VALUE then
@@ -5578,18 +5720,26 @@ begin
  if Status = USB_STATUS_SUCCESS then
   begin
    {Wait for Completion}
-   SemaphoreWait(Semaphore);
-   
-   {Get Status}
-   Status:=Request.Status;
-   
-   {Force error if actual size was not the same as requested size}
-   if (Status = USB_STATUS_SUCCESS) and (Request.ActualSize <> Request.Size) and not(AllowShort) then
+   if SemaphoreWaitEx(Semaphore,Timeout) = ERROR_SUCCESS then
     begin
-     Status:=USB_STATUS_INVALID_DATA;
-     Inc(Request.Device.RequestErrors);
-     Request.Device.LastError:=Status;
-    end;
+     {Get Status}
+     Status:=Request.Status;
+     
+     {Force error if actual size was not the same as requested size}
+     if (Status = USB_STATUS_SUCCESS) and (Request.ActualSize <> Request.Size) and not(AllowShort) then
+      begin
+       Status:=USB_STATUS_INVALID_DATA;
+       Inc(Request.Device.RequestErrors);
+       Request.Device.LastError:=Status;
+      end;
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Control request timeout (Timeout=' + IntToStr(Timeout) + ')');
+     
+     {Cancel Request}
+     USBRequestCancel(Request);
+    end;    
   end;  
  
  {Release Setup Data}
@@ -6851,7 +7001,7 @@ begin
    begin
     {Get Message}
     FillChar(Message,SizeOf(TMessage),0);
-    Result:=ThreadReceiveMessage(Message);
+    Result:=MessageslotReceive(USBHubMessageslot,Message);
     if Result = ERROR_SUCCESS then
      begin
       {Get Request}
@@ -6866,23 +7016,6 @@ begin
           if MutexLock(Hub.Lock) = ERROR_SUCCESS then
            begin
             try 
-             {Update Pending (Must be first)} //To Do //Critical //This may need to be done by USBHubStatusComplete ? (Since HubThread does the Unbind/Detach and will be the waiter thread ?) //See Keyboard/Mouse
-             Dec(Hub.PendingCount); 
-             
-             {Update Statistics}
-             Inc(Hub.ReceiveCount); 
-             
-             {Check State}
-             if Hub.HubState = USBHUB_STATE_DETACHING then
-              begin
-               {$IFDEF USB_DEBUG}
-               if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Hub: Detachment pending, setting report request status to USB_STATUS_DEVICE_DETACHED');
-               {$ENDIF}
-               
-               {Update Request}
-               Request.Status:=USB_STATUS_DEVICE_DETACHED;
-              end;
-             
              {Check Result}     
              if Request.Status = USB_STATUS_SUCCESS then
               begin
@@ -6890,10 +7023,8 @@ begin
                if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Hub: Processing hub status change');
                {$ENDIF}
                
-               {The format of the message is a bitmap that indicates which ports have had status changes.
-                We ignore bit 0, which indicates status change of the hub device itself.}
-               {Note: The buffer is large enough to hold 64 bits but we only support 16 ports and this code could only support 32 ports
-                 Need to rework this to provide expandable support}
+               {The format of the message is a bitmap that indicates which ports have status changes, we ignore bit 0, which indicates status change of the hub device itself}
+               {Note: The buffer is large enough to hold 64 bits but this code could only support 32 ports (PortMask), need to rework this for expandable support}
                
                {Determine Ports with Status Changes}
                PortMask:=0;
@@ -6901,8 +7032,6 @@ begin
                 begin
                  ChangeMask:=PByte(LongWord(Request.Data) + Count)^;
                  PortMask:=PortMask or (ChangeMask shl (Count * 8));
-                 //To Do //Check this, not clear what the original is trying to do.
-                               //Find the relevant request in the specs and compare //May be correct at this
                 end;
         
                {Process Ports with Status Changes}
@@ -6916,29 +7045,16 @@ begin
               end
              else
               begin
+               {Note: This should never happen as completion only sends successful requests)}
                if USB_LOG_ENABLED then USBLogError(Request.Device,'Hub: Status change request failed: ' + USBStatusToString(Request.Status));
                
                {Update Statistics}
                Inc(Hub.ReceiveErrors); 
               end;      
-                  
+ 
              {Check State}
-             if Hub.HubState = USBHUB_STATE_DETACHING then
+             if Hub.HubState <> USBHUB_STATE_DETACHING then
               begin
-               {Check Pending} //To Do //Critical //This may need to be done by USBHubStatusComplete ? (Since HubThread does the Unbind/Detach and will be the waiter thread ?) //See Keyboard/Mouse
-               if Hub.PendingCount = 0 then
-                begin
-                 {$IFDEF USB_DEBUG}
-                 if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Hub: Detachment pending, sending message to waiter thread (Thread=' + IntToHex(Hub.WaiterThread,8) + ')');
-                 {$ENDIF}
-                 
-                 {Send Message}
-                 FillChar(Message,SizeOf(TMessage),0);
-                 ThreadSendMessage(Hub.WaiterThread,Message);
-                end;
-              end
-             else
-              begin      
                {Update Pending}
                Inc(Hub.PendingCount);
                   
@@ -6995,21 +7111,113 @@ procedure USBHubStatusComplete(Request:PUSBRequest);
 {Called when the USB request from a USB hub IN interrupt endpoint completes}
 {Request: The USB request which has completed}
 var
+ Hub:PUSBHub;
+ Status:LongWord;
  Message:TMessage;
 begin
  {}
- //To Do //Critical //See changes in HubExecute
- 
  {Check Request}
- if Request = nil then Exit;
+ if Request <> nil then
+  begin
+   {Get Hub}
+   Hub:=PUSBHub(Request.DriverData);
+   if Hub <> nil then
+    begin
+     {Acquire the Lock}
+     if MutexLock(Hub.Lock) = ERROR_SUCCESS then
+      begin
+       try 
+        {Update Statistics}
+        Inc(Hub.ReceiveCount); 
+        
+        {Check State}
+        if Hub.HubState = USBHUB_STATE_DETACHING then
+         begin
+          {$IFDEF USB_DEBUG}
+          if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Hub: Detachment pending, setting report request status to USB_STATUS_DEVICE_DETACHED');
+          {$ENDIF}
+          
+          {Update Request}
+          Request.Status:=USB_STATUS_DEVICE_DETACHED;
+         end;
+   
+        {Check Result (Only send successful requests)}
+        if Request.Status = USB_STATUS_SUCCESS then
+         begin
+          {Send Message to the Hub Thread} 
+          FillChar(Message,SizeOf(TMessage),0);
+          Message.Msg:=LongWord(Request);
+          MessageslotSend(USBHubMessageslot,Message);
+         end
+        else
+         begin
+          if USB_LOG_ENABLED then USBLogError(Request.Device,'Hub: Status change request failed: ' + USBStatusToString(Request.Status));
+          
+          {Update Statistics}
+          Inc(Hub.ReceiveErrors); 
+         end;
+        
+        {Update Pending} 
+        Dec(Hub.PendingCount); 
+        
+        {Check State}
+        if Hub.HubState = USBHUB_STATE_DETACHING then
+         begin
+          {Check Pending} 
+          if Hub.PendingCount = 0 then
+           begin
+            {Check Waiter}
+            if Hub.WaiterThread <> INVALID_HANDLE_VALUE then
+             begin
+              {$IFDEF USB_DEBUG}
+              if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Hub: Detachment pending, sending message to waiter thread (Thread=' + IntToHex(Hub.WaiterThread,8) + ')');
+              {$ENDIF}
+              
+              {Send Message}
+              FillChar(Message,SizeOf(TMessage),0);
+              ThreadSendMessage(Hub.WaiterThread,Message);
+              Hub.WaiterThread:=INVALID_HANDLE_VALUE;
+             end; 
+           end;
+         end
+        else if Request.Status <> USB_STATUS_SUCCESS then
+         begin
+          {Update Pending}
+          Inc(Hub.PendingCount);
+             
+          {$IFDEF USB_DEBUG}
+          if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Hub: Resubmitting status change request');
+          {$ENDIF}
  
- {Check Hub Thread}
- if USBHubThread = INVALID_HANDLE_VALUE then Exit;
- 
- {Send Message to the Hub Thread} 
- FillChar(Message,SizeOf(TMessage),0);
- Message.Msg:=LongWord(Request);
- ThreadSendMessage(USBHubThread,Message);
+          {Resubmit Status Change Request}
+          Status:=USBRequestSubmit(Request);
+          if Status <> USB_STATUS_SUCCESS then
+           begin
+            if USB_LOG_ENABLED then USBLogError(Request.Device,'Hub: Failed to resubmit status change request: ' + USBStatusToString(Status));
+    
+            {Update Pending}
+            Dec(Hub.PendingCount);
+           end;
+         end;
+       finally
+        {Release the Lock}
+        MutexUnlock(Hub.Lock);
+       end;
+      end
+     else
+      begin
+       if USB_LOG_ENABLED then USBLogError(nil,'Hub: Failed to acquire hub lock'); 
+      end;
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(nil,'Hub: Status change request hub invalid (Hub=' + IntToHex(LongWord(Hub),8) + ')'); 
+    end;    
+  end
+ else
+  begin
+   if USB_LOG_ENABLED then USBLogError(nil,'Hub: Status change request invalid (Request=' + IntToHex(LongWord(Request),8) + ')'); 
+  end;
 end;
 
 {==============================================================================}
@@ -7294,13 +7502,16 @@ begin
  if MutexLock(Hub.Lock) = ERROR_SUCCESS then
   begin
    try
+    {Cancel Status Request}
+    USBRequestCancel(Hub.StatusRequest);
+   
     {Check Pending}
     if Hub.PendingCount <> 0 then
      begin
       {$IFDEF USB_DEBUG}
       if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Waiting for ' + IntToStr(Hub.PendingCount) + ' pending requests to complete');
       {$ENDIF}
-
+      
       {Wait for Pending}
       
       {Setup Waiter}
@@ -7681,6 +7892,9 @@ begin
   USB_STATUS_NOT_BOUND:Result:='USB_STATUS_NOT_BOUND';
   USB_STATUS_ALREADY_BOUND:Result:='USB_STATUS_ALREADY_BOUND';
   USB_STATUS_NOT_READY:Result:='USB_STATUS_NOT_READY';
+  USB_STATUS_NOT_COMPLETED:Result:='USB_STATUS_NOT_COMPLETED';
+  USB_STATUS_CANCELLED:Result:='USB_STATUS_CANCELLED';
+  USB_STATUS_NOT_VALID:Result:='USB_STATUS_NOT_VALID';
  end;
 end;
 

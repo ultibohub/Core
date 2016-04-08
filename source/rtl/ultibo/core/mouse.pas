@@ -1499,13 +1499,16 @@ begin
  {Acquire the Lock}
  if MutexLock(Mouse.Mouse.Lock) <> ERROR_SUCCESS then Exit;
  
+ {Cancel Report Request}
+ USBRequestCancel(Mouse.ReportRequest);
+ 
  {Check Pending}
  if Mouse.PendingCount <> 0 then
   begin
    {$IFDEF USB_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Waiting for ' + IntToStr(Mouse.PendingCount) + ' pending requests to complete');
    {$ENDIF}
-
+  
    {Wait for Pending}
    
    {Setup Waiter}
@@ -1748,13 +1751,18 @@ begin
         {Check Pending}
         if Mouse.PendingCount = 0 then
          begin
-          {$IFDEF USB_DEBUG}
-          if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Mouse: Detachment pending, sending message to waiter thread (Thread=' + IntToHex(Mouse.WaiterThread,8) + ')');
-          {$ENDIF}
-          
-          {Send Message}
-          FillChar(Message,SizeOf(TMessage),0);
-          ThreadSendMessage(Mouse.WaiterThread,Message);
+          {Check Waiter}
+          if Mouse.WaiterThread <> INVALID_HANDLE_VALUE then
+           begin
+            {$IFDEF USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Mouse: Detachment pending, sending message to waiter thread (Thread=' + IntToHex(Mouse.WaiterThread,8) + ')');
+            {$ENDIF}
+            
+            {Send Message}
+            FillChar(Message,SizeOf(TMessage),0);
+            ThreadSendMessage(Mouse.WaiterThread,Message);
+            Mouse.WaiterThread:=INVALID_HANDLE_VALUE;
+           end; 
          end;
        end
       else

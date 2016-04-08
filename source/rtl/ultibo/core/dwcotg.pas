@@ -31,7 +31,7 @@ Credits
                    https://github.com/xinu-os/xinu/blob/master/system/platforms/arm-rpi/usb_dwc_hcd.c
                    https://github.com/xinu-os/xinu/blob/master/system/platforms/arm-rpi/usb_dwc_regs.h
                    
-  Linux DWCOTG driver - ????
+  Linux DWCOTG driver - \drivers\usb\host\dwc_otg\*
   
   USPI (rsta2) - https://github.com/rsta2/uspi
   
@@ -56,10 +56,10 @@ was written on a best-effort basis using several sources to glean the
 necessary hardware details, including the extremely complicated and difficult
 to understand vendor provided Linux driver.
  
-This file implements the Host Controller Driver Interface defined in
-usb_hcdi.h.  Most importantly, it implements a function to power on and start
-the host controller (USBHCDIStart) and a function to send and receive messages
-over the USB (USBHCDISubmit).
+This file implements the Host Controller Driver Interface defined in TUSBHost.
+Most importantly, it implements a function to power on and start the host
+controller (HostStart) and a function to send and receive messages over the
+USB (HostSubmit).
  
 The DWC is controlled by reading and writing to/from memory-mapped registers.
 The most important registers are the host channel registers.  On this
@@ -122,7 +122,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,U
 {==============================================================================}
 const
  {DWCOTG specific constants}
- DWC_NUM_CHANNELS = 8;                                      {Number of DWC host channels} //To Do //Move to GlobalConfig ? //Read from Registers ?
+ DWC_NUM_CHANNELS = 8;                                      {Number of DWC host channels} //To Do //Move to GlobalConfig ? //Read from Registers ? //See max channels value in Linux driver
  
  DWC_SCHEDULER_THREAD_STACK_SIZE = SIZE_32K;                {Stack size of USB request scheduler thread}
  DWC_SCHEDULER_THREAD_PRIORITY = THREAD_PRIORITY_HIGHEST;   {Priority of USB request scheduler thread (should be fairly high so that USB transfers can be started as soon as possible)} 
@@ -161,6 +161,8 @@ const
  DWC_STATUS_TRANSACTION_RESTART = 5;
  DWC_STATUS_HOST_PORT_CHANGE    = 6;
  DWC_STATUS_ROOT_HUB_REQUEST    = 7;
+ DWC_STATUS_INVALID             = 8;
+ DWC_STATUS_CANCELLED           = 9;
  
  {DWC Complete Split}
  DWC_COMPLETE_SPLIT_RETRIES = 10;
@@ -183,15 +185,34 @@ const
  DWC_AHB_MASTER_IDLE        = (1 shl 31);
  
  {TDWCRegisters: 0x000c : Core USB Configuration Register}
- DWC_USB_CFG_PHYIF16	       = (1 shl 3);
- DWC_USB_CFG_ULPI_UTMI_SEL	   = (1 shl 4);
- DWC_USB_CFG_SRP_CAPABLE 	   = (1 shl 8);
- DWC_USB_CFG_HNP_CAPABLE 	   = (1 shl 9);
- DWC_USB_CFG_ULPI_FSLS		   = (1 shl 17);
- DWC_USB_CFG_ULPI_CLK_SUS_M    = (1 shl 19);
- DWC_USB_CFG_ULPI_EXT_VBUS_DRV = (1 shl 20);
- DWC_USB_CFG_TERM_SEL_DL_PULSE = (1 shl 22);
- 
+ DWC_USB_CFG_TOUTCAL_NASK            = (7 shl 0);
+ DWC_USB_CFG_PHYIF16	             = (1 shl 3);
+ DWC_USB_CFG_ULPI_UTMI_SEL	         = (1 shl 4);
+ DWC_USB_CFG_FS_INTF                 = (1 shl 5);
+ DWC_USB_CFG_PHY_SEL                 = (1 shl 6);
+ DWC_USB_CFG_DDR_SEL                 = (1 shl 7);
+ DWC_USB_CFG_SRP_CAPABLE 	         = (1 shl 8);
+ DWC_USB_CFG_HNP_CAPABLE 	         = (1 shl 9);
+ DWC_USB_CFG_USB_TRDTIM_MASK         = ($F shl 10);
+ DWC_USB_CFG_RESERVED14              = (1 shl 14);
+ DWC_USB_CFG_PHY_LOW_PWR_CLK_SEL     = (1 shl 15);
+ DWC_USB_CFG_OTG_UTMI_FS_SEL         = (1 shl 16);
+ DWC_USB_CFG_ULPI_FSLS		         = (1 shl 17);
+ DWC_USB_CFG_ULPI_AUTO_RES           = (1 shl 18);
+ DWC_USB_CFG_ULPI_CLK_SUS_M          = (1 shl 19);
+ DWC_USB_CFG_ULPI_EXT_VBUS_DRV       = (1 shl 20);
+ DWC_USB_CFG_ULPI_INT_VBUS_INDICATOR = (1 shl 21);
+ DWC_USB_CFG_TERM_SEL_DL_PULSE       = (1 shl 22);
+ DWC_USB_CFG_INDICATOR_COMPLEMENT    = (1 shl 23);
+ DWC_USB_CFG_INDICATOR_PASS_THROUGH  = (1 shl 24);
+ DWC_USB_CFG_ULPI_INT_PROT_DIS       = (1 shl 25);
+ DWC_USB_CFG_IC_USB_CAP              = (1 shl 26);
+ DWC_USB_CFG_IC_TRAFFIC_PULL_REMOVE  = (1 shl 27);
+ DWC_USB_CFG_TX_END_DELAY            = (1 shl 28);
+ DWC_USB_CFG_FORCE_HOST_MODE         = (1 shl 29);
+ DWC_USB_CFG_FORCE_DEV_MODE          = (1 shl 30);
+ DWC_USB_CFG_RESERVED31              = (1 shl 31);
+
  {TDWCRegisters: 0x0010 : Core Reset Register}
  {Write 1 to this location in the Core Reset Register to start a soft reset.  This bit will then be cleared by the hardware when the reset is complete}
  DWC_SOFT_RESET      = (1 shl 0);
@@ -215,21 +236,50 @@ const
  DWC_VENDOR_ID_MASK = $fffff000;
  
  {TDWCRegisters: 0x0048 : Hardware Configuration 2}
- DWC_HWCFG2_ARCHITECTURE_SLAVE_ONLY = (0 shl 3);
- DWC_HWCFG2_ARCHITECTURE_EXT_DMA    = (1 shl 3);
- DWC_HWCFG2_ARCHITECTURE_INT_DMA    = (2 shl 3);
+ DWC_HWCFG2_OP_MODE_MASK                   = (7 shl 0);
+ DWC_HWCFG2_OP_MODE_HNP_SRP_CAPABLE_OTG    = (0 shl 0);
+ DWC_HWCFG2_OP_MODE_SRP_ONLY_CAPABLE_OTG   = (1 shl 0);
+ DWC_HWCFG2_OP_MODE_NO_HNP_SRP_CAPABLE_OTG = (2 shl 0);
+ DWC_HWCFG2_OP_MODE_SRP_CAPABLE_DEVICE     = (3 shl 0);
+ DWC_HWCFG2_OP_MODE_NO_SRP_CAPABLE_DEVICE  = (4 shl 0);
+ DWC_HWCFG2_OP_MODE_SRP_CAPABLE_HOST       = (5 shl 0);
+ DWC_HWCFG2_OP_MODE_NO_SRP_CAPABLE_HOST    = (6 shl 0);
  
- DWC_HWCFG2_HS_PHY_TYPE_NOT_SUPPORTED = (0 shl 6);
- DWC_HWCFG2_HS_PHY_TYPE_UTMI		  = (1 shl 6);
- DWC_HWCFG2_HS_PHY_TYPE_ULPI		  = (2 shl 6);
- DWC_HWCFG2_HS_PHY_TYPE_UTMI_ULPI	  = (3 shl 6);
+ DWC_HWCFG2_ARCHITECTURE_MASK              = (3 shl 3);
+ DWC_HWCFG2_ARCHITECTURE_SLAVE_ONLY        = (0 shl 3);
+ DWC_HWCFG2_ARCHITECTURE_EXT_DMA           = (1 shl 3);
+ DWC_HWCFG2_ARCHITECTURE_INT_DMA           = (2 shl 3);
  
- DWC_HWCFG2_FS_PHY_TYPE_NOT_SUPPORTED = (0 shl 8);
- DWC_HWCFG2_FS_PHY_TYPE_DEDICATED	  = (1 shl 8);
- DWC_HWCFG2_FS_PHY_TYPE_SHARED_UTMI	  = (2 shl 8);
- DWC_HWCFG2_FS_PHY_TYPE_SHARED_ULPI	  = (3 shl 8);
+ DWC_HWCFG2_POINT2POINT                    = (1 shl 5);
  
- DWC_HWCFG2_NUM_HOST_CHANNELS         = ($F shl 14);
+ DWC_HWCFG2_HS_PHY_TYPE_MASK               = (3 shl 6);
+ DWC_HWCFG2_HS_PHY_TYPE_NOT_SUPPORTED      = (0 shl 6);
+ DWC_HWCFG2_HS_PHY_TYPE_UTMI		       = (1 shl 6);
+ DWC_HWCFG2_HS_PHY_TYPE_ULPI		       = (2 shl 6);
+ DWC_HWCFG2_HS_PHY_TYPE_UTMI_ULPI	       = (3 shl 6);
+                                           
+ DWC_HWCFG2_FS_PHY_TYPE_MASK               = (3 shl 8);
+ DWC_HWCFG2_FS_PHY_TYPE_NOT_SUPPORTED      = (0 shl 8);
+ DWC_HWCFG2_FS_PHY_TYPE_DEDICATED	       = (1 shl 8);
+ DWC_HWCFG2_FS_PHY_TYPE_SHARED_UTMI	       = (2 shl 8);
+ DWC_HWCFG2_FS_PHY_TYPE_SHARED_ULPI	       = (3 shl 8);
+             
+ DWC_HWCFG2_NUM_DEV_ENDPOINTS              = ($F shl 10);
+ DWC_HWCFG2_NUM_HOST_CHANNELS              = ($F shl 14);
+ 
+ DWC_HWCFG2_PERIODIC_ENDPOINT_SUPPORTED    = (1 shl 18);
+ DWC_HWCFG2_DYNAMIC_FIFO                   = (1 shl 19);
+ DWC_HWCFG2_MULTI_PROC_INT                 = (1 shl 20);
+ DWC_HWCFG2_RESERVED21                     = (1 shl 21);
+ DWC_HWCFG2_NON_PERIODIC_TX_QUEUE_DEPTH    = (3 shl 22);
+ DWC_HWCFG2_HOST_PERIODIC_TX_QUEUE_DEPTH   = (3 shl 24);
+ DWC_HWCFG2_DEV_TOKEN_QUEUE_DEPTH          = ($1F shl 26);
+ DWC_HWCFG2_OTG_ENABLE_IC_USB              = (1 shl 31);
+  
+ {TDWCRegisters: 0x0404 : Host Frame Interval Register}
+ DWC_HFIR_FRAME_INTERVAL_MASK    = ($FFFF shl 0);
+ DWC_HFIR_FRAME_INT_RELOAD_CTL   = (1 shl 16);
+ DWC_HFIR_RESERVED1              = ($FFFE  shl 17);
  
  {TDWCRegisters: 0x0440 : Host Port Control and Status Register}
  {This register provides the information needed to respond to status queries about the "host port", which is the port that is logically attached to the root hub}
@@ -453,8 +503,7 @@ type
    to send or receive is 0. The hardware will increment this address by the number of bytes successfully received or sent, which will correspond to the size decrease in transfer.size}
   {Note: DMA must be enabled in the AHB Configuration Register before this register can be used.  Otherwise, the hardware is considered to be in Slave mode and must be controlled a
    different way, which we do not use in our driver and do not attempt to document}
-  {BCM2835-specific note:  Theoretically, addresses written to this register must be bus addresses, not ARM physical addresses.  However, in our experience the behavior is the same
-   when simply using ARM physical addresses} 
+  {BCM2835-specific note:  Addresses written to this register must be bus addresses, not ARM physical addresses} 
   DMAAddress:LongWord;
   
   {0x0018 : Reserved}
@@ -482,13 +531,13 @@ type
  PDWCRegisters = ^TDWCRegisters;
  TDWCRegisters = record
   {Core registers}
-  {0x0000 : OTG Control}
+  {0x0000 : OTG Control and Status}
   OTGControl:LongWord;
    
   {0x0004 : OTG Interrupt}
   OTGInterrupt:LongWord;
    
-  {0x0008 : AHB Configuration}
+  {0x0008 : Core AHB Configuration}
   {This register configures some of the interactions the DWC has with the rest of the system}
   AHBConfiguration:LongWord;
    
@@ -508,10 +557,10 @@ type
   {This register has the same format as the Core Interrupt Register and configures whether the corresponding interrupt is enabled (1) or disabled (0).  Initial state after reset is all 0's}
   CoreInterruptMask:LongWord;
    
-  {0x001c : Receive Status Queue Read}
+  {0x001c : Receive Status Queue Read (Read Only)}
   ReceiveStatus:LongWord;
    
-  {0x0020 : Receive Status Queue Read & Pop}
+  {0x0020 : Receive Status Queue Read & POP (Read Only)}
   ReceiveStatusPop:LongWord;
    
   {0x0024 : Receive FIFO Size}
@@ -525,31 +574,31 @@ type
   {This register must be set by software before using the controller; see the note in the documentation for the hwcfg3 register about configuring the dynamic FIFOs} 
   NonPeriodicTransmitFIFOSize:LongWord;
    
-  {0x002c : Non Periodic Transmit FIFO/Queue Status}
+  {0x002c : Non Periodic Transmit FIFO/Queue Status (Read Only)}
   NonPeriodicTransmitFIFOStatus:LongWord;
    
-  {0x0030}
+  {0x0030 : I2C Access}
   I2CControl:LongWord;
    
-  {0x0034}
+  {0x0034 : PHY Vendor Control}
   PHYVendorControl:LongWord;
    
-  {0x0038}
+  {0x0038 : General Purpose Input/Output}
   GPIO:LongWord;
    
-  {0x003c}
+  {0x003c : User ID}
   UserId:LongWord;
    
-  {0x0040 : Vendor Id}
+  {0x0040 : Vendor ID (Read Only)}
   VendorId:LongWord;
    
-  {0x0044 : Hardware Configuration 1}
+  {0x0044 : User HW Config1 (Read Only)}
   HWCfg1:LongWord;
    
-  {0x0048 : Hardware Configuration 2}
+  {0x0048 : User HW Config2 (Read Only)}
   HWCfg2:LongWord;
    
-  {0x004c : Hardware Configuration 3}
+  {0x004c : User HW Config3 (Read Only)}
   {The high 16 bits of this read-only register contain the maximum total size, in words, of the dynamic FIFOs (Rx, Nonperiodic Tx, and Periodic Tx).
    Software must set up these three dynamic FIFOs in the rx_fifo_size, nonperiodic_tx_fifo_size, and host_periodic_tx_fifo_size registers such that
    their total size does not exceed this maximum total size and no FIFOs overlap}
@@ -560,22 +609,22 @@ type
   {The low 16 bits of this register contain various flags that are not documented here as we don't use any in our driver} 
   HWCfg3:LongWord;
    
-  {0x0050 : Hardware Configuration 4}
+  {0x0050 : User HW Config4 (Read Only)}
   HWCfg4:LongWord;
    
-  {0x0054}
+  {0x0054 :  Core LPM Configuration}
   CoreLPMConfiguration:LongWord;
   
-  {0x0058}
+  {0x0058 : Global PowerDown}
   GlobalPowerDown:LongWord;
    
-  {0x005c}
+  {0x005c : Global DFIFO SW Config}
   GlobalFIFOConfig:LongWord;
    
-  {0x0060}
+  {0x0060 : ADP Control (Attach Detection Protocol)}
   ADPControl:LongWord;
    
-  {0x0064}
+  {0x0064 : Reserved }
   Reserved0x0064:array[1..39] of LongWord;
    
   {0x0100 : Host Periodic Transmit FIFO Size}
@@ -584,26 +633,26 @@ type
   {This register should be set by software before using the controller; see the note in the documentation for the hwcfg3 register about configuring the dynamic FIFOs} 
   HostPeriodicTransmitFIFOSize:LongWord;
    
-  {0x0104}
+  {0x0104 : Device Periodic Transmit FIFO#n (if dedicated fifos are disabled, otherwise Device Transmit FIFO#n)}
   Reserved0x0104:array[1..191] of LongWord;
    
   {Host registers}
   {The registers beginning at this point are considered to be the "Host" registers. These are used for the "Host" half of the OTG (On-The-Go) protocol, which allows this hardware
    to act as either a USB host or a USB device.  This is the only half we are concerned with in this driver and we do not declare the corresponding Device registers}
    
-  {0x0400}
+  {0x0400 : Host Configuration}
   HostConfiguration:LongWord;
    
-  {0x0404}
+  {0x0404 : Host Frame Interval}
   HostFrameInterval:LongWord;
    
-  {0x0408}
+  {0x0408 : Host Frame Number / Frame Remaining}
   HostFrameNumber:LongWord;
    
-  {0x040c}
+  {0x040c : Reserved}
   Reserved0x040c:LongWord;
    
-  {0x0410}
+  {0x0410 : Host Periodic Transmit FIFO/ Queue Status}
   HostFIFOStatus:LongWord;
    
   {0x0414 : Host All Channels Interrupt}
@@ -616,7 +665,7 @@ type
    change this register.  Defaults to all 0's after a reset}
   HostChannelsInterruptMask:LongWord;
    
-  {0x041c}
+  {0x041c : Host Frame List Base Address Register}
   HostFrameList:LongWord;
    
   {0x0420}
@@ -631,6 +680,7 @@ type
   {0x0444}
   Reserved0x0444:array[1..47] of LongWord;
 
+  {Host channel registers}
   {0x0500 : Array of Host Channels}
   {Each host channel can be used to execute an independent USB transfer or transaction simultaneously.  A USB transfer may consist of multiple transactions, or packets.
    To avoid having to re-program the channel, it may be useful to use one channel for all transactions of a transfer before allowing other transfers to be scheduled on it}
@@ -711,6 +761,7 @@ function DWCHostStop(Host:PUSBHost):LongWord;
 function DWCHostReset(Host:PUSBHost):LongWord;    
 function DWCHostResetEx(Host:PDWCUSBHost):LongWord;
 function DWCHostSubmit(Host:PUSBHost;Request:PUSBRequest):LongWord;
+function DWCHostCancel(Host:PUSBHost;Request:PUSBRequest):LongWord;
 
 function DWCHostResubmit(Host:PDWCUSBHost;Request:PUSBRequest):LongWord;
 
@@ -767,6 +818,8 @@ function DWCChannelCompleted(Host:PDWCUSBHost;Request:PUSBRequest;Channel,Interr
 {DWCOTG Helper Functions}
 function DWCDivRoundUp(Number,Denominator:LongWord):LongWord;
 
+function DWCCalculateFrameInterval(Host:PDWCUSBHost):LongWord;
+
 {==============================================================================}
 {==============================================================================}
 
@@ -810,6 +863,7 @@ begin
    DWCHost.Host.HostStop:=DWCHostStop;
    DWCHost.Host.HostReset:=DWCHostReset;
    DWCHost.Host.HostSubmit:=DWCHostSubmit;
+   DWCHost.Host.HostCancel:=DWCHostCancel;
    DWCHost.Host.Alignment:=DWCOTG_DMA_ALIGNMENT;
    DWCHost.Host.Multiplier:=DWCOTG_DMA_MULTIPLIER;
    {DWCOTG}
@@ -945,9 +999,9 @@ end;
 {==============================================================================}
 {DWCOTG Functions}
 function DWCHostStart(Host:PUSBHost):LongWord;
-{Implementation of USBHCDIStart for the DesignWare Hi-Speed USB 2.0 On-The-Go
- Controller. See usb.pas for the documentation of this interface of the
- Host Controller Driver}
+{Implementation of USBHostStart for the DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
+
+ See usb.pas for the documentation of this interface of the Host Controller Driver}
 var
  Count:LongWord;
  Status:LongWord;
@@ -1084,9 +1138,9 @@ end;
 {==============================================================================}
 
 function DWCHostStop(Host:PUSBHost):LongWord; 
-{Implementation of USBHostStop for the DesignWare Hi-Speed USB 2.0 On-The-Go
- Controller. See usb.pas for the documentation of this interface of the
- Host Controller Driver.}
+{Implementation of USBHostStop for the DesignWare Hi-Speed USB 2.0 On-The-Go Controller. 
+ 
+ See usb.pas for the documentation of this interface of the Host Controller Driver}
 var
  Count:LongWord;
  Status:LongWord; 
@@ -1110,13 +1164,13 @@ begin
  {Stop Completion Thread}
  if PDWCUSBHost(Host).CompletionThread <> INVALID_HANDLE_VALUE then
   begin
-   KillThread(PDWCUSBHost(Host).CompletionThread);
+   KillThread(PDWCUSBHost(Host).CompletionThread); //To Do //Signal thread to terminate, dont kill
   end; 
   
  {Stop Scheduler Thread}
  if PDWCUSBHost(Host).SchedulerThread <> INVALID_HANDLE_VALUE then
   begin
-   KillThread(PDWCUSBHost(Host).SchedulerThread);
+   KillThread(PDWCUSBHost(Host).SchedulerThread); //To Do //Signal thread to terminate, dont kill
   end; 
  
  {Free Scheduler Mailslot}
@@ -1267,9 +1321,9 @@ end;
 {==============================================================================}
 
 function DWCHostSubmit(Host:PUSBHost;Request:PUSBRequest):LongWord;
-{Implementation of USBHCDISubmit for the DesignWare Hi-Speed USB
- 2.0 On-The-Go Controller.  See usb.pas for the documentation of this
- interface of the Host Controller Driver
+{Implementation of USBHostSubmit for the DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
+
+ See usb.pas for the documentation of this interface of the Host Controller Driver.
  
  This Host Controller Driver implements this interface asynchronously, as
  intended. Furthermore, it uses a simplistic scheduling algorithm where it
@@ -1280,6 +1334,8 @@ function DWCHostSubmit(Host:PUSBHost;Request:PUSBRequest):LongWord;
  at an appropriate time by separate code that shortcuts the main queue when
  the timer expires}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must hold the device lock}
 var
  Status:LongWord; 
 begin
@@ -1307,6 +1363,168 @@ begin
   end;
  
  Result:=USB_STATUS_SUCCESS;
+end;
+
+{==============================================================================}
+
+function DWCHostCancel(Host:PUSBHost;Request:PUSBRequest):LongWord;
+{Implementation of USBHostCancel for the DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
+
+ See usb.pas for the documentation of thisinterface of the Host Controller Driver}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure} 
+
+{Note: Caller must hold the device lock}
+var
+ Count:LongWord;
+ Message:TMessage;
+ Channel:LongWord;
+ ResultCode:LongWord;
+ Characteristics:LongWord;
+ HostChannel:PDWCHostChannel;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Host}
+ if Host = nil then Exit;
+ 
+ {Check Request}
+ if Request = nil then Exit;
+
+ {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+ if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Cancelling request (Request=' + IntToHex(LongWord(Request),8) + ')');
+ {$ENDIF}
+ 
+ {Acquire the Channel Lock (Must be before Host Lock)}
+ if MutexLock(PDWCUSBHost(Host).ChannelFreeLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Acquire the Host Lock}
+    if DWCOTG_FIQ_ENABLED then
+     begin
+      ResultCode:=SpinLockIRQFIQ(PDWCUSBHost(Host).Lock);
+     end
+    else
+     begin
+      ResultCode:=SpinLockIRQ(PDWCUSBHost(Host).Lock);
+     end;  
+    if ResultCode = ERROR_SUCCESS then
+     begin
+      try
+       {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+       if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:  (Status=' + USBStatusToString(Request.Status) + ')');
+       {$ENDIF}
+       
+       {Check Request}
+       if Request.Status = USB_STATUS_NOT_PROCESSED then
+        begin
+         {Update Request}
+         Request.Status:=USB_STATUS_CANCELLED;
+         
+         {Scheduler will complete cancel}
+         
+         {Return Result}
+         Result:=USB_STATUS_SUCCESS;
+        end
+       else if Request.Status = USB_STATUS_NOT_COMPLETED then
+        begin
+         {Update Request}
+         Request.Status:=USB_STATUS_CANCELLED;
+
+         {Find Channel}
+         Channel:=LongWord(INVALID_HANDLE_VALUE);
+         for Count:=0 to DWC_NUM_CHANNELS - 1 do
+          begin
+           if PDWCUSBHost(Host).ChannelRequests[Count] = Request then
+            begin
+             Channel:=Count;
+             Break;
+            end;
+          end;
+         
+         {Check Channel}
+         if Channel <> LongWord(INVALID_HANDLE_VALUE) then
+          begin
+           {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+           if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: (Channel=' + IntToStr(Channel) + ')');
+           {$ENDIF}
+           
+           {Get Host Channel}
+           HostChannel:=@PDWCUSBHost(Host).Registers.HostChannels[Channel];
+           
+           {Memory Barrier}
+           DataMemoryBarrier; {Before the First Write}
+           
+           {Get Characteristics}
+           Characteristics:=HostChannel.Characteristics;
+           
+           {Check Enabled}
+           if (Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE) <> 0 then
+            begin
+             {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Channel is Enabled');
+             {$ENDIF}
+             
+             {Disable Channel}
+             Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_DISABLE);
+             
+             {Set Characteristics}
+             HostChannel.Characteristics:=Characteristics;
+            end
+           else
+            begin
+             {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Channel is not Enabled');
+             {$ENDIF}
+            end;
+           
+           {Memory Barrier}
+           DataMemoryBarrier; {After the Last Read} 
+           
+           {Interrupt handler will complete cancel}
+          end
+         else
+          begin
+           {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+           if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: (No Channel)'); 
+           {$ENDIF}
+           
+           {Interrupt handler or Resubmit thread will complete cancel}
+          end;          
+         
+         {Return Result}
+         Result:=USB_STATUS_SUCCESS;
+        end
+       else
+        begin
+         {Return Result}
+         Result:=USB_STATUS_OPERATION_FAILED;
+        end;     
+      finally
+       {Release the Host Lock}
+       if DWCOTG_FIQ_ENABLED then
+        begin
+         SpinUnlockIRQFIQ(PDWCUSBHost(Host).Lock);
+        end
+       else
+        begin
+         SpinUnlockIRQ(PDWCUSBHost(Host).Lock);
+        end;     
+       end;   
+     end
+    else
+     begin
+      Result:=USB_STATUS_OPERATION_FAILED;
+     end;  
+   finally
+    {Release the Channel Lock}
+    MutexUnlock(PDWCUSBHost(Host).ChannelFreeLock);
+   end;   
+  end
+ else
+  begin
+   Result:=USB_STATUS_OPERATION_FAILED;
+  end;  
 end;
 
 {==============================================================================}
@@ -1612,6 +1830,8 @@ begin
     
     {Save Core USB Configuration}
     Host.Registers.CoreUSBConfiguration:=CoreUSBConfiguration;
+
+    //To Do //Linux driver does a Reset again after setting these ?
     
     {Get Hardware Configuration 2}
     HWCfg2:=Host.Registers.HWCfg2;
@@ -1714,6 +1934,7 @@ function DWCHostSetup(Host:PDWCUSBHost):LongWord;
 var
  Power:LongWord;
  ResultCode:LongWord; 
+ HostFrameInterval:LongWord;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -1753,14 +1974,32 @@ begin
     {Save Power}
     Host.Registers.Power:=Power;
     
+    //To Do //Check Linux/FreeBSD drivers for addition initialization
     
-    //To Do 
+    {Get Host Frame Interval}
+    HostFrameInterval:=Host.Registers.HostFrameInterval;
+    
+    {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+    if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG:  HostFrameInterval = ' + IntToHex(HostFrameInterval,8));
+    {$ENDIF}
+    
+    {Check Host Frame Interval}
+    if DWCOTG_HOST_FRAME_INTERVAL then
+     begin
+      {Enable Reload Control}
+      {This bit allows dynamic reloading of the HFIR register during runtime. This bit needs to be programmed during initial configuration and its value must not be changed during runtime}
+      HostFrameInterval:=HostFrameInterval or DWC_HFIR_FRAME_INT_RELOAD_CTL;
+      
+      {Save Host Frame Interval}
+      Host.Registers.HostFrameInterval:=HostFrameInterval;
+     end; 
     
     {Memory Barrier}
     DataMemoryBarrier; {After the Last Read}
     
     {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
     if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG:  Power (After Setup) = ' + IntToHex(Power,8));
+    if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG:  HostFrameInterval (After Setup) = ' + IntToHex(HostFrameInterval,8));
     {$ENDIF}
     
     {Return Result}
@@ -2329,6 +2568,13 @@ begin
        
        Request.ShortAttempt:=True;
       end;
+      
+     {Check for Root Hub and Speed}
+     if USBIsRootHub(Request.Device.Parent) and (Request.Device.Speed <> USB_SPEED_HIGH) then
+      begin
+       {Due to bugs in the controller, change the Endpoint type from Interrupt to Control}
+       Characteristics:=(Characteristics and not(USB_TRANSFER_TYPE_INTERRUPT shl 18));
+      end; 
     end;
    
    {Setup Transfer Packet ID}
@@ -2350,25 +2596,29 @@ begin
     TransactionTranslatorHub:=TransactionTranslatorHub.Parent;
    until TransactionTranslatorHub.Speed = USB_SPEED_HIGH;
    
-   {Setup Port Address}
-   SplitControl:=(SplitControl or ((TransactionTranslatorHubPort - 1) shl 0));
-   
-   {Setup Hub Addresss}
-   SplitControl:=(SplitControl or (TransactionTranslatorHub.Address shl 7));
-   
-   {Setup Split Enable}
-   SplitControl:=(SplitControl or DWC_HOST_CHANNEL_SPLIT_CONTROL_SPLIT_ENABLE);
-   
-   {Check Transfer Size}
-   if ((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0) > ((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) shr 0) then
+   {Check for Root Hub (Do not do Split on Root Hub)}
+   if not USBIsRootHub(TransactionTranslatorHub) then
     begin
-     {Adjust Transfer Size}
-     Transfer:=(Transfer and not(DWC_HOST_CHANNEL_TRANSFER_SIZE)); {Reset Transfer Size}
-     Transfer:=(Transfer or (((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) shr 0) shl 0));
+     {Setup Port Address}
+     SplitControl:=(SplitControl or ((TransactionTranslatorHubPort - 1) shl 0));
      
-     Request.ShortAttempt:=True;
-    end; 
-   
+     {Setup Hub Addresss}
+     SplitControl:=(SplitControl or (TransactionTranslatorHub.Address shl 7));
+     
+     {Setup Split Enable}
+     SplitControl:=(SplitControl or DWC_HOST_CHANNEL_SPLIT_CONTROL_SPLIT_ENABLE);
+     
+     {Check Transfer Size}
+     if ((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0) > ((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) shr 0) then
+      begin
+       {Adjust Transfer Size}
+       Transfer:=(Transfer and not(DWC_HOST_CHANNEL_TRANSFER_SIZE)); {Reset Transfer Size}
+       Transfer:=(Transfer or (((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) shr 0) shl 0));
+       
+       Request.ShortAttempt:=True;
+      end; 
+    end;
+    
    if Request.Device.Speed = USB_SPEED_LOW then
     begin
      {Setup Low Speed}
@@ -2557,7 +2807,7 @@ begin
   end;
  Characteristics:=HostChannel.Characteristics;
  if (NextFrame and 1) <> 0 then Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_ODD_FRAME) else Characteristics:=(Characteristics and not(DWC_HOST_CHANNEL_CHARACTERISTICS_ODD_FRAME));
- Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE);
+ {Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE);} {Moved to last}
  HostChannel.Characteristics:=Characteristics;
  
  {Set the channel's interrupt mask to any interrupts we need to ensure that DWCInterruptHandler gets called when the software must take action on
@@ -2567,7 +2817,10 @@ begin
  InterruptMask:=(InterruptMask or DWC_HOST_CHANNEL_INTERRUPTS_CHANNEL_HALTED);
  HostChannel.InterruptMask:=InterruptMask;
  Host.Registers.HostChannelsInterruptMask:=(Host.Registers.HostChannelsInterruptMask or (1 shl Channel));
-
+ 
+ {Enable the channel}
+ HostChannel.Characteristics:=HostChannel.Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE;
+ 
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
  
@@ -2582,7 +2835,7 @@ function DWCHostPortReset(Host:PDWCUSBHost):LongWord;
 
 {Note: Caller must hold the Host lock} 
 var
- HardwareStatus:LongWord;
+ HostPortControlStatus:LongWord;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -2595,25 +2848,25 @@ begin
  {$ENDIF}
  
  {Get the Status}
- HardwareStatus:=DWCHostPortGetStatus(Host);
+ HostPortControlStatus:=DWCHostPortGetStatus(Host);
 
  {Set the reset flag on the port, then clear it after a certain amount of time}
- HardwareStatus:=HardwareStatus or DWC_HOST_PORT_CTRLSTATUS_RESET;
+ HostPortControlStatus:=HostPortControlStatus or DWC_HOST_PORT_CTRLSTATUS_RESET;
 
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
 
  {Write the Status}
- Host.Registers.HostPortControlStatus:=HardwareStatus;
+ Host.Registers.HostPortControlStatus:=HostPortControlStatus;
 
  {Wait for Reset}
  MillisecondDelay(60); //To Do //Critical  //Make this a constant
 
  {Clear the reset flag on the port}
- HardwareStatus:=HardwareStatus and not(DWC_HOST_PORT_CTRLSTATUS_RESET);
+ HostPortControlStatus:=HostPortControlStatus and not(DWC_HOST_PORT_CTRLSTATUS_RESET);
 
  {Write the Status}
- Host.Registers.HostPortControlStatus:=HardwareStatus;
+ Host.Registers.HostPortControlStatus:=HostPortControlStatus;
 
  {Wait for Recovery}
  MillisecondDelay(USB_PORT_RESET_RECOVERY);
@@ -2629,7 +2882,7 @@ function DWCHostPortPowerOn(Host:PDWCUSBHost):LongWord;
 
 {Note: Caller must hold the Host lock} 
 var
- HardwareStatus:LongWord;
+ HostPortControlStatus:LongWord;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -2642,16 +2895,16 @@ begin
  {$ENDIF}
  
  {Get the Status}
- HardwareStatus:=DWCHostPortGetStatus(Host);
+ HostPortControlStatus:=DWCHostPortGetStatus(Host);
 
  {Set the Powered bit}
- HardwareStatus:=HardwareStatus or DWC_HOST_PORT_CTRLSTATUS_POWERED;
+ HostPortControlStatus:=HostPortControlStatus or DWC_HOST_PORT_CTRLSTATUS_POWERED;
 
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
 
  {Write the Status}
- Host.Registers.HostPortControlStatus:=HardwareStatus;
+ Host.Registers.HostPortControlStatus:=HostPortControlStatus;
  
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
@@ -2667,7 +2920,7 @@ function DWCHostPortGetStatus(Host:PDWCUSBHost):LongWord;
 
 {Note: Caller must hold the Host lock}
 var
- HardwareStatus:LongWord;
+ HostPortControlStatus:LongWord;
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
@@ -2680,19 +2933,19 @@ begin
  {$ENDIF}
  
  {Read the Status}
- HardwareStatus:=Host.Registers.HostPortControlStatus;
+ HostPortControlStatus:=Host.Registers.HostPortControlStatus;
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read}
  
  {Zero the write clear bits}
- HardwareStatus:=HardwareStatus and not(DWC_HOST_PORT_CTRLSTATUS_ENABLED);
- HardwareStatus:=HardwareStatus and not(DWC_HOST_PORT_CTRLSTATUS_CONNECTED_CHANGED);
- HardwareStatus:=HardwareStatus and not(DWC_HOST_PORT_CTRLSTATUS_ENABLED_CHANGED);
- HardwareStatus:=HardwareStatus and not(DWC_HOST_PORT_CTRLSTATUS_OVERCURRENT_CHANGED);
+ HostPortControlStatus:=HostPortControlStatus and not(DWC_HOST_PORT_CTRLSTATUS_ENABLED);
+ HostPortControlStatus:=HostPortControlStatus and not(DWC_HOST_PORT_CTRLSTATUS_CONNECTED_CHANGED);
+ HostPortControlStatus:=HostPortControlStatus and not(DWC_HOST_PORT_CTRLSTATUS_ENABLED_CHANGED);
+ HostPortControlStatus:=HostPortControlStatus and not(DWC_HOST_PORT_CTRLSTATUS_OVERCURRENT_CHANGED);
  
  {Return Result}
- Result:=HardwareStatus;
+ Result:=HostPortControlStatus;
 end; 
 
 {==============================================================================}
@@ -2713,7 +2966,7 @@ begin
  {Check Feature}
  case Feature of
   USB_PORT_POWER:begin
-    {Power on  Port}
+    {Power on Port}
     Result:=DWCHostPortPowerOn(Host);
    end;
   USB_PORT_RESET:begin
@@ -2853,7 +3106,7 @@ begin
    {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Performing request to root hub default endpoint');
    {$ENDIF}
-
+   
    {Control request (Default Endpoint)}
    Request.Status:=DWCRootHubControlRequest(Host,Request);
    
@@ -2861,7 +3114,7 @@ begin
    FillChar(Message,SizeOf(TMessage),0);
    Message.Msg:=LongWord(Request);
    Message.wParam:=INVALID_HANDLE_VALUE;
-   Message.lParam:=DWC_STATUS_HOST_PORT_CHANGE; //Critical //DWC_STATUS_ROOT_HUB_REQUEST //Plus additions in CompletionExecute
+   Message.lParam:=DWC_STATUS_ROOT_HUB_REQUEST;
    ThreadSendMessage(Host.CompletionThread,Message);
    
    {Return Result}
@@ -2873,14 +3126,31 @@ begin
    if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Registering status change request to root hub');
    {$ENDIF}
    
-   //Critical //Error if already assigned //Send to completion with error code
-   {Interrupt request (Status Endpoint)}
-   Host.HubStatusChange:=Request;
-   if Host.PortStatus.wPortChange <> 0 then
+   {Check Request}
+   if Host.HubStatusChange = nil then
     begin
-     DWCHostPortStatusChanged(Host);
+     {Interrupt request (Status Endpoint)}
+     Host.HubStatusChange:=Request;
+     if Host.PortStatus.wPortChange <> 0 then
+      begin
+       DWCHostPortStatusChanged(Host);
+      end;
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(nil,'DWCOTG: Cannot register multiple status change requests for root hub');
+     
+     {Update Request}
+     Request.Status:=USB_STATUS_UNSUPPORTED_REQUEST;
+     
+     {Send to the Completion thread}
+     FillChar(Message,SizeOf(TMessage),0);
+     Message.Msg:=LongWord(Request);
+     Message.wParam:=INVALID_HANDLE_VALUE;
+     Message.lParam:=DWC_STATUS_HOST_PORT_CHANGE;
+     ThreadSendMessage(Host.CompletionThread,Message);
     end;
-
+    
    {Return Result}
    Result:=USB_STATUS_SUCCESS;
   end;
@@ -3329,12 +3599,17 @@ end;
 {==============================================================================}
 
 function DWCSchedulerExecute(Host:PDWCUSBHost):PtrInt;
-{USB request scheduler thread:  This thread repeatedly waits for next
- USB request that needs to be scheduled, waits for a free channel,
- then starts the request on that channel.  This is obviously a very
- simplistic scheduler as it does not take into account bandwidth requirements
- or which endpoint a transfer is for} //Critical
+{USB request scheduler thread
+
+ This thread receives requests that have been submitted and schedules them on
+ the next available channel.
+ 
+ This is a very simplistic scheduler that does not take into account bandwidth
+ requirements or which endpoint a transfer is for}
+ 
+{Host: USB host to service submitted requests for} 
 var
+ Message:TMessage;
  Channel:LongWord;
  Request:PUSBRequest;
  ResultCode:LongWord;
@@ -3377,8 +3652,24 @@ begin
         if ResultCode = ERROR_SUCCESS then
          begin
           try
-           {Perform Request}
-           DWCRootHubRequest(Host,Request);
+           {Check Request}
+           if Request.Status = USB_STATUS_NOT_PROCESSED then
+            begin
+             {Update Request}
+             Request.Status:=USB_STATUS_NOT_COMPLETED;
+             
+             {Perform Request}
+             DWCRootHubRequest(Host,Request);
+            end
+           else
+            begin
+             {Send to the Completion thread}
+             FillChar(Message,SizeOf(TMessage),0);
+             Message.Msg:=LongWord(Request);
+             Message.wParam:=INVALID_HANDLE_VALUE;
+             Message.lParam:=DWC_STATUS_INVALID;
+             ThreadSendMessage(Host.CompletionThread,Message);
+            end;
           finally
            {Release the Lock}
            if DWCOTG_FIQ_ENABLED then
@@ -3397,6 +3688,7 @@ begin
         {Schedule the request on a channel}
         {Get Channel}
         Channel:=DWCAllocateChannel(Host);
+        //To Do //Cancel //Fail request (Return to completion) if no channel
         
         {Acquire the Lock}
         if DWCOTG_FIQ_ENABLED then
@@ -3410,8 +3702,24 @@ begin
         if ResultCode = ERROR_SUCCESS then
          begin
           try
-           {Start Transfer}
-           DWCChannelStartTransfer(Host,Channel,Request);
+           {Check Request}
+           if Request.Status = USB_STATUS_NOT_PROCESSED then
+            begin
+             {Update Request}
+             Request.Status:=USB_STATUS_NOT_COMPLETED;
+           
+             {Start Transfer}
+             DWCChannelStartTransfer(Host,Channel,Request);
+            end
+           else
+            begin
+             {Send to the Completion thread}
+             FillChar(Message,SizeOf(TMessage),0);
+             Message.Msg:=LongWord(Request);
+             Message.wParam:=Channel;
+             Message.lParam:=DWC_STATUS_INVALID;
+             ThreadSendMessage(Host.CompletionThread,Message);
+            end;
           finally
            {Release the Lock}
            if DWCOTG_FIQ_ENABLED then
@@ -3442,11 +3750,21 @@ end;
 {==============================================================================}
 
 function DWCCompletionExecute(Host:PDWCUSBHost):PtrInt;
-{USB request completion thread}
-{Message contents passed from interrupt handler are as follows:
+{USB request completion thread
+ 
+ This thread receives completed requests which have either succeeded or failed 
+ and calls the completion handler which will call the registered callback for
+ the request.
+ 
+ This thread also receives requests that need to be resubmitted and resubmits
+ them for later processing by another thread}
+
+{Host: USB host to service completed requests for}
+
+{Message contents are as follows:
  
   Msg = Request to be completed
-  wParam = Channel that the request executed on
+  wParam = Channel that the request executed on (or INVALID_HANDLE_VALUE if no channel was allocated)
   lParam = Status of the channel interrupt
  
 }
@@ -3493,47 +3811,44 @@ begin
           DWCReleaseChannel(Host,Channel);
          end; 
         
-        //To Do //Critical //Rearrange, add DWC_STATUS_ROOT_HUB_REQUEST etc
-        if InterruptStatus <> DWC_STATUS_HOST_PORT_CHANGE then
-         begin
-          {Set the actual transferred size, unless we are doing a control transfer and aren't on the DATA phase}
-          if not(USBIsControlRequest(Request)) or ((Request.ControlPhase = USB_CONTROL_PHASE_DATA) and (InterruptStatus <> DWC_STATUS_TRANSFER_RESUBMIT)) then
-           begin
-            Request.ActualSize:=LongWord(Request.CurrentData) - LongWord(Request.Data);
-           end;
-        
-          {If we got here because we received a NAK or NYET, resubmit the request for a later time}
-          if InterruptStatus = DWC_STATUS_TRANSFER_RESUBMIT then
-           begin
-            Status:=DWCHostResubmit(Host,Request);
-            if Status <> USB_STATUS_SUCCESS then
-             begin
-              Request.Status:=Status;
+        {Check Status}
+        case InterruptStatus of 
+         DWC_STATUS_HOST_PORT_CHANGE,DWC_STATUS_ROOT_HUB_REQUEST,DWC_STATUS_INVALID,DWC_STATUS_CANCELLED:begin
+           {Update Statistics}
+           if Request.Status <> USB_STATUS_SUCCESS then Inc(Host.Host.RequestErrors);
+           
+           {Complete the request}
+           USBRequestComplete(Request);
+          end;
+         DWC_STATUS_TRANSFER_RESUBMIT:begin
+           {If we got here because we received a NAK or NYET, resubmit the request for a later time}
+           Status:=DWCHostResubmit(Host,Request);
+           if Status <> USB_STATUS_SUCCESS then
+            begin
+             Request.Status:=Status;
  
-              {Update Statistics}
-              if Request.Status <> USB_STATUS_SUCCESS then Inc(Host.Host.RequestErrors);
-              
-              {Complete the request}
-              USBRequestComplete(Request);
-             end;    
-           end
-          else
-           begin       
-            {Update Statistics}
-            if Request.Status <> USB_STATUS_SUCCESS then Inc(Host.Host.RequestErrors);
- 
-            {Complete the request}
-            USBRequestComplete(Request);
-           end; 
-         end
-        else
-         begin
-          {Update Statistics}
-          if Request.Status <> USB_STATUS_SUCCESS then Inc(Host.Host.RequestErrors);
+             {Update Statistics}
+             if Request.Status <> USB_STATUS_SUCCESS then Inc(Host.Host.RequestErrors);
+             
+             {Complete the request}
+             USBRequestComplete(Request);
+            end;    
+          end;         
+         else
+          begin
+           {Set the actual transferred size, unless we are doing a control transfer and aren't on the DATA phase}
+           if not(USBIsControlRequest(Request)) or (Request.ControlPhase = USB_CONTROL_PHASE_DATA) then
+            begin
+             Request.ActualSize:=LongWord(Request.CurrentData) - LongWord(Request.Data);
+            end;
           
-          {Complete the request}
-          USBRequestComplete(Request);
-         end;
+           {Update Statistics}
+           if Request.Status <> USB_STATUS_SUCCESS then Inc(Host.Host.RequestErrors);
+ 
+           {Complete the request}
+           USBRequestComplete(Request);
+          end;
+        end;  
        end
       else
        begin
@@ -3556,9 +3871,20 @@ end;
 {==============================================================================}
 
 function DWCResubmitExecute(Request:PUSBRequest):PtrInt;
-{Thread procedure for the threads created in DWCTransferResubmit
- Instances of this thread are killed in USBReleaseRequest}
-{Request: USB request to resubmit} //Critical
+{USB request resubmit thread
+
+ An instance of this thread is created for each request that needs to be resubmitted,
+ this thread then either waits for a predetermined number of milliseconds before
+ scheduling the request on the next available channel or waits for a signal from
+ the interrupt handler to indicate a start of frame before scheduling the request
+ on the allocated channel.
+ 
+ Once the request has been resubmitted the thread waits for the semaphore to be
+ signaled again. If the request is a periodic polling of an endpoint then it will
+ be resubmitted continuously at the predetermined interval, otherwise the semaphore
+ will be destroyed by the completion handler and the thread will terminate}
+ 
+{Request: USB request to resubmit}
 var
  Host:PDWCUSBHost;
  Channel:LongWord;
@@ -3629,6 +3955,7 @@ begin
       
       {Get Channel}
       Channel:=DWCAllocateChannel(Host);
+      //To Do //Cancel //Fail request (Return to completion) if no channel
       
       {Update Pending Transfers}
       if Channel <> LongWord(INVALID_HANDLE_VALUE) then
@@ -3688,8 +4015,21 @@ begin
       if ResultCode = ERROR_SUCCESS then
        begin
         try
-         {Start Transfer}
-         DWCChannelStartTransfer(Host,Channel,Request);
+         {Check Request}
+         if Request.Status = USB_STATUS_NOT_COMPLETED then
+          begin
+           {Start Transfer}
+           DWCChannelStartTransfer(Host,Channel,Request);
+          end
+         else
+          begin
+           {Send to the Completion thread}
+           FillChar(Message,SizeOf(TMessage),0);
+           Message.Msg:=LongWord(Request);
+           Message.wParam:=Channel;
+           Message.lParam:=DWC_STATUS_INVALID;
+           ThreadSendMessage(Host.CompletionThread,Message);
+          end;
         finally
          {Release the Lock}
          if DWCOTG_FIQ_ENABLED then
@@ -3714,6 +4054,7 @@ begin
       
       {Get Channel}
       Channel:=DWCAllocateChannel(Host);
+      //To Do //Cancel //Fail request (Return to completion) if no channel
       
       {Acquire the Lock}
       if DWCOTG_FIQ_ENABLED then
@@ -3727,8 +4068,21 @@ begin
       if ResultCode = ERROR_SUCCESS then
        begin
         try
-         {Start Transfer}
-         DWCChannelStartTransfer(Host,Channel,Request);
+         {Check Request}
+         if Request.Status = USB_STATUS_NOT_COMPLETED then
+          begin
+           {Start Transfer}
+           DWCChannelStartTransfer(Host,Channel,Request);
+          end 
+         else
+          begin
+           {Send to the Completion thread}
+           FillChar(Message,SizeOf(TMessage),0);
+           Message.Msg:=LongWord(Request);
+           Message.wParam:=Channel;
+           Message.lParam:=DWC_STATUS_INVALID;
+           ThreadSendMessage(Host.CompletionThread,Message);
+          end;
         finally
          {Release the Lock}
          if DWCOTG_FIQ_ENABLED then
@@ -3767,6 +4121,7 @@ var
  TempInterrupts:LongWord;
  CoreInterrupts:LongWord;
  ChannelInterrupt:LongWord;
+ HostFrameInterval:LongWord;
  HostPortControlStatus:LongWord;
 begin
  {}
@@ -3829,9 +4184,13 @@ begin
              {Get first channel waiting for SOF}
              Channel:=FirstBitSet(Host.StartOfFrameMask);
        
-             {Send a message to the resubmit thread}
-             FillChar(Message,SizeOf(TMessage),0);
-             ThreadSendMessage(Host.ChannelRequests[Channel].ResubmitThread,Message);
+             {Check Channel}
+             if Host.ChannelRequests[Channel] <> nil then
+              begin
+               {Send a message to the resubmit thread}
+               FillChar(Message,SizeOf(TMessage),0);
+               ThreadSendMessage(Host.ChannelRequests[Channel].ResubmitThread,Message);
+              end; 
        
              {Remove the channel from the waiting mask}
              Host.StartOfFrameMask:=Host.StartOfFrameMask and not(1 shl Channel);
@@ -3922,6 +4281,30 @@ begin
       if (HostPortControlStatus and DWC_HOST_PORT_CTRLSTATUS_ENABLED_CHANGED) <> 0 then Host.PortStatus.wPortChange:=(Host.PortStatus.wPortChange or USB_PORT_CHANGE_ENABLED) else Host.PortStatus.wPortChange:=(Host.PortStatus.wPortChange and not(USB_PORT_CHANGE_ENABLED));
       if (HostPortControlStatus and DWC_HOST_PORT_CTRLSTATUS_OVERCURRENT_CHANGED) <> 0 then Host.PortStatus.wPortChange:=(Host.PortStatus.wPortChange or USB_PORT_CHANGE_OVERCURRENT) else Host.PortStatus.wPortChange:=(Host.PortStatus.wPortChange and not(USB_PORT_CHANGE_OVERCURRENT));
  
+      {Check Port Enabled Change}
+      if (Host.PortStatus.wPortChange and USB_PORT_CHANGE_ENABLED) = USB_PORT_CHANGE_ENABLED then
+       begin
+        {Check Port Status Connected}
+        if (Host.PortStatus.wPortStatus and USB_PORT_STATUS_CONNNECTED) <> USB_PORT_STATUS_CONNNECTED then
+         begin
+          {Force Port Connnected Change}
+          Host.PortStatus.wPortChange:=(Host.PortStatus.wPortChange or USB_PORT_CHANGE_CONNECTED);
+         end;
+         
+        {Check Port Status Enabled}
+        if (Host.PortStatus.wPortStatus and USB_PORT_STATUS_ENABLED) = USB_PORT_STATUS_ENABLED then
+         begin
+          {Check Host Frame Interval}
+          if DWCOTG_HOST_FRAME_INTERVAL then
+           begin
+            {Calculate Host Frame Interval}
+            HostFrameInterval:=Host.Registers.HostFrameInterval;
+            HostFrameInterval:=(HostFrameInterval and not(DWC_HFIR_FRAME_INTERVAL_MASK)) or DWCCalculateFrameInterval(Host);
+            Host.Registers.HostFrameInterval:=HostFrameInterval;
+           end; 
+         end;
+       end;
+      
       {Clear the interrupt(s), which are "write-clear", by writing the Host Port Control and Status register back to itself. But as a special case, 'enabled' must be written as 0; otherwise the port will apparently disable itself}
       HostPortControlStatus:=(HostPortControlStatus and not(DWC_HOST_PORT_CTRLSTATUS_ENABLED));
       Host.Registers.HostPortControlStatus:=HostPortControlStatus;
@@ -3974,7 +4357,8 @@ begin
  
  {Get Request}
  Request:=Host.ChannelRequests[Channel];
-
+ if Request = nil then Exit;
+ 
  {Get Host Channel}
  HostChannel:=@Host.Registers.HostChannels[Channel];
  
@@ -3986,8 +4370,18 @@ begin
  if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG:   (Interrupts=' + IntToHex(Interrupts,8) + ', Characteristics=' + IntToHex(HostChannel.Characteristics,8) + ', Transfer=' + IntToHex(HostChannel.Transfer,8) + ')');
  {$ENDIF}
  
+ {Check Request Status}
+ if Request.Status <> USB_STATUS_NOT_COMPLETED then
+  begin
+   {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
+   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Request status invalid (Status=' + USBStatusToString(Request.Status) + ')');
+   {$ENDIF}
+  
+   {Request status invalid, transfer cancelled}
+   InterruptStatus:=DWC_STATUS_CANCELLED;
+  end
  {Check the Interrupts for errors}
- if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_STALL_RESPONSE_RECEIVED) <> 0 then
+ else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_STALL_RESPONSE_RECEIVED) <> 0 then
   begin
    {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Hardware stall on channel ' + IntToStr(Channel) + ' (Interrupts=' + IntToHex(Interrupts,8) + ', TRANSFER_PACKET_COUNT=' + IntToStr((HostChannel.Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19) + ')');
@@ -4147,6 +4541,9 @@ begin
     DWCChannelStartTransaction(Host,Channel,Request);
     Exit;
    end;
+  DWC_STATUS_CANCELLED:begin
+    Request.Status:=USB_STATUS_CANCELLED;
+   end;  
  end;
  
  {Transfer complete, transfer encountered an error, or transfer needs to be retried later}
@@ -4226,6 +4623,13 @@ begin
    Direction:=((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_DIRECTION) shr 15);
    TransferType:=((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_TYPE) shr 18);
    
+   {Check for Root Hub and Speed}
+   if USBIsRootHub(Request.Device.Parent) and (Request.Device.Speed <> USB_SPEED_HIGH) then
+    begin
+     {Fixup Transfer Type set by start transfer due to controller bugs}
+     if USBIsInterruptRequest(Request) then TransferType:=USB_TRANSFER_TYPE_INTERRUPT;
+    end; 
+   
    {Calculate number of bytes transferred and copy data from DMA buffer if needed}
    if Direction = USB_DIRECTION_IN then
     begin
@@ -4238,7 +4642,6 @@ begin
        if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
         begin
          {Invalidate the data cache}
-         //CleanAndInvalidateDataCacheRange(LongWord(PtrUInt(Request.CurrentData) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred); //TestingRPi2
          InvalidateDataCacheRange(LongWord(PtrUInt(Request.CurrentData) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred);
          //To Do //Is this the correct offset ?
         end;
@@ -4252,7 +4655,6 @@ begin
        if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
         begin
          {Invalidate the data cache}
-         //CleanAndInvalidateDataCacheRange(LongWord(PtrUInt(Host.DMABuffers[Channel]) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred); //TestingRPi2
          InvalidateDataCacheRange(LongWord(PtrUInt(Host.DMABuffers[Channel]) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred);
          //To Do //Is this the correct offset ?
         end; 
@@ -4430,6 +4832,87 @@ begin
  if Denominator = 0 then Exit;
  
  Result:=((Number + Denominator) - 1) div Denominator;
+end;
+
+{==============================================================================}
+
+function DWCCalculateFrameInterval(Host:PDWCUSBHost):LongWord;
+{Calculate the frame interval register value based on USB configuration and port speed}
+{Note: The host frame interval register can only be modified when the port enabled bit
+ is set in the host port control and status register}
+{Host: The DWCOTG host to calculate the interval for}
+
+{Note: Caller must hold the Host lock}  
+var
+ Clock:LongWord;
+ HWCfg2:LongWord;
+ CoreUSBConfiguration:LongWord;
+ HostPortControlStatus:LongWord;    
+begin
+ {}
+ Result:=0;
+ 
+ if Host = nil then Exit;
+ 
+ {Set Default}
+ Clock:=60;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Hardware Configuration 2}
+ HWCfg2:=Host.Registers.HWCfg2;
+ 
+ {Get Core USB Configuration}
+ CoreUSBConfiguration:=Host.Registers.CoreUSBConfiguration;
+ 
+ {Get Host Port Control and Status}
+ HostPortControlStatus:=Host.Registers.HostPortControlStatus;
+ 
+ {Check PHY Type}
+ if ((CoreUSBConfiguration and DWC_USB_CFG_PHY_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_ULPI_UTMI_SEL) = DWC_USB_CFG_ULPI_UTMI_SEL) and ((CoreUSBConfiguration and DWC_USB_CFG_PHYIF16) = 0) then
+  begin
+   Clock:=60;
+  end;
+ if ((CoreUSBConfiguration and DWC_USB_CFG_PHY_SEL) = DWC_USB_CFG_PHY_SEL) and ((HWCfg2 and DWC_HWCFG2_FS_PHY_TYPE_MASK) = DWC_HWCFG2_FS_PHY_TYPE_SHARED_ULPI) then
+  begin
+   Clock:=48;
+  end;
+ if ((CoreUSBConfiguration and DWC_USB_CFG_PHY_LOW_PWR_CLK_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_PHY_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_ULPI_UTMI_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_PHYIF16) = DWC_USB_CFG_PHYIF16) then
+  begin
+   Clock:=30;
+  end;
+ if ((CoreUSBConfiguration and DWC_USB_CFG_PHY_LOW_PWR_CLK_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_PHY_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_ULPI_UTMI_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_PHYIF16) = 0) then
+  begin
+   Clock:=60;
+  end; 
+ if ((CoreUSBConfiguration and DWC_USB_CFG_PHY_LOW_PWR_CLK_SEL) = DWC_USB_CFG_PHY_LOW_PWR_CLK_SEL) and ((CoreUSBConfiguration and DWC_USB_CFG_PHY_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_ULPI_UTMI_SEL) = 0) and ((CoreUSBConfiguration and DWC_USB_CFG_PHYIF16) = DWC_USB_CFG_PHYIF16) then
+  begin
+   Clock:=48;
+  end;
+ if ((CoreUSBConfiguration and DWC_USB_CFG_PHY_SEL) = DWC_USB_CFG_PHY_SEL) and ((CoreUSBConfiguration and DWC_USB_CFG_PHYIF16) = 0) and ((HWCfg2 and DWC_HWCFG2_FS_PHY_TYPE_MASK) = DWC_HWCFG2_FS_PHY_TYPE_SHARED_UTMI) then
+  begin
+   Clock:=48;
+  end;
+ if ((CoreUSBConfiguration and DWC_USB_CFG_PHY_SEL) = DWC_USB_CFG_PHY_SEL) and ((HWCfg2 and DWC_HWCFG2_FS_PHY_TYPE_MASK) = DWC_HWCFG2_FS_PHY_TYPE_DEDICATED) then
+  begin
+   Clock:=48;
+  end;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Check Speed}
+ if (HostPortControlStatus and DWC_HOST_PORT_CTRLSTATUS_SPEED) = (USB_SPEED_HIGH shl 17) then
+  begin
+   {Return High Speed Value}
+   Result:=125 * Clock;
+  end
+ else
+  begin
+   {Return Full Speed / Low Speed Value}
+   Result:=1000 * Clock;
+  end;
 end;
 
 {==============================================================================}

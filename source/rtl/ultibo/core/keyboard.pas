@@ -1980,9 +1980,12 @@ begin
  {Set State to Detaching}
  Result:=USB_STATUS_OPERATION_FAILED;
  if KeyboardDeviceSetState(@Keyboard.Keyboard,KEYBOARD_STATE_DETACHING) <> ERROR_SUCCESS then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Keyboard.Keyboard.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Cancel Report Request}
+ USBRequestCancel(Keyboard.ReportRequest);
  
  {Check Pending}
  if Keyboard.PendingCount <> 0 then
@@ -2245,13 +2248,18 @@ begin
         {Check Pending}
         if Keyboard.PendingCount = 0 then
          begin
-          {$IFDEF USB_DEBUG}
-          if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Keyboard: Detachment pending, sending message to waiter thread (Thread=' + IntToHex(Keyboard.WaiterThread,8) + ')');
-          {$ENDIF}
-          
-          {Send Message}
-          FillChar(Message,SizeOf(TMessage),0);
-          ThreadSendMessage(Keyboard.WaiterThread,Message);
+          {Check Waiter}
+          if Keyboard.WaiterThread <> INVALID_HANDLE_VALUE then
+           begin
+            {$IFDEF USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Keyboard: Detachment pending, sending message to waiter thread (Thread=' + IntToHex(Keyboard.WaiterThread,8) + ')');
+            {$ENDIF}
+            
+            {Send Message}
+            FillChar(Message,SizeOf(TMessage),0);
+            ThreadSendMessage(Keyboard.WaiterThread,Message);
+            Keyboard.WaiterThread:=INVALID_HANDLE_VALUE;
+           end; 
          end;
        end
       else
