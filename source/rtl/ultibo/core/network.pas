@@ -186,7 +186,7 @@ const
  ADAPTER_STATUS_LINKDOWN = 2;
  ADAPTER_STATUS_SHUTDOWN = 3;
 
- ADAPTER_MODE_NONE            = 1;   //To Do //Remove ??  //Maybe not, seem to be for Get/SetReceiveMode ?
+ ADAPTER_MODE_NONE            = 1;   //To Do //Remove ??  //Maybe not, seem to be for Get/SetReceiveMode ? //Use for Filtering 
  ADAPTER_MODE_LOCAL           = 2;
  ADAPTER_MODE_BROADCAST       = 3;  {This is the default}
  ADAPTER_MODE_LOCAL_MULTI     = 4;  {Mode 3 plus directed Multicast}
@@ -289,6 +289,9 @@ type
  PHardwareAddress = ^THardwareAddress;
  THardwareAddress = array[0..HARDWARE_ADDRESS_SIZE - 1] of Byte;
 
+ PHardwareAddresses = ^THardwareAddresses;
+ THardwareAddresses = array[0..0] of THardwareAddress;
+ 
  PMulticastAddresses = ^TMulticastAddresses;
  TMulticastAddresses = array[0..MAX_MULTICAST_ADDRESS - 1] of THardwareAddress;
 
@@ -306,7 +309,29 @@ type
   Wait:TSemaphoreHandle;     {Packet ready semaphore}
   Start:LongWord;            {Index of first packet ready}
   Count:LongWord;            {Number of packets ready in buffer}
-  Buffer:array[0..(NETWORK_BUFFER_SIZE - 1)] of PNetworkPacket;
+  Packets:array[0..(NETWORK_BUFFER_SIZE - 1)] of PNetworkPacket;
+ end;
+ 
+ {Network Entry}
+ PNetworkEntry = ^TNetworkEntry;
+ TNetworkEntry = record
+  Buffer:Pointer;            {Pointer to buffer}
+  Size:LongWord;             {Size of the buffer}
+  Offset:LongWord;           {Offset to start of data}
+  Count:LongWord;            {Number of packets in the entry}
+  DriverData:Pointer;        {Driver private data}
+  Packets:array of PNetworkPacket;
+ end;
+ 
+ {Network Queue}
+ PNetworkQueue = ^TNetworkQueue;
+ TNetworkQueue = record
+  Buffer:TBufferHandle;      {Handle for buffers}
+  Wait:TSemaphoreHandle;     {Entry ready semaphore}
+  Start:LongWord;            {Index of first entry ready}
+  Count:LongWord;            {Number of entries ready in queue}
+  Flags:LongWord;            {Queue specific flags}
+  Entries:array of PNetworkEntry;
  end;
  
  {Network Device}
@@ -324,33 +349,45 @@ type
  TNetworkDeviceWrite = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
  TNetworkDeviceControl = function(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
  
+ TNetworkBufferAllocate = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+ TNetworkBufferRelease = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+ TNetworkBufferReceive = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+ TNetworkBufferTransmit = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+ 
  TNetworkDevice = record
   {Device Properties}
-  Device:TDevice;                      {The Device entry for this Network}
-  {Network Properties}
-  NetworkId:LongWord;                  {Unique Id of this Network in the Network table}
-  NetworkState:LongWord;               {Network state (eg NETWORK_STATE_OPEN)}
-  NetworkStatus:LongWord;              {Network status (eg NETWORK_STATUS_UP)}
-  DeviceOpen:TNetworkDeviceOpen;       {A Device specific DeviceOpen method implementing a standard Network device interface}
-  DeviceClose:TNetworkDeviceClose;     {A Device specific DeviceClose method implementing a standard Network device interface}
-  DeviceRead:TNetworkDeviceRead;       {A Device specific DeviceRead method implementing a standard Network device interface}
-  DeviceWrite:TNetworkDeviceWrite;     {A Device specific DeviceWrite method implementing a standard Network device interface}
-  DeviceControl:TNetworkDeviceControl; {A Device specific DeviceControl method implementing a standard Network device interface}
+  Device:TDevice;                        {The Device entry for this Network}
+  {Network Properties}                   
+  NetworkId:LongWord;                    {Unique Id of this Network in the Network table}
+  NetworkState:LongWord;                 {Network state (eg NETWORK_STATE_OPEN)}
+  NetworkStatus:LongWord;                {Network status (eg NETWORK_STATUS_UP)}
+  DeviceOpen:TNetworkDeviceOpen;         {A Device specific DeviceOpen method implementing a standard Network device interface}
+  DeviceClose:TNetworkDeviceClose;       {A Device specific DeviceClose method implementing a standard Network device interface}
+  DeviceRead:TNetworkDeviceRead;         {A Device specific DeviceRead method implementing a standard Network device interface}
+  DeviceWrite:TNetworkDeviceWrite;       {A Device specific DeviceWrite method implementing a standard Network device interface}
+  DeviceControl:TNetworkDeviceControl;   {A Device specific DeviceControl method implementing a standard Network device interface}
+  BufferAllocate:TNetworkBufferAllocate; {A Device specific BufferAllocate method implementing a standard Network device interface}
+  BufferRelease:TNetworkBufferRelease;   {A Device specific BufferRelease method implementing a standard Network device interface}
+  BufferReceive:TNetworkBufferReceive;   {A Device specific BufferReceive method implementing a standard Network device interface}
+  BufferTransmit:TNetworkBufferTransmit; {A Device specific BufferTransmit method implementing a standard Network device interface}
   {Driver Properties}
-  Lock:TMutexHandle;                   {Network lock}
-  Buffer:TNetworkBuffer;               {Network receive buffer}
-  TransmitWait:TSemaphoreHandle;       {Transmit complete semaphore}
-  ReceiveBuffer:TBufferHandle;         {Buffer for receive packets}
-  TransmitBuffer:TBufferHandle;        {Buffer for transmit packets}
-  {Statistics Properties}
-  ReceiveCount:LongWord;
-  ReceiveErrors:LongWord;
-  TransmitCount:LongWord;
-  TransmitErrors:LongWord;
-  BufferOverruns:LongWord;
-  {Internal Properties}                                                                        
-  Prev:PNetworkDevice;                 {Previous entry in Network table}
-  Next:PNetworkDevice;                 {Next entry in Network table}
+  Lock:TMutexHandle;                     {Network lock}
+  Buffer:TNetworkBuffer;                 {Network receive buffer}
+  TransmitWait:TSemaphoreHandle;         {Transmit complete semaphore}
+  ReceiveBuffer:TBufferHandle;           {Buffer for receive packets}
+  TransmitBuffer:TBufferHandle;          {Buffer for transmit packets}
+                                         
+  ReceiveQueue:TNetworkQueue;            {Queue for receive packets}
+  TransmitQueue:TNetworkQueue;           {Queue for transmit packets}
+  {Statistics Properties}                
+  ReceiveCount:LongWord;                 
+  ReceiveErrors:LongWord;                
+  TransmitCount:LongWord;                
+  TransmitErrors:LongWord;               
+  BufferOverruns:LongWord;               
+  {Internal Properties}                                                                          
+  Prev:PNetworkDevice;                   {Previous entry in Network table}
+  Next:PNetworkDevice;                   {Next entry in Network table}
  end; 
  
  {Network Event}
@@ -802,7 +839,10 @@ function NetworkDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;v
 function NetworkDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
 function NetworkDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 
-//To Do //BufferAllocate/BufferRelease/BufferReceive/BufferTransmit
+function NetworkBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+function NetworkBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+function NetworkBufferReceive(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+function NetworkBufferTransmit(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
 
 function NetworkDeviceSetState(Network:PNetworkDevice;State:LongWord):LongWord;
 function NetworkDeviceSetStatus(Network:PNetworkDevice;Status:LongWord):LongWord;
@@ -3433,6 +3473,96 @@ end;
 
 {==============================================================================}
 
+function NetworkBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+{Allocate a transmit buffer from the specified network device, the returned entry will
+ include a buffer for writing data to as well as an offfset value to allow the driver
+ data to be written to the start of the buffer.
+ 
+ When the data has been copied to the buffer, pass the entry to NetworkBufferTransmit}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Method}
+ if not Assigned(Network.BufferAllocate) then Exit;
+
+ {Call Allocate}
+ Result:=Network.BufferAllocate(Network,Entry);
+end;
+ 
+{==============================================================================}
+
+function NetworkBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+{Release a receive buffer to the specified network device, the entry must have been
+ returned from NetworkBufferReceive}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Method}
+ if not Assigned(Network.BufferRelease) then Exit;
+
+ {Call Release}
+ Result:=Network.BufferRelease(Network,Entry);
+end;
+
+{==============================================================================}
+
+function NetworkBufferReceive(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+{Receive a completed receive buffer from the specified network device. The returned
+ entry will contain a one or more packets of data to read from.
+ 
+ When the data has been processed pas the returned buffer to NetworkBufferRelease}
+ 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Method}
+ if not Assigned(Network.BufferReceive) then Exit;
+
+ {Call Release}
+ Result:=Network.BufferReceive(Network,Entry);
+end;
+
+{==============================================================================}
+
+function NetworkBufferTransmit(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+{Transmit a completed transmit buffer to the specified network device. The entry
+ must have been allocated using NetworkBufferAllocate}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Method}
+ if not Assigned(Network.BufferTransmit) then Exit;
+
+ {Call Release}
+ Result:=Network.BufferTransmit(Network,Entry);
+end;
+ 
+{==============================================================================}
+
 function NetworkDeviceSetState(Network:PNetworkDevice;State:LongWord):LongWord;
 {Set the state of the specified network and send a notification}
 {Network: The network to set the state for}
@@ -3578,6 +3708,10 @@ begin
  Result.TransmitWait:=INVALID_HANDLE_VALUE;
  Result.ReceiveBuffer:=INVALID_HANDLE_VALUE;
  Result.TransmitBuffer:=INVALID_HANDLE_VALUE;
+ Result.ReceiveQueue.Buffer:=INVALID_HANDLE_VALUE;
+ Result.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
+ Result.TransmitQueue.Buffer:=INVALID_HANDLE_VALUE;
+ Result.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
  
  {Create Lock} 
  Result.Lock:=MutexCreate;
@@ -3649,6 +3783,10 @@ begin
  if Network = nil then Exit;
  if Network.NetworkId <> DEVICE_ID_ANY then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Functions}
+ if not Assigned(Network.DeviceOpen) then Exit;
+ if not Assigned(Network.DeviceClose) then Exit;
  
  {Check Network}
  Result:=ERROR_ALREADY_EXISTS;
@@ -4532,6 +4670,8 @@ begin
   PACKET_TYPE_ARP:Result:='PACKET_TYPE_ARP';
   PACKET_TYPE_RARP:Result:='PACKET_TYPE_RARP';
   PACKET_TYPE_IPX:Result:='PACKET_TYPE_IPX';
+  PACKET_TYPE_EAPOL:Result:='PACKET_TYPE_EAPOL';
+  PACKET_TYPE_RSN:Result:='PACKET_TYPE_RSN';
  end; 
 end;
 

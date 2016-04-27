@@ -27,6 +27,12 @@ Credits
    Linux MMC/SDHCI drivers
    U-Boot MMC/SDHCI drivers
  
+   Linux - \drivers\video\bcm2708_fb.c
+   U-Boot - \drivers\video\bcm2835.c 
+ 
+   Linux - \drivers\dma\bcm2708-dmaengine.c - Copyright 2013-2014 Florian Meier and Gellert Weisz
+   Linux - \drivers\dma\bcm2835-dma.c - Copyright 2013 Florian Meier
+ 
 References
 ==========
 
@@ -55,6 +61,7 @@ BCM2709 Devices
   PWM
   PCM
   GPIO
+  UART
   SDHCI (eMMC)
  
   Clock
@@ -79,7 +86,19 @@ BCM2709 I2C Device
 BCM2709 DMA Device
 ==================
 
+ The DMA controller has 16 channels in total although not all are available for software to use as some are already used by the GPU.
+ 
+ The firmware will pass the value dma.dmachans on the command line which will indicate which channels are available for our use.
+ 
+ Channels 0 to 6 are normal channels which support 2D stride and transfers up to 1GB per control block
+ 
+ Channels 7 to 14 are Lite channels which do not support stride and only allow transfers up to 64KB per control block
 
+ Channel 15 is not mentioned in most documentation and is shown as not available in the mask passed in dma.dmachans
+ 
+ Channel 0 and 15 are Bulk channels which have an additional FIFO for faster transfers (8 beat burst per read)
+ 
+ 
 BCM2709 PWM Device
 ==================
 
@@ -89,6 +108,10 @@ BCM2709 PCM Device
 
  
 BCM2709 GPIO Device
+===================
+
+
+BCM2709 UART Device
 ===================
 
 
@@ -136,7 +159,7 @@ unit BCM2709;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi2{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,MMC,Framebuffer,SysUtils; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi2{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,MMC,Framebuffer,SysUtils; 
 
 {==============================================================================}
 {Global definitions}
@@ -151,12 +174,34 @@ const
  {BCM2709 I2C constants}
  
  {BCM2709 DMA constants}
+ BCM2709_DMA_CHANNEL_COUNT = 16;                 {Total number of DMA channels (Not all are usable)}
+ 
+ BCM2709_DMA_LITE_CHANNELS   = $7F80;            {Mask of DMA Lite channels (7 to 14)}
+ BCM2709_DMA_NORMAL_CHANNELS = $007E; {807F}     {Mask of normal channels (1 to 6)}
+ BCM2709_DMA_BULK_CHANNELS   = $8001;            {Mask of DMA Bulk channels (0 and 15)}
+ 
+ BCM2709_DMA_SHARED_CHANNELS = $7800;            {Mask of channels with shared interrupt (11 to 14)}
+ 
+ BCM2709_DMA_MAX_LITE_TRANSFER   = 65536;        {Maximum transfer length for a DMA Lite channel}
+ BCM2709_DMA_MAX_NORMAL_TRANSFER = 1073741824;   {Maximum transfer length for a normal channel}
+ 
+ BCM2709_DMA_MAX_STRIDE   = $FFFF;               {Maximum stride value (Increment between rows) (Note this is a signed value (Min -32768 / Max 32767)}
+ BCM2709_DMA_MAX_Y_COUNT  = $3FFF;               {Maximum number of X length transfers in 2D stride}
+ BCM2709_DMA_MAX_X_LENGTH = $FFFF;               {Maximum X transfer length in 2D stride}
+ 
+ BCM2709_DMA_CB_ALIGNMENT = 32;                  {Alignement required for DMA control blocks}
+ 
+ BCM2709_DMA_LITE_BURST_LENGTH = 1;              {Burst length for DMA Lite channels}
+ BCM2709_DMA_NORMAL_BURST_LENGTH = 2;            {Burst length for normal channels}
+ BCM2709_DMA_BULK_BURST_LENGTH = 8;              {Burst length for DMA Bulk channels}
  
  {BCM2709 PWM constants}
  
  {BCM2709 PCM constants}
  
  {BCM2709 GPIO constants}
+
+ {BCM2709 UART constants}
  
  {BCM2709 SDHCI constants}
  BCM2709_EMMC_MIN_FREQ = 400000;    {Default minimum of 400KHz}
@@ -184,12 +229,41 @@ type
  {BCM2709 I2C types}
  
  {BCM2709 DMA types}
+ PBCM2709DMAHost = ^TBCM2709DMAHost;
+ 
+ PBCM2709DMAChannel = ^TBCM2709DMAChannel;
+ TBCM2709DMAChannel = record
+  Host:PBCM2709DMAHost;            {DMA host this channel belongs to}
+  Request:PDMARequest;             {Current DMA request pending on this channel (or nil of no request is pending)} 
+  Number:LongWord;                 {The channel number of this channel}
+  Interrupt:LongWord;              {The interrupt number of this channel}
+  Registers:PBCM2836DMARegisters;  {The channel registers for configuration}
+ end;
+ 
+ TBCM2709DMAHost = record
+  {DMA Properties}
+  DMA:TDMAHost;
+  {BCM2709 Properties}
+  ChannelMask:LongWord;                                                   {Mask of available channels (Passed from GPU firmware)}
+  ChannelFree:LongWord;                                                   {Bitmap of current free channels}
+  ChannelLock:TMutexHandle;                                               {Lock for access to ChannelFree}
+  ChannelWait:TSemaphoreHandle;                                           {Number of free normal channels in ChannelFree}
+  ChannelLite:TSemaphoreHandle;                                           {Number of free DMA Lite channels in ChannelFree}
+  ChannelBulk:TSemaphoreHandle;                                           {Number of free DMA Bulk channels in ChannelFree}
+  Channels:array[0..BCM2709_DMA_CHANNEL_COUNT - 1] of TBCM2709DMAChannel; {Channel information for each DMA channel on the host}
+  EnableRegister:PLongWord;
+  InterruptRegister:PLongWord;
+  {Statistics Properties}                                        
+  InterruptCount:LongWord;                                                {Number of interrupt requests received by the host controller}
+ end;
  
  {BCM2709 PWM types}
  
  {BCM2709 PCM types}
  
  {BCM2709 GPIO types}
+
+ {BCM2709 UART types}
  
  {BCM2709 SDHCI types}
  PBCM2709SDHCIHost = ^TBCM2709SDHCIHost;
@@ -276,6 +350,19 @@ procedure BCM2709Init;
 
 {==============================================================================}
 {BCM2709 DMA Functions}
+function BCM2709DMAHostStart(DMA:PDMAHost):LongWord;
+function BCM2709DMAHostStop(DMA:PDMAHost):LongWord;
+
+function BCM2709DMAHostSubmit(DMA:PDMAHost;Request:PDMARequest):LongWord;
+function BCM2709DMAHostCancel(DMA:PDMAHost;Request:PDMARequest):LongWord;
+
+procedure BCM2709DMAInterruptHandler(Channel:PBCM2709DMAChannel);
+procedure BCM2709DMASharedInterruptHandler(DMA:PBCM2709DMAHost);
+
+procedure BCM2709DMARequestComplete(Channel:PBCM2709DMAChannel);
+
+function BCM2709DMAPeripheralToDREQ(Peripheral:LongWord):LongWord;
+procedure BCM2709DMADataToControlBlock(Request:PDMARequest;Data:PDMAData;Block:PBCM2836DMAControlBlock;Bulk,Lite:Boolean);
 
 {==============================================================================}
 {BCM2709 PWM Functions}
@@ -285,6 +372,9 @@ procedure BCM2709Init;
 
 {==============================================================================}
 {BCM2709 GPIO Functions}
+
+{==============================================================================}
+{BCM2709 UART Functions}
 
 {==============================================================================}
 {BCM2709 SDHCI Functions}
@@ -359,6 +449,7 @@ procedure BCM2709Init;
 var
  Status:LongWord;
  
+ BCM2709DMAHost:PBCM2709DMAHost;
  BCM2709SDHCIHost:PBCM2709SDHCIHost; 
 
  BCM2709Clock:PBCM2709Clock;
@@ -448,7 +539,63 @@ begin
  {Create DMA}
  if BCM2709_REGISTER_DMA then
   begin
-   //To Do
+   BCM2709DMAHost:=PBCM2709DMAHost(DMAHostCreateEx(SizeOf(TBCM2709DMAHost)));
+   if BCM2709DMAHost <> nil then
+    begin
+     {Update DMA}
+     {Device}
+     BCM2709DMAHost.DMA.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     BCM2709DMAHost.DMA.Device.DeviceType:=DMA_TYPE_NONE;
+     BCM2709DMAHost.DMA.Device.DeviceFlags:=DMA_FLAG_STRIDE or DMA_FLAG_DREQ or DMA_FLAG_NOINCREMENT or DMA_FLAG_NOREAD or DMA_FLAG_NOWRITE or DMA_FLAG_WIDE;
+     BCM2709DMAHost.DMA.Device.DeviceData:=nil;
+     if BCM2709DMA_SHARED_MEMORY then BCM2709DMAHost.DMA.Device.DeviceFlags:=BCM2709DMAHost.DMA.Device.DeviceFlags or DMA_FLAG_SHARED;
+     if BCM2709DMA_NOCACHE_MEMORY then BCM2709DMAHost.DMA.Device.DeviceFlags:=BCM2709DMAHost.DMA.Device.DeviceFlags or DMA_FLAG_NOCACHE;
+     if BCM2709DMA_CACHE_COHERENT then BCM2709DMAHost.DMA.Device.DeviceFlags:=BCM2709DMAHost.DMA.Device.DeviceFlags or DMA_FLAG_COHERENT;
+     {DMA}
+     BCM2709DMAHost.DMA.DMAState:=DMA_STATE_DISABLED;
+     BCM2709DMAHost.DMA.HostStart:=BCM2709DMAHostStart;
+     BCM2709DMAHost.DMA.HostStop:=BCM2709DMAHostStop;
+     BCM2709DMAHost.DMA.HostReset:=nil;
+     BCM2709DMAHost.DMA.HostSubmit:=BCM2709DMAHostSubmit;
+     BCM2709DMAHost.DMA.HostCancel:=BCM2709DMAHostCancel;
+     BCM2709DMAHost.DMA.HostProperties:=nil;
+     BCM2709DMAHost.DMA.Alignment:=BCM2709DMA_ALIGNMENT;
+     BCM2709DMAHost.DMA.Multiplier:=BCM2709DMA_MULTIPLIER;
+     BCM2709DMAHost.DMA.Properties.Flags:=BCM2709DMAHost.DMA.Device.DeviceFlags;
+     BCM2709DMAHost.DMA.Properties.Alignment:=BCM2709DMAHost.DMA.Alignment;
+     BCM2709DMAHost.DMA.Properties.Multiplier:=BCM2709DMAHost.DMA.Multiplier;
+     BCM2709DMAHost.DMA.Properties.Channels:=BCM2709_DMA_CHANNEL_COUNT;
+     BCM2709DMAHost.DMA.Properties.MaxSize:=BCM2709_DMA_MAX_NORMAL_TRANSFER;
+     BCM2709DMAHost.DMA.Properties.MaxCount:=BCM2709_DMA_MAX_Y_COUNT;
+     BCM2709DMAHost.DMA.Properties.MaxLength:=BCM2709_DMA_MAX_X_LENGTH;
+     BCM2709DMAHost.DMA.Properties.MinStride:=-32768;
+     BCM2709DMAHost.DMA.Properties.MaxStride:=32767;
+     {BCM2709}
+     BCM2709DMAHost.ChannelLock:=INVALID_HANDLE_VALUE;
+     BCM2709DMAHost.ChannelWait:=INVALID_HANDLE_VALUE;
+     BCM2709DMAHost.ChannelLite:=INVALID_HANDLE_VALUE;
+     BCM2709DMAHost.ChannelBulk:=INVALID_HANDLE_VALUE;
+     
+     {Register DMA}
+     Status:=DMAHostRegister(@BCM2709DMAHost.DMA);
+     if Status = ERROR_SUCCESS then
+      begin
+       {Start DMA}
+       Status:=DMAHostStart(@BCM2709DMAHost.DMA);
+       if Status <> ERROR_SUCCESS then
+        begin
+         if DMA_LOG_ENABLED then DMALogError(nil,'BCM2709: Failed to start new DMA host: ' + ErrorToString(Status));
+        end;
+      end
+     else
+      begin
+       if DMA_LOG_ENABLED then DMALogError(nil,'BCM2709: Failed to register new DMA host: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if DMA_LOG_ENABLED then DMALogError(nil,'BCM2709: Failed to create new DMA host');
+    end;
   end;
   
  {Create PWM}
@@ -468,7 +615,13 @@ begin
   begin
    //To Do
   end;
- 
+
+ {Create UART}
+ if BCM2709_REGISTER_UART then
+  begin
+   //To Do
+  end;
+  
  {Create SDHCI}
  if BCM2709_REGISTER_SDHCI then
   begin
@@ -708,6 +861,1022 @@ end;
 {==============================================================================}
 {==============================================================================}
 {BCM2709 DMA Functions}
+function BCM2709DMAHostStart(DMA:PDMAHost):LongWord;
+var
+ Mask:LongWord;
+ Count:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check DMA}
+ if DMA = nil then Exit;
+ 
+ {Get Channel Mask}
+ PBCM2709DMAHost(DMA).ChannelMask:=DMAGetChannels;
+
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(nil,'BCM2709: Channel mask = ' + IntToHex(PBCM2709DMAHost(DMA).ChannelMask,8));
+ {$ENDIF}
+ 
+ {Get Channel Free}
+ PBCM2709DMAHost(DMA).ChannelFree:=PBCM2709DMAHost(DMA).ChannelMask;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(nil,'BCM2709: Channel free = ' + IntToHex(PBCM2709DMAHost(DMA).ChannelFree,8));
+ {$ENDIF}
+ 
+ {Create Channel Lock}
+ PBCM2709DMAHost(DMA).ChannelLock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
+ if PBCM2709DMAHost(DMA).ChannelLock = INVALID_HANDLE_VALUE then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+  
+ {Count Free Normal Channels}
+ Mask:=(PBCM2709DMAHost(DMA).ChannelMask and BCM2709_DMA_NORMAL_CHANNELS);
+ Count:=0;
+ while Mask <> 0 do
+  begin
+   if (Mask and 1) <> 0 then
+    begin
+     Inc(Count);
+    end;
+   
+   Mask:=(Mask shr 1);
+  end;
+  
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(nil,'BCM2709: Normal channel free count = ' + IntToStr(Count));
+ {$ENDIF}
+  
+ {Create Normal Channel Semaphore}
+ PBCM2709DMAHost(DMA).ChannelWait:=SemaphoreCreate(Count);
+ if PBCM2709DMAHost(DMA).ChannelWait = INVALID_HANDLE_VALUE then
+  begin
+   {Destroy Channel Lock}
+   MutexDestroy(PBCM2709DMAHost(DMA).ChannelLock);
+   
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+
+ {Count Free DMA Lite Channels}
+ Mask:=(PBCM2709DMAHost(DMA).ChannelMask and BCM2709_DMA_LITE_CHANNELS);
+ Count:=0;
+ while Mask <> 0 do
+  begin
+   if (Mask and 1) <> 0 then
+    begin
+     Inc(Count);
+    end;
+   
+   Mask:=(Mask shr 1);
+  end;
+  
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(nil,'BCM2709: DMA Lite channel free count = ' + IntToStr(Count));
+ {$ENDIF}
+  
+ {Create DMA Lite Channel Semaphore}
+ PBCM2709DMAHost(DMA).ChannelLite:=SemaphoreCreate(Count);
+ if PBCM2709DMAHost(DMA).ChannelLite = INVALID_HANDLE_VALUE then
+  begin
+   {Destroy Normal Channel Semaphore}
+   SemaphoreDestroy(PBCM2709DMAHost(DMA).ChannelWait);
+   
+   {Destroy Channel Lock}
+   MutexDestroy(PBCM2709DMAHost(DMA).ChannelLock);
+   
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+
+ {Count Free DMA Bulk Channels}
+ Mask:=(PBCM2709DMAHost(DMA).ChannelMask and BCM2709_DMA_BULK_CHANNELS);
+ Count:=0;
+ while Mask <> 0 do
+  begin
+   if (Mask and 1) <> 0 then
+    begin
+     Inc(Count);
+    end;
+   
+   Mask:=(Mask shr 1);
+  end;
+  
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(nil,'BCM2709: DMA Bulk channel free count = ' + IntToStr(Count));
+ {$ENDIF}
+  
+ {Create DMA Bulk Channel Semaphore}
+ PBCM2709DMAHost(DMA).ChannelBulk:=SemaphoreCreate(Count);
+ if PBCM2709DMAHost(DMA).ChannelBulk = INVALID_HANDLE_VALUE then
+  begin
+   {Destroy DMA Lite Channel Semaphore}
+   SemaphoreDestroy(PBCM2709DMAHost(DMA).ChannelLite);
+  
+   {Destroy Normal Channel Semaphore}
+   SemaphoreDestroy(PBCM2709DMAHost(DMA).ChannelWait);
+   
+   {Destroy Channel Lock}
+   MutexDestroy(PBCM2709DMAHost(DMA).ChannelLock);
+   
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Setup Enable Register}
+ PBCM2709DMAHost(DMA).EnableRegister:=PLongWord(BCM2836_DMA_ENABLE_BASE);
+ 
+ {Setup Interrupt Register}
+ PBCM2709DMAHost(DMA).InterruptRegister:=PLongWord(BCM2836_DMA_INT_STATUS_BASE);
+ 
+ {Start Channels}
+ for Count:=0 to BCM2709_DMA_CHANNEL_COUNT - 1 do
+  begin
+   {Host}
+   PBCM2709DMAHost(DMA).Channels[Count].Host:=PBCM2709DMAHost(DMA);
+   
+   {Channel No}
+   PBCM2709DMAHost(DMA).Channels[Count].Number:=Count;
+   
+   {Check Available}
+   if (PBCM2709DMAHost(DMA).ChannelMask and (1 shl Count)) <> 0 then
+    begin
+     {Check Channel}
+     case Count of
+      {Channels 0 to 10}
+      0..10:begin
+        {Interrupt No}
+        PBCM2709DMAHost(DMA).Channels[Count].Interrupt:=BCM2836_IRQ_DMA0 + Count;
+      
+        {Registers}
+        PBCM2709DMAHost(DMA).Channels[Count].Registers:=PBCM2836DMARegisters(BCM2836_DMA0_REGS_BASE + ($100 * Count));
+      
+        {Request IRQ}
+        RequestIRQ(IRQ_ROUTING,PBCM2709DMAHost(DMA).Channels[Count].Interrupt,TInterruptHandler(BCM2709DMAInterruptHandler),@PBCM2709DMAHost(DMA).Channels[Count]);
+       end;
+      {Channels 11 to 14}
+      11..14:begin
+        {Interrupt No}
+        PBCM2709DMAHost(DMA).Channels[Count].Interrupt:=BCM2836_IRQ_DMA11_14;
+      
+        {Registers}
+        PBCM2709DMAHost(DMA).Channels[Count].Registers:=PBCM2836DMARegisters(BCM2836_DMA0_REGS_BASE + ($100 * Count));
+      
+        {Request IRQ}
+        RequestIRQ(IRQ_ROUTING,PBCM2709DMAHost(DMA).Channels[Count].Interrupt,TInterruptHandler(BCM2709DMASharedInterruptHandler),DMA);
+       end; 
+      {Channel 15}
+      15:begin
+        {Interrupt No (Only available on the all channels interrupt)} 
+        PBCM2709DMAHost(DMA).Channels[Count].Interrupt:=BCM2836_IRQ_DMA_ALL;
+
+        {Registers}
+        PBCM2709DMAHost(DMA).Channels[Count].Registers:=PBCM2836DMARegisters(BCM2836_DMA15_REGS_BASE);
+        
+        {No Request IRQ}
+       end;      
+     end;
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Check the Channel}
+     if (PBCM2709DMAHost(DMA).EnableRegister^ and (1 shl Count)) = 0 then
+      begin
+       {Enable the Channel}
+       PBCM2709DMAHost(DMA).EnableRegister^:=PBCM2709DMAHost(DMA).EnableRegister^ or (1 shl Count);
+       MicrosecondDelay(1000);
+     
+       {Reset the Channel}
+       PBCM2709DMAHost(DMA).Channels[Count].Registers.CS:=BCM2836_DMA_CS_RESET;
+      end; 
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {After the Last Read} 
+    end
+   else
+    begin
+     {Interrupt No}
+     PBCM2709DMAHost(DMA).Channels[Count].Interrupt:=LongWord(INVALID_HANDLE_VALUE);
+     
+     {Registers}
+     PBCM2709DMAHost(DMA).Channels[Count].Registers:=nil;
+    end;
+  end;
+
+ Result:=ERROR_SUCCESS;  
+end; 
+
+{==============================================================================}
+
+function BCM2709DMAHostStop(DMA:PDMAHost):LongWord;
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check DMA}
+ if DMA = nil then Exit;
+ 
+ {Stop Channels}
+ for Count:=0 to BCM2709_DMA_CHANNEL_COUNT - 1 do
+  begin
+   {Check Available}
+   if (PBCM2709DMAHost(DMA).ChannelMask and (1 shl Count)) <> 0 then
+    begin
+     {Check Channel}
+     case Count of
+      {Channels 0 to 10}
+      0..10:begin
+        {Release IRQ}
+        ReleaseIRQ(IRQ_ROUTING,PBCM2709DMAHost(DMA).Channels[Count].Interrupt,TInterruptHandler(BCM2709DMAInterruptHandler),@PBCM2709DMAHost(DMA).Channels[Count]);
+       end;
+      {Channels 11 to 14}
+      11..14:begin
+        {Release IRQ}
+        ReleaseIRQ(IRQ_ROUTING,PBCM2709DMAHost(DMA).Channels[Count].Interrupt,TInterruptHandler(BCM2709DMASharedInterruptHandler),DMA);
+       end;
+      {Channel 15}
+      15:begin
+        {No Release IRQ}
+       end;
+     end;
+    end;
+  end; 
+
+ {Destroy DMA Bulk Channel Semaphore}
+ SemaphoreDestroy(PBCM2709DMAHost(DMA).ChannelBulk);
+ PBCM2709DMAHost(DMA).ChannelBulk:=INVALID_HANDLE_VALUE;
+  
+ {Destroy DMA Lite Channel Semaphore}
+ SemaphoreDestroy(PBCM2709DMAHost(DMA).ChannelLite);
+ PBCM2709DMAHost(DMA).ChannelLite:=INVALID_HANDLE_VALUE;
+  
+ {Destroy Normal Channel Semaphore}
+ SemaphoreDestroy(PBCM2709DMAHost(DMA).ChannelWait);
+ PBCM2709DMAHost(DMA).ChannelWait:=INVALID_HANDLE_VALUE;
+ 
+ {Destroy Channel Lock}
+ MutexDestroy(PBCM2709DMAHost(DMA).ChannelLock);
+ PBCM2709DMAHost(DMA).ChannelLock:=INVALID_HANDLE_VALUE;
+ 
+ Result:=ERROR_SUCCESS;  
+end; 
+
+{==============================================================================}
+
+function BCM2709DMAHostSubmit(DMA:PDMAHost;Request:PDMARequest):LongWord;
+var
+ Bulk:Boolean;
+ Lite:Boolean;
+ Flags:LongWord;
+ Count:LongWord;
+ Channel:LongWord;
+ Maximum:LongWord;
+ Data:PDMAData;
+ Block:PBCM2836DMAControlBlock;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check DMA}
+ if DMA = nil then Exit;
+ 
+ {Check Request}
+ if Request = nil then Exit;
+ if Request.Host <> DMA then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Submitting request (Request=' + IntToHex(LongWord(Request),8) + ')');
+ {$ENDIF}
+ 
+ {Get Data Count}
+ Count:=DMADataCount(Request.Data);
+ if Count = 0 then Exit;
+
+ {Get Data Flags}
+ Flags:=DMADataFlags(Request.Data);
+ 
+ {Get Data Maximum}
+ Maximum:=DMADataMaximum(Request.Data);
+ 
+ Bulk:=False;
+ Lite:=False;
+ 
+ {Check for "Bulk" channel request}
+ if (Flags and DMA_DATA_FLAG_BULK) <> 0 then
+  begin
+   Bulk:=True;
+  end
+ else
+  begin 
+   {Check for "Lite" suitable request (No Stride, No Ignore, Size less then 64K)}
+   if (Flags and (DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_NOREAD or DMA_DATA_FLAG_NOWRITE) = 0) and (Maximum <= BCM2709_DMA_MAX_LITE_TRANSFER) then
+    begin
+     Lite:=True;
+    end;
+  end;  
+ 
+ {Get Maximum Size}
+ Maximum:=BCM2709_DMA_MAX_NORMAL_TRANSFER;
+ if Lite then Maximum:=BCM2709_DMA_MAX_LITE_TRANSFER;
+ 
+ Result:=ERROR_OPERATION_FAILED;
+ 
+ {Create Control Blocks}
+ if BCM2709DMA_SHARED_MEMORY then
+  begin
+   Request.ControlBlocks:=GetSharedAlignedMem(Count * SizeOf(TBCM2836DMAControlBlock),BCM2709_DMA_CB_ALIGNMENT);
+  end
+ else if BCM2709DMA_NOCACHE_MEMORY then
+  begin
+   Request.ControlBlocks:=GetNoCacheAlignedMem(Count * SizeOf(TBCM2836DMAControlBlock),BCM2709_DMA_CB_ALIGNMENT);
+  end
+ else 
+  begin
+   Request.ControlBlocks:=GetAlignedMem(Count * SizeOf(TBCM2836DMAControlBlock),BCM2709_DMA_CB_ALIGNMENT);
+  end;  
+ if Request.ControlBlocks = nil then Exit;
+ try
+  {Update Control Blocks}
+  Data:=Request.Data;
+  Block:=PBCM2836DMAControlBlock(Request.ControlBlocks);
+  while Data <> nil do
+   begin
+    {Check Size}
+    if Data.Size = 0 then Exit;
+    if Data.Size > Maximum then Exit;
+    if ((Data.Flags and DMA_DATA_FLAG_STRIDE) <> 0) and (Data.StrideLength = 0) then Exit;
+    
+    {Setup Control Block}
+    BCM2709DMADataToControlBlock(Request,Data,Block,Bulk,Lite);
+    
+    {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+    if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Data block (Source=' + IntToHex(LongWord(Data.Source),8) + ' Dest=' + IntToHex(LongWord(Data.Dest),8) + ' Size=' + IntToStr(Data.Size) + ')');
+    if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Control block (SourceAddress=' + IntToHex(Block.SourceAddress,8) + ' DestinationAddress=' + IntToHex(Block.DestinationAddress,8) + ' TransferLength=' + IntToHex(Block.TransferLength,8) + ')');
+    {$ENDIF}
+    
+    {Get Next}
+    Data:=Data.Next;
+    if Data <> nil then
+     begin
+      {Get Next Block}
+      Block:=PBCM2836DMAControlBlock(LongWord(Block) + SizeOf(TBCM2836DMAControlBlock));
+     end;
+   end; 
+ 
+  {Flush Control Blocks}
+  if not(BCM2709DMA_CACHE_COHERENT) then
+   begin
+    CleanDataCacheRange(LongWord(Request.ControlBlocks),Count * SizeOf(TBCM2836DMAControlBlock));
+   end;
+  
+  {Wait for Channel}
+  if Bulk then
+   begin
+    if SemaphoreWait(PBCM2709DMAHost(DMA).ChannelBulk) <> ERROR_SUCCESS then Exit;
+   end
+  else if Lite then
+   begin
+    if SemaphoreWait(PBCM2709DMAHost(DMA).ChannelLite) <> ERROR_SUCCESS then Exit;
+   end
+  else
+   begin  
+    if SemaphoreWait(PBCM2709DMAHost(DMA).ChannelWait) <> ERROR_SUCCESS then Exit;
+   end; 
+  
+  {Acquire the Lock}
+  if MutexLock(PBCM2709DMAHost(DMA).ChannelLock) = ERROR_SUCCESS then
+   begin
+    try
+     {Get Free Channel}
+     if Bulk then
+      begin
+       Channel:=FirstBitSet(PBCM2709DMAHost(DMA).ChannelFree and BCM2709_DMA_BULK_CHANNELS);
+      end
+     else if Lite then
+      begin
+       Channel:=FirstBitSet(PBCM2709DMAHost(DMA).ChannelFree and BCM2709_DMA_LITE_CHANNELS);
+      end
+     else
+      begin
+       Channel:=FirstBitSet(PBCM2709DMAHost(DMA).ChannelFree and BCM2709_DMA_NORMAL_CHANNELS);
+      end;
+      
+     {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+     if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Allocated channel (Channel=' + IntToStr(Channel) + ')');
+     {$ENDIF}
+      
+     {Check Free Channel} 
+     if Channel <> LongWord(INVALID_HANDLE_VALUE) then 
+      begin
+       {Update Channel Free}
+       PBCM2709DMAHost(DMA).ChannelFree:=PBCM2709DMAHost(DMA).ChannelFree xor (1 shl Channel);
+      
+       {Update Channel}
+       PBCM2709DMAHost(DMA).Channels[Channel].Request:=Request;
+       
+       {Memory Barrier}
+       DataMemoryBarrier; {Before the First Write}
+       
+       {Set Control Block}
+       if BCM2709DMA_BUS_ADDRESSES then
+        begin
+         PBCM2709DMAHost(DMA).Channels[Channel].Registers.CONBLK_AD:=PhysicalToBusAddress(Request.ControlBlocks);
+        end
+       else
+        begin
+         PBCM2709DMAHost(DMA).Channels[Channel].Registers.CONBLK_AD:=LongWord(Request.ControlBlocks);
+        end; 
+       
+       {Note: Broadcom documentation states that BCM2836_DMA_CS_ERROR bit should be cleared by writing
+              to the error bits in the debug register, this doesn't seem to be neccessary in practice}
+              
+       {Enable Channel}
+       PBCM2709DMAHost(DMA).Channels[Channel].Registers.CS:=BCM2836_DMA_CS_ACTIVE;
+       
+       {Note: Broadcom documentation states that the BCM2836_DMA_CS_END bit will be set when a transfer
+              is completed and should be cleared by writing 1 to it, this doesn't seem to be the case}
+                            
+       {Update Status}
+       Request.Status:=ERROR_NOT_COMPLETED;
+      
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end
+     else
+      begin
+       {Signal Semaphore}
+       if Bulk then
+        begin
+         SemaphoreSignal(PBCM2709DMAHost(DMA).ChannelBulk);
+        end
+       else if Lite then
+        begin
+         SemaphoreSignal(PBCM2709DMAHost(DMA).ChannelLite);
+        end
+       else
+        begin
+         SemaphoreSignal(PBCM2709DMAHost(DMA).ChannelWait);
+        end;
+      end;     
+    finally
+     {Release the Lock}
+     MutexUnlock(PBCM2709DMAHost(DMA).ChannelLock);
+    end;   
+   end;
+ finally
+  if Result <> ERROR_SUCCESS then
+   begin
+    FreeMem(Request.ControlBlocks);
+   end;
+ end; 
+end; 
+
+{==============================================================================}
+
+function BCM2709DMAHostCancel(DMA:PDMAHost;Request:PDMARequest):LongWord;
+var
+ CS:LongWord;
+ Count:LongWord;
+ Channel:LongWord;
+ Timeout:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check DMA}
+ if DMA = nil then Exit;
+ 
+ {Check Request}
+ if Request = nil then Exit;
+ if Request.Host <> DMA then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Cancelling request (Request=' + IntToHex(LongWord(Request),8) + ')');
+ {$ENDIF}
+ 
+ {Acquire the Lock}
+ if MutexLock(PBCM2709DMAHost(DMA).ChannelLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Request}
+    if Request.Status = ERROR_NOT_PROCESSED then
+     begin
+      {Update Request}
+      Request.Status:=ERROR_CANCELLED;
+     
+      {Return Result}
+      Result:=ERROR_SUCCESS;
+     end
+    else if Request.Status = ERROR_NOT_COMPLETED then
+     begin
+      {Update Request}
+      Request.Status:=ERROR_CANCELLED;
+     
+      {Find Channel}
+      Channel:=LongWord(INVALID_HANDLE_VALUE);
+      for Count:=0 to BCM2709_DMA_CHANNEL_COUNT - 1 do
+       begin
+        if PBCM2709DMAHost(DMA).Channels[Channel].Request = Request then
+         begin
+          Channel:=Count;
+          Break;
+         end;
+       end;
+       
+      {Check Channel}
+      if Channel <> LongWord(INVALID_HANDLE_VALUE) then
+       begin
+        {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+        if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Located channel (Channel=' + IntToStr(Channel) + ')');
+        {$ENDIF}
+      
+        {Memory Barrier}
+        DataMemoryBarrier; {Before the First Write}
+      
+        {Get Status}
+        CS:=PBCM2709DMAHost(DMA).Channels[Channel].Registers.CS;
+      
+        {Check Active}
+        if (CS and BCM2836_DMA_CS_ACTIVE) <> 0 then
+         begin
+          {Pause the Channel}
+          PBCM2709DMAHost(DMA).Channels[Channel].Registers.CS:=CS and not(BCM2836_DMA_CS_ACTIVE);
+          
+          {Wait for Paused}
+          Timeout:=10000;
+          while ((CS and BCM2836_DMA_CS_PAUSED) = 0) and (Timeout > 0) do
+           begin
+            CS:=PBCM2709DMAHost(DMA).Channels[Channel].Registers.CS;
+            
+            Dec(Timeout);
+           end;
+          
+          {Check Paused}
+          if (CS and BCM2836_DMA_CS_PAUSED) = 0 then
+           begin
+            Result:=ERROR_TIMEOUT;
+            Exit;
+           end;
+           
+          {Clear the Next Control Block}
+          PBCM2709DMAHost(DMA).Channels[Channel].Registers.NEXTCONBK:=0;
+          
+          {Set the Interrupt Enable}
+          PBCM2709DMAHost(DMA).Channels[Channel].Registers.TI:=PBCM2709DMAHost(DMA).Channels[Channel].Registers.TI or BCM2836_DMA_TI_INTEN;
+          
+          {Enable and Abort the Channel}
+          PBCM2709DMAHost(DMA).Channels[Channel].Registers.CS:=PBCM2709DMAHost(DMA).Channels[Channel].Registers.CS or BCM2836_DMA_CS_ACTIVE or BCM2836_DMA_CS_ABORT;
+         end;
+         
+        {Memory Barrier}
+        DataMemoryBarrier; {After the Last Read} 
+           
+        {Interrupt handler will complete cancel}
+       end
+      else
+       begin
+        {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+        if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: No channel');
+        {$ENDIF}
+       
+        {Interrupt handler will complete cancel}
+       end;
+              
+      {Return Result}
+      Result:=ERROR_SUCCESS;
+     end
+    else
+     begin
+      {Return Result}
+      Result:=ERROR_OPERATION_FAILED;
+     end;     
+   finally
+    {Release the Lock}
+    MutexUnlock(PBCM2709DMAHost(DMA).ChannelLock);
+   end;   
+  end
+ else
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+  end;
+end; 
+
+{==============================================================================}
+
+procedure BCM2709DMAInterruptHandler(Channel:PBCM2709DMAChannel);
+{DMA Channels 0 to 10 each have a dedicated interrupt, this handler simply
+ clears the interrupt and sends a completion on the associated channel}
+begin
+ {}
+ {Check Channel}
+ if Channel = nil then Exit;
+ if Channel.Registers = nil then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Acknowledge Interrupt}
+ Channel.Registers.CS:=BCM2836_DMA_CS_INT;
+ 
+ {Send Completion}
+ WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2709DMARequestComplete),Channel,nil);
+end; 
+
+{==============================================================================}
+
+procedure BCM2709DMASharedInterruptHandler(DMA:PBCM2709DMAHost);
+{DMA Channels 11 to 14 share a common interrupt, this alternate handler determines
+ which ones triggered the current interrupt and sends a completion on that channel}
+var
+ Channel:LongWord;
+ Interrupts:LongWord; 
+begin
+ {}
+ {Check DMA}
+ if DMA = nil then Exit;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Interrupt Status}
+ Interrupts:=(DMA.InterruptRegister^ and BCM2709_DMA_SHARED_CHANNELS);
+ while Interrupts <> 0 do
+  begin
+   {Get Channel}
+   Channel:=FirstBitSet(Interrupts);
+   
+   {Check Channel}
+   if DMA.Channels[Channel].Registers <> nil then
+    begin
+     {Acknowledge Interrupt}
+     DMA.Channels[Channel].Registers.CS:=BCM2836_DMA_CS_INT;
+     
+     {Send Completion}
+     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2709DMARequestComplete),@DMA.Channels[Channel],nil);
+    end;
+   
+   {Clear the Interrupt}
+   Interrupts:=Interrupts xor (1 shl Channel);
+  end; 
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+procedure BCM2709DMARequestComplete(Channel:PBCM2709DMAChannel);
+var
+ CS:LongWord;
+ Data:PDMAData;
+ Offset:LongInt; {Allow for negative stride}
+ DMA:PBCM2709DMAHost;
+ Request:PDMARequest;
+begin
+ {}
+ {Check Channel}
+ if Channel = nil then Exit;
+ if Channel.Registers = nil then Exit;
+ 
+ {Get Host}
+ DMA:=Channel.Host;
+ if DMA = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709: Request completed (Request=' + IntToHex(LongWord(Channel.Request),8) + ')');
+ {$ENDIF}
+
+ {Get Status}
+ CS:=Channel.Registers.CS;
+
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.CS=' + IntToHex(Channel.Registers.CS,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.CONBLK_AD=' + IntToHex(Channel.Registers.CONBLK_AD,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.TI=' + IntToHex(Channel.Registers.TI,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.SOURCE_AD=' + IntToHex(Channel.Registers.SOURCE_AD,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.DEST_AD=' + IntToHex(Channel.Registers.DEST_AD,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.TXFR_LEN=' + IntToHex(Channel.Registers.TXFR_LEN,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.STRIDE=' + IntToHex(Channel.Registers.STRIDE,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.NEXTCONBK=' + IntToHex(Channel.Registers.NEXTCONBK,8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709:  (Registers.DEBUG=' + IntToHex(Channel.Registers.DEBUG,8) + ')');
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Get Request}
+ Request:=Channel.Request;
+ 
+ {Acquire the Lock}
+ if MutexLock(DMA.ChannelLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Update Statistics}
+    Inc(DMA.InterruptCount);
+    
+    {Check Channel}
+    if Channel.Number < BCM2709_DMA_CHANNEL_COUNT then
+     begin
+      {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
+      if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709: Released channel (Channel=' + IntToStr(Channel.Number) + ')');
+      {$ENDIF}
+      
+      {Update Channel}
+      DMA.Channels[Channel.Number].Request:=nil;
+      
+      {Update Channel Free}
+      DMA.ChannelFree:=DMA.ChannelFree or (1 shl Channel.Number);
+      
+      {Check Bulk}
+      if ((1 shl Channel.Number) and BCM2709_DMA_BULK_CHANNELS) <> 0 then
+       begin
+        {Signal Semaphore}
+        SemaphoreSignal(DMA.ChannelBulk);
+       end
+      {Check Lite}
+      else if ((1 shl Channel.Number) and BCM2709_DMA_LITE_CHANNELS) <> 0 then
+       begin
+        {Signal Semaphore}
+        SemaphoreSignal(DMA.ChannelLite);
+       end
+      else
+       begin
+        {Signal Semaphore}
+        SemaphoreSignal(DMA.ChannelWait);
+       end;
+     end; 
+    
+   finally
+    {Release the Lock}
+    MutexUnlock(DMA.ChannelLock);
+   end;   
+  end;
+  
+ {Check Request}
+ if Request <> nil then
+  begin
+   {Check Status}
+   if (CS and BCM2836_DMA_CS_ERROR) <> 0 then
+    begin
+     Request.Status:=ERROR_OPERATION_FAILED;
+    end
+   else
+    begin
+     Request.Status:=ERROR_SUCCESS;
+    end;       
+   
+   {Release Control Blocks}
+   if Request.ControlBlocks <> nil then
+    begin
+     FreeMem(Request.ControlBlocks);
+     Request.ControlBlocks:=nil;
+    end; 
+   
+   {Flush Dest} 
+   case Request.Direction of
+    DMA_DIR_MEM_TO_MEM,DMA_DIR_DEV_TO_MEM:begin
+      if not(BCM2709DMA_CACHE_COHERENT) then
+       begin
+        Data:=Request.Data;
+        while Data <> nil do
+         begin
+          if (Data.Flags and DMA_DATA_FLAG_NOINVALIDATE) = 0 then
+           begin
+            if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.DestStride = 0) then
+             begin
+              InvalidateDataCacheRange(LongWord(Data.Dest),Data.Size);
+             end
+            else
+             begin
+              Offset:=0;
+              while Offset < Data.Size do
+               begin
+                InvalidateDataCacheRange(LongWord(Data.Dest + Offset),Data.StrideLength);
+                
+                Inc(Offset,Data.DestStride);
+               end;
+             end;
+           end; 
+          
+          Data:=Data.Next;
+         end; 
+       end;
+     end;
+   end;
+           
+   {Complete the request}
+   DMARequestComplete(Request);
+  end;
+end; 
+
+{==============================================================================}
+
+function BCM2709DMAPeripheralToDREQ(Peripheral:LongWord):LongWord;
+begin
+ {}
+ Result:=BCM2836_DMA_DREQ_NONE;
+ 
+ case Peripheral of
+  DMA_DREQ_ID_UART_TX:Result:=BCM2836_DMA_DREQ_UARTTX;
+  DMA_DREQ_ID_UART_RX:Result:=BCM2836_DMA_DREQ_UARTRX;
+  DMA_DREQ_ID_SPI_TX:Result:=BCM2836_DMA_DREQ_SPITX;
+  DMA_DREQ_ID_SPI_RX:Result:=BCM2836_DMA_DREQ_SPIRX;
+  DMA_DREQ_ID_SPI_SLAVE_TX:Result:=BCM2836_DMA_DREQ_BSCSPITX;
+  DMA_DREQ_ID_SPI_SLAVE_RX:Result:=BCM2836_DMA_DREQ_BSCSPIRX;
+  DMA_DREQ_ID_PCM_TX:Result:=BCM2836_DMA_DREQ_PCMTX;
+  DMA_DREQ_ID_PCM_RX:Result:=BCM2836_DMA_DREQ_PCMRX;
+  DMA_DREQ_ID_PWM:Result:=BCM2836_DMA_DREQ_PWM;
+  DMA_DREQ_ID_MMC:Result:=BCM2836_DMA_DREQ_EMMC;
+  DMA_DREQ_ID_SDHOST:Result:=BCM2836_DMA_DREQ_SDHOST;
+ end;
+end;
+
+{==============================================================================}
+
+procedure BCM2709DMADataToControlBlock(Request:PDMARequest;Data:PDMAData;Block:PBCM2836DMAControlBlock;Bulk,Lite:Boolean);
+var
+ Count:LongWord;
+ Offset:LongInt; {Allow for negative stride}
+begin
+ {}
+ if Request = nil then Exit;
+ if Data = nil then Exit;
+ if Block = nil then Exit;
+ 
+ {Clear Transfer Information}
+ Block.TransferInformation:=0;
+ 
+ {Setup Source and Destination}
+ if BCM2709DMA_BUS_ADDRESSES then
+  begin
+   case Request.Direction of
+    DMA_DIR_NONE:begin
+      Block.SourceAddress:=LongWord(Data.Source);
+      Block.DestinationAddress:=LongWord(Data.Dest);
+     end;
+    DMA_DIR_MEM_TO_MEM:begin
+      Block.SourceAddress:=PhysicalToBusAddress(Data.Source);
+      Block.DestinationAddress:=PhysicalToBusAddress(Data.Dest);
+     end;
+    DMA_DIR_MEM_TO_DEV:begin
+      Block.SourceAddress:=PhysicalToBusAddress(Data.Source);
+      Block.DestinationAddress:=PhysicalToIOAddress(Data.Dest);
+     end;
+    DMA_DIR_DEV_TO_MEM:begin
+      Block.SourceAddress:=PhysicalToIOAddress(Data.Source);
+      Block.DestinationAddress:=PhysicalToBusAddress(Data.Dest);
+     end;
+    DMA_DIR_DEV_TO_DEV:begin
+      Block.SourceAddress:=PhysicalToIOAddress(Data.Source);
+      Block.DestinationAddress:=PhysicalToIOAddress(Data.Dest);
+     end;     
+   end;
+  end
+ else
+  begin
+   Block.SourceAddress:=LongWord(Data.Source);
+   Block.DestinationAddress:=LongWord(Data.Dest);
+  end;  
+   
+ {Setup Transfer Length and Stride}
+ if (Data.Flags and DMA_DATA_FLAG_STRIDE) = 0 then
+  begin
+   {Linear Mode}
+   Block.TransferLength:=Data.Size;
+   Block.ModeStide:=0;
+  end
+ else
+  begin
+   {Stride Mode}
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_2DMODE;
+   
+   {Get Count (minus 1)}
+   Count:=(Data.Size div (Data.StrideLength and BCM2709_DMA_MAX_X_LENGTH)) - 1;
+   
+   {Set Length and Count}
+   Block.TransferLength:=((Count and BCM2709_DMA_MAX_Y_COUNT) shl 16) or (Data.StrideLength and BCM2709_DMA_MAX_X_LENGTH);
+   
+   {Set Source and Dest Stride}
+   Block.ModeStide:=((Data.DestStride and BCM2709_DMA_MAX_STRIDE) shl 16) or (Data.SourceStride and BCM2709_DMA_MAX_STRIDE);
+  end;  
+ 
+ {Setup Transfer Information}
+ {Source Data Request}
+ if (Data.Flags and DMA_DATA_FLAG_SOURCE_DREQ) <> 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_WAIT_RESP or BCM2836_DMA_TI_SRC_DREQ;
+  end;
+ {Dest Data Request} 
+ if (Data.Flags and DMA_DATA_FLAG_DEST_DREQ) <> 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_WAIT_RESP or BCM2836_DMA_TI_DEST_DREQ;
+  end;
+ {Source Increment} 
+ if (Data.Flags and DMA_DATA_FLAG_SOURCE_NOINCREMENT) = 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_SRC_INC;
+  end;
+ {Dest Increment} 
+ if (Data.Flags and DMA_DATA_FLAG_DEST_NOINCREMENT) = 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_DEST_INC;
+  end;
+ {Source Width}
+ if (Data.Flags and DMA_DATA_FLAG_SOURCE_WIDE) <> 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_SRC_WIDTH;
+  end;
+ {Dest Width}
+ if (Data.Flags and DMA_DATA_FLAG_DEST_WIDE) <> 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_DEST_WIDTH;
+  end;
+ {Source Ignore}
+ if (Data.Flags and DMA_DATA_FLAG_NOREAD) <> 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_SRC_IGNORE;
+  end;
+ {Dest Ignore}
+ if (Data.Flags and DMA_DATA_FLAG_NOWRITE) <> 0 then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_DEST_IGNORE;
+  end;
+ {Peripheral Map}
+ if Request.Peripheral <> DMA_DREQ_ID_NONE then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or (BCM2709DMAPeripheralToDREQ(Request.Peripheral) shl BCM2836_DMA_TI_PERMAP_SHIFT);
+  end; 
+ {Burst Length}
+ if Bulk then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or (BCM2709_DMA_BULK_BURST_LENGTH shl BCM2836_DMA_TI_BURST_LENGTH_SHIFT);
+  end
+ else if Lite then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or (BCM2709_DMA_LITE_BURST_LENGTH shl BCM2836_DMA_TI_BURST_LENGTH_SHIFT);
+  end
+ else
+  begin
+   Block.TransferInformation:=Block.TransferInformation or (BCM2709_DMA_NORMAL_BURST_LENGTH shl BCM2836_DMA_TI_BURST_LENGTH_SHIFT);
+  end;  
+ {Interrupt Enable}
+ if Data.Next = nil then
+  begin
+   Block.TransferInformation:=Block.TransferInformation or BCM2836_DMA_TI_INTEN;
+  end;
+ 
+ {Setup Next Control Block}
+ if Data.Next <> nil then
+  begin
+   {Set Next Block}
+   if BCM2709DMA_BUS_ADDRESSES then
+    begin
+     Block.NextControlBlockAddress:=PhysicalToBusAddress(Pointer(LongWord(Block) + SizeOf(TBCM2836DMAControlBlock)));
+    end
+   else
+    begin
+     Block.NextControlBlockAddress:=LongWord(Block) + SizeOf(TBCM2836DMAControlBlock);
+    end;
+  end
+ else
+  begin
+   Block.NextControlBlockAddress:=0;
+  end;  
+  
+ {Setup Reserved} 
+ Block.Reserved1:=0;
+ Block.Reserved2:=0;
+ 
+ {Flush Source} 
+ case Request.Direction of
+  DMA_DIR_MEM_TO_MEM,DMA_DIR_MEM_TO_DEV:begin
+    if not(BCM2709DMA_CACHE_COHERENT) and ((Data.Flags and DMA_DATA_FLAG_NOCLEAN) = 0) then
+     begin
+      if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.SourceStride = 0) then
+       begin
+        CleanDataCacheRange(LongWord(Data.Source),Data.Size);
+       end
+      else
+       begin
+        Offset:=0;
+        while Offset < Data.Size do
+         begin
+          CleanDataCacheRange(LongWord(Data.Source + Offset),Data.StrideLength);
+          
+          Inc(Offset,Data.SourceStride);
+         end; 
+       end;
+     end;
+   end;
+ end;  
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -720,6 +1889,10 @@ end;
 {==============================================================================}
 {==============================================================================}
 {BCM2709 GPIO Functions}
+
+{==============================================================================}
+{==============================================================================}
+{BCM2709 UART Functions}
 
 {==============================================================================}
 {==============================================================================}

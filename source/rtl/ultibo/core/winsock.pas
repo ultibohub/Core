@@ -1182,7 +1182,7 @@ end;
 function ioctlsocket(s: TSocket; cmd:longint; var arg:longint):tOS_INT; 
 begin
  {}
- Result:=ioctlsocket(s,cmd,arg);
+ Result:=ioctlsocket(s,cmd,u_long(arg));
 end;
 
 {==============================================================================}
@@ -1321,7 +1321,7 @@ end;
 function getsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;optval:pointer;var optlen:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=getsockopt(s,level,optname,optval,optlen);
+ Result:=getsockopt(s,level,optname,PChar(optval),optlen);
 end;
 
 {==============================================================================}
@@ -1329,7 +1329,7 @@ end;
 function getsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;var optval;var optlen:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=getsockopt(s,level,optname,@optval,optlen)
+ Result:=getsockopt(s,level,optname,PChar(@optval),optlen);
 end;
 
 {==============================================================================}
@@ -1453,7 +1453,7 @@ end;
 function recv(s: TSocket;buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=recv(s,buf^,len,flags)
+ Result:=recv(s,buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -1461,7 +1461,7 @@ end;
 function recv(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=recv(s,buf^,len,flags)
+ Result:=recv(s,buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -1510,7 +1510,7 @@ end;
 function recvfrom(s: TSocket;buf:pchar; len:tOS_INT; flags:tOS_INT;from:PSockAddr; fromlen:ptOS_INT):tOS_INT; 
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^)
+ Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
 end;
 
 {==============================================================================}
@@ -1518,7 +1518,7 @@ end;
 function recvfrom(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT;from:PSockAddr; fromlen:ptOS_INT):tOS_INT; 
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^)
+ Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
 end;
 
 {==============================================================================}
@@ -1682,7 +1682,7 @@ end;
 function send(s: TSocket; buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=send(s,buf^,len,flags)
+ Result:=send(s,buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -1690,7 +1690,7 @@ end;
 function send(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=send(s,buf^,len,flags)
+ Result:=send(s,buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -1698,7 +1698,7 @@ end;
 function sendto(s: TSocket; buf:pchar; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=sendto(s,buf^,len,flags,toaddr^,tolen)
+ Result:=sendto(s,buf^,len,flags,toaddr^,tolen);
 end;
 
 {==============================================================================}
@@ -1706,7 +1706,7 @@ end;
 function sendto(s: TSocket; buf:pointer; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=sendto(s,buf^,len,flags,toaddr^,tolen)
+ Result:=sendto(s,buf^,len,flags,toaddr^,tolen);
 end;
 
 {==============================================================================}
@@ -1796,7 +1796,7 @@ end;
 function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;optval:pointer; optlen:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=setsockopt(s,level,optname,optval,optlen)
+ Result:=setsockopt(s,level,optname,PChar(optval),optlen)
 end;
 
 {==============================================================================}
@@ -1804,7 +1804,7 @@ end;
 function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; var optval; optlen:tOS_INT):tOS_INT; 
 begin
  {}
- Result:=setsockopt(s,level,optname,@optval,optlen)
+ Result:=setsockopt(s,level,optname,PChar(@optval),optlen)
 end;
 
 {==============================================================================}

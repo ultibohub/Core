@@ -1078,6 +1078,7 @@ function DriverClassToString(DriverClass:LongWord):String;
 {Clock Device Helper Functions}
 function ClockDeviceGetCount:LongWord; inline;
 function ClockDeviceGetDefault:PClockDevice; inline;
+function ClockDeviceSetDefault(Clock:PClockDevice):LongWord; 
 
 function ClockDeviceCheck(Clock:PClockDevice):PClockDevice;
 
@@ -1085,6 +1086,7 @@ function ClockDeviceCheck(Clock:PClockDevice):PClockDevice;
 {Timer Device Helper Functions}
 function TimerDeviceGetCount:LongWord; inline;
 function TimerDeviceGetDefault:PTimerDevice; inline;
+function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord; 
 
 function TimerDeviceCheck(Timer:PTimerDevice):PTimerDevice;
 
@@ -1092,6 +1094,7 @@ function TimerDeviceCheck(Timer:PTimerDevice):PTimerDevice;
 {Random Device Helper Functions}
 function RandomDeviceGetCount:LongWord; inline;
 function RandomDeviceGetDefault:PRandomDevice; inline;
+function RandomDeviceSetDefault(Random:PRandomDevice):LongWord; 
 
 function RandomDeviceCheck(Random:PRandomDevice):PRandomDevice;
 
@@ -1099,6 +1102,7 @@ function RandomDeviceCheck(Random:PRandomDevice):PRandomDevice;
 {Mailbox Device Helper Functions}
 function MailboxDeviceGetCount:LongWord; inline;
 function MailboxDeviceGetDefault:PMailboxDevice; inline;
+function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord; 
 
 function MailboxDeviceCheck(Mailbox:PMailboxDevice):PMailboxDevice;
 
@@ -1106,6 +1110,7 @@ function MailboxDeviceCheck(Mailbox:PMailboxDevice):PMailboxDevice;
 {Watchdog Device Helper Functions}
 function WatchdogDeviceGetCount:LongWord; inline;
 function WatchdogDeviceGetDefault:PWatchdogDevice; inline;
+function WatchdogDeviceSetDefault(Watchdog:PWatchdogDevice):LongWord; 
 
 function WatchdogDeviceCheck(Watchdog:PWatchdogDevice):PWatchdogDevice;
 
@@ -5915,6 +5920,41 @@ end;
 
 {==============================================================================}
 
+function ClockDeviceSetDefault(Clock:PClockDevice):LongWord; 
+{Set the current default clock device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(ClockDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Clock}
+    if ClockDeviceCheck(Clock) <> Clock then Exit;
+    
+    {Set Clock Default}
+    ClockDeviceDefault:=Clock;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(ClockDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
 function ClockDeviceCheck(Clock:PClockDevice):PClockDevice;
 {Check if the supplied Clock is in the Clock table}
 var
@@ -5969,6 +6009,41 @@ function TimerDeviceGetDefault:PTimerDevice; inline;
 begin
  {}
  Result:=TimerDeviceDefault;
+end;
+
+{==============================================================================}
+
+function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord; 
+{Set the current default timer device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(TimerDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Timer}
+    if TimerDeviceCheck(Timer) <> Timer then Exit;
+    
+    {Set Timer Default}
+    TimerDeviceDefault:=Timer;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(TimerDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}
@@ -6031,6 +6106,41 @@ end;
 
 {==============================================================================}
 
+function RandomDeviceSetDefault(Random:PRandomDevice):LongWord; 
+{Set the current default random device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Random}
+ if Random = nil then Exit;
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(RandomDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Random}
+    if RandomDeviceCheck(Random) <> Random then Exit;
+    
+    {Set Random Default}
+    RandomDeviceDefault:=Random;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(RandomDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
 function RandomDeviceCheck(Random:PRandomDevice):PRandomDevice;
 {Check if the supplied Random is in the Random table}
 var
@@ -6089,6 +6199,41 @@ end;
 
 {==============================================================================}
 
+function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord; 
+{Set the current default mailbox device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Mailbox}
+ if Mailbox = nil then Exit;
+ if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(MailboxDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Mailbox}
+    if MailboxDeviceCheck(Mailbox) <> Mailbox then Exit;
+    
+    {Set Mailbox Default}
+    MailboxDeviceDefault:=Mailbox;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(MailboxDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
 function MailboxDeviceCheck(Mailbox:PMailboxDevice):PMailboxDevice;
 {Check if the supplied Mailbox is in the Mailbox table}
 var
@@ -6143,6 +6288,41 @@ function WatchdogDeviceGetDefault:PWatchdogDevice; inline;
 begin
  {}
  Result:=WatchdogDeviceDefault;
+end;
+
+{==============================================================================}
+
+function WatchdogDeviceSetDefault(Watchdog:PWatchdogDevice):LongWord; 
+{Set the current default watchdog device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Watchdog}
+ if Watchdog = nil then Exit;
+ if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(WatchdogDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Watchdog}
+    if WatchdogDeviceCheck(Watchdog) <> Watchdog then Exit;
+    
+    {Set Watchdog Default}
+    WatchdogDeviceDefault:=Watchdog;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(WatchdogDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

@@ -61,6 +61,9 @@ const
  RT2X00USB_REGISTER_TIMEOUT_FIRMWARE = 1000; {Timeout when loading Firmware}
  RT2X00USB_EEPROM_TIMEOUT            = 2000; {Timeout when reading EEPROM}
  
+ {USB block sizes}
+ RT2X00USB_REGISTER_BLOCK_SIZE       = 64;
+ 
  {USB request types}
  RT2X00USB_VENDOR_REQUEST     = (USB_BMREQUESTTYPE_TYPE_VENDOR or USB_BMREQUESTTYPE_RECIPIENT_DEVICE);
  RT2X00USB_VENDOR_REQUEST_IN  = (USB_BMREQUESTTYPE_DIR_IN or RT2X00USB_VENDOR_REQUEST);
@@ -100,19 +103,21 @@ const
  
 {==============================================================================}
 {RT2X00USB Functions}
-function RT2X00USBDisableRadio(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2X00USBDriverQuit(RT2X00:PRT2X00WiFiDevice):LongWord;
 
-function RT2X00USBEepromLoad(RT2X00:PRT2X00NetworkDevice;Data:PWord;Size:LongWord):LongWord;
+function RT2X00USBDisableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
 
-function RT2X00USBRegisterRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:PLongWord):LongWord;
-function RT2X00USBRegisterWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:LongWord):LongWord;
+function RT2X00USBEepromLoad(RT2X00:PRT2X00WiFiDevice;Data:PWord;Size:LongWord):LongWord;
 
-function RT2X00USBRegisterMultiRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord;
-function RT2X00USBRegisterMultiWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord;
+function RT2X00USBRegisterRead(RT2X00:PRT2X00WiFiDevice;Offset:Word;Value:PLongWord):LongWord;
+function RT2X00USBRegisterWrite(RT2X00:PRT2X00WiFiDevice;Offset:Word;Value:LongWord):LongWord;
 
-function RT2X00USBRegisterBusyRead(RT2X00:PRT2X00NetworkDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; 
+function RT2X00USBRegisterMultiRead(RT2X00:PRT2X00WiFiDevice;Offset:Word;Data:Pointer;Size:LongWord):LongWord;
+function RT2X00USBRegisterMultiWrite(RT2X00:PRT2X00WiFiDevice;Offset:Word;Data:Pointer;Size:LongWord):LongWord;
 
-function RT2X00USBVendorRequest(RT2X00:PRT2X00NetworkDevice;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word):LongWord;
+function RT2X00USBRegisterBusyRead(RT2X00:PRT2X00WiFiDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; 
+
+function RT2X00USBVendorRequest(RT2X00:PRT2X00WiFiDevice;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;Timeout:LongWord):LongWord;
 
 {==============================================================================}
 {RT2X00USB Helper Functions}
@@ -129,15 +134,25 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {RT2X00USB Functions}
-function RT2X00USBDisableRadio(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2X00USBDriverQuit(RT2X00:PRT2X00WiFiDevice):LongWord;
 begin
  {}
- Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_RX_CONTROL,RT2X00USB_VENDOR_REQUEST_OUT,0,0,nil,0);
+ Result:=RT2X00DriverQuit(RT2X00);
+ 
+ //To Do //rt2x00usb_disconnect
 end;
 
 {==============================================================================}
 
-function RT2X00USBEepromLoad(RT2X00:PRT2X00NetworkDevice;Data:PWord;Size:LongWord):LongWord;
+function RT2X00USBDisableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_RX_CONTROL,RT2X00USB_VENDOR_REQUEST_OUT,0,0,nil,0,RT2X00USB_REGISTER_TIMEOUT);
+end;
+
+{==============================================================================}
+
+function RT2X00USBEepromLoad(RT2X00:PRT2X00WiFiDevice;Data:PWord;Size:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -145,12 +160,12 @@ begin
  {Check Data}
  if Data = nil then Exit;
  
- Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_EEPROM_READ,RT2X00USB_VENDOR_REQUEST_IN,0,0,Data,Size);
+ Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_EEPROM_READ,RT2X00USB_VENDOR_REQUEST_IN,0,0,Data,Size,RT2X00USB_EEPROM_TIMEOUT);
 end;
 
 {==============================================================================}
 
-function RT2X00USBRegisterRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:PLongWord):LongWord;
+function RT2X00USBRegisterRead(RT2X00:PRT2X00WiFiDevice;Offset:Word;Value:PLongWord):LongWord;
 var
  Reg:LongWord;
 begin
@@ -160,7 +175,9 @@ begin
  {Check Value}
  if Value = nil then Exit;
 
- Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_READ,RT2X00USB_VENDOR_REQUEST_IN,0,Offset,@Reg,SizeOf(LongWord));
+ Reg:=0;
+ 
+ Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_READ,RT2X00USB_VENDOR_REQUEST_IN,0,Offset,@Reg,SizeOf(LongWord),RT2X00USB_REGISTER_TIMEOUT);
  
  {Return Value}
  Value^:=LongWordLEtoN(Reg);
@@ -168,7 +185,7 @@ end;
 
 {==============================================================================}
 
-function RT2X00USBRegisterWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:LongWord):LongWord;
+function RT2X00USBRegisterWrite(RT2X00:PRT2X00WiFiDevice;Offset:Word;Value:LongWord):LongWord;
 var
  Reg:LongWord;
 begin
@@ -176,28 +193,76 @@ begin
  {Copy Value}
  Reg:=LongWordNtoLE(Value);
  
- Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_WRITE,RT2X00USB_VENDOR_REQUEST_OUT,0,Offset,@Reg,SizeOf(LongWord));
+ Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_WRITE,RT2X00USB_VENDOR_REQUEST_OUT,0,Offset,@Reg,SizeOf(LongWord),RT2X00USB_REGISTER_TIMEOUT);
 end;
 
 {==============================================================================}
 
-function RT2X00USBRegisterMultiRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord;
+function RT2X00USBRegisterMultiRead(RT2X00:PRT2X00WiFiDevice;Offset:Word;Data:Pointer;Size:LongWord):LongWord;
+var
+ Index:LongWord;
+ Status:LongWord;
+ Buffer:Pointer;
+ Remain:LongWord;
+ BlockSize:LongWord;
 begin
  {}
- Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_READ,RT2X00USB_VENDOR_REQUEST_IN,0,Offset,Data,Size);
+ Status:=ERROR_SUCCESS;
+ 
+ Index:=Offset;
+ Buffer:=Data;
+ Remain:=Size;
+ 
+ while Remain > 0 do
+  begin
+   BlockSize:=Min(RT2X00USB_REGISTER_BLOCK_SIZE,Remain);
+   
+   Status:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_READ,RT2X00USB_VENDOR_REQUEST_IN,0,Index,Buffer,BlockSize,RT2X00USB_REGISTER_TIMEOUT);
+   if Status <> USB_STATUS_SUCCESS then Break; //To Do //Change to ERROR_ returns  //Dont use USB_STATUS_ codes
+   
+   Inc(Index,BlockSize);
+   Inc(Buffer,BlockSize);
+   Dec(Remain,BlockSize);
+  end;
+
+ Result:=Status;  
 end;
 
 {==============================================================================}
 
-function RT2X00USBRegisterMultiWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord;
+function RT2X00USBRegisterMultiWrite(RT2X00:PRT2X00WiFiDevice;Offset:Word;Data:Pointer;Size:LongWord):LongWord;
+var
+ Index:LongWord;
+ Status:LongWord;
+ Buffer:Pointer;
+ Remain:LongWord;
+ BlockSize:LongWord;
 begin
  {}
- Result:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_WRITE,RT2X00USB_VENDOR_REQUEST_OUT,0,Offset,Data,Size);
+ Status:=ERROR_SUCCESS;
+ 
+ Index:=Offset;
+ Buffer:=Data;
+ Remain:=Size;
+ 
+ while Remain > 0 do
+  begin
+   BlockSize:=Min(RT2X00USB_REGISTER_BLOCK_SIZE,Remain);
+
+   Status:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_MULTI_WRITE,RT2X00USB_VENDOR_REQUEST_OUT,0,Index,Buffer,BlockSize,RT2X00USB_REGISTER_TIMEOUT);
+   if Status <> USB_STATUS_SUCCESS then Break; //To Do //Change to ERROR_ returns  //Dont use USB_STATUS_ codes
+   
+   Inc(Index,BlockSize);
+   Inc(Buffer,BlockSize);
+   Dec(Remain,BlockSize);
+  end;
+
+ Result:=Status;  
 end;
 
 {==============================================================================}
 
-function RT2X00USBRegisterBusyRead(RT2X00:PRT2X00NetworkDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; 
+function RT2X00USBRegisterBusyRead(RT2X00:PRT2X00WiFiDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; 
 var
  Busy:LongWord;
 begin
@@ -225,32 +290,43 @@ begin
    Inc(Busy);
   end; 
  
+ if USB_LOG_ENABLED then USBLogError(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2X00USB: Register busy read timeout');
+ 
  {Default return}
  Reg^:=not(0);
 end;
 
 {==============================================================================}
 
-function RT2X00USBVendorRequest(RT2X00:PRT2X00NetworkDevice;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word):LongWord;
+function RT2X00USBVendorRequest(RT2X00:PRT2X00WiFiDevice;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;Timeout:LongWord):LongWord;
 var
+ Status:LongWord;
  Device:PUSBDevice;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER; //TO Do //Change to ERROR_INVALID_PARAMETER; //Dont use USB_STATUS_ codes
-
+                                       
  {Check Device}
  if RT2X00 = nil then Exit;
  
  {$IFDEF RT2800USB_DEBUG}
- //--if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.Network.Device.DeviceData),'RT2X00USB: Vendor request');
+ //--if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2X00USB: Vendor request');
  {$ENDIF}
  
  {Get Device}
- Device:=PUSBDevice(RT2X00.Network.Device.DeviceData);
+ Device:=PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData);
  if Device = nil then Exit;
  
  {Send Vendor Request}
- Result:=USBControlRequest(Device,nil,bRequest,bmRequestType,wValue,wIndex,Data,wLength);
+ Status:=USBControlRequestEx(Device,nil,bRequest,bmRequestType,wValue,wIndex,Data,wLength,Timeout,True);
+ if Status <> USB_STATUS_SUCCESS then
+  begin
+   if USB_LOG_ENABLED then USBLogError(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2X00USB: Vendor request failed (Status=' + USBStatusToString(Status) + ')');
+  end;
+  
+ Result:=Status; //To Do //Change to ERROR_ returns  //Dont use USB_STATUS_ codes
+ 
+ //To Do //Wrapper with timeout, keep retrying if return is not fatal ?
 end;
  
 {==============================================================================}

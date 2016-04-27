@@ -28,8 +28,8 @@ References
 ==========
 
 
-SPI Hosts
-=========
+SPI Devices
+===========
 
 }
 
@@ -95,7 +95,7 @@ type
  
  {SPI Device Methods}
  //To Do
- TSPIDeviceProperties = function(SPI:PSPIDevice;var Properties:PSPIProperties):LongWord;
+ TSPIDeviceProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
  
  TSPIDevice = record
   {Device Properties}
@@ -129,7 +129,7 @@ procedure SPIInit;
  
 //To Do
 
-function SPIDeviceProperties(SPI:PSPIDevice;var Properties:PSPIProperties):LongWord;
+function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
   
 function SPIDeviceCreate:PSPIDevice;
 function SPIDeviceCreateEx(Size:LongWord):PSPIDevice;
@@ -150,6 +150,7 @@ function SPIDeviceNotification(SPI:PSPIDevice;Callback:TSPINotification;Data:Poi
 {SPI Helper Functions}
 function SPIGetCount:LongWord; inline;
 function SPIDeviceGetDefault:PSPIDevice; inline;
+function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord; 
 
 function SPIDeviceCheck(SPI:PSPIDevice):PSPIDevice;
 
@@ -211,7 +212,7 @@ end;
 
 {==============================================================================}
  
-function SPIDeviceProperties(SPI:PSPIDevice;var Properties:PSPIProperties):LongWord;
+function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -580,6 +581,41 @@ function SPIDeviceGetDefault:PSPIDevice; inline;
 begin
  {}
  Result:=SPIDeviceDefault;
+end;
+
+{==============================================================================}
+
+function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord; 
+{Set the current default SPI device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(SPIDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check SPI}
+    if SPIDeviceCheck(SPI) <> SPI then Exit;
+    
+    {Set SPI Default}
+    SPIDeviceDefault:=SPI;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SPIDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

@@ -95,7 +95,7 @@ type
  
  {PWM Device Methods}
  //To Do
- TPWMDeviceProperties = function(PWM:PPWMDevice;var Properties:PPWMProperties):LongWord;
+ TPWMDeviceProperties = function(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
  
  TPWMDevice = record
   {Device Properties}
@@ -129,7 +129,7 @@ procedure PWMInit;
  
 //To Do
  
-function PWMDeviceProperties(PWM:PPWMDevice;var Properties:PPWMProperties):LongWord;
+function PWMDeviceProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
   
 function PWMDeviceCreate:PPWMDevice;
 function PWMDeviceCreateEx(Size:LongWord):PPWMDevice;
@@ -150,6 +150,7 @@ function PWMDeviceNotification(PWM:PPWMDevice;Callback:TPWMNotification;Data:Poi
 {PWM Helper Functions}
 function PWMGetCount:LongWord; inline;
 function PWMDeviceGetDefault:PPWMDevice; inline;
+function PWMDeviceSetDefault(PWM:PPWMDevice):LongWord; 
 
 function PWMDeviceCheck(PWM:PPWMDevice):PPWMDevice;
 
@@ -208,7 +209,7 @@ end;
 {PWM Functions}
 {==============================================================================}
  
-function PWMDeviceProperties(PWM:PPWMDevice;var Properties:PPWMProperties):LongWord;
+function PWMDeviceProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -577,6 +578,41 @@ function PWMDeviceGetDefault:PPWMDevice; inline;
 begin
  {}
  Result:=PWMDeviceDefault;
+end;
+
+{==============================================================================}
+
+function PWMDeviceSetDefault(PWM:PPWMDevice):LongWord; 
+{Set the current default PWM device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ if PWM.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(PWMDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check PWM}
+    if PWMDeviceCheck(PWM) <> PWM then Exit;
+    
+    {Set PWM Default}
+    PWMDeviceDefault:=PWM;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(PWMDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

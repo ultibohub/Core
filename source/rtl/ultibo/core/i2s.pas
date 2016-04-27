@@ -28,8 +28,8 @@ References
 ==========
 
 
-I2S Hosts
-=========
+I2S Devices
+===========
 
 }
 
@@ -95,7 +95,7 @@ type
  
  {I2S Device Methods}
  //To Do
- TI2SDeviceProperties = function(I2S:PI2SDevice;var Properties:PI2SProperties):LongWord;
+ TI2SDeviceProperties = function(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
  
  TI2SDevice = record
   {Device Properties}
@@ -128,7 +128,7 @@ procedure I2SInit;
 {I2S Functions}
 //To Do
 
-function I2SDeviceProperties(I2S:PI2SDevice;var Properties:PI2SProperties):LongWord;
+function I2SDeviceProperties(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
   
 function I2SDeviceCreate:PI2SDevice;
 function I2SDeviceCreateEx(Size:LongWord):PI2SDevice;
@@ -149,6 +149,7 @@ function I2SDeviceNotification(I2S:PI2SDevice;Callback:TI2SNotification;Data:Poi
 {I2S Helper Functions}
 function I2SGetCount:LongWord; inline;
 function I2SDeviceGetDefault:PI2SDevice; inline;
+function I2SDeviceSetDefault(I2S:PI2SDevice):LongWord; 
 
 function I2SDeviceCheck(I2S:PI2SDevice):PI2SDevice;
 
@@ -210,7 +211,7 @@ end;
 
 {==============================================================================}
  
-function I2SDeviceProperties(I2S:PI2SDevice;var Properties:PI2SProperties):LongWord;
+function I2SDeviceProperties(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -579,6 +580,41 @@ function I2SDeviceGetDefault:PI2SDevice; inline;
 begin
  {}
  Result:=I2SDeviceDefault;
+end;
+
+{==============================================================================}
+
+function I2SDeviceSetDefault(I2S:PI2SDevice):LongWord; 
+{Set the current default I2S device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check I2S}
+ if I2S = nil then Exit;
+ if I2S.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(I2SDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check I2S}
+    if I2SDeviceCheck(I2S) <> I2S then Exit;
+    
+    {Set I2S Default}
+    I2SDeviceDefault:=I2S;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(I2SDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

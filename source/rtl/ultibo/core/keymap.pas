@@ -128,6 +128,7 @@ function KeymapEnumerate(Callback:TKeymapEnumerate;Data:Pointer):LongWord;
 {Keymap Helper Functions}
 function KeymapGetCount:LongWord; inline;
 function KeymapGetDefault:TKeymapHandle; inline;
+function KeymapSetDefault(Keymap:PKeymapEntry):LongWord; 
 
 function KeymapCheck(Keymap:PKeymapEntry):PKeymapEntry;
 
@@ -524,6 +525,41 @@ function KeymapGetDefault:TKeymapHandle; inline;
 begin
  {}
  Result:=KeymapDefault;
+end;
+
+{==============================================================================}
+
+function KeymapSetDefault(Keymap:PKeymapEntry):LongWord; 
+{Set the current default keymap}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Keymap}
+ if Keymap = nil then Exit;
+ if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Keymap}
+    if KeymapCheck(Keymap) <> Keymap then Exit;
+    
+    {Set Keymap Default}
+    KeymapDefault:=TKeymapHandle(Keymap);
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(KeymapTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

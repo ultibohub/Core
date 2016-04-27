@@ -181,6 +181,7 @@ function SysFramebufferAvailable:Boolean;
 {Framebuffer Helper Functions}
 function FramebufferDeviceGetCount:LongWord; inline;
 function FramebufferDeviceGetDefault:PFramebufferDevice; inline;
+function FramebufferDeviceSetDefault(Framebuffer:PFramebufferDevice):LongWord; 
 
 function FramebufferDeviceCheck(Framebuffer:PFramebufferDevice):PFramebufferDevice;
 
@@ -816,6 +817,41 @@ function FramebufferDeviceGetDefault:PFramebufferDevice; inline;
 begin
  {}
  Result:=FramebufferDeviceDefault;
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceSetDefault(Framebuffer:PFramebufferDevice):LongWord; 
+{Set the current default framebuffer device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(FramebufferDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Framebuffer}
+    if FramebufferDeviceCheck(Framebuffer) <> Framebuffer then Exit;
+    
+    {Set Framebuffer Default}
+    FramebufferDeviceDefault:=Framebuffer;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(FramebufferDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

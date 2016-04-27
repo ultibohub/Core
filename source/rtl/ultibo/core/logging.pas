@@ -60,6 +60,7 @@ const
  LOGGING_TYPE_CONSOLE   = 1;
  LOGGING_TYPE_FILE      = 2;
  LOGGING_TYPE_SYSLOG    = 3;
+ LOGGING_TYPE_SERIAL    = 4;
  
  {Logging Device States}
  LOGGING_STATE_DISABLED   = 0;

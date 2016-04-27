@@ -25,6 +25,7 @@ Credits
 
   Linux - \drivers\net\wireless\rtl8192cu\* - Copyright(c) 2007 - 2011 Realtek Corporation.
   Linux - \drivers\net\wireless\realtek\rtl8xxxu\* - Copyright (c) 2014 - 2015 Jes Sorensen.
+  Linux - \drivers\net\wireless\rtlwifi\* - Copyright(c) 2009-2012  Realtek Corporation.
   
 References
 ==========
@@ -53,7 +54,7 @@ unit RTL8192CU;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,WiFi,SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -174,7 +175,6 @@ procedure RTL8192CUInit;
 {RTL8192CU Network Functions}
 function RTL8192CUDeviceOpen(Network:PNetworkDevice):LongWord;
 function RTL8192CUDeviceClose(Network:PNetworkDevice):LongWord;
-//To Do //DeviceAllocate/DeviceRelease
 function RTL8192CUDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function RTL8192CUDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function RTL8192CUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;

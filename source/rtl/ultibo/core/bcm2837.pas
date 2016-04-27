@@ -222,8 +222,8 @@ const
  BCM2837_IRQ_DMA8           = 24;
  BCM2837_IRQ_DMA9           = 25;
  BCM2837_IRQ_DMA10          = 26;
- BCM2837_IRQ_DMA11          = 27;
- BCM2837_IRQ_DMA12          = 28;
+ BCM2837_IRQ_DMA11_14       = 27; {BCM2837_IRQ_DMA11} {This IRQ is actually shared between DMA channels 11, 12, 13 and 14}
+ BCM2837_IRQ_DMA_ALL        = 28; {BCM2837_IRQ_DMA12} {This IRQ is triggered by any DMA channel (all channels interrupt to allow DMA FIQ)}
  
  {AUX (UART1, SPI1 and SPI2)}
  BCM2837_IRQ_AUX            = 29;
@@ -401,6 +401,77 @@ const
  BCM2837_SYSTEM_TIMER_CS_3 = (1 shl 3);
 
 const
+ {DMA Control and Status register bits (See Section 4)}
+ BCM2837_DMA_CS_ACTIVE                         = (1 shl 0);   {Activate the DMA (This bit enables the DMA. The DMA will start if this bit is set and the CB_ADDR is non zero. The DMA transfer can be paused and resumed by clearing, then setting it again)}
+ BCM2837_DMA_CS_END                            = (1 shl 1);   {DMA End Flag (Set when the transfer described by the current control block is complete. Write 1 to clear)}
+ BCM2837_DMA_CS_INT                            = (1 shl 2);   {Interrupt Status (This is set when the transfer for the CB ends and INTEN is set to 1. Write 1 to clear)}
+ BCM2837_DMA_CS_DREQ                           = (1 shl 3);   {DREQ State (Indicates the state of the selected DREQ (Data Request) signal, ie. the DREQ selected by the PERMAP field of the transfer info)}
+ BCM2837_DMA_CS_PAUSED                         = (1 shl 4);   {DMA Paused State (Indicates if the DMA is currently paused and not transferring data)}
+ BCM2837_DMA_CS_DREQ_PAUSED                    = (1 shl 5);   {DMA Paused by DREQ State (Indicates if the DMA is currently paused and not transferring data due to the DREQ being inactive)}
+ BCM2837_DMA_CS_WAITING_FOR_OUTSTANDING_WRITES = (1 shl 6);   {DMA is Waiting for the Last Write to be Received (Indicates if the DMA is currently waiting for any outstanding writes to be received, and is not transferring data)}
+ {Bit 7 Reserved - Write as 0, read as don't care}
+ BCM2837_DMA_CS_ERROR                          = (1 shl 8);   {DMA Error (Indicates if the DMA has detected an error)}
+ {Bits 9:15 Reserved - Write as 0, read as don't care}
+ BCM2837_DMA_CS_PRIORITY                       = ($F shl 16); {AXI Priority Level (Sets the priority of normal AXI bus transactions. Zero is the lowest priority)}
+ BCM2837_DMA_CS_PANIC_PRIORITY                 = ($F shl 20); {AXI Panic Priority Level (Sets the priority of panicking AXI bus transactions)}
+ {Bits 24:27 Reserved - Write as 0, read as don't care}
+ BCM2837_DMA_CS_WAIT_FOR_OUTSTANDING_WRITES    = (1 shl 28);  {Wait for outstanding writes (When set to 1, the DMA will keep a tally of the AXI writes going out and the write responses coming in)}
+ BCM2837_DMA_CS_DISDEBUG                       = (1 shl 29);  {Disable debug pause signal (When set to 1, the DMA will not stop when the debug pause signal is asserted)}
+ BCM2837_DMA_CS_ABORT                          = (1 shl 30);  {Abort DMA (Writing a 1 to this bit will abort the current DMA CB. The DMA will load the next CB and attempt to continue. The bit cannot be read, and will self clear)}
+ BCM2837_DMA_CS_RESET                          = (1 shl 31);  {DMA Channel Reset (Writing a 1 to this bit will reset the DMA. The bit cannot be read, and will self clear)}
+ 
+ BCM2837_DMA_CS_PRIORITY_DEFAULT = 0;
+ 
+ {DMA Transfer Information bits (See Section 4)}
+ BCM2837_DMA_TI_INTEN          = (1 shl 0);    {Interrupt Enable (1 = Generate an interrupt when the transfer described by the current Control Block completes)}
+ BCM2837_DMA_TI_2DMODE         = (1 shl 1);    {2D Mode (1 = 2D mode interpret the TXFR_LEN register as YLENGTH number of transfers each of XLENGTH, and add the strides to the address after each transfer)}
+ {Bit 2 Reserved - Write as 0, read as don't care}
+ BCM2837_DMA_TI_WAIT_RESP      = (1 shl 3);    {Wait for a Write Response (When set this makes the DMA wait until it receives the AXI write response for each write. This ensures that multiple writes cannot get stacked in the AXI bus pipeline)}
+ BCM2837_DMA_TI_DEST_INC       = (1 shl 4);    {Destination Address Increment (1 = Destination address increments after each write The address will increment by 4, if DEST_WIDTH=0 else by 32)}
+ BCM2837_DMA_TI_DEST_WIDTH     = (1 shl 5);    {Destination Transfer Width (1 = Use 128-bit destination write width. 0 = Use 32-bit destination write width)}
+ BCM2837_DMA_TI_DEST_DREQ      = (1 shl 6);    {Control Destination Writes with DREQ (1 = The DREQ selected by PERMAP will gate the destination writes)}
+ BCM2837_DMA_TI_DEST_IGNORE    = (1 shl 7);    {Ignore Writes (1 = Do not perform destination writes. 0 = Write data to destination)}
+ BCM2837_DMA_TI_SRC_INC        = (1 shl 8);    {Source Address Increment (1 = Source address increments after each read. The address will increment by 4, if S_WIDTH=0 else by 32)}
+ BCM2837_DMA_TI_SRC_WIDTH      = (1 shl 9);    {Source Transfer Width (1 = Use 128-bit source read width. 0 = Use 32-bit source read width)}
+ BCM2837_DMA_TI_SRC_DREQ       = (1 shl 10);   {Control Source Reads with DREQ (1 = The DREQ selected by PERMAP will gate the source reads)}
+ BCM2837_DMA_TI_SRC_IGNORE     = (1 shl 11);   {Ignore Reads (1 = Do not perform source reads. In addition, destination writes will zero all the write strobes. This is used for fast cache fill operations)}
+ BCM2837_DMA_TI_BURST_LENGTH   = ($F shl 12);  {Burst Transfer Length (Indicates the burst length of the DMA transfers)}
+ BCM2837_DMA_TI_PERMAP         = ($1F shl 16); {Peripheral Mapping (Indicates the peripheral number (1-31) whose ready signal shall be used to control the rate of the transfers)}
+ BCM2837_DMA_TI_WAITS          = ($3E shl 21); {Add Wait Cycles (This slows down the DMA throughput by setting the number of dummy cycles burnt after each DMA read or write operation is completed)}
+ BCM2837_DMA_TI_NO_WIDE_BURSTS = (1 shl 26);   {Don't Do wide writes as a 2 beat burst (This prevents the DMA from issuing wide writes as 2 beat AXI bursts. This is an inefficient access mode, so the default is to use the bursts)}
+ {Bits 27:31 Reserved - Write as 0, read as don't care}
+ 
+ {Note: BCM2837_DMA_TI_2DMODE, BCM2837_DMA_TI_DEST_IGNORE, BCM2837_DMA_TI_SRC_IGNORE and BCM2837_DMA_TI_NO_WIDE_BURSTS not available on DMA Lite channels}
+ 
+ BCM2837_DMA_TI_PERMAP_SHIFT = 16;
+ BCM2837_DMA_TI_BURST_LENGTH_SHIFT = 12;
+ 
+ BCM2837_DMA_TI_BURST_LENGTH_DEFAULT = 0;
+ 
+ {DMA Transfer Length bits (See Section 4)}
+ BCM2837_DMA_TXFR_LEN_XLENGTH = ($FFFF shl 0);  {Transfer Length in bytes}
+ BCM2837_DMA_TXFR_LEN_YLENGTH = ($3FFF shl 16); {When in 2D mode, This is the Y transfer length, indicating how many xlength transfers are performed. When in normal linear mode this becomes the top bits of the XLENGTH}
+
+ {Note: BCM2837_DMA_TXFR_LEN_YLENGTH not available on DMA Lite channels}
+ 
+ {DMA 2D Stride bits (See Section 4)}
+ BCM2837_DMA_STRIDE_S_STRIDE  = ($FFFF shl 0);  {Destination Stride (2D Mode) (Signed (2 s complement) byte increment to apply to the destination address at the end of each row in 2D mode)}
+ BCM2837_DMA_STRIDE_D_STRIDE  = ($FFFF shl 16); {Source Stride (2D Mode) (Signed (2 s complement) byte increment to apply to the source address at the end of each row in 2D mode)}
+ 
+ {Note: BCM2837_DMA_STRIDE_S_STRIDE and BCM2837_DMA_STRIDE_D_STRIDE not available on DMA Lite channels}
+ 
+ {DMA Debug register bits (See Section 4)} 
+ BCM2837_DMA_DEBUG_READ_LAST_NOT_SET_ERROR = (1 shl 0);     {Read Last Not Set Error}
+ BCM2837_DMA_DEBUG_FIFO_ERROR              = (1 shl 1);     {Fifo Error}
+ BCM2837_DMA_DEBUG_READ_ERROR              = (1 shl 2);     {Slave Read Response Error} 
+ {Bit 3 Reserved - Write as 0, read as don't care}     
+ BCM2837_DMA_DEBUG_OUTSTANDING_WRITES      = ($F shl 4);    {DMA Outstanding Writes Counter} 
+ BCM2837_DMA_DEBUG_DMA_ID                  = ($FF shl 8);   {DMA ID}
+ BCM2837_DMA_DEBUG_DMA_STATE               = ($1FF shl 16); {DMA State Machine State}
+ BCM2837_DMA_DEBUG_VERSION                 = (7 shl 25);    {DMA Version}
+ BCM2837_DMA_DEBUG_LITE                    = (1 shl 28);    {DMA Lite}
+ {Bits 29:31 Reserved - Write as 0, read as don't care}
+ 
  {DMA Engine Interrupt Status register bits (See Section 4)} 
  BCM2837_DMA_INT_STATUS_0  = (1 shl 0);
  BCM2837_DMA_INT_STATUS_1  = (1 shl 1); 
@@ -659,8 +730,8 @@ const
  
  BCM2837_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
  
- BCM2837_MBOX_TAG_SET_CURSOR_INFO   = $00008011;
- BCM2837_MBOX_TAG_SET_CURSOR_STATE  = $00008010;
+ BCM2837_MBOX_TAG_SET_CURSOR_INFO   = $00008010; {00008011} {These were reversed in the documentation, see Linux \include\soc\bcm2835\raspberrypi-firmware.h}
+ BCM2837_MBOX_TAG_SET_CURSOR_STATE  = $00008011; {00008010}
  {VCHIQ}
  BCM2837_MBOX_TAG_VCHIQ_INIT        = $00048010;
  {Config}

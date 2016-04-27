@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '8/4/2016';
+ ULTIBO_RELEASE_DATE             = '27/4/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.1.101';
+ ULTIBO_RELEASE_VERSION          = '1.1.127';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 1;
- ULTIBO_RELEASE_VERSION_REVISION = 101;
+ ULTIBO_RELEASE_VERSION_REVISION = 127;
  
 {==============================================================================}
 const
@@ -74,7 +74,12 @@ const
  ERROR_INVALID_ACCESS      = 12;   {Invalid access}
  ERROR_INVALID_DATA        = 13;   {The data is invalid}
  ERROR_OUTOFMEMORY         = 14;   {Not enough memory is available}
- 
+ ERROR_INVALID_DRIVE       = 15;   {Cannot find the drive specified}
+ ERROR_CURRENT_DIRECTORY   = 16;   {Current directory cannot be removed}
+ ERROR_NOT_SAME_DEVICE     = 17;   {Cannot move the file to a different disk drive}
+ ERROR_NO_MORE_FILES       = 18;   {There are no more files}
+ ERROR_WRITE_PROTECT       = 19;   {Media is write protected}
+ ERROR_BAD_UNIT            = 20;   {Cannot find the device specified}
  ERROR_NOT_READY           = 21;   {The device is not ready}
  ERROR_BAD_COMMAND         = 22;   {The device does not recognise the command}
  
@@ -121,6 +126,8 @@ const
  
  ERROR_CAN_NOT_COMPLETE    = 1003; {Cannot complete the function}
  
+ ERROR_NOT_FOUND           = 1168; {The entry or device was not found}
+ 
  ERROR_INVALID_ACL            = DWORD(1336);  {The access control list (ACL) structure is invalid}
  ERROR_INVALID_SID            = DWORD(1337);  {The security ID structure is invalid}
  ERROR_INVALID_SECURITY_DESCR = DWORD(1338);  {The security descriptor structure is invalid}
@@ -130,7 +137,7 @@ const
  ERROR_FUNCTION_FAILED     = 1627; {The function call failed}
  
  {Errors below here have no compatibility equivalent}
- ERROR_NOT_FOUND           = 1000001;    {The device was not found}
+ ERROR_NOT_VALID           = 1000001;    {The entry or device is not valid}
  ERROR_NOT_ASSIGNED        = 1000002;    {The device is not assigned}
  ERROR_IN_USE              = 1000003;    {The device is in use}
  ERROR_OPERATION_FAILED    = 1000004;    {The operation failed}
@@ -140,6 +147,10 @@ const
  ERROR_IN_PROGRESS         = 1000008;    {An operation is already in progress}
  ERROR_RUNTIME_ERROR       = 1000009;    {A run time occurred}
  ERROR_EXCEPTION           = 1000010;    {An exception occurred}
+ ERROR_NOT_PROCESSED       = 1000011;    {The entry has not been processed}
+ ERROR_NOT_COMPLETED       = 1000012;    {The entry or operation has not completed}
+ ERROR_NOT_COMPATIBLE      = 1000013;    {The entry is not compatible for the operation}
+ ERROR_CANCELLED           = 1000014;    {The entry or operation has been cancelled}
  
  ERROR_UNKNOWN             = $FFFFFFFF;
  
@@ -553,8 +564,15 @@ const
  
 {==============================================================================}
 const
+ {DMA Direction constants}
+ DMA_DIR_NONE       = 0; {No direction (No special handling by controller)}
+ DMA_DIR_MEM_TO_MEM = 1;
+ DMA_DIR_MEM_TO_DEV = 2;
+ DMA_DIR_DEV_TO_MEM = 3;
+ DMA_DIR_DEV_TO_DEV = 4;
+ 
  {DMA DREQ ID constants}
- DMA_DREQ_ID_NONE          =  0;
+ DMA_DREQ_ID_NONE          =  0;  {No peripheral gating (memory to memory transfer)}
  DMA_DREQ_ID_UART_TX       =  1;
  DMA_DREQ_ID_UART_RX       =  2;
  DMA_DREQ_ID_SPI_TX        =  3;
@@ -566,7 +584,6 @@ const
  DMA_DREQ_ID_PWM           =  9;
  DMA_DREQ_ID_MMC           =  10;
  DMA_DREQ_ID_SDHOST        =  11;
- //To Do
  
 {==============================================================================}
 const
@@ -824,6 +841,7 @@ const
  LOGGING_FACILITY_PWM        = 27; {PWM log messages}
  LOGGING_FACILITY_SERIAL     = 28; {Serial log messages}
  LOGGING_FACILITY_SPI        = 29; {SPI log messages}
+ LOGGING_FACILITY_UART       = 30; {UART log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 

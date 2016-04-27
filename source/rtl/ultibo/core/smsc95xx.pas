@@ -498,8 +498,13 @@ function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:
 function SMSC95XXDriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function SMSC95XXDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
  
+procedure SMSC95XXReceiveWorker(Request:PUSBRequest); 
 procedure SMSC95XXReceiveComplete(Request:PUSBRequest); 
+
+procedure SMSC95XXTransmitWorker(Request:PUSBRequest); 
 procedure SMSC95XXTransmitComplete(Request:PUSBRequest); 
+
+procedure SMSC95XXInterruptWorker(Request:PUSBRequest);
 procedure SMSC95XXInterruptComplete(Request:PUSBRequest);
  
 {==============================================================================}
@@ -893,7 +898,7 @@ begin
       Result:=ERROR_OPERATION_FAILED;
 
       {Remove the Packet}
-      Packet:=Network.Buffer.Buffer[Network.Buffer.Start];
+      Packet:=Network.Buffer.Packets[Network.Buffer.Start];
       if Packet <> nil then
        begin
         {Update Start}
@@ -904,7 +909,7 @@ begin
   
         {Copy the Packet}
         Length:=Size;
-        if Packet.Length < Length then Length:=Packet.Length;
+        if Packet.Length < Length then Length:=Packet.Length; //To Do //Min
         System.Move(Packet.Buffer^,Buffer^,Length); //To Do //Critical //Non copy receive to be implemented !!
    
         {Return the Buffer}
@@ -1388,8 +1393,8 @@ end;
 
 {==============================================================================}
 
-procedure SMSC95XXReceiveComplete(Request:PUSBRequest);
-{Called when a USB request from the SMSC95XX bulk IN endpoint completes}
+procedure SMSC95XXReceiveWorker(Request:PUSBRequest); 
+{Called (by a Worker thread) to process a completed USB request from the SMSC95XX bulk IN endpoint}
 {Request: The USB request which has completed}
 var
  Data:Pointer;
@@ -1485,7 +1490,7 @@ begin
                 System.Move(Pointer(PtrUInt(Data) + SMSC95XX_RX_OVERHEAD)^,Packet.Buffer^,Packet.Length); //To Do //Critical //Non copy receive to be implemented
               
                 {Add the Packet}
-                Network.Network.Buffer.Buffer[(Network.Network.Buffer.Start + Network.Network.Buffer.Count) mod NETWORK_BUFFER_SIZE]:=Packet;
+                Network.Network.Buffer.Packets[(Network.Network.Buffer.Start + Network.Network.Buffer.Count) mod NETWORK_BUFFER_SIZE]:=Packet;
               
                 {Update Count}
                 Inc(Network.Network.Buffer.Count);
@@ -1532,13 +1537,18 @@ begin
         {Check Pending}
         if Network.PendingCount = 0 then
          begin
-          {$IFDEF USB_DEBUG}
-          if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
-          {$ENDIF}
-          
-          {Send Message}
-          FillChar(Message,SizeOf(TMessage),0);
-          ThreadSendMessage(Network.WaiterThread,Message);
+          {Check Waiter}
+          if Network.WaiterThread <> INVALID_HANDLE_VALUE then
+           begin
+            {$IFDEF USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
+            {$ENDIF}
+            
+            {Send Message}
+            FillChar(Message,SizeOf(TMessage),0);
+            ThreadSendMessage(Network.WaiterThread,Message);
+            Network.WaiterThread:=INVALID_HANDLE_VALUE;
+           end; 
          end;
        end
       else
@@ -1578,8 +1588,22 @@ end;
 
 {==============================================================================}
 
-procedure SMSC95XXTransmitComplete(Request:PUSBRequest);
-{Called when a USB request from the SMSC95XX bulk OUT endpoint completes}
+procedure SMSC95XXReceiveComplete(Request:PUSBRequest);
+{Called when a USB request from the SMSC95XX bulk IN endpoint completes}
+{Request: The USB request which has completed}
+{Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ WorkerSchedule(0,TWorkerTask(SMSC95XXReceiveWorker),Request,nil)
+end;
+
+{==============================================================================}
+
+procedure SMSC95XXTransmitWorker(Request:PUSBRequest); 
+{Called (by a Worker thread) to process a completed USB request to the SMSC95XX bulk OUT endpoint}
 {Request: The USB request which has completed}
 var
  Status:LongWord;
@@ -1639,13 +1663,18 @@ begin
         {Check Pending}
         if Network.PendingCount = 0 then
          begin
-          {$IFDEF USB_DEBUG}
-          if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
-          {$ENDIF}
-          
-          {Send Message}
-          FillChar(Message,SizeOf(TMessage),0);
-          ThreadSendMessage(Network.WaiterThread,Message);
+          {Check Waiter}
+          if Network.WaiterThread <> INVALID_HANDLE_VALUE then
+           begin
+            {$IFDEF USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
+            {$ENDIF}
+            
+            {Send Message}
+            FillChar(Message,SizeOf(TMessage),0);
+            ThreadSendMessage(Network.WaiterThread,Message);
+            Network.WaiterThread:=INVALID_HANDLE_VALUE;
+           end; 
          end;
        end;
      finally
@@ -1666,8 +1695,22 @@ end;
 
 {==============================================================================}
 
-procedure SMSC95XXInterruptComplete(Request:PUSBRequest);
-{Called when a USB request from the SMSC95XX interrupt IN endpoint completes}
+procedure SMSC95XXTransmitComplete(Request:PUSBRequest);
+{Called when a USB request to the SMSC95XX bulk OUT endpoint completes}
+{Request: The USB request which has completed}
+{Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ WorkerSchedule(0,TWorkerTask(SMSC95XXTransmitWorker),Request,nil)
+end;
+
+{==============================================================================}
+
+procedure SMSC95XXInterruptWorker(Request:PUSBRequest);
+{Called (by a Worker thread) to process a completed USB request from the SMSC95XX interrupt IN endpoint}
 {Request: The USB request which has completed}
 var
  Status:LongWord;
@@ -1686,7 +1729,7 @@ begin
     begin
      try
 
-     //Critical
+      //To Do
  
      finally
       {Release the Lock}
@@ -1702,6 +1745,20 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'SMSC95XX: Interrupt request invalid');
   end;    
+end;
+
+{==============================================================================}
+
+procedure SMSC95XXInterruptComplete(Request:PUSBRequest);
+{Called when a USB request from the SMSC95XX interrupt IN endpoint completes}
+{Request: The USB request which has completed}
+{Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ WorkerSchedule(0,TWorkerTask(SMSC95XXInterruptWorker),Request,nil)
 end;
 
 {==============================================================================}

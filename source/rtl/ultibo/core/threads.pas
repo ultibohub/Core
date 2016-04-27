@@ -1035,6 +1035,8 @@ type
  TBufferGetEx = function(Buffer:PBufferEntry;Timeout:LongWord):Pointer;
  TBufferFree = function(Buffer:Pointer):LongWord;
  
+ TBufferIterate = function(Buffer:PBufferEntry;Previous:Pointer):Pointer;
+ 
 type
  {Prototypes for Event Wait/WaitEx/Set/Reset/Pulse Handlers}
  TEventWait = function(Event:PEventEntry):LongWord;
@@ -1316,6 +1318,8 @@ var
  BufferGetHandler:TBufferGet;
  BufferGetExHandler:TBufferGetEx;
  BufferFreeHandler:TBufferFree;
+ 
+ BufferIterateHandler:TBufferIterate;
  
 var
  {Event Wait/Set/Reset/Pulse Handlers}
@@ -1670,9 +1674,14 @@ function BufferCreate(Size,Count:LongWord):TBufferHandle;
 function BufferCreateEx(Size,Count,Flags:LongWord):TBufferHandle;
 function BufferDestroy(Buffer:TBufferHandle):LongWord;
 
+function BufferCount(Buffer:TBufferHandle):LongWord;
+function BufferAvailable(Buffer:TBufferHandle):LongWord;
+
 function BufferGet(Buffer:TBufferHandle):Pointer;
 function BufferGetEx(Buffer:TBufferHandle;Timeout:LongWord):Pointer;                            {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 function BufferFree(Buffer:Pointer):LongWord;
+
+function BufferIterate(Buffer:TBufferHandle;Previous:Pointer):Pointer;
 
 {==============================================================================}
 {Event Functions}
@@ -1730,6 +1739,10 @@ procedure SysInitProc;
 procedure SysExitProc;
 
 function SysInitCompleted:Boolean;
+
+{==============================================================================}
+{RTL Process Functions}
+function SysGetProcessID:SizeUInt;
 
 {==============================================================================}
 {RTL Thread Manager Functions}
@@ -2143,6 +2156,9 @@ begin
  
  {Setup System ExitProc}
  AddExitProc(SysExitProc);
+ 
+ {Setup System Handlers}
+ SysGetProcessIDHandler:=SysGetProcessID;
  
  {Setup SysUtils Handlers}
  {Thread Functions}
@@ -6529,7 +6545,7 @@ end;
   
 function SemaphoreCount(Semaphore:TSemaphoreHandle):LongWord;
 {Get the current count of an existing Semaphore entry}
-{Semaphore: Semaphore to get owner for}
+{Semaphore: Semaphore to get count for}
 {Return: Current count or INVALID_HANDLE_VALUE on error}
 var
  ResultCode:LongWord;
@@ -17070,6 +17086,78 @@ end;
 
 {==============================================================================}
 
+function BufferCount(Buffer:TBufferHandle):LongWord;
+{Get the total count of buffers in an existing Buffer entry}
+{Buffer: Buffer to get total count for}
+{Return: Total count or INVALID_HANDLE_VALUE on error}
+var
+ BufferEntry:PBufferEntry;
+begin
+ {}
+ Result:=LongWord(INVALID_HANDLE_VALUE);
+ 
+ {Check Buffer}
+ if Buffer = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ BufferEntry:=PBufferEntry(Buffer);
+ if BufferEntry = nil then Exit;
+ if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if SpinLock(BufferEntry.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
+    
+    {Get Total Count}
+    Result:=BufferEntry.Count;
+   finally
+    {Release the Lock}
+    SpinUnlock(BufferEntry.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function BufferAvailable(Buffer:TBufferHandle):LongWord;
+{Get the available count of buffers in an existing Buffer entry}
+{Buffer: Buffer to get available count for}
+{Return: Available count or INVALID_HANDLE_VALUE on error}
+var
+ BufferEntry:PBufferEntry;
+begin
+ {}
+ Result:=LongWord(INVALID_HANDLE_VALUE);
+ 
+ {Check Buffer}
+ if Buffer = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ BufferEntry:=PBufferEntry(Buffer);
+ if BufferEntry = nil then Exit;
+ if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if SpinLock(BufferEntry.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
+    
+    {Get Available Count}
+    Result:=SemaphoreCount(BufferEntry.Available);
+   finally
+    {Release the Lock}
+    SpinUnlock(BufferEntry.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
 function BufferGet(Buffer:TBufferHandle):Pointer;
 {Allocate an available buffer from an existing Buffer entry}
 {Buffer: Handle of Buffer entry to allocate from}
@@ -17283,6 +17371,87 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;  
+  end; 
+end;
+
+{==============================================================================}
+
+function BufferIterate(Buffer:TBufferHandle;Previous:Pointer):Pointer;
+{Iterate through each of the buffers in an existing Buffer entry}
+{Buffer: Handle of Buffer entry to iterate from}
+{Previous: The pointer returned by the previous call or nil on first call}
+{Return: A pointer to the next buffer or nil on error}
+
+{Note: Iterate is intended to allow allocating or initializing buffers after
+ a Buffer entry is created, or deallocating before a Buffer entry is destroyed.
+ 
+ The function will fail if any buffers are already in use (if the count and
+ available count are not equal)}
+var 
+ BufferItem:PBufferItem;
+ PreviousItem:PBufferItem;
+ BufferEntry:PBufferEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Buffer}
+ if Buffer = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ BufferEntry:=PBufferEntry(Buffer);
+ if BufferEntry = nil then Exit;
+ if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
+ 
+ {Check Handler}
+ if Assigned(BufferIterateHandler) then
+  begin
+   {Use Handler Method}
+   Result:=BufferIterateHandler(BufferEntry,Previous);
+  end
+ else
+  begin
+   {Use Default Method}
+   {Acquire the Lock}
+   if SpinLock(BufferEntry.Lock) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Signature}
+      if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
+ 
+      {Check Available}
+      if SemaphoreCount(BufferEntry.Available) = BufferEntry.Count then
+       begin
+        {Check Previous}
+        if Previous = nil then
+         begin
+          {Get First}
+          BufferItem:=BufferEntry.First;
+          if BufferItem = nil then Exit;
+  
+          {Return Buffer}
+          Result:=BufferItem.Buffer;
+         end
+        else
+         begin
+          {Get Previous}
+          PreviousItem:=PBufferItem(PtrUInt(Previous) - PtrUInt(SizeOf(TBufferItem)));
+          if PreviousItem = nil then Exit;
+          if PreviousItem.Buffer <> Previous then Exit; 
+          if PreviousItem.Parent <> Buffer then Exit;
+          
+          {Get Next}
+          BufferItem:=PreviousItem.Next;
+  
+          {Return Buffer}
+          Result:=BufferItem.Buffer;
+         end;       
+       end;  
+     finally
+      {Release the Lock}
+      SpinUnlock(BufferEntry.Lock);
+     end;
+    end;
   end; 
 end;
 
@@ -19409,6 +19578,12 @@ begin
  WorkerRequest.Data:=Data;
  WorkerRequest.Callback:=Callback;
  
+ {Flush Worker Request}
+ if not(HEAP_IRQ_CACHE_COHERENT) then
+  begin
+   CleanDataCacheRange(LongWord(WorkerRequest),SizeOf(TWorkerRequest));
+  end;
+  
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=LongWord(WorkerRequest);
@@ -19463,6 +19638,12 @@ begin
  WorkerRequest.Task:=Task;
  WorkerRequest.Data:=Data;
  WorkerRequest.Callback:=Callback;
+ 
+ {Flush Worker Request}
+ if not(HEAP_FIQ_CACHE_COHERENT) then
+  begin
+   CleanDataCacheRange(LongWord(WorkerRequest),SizeOf(TWorkerRequest));
+  end;
  
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
@@ -19732,6 +19913,16 @@ function SysInitCompleted:Boolean;
 begin
  {}
  Result:=SysInitializationCompleted;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{RTL Process Functions}
+function SysGetProcessID:SizeUInt;
+{Return current Thread ID}
+begin
+ {}
+ Result:=ThreadGetCurrent;
 end;
 
 {==============================================================================}

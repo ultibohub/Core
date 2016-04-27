@@ -56,6 +56,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalStrings,HeapManager,SysUtils;
 const
  {Platform specific constants}
 
+ {DMA Data Flags}
+ DMA_DATA_FLAG_NONE                = $00000000; 
+ DMA_DATA_FLAG_STRIDE              = $00000001; {Transfer from the source to the destination using 2D stride (If supported)}
+ DMA_DATA_FLAG_SOURCE_NOINCREMENT  = $00000002; {Don't increment the source address during the DMA request (If supported)}
+ DMA_DATA_FLAG_DEST_NOINCREMENT    = $00000004; {Don't increment the dest address during the DMA request (If supported)}
+ DMA_DATA_FLAG_SOURCE_DREQ         = $00000008; {Use DREQ gating on the source address during the DMA request (If supported)}
+ DMA_DATA_FLAG_DEST_DREQ           = $00000010; {Use DREQ gating on the dest address during the DMA request (If supported)}
+ DMA_DATA_FLAG_SOURCE_WIDE         = $00000020; {Use wide reads on the source address during the DMA request (If supported)}
+ DMA_DATA_FLAG_DEST_WIDE           = $00000040; {Use wide writes on the dest address during the DMA request (If supported)}
+ DMA_DATA_FLAG_NOREAD              = $00000080; {Ignore the source address and zero fill the destination (If supported)} 
+ DMA_DATA_FLAG_NOWRITE             = $00000100; {Ignore the dest address and cache fill from the source (If supported)}   
+ DMA_DATA_FLAG_NOCLEAN             = $00000200; {Do not perform cache clean on the source address (If applicable)}
+ DMA_DATA_FLAG_NOINVALIDATE        = $00000400; {Do not perform cache invalidate on the dest address (If applicable)}
+ DMA_DATA_FLAG_BULK                = $00000800; {Perform a bulk transfer (If applicable)}
+ 
  {Page Table Flags}
  PAGE_TABLE_FLAG_NONE          = (1 shl 0);
  PAGE_TABLE_FLAG_NORMAL        = (1 shl 1);
@@ -151,6 +166,23 @@ type
  {Abort Masks}
  TAbortMask = LongWord;
 
+type
+ {DMA Data}
+ PDMAData = ^TDMAData;
+ TDMAData = record
+  {Data Properties}
+  Source:Pointer;         {Source address for DMA (May need to be allocated in accordance with DMA host configuration)}
+  Dest:Pointer;           {Dest address for DMA (May need to be allocated in accordance with DMA host configuration)}
+  Size:LongWord;          {Size for DMA transfer (For 2D stride the length of a row multiplied by the count of rows)}
+  Flags:LongWord;         {Flags for DMA transfer (See DMA_DATA_FLAG_* above)}
+  {Stride Properties}
+  StrideLength:LongWord;  {Length of each row during 2D stride (If supported)}
+  SourceStride:LongInt;   {Increment between rows for source address during 2D stride (If supported)}
+  DestStride:LongInt;     {Increment between rows for destination address during 2D stride (If supported)}
+  {Next Block}
+  Next:PDMAData;          {Link to next DMA data block (or nil for the last block)}
+ end;
+ 
 type
  {SWI Request}
  PSWIRequest = ^TSWIRequest;
@@ -518,9 +550,19 @@ type
  {Prototypes for DMA Handlers}
  TDMAAvailable = function:Boolean;
  
- TDMAGetChannels = function:LongWord;
+ TDMATransfer = function(Data:PDMAData;Direction,Peripheral:LongWord):LongWord;
  
- //To Do //More //Basic DMA Allocate/Submit/Release etc (FillMemory/CopyMemory/ReadMemory/WriteMemory etc)
+ TDMAFillMemory = function(Dest:Pointer;Size:LongWord;Value:Byte):LongWord;
+ TDMACopyMemory = function(Source,Dest:Pointer;Size:LongWord):LongWord;
+ 
+ TDMAReadPeripheral = function(Address,Dest:Pointer;Size,Peripheral:LongWord):LongWord;
+ TDMAWritePeripheral = function(Source,Address:Pointer;Size,Peripheral:LongWord):LongWord;
+ 
+ TDMAAllocateBuffer = function(Size:LongWord):Pointer;
+ TDMAAllocateBufferEx = function(var Size:LongWord):Pointer;
+ TDMAReleaseBuffer = function(Buffer:Pointer):LongWord;
+ 
+ TDMAGetChannels = function:LongWord;
  
 type
  {Prototypes for GPIO Handlers}
@@ -1066,9 +1108,20 @@ var
 var
  {DMA Handlers}
  DMAAvailableHandler:TDMAAvailable;
- DMAGetChannelsHandler:TDMAGetChannels;
  
- //To Do //More //Basic DMA Allocate/Submit/Release etc (FillMemory/CopyMemory/ReadMemory/WriteMemory etc)
+ DMATransferHandler:TDMATransfer;
+ 
+ DMAFillMemoryHandler:TDMAFillMemory;
+ DMACopyMemoryHandler:TDMACopyMemory;
+ 
+ DMAReadPeripheralHandler:TDMAReadPeripheral;
+ DMAWritePeripheralHandler:TDMAWritePeripheral;
+ 
+ DMAAllocateBufferHandler:TDMAAllocateBuffer;
+ DMAAllocateBufferExHandler:TDMAAllocateBufferEx;
+ DMAReleaseBufferHandler:TDMAReleaseBuffer;
+ 
+ DMAGetChannelsHandler:TDMAGetChannels;
  
 var
  {GPIO Handlers} 
@@ -1535,9 +1588,19 @@ function CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
 {DMA Functions}
 function DMAAvailable:Boolean; inline;
 
-function DMAGetChannels:LongWord; inline;
+function DMATransfer(Data:PDMAData;Direction,Peripheral:LongWord):LongWord; inline;
+ 
+function DMAFillMemory(Dest:Pointer;Size:LongWord;Value:Byte):LongWord; inline;
+function DMACopyMemory(Source,Dest:Pointer;Size:LongWord):LongWord; inline;
+ 
+function DMAReadPeripheral(Address,Dest:Pointer;Size,Peripheral:LongWord):LongWord; inline;
+function DMAWritePeripheral(Source,Address:Pointer;Size,Peripheral:LongWord):LongWord; inline;
+ 
+function DMAAllocateBuffer(Size:LongWord):Pointer; inline;
+function DMAAllocateBufferEx(var Size:LongWord):Pointer; inline;
+function DMAReleaseBuffer(Buffer:Pointer):LongWord; inline;
 
-//To Do //More //Basic DMA Allocate/Submit/Release etc (FillMemory/CopyMemory/ReadMemory/WriteMemory etc)
+function DMAGetChannels:LongWord; inline;
 
 {==============================================================================}
 {Handle Functions}
@@ -1821,7 +1884,7 @@ begin
  ShutdownSemaphore.SignalSemaphore:=nil;
  
  {Setup System Handlers}
- //To Do
+  {Nothing}
  
  {Setup SysUtils Handlers}
  {Locale Functions}
@@ -4626,8 +4689,156 @@ end;
 
 {==============================================================================}
 
+function DMATransfer(Data:PDMAData;Direction,Peripheral:LongWord):LongWord; inline;
+{Perform a DMA transfer using the list of DMA data blocks provided}
+{Data: A linked list of DMA data blocks for the transfer}
+{Direction: The direction of the DMA request (eg DMA_DIR_MEM_TO_MEM)}
+{Peripheral: The peripheral ID for data request gating (eg DMA_DREQ_ID_NONE)}
+begin
+ {}
+ if Assigned(DMATransferHandler) then
+  begin
+   Result:=DMATransferHandler(Data,Direction,Peripheral);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function DMAFillMemory(Dest:Pointer;Size:LongWord;Value:Byte):LongWord; inline;
+{Fill memory at the destination address using DMA}
+{Dest: The address to start the memory fill}
+{Size: The size of memory to fill in bytes}
+{Value: The value to fill the memory with}
+begin
+ {}
+ if Assigned(DMAFillMemoryHandler) then
+  begin
+   Result:=DMAFillMemoryHandler(Dest,Size,Value);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function DMACopyMemory(Source,Dest:Pointer;Size:LongWord):LongWord; inline;
+{Copy memory from the source to the destination address using DMA}
+{Source: The source address to start the memory copy}
+{Dest: The destination address to start the memory copy}
+{Size: The size of memory to copy in bytes}
+begin
+ {}
+ if Assigned(DMACopyMemoryHandler) then
+  begin
+   Result:=DMACopyMemoryHandler(Source,Dest,Size);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function DMAReadPeripheral(Address,Dest:Pointer;Size,Peripheral:LongWord):LongWord; inline;
+{Read from a periperal address to the destination address using DMA}
+{Address: The address of the periperhal register to read from}
+{Dest: The destination address to start writing to}
+{Size: The size of the read in bytes}
+{Peripheral: The peripheral ID for data request gating (eg DMA_DREQ_ID_UART_RX)}
+begin
+ {}
+ if Assigned(DMAReadPeripheralHandler) then
+  begin
+   Result:=DMAReadPeripheralHandler(Address,Dest,Size,Peripheral);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function DMAWritePeripheral(Source,Address:Pointer;Size,Peripheral:LongWord):LongWord; inline;
+{Write to a peripheral address from the source address using DMA}
+{Source: The source address to start reading from}
+{Address: The address of the peripheral register to write to}
+{Size: The size of the write in bytes}
+{Peripheral: The peripheral ID for data request gating (eg DMA_DREQ_ID_UART_TX)}
+begin
+ {}
+ if Assigned(DMAWritePeripheralHandler) then
+  begin
+   Result:=DMAWritePeripheralHandler(Source,Address,Size,Peripheral);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function DMAAllocateBuffer(Size:LongWord):Pointer; inline;
+{Allocate a buffer compatible with DMA memory reads or writes}
+{Size: The size of the buffer to allocate}
+begin
+ {}
+ if Assigned(DMAAllocateBufferHandler) then
+  begin
+   Result:=DMAAllocateBufferHandler(Size);
+  end
+ else
+  begin
+   Result:=nil;
+  end;
+end;
+
+{==============================================================================}
+
+function DMAAllocateBufferEx(var Size:LongWord):Pointer; inline;
+{Allocate a buffer compatible with DMA memory reads or writes}
+{Size: The size of the buffer to allocate (Updated on return to actual size)}
+begin
+ {}
+ if Assigned(DMAAllocateBufferExHandler) then
+  begin
+   Result:=DMAAllocateBufferExHandler(Size);
+  end
+ else
+  begin
+   Result:=nil;
+  end;
+end;
+
+{==============================================================================}
+
+function DMAReleaseBuffer(Buffer:Pointer):LongWord; inline;
+{Release a buffer allocated with DMAAllocateBuffer}
+{Buffer: The buffer to be released}
+begin
+ {}
+ if Assigned(DMAReleaseBufferHandler) then
+  begin
+   Result:=DMAReleaseBufferHandler(Buffer);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
 function DMAGetChannels:LongWord; inline;
-{Get the currently enabled DMA channels}
+{Get the currently enabled DMA channel bitmap (If supported)}
 begin
  {}
  if Assigned(DMAGetChannelsHandler) then

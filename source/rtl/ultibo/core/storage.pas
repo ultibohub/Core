@@ -2252,9 +2252,9 @@ begin
  Storage:=PUSBStorageDevice(Request.DriverData);
  if Storage <> nil then
   begin
-   {Update Pending}
-   Dec(Storage.PendingCount); //To Do //Critical //May need to move below SemaphoreSignal for safety ? //See: SMSC95XX
- 
+   {Update Pending (Before signal as the submitter has the lock)}
+   Dec(Storage.PendingCount);
+  
    {Check State}
    if Storage.Storage.StorageState = STORAGE_STATE_EJECTING then
     begin
@@ -2268,20 +2268,25 @@ begin
  
    {Signal Semaphore}
    SemaphoreSignal(Storage.ReadWait);
-
+   
    {Check State}
    if Storage.Storage.StorageState = STORAGE_STATE_EJECTING then
     begin
      {Check Pending}
      if Storage.PendingCount = 0 then
       begin
-       {$IFDEF USB_DEBUG}
-       if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Storage: Eject pending, sending message to waiter thread (Thread=' + IntToHex(Storage.WaiterThread,8) + ')');
-       {$ENDIF}
-          
-       {Send Message}
-       FillChar(Message,SizeOf(TMessage),0);
-       ThreadSendMessage(Storage.WaiterThread,Message);
+       {Check Waiter}
+       if Storage.WaiterThread <> INVALID_HANDLE_VALUE then
+        begin
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Storage: Eject pending, sending message to waiter thread (Thread=' + IntToHex(Storage.WaiterThread,8) + ')');
+         {$ENDIF}
+            
+         {Send Message}
+         FillChar(Message,SizeOf(TMessage),0);
+         ThreadSendMessage(Storage.WaiterThread,Message);
+         Storage.WaiterThread:=INVALID_HANDLE_VALUE;
+        end; 
       end;
     end;
   end
@@ -2309,9 +2314,9 @@ begin
  Storage:=PUSBStorageDevice(Request.DriverData);
  if Storage <> nil then
   begin
-   {Update Pending}
-   Dec(Storage.PendingCount); //To Do //Critical //May need to move below SemaphoreSignal for safety ? //See: SMSC95XX
- 
+   {Update Pending (Before signal as the submitter has the lock)}
+   Dec(Storage.PendingCount);
+
    {Check State}
    if Storage.Storage.StorageState = STORAGE_STATE_EJECTING then
     begin
@@ -2325,20 +2330,25 @@ begin
  
    {Signal Semaphore}
    SemaphoreSignal(Storage.WriteWait);
-
+   
    {Check State}
    if Storage.Storage.StorageState = STORAGE_STATE_EJECTING then
     begin
      {Check Pending}
      if Storage.PendingCount = 0 then
       begin
-       {$IFDEF USB_DEBUG}
-       if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Storage: Eject pending, sending message to waiter thread (Thread=' + IntToHex(Storage.WaiterThread,8) + ')');
-       {$ENDIF}
-          
-       {Send Message}
-       FillChar(Message,SizeOf(TMessage),0);
-       ThreadSendMessage(Storage.WaiterThread,Message);
+       {Check Waiter}
+       if Storage.WaiterThread <> INVALID_HANDLE_VALUE then
+        begin
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Storage: Eject pending, sending message to waiter thread (Thread=' + IntToHex(Storage.WaiterThread,8) + ')');
+         {$ENDIF}
+            
+         {Send Message}
+         FillChar(Message,SizeOf(TMessage),0);
+         ThreadSendMessage(Storage.WaiterThread,Message);
+         Storage.WaiterThread:=INVALID_HANDLE_VALUE;
+        end; 
       end;
     end;
   end
@@ -2366,8 +2376,8 @@ begin
  Storage:=PUSBStorageDevice(Request.DriverData);
  if Storage <> nil then
   begin
-   {Update Pending}
-   Dec(Storage.PendingCount); //To Do //Critical //May need to move below SemaphoreSignal for safety ? //See: SMSC95XX
+   {Update Pending (Before signal as the submitter has the lock)}
+   Dec(Storage.PendingCount);
  
    {Check State}
    if Storage.Storage.StorageState = STORAGE_STATE_EJECTING then
@@ -2389,13 +2399,18 @@ begin
      {Check Pending}
      if Storage.PendingCount = 0 then
       begin
-       {$IFDEF USB_DEBUG}
-       if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Storage: Eject pending, sending message to waiter thread (Thread=' + IntToHex(Storage.WaiterThread,8) + ')');
-       {$ENDIF}
-          
-       {Send Message}
-       FillChar(Message,SizeOf(TMessage),0);
-       ThreadSendMessage(Storage.WaiterThread,Message);
+       {Check Waiter}
+       if Storage.WaiterThread <> INVALID_HANDLE_VALUE then
+        begin
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Storage: Eject pending, sending message to waiter thread (Thread=' + IntToHex(Storage.WaiterThread,8) + ')');
+         {$ENDIF}
+            
+         {Send Message}
+         FillChar(Message,SizeOf(TMessage),0);
+         ThreadSendMessage(Storage.WaiterThread,Message);
+         Storage.WaiterThread:=INVALID_HANDLE_VALUE;
+        end; 
       end;
     end;
   end

@@ -1458,8 +1458,6 @@ const
  RT2800_MAC_WCID_ATTRIBUTE_BASE  = $6800; {MAC_WCID_ATTRIBUTE_BASE: 4-byte * 256-entry}
  RT2800_SHARED_KEY_TABLE_BASE  = $6c00; {SHARED_KEY_TABLE_BASE: 32-byte * 16-entry}
  RT2800_SHARED_KEY_MODE_BASE  = $7000; {SHARED_KEY_MODE_BASE: 4-byte * 16-entry}
-
- //TO Do //MAC_WCID_ENTRY/PAIRWISE_KEY_ENTRY etc //Macros and Types
  
  {MAC_WCID_ATTRIBUTE}
  RT2800_MAC_WCID_ATTRIBUTE_KEYTAB     = $00000001;
@@ -1537,11 +1535,9 @@ const
   1. The original region for BCN 0~3
   2. Extract memory from FCE table for BCN 4~5
   3. Extract memory from Pair-wise key table for BCN 6~7
-     It occupied those memory of wcid 238~253 for BCN 6
-     and wcid 222~237 for BCN 7 (see Security key table memory
-     for more info).}
+     It occupied those memory of wcid 238~253 for BCN 6 and wcid 222~237 for BCN 7 (see Security key table memory for more info)}
  
- {IMPORTANT NOTE: Not sure why legacy driver does this, but HW_BEACON_BASE7 is = $0200 bytes below HW_BEACON_BASE6.}
+ {IMPORTANT NOTE: Not sure why legacy driver does this, but HW_BEACON_BASE7 is = $0200 bytes below HW_BEACON_BASE6}
  RT2800_HW_BEACON_BASE0     = $7800;
  RT2800_HW_BEACON_BASE1     = $7a00;
  RT2800_HW_BEACON_BASE2     = $7c00;
@@ -1550,8 +1546,6 @@ const
  RT2800_HW_BEACON_BASE5     = $7400;
  RT2800_HW_BEACON_BASE6     = $5dc0;
  RT2800_HW_BEACON_BASE7     = $5bc0;
-
- //To Do //HW_BEACON_BASE/BEACON_BASE_TO_OFFSET etc Macros
 
  {BBP registers}
  {The wordsize of the BBP is 8 bits}
@@ -1955,16 +1949,16 @@ const
  RT2800_EEPROM_TSSI_BOUND_BG2_MINUS1     = $ff00; {MINUS1: If the actual TSSI is below this boundary, tx power needs to be reduced by (agc_step {-1)}
 
  {EEPROM temperature compensation boundaries 802.11BG}
- RT2800_EEPROM_TSSI_BOUND_BG3_REF     = $00ff; {REF: Reference TSSI value, no tx power changes needed}
- RT2800_EEPROM_TSSI_BOUND_BG3_PLUS1     = $ff00; {PLUS1: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {1)}
+ RT2800_EEPROM_TSSI_BOUND_BG3_REF        = $00ff; {REF: Reference TSSI value, no tx power changes needed}
+ RT2800_EEPROM_TSSI_BOUND_BG3_PLUS1      = $ff00; {PLUS1: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {1)}
 
  {EEPROM temperature compensation boundaries 802.11BG}
- RT2800_EEPROM_TSSI_BOUND_BG4_PLUS2     = $00ff; {PLUS2: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {2)}
- RT2800_EEPROM_TSSI_BOUND_BG4_PLUS3     = $ff00; {PLUS3: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {3)}
+ RT2800_EEPROM_TSSI_BOUND_BG4_PLUS2      = $00ff; {PLUS2: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {2)}
+ RT2800_EEPROM_TSSI_BOUND_BG4_PLUS3      = $ff00; {PLUS3: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {3)}
 
- {EEPROM temperature compensation boundaries 802.11BG
- RT2800_EEPROM_TSSI_BOUND_BG5_PLUS4     = $00ff; {PLUS4: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {4)}
- RT2800_EEPROM_TSSI_BOUND_BG5_AGC_STEP     = $ff00; {AGC_STEP: Temperature compensation step.}
+ {EEPROM temperature compensation boundaries 802.11BG}
+ RT2800_EEPROM_TSSI_BOUND_BG5_PLUS4      = $00ff; {PLUS4: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {4)}
+ RT2800_EEPROM_TSSI_BOUND_BG5_AGC_STEP   = $ff00; {AGC_STEP: Temperature compensation step.}
 
  {EEPROM TXPOWER 802.11A}
  RT2800_EEPROM_TXPOWER_A_SIZE   = 6;
@@ -1972,8 +1966,8 @@ const
  RT2800_EEPROM_TXPOWER_A_2      = $ff00;
 
  {EEPROM_TXPOWER_(A,G) fields for RT3593}
- RT2800_EEPROM_TXPOWER_ALC      = $1f;
- RT2800_EEPROM_TXPOWER_FINE_CTRL     = $e0;
+ RT2800_EEPROM_TXPOWER_ALC        = $1f;
+ RT2800_EEPROM_TXPOWER_FINE_CTRL  = $e0;
 
  {EEPROM temperature compensation boundaries 802.11A}
  RT2800_EEPROM_TSSI_BOUND_A1_MINUS4     = $00ff; {MINUS4: If the actual TSSI is below this boundary, tx power needs to be reduced by (agc_step {-4)}
@@ -1984,16 +1978,16 @@ const
  RT2800_EEPROM_TSSI_BOUND_A2_MINUS1     = $ff00; {MINUS1: If the actual TSSI is below this boundary, tx power needs to be reduced by (agc_step {-1)}
 
  {EEPROM temperature compensation boundaries 802.11A}
- RT2800_EEPROM_TSSI_BOUND_A3_REF     = $00ff; {REF: Reference TSSI value, no tx power changes needed}
- RT2800_EEPROM_TSSI_BOUND_A3_PLUS1     = $ff00; {PLUS1: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {1)}
+ RT2800_EEPROM_TSSI_BOUND_A3_REF        = $00ff; {REF: Reference TSSI value, no tx power changes needed}
+ RT2800_EEPROM_TSSI_BOUND_A3_PLUS1      = $ff00; {PLUS1: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {1)}
 
  {EEPROM temperature compensation boundaries 802.11A}
- RT2800_EEPROM_TSSI_BOUND_A4_PLUS2     = $00ff; {PLUS2: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {2)}
- RT2800_EEPROM_TSSI_BOUND_A4_PLUS3     = $ff00; {PLUS3: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {3)}
+ RT2800_EEPROM_TSSI_BOUND_A4_PLUS2      = $00ff; {PLUS2: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {2)}
+ RT2800_EEPROM_TSSI_BOUND_A4_PLUS3      = $ff00; {PLUS3: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {3)}
 
  {EEPROM temperature compensation boundaries 802.11A}
- RT2800_EEPROM_TSSI_BOUND_A5_PLUS4     = $00ff; {PLUS4: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {4)}
- RT2800_EEPROM_TSSI_BOUND_A5_AGC_STEP     = $ff00; {AGC_STEP: Temperature compensation step.}
+ RT2800_EEPROM_TSSI_BOUND_A5_PLUS4      = $00ff; {PLUS4: If the actual TSSI is above this boundary, tx power needs to be increased by (agc_step {4)}
+ RT2800_EEPROM_TSSI_BOUND_A5_AGC_STEP   = $ff00; {AGC_STEP: Temperature compensation step.}
 
  {EEPROM TXPOWER by rate: tx power per tx rate for HT20 mode}
  RT2800_EEPROM_TXPOWER_BYRATE_SIZE  = 9;
@@ -2096,73 +2090,81 @@ const
  RT2800_RXWI_DESC_SIZE_5WORDS = (5 * SizeOf(LongWord));
  RT2800_RXWI_DESC_SIZE_6WORDS = (6 * SizeOf(LongWord));
  
- {TX WI structure}
+ {TXWI structure}
  {Word0}
- RT2800_TXWI_W0_FRAG       = $00000001; {FRAG: 1 To inform TKIP engine this is a fragment.}
- RT2800_TXWI_W0_MIMO_PS       = $00000002; {MIMO_PS: The remote peer is in dynamic MIMO-PS mode}
- RT2800_TXWI_W0_CF_ACK       = $00000004;
- RT2800_TXWI_W0_TS       = $00000008;
- RT2800_TXWI_W0_AMPDU       = $00000010; {AMPDU: 1: this frame is eligible for AMPDU aggregation, the hw will aggregate consecutive frames with the same RA and QoS TID. If}
+ RT2800_TXWI_W0_FRAG                   = $00000001; {FRAG: 1 To inform TKIP engine this is a fragment.}
+ RT2800_TXWI_W0_MIMO_PS                = $00000002; {MIMO_PS: The remote peer is in dynamic MIMO-PS mode}
+ RT2800_TXWI_W0_CF_ACK                 = $00000004;
+ RT2800_TXWI_W0_TS                     = $00000008;
+ RT2800_TXWI_W0_AMPDU                  = $00000010; {AMPDU: 1: this frame is eligible for AMPDU aggregation, the hw will aggregate consecutive frames with the same RA and QoS TID. If}
                                                     { a frame A with the same RA and QoS TID but AMPDU=0 is queued directly after a frame B with AMPDU=1, frame A might still}
                                                     { get aggregated into the AMPDU started by frame B. So, setting AMPDU to 0 does _not_ necessarily mean the frame is sent as}
                                                     { MPDU, it can still end up in an AMPDU if the previous frame was tagged as AMPDU}
- RT2800_TXWI_W0_MPDU_DENSITY      = $000000e0;
- RT2800_TXWI_W0_TX_OP       = $00000300; {TX_OP: 0:HT TXOP rule , 1:PIFS TX ,2:Backoff, 3:sifs}
- RT2800_TXWI_W0_MCS       = $007f0000;
- RT2800_TXWI_W0_BW       = $00800000; {BW: Channel bandwidth 0:20MHz, 1:40 MHz (for legacy rates this will duplicate the frame to both channels)}
- RT2800_TXWI_W0_SHORT_GI      = $01000000;
- RT2800_TXWI_W0_STBC       = $06000000; {STBC: 1: STBC support MCS =0-7, 2,3 : RESERVED}
- RT2800_TXWI_W0_IFS       = $08000000;
- RT2800_TXWI_W0_PHYMODE       = $c0000000;
-
- {Word1}
- RT2800_TXWI_W1_ACK       = $00000001; {ACK: 0: No Ack needed, 1: Ack needed}
- RT2800_TXWI_W1_NSEQ       = $00000002; {NSEQ: 0: Don't assign hw sequence number, 1: Assign hw sequence number}
- RT2800_TXWI_W1_BW_WIN_SIZE      = $000000fc; {BW_WIN_SIZE: BA windows size of the recipient}
- RT2800_TXWI_W1_WIRELESS_CLI_ID      = $0000ff00; {WIRELESS_CLI_ID: Client ID for WCID table access}
- RT2800_TXWI_W1_MPDU_TOTAL_BYTE_COUNT     = $0fff0000; {MPDU_TOTAL_BYTE_COUNT: Length of 802.11 frame}
- RT2800_TXWI_W1_PACKETID      = $f0000000; {PACKETID: Will be latched into the TX_STA_FIFO register once the according frame was processed. If multiple frames are aggregated together}
+ RT2800_TXWI_W0_MPDU_DENSITY           = $000000e0;
+ RT2800_TXWI_W0_TX_OP                  = $00000300; {TX_OP: 0:HT TXOP rule , 1:PIFS TX ,2:Backoff, 3:sifs}
+ RT2800_TXWI_W0_MCS                    = $007f0000;
+ RT2800_TXWI_W0_BW                     = $00800000; {BW: Channel bandwidth 0:20MHz, 1:40 MHz (for legacy rates this will duplicate the frame to both channels)}
+ RT2800_TXWI_W0_SHORT_GI               = $01000000;
+ RT2800_TXWI_W0_STBC                   = $06000000; {STBC: 1: STBC support MCS =0-7, 2,3 : RESERVED}
+ RT2800_TXWI_W0_IFS                    = $08000000;
+ RT2800_TXWI_W0_PHYMODE                = $c0000000;
+                                       
+ {Word1}                               
+ RT2800_TXWI_W1_ACK                    = $00000001; {ACK: 0: No Ack needed, 1: Ack needed}
+ RT2800_TXWI_W1_NSEQ                   = $00000002; {NSEQ: 0: Don't assign hw sequence number, 1: Assign hw sequence number}
+ RT2800_TXWI_W1_BW_WIN_SIZE            = $000000fc; {BW_WIN_SIZE: BA windows size of the recipient}
+ RT2800_TXWI_W1_WIRELESS_CLI_ID        = $0000ff00; {WIRELESS_CLI_ID: Client ID for WCID table access}
+ RT2800_TXWI_W1_MPDU_TOTAL_BYTE_COUNT  = $0fff0000; {MPDU_TOTAL_BYTE_COUNT: Length of 802.11 frame}
+ RT2800_TXWI_W1_PACKETID               = $f0000000; {PACKETID: Will be latched into the TX_STA_FIFO register once the according frame was processed. If multiple frames are aggregated together}
                                                     {          (AMPDU==1; the reported tx status will always contain the packet id of the first frame. 0: Don't report tx status for this frame}
- RT2800_TXWI_W1_PACKETID_QUEUE      = $30000000; {PACKETID_QUEUE: Part of PACKETID, This is the queue index (0-3)}
- RT2800_TXWI_W1_PACKETID_ENTRY      = $c0000000; {PACKETID_ENTRY: Part of PACKETID, THis is the queue entry index (1-3; This identification number is calculated by ((idx % 3; + 1)}
-                                                        {                The (+1; is required to prevent PACKETID to become 0}
+ RT2800_TXWI_W1_PACKETID_QUEUE         = $30000000; {PACKETID_QUEUE: Part of PACKETID, This is the queue index (0-3)}
+ RT2800_TXWI_W1_PACKETID_ENTRY         = $c0000000; {PACKETID_ENTRY: Part of PACKETID, THis is the queue entry index (1-3; This identification number is calculated by ((idx % 3; + 1)}
+                                                    {                The (+1; is required to prevent PACKETID to become 0}
 
  {Word2}
- RT2800_TXWI_W2_IV       = $ffffffff;
+ RT2800_TXWI_W2_IV                     = $ffffffff;
 
  {Word3}
- RT2800_TXWI_W3_EIV       = $ffffffff;
+ RT2800_TXWI_W3_EIV                    = $ffffffff;
  
- {RX WI structure}
+ {RXWI structure}
  {Word0}
- RT2800_RXWI_W0_WIRELESS_CLI_ID      = $000000ff;
- RT2800_RXWI_W0_KEY_INDEX      = $00000300;
- RT2800_RXWI_W0_BSSID       = $00001c00;
- RT2800_RXWI_W0_UDF       = $0000e000;
- RT2800_RXWI_W0_MPDU_TOTAL_BYTE_COUNT     = $0fff0000;
- RT2800_RXWI_W0_TID       = $f0000000;
+ RT2800_RXWI_W0_WIRELESS_CLI_ID       = $000000ff;
+ RT2800_RXWI_W0_KEY_INDEX             = $00000300;
+ RT2800_RXWI_W0_BSSID                 = $00001c00;
+ RT2800_RXWI_W0_UDF                   = $0000e000;
+ RT2800_RXWI_W0_MPDU_TOTAL_BYTE_COUNT = $0fff0000;
+ RT2800_RXWI_W0_TID                   = $f0000000;
 
  {Word1}
- RT2800_RXWI_W1_FRAG       = $0000000f;
- RT2800_RXWI_W1_SEQUENCE      = $0000fff0;
- RT2800_RXWI_W1_MCS       = $007f0000;
- RT2800_RXWI_W1_BW       = $00800000;
- RT2800_RXWI_W1_SHORT_GI      = $01000000;
- RT2800_RXWI_W1_STBC       = $06000000;
- RT2800_RXWI_W1_PHYMODE       = $c0000000;
+ RT2800_RXWI_W1_FRAG                  = $0000000f;
+ RT2800_RXWI_W1_SEQUENCE              = $0000fff0;
+ RT2800_RXWI_W1_MCS                   = $007f0000;
+ RT2800_RXWI_W1_BW                    = $00800000;
+ RT2800_RXWI_W1_SHORT_GI              = $01000000;
+ RT2800_RXWI_W1_STBC                  = $06000000;
+ RT2800_RXWI_W1_PHYMODE               = $c0000000;
+                                      
+ {Word2}                              
+ RT2800_RXWI_W2_RSSI0                 = $000000ff;
+ RT2800_RXWI_W2_RSSI1                 = $0000ff00;
+ RT2800_RXWI_W2_RSSI2                 = $00ff0000;
+                                      
+ {Word3}                              
+ RT2800_RXWI_W3_SNR0                  = $000000ff;
+ RT2800_RXWI_W3_SNR1                  = $0000ff00;
 
- {Word2}
- RT2800_RXWI_W2_RSSI0       = $000000ff;
- RT2800_RXWI_W2_RSSI1       = $0000ff00;
- RT2800_RXWI_W2_RSSI2       = $00ff0000;
+ {Macros for converting TXPower from EEPROM to WiFi value and from WiFi value to register value}
+ RT2800_MIN_G_TXPOWER   = 0;
+ RT2800_MIN_A_TXPOWER   = -7;
+ RT2800_MAX_G_TXPOWER   = 31;
+ RT2800_MAX_A_TXPOWER   = 15;
+ RT2800_DEFAULT_TXPOWER = 5;
 
- {Word3}
- RT2800_RXWI_W3_SNR0       = $000000ff;
- RT2800_RXWI_W3_SNR1       = $0000ff00;
-
- //To Do //TXPOWER_G_FROM_DEV/TXPOWER_A_FROM_DEV Macros
+ RT2800_MIN_A_TXPOWER_3593 = 0;
+ RT2800_MAX_A_TXPOWER_3593 = 31;
  
- //To Do //rt2800_drv_data Type
+ //To Do //TXPOWER_G_FROM_DEV/TXPOWER_A_FROM_DEV Macros
  
  {Board's maximun TX power limitation}
  RT2800_EIRP_MAX_TX_POWER_LIMIT = $50;
@@ -2215,7 +2217,7 @@ const
   $0000,
   $0000);
  
- RT2800_EEPROM_MAP_EXT:array[0..RT2800_EEPROM_WORD_COUNT - 1] of Word = (
+ RT2800_EEPROM_MAP_EXT:array[0..RT2800_EEPROM_WORD_COUNT - 1] of Word = ( //To Do //This one will be incorrect !! //Reorder according to rt2800_eeprom_map_ext //Or turn these into inline functions ? (Yes)
   $0000,  {EEPROM_CHIP_ID}
   $0001,  {EEPROM_VERSION}
   $0002,  {EEPROM_MAC_ADDR_0}
@@ -2257,18 +2259,302 @@ const
   $0000,
   $0000);
  
- {Led modes}
- RT2800_LED_MODE_DEFAULT = 0;
- RT2800_LED_MODE_TXRX_ACTIVITY = 1;
- RT2800_LED_MODE_SIGNAL_STRENGTH = 2;
- RT2800_LED_MODE_ASUS = 3;
- RT2800_LED_MODE_ALPHA = 4;
+ {RF value list for rt28xx}{Supports: 2.4 GHz (all) & 5.2 GHz (RF2850 & RF2750)}
+ RT2800_RF_VALUES:array[0..59] of TRT2X00RFChannel = (
+  (Channel:  1;RF1: $18402ecc;RF2: $184c0786;RF3: $1816b455;RF4: $1800510b),
+  (Channel:  2;RF1: $18402ecc;RF2: $184c0786;RF3: $18168a55;RF4: $1800519f),
+  (Channel:  3;RF1: $18402ecc;RF2: $184c078a;RF3: $18168a55;RF4: $1800518b),
+  (Channel:  4;RF1: $18402ecc;RF2: $184c078a;RF3: $18168a55;RF4: $1800519f),
+  (Channel:  5;RF1: $18402ecc;RF2: $184c078e;RF3: $18168a55;RF4: $1800518b),
+  (Channel:  6;RF1: $18402ecc;RF2: $184c078e;RF3: $18168a55;RF4: $1800519f),
+  (Channel:  7;RF1: $18402ecc;RF2: $184c0792;RF3: $18168a55;RF4: $1800518b),
+  (Channel:  8;RF1: $18402ecc;RF2: $184c0792;RF3: $18168a55;RF4: $1800519f),
+  (Channel:  9;RF1: $18402ecc;RF2: $184c0796;RF3: $18168a55;RF4: $1800518b),
+  (Channel: 10;RF1: $18402ecc;RF2: $184c0796;RF3: $18168a55;RF4: $1800519f),
+  (Channel: 11;RF1: $18402ecc;RF2: $184c079a;RF3: $18168a55;RF4: $1800518b),
+  (Channel: 12;RF1: $18402ecc;RF2: $184c079a;RF3: $18168a55;RF4: $1800519f),
+  (Channel: 13;RF1: $18402ecc;RF2: $184c079e;RF3: $18168a55;RF4: $1800518b),
+  (Channel: 14;RF1: $18402ecc;RF2: $184c07a2;RF3: $18168a55;RF4: $18005193),
+  {802.11 UNI / HyperLan 2}
+  (Channel: 36;RF1: $18402ecc;RF2: $184c099a;RF3: $18158a55;RF4: $180ed1a3),
+  (Channel: 38;RF1: $18402ecc;RF2: $184c099e;RF3: $18158a55;RF4: $180ed193),
+  (Channel: 40;RF1: $18402ec8;RF2: $184c0682;RF3: $18158a55;RF4: $180ed183),
+  (Channel: 44;RF1: $18402ec8;RF2: $184c0682;RF3: $18158a55;RF4: $180ed1a3),
+  (Channel: 46;RF1: $18402ec8;RF2: $184c0686;RF3: $18158a55;RF4: $180ed18b),
+  (Channel: 48;RF1: $18402ec8;RF2: $184c0686;RF3: $18158a55;RF4: $180ed19b),
+  (Channel: 52;RF1: $18402ec8;RF2: $184c068a;RF3: $18158a55;RF4: $180ed193),
+  (Channel: 54;RF1: $18402ec8;RF2: $184c068a;RF3: $18158a55;RF4: $180ed1a3),
+  (Channel: 56;RF1: $18402ec8;RF2: $184c068e;RF3: $18158a55;RF4: $180ed18b),
+  (Channel: 60;RF1: $18402ec8;RF2: $184c0692;RF3: $18158a55;RF4: $180ed183),
+  (Channel: 62;RF1: $18402ec8;RF2: $184c0692;RF3: $18158a55;RF4: $180ed193),
+  (Channel: 64;RF1: $18402ec8;RF2: $184c0692;RF3: $18158a55;RF4: $180ed1a3),
+  {802.11 HyperLan 2}
+  (Channel: 100;RF1: $18402ec8;RF2: $184c06b2;RF3: $18178a55;RF4: $180ed783),
+  (Channel: 102;RF1: $18402ec8;RF2: $184c06b2;RF3: $18578a55;RF4: $180ed793),
+  (Channel: 104;RF1: $18402ec8;RF2: $185c06b2;RF3: $18578a55;RF4: $180ed1a3),
+  (Channel: 108;RF1: $18402ecc;RF2: $185c0a32;RF3: $18578a55;RF4: $180ed193),
+  (Channel: 110;RF1: $18402ecc;RF2: $184c0a36;RF3: $18178a55;RF4: $180ed183),
+  (Channel: 112;RF1: $18402ecc;RF2: $184c0a36;RF3: $18178a55;RF4: $180ed19b),
+  (Channel: 116;RF1: $18402ecc;RF2: $184c0a3a;RF3: $18178a55;RF4: $180ed1a3),
+  (Channel: 118;RF1: $18402ecc;RF2: $184c0a3e;RF3: $18178a55;RF4: $180ed193),
+  (Channel: 120;RF1: $18402ec4;RF2: $184c0382;RF3: $18178a55;RF4: $180ed183),
+  (Channel: 124;RF1: $18402ec4;RF2: $184c0382;RF3: $18178a55;RF4: $180ed193),
+  (Channel: 126;RF1: $18402ec4;RF2: $184c0382;RF3: $18178a55;RF4: $180ed15b),
+  (Channel: 128;RF1: $18402ec4;RF2: $184c0382;RF3: $18178a55;RF4: $180ed1a3),
+  (Channel: 132;RF1: $18402ec4;RF2: $184c0386;RF3: $18178a55;RF4: $180ed18b),
+  (Channel: 134;RF1: $18402ec4;RF2: $184c0386;RF3: $18178a55;RF4: $180ed193),
+  (Channel: 136;RF1: $18402ec4;RF2: $184c0386;RF3: $18178a55;RF4: $180ed19b),
+  (Channel: 140;RF1: $18402ec4;RF2: $184c038a;RF3: $18178a55;RF4: $180ed183),
+  {802.11 UNII}
+  (Channel: 149;RF1: $18402ec4;RF2: $184c038a;RF3: $18178a55;RF4: $180ed1a7),
+  (Channel: 151;RF1: $18402ec4;RF2: $184c038e;RF3: $18178a55;RF4: $180ed187),
+  (Channel: 153;RF1: $18402ec4;RF2: $184c038e;RF3: $18178a55;RF4: $180ed18f),
+  (Channel: 157;RF1: $18402ec4;RF2: $184c038e;RF3: $18178a55;RF4: $180ed19f),
+  (Channel: 159;RF1: $18402ec4;RF2: $184c038e;RF3: $18178a55;RF4: $180ed1a7),
+  (Channel: 161;RF1: $18402ec4;RF2: $184c0392;RF3: $18178a55;RF4: $180ed187),
+  (Channel: 165;RF1: $18402ec4;RF2: $184c0392;RF3: $18178a55;RF4: $180ed197),
+  (Channel: 167;RF1: $18402ec4;RF2: $184c03d2;RF3: $18179855;RF4: $1815531f),
+  (Channel: 169;RF1: $18402ec4;RF2: $184c03d2;RF3: $18179855;RF4: $18155327),
+  (Channel: 171;RF1: $18402ec4;RF2: $184c03d6;RF3: $18179855;RF4: $18155307),
+  (Channel: 173;RF1: $18402ec4;RF2: $184c03d6;RF3: $18179855;RF4: $1815530f),
+  {802.11 Japan}
+  (Channel: 184;RF1: $15002ccc;RF2: $1500491e;RF3: $1509be55;RF4: $150c0a0b),
+  (Channel: 188;RF1: $15002ccc;RF2: $15004922;RF3: $1509be55;RF4: $150c0a13),
+  (Channel: 192;RF1: $15002ccc;RF2: $15004926;RF3: $1509be55;RF4: $150c0a1b),
+  (Channel: 196;RF1: $15002ccc;RF2: $1500492a;RF3: $1509be55;RF4: $150c0a23),
+  (Channel: 208;RF1: $15002ccc;RF2: $1500493a;RF3: $1509be55;RF4: $150c0a13),
+  (Channel: 212;RF1: $15002ccc;RF2: $1500493e;RF3: $1509be55;RF4: $150c0a1b),
+  (Channel: 216;RF1: $15002ccc;RF2: $15004982;RF3: $1509be55;RF4: $150c0a23));
+ 
+ {RF value list for rt3xxx}{Supports: 2.4 GHz (all) & 5.2 GHz (RF3052 & RF3053)}
+ RT2800_RF_VALUES_3X:array[0..52] of TRT2X00RFChannel = (
+  (Channel: 1;RF1:  241;RF2: 2;RF3: 2;RF4: 0),
+  (Channel: 2;RF1:  241;RF2: 2;RF3: 7;RF4: 0),
+  (Channel: 3;RF1:  242;RF2: 2;RF3: 2;RF4: 0),
+  (Channel: 4;RF1:  242;RF2: 2;RF3: 7;RF4: 0),
+  (Channel: 5;RF1:  243;RF2: 2;RF3: 2;RF4: 0),
+  (Channel: 6;RF1:  243;RF2: 2;RF3: 7;RF4: 0),
+  (Channel: 7;RF1:  244;RF2: 2;RF3: 2;RF4: 0),
+  (Channel: 8;RF1:  244;RF2: 2;RF3: 7;RF4: 0),
+  (Channel: 9;RF1:  245;RF2: 2;RF3: 2;RF4: 0),
+  (Channel: 10;RF1: 245;RF2: 2;RF3: 7;RF4: 0),
+  (Channel: 11;RF1: 246;RF2: 2;RF3: 2;RF4: 0),
+  (Channel: 12;RF1: 246;RF2: 2;RF3: 7;RF4: 0),
+  (Channel: 13;RF1: 247;RF2: 2;RF3: 2;RF4: 0),
+  (Channel: 14;RF1: 248;RF2: 2;RF3: 4;RF4: 0),
+  {802.11 UNI / HyperLan 2}
+  (Channel: 36;RF1: $56;RF2: 0;RF3: 4;RF4: 0),
+  (Channel: 38;RF1: $56;RF2: 0;RF3: 6;RF4: 0),
+  (Channel: 40;RF1: $56;RF2: 0;RF3: 8;RF4: 0),
+  (Channel: 44;RF1: $57;RF2: 0;RF3: 0;RF4: 0),
+  (Channel: 46;RF1: $57;RF2: 0;RF3: 2;RF4: 0),
+  (Channel: 48;RF1: $57;RF2: 0;RF3: 4;RF4: 0),
+  (Channel: 52;RF1: $57;RF2: 0;RF3: 8;RF4: 0),
+  (Channel: 54;RF1: $57;RF2: 0;RF3: 10;RF4: 0),
+  (Channel: 56;RF1: $58;RF2: 0;RF3: 0;RF4: 0),
+  (Channel: 60;RF1: $58;RF2: 0;RF3: 4;RF4: 0),
+  (Channel: 62;RF1: $58;RF2: 0;RF3: 6;RF4: 0),
+  (Channel: 64;RF1: $58;RF2: 0;RF3: 8;RF4: 0),
+  {802.11 HyperLan 2}
+  (Channel: 100;RF1: $5b;RF2: 0;RF3: 8;RF4: 0),
+  (Channel: 102;RF1: $5b;RF2: 0;RF3: 10;RF4: 0),
+  (Channel: 104;RF1: $5c;RF2: 0;RF3: 0;RF4: 0),
+  (Channel: 108;RF1: $5c;RF2: 0;RF3: 4;RF4: 0),
+  (Channel: 110;RF1: $5c;RF2: 0;RF3: 6;RF4: 0),
+  (Channel: 112;RF1: $5c;RF2: 0;RF3: 8;RF4: 0),
+  (Channel: 116;RF1: $5d;RF2: 0;RF3: 0;RF4: 0),
+  (Channel: 118;RF1: $5d;RF2: 0;RF3: 2;RF4: 0),
+  (Channel: 120;RF1: $5d;RF2: 0;RF3: 4;RF4: 0),
+  (Channel: 124;RF1: $5d;RF2: 0;RF3: 8;RF4: 0),
+  (Channel: 126;RF1: $5d;RF2: 0;RF3: 10;RF4: 0),
+  (Channel: 128;RF1: $5e;RF2: 0;RF3: 0;RF4: 0),
+  (Channel: 132;RF1: $5e;RF2: 0;RF3: 4;RF4: 0),
+  (Channel: 134;RF1: $5e;RF2: 0;RF3: 6;RF4: 0),
+  (Channel: 136;RF1: $5e;RF2: 0;RF3: 8;RF4: 0),
+  (Channel: 140;RF1: $5f;RF2: 0;RF3: 0;RF4: 0),
+  {802.11 UNII}
+  (Channel: 149;RF1: $5f;RF2: 0;RF3: 9;RF4: 0),
+  (Channel: 151;RF1: $5f;RF2: 0;RF3: 11;RF4: 0),
+  (Channel: 153;RF1: $60;RF2: 0;RF3: 1;RF4: 0),
+  (Channel: 157;RF1: $60;RF2: 0;RF3: 5;RF4: 0),
+  (Channel: 159;RF1: $60;RF2: 0;RF3: 7;RF4: 0),
+  (Channel: 161;RF1: $60;RF2: 0;RF3: 9;RF4: 0),
+  (Channel: 165;RF1: $61;RF2: 0;RF3: 1;RF4: 0),
+  (Channel: 167;RF1: $61;RF2: 0;RF3: 3;RF4: 0),
+  (Channel: 169;RF1: $61;RF2: 0;RF3: 5;RF4: 0),
+  (Channel: 171;RF1: $61;RF2: 0;RF3: 7;RF4: 0),
+  (Channel: 173;RF1: $61;RF2: 0;RF3: 9;RF4: 0));
+ 
+ RT2800_RF_VALUES_5592_XTAL20:array[0..61] of TRT2X00RFChannel = (
+  {Channel, N, K, mod, R}
+  (Channel: 1;RF1: 482;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 2;RF1: 483;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 3;RF1: 484;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 4;RF1: 485;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 5;RF1: 486;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 6;RF1: 487;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 7;RF1: 488;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 8;RF1: 489;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 9;RF1: 490;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 10;RF1: 491;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 11;RF1: 492;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 12;RF1: 493;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 13;RF1: 494;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 14;RF1: 496;RF2: 8;RF3: 10;RF4: 3),
+  (Channel: 36;RF1: 172;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 38;RF1: 173;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 40;RF1: 173;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 42;RF1: 173;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 44;RF1: 174;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 46;RF1: 174;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 48;RF1: 174;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 50;RF1: 175;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 52;RF1: 175;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 54;RF1: 175;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 56;RF1: 176;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 58;RF1: 176;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 60;RF1: 176;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 62;RF1: 177;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 64;RF1: 177;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 100;RF1: 183;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 102;RF1: 183;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 104;RF1: 184;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 106;RF1: 184;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 108;RF1: 184;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 110;RF1: 185;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 112;RF1: 185;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 114;RF1: 185;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 116;RF1: 186;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 118;RF1: 186;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 120;RF1: 186;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 122;RF1: 187;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 124;RF1: 187;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 126;RF1: 187;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 128;RF1: 188;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 130;RF1: 188;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 132;RF1: 188;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 134;RF1: 189;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 136;RF1: 189;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 138;RF1: 189;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 140;RF1: 190;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 149;RF1: 191;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 151;RF1: 191;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 153;RF1: 192;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 155;RF1: 192;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 157;RF1: 192;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 159;RF1: 193;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 161;RF1: 193;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 165;RF1: 194;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 184;RF1: 164;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 188;RF1: 164;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 192;RF1: 165;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 196;RF1: 166;RF2: 0;RF3: 12;RF4: 1));
+ 
+ RT2800_RF_VALUES_5592_XTAL40:array[0..61] of TRT2X00RFChannel = (
+  {Channel, N, K, mod, R}
+  (Channel: 1;RF1: 241;RF2: 2;RF3: 10;RF4: 3),
+  (Channel: 2;RF1: 241;RF2: 7;RF3: 10;RF4: 3),
+  (Channel: 3;RF1: 242;RF2: 2;RF3: 10;RF4: 3),
+  (Channel: 4;RF1: 242;RF2: 7;RF3: 10;RF4: 3),
+  (Channel: 5;RF1: 243;RF2: 2;RF3: 10;RF4: 3),
+  (Channel: 6;RF1: 243;RF2: 7;RF3: 10;RF4: 3),
+  (Channel: 7;RF1: 244;RF2: 2;RF3: 10;RF4: 3),
+  (Channel: 8;RF1: 244;RF2: 7;RF3: 10;RF4: 3),
+  (Channel: 9;RF1: 245;RF2: 2;RF3: 10;RF4: 3),
+  (Channel: 10;RF1: 245;RF2: 7;RF3: 10;RF4: 3),
+  (Channel: 11;RF1: 246;RF2: 2;RF3: 10;RF4: 3),
+  (Channel: 12;RF1: 246;RF2: 7;RF3: 10;RF4: 3),
+  (Channel: 13;RF1: 247;RF2: 2;RF3: 10;RF4: 3),
+  (Channel: 14;RF1: 248;RF2: 4;RF3: 10;RF4: 3),
+  (Channel: 36;RF1: 86;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 38;RF1: 86;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 40;RF1: 86;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 42;RF1: 86;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 44;RF1: 87;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 46;RF1: 87;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 48;RF1: 87;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 50;RF1: 87;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 52;RF1: 87;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 54;RF1: 87;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 56;RF1: 88;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 58;RF1: 88;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 60;RF1: 88;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 62;RF1: 88;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 64;RF1: 88;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 100;RF1: 91;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 102;RF1: 91;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 104;RF1: 92;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 106;RF1: 92;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 108;RF1: 92;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 110;RF1: 92;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 112;RF1: 92;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 114;RF1: 92;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 116;RF1: 93;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 118;RF1: 93;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 120;RF1: 93;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 122;RF1: 93;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 124;RF1: 93;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 126;RF1: 93;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 128;RF1: 94;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 130;RF1: 94;RF2: 2;RF3: 12;RF4: 1),
+  (Channel: 132;RF1: 94;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 134;RF1: 94;RF2: 6;RF3: 12;RF4: 1),
+  (Channel: 136;RF1: 94;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 138;RF1: 94;RF2: 10;RF3: 12;RF4: 1),
+  (Channel: 140;RF1: 95;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 149;RF1: 95;RF2: 9;RF3: 12;RF4: 1),
+  (Channel: 151;RF1: 95;RF2: 11;RF3: 12;RF4: 1),
+  (Channel: 153;RF1: 96;RF2: 1;RF3: 12;RF4: 1),
+  (Channel: 155;RF1: 96;RF2: 3;RF3: 12;RF4: 1),
+  (Channel: 157;RF1: 96;RF2: 5;RF3: 12;RF4: 1),
+  (Channel: 159;RF1: 96;RF2: 7;RF3: 12;RF4: 1),
+  (Channel: 161;RF1: 96;RF2: 9;RF3: 12;RF4: 1),
+  (Channel: 165;RF1: 97;RF2: 1;RF3: 12;RF4: 1),
+  (Channel: 184;RF1: 82;RF2: 0;RF3: 12;RF4: 1),
+  (Channel: 188;RF1: 82;RF2: 4;RF3: 12;RF4: 1),
+  (Channel: 192;RF1: 82;RF2: 8;RF3: 12;RF4: 1),
+  (Channel: 196;RF1: 83;RF2: 0;RF3: 12;RF4: 1));
+ 
+ {Power bounds}
+ RT2800_POWER_BOUND    = $27;
+ RT2800_POWER_BOUND_5G = $2b;
+
+ {Frequency bound}
+ RT2800_FREQ_OFFSET_BOUND = $5f;
  
  //To Do //See: rt2x00reg.h
  
 {==============================================================================}
-{type}
+type
  {RT2800LIB specific types}
+ PRT2800_MAC_WCID_Entry = ^TRT2800_MAC_WCID_Entry;
+ TRT2800_MAC_WCID_Entry = packed record {Security key table memory above}
+  MAC:array[0..5] of Byte;
+  Reserved:array[0..1] of Byte;
+ end;
+ 
+ PRT2800_HW_Key_Entry = ^TRT2800_HW_Key_Entry;
+ TRT2800_HW_Key_Entry = packed record {Security key table memory above}
+  Key:array[0..15] of Byte;
+  TXMic:array[0..7] of Byte; 
+  RXMic:array[0..7] of Byte; 
+ end;
+
+ PRT2800_MAC_IVEIV_Entry = ^TRT2800_MAC_IVEIV_Entry;
+ TRT2800_MAC_IVEIV_Entry = packed record {Security key table memory above}
+  IV:array[0..7] of Byte;
+ end;
+ 
+ PRT2800Data = ^TRT2800Data;
+ TRT2800Data = record
+  CalibrationBW20:Byte;
+  CalibrationBW40:Byte;
+  BBP25:Byte;
+  BBP26:Byte;
+  TXMixerGain24G:Byte;
+  TXMixerGain5G:Byte;
+  TBTTTick:LongWord;
+ end;
  
 {==============================================================================}
 {var}
@@ -2279,63 +2565,175 @@ const
  
 {==============================================================================}
 {RT2800LIB Functions}
-function RT2800DriverInit(RT2X00:PRT2X00NetworkDevice):LongWord;
-function RT2800EepromLoad(RT2X00:PRT2X00NetworkDevice;Data:PWord;Size:LongWord):LongWord;
+function RT2800DriverInit(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800EepromLoad(RT2X00:PRT2X00WiFiDevice;Data:PWord;Size:LongWord):LongWord;
+
+function RT2800SetLED(RT2X00:PRT2X00WiFiDevice;ID,Level:LongWord):LongWord;
 
 //To Do //rt2800lib.c
         //rt2800_config_shared_key
         //rt2800_config_wcid_attr_cipher
-        //rt2800_config_wcid
         //rt2800_config_pairwise_key
         //rt2800_sta_add
         //rt2800_sta_remove
+
+function RT2800DetectRTChip(RT2X00:PRT2X00WiFiDevice):Boolean;
+function RT2800DetectEfuse(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800EnableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800DisableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800ValidateEeprom(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeEeprom(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800InitializeModes(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800InitializeBBP(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP28xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP30xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP3290(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP3352(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP3390(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP3572(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP3593(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP53xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP5592(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeBBP305xSOC(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800InitializeRFCSR(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR30xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR3290(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR3352(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR3390(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR3572(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR3593(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR5390(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR5392(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR5592(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800InitializeRFCSR305xSOC(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800InitializeRegisters(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800InitializeRFCalibration(RT2X00:PRT2X00WiFiDevice;RegNo:Byte):LongWord;
+function RT2800InitializeFrequencyCalibration(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800SetupNormalMode5xxx(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800GetTXMixerGain24G(RT2X00:PRT2X00WiFiDevice):Byte;
+function RT2800GetTXMixerGain5G(RT2X00:PRT2X00WiFiDevice):Byte;
+
+function RT2800LoadEfuse(RT2X00:PRT2X00WiFiDevice;Data:PWord;Size:LongWord):LongWord;
+
+function RT2800CheckFirmware(RT2X00:PRT2X00WiFiDevice;Data:PByte;Size:LongWord):Boolean;
+function RT2800LoadFirmware(RT2X00:PRT2X00WiFiDevice;Data:PByte;Size:LongWord):Boolean;
+
+function RT2800Configure(RT2X00:PRT2X00WiFiDevice;Configuration:PRT2X00ChannelConfiguration;Flags:LongWord):LongWord;
+function RT2800ConfigureLNAGain(RT2X00:PRT2X00WiFiDevice;Configuration:PRT2X00ChannelConfiguration):LongWord;
+function RT2800ConfigureChannel(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF2xxx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF3xxx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF3052(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF3053(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF3290(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF3322(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF53xx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureChannelRF55xx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+function RT2800ConfigureTXPower(RT2X00:PRT2X00WiFiDevice;Channel:PIEEE80211Channel;PowerLevel:LongInt):LongWord;
+function RT2800ConfigureTXPowerRT28xx(RT2X00:PRT2X00WiFiDevice;Channel:PIEEE80211Channel;PowerLevel:LongInt):LongWord;
+function RT2800ConfigureTXPowerRT3593(RT2X00:PRT2X00WiFiDevice;Channel:PIEEE80211Channel;PowerLevel:LongInt):LongWord;
+function RT2800ConfigureRetryLimit(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800ConfigurePowersave(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800ConfigureFilter(RT2X00:PRT2X00WiFiDevice;Filter:LongWord):LongWord;
+function RT2800ConfigureAntenna(RT2X00:PRT2X00WiFiDevice;Antenna:PRT2X00Antenna):LongWord;
+function RT2800ConfigureAntenna3572BT(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800ConfigureInterface(RT2X00:PRT2X00WiFiDevice;Configuration:PRT2X00InterfaceConfiguration;Flags:LongWord):LongWord;
+
+function RT2800ConfigureWCID(RT2X00:PRT2X00WiFiDevice;WCID:LongWord;Address:PByte):LongWord;
+
+function RT2800DeleteWCIDAttribute(RT2X00:PRT2X00WiFiDevice;WCID:LongWord):LongWord;
+
+function RT2800ClearBeaconRegister(RT2X00:PRT2X00WiFiDevice;Index:LongWord):LongWord;
+
+function RT2800CalibrateIQ(RT2X00:PRT2X00WiFiDevice;Channel:LongWord):LongWord;
+
+function RT2800AdjustFrequencyOffset(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800WaitCSRReady(RT2X00:PRT2X00WiFiDevice):Boolean;
+function RT2800WaitWPDMAReady(RT2X00:PRT2X00WiFiDevice):Boolean;
+function RT2800WaitBBPReady(RT2X00:PRT2X00WiFiDevice):Boolean;
+function RT2800WaitBBPRFReady(RT2X00:PRT2X00WiFiDevice):Boolean;
         
-        
-//To Do //rt2800_enable_radio
-        //rt2800_disable_radio
+function RT2800DisableWPDMA(RT2X00:PRT2X00WiFiDevice):Boolean;       
+function RT2800EnableRT3290WLAN(RT2X00:PRT2X00WiFiDevice):Boolean;
 
-function RT2800DetectRTChip(RT2X00:PRT2X00NetworkDevice):Boolean;
-function RT2800DetectEfuse(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2800EnableLEDOpenDrain(RT2X00:PRT2X00WiFiDevice):LongWord;
 
-function RT2800ValidateEeprom(RT2X00:PRT2X00NetworkDevice):LongWord;
-function RT2800InitializeEeprom(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2800DisableUnusedDACADC(RT2X00:PRT2X00WiFiDevice):LongWord;
 
-function RT2800LoadEfuse(RT2X00:PRT2X00NetworkDevice;Data:PWord;Size:LongWord):LongWord;
+function RT2800BBP4MACInterfaceControl(RT2X00:PRT2X00WiFiDevice):LongWord;
 
-function RT2800CheckFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWord):Boolean;
-function RT2800LoadFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWord):Boolean;
+function RT2800BBPRead(RT2X00:PRT2X00WiFiDevice;RegNo:Byte;Value:PByte):Boolean;
+function RT2800BBPWrite(RT2X00:PRT2X00WiFiDevice;RegNo,Value:Byte):Boolean;
+function RT2800BBPWriteRXChain(RT2X00:PRT2X00WiFiDevice;RegNo,Value:Byte):Boolean;
 
-function RT2800WaitCSRReady(RT2X00:PRT2X00NetworkDevice):Boolean;
-function RT2800WaitWPDMAReady(RT2X00:PRT2X00NetworkDevice):Boolean;
-        
-function RT2800DisableWPDMA(RT2X00:PRT2X00NetworkDevice):Boolean;       
-function RT2800EnableRT3290WLAN(RT2X00:PRT2X00NetworkDevice):Boolean;
+function RT2800RFCSRRead(RT2X00:PRT2X00WiFiDevice;RegNo:Byte;Value:PByte):Boolean;
+function RT2800RFCSRWrite(RT2X00:PRT2X00WiFiDevice;RegNo,Value:Byte):Boolean;
 
-function RT2800MCURequest(RT2X00:PRT2X00NetworkDevice;Command,Token,Arg0,Arg1:Byte):Boolean;
+function RT2800RFWrite(RT2X00:PRT2X00WiFiDevice;Index:Word;Value:LongWord):Boolean;
+
+function RT2800MCURequest(RT2X00:PRT2X00WiFiDevice;Command,Token,Arg0,Arg1:Byte):Boolean;
 
 {==============================================================================}
 {RT2800LIB Helper Functions}
-function RT2800RegisterRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:PLongWord):LongWord; inline;
-function RT2800RegisterWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:LongWord):LongWord; inline;
+function RT2800RegisterRead(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Value:PLongWord):LongWord; inline;
+function RT2800RegisterWrite(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Value:LongWord):LongWord; inline;
 
-function RT2800RegisterMultiRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
-function RT2800RegisterMultiWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
+function RT2800RegisterMultiRead(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
+function RT2800RegisterMultiWrite(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
 
-function RT2800RegisterBusyRead(RT2X00:PRT2X00NetworkDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; inline;
+function RT2800RegisterBusyRead(RT2X00:PRT2X00WiFiDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; inline;
 
-function RT2800WriteFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWord):Boolean; inline;
+function RT2800WriteFirmware(RT2X00:PRT2X00WiFiDevice;Data:PByte;Size:LongWord):Boolean; inline;
 
-function RT2800WaitForBBP(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
-function RT2800WaitForRFCSR(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
-function RT2800WaitForRF(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
-function RT2800WaitForMCU(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
+function RT2800HardwareEncryptionDisabled(RT2X00:PRT2X00WiFiDevice):Boolean; inline;
 
-function RT2800GetEeprom16(RT2X00:PRT2X00NetworkDevice;ID:Word):Word;
-procedure RT2800SetEeprom16(RT2X00:PRT2X00NetworkDevice;ID,Value:Word);
+function RT2800WaitForBBP(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
+function RT2800WaitForRFCSR(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
+function RT2800WaitForRF(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
+function RT2800WaitForMCU(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
 
-function RT2800GetEepromAddress(RT2X00:PRT2X00NetworkDevice;ID:Word):Pointer;
+function RT2800GetEeprom16(RT2X00:PRT2X00WiFiDevice;ID:Word):Word;
+procedure RT2800SetEeprom16(RT2X00:PRT2X00WiFiDevice;ID,Value:Word);
 
-function RT2800EepromIDtoOffset(RT2X00:PRT2X00NetworkDevice;ID:Word):Word;
+function RT2800GetEeprom16Array(RT2X00:PRT2X00WiFiDevice;ID,Offset:Word):Word;
+
+function RT2800GetEepromAddress(RT2X00:PRT2X00WiFiDevice;ID:Word):Pointer;
+
+function RT2800EepromIDtoOffset(RT2X00:PRT2X00WiFiDevice;ID:Word):Word;
+
+function RT2800Is305xSOC(RT2X00:PRT2X00WiFiDevice):Boolean;
+
+function RT2800GetTXWISize(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2800GetRXWISize(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800TXPowerToDevice(RT2X00:PRT2X00WiFiDevice;Channel:LongWord;TXPower:ShortInt):ShortInt;
+function RT2800GetTXPowerRegulatoryDelta(RT2X00:PRT2X00WiFiDevice;PowerLevel,MaxPower:LongInt):LongInt;
+function RT2800GetTXPowerBandwidthCompensation(RT2X00:PRT2X00WiFiDevice;Band:LongWord):LongInt;
+
+function RT2800GetGainCalibrationDelta(RT2X00:PRT2X00WiFiDevice):LongInt;
+
+function RT2800CompensateTXPower(RT2X00:PRT2X00WiFiDevice;IsRateB,Band:LongWord;PowerLevel:LongInt;TXPower:Byte;Delta:LongInt):Byte;
+
+function RT2800_MAC_WCID_ENTRY(Index:LongWord):LongWord; inline;
+function RT2800_PAIRWISE_KEY_ENTRY(Index:LongWord):LongWord; inline;
+function RT2800_MAC_IVEIV_ENTRY(Index:LongWord):LongWord; inline;
+function RT2800_MAC_WCID_ATTR_ENTRY(Index:LongWord):LongWord; inline;
+function RT2800_SHARED_KEY_ENTRY(Index:LongWord):LongWord; inline;
+function RT2800_SHARED_KEY_MODE_ENTRY(Index:LongWord):LongWord; inline;
+
+function RT2800_HW_BEACON_BASE(Index:LongWord):LongWord; inline;
+function RT2800_BEACON_BASE_TO_OFFSET(Base:LongWord):LongWord; inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -2349,7 +2747,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {RT2800LIB Functions}
-function RT2800DriverInit(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2800DriverInit(RT2X00:PRT2X00WiFiDevice):LongWord;
 var
  Reg:LongWord;
  Status:LongWord;
@@ -2390,26 +2788,61 @@ begin
    Exit;
   end;
  
- {}
- //To Do //rt2800_probe_hw
- 
  {Enable RFKill} //To do //Not used ?
  //RT2800RegisterRead(RT2X00,RT2800_GPIO_CTRL,@Reg);
  //RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_DIR2,10,1);
  //RT2800RegisterWrite(RT2X00,RT2800_GPIO_CTRL,Reg);
  
+ {Initialize Modes}
+ Status:=RT2800InitializeModes(RT2X00);
+ if Status <> ERROR_SUCCESS then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'RT2800: Failed to initialize hardware modes');
+   Result:=Status;
+   Exit;
+  end;
+ 
  {Setup capabilities}
- //To Do
+ RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_CONTROL_FILTERS);
+ RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_CONTROL_FILTER_PSPOLL);
+ if not RT2X00IsUSB(RT2X00) then
+  begin
+   RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_PRE_TBTT_INTERRUPT); 
+  end;
  
  {Setup requirements}
- //To Do
+ if not RT2X00IsMMIO(RT2X00) then
+  begin
+   RT2X00SetRequirement(RT2X00,RT2X00_REQUIRE_FIRMWARE); 
+  end;
+ RT2X00SetRequirement(RT2X00,RT2X00_REQUIRE_L2PAD); 
+ RT2X00SetRequirement(RT2X00,RT2X00_REQUIRE_TXSTATUS_FIFO);  
+
+ if not RT2800HardwareEncryptionDisabled(RT2X00) then
+  begin
+   RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_HW_CRYPTO); 
+  end;
+ RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_LINK_TUNING); 
+ 
+ RT2X00SetRequirement(RT2X00,RT2X00_REQUIRE_HT_TX_DESC); 
+ if RT2X00IsUSB(RT2X00) then
+  begin
+   RT2X00SetRequirement(RT2X00,RT2X00_REQUIRE_PS_AUTOWAKE);  
+  end
+ else
+  begin
+   RT2X00SetRequirement(RT2X00,RT2X00_REQUIRE_DMA);  
+  end;  
+ 
+ {Set RSSI offset}
+ RT2X00.RSSIOffset:=RT2800_DEFAULT_RSSI_OFFSET;
  
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 
-function RT2800EepromLoad(RT2X00:PRT2X00NetworkDevice;Data:PWord;Size:LongWord):LongWord;
+function RT2800EepromLoad(RT2X00:PRT2X00WiFiDevice;Data:PWord;Size:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2434,7 +2867,100 @@ end;
 
 {==============================================================================}
 
-function RT2800DetectRTChip(RT2X00:PRT2X00NetworkDevice):Boolean;
+function RT2800SetLED(RT2X00:PRT2X00WiFiDevice;ID,Level:LongWord):LongWord;
+var
+ Reg:LongWord;
+ LEDMode:Word;
+ Polarity:Word;
+ BGMode:Boolean;
+ Enabled:Boolean;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Set LED (ID=' + IntToStr(ID) + ' Level=' + IntToStr(Level) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Enabled:=Level <> WIFI_LED_OFF;
+ 
+ {Check BG Mode}
+ BGMode:=Enabled and (RT2X00.CurrentBand = IEEE80211_BAND_2GHZ);
+ 
+ {Get Polarity}
+ Polarity:=RT2X00GetRegister16(RT2X00.LEDMCURegister,RT2800_EEPROM_FREQ_LED_POLARITY,12);
+ 
+ {Get LED Mode}
+ LEDMode:=RT2X00GetRegister16(RT2X00.LEDMCURegister,RT2800_EEPROM_FREQ_LED_MODE,8);
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Enabled=' + BoolToStr(Enabled) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (BGMode=' + BoolToStr(BGMode) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Polarity=' + IntToStr(Polarity) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (LEDMode=' + IntToStr(LEDMode) + ')');
+ {$ENDIF}
+ 
+ {Check for MMIO (SOC devices don't support MCU requests)}
+ if RT2X00IsMMIO(RT2X00) then 
+  begin
+   RT2800RegisterRead(RT2X00,RT2800_LED_CFG,@Reg);
+     
+   {Set LED Polarity}
+   RT2X00SetRegister32(Reg,RT2800_LED_CFG_LED_POLAR,30,Polarity);
+     
+   {Set LED Mode}
+   if ID = RT2X00_LED_TYPE_RADIO then
+    begin
+     if Enabled then RT2X00SetRegister32(Reg,RT2800_LED_CFG_G_LED_MODE,26,3) else RT2X00SetRegister32(Reg,RT2800_LED_CFG_G_LED_MODE,26,0);
+    end 
+   else if ID = RT2X00_LED_TYPE_ASSOC then
+    begin
+     if Enabled then RT2X00SetRegister32(Reg,RT2800_LED_CFG_Y_LED_MODE,28,3) else RT2X00SetRegister32(Reg,RT2800_LED_CFG_Y_LED_MODE,28,0);
+    end 
+   else if ID = RT2X00_LED_TYPE_QUALITY then
+    begin
+     if Enabled then RT2X00SetRegister32(Reg,RT2800_LED_CFG_R_LED_MODE,24,3) else RT2X00SetRegister32(Reg,RT2800_LED_CFG_R_LED_MODE,24,0);
+    end; 
+   
+   RT2800RegisterWrite(RT2X00,RT2800_LED_CFG,Reg);
+  end
+ else
+  begin
+   if ID = RT2X00_LED_TYPE_RADIO then
+    begin
+     if Enabled then RT2800MCURequest(RT2X00,RT2800_MCU_LED,$ff,LEDMode,$20) else RT2800MCURequest(RT2X00,RT2800_MCU_LED,$ff,LEDMode,0);
+    end
+   else if ID = RT2X00_LED_TYPE_ASSOC then
+    begin
+     if Enabled then
+      begin
+       if BGMode then RT2800MCURequest(RT2X00,RT2800_MCU_LED,$ff,LEDMode,$60) else RT2800MCURequest(RT2X00,RT2800_MCU_LED,$ff,LEDMode,$a0);
+      end
+     else
+      begin
+       RT2800MCURequest(RT2X00,RT2800_MCU_LED,$ff,LEDMode,$20);
+      end;
+    end
+   else if ID = RT2X00_LED_TYPE_QUALITY then
+    begin
+     {The brightness is divided into 6 levels (0 - 5), The specs tell us the following levels:
+       0, 1 ,3, 7, 15, 31
+      to determine the level in a simple way we can simply work with bitshifting:
+       (1 << level) - 1}
+     RT2800MCURequest(RT2X00,RT2800_MCU_LED_STRENGTH,$ff,(1 shl Level div (WIFI_LED_FULL div 6)) - 1,Polarity);
+    end; 
+  end;  
+ 
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function RT2800DetectRTChip(RT2X00:PRT2X00WiFiDevice):Boolean;
 var
  Reg:LongWord;
  RTChip:LongWord;
@@ -2489,7 +3015,7 @@ end;
 
 {==============================================================================}
 
-function RT2800DetectEfuse(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2800DetectEfuse(RT2X00:PRT2X00WiFiDevice):LongWord;
 var
  Reg:LongWord;
  Control:Word;
@@ -2529,7 +3055,139 @@ end;
 
 {==============================================================================}
 
-function RT2800ValidateEeprom(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2800EnableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
+{rt2800_enable_radio}
+var
+ Value:Word;
+ Reg:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Enable Radio');
+ {$ENDIF}
+
+ {Wait DMA Ready}
+ if not RT2800WaitWPDMAReady(RT2X00) then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+  
+ {Initialize Registers}
+ Result:=RT2800InitializeRegisters(RT2X00);
+ if Result <> ERROR_SUCCESS then
+  begin
+   Exit;
+  end;
+ 
+ {Wait BBP/RF Ready}
+ if not RT2800WaitBBPRFReady(RT2X00) then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+  
+ {Send signal to initialize firmware}
+ RT2800RegisterWrite(RT2X00,RT2800_H2M_BBP_AGENT,0);
+ RT2800RegisterWrite(RT2X00,RT2800_H2M_MAILBOX_CSR,0);
+ if RT2X00IsUSB(RT2X00) then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_H2M_INT_SRC,0);
+  end; 
+ RT2800MCURequest(RT2X00,RT2800_MCU_BOOT_SIGNAL,0,0,0);
+ Sleep(1);
+ 
+ {Wait BBP Ready}
+ if not RT2800WaitBBPReady(RT2X00) then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+  
+ {Initialize BBP/RF registers}
+ RT2800InitializeBBP(RT2X00);
+ RT2800InitializeRFCSR(RT2X00);
+     
+ if RT2X00IsUSB(RT2X00) and ((RT2X00GetRTChip(RT2X00) = RT2X00_RT3070) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3071) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3572)) then
+  begin
+   MicrosecondDelay(200);
+   RT2800MCURequest(RT2X00,RT2800_MCU_CURRENT,0,0,0);
+   MicrosecondDelay(10);
+  end;
+ 
+ {Enable TX/RX}
+ RT2800RegisterRead(RT2X00,RT2800_MAC_SYS_CTRL,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_TX,2,1);
+ RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_RX,3,0);
+ RT2800RegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,Reg);
+    
+ MicrosecondDelay(50);
+    
+ RT2800RegisterRead(RT2X00,RT2800_WPDMA_GLO_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_ENABLE_TX_DMA,0,1);
+ RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_ENABLE_RX_DMA,2,1);
+ RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_WP_DMA_BURST_SIZE,4,2);
+ RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_TX_WRITEBACK_DONE,6,1);
+ RT2800RegisterWrite(RT2X00,RT2800_WPDMA_GLO_CFG,Reg);
+    
+ RT2800RegisterRead(RT2X00,RT2800_MAC_SYS_CTRL,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_TX,2,1);
+ RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_RX,3,1);
+ RT2800RegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,Reg);
+ 
+ {Initialize LED control}
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_LED_AG_CONF);
+ RT2800MCURequest(RT2X00,RT2800_MCU_LED_AG_CONF,$ff,Value and $ff,(Value shr 8) and $ff);
+    
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_LED_ACT_CONF);
+ RT2800MCURequest(RT2X00,RT2800_MCU_LED_ACT_CONF,$ff,Value and $ff,(Value shr 8) and $ff);
+    
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_LED_POLARITY);
+ RT2800MCURequest(RT2X00,RT2800_MCU_LED_LED_POLARITY,$ff,Value and $ff,(Value shr 8) and $ff);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+
+function RT2800DisableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
+{rt2800_disable_radio}
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: Disable Radio');
+ {$ENDIF}
+
+ {Disable DMA}
+ RT2800DisableWPDMA(RT2X00);
+ 
+ {Wait DMA Ready (Ignore Errors)}
+ RT2800WaitWPDMAReady(RT2X00);
+ 
+ {Disable TX/RX}
+ RT2800RegisterRead(RT2X00,RT2800_MAC_SYS_CTRL,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_TX,2,0);
+ RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_RX,3,0);
+ RT2800RegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,Reg);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800ValidateEeprom(RT2X00:PRT2X00WiFiDevice):LongWord;
 var
  Value:Word;
  Status:LongWord;
@@ -2626,7 +3284,7 @@ begin
   end;   
  if (Value and $ff00) = $ff00 then  
   begin
-   RT2X00SetRegister16(Value,RT2800_EEPROM_FREQ_LED_MODE,8,RT2800_LED_MODE_TXRX_ACTIVITY);
+   RT2X00SetRegister16(Value,RT2800_EEPROM_FREQ_LED_MODE,8,RT2X00_LED_MODE_TXRX_ACTIVITY);
    RT2X00SetRegister16(Value,RT2800_EEPROM_FREQ_LED_POLARITY,12,0);
    RT2800SetEeprom16(RT2X00,RT2800_EEPROM_FREQ,Value);
    RT2800SetEeprom16(RT2X00,RT2800_EEPROM_LED_AG_CONF,$5555);
@@ -2638,89 +3296,93 @@ begin
    {$ENDIF}
   end; 
   
- {LNA (Note that EEPROM_LNA is never validated)}
+ {LNA (Note that RT2800_EEPROM_LNA_A0 value is never validated)}
  Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_LNA);
  DefaultLNAGain:=RT2X00GetRegister16(Value,RT2800_EEPROM_LNA_A0,8);
 
- (*To Do //Continuing
- 
  Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_BG);
- if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET0,)) > 10 then //To Do //Abs ?
+ if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET0,0)) > 10 then
   begin
-   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET0,,0);
+   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET0,0,0);
   end; 
- if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET1,)) > 10 then //To Do //Abs ? //See: http://lxr.free-electrons.com/source/include/linux/kernel.h?v=2.6.32#L161
+ if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET1,8)) > 10 then
   begin
-   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET1,,0);
+   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET1,8,0);
   end; 
  RT2800SetEeprom16(RT2X00,RT2800_EEPROM_RSSI_BG,Value);
  
- drv_data->txmixer_gain_24g = rt2800_get_txmixer_gain_24g(RT2X00); //TO Do //See: rt2x00.h / rt2800.h
+ PRT2800Data(RT2X00.Data).TXMixerGain24G:=RT2800GetTXMixerGain24G(RT2X00);
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: TXMixerGain24G=' + IntToHex(PRT2800Data(RT2X00.Data).TXMixerGain24G,4));
+ {$ENDIF}
     
- RT2800GetEeprom16(RT2X00,EEPROM_RSSI_BG2,Value);
- if abs(RT2X00GetRegister16(Value,EEPROM_RSSI_BG2_OFFSET2)) > 10 then
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_BG2);
+ if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG2_OFFSET2,0)) > 10 then
   begin
-   RT2X00SetRegister16(Value,EEPROM_RSSI_BG2_OFFSET2, 0);
+   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_BG2_OFFSET2,0,0);
   end; 
- if not RT2X00GetRTChip(RT2X00,RT3593) then
+ if RT2X00GetRTChip(RT2X00) <> RT2X00_RT3593 then
   begin
-   if (RT2X00GetRegister16(Value,EEPROM_RSSI_BG2_LNA_A1) = $00) or (RT2X00GetRegister16(Value,EEPROM_RSSI_BG2_LNA_A1) = $ff) then
+   if (RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG2_LNA_A1,8) = $00) or (RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG2_LNA_A1,8) = $ff) then
     begin
-     RT2X00SetRegister16(Value,EEPROM_RSSI_BG2_LNA_A1,DefaultLNAGain);
+     RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_BG2_LNA_A1,8,DefaultLNAGain);
     end;   
   end;
- RT2800SetEeprom16(RT2X00,EEPROM_RSSI_BG2,Value);
+ RT2800SetEeprom16(RT2X00,RT2800_EEPROM_RSSI_BG2,Value);
+ 
+ PRT2800Data(RT2X00.Data).TXMixerGain5G:=RT2800GetTXMixerGain5G(RT2X00);
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: TXMixerGain5G=' + IntToHex(PRT2800Data(RT2X00.Data).TXMixerGain5G,4));
+ {$ENDIF}
     
- drv_data->txmixer_gain_5g = rt2800_get_txmixer_gain_5g(RT2X00);
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_A);
+ if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A_OFFSET0,0)) > 10 then
+  begin
+   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_A_OFFSET0,0,0);
+  end; 
+ if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A_OFFSET1,8)) > 10 then
+  begin
+   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_A_OFFSET1,8,0);
+  end; 
+ RT2800SetEeprom16(RT2X00,RT2800_EEPROM_RSSI_A,Value);
     
- RT2800GetEeprom16(RT2X00,EEPROM_RSSI_A,Value);
- if abs(RT2X00GetRegister16(Value,EEPROM_RSSI_A_OFFSET0)) > 10 then
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_A2);
+ if Abs(RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A2_OFFSET2,0)) > 10 then
   begin
-   RT2X00SetRegister16(Value,EEPROM_RSSI_A_OFFSET0,0);
+   RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_A2_OFFSET2,0,0);
   end; 
- if abs(RT2X00GetRegister16(Value,EEPROM_RSSI_A_OFFSET1)) > 10 then
+ if RT2X00GetRTChip(RT2X00) <> RT2X00_RT3593 then
   begin
-   RT2X00SetRegister16(Value,EEPROM_RSSI_A_OFFSET1,0);
-  end; 
- RT2800SetEeprom16(RT2X00,EEPROM_RSSI_A,Value);
-    
- RT2800GetEeprom16(RT2X00,EEPROM_RSSI_A2,Value);
- if abs(RT2X00GetRegister16(Value,EEPROM_RSSI_A2_OFFSET2)) > 10 then
-  begin
-   RT2X00SetRegister16(Value,EEPROM_RSSI_A2_OFFSET2,0);
-  end; 
- if not RT2X00GetRTChip(RT2X00,RT3593) then
-  begin
-   if (RT2X00GetRegister16(Value,EEPROM_RSSI_A2_LNA_A2) = $00) or (RT2X00GetRegister16(Value, EEPROM_RSSI_A2_LNA_A2) = $ff) then
+   if (RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A2_LNA_A2,8) = $00) or (RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A2_LNA_A2,8) = $ff) then
     begin
-     RT2X00SetRegister16(Value,EEPROM_RSSI_A2_LNA_A2,DefaultLNAGain);
+     RT2X00SetRegister16(Value,RT2800_EEPROM_RSSI_A2_LNA_A2,8,DefaultLNAGain);
     end; 
   end;
- RT2800SetEeprom16(RT2X00,EEPROM_RSSI_A2,Value);
+ RT2800SetEeprom16(RT2X00,RT2800_EEPROM_RSSI_A2,Value);
     
- if RT2X00GetRTChip(RT2X00,RT3593) then
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
   begin
-   Value:=RT2800GetEeprom16(RT2X00,EEPROM_EXT_LNA2);
-   if (RT2X00GetRegister16(Value,EEPROM_EXT_LNA2_A1) = $00) or (RT2X00GetRegister16(Value, EEPROM_EXT_LNA2_A1) = $ff) then
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_EXT_LNA2);
+   if (RT2X00GetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A1,0) = $00) or (RT2X00GetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A1,0) = $ff) then
     begin
-     RT2X00SetRegister16(Value,EEPROM_EXT_LNA2_A1,DefaultLNAGain);
+     RT2X00SetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A1,0,DefaultLNAGain);
     end;   
-   if (RT2X00GetRegister16(Value,EEPROM_EXT_LNA2_A2) = $00) or (RT2X00GetRegister16(Value, EEPROM_EXT_LNA2_A2) = $ff) then
+   if (RT2X00GetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A2,8) = $00) or (RT2X00GetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A2,8) = $ff) then
     begin
-     RT2X00SetRegister16(Value,EEPROM_EXT_LNA2_A1,DefaultLNAGain);
+     RT2X00SetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A1,0,DefaultLNAGain); //To Do //Should this be RT2800_EEPROM_EXT_LNA2_A2,8
     end;   
-   RT2800SetEeprom16(RT2X00,EEPROM_EXT_LNA2,Value);
-  end;*)
- 
- 
- //To Do //rt2800_validate_eeprom
+   RT2800SetEeprom16(RT2X00,RT2800_EEPROM_EXT_LNA2,Value);
+  end;
  
  Result:=ERROR_SUCCESS;
 end;
  
 {==============================================================================}
 
-function RT2800InitializeEeprom(RT2X00:PRT2X00NetworkDevice):LongWord;
+function RT2800InitializeEeprom(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Value:Word;
+ RFChip:Word;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2732,14 +3394,1724 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: Initialize EEPROM');
  {$ENDIF}
 
- //TO Do //rt2800_init_eeprom
+ {Get EEPROM_NIC_CONF0}
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF0);
+ 
+ {Identify RF chipset by EEPROM value}
+ if (RT2X00GetRTChip(RT2X00) = RT2X00_RT3290) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT5390) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT5392) then
+  begin
+   {RT53xx: defined in "EEPROM_CHIP_ID" field}
+   RFChip:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_CHIP_ID);
+  end
+ else
+  begin
+   {RT28xx/RT30xx: defined in "EEPROM_NIC_CONF0_RF_TYPE" field}
+   RFChip:=RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF0_RF_TYPE,8);
+  end;  
+ 
+ case RFChip of
+  RT2800_RF2820,RT2800_RF2850,RT2800_RF2720,RT2800_RF2750,RT2800_RF3020,RT2800_RF2020,RT2800_RF3021,RT2800_RF3022,RT2800_RF3052,RT2800_RF3053,RT2800_RF3070,
+  RT2800_RF3290,RT2800_RF3320,RT2800_RF3322,RT2800_RF5360,RT2800_RF5362,RT2800_RF5370,RT2800_RF5372,RT2800_RF5390,RT2800_RF5392,RT2800_RF5592:begin
+    {$IFDEF RT2800USB_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: Detected RF Chipset=' + IntToHex(RFChip,4));
+    {$ENDIF}
+  
+    {Set Chipset}
+    RT2X00SetRFChip(RT2X00,RFChip);
+   end;
+  else
+   begin  
+    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'RT2800: Invalid RF Chipset=' + IntToHex(RFChip,4));
+    Result:=ERROR_BAD_DEV_TYPE;
+    Exit;
+   end;
+ end;
+ 
+ {Default antenna configuration}
+ RT2X00.Antenna.TXChainNo:=RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF0_TXPATH,4);
+ RT2X00.Antenna.RXChainNo:=RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF0_RXPATH,0);
+ 
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF1);
+ if (RT2X00GetRTChip(RT2X00) = RT2X00_RT3070) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3090) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3352) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3390) then
+  begin
+   case RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_ANT_DIVERSITY,11) of
+    0,1,2:begin
+      RT2X00.Antenna.TX:=RT2X00_ANTENNA_A;
+      RT2X00.Antenna.RX:=RT2X00_ANTENNA_A;
+     end;
+    3:begin 
+      RT2X00.Antenna.TX:=RT2X00_ANTENNA_A;
+      RT2X00.Antenna.RX:=RT2X00_ANTENNA_B;
+     end;
+   end;
+  end
+ else
+  begin
+   RT2X00.Antenna.TX:=RT2X00_ANTENNA_A;
+   RT2X00.Antenna.RX:=RT2X00_ANTENNA_A;
+  end;  
+ 
+ if (RT2X00GetRTChip(RT2X00) = RT2X00_RT5390) and (RT2X00GetRevision(RT2X00) = RT2800_REV_RT5390R) then
+  begin
+   RT2X00.Antenna.TX:=RT2X00_ANTENNA_HW_DIVERSITY;
+   RT2X00.Antenna.RX:=RT2X00_ANTENNA_HW_DIVERSITY;
+  end;
+ 
+ {Detect external LNA configuration}
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_EXTERNAL_LNA_5G,3) = 1 then
+  begin
+   RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_EXTERNAL_LNA_A);
+  end;
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_EXTERNAL_LNA_2G,2) = 1 then
+  begin
+   RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_EXTERNAL_LNA_BG);
+  end;
+ 
+ {Detect hardware controlled radio}
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_HW_RADIO,0) = 1 then
+  begin
+   RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_HW_BUTTON);
+  end;
+ 
+ {Detect Bluetooth co-existence}
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_BT_COEXIST,14) = 1 then
+  begin
+   RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST);
+  end;
+ 
+ {Read frequency offset and RF programming sequence}
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_FREQ);
+ RT2X00.FrequencyOffset:=RT2X00GetRegister16(Value,RT2800_EEPROM_FREQ_OFFSET,0);
+ 
+ {Store LED settings}
+ RT2X00.LEDRadio:=True;
+ RT2X00.LEDAssoc:=True;
+ RT2X00.LEDQuality:=True;
+ RT2X00.LEDMCURegister:=Value;
+ 
+ {Detect EIRP TX power limit}
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_EIRP_MAX_TX_POWER);
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_EIRP_MAX_TX_POWER_2GHZ,0) < RT2800_EIRP_MAX_TX_POWER_LIMIT then
+  begin
+   RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_POWER_LIMIT);
+  end;
+
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeModes(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Reg:LongWord;
+ Count:LongWord;
+ DefaultPower1:PByte;
+ DefaultPower2:PByte;
+ DefaultPower3:PByte;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: Initialize Modes');
+ {$ENDIF}
+
+ {Disable Powersave flag}
+ RT2X00.WiFi.WiFiFlags:=RT2X00.WiFi.WiFiFlags and not(WIFI_FLAG_PS_ON_BY_DEFAULT);
+ 
+ {Initialize Hardware flags}
+ RT2X00.WiFi.Hardware.Flags:=IEEE80211_HW_SIGNAL_DBM or IEEE80211_HW_SUPPORTS_PS or IEEE80211_HW_PS_NULLFUNC_STACK or IEEE80211_HW_AMPDU_AGGREGATION or IEEE80211_HW_REPORTS_TX_ACK_STATUS or IEEE80211_HW_SUPPORTS_HT_CCK_RATES;
+ 
+ {Don't set IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING for USB devices}
+ if not RT2X00IsUSB(RT2X00) then
+  begin
+   RT2X00.WiFi.Hardware.Flags:=RT2X00.WiFi.Hardware.Flags or IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING;
+  end;
+ 
+ {Set Permanent Address}
+ System.Move(RT2800GetEepromAddress(RT2X00,RT2800_EEPROM_MAC_ADDR_0)^,RT2X00.WiFi.PermanentAddress,SizeOf(THardwareAddress));
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800:  (PermanentAddress=' + HardwareAddressToString(RT2X00.WiFi.PermanentAddress) + ')');
+ {$ENDIF}
+ 
+ {As RT2800 has a global fallback table we cannot specify more then one tx rate per frame but since the hw will try several
+  rates (based on the fallback table) we should initialize MaxReportRates to the maximum number of rates we are going to try}
+ RT2X00.WiFi.Hardware.MaxRates:=1;
+ RT2X00.WiFi.Hardware.MaxReportRates:=7;
+ RT2X00.WiFi.Hardware.MaxRateTries:=1;
+  
+ {Initialize hardware specifications}
+ RT2X00.Specifications.SupportedRates:=RT2X00_SUPPORT_RATE_CCK or RT2X00_SUPPORT_RATE_OFDM;
+ 
+ {Check RF chipset}
+ case RT2X00GetRFChip(RT2X00) of
+  RT2800_RF2720,RT2800_RF2820:begin
+    RT2X00.Specifications.ChannelCount:=14;
+    RT2X00.Specifications.RFChannels:=@RT2800_RF_VALUES
+   end;
+  RT2800_RF2750,RT2800_RF2850:begin
+    RT2X00.Specifications.ChannelCount:=High(RT2800_RF_VALUES);
+    RT2X00.Specifications.RFChannels:=@RT2800_RF_VALUES
+   end;
+  RT2800_RF2020,RT2800_RF3020,RT2800_RF3021,RT2800_RF3022,RT2800_RF3070,RT2800_RF3290,RT2800_RF3320,
+  RT2800_RF3322,RT2800_RF5360,RT2800_RF5362,RT2800_RF5370,RT2800_RF5372,RT2800_RF5390,RT2800_RF5392:begin
+    RT2X00.Specifications.ChannelCount:=14;
+    RT2X00.Specifications.RFChannels:=@RT2800_RF_VALUES_3X;
+   end;
+  RT2800_RF3052,RT2800_RF3053:begin
+    RT2X00.Specifications.ChannelCount:=High(RT2800_RF_VALUES_3X);
+    RT2X00.Specifications.RFChannels:=@RT2800_RF_VALUES_3X;
+   end;
+  RT2800_RF5592:begin
+    RT2800RegisterRead(RT2X00,RT2800_MAC_DEBUG_INDEX,@Reg);
+    if RT2X00GetRegister32(Reg,RT2800_MAC_DEBUG_INDEX_XTAL,31) = 1 then
+     begin
+      RT2X00.Specifications.ChannelCount:=High(RT2800_RF_VALUES_5592_XTAL40);
+      RT2X00.Specifications.RFChannels:=@RT2800_RF_VALUES_5592_XTAL40;
+     end
+    else
+     begin
+      RT2X00.Specifications.ChannelCount:=High(RT2800_RF_VALUES_5592_XTAL20);
+      RT2X00.Specifications.RFChannels:=@RT2800_RF_VALUES_5592_XTAL20;
+     end;     
+   end;  
+ end;
+ 
+ if RT2X00.Specifications.ChannelCount > 0 then
+  begin
+   {$IFDEF RT2800USB_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800:  (Channel count=' + IntToStr(RT2X00.Specifications.ChannelCount) + ')');
+   {$ENDIF}
+  end
+ else
+  begin 
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'RT2800: Invalid channel count (Count=' + IntToStr(RT2X00.Specifications.ChannelCount) + ')');
+   Result:=ERROR_BAD_DEV_TYPE;
+   Exit;
+  end;
+  
+ RT2X00.Specifications.SupportedBands:=RT2X00_SUPPORT_BAND_2GHZ;
+ if RT2X00.Specifications.ChannelCount > 14 then
+  begin
+   RT2X00.Specifications.SupportedBands:=RT2X00.Specifications.SupportedBands or RT2X00_SUPPORT_BAND_5GHZ;
+  end;
+ 
+ {Initialize HT information}
+ if RT2X00GetRFChip(RT2X00) <> RT2800_RF2020 then
+  begin
+   RT2X00.Specifications.HTCapabilities.HTSupported:=True;
+  end
+ else
+  begin
+   RT2X00.Specifications.HTCapabilities.HTSupported:=False;
+  end;
+   
+  RT2X00.Specifications.HTCapabilities.Capabilities:=IEEE80211_HT_CAP_SUP_WIDTH_20_40 or IEEE80211_HT_CAP_GRN_FLD or IEEE80211_HT_CAP_SGI_20 or IEEE80211_HT_CAP_SGI_40;
+
+  if RT2X00.Antenna.TXChainNo >= 2 then
+   begin
+    RT2X00.Specifications.HTCapabilities.Capabilities:=RT2X00.Specifications.HTCapabilities.Capabilities or IEEE80211_HT_CAP_TX_STBC;
+   end;
+
+  RT2X00.Specifications.HTCapabilities.Capabilities:=RT2X00.Specifications.HTCapabilities.Capabilities or (RT2X00.Antenna.RXChainNo shl IEEE80211_HT_CAP_RX_STBC_SHIFT);
+  
+  RT2X00.Specifications.HTCapabilities.AMPDUFactor:=3;
+  RT2X00.Specifications.HTCapabilities.AMPDUDensity:=4;
+  RT2X00.Specifications.HTCapabilities.MCS.TXParams:=IEEE80211_HT_MCS_TX_DEFINED or IEEE80211_HT_MCS_TX_RX_DIFF or ((RT2X00.Antenna.TXChainNo - 1) shl IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT);
+  
+  case RT2X00.Antenna.RXChainNo of
+   3:begin
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[2]:=$ff;
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[1]:=$ff;
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[0]:=$ff;
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[4]:=$01; {MCS32}
+    end;
+   2:begin
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[1]:=$ff;
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[0]:=$ff;
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[4]:=$01; {MCS32}
+    end;
+   1:begin
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[0]:=$ff;
+     RT2X00.Specifications.HTCapabilities.MCS.RXMask[4]:=$01; {MCS32}
+    end;
+  end;
+ 
+ {Create channel information}
+ RT2X00.Specifications.Channels:=AllocMem(RT2X00.Specifications.ChannelCount * SizeOf(TRT2X00Channel));
+ if RT2X00.Specifications.Channels = nil then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'RT2800: Failed to allocate channel info');
+   Result:=ERROR_OUTOFMEMORY;
+   Exit;
+  end;
+
+ DefaultPower1:=RT2800GetEepromAddress(RT2X00,RT2800_EEPROM_TXPOWER_BG1);
+ DefaultPower2:=RT2800GetEepromAddress(RT2X00,RT2800_EEPROM_TXPOWER_BG2);
+ if RT2X00.Antenna.TXChainNo > 2 then
+  begin
+   DefaultPower3:=RT2800GetEepromAddress(RT2X00,RT2800_EEPROM_EXT_TXPOWER_BG3);
+  end
+ else
+  begin
+   DefaultPower3:=nil;
+  end; 
+
+ Count:=0;
+ while Count < 14 do
+  begin
+   RT2X00.Specifications.Channels[Count].DefaultPower1:=DefaultPower1[Count];
+   RT2X00.Specifications.Channels[Count].DefaultPower2:=DefaultPower2[Count];
+   if DefaultPower3 <> nil then
+    begin
+     RT2X00.Specifications.Channels[Count].DefaultPower3:=DefaultPower3[Count];
+    end;
+  
+   Inc(Count);
+  end;
+  
+ if RT2X00.Specifications.ChannelCount > 14 then
+  begin
+   DefaultPower1:=RT2800GetEepromAddress(RT2X00,RT2800_EEPROM_TXPOWER_A1);
+   DefaultPower2:=RT2800GetEepromAddress(RT2X00,RT2800_EEPROM_TXPOWER_A2);
+   if RT2X00.Antenna.TXChainNo > 2 then
+    begin
+     DefaultPower3:=RT2800GetEepromAddress(RT2X00,RT2800_EEPROM_EXT_TXPOWER_A3);
+    end
+   else
+    begin
+     DefaultPower3:=nil;
+    end; 
+   
+   Count:=14;
+   while Count < RT2X00.Specifications.ChannelCount do
+    begin
+     RT2X00.Specifications.Channels[Count].DefaultPower1:=DefaultPower1[Count - 14];
+     RT2X00.Specifications.Channels[Count].DefaultPower2:=DefaultPower2[Count - 14];
+     if DefaultPower3 <> nil then
+      begin
+       RT2X00.Specifications.Channels[Count].DefaultPower3:=DefaultPower3[Count - 14];
+      end;
+    
+     Inc(Count);
+    end;
+  end;
+
+ {Check RF chipset}
+ case RT2X00GetRFChip(RT2X00) of
+  RT2800_RF2020,RT2800_RF3020,RT2800_RF3021,RT2800_RF3022,RT2800_RF3320,RT2800_RF3052,RT2800_RF3053,RT2800_RF3070,
+  RT2800_RF3290,RT2800_RF5360,RT2800_RF5362,RT2800_RF5370,RT2800_RF5372,RT2800_RF5390,RT2800_RF5392:begin
+    RT2X00SetCapability(RT2X00,RT2X00_CAPABILITY_VCO_RECALIBRATION);
+   end;
+ end;  
  
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 
-function RT2800LoadEfuse(RT2X00:PRT2X00NetworkDevice;Data:PWord;Size:LongWord):LongWord;
+function RT2800InitializeBBP(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Value:Word;
+ RegNo:Byte;
+ RegValue:Byte;
+ Count:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP');
+ {$ENDIF}
+ 
+ if RT2800Is305xSOC(RT2X00) then
+  begin
+   Result:=RT2800InitializeBBP305xSOC(RT2X00);
+  end;  
+
+ case RT2X00GetRTChip(RT2X00) of
+  RT2X00_RT2860,RT2X00_RT2872,RT2X00_RT2883:begin
+    Result:=RT2800InitializeBBP28xx(RT2X00);
+   end;
+  RT2X00_RT3070,RT2X00_RT3071,RT2X00_RT3090:begin
+    Result:=RT2800InitializeBBP30xx(RT2X00);
+   end;
+  RT2X00_RT3290:begin
+    Result:=RT2800InitializeBBP3290(RT2X00);
+   end;
+  RT2X00_RT3352:begin
+    Result:=RT2800InitializeBBP3352(RT2X00);
+   end;
+  RT2X00_RT3390:begin
+    Result:=RT2800InitializeBBP3390(RT2X00);
+   end;
+  RT2X00_RT3572:begin
+    Result:=RT2800InitializeBBP3572(RT2X00);
+   end;
+  RT2X00_RT3593:begin
+    Result:=RT2800InitializeBBP3593(RT2X00);
+    Exit;
+   end;
+  RT2X00_RT5390,RT2X00_RT5392:begin
+    Result:=RT2800InitializeBBP53xx(RT2X00);
+   end;
+  RT2X00_RT5592:begin
+    Result:=RT2800InitializeBBP5592(RT2X00);
+    Exit;
+   end;
+  else
+   begin
+    Result:=ERROR_NOT_SUPPORTED;
+    Exit;
+   end;
+ end;   
+
+ for Count:=0 to RT2800_EEPROM_BBP_SIZE - 1 do
+  begin
+   Value:=RT2800GetEeprom16Array(RT2X00,RT2800_EEPROM_BBP_START,Count);
+   if (Value <> $ffff) and (Value <> $0000) then
+    begin
+     RegNo:=RT2X00GetRegister16(Value,RT2800_EEPROM_BBP_REG_ID,8);
+     RegValue:=RT2X00GetRegister16(Value,RT2800_EEPROM_BBP_VALUE,0);
+    
+     RT2800BBPWrite(RT2X00,RegNo,RegValue);
+     
+     {$IFDEF RT2800USB_DEBUG}
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: BBP Write (RegNo=' + IntToHex(RegNo,4) + ' RegValue=' + IntToHex(RegValue,4) + ')'); //To Do //Testing
+     {$ENDIF}
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeBBP28xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 28xx');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_28xx
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP30xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 30xx');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_30xx
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP3290(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 3290');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_3290
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP3352(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 3352');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_3352
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP3390(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 3390');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_3390
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP3572(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 3572');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_3572
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP3593(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 3593');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_3593
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP53xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Value:Word;
+ BBPReg:Byte;
+ Reg:LongWord;
+ Antenna:Word;
+ DivMode:Word;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 53xx');
+ {$ENDIF}
+
+ RT2800BBP4MACInterfaceControl(RT2X00);
+    
+ RT2800BBPWrite(RT2X00,31,$08);
+    
+ RT2800BBPWrite(RT2X00,65,$2c);
+ RT2800BBPWrite(RT2X00,66,$38);
+    
+ RT2800BBPWrite(RT2X00,68,$0b);
+    
+ RT2800BBPWrite(RT2X00,69,$12);
+ RT2800BBPWrite(RT2X00,73,$13);
+ RT2800BBPWrite(RT2X00,75,$46);
+ RT2800BBPWrite(RT2X00,76,$28);
+    
+ RT2800BBPWrite(RT2X00,77,$59);
+    
+ RT2800BBPWrite(RT2X00,70,$0a);
+    
+ RT2800BBPWrite(RT2X00,79,$13);
+ RT2800BBPWrite(RT2X00,80,$05);
+ RT2800BBPWrite(RT2X00,81,$33);
+    
+ RT2800BBPWrite(RT2X00,82,$62);
+    
+ RT2800BBPWrite(RT2X00,83,$7a);
+    
+ RT2800BBPWrite(RT2X00,84,$9a);
+    
+ RT2800BBPWrite(RT2X00,86,$38);
+    
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5392 then
+  begin
+   RT2800BBPWrite(RT2X00,88,$90);
+  end; 
+    
+ RT2800BBPWrite(RT2X00,91,$04);
+    
+ RT2800BBPWrite(RT2X00,92,$02);
+    
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5392 then
+  begin
+   RT2800BBPWrite(RT2X00,95,$9a);
+   RT2800BBPWrite(RT2X00,98,$12);
+  end; 
+    
+ RT2800BBPWrite(RT2X00,103,$c0);
+    
+ RT2800BBPWrite(RT2X00,104,$92);
+    
+ RT2800BBPWrite(RT2X00,105,$3c);
+    
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5390 then
+  begin
+   RT2800BBPWrite(RT2X00,106,$03);
+  end 
+ else if RT2X00GetRTChip(RT2X00) = RT2X00_RT5392 then
+  begin
+   RT2800BBPWrite(RT2X00,106,$12);
+  end 
+ else
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'RT2800: Invalid RT chipset during Initialize BBP 53xx');
+  end; 
+    
+ RT2800BBPWrite(RT2X00,128,$12);
+    
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5392 then
+  begin
+   RT2800BBPWrite(RT2X00,134,$d0);
+   RT2800BBPWrite(RT2X00,135,$f6);
+  end; 
+    
+ RT2800DisableUnusedDACADC(RT2X00);
+    
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF1);
+ DivMode:=RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_ANT_DIVERSITY,11);
+ if DivMode = 3 then Antenna:=1 else Antenna:=0;
+    
+ {Check if this is a Bluetooth combo card}
+ if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+  begin
+   RT2800RegisterRead(RT2X00,RT2800_GPIO_CTRL,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_DIR3,11,0);
+   RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_DIR6,14,0);
+   RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL3,3,0);
+   RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL6,6,0);
+   if Antenna = 0 then
+    begin
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL3,3,1);
+    end 
+   else if Antenna = 1 then
+    begin
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL6,6,1);
+    end; 
+   RT2800RegisterWrite(RT2X00,RT2800_GPIO_CTRL,Reg);
+  end;  
+    
+ {This chip has hardware antenna diversity}
+ if RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390R) then
+  begin
+   RT2800BBPWrite(RT2X00,150,0); {Disable Antenna Software OFDM}
+   RT2800BBPWrite(RT2X00,151,0); {Disable Antenna Software CCK}
+   RT2800BBPWrite(RT2X00,154,0); {Clear previously selected antenna}
+  end;  
+    
+ RT2800BBPRead(RT2X00,152,@BBPReg);
+ if Antenna = 0 then
+  begin
+   RT2X00SetRegister8(BBPReg,RT2800_BBP152_RX_DEFAULT_ANT,7,1);
+  end 
+ else
+  begin
+   RT2X00SetRegister8(BBPReg,RT2800_BBP152_RX_DEFAULT_ANT,7,0);
+  end; 
+ RT2800BBPWrite(RT2X00,152,BBPReg);
+    
+ RT2800InitializeFrequencyCalibration(RT2X00);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP5592(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 5592');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_5592
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800InitializeBBP305xSOC(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize BBP 305x SoC');
+ {$ENDIF}
+
+ //To Do //rt2800_init_bbp_305x_soc
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR');
+ {$ENDIF}
+ 
+ if RT2800Is305xSOC(RT2X00) then
+  begin
+   Result:=RT2800InitializeRFCSR305xSOC(RT2X00);
+   Exit;
+  end;
+  
+ case RT2X00GetRTChip(RT2X00) of
+  RT2X00_RT3070,RT2X00_RT3071,RT2X00_RT3090:begin
+    Result:=RT2800InitializeRFCSR30xx(RT2X00);
+   end;
+  RT2X00_RT3290:begin
+    Result:=RT2800InitializeRFCSR3290(RT2X00);
+   end; 
+  RT2X00_RT3352:begin
+    Result:=RT2800InitializeRFCSR3352(RT2X00);
+   end;
+  RT2X00_RT3390:begin
+    Result:=RT2800InitializeRFCSR3390(RT2X00);
+   end;
+  RT2X00_RT3572:begin
+    Result:=RT2800InitializeRFCSR3572(RT2X00);
+   end;
+  RT2X00_RT3593:begin
+    Result:=RT2800InitializeRFCSR3593(RT2X00);
+   end;
+  RT2X00_RT5390:begin
+    Result:=RT2800InitializeRFCSR5390(RT2X00);
+   end;
+  RT2X00_RT5392:begin
+    Result:=RT2800InitializeRFCSR5392(RT2X00);
+   end;
+  RT2X00_RT5592:begin
+    Result:=RT2800InitializeRFCSR5592(RT2X00);
+   end;
+  else
+   begin
+    Result:=ERROR_NOT_SUPPORTED;
+   end;   
+ end;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR30xx(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 30xx');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_30xx
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR3290(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 3290');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_3290
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR3352(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 3352');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_3352
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR3390(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 3390');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_3390
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR3572(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 3572');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_3572
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR3593(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 3593');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_3593
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR5390(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 5390');
+ {$ENDIF}
+
+ RT2800InitializeRFCalibration(RT2X00,2);
+    
+ RT2800RFCSRWrite(RT2X00,1,$0f);
+ RT2800RFCSRWrite(RT2X00,2,$80);
+ RT2800RFCSRWrite(RT2X00,3,$88);
+ RT2800RFCSRWrite(RT2X00,5,$10);
+ if (RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F)) then
+  begin
+   RT2800RFCSRWrite(RT2X00,6,$e0);
+  end 
+ else
+  begin
+   RT2800RFCSRWrite(RT2X00,6,$a0);
+  end; 
+ RT2800RFCSRWrite(RT2X00,7,$00);
+ RT2800RFCSRWrite(RT2X00,10,$53);
+ RT2800RFCSRWrite(RT2X00,11,$4a);
+ RT2800RFCSRWrite(RT2X00,12,$46);
+ RT2800RFCSRWrite(RT2X00,13,$9f);
+ RT2800RFCSRWrite(RT2X00,14,$00);
+ RT2800RFCSRWrite(RT2X00,15,$00);
+ RT2800RFCSRWrite(RT2X00,16,$00);
+ RT2800RFCSRWrite(RT2X00,18,$03);
+ RT2800RFCSRWrite(RT2X00,19,$00);
+    
+ RT2800RFCSRWrite(RT2X00,20,$00);
+ RT2800RFCSRWrite(RT2X00,21,$00);
+ RT2800RFCSRWrite(RT2X00,22,$20);
+ RT2800RFCSRWrite(RT2X00,23,$00);
+ RT2800RFCSRWrite(RT2X00,24,$00);
+ if RT2X00IsUSB(RT2X00) and RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F) then
+  begin
+   RT2800RFCSRWrite(RT2X00,25,$80);
+  end 
+ else
+  begin
+   RT2800RFCSRWrite(RT2X00,25,$c0);
+  end; 
+ RT2800RFCSRWrite(RT2X00,26,$00);
+ RT2800RFCSRWrite(RT2X00,27,$09);
+ RT2800RFCSRWrite(RT2X00,28,$00);
+ RT2800RFCSRWrite(RT2X00,29,$10);
+    
+ RT2800RFCSRWrite(RT2X00,30,$10);
+ RT2800RFCSRWrite(RT2X00,31,$80);
+ RT2800RFCSRWrite(RT2X00,32,$80);
+ RT2800RFCSRWrite(RT2X00,33,$00);
+ RT2800RFCSRWrite(RT2X00,34,$07);
+ RT2800RFCSRWrite(RT2X00,35,$12);
+ RT2800RFCSRWrite(RT2X00,36,$00);
+ RT2800RFCSRWrite(RT2X00,37,$08);
+ RT2800RFCSRWrite(RT2X00,38,$85);
+ RT2800RFCSRWrite(RT2X00,39,$1b);
+    
+ RT2800RFCSRWrite(RT2X00,40,$0b);
+ RT2800RFCSRWrite(RT2X00,41,$bb);
+ RT2800RFCSRWrite(RT2X00,42,$d2);
+ RT2800RFCSRWrite(RT2X00,43,$9a);
+ RT2800RFCSRWrite(RT2X00,44,$0e);
+ RT2800RFCSRWrite(RT2X00,45,$a2);
+ if RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F) then
+  begin
+   RT2800RFCSRWrite(RT2X00,46,$73);
+  end 
+ else
+  begin
+   RT2800RFCSRWrite(RT2X00,46,$7b);
+  end; 
+ RT2800RFCSRWrite(RT2X00,47,$00);
+ RT2800RFCSRWrite(RT2X00,48,$10);
+ RT2800RFCSRWrite(RT2X00,49,$94);
+    
+ RT2800RFCSRWrite(RT2X00,52,$38);
+ if RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F) then
+  begin
+   RT2800RFCSRWrite(RT2X00,53,$00);
+  end 
+ else
+  begin
+   RT2800RFCSRWrite(RT2X00,53,$84);
+  end; 
+ RT2800RFCSRWrite(RT2X00,54,$78);
+ RT2800RFCSRWrite(RT2X00,55,$44);
+ if RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F) then
+  begin
+   RT2800RFCSRWrite(RT2X00,56,$42);
+  end 
+ else
+  begin
+   RT2800RFCSRWrite(RT2X00,56,$22);
+  end; 
+ RT2800RFCSRWrite(RT2X00,57,$80);
+ RT2800RFCSRWrite(RT2X00,58,$7f);
+ RT2800RFCSRWrite(RT2X00,59,$8f);
+    
+ RT2800RFCSRWrite(RT2X00,60,$45);
+ if RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F) then
+  begin
+   if RT2X00IsUSB(RT2X00) then
+    begin
+     RT2800RFCSRWrite(RT2X00,61,$d1);
+    end 
+   else
+    begin
+     RT2800RFCSRWrite(RT2X00,61,$d5);
+    end; 
+  end      
+ else
+  begin
+   if RT2X00IsUSB(RT2X00) then
+    begin
+     RT2800RFCSRWrite(RT2X00,61,$dd);
+    end 
+   else
+    begin
+     RT2800RFCSRWrite(RT2X00,61,$b5);
+    end; 
+  end;      
+ RT2800RFCSRWrite(RT2X00,62,$00);
+ RT2800RFCSRWrite(RT2X00,63,$00);
+    
+ RT2800SetupNormalMode5xxx(RT2X00);
+    
+ RT2800EnableLEDOpenDrain(RT2X00);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR5392(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 5392');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_5392
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR5592(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 5592');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_5592
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCSR305xSOC(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF CSR 305x SoC');
+ {$ENDIF}
+
+ //To Do //rt2800_init_rfcsr_305x_soc
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRegisters(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Value:Word;
+ Reg:LongWord;
+ Count:LongWord;
+ Status:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize Registers');
+ {$ENDIF}
+
+ {Disable DMA}
+ RT2800DisableWPDMA(RT2X00);
+ 
+ {Initialize Registers}
+ if Assigned(RT2X00.InitializeRegisters) then
+  begin
+   Status:=RT2X00.InitializeRegisters(RT2X00);
+   if Status <> ERROR_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end;
+  end
+ else
+  begin
+   Result:=ERROR_NOT_ASSIGNED;
+   Exit;
+  end;  
+ 
+ {Initialize Registers}
+ RT2800RegisterWrite(RT2X00,RT2800_LEGACY_BASIC_RATE,$0000013f);
+ RT2800RegisterWrite(RT2X00,RT2800_HT_BASIC_RATE,$00008003);
+
+ RT2800RegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,$00000000);
+
+ RT2800RegisterRead(RT2X00,RT2800_BCN_TIME_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_BEACON_INTERVAL,0,1600);
+ RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_TSF_TICKING,16,0);
+ RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_TSF_SYNC,17,0);
+ RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_TBTT_ENABLE,19,0);
+ RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_BEACON_GEN,20,0);
+ RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_TX_TIME_COMPENSATE,28,0);
+ RT2800RegisterWrite(RT2X00,RT2800_BCN_TIME_CFG,Reg);
+
+ RT2800ConfigureFilter(RT2X00,IEEE80211_FIF_ALLMULTI);
+
+ RT2800RegisterRead(RT2X00,RT2800_BKOFF_SLOT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_BKOFF_SLOT_CFG_SLOT_TIME,0,9);
+ RT2X00SetRegister32(Reg,RT2800_BKOFF_SLOT_CFG_CC_DELAY_TIME,8,2);
+ RT2800RegisterWrite(RT2X00,RT2800_BKOFF_SLOT_CFG,Reg);
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3290 then 
+  begin
+   RT2800RegisterRead(RT2X00,RT2800_WLAN_FUN_CTRL,@Reg);
+   if RT2X00GetRegister32(Reg,RT2800_WLAN_EN,0) = 1 then
+    begin
+     RT2X00SetRegister32(Reg,RT2800_PCIE_APP0_CLK_REQ,4,1);
+     RT2800RegisterWrite(RT2X00,RT2800_WLAN_FUN_CTRL,Reg);
+    end;  
+   
+   RT2800RegisterRead(RT2X00,RT2800_CMB_CTRL,@Reg);
+   if RT2X00GetRegister32(Reg,RT2800_LDO0_EN,31) <> 1 then
+    begin
+     RT2X00SetRegister32(Reg,RT2800_LDO0_EN,31,1);
+     RT2X00SetRegister32(Reg,RT2800_LDO_BGSEL,28,3);
+     RT2800RegisterWrite(RT2X00,RT2800_CMB_CTRL,Reg);
+    end; 
+  
+   RT2800RegisterRead(RT2X00,RT2800_OSC_CTRL,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_OSC_ROSC_EN,31,1);
+   RT2X00SetRegister32(Reg,RT2800_OSC_CAL_REQ,30,1);
+   RT2X00SetRegister32(Reg,RT2800_OSC_REF_CYCLE,0,$27);
+   RT2800RegisterWrite(RT2X00,RT2800_OSC_CTRL,Reg);
+   
+   RT2800RegisterRead(RT2X00,RT2800_COEX_CFG0,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_COEX_CFG_ANT,24,$5e);
+   RT2800RegisterWrite(RT2X00,RT2800_COEX_CFG0,Reg);
+   
+   RT2800RegisterRead(RT2X00,RT2800_COEX_CFG2,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_BT_COEX_CFG1,24,$00);
+   RT2X00SetRegister32(Reg,RT2800_BT_COEX_CFG0,16,$17);
+   RT2X00SetRegister32(Reg,RT2800_WL_COEX_CFG1,8,$93);
+   RT2X00SetRegister32(Reg,RT2800_WL_COEX_CFG0,0,$7f);
+   RT2800RegisterWrite(RT2X00,RT2800_COEX_CFG2,Reg);
+   
+   RT2800RegisterRead(RT2X00,RT2800_PLL_CTRL,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_PLL_CONTROL,16,1);
+   RT2800RegisterWrite(RT2X00,RT2800_PLL_CTRL,Reg);
+  end;
+
+ if (RT2X00GetRTChip(RT2X00) = RT2X00_RT3071) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3090) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3290) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3390) then
+  begin
+   if RT2X00GetRTChip(RT2X00) = RT2X00_RT3290 then
+    begin
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000404);
+    end
+   else
+    begin
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000400);
+    end;
+ 
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00000000);
+   if (RT2X00IsRTChipRevisionLT(RT2X00,RT2X00_RT3071,RT2800_REV_RT3071E)) or (RT2X00IsRTChipRevisionLT(RT2X00,RT2X00_RT3090,RT2800_REV_RT3090E)) or  (RT2X00IsRTChipRevisionLT(RT2X00,RT2X00_RT3390,RT2800_REV_RT3390E)) then
+    begin
+     Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF1);
+     if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_DAC_TEST,15) = 1 then
+      begin
+       RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$0000002c);
+      end 
+     else
+      begin
+       RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$0000000f);
+      end; 
+    end  
+   else
+    begin
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$00000000);
+    end; 
+  end
+ else if RT2X00GetRTChip(RT2X00) = RT2X00_RT3070 then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000400);
+   
+   if RT2X00IsRTChipRevisionLT(RT2X00,RT2X00_RT3070,RT2800_REV_RT3070F) then
+    begin
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00000000);
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$0000002c);
+    end 
+   else
+    begin
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00080606);
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$00000000);
+    end; 
+  end
+ else if RT2800Is305xSOC(RT2X00) then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000400);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00000000);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$00000030);
+  end 
+ else if RT2X00GetRTChip(RT2X00) = RT2X00_RT3352 then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000402);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00080606);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$00000000);
+  end 
+ else if RT2X00GetRTChip(RT2X00) = RT2X00_RT3572 then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000400);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00080606);
+  end 
+ else if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000402);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00000000);
+   if RT2X00IsRTChipRevisionLT(RT2X00,RT2X00_RT3593,RT2800_REV_RT3593E) then
+    begin
+     Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF1);
+     if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_DAC_TEST,15) = 1 then
+      begin
+       RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$0000001f);
+      end 
+     else
+      begin
+       RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$0000000f);
+      end;
+    end 
+   else
+    begin
+     RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$00000000);
+    end; 
+  end
+ else if (RT2X00GetRTChip(RT2X00) = RT2X00_RT5390) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT5392) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT5592) then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000404);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00080606);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG2,$00000000);
+  end
+ else
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG0,$00000000);
+   RT2800RegisterWrite(RT2X00,RT2800_TX_SW_CFG1,$00080606);
+  end; 
+
+ RT2800RegisterRead(RT2X00,RT2800_TX_LINK_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_REMOTE_MFB_LIFETIME,0,32);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_MFB_ENABLE,8,0);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_REMOTE_UMFS_ENABLE,9,0);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_TX_MRQ_EN,10,0);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_TX_RDG_EN,11,0);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_TX_CF_ACK_EN,12,1);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_REMOTE_MFB,16,0);
+ RT2X00SetRegister32(Reg,RT2800_TX_LINK_CFG_REMOTE_MFS,24,0);
+ RT2800RegisterWrite(RT2X00,RT2800_TX_LINK_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_TX_TIMEOUT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_TX_TIMEOUT_CFG_MPDU_LIFETIME,4,9);
+ RT2X00SetRegister32(Reg,RT2800_TX_TIMEOUT_CFG_RX_ACK_TIMEOUT,8,32);
+ RT2X00SetRegister32(Reg,RT2800_TX_TIMEOUT_CFG_TX_OP_TIMEOUT,16,10);
+ RT2800RegisterWrite(RT2X00,RT2800_TX_TIMEOUT_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_MAX_LEN_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_MAX_LEN_CFG_MAX_MPDU,0,RT2X00_AGGREGATION_SIZE);
+ if (RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT2872,RT2800_REV_RT2872E)) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT2883) or (RT2X00IsRTChipRevisionLT(RT2X00,RT2X00_RT3070,RT2800_REV_RT3070E)) then
+  begin
+   RT2X00SetRegister32(Reg,RT2800_MAX_LEN_CFG_MAX_PSDU,12,2);
+  end 
+ else
+  begin
+   RT2X00SetRegister32(Reg,RT2800_MAX_LEN_CFG_MAX_PSDU,12,1);
+  end; 
+ RT2X00SetRegister32(Reg,RT2800_MAX_LEN_CFG_MIN_PSDU,14,0);
+ RT2X00SetRegister32(Reg,RT2800_MAX_LEN_CFG_MIN_MPDU,16,0);
+ RT2800RegisterWrite(RT2X00,RT2800_MAX_LEN_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_LED_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_LED_CFG_ON_PERIOD,0,70);
+ RT2X00SetRegister32(Reg,RT2800_LED_CFG_OFF_PERIOD,8,30);
+ RT2X00SetRegister32(Reg,RT2800_LED_CFG_SLOW_BLINK_PERIOD,16,3);
+ RT2X00SetRegister32(Reg,RT2800_LED_CFG_R_LED_MODE,24,3);
+ RT2X00SetRegister32(Reg,RT2800_LED_CFG_G_LED_MODE,26,3);
+ RT2X00SetRegister32(Reg,RT2800_LED_CFG_Y_LED_MODE,28,3);
+ RT2X00SetRegister32(Reg,RT2800_LED_CFG_LED_POLAR,30,1);
+ RT2800RegisterWrite(RT2X00,RT2800_LED_CFG,Reg);
+
+ RT2800RegisterWrite(RT2X00,RT2800_PBF_MAX_PCNT,$1f3fbf9f);
+
+ RT2800RegisterRead(RT2X00,RT2800_TX_RTY_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_SHORT_RTY_LIMIT,0,15);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_LONG_RTY_LIMIT,8,31);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_LONG_RTY_THRE,16,2000);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_NON_AGG_RTY_MODE,28,0);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_AGG_RTY_MODE,29,0);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_TX_AUTO_FB_ENABLE,30,1);
+ RT2800RegisterWrite(RT2X00,RT2800_TX_RTY_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_AUTO_RSP_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_AUTO_RSP_CFG_AUTORESPONDER,0,1);
+ RT2X00SetRegister32(Reg,RT2800_AUTO_RSP_CFG_BAC_ACK_POLICY,1,1);
+ RT2X00SetRegister32(Reg,RT2800_AUTO_RSP_CFG_CTS_40_MMODE,2,0);
+ RT2X00SetRegister32(Reg,RT2800_AUTO_RSP_CFG_CTS_40_MREF,3,0);
+ RT2X00SetRegister32(Reg,RT2800_AUTO_RSP_CFG_AR_PREAMBLE,4,1);
+ RT2X00SetRegister32(Reg,RT2800_AUTO_RSP_CFG_DUAL_CTS_EN,6,0);
+ RT2X00SetRegister32(Reg,RT2800_AUTO_RSP_CFG_ACK_CTS_PSM_BIT,7,0);
+ RT2800RegisterWrite(RT2X00,RT2800_AUTO_RSP_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_CCK_PROT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_PROTECT_RATE,0,3);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_PROTECT_CTRL,16,0);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_PROTECT_NAV_SHORT,18,1);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_TX_OP_ALLOW_CCK,20,1);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_TX_OP_ALLOW_OFDM,21,1);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_TX_OP_ALLOW_MM20,22,1);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_TX_OP_ALLOW_MM40,23,0);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_TX_OP_ALLOW_GF20,24,1);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_TX_OP_ALLOW_GF40,25,0);
+ RT2X00SetRegister32(Reg,RT2800_CCK_PROT_CFG_RTS_TH_EN,26,1);
+ RT2800RegisterWrite(RT2X00,RT2800_CCK_PROT_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_OFDM_PROT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_PROTECT_RATE,0,3);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_PROTECT_CTRL,16,0);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_PROTECT_NAV_SHORT,18,1);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_TX_OP_ALLOW_CCK,20,1);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_TX_OP_ALLOW_OFDM,21,1);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_TX_OP_ALLOW_MM20,22,1);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_TX_OP_ALLOW_MM40,23,0);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_TX_OP_ALLOW_GF20,24,1);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_TX_OP_ALLOW_GF40,25,0);
+ RT2X00SetRegister32(Reg,RT2800_OFDM_PROT_CFG_RTS_TH_EN,26,1);
+ RT2800RegisterWrite(RT2X00,RT2800_OFDM_PROT_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_MM20_PROT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_PROTECT_RATE,0,$4004);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_PROTECT_CTRL,16,0);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_PROTECT_NAV_SHORT,18,1);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_TX_OP_ALLOW_CCK,20,1);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_TX_OP_ALLOW_OFDM,21,1);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_TX_OP_ALLOW_MM20,22,1);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_TX_OP_ALLOW_MM40,23,0);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_TX_OP_ALLOW_GF20,24,1);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_TX_OP_ALLOW_GF40,25,0);
+ RT2X00SetRegister32(Reg,RT2800_MM20_PROT_CFG_RTS_TH_EN,26,0);
+ RT2800RegisterWrite(RT2X00,RT2800_MM20_PROT_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_MM40_PROT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_PROTECT_RATE,0,$4084);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_PROTECT_CTRL,16,0);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_PROTECT_NAV_SHORT,18,1);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_TX_OP_ALLOW_CCK,20,1);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_TX_OP_ALLOW_OFDM,21,1);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_TX_OP_ALLOW_MM20,22,1);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_TX_OP_ALLOW_MM40,23,1);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_TX_OP_ALLOW_GF20,24,1);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_TX_OP_ALLOW_GF40,25,1);
+ RT2X00SetRegister32(Reg,RT2800_MM40_PROT_CFG_RTS_TH_EN,26,0);
+ RT2800RegisterWrite(RT2X00,RT2800_MM40_PROT_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_GF20_PROT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_PROTECT_RATE,0,$4004);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_PROTECT_CTRL,16,0);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_PROTECT_NAV_SHORT,18,1);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_TX_OP_ALLOW_CCK,20,1);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_TX_OP_ALLOW_OFDM,21,1);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_TX_OP_ALLOW_MM20,22,1);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_TX_OP_ALLOW_MM40,23,0);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_TX_OP_ALLOW_GF20,24,1);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_TX_OP_ALLOW_GF40,25,0);
+ RT2X00SetRegister32(Reg,RT2800_GF20_PROT_CFG_RTS_TH_EN,26,0);
+ RT2800RegisterWrite(RT2X00,RT2800_GF20_PROT_CFG,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_GF40_PROT_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_PROTECT_RATE,0,$4084);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_PROTECT_CTRL,16,0);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_PROTECT_NAV_SHORT,18,1);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_TX_OP_ALLOW_CCK,20,1);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_TX_OP_ALLOW_OFDM,21,1);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_TX_OP_ALLOW_MM20,22,1);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_TX_OP_ALLOW_MM40,23,1);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_TX_OP_ALLOW_GF20,24,1);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_TX_OP_ALLOW_GF40,25,1);
+ RT2X00SetRegister32(Reg,RT2800_GF40_PROT_CFG_RTS_TH_EN,26,0);
+ RT2800RegisterWrite(RT2X00,RT2800_GF40_PROT_CFG,Reg);
+
+ if RT2X00IsUSB(RT2X00) then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_PBF_CFG,$f40006);
+   
+   RT2800RegisterRead(RT2X00,RT2800_WPDMA_GLO_CFG,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_ENABLE_TX_DMA,0,0);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_TX_DMA_BUSY,1,0);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_ENABLE_RX_DMA,2,0);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_RX_DMA_BUSY,3,0);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_WP_DMA_BURST_SIZE,4,3);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_TX_WRITEBACK_DONE,6,0);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_BIG_ENDIAN,7,0);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_RX_HDR_SCATTER,8,0);
+   RT2X00SetRegister32(Reg,RT2800_WPDMA_GLO_CFG_HDR_SEG_LEN,16,0);
+   RT2800RegisterWrite(RT2X00,RT2800_WPDMA_GLO_CFG,Reg);
+  end; 
+
+ {The legacy driver also sets TXOP_CTRL_CFG_RESERVED_TRUN_EN to 1 although it is reserved}
+ RT2800RegisterRead(RT2X00,RT2800_TXOP_CTRL_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_TIMEOUT_TRUN_EN,0,1);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_AC_TRUN_EN,1,1);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_TXRATEGRP_TRUN_EN,2,1);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_USER_MODE_TRUN_EN,3,1);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_MIMO_PS_TRUN_EN,4,1);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_RESERVED_TRUN_EN,5,1);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_LSIG_TXOP_EN,6,0);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_EXT_CCA_EN,7,0);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_EXT_CCA_DLY,8,88);
+ RT2X00SetRegister32(Reg,RT2800_TXOP_CTRL_CFG_EXT_CWMIN,16,0);
+ RT2800RegisterWrite(RT2X00,RT2800_TXOP_CTRL_CFG,Reg);
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5592 then
+  begin
+   Reg:=$00000082;
+  end
+ else
+  begin
+   Reg:=$00000002;
+  end;  
+ RT2800RegisterWrite(RT2X00,RT2800_TXOP_HLDR_ET,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_TX_RTS_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTS_CFG_AUTO_RTS_RETRY_LIMIT,0,32);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTS_CFG_RTS_THRES,8,IEEE80211_MAX_RTS_THRESHOLD);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTS_CFG_RTS_FBK_EN,24,0);
+ RT2800RegisterWrite(RT2X00,RT2800_TX_RTS_CFG,Reg);
+
+ RT2800RegisterWrite(RT2X00,RT2800_EXP_ACK_TIME,$002400ca);
+
+ {Usually the CCK SIFS time should be set to 10 and the OFDM SIFS time should be set to 16. However, the original Ralink driver uses
+  16 for both and indeed using a value of 10 for CCK SIFS results in connection problems with 11g + CTS protection. Hence, use the same
+  defaults as the Ralink driver: 16 for both, CCK and OFDM SIFS.}
+ RT2800RegisterRead(RT2X00,RT2800_XIFS_TIME_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_XIFS_TIME_CFG_CCKM_SIFS_TIME,0,16);
+ RT2X00SetRegister32(Reg,RT2800_XIFS_TIME_CFG_OFDM_SIFS_TIME,8,16);
+ RT2X00SetRegister32(Reg,RT2800_XIFS_TIME_CFG_OFDM_XIFS_TIME,16,4);
+ RT2X00SetRegister32(Reg,RT2800_XIFS_TIME_CFG_EIFS,20,314);
+ RT2X00SetRegister32(Reg,RT2800_XIFS_TIME_CFG_BB_RXEND_ENABLE,29,1);
+ RT2800RegisterWrite(RT2X00,RT2800_XIFS_TIME_CFG,Reg);
+
+ RT2800RegisterWrite(RT2X00,RT2800_PWR_PIN_CFG,$00000003);
+
+ {ASIC will keep garbage value after boot, clear encryption keys}
+ for Count:=0 to 3 do
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_SHARED_KEY_MODE_ENTRY(Count),0);
+  end; 
+
+ for Count:=0 to 255 do
+  begin
+   RT2800ConfigureWCID(RT2X00,Count,nil);
+   RT2800DeleteWCIDAttribute(RT2X00,Count);
+   RT2800RegisterWrite(RT2X00,RT2800_MAC_IVEIV_ENTRY(Count),0);
+  end; 
+
+ {Clear all beacons}
+ for Count:=0 to 7 do
+  begin
+   RT2800ClearBeaconRegister(RT2X00,Count);
+  end; 
+
+ if RT2X00IsUSB(RT2X00) then
+  begin
+   RT2800RegisterRead(RT2X00,RT2800_US_CYC_CNT,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_US_CYC_CNT_CLOCK_CYCLE,0,30);
+   RT2800RegisterWrite(RT2X00,RT2800_US_CYC_CNT,Reg);
+  end
+ else if RT2X00IsPCIe(RT2X00) then
+  begin
+   RT2800RegisterRead(RT2X00,RT2800_US_CYC_CNT,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_US_CYC_CNT_CLOCK_CYCLE,0,125);
+   RT2800RegisterWrite(RT2X00,RT2800_US_CYC_CNT,Reg);
+  end;  
+ 
+ RT2800RegisterRead(RT2X00,RT2800_HT_FBK_CFG0,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS0FBK,0,0);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS1FBK,4,0);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS2FBK,8,1);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS3FBK,12,2);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS4FBK,16,3);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS5FBK,20,4);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS6FBK,24,5);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG0_HTMCS7FBK,28,6);
+ RT2800RegisterWrite(RT2X00,RT2800_HT_FBK_CFG0,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_HT_FBK_CFG1,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS8FBK,0,8);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS9FBK,4,8);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS10FBK,8,9);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS11FBK,12,10);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS12FBK,16,11);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS13FBK,20,12);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS14FBK,24,13);
+ RT2X00SetRegister32(Reg,RT2800_HT_FBK_CFG1_HTMCS15FBK,28,14);
+ RT2800RegisterWrite(RT2X00,RT2800_HT_FBK_CFG1,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_LG_FBK_CFG0,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS0FBK,0,8);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS1FBK,4,8);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS2FBK,8,9);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS3FBK,12,10);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS4FBK,16,11);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS5FBK,20,12);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS6FBK,24,13);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_OFDMMCS7FBK,28,14);
+ RT2800RegisterWrite(RT2X00,RT2800_LG_FBK_CFG0,Reg);
+
+ RT2800RegisterRead(RT2X00,RT2800_LG_FBK_CFG1,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_CCKMCS0FBK,0,0);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_CCKMCS1FBK,4,0);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_CCKMCS2FBK,8,1);
+ RT2X00SetRegister32(Reg,RT2800_LG_FBK_CFG0_CCKMCS3FBK,12,2);
+ RT2800RegisterWrite(RT2X00,RT2800_LG_FBK_CFG1,Reg);
+
+ {Do not force the BA window size, we use the TXWI to set it}
+ RT2800RegisterRead(RT2X00,RT2800_AMPDU_BA_WINSIZE,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_AMPDU_BA_WINSIZE_FORCE_WINSIZE_ENABLE,5,0);
+ RT2X00SetRegister32(Reg,RT2800_AMPDU_BA_WINSIZE_FORCE_WINSIZE,0,0);
+ RT2800RegisterWrite(RT2X00,RT2800_AMPDU_BA_WINSIZE,Reg);
+
+ {We must clear the error counters. These Registers are cleared on read, so we may pass a useless variable to store the value}
+ RT2800RegisterRead(RT2X00,RT2800_RX_STA_CNT0,@Reg);
+ RT2800RegisterRead(RT2X00,RT2800_RX_STA_CNT1,@Reg);
+ RT2800RegisterRead(RT2X00,RT2800_RX_STA_CNT2,@Reg);
+ RT2800RegisterRead(RT2X00,RT2800_TX_STA_CNT0,@Reg);
+ RT2800RegisterRead(RT2X00,RT2800_TX_STA_CNT1,@Reg);
+ RT2800RegisterRead(RT2X00,RT2800_TX_STA_CNT2,@Reg);
+
+ {Setup leadtime for pre tbtt interrupt to 6ms}
+ RT2800RegisterRead(RT2X00,RT2800_INT_TIMER_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_INT_TIMER_CFG_PRE_TBTT_TIMER,0,6 shl 4);
+ RT2800RegisterWrite(RT2X00,RT2800_INT_TIMER_CFG,Reg);
+
+ {Set up channel statistics timer}
+ RT2800RegisterRead(RT2X00,RT2800_CH_TIME_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_CH_TIME_CFG_EIFS_BUSY,4,1);
+ RT2X00SetRegister32(Reg,RT2800_CH_TIME_CFG_NAV_BUSY,3,1);
+ RT2X00SetRegister32(Reg,RT2800_CH_TIME_CFG_RX_BUSY,2,1);
+ RT2X00SetRegister32(Reg,RT2800_CH_TIME_CFG_TX_BUSY,1,1);
+ RT2X00SetRegister32(Reg,RT2800_CH_TIME_CFG_TMR_EN,0,1);
+ RT2800RegisterWrite(RT2X00,RT2800_CH_TIME_CFG,Reg);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800InitializeRFCalibration(RT2X00:PRT2X00WiFiDevice;RegNo:Byte):LongWord;
+var
+ RFCSR:Byte;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize RF Calibration');
+ {$ENDIF}
+ 
+ RT2800RFCSRRead(RT2X00,RegNo,@RFCSR);
+ RT2X00SetRegister8(RFCSR,$80,7,1);
+ RT2800RFCSRWrite(RT2X00,RegNo,RFCSR);
+ Sleep(1);
+ RT2X00SetRegister8(RFCSR,$80,7,0);
+ RT2800RFCSRWrite(RT2X00,RegNo,RFCSR);
+ 
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function RT2800InitializeFrequencyCalibration(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Initialize Frequency Calibration');
+ {$ENDIF}
+
+ RT2800BBPWrite(RT2X00,142,1);
+ RT2800BBPWrite(RT2X00,143,57);
+ 
+ Result:=ERROR_SUCCESS;
+end; 
+ 
+{==============================================================================}
+
+function RT2800SetupNormalMode5xxx(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Reg:Byte;
+ Value:Word;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Setup Normal Mode 5xxx');
+ {$ENDIF}
+
+ {Turn off unused DAC1 and ADC1 to reduce power consumption}
+ RT2800BBPRead(RT2X00,138,@Reg);
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF0);
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF0_RXPATH,0) = 1 then
+  begin
+   RT2X00SetRegister8(Reg,RT2800_BBP138_RX_ADC1,1,0);
+  end; 
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF0_TXPATH,4) = 1 then
+  begin
+   RT2X00SetRegister8(Reg,RT2800_BBP138_TX_DAC1,5,1);
+  end; 
+ RT2800BBPWrite(RT2X00,138,Reg);
+    
+ RT2800RFCSRRead(RT2X00,38,@Reg);
+ RT2X00SetRegister8(Reg,RT2800_RFCSR38_RX_LO1_EN,5,0);
+ RT2800RFCSRWrite(RT2X00,38,Reg);
+    
+ RT2800RFCSRRead(RT2X00,39,@Reg);
+ RT2X00SetRegister8(Reg,RT2800_RFCSR39_RX_LO2_EN,7,0);
+ RT2800RFCSRWrite(RT2X00,39,Reg);
+    
+ RT2800BBP4MACInterfaceControl(RT2X00);
+    
+ RT2800RFCSRRead(RT2X00,30,@Reg);
+ RT2X00SetRegister8(Reg,RT2800_RFCSR30_RX_VCM,3,2);
+ RT2800RFCSRWrite(RT2X00,30,Reg);
+ 
+ Result:=ERROR_SUCCESS;
+end; 
+{==============================================================================}
+
+function RT2800GetTXMixerGain24G(RT2X00:PRT2X00WiFiDevice):Byte;
+var
+ Value:Word;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: Get TX Mixer Gain 2.4G');
+ {$ENDIF}
+ 
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then Exit;
+
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TXMIXER_GAIN_BG);
+ if (Value and $00ff) <> $00ff then
+  begin
+   Result:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXMIXER_GAIN_BG_VAL,0);
+  end;
+end;
+
+{==============================================================================}
+
+function RT2800GetTXMixerGain5G(RT2X00:PRT2X00WiFiDevice):Byte;
+var
+ Value:Word;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RT2800: Get TX Mixer Gain 5G');
+ {$ENDIF}
+ 
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then Exit;
+
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TXMIXER_GAIN_A);
+ if (Value and $00ff) <> $00ff then
+  begin
+   Result:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXMIXER_GAIN_A_VAL,0);
+  end;
+end;
+
+{==============================================================================}
+
+function RT2800LoadEfuse(RT2X00:PRT2X00WiFiDevice;Data:PWord;Size:LongWord):LongWord;
 var
  Reg:LongWord;
  Data0:Word;
@@ -2799,18 +5171,21 @@ begin
    
    {Read the EEPROM data (Apparently the data is read from end to start)}
    RT2800RegisterRead(RT2X00,Data3,@Reg);
-   Data[Offset]:=WordNtoLE(Reg);  {The returned value is in CPU order, but the EEPROM is LE}
+   PLongWord(@Data[Offset])^:=LongWordNtoLE(Reg);  {The returned value is in CPU order, but the EEPROM is LE} {Each read is 2 words (4 bytes)}
+   
    RT2800RegisterRead(RT2X00,Data2,@Reg);
-   Data[Offset + 2]:=WordNtoLE(Reg);
+   PLongWord(@Data[Offset + 2])^:=LongWordNtoLE(Reg);
+   
    RT2800RegisterRead(RT2X00,Data1,@Reg);
-   Data[Offset + 4]:=WordNtoLE(Reg);
+   PLongWord(@Data[Offset + 4])^:=LongWordNtoLE(Reg);
+   
    RT2800RegisterRead(RT2X00,Data0,@Reg);
-   Data[Offset + 6]:=WordNtoLE(Reg);
+   PLongWord(@Data[Offset + 6])^:=LongWordNtoLE(Reg);
    
    {Release lock}
    MutexUnlock(RT2X00.CSRLock);
    
-   Inc(Offset,8);
+   Inc(Offset,8); {Increment by 8 words (16 bytes)}
   end;
   
  Result:=ERROR_SUCCESS
@@ -2818,14 +5193,15 @@ end;
 
 {==============================================================================}
 
-function RT2800CheckFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWord):Boolean;
+function RT2800CheckFirmware(RT2X00:PRT2X00WiFiDevice;Data:PByte;Size:LongWord):Boolean;
 {PCI(e) and MMIO devices require firmware with a length of 8kb
  USB devices require firmware files with a length of 4kb
  Certain USB chipsets however require different firmware, which Ralink only provides attached to the original firmware file
  Thus for USB devices, firmware files have a length which is a multiple of 4kb
  The firmware for rt3290 chip also have a length which is a multiple of 4kb}
- 
+
  function RT2800CheckFirmwareCRC(Data:PByte;Size:LongWord):Boolean;
+ {rt2800_check_firmware_crc}
  var
   CRC:Word;
   FirmwareCRC:Word;
@@ -2837,7 +5213,7 @@ function RT2800CheckFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWor
   if Data = nil then Exit;
   
   {Get the firmware CRC (The last 2 bytes in the firmware array are the crc itself)}
-  FirmwareCRC:=(Data[Size - 2] shr 8) or (Data[Size - 1]);
+  FirmwareCRC:=(Data[Size - 2] shl 8) or (Data[Size - 1]);
   
   {Calculate the CRC (Use the crc ccitt algorithm)}
   CRC:=CRC16CCITT(not(0),Data,Size - 2);
@@ -2845,9 +5221,14 @@ function RT2800CheckFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWor
   {Convert from CRC-CCITT to CRC-ITU-T + bit reversion}
   CRC:=Swap(CRC);
   
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Check firmware (CRC=' + IntToHex(CRC,4) + ' FirmwareCRC=' + IntToHex(FirmwareCRC,4) + ')');
+ {$ENDIF}
+  
   Result:=(FirmwareCRC = CRC);
  end;
  
+{rt2800_check_firmware}  
 var
  Count:LongWord;
  Offset:PtrUInt;
@@ -2859,7 +5240,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.Network),'RT2800: Check firmware');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Check firmware (Data=' + IntToHex(LongWord(Data),8) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Check Firmware}
@@ -2880,14 +5261,14 @@ begin
  {Check firmware length}
  if (Size <> Count) and ((Size mod Count) <> 0) then
   begin
-   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.Network),'RT2800: Invalid firmware length (Size=' + IntToStr(Size) + ')');
+   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Invalid firmware length (Size=' + IntToStr(Size) + ')');
    Exit;
   end;
   
  {Check Chipset}
  if RT2X00IsUSB(RT2X00) and (RT2X00GetRTChip(RT2X00) <> RT2X00_RT2860) and (RT2X00GetRTChip(RT2X00) <> RT2X00_RT2872) and (RT2X00GetRTChip(RT2X00) <> RT2X00_RT3070) and ((Size div Count) = 1) then
   begin
-   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.Network),'RT2800: Firmware too short (Size=' + IntToStr(Size) + ')');
+   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Firmware too short (Size=' + IntToStr(Size) + ')');
    Exit;
   end;
  
@@ -2897,7 +5278,7 @@ begin
   begin
    if not RT2800CheckFirmwareCRC(Data + Offset,Count) then
     begin
-     if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.Network),'RT2800: Firmware CRC error (Offset=' + IntToStr(Offset) + ')');
+     if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Firmware CRC error (Offset=' + IntToStr(Offset) + ')');
      Exit;
     end;
     
@@ -2909,7 +5290,8 @@ end;
 
 {==============================================================================}
 
-function RT2800LoadFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWord):Boolean;
+function RT2800LoadFirmware(RT2X00:PRT2X00WiFiDevice;Data:PByte;Size:LongWord):Boolean;
+{rt2800_load_firmware}
 var
  Reg:LongWord;
  Busy:LongWord;
@@ -2921,7 +5303,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.Network),'RT2800: Load firmware');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Load firmware (Data=' + IntToHex(LongWord(Data),8) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Check Firmware}
@@ -2933,7 +5315,7 @@ begin
    {Enable WLAN}
    if not RT2800EnableRT3290WLAN(RT2X00) then
     begin
-     if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.Network),'RT2800: Enable RT3290WLAN failed');
+     if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Enable RT3290WLAN failed');
      Exit;
     end;
   end;
@@ -2944,7 +5326,7 @@ begin
  {Wait for the hardware to stablize}
  if not RT2800WaitCSRReady(RT2X00) then
   begin
-   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.Network),'RT2800: Wait CSR ready failed');
+   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Wait CSR ready failed');
    Exit;
   end;
   
@@ -2966,7 +5348,11 @@ begin
  RT2800DisableWPDMA(RT2X00);
  
  {Write the firmware}
- RT2800WriteFirmware(RT2X00,Data,Size);
+ if not RT2800WriteFirmware(RT2X00,Data,Size) then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Write firmware failed');
+   Exit;
+  end;
  
  {Wait for the device to stabilize}
  Busy:=0;
@@ -2981,7 +5367,7 @@ begin
   end;
  if Busy >= RT2X00_REGISTER_BUSY_COUNT then
   begin
-   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.Network),'RT2800: PBF system register not ready');
+   if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: PBF system register not ready');
    Exit;
   end;
  
@@ -2996,7 +5382,6 @@ begin
    RT2800RegisterWrite(RT2X00,RT2800_H2M_INT_SRC,0);
    RT2800MCURequest(RT2X00,RT2800_MCU_BOOT_SIGNAL,0,0,0);
   end; 
- 
  Sleep(1);
  
  Result:=True;
@@ -3004,7 +5389,1645 @@ end;
  
 {==============================================================================}
  
-function RT2800WaitCSRReady(RT2X00:PRT2X00NetworkDevice):Boolean;
+function RT2800Configure(RT2X00:PRT2X00WiFiDevice;Configuration:PRT2X00ChannelConfiguration;Flags:LongWord):LongWord;
+{rt2800_config}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Flags=' + IntToHex(Flags,8) + ')');
+ {$ENDIF}
+
+ {Check Configuration}
+ if Configuration = nil then Exit;
+ 
+ {Always recalculate LNA gain before changing configuration}
+ RT2800ConfigureLNAGain(RT2X00,Configuration);
+ 
+ {Check Flags}
+ if (Flags and IEEE80211_CONF_CHANGE_CHANNEL) <> 0 then
+  begin
+   {Configure Channel}
+   RT2800ConfigureChannel(RT2X00,@Configuration.RFChannel,@Configuration.Channel);
+   
+   {Configure TX Power}
+   RT2800ConfigureTXPower(RT2X00,RT2X00.WiFi.Configuration.ChannelDefinition.Channel,RT2X00.WiFi.Configuration.PowerLevel);
+  end;
+ 
+ if (Flags and IEEE80211_CONF_CHANGE_POWER) <> 0 then
+  begin
+   {Configure TX Power}
+   RT2800ConfigureTXPower(RT2X00,RT2X00.WiFi.Configuration.ChannelDefinition.Channel,RT2X00.WiFi.Configuration.PowerLevel);
+  end;
+  
+ if (Flags and IEEE80211_CONF_CHANGE_RETRY_LIMITS) <> 0 then
+  begin
+   {Configure Retry Limit}
+   RT2800ConfigureRetryLimit(RT2X00);
+  end;
+  
+ if (Flags and IEEE80211_CONF_CHANGE_PS) <> 0 then
+  begin
+   {Configure Powersave}
+   RT2800ConfigurePowersave(RT2X00);
+  end;
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800ConfigureLNAGain(RT2X00:PRT2X00WiFiDevice;Configuration:PRT2X00ChannelConfiguration):LongWord;
+{rt2800_config_lna_gain}
+var
+ Value:Word;
+ LNAGain:Word;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure LNA gain');
+ {$ENDIF}
+
+ {Check Configuration}
+ if Configuration = nil then Exit;
+
+ {Check Channel}
+ if Configuration.RFChannel.Channel <= 14 then
+  begin
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_LNA);
+   LNAGain:=RT2X00GetRegister16(Value,RT2800_EEPROM_LNA_BG,0);
+  end
+ else if Configuration.RFChannel.Channel <= 64 then 
+  begin
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_LNA);
+   LNAGain:=RT2X00GetRegister16(Value,RT2800_EEPROM_LNA_A0,8);
+  end
+ else if Configuration.RFChannel.Channel <= 128 then  
+  begin
+   if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+    begin
+     Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_EXT_LNA2);
+     LNAGain:=RT2X00GetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A1,0);
+    end
+   else 
+    begin
+     Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_BG2);
+     LNAGain:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG2_LNA_A1,8);
+    end; 
+  end
+ else
+  begin
+   if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+    begin
+     Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_EXT_LNA2);
+     LNAGain:=RT2X00GetRegister16(Value,RT2800_EEPROM_EXT_LNA2_A2,8);
+    end        
+   else
+    begin    
+     Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_A2);
+     LNAGain:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A2_LNA_A2,8);
+    end;        
+  end;  
+ 
+ {Save LNA gain}
+ RT2X00.LNAGain:=LNAGain;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (LNAGain=' + IntToStr(RT2X00.LNAGain) + ')');
+ {$ENDIF}
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureChannel(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel}
+var
+ BBP:Byte;
+ RFCSR:Byte;
+ Reg:LongWord;
+ TXPin:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+ 
+ {Adjust Default Power}
+ Channel.DefaultPower1:=RT2800TXPowerToDevice(RT2X00,RFChannel.Channel,Channel.DefaultPower1);
+ Channel.DefaultPower2:=RT2800TXPowerToDevice(RT2X00,RFChannel.Channel,Channel.DefaultPower2);
+ if RT2X00.Antenna.TXChainNo > 2 then
+  begin
+   Channel.DefaultPower3:=RT2800TXPowerToDevice(RT2X00,RFChannel.Channel,Channel.DefaultPower3);
+  end;
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.DefaultPower1=' + IntToStr(Channel.DefaultPower1) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.DefaultPower2=' + IntToStr(Channel.DefaultPower2) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.DefaultPower3=' + IntToStr(Channel.DefaultPower3) + ')');
+ {$ENDIF}
+ 
+ {Check RF Chip}
+ case RT2X00GetRFChip(RT2X00) of
+  RT2800_RF2020,RT2800_RF3020,RT2800_RF3021,RT2800_RF3022,RT2800_RF3320:begin
+    RT2800ConfigureChannelRF3xxx(RT2X00,RFChannel,Channel);
+   end; 
+  RT2800_RF3052:begin
+    RT2800ConfigureChannelRF3052(RT2X00,RFChannel,Channel);
+   end;
+  RT2800_RF3053:begin
+    RT2800ConfigureChannelRF3053(RT2X00,RFChannel,Channel);
+   end; 
+  RT2800_RF3290:begin
+    RT2800ConfigureChannelRF3290(RT2X00,RFChannel,Channel);
+   end; 
+  RT2800_RF3322:begin
+    RT2800ConfigureChannelRF3322(RT2X00,RFChannel,Channel);
+   end; 
+  RT2800_RF3070,RT2800_RF5360,RT2800_RF5362,RT2800_RF5370,RT2800_RF5372,RT2800_RF5390,RT2800_RF5392:begin
+    RT2800ConfigureChannelRF53xx(RT2X00,RFChannel,Channel);
+   end; 
+  RT2800_RF5592:begin
+    RT2800ConfigureChannelRF55xx(RT2X00,RFChannel,Channel);
+   end; 
+  else
+   begin
+    RT2800ConfigureChannelRF2xxx(RT2X00,RFChannel,Channel);
+   end; 
+ end;  
+ 
+ if (RT2X00GetRFChip(RT2X00) = RT2800_RF3070) or (RT2X00GetRFChip(RT2X00) = RT2800_RF3290) or (RT2X00GetRFChip(RT2X00) = RT2800_RF3322)
+  or (RT2X00GetRFChip(RT2X00) = RT2800_RF5360) or (RT2X00GetRFChip(RT2X00) = RT2800_RF5362) or (RT2X00GetRFChip(RT2X00) = RT2800_RF5370)
+  or (RT2X00GetRFChip(RT2X00) = RT2800_RF5372) or (RT2X00GetRFChip(RT2X00) = RT2800_RF5390) or (RT2X00GetRFChip(RT2X00) = RT2800_RF5392) then
+  begin      
+   RT2800RFCSRRead(RT2X00,30,@RFCSR);
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR30_TX_H20M,1,0);
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR30_RX_H20M,2,0);
+   RT2800RFCSRWrite(RT2X00,30,RFCSR);
+   
+   RT2800RFCSRRead(RT2X00,3,@RFCSR);
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR3_VCOCAL_EN,7,1);
+   RT2800RFCSRWrite(RT2X00,3,RFCSR);
+  end;      
+
+ {Change BBP settings}
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3352 then
+  begin
+  RT2800BBPWrite(RT2X00,27,$0);
+  RT2800BBPWrite(RT2X00,66,$26 + RT2X00.LNAGain);
+  RT2800BBPWrite(RT2X00,27,$20);
+  RT2800BBPWrite(RT2X00,66,$26 + RT2X00.LNAGain);
+  end 
+ else if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   if RFChannel.Channel > 14 then
+    begin
+     {Disable CCK Packet detection on 5GHz}
+     RT2800BBPWrite(RT2X00,70,$00);
+    end 
+   else 
+    begin
+     RT2800BBPWrite(RT2X00,70,$0a);
+    end; 
+   
+   if WiFiConfigurationIsHT40(@RT2X00.WiFi.Configuration) then
+    begin
+     RT2800BBPWrite(RT2X00,105,$04);
+    end 
+   else
+    begin
+     RT2800BBPWrite(RT2X00,105,$34);
+    end; 
+   
+   RT2800BBPWrite(RT2X00,62,$37 - RT2X00.LNAGain);
+   RT2800BBPWrite(RT2X00,63,$37 - RT2X00.LNAGain);
+   RT2800BBPWrite(RT2X00,64,$37 - RT2X00.LNAGain);
+   RT2800BBPWrite(RT2X00,77,$98);
+  end 
+ else
+  begin
+   RT2800BBPWrite(RT2X00,62,$37 - RT2X00.LNAGain);
+   RT2800BBPWrite(RT2X00,63,$37 - RT2X00.LNAGain);
+   RT2800BBPWrite(RT2X00,64,$37 - RT2X00.LNAGain);
+   RT2800BBPWrite(RT2X00,86,0);
+  end; 
+
+ if RFChannel.Channel <= 14 then
+  begin
+   if (RT2X00GetRTChip(RT2X00) <> RT2X00_RT5390) and (RT2X00GetRTChip(RT2X00) <> RT2X00_RT5392) then
+    begin
+     if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_EXTERNAL_LNA_BG) then
+      begin
+       RT2800BBPWrite(RT2X00,82,$62);
+       RT2800BBPWrite(RT2X00,75,$46);
+      end 
+     else
+      begin
+       if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+        begin
+         RT2800BBPWrite(RT2X00,82,$62);
+        end 
+       else
+        begin
+         RT2800BBPWrite(RT2X00,82,$84);
+        end; 
+       
+       RT2800BBPWrite(RT2X00,75,$50);
+      end;
+      
+     if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+      begin
+       RT2800BBPWrite(RT2X00,83,$8a);
+      end; 
+    end;
+  end
+ else 
+  begin
+   if RT2X00GetRTChip(RT2X00) = RT2X00_RT3572 then
+    begin
+     RT2800BBPWrite(RT2X00,82,$94);
+    end 
+   else if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+    begin
+     RT2800BBPWrite(RT2X00,82,$82);
+    end 
+   else
+    begin
+     RT2800BBPWrite(RT2X00,82,$f2);
+    end; 
+   
+   if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+    begin
+     RT2800BBPWrite(RT2X00,83,$9a);
+    end; 
+   
+   if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_EXTERNAL_LNA_A) then
+    begin
+     RT2800BBPWrite(RT2X00,75,$46);
+    end 
+   else
+    begin
+     RT2800BBPWrite(RT2X00,75,$50);
+    end; 
+  end;
+
+ RT2800RegisterRead(RT2X00,RT2800_TX_BAND_CFG,@Reg);
+ if WiFiConfigurationIsHT40Minus(@RT2X00.WiFi.Configuration) then RT2X00SetRegister32(Reg,RT2800_TX_BAND_CFG_HT40_MINUS,0,1) else RT2X00SetRegister32(Reg,RT2800_TX_BAND_CFG_HT40_MINUS,0,0);
+ if RFChannel.Channel > 14 then RT2X00SetRegister32(Reg,RT2800_TX_BAND_CFG_A,1,1) else RT2X00SetRegister32(Reg,RT2800_TX_BAND_CFG_A,1,0);
+ if RFChannel.Channel <= 14 then RT2X00SetRegister32(Reg,RT2800_TX_BAND_CFG_BG,2,1) else RT2X00SetRegister32(Reg,RT2800_TX_BAND_CFG_BG,2,0);
+ RT2800RegisterWrite(RT2X00,RT2800_TX_BAND_CFG,Reg);
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3572 then
+  begin
+   RT2800RFCSRWrite(RT2X00,8,0);
+  end; 
+
+ TXPin:=0;
+
+ case RT2X00.Antenna.TXChainNo of
+  3:begin
+    {Turn on tertiary PAs}
+    if RFChannel.Channel > 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A2_EN,24,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A2_EN,24,0);
+    if RFChannel.Channel <= 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G2_EN,25,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G2_EN,25,0);
+    {Turn on secondary PAs}
+    if RFChannel.Channel > 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A1_EN,2,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A1_EN,2,0);
+    if RFChannel.Channel <= 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G1_EN,3,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G1_EN,3,0);
+    {Turn on primary PAs}
+    if RFChannel.Channel > 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A0_EN,0,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A0_EN,0,0);
+    if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+     begin
+      RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,1);
+     end 
+    else
+     begin
+      if RFChannel.Channel <= 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,0);
+     end; 
+   end;
+  2:begin
+    {Turn on secondary PAs}
+    if RFChannel.Channel > 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A1_EN,2,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A1_EN,2,0);
+    if RFChannel.Channel <= 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G1_EN,3,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G1_EN,3,0);
+    {Turn on primary PAs}
+    if RFChannel.Channel > 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A0_EN,0,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A0_EN,0,0);
+    if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+     begin
+      RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,1);
+     end 
+    else
+     begin
+      if RFChannel.Channel <= 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,0);
+     end; 
+   end; 
+  1:begin
+    {Turn on primary PAs}
+    if RFChannel.Channel > 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A0_EN,0,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_A0_EN,0,0);
+    if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+     begin
+      RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,1);
+     end 
+    else
+     begin
+      if RFChannel.Channel <= 14 then RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,1) else RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_PA_PE_G0_EN,1,0);
+     end; 
+   end; 
+ end; 
+
+ case RT2X00.Antenna.RXChainNo of
+  3:begin
+    {Turn on tertiary LNAs}
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_A2_EN,28,1);
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_G2_EN,29,1);
+    {Turn on secondary LNAs}
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_A1_EN,10,1);
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_G1_EN,11,1);
+    {Turn on primary LNAs}
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_A0_EN,8,1);
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_G0_EN,9,1);
+   end; 
+  2:begin
+    {Turn on secondary LNAs}
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_A1_EN,10,1);
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_G1_EN,11,1);
+    {Turn on primary LNAs}
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_A0_EN,8,1);
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_G0_EN,9,1);
+   end; 
+  1:begin
+    {Turn on primary LNAs}
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_A0_EN,8,1);
+    RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_LNA_PE_G0_EN,9,1);
+   end; 
+ end; 
+
+ RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_RFTR_EN,16,1);
+ RT2X00SetRegister32(TXPin,RT2800_TX_PIN_CFG_TRSW_EN,18,1);
+
+ RT2800RegisterWrite(RT2X00,RT2800_TX_PIN_CFG,TXPin);
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3572 then
+  begin
+   RT2800RFCSRWrite(RT2X00,8,$80);
+   
+   {AGC init}
+   if RFChannel.Channel <= 14 then
+    begin
+     Reg:=$1c + (2 * RT2X00.LNAGain);
+    end 
+   else
+    begin
+     Reg:=$22 + ((RT2X00.LNAGain * 5) div 3);
+    end; 
+   
+   RT2800BBPWriteRXChain(RT2X00,66,Reg);
+  end;
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   RT2800RegisterRead(RT2X00,RT2800_GPIO_CTRL,@Reg);
+ 
+   {Band selection}
+   if RT2X00IsUSB(RT2X00) or RT2X00IsPCIe(RT2X00) then
+    begin
+     {GPIO #8 controls all paths}
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_DIR8,24,0);
+     if RFChannel.Channel <= 14 then
+      begin
+       RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL8,16,1);
+      end 
+     else
+      begin
+       RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL8,16,0);
+      end; 
+    end;  
+ 
+   {LNA PE control}
+   if RT2X00IsUSB(RT2X00) then
+    begin
+     {GPIO #4 controls PE0 and PE1,GPIO #7 controls PE2}
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_DIR4,12,0);
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_DIR7,15,0);
+     
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL4,4,1);
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL7,7,1);
+    end 
+   else if RT2X00IsPCIe(RT2X00) then
+    begin
+     {GPIO #4 controls PE0, PE1 and PE2}
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_DIR4,12,0);
+     RT2X00SetRegister32(Reg,RT2800_GPIO_CTRL_VAL4,4,1);
+    end; 
+ 
+   RT2800RegisterWrite(RT2X00,RT2800_GPIO_CTRL,Reg);
+ 
+   {AGC init}
+   if RFChannel.Channel <= 14 then
+    begin
+     Reg:=$1c + 2 * RT2X00.LNAGain;
+    end 
+   else
+    begin
+     Reg:=$22 + ((RT2X00.LNAGain * 5) div 3);
+    end; 
+ 
+   RT2800BBPWriteRXChain(RT2X00,66,Reg); 
+ 
+   MicrosecondDelay(1500);
+  end; 
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5592 then
+  begin
+   RT2800BBPWrite(RT2X00,195,141);
+   if WiFiConfigurationIsHT40(@RT2X00.WiFi.Configuration) then RT2800BBPWrite(RT2X00,196,$10) else RT2800BBPWrite(RT2X00,196,$1a);
+   
+   {AGC init}
+   if RFChannel.Channel <= 14 then Reg:=$1c + 2 * RT2X00.LNAGain else Reg:=$24 + 2 * RT2X00.LNAGain;
+   RT2800BBPWriteRXChain(RT2X00,66,Reg);
+   
+   RT2800CalibrateIQ(RT2X00,RFChannel.Channel);
+  end; 
+
+ RT2800BBPRead(RT2X00,4,@BBP);
+ if WiFiConfigurationIsHT40(@RT2X00.WiFi.Configuration) then RT2X00SetRegister8(BBP,RT2800_BBP4_BANDWIDTH,3,2) else RT2X00SetRegister8(BBP,RT2800_BBP4_BANDWIDTH,3,0);
+ RT2800BBPWrite(RT2X00,4,BBP);
+
+ RT2800BBPRead(RT2X00,3,@BBP);
+ if WiFiConfigurationIsHT40Minus(@RT2X00.WiFi.Configuration) then RT2X00SetRegister8(BBP,RT2800_BBP3_HT40_MINUS,5,1) else RT2X00SetRegister8(BBP,RT2800_BBP3_HT40_MINUS,5,0);
+ RT2800BBPWrite(RT2X00,3,BBP);
+
+ if RT2X00IsRTChipRevision(RT2X00,RT2X00_RT2860,RT2800_REV_RT2860C) then
+  begin
+   if WiFiConfigurationIsHT40(@RT2X00.WiFi.Configuration) then
+    begin
+     RT2800BBPWrite(RT2X00,69,$1a);
+     RT2800BBPWrite(RT2X00,70,$0a);
+     RT2800BBPWrite(RT2X00,73,$16);
+    end 
+   else
+    begin
+     RT2800BBPWrite(RT2X00,69,$16);
+     RT2800BBPWrite(RT2X00,70,$08);
+     RT2800BBPWrite(RT2X00,73,$11);
+    end; 
+  end; 
+
+ Sleep(1);
+
+ {Clear channel statistic counters}
+ RT2800RegisterRead(RT2X00,RT2800_CH_IDLE_STA,@Reg);
+ RT2800RegisterRead(RT2X00,RT2800_CH_BUSY_STA,@Reg);
+ RT2800RegisterRead(RT2X00,RT2800_CH_BUSY_STA_SEC,@Reg);
+
+ {Clear update flag}
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3352 then
+  begin
+   RT2800BBPRead(RT2X00,49,@BBP);
+   RT2X00SetRegister8(BBP,RT2800_BBP49_UPDATE_FLAG,0,0);
+   RT2800BBPWrite(RT2X00,49,BBP);
+  end; 
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+
+function RT2800ConfigureChannelRF2xxx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf2xxx}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF2xxx');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_channel_rf2xxx
+end;
+ 
+{==============================================================================}
+
+function RT2800ConfigureChannelRF3xxx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf3xxx}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF3xxx');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_channel_rf3xxx
+end;
+ 
+{==============================================================================}
+
+function RT2800ConfigureChannelRF3052(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf3052}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF3052');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_channel_rf3052
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureChannelRF3053(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf3053}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF3053');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_channel_rf3053
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureChannelRF3290(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf3290}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF3290');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_channel_rf3290
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureChannelRF3322(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf3322}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF3322');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_channel_rf3322
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureChannelRF53xx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf53xx}
+const
+ {R55/R59 value array of channel 1~14}
+ R55_BT_REV:array[0..13] of Byte = ($83, $83, $83, $73, $73, $63, $53, $53, $53, $43, $43, $43, $43, $43);
+ R59_BT_REV:array[0..13] of Byte = ($0e, $0e, $0e, $0e, $0e, $0b, $0a, $09, $07, $07, $07, $07, $07, $07);
+ R59_BT:array[0..13] of Byte = ($8b, $8b, $8b, $8b, $8b, $8b, $8b, $8a, $89, $88, $88, $86, $85, $84);
+ R55_NONBT_REV:array[0..13] of Byte = ($23, $23, $23, $23, $13, $13, $03, $03, $03, $03, $03, $03, $03, $03);
+ R59_NONBT_REV:array[0..13] of Byte = ($07, $07, $07, $07, $07, $07, $07, $07, $07, $07, $06, $05, $04, $04);
+ R59_NON_BT:array[0..13] of Byte = ($8f, $8f, $8f, $8f, $8f, $8f, $8f, $8d, $8a, $88, $88, $87, $87, $86);
+
+var
+ RFCSR:Byte;
+ Index:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF53xx');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ RT2800RFCSRWrite(RT2X00,8,RFChannel.RF1);
+ RT2800RFCSRWrite(RT2X00,9,RFChannel.RF3);
+ RT2800RFCSRRead(RT2X00,11,@RFCSR);
+ RT2X00SetRegister8(RFCSR,RT2800_RFCSR11_R,0,RFChannel.RF2);
+ RT2800RFCSRWrite(RT2X00,11,RFCSR);
+
+ RT2800RFCSRRead(RT2X00,49,@RFCSR);
+ if Channel.DefaultPower1 > RT2800_POWER_BOUND then
+  begin
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR49_TX,0,RT2800_POWER_BOUND);
+  end 
+ else
+  begin
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR49_TX,0,Channel.DefaultPower1);
+  end; 
+ RT2800RFCSRWrite(RT2X00,49,RFCSR);
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.DefaultPower1=' + IntToStr(Channel.DefaultPower1) + ')');
+ {$ENDIF}
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5392 then
+  begin
+   RT2800RFCSRRead(RT2X00,50,@RFCSR);
+   if Channel.DefaultPower2 > RT2800_POWER_BOUND then
+    begin
+     RT2X00SetRegister8(RFCSR,RT2800_RFCSR50_TX,0,RT2800_POWER_BOUND);
+    end 
+   else
+    begin
+     RT2X00SetRegister8(RFCSR,RT2800_RFCSR50_TX,0,Channel.DefaultPower2);
+    end; 
+   RT2800RFCSRWrite(RT2X00,50,RFCSR);
+   {$IFDEF RT2800USB_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.DefaultPower2=' + IntToStr(Channel.DefaultPower2) + ')');
+   {$ENDIF}
+  end; 
+
+ RT2800RFCSRRead(RT2X00,1,@RFCSR);
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT5392 then
+  begin
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR1_RX1_PD,4,1);
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR1_TX1_PD,5,1);
+  end; 
+ RT2X00SetRegister8(RFCSR,RT2800_RFCSR1_RF_BLOCK_EN,0,1);
+ RT2X00SetRegister8(RFCSR,RT2800_RFCSR1_PLL_PD,1,1);
+ RT2X00SetRegister8(RFCSR,RT2800_RFCSR1_RX0_PD,2,1);
+ RT2X00SetRegister8(RFCSR,RT2800_RFCSR1_TX0_PD,3,1);
+ RT2800RFCSRWrite(RT2X00,1,RFCSR);
+
+ RT2800AdjustFrequencyOffset(RT2X00);
+
+ if RFChannel.Channel <= 14 then
+  begin
+   Index:=RFChannel.Channel - 1;
+   {$IFDEF RT2800USB_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel=' + IntToStr(RFChannel.Channel) + ' Index=' + IntToStr(Index) + ')');
+   {$ENDIF}
+   
+   if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+    begin
+     if RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F) then
+      begin
+       RT2800RFCSRWrite(RT2X00,55,R55_BT_REV[Index]);
+       RT2800RFCSRWrite(RT2X00,59,R59_BT_REV[Index]);
+      end
+     else
+      begin
+       RT2800RFCSRWrite(RT2X00,59,R59_BT[Index]);
+      end;
+    end 
+   else
+    begin
+     if RT2X00IsRTChipRevisionGTE(RT2X00,RT2X00_RT5390,RT2800_REV_RT5390F) then
+      begin
+       RT2800RFCSRWrite(RT2X00,55,R55_NONBT_REV[Index]);
+       RT2800RFCSRWrite(RT2X00,59,R59_NONBT_REV[Index]);
+      end
+     else if (RT2X00GetRTChip(RT2X00) = RT2X00_RT5390) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT5392) then
+      begin
+       RT2800RFCSRWrite(RT2X00,59,R59_NON_BT[Index]);
+      end; 
+    end;
+  end;
+ 
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureChannelRF55xx(RT2X00:PRT2X00WiFiDevice;RFChannel:PRT2X00RFChannel;Channel:PRT2X00Channel):LongWord;
+{rt2800_config_channel_rf55xx}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Channel RF55xx');
+ {$ENDIF}
+
+ {Check Channel}
+ if RFChannel = nil then Exit;
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_channel_rf55xx
+end;
+ 
+{==============================================================================}
+
+function RT2800ConfigureTXPower(RT2X00:PRT2X00WiFiDevice;Channel:PIEEE80211Channel;PowerLevel:LongInt):LongWord;
+{rt2800_config_txpower}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure TX Power');
+ {$ENDIF}
+
+ {Check Channel}
+ if Channel = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.Band=' + IntToStr(Channel.Band) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.CenterFrequency=' + IntToStr(Channel.CenterFrequency) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.HardwareChannel=' + IntToStr(Channel.HardwareChannel) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.Flags=' + IntToHex(Channel.Flags,8) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.MaxAntennaGain=' + IntToStr(Channel.MaxAntennaGain) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.MaxPower=' + IntToStr(Channel.MaxPower) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.MaxRegPower=' + IntToStr(Channel.MaxRegPower) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Channel.BeaconFound=' + BoolToStr(Channel.BeaconFound) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (PowerLevel=' + IntToStr(PowerLevel) + ')');
+ {$ENDIF}
+ 
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   Result:=RT2800ConfigureTXPowerRT3593(RT2X00,Channel,PowerLevel);
+  end 
+ else
+  begin
+   Result:=RT2800ConfigureTXPowerRT28xx(RT2X00,Channel,PowerLevel);
+  end; 
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureTXPowerRT28xx(RT2X00:PRT2X00WiFiDevice;Channel:PIEEE80211Channel;PowerLevel:LongInt):LongWord;
+{We configure transmit power using MAC TX_PWR_CFG_(0,...,N) registers and
+ BBP R1 register. TX_PWR_CFG_X allow to configure per rate TX power values,
+ 4 bits for each rate (tune from 0 to 15 dBm). BBP_R1 controls transmit power
+ for all rates, but allow to set only 4 discrete values: -12, -6, 0 and 6 dBm.
+ Reference per rate transmit power values are located in the EEPROM at
+ EEPROM_TXPOWER_BYRATE offset. We adjust them and BBP R1 settings according to
+ current conditions (i.e. band, bandwidth, temperature, user settings)}
+
+{rt2800_config_txpower_rt28xx}
+var
+ Reg1:Byte;
+ TXPower:Byte;
+ Reg:LongWord;
+ Value:Word;
+ Offset:LongWord;
+ Count:LongWord;
+ IsRateB:LongWord;
+ Delta:LongInt;
+ PowerControl:LongWord;
+ Band:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure TX Power RT28xx');
+ {$ENDIF}
+
+ {Check Channel}
+ if Channel = nil then Exit;
+
+ Band:=Channel.Band;
+ 
+ {Calculate HT40 compensation. For 40MHz we need to add or subtract value read from EEPROM (different for 2GHz and for 5GHz)}
+ Delta:=RT2800GetTXPowerBandwidthCompensation(RT2X00,Band);
+
+ {Calculate temperature compensation. Depends on measurement of current TSSI (Transmitter Signal Strength Indication) we know TX power (due to
+  temperature or maybe other factors) is smaller or bigger than expected. We adjust it, based on TSSI reference and boundaries values provided in EEPROM.}
+ case RT2X00GetRTChip(RT2X00) of
+  RT2X00_RT2860,RT2X00_RT2872,RT2X00_RT2883,RT2X00_RT3070,RT2X00_RT3071,RT2X00_RT3090,RT2X00_RT3572:begin
+    Delta:=Delta + RT2800GetGainCalibrationDelta(RT2X00);
+   end;
+  else
+   begin
+    {TODO: temperature compensation code for other chips}
+   end;
+ end;  
+ 
+ {Decrease power according to user settings, on devices with unknown maximum tx power. For other devices we take user power_level into consideration on RT2800CompensateTXPower}
+ Delta:=Delta + RT2800GetTXPowerRegulatoryDelta(RT2X00,PowerLevel,Channel.MaxPower);
+ 
+ {BBP_R1 controls TX power for all rates, it allow to set the following gains -12, -6, 0, +6 dBm by setting values 2, 1, 0, 3 respectively.
+  TODO: we do not use +6 dBm option to do not increase power beyond regulatory limit, however this could be utilized for devices with CAPABILITY_POWER_LIMIT}
+ if Delta <= -12 then
+  begin
+   PowerControl:=2;
+   Delta:=Delta + 12;
+  end
+ else if Delta <= -6 then
+  begin
+   PowerControl:=1;
+   Delta:=Delta + 6;
+  end
+ else 
+  begin
+   PowerControl:=0;
+  end; 
+ RT2800BBPRead(RT2X00,1,@Reg1);
+ RT2X00SetRegister8(Reg1,RT2800_BBP1_TX_POWER_CTRL,0,PowerControl);
+ RT2800BBPWrite(RT2X00,1,Reg1);
+
+ Offset:=RT2800_TX_PWR_CFG_0;
+  
+ Count:=0;
+ while Count < RT2800_EEPROM_TXPOWER_BYRATE_SIZE do
+  begin
+   {just to be safe}
+   if Offset > RT2800_TX_PWR_CFG_4 then Break;
+   
+   RT2800RegisterRead(RT2X00,Offset,@Reg);
+   
+   {read the next four TXPower values}
+   Value:=RT2800GetEeprom16Array(RT2X00,RT2800_EEPROM_TXPOWER_BYRATE,Count);
+   
+   if Count <> 0 then IsRateB:=0 else IsRateB:=1;
+   
+   {TX_PWR_CFG_0: 1MBS, TX_PWR_CFG_1: 24MBS,
+    TX_PWR_CFG_2: MCS4, TX_PWR_CFG_3: MCS12,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE0,0);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE0,0,TXPower);
+   
+   {TX_PWR_CFG_0: 2MBS, TX_PWR_CFG_1: 36MBS,
+    TX_PWR_CFG_2: MCS5, TX_PWR_CFG_3: MCS13,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE1,4);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE1,4,TXPower);
+   
+   {TX_PWR_CFG_0: 5.5MBS, TX_PWR_CFG_1: 48MBS,
+    TX_PWR_CFG_2: MCS6,  TX_PWR_CFG_3: MCS14,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE2,8);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE2,8,TXPower);
+   
+   {TX_PWR_CFG_0: 11MBS, TX_PWR_CFG_1: 54MBS,
+    TX_PWR_CFG_2: MCS7,  TX_PWR_CFG_3: MCS15,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE3,12);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE3,12,TXPower);
+   
+   {read the next four txpower values}
+   Value:=RT2800GetEeprom16Array(RT2X00,RT2800_EEPROM_TXPOWER_BYRATE,Count + 1);
+   
+   IsRateB:=0;
+   
+   {TX_PWR_CFG_0: 6MBS, TX_PWR_CFG_1: MCS0,
+    TX_PWR_CFG_2: MCS8, TX_PWR_CFG_3: unknown,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE0,0);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE4,16,TXPower);
+   
+   {TX_PWR_CFG_0: 9MBS, TX_PWR_CFG_1: MCS1,
+    TX_PWR_CFG_2: MCS9, TX_PWR_CFG_3: unknown,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE1,4);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE5,20,TXPower);
+   
+   {TX_PWR_CFG_0: 12MBS, TX_PWR_CFG_1: MCS2,
+    TX_PWR_CFG_2: MCS10, TX_PWR_CFG_3: unknown,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE2,8);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE6,24,TXPower);
+   
+   {TX_PWR_CFG_0: 18MBS, TX_PWR_CFG_1: MCS3,
+    TX_PWR_CFG_2: MCS11, TX_PWR_CFG_3: unknown,
+    TX_PWR_CFG_4: unknown}
+   TXPower:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE3,12);
+   TXPower:=RT2800CompensateTXPower(RT2X00,IsRateB,Band,PowerLevel,TXPower,Delta);
+   RT2x00SetRegister32(Reg,RT2800_TX_PWR_CFG_RATE7,28,TXPower);
+   
+   RT2800RegisterWrite(RT2X00,Offset,Reg);
+   
+   {next TX_PWR_CFG register}
+   Offset:=Offset + 4;
+   
+   Inc(Count,2);
+  end; 
+  
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+
+function RT2800ConfigureTXPowerRT3593(RT2X00:PRT2X00WiFiDevice;Channel:PIEEE80211Channel;PowerLevel:LongInt):LongWord;
+{rt2800_config_txpower_rt3593}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure TX Power RT3593');
+ {$ENDIF}
+
+ {Check Channel}
+ if Channel = nil then Exit;
+
+ //To Do //rt2800_config_txpower_rt3593
+end;
+
+{==============================================================================}
+
+function RT2800ConfigureRetryLimit(RT2X00:PRT2X00WiFiDevice):LongWord;
+{rt2800_config_retry_limit}
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Retry Limit');
+ {$ENDIF}
+
+ RT2800RegisterRead(RT2X00,RT2800_TX_RTY_CFG,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_SHORT_RTY_LIMIT,0,RT2X00.WiFi.Configuration.ShortFrameMaxTXCount);
+ RT2X00SetRegister32(Reg,RT2800_TX_RTY_CFG_LONG_RTY_LIMIT,8,RT2X00.WiFi.Configuration.LongFrameMaxTXCount);
+ RT2800RegisterWrite(RT2X00,RT2800_TX_RTY_CFG,Reg);
+
+ Result:=ERROR_SUCCESS;    
+end;
+ 
+{==============================================================================}
+
+function RT2800ConfigurePowersave(RT2X00:PRT2X00WiFiDevice):LongWord;
+{rt2800_config_ps}
+var
+ Reg:LongWord;
+ State:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Powersave');
+ {$ENDIF}
+
+ {Check Flags}
+ if (RT2X00.WiFi.Configuration.Flags and IEEE80211_CONF_PS) <> 0 then State:=RT2X00_STATE_SLEEP else State:=RT2X00_STATE_AWAKE;
+ 
+ if State = RT2X00_STATE_SLEEP then
+  begin
+   RT2800RegisterWrite(RT2X00,RT2800_AUTOWAKEUP_CFG,0);
+   
+   RT2800RegisterRead(RT2X00,RT2800_AUTOWAKEUP_CFG,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_AUTOWAKEUP_CFG_AUTO_LEAD_TIME,0,5);
+   RT2X00SetRegister32(Reg,RT2800_AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE,8,RT2X00.WiFi.Configuration.ListenInterval - 1);
+   RT2X00SetRegister32(Reg,RT2800_AUTOWAKEUP_CFG_AUTOWAKE,15,1);
+   RT2800RegisterWrite(RT2X00,RT2800_AUTOWAKEUP_CFG,Reg);
+   
+   if Assigned(RT2X00.SetState) then
+    begin
+     RT2X00.SetState(RT2X00,State);
+    end;
+  end 
+ else
+  begin 
+   RT2800RegisterRead(RT2X00,RT2800_AUTOWAKEUP_CFG,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_AUTOWAKEUP_CFG_AUTO_LEAD_TIME,0,0);
+   RT2X00SetRegister32(Reg,RT2800_AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE,8,0);
+   RT2X00SetRegister32(Reg,RT2800_AUTOWAKEUP_CFG_AUTOWAKE,15,0);
+   RT2800RegisterWrite(RT2X00,RT2800_AUTOWAKEUP_CFG,Reg);
+   
+   if Assigned(RT2X00.SetState) then
+    begin
+     RT2X00.SetState(RT2X00,State);
+    end;
+  end; 
+ 
+ Result:=ERROR_SUCCESS;    
+end;
+
+{==============================================================================}
+ 
+function RT2800ConfigureFilter(RT2X00:PRT2X00WiFiDevice;Filter:LongWord):LongWord;
+{rt2800_config_filter}
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Filter');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Filter=' + IntToHex(Filter,8) + ')');
+ {$ENDIF}
+
+ {Filter configuration}
+ {Version error will always be dropped and broadcast frames will always be accepted since there is no filter for it at this time}
+ RT2800RegisterRead(RT2X00,RT2800_RX_FILTER_CFG,@Reg);
+ if (Filter and IEEE80211_FIF_FCSFAIL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CRC_ERROR,0,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CRC_ERROR,0,0);
+ if (Filter and IEEE80211_FIF_PLCPFAIL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_PHY_ERROR,1,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_PHY_ERROR,1,0);
+ if (Filter and IEEE80211_FIF_PROMISC_IN_BSS) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_NOT_TO_ME,2,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_NOT_TO_ME,2,0);
+ RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_NOT_MY_BSSD,3,0);
+ RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_VER_ERROR,4,1);
+ if (Filter and IEEE80211_FIF_ALLMULTI) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_MULTICAST,5,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_MULTICAST,5,0);
+ RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_BROADCAST,6,0);
+ RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_DUPLICATE,7,1);
+ if (Filter and IEEE80211_FIF_CONTROL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CF_END_ACK,8,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CF_END_ACK,8,0);
+ if (Filter and IEEE80211_FIF_CONTROL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CF_END,9,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CF_END,9,0);
+ if (Filter and IEEE80211_FIF_CONTROL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_ACK,10,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_ACK,10,0);
+ if (Filter and IEEE80211_FIF_CONTROL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CTS,11,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CTS,11,0);
+ if (Filter and IEEE80211_FIF_CONTROL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_RTS,12,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_RTS,12,0);
+ if (Filter and IEEE80211_FIF_PSPOLL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_PSPOLL,13,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_PSPOLL,13,0);
+ RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_BA,14,0);
+ if (Filter and IEEE80211_FIF_CONTROL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_BAR,15,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_BAR,15,0);
+ if (Filter and IEEE80211_FIF_CONTROL) = 0 then RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CNTL,16,1) else RT2X00SetRegister32(Reg,RT2800_RX_FILTER_CFG_DROP_CNTL,16,0);
+ RT2800RegisterWrite(RT2X00,RT2800_RX_FILTER_CFG,0); //Reg //To Do //Testing No Filters
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Reg=' + IntToHex(Reg,8) + ')');
+ {$ENDIF}
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800ConfigureAntenna(RT2X00:PRT2X00WiFiDevice;Antenna:PRT2X00Antenna):LongWord;
+{rt2800_config_ant}
+var
+ Reg1:Byte;
+ Reg3:Byte;
+ Value:Word;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Antenna');
+ {$ENDIF}
+
+ {Check Antenna}
+ if Antenna = nil then Exit;
+
+ RT2800BBPRead(RT2X00,1,@Reg1);
+ RT2800BBPRead(RT2X00,3,@Reg3);
+ 
+ if (RT2X00GetRTChip(RT2X00) = RT2X00_RT3572) and RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+  begin
+   RT2800ConfigureAntenna3572BT(RT2X00);
+  end; 
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (TX Chain No=' + IntToStr(Antenna.TXChainNo) + ')');
+ {$ENDIF}
+
+ {Configure the TX antenna}
+ case Antenna.TXChainNo of
+  1:begin
+    RT2X00SetRegister8(Reg1,RT2800_BBP1_TX_ANTENNA,3,0);
+   end;
+  2:begin
+    if (RT2X00GetRTChip(RT2X00) = RT2X00_RT3572) and RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+     begin
+      RT2X00SetRegister8(Reg1,RT2800_BBP1_TX_ANTENNA,3,1);
+     end
+    else
+     begin
+      RT2X00SetRegister8(Reg1,RT2800_BBP1_TX_ANTENNA,3,2);
+     end;     
+   end;
+  3:begin
+    RT2X00SetRegister8(Reg1,RT2800_BBP1_TX_ANTENNA,3,2);
+   end;
+ end;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (RX Chain No=' + IntToStr(Antenna.RXChainNo) + ')');
+ {$ENDIF}
+
+ {Configure the RX antenna}
+ case Antenna.RXChainNo of
+  1:begin
+    if (RT2X00GetRTChip(RT2X00) = RT2X00_RT3070) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3090) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3352) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3390) then
+     begin
+      Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF1);
+      if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_ANT_DIVERSITY,11) <> 0 then
+       begin
+        //To Do //rt2800_set_ant_diversity(RT2X00,RT2X00->default_ant.rx);
+       end;
+     end;
+     
+    RT2X00SetRegister8(Reg3,RT2800_BBP3_RX_ANTENNA,3,0);
+   end;
+  2:begin
+    if (RT2X00GetRTChip(RT2X00) = RT2X00_RT3572) and RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_BT_COEXIST) then
+     begin
+      RT2X00SetRegister8(Reg3,RT2800_BBP3_RX_ADC,0,1);
+      if RT2X00.CurrentBand = IEEE80211_BAND_5GHZ then RT2X00SetRegister8(Reg3,RT2800_BBP3_RX_ANTENNA,3,1) else RT2X00SetRegister8(Reg3,RT2800_BBP3_RX_ANTENNA,3,0);
+      //To Do //rt2800_set_ant_diversity(RT2X00, ANTENNA_B);
+     end
+    else
+     begin
+      RT2X00SetRegister8(Reg3,RT2800_BBP3_RX_ANTENNA,3,1);
+     end;
+   end;
+  3:begin
+    RT2X00SetRegister8(Reg3,RT2800_BBP3_RX_ANTENNA,3,2);
+   end;
+ end;
+ 
+ RT2800BBPWrite(RT2X00,3,Reg3);
+ RT2800BBPWrite(RT2X00,1,Reg1);
+ 
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   if Antenna.RXChainNo = 1 then
+    begin
+     RT2800BBPWrite(RT2X00,86,$00);
+    end
+   else
+    begin
+     RT2800BBPWrite(RT2X00,86,$46);
+    end;
+  end;
+  
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800ConfigureAntenna3572BT(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Antenna 3572BT');
+ {$ENDIF}
+ 
+ //To Do //rt2800_config_3572bt_ant
+end;
+
+{==============================================================================}
+ 
+function RT2800ConfigureInterface(RT2X00:PRT2X00WiFiDevice;Configuration:PRT2X00InterfaceConfiguration;Flags:LongWord):LongWord;
+var
+ Reg:LongWord;
+ UpdateBSSID:Boolean;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure Interface');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Flags=' + IntToHex(Flags,8) + ')');
+ {$ENDIF}
+
+ {Check Configuration}
+ if Configuration = nil then Exit;
+ 
+ UpdateBSSID:=False;
+ 
+ {Check Flags}
+ if (Flags and RT2X00_CONFIG_UPDATE_TYPE) <> 0 then
+  begin
+   {Enable synchronisation}
+   RT2800RegisterRead(RT2X00,RT2800_BCN_TIME_CFG,@Reg);
+   RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_TSF_SYNC,17,Configuration.TSFSync);
+   RT2800RegisterWrite(RT2X00,RT2800_BCN_TIME_CFG,Reg);
+   
+   if Configuration.TSFSync = RT2X00_TSF_SYNC_AP_NONE then
+    begin
+     {Tune beacon queue transmit parameters for AP mode}
+     RT2800RegisterRead(RT2X00,RT2800_TBTT_SYNC_CFG,@Reg);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_BCN_CWMIN,20,0);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_BCN_AIFSN,16,1);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_BCN_EXP_WIN,8,32);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_TBTT_ADJUST,0,0);
+     RT2800RegisterWrite(RT2X00,RT2800_TBTT_SYNC_CFG,Reg);
+    end
+   else
+    begin
+     RT2800RegisterRead(RT2X00,RT2800_TBTT_SYNC_CFG,@Reg);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_BCN_CWMIN,20,4);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_BCN_AIFSN,16,2);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_BCN_EXP_WIN,8,32);
+     RT2X00SetRegister32(Reg,RT2800_TBTT_SYNC_CFG_TBTT_ADJUST,0,16);
+     RT2800RegisterWrite(RT2X00,RT2800_TBTT_SYNC_CFG,Reg);
+    end;
+  end;
+  
+ {Check Flags}
+ if (Flags and RT2X00_CONFIG_UPDATE_MAC) <> 0 then
+  begin
+   if ((Flags and RT2X00_CONFIG_UPDATE_TYPE) <> 0) and (Configuration.TSFSync = RT2X00_TSF_SYNC_AP_NONE) then
+    begin
+     {The BSSID register has to be set to our own mac address in AP mode}
+     System.Move(Configuration.MAC,Configuration.BSSID,SizeOf(Configuration.MAC));
+     UpdateBSSID:=True;
+    end;
+    
+   if not CompareHardwareDefault(PHardwareAddress(@Configuration.MAC)^) then
+    begin
+     Reg:=LongWordLEToN(Configuration.MAC[1]);
+     RT2X00SetRegister32(Reg,RT2800_MAC_ADDR_DW1_UNICAST_TO_ME_MASK,16,$ff);
+     Configuration.MAC[1]:=LongWordNToLE(Reg);
+    end;
+    
+   RT2800RegisterMultiWrite(RT2X00,RT2800_MAC_ADDR_DW0,@Configuration.MAC,SizeOf(Configuration.MAC));
+  end;
+  
+ {Check Flags}
+ if ((Flags and RT2X00_CONFIG_UPDATE_BSSID) <> 0) or UpdateBSSID then
+  begin
+   if not CompareHardwareDefault(PHardwareAddress(@Configuration.BSSID)^) then
+    begin
+     Reg:=LongWordLEToN(Configuration.BSSID[1]);
+     RT2X00SetRegister32(Reg,RT2800_MAC_BSSID_DW1_BSS_ID_MASK,16,3);
+     RT2X00SetRegister32(Reg,RT2800_MAC_BSSID_DW1_BSS_BCN_NUM,18,0);
+     Configuration.BSSID[1]:=LongWordNToLE(Reg);
+    end;
+   
+   RT2800RegisterMultiWrite(RT2X00,RT2800_MAC_BSSID_DW0,@Configuration.BSSID,SizeOf(Configuration.BSSID));
+  end;
+  
+ Result:=ERROR_SUCCESS;
+end; 
+{==============================================================================}
+ 
+function RT2800ConfigureWCID(RT2X00:PRT2X00WiFiDevice;WCID:LongWord;Address:PByte):LongWord;
+var
+ Offset:LongWord;
+ WCIDEntry:TRT2800_MAC_WCID_Entry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Configure WCID=' + IntToStr(WCID)); //To Do
+ {$ENDIF}
+ 
+ {Check Address}
+ if Address = nil then Exit;
+ 
+ Offset:=RT2800_MAC_WCID_ENTRY(WCID);
+  
+ FillChar(WCIDEntry,SizeOf(TRT2800_MAC_WCID_Entry),$FF);
+ if Address <> nil then
+  begin
+   System.Move(Address^,WCIDEntry.MAC[0],HARDWARE_ADDRESS_SIZE);
+  end;
+
+ RT2800RegisterMultiWrite(RT2X00,Offset,@WCIDEntry,SizeOf(TRT2800_MAC_WCID_Entry));
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800DeleteWCIDAttribute(RT2X00:PRT2X00WiFiDevice;WCID:LongWord):LongWord;
+var
+ Offset:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Delete WCID attribute WCID=' + IntToStr(WCID)); //To Do
+ {$ENDIF}
+ 
+ Offset:=RT2800_MAC_WCID_ATTR_ENTRY(WCID);
+ RT2800RegisterWrite(RT2X00,Offset,0);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800ClearBeaconRegister(RT2X00:PRT2X00WiFiDevice;Index:LongWord):LongWord;
+var
+ Count:LongWord;
+ Base:LongWord;
+ TXWISize:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Clear Beacon register (Index=' + IntToStr(Index) + ')'); //To Do
+ {$ENDIF}
+
+ TXWISize:=RT2800GetTXWISize(RT2X00);
+ 
+ Base:=RT2800_HW_BEACON_BASE(Index);
+
+ {For the Beacon base registers we only need to clear the whole TXWI which (when set to 0) will invalidate the entire beacon}
+ Count:=0;
+ while Count < TXWISize do
+  begin
+   RT2800RegisterWrite(RT2X00,Base + Count,0);
+   
+   Inc(Count,SizeOf(LongWord));
+  end;
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800CalibrateIQ(RT2X00:PRT2X00WiFiDevice;Channel:LongWord):LongWord;
+{rt2800_iq_calibrate}
+var
+ Calibration:Byte;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Calibrate IQ (Channel=' + IntToStr(Channel) + ')');
+ {$ENDIF}
+
+ {TX0 IQ Gain}
+ RT2800BBPWrite(RT2X00,158,$2c);
+ if Channel <= 14 then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX0_2G);
+  end 
+ else if (Channel >= 36) and (Channel <= 64) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX0_CH36_TO_CH64_5G);
+  end 
+ else if (Channel >= 100) and (Channel <= 138) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX0_CH100_TO_CH138_5G);
+  end 
+ else if (Channel >= 140) and (Channel <= 165) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX0_CH140_TO_CH165_5G);
+  end 
+ else
+  begin
+   Calibration:=0;
+  end; 
+ RT2800BBPWrite(RT2X00,159,Calibration);
+  
+ {TX0 IQ Phase}
+ RT2800BBPWrite(RT2X00,158,$2d);
+ if Channel <= 14 then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX0_2G);
+  end 
+ else if (Channel >= 36) and (Channel <= 64) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX0_CH36_TO_CH64_5G);
+  end 
+ else if (Channel >= 100) and (Channel <= 138) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX0_CH100_TO_CH138_5G);
+  end 
+ else if (Channel >= 140) and (Channel <= 165) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX0_CH140_TO_CH165_5G);
+  end 
+ else
+  begin
+   Calibration:=0;
+  end; 
+ RT2800BBPWrite(RT2X00,159,Calibration);
+  
+ {TX1 IQ Gain}
+ RT2800BBPWrite(RT2X00,158,$4a);
+ if Channel <= 14 then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX1_2G);
+  end 
+ else if (Channel >= 36) and (Channel <= 64) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX1_CH36_TO_CH64_5G);
+  end 
+ else if (Channel >= 100) and (Channel <= 138) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX1_CH100_TO_CH138_5G);
+  end 
+ else if (Channel >= 140) and (Channel <= 165) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_GAIN_CAL_TX1_CH140_TO_CH165_5G);
+  end 
+ else
+  begin
+   Calibration:=0;
+  end; 
+ RT2800BBPWrite(RT2X00,159,Calibration);
+
+ {TX1 IQ Phase}
+ RT2800BBPWrite(RT2X00,158,$4b);
+ if Channel <= 14 then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX1_2G);
+  end 
+ else if (Channel >= 36) and (Channel <= 64) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX1_CH36_TO_CH64_5G);
+  end 
+ else if (Channel >= 100) and (Channel <= 138) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX1_CH100_TO_CH138_5G);
+  end 
+ else if (Channel >= 140) and (Channel <= 165) then
+  begin
+   Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_IQ_PHASE_CAL_TX1_CH140_TO_CH165_5G);
+  end 
+ else
+  begin
+   Calibration:=0;
+  end; 
+ RT2800BBPWrite(RT2X00,159,Calibration);
+
+ {TODO: possible RX0, RX1 calibration ?}
+
+ {RF IQ compensation control}
+ RT2800BBPWrite(RT2X00,158,$04);
+ Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_RF_IQ_COMPENSATION_CONTROL);
+ if Calibration <> $ff then RT2800BBPWrite(RT2X00,159,Calibration) else RT2800BBPWrite(RT2X00,159,0);
+
+ {RF IQ imbalance compensation control}
+ RT2800BBPWrite(RT2X00,158,$03);
+ Calibration:=RT2X00GetEeprom8(RT2X00,RT2800_EEPROM_RF_IQ_IMBALANCE_COMPENSATION_CONTROL);
+ if Calibration <> $ff then RT2800BBPWrite(RT2X00,159,Calibration) else RT2800BBPWrite(RT2X00,159,0);
+  
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+
+function RT2800AdjustFrequencyOffset(RT2X00:PRT2X00WiFiDevice):LongWord;
+{rt2800_adjust_freq_offset}
+var
+ RFCSR:Byte;
+ PrevRFCSR:Byte;
+ FrequencyOffset:Byte;
+ PrevFrequencyOffset:Byte;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Adjust Frequency Offset');
+ {$ENDIF}
+ 
+ FrequencyOffset:=RT2X00GetRegister8(RT2X00.FrequencyOffset,RT2800_RFCSR17_CODE,0);
+ FrequencyOffset:=Min(FrequencyOffset,RT2800_FREQ_OFFSET_BOUND);
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Frequency Offset=' + IntToStr(FrequencyOffset) + ')');
+ {$ENDIF}
+
+ RT2800RFCSRRead(RT2X00,17,@RFCSR);
+ PrevRFCSR:=RFCSR;
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (RFCSR=' + IntToHex(RFCSR,2) + ')');
+ {$ENDIF}
+
+ RT2X00SetRegister8(RFCSR,RT2800_RFCSR17_CODE,0,FrequencyOffset);
+ if RFCSR = PrevRFCSR then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
+
+ if RT2X00IsUSB(RT2X00) then
+  begin
+   RT2800MCURequest(RT2X00,RT2800_MCU_FREQ_OFFSET,$ff,FrequencyOffset,PrevRFCSR);
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end; 
+
+ PrevFrequencyOffset:=RT2X00GetRegister8(PrevRFCSR,RT2800_RFCSR17_CODE,0);
+ while PrevFrequencyOffset <> FrequencyOffset do
+  begin
+   if PrevFrequencyOffset < FrequencyOffset then
+    begin
+     Inc(PrevFrequencyOffset);
+    end 
+   else
+    begin
+     Dec(PrevFrequencyOffset);
+    end; 
+   
+   RT2X00SetRegister8(RFCSR,RT2800_RFCSR17_CODE,0,PrevFrequencyOffset);
+   RT2800RFCSRWrite(RT2X00,17,RFCSR);
+   
+   MicrosecondDelay(1500);
+  end; 
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+ 
+function RT2800WaitCSRReady(RT2X00:PRT2X00WiFiDevice):Boolean;
 var
  Reg:LongWord;
  Busy:LongWord;
@@ -3016,7 +7039,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.Network),'RT2800: Wait CSR Ready');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Wait CSR Ready');
  {$ENDIF}
  
  Busy:=0;
@@ -3037,7 +7060,7 @@ end;
 
 {==============================================================================}
 
-function RT2800WaitWPDMAReady(RT2X00:PRT2X00NetworkDevice):Boolean;
+function RT2800WaitWPDMAReady(RT2X00:PRT2X00WiFiDevice):Boolean;
 var
  Reg:LongWord;
  Busy:LongWord;
@@ -3049,7 +7072,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.Network),'RT2800: Wait WPDMA Ready');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Wait WPDMA Ready');
  {$ENDIF}
  
  Busy:=0;
@@ -3069,8 +7092,84 @@ begin
 end;
  
 {==============================================================================}
+ 
+function RT2800WaitBBPReady(RT2X00:PRT2X00WiFiDevice):Boolean;
+{rt2800_wait_bbp_ready}
+var
+ Value:Byte;
+ Busy:LongWord;
+begin
+ {}
+ Result:=False;
 
-function RT2800DisableWPDMA(RT2X00:PRT2X00NetworkDevice):Boolean;       
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Wait BBP Ready');
+ {$ENDIF}
+
+ {BBP was enabled after firmware was loaded, but we need to reactivate it now}
+ RT2800RegisterWrite(RT2X00,RT2800_H2M_BBP_AGENT,0);
+ RT2800RegisterWrite(RT2X00,RT2800_H2M_MAILBOX_CSR,0);
+ Sleep(1);
+
+ Busy:=0;
+ while Busy < RT2X00_REGISTER_BUSY_COUNT do
+  begin
+   RT2800BBPRead(RT2X00,0,@Value);
+   if (Value <> $FF) and (Value <> $00) then
+    begin
+     Result:=True;
+     Exit;
+    end;
+    
+   MicrosecondDelay(RT2X00_REGISTER_BUSY_DELAY);
+   
+   Inc(Busy);
+  end;
+
+  if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: BBP register access failed');
+end;
+ 
+{==============================================================================}
+
+function RT2800WaitBBPRFReady(RT2X00:PRT2X00WiFiDevice):Boolean;
+var
+ Reg:LongWord;
+ Busy:LongWord;
+begin
+ {}
+ Result:=False;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Wait BBP/RF Ready');
+ {$ENDIF}
+ 
+ Busy:=0;
+ while Busy < RT2X00_REGISTER_BUSY_COUNT do
+  begin
+   RT2800RegisterRead(RT2X00,RT2800_MAC_STATUS_CFG,@Reg);
+   if RT2X00GetRegister32(Reg,RT2800_MAC_STATUS_CFG_BBP_RF_BUSY,0) = 0 then {Shift 0 because mask will determine result}
+    begin
+     Result:=True;
+     Exit;
+    end;
+ 
+   MicrosecondDelay(RT2X00_REGISTER_BUSY_DELAY);
+   
+   Inc(Busy);
+  end;
+   
+ if NETWORK_LOG_ENABLED then NetworkLogError(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: BBP/RF register access failed');
+end;
+ 
+{==============================================================================}
+
+function RT2800DisableWPDMA(RT2X00:PRT2X00WiFiDevice):Boolean;       
 var
  Reg:LongWord;
 begin
@@ -3081,7 +7180,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.Network),'RT2800: Disable DMA');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Disable DMA');
  {$ENDIF}
 
  RT2800RegisterRead(RT2X00,RT2800_WPDMA_GLO_CFG,@Reg);
@@ -3097,7 +7196,7 @@ end;
  
 {==============================================================================}
 
-function RT2800EnableRT3290WLAN(RT2X00:PRT2X00NetworkDevice):Boolean;
+function RT2800EnableRT3290WLAN(RT2X00:PRT2X00WiFiDevice):Boolean;
 var
  Reg:LongWord;
  Busy:LongWord;
@@ -3110,7 +7209,7 @@ begin
  if RT2X00 = nil then Exit;
  
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.Network),'RT2800: Enable RT3290WLAN');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Enable RT3290WLAN');
  {$ENDIF}
  
  {Check Enabled}
@@ -3122,7 +7221,7 @@ begin
    RT2X00SetRegister32(Reg,RT2800_FRC_WL_ANT_SET,5,1);
    RT2X00SetRegister32(Reg,RT2800_WLAN_CLK_EN,1,0);
    RT2X00SetRegister32(Reg,RT2800_WLAN_EN,0,1);
-   RT2800RegisterWrite(RT2X00,RT2800_WLAN_FUN_CTRL, Reg);
+   RT2800RegisterWrite(RT2X00,RT2800_WLAN_FUN_CTRL,Reg);
    
    MicrosecondDelay(RT2X00_REGISTER_BUSY_DELAY);
 
@@ -3177,10 +7276,89 @@ begin
   
  Result:=True; 
 end;
+
+{==============================================================================}
+
+function RT2800EnableLEDOpenDrain(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Enable LED Open Drain');
+ {$ENDIF}
+
+ RT2800RegisterRead(RT2X00,RT2800_OPT_14_CSR,@Reg);
+ RT2X00SetRegister32(Reg,RT2800_OPT_14_CSR_BIT0,0,1);
+ RT2800RegisterWrite(RT2X00,RT2800_OPT_14_CSR,Reg);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function RT2800DisableUnusedDACADC(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Reg:Byte;
+ Value:Word;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Disable unused DAC ADC');
+ {$ENDIF}
+
+ RT2800BBPRead(RT2X00,138,@Reg);
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF0);
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF0_TXPATH,4) = 1 then
+  begin
+   Reg:=Reg or $20;
+  end; 
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF0_RXPATH,0) = 1 then
+  begin
+   Reg:=Reg and not($02);
+  end; 
+ RT2800BBPWrite(RT2X00,138,Reg);
+ 
+ Result:=ERROR_SUCCESS;
+end;
  
 {==============================================================================}
 
-function RT2800MCURequest(RT2X00:PRT2X00NetworkDevice;Command,Token,Arg0,Arg1:Byte):Boolean;
+function RT2800BBP4MACInterfaceControl(RT2X00:PRT2X00WiFiDevice):LongWord;
+var
+ Value:Byte;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: BBP4 MAC Interface Control');
+ {$ENDIF}
+
+ RT2800BBPRead(RT2X00,4,@Value);
+ RT2X00SetRegister8(Value,RT2800_BBP4_MAC_IF_CTRL,6,1);
+ RT2800BBPWrite(RT2X00,4,Value);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+ 
+{==============================================================================}
+
+function RT2800BBPRead(RT2X00:PRT2X00WiFiDevice;RegNo:Byte;Value:PByte):Boolean;
+{rt2800_bbp_read}
 var
  Reg:LongWord;
 begin
@@ -3191,7 +7369,236 @@ begin
  if RT2X00 = nil then Exit;
  
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.Network),'RT2800: MCU Request');
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: BBP Read'); //To Do
+ {$ENDIF}
+
+ {Check Value}
+ if Value = nil then Exit;
+ 
+ {Acquire lock}
+ if MutexLock(RT2X00.CSRLock) <> ERROR_SUCCESS then Exit;
+ 
+ {Wait until the BBP becomes available}
+ if RT2800WaitForBBP(RT2X00,@Reg) then
+  begin
+   Reg:=0;
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_REGNUM,8,RegNo);
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_BUSY,17,1);
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_READ_CONTROL,16,1);
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_BBP_RW_MODE,19,1);
+   
+   RT2800RegisterWrite(RT2X00,RT2800_BBP_CSR_CFG,Reg);
+   
+   RT2800WaitForBBP(RT2X00,@Reg);
+  end;
+  
+ Value^:=RT2X00GetRegister32(Reg,RT2800_BBP_CSR_CFG_VALUE,0);
+ 
+ {Release lock}
+ MutexUnlock(RT2X00.CSRLock);
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RT2800BBPWrite(RT2X00:PRT2X00WiFiDevice;RegNo,Value:Byte):Boolean;
+{RT2800BBPWrite}
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: BBP Write'); //To Do
+ {$ENDIF}
+
+ {Acquire lock}
+ if MutexLock(RT2X00.CSRLock) <> ERROR_SUCCESS then Exit;
+ 
+ {Wait until the BBP becomes available}
+ if RT2800WaitForBBP(RT2X00,@Reg) then
+  begin
+   Reg:=0;
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_VALUE,0,Value);
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_REGNUM,8,RegNo);
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_BUSY,17,1);
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_READ_CONTROL,16,0);
+   RT2X00SetRegister32(Reg,RT2800_BBP_CSR_CFG_BBP_RW_MODE,19,1);
+         
+   RT2800RegisterWrite(RT2X00,RT2800_BBP_CSR_CFG,Reg);
+  end;
+  
+ {Release lock}
+ MutexUnlock(RT2X00.CSRLock);
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RT2800BBPWriteRXChain(RT2X00:PRT2X00WiFiDevice;RegNo,Value:Byte):Boolean;
+{RT2800BBPWrite_with_rx_chain}
+var
+ Reg:Byte;
+ Chain:Byte;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: BBP Write RX Chain');
+ {$ENDIF}
+
+ for Chain:=0 to RT2X00.Antenna.RXChainNo - 1 do
+  begin
+   RT2800BBPRead(RT2X00,27,@Reg);
+   RT2X00SetRegister8(Reg,RT2800_BBP27_RX_CHAIN_SEL,Chain,5);
+   RT2800BBPWrite(RT2X00,27,Reg);
+   
+   RT2800BBPWrite(RT2X00,RegNo,Value);
+  end;
+end;
+ 
+{==============================================================================}
+
+function RT2800RFCSRRead(RT2X00:PRT2X00WiFiDevice;RegNo:Byte;Value:PByte):Boolean;
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RF CSR Read'); //To Do
+ {$ENDIF}
+
+ {Check Value}
+ if Value = nil then Exit;
+ 
+ {Acquire lock}
+ if MutexLock(RT2X00.CSRLock) <> ERROR_SUCCESS then Exit;
+ 
+ {Wait until the RFCSR becomes available}
+ if RT2800WaitForRFCSR(RT2X00,@Reg) then
+  begin
+   Reg:=0;
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG_REGNUM,8,RegNo);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG_WRITE,16,0);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG_BUSY,17,1);
+         
+   RT2800RegisterWrite(RT2X00,RT2800_RF_CSR_CFG,Reg);
+  
+   RT2800WaitForRFCSR(RT2X00,@Reg);
+  end;
+
+ Value^:=RT2X00GetRegister32(Reg,RT2800_RF_CSR_CFG_DATA,0);
+ 
+ {Release lock}
+ MutexUnlock(RT2X00.CSRLock);
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RT2800RFCSRWrite(RT2X00:PRT2X00WiFiDevice;RegNo,Value:Byte):Boolean;
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RF CSR Write'); //To Do
+ {$ENDIF}
+
+ {Acquire lock}
+ if MutexLock(RT2X00.CSRLock) <> ERROR_SUCCESS then Exit;
+ 
+ {Wait until the RFCSR becomes available}
+ if RT2800WaitForRFCSR(RT2X00,@Reg) then
+  begin
+   Reg:=0;
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG_DATA,0,Value);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG_REGNUM,8,RegNo);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG_WRITE,16,1);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG_BUSY,17,1);
+         
+   RT2800RegisterWrite(RT2X00,RT2800_RF_CSR_CFG,Reg);
+  end;
+  
+ {Release lock}
+ MutexUnlock(RT2X00.CSRLock);
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RT2800RFWrite(RT2X00:PRT2X00WiFiDevice;Index:Word;Value:LongWord):Boolean;
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RF Write'); //To Do
+ {$ENDIF}
+
+ {Acquire lock}
+ if MutexLock(RT2X00.CSRLock) <> ERROR_SUCCESS then Exit;
+ 
+ {Wait until the RF becomes available}
+ if RT2800WaitForRF(RT2X00,@Reg) then
+  begin
+   Reg:=0;
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG0_REG_VALUE_BW,0,Value);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG0_STANDBYMODE,29,0);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG0_SEL,30,0);
+   RT2X00SetRegister32(Reg,RT2800_RF_CSR_CFG0_BUSY,31,1);
+         
+   RT2800RegisterWrite(RT2X00,RT2800_RF_CSR_CFG0,Reg);
+   RT2X00RFWrite(RT2X00,Index,Value);
+  end;
+ 
+ {Release lock}
+ MutexUnlock(RT2X00.CSRLock);
+ 
+ Result:=True;
+end;
+ 
+{==============================================================================}
+
+function RT2800MCURequest(RT2X00:PRT2X00WiFiDevice;Command,Token,Arg0,Arg1:Byte):Boolean;
+var
+ Reg:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: MCU Request (Command=' + IntToHex(Command,2) + ' Token=' + IntToHex(Token,2) + ' Arg0=' + IntToHex(Arg0,2) + ' Arg1=' + IntToHex(Arg1,2) + ')');
  {$ENDIF}
 
  {Check Chipset}
@@ -3224,7 +7631,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RT2800LIB Helper Functions}
-function RT2800RegisterRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:PLongWord):LongWord; inline;
+function RT2800RegisterRead(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Value:PLongWord):LongWord; inline;
 begin
  {}
  Result:=ERROR_NOT_ASSIGNED;
@@ -3236,7 +7643,7 @@ end;
 
 {==============================================================================}
 
-function RT2800RegisterWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Value:LongWord):LongWord; inline;
+function RT2800RegisterWrite(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Value:LongWord):LongWord; inline;
 begin
  {}
  Result:=ERROR_NOT_ASSIGNED;
@@ -3248,7 +7655,7 @@ end;
 
 {==============================================================================}
 
-function RT2800RegisterMultiRead(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
+function RT2800RegisterMultiRead(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
 begin
  {}
  Result:=ERROR_NOT_ASSIGNED;
@@ -3260,7 +7667,7 @@ end;
 
 {==============================================================================}
 
-function RT2800RegisterMultiWrite(RT2X00:PRT2X00NetworkDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
+function RT2800RegisterMultiWrite(RT2X00:PRT2X00WiFiDevice;Offset:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
 begin
  {}
  Result:=ERROR_NOT_ASSIGNED;
@@ -3272,7 +7679,7 @@ end;
 
 {==============================================================================}
 
-function RT2800RegisterBusyRead(RT2X00:PRT2X00NetworkDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; inline;
+function RT2800RegisterBusyRead(RT2X00:PRT2X00WiFiDevice;Offset,Mask:LongWord;Reg:PLongWord):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -3284,7 +7691,7 @@ end;
 
 {==============================================================================}
 
-function RT2800WriteFirmware(RT2X00:PRT2X00NetworkDevice;Data:PByte;Size:LongWord):Boolean; inline;
+function RT2800WriteFirmware(RT2X00:PRT2X00WiFiDevice;Data:PByte;Size:LongWord):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -3296,7 +7703,19 @@ end;
 
 {==============================================================================}
 
-function RT2800WaitForBBP(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
+function RT2800HardwareEncryptionDisabled(RT2X00:PRT2X00WiFiDevice):Boolean; inline;
+begin
+ {}
+ Result:=False;
+ 
+ if not Assigned(RT2X00.HardwareEncryptionDisabled) then Exit;
+ 
+ Result:=RT2X00.HardwareEncryptionDisabled(RT2X00);
+end;
+
+{==============================================================================}
+
+function RT2800WaitForBBP(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
 begin
  {}
  Result:=RT2800RegisterBusyRead(RT2X00,RT2800_BBP_CSR_CFG,RT2800_BBP_CSR_CFG_BUSY,Reg);
@@ -3304,7 +7723,7 @@ end;
 
 {==============================================================================}
 
-function RT2800WaitForRFCSR(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
+function RT2800WaitForRFCSR(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
 begin
  {}
  Result:=RT2800RegisterBusyRead(RT2X00,RT2800_RF_CSR_CFG,RT2800_RF_CSR_CFG_BUSY,Reg);
@@ -3312,7 +7731,7 @@ end;
 
 {==============================================================================}
 
-function RT2800WaitForRF(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
+function RT2800WaitForRF(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
 begin
  {}
  Result:=RT2800RegisterBusyRead(RT2X00,RT2800_RF_CSR_CFG0,RT2800_RF_CSR_CFG0_BUSY,Reg);
@@ -3320,7 +7739,7 @@ end;
 
 {==============================================================================}
 
-function RT2800WaitForMCU(RT2X00:PRT2X00NetworkDevice;Reg:PLongWord):Boolean; inline;
+function RT2800WaitForMCU(RT2X00:PRT2X00WiFiDevice;Reg:PLongWord):Boolean; inline;
 begin
  {}
  Result:=RT2800RegisterBusyRead(RT2X00,RT2800_H2M_MAILBOX_CSR,RT2800_H2M_MAILBOX_CSR_OWNER,Reg);
@@ -3328,7 +7747,7 @@ end;
 
 {==============================================================================}
 
-function RT2800GetEeprom16(RT2X00:PRT2X00NetworkDevice;ID:Word):Word;
+function RT2800GetEeprom16(RT2X00:PRT2X00WiFiDevice;ID:Word):Word;
 var
  Offset:Word;
 begin
@@ -3339,7 +7758,7 @@ end;
 
 {==============================================================================}
 
-procedure RT2800SetEeprom16(RT2X00:PRT2X00NetworkDevice;ID,Value:Word);
+procedure RT2800SetEeprom16(RT2X00:PRT2X00WiFiDevice;ID,Value:Word);
 var
  Offset:Word;
 begin
@@ -3350,7 +7769,18 @@ end;
 
 {==============================================================================}
 
-function RT2800GetEepromAddress(RT2X00:PRT2X00NetworkDevice;ID:Word):Pointer;
+function RT2800GetEeprom16Array(RT2X00:PRT2X00WiFiDevice;ID,Offset:Word):Word;
+var
+ Base:Word;
+begin
+ {}
+ Base:=RT2800EepromIDtoOffset(RT2X00,ID);
+ Result:=RT2X00GetEeprom16(RT2X00,Base + Offset);
+end;
+
+{==============================================================================}
+
+function RT2800GetEepromAddress(RT2X00:PRT2X00WiFiDevice;ID:Word):Pointer;
 var
  Offset:Word;
 begin
@@ -3361,7 +7791,7 @@ end;
 
 {==============================================================================}
 
-function RT2800EepromIDtoOffset(RT2X00:PRT2X00NetworkDevice;ID:Word):Word;
+function RT2800EepromIDtoOffset(RT2X00:PRT2X00WiFiDevice;ID:Word):Word;
 begin
  {}
  {Check ID}
@@ -3387,6 +7817,463 @@ begin
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'RT2800: Invalid EEPROM offset value');
   end;
+end;
+
+{==============================================================================}
+
+function RT2800Is305xSOC(RT2X00:PRT2X00WiFiDevice):Boolean;
+begin
+ {}
+ Result:=False;
+
+ {Check for RT2872 on SoC}
+ if (not RT2X00IsMMIO(RT2X00)) or (not (RT2X00GetRTChip(RT2X00) = RT2X00_RT2872)) then Exit;
+
+ 
+ {These rf chipsets are used on RT305x boards}
+ if (RT2X00GetRFChip(RT2X00) = RT2800_RF3020) or (RT2X00GetRFChip(RT2X00) = RT2800_RF3021) or (RT2X00GetRFChip(RT2X00) = RT2800_RF3022) then
+  begin
+   Result:=True;
+   Exit;
+  end;
+
+ if NETWORK_LOG_ENABLED then NetworkLogError(nil,'RT2800: Unknown RF chipset on RT305x');
+end;
+
+{==============================================================================}
+
+function RT2800GetTXWISize(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ case RT2X00GetRTChip(RT2X00) of
+  RT2X00_RT3593:begin
+    Result:=RT2800_TXWI_DESC_SIZE_4WORDS;
+   end;
+  RT2X00_RT5592:begin
+    Result:=RT2800_TXWI_DESC_SIZE_5WORDS;
+   end;  
+  else
+   begin
+    Result:=RT2800_TXWI_DESC_SIZE_4WORDS;
+   end;  
+ end;
+end;
+
+{==============================================================================}
+
+function RT2800GetRXWISize(RT2X00:PRT2X00WiFiDevice):LongWord;
+begin
+ {}
+ case RT2X00GetRTChip(RT2X00) of
+  RT2X00_RT3593:begin
+    Result:=RT2800_RXWI_DESC_SIZE_5WORDS;
+   end;
+  RT2X00_RT5592:begin
+    Result:=RT2800_RXWI_DESC_SIZE_6WORDS;
+   end;  
+  else
+   begin
+    Result:=RT2800_RXWI_DESC_SIZE_4WORDS;
+   end;  
+ end;
+end;
+
+{==============================================================================}
+
+function RT2800TXPowerToDevice(RT2X00:PRT2X00WiFiDevice;Channel:LongWord;TXPower:ShortInt):ShortInt;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   TXPower:=RT2X00GetRegister8(TXPower,RT2800_EEPROM_TXPOWER_ALC,0);
+  end; 
+
+ if Channel <= 14 then
+  begin
+   Result:=Clamp(TXPower,RT2800_MIN_G_TXPOWER,RT2800_MAX_G_TXPOWER);
+   {$IFDEF RT2800USB_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800TXPowerToDevice (Result=' + IntToStr(Result) + ' TXPower=' + IntToStr(TXPower) + ' RT2800_MIN_G_TXPOWER=' + IntToStr(RT2800_MIN_G_TXPOWER) + ' RT2800_MAX_G_TXPOWER=' + IntToStr(RT2800_MAX_G_TXPOWER) + ')');
+   {$ENDIF}
+   Exit;
+  end; 
+ 
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   Result:=Clamp(TXPower,RT2800_MIN_A_TXPOWER_3593,RT2800_MAX_A_TXPOWER_3593);
+   {$IFDEF RT2800USB_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800TXPowerToDevice (Result=' + IntToStr(Result) + ' TXPower=' + IntToStr(TXPower) + ' RT2800_MIN_A_TXPOWER_3593=' + IntToStr(RT2800_MIN_A_TXPOWER_3593) + ' RT2800_MAX_A_TXPOWER_3593=' + IntToStr(RT2800_MAX_A_TXPOWER_3593) + ')');
+   {$ENDIF}
+  end 
+ else
+  begin
+   Result:=Clamp(TXPower,RT2800_MIN_A_TXPOWER,RT2800_MAX_A_TXPOWER);
+   {$IFDEF RT2800USB_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800TXPowerToDevice (Result=' + IntToStr(Result) + ' TXPower=' + IntToStr(TXPower) + ' RT2800_MIN_A_TXPOWER=' + IntToStr(RT2800_MIN_A_TXPOWER) + ' RT2800_MAX_A_TXPOWER=' + IntToStr(RT2800_MAX_A_TXPOWER) + ')');
+   {$ENDIF}
+  end; 
+end;
+
+{==============================================================================}
+
+function RT2800GetTXPowerRegulatoryDelta(RT2X00:PRT2X00WiFiDevice;PowerLevel,MaxPower:LongInt):LongInt;
+{rt2800_get_txpower_reg_delta}
+var
+ Delta:LongInt;
+begin
+ {}
+ Result:=0;
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800GetTXPowerRegulatoryDelta (PowerLevel=' + IntToStr(PowerLevel) + ' MaxPower=' + IntToStr(MaxPower) + ')');
+ {$ENDIF}
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_POWER_LIMIT) then
+  begin
+   Exit;
+  end;
+ 
+ {We don't know the maximum transmit power of our hardware since the EEPROM doesn't expose it. We only know that we are calibrated to 100% tx power}
+ {Hence, we assume the regulatory limit that IEEE80211 calulated for the current channel is our maximum and if we are requested to lower the value we just reduce our tx power accordingly}
+ Delta:=PowerLevel - MaxPower;
+ 
+ Result:=Min(Delta,0);
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function RT2800GetTXPowerBandwidthCompensation(RT2X00:PRT2X00WiFiDevice;Band:LongWord):LongInt;
+{rt2800_get_txpower_bw_comp}
+var
+ Value:Word;
+ CompensationEnable:Byte;
+ CompensationType:Byte;
+ CompensationValue:LongInt;
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800GetTXPowerBandwidthCompensation (Band=' + IntToStr(Band) + ')');
+ {$ENDIF}
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ CompensationValue:=0;
+ 
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TXPOWER_DELTA);
+
+ {HT40 compensation not required}
+ if (Value = $ffff) or ((RT2X00.Flags and RT2X00_CONFIG_CHANNEL_HT40) = 0) then
+  begin
+   Exit;
+  end;
+
+ if Band = IEEE80211_BAND_2GHZ then
+  begin
+   CompensationEnable:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_DELTA_ENABLE_2G,7);
+   if CompensationEnable <> 0 then
+    begin
+     CompensationType:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_DELTA_TYPE_2G,6);
+     CompensationValue:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_DELTA_VALUE_2G,0);
+     if CompensationType = 0 then
+      begin
+       CompensationValue:=-CompensationValue;
+      end; 
+    end;
+  end  
+ else
+  begin
+   CompensationEnable:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_DELTA_ENABLE_5G,15);
+   if CompensationEnable <> 0 then
+    begin
+     CompensationType:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_DELTA_TYPE_5G,14);
+     CompensationValue:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_DELTA_VALUE_5G,8);
+     if CompensationType = 0 then
+      begin
+       CompensationValue:=-CompensationValue;
+      end; 
+    end;  
+  end;  
+
+ Result:=CompensationValue;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function RT2800GetGainCalibrationDelta(RT2X00:PRT2X00WiFiDevice):LongInt;
+{rt2800_get_gain_calibration_delta}
+var
+ TSSIBounds:array[0..8] of Byte;
+ CurrentTSSI:Byte;
+ Value:Word;
+ Step:Byte;
+ Count:LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800GetGainCalibrationDelta');
+ {$ENDIF}
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {First check if temperature compensation is supported}
+ Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_NIC_CONF1);
+ if RT2X00GetRegister16(Value,RT2800_EEPROM_NIC_CONF1_EXTERNAL_TX_ALC,1) = 0 then Exit;
+ 
+ {Read TSSI boundaries for temperature compensation from the EEPROM.
+ 
+  Array idx               0    1    2    3    4    5    6    7    8
+  Matching Delta value   -4   -3   -2   -1    0   +1   +2   +3   +4
+  Example TSSI bounds  0xF0 0xD0 0xB5 0xA0 0x88 0x45 0x25 0x15 0x00}
+ if RT2X00.CurrentBand = IEEE80211_BAND_2GHZ then
+  begin
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_BG1);
+   TSSIBounds[0]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG1_MINUS4,0);
+   TSSIBounds[1]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG1_MINUS3,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_BG2);
+   TSSIBounds[2]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG2_MINUS2,0);
+   TSSIBounds[3]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG2_MINUS1,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_BG3);
+   TSSIBounds[4]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG3_REF,0);
+   TSSIBounds[5]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG3_PLUS1,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_BG4);
+   TSSIBounds[6]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG4_PLUS2,0);
+   TSSIBounds[7]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG4_PLUS3,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_BG5);
+   TSSIBounds[8]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG5_PLUS4,0);
+   
+   Step:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_BG5_AGC_STEP,8);
+  end  
+ else 
+  begin
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_A1);
+   TSSIBounds[0]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A1_MINUS4,0);
+   TSSIBounds[1]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A1_MINUS3,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_A2);
+   TSSIBounds[2]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A2_MINUS2,0);
+   TSSIBounds[3]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A2_MINUS1,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_A3);
+   TSSIBounds[4]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A3_REF,0);
+   TSSIBounds[5]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A3_PLUS1,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_A4);
+   TSSIBounds[6]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A4_PLUS2,0);
+   TSSIBounds[7]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A4_PLUS3,8);
+   
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_TSSI_BOUND_A5);
+   TSSIBounds[8]:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A5_PLUS4,0);
+   
+   Step:=RT2X00GetRegister16(Value,RT2800_EEPROM_TSSI_BOUND_A5_AGC_STEP,8);
+  end;  
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (Step=' + IntToStr(Step) + ')');
+ {$ENDIF}
+  
+ {Check if temperature compensation is supported}
+ if (TSSIBounds[4] = $ff) or (Step = $ff) then Exit;
+
+ {Read current TSSI (BBP 49)}
+ RT2800BBPRead(RT2X00,49,@CurrentTSSI);
+
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (CurrentTSSI=' + IntToStr(CurrentTSSI) + ')');
+ {$ENDIF}
+ 
+ {Compare TSSI value (BBP49) with the compensation boundaries from the EEPROM and increase or decrease tx power}
+ Count:=0;
+ while Count <= 3 do
+  begin
+   if (CurrentTSSI > TSSIBounds[Count]) then Break;
+   Inc(Count);
+  end;  
+
+ if Count = 4 then
+  begin
+   Count:=8;
+   while Count >= 5 do
+    begin
+     if (CurrentTSSI < TSSIBounds[Count]) then Break;
+     Dec(Count);
+    end;
+  end;
+
+ Result:=(Count - 4) * Step;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function RT2800CompensateTXPower(RT2X00:PRT2X00WiFiDevice;IsRateB,Band:LongWord;PowerLevel:LongInt;TXPower:Byte;Delta:LongInt):Byte;
+{rt2800_compensate_txpower}
+var
+ Value:Word;
+ Criterion:Byte;
+ EIRPTXPower:Byte;
+ EIRPTXPowerCriterion:Byte;
+ RegLimit:Byte;
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800CompensateTXPower'); //To Do 
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (IsRateB=' + IntToStr(IsRateB) + ')'); //To Do 
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Band=' + IntToStr(Band) + ')'); //To Do 
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (PowerLevel=' + IntToStr(PowerLevel) + ')'); //To Do 
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (TXPower=' + IntToStr(TXPower) + ')'); //To Do 
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (Delta=' + IntToStr(Delta) + ')'); //To Do 
+ {$ENDIF}
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ if RT2X00GetRTChip(RT2X00) = RT2X00_RT3593 then
+  begin
+   Result:=Min(TXPower,$c);
+   Exit;
+  end; 
+ 
+ if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_POWER_LIMIT) then
+  begin
+   {Check if eirp txpower exceed txpower_limit. We use OFDM 6M as criterion and its eirp txpower is stored at EEPROM_EIRP_MAX_TX_POWER}
+   {.11b data rate need add additional 4dbm when calculating eirp txpower}
+   Value:=RT2800GetEeprom16Array(RT2X00,RT2800_EEPROM_TXPOWER_BYRATE,1);
+   Criterion:=RT2X00GetRegister16(Value,RT2800_EEPROM_TXPOWER_BYRATE_RATE0,0);
+  
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_EIRP_MAX_TX_POWER);
+  
+   if Band = IEEE80211_BAND_2GHZ then
+    begin
+     EIRPTXPowerCriterion:=RT2X00GetRegister16(Value,RT2800_EEPROM_EIRP_MAX_TX_POWER_2GHZ,0);
+    end 
+   else
+    begin
+     EIRPTXPowerCriterion:=RT2X00GetRegister16(Value,RT2800_EEPROM_EIRP_MAX_TX_POWER_5GHZ,8);
+    end; 
+  
+   if IsRateB <> 0 then EIRPTXPower:=EIRPTXPowerCriterion + (TXPower - Criterion) + 4 + Delta else EIRPTXPower:=EIRPTXPowerCriterion + (TXPower - Criterion) + 0 + Delta;
+  
+   if (EIRPTXPower > PowerLevel) then RegLimit:=(EIRPTXPower - PowerLevel) else RegLimit:=0;
+  end
+ else
+  begin
+   RegLimit:=0;
+  end; 
+
+ TXPower:=Max(0,TXPower + Delta - RegLimit);
+ Result:=Min(TXPower,$c);
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (Result=' + IntToStr(Result) + ')'); //To Do 
+ {$ENDIF}
+end;
+ 
+{==============================================================================}
+
+function RT2800_MAC_WCID_ENTRY(Index:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=RT2800_MAC_WCID_BASE + (Index * SizeOf(TRT2800_MAC_WCID_Entry));
+end;
+
+{==============================================================================}
+
+function RT2800_PAIRWISE_KEY_ENTRY(Index:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=RT2800_PAIRWISE_KEY_TABLE_BASE + (Index * SizeOf(TRT2800_HW_Key_Entry));
+end;
+
+{==============================================================================}
+
+function RT2800_MAC_IVEIV_ENTRY(Index:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=RT2800_MAC_IVEIV_TABLE_BASE + (Index * Sizeof(TRT2800_MAC_IVEIV_Entry));
+end;
+
+{==============================================================================}
+
+function RT2800_MAC_WCID_ATTR_ENTRY(Index:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=RT2800_MAC_WCID_ATTRIBUTE_BASE + (Index * SizeOf(LongWord));
+end;
+
+{==============================================================================}
+
+function RT2800_SHARED_KEY_ENTRY(Index:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=RT2800_SHARED_KEY_TABLE_BASE + (Index * SizeOf(TRT2800_HW_Key_Entry));
+end;
+
+{==============================================================================}
+
+function RT2800_SHARED_KEY_MODE_ENTRY(Index:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=RT2800_SHARED_KEY_MODE_BASE + (Index * SizeOf(LongWord));
+end;
+
+{==============================================================================}
+
+function RT2800_HW_BEACON_BASE(Index:LongWord):LongWord; inline;
+begin
+ {}
+ if Index < 4 then
+  begin
+   Result:=RT2800_HW_BEACON_BASE0 + (Index * $0200);
+  end
+ else
+  begin
+   if Index < 6 then
+    begin
+     Result:=RT2800_HW_BEACON_BASE4 + ((Index - 4) * $0200);
+    end
+   else
+    begin
+     Result:=RT2800_HW_BEACON_BASE6 - ((Index - 6) * $0200);
+    end;    
+  end;  
+end;
+
+{==============================================================================}
+
+function RT2800_BEACON_BASE_TO_OFFSET(Base:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=(Base - $4000) div 64;
 end;
 
 {==============================================================================}

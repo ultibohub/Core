@@ -9103,7 +9103,7 @@ end;
 function getsockopt( const s: TSocket; const level, optname: Longint; optval: Pointer; var optlen: Longint ): Longint; 
 begin
  {}
- Result:=getsockopt(s,level,optname,optval,optlen);
+ Result:=getsockopt(s,level,optname,PChar(optval),optlen);
 end;
 
 {==============================================================================}
@@ -9111,7 +9111,7 @@ end;
 function getsockopt( const s: TSocket; const level, optname: Longint; var optval; var optlen: Longint ): Longint; 
 begin
  {}
- Result:=getsockopt(s,level,optname,@optval,optlen)
+ Result:=getsockopt(s,level,optname,PChar(@optval),optlen);
 end;
 
 {==============================================================================}
@@ -9276,7 +9276,7 @@ end;
 function recv(s: TSocket; Buf: PChar; len, flags: Longint): Longint; 
 begin
  {}
- Result:=recv(s,buf^,len,flags)
+ Result:=recv(s,buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -9284,7 +9284,7 @@ end;
 function recv(s: TSocket; Buf: Pointer; len, flags: Longint): Longint;  
 begin
  {}
- Result:=recv(s,buf^,len,flags)
+ Result:=recv(s,buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -9292,7 +9292,7 @@ end;
 function recvfrom(s: TSocket; Buf: PChar; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; 
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^)
+ Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
 end;
 
 {==============================================================================}
@@ -9300,7 +9300,7 @@ end;
 function recvfrom(s: TSocket; Buf: Pointer; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; 
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^)
+ Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
 end;
 
 {==============================================================================}
@@ -9464,7 +9464,7 @@ end;
 function send(s: TSocket; Buf: PChar; len, flags: Longint): Longint; 
 begin
  {}
- Result:=send(s,Buf^,len,flags)
+ Result:=send(s,Buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -9472,7 +9472,7 @@ end;
 function send(s: TSocket; Buf: Pointer; len, flags: Longint): Longint; 
 begin
  {}
- Result:=send(s,Buf^,len,flags)
+ Result:=send(s,Buf^,len,flags);
 end;
 
 {==============================================================================}
@@ -9521,7 +9521,7 @@ end;
 function sendto(s: TSocket; Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
 begin
  {}
- Result:=sendto(s,buf^,len,flags,addrto^,tolen)
+ Result:=sendto(s,buf^,len,flags,addrto^,tolen);
 end;
 
 {==============================================================================}
@@ -9529,15 +9529,15 @@ end;
 function sendto(s: TSocket; Buf: Pointer; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
 begin
  {}
- Result:=sendto(s,buf^,len,flags,addrto^,tolen)
+ Result:=sendto(s,buf^,len,flags,addrto^,tolen);
 end;
 
 {==============================================================================}
 
-function setsockopt(s: TSocket; level, optname: Longint; const optval; optlen: Longint): Longint; 
+function setsockopt(s: TSocket; level, optname: Longint; const optval; optlen: Longint): Longint;  
 begin
  {}
- Result:=setsockopt(s,level,optname,@optval,optlen)
+ Result:=setsockopt(s,level,optname,PChar(@optval),optlen);
 end;
 
 {==============================================================================}
@@ -9586,7 +9586,7 @@ end;
 function setsockopt(s: TSocket; level, optname: Longint; optval: Pointer; optlen: Longint): Longint; 
 begin
  {}
- Result:=setsockopt(s,level,optname,optval,optlen)
+ Result:=setsockopt(s,level,optname,PChar(optval),optlen);
 end;
 
 {==============================================================================}

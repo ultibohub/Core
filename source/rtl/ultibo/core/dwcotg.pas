@@ -743,6 +743,8 @@ type
   StartOfFrameInterruptCount:LongWord;                           {Number of start of frame interrupts received by the host controller} 
   ResubmitCount:LongWord;                                        {Number of requests resubmitted for later retry}
   StartOfFrameCount:LongWord;                                    {Number of requests resubmitted to wait for start of frame}
+  DMABufferReadCount:LongWord;                                   {Number of IN requests that required a DMA buffer}
+  DMABufferWriteCount:LongWord;                                  {Number of OUT requests that required a DMA buffer}
  end;
  
 {==============================================================================}
@@ -2661,7 +2663,7 @@ begin
    {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Using DMA buffer at ' + IntToHex(LongWord(Host.DMABuffers[Channel]),8) + ' for DMA transaction');
    {$ENDIF}
-   
+
    {Use a buffer for DMA (If the attempted transfer size overflows this alternate buffer cap it to the greatest number of whole packets that fit)}
    if DWCOTG_DMA_BUS_ADDRESSES then
     begin
@@ -2689,6 +2691,8 @@ begin
      {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
      if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Copying data to DMA buffer');
      {$ENDIF}
+     {Update Statistics}
+     Inc(Host.DMABufferWriteCount);
      
      {Copy the data to the DMA buffer}
      System.Move(Data^,Host.DMABuffers[Channel]^,((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0));
@@ -4651,6 +4655,9 @@ begin
        {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Copying data from DMA buffer');
        {$ENDIF}
+       
+       {Update Statistics}
+       Inc(Host.DMABufferReadCount);
        
        if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
         begin

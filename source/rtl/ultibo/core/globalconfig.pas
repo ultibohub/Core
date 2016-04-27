@@ -196,7 +196,9 @@ var
  GPU_TYPE:LongWord;                   {The current GPU type for this board}
 
  GPU_MEMORY_BASE:PtrUInt;             {The base (Physical) address for GPU memory}
- GPU_MEMORY_SIZE:LongWord;            {The size of the CPU address space}
+ GPU_MEMORY_SIZE:LongWord;            {The size of the GPU address space}
+
+ GPU_MEMORY_CACHED:LongBool;          {The GPU memory is cached when accessed by the CPU}
  
 {==============================================================================}
 var
@@ -309,6 +311,11 @@ var
  HEAP_NORMAL_DEVICE:LongBool;                   {If True then Normal memory is considered Device memory by the Heap Manager (Default False)}
  HEAP_NORMAL_NOCACHE:LongBool;                  {If True then Normal memory is considered Non Cached memory by the Heap Manager (Default False)}
  HEAP_NORMAL_NONSHARED:LongBool;                {If True then Normal memory is considered Non Shared memory by the Heap Manager (Default False)}
+ 
+ HEAP_LOCAL_CACHE_COHERENT:LongBool;            {If True then Local memory is considered cache coherent (Default False)}
+ 
+ HEAP_IRQ_CACHE_COHERENT:LongBool;              {If True then IRQ memory is considered cache coherent (Default False)}
+ HEAP_FIQ_CACHE_COHERENT:LongBool;              {If True then FIQ memory is considered cache coherent (Default False)}
  
  {Heap Locking}
  HEAP_LOCK_SPIN:LongBool;                       {If True then Heap lock uses Spin instead of Mutex (Default False)}
@@ -461,9 +468,11 @@ var
 
  CONSOLE_LINE_WRAP:LongBool = True;              {If True then wrap long lines to the next line when writing to the console (Sets CONSOLE_FLAG_LINE_WRAP on device)}
  
- CONSOLE_DMA_FILL:LongBool = False; //True;               {If True then use DMA (If avaialable) to fill console windows (Sets CONSOLE_FLAG_DMA_FILL on device)}
- CONSOLE_DMA_CLEAR:LongBool = False; //True;              {If True then use DMA (If avaialable) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
- CONSOLE_DMA_SCROLL:LongBool = False; //True;             {If True then use DMA (If avaialable) to scroll console windows (Sets CONSOLE_FLAG_DMA_SCROLL on device)}
+ CONSOLE_DMA_BOX:LongBool = True;                {If True then use DMA (If avaialable) to draw console window boxes (Sets CONSOLE_FLAG_DMA_BOX on device)}
+ CONSOLE_DMA_LINE:LongBool = True;               {If True then use DMA (If avaialable) to draw console window lines (Sets CONSOLE_FLAG_DMA_LINE on device)}
+ CONSOLE_DMA_FILL:LongBool = True;               {If True then use DMA (If avaialable) to fill console windows (Sets CONSOLE_FLAG_DMA_FILL on device)}
+ CONSOLE_DMA_CLEAR:LongBool = True;              {If True then use DMA (If avaialable) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
+ CONSOLE_DMA_SCROLL:LongBool = True;             {If True then use DMA (If avaialable) to scroll console windows (Sets CONSOLE_FLAG_DMA_SCROLL on device)}
  
  CONSOLE_REGISTER_LOGGING:LongBool = False;      {If True then register Console as a Logging device on boot}
  CONSOLE_LOGGING_DEFAULT:LongBool = False;       {If True then Console can be the default Logging device}
@@ -531,7 +540,8 @@ var
  DMA_SHARED_MEMORY:LongBool;        {DMA control blocks and DMA buffers are allocated from Shared memory regions if True}
  DMA_NOCACHE_MEMORY:LongBool;       {DMA control blocks and DMA buffers are allocated from Non Cached memory regions if True}
  DMA_BUS_ADDRESSES:LongBool;        {DMA control blocks and DMA buffers are referenced by Bus addresses if True}
-
+ DMA_CACHE_COHERENT:LongBool;       {DMA control blocks and DMA buffers are considered cache coherent if True}
+ 
 {==============================================================================}
 {Device configuration}
 var
@@ -588,6 +598,7 @@ var
  USB_DMA_SHARED_MEMORY:LongBool;       {USB DMA buffers are allocated from Shared memory regions if True}
  USB_DMA_NOCACHE_MEMORY:LongBool;      {USB DMA buffers are allocated from Non Cached memory regions if True}
  USB_DMA_BUS_ADDRESSES:LongBool;       {USB DMA buffers are referenced by Bus addresses if True}
+ USB_DMA_CACHE_COHERENT:LongBool;      {USB DMA buffers are considered cache coherent if True}
  
  {MMC}
  MMC_AUTOSTART:LongBool = True;        {If True then auto start the MMC/SD subsystem on boot (Only if MMC unit included)}
@@ -598,6 +609,7 @@ var
  MMC_DMA_SHARED_MEMORY:LongBool;       {MMC DMA buffers are allocated from Shared memory regions if True}
  MMC_DMA_NOCACHE_MEMORY:LongBool;      {MMC DMA buffers are allocated from Non Cached memory regions if True}
  MMC_DMA_BUS_ADDRESSES:LongBool;       {MMC DMA buffers are referenced by Bus addresses if True}
+ MMC_DMA_CACHE_COHERENT:LongBool;      {MMC DMA buffers are considered cache coherent if True}
  
  {USB Hub}
  USB_HUB_MESSAGESLOT_MAXIMUM:LongWord = SIZE_512; {Maximum number of messages for the USB hub messageslot}
@@ -634,6 +646,7 @@ var
  DWCOTG_DMA_SHARED_MEMORY:LongBool;   {DWCOTG DMA buffers are allocated from Shared memory regions if True}
  DWCOTG_DMA_NOCACHE_MEMORY:LongBool;  {DWCOTG DMA buffers are allocated from Non Cached memory regions if True}
  DWCOTG_DMA_BUS_ADDRESSES:LongBool;   {DWCOTG DMA buffers are referenced by Bus addresses if True}
+ DWCOTG_DMA_CACHE_COHERENT:LongBool;  {DWCOTG DMA buffers are considered cache coherent if True}
  DWCOTG_HOST_FRAME_INTERVAL:LongBool; {Update the host frame interval register on root port enable if True}
  //To Do //Number of Channels ?
  
@@ -641,6 +654,13 @@ var
  SMSC95XX_MAC_ADDRESS:String;       {The preconfigured MAC address for an SMSC95XX device}
   
  {BCM2708}
+ BCM2708DMA_ALIGNMENT:LongWord;             {The default alignment for BCM2708 DMA memory allocations}
+ BCM2708DMA_MULTIPLIER:LongWord;            {The default multiplier for BCM2708 DMA memory allocations}
+ BCM2708DMA_SHARED_MEMORY:LongBool;         {BCM2708 DMA control blocks and DMA buffers are allocated from Shared memory regions if True}
+ BCM2708DMA_NOCACHE_MEMORY:LongBool;        {BCM2708 DMA control blocks and DMA buffers are allocated from Non Cached memory regions if True}
+ BCM2708DMA_BUS_ADDRESSES:LongBool;         {BCM2708 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
+ BCM2708DMA_CACHE_COHERENT:LongBool;        {BCM2708 DMA control blocks and DMA buffers are considered cache coherent if True}
+ 
  BCM2708SDHCI_FIQ_ENABLED:LongBool;         {The BCM2708 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2708FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2708 Framebuffer device}
@@ -652,6 +672,7 @@ var
  BCM2708_REGISTER_PWM:LongBool = True;      {If True then register the BCM2708 PWM device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PCM:LongBool = True;      {If True then register the BCM2708 PCM device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2708 GPIO device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_UART:LongBool = True;     {If True then register the BCM2708 UART device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
 
  BCM2708_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2708 Clock device during boot (Only if BCM2708 unit included)}
@@ -662,6 +683,13 @@ var
  BCM2708_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2708 Framebuffer device during boot (Only if BCM2708 unit included)}
  
  {BCM2709}
+ BCM2709DMA_ALIGNMENT:LongWord;             {The default alignment for BCM2709 DMA memory allocations}
+ BCM2709DMA_MULTIPLIER:LongWord;            {The default multiplier for BCM2709 DMA memory allocations}
+ BCM2709DMA_SHARED_MEMORY:LongBool;         {BCM2709 DMA control blocks and DMA buffers are allocated from Shared memory regions if True}
+ BCM2709DMA_NOCACHE_MEMORY:LongBool;        {BCM2709 DMA control blocks and DMA buffers are allocated from Non Cached memory regions if True}
+ BCM2709DMA_BUS_ADDRESSES:LongBool;         {BCM2709 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
+ BCM2709DMA_CACHE_COHERENT:LongBool;        {BCM2709 DMA control blocks and DMA buffers are considered cache coherent if True}
+
  BCM2709SDHCI_FIQ_ENABLED:LongBool;         {The BCM2709 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2709FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2709 Framebuffer device}
@@ -673,6 +701,7 @@ var
  BCM2709_REGISTER_PWM:LongBool = True;      {If True then register the BCM2709 PWM device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PCM:LongBool = True;      {If True then register the BCM2709 PCM device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2709 GPIO device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_UART:LongBool = True;     {If True then register the BCM2709 UART device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
 
  BCM2709_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2709 Clock device during boot (Only if BCM2709 unit included)}
@@ -683,6 +712,13 @@ var
  BCM2709_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2709 Framebuffer device during boot (Only if BCM2709 unit included)}
 
  {BCM2710}
+ BCM2710DMA_ALIGNMENT:LongWord;             {The default alignment for BCM2710 DMA memory allocations}
+ BCM2710DMA_MULTIPLIER:LongWord;            {The default multiplier for BCM2710 DMA memory allocations}
+ BCM2710DMA_SHARED_MEMORY:LongBool;         {BCM2710 DMA control blocks and DMA buffers are allocated from Shared memory regions if True}
+ BCM2710DMA_NOCACHE_MEMORY:LongBool;        {BCM2710 DMA control blocks and DMA buffers are allocated from Non Cached memory regions if True}
+ BCM2710DMA_BUS_ADDRESSES:LongBool;         {BCM2710 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
+ BCM2710DMA_CACHE_COHERENT:LongBool;        {BCM2710 DMA control blocks and DMA buffers are considered cache coherent if True}
+
  BCM2710SDHCI_FIQ_ENABLED:LongBool;         {The BCM2710 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2710FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2710 Framebuffer device}
@@ -694,6 +730,7 @@ var
  BCM2710_REGISTER_PWM:LongBool = True;      {If True then register the BCM2710 PWM device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PCM:LongBool = True;      {If True then register the BCM2710 PCM device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2710 GPIO device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_UART:LongBool = True;     {If True then register the BCM2710 UART device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
 
  BCM2710_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2710 Clock device during boot (Only if BCM2710 unit included)}
@@ -948,6 +985,8 @@ var
 function Min(A,B:LongInt):LongInt; inline;
 function Max(A,B:LongInt):LongInt; inline;
 
+function Clamp(Value,Low,High:LongInt):LongInt;
+
 function RoundUp(Value,Multiple:LongWord):LongWord; 
 function RoundDown(Value,Multiple:LongWord):LongWord; 
 
@@ -1035,6 +1074,14 @@ function Max(A,B:LongInt):LongInt; inline;
 begin
  {}
  if A > B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function Clamp(Value,Low,High:LongInt):LongInt;
+begin
+ {}
+ Result:=Min(Max(Value,Low),High);
 end;
 
 {==============================================================================}
@@ -1280,11 +1327,17 @@ begin
   ERROR_TOO_MANY_OPEN_FILES:Result:='ERROR_TOO_MANY_OPEN_FILES';
   ERROR_ACCESS_DENIED:Result:='ERROR_ACCESS_DENIED';
   ERROR_INVALID_HANDLE:Result:='ERROR_INVALID_HANDLE';
- 
+  ERROR_NOT_ENOUGH_MEMORY:Result:='ERROR_NOT_ENOUGH_MEMORY';
+  
   ERROR_INVALID_ACCESS:Result:='ERROR_INVALID_ACCESS';
   ERROR_INVALID_DATA:Result:='ERROR_INVALID_DATA';
   ERROR_OUTOFMEMORY:Result:='ERROR_OUTOFMEMORY';
- 
+  ERROR_INVALID_DRIVE:Result:='ERROR_INVALID_DRIVE';
+  ERROR_CURRENT_DIRECTORY:Result:='ERROR_CURRENT_DIRECTORY';
+  ERROR_NOT_SAME_DEVICE:Result:='ERROR_NOT_SAME_DEVICE';
+  ERROR_NO_MORE_FILES:Result:='ERROR_NO_MORE_FILES';
+  ERROR_WRITE_PROTECT:Result:='ERROR_WRITE_PROTECT';
+  ERROR_BAD_UNIT:Result:='ERROR_BAD_UNIT';
   ERROR_NOT_READY:Result:='ERROR_NOT_READY';
   ERROR_BAD_COMMAND:Result:='ERROR_BAD_COMMAND';
  
@@ -1306,7 +1359,8 @@ begin
   ERROR_OPEN_FAILED:Result:='ERROR_OPEN_FAILED';
   ERROR_CALL_NOT_IMPLEMENTED:Result:='ERROR_CALL_NOT_IMPLEMENTED';
   ERROR_INSUFFICIENT_BUFFER:Result:='ERROR_INSUFFICIENT_BUFFER';
- 
+  ERROR_WAIT_NO_CHILDREN:Result:='ERROR_WAIT_NO_CHILDREN';
+  
   ERROR_NOT_LOCKED:Result:='ERROR_NOT_LOCKED';
  
   ERROR_LOCK_FAILED:Result:='ERROR_LOCK_FAILED';
@@ -1324,7 +1378,13 @@ begin
  
   ERROR_NOT_OWNER:Result:='ERROR_NOT_OWNER';
  
+  ERROR_OPERATION_ABORTED:Result:='ERROR_OPERATION_ABORTED';
+  ERROR_IO_INCOMPLETE:Result:='ERROR_IO_INCOMPLETE';
+  ERROR_IO_PENDING:Result:='ERROR_IO_PENDING';
+ 
   ERROR_CAN_NOT_COMPLETE:Result:='ERROR_CAN_NOT_COMPLETE';
+ 
+  ERROR_NOT_FOUND:Result:='ERROR_NOT_FOUND';
  
   ERROR_INVALID_ACL:Result:='ERROR_INVALID_ACL';
   ERROR_INVALID_SID:Result:='ERROR_INVALID_SID';
@@ -1335,14 +1395,22 @@ begin
   ERROR_FUNCTION_FAILED:Result:='ERROR_FUNCTION_FAILED';
  
   {Errors below here have no compatibility equivalent}
-  ERROR_NOT_FOUND:Result:='ERROR_NOT_FOUND';
+  ERROR_NOT_VALID:Result:='ERROR_NOT_VALID';
   ERROR_NOT_ASSIGNED:Result:='ERROR_NOT_ASSIGNED';
   ERROR_IN_USE:Result:='ERROR_IN_USE';
   ERROR_OPERATION_FAILED:Result:='ERROR_OPERATION_FAILED';
   ERROR_NOT_OPEN:Result:='ERROR_NOT_OPEN';
   ERROR_ALREADY_OPEN:Result:='ERROR_ALREADY_OPEN';
   ERROR_WAIT_ABANDONED:Result:='ERROR_WAIT_ABANDONED';
-  //To Do //More To Do
+  ERROR_IN_PROGRESS:Result:='ERROR_IN_PROGRESS';
+  ERROR_RUNTIME_ERROR:Result:='ERROR_RUNTIME_ERROR';
+  ERROR_EXCEPTION:Result:='ERROR_EXCEPTION';
+  ERROR_NOT_PROCESSED:Result:='ERROR_NOT_PROCESSED';
+  ERROR_NOT_COMPLETED:Result:='ERROR_NOT_COMPLETED';
+  ERROR_NOT_COMPATIBLE:Result:='ERROR_NOT_COMPATIBLE';
+  ERROR_CANCELLED:Result:='ERROR_CANCELLED';
+  
+  ERROR_UNKNOWN:Result:='ERROR_UNKNOWN';
  end;
 end;
 

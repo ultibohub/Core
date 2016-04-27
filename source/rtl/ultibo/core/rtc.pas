@@ -96,7 +96,7 @@ type
  {RTC Device Methods}
  TRTCDeviceGetTime = function(RTC:PRTCDevice):Int64;
  TRTCDeviceSetTime = function(RTC:PRTCDevice;const Time:Int64):LongWord;
- TRTCDeviceProperties = function(RTC:PRTCDevice;var Properties:PRTCProperties):LongWord;
+ TRTCDeviceProperties = function(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
  
  TRTCDevice = record
   {Device Properties}
@@ -131,7 +131,7 @@ procedure RTCInit;
 function RTCDeviceGetTime(RTC:PRTCDevice):Int64;
 function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):LongWord;
  
-function RTCDeviceProperties(RTC:PRTCDevice;var Properties:PRTCProperties):LongWord;
+function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
   
 function RTCDeviceCreate:PRTCDevice;
 function RTCDeviceCreateEx(Size:LongWord):PRTCDevice;
@@ -156,6 +156,7 @@ function SysRTCSetTime(const Time:Int64):LongWord;
 {RTC Helper Functions}
 function RTCGetCount:LongWord; inline;
 function RTCDeviceGetDefault:PRTCDevice; inline;
+function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord; 
 
 function RTCDeviceCheck(RTC:PRTCDevice):PRTCDevice;
 
@@ -234,7 +235,7 @@ end;
  
 {==============================================================================}
  
-function RTCDeviceProperties(RTC:PRTCDevice;var Properties:PRTCProperties):LongWord;
+function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -634,6 +635,41 @@ function RTCDeviceGetDefault:PRTCDevice; inline;
 begin
  {}
  Result:=RTCDeviceDefault;
+end;
+
+{==============================================================================}
+
+function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord; 
+{Set the current default RTC device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check RTC}
+ if RTC = nil then Exit;
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(RTCDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check RTC}
+    if RTCDeviceCheck(RTC) <> RTC then Exit;
+    
+    {Set RTC Default}
+    RTCDeviceDefault:=RTC;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(RTCDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

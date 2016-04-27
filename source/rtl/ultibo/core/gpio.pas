@@ -112,7 +112,7 @@ type
  TGPIODeviceOutputClear = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
  TGPIODeviceFunctionSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
  
- TGPIODeviceProperties = function(GPIO:PGPIODevice;var Properties:PGPIOProperties):LongWord;
+ TGPIODeviceProperties = function(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
  
  TGPIODevice = record
   {Device Properties}
@@ -164,7 +164,7 @@ function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODeviceOutputClear(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODeviceFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 
-function GPIODeviceProperties(GPIO:PGPIODevice;var Properties:PGPIOProperties):LongWord;
+function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
  
 function GPIODeviceCreate:PGPIODevice;
 function GPIODeviceCreateEx(Size:LongWord):PGPIODevice;
@@ -194,6 +194,7 @@ function SysGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
 {GPIO Helper Functions}
 function GPIOGetCount:LongWord; inline;
 function GPIODeviceGetDefault:PGPIODevice; inline;
+function GPIODeviceSetDefault(GPIO:PGPIODevice):LongWord; 
 
 function GPIODeviceCheck(GPIO:PGPIODevice):PGPIODevice;
 
@@ -352,7 +353,7 @@ end;
 
 {==============================================================================}
 
-function GPIODeviceProperties(GPIO:PGPIODevice;var Properties:PGPIOProperties):LongWord;
+function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -806,6 +807,41 @@ function GPIODeviceGetDefault:PGPIODevice; inline;
 begin
  {}
  Result:=GPIODeviceDefault;
+end;
+
+{==============================================================================}
+
+function GPIODeviceSetDefault(GPIO:PGPIODevice):LongWord; 
+{Set the current default GPIO device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(GPIODeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check GPIO}
+    if GPIODeviceCheck(GPIO) <> GPIO then Exit;
+    
+    {Set GPIO Default}
+    GPIODeviceDefault:=GPIO;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(GPIODeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

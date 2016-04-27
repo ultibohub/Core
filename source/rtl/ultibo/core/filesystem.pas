@@ -19303,7 +19303,11 @@ begin
       begin
        Result:=FileSearchRec.FindHandle;
        AFindData:=FileSearchRec.FindData;
-      end;
+      end
+     else
+      begin
+       SetLastError(ERROR_FILE_NOT_FOUND);
+      end;      
     finally 
      {Unlock Volume}
      Volume.ReaderUnlock;
@@ -19318,6 +19322,10 @@ begin
       begin
        Result:=FileSearchRec.FindHandle;
        AFindData:=FileSearchRec.FindData;
+      end
+     else
+      begin
+       SetLastError(ERROR_FILE_NOT_FOUND);
       end;
     finally 
      {Unlock Drive}
@@ -19356,8 +19364,13 @@ begin
      FileSearchRec.FindHandle:=AHandle;
      if Drive.FileSystem.FindNextEx(FileSearchRec) = 0 then
       begin
+       Result:=True;
        AFindData:=FileSearchRec.FindData;
-      end;
+      end
+     else
+      begin
+       SetLastError(ERROR_NO_MORE_FILES);
+      end;      
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
@@ -19374,8 +19387,13 @@ begin
        FileSearchRec.FindHandle:=AHandle;
        if Volume.FileSystem.FindNextEx(FileSearchRec) = 0 then
         begin
+         Result:=True;
          AFindData:=FileSearchRec.FindData;
-         end;
+        end
+       else
+        begin
+         SetLastError(ERROR_NO_MORE_FILES);
+        end;
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;

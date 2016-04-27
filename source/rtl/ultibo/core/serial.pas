@@ -41,7 +41,7 @@ unit Serial;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -52,17 +52,18 @@ const
  {Serial specific constants}
  SERIAL_NAME_PREFIX = 'Serial';  {Name prefix for Serial Devices}
  
- {SERIAL Device Types}
+ {Serial Device Types}
  SERIAL_TYPE_NONE      = 0;
+ SERIAL_TYPE_UART      = 1;
  
- {SERIAL Device States}
+ {Serial Device States}
  SERIAL_STATE_DISABLED = 0;
  SERIAL_STATE_ENABLED  = 1;
  
- {SERIAL Device Flags}
+ {Serial Device Flags}
  SERIAL_FLAG_NONE          = $00000000;
  
- {SERIAL logging}
+ {Serial logging}
  SERIAL_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Serial debugging messages}
  SERIAL_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Serial informational messages, such as a device being attached or detached}
  SERIAL_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Serial error messages}
@@ -72,7 +73,7 @@ var
  SERIAL_DEFAULT_LOG_LEVEL:LongWord = SERIAL_LOG_LEVEL_INFO; {Minimum level for Serial messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
- {SERIAL logging}
+ {Serial logging}
  SERIAL_LOG_ENABLED:Boolean; 
 
 {==============================================================================}
@@ -95,7 +96,7 @@ type
  
  {Serial Device Methods}
  //To Do
- TSerialDeviceProperties = function(Serial:PSerialDevice;var Properties:PSerialProperties):LongWord;
+ TSerialDeviceProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
  
  TSerialDevice = record
   {Device Properties}
@@ -129,7 +130,7 @@ procedure SerialInit;
 
 //To Do
 
-function SerialDeviceProperties(Serial:PSerialDevice;var Properties:PSerialProperties):LongWord;
+function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
   
 function SerialDeviceCreate:PSerialDevice;
 function SerialDeviceCreateEx(Size:LongWord):PSerialDevice;
@@ -150,6 +151,7 @@ function SerialDeviceNotification(Serial:PSerialDevice;Callback:TSerialNotificat
 {Serial Helper Functions}
 function SerialGetCount:LongWord; inline;
 function SerialDeviceGetDefault:PSerialDevice; inline;
+function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord; 
 
 function SerialDeviceCheck(Serial:PSerialDevice):PSerialDevice;
 
@@ -211,10 +213,13 @@ end;
 
 {==============================================================================}
  
-function SerialDeviceProperties(Serial:PSerialDevice;var Properties:PSerialProperties):LongWord;
+function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Properties}
+ if Properties = nil then Exit;
  
  //To Do
  
@@ -580,6 +585,41 @@ function SerialDeviceGetDefault:PSerialDevice; inline;
 begin
  {}
  Result:=SerialDeviceDefault;
+end;
+
+{==============================================================================}
+
+function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord; 
+{Set the current default Serial device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Serial}
+ if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(SerialDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Serial}
+    if SerialDeviceCheck(Serial) <> Serial then Exit;
+    
+    {Set Serial Default}
+    SerialDeviceDefault:=Serial;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SerialDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}

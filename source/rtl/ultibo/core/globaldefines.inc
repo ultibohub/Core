@@ -83,6 +83,7 @@ Global Defines
 {--$DEFINE PWM_DEBUG}             {Enable debug output/counters for PWM devices (Default: Off)}
 {--$DEFINE PCM_DEBUG}             {Enable debug output/counters for PCM devices (Default: Off)}
 {--$DEFINE GPIO_DEBUG}            {Enable debug output/counters for GPIO devices (Default: Off)}
+{--$DEFINE UART_DEBUG}            {Enable debug output/counters for UART devices (Default: Off)}
 {--$DEFINE BLUETOOTH_DEBUG}       {Enable debug output/counters for Bluetooth devices/drivers/hosts (Default: Off)}
 
 {--$DEFINE STORAGE_DEBUG}         {Enable debug output/counters for Storage devices (Default: Off)}
@@ -167,6 +168,7 @@ Global Defines
 {--$DEFINE BCM2709_DEBUG}         {Enable debug output/counters for BCM2709 drivers (Default: Off)}
 {--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
 
+{$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
 {$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
 {$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
 

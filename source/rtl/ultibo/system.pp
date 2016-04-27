@@ -90,6 +90,9 @@ var
 {$endif FPUNONE}
 
 type
+ {Process Functions}
+ TSysGetProcessID = function:SizeUInt;
+ 
  {File Functions}
  TSysDoClose = procedure(handle:longint);
  TSysDoErase = procedure(p:pchar;pchangeable:boolean);
@@ -110,6 +113,9 @@ type
  TSysDoGetDir = procedure(DriveNr:Byte;var Dir:RawByteString);
 
 var
+ {Process Functions}
+ SysGetProcessIDHandler:TSysGetProcessID;
+ 
  {File Functions}
  SysDoCloseHandler:TSysDoClose;
  SysDoEraseHandler:TSysDoErase;
@@ -188,7 +194,14 @@ End;
 {$ifdef FPC_HAS_FEATURE_PROCESSES}
 function GetProcessID: SizeUInt;
 begin
-  GetProcessID := 0;
+ if Assigned(SysGetProcessIDHandler) then
+  begin
+   GetProcessID:=SysGetProcessIDHandler();
+  end
+ else
+  begin 
+   GetProcessID:=0;
+  end; 
 end;
 {$endif}
 

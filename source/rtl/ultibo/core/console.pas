@@ -48,10 +48,6 @@ unit Console;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Framebuffer,Font,SysUtils;
-            
-//To Do //Look for:
-
-//Critical 
 
 {==============================================================================}
 {Global definitions}
@@ -75,9 +71,11 @@ const
  {Console Device Flags}
  CONSOLE_FLAG_NONE       = $00000000;
  CONSOLE_FLAG_LINE_WRAP  = $00000001; {Wrap long lines to the next line if set}
- CONSOLE_FLAG_DMA_FILL   = $00000002;
- CONSOLE_FLAG_DMA_CLEAR  = $00000004;
- CONSOLE_FLAG_DMA_SCROLL = $00000008;
+ CONSOLE_FLAG_DMA_BOX    = $00000002;
+ CONSOLE_FLAG_DMA_LINE   = $00000004;
+ CONSOLE_FLAG_DMA_FILL   = $00000008;
+ CONSOLE_FLAG_DMA_CLEAR  = $00000010;
+ CONSOLE_FLAG_DMA_SCROLL = $00000020;
  
  {Console Device Modes}
  CONSOLE_MODE_NONE      = 0;
@@ -259,6 +257,10 @@ type
   DesktopHeight:LongWord;                        {Desktop Height} {Console Relative (Pixels)}
   DesktopOffset:LongWord;                        {Desktop Offset}
   DesktopColor:LongWord;                         {Desktop Color}
+  {DMA Properties}
+  FillSize:LongWord;                             {Size of the DMA fill buffer (From DMAAllocateBufferEx)}
+  FillBuffer:Pointer;                            {Buffer for DMA memory fills}
+  ScrollBuffer:Pointer;                          {Buffer for DMA scroll right (Overlapped)}
  end;
  
 {==============================================================================}
@@ -435,6 +437,7 @@ function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;
 {Console Helper Functions}
 function ConsoleDeviceGetCount:LongWord; inline;
 function ConsoleDeviceGetDefault:PConsoleDevice; inline;
+function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord; 
 
 function ConsoleDeviceCheck(Console:PConsoleDevice):PConsoleDevice;
 
@@ -885,6 +888,8 @@ begin
  
  {Setup Flags}
  if CONSOLE_LINE_WRAP then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_LINE_WRAP;
+ if CONSOLE_DMA_BOX then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_BOX;
+ if CONSOLE_DMA_LINE then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_LINE;
  if CONSOLE_DMA_FILL then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_FILL;
  if CONSOLE_DMA_CLEAR then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_CLEAR;
  if CONSOLE_DMA_SCROLL then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_SCROLL;
@@ -2034,7 +2039,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Critical //Check for WINDOW_MODE_TEXT //All of these ? //Maybe not this one ?
+ //To Do //Check for WINDOW_MODE_TEXT //All of these ? //Maybe not this one ?
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -4625,13 +4630,27 @@ begin
     Unlock:=True;
     
     {Update Console}
+    {Console}
     Console.Width:=0;
     Console.Height:=0;
+    {Framebuffer}
     PFramebufferConsole(Console).DesktopX:=0;
     PFramebufferConsole(Console).DesktopY:=0;
     PFramebufferConsole(Console).DesktopWidth:=0;
     PFramebufferConsole(Console).DesktopHeight:=0;
-    
+    {DMA}
+    if PFramebufferConsole(Console).FillBuffer <> nil then
+     begin
+      DMAReleaseBuffer(PFramebufferConsole(Console).FillBuffer);
+      PFramebufferConsole(Console).FillSize:=0;
+      PFramebufferConsole(Console).FillBuffer:=nil;
+     end;
+    if PFramebufferConsole(Console).ScrollBuffer <> nil then
+     begin
+      DMAReleaseBuffer(PFramebufferConsole(Console).ScrollBuffer);
+      PFramebufferConsole(Console).ScrollBuffer:=nil;
+     end;
+     
     {Update Statistics}
     Inc(Console.CloseCount);
     
@@ -4651,6 +4670,8 @@ end;
 
 function FramebufferConsoleClear(Console:PConsoleDevice;Color:LongWord):LongWord;
 var
+ Data:TDMAData;
+ Count:LongWord;
  Address:LongWord;
  EndAddress:LongWord;
  Framebuffer:PFramebufferDevice;
@@ -4686,11 +4707,43 @@ begin
      end;
      
     {Check DMA}
-    if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_CLEAR) <> 0) and (DMAAvailable) then
+    if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_CLEAR) <> 0) and (DMAAvailable) and SysInitCompleted then
      begin
-     
-      //To Do
+      {Check Buffer}
+      if PFramebufferConsole(Console).FillBuffer = nil then
+       begin
+        {Get Size}
+        PFramebufferConsole(Console).FillSize:=(Framebuffer.Depth shr 3);
       
+        {Get Buffer}
+        PFramebufferConsole(Console).FillBuffer:=DMAAllocateBufferEx(PFramebufferConsole(Console).FillSize);
+       end;
+       
+      {Fill Source}
+      Count:=0;
+      while Count < PFramebufferConsole(Console).FillSize do
+       begin
+        PLongWord(PFramebufferConsole(Console).FillBuffer + Count)^:=Color;
+        
+        Inc(Count,(Framebuffer.Depth shr 3));
+       end;
+      
+      {Check Cache}
+      if not(DMA_CACHE_COHERENT) then
+       begin
+        {Clean Cache}
+        CleanDataCacheRange(LongWord(PFramebufferConsole(Console).FillBuffer),PFramebufferConsole(Console).FillSize);
+       end;
+      
+      {Create Data}
+      FillChar(Data,SizeOf(TDMAData),0);
+      Data.Source:=PFramebufferConsole(Console).FillBuffer;
+      Data.Dest:=Pointer(Framebuffer.Address);
+      Data.Flags:=DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.Size:=(Console.Height * Framebuffer.Pitch) + (Console.Width * (Framebuffer.Depth shr 3));
+      
+      {Perform Fill}
+      DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
      end
     else
      begin    
@@ -4713,7 +4766,7 @@ begin
       if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
        begin
         {Clean Cache}
-        CleanDataCacheRange(Framebuffer.Address,Framebuffer.Size);
+        CleanAndInvalidateDataCacheRange(Framebuffer.Address,Framebuffer.Size);
        end;
      end;
     
@@ -4739,6 +4792,10 @@ end;
 
 function FramebufferConsoleScroll(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord;
 var
+ Data:TDMAData;
+ Next:PDMAData;
+ Start:PDMAData;
+ Lines:LongWord;
  Size:LongWord;
  Dest:LongWord;
  Source:LongWord;
@@ -4785,11 +4842,143 @@ begin
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
     try
      {Check DMA}
-     if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_SCROLL) <> 0) and (DMAAvailable) then
+     if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_SCROLL) <> 0) and (DMAAvailable) and SysInitCompleted then
       begin
+       {Check Direction}
+       case Direction of
+        CONSOLE_DIRECTION_UP:begin
+          {Check Count}
+          if Count > Y1 then Exit;
       
-       //To Do
-       
+          {Create Data}
+          FillChar(Data,SizeOf(TDMAData),0);
+          Data.Source:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+          Data.Dest:=Pointer(Framebuffer.Address + ((Y1 - Count) * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+          Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+          Data.StrideLength:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+          Data.SourceStride:=Framebuffer.Pitch - Data.StrideLength;
+          Data.DestStride:=Framebuffer.Pitch - Data.StrideLength;
+          Data.Size:=Data.StrideLength * ((Y2 - Y1) + 1);
+          
+          {Check Stride}
+          if Data.StrideLength < 1 then Exit;
+          
+          {Perform Copy}
+          DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+         end;
+        CONSOLE_DIRECTION_DOWN:begin
+          {Check Count}
+          if (Y2 + Count) >= Console.Height then Exit;
+          
+          {Create Data}
+          FillChar(Data,SizeOf(TDMAData),0);
+          Data.Source:=Pointer(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+          Data.Dest:=Pointer(Framebuffer.Address + ((Y2 + Count) * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+          Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+          Data.StrideLength:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+          Data.SourceStride:=-(Framebuffer.Pitch + Data.StrideLength); {Negative stride}
+          Data.DestStride:=-(Framebuffer.Pitch + Data.StrideLength); {Negative stride}
+          Data.Size:=Data.StrideLength * ((Y2 - Y1) + 1);
+          
+          {Check Stride}
+          if Data.StrideLength < 1 then Exit;
+          
+          {Perform Copy}
+          DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+         end;
+        CONSOLE_DIRECTION_LEFT:begin
+          {Check Count}
+          if Count > X1 then Exit;
+          
+          {Create Data}
+          FillChar(Data,SizeOf(TDMAData),0);
+          Data.Source:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+          Data.Dest:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + ((X1 - Count) * (Framebuffer.Depth shr 3)));
+          Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+          Data.StrideLength:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+          Data.SourceStride:=Framebuffer.Pitch - Data.StrideLength;
+          Data.DestStride:=Framebuffer.Pitch - Data.StrideLength;
+          Data.Size:=Data.StrideLength * ((Y2 - Y1) + 1);
+          
+          {Check Stride}
+          if Data.StrideLength < 1 then Exit;
+          
+          {Perform Copy}
+          DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+         end;
+        CONSOLE_DIRECTION_RIGHT:begin
+          {Check Count}
+          if (X2 + Count) >= Console.Width then Exit;
+          
+          {Get Size}
+          Size:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+          if Size < 1 then Exit;
+          
+          {Get Lines}
+          Lines:=(SIZE_64K - SIZE_16K) div Size;
+          
+          {Check Buffer}
+          if PFramebufferConsole(Console).ScrollBuffer = nil then
+           begin
+            {Get Buffer}
+            PFramebufferConsole(Console).ScrollBuffer:=DMAAllocateBuffer(SIZE_64K);
+           end;
+          
+          {Get Buffer}
+          Buffer:=PFramebufferConsole(Console).ScrollBuffer;
+          
+          {Get Start}
+          Start:=PDMAData(Buffer + (Size * Lines));
+          Next:=Start;
+          
+          {Scroll Right}
+          CurrentY:=Y1;
+          while CurrentY <= Y2 do
+           begin
+            {Check Lines}
+            if ((Y2 - CurrentY) + 1) < Lines then Lines:=((Y2 - CurrentY) + 1);
+            
+            {Create Data (To Buffer)}
+            FillChar(Next^,SizeOf(TDMAData),0);
+            Next.Source:=Pointer(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+            Next.Dest:=Buffer;
+            Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+            Next.StrideLength:=Size;
+            Next.SourceStride:=Framebuffer.Pitch - Size;
+            Next.DestStride:=Framebuffer.Pitch - Size;
+            Next.Size:=Size * Lines;
+            Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
+            
+            {Get Next}
+            Next:=Next.Next;
+            
+            {Create Data (From Buffer)}
+            FillChar(Next^,SizeOf(TDMAData),0);
+            Next.Source:=Buffer;
+            Next.Dest:=Pointer(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X1 + Count) * (Framebuffer.Depth shr 3)));
+            Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+            Next.StrideLength:=Size;
+            Next.SourceStride:=Framebuffer.Pitch - Size;
+            Next.DestStride:=Framebuffer.Pitch - Size;
+            Next.Size:=Size * Lines;
+            Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
+            
+            Inc(CurrentY,Lines);
+            
+            if CurrentY > Y2 then
+             begin
+              Next.Next:=nil;
+             end
+            else
+             begin
+              Next:=Next.Next;
+             end;
+           end;
+          
+          {Perform Copy}
+          DMATransfer(Start,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+         end;
+       end;
       end
      else
       begin    
@@ -4823,7 +5012,7 @@ begin
             if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
              begin
               {Clean Cache}
-              CleanDataCacheRange(Dest,Size); 
+              CleanAndInvalidateDataCacheRange(Dest,Size); 
              end; 
             
             Inc(CurrentY);
@@ -4854,7 +5043,7 @@ begin
             if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
              begin
               {Clean Cache}
-              CleanDataCacheRange(Dest,Size); 
+              CleanAndInvalidateDataCacheRange(Dest,Size);
              end; 
             
             Dec(CurrentY);
@@ -4892,7 +5081,7 @@ begin
              if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
               begin
                {Clean Cache}
-               CleanDataCacheRange(Dest,Size); 
+               CleanAndInvalidateDataCacheRange(Dest,Size); 
               end; 
             
              Inc(CurrentY);
@@ -4933,7 +5122,7 @@ begin
              if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
               begin
                {Clean Cache}
-               CleanDataCacheRange(Dest,Size); 
+               CleanAndInvalidateDataCacheRange(Dest,Size); 
               end; 
              
              Inc(CurrentY);
@@ -4970,6 +5159,10 @@ function FramebufferConsoleDrawBox(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Widt
 var
  Size:LongWord;
  Count:LongWord;
+ TopData:TDMAData;
+ LeftData:TDMAData;
+ RightData:TDMAData;
+ BottomData:TDMAData;
  Address:LongWord;
  CurrentX:LongWord;
  CurrentY:LongWord;
@@ -5018,64 +5211,146 @@ begin
       Color:=FramebufferDeviceSwap(Color);
      end;
    
-    {Memory Barrier}
-    DataMemoryBarrier;  {Before the First Write}
-    
-    {Draw Top / Bottom}
-    CurrentX:=X1;
-    while CurrentX <= X2 do
+    {Check DMA}
+    if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_BOX) <> 0) and (DMAAvailable) and SysInitCompleted then
      begin
-      for Count:=0 to Width - 1 do
+      {Check Buffer}
+      if PFramebufferConsole(Console).FillBuffer = nil then
        begin
-        {Get Address Y1}
-        Address:=(Framebuffer.Address + ((Y1 + Count) * Framebuffer.Pitch) + (CurrentX * (Framebuffer.Depth shr 3)));
-        
-        {Write Pixel Y1}
-        PLongWord(Address)^:=Color;
-
-        {Get Address Y2}
-        Address:=(Framebuffer.Address + ((Y2 - Count) * Framebuffer.Pitch) + (CurrentX * (Framebuffer.Depth shr 3)));
-        
-        {Write Pixel Y2}
-        PLongWord(Address)^:=Color;
+        {Get Size}
+        PFramebufferConsole(Console).FillSize:=(Framebuffer.Depth shr 3);
+      
+        {Get Buffer}
+        PFramebufferConsole(Console).FillBuffer:=DMAAllocateBufferEx(PFramebufferConsole(Console).FillSize);
        end;
-       
-      Inc(CurrentX);
-     end;
-
-    {Draw Left / Right}
-    CurrentY:=Y1;
-    while CurrentY <= Y2 do
-     begin
-      for Count:=0 to Width - 1 do
+      
+      {Fill Source}
+      Count:=0;
+      while Count < PFramebufferConsole(Console).FillSize do
        begin
-        {Get Address X1}
-        Address:=(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X1 + Count) * (Framebuffer.Depth shr 3)));
+        PLongWord(PFramebufferConsole(Console).FillBuffer + Count)^:=Color;
         
-        {Write Pixel X1}
-        PLongWord(Address)^:=Color;
-
-        {Get Address X2}
-        Address:=(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X2 - Count) * (Framebuffer.Depth shr 3)));
-        
-        {Write Pixel X2}
-        PLongWord(Address)^:=Color;
+        Inc(Count,(Framebuffer.Depth shr 3));
        end;
-       
-      Inc(CurrentY);
-     end;
+      
+      {Check Cache}
+      if not(DMA_CACHE_COHERENT) then
+       begin
+        {Clean Cache}
+        CleanDataCacheRange(LongWord(PFramebufferConsole(Console).FillBuffer),PFramebufferConsole(Console).FillSize);
+       end;
     
-    {Check Cached}
-    if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
-     begin
-      {Get Address}
-      Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //See DrawBlock
+      {Draw Top}
+      {Create Data}
+      FillChar(TopData,SizeOf(TDMAData),0);
+      TopData.Source:=PFramebufferConsole(Console).FillBuffer;
+      TopData.Dest:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+      TopData.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      TopData.StrideLength:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+      TopData.SourceStride:=0;
+      TopData.DestStride:=Framebuffer.Pitch - TopData.StrideLength;
+      TopData.Size:=TopData.StrideLength * Width; {Not + 1}
+      TopData.Next:=@BottomData;
       
-      {Get Size}
-      Size:=((Y2 - Y1) + 1) * Framebuffer.Pitch; //To Do //See DrawBlock
+      {Draw Bottom}
+      {Create Data}
+      FillChar(BottomData,SizeOf(TDMAData),0);
+      BottomData.Source:=PFramebufferConsole(Console).FillBuffer;
+      BottomData.Dest:=Pointer(Framebuffer.Address + (((Y2 - Width) + 1) * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+      BottomData.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      BottomData.StrideLength:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+      BottomData.SourceStride:=0;
+      BottomData.DestStride:=Framebuffer.Pitch - BottomData.StrideLength;
+      BottomData.Size:=BottomData.StrideLength * Width; {Not + 1}
+      BottomData.Next:=@LeftData;
       
-      {Clean Cache}
-      CleanDataCacheRange(Address,Size);
+      {Draw Left}
+      {Create Data}
+      FillChar(LeftData,SizeOf(TDMAData),0);
+      LeftData.Source:=PFramebufferConsole(Console).FillBuffer;
+      LeftData.Dest:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+      LeftData.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      LeftData.StrideLength:=Width * (Framebuffer.Depth shr 3);
+      LeftData.SourceStride:=0;
+      LeftData.DestStride:=Framebuffer.Pitch - LeftData.StrideLength;
+      LeftData.Size:=LeftData.StrideLength * ((Y2 - Y1) + 1);
+      LeftData.Next:=@RightData;
+      
+      {Draw Right}
+      {Create Data}
+      FillChar(RightData,SizeOf(TDMAData),0);
+      RightData.Source:=PFramebufferConsole(Console).FillBuffer;
+      RightData.Dest:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (((X2 - Width) + 1) * (Framebuffer.Depth shr 3)));
+      RightData.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      RightData.StrideLength:=Width * (Framebuffer.Depth shr 3);
+      RightData.SourceStride:=0;
+      RightData.DestStride:=Framebuffer.Pitch - RightData.StrideLength;
+      RightData.Size:=RightData.StrideLength * ((Y2 - Y1) + 1);
+      
+      {Perform Fill}
+      DMATransfer(@TopData,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+     end
+    else
+     begin    
+      {Memory Barrier}
+      DataMemoryBarrier;  {Before the First Write}
+      
+      {Draw Top / Bottom}
+      CurrentX:=X1;
+      while CurrentX <= X2 do
+       begin
+        for Count:=0 to Width - 1 do
+         begin
+          {Get Address Y1}
+          Address:=(Framebuffer.Address + ((Y1 + Count) * Framebuffer.Pitch) + (CurrentX * (Framebuffer.Depth shr 3)));
+          
+          {Write Pixel Y1}
+          PLongWord(Address)^:=Color;
+      
+          {Get Address Y2}
+          Address:=(Framebuffer.Address + ((Y2 - Count) * Framebuffer.Pitch) + (CurrentX * (Framebuffer.Depth shr 3)));
+          
+          {Write Pixel Y2}
+          PLongWord(Address)^:=Color;
+         end;
+         
+        Inc(CurrentX);
+       end;
+      
+      {Draw Left / Right}
+      CurrentY:=Y1;
+      while CurrentY <= Y2 do
+       begin
+        for Count:=0 to Width - 1 do
+         begin
+          {Get Address X1}
+          Address:=(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X1 + Count) * (Framebuffer.Depth shr 3)));
+          
+          {Write Pixel X1}
+          PLongWord(Address)^:=Color;
+      
+          {Get Address X2}
+          Address:=(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X2 - Count) * (Framebuffer.Depth shr 3)));
+          
+          {Write Pixel X2}
+          PLongWord(Address)^:=Color;
+         end;
+         
+        Inc(CurrentY);
+       end;
+      
+      {Check Cached}
+      if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
+       begin
+        {Get Address}
+        Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //See DrawBlock
+        
+        {Get Size}
+        Size:=((Y2 - Y1) + 1) * Framebuffer.Pitch; //To Do //See DrawBlock
+        
+        {Clean Cache}
+        CleanAndInvalidateDataCacheRange(Address,Size);
+       end;
      end;
     
     {Unlock Framebuffer}
@@ -5101,6 +5376,7 @@ end;
 function FramebufferConsoleDrawLine(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
 var
  Size:LongWord;
+ Data:TDMAData;
  Count:LongWord;
  Address:LongWord;
  CurrentX:LongWord;
@@ -5152,73 +5428,165 @@ begin
       Color:=FramebufferDeviceSwap(Color);
      end;
    
-    {Memory Barrier}
-    DataMemoryBarrier;  {Before the First Write}
- 
-    {Get Direction}
-    if X1 = X2 then
+    {Check DMA}
+    if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_LINE) <> 0) and (DMAAvailable) and SysInitCompleted then
      begin
-      {Vertical}
-      CurrentY:=Y1;
-      while CurrentY <= Y2 do
+      {Get Direction}
+      if X1 = X2 then
        begin
-        for Count:=0 to Width - 1 do
+        {Vertical}
+        {Check Buffer}
+        if PFramebufferConsole(Console).FillBuffer = nil then
          begin
-          {Get Address}
-          Address:=(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X1 + Count) * (Framebuffer.Depth shr 3)));
-          
-          {Write Pixel}
-          PLongWord(Address)^:=Color;
+          {Get Size}
+          PFramebufferConsole(Console).FillSize:=(Framebuffer.Depth shr 3);
+        
+          {Get Buffer}
+          PFramebufferConsole(Console).FillBuffer:=DMAAllocateBufferEx(PFramebufferConsole(Console).FillSize);
          end;
-       
-        Inc(CurrentY);
-       end;
-       
-      {Check Cached}
-      if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
+        
+        {Fill Source}
+        Count:=0;
+        while Count < PFramebufferConsole(Console).FillSize do
+         begin
+          PLongWord(PFramebufferConsole(Console).FillBuffer + Count)^:=Color;
+          
+          Inc(Count,(Framebuffer.Depth shr 3));
+         end;
+        
+        {Check Cache}
+        if not(DMA_CACHE_COHERENT) then
+         begin
+          {Clean Cache}
+          CleanDataCacheRange(LongWord(PFramebufferConsole(Console).FillBuffer),PFramebufferConsole(Console).FillSize);
+         end;
+        
+        {Create Data}
+        FillChar(Data,SizeOf(TDMAData),0);
+        Data.Source:=PFramebufferConsole(Console).FillBuffer;
+        Data.Dest:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+        Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+        Data.StrideLength:=Width * (Framebuffer.Depth shr 3);
+        Data.SourceStride:=0;
+        Data.DestStride:=Framebuffer.Pitch - Data.StrideLength;
+        Data.Size:=Data.StrideLength * ((Y2 - Y1) + 1);
+        
+        {Perform Fill}
+        DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+       end
+      else if Y1 = Y2 then 
        begin
-        {Get Address}
-        Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //See DrawBlock
-
-        {Get Size}
-        Size:=((Y2 - Y1) + 1) * Framebuffer.Pitch; //To Do //See DrawBlock
-
-        {Clean Cache}
-        CleanDataCacheRange(Address,Size);
+        {Horizontal}
+        {Check Buffer}
+        if PFramebufferConsole(Console).FillBuffer = nil then
+         begin
+          {Get Size}
+          PFramebufferConsole(Console).FillSize:=(Framebuffer.Depth shr 3);
+        
+          {Get Buffer}
+          PFramebufferConsole(Console).FillBuffer:=DMAAllocateBufferEx(PFramebufferConsole(Console).FillSize);
+         end;
+        
+        {Fill Source}
+        Count:=0;
+        while Count < PFramebufferConsole(Console).FillSize do
+         begin
+          PLongWord(PFramebufferConsole(Console).FillBuffer + Count)^:=Color;
+          
+          Inc(Count,(Framebuffer.Depth shr 3));
+         end;
+        
+        {Check Cache}
+        if not(DMA_CACHE_COHERENT) then
+         begin
+          {Clean Cache}
+          CleanDataCacheRange(LongWord(PFramebufferConsole(Console).FillBuffer),PFramebufferConsole(Console).FillSize);
+         end;
+        
+        {Create Data}
+        FillChar(Data,SizeOf(TDMAData),0);
+        Data.Source:=PFramebufferConsole(Console).FillBuffer;
+        Data.Dest:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+        Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+        Data.StrideLength:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+        Data.SourceStride:=0;
+        Data.DestStride:=Framebuffer.Pitch - Data.StrideLength;
+        Data.Size:=Data.StrideLength * Width; {Not + 1}
+        
+        {Perform Fill}
+        DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
        end;
      end
-    else if Y1 = Y2 then 
-     begin
-      {Horizontal}
-      CurrentX:=X1;
-      while CurrentX <= X2 do
+    else
+     begin    
+      {Memory Barrier}
+      DataMemoryBarrier;  {Before the First Write}
+      
+      {Get Direction}
+      if X1 = X2 then
        begin
-        for Count:=0 to Width - 1 do
+        {Vertical}
+        CurrentY:=Y1;
+        while CurrentY <= Y2 do
          begin
-          {Get Address}
-          Address:=(Framebuffer.Address + ((Y1 + Count) * Framebuffer.Pitch) + (CurrentX * (Framebuffer.Depth shr 3)));
-          
-          {Write Pixel}
-          PLongWord(Address)^:=Color;
+          for Count:=0 to Width - 1 do
+           begin
+            {Get Address}
+            Address:=(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X1 + Count) * (Framebuffer.Depth shr 3)));
+            
+            {Write Pixel}
+            PLongWord(Address)^:=Color;
+           end;
+         
+          Inc(CurrentY);
          end;
          
-        Inc(CurrentX);
-       end;
-       
-      {Check Cached}
-      if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
+        {Check Cached}
+        if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
+         begin
+          {Get Address}
+          Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //See DrawBlock
+      
+          {Get Size}
+          Size:=((Y2 - Y1) + 1) * Framebuffer.Pitch; //To Do //See DrawBlock
+      
+          {Clean Cache}
+          CleanAndInvalidateDataCacheRange(Address,Size);
+         end;
+       end
+      else if Y1 = Y2 then 
        begin
-        {Get Address}
-        Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //See DrawBlock
-        
-        {Get Size}
-        Size:=((Y2 - Y1) + Width) * Framebuffer.Pitch; //To Do //See DrawBlock
-        
-        {Clean Cache}
-        CleanDataCacheRange(Address,Size);
+        {Horizontal}
+        CurrentX:=X1;
+        while CurrentX <= X2 do
+         begin
+          for Count:=0 to Width - 1 do
+           begin
+            {Get Address}
+            Address:=(Framebuffer.Address + ((Y1 + Count) * Framebuffer.Pitch) + (CurrentX * (Framebuffer.Depth shr 3)));
+            
+            {Write Pixel}
+            PLongWord(Address)^:=Color;
+           end;
+           
+          Inc(CurrentX);
+         end;
+         
+        {Check Cached}
+        if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
+         begin
+          {Get Address}
+          Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //See DrawBlock
+          
+          {Get Size}
+          Size:=((Y2 - Y1) + Width) * Framebuffer.Pitch; //To Do //See DrawBlock
+          
+          {Clean Cache}
+          CleanAndInvalidateDataCacheRange(Address,Size);
+         end;
        end;
      end;
- 
+     
     {Unlock Framebuffer}
     MutexUnlock(Framebuffer.Lock);
     
@@ -5336,7 +5704,7 @@ begin
           if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
            begin
             {Clean Cache}
-            CleanDataCacheRange(Address,Font.CharWidth * SizeOf(LongWord));
+            CleanAndInvalidateDataCacheRange(Address,Font.CharWidth * SizeOf(LongWord));
            end;
          end;
        end;
@@ -5474,7 +5842,7 @@ begin
             if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
              begin
               {Clean Cache}
-              CleanDataCacheRange(Address,Font.CharWidth * SizeOf(LongWord));
+              CleanAndInvalidateDataCacheRange(Address,Font.CharWidth * SizeOf(LongWord));
              end;
            end;
          end;
@@ -5557,7 +5925,7 @@ begin
     if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
      begin
       {Clean Cache}
-      CleanDataCacheRange(Address,SizeOf(LongWord));
+      CleanAndInvalidateDataCacheRange(Address,SizeOf(LongWord));
      end;
     
     {Unlock Framebuffer}
@@ -5583,6 +5951,8 @@ end;
 function FramebufferConsoleDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
 var
  Size:LongWord;
+ Data:TDMAData;
+ Count:LongWord;
  Address:LongWord;
  CurrentX:LongWord;
  CurrentY:LongWord;
@@ -5629,11 +5999,46 @@ begin
      end;
     
     {Check DMA}
-    if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_FILL) <> 0) and (DMAAvailable) then
+    if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_FILL) <> 0) and (DMAAvailable) and SysInitCompleted then
      begin
-     
-      //To Do
+      {Check Buffer}
+      if PFramebufferConsole(Console).FillBuffer = nil then
+       begin
+        {Get Size}
+        PFramebufferConsole(Console).FillSize:=(Framebuffer.Depth shr 3);
       
+        {Get Buffer}
+        PFramebufferConsole(Console).FillBuffer:=DMAAllocateBufferEx(PFramebufferConsole(Console).FillSize);
+       end;
+       
+      {Fill Source}
+      Count:=0;
+      while Count < PFramebufferConsole(Console).FillSize do
+       begin
+        PLongWord(PFramebufferConsole(Console).FillBuffer + Count)^:=Color;
+        
+        Inc(Count,(Framebuffer.Depth shr 3));
+       end;
+      
+      {Check Cached}
+      if not(DMA_CACHE_COHERENT) then
+       begin
+        {Clean Cache}
+        CleanDataCacheRange(LongWord(PFramebufferConsole(Console).FillBuffer),PFramebufferConsole(Console).FillSize);
+       end;
+      
+      {Create Data}
+      FillChar(Data,SizeOf(TDMAData),0);
+      Data.Source:=PFramebufferConsole(Console).FillBuffer;
+      Data.Dest:=Pointer(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.StrideLength:=((X2 - X1) + 1) * (Framebuffer.Depth shr 3);
+      Data.SourceStride:=0;
+      Data.DestStride:=Framebuffer.Pitch - Data.StrideLength;
+      Data.Size:=Data.StrideLength * ((Y2 - Y1) + 1);
+      
+      {Perform Fill}
+      DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
      end
     else
      begin    
@@ -5664,13 +6069,13 @@ begin
       if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CACHED) <> 0 then
        begin
         {Get Address}
-        Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //Critical //Should this be just Y1 to start at the left hand edge ?
+        Address:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3))); //To Do //Should this be just Y1 to start at the left hand edge ?
         
         {Get Size}
-        Size:=((Y2 - Y1) + 1) * Framebuffer.Pitch; //To Do //Critical //Or should this be + X2 * (Framebuffer.Depth shr 3) ? (and not Y + 1)
+        Size:=((Y2 - Y1) + 1) * Framebuffer.Pitch; //To Do //Or should this be + X2 * (Framebuffer.Depth shr 3) ? (and not Y + 1)
         
         {Clean Cache}
-        CleanDataCacheRange(Address,Size);
+        CleanAndInvalidateDataCacheRange(Address,Size);
        end;
      end;  
  
@@ -5950,6 +6355,41 @@ end;
 
 {==============================================================================}
 
+function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord; 
+{Set the current default console device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Console}
+    if ConsoleDeviceCheck(Console) <> Console then Exit;
+    
+    {Set Console Default}
+    ConsoleDeviceDefault:=Console;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(ConsoleDeviceTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
 function ConsoleDeviceCheck(Console:PConsoleDevice):PConsoleDevice;
 {Check if the supplied Console device is in the Console table}
 var
@@ -6032,6 +6472,8 @@ begin
      
      {Setup Flags}
      if CONSOLE_LINE_WRAP then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_LINE_WRAP;
+     if CONSOLE_DMA_BOX then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_BOX;
+     if CONSOLE_DMA_LINE then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_LINE;
      if CONSOLE_DMA_FILL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_FILL;
      if CONSOLE_DMA_CLEAR then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_CLEAR;
      if CONSOLE_DMA_SCROLL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_SCROLL;
@@ -6115,8 +6557,12 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit; 
  
- {Add Framebuffer}
- Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
+ {Check Autocreate}
+ if FRAMEBUFFER_CONSOLE_AUTOCREATE then
+  begin
+   {Add Framebuffer}
+   Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
+  end; 
 end;
 
 {==============================================================================}
@@ -6144,16 +6590,24 @@ begin
    {Check Framebuffer}
    if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit; 
    
-   {Add Framebuffer}
-   Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
+   {Check Autocreate}
+   if FRAMEBUFFER_CONSOLE_AUTOCREATE then
+    begin
+     {Add Framebuffer}
+     Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
+    end; 
   end
  else if (Notification and DEVICE_NOTIFICATION_ENABLE) <> 0 then
   begin
    {Check Framebuffer}
    if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit; 
 
-   {Add Framebuffer}
-   Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
+   {Check Autocreate}
+   if FRAMEBUFFER_CONSOLE_AUTOCREATE then
+    begin
+     {Add Framebuffer}
+     Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
+    end; 
   end
  else if (Notification and DEVICE_NOTIFICATION_DEREGISTER) <> 0 then
   begin

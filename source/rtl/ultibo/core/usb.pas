@@ -1338,6 +1338,9 @@ function USBDeviceFindInterfaceByClass(Device:PUSBDevice;InterfaceClass,Interfac
 
 function USBDeviceFindEndpointByIndex(Device:PUSBDevice;Interrface:PUSBInterface;Index:Byte):PUSBEndpointDescriptor;
 function USBDeviceFindEndpointByType(Device:PUSBDevice;Interrface:PUSBInterface;Direction,TransferType:Byte):PUSBEndpointDescriptor;
+function USBDeviceFindEndpointByTypeEx(Device:PUSBDevice;Interrface:PUSBInterface;Direction,TransferType:Byte;var Index:Byte):PUSBEndpointDescriptor;
+
+function USBDeviceCountEndpointsByType(Device:PUSBDevice;Interrface:PUSBInterface;Direction,TransferType:Byte):Byte;
 
 function USBDeviceFindAlternateByIndex(Device:PUSBDevice;Interrface:PUSBInterface;Index:Byte):PUSBAlternate;
 
@@ -2957,6 +2960,121 @@ begin
             {Return Result}
             Result:=Endpoint;
             Exit;
+           end;
+         end;
+       end;
+     end;  
+   finally
+    {Release the Lock}
+    MutexUnlock(Device.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function USBDeviceFindEndpointByTypeEx(Device:PUSBDevice;Interrface:PUSBInterface;Direction,TransferType:Byte;var Index:Byte):PUSBEndpointDescriptor;
+{Find the next endpoint of the specified type and direction on the specified interface of the specified device}
+{Device: The USB device to find the endpoint from}
+{Interrface: The interface to find the endpoint from}
+{Direction: The direction of the endpoint to find (eg USB_DIRECTION_OUT)}
+{TransferType: The transfer type of the endpoint to find (eg USB_TRANSFER_TYPE_BULK)}
+{Index: The index returned from the last call, pass 0 on the first call]
+{Return: The endpoint for the matching endpoint of nil if no endpoint matched}
+var
+ Count:LongWord;
+ Endpoint:PUSBEndpointDescriptor;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Interface}
+ if Interrface = nil then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
+  begin
+   try 
+    {Find Endpoint}
+    for Count:=0 to Length(Interrface.Endpoints) - 1 do
+     begin
+      {Check Endpoint}
+      Endpoint:=Interrface.Endpoints[Count];
+      if Endpoint <> nil then
+       begin
+        {Check Direction}
+        if (Endpoint.bEndpointAddress shr 7) = Direction then
+         begin
+          {Check Transfer Type}
+          if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+           begin
+            {Check Index}
+            if (Count >= Index) then
+             begin
+              {Update Index}
+              Index:=Count + 1;
+              
+              {Return Result}
+              Result:=Endpoint;
+              Exit;
+             end; 
+           end;
+         end;
+       end;
+     end;  
+   finally
+    {Release the Lock}
+    MutexUnlock(Device.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function USBDeviceCountEndpointsByType(Device:PUSBDevice;Interrface:PUSBInterface;Direction,TransferType:Byte):Byte;
+{Count the number of endpoints of the specified type and direction on the specified interface of the specified device}
+{Device: The USB device to find the endpoint from}
+{Interrface: The interface to find the endpoint from}
+{Direction: The direction of the endpoint to find (eg USB_DIRECTION_OUT)}
+{TransferType: The transfer type of the endpoint to find (eg USB_TRANSFER_TYPE_BULK)}
+{Return: The number of matching endpoints on the specified interface}
+var
+ Count:LongWord;
+ Endpoint:PUSBEndpointDescriptor;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Interface}
+ if Interrface = nil then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
+  begin
+   try 
+    {Find Endpoint}
+    for Count:=0 to Length(Interrface.Endpoints) - 1 do
+     begin
+      {Check Endpoint}
+      Endpoint:=Interrface.Endpoints[Count];
+      if Endpoint <> nil then
+       begin
+        {Check Direction}
+        if (Endpoint.bEndpointAddress shr 7) = Direction then
+         begin
+          {Check Transfer Type}
+          if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+           begin
+            {Update Result}
+            Inc(Result);
            end;
          end;
        end;
@@ -5183,7 +5301,16 @@ begin
        {Set Flags}
        Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
       end;
-    end;
+    end
+   else
+    begin
+     {Check Flags}
+     if (Flags and USB_REQUEST_FLAG_ALIGNED) = USB_REQUEST_FLAG_ALIGNED then
+      begin
+       {Set Flags}
+       //Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE; //To Do //This was missing ? //If we add it USB fails to bind devices, why ?
+      end; 
+    end;    
   end;
   
  {Return Result}
@@ -5444,6 +5571,9 @@ begin
  if MutexLock(Request.Device.Lock) = ERROR_SUCCESS then
   begin
    try
+    {Update Statistics}
+    Inc(Request.Device.RequestCount); 
+    
     {Update Pending}
     Inc(Request.Device.PendingCount);
     
@@ -5658,6 +5788,7 @@ function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;b
 var
  Status:LongWord;
  Request:PUSBRequest;
+ ResultCode:LongWord;
  Semaphore:TSemaphoreHandle;
 begin
  {}
@@ -5720,7 +5851,8 @@ begin
  if Status = USB_STATUS_SUCCESS then
   begin
    {Wait for Completion}
-   if SemaphoreWaitEx(Semaphore,Timeout) = ERROR_SUCCESS then
+   ResultCode:=SemaphoreWaitEx(Semaphore,Timeout);
+   if ResultCode = ERROR_SUCCESS then
     begin
      {Get Status}
      Status:=Request.Status;
@@ -5729,16 +5861,39 @@ begin
      if (Status = USB_STATUS_SUCCESS) and (Request.ActualSize <> Request.Size) and not(AllowShort) then
       begin
        Status:=USB_STATUS_INVALID_DATA;
+       
+       {Update Statistics}
        Inc(Request.Device.RequestErrors);
+       
+       {Update Status}
        Request.Device.LastError:=Status;
       end;
     end
-   else
+   else if ResultCode = ERROR_WAIT_TIMEOUT then
     begin
      if USB_LOG_ENABLED then USBLogError(Device,'Control request timeout (Timeout=' + IntToStr(Timeout) + ')');
      
+     {Get Status}
+     Status:=USB_STATUS_TIMEOUT;
+     
      {Cancel Request}
      USBRequestCancel(Request);
+     
+     {Wait for Cancel}
+     SemaphoreWait(Semaphore);
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Control request failure (Error=' + ErrorToString(ResultCode) + ')');
+     
+     {Get Status}
+     Status:=USB_STATUS_OPERATION_FAILED;
+     
+     {Cancel Request}
+     USBRequestCancel(Request);
+     
+     {Wait for Cancel}
+     SemaphoreWait(Semaphore); 
     end;    
   end;  
  

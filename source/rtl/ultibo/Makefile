@@ -369,6 +369,7 @@ ULTIBO_UNITS=globalconfig \
 	     console \
 	     logging \
 	     serial \
+	     uart \
 	     i2c \
 	     spi \
 	     i2s \
@@ -462,7 +463,9 @@ ULTIBO_EXTRAS=consoleshell \
 	      webstatus
 ULTIBO_CPU_UNITS=
 ULTIBO_CPU_EXTRAS=
-ULTIBO_DRIVER_UNITS=rtl8192cu \
+ULTIBO_DRIVER_UNITS=rtlwifi \
+		    rtl8192cu \
+		    rtl8188eu \
 		    rt2x00lib \
 		    rt2800lib \
 		    rt2x00usb \
