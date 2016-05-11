@@ -170,7 +170,7 @@ const
  KEYBOARD_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Keyboard messages}
 
 var 
- KEYBOARD_DEFAULT_LOG_LEVEL:LongWord = KEYBOARD_LOG_LEVEL_INFO; {Minimum level for Keyboard messages.  Only messages with level greater than or equal to this will be printed}
+ KEYBOARD_DEFAULT_LOG_LEVEL:LongWord = KEYBOARD_LOG_LEVEL_DEBUG; {Minimum level for Keyboard messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {Keyboard logging}
@@ -513,7 +513,7 @@ type
  {Keyboard Buffer}
  PKeyboardBuffer = ^TKeyboardBuffer;
  TKeyboardBuffer = record
-  Wait:TSemaphoreHandle;     {Data ready semahore}
+  Wait:TSemaphoreHandle;     {Data ready semaphore}
   Start:LongWord;            {Index of first buffer ready}
   Count:LongWord;            {Number of messages ready in buffer}
   Buffer:array[0..(KEYBOARD_BUFFER_SIZE - 1)] of TKeyboardData; 
@@ -1052,6 +1052,7 @@ begin
         end;
       end;
       
+     //To Do //Move these outside of loop (Allow for 0 return count on non block) //Same for Mouse (or change as per KeyboardReadEx)
      {$IFDEF KEYBOARD_DEBUG}
      if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(Keyboard,'Return count=' + IntToStr(Count));
      {$ENDIF}
@@ -1698,6 +1699,7 @@ begin
       end;
     end;
     
+   //To Do //Move these outside of loop (Allow for 0 return count on non block) //Same for Mouse (or change as per KeyboardReadEx)
    {$IFDEF KEYBOARD_DEBUG}
    if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(Keyboard,'Return count=' + IntToStr(Count));
    {$ENDIF}

@@ -1606,7 +1606,6 @@ procedure SMSC95XXTransmitWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request to the SMSC95XX bulk OUT endpoint}
 {Request: The USB request which has completed}
 var
- Status:LongWord;
  Message:TMessage;
  Network:PSMSC95XXNetworkDevice;
 begin
@@ -1629,7 +1628,7 @@ begin
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
         {$IFDEF USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
+        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, setting transmit request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
       
         {Update Request}

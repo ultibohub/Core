@@ -1411,11 +1411,32 @@ begin
  
  {Setup GPIO}
  GPIO_PIN_COUNT:=BCM2836_GPIO_PIN_COUNT;
- //To Do
  
  {Setup Virtual GPIO}
  if BOARD_TYPE = BOARD_TYPE_RPI3B then VIRTUAL_GPIO_PIN_COUNT:=BCM2837_VIRTUAL_GPIO_PIN_COUNT;
- //To Do
+ 
+ {Setup LEDs}
+ case BOARD_TYPE of
+  BOARD_TYPE_RPI2B:begin
+    {Power LED}
+    POWER_LED_PIN:=GPIO_PIN_35;
+    POWER_LED_PULL:=GPIO_PULL_NONE;
+    POWER_LED_FUNCTION:=GPIO_FUNCTION_OUT;
+    POWER_LED_ACTIVE_LOW:=False;
+    
+    {Activity LED}
+    ACTIVITY_LED_PIN:=GPIO_PIN_47;
+    ACTIVITY_LED_PULL:=GPIO_PULL_NONE;
+    ACTIVITY_LED_FUNCTION:=GPIO_FUNCTION_OUT;
+    ACTIVITY_LED_ACTIVE_LOW:=False;
+   end;
+  BOARD_TYPE_RPI3B:begin
+    {Activity LED}
+    ACTIVITY_LED_PIN:=VIRTUAL_GPIO_PIN_0;
+    ACTIVITY_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
+    ACTIVITY_LED_ACTIVE_LOW:=False;
+   end;
+ end;
  
  {Setup DMA}
  DMA_ALIGNMENT:=SizeOf(LongWord);
@@ -1861,10 +1882,13 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
-    //To Do
+    {Disable Pull Up/Down}
+    GPIOPullSelect(GPIO_PIN_35,GPIO_PULL_NONE);
+    {Enable Output}
+    GPIOFunctionSelect(GPIO_PIN_35,GPIO_FUNCTION_OUT);
    end;
   BOARD_TYPE_RPI3B:begin
-    //To Do //Not supported ? //See BCM2710.dts
+    {Not Supported}
    end;  
  end;
 end;
@@ -1876,10 +1900,11 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
-    //To Do
+    {LED On}
+    GPIOOutputSet(GPIO_PIN_35,GPIO_LEVEL_HIGH);
    end;
   BOARD_TYPE_RPI3B:begin
-    //To Do //Not supported ? //See BCM2710.dts
+    {Not Supported}
    end;  
  end;
 end;
@@ -1891,10 +1916,11 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
-    //To Do
+    {LED Off}
+    GPIOOutputSet(GPIO_PIN_35,GPIO_LEVEL_LOW);
    end;
   BOARD_TYPE_RPI3B:begin 
-    //To Do //Not supported ? //See BCM2710.dts
+    {Not Supported}
    end;
  end;
 end;
@@ -1908,14 +1934,19 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
-    {Read current value of GPFSEL}
-    Value:=GPIORead(RPI2_GPIO_ACTLED_GPFSEL);
+    {Read current value of GPFSEL} {Moved to new GPIO functions below}
+    (*Value:=GPIORead(RPI2_GPIO_ACTLED_GPFSEL);
     {Mask off relevant bits}
     Value:=Value and not(RPI2_GPIO_ACTLED_GPFMASK shl RPI2_GPIO_ACTLED_GPFSHIFT);
     {Include required bits}
     Value:=Value or (1 shl RPI2_GPIO_ACTLED_GPFSHIFT);
     {Write new value to GPFSEL} 
-    GPIOFunctionSelect(RPI2_GPIO_ACTLED_GPFSEL,Value);
+    GPIOFunctionSelectOld(RPI2_GPIO_ACTLED_GPFSEL,Value);*)
+    
+    {Disable Pull Up/Down}
+    GPIOPullSelect(GPIO_PIN_47,GPIO_PULL_NONE);
+    {Enable Output}
+    GPIOFunctionSelect(GPIO_PIN_47,GPIO_FUNCTION_OUT);
    end;
   BOARD_TYPE_RPI3B:begin 
     {Virtual GPIO}
@@ -1932,7 +1963,8 @@ begin
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
     {LED On}
-    GPIOOutputSet(RPI2_GPIO_ACTLED_GPSET,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));
+    {GPIOOutputSetOld(RPI2_GPIO_ACTLED_GPSET,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
+    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
    end;
   BOARD_TYPE_RPI3B:begin 
     {LED On}
@@ -1949,7 +1981,8 @@ begin
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
     {LED Off}
-    GPIOOutputClear(RPI2_GPIO_ACTLED_GPCLR,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));
+    {GPIOOutputClearOld(RPI2_GPIO_ACTLED_GPCLR,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
+    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
    end;
   BOARD_TYPE_RPI3B:begin 
     {LED Off}

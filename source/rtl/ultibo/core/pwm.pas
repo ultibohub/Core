@@ -69,7 +69,7 @@ const
  PWM_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No PWM messages}
 
 var 
- PWM_DEFAULT_LOG_LEVEL:LongWord = PWM_LOG_LEVEL_INFO; {Minimum level for PWM messages.  Only messages with level greater than or equal to this will be printed}
+ PWM_DEFAULT_LOG_LEVEL:LongWord = PWM_LOG_LEVEL_DEBUG; {Minimum level for PWM messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {PWM logging}

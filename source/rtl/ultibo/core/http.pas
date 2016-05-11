@@ -397,7 +397,7 @@ const
  HTTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No HTTP messages}
 
 var 
- HTTP_DEFAULT_LOG_LEVEL:LongWord = HTTP_LOG_LEVEL_DEBUG; //HTTP_LOG_LEVEL_INFO; {Minimum level for HTTP messages. Only messages with level greater than or equal to this will be printed} 
+ HTTP_DEFAULT_LOG_LEVEL:LongWord = HTTP_LOG_LEVEL_DEBUG; {Minimum level for HTTP messages. Only messages with level greater than or equal to this will be printed} 
  
 var 
  {HTTP logging}

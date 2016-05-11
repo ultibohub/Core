@@ -71,19 +71,19 @@ Global Defines
 {--$DEFINE HEAP_DEBUG}            {Enable debug output/counters for heap manager (Default: Off)}
 {--$DEFINE THREAD_DEBUG}          {Enable debug output/counters for thread internals (Default: Off)}
 {--$DEFINE PLATFORM_DEBUG}        {Enable debug output/counters for platform internals (Default: Off)}
-{--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off)}
+{--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off) (Do not enable when console logging is active)}
 {--$DEFINE LOGGING_DEBUG}         {Enable debug output/counters for logging devices (Default: Off)}
 
 {--$DEFINE DEVICE_DEBUG}          {Enable debug output/counters for device management (Default: Off)}
 {--$DEFINE DMA_DEBUG}             {Enable debug output/counters for DMA devices/hosts (Default: Off)}
-{--$DEFINE USB_DEBUG}             {Enable debug output/counters for USB devices/drivers/hosts (Default: Off)}
+{--$DEFINE USB_DEBUG}             {Enable debug output/counters for USB devices/drivers/hosts (Default: Off) (Do not enable when network or file logging is active)}
 {--$DEFINE MMC_DEBUG}             {Enable debug output/counters for MMC/SD devices/hosts (Default: Off)}
 {--$DEFINE SPI_DEBUG}             {Enable debug output/counters for SPI devices (Default: Off)}
 {--$DEFINE I2C_DEBUG}             {Enable debug output/counters for I2C devices (Default: Off)}
 {--$DEFINE PWM_DEBUG}             {Enable debug output/counters for PWM devices (Default: Off)}
 {--$DEFINE PCM_DEBUG}             {Enable debug output/counters for PCM devices (Default: Off)}
 {--$DEFINE GPIO_DEBUG}            {Enable debug output/counters for GPIO devices (Default: Off)}
-{--$DEFINE UART_DEBUG}            {Enable debug output/counters for UART devices (Default: Off)}
+{--$DEFINE UART_DEBUG}            {Enable debug output/counters for UART devices (Default: Off) (Do not enable when serial logging is active)}
 {--$DEFINE BLUETOOTH_DEBUG}       {Enable debug output/counters for Bluetooth devices/drivers/hosts (Default: Off)}
 
 {--$DEFINE STORAGE_DEBUG}         {Enable debug output/counters for Storage devices (Default: Off)}
@@ -105,7 +105,7 @@ Global Defines
  {$DEFINE VIRTUAL_DEBUG}
 {$ENDIF}
 
-{--$DEFINE NETWORK_DEBUG}         {Enable debug output/counters for Network services (Default: Off)}
+{--$DEFINE NETWORK_DEBUG}         {Enable debug output/counters for Network services (Default: Off) (Do not enable when network logging is active)}
 {$IFDEF NETWORK_DEBUG}
  {$DEFINE TRANSPORT_DEBUG}
  {$DEFINE PROTOCOL_DEBUG}
@@ -132,7 +132,7 @@ Global Defines
 {$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
 {--$DEFINE VPN_DEBUG}             {Enable debug output/counters for VPN devices (Default: Off)}
 
-{--$DEFINE SERIAL_DEBUG}          {Enable debug output/counters for Serial devices (Default: Off)}
+{--$DEFINE SERIAL_DEBUG}          {Enable debug output/counters for Serial devices (Default: Off) (Do not enable when serial logging is active)}
 
 {--$DEFINE VIDEO_DEBUG}           {Enable debug output/counters for Video devices (Default: Off)}
 {--$DEFINE AUDIO_DEBUG}           {Enable debug output/counters for Audio devices (Default: Off)}
@@ -171,6 +171,8 @@ Global Defines
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
 {$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
 {$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
+                                
+{--$DEFINE PL2303_DEBUG}          {Enable debug output/counters for PL2303 driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

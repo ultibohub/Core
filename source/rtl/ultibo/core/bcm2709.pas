@@ -33,6 +33,10 @@ Credits
    Linux - \drivers\dma\bcm2708-dmaengine.c - Copyright 2013-2014 Florian Meier and Gellert Weisz
    Linux - \drivers\dma\bcm2835-dma.c - Copyright 2013 Florian Meier
  
+   Linux - \drivers\pinctrl\bcm\pinctrl-bcm2835.c - Copyright (C) 2012 Chris Boot, Simon Arlott, Stephen Warren
+   
+   Linux - \drivers\tty\serial\amba-pl011.c - Copyright (C) 2010 ST-Ericsson SA and others
+   
 References
 ==========
 
@@ -61,7 +65,8 @@ BCM2709 Devices
   PWM
   PCM
   GPIO
-  UART
+  UART0
+  UART1
   SDHCI (eMMC)
  
   Clock
@@ -110,11 +115,56 @@ BCM2709 PCM Device
 BCM2709 GPIO Device
 ===================
 
+ The GPIO has 54 pins available each with multiple alternate functions. All pins can be configured as input or output
+ and all can have pull up or down applied.
+ 
+ Not all pins are exposed on the 26 or 40 pin header of the Raspberry Pi, for details of which pins are available see:
+ 
+  Raspberry Pi A and B - https://www.raspberrypi.org/documentation/usage/gpio/README.md
+  Raspberry Pi A+/B+/2B/3B/Zero - https://www.raspberrypi.org/documentation/usage/gpio-plus-and-raspi2/README.md
+ 
+ Some of the 54 pins are used for peripheral communication (such as the SD card) and are not available for general use,
+ take care when changing function selects on pins to avoid disabling certain system peripherals.
+ 
+ Event detection can be enabled for both high and low levels as well as rising and falling edges, there is also an
+ asynchronous rising or falling edge detection which can detect edges of very short duration.
+  
+  
+BCM2709 UART0 Device
+====================
 
-BCM2709 UART Device
-===================
+ The UART0 device is an ARM PL011 UART which supports programmable baud rates, start, stop and parity bits and hardware
+ flow control and many others. The UART0 is similar to the industry standard 16C650 but with a number of differences, the
+ PL011 has a some optional features such as IrDA, Serial InfraRed and DMA which are not supported by the Broadcom implementation.
 
+ In the standard configuration the UART0 TX and RX lines are connected to GPIO pins 14 and 15 respectively (Alternate function
+ 0) but they can be remapped via GPIO function selects to a number of other locations. On the Raspberry Pi (all models) none of
+ these alternate pin mappings are exposed via the 26 or 40 pin header and therefore cannot be used easily. This means that UART0
+ and UART1 cannot be used at the same time.
+ 
+ On the Raspberry Pi 3B the UART0 can be mapped to GPIO pins 32 and 33 (Alternate function 3) to communicate with the built in
+ Bluetooth module.
 
+ 
+BCM2709 UART1 Device
+====================
+
+ The UART1 device is a Broadcom implementation that is part of the AUX device which also includes the SPI1 and SPI2 devices.
+ This device is termed a Mini UART and has a smaller feature set than the PL011 UART but still supports a fairly standard
+ communication protocol with programmable baud rate and hardware flow control.
+ 
+ The Mini UART is similar to the standard 16550 device but is missing some of the features, the device also has no DMA support
+ so high speed transfers will produce a higher CPU load.
+
+ In the standard configuration the UART1 TX and RX lines are connected to GPIO pins 14 and 15 respectively (Alternate function
+ 5) but they can be remapped via GPIO function selects to a number of other locations. On the Raspberry Pi (all models) none of
+ these alternate pin mappings are exposed via the 26 or 40 pin header and therefore cannot be used easily. This means that UART0
+ and UART1 cannot be used at the same time.
+ 
+ On the Raspberry Pi 3B the UART1 can be mapped to GPIO pins 32 and 33 (Alternate function 5) to communicate with the built in
+ Bluetooth module.
+ 
+ 
 BCM2709 SDHCI Device
 ====================
 
@@ -174,6 +224,8 @@ const
  {BCM2709 I2C constants}
  
  {BCM2709 DMA constants}
+ BCM2709_DMA_DESCRIPTION = 'BCM2836 DMA';
+ 
  BCM2709_DMA_CHANNEL_COUNT = 16;                 {Total number of DMA channels (Not all are usable)}
  
  BCM2709_DMA_LITE_CHANNELS   = $7F80;            {Mask of DMA Lite channels (7 to 14)}
@@ -200,10 +252,82 @@ const
  {BCM2709 PCM constants}
  
  {BCM2709 GPIO constants}
+ BCM2709_GPIO_DESCRIPTION = 'BCM2836 GPIO';
+ 
+ BCM2709_GPIO_MIN_PIN = GPIO_PIN_0;
+ BCM2709_GPIO_MAX_PIN = GPIO_PIN_53;
+ 
+ BCM2709_GPIO_MAX_LEVEL = GPIO_LEVEL_HIGH;
+ 
+ BCM2709_GPIO_MAX_PULL = GPIO_PULL_DOWN;
+  
+ BCM2709_GPIO_MIN_FUNCTION = GPIO_FUNCTION_IN;
+ BCM2709_GPIO_MAX_FUNCTION = GPIO_FUNCTION_ALT5;
 
- {BCM2709 UART constants}
+ BCM2709_GPIO_MIN_TRIGGER = GPIO_TRIGGER_LOW;
+ BCM2709_GPIO_MAX_TRIGGER = GPIO_TRIGGER_ASYNC_FALLING;
+
+ BCM2709_GPIO_PULL_MAP:array[GPIO_PULL_NONE..GPIO_PULL_DOWN] of LongWord = (
+  {GPIO pull up/down to BCM2836 pull up/down}
+  BCM2836_GPPUD_NONE,
+  BCM2836_GPPUD_UP,
+  BCM2836_GPPUD_DOWN);
+ 
+ BCM2709_GPIO_FUNCTION_MAP:array[BCM2709_GPIO_MIN_FUNCTION..BCM2709_GPIO_MAX_FUNCTION] of LongWord = (
+  {GPIO functions to BCM2836 functions}
+  BCM2836_GPFSEL_IN,
+  BCM2836_GPFSEL_OUT,
+  BCM2836_GPFSEL_ALT0,
+  BCM2836_GPFSEL_ALT1,
+  BCM2836_GPFSEL_ALT2,
+  BCM2836_GPFSEL_ALT3,
+  BCM2836_GPFSEL_ALT4,
+  BCM2836_GPFSEL_ALT5);
+ 
+ BCM2709_GPIO_FUNCTION_UNMAP:array[BCM2709_GPIO_MIN_FUNCTION..BCM2709_GPIO_MAX_FUNCTION] of LongWord = (
+  {BCM2836 functions to GPIO functions}
+  GPIO_FUNCTION_IN,
+  GPIO_FUNCTION_OUT,
+  GPIO_FUNCTION_ALT5,
+  GPIO_FUNCTION_ALT4,
+  GPIO_FUNCTION_ALT0,
+  GPIO_FUNCTION_ALT1,
+  GPIO_FUNCTION_ALT2,
+  GPIO_FUNCTION_ALT3);
+  
+ BCM2709_GPIO_TRIGGER_MAP:array[BCM2709_GPIO_MIN_TRIGGER..BCM2709_GPIO_MAX_TRIGGER] of LongWord = (
+  {GPIO triggers to BCM2836 event registers}
+  BCM2836_GPLEN0,
+  BCM2836_GPHEN0,
+  BCM2836_GPREN0,
+  BCM2836_GPFEN0,
+  BCM2836_GPAREN0,
+  BCM2836_GPAFEN0);
+ 
+ {BCM2709 UART0 (PL011) constants}
+ BCM2709_UART0_DESCRIPTION = 'BCM2836 PL011 UART';
+ 
+ BCM2709_UART0_MIN_BAUD = 300;      {Default minimum of 300 baud}
+ BCM2709_UART0_MAX_BAUD = 187500;   {Default maximum based on the default settings from the firmware (Recalculated during open)}
+ 
+ BCM2709_UART0_MIN_DATABITS = SERIAL_DATA_5BIT;
+ BCM2709_UART0_MAX_DATABITS = SERIAL_DATA_8BIT;
+ 
+ BCM2709_UART0_MIN_STOPBITS = SERIAL_STOP_1BIT;
+ BCM2709_UART0_MAX_STOPBITS = SERIAL_STOP_2BIT;
+ 
+ BCM2709_UART0_MAX_PARITY = SERIAL_PARITY_EVEN;
+ 
+ BCM2709_UART0_MAX_FLOW = SERIAL_FLOW_RTS_CTS;
+ 
+ BCM2709_UART0_CLOCK_RATE = 3000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
+ 
+ {BCM2709 UART1 (AUX) constants}
+ BCM2709_UART1_DESCRIPTION = 'BCM2836 AUX (Mini) UART';
  
  {BCM2709 SDHCI constants}
+ BCM2709_EMMC_DESCRIPTION = 'BCM2836 Arasan SD Host';
+ 
  BCM2709_EMMC_MIN_FREQ = 400000;    {Default minimum of 400KHz}
  BCM2709_EMMC_MAX_FREQ = 250000000; //To Do //Get the current frequency from the command line or mailbox instead ? //Peripheral init could get from Mailbox like SMSC95XX ?
  
@@ -262,8 +386,39 @@ type
  {BCM2709 PCM types}
  
  {BCM2709 GPIO types}
-
- {BCM2709 UART types}
+ PBCM2709GPIODevice = ^TBCM2709GPIODevice;
+ 
+ PBCM2709GPIOBank = ^TBCM2709GPIOBank;
+ TBCM2709GPIOBank = record
+  GPIO:PGPIODevice;
+  Bank:LongWord;
+  Address:LongWord;
+  PinStart:LongWord;
+ end;
+ 
+ TBCM2709GPIODevice = record
+  {GPIO Properties}
+  GPIO:TGPIODevice;
+  {BCM2709 Properties}
+  Lock:TSpinHandle;                                                       {Device lock (Differs from lock in Device portion) (Spin lock due to use by interrupt handler)}
+  Banks:array[0..BCM2836_GPIO_BANK_COUNT - 1] of TBCM2709GPIOBank;
+  {Statistics Properties}                                        
+  InterruptCount:LongWord;                                                {Number of interrupt requests received by the device}
+ end;
+ 
+ {BCM2709 UART0 types}
+ PBCM2709UART0Device = ^TBCM2709UART0Device;
+ TBCM2709UART0Device = record
+  {UART Properties}
+  UART:TUARTDevice;
+  {BCM2709 Properties}
+  Address:Pointer;                                                        {Device register base address}
+  ClockRate:LongWord;                                                     {Device clock rate}
+  {Statistics Properties}                                        
+  InterruptCount:LongWord;                                                {Number of interrupt requests received by the device}
+ end;
+ 
+ {BCM2709 UART1 types}
  
  {BCM2709 SDHCI types}
  PBCM2709SDHCIHost = ^TBCM2709SDHCIHost;
@@ -372,9 +527,43 @@ procedure BCM2709DMADataToControlBlock(Request:PDMARequest;Data:PDMAData;Block:P
 
 {==============================================================================}
 {BCM2709 GPIO Functions}
+function BCM2709GPIOStart(GPIO:PGPIODevice):LongWord; 
+function BCM2709GPIOStop(GPIO:PGPIODevice):LongWord; 
+ 
+function BCM2709GPIOInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+function BCM2709GPIOInputWait(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
+function BCM2709GPIOInputEvent(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
+function BCM2709GPIOInputCancel(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+
+function BCM2709GPIOOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+
+function BCM2709GPIOPullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+
+function BCM2709GPIOFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+function BCM2709GPIOFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+
+procedure BCM2709GPIOInterruptHandler(Bank:PBCM2709GPIOBank);
+
+procedure BCM2709GPIOEventTrigger(Pin:PGPIOPin);
+procedure BCM2709GPIOEventTimeout(Event:PGPIOEvent);
 
 {==============================================================================}
-{BCM2709 UART Functions}
+{BCM2709 UART0 Functions}
+function BCM2709UART0Open(UART:PUARTDevice;BaudRate,DataBits,StopBits,Parity,FlowControl:LongWord):LongWord;
+function BCM2709UART0Close(UART:PUARTDevice):LongWord;
+ 
+function BCM2709UART0Read(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function BCM2709UART0Write(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+ 
+function BCM2709UART0Status(UART:PUARTDevice):LongWord;
+
+procedure BCM2709UART0InterruptHandler(UART:PUARTDevice);
+
+procedure BCM2709UART0Receive(UART:PUARTDevice);
+procedure BCM2709UART0Transmit(UART:PUARTDevice);
+
+{==============================================================================}
+{BCM2709 UART1 Functions}
 
 {==============================================================================}
 {BCM2709 SDHCI Functions}
@@ -452,6 +641,9 @@ var
  BCM2709DMAHost:PBCM2709DMAHost;
  BCM2709SDHCIHost:PBCM2709SDHCIHost; 
 
+ BCM2709GPIO:PBCM2709GPIODevice;
+ BCM2709UART0:PBCM2709UART0Device;
+ 
  BCM2709Clock:PBCM2709Clock;
  BCM2709Timer:PBCM2709Timer;
  BCM2709Random:PBCM2709Random;
@@ -548,6 +740,7 @@ begin
      BCM2709DMAHost.DMA.Device.DeviceType:=DMA_TYPE_NONE;
      BCM2709DMAHost.DMA.Device.DeviceFlags:=DMA_FLAG_STRIDE or DMA_FLAG_DREQ or DMA_FLAG_NOINCREMENT or DMA_FLAG_NOREAD or DMA_FLAG_NOWRITE or DMA_FLAG_WIDE;
      BCM2709DMAHost.DMA.Device.DeviceData:=nil;
+     BCM2709DMAHost.DMA.Device.DeviceDescription:=BCM2709_DMA_DESCRIPTION;
      if BCM2709DMA_SHARED_MEMORY then BCM2709DMAHost.DMA.Device.DeviceFlags:=BCM2709DMAHost.DMA.Device.DeviceFlags or DMA_FLAG_SHARED;
      if BCM2709DMA_NOCACHE_MEMORY then BCM2709DMAHost.DMA.Device.DeviceFlags:=BCM2709DMAHost.DMA.Device.DeviceFlags or DMA_FLAG_NOCACHE;
      if BCM2709DMA_CACHE_COHERENT then BCM2709DMAHost.DMA.Device.DeviceFlags:=BCM2709DMAHost.DMA.Device.DeviceFlags or DMA_FLAG_COHERENT;
@@ -613,11 +806,112 @@ begin
  {Create GPIO}
  if BCM2709_REGISTER_GPIO then
   begin
-   //To Do
+   BCM2709GPIO:=PBCM2709GPIODevice(GPIODeviceCreateEx(SizeOf(TBCM2709GPIODevice)));
+   if BCM2709GPIO <> nil then
+    begin
+     {Update GPIO}
+     {Device}
+     BCM2709GPIO.GPIO.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     BCM2709GPIO.GPIO.Device.DeviceType:=GPIO_TYPE_NONE;
+     BCM2709GPIO.GPIO.Device.DeviceFlags:=GPIO_FLAG_PULL_UP or GPIO_FLAG_PULL_DOWN or GPIO_FLAG_TRIGGER_LOW or GPIO_FLAG_TRIGGER_HIGH or GPIO_FLAG_TRIGGER_RISING or GPIO_FLAG_TRIGGER_FALLING or GPIO_FLAG_TRIGGER_ASYNC or GPIO_FLAG_TRIGGER_EDGE;
+     BCM2709GPIO.GPIO.Device.DeviceData:=nil;
+     BCM2709GPIO.GPIO.Device.DeviceDescription:=BCM2709_GPIO_DESCRIPTION;
+     {GPIO}
+     BCM2709GPIO.GPIO.GPIOState:=GPIO_STATE_DISABLED;
+     BCM2709GPIO.GPIO.DeviceStart:=BCM2709GPIOStart;
+     BCM2709GPIO.GPIO.DeviceStop:=BCM2709GPIOStop;
+     BCM2709GPIO.GPIO.DeviceInputGet:=BCM2709GPIOInputGet;
+     BCM2709GPIO.GPIO.DeviceInputWait:=BCM2709GPIOInputWait; 
+     BCM2709GPIO.GPIO.DeviceInputEvent:=BCM2709GPIOInputEvent;
+     BCM2709GPIO.GPIO.DeviceInputCancel:=BCM2709GPIOInputCancel;
+     BCM2709GPIO.GPIO.DeviceOutputSet:=BCM2709GPIOOutputSet;
+     BCM2709GPIO.GPIO.DevicePullSelect:=BCM2709GPIOPullSelect;  
+     BCM2709GPIO.GPIO.DeviceFunctionGet:=BCM2709GPIOFunctionGet;
+     BCM2709GPIO.GPIO.DeviceFunctionSelect:=BCM2709GPIOFunctionSelect;    
+     {Driver}
+     BCM2709GPIO.GPIO.Address:=Pointer(BCM2836_GPIO_REGS_BASE);
+     BCM2709GPIO.GPIO.Properties.Flags:=BCM2709GPIO.GPIO.Device.DeviceFlags;
+     BCM2709GPIO.GPIO.Properties.PinMin:=BCM2709_GPIO_MIN_PIN;
+     BCM2709GPIO.GPIO.Properties.PinMax:=BCM2709_GPIO_MAX_PIN;
+     BCM2709GPIO.GPIO.Properties.PinCount:=BCM2836_GPIO_PIN_COUNT;
+     BCM2709GPIO.GPIO.Properties.FunctionMin:=BCM2709_GPIO_MIN_FUNCTION;
+     BCM2709GPIO.GPIO.Properties.FunctionMax:=BCM2709_GPIO_MAX_FUNCTION;
+     BCM2709GPIO.GPIO.Properties.FunctionCount:=8;
+     {BCM2709}
+     BCM2709GPIO.Lock:=INVALID_HANDLE_VALUE;
+     
+     {Register GPIO}
+     Status:=GPIODeviceRegister(@BCM2709GPIO.GPIO);
+     if Status = ERROR_SUCCESS then
+      begin
+       {Start GPIO}
+       Status:=GPIODeviceStart(@BCM2709GPIO.GPIO);
+       if Status <> ERROR_SUCCESS then
+        begin
+         if GPIO_LOG_ENABLED then GPIOLogError(nil,'BCM2709: Failed to start new GPIO device: ' + ErrorToString(Status));
+        end;
+      end
+     else
+      begin
+       if GPIO_LOG_ENABLED then GPIOLogError(nil,'BCM2709: Failed to register new GPIO device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if GPIO_LOG_ENABLED then GPIOLogError(nil,'BCM2709: Failed to create new GPIO device');
+    end;
   end;
 
- {Create UART}
- if BCM2709_REGISTER_UART then
+ {Create UART0}
+ if BCM2709_REGISTER_UART0 then
+  begin
+   BCM2709UART0:=PBCM2709UART0Device(UARTDeviceCreateEx(SizeOf(TBCM2709UART0Device)));
+   if BCM2709UART0 <> nil then
+    begin
+     {Update UART0}
+     {Device}
+     BCM2709UART0.UART.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     BCM2709UART0.UART.Device.DeviceType:=UART_TYPE_16650;
+     BCM2709UART0.UART.Device.DeviceFlags:=UART_FLAG_DATA_8BIT or UART_FLAG_DATA_7BIT or UART_FLAG_DATA_6BIT or UART_FLAG_DATA_5BIT or UART_FLAG_STOP_1BIT or UART_FLAG_STOP_2BIT or UART_FLAG_PARITY_ODD or UART_FLAG_PARITY_EVEN or UART_FLAG_FLOW_RTS_CTS;
+     BCM2709UART0.UART.Device.DeviceData:=nil;
+     BCM2709UART0.UART.Device.DeviceDescription:=BCM2709_UART0_DESCRIPTION;
+     {UART}
+     BCM2709UART0.UART.UARTMode:=UART_MODE_NONE;
+     BCM2709UART0.UART.UARTState:=UART_STATE_DISABLED;
+     BCM2709UART0.UART.UARTStatus:=UART_STATUS_NONE;
+     BCM2709UART0.UART.DeviceOpen:=BCM2709UART0Open;
+     BCM2709UART0.UART.DeviceClose:=BCM2709UART0Close;
+     BCM2709UART0.UART.DeviceRead:=BCM2709UART0Read;
+     BCM2709UART0.UART.DeviceWrite:=BCM2709UART0Write;
+     BCM2709UART0.UART.DeviceStatus:=BCM2709UART0Status;
+     {Driver}
+     BCM2709UART0.UART.Properties.Flags:=BCM2709UART0.UART.Device.DeviceFlags;
+     BCM2709UART0.UART.Properties.MinRate:=BCM2709_UART0_MIN_BAUD;
+     BCM2709UART0.UART.Properties.MaxRate:=BCM2709_UART0_MAX_BAUD;
+     BCM2709UART0.UART.Properties.BaudRate:=SERIAL_BAUD_RATE_DEFAULT;
+     BCM2709UART0.UART.Properties.DataBits:=SERIAL_DATA_8BIT;
+     BCM2709UART0.UART.Properties.StopBits:=SERIAL_STOP_1BIT;
+     BCM2709UART0.UART.Properties.Parity:=SERIAL_PARITY_NONE;
+     BCM2709UART0.UART.Properties.FlowControl:=SERIAL_FLOW_NONE;
+     {BCM2709}
+     BCM2709UART0.Address:=Pointer(BCM2836_PL011_REGS_BASE);
+     BCM2709UART0.ClockRate:=BCM2709_UART0_CLOCK_RATE;
+     
+     {Register UART0}
+     Status:=UARTDeviceRegister(@BCM2709UART0.UART);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if UART_LOG_ENABLED then UARTLogError(nil,'BCM2709: Failed to register new UART0 device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if UART_LOG_ENABLED then UARTLogError(nil,'BCM2709: Failed to create new UART0 device');
+    end;
+  end;
+ 
+ {Create UART1}
+ if BCM2709_REGISTER_UART1 then
   begin
    //To Do
   end;
@@ -634,6 +928,7 @@ begin
      BCM2709SDHCIHost.SDHCI.Device.DeviceType:=SDHCI_TYPE_NONE;
      BCM2709SDHCIHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NONE;
      BCM2709SDHCIHost.SDHCI.Device.DeviceData:=nil;
+     BCM2709SDHCIHost.SDHCI.Device.DeviceDescription:=BCM2709_EMMC_DESCRIPTION;
      {SDHCI}
      BCM2709SDHCIHost.SDHCI.SDHCIState:=SDHCI_STATE_DISABLED;
      BCM2709SDHCIHost.SDHCI.HostStart:=BCM2709SDHCIHostStart;
@@ -1889,10 +2184,1907 @@ end;
 {==============================================================================}
 {==============================================================================}
 {BCM2709 GPIO Functions}
+function BCM2709GPIOStart(GPIO:PGPIODevice):LongWord; 
+var
+ Pin:LongWord;
+ Count:LongWord;
+ Value:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Start');
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Clear Registers}
+ for Count:=0 to BCM2836_GPIO_BANK_COUNT - 1 do
+  begin
+   {Event Detect Registers}
+   PLongWord(GPIO.Address + BCM2836_GPREN0 + (Count * SizeOf(LongWord)))^:=0;
+   PLongWord(GPIO.Address + BCM2836_GPFEN0 + (Count * SizeOf(LongWord)))^:=0;
+   PLongWord(GPIO.Address + BCM2836_GPHEN0 + (Count * SizeOf(LongWord)))^:=0;
+   PLongWord(GPIO.Address + BCM2836_GPLEN0 + (Count * SizeOf(LongWord)))^:=0;
+   PLongWord(GPIO.Address + BCM2836_GPAREN0 + (Count * SizeOf(LongWord)))^:=0;
+   PLongWord(GPIO.Address + BCM2836_GPAFEN0 + (Count * SizeOf(LongWord)))^:=0;
+   
+   {Event Detect Status}
+   Value:=PLongWord(GPIO.Address + BCM2836_GPEDS0 + (Count * SizeOf(LongWord)))^;
+   while Value <> 0 do
+    begin
+     {Get Pin}
+     Pin:=FirstBitSet(Value);
+
+     {Clear Status}
+     PLongWord(GPIO.Address + BCM2836_GPEDS0 + (Count * SizeOf(LongWord)))^:=(BCM2836_GPEDS_MASK shl Pin);
+     
+     {Clear Pin}
+     Value:=Value xor (1 shl Pin);
+    end;
+  end; 
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Create Lock}
+ PBCM2709GPIODevice(GPIO).Lock:=SpinCreate;
+ if PBCM2709GPIODevice(GPIO).Lock = INVALID_HANDLE_VALUE then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end; 
+ 
+ {Setup Banks}
+ for Count:=0 to BCM2836_GPIO_BANK_COUNT - 1 do
+  begin
+   PBCM2709GPIODevice(GPIO).Banks[Count].GPIO:=GPIO;
+   PBCM2709GPIODevice(GPIO).Banks[Count].Bank:=Count;
+   PBCM2709GPIODevice(GPIO).Banks[Count].Address:=PtrUInt(GPIO.Address) + BCM2836_GPEDS0 + (Count * SizeOf(LongWord));
+   PBCM2709GPIODevice(GPIO).Banks[Count].PinStart:=Count * 32;
+  end;
+  
+ {Create Pins}
+ SetLength(GPIO.Pins,BCM2836_GPIO_PIN_COUNT);
+ 
+ {Setup Pins}
+ for Count:=0 to BCM2836_GPIO_PIN_COUNT - 1 do
+  begin
+   GPIO.Pins[Count].GPIO:=GPIO;
+   GPIO.Pins[Count].Pin:=Count;
+   GPIO.Pins[Count].Flags:=GPIO_EVENT_FLAG_NONE;
+   GPIO.Pins[Count].Trigger:=GPIO_TRIGGER_NONE;
+   GPIO.Pins[Count].Count:=0;
+   GPIO.Pins[Count].Event:=INVALID_HANDLE_VALUE;
+   GPIO.Pins[Count].Events:=nil;
+  end;
+  
+ {Request Bank0 IRQ}
+ RequestIRQ(IRQ_ROUTING,BCM2836_IRQ_GPIO_0,TInterruptHandler(BCM2709GPIOInterruptHandler),@PBCM2709GPIODevice(GPIO).Banks[0]);
+
+ {Request Bank1 IRQ}
+ RequestIRQ(IRQ_ROUTING,BCM2836_IRQ_GPIO_1,TInterruptHandler(BCM2709GPIOInterruptHandler),@PBCM2709GPIODevice(GPIO).Banks[1]);
+
+ Result:=ERROR_SUCCESS;  
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOStop(GPIO:PGPIODevice):LongWord;
+var
+ Count:LongWord;
+ Event:PGPIOEvent;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Stop');
+ {$ENDIF}
+ 
+ {Release Bank0 IRQ}
+ ReleaseIRQ(IRQ_ROUTING,BCM2836_IRQ_GPIO_0,TInterruptHandler(BCM2709GPIOInterruptHandler),@PBCM2709GPIODevice(GPIO).Banks[0]);
+
+ {Release Bank1 IRQ}
+ ReleaseIRQ(IRQ_ROUTING,BCM2836_IRQ_GPIO_1,TInterruptHandler(BCM2709GPIOInterruptHandler),@PBCM2709GPIODevice(GPIO).Banks[1]);
+ 
+ {Release Pins}
+ for Count:=0 to BCM2836_GPIO_PIN_COUNT - 1 do
+  begin
+   if GPIO.Pins[Count].Event <> INVALID_HANDLE_VALUE then
+    begin
+     EventDestroy(GPIO.Pins[Count].Event);
+    end;
+   
+   if GPIO.Pins[Count].Events <> nil then
+    begin
+     Event:=GPIO.Pins[Count].Events;
+     while Event <> nil do
+      begin
+       {Deregister Event}
+       GPIODeviceDeregisterEvent(GPIO,@GPIO.Pins[Count],Event);
+       
+       {Destroy Event}
+       GPIODeviceDestroyEvent(GPIO,Event);
+       
+       Event:=GPIO.Pins[Count].Events;
+      end;
+    end;
+  end; 
+ 
+ {Destroy Pins}
+ SetLength(GPIO.Pins,0);
+ 
+ {Destroy Lock}
+ if PBCM2709GPIODevice(GPIO).Lock <> INVALID_HANDLE_VALUE then
+  begin
+   SpinDestroy(PBCM2709GPIODevice(GPIO).Lock);
+  end;
+ 
+ Result:=ERROR_SUCCESS;  
+end;
+
+{==============================================================================}
+ 
+function BCM2709GPIOInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+begin
+ {}
+ Result:=GPIO_LEVEL_UNKNOWN;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Input Get (Pin=' + GPIOPinToString(Pin) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+
+ {Update Statistics}
+ Inc(GPIO.GetCount);
+ 
+ {Get Shift}
+ Shift:=Pin mod 32;
+ 
+ {Get Register}
+ Reg:=BCM2836_GPLEV0 + ((Pin div 32) * SizeOf(LongWord));
+ 
+ {Read Register}
+ Result:=(PLongWord(GPIO.Address + Reg)^ shr Shift) and BCM2836_GPLEV_MASK;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOInputWait(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+begin
+ {}
+ Result:=GPIO_LEVEL_UNKNOWN;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO  Input Wait (Pin=' + GPIOPinToString(Pin) + ' Trigger=' + GPIOTriggerToString(Trigger) + ' Timeout=' + IntToStr(Timeout) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+ 
+ {Check Timeout}
+ if Timeout = 0 then Timeout:=INFINITE;
+ 
+ {Check Trigger}
+ if ((Trigger < BCM2709_GPIO_MIN_TRIGGER) or (Trigger > BCM2709_GPIO_MAX_TRIGGER)) and (Trigger <> GPIO_TRIGGER_EDGE) then Exit;
+ 
+ {Check Existing}
+ if GPIO.Pins[Pin].Trigger <> GPIO_TRIGGER_NONE then
+  begin
+   if GPIO.Pins[Pin].Trigger <> Trigger then Exit;
+   if (GPIO.Pins[Pin].Flags and (GPIO_EVENT_FLAG_REPEAT or GPIO_EVENT_FLAG_INTERRUPT)) <> 0 then Exit;
+  end;  
+ 
+ {Check Lock}
+ if (MutexOwner(GPIO.Lock) <> ThreadGetCurrent) or (MutexCount(GPIO.Lock) > 1) then Exit;
+ 
+ {Check Event}
+ if GPIO.Pins[Pin].Event = INVALID_HANDLE_VALUE then
+  begin
+   {Create Event (Manual Reset)}
+   GPIO.Pins[Pin].Event:=EventCreate(True,False);
+   
+   {Check Event}
+   if GPIO.Pins[Pin].Event = INVALID_HANDLE_VALUE then Exit;
+  end;
+  
+ {Update Statistics}
+ Inc(GPIO.WaitCount);
+
+ {Check Trigger} 
+ if GPIO.Pins[Pin].Trigger = GPIO_TRIGGER_NONE then
+  begin
+   {Get Shift}
+   Shift:=Pin mod 32;
+   
+   {Set the Flags}
+   GPIO.Pins[Pin].Flags:=GPIO_EVENT_FLAG_NONE;
+   
+   {Set the Trigger}
+   GPIO.Pins[Pin].Trigger:=Trigger;
+   
+   {Acquire the Lock}
+   if SpinLockIRQ(PBCM2709GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Check Trigger} 
+   if Trigger <> GPIO_TRIGGER_EDGE then
+    begin
+     {Get Register (Trigger)}
+     Reg:=BCM2709_GPIO_TRIGGER_MAP[Trigger] + ((Pin div 32) * SizeOf(LongWord));
+     
+     {Add Trigger (Trigger)}
+     PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ or (1 shl Shift);
+    end
+   else
+    begin 
+     {Get Register (Rising)}
+     Reg:=BCM2836_GPREN0 + ((Pin div 32) * SizeOf(LongWord));
+     
+     {Add Trigger (Rising)}
+     PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ or (1 shl Shift);
+   
+     {Get Register (Falling)}
+     Reg:=BCM2836_GPFEN0 + ((Pin div 32) * SizeOf(LongWord));
+     
+     {Add Trigger (Falling)}
+     PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ or (1 shl Shift);
+    end; 
+    
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Release the Lock}
+   SpinUnlockIRQ(PBCM2709GPIODevice(GPIO).Lock);
+  end;
+  
+ {Increment Count}
+ Inc(GPIO.Pins[Pin].Count);
+ 
+ {Release the Lock}
+ MutexUnlock(GPIO.Lock);
+ 
+ {Wait for Event}
+ if EventWaitEx(GPIO.Pins[Pin].Event,Timeout) = ERROR_SUCCESS then
+  begin
+   {Get Register (Level)}
+   Reg:=BCM2836_GPLEV0 + ((Pin div 32) * SizeOf(LongWord));
+   
+   {Read Register}
+   Result:=(PLongWord(GPIO.Address + Reg)^ shr Shift) and BCM2836_GPLEV_MASK;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+  end
+ else
+  begin
+   {Acquire the Lock}
+   if MutexLock(GPIO.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Decrement Count}
+   Dec(GPIO.Pins[Pin].Count);
+   
+   {Check Count}
+   if GPIO.Pins[Pin].Count = 0 then
+    begin
+     {Check Trigger}
+     if GPIO.Pins[Pin].Trigger = Trigger then
+      begin
+       {Get Shift}
+       Shift:=Pin mod 32;
+      
+       {Acquire the Lock}
+       if SpinLockIRQ(PBCM2709GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+       
+       {Memory Barrier}
+       DataMemoryBarrier; {Before the First Write}
+       
+       {Check Trigger} 
+       if Trigger <> GPIO_TRIGGER_EDGE then
+        begin
+         {Get Register (Trigger)}
+         Reg:=BCM2709_GPIO_TRIGGER_MAP[Trigger] + ((Pin div 32) * SizeOf(LongWord));
+         
+         {Remove Trigger (Trigger)}
+         PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+        end
+       else
+        begin 
+         {Get Register (Rising)}
+         Reg:=BCM2836_GPREN0 + ((Pin div 32) * SizeOf(LongWord));
+         
+         {Remove Trigger (Rising)}
+         PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+       
+         {Get Register (Falling)}
+         Reg:=BCM2836_GPFEN0 + ((Pin div 32) * SizeOf(LongWord));
+         
+         {Remove Trigger (Falling)}
+         PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+        end; 
+        
+       {Memory Barrier}
+       DataMemoryBarrier; {After the Last Read} 
+       
+       {Release the Lock}
+       SpinUnlockIRQ(PBCM2709GPIODevice(GPIO).Lock);
+      
+       {Reset the Flags}
+       GPIO.Pins[Pin].Flags:=GPIO_EVENT_FLAG_NONE;
+       
+       {Reset the Trigger}
+       GPIO.Pins[Pin].Trigger:=GPIO_TRIGGER_NONE;
+      end; 
+    end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOInputEvent(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+ Event:PGPIOEvent;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Input Event (Pin=' + GPIOPinToString(Pin) + ' Trigger=' + GPIOTriggerToString(Trigger) + ' Flags=' + IntToHex(Flags,8) + ' Timeout=' + IntToStr(Timeout) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+ 
+ {Check Timeout}
+ if Timeout = 0 then Timeout:=INFINITE;
+ 
+ {Check Flags}
+ if ((Flags and GPIO_EVENT_FLAG_REPEAT) <> 0) and ((Trigger = GPIO_TRIGGER_LOW) or (Trigger = GPIO_TRIGGER_HIGH)) then Exit;
+ if ((Flags and GPIO_EVENT_FLAG_INTERRUPT) <> 0) and ((Flags and GPIO_EVENT_FLAG_REPEAT) = 0) then Exit;
+ if ((Flags and GPIO_EVENT_FLAG_REPEAT) <> 0) and (Timeout <> INFINITE) then Exit;
+                      
+ {Check Trigger}
+ if ((Trigger < BCM2709_GPIO_MIN_TRIGGER) or (Trigger > BCM2709_GPIO_MAX_TRIGGER)) and (Trigger <> GPIO_TRIGGER_EDGE) then Exit;
+ 
+ {Check Existing}
+ if GPIO.Pins[Pin].Trigger <> GPIO_TRIGGER_NONE then
+  begin
+   Result:=ERROR_IN_USE;
+   if GPIO.Pins[Pin].Trigger <> Trigger then Exit;
+   if (Flags and (GPIO_EVENT_FLAG_REPEAT or GPIO_EVENT_FLAG_INTERRUPT)) <> 0 then Exit;
+   if (GPIO.Pins[Pin].Flags and (GPIO_EVENT_FLAG_REPEAT or GPIO_EVENT_FLAG_INTERRUPT)) <> 0 then Exit;
+  end; 
+
+ {Create Event}
+ Event:=GPIODeviceCreateEvent(GPIO,@GPIO.Pins[Pin],Callback,Data,Timeout);
+ if Event = nil then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Register Event}
+ if GPIODeviceRegisterEvent(GPIO,@GPIO.Pins[Pin],Event) <> ERROR_SUCCESS then
+  begin
+   GPIODeviceDestroyEvent(GPIO,Event);
+   
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+  
+ {Update Statistics}
+ Inc(GPIO.EventCount);
+
+ {Check Trigger} 
+ if GPIO.Pins[Pin].Trigger = GPIO_TRIGGER_NONE then
+  begin
+   {Get Shift}
+   Shift:=Pin mod 32;
+
+   {Set the Flags}
+   GPIO.Pins[Pin].Flags:=Flags;
+   
+   {Set the Trigger}
+   GPIO.Pins[Pin].Trigger:=Trigger;
+
+   {Acquire the Lock}
+   if SpinLockIRQ(PBCM2709GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Check Trigger} 
+   if Trigger <> GPIO_TRIGGER_EDGE then
+    begin
+     {Get Register (Trigger)}
+     Reg:=BCM2709_GPIO_TRIGGER_MAP[Trigger] + ((Pin div 32) * SizeOf(LongWord));
+     
+     {Add Trigger (Trigger)}
+     PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ or (1 shl Shift);
+    end
+   else
+    begin 
+     {Get Register (Rising)}
+     Reg:=BCM2836_GPREN0 + ((Pin div 32) * SizeOf(LongWord));
+     
+     {Add Trigger (Rising)}
+     PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ or (1 shl Shift);
+   
+     {Get Register (Falling)}
+     Reg:=BCM2836_GPFEN0 + ((Pin div 32) * SizeOf(LongWord));
+     
+     {Add Trigger (Falling)}
+     PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ or (1 shl Shift);
+    end; 
+  
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Release the Lock}
+   SpinUnlockIRQ(PBCM2709GPIODevice(GPIO).Lock);
+  end; 
+ 
+ {Increment Count}
+ Inc(GPIO.Pins[Pin].Count);
+ 
+ {Check Timeout}
+ if Timeout <> INFINITE then
+  begin
+   {Schedule Worker}
+   WorkerSchedule(Timeout,TWorkerTask(BCM2709GPIOEventTimeout),Event,nil);
+  end;
+  
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOInputCancel(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+ Event:PGPIOEvent;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Input Cancel (Pin=' + GPIOPinToString(Pin) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+
+ {Check Trigger}
+ if GPIO.Pins[Pin].Trigger = GPIO_TRIGGER_NONE then
+  begin
+   Result:=ERROR_NOT_FOUND;
+   Exit;
+  end;
+ 
+ {Check Flags}
+ if (GPIO.Pins[Pin].Flags and GPIO_EVENT_FLAG_REPEAT) = 0 then
+  begin
+   Result:=ERROR_NOT_FOUND;
+   Exit;
+  end;
+ 
+ {Get Event}
+ Event:=GPIO.Pins[Pin].Events;
+ if Event <> nil then
+  begin
+   {Deregister Event}
+   GPIODeviceDeregisterEvent(GPIO,@GPIO.Pins[Pin],Event);
+   
+   {Check Timeout}
+   if Event.Timeout = INFINITE then
+    begin
+     {Destroy Event}
+     GPIODeviceDestroyEvent(GPIO,Event);
+    end
+   else
+    begin
+     {Set Timeout (Timeout will destroy event)}
+     Event.Timeout:=INFINITE;
+    end;    
+    
+   {Decrement Count}
+   Dec(GPIO.Pins[Pin].Count);
+   
+   {Check Count}
+   if GPIO.Pins[Pin].Count = 0 then
+    begin
+     {Check Trigger}
+     if GPIO.Pins[Pin].Trigger <> GPIO_TRIGGER_NONE then
+      begin
+       {Get Shift}
+       Shift:=Pin mod 32;
+      
+       {Acquire the Lock}
+       if SpinLockIRQ(PBCM2709GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+       
+       {Memory Barrier}
+       DataMemoryBarrier; {Before the First Write}
+       
+       {Check Trigger} 
+       if GPIO.Pins[Pin].Trigger <> GPIO_TRIGGER_EDGE then
+        begin
+         {Get Register (Trigger)}
+         Reg:=BCM2709_GPIO_TRIGGER_MAP[GPIO.Pins[Pin].Trigger] + ((Pin div 32) * SizeOf(LongWord));
+         
+         {Remove Trigger (Trigger)}
+         PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+        end
+       else
+        begin 
+         {Get Register (Rising)}
+         Reg:=BCM2836_GPREN0 + ((Pin div 32) * SizeOf(LongWord));
+         
+         {Remove Trigger (Rising)}
+         PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+       
+         {Get Register (Falling)}
+         Reg:=BCM2836_GPFEN0 + ((Pin div 32) * SizeOf(LongWord));
+         
+         {Remove Trigger (Falling)}
+         PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+        end; 
+        
+       {Memory Barrier}
+       DataMemoryBarrier; {After the Last Read} 
+       
+       {Release the Lock}
+       SpinUnlockIRQ(PBCM2709GPIODevice(GPIO).Lock);
+      
+       {Reset the Flags}
+       GPIO.Pins[Pin].Flags:=GPIO_EVENT_FLAG_NONE;
+       
+       {Reset the Trigger}
+       GPIO.Pins[Pin].Trigger:=GPIO_TRIGGER_NONE;
+      end; 
+    end; 
+  end;
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Output Set (Pin=' + GPIOPinToString(Pin) + ' Level=' + GPIOLevelToString(Level) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+ 
+ {Check Level}
+ if Level > BCM2709_GPIO_MAX_LEVEL then Exit;
+ 
+ {Update Statistics}
+ Inc(GPIO.SetCount);
+ 
+ {Get Shift}
+ Shift:=Pin mod 32;
+ 
+ {Get Register}
+ if Level = GPIO_LEVEL_HIGH then
+  begin
+   Reg:=BCM2836_GPSET0 + ((Pin div 32) * SizeOf(LongWord));
+  end
+ else
+  begin
+   Reg:=BCM2836_GPCLR0 + ((Pin div 32) * SizeOf(LongWord));
+  end;
+  
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+  
+ {Write Register}
+ PLongWord(GPIO.Address + Reg)^:=(BCM2836_GPSET_MASK shl Shift);
+
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOPullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+ Select:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Pull Select (Pin=' + GPIOPinToString(Pin) + ' Mode=' + GPIOPullToString(Mode) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+ 
+ {Check Mode}
+ if Mode > BCM2709_GPIO_MAX_PULL then Exit;
+ 
+ {Get Select}
+ Select:=BCM2709_GPIO_PULL_MAP[Mode];
+ 
+ {Get Shift}
+ Shift:=Pin mod 32;
+ 
+ {Get Register}
+ Reg:=BCM2836_GPPUDCLK0 + ((Pin div 32) * SizeOf(LongWord));
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Write Mode}
+ PLongWord(GPIO.Address + BCM2836_GPPUD)^:=Select;
+ 
+ {Wait 150 microseconds (150 cycles)}
+ MicrosecondDelay(150);
+ 
+ {Write Clock}
+ PLongWord(GPIO.Address + Reg)^:=(BCM2836_GPPUDCLK_MASK shl Shift);
+ 
+ {Wait 150 microseconds (150 cycles)}
+ MicrosecondDelay(150);
+ 
+ {Reset Mode}
+ PLongWord(GPIO.Address + BCM2836_GPPUD)^:=0;
+ 
+ {Reset Clock}
+ PLongWord(GPIO.Address + Reg)^:=0;
+ 
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+ Current:LongWord;
+begin
+ {}
+ Result:=GPIO_FUNCTION_UNKNOWN;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Function Get (Pin=' + GPIOPinToString(Pin) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+ 
+ {Get Shift}
+ Shift:=(Pin mod 10) * 3;
+ 
+ {Get Register}
+ Reg:=BCM2836_GPFSEL0 + ((Pin div 10) * SizeOf(LongWord));
+ 
+ {Read Register}
+ Current:=(PLongWord(GPIO.Address + Reg)^ shr Shift) and BCM2836_GPFSEL_MASK;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Return Result}
+ Result:=BCM2709_GPIO_FUNCTION_UNMAP[Current];
+end;
+
+{==============================================================================}
+
+function BCM2709GPIOFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+var
+ Reg:LongWord;
+ Shift:LongWord;
+ Value:LongWord;
+ Select:LongWord;
+ Current:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Function Select (Pin=' + GPIOPinToString(Pin) + ' Mode=' + GPIOFunctionToString(Mode) + ')');
+ {$ENDIF}
+ 
+ {Check Pin}
+ if Pin > BCM2709_GPIO_MAX_PIN then Exit;
+ 
+ {Check Mode}
+ if Mode > BCM2709_GPIO_MAX_FUNCTION then Exit;
+ 
+ {Get Select}
+ Select:=BCM2709_GPIO_FUNCTION_MAP[Mode];
+ 
+ {Get Shift}
+ Shift:=(Pin mod 10) * 3;
+ 
+ {Get Register}
+ Reg:=BCM2836_GPFSEL0 + ((Pin div 10) * SizeOf(LongWord));
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Read Value}
+ Value:=PLongWord(GPIO.Address + Reg)^;
+ 
+ {Get Current}
+ Current:=(Value shr Shift) and BCM2836_GPFSEL_MASK;
+ 
+ {Check Current}
+ if Select <> Current then
+  begin
+   {Check Mode}
+   if (Select <> BCM2836_GPFSEL_IN) and (Current <> BCM2836_GPFSEL_IN) then
+    begin
+     {Select Input}
+     Value:=Value and not(BCM2836_GPFSEL_MASK shl Shift);
+     Value:=Value or (BCM2836_GPFSEL_IN shl Shift);
+     
+     {Write Value}
+     PLongWord(GPIO.Address + Reg)^:=Value;
+    end;
+   
+   {Select Mode}
+   Value:=Value and not(BCM2836_GPFSEL_MASK shl Shift);
+   Value:=Value or (Select shl Shift);
+   
+   {Write Value}
+   PLongWord(GPIO.Address + Reg)^:=Value;
+  end;
+  
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+  
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+procedure BCM2709GPIOInterruptHandler(Bank:PBCM2709GPIOBank);
+var
+ Bit:LongWord;
+ Pin:LongWord;
+ Reg:LongWord;
+ Shift:LongWord;
+ Flags:LongWord;
+ Status:LongWord;
+ Trigger:LongWord;
+ GPIO:PGPIODevice;
+ Event:PGPIOEvent;
+begin
+ {}
+ {Check Bank}
+ if Bank = nil then Exit;
+
+ {Get GPIO}
+ GPIO:=Bank.GPIO;
+ if GPIO = nil then Exit;
+ 
+ {Acquire the Lock}
+ if SpinLockIRQ(PBCM2709GPIODevice(GPIO).Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Update Statistics}
+    Inc(PBCM2709GPIODevice(GPIO).InterruptCount);
+    
+    {Memory Barrier}
+    DataMemoryBarrier; {Before the First Write}
+    
+    {Get Status}
+    Status:=PLongWord(Bank.Address)^;
+    while Status <> 0 do
+     begin
+      {Get Bit}
+      Bit:=FirstBitSet(Status);
+      
+      {Get Pin}
+      Pin:=GPIO.Pins[Bank.PinStart + Bit].Pin;
+      
+      {Get Flags}
+      Flags:=GPIO.Pins[Bank.PinStart + Bit].Flags;
+      
+      {Get Trigger}
+      Trigger:=GPIO.Pins[Bank.PinStart + Bit].Trigger;
+      
+      {Check Trigger}
+      if Trigger <> GPIO_TRIGGER_NONE then
+       begin
+        {Get Shift}
+        Shift:=Pin mod 32;
+        
+        {Remove Triggers}
+        if Trigger <> GPIO_TRIGGER_EDGE then
+         begin
+          {Check Flags}
+          if ((Flags and GPIO_EVENT_FLAG_REPEAT) = 0) or (Trigger = GPIO_TRIGGER_LOW) or (Trigger = GPIO_TRIGGER_HIGH) then
+           begin
+            {Get Register (Trigger)}
+            Reg:=BCM2709_GPIO_TRIGGER_MAP[Trigger] + ((Pin div 32) * SizeOf(LongWord));
+            
+            {Remove Trigger (Trigger)}
+            PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+           end; 
+         end
+        else
+         begin
+          {Check Flags}
+          if (Flags and GPIO_EVENT_FLAG_REPEAT) = 0 then
+           begin
+            {Get Register (Rising)}
+            Reg:=BCM2836_GPREN0 + ((Pin div 32) * SizeOf(LongWord));
+            
+            {Remove Trigger (Rising)}
+            PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+            
+            {Get Register (Falling)}
+            Reg:=BCM2836_GPFEN0 + ((Pin div 32) * SizeOf(LongWord));
+            
+            {Remove Trigger (Falling)}
+            PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+           end; 
+         end;     
+       end; 
+      
+      {Clear Status}
+      PLongWord(Bank.Address)^:=(BCM2836_GPEDS_MASK shl Bit);
+      
+      {Check Flags}
+      if ((Flags and GPIO_EVENT_FLAG_INTERRUPT) = 0) or ((Flags and GPIO_EVENT_FLAG_REPEAT) = 0) then
+       begin
+        {Send Event}
+        WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2709GPIOEventTrigger),@GPIO.Pins[Bank.PinStart + Bit],nil);
+       end
+      else
+       begin
+        {Call Event (Only for Repeating Interrupt events)}
+        Event:=GPIO.Pins[Bank.PinStart + Bit].Events;
+        if (Event <> nil) and Assigned(Event.Callback) then
+         begin
+          Event.Callback(Event.Data,Pin,Trigger);
+         end;
+       end;    
+      
+      {Clear Bit}
+      Status:=Status xor (1 shl Bit);
+     end;
+    
+    {Memory Barrier}
+    DataMemoryBarrier; {After the Last Read} 
+   finally
+    {Release the Lock}
+    SpinUnlockIRQ(PBCM2709GPIODevice(GPIO).Lock);
+   end;   
+  end; 
+end;
+
+{==============================================================================}
+
+procedure BCM2709GPIOEventTrigger(Pin:PGPIOPin);
+var
+ Count:LongWord;
+ Flags:LongWord;
+ Trigger:LongWord;
+ GPIO:PGPIODevice;
+ Next:PGPIOEvent;
+ Event:PGPIOEvent;
+ Events:PGPIOEvent;
+ Single:TGPIOEvent;
+ Current:PGPIOEvent;
+begin
+ {}
+ {Check Pin}
+ if Pin = nil then Exit;
+
+ {Get GPIO}
+ GPIO:=Pin.GPIO;
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Event Trigger (Pin=' + GPIOPinToString(Pin.Pin) + ')');
+ {$ENDIF}
+ 
+ {Setup Count}
+ Count:=0;
+ 
+ {Setup Events}
+ Events:=nil;
+
+ {Setup Single}
+ FillChar(Single,SizeOf(TGPIOEvent),0);
+ 
+ {Get Flags}
+ Flags:=Pin.Flags;
+ 
+ {Get Trigger}
+ Trigger:=Pin.Trigger;
+ 
+ {Acquire the Lock}
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Flags}
+    if (Flags and GPIO_EVENT_FLAG_REPEAT) = 0 then
+     begin
+      {Signal Event}
+      if Pin.Event <> INVALID_HANDLE_VALUE then
+       begin
+        EventPulse(Pin.Event);
+       end;
+      
+      {Count Events}
+      Event:=Pin.Events;
+      while Event <> nil do
+       begin
+        Inc(Count);
+        {Get Next}
+        Event:=Event.Next;
+       end;
+      
+      {Check Count}
+      if Count > 0 then
+       begin
+        if Count = 1 then
+         begin
+          {Get Single}
+          Event:=Pin.Events;
+          if Event <> nil then
+           begin
+            Single.Callback:=Event.Callback;
+            Single.Data:=Event.Data;
+            
+            {Save Next}
+            Next:=Event.Next;
+            
+            {Deregister Event}
+            GPIODeviceDeregisterEvent(GPIO,Pin,Event);
+            
+            {Check Timeout}
+            if Event.Timeout = INFINITE then
+             begin
+              {Destroy Event}
+              GPIODeviceDestroyEvent(GPIO,Event);
+             end
+            else
+             begin
+              {Set Timeout (Timeout will destroy event)}
+              Event.Timeout:=INFINITE;
+             end;
+            
+            {Get Next}
+            Event:=Next;
+           end;
+         end
+        else
+         begin        
+          {Allocate Events}
+          Events:=GetMem(Count * SizeOf(TGPIOEvent));
+          Current:=Events;
+          
+          {Get Events}
+          Event:=Pin.Events;
+          while Event <> nil do
+           begin
+            Current.Callback:=Event.Callback;
+            Current.Data:=Event.Data;
+            Current.Next:=nil;
+            if Event.Next <> nil then
+             begin
+              Current.Next:=PGPIOEvent(PtrUInt(Current) + SizeOf(TGPIOEvent));
+              Current:=Current.Next;
+             end;
+            
+            {Save Next}
+            Next:=Event.Next;
+            
+            {Deregister Event}
+            GPIODeviceDeregisterEvent(GPIO,Pin,Event);
+            
+            {Check Timeout}
+            if Event.Timeout = INFINITE then
+             begin
+              {Destroy Event}
+              GPIODeviceDestroyEvent(GPIO,Event);
+             end
+            else
+             begin
+              {Set Timeout (Timeout will destroy event)}
+              Event.Timeout:=INFINITE;
+             end;
+             
+            {Get Next}
+            Event:=Next;
+           end;
+         end;  
+       end;
+       
+      {Reset Flags}
+      Pin.Flags:=GPIO_EVENT_FLAG_NONE;
+      
+      {Reset Trigger}
+      Pin.Trigger:=GPIO_TRIGGER_NONE;
+      
+      {Reset Count}
+      Pin.Count:=0;
+     end
+    else
+     begin    
+      {Get Single}
+      Event:=Pin.Events;
+      if Event <> nil then
+       begin
+        Single.Callback:=Event.Callback;
+        Single.Data:=Event.Data;
+       end; 
+     end; 
+   finally
+    {Release the Lock}
+    MutexUnlock(GPIO.Lock);
+   end; 
+  end; 
+
+ {Check Flags}  
+ if (Flags and GPIO_EVENT_FLAG_REPEAT) = 0 then
+  begin
+   if Count > 0 then
+    begin
+     if Count = 1 then
+      begin
+       {Call Event}
+       if Assigned(Single.Callback) then
+        begin
+         Single.Callback(Single.Data,Pin.Pin,Trigger);
+        end;
+      end
+     else
+      begin  
+       {Get Events}
+       Event:=Events;
+       while Event <> nil do
+        begin
+         {Call Event}
+         if Assigned(Event.Callback) then
+          begin
+           Event.Callback(Event.Data,Pin.Pin,Trigger);
+          end;
+         {Get Next} 
+         Event:=Event.Next;
+        end;
+       
+       {Free Events}
+       FreeMem(Events);
+      end; 
+    end; 
+  end
+ else
+  begin
+   {Call Event}
+   if Assigned(Single.Callback) then
+    begin
+     Single.Callback(Single.Data,Pin.Pin,Trigger);
+    end;
+  end;  
+end;
+
+{==============================================================================}
+
+procedure BCM2709GPIOEventTimeout(Event:PGPIOEvent);
+var
+ Reg:LongWord;
+ Pin:PGPIOPin;
+ Shift:LongWord;
+ GPIO:PGPIODevice;
+begin
+ {}
+ {Check Event}
+ if Event = nil then Exit;
+
+ {Get Pin}
+ Pin:=Event.Pin;
+ if Pin = nil then Exit;
+ 
+ {Get GPIO}
+ GPIO:=Pin.GPIO;
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Event Timeout (Pin=' + GPIOPinToString(Pin.Pin) + ' Event=' + IntToHex(LongWord(Event),8) + ')');
+ {$ENDIF}
+ 
+ {Acquire the Lock}
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Timeout}
+    if Event.Timeout = INFINITE then
+     begin
+      {Event must have been handled by trigger}
+      
+      {Destroy Event}
+      GPIODeviceDestroyEvent(GPIO,Event);
+     end
+    else
+     begin
+      {Deregister Event}
+      GPIODeviceDeregisterEvent(GPIO,Pin,Event);
+      
+      {Destroy Event}
+      GPIODeviceDestroyEvent(GPIO,Event);
+      
+      {Decrement Count}
+      Dec(Pin.Count);
+    
+      {Check Count}
+      if Pin.Count = 0 then 
+       begin
+        {Check Trigger}
+        if Pin.Trigger <> GPIO_TRIGGER_NONE then
+         begin
+          {Get Shift}
+          Shift:=Pin.Pin mod 32;
+         
+          {Acquire the Lock}
+          if SpinLockIRQ(PBCM2709GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+          
+          {Memory Barrier}
+          DataMemoryBarrier; {Before the First Write}
+          
+          {Check Trigger} 
+          if Pin.Trigger <> GPIO_TRIGGER_EDGE then
+           begin
+            {Get Register (Trigger)}
+            Reg:=BCM2709_GPIO_TRIGGER_MAP[Pin.Trigger] + ((Pin.Pin div 32) * SizeOf(LongWord));
+            
+            {Remove Trigger (Trigger)}
+            PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+           end
+          else
+           begin 
+            {Get Register (Rising)}
+            Reg:=BCM2836_GPREN0 + ((Pin.Pin div 32) * SizeOf(LongWord));
+            
+            {Remove Trigger (Rising)}
+            PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+          
+            {Get Register (Falling)}
+            Reg:=BCM2836_GPFEN0 + ((Pin.Pin div 32) * SizeOf(LongWord));
+            
+            {Remove Trigger (Falling)}
+            PLongWord(GPIO.Address + Reg)^:=PLongWord(GPIO.Address + Reg)^ and not(1 shl Shift);
+           end; 
+          
+          {Memory Barrier}
+          DataMemoryBarrier; {After the Last Read} 
+          
+          {Release the Lock}
+          SpinUnlockIRQ(PBCM2709GPIODevice(GPIO).Lock);
+         
+          {Reset the Flags}
+          Pin.Flags:=GPIO_EVENT_FLAG_NONE;
+          
+          {Reset the Trigger}
+          Pin.Trigger:=GPIO_TRIGGER_NONE;
+         end; 
+       end;
+     end;
+   finally
+    {Release the Lock}
+    MutexUnlock(GPIO.Lock);
+   end; 
+  end;    
+end;
 
 {==============================================================================}
 {==============================================================================}
-{BCM2709 UART Functions}
+{BCM2709 UART0 Functions}
+function BCM2709UART0Open(UART:PUARTDevice;BaudRate,DataBits,StopBits,Parity,FlowControl:LongWord):LongWord;
+var
+ Control:LongWord;
+ Divisor:LongWord;
+ LineControl:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + IntToStr(DataBits) + ' StopBits=' + IntToStr(StopBits) + ' Parity=' + IntToStr(Parity) + ' FlowControl=' + IntToStr(FlowControl) + ')');
+ {$ENDIF}
+ 
+ {Update Clock Rate}
+ PBCM2709UART0Device(UART).ClockRate:=ClockGetRate(CLOCK_ID_UART0);
+ if PBCM2709UART0Device(UART).ClockRate = 0 then PBCM2709UART0Device(UART).ClockRate:=BCM2709_UART0_CLOCK_RATE; 
+ 
+ {Update Properties}
+ UART.Properties.MaxRate:=PBCM2709UART0Device(UART).ClockRate div 16;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  ClockRate=' + IntToStr(PBCM2709UART0Device(UART).ClockRate) + ' MaxRate=' + IntToStr(UART.Properties.MaxRate));
+ {$ENDIF}
+ 
+ {Check Baud Rate}
+ if ((BaudRate < BCM2709_UART0_MIN_BAUD) or (BaudRate > UART.Properties.MaxRate)) and (BaudRate <> SERIAL_BAUD_RATE_DEFAULT) then Exit;
+ 
+ {Check Data Bits}
+ if (DataBits < BCM2709_UART0_MIN_DATABITS) or (DataBits > BCM2709_UART0_MAX_DATABITS) then Exit;
+ 
+ {Check Stop Bits}
+ if (StopBits < BCM2709_UART0_MIN_STOPBITS) or (StopBits > BCM2709_UART0_MAX_STOPBITS) then Exit;
+ 
+ {Check Parity}
+ if Parity > BCM2709_UART0_MAX_PARITY then Exit;
+ 
+ {Check Flow Control}
+ if FlowControl > BCM2709_UART0_MAX_FLOW then Exit;
+ 
+ {Adjust Baud Rate}
+ if BaudRate = SERIAL_BAUD_RATE_DEFAULT then
+  begin
+   BaudRate:=SERIAL_BAUD_RATE_STANDARD;
+   if (BaudRate > UART.Properties.MaxRate) then BaudRate:=SERIAL_BAUD_RATE_FALLBACK;
+  end; 
+
+ {Enable GPIO Pins}
+ if BoardGetType = BOARD_TYPE_RPI3B then
+  begin
+   {On Raspberry Pi 3B UART0 may be connected to the Bluetooth on pins 32 and 33}
+   GPIOFunctionSelect(GPIO_PIN_32,GPIO_FUNCTION_IN);
+   GPIOFunctionSelect(GPIO_PIN_33,GPIO_FUNCTION_IN);
+  end;
+ GPIOPullSelect(GPIO_PIN_14,GPIO_PULL_NONE);
+ GPIOFunctionSelect(GPIO_PIN_14,GPIO_FUNCTION_ALT0);
+ GPIOPullSelect(GPIO_PIN_15,GPIO_PULL_UP);
+ GPIOFunctionSelect(GPIO_PIN_15,GPIO_FUNCTION_ALT0);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+  
+ {Reset Control (Disable UART)}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR:=0;
+ 
+ {Reset Interrupt Mask (Disable Interrupts)}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IMSC:=0;
+ 
+ {Ackowledge Interrupts}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).ICR:=$7FF;
+ 
+ {Reset Line Control (Flush FIFOs)}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).LCRH:=0;
+ 
+ {Calculate Divisor}
+ if BaudRate > (PBCM2709UART0Device(UART).ClockRate div 16) then
+  begin
+   Divisor:=DivRoundClosest(PBCM2709UART0Device(UART).ClockRate * 8,BaudRate);
+  end
+ else
+  begin
+   Divisor:=DivRoundClosest(PBCM2709UART0Device(UART).ClockRate * 4,BaudRate);
+  end;
+  
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  BaudRate=' + IntToStr(BaudRate) + ' Divisor=' + IntToStr(Divisor) + ' Divisor shr 6=' + IntToStr(Divisor shr 6) + ' Divisor and $3F=' + IntToStr(Divisor and $3f));
+ {$ENDIF}
+
+ {Set Baud Rate}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).FBRD:=Divisor and $3f;
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IBRD:=Divisor shr 6;
+  
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Integer Divisor=' + IntToStr(PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IBRD));
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Fractional Divisor=' + IntToStr(PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).FBRD));
+ {$ENDIF}
+  
+ {Get Line Control}
+ LineControl:=BCM2836_PL011_LCRH_FEN;
+ {Data Bits}
+ case DataBits of
+  SERIAL_DATA_8BIT:LineControl:=LineControl or BCM2836_PL011_LCRH_WLEN8;
+  SERIAL_DATA_7BIT:LineControl:=LineControl or BCM2836_PL011_LCRH_WLEN7;
+  SERIAL_DATA_6BIT:LineControl:=LineControl or BCM2836_PL011_LCRH_WLEN6;
+  SERIAL_DATA_5BIT:LineControl:=LineControl or BCM2836_PL011_LCRH_WLEN5;
+ end;
+ {Stop Bits}
+ case StopBits of
+  SERIAL_STOP_2BIT:LineControl:=LineControl or BCM2836_PL011_LCRH_STP2;
+ end;
+ {Parity}
+ case Parity of
+  SERIAL_PARITY_ODD:LineControl:=LineControl or BCM2836_PL011_LCRH_PEN;
+  SERIAL_PARITY_EVEN:LineControl:=LineControl or BCM2836_PL011_LCRH_PEN or BCM2836_PL011_LCRH_EPS;
+ end;
+ 
+ {Set Line Control}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).LCRH:=LineControl;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Line Control=' + IntToHex(PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).LCRH,8));
+ {$ENDIF}
+ 
+ {Set Interrupt FIFO Level}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IFLS:=BCM2836_PL011_IFLS_RXIFLSEL1_8 or BCM2836_PL011_IFLS_TXIFLSEL1_2; {BCM2836_PL011_IFLS_RXIFLSEL1_2}
+
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Interrupt FIFO Level=' + IntToHex(PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IFLS,8));
+ {$ENDIF}
+ 
+ {Get Control} 
+ Control:=BCM2836_PL011_CR_RXE or BCM2836_PL011_CR_TXE or BCM2836_PL011_CR_UARTEN;
+ {Flow Control}
+ case FlowControl of
+  SERIAL_FLOW_RTS_CTS:Control:=Control or BCM2836_PL011_CR_CTSEN or BCM2836_PL011_CR_RTSEN;
+ end;
+ 
+ {Create Receive Event (Manual Reset)}
+ UART.ReceiveWait:=EventCreate(True,False);
+ if UART.ReceiveWait = INVALID_HANDLE_VALUE then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+
+ {Create Transmit Event (Manual Reset / Intitial State)}
+ UART.TransmitWait:=EventCreate(True,True);
+ if UART.TransmitWait = INVALID_HANDLE_VALUE then
+  begin
+   EventDestroy(UART.ReceiveWait);
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Set Control (Enable UART)}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR:=Control;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Control=' + IntToHex(PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR,8));
+ {$ENDIF}
+ 
+ {Request IRQ}
+ RequestIRQ(IRQ_ROUTING,BCM2836_IRQ_PL011,TInterruptHandler(BCM2709UART0InterruptHandler),UART);
+ 
+ {Set Interrupt Mask (Enable Interrupts)}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IMSC:=BCM2836_PL011_IMSC_TXIM or BCM2836_PL011_IMSC_RXIM;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Interrupt Mask=' + IntToHex(PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IMSC,8));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ UART.Properties.BaudRate:=BaudRate;
+ UART.Properties.DataBits:=DataBits;
+ UART.Properties.StopBits:=StopBits;
+ UART.Properties.Parity:=Parity;
+ UART.Properties.FlowControl:=FlowControl;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2709UART0Close(UART:PUARTDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Close');
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Reset Interrupt Mask (Disable Interrupts)}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).IMSC:=0;
+ 
+ {Acknowledge Interrupts}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).ICR:=$7FF;
+ 
+ {Release IRQ}
+ ReleaseIRQ(IRQ_ROUTING,BCM2836_IRQ_PL011,TInterruptHandler(BCM2709UART0InterruptHandler),UART);
+ 
+ {Reset Control (Disable UART)}
+ PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR:=0;
+ 
+ {Destroy Transmit Event}
+ EventDestroy(UART.TransmitWait);
+ 
+ {Destroy Receive Event}
+ EventDestroy(UART.ReceiveWait);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ UART.Properties.BaudRate:=SERIAL_BAUD_RATE_DEFAULT;
+ UART.Properties.DataBits:=SERIAL_DATA_8BIT;
+ UART.Properties.StopBits:=SERIAL_STOP_1BIT;
+ UART.Properties.Parity:=SERIAL_PARITY_NONE;
+ UART.Properties.FlowControl:=SERIAL_FLOW_NONE;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+ 
+function BCM2709UART0Read(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+var
+ Value:LongWord;
+ Total:LongWord;
+ Offset:LongWord;
+ Status:LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Read (Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Read to Buffer}
+ Offset:=0;
+ Total:=Size;
+ while Size > 0 do
+  begin
+   {Check Non Blocking}
+   if ((Flags and UART_READ_NON_BLOCK) <> 0) and (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) then
+    begin
+     Result:=ERROR_NO_MORE_ITEMS;
+     Break;
+    end;
+ 
+   {Release the Lock}
+   MutexUnlock(UART.Lock);
+   
+   {Wait for Data}
+   if EventWait(UART.ReceiveWait) = ERROR_SUCCESS then
+    begin
+     {Acquire the Lock}
+     if MutexLock(UART.Lock) = ERROR_SUCCESS then
+      begin
+       {Memory Barrier}
+       DataMemoryBarrier; {Before the First Write}
+ 
+       {Get Status}
+       Status:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).FR;
+       while ((Status and BCM2836_PL011_FR_RXFE) = 0) and (Size > 0) do
+        begin
+         {Read Data}
+         Value:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).DR;
+         
+         {Check for Error}
+         if (Value and BCM2836_PL011_DR_ERROR) <> 0 then
+          begin
+           {Check Error}
+           if (Value and BCM2836_PL011_DR_OE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2709: Overrun error on receive character'); 
+            end;
+           if (Value and BCM2836_PL011_DR_BE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2709: Break error on receive character'); 
+            end;
+           if (Value and BCM2836_PL011_DR_PE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2709: Parity error on receive character'); 
+            end;
+           if (Value and BCM2836_PL011_DR_FE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2709: Framing error on receive character'); 
+            end;
+           
+           {Update Statistics}
+           Inc(UART.ReceiveErrors);
+          end;
+          
+         {Save Data}
+         PByte(Buffer + Offset)^:=Value and BCM2836_PL011_DR_DATA;
+         
+         {Update Statistics}
+         Inc(UART.ReceiveCount);
+         
+         {Update Count}
+         Inc(Count);
+         
+         {Update Size and Offset}
+         Dec(Size);
+         Inc(Offset);
+         
+         {Get Status}
+         Status:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).FR;
+        end;
+        
+       {Check Status}
+       if (Status and BCM2836_PL011_FR_RXFE) <> 0 then
+        begin
+         {Reset Event}
+         EventReset(UART.ReceiveWait);
+        end;        
+ 
+       {Memory Barrier}
+       DataMemoryBarrier; {After the Last Read} 
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;      
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+     Exit;
+    end;    
+  end;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+ 
+ {Return Result}
+ if (Total = Count) then Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function BCM2709UART0Write(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+var
+ Total:LongWord;
+ Offset:LongWord;
+ Status:LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Write (Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Write from Buffer}
+ Offset:=0;
+ Total:=Size;
+ while Size > 0 do
+  begin
+   {Check Non Blocking}
+   if ((Flags and UART_WRITE_NON_BLOCK) <> 0) and (EventState(UART.TransmitWait) <> EVENT_STATE_SIGNALED) then
+    begin
+     Result:=ERROR_INSUFFICIENT_BUFFER;
+     Break;
+    end;
+   
+   {Release the Lock}
+   MutexUnlock(UART.Lock);
+   
+   {Wait for Space}
+   if EventWait(UART.TransmitWait) = ERROR_SUCCESS then
+    begin
+     {Acquire the Lock}
+     if MutexLock(UART.Lock) = ERROR_SUCCESS then
+      begin
+       {Memory Barrier}
+       DataMemoryBarrier; {Before the First Write}
+      
+       {Get Status}
+       Status:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).FR;
+       while ((Status and BCM2836_PL011_FR_TXFF) = 0) and (Size > 0) do
+        begin
+         {Write Data}
+         PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).DR:=PByte(Buffer + Offset)^;
+         
+         {Update Statistics}
+         Inc(UART.TransmitCount);
+         
+         {Update Count}
+         Inc(Count);
+         
+         {Update Size and Offset}
+         Dec(Size);
+         Inc(Offset);
+         
+         {Get Status}
+         Status:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).FR;
+        end;
+        
+       {Check Status}
+       if (Status and BCM2836_PL011_FR_TXFF) <> 0 then
+        begin
+         {Reset Event}
+         EventReset(UART.TransmitWait);
+        end;        
+      
+       {Memory Barrier}
+       DataMemoryBarrier; {After the Last Read} 
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;      
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+     Exit;
+    end;    
+  end;
+  
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+ 
+ {Return Result}
+ if (Total = Count) then Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+ 
+function BCM2709UART0Status(UART:PUARTDevice):LongWord;
+var
+ Flags:LongWord;
+ Status:LongWord;
+ Control:LongWord;
+begin
+ {}
+ Result:=UART_STATUS_NONE;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Status');
+ {$ENDIF}
+ 
+ {Get Flags}
+ Flags:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).FR;
+ if (Flags and BCM2836_PL011_FR_CTS) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_CTS;
+  end;
+ if (Flags and BCM2836_PL011_FR_RXFF) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_RX_FULL;
+  end;
+ if (Flags and BCM2836_PL011_FR_RXFE) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_RX_EMPTY;
+  end;
+ if (Flags and BCM2836_PL011_FR_TXFF) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_TX_FULL;
+  end;
+ if (Flags and BCM2836_PL011_FR_TXFE) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_TX_EMPTY;
+  end;
+ if (Flags and BCM2836_PL011_FR_BUSY) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_BUSY;
+  end;
+ 
+ {Get Status}
+ Status:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).RSRECR;
+ if (Status and BCM2836_PL011_RSRECR_OE) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_OVERRUN_ERROR;
+  end;
+ if (Status and BCM2836_PL011_RSRECR_BE) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_BREAK_ERROR;
+  end;
+ if (Status and BCM2836_PL011_RSRECR_PE) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_PARITY_ERROR;
+  end;
+ if (Status and BCM2836_PL011_RSRECR_FE) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_FRAMING_ERROR;
+  end;
+
+ {Get Control}
+ Control:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR;
+ if (Control and BCM2836_PL011_CR_RTS) <> 0 then
+  begin
+   Result:=Result or UART_STATUS_RTS;
+  end;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+procedure BCM2709UART0InterruptHandler(UART:PUARTDevice);
+var
+ Status:LongWord;
+begin
+ {}
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {Update Statistics}
+ Inc(PBCM2709UART0Device(UART).InterruptCount);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Interrupt Status}
+ Status:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).MIS;
+ if Status <> 0 then
+  begin
+   {Acknowledge Interrupts}
+   PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).ICR:=Status and not(BCM2836_PL011_ICR_TXIC or BCM2836_PL011_ICR_RXIC);
+   
+   {Check Transmit}
+   if (Status and BCM2836_PL011_MIS_TXMIS) <> 0 then
+    begin
+     {Acknowledge Transmit}
+     PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).ICR:=BCM2836_PL011_ICR_TXIC;
+     
+     {Send Transmit}
+     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2709UART0Transmit),UART,nil);
+    end;
+    
+   {Check Receive}
+   if (Status and BCM2836_PL011_MIS_RXMIS) <> 0 then
+    begin
+     {Acknowledge Receive}
+     PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).ICR:=BCM2836_PL011_ICR_RXIC;
+
+     {Send Receive}
+     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2709UART0Receive),UART,nil);
+    end;
+  end; 
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+procedure BCM2709UART0Receive(UART:PUARTDevice);
+begin
+ {}
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Receive');
+ {$ENDIF}
+ 
+ {Acquire the Lock}
+ if MutexLock(UART.Lock) = ERROR_SUCCESS then
+  begin
+   {Set Event}
+   EventSet(UART.ReceiveWait);
+   
+   {Check Mode}
+   if UART.UARTMode = UART_MODE_SERIAL then
+    begin
+     {Serial Receive}
+     UARTSerialDeviceReceive(UART);
+    end;
+
+   {Release the Lock}
+   MutexUnlock(UART.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+procedure BCM2709UART0Transmit(UART:PUARTDevice);
+begin
+ {}
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Transmit');
+ {$ENDIF}
+ 
+ {Acquire the Lock}
+ if MutexLock(UART.Lock) = ERROR_SUCCESS then
+  begin
+   {Set Event}
+   EventSet(UART.TransmitWait);
+   
+   {Check Mode}
+   if UART.UARTMode = UART_MODE_SERIAL then
+    begin
+     {Serial Transmit}
+     UARTSerialDeviceTransmit(UART);
+    end;    
+
+   {Release the Lock}
+   MutexUnlock(UART.Lock);
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{BCM2709 UART1 Functions}
 
 {==============================================================================}
 {==============================================================================}

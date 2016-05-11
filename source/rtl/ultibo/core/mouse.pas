@@ -132,7 +132,7 @@ const
  MOUSE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Mouse messages}
 
 var 
- MOUSE_DEFAULT_LOG_LEVEL:LongWord = MOUSE_LOG_LEVEL_INFO; {Minimum level for Mouse messages.  Only messages with level greater than or equal to this will be printed}
+ MOUSE_DEFAULT_LOG_LEVEL:LongWord = MOUSE_LOG_LEVEL_DEBUG; {Minimum level for Mouse messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {Mouse logging}
@@ -196,7 +196,7 @@ type
  {Mouse Buffer}
  PMouseBuffer = ^TMouseBuffer;
  TMouseBuffer = record
-  Wait:TSemaphoreHandle;     {Buffer ready semahore}
+  Wait:TSemaphoreHandle;     {Buffer ready semaphore}
   Start:LongWord;            {Index of first buffer ready}
   Count:LongWord;            {Number of entries ready in buffer}
   Buffer:array[0..(MOUSE_BUFFER_SIZE - 1)] of TMouseData; 

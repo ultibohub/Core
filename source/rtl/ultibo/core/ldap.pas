@@ -63,7 +63,7 @@ const
  LDAP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No LDAP messages}
 
 var 
- LDAP_DEFAULT_LOG_LEVEL:LongWord = LDAP_LOG_LEVEL_DEBUG; //LDAP_LOG_LEVEL_INFO; {Minimum level for LDAP messages.  Only messages with level greater than or equal to this will be printed} 
+ LDAP_DEFAULT_LOG_LEVEL:LongWord = LDAP_LOG_LEVEL_DEBUG; {Minimum level for LDAP messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {LDAP logging}

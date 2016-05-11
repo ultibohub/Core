@@ -263,7 +263,7 @@ const
  NETWORK_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Network messages}
 
 var 
- NETWORK_DEFAULT_LOG_LEVEL:LongWord = NETWORK_LOG_LEVEL_INFO; {Minimum level for Network messages.  Only messages with level greater than or equal to this will be printed}
+ NETWORK_DEFAULT_LOG_LEVEL:LongWord = NETWORK_LOG_LEVEL_DEBUG; {Minimum level for Network messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {Network logging}

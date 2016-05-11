@@ -358,6 +358,10 @@ const
  USB_CONTROL_PHASE_DATA   = 1; {Data phase of a Control request (Using Data buffer)}
  USB_CONTROL_PHASE_STATUS = 2; {Status phase of a Control request (Using StatusData)}
  
+ {USB Control Timeouts}
+ USB_CONTROL_GET_TIMEOUT = 5000;
+ USB_CONTROL_SET_TIMEOUT = 5000;
+ 
  {Default maximum packet size for unconfigured Endpoints}
  USB_DEFAULT_MAX_PACKET_SIZE = 8;
  USB_ALTERNATE_MAX_PACKET_SIZE = 64;
@@ -817,7 +821,7 @@ const
  USB_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No USB messages}
 
 var 
- USB_DEFAULT_LOG_LEVEL:LongWord = USB_LOG_LEVEL_INFO; {Minimum level for USB messages.  Only messages with level greater than or equal to this will be printed}
+ USB_DEFAULT_LOG_LEVEL:LongWord = USB_LOG_LEVEL_DEBUG; {Minimum level for USB messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {USB logging}

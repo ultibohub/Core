@@ -433,7 +433,11 @@ var
  TIMER_REGS_BASE:LongWord;        {The base address of the Timer registers (If Applicable)}
  GPIO_REGS_BASE:LongWord;         {The base address of the GPIO registers (If Applicable)}
  UART_REGS_BASE:LongWord;         {The base address of the primary UART registers (If Applicable)}
-
+ SPI_REGS_BASE:LongWord;          {The base address of the primary SPI registers (If Applicable)}
+ I2C_REGS_BASE:LongWord;          {The base address of the primary I2C registers (If Applicable)}
+ I2S_REGS_BASE:LongWord;          {The base address of the primary I2S registers (If Applicable)}
+ PWM_REGS_BASE:LongWord;          {The base address of the primary PWM registers (If Applicable)}
+ 
 {==============================================================================}
 {Interrupt configuration (Set by PeripheralInit)}
 //var
@@ -444,15 +448,17 @@ var
 {LED configuration (Set by specific PlatformInit)}
 var
  {Power LED}
- POWER_LED_PIN:LongWord;            {The GPIO Pin for the Power LED (Where Applicable)}
- POWER_LED_FUNCTION:LongWord;       {The GPIO Function Select for the Power LED (Where Applicable)}
- POWER_LED_ACTIVE_LOW:LongBool;     {If True the Power LED is Active Low (Clear Pin to Turn On) (Where Applicable)}
+ POWER_LED_PIN:LongWord = GPIO_PIN_UNKNOWN;           {The GPIO Pin for the Power LED (Where Applicable)}
+ POWER_LED_PULL:LongWord = GPIO_PULL_UNKNOWN;         {The GPIO Pull Select for the Power LED (Where Applicable)}
+ POWER_LED_FUNCTION:LongWord = GPIO_FUNCTION_UNKNOWN; {The GPIO Function Select for the Power LED (Where Applicable)}
+ POWER_LED_ACTIVE_LOW:LongBool;                       {If True the Power LED is Active Low (Clear Pin to Turn On) (Where Applicable)}
  
 var
  {Activity LED} 
- ACTIVITY_LED_PIN:LongWord;         {The GPIO Pin for the Activity LED (Where Applicable)}  
- ACTIVITY_LED_FUNCTION:LongWord;    {The GPIO Function Select for the Activity LED (Where Applicable)}
- ACTIVITY_LED_ACTIVE_LOW:LongBool;  {If True the Activity LED is Active Low (Clear Pin to Turn On) (Where Applicable)}
+ ACTIVITY_LED_PIN:LongWord = GPIO_PIN_UNKNOWN;           {The GPIO Pin for the Activity LED (Where Applicable)}  
+ ACTIVITY_LED_PULL:LongWord = GPIO_PULL_UNKNOWN;         {The GPIO Pull Select for the Activity LED (Where Applicable)}
+ ACTIVITY_LED_FUNCTION:LongWord = GPIO_FUNCTION_UNKNOWN; {The GPIO Function Select for the Activity LED (Where Applicable)}
+ ACTIVITY_LED_ACTIVE_LOW:LongBool;                       {If True the Activity LED is Active Low (Clear Pin to Turn On) (Where Applicable)}
  
 {==============================================================================}
 {Console and FrameBuffer configuration}
@@ -474,8 +480,8 @@ var
  CONSOLE_DMA_CLEAR:LongBool = True;              {If True then use DMA (If avaialable) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
  CONSOLE_DMA_SCROLL:LongBool = True;             {If True then use DMA (If avaialable) to scroll console windows (Sets CONSOLE_FLAG_DMA_SCROLL on device)}
  
- CONSOLE_REGISTER_LOGGING:LongBool = False;      {If True then register Console as a Logging device on boot}
- CONSOLE_LOGGING_DEFAULT:LongBool = False;       {If True then Console can be the default Logging device}
+ CONSOLE_REGISTER_LOGGING:LongBool = False;      {If True then register any Console device as a Logging device (Only if Console unit included)}
+ CONSOLE_LOGGING_DEFAULT:LongBool = False;       {If True then a Console device can be the default Logging device}
  CONSOLE_LOGGING_POSITION:LongWord = CONSOLE_POSITION_RIGHT; {The default Console Window position for the console Logging device}
  
 var
@@ -567,6 +573,13 @@ var
  HOST_SHARED_MEMORY:LongBool;       {Hosts are allocated from Shared memory regions if True}
  
 {==============================================================================}
+{Serial configuration}
+var
+ SERIAL_REGISTER_LOGGING:LongBool = False;      {If True then register any Serial device as a Logging device (Only if Serial unit included)}
+ SERIAL_LOGGING_DEFAULT:LongBool = False;       {If True then a Serial device can be the default Logging device}
+ SERIAL_LOGGING_PARAMETERS:String = '0,N,8,1';  {The default serial settings for the serial logging device (BaudRate,Parity,DataBits,StopBits)(BaudRate 0 equals use default rate)}
+ 
+{==============================================================================}
 {Logging configuration}
 var
  {Logging defaults}
@@ -579,15 +592,9 @@ var
 var
  {GPIO}
  GPIO_PIN_COUNT:LongWord;              {The number of GPIO pins available on this board}
- //GPIO_FUNCTION_COUNT:LongWord;       {The number of GPIO function selects available on this board}
- 
- //GPIO_PIN_VALUES:array of LongWord;
- //GPIO_FUNCTION_VALUES:array of LongWord;
- //To Do //More
  
  {Virtual GPIO}
  VIRTUAL_GPIO_PIN_COUNT:LongWord;      {The number of Virtual GPIO pins available on this board}
- //To Do 
  
  {USB}
  USB_AUTOSTART:LongBool = True;        {If True then auto start the USB subsystem on boot (Only if USB unit included)}
@@ -672,7 +679,8 @@ var
  BCM2708_REGISTER_PWM:LongBool = True;      {If True then register the BCM2708 PWM device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PCM:LongBool = True;      {If True then register the BCM2708 PCM device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2708 GPIO device during boot (Only if BCM2708 unit included)}
- BCM2708_REGISTER_UART:LongBool = True;     {If True then register the BCM2708 UART device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_UART0:LongBool = True;    {If True then register the BCM2708 UART0 device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_UART1:LongBool = True;    {If True then register the BCM2708 UART1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
 
  BCM2708_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2708 Clock device during boot (Only if BCM2708 unit included)}
@@ -701,7 +709,8 @@ var
  BCM2709_REGISTER_PWM:LongBool = True;      {If True then register the BCM2709 PWM device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PCM:LongBool = True;      {If True then register the BCM2709 PCM device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2709 GPIO device during boot (Only if BCM2709 unit included)}
- BCM2709_REGISTER_UART:LongBool = True;     {If True then register the BCM2709 UART device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_UART0:LongBool = True;    {If True then register the BCM2709 UART0 device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_UART1:LongBool = True;    {If True then register the BCM2709 UART1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
 
  BCM2709_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2709 Clock device during boot (Only if BCM2709 unit included)}
@@ -730,7 +739,8 @@ var
  BCM2710_REGISTER_PWM:LongBool = True;      {If True then register the BCM2710 PWM device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PCM:LongBool = True;      {If True then register the BCM2710 PCM device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2710 GPIO device during boot (Only if BCM2710 unit included)}
- BCM2710_REGISTER_UART:LongBool = True;     {If True then register the BCM2710 UART device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_UART0:LongBool = True;    {If True then register the BCM2710 UART0 device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_UART1:LongBool = True;    {If True then register the BCM2710 UART1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
 
  BCM2710_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2710 Clock device during boot (Only if BCM2710 unit included)}
@@ -972,6 +982,10 @@ var
 {==============================================================================}
 {Specific Driver configuration}
 var
+ {PL2303}
+ PL2303_MAX_TRANSMIT:LongWord;                  {The maximum transmit size of the PL2303 USB to Serial converter (Defaults to maximum supported by the device if not specified)}
+ 
+ {RT2800USB}
  RT2800USB_HARDWARE_ENCRYPTION_DISABLED:LongBool; {If True then use software only encryption for RT2800USB}
  
 {==============================================================================}
@@ -988,7 +1002,9 @@ function Max(A,B:LongInt):LongInt; inline;
 function Clamp(Value,Low,High:LongInt):LongInt;
 
 function RoundUp(Value,Multiple:LongWord):LongWord; 
-function RoundDown(Value,Multiple:LongWord):LongWord; 
+function RoundDown(Value,Multiple:LongWord):LongWord;
+
+function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 
 function HIWORD(L:LongInt):Word; inline;
 function LOWORD(L:LongInt):Word; inline;
@@ -1126,6 +1142,21 @@ begin
   begin
    Result:=Value;
   end;  
+end;
+
+{==============================================================================}
+
+function DivRoundClosest(Value,Divisor:LongInt):LongWord;
+begin
+ {}
+ if ((Value - 1) > 0) or ((Divisor - 1) > 0) or (Value > 0) then
+  begin
+   Result:=(Value + (Divisor div 2)) div Divisor;
+  end
+ else
+  begin
+   Result:=(Value - (Divisor div 2)) div Divisor;
+  end;
 end;
 
 {==============================================================================}

@@ -97,7 +97,7 @@ const
  PLATFORM_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Platform messages}
 
 var 
- PLATFORM_DEFAULT_LOG_LEVEL:LongWord = PLATFORM_LOG_LEVEL_INFO; {Minimum level for Platform messages.  Only messages with level greater than or equal to this will be printed}
+ PLATFORM_DEFAULT_LOG_LEVEL:LongWord = PLATFORM_LOG_LEVEL_DEBUG; {Minimum level for Platform messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {Platform logging}
@@ -313,8 +313,8 @@ type
  TWorkerCallback = procedure(Data:Pointer); 
 
 type 
- {Prototype for GPIO Event Handlers}
- TGPIOEvent = procedure(Data:Pointer);
+ {Prototype for GPIO Callback Handlers}
+ TGPIOCallback = procedure(Data:Pointer;Pin,Trigger:LongWord);
  
 type
  {Prototypes for Blink Handlers}
@@ -570,15 +570,22 @@ type
  TGPIOWrite = procedure(Reg,Value:LongWord);
  
  TGPIOInputGet = function(Pin:LongWord):LongWord;
- TGPIOInputWait = function(Pin,Timeout:LongWord):LongWord;
- TGPIOInputEvent = function(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+ TGPIOInputWait = function(Pin,Trigger,Timeout:LongWord):LongWord;
+ TGPIOInputEvent = function(Pin,Trigger,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
  
+ TGPIOOutputSet = function(Pin,Level:LongWord):LongWord;
+ 
+ TGPIOPullGet = function(Pin:LongWord):LongWord;
  TGPIOPullSelect = function(Pin,Mode:LongWord):LongWord;
- 
- TGPIOOutputSet = procedure(Reg,Value:LongWord);      //To Do //Change from Reg,Value to Pin //Change to function
- TGPIOOutputClear = procedure(Reg,Value:LongWord);    //To Do //Change from Reg,Value to Pin //Change to function
- TGPIOFunctionSelect = procedure(Reg,Value:LongWord); //To Do //Change from Reg,Value to Pin,Mode //Change to function
 
+ TGPIOFunctionGet = function(Pin:LongWord):LongWord;
+ TGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
+
+ {Note: These are to be removed when GPIO unit and driver are completed}
+ TGPIOOutputSetOld = procedure(Reg,Value:LongWord); 
+ TGPIOOutputClearOld = procedure(Reg,Value:LongWord); 
+ TGPIOFunctionSelectOld = procedure(Reg,Value:LongWord);
+ 
 type
  {Prototypes for Virtual GPIO Handlers}
  TVirtualGPIOInputGet = function(Pin:LongWord):LongWord;
@@ -596,6 +603,16 @@ type
  
  TRTCGetTime = function:Int64;
  TRTCSetTime = function(const Time:Int64):LongWord;
+ 
+type
+ {Prototypes for Serial Handlers}
+ TSerialAvailable = function:Boolean;
+ 
+ TSerialOpen = function(BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
+ TSerialClose = function:LongWord;
+  
+ TSerialRead = function(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ TSerialWrite = function(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
  
 type
  {Prototypes for Peripheral Handlers}
@@ -1132,11 +1149,18 @@ var
  GPIOInputWaitHandler:TGPIOInputWait;
  GPIOInputEventHandler:TGPIOInputEvent;
  
+ GPIOOutputSetHandler:TGPIOOutputSet;
+ 
+ GPIOPullGetHandler:TGPIOPullGet;
  GPIOPullSelectHandler:TGPIOPullSelect;
  
- GPIOOutputSetHandler:TGPIOOutputSet;
- GPIOOutputClearHandler:TGPIOOutputClear;
+ GPIOFunctionGetHandler:TGPIOFunctionGet;
  GPIOFunctionSelectHandler:TGPIOFunctionSelect;
+ 
+ {Note: These are to be removed when GPIO unit and driver are completed}
+ GPIOOutputSetOldHandler:TGPIOOutputSetOld;
+ GPIOOutputClearOldHandler:TGPIOOutputClearOld;
+ GPIOFunctionSelectOldHandler:TGPIOFunctionSelectOld;
  
 var
  {Virtual GPIO Handlers} 
@@ -1154,6 +1178,16 @@ var
  RTCAvailableHandler:TRTCAvailable;
  RTCGetTimeHandler:TRTCGetTime;
  RTCSetTimeHandler:TRTCSetTime;
+
+var
+ {Serial Handlers}
+ SerialAvailableHandler:TSerialAvailable;
+ 
+ SerialOpenHandler:TSerialOpen;
+ SerialCloseHandler:TSerialClose;
+  
+ SerialReadHandler:TSerialRead;
+ SerialWriteHandler:TSerialWrite;
  
 var
  {Peripheral Handlers}
@@ -1621,14 +1655,21 @@ function GPIORead(Reg:LongWord):LongWord; inline;
 procedure GPIOWrite(Reg,Value:LongWord); inline;
 
 function GPIOInputGet(Pin:LongWord):LongWord; inline;
-function GPIOInputWait(Pin,Timeout:LongWord):LongWord; inline;
-function GPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord; inline;
+function GPIOInputWait(Pin,Trigger,Timeout:LongWord):LongWord; inline;
+function GPIOInputEvent(Pin,Trigger,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord; inline;
  
+function GPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
+ 
+function GPIOPullGet(Pin:LongWord):LongWord; inline;
 function GPIOPullSelect(Pin,Mode:LongWord):LongWord; inline;
 
-procedure GPIOOutputSet(Reg,Value:LongWord); inline;       //To Do //Change from Reg,Value to Pin //Change to function
-procedure GPIOOutputClear(Reg,Value:LongWord); inline;     //To Do //Change from Reg,Value to Pin //Change to function
-procedure GPIOFunctionSelect(Reg,Value:LongWord); inline;  //To Do //Change from Reg,Value to Pin,Mode //Change to function
+function GPIOFunctionGet(Pin:LongWord):LongWord; inline;
+function GPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
+
+{Note: These are to be removed when GPIO unit and driver are completed}
+procedure GPIOOutputSetOld(Reg,Value:LongWord); inline;  
+procedure GPIOOutputClearOld(Reg,Value:LongWord); inline; 
+procedure GPIOFunctionSelectOld(Reg,Value:LongWord); inline;
 
 {==============================================================================}
 {Virtual GPIO Functions}
@@ -1647,6 +1688,16 @@ function RTCAvailable:Boolean; inline;
 
 function RTCGetTime:Int64; inline;
 function RTCSetTime(const Time:Int64):LongWord; inline;
+
+{==============================================================================}
+{Serial Functions}
+function SerialAvailable:Boolean; inline;
+ 
+function SerialOpen(BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord; inline;
+function SerialClose:LongWord; inline;
+  
+function SerialRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function SerialWrite(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 
 {==============================================================================}
 {Peripheral Functions}
@@ -4860,6 +4911,9 @@ end;
 {==============================================================================}
 {GPIO Functions}
 function GPIORead(Reg:LongWord):LongWord; inline;
+{Perform a direct read from a GPIO register}
+{Reg: The memory register to read from}
+{Return: The value of the memory register}
 begin
  {}
  if Assigned(GPIOReadHandler) then
@@ -4879,6 +4933,9 @@ end;
 {==============================================================================}
 
 procedure GPIOWrite(Reg,Value:LongWord); inline;
+{Perform a direct write to a GPIO register}
+{Reg: The memory register to write to}
+{Value: The value to write to the register}
 begin
  {}
  if Assigned(GPIOWriteHandler) then
@@ -4898,6 +4955,9 @@ end;
 {==============================================================================}
 
 function GPIOInputGet(Pin:LongWord):LongWord; inline;
+{Get the current state of a GPIO input pin}
+{Pin: The pin to get the state for (eg GPIO_PIN_1)}
+{Return: The current state (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
 begin
  {}
  if Assigned(GPIOInputGetHandler) then
@@ -4906,43 +4966,98 @@ begin
   end
  else
   begin
-   Result:=0;
+   Result:=GPIO_LEVEL_UNKNOWN;
   end;
 end;
 
 {==============================================================================}
 
-function GPIOInputWait(Pin,Timeout:LongWord):LongWord; inline;
+function GPIOInputWait(Pin,Trigger,Timeout:LongWord):LongWord; inline;
+{Wait for the state of a GPIO input pin to change}
+{Pin: The pin to wait for the state to change (eg GPIO_PIN_1)}
+{Trigger: The trigger event to wait for (eg GPIO_TRIGGER_HIGH)}
+{Timeout: Number of milliseconds to wait for the change (INFINITE to wait forever)}
+{Return: The state after the change (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure or timeout}
 begin
  {}
  if Assigned(GPIOInputWaitHandler) then
   begin
-   Result:=GPIOInputWaitHandler(Pin,Timeout);
+   Result:=GPIOInputWaitHandler(Pin,Trigger,Timeout);
   end
  else
   begin
-   Result:=0;
+   Result:=GPIO_LEVEL_UNKNOWN;
   end;
 end;
 
 {==============================================================================}
 
-function GPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord; inline;
+function GPIOInputEvent(Pin,Trigger,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord; inline;
+{Schedule a function to be called when the state of a GPIO input pin changes}
+{Pin: The pin to schedule the state change for (eg GPIO_PIN_1)}
+{Trigger: The trigger event which will cause the function to be called (eg GPIO_TRIGGER_HIGH)}
+{Timeout: The number of milliseconds before the scheduled trigger expires (INFINITE to never expire)}
+{Callback: The function to be called when the trigger occurs}
+{Data: A pointer to be pass to the function when the trigger occurs (Optional)}
+{Return: ERROR_SUCCESS if the trigger was scheduled successfully or another error code on failure}
+
+{Note: The pin and trigger that caused the event will be passed to the callback function}
 begin
  {}
  if Assigned(GPIOInputEventHandler) then
   begin
-   Result:=GPIOInputEventHandler(Pin,Timeout,Callback,Data);
+   Result:=GPIOInputEventHandler(Pin,Trigger,Timeout,Callback,Data);
   end
  else
   begin
-   Result:=0;
+   Result:=ERROR_CALL_NOT_IMPLEMENTED; 
+  end;
+end;
+
+{==============================================================================}
+
+function GPIOOutputSet(Pin,Level:LongWord):LongWord; inline;  
+{Set the state of a GPIO output pin}
+{Pin: The pin to set the state for (eg GPIO_PIN_1)}
+{Level: The state to set the pin to (eg GPIO_LEVEL_HIGH)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
+begin
+ {}
+ if Assigned(GPIOOutputSetHandler) then
+  begin
+   Result:=GPIOOutputSetHandler(Pin,Level);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function GPIOPullGet(Pin:LongWord):LongWord; inline;
+{Get the current pull state of a GPIO pin}
+{Pin: The pin to get the pull state for (eg GPIO_PIN_1)}
+{Return: The current pull state of the pin (eg GPIO_PULL_UP) or GPIO_PULL_UNKNOWN on failure}
+begin
+ {}
+ if Assigned(GPIOPullGetHandler) then
+  begin
+   Result:=GPIOPullGetHandler(Pin);
+  end
+ else
+  begin
+   Result:=GPIO_PULL_UNKNOWN; 
   end;
 end;
 
 {==============================================================================}
  
 function GPIOPullSelect(Pin,Mode:LongWord):LongWord; inline;
+{Change the pull state of a GPIO pin}
+{Pin: The pin to change the pull state for (eg GPIO_PIN_1)}
+{Mode: The pull state to set for the pin (eg GPIO_PULL_UP)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
  if Assigned(GPIOPullSelectHandler) then
@@ -4951,56 +5066,93 @@ begin
   end
  else
   begin
-   Result:=0;
+   Result:=ERROR_CALL_NOT_IMPLEMENTED; 
   end;
 end;
 
 {==============================================================================}
 
-procedure GPIOOutputSet(Reg,Value:LongWord); inline;
+function GPIOFunctionGet(Pin:LongWord):LongWord; inline;
+{Get the current function of a GPIO pin}
+{Pin: The pin to get the function for (eg GPIO_PIN_1)}
+{Return: The current function of the pin (eg GPIO_FUNCTION_IN) or GPIO_FUNCTION_UNKNOWN on failure}
 begin
  {}
- if Assigned(GPIOOutputSetHandler) then
+ if Assigned(GPIOFunctionGetHandler) then
   begin
-   GPIOOutputSetHandler(Reg,Value);
+   Result:=GPIOFunctionGetHandler(Pin);
   end
  else
   begin
-   {Memory Barrier}
-   DataMemoryBarrier; {Before the First Write}
-   
-   {Write Value}
-   PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
-  end; 
+   Result:=GPIO_FUNCTION_UNKNOWN; 
+  end;
 end;
 
 {==============================================================================}
 
-procedure GPIOOutputClear(Reg,Value:LongWord); inline;
-begin
- {}
- if Assigned(GPIOOutputClearHandler) then
-  begin
-   GPIOOutputClearHandler(Reg,Value);
-  end
- else
-  begin
-   {Memory Barrier}
-   DataMemoryBarrier; {Before the First Write}
-   
-   {Write Value}
-   PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
-  end; 
-end;
-
-{==============================================================================}
-
-procedure GPIOFunctionSelect(Reg,Value:LongWord); inline;
+function GPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
+{Change the function of a GPIO pin}
+{Pin: The pin to change the function for (eg GPIO_PIN_1)}
+{Mode: The function to set for the pin (eg GPIO_FUNCTION_OUT)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
  if Assigned(GPIOFunctionSelectHandler) then
   begin
-   GPIOFunctionSelectHandler(Reg,Value);
+   Result:=GPIOFunctionSelectHandler(Pin,Mode);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED; 
+  end;
+end;
+
+{==============================================================================}
+{Note: These are to be removed when GPIO unit and driver are completed}
+procedure GPIOOutputSetOld(Reg,Value:LongWord); inline;
+begin
+ {}
+ if Assigned(GPIOOutputSetOldHandler) then
+  begin
+   GPIOOutputSetOldHandler(Reg,Value);
+  end
+ else
+  begin
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Write Value}
+   PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
+  end; 
+end;
+
+{==============================================================================}
+
+procedure GPIOOutputClearOld(Reg,Value:LongWord); inline;
+begin
+ {}
+ if Assigned(GPIOOutputClearOldHandler) then
+  begin
+   GPIOOutputClearOldHandler(Reg,Value);
+  end
+ else
+  begin
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Write Value}
+   PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
+  end; 
+end;
+
+{==============================================================================}
+
+procedure GPIOFunctionSelectOld(Reg,Value:LongWord); inline;
+begin
+ {}
+ if Assigned(GPIOFunctionSelectOldHandler) then
+  begin
+   GPIOFunctionSelectOldHandler(Reg,Value);
   end
  else
   begin
@@ -5016,6 +5168,9 @@ end;
 {==============================================================================}
 {Virtual GPIO Functions}
 function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
+{Get the current state of a virtual GPIO input pin}
+{Pin: The pin to get the state for (eg VIRTUAL_GPIO_PIN_1)}
+{Return: The current state (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
 begin
  {}
  if Assigned(VirtualGPIOInputGetHandler) then
@@ -5024,7 +5179,7 @@ begin
   end
  else
   begin
-   Result:=0;
+   Result:=GPIO_LEVEL_UNKNOWN;
   end;
 end;
 
@@ -5125,6 +5280,100 @@ begin
  else
   begin
    Result:=0;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Serial Functions}
+function SerialAvailable:Boolean; inline;
+{Check if a Serial device is available}
+begin
+ {}
+ if Assigned(SerialAvailableHandler) then
+  begin
+   Result:=SerialAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
+function SerialOpen(BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord; inline;
+{Open the default Serial device ready for sending and receiving}
+{BaudRate: Baud rate for the connection (eg 9600, 57600, 115200 etc}
+{DataBits: Size of the data (eg SERIAL_DATA_8BIT)}
+{StopBits: Number of stop bits (eg SERIAL_STOP_1BIT)}
+{Parity: Parity type for the data (eg SERIAL_PARITY_NONE)}
+{FlowControl: Flow control for the connection (eg SERIAL_FLOW_NONE)}
+{ReceiveDepth: Size of the receive buffer (0 = Default size)}
+{TransmitDepth: Size of the transmit buffer (0 = Default size)}
+begin
+ {}
+ if Assigned(SerialOpenHandler) then
+  begin
+   Result:=SerialOpenHandler(BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function SerialClose:LongWord; inline;
+{Close the default Serial device and terminate sending and receiving}
+begin
+ {}
+ if Assigned(SerialCloseHandler) then
+  begin
+   Result:=SerialCloseHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+  
+function SerialRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Read data from the default Serial device}
+{Buffer: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Count: The number of bytes read on return}
+begin
+ {}
+ if Assigned(SerialReadHandler) then
+  begin
+   Result:=SerialReadHandler(Buffer,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function SerialWrite(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Write data to the default Serial device}
+{Buffer: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Count: The number of bytes written on return}
+begin
+ {}
+ if Assigned(SerialWriteHandler) then
+  begin
+   Result:=SerialWriteHandler(Buffer,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 

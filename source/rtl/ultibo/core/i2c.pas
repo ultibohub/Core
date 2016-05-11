@@ -69,7 +69,7 @@ const
  I2C_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No I2C messages}
  
 var 
- I2C_DEFAULT_LOG_LEVEL:LongWord = I2C_LOG_LEVEL_INFO; {Minimum level for I2C messages.  Only messages with level greater than or equal to this will be printed}
+ I2C_DEFAULT_LOG_LEVEL:LongWord = I2C_LOG_LEVEL_DEBUG; {Minimum level for I2C messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {I2C logging}

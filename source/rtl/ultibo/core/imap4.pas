@@ -60,7 +60,7 @@ const
  IMAP4_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No IMAP4 messages}
 
 var 
- IMAP4_DEFAULT_LOG_LEVEL:LongWord = IMAP4_LOG_LEVEL_DEBUG; //IMAP4_LOG_LEVEL_INFO; {Minimum level for IMAP4 messages.  Only messages with level greater than or equal to this will be printed} 
+ IMAP4_DEFAULT_LOG_LEVEL:LongWord = IMAP4_LOG_LEVEL_DEBUG; {Minimum level for IMAP4 messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {IMAP4 logging}

@@ -865,7 +865,7 @@ const
  FILESYS_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FileSystem messages}
 
 var 
- FILESYS_DEFAULT_LOG_LEVEL:LongWord = FILESYS_LOG_LEVEL_INFO; {Minimum level for FileSystem messages.  Only messages with level greater than or equal to this will be printed}
+ FILESYS_DEFAULT_LOG_LEVEL:LongWord = FILESYS_LOG_LEVEL_DEBUG; {Minimum level for FileSystem messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {FileSystem logging}

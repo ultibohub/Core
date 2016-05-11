@@ -62,7 +62,7 @@ const
  FTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FTP messages}
 
 var 
- FTP_DEFAULT_LOG_LEVEL:LongWord = FTP_LOG_LEVEL_DEBUG; //FTP_LOG_LEVEL_INFO; {Minimum level for FTP messages.  Only messages with level greater than or equal to this will be printed} 
+ FTP_DEFAULT_LOG_LEVEL:LongWord = FTP_LOG_LEVEL_DEBUG; {Minimum level for FTP messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {FTP logging}

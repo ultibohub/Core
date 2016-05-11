@@ -548,7 +548,7 @@ const
  THREAD_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Thread messages}
 
 var 
- THREAD_DEFAULT_LOG_LEVEL:LongWord = THREAD_LOG_LEVEL_INFO; {Minimum level for Thread messages.  Only messages with level greater than or equal to this will be printed} 
+ THREAD_DEFAULT_LOG_LEVEL:LongWord = THREAD_LOG_LEVEL_DEBUG; {Minimum level for Thread messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {Thread logging}
@@ -1688,6 +1688,8 @@ function BufferIterate(Buffer:TBufferHandle;Previous:Pointer):Pointer;
 function EventCreate(ManualReset,InitialState:Boolean):TEventHandle;
 function EventCreateEx(Flags:LongWord):TEventHandle;
 function EventDestroy(Event:TEventHandle):LongWord;
+
+function EventState(Event:TEventHandle):LongWord;
 
 function EventWait(Event:TEventHandle):LongWord;
 function EventWaitEx(Event:TEventHandle;Timeout:LongWord):LongWord;                             {Timeout = 0 then no Wait, Timeout = INFINITE then Wait forever}
@@ -10464,6 +10466,15 @@ function ThreadCreate(StartProc:TThreadStart;StackSize,Priority:LongWord;Name:PC
 {Note: Calls ThreadCreateEx with:
          Affinity = SCHEDULER_CPU_MASK (Run on any available CPU)
          CPU = SchedulerThreadNext (Assign to next CPU in round robin)}
+         
+{WARNING: ThreadCreate and ThreadCreateEx are only used internally by SysBeginThread and SysBeginThreadEx
+          
+          These functions do not handle setting up certain RTL functionality such as thread variables,
+          exceptions and standard input/output handles.
+          
+          If you need to create a standard thread use either BeginThread (or BeginThreadEx) or use the
+          TThread class and its descendants. Only use ThreadCreate and ThreadCreateEx if you need to modify
+          the thread creation behaviour and understand that you also need to handle the additional RTL setup}         
 begin
  {}
  Result:=ThreadCreateEx(StartProc,StackSize,Priority,SCHEDULER_CPU_MASK,SchedulerThreadNext,Name,Parameter);
@@ -10484,6 +10495,15 @@ function ThreadCreateEx(StartProc:TThreadStart;StackSize,Priority,Affinity,CPU:L
 {Name: Name of the thread}
 {Parameter: Parameter passed to StartProc of new thread}
 {Return: Handle of new thread or INVALID_HANDLE_VALUE if a new thread could not be created}
+
+{WARNING: ThreadCreate and ThreadCreateEx are only used internally by SysBeginThread and SysBeginThreadEx
+          
+          These functions do not handle setting up certain RTL functionality such as thread variables,
+          exceptions and standard input/output handles.
+          
+          If you need to create a standard thread use either BeginThread (or BeginThreadEx) or use the
+          TThread class or its descendants. Only use ThreadCreate and ThreadCreateEx if you need to modify
+          the thread creation behaviour and understand that you also need to handle the additional RTL setup}         
 var
  StackBase:Pointer;
  ThreadEntry:PThreadEntry;
@@ -17655,6 +17675,42 @@ begin
   begin
    {Return Result}
    Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function EventState(Event:TEventHandle):LongWord;
+{Get the current state of an existing Event entry}
+{Event: Event to get state for}
+{Return: Current state or INVALID_HANDLE_VALUE on error}
+var
+ EventEntry:PEventEntry;
+begin
+ {}
+ Result:=LongWord(INVALID_HANDLE_VALUE);
+ 
+ {Check Event}
+ if Event = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ EventEntry:=PEventEntry(Event);
+ if EventEntry = nil then Exit;
+ if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if SpinLock(EventEntry.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
+    
+    {Get State}
+    Result:=EventEntry.State;
+   finally
+    {Release the Lock}
+    SpinUnlock(EventEntry.Lock);
+   end;
   end;
 end;
 

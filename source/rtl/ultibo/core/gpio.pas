@@ -31,6 +31,26 @@ References
 GPIO Devices
 ============
 
+ GPIO devices represent the external or internal pins available on most system on chip (SoC)
+ devices to provide control and interfacing capabilities for both hardware and software.
+ 
+ This unit maintains pin numbering exactly as per the SoC documentation but abstracts other 
+ features such as alternate function selects to avoid exposing chip specific values via the
+ API.
+ 
+ Not all GPIO devices support the same feature set so the GPIODeviceProperties function returns
+ a structure which describes the number of pins as well as minimum and maximum pin numbers along
+ with a set of flags that indicate what functionality is supported by the device.
+ 
+ Multiple GPIO devices can be accomodated, each one is registered with this unit when the driver
+ for the device is loaded and initialized. This unit includes functions for enumerating the devices
+ that are available and each function takes a GPIODevice parameter to allow specifying the exact
+ device to control.
+ 
+ Simplified versions of many of the functions in this unit are provided in the Platform unit to
+ allow control of the default GPIO device and in cases where there is only one device registered
+ these functions will provide most of the capability required.
+ 
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -42,10 +62,6 @@ unit GPIO;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
-
-//To Do
-
-//See: \u-boot-HEAD-5745f8c\drivers\gpio\bcm2835_gpio.c
 
 {==============================================================================}
 {Global definitions}
@@ -64,8 +80,21 @@ const
  GPIO_STATE_ENABLED  = 1;
  
  {GPIO Device Flags}
- GPIO_FLAG_NONE          = $00000000;
+ GPIO_FLAG_NONE            = $00000000;
+ GPIO_FLAG_PULL_UP         = $00000001; {Device supports Pull Up on a pin}
+ GPIO_FLAG_PULL_DOWN       = $00000002; {Device supports Pull Down on a pin}
+ GPIO_FLAG_TRIGGER_LOW     = $00000004; {Device supports Trigger on Low level on a pin}
+ GPIO_FLAG_TRIGGER_HIGH    = $00000008; {Device supports Trigger on High level on a pin}
+ GPIO_FLAG_TRIGGER_RISING  = $00000010; {Device supports Trigger on Rising edge on a pin}
+ GPIO_FLAG_TRIGGER_FALLING = $00000020; {Device supports Trigger on Falling edge on a pin}
+ GPIO_FLAG_TRIGGER_EDGE    = $00000040; {Device supports Trigger on any edge (Rising or Falling) on a pin}
+ GPIO_FLAG_TRIGGER_ASYNC   = $00000080; {Device supports Trigger on Asynchronous Rising/Falling edge on a pin}
  
+ {GPIO Event Flags}
+ GPIO_EVENT_FLAG_NONE      = $00000000;
+ GPIO_EVENT_FLAG_REPEAT    = $00000001; {Event will be repeated until cancelled}
+ GPIO_EVENT_FLAG_INTERRUPT = $00000002; {Event will be dispatched by interrupt handler (If applicable)}
+                                        {Caution: Events called by the interrupt handler must obey interrupt rules with regard to locks, memory allocation and latency}
  {GPIO logging}
  GPIO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {GPIO debugging messages}
  GPIO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {GPIO informational messages, such as a device being attached or detached}
@@ -73,7 +102,7 @@ const
  GPIO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No GPIO messages}
 
 var 
- GPIO_DEFAULT_LOG_LEVEL:LongWord = GPIO_LOG_LEVEL_INFO; {Minimum level for GPIO messages.  Only messages with level greater than or equal to this will be printed}
+ GPIO_DEFAULT_LOG_LEVEL:LongWord = GPIO_LOG_LEVEL_DEBUG; {Minimum level for GPIO messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {GPIO logging}
@@ -86,12 +115,40 @@ type
  {GPIO Properties}
  PGPIOProperties = ^TGPIOProperties;
  TGPIOProperties = record
+  Flags:LongWord;        {Device flags (eg GPIO_FLAG_TRIGGER_HIGH)}
+  PinMin:LongWord;
+  PinMax:LongWord;
   PinCount:LongWord;
-  //To Do
+  FunctionMin:LongWord;
+  FunctionMax:LongWord;
+  FunctionCount:LongWord;
  end;
  
  {GPIO Device}
- PGPIODevice = ^TGPIODevice;
+ PGPIODevice = ^TGPIODevice; {Forward decleard for GPIOPin}
+ PGPIOPin = ^TGPIOPin;       {Forward declared for GPIOEvent}
+ 
+ {GPIO Event}
+ PGPIOEvent = ^TGPIOEvent;
+ TGPIOEvent = record
+  Pin:PGPIOPin;            {GPIO Pin this event belongs to}
+  Callback:TGPIOCallback;  {Callback function to call when trigger occurs}
+  Data:Pointer;            {Pointer to pass to the callback function when trigger occurs}
+  Timeout:LongWord;        {Timeout in milliseconds for this callback (or INFINITE for no timeout)}
+  Prev:PGPIOEvent;         {Previous event in the list}
+  Next:PGPIOEvent;         {Next event in the list}
+ end;
+ 
+ {GPIO Pin}
+ TGPIOPin = record
+  GPIO:PGPIODevice;        {GPIO device this pin belongs to}
+  Pin:LongWord;            {Pin number of this pin on the device (May be used by drivers for internal numbering)}
+  Flags:LongWord;          {Current flags for this pin (eg GPIO_EVENT_FLAG_REPEAT)}
+  Trigger:LongWord;        {Current trigger value for this pin (or GPIO_TRIGGER_NONE if no triggers current)}
+  Count:LongWord;          {Count of threads and events waiting for the trigger}
+  Event:TEventHandle;      {Event for threads waiting for the trigger}
+  Events:PGPIOEvent;       {List of events waiting for the trigger}
+ end;
  
  {GPIO Enumeration Callback}
  TGPIOEnumerate = function(GPIO:PGPIODevice;Data:Pointer):LongWord;
@@ -99,17 +156,23 @@ type
  TGPIONotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
  
  {GPIO Device Methods}
+ TGPIODeviceStart = function(GPIO:PGPIODevice):LongWord; 
+ TGPIODeviceStop = function(GPIO:PGPIODevice):LongWord; 
+ 
  TGPIODeviceRead = function(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
  TGPIODeviceWrite = procedure(GPIO:PGPIODevice;Reg,Value:LongWord);
  
  TGPIODeviceInputGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
- TGPIODeviceInputWait = function(GPIO:PGPIODevice;Pin,Timeout:LongWord):LongWord;
- TGPIODeviceInputEvent = function(GPIO:PGPIODevice;Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+ TGPIODeviceInputWait = function(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
+ TGPIODeviceInputEvent = function(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
+ TGPIODeviceInputCancel = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
  
+ TGPIODeviceOutputSet = function(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+ 
+ TGPIODevicePullGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
  TGPIODevicePullSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
  
- TGPIODeviceOutputSet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
- TGPIODeviceOutputClear = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+ TGPIODeviceFunctionGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
  TGPIODeviceFunctionSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
  
  TGPIODeviceProperties = function(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
@@ -120,22 +183,30 @@ type
   {GPIO Properties}
   GPIOId:LongWord;                                {Unique Id of this GPIO in the GPIO table}
   GPIOState:LongWord;                             {GPIO state (eg GPIO_STATE_ENABLED)}
-  DeviceRead:TGPIODeviceRead;                     {A Device specific DeviceRead method implementing the standard GPIO device interface}
-  DeviceWrite:TGPIODeviceWrite;                   {A Device specific DeviceWrite method implementing the standard GPIO device interface}
-  DeviceInputGet:TGPIODeviceInputGet;             {A Device specific DeviceInputGet method implementing the standard GPIO device interface}
-  DeviceInputWait:TGPIODeviceInputWait;           {A Device specific DeviceInputWait method implementing the standard GPIO device interface}
-  DeviceInputEvent:TGPIODeviceInputEvent;         {A Device specific DeviceInputEvent method implementing the standard GPIO device interface}
-  DevicePullSelect:TGPIODevicePullSelect;         {A Device specific DevicePullSelect method implementing the standard GPIO device interface}
-  DeviceOutputSet:TGPIODeviceOutputSet;           {A Device specific DeviceOutputSet method implementing the standard GPIO device interface}
-  DeviceOutputClear:TGPIODeviceOutputClear;       {A Device specific DeviceOutputClear method implementing the standard GPIO device interface}
-  DeviceFunctionSelect:TGPIODeviceFunctionSelect; {A Device specific DeviceFunctionSelect method implementing the standard GPIO device interface}
-  DeviceProperties:TGPIODeviceProperties;         {A Device specific DeviceProperties method implementing the standard GPIO device interface}
-  {Statistics Properties}
-  //To Do
+  DeviceStart:TGPIODeviceStart;                   {A Device specific DeviceStart method implementing the standard GPIO device interface (Manadatory)}
+  DeviceStop:TGPIODeviceStop;                     {A Device specific DeviceStop method implementing the standard GPIO device interface (Manadatory)}
+  DeviceRead:TGPIODeviceRead;                     {A Device specific DeviceRead method implementing the standard GPIO device interface (Or nil if the default method is suitable)}
+  DeviceWrite:TGPIODeviceWrite;                   {A Device specific DeviceWrite method implementing the standard GPIO device interface (Or nil if the default method is suitable)}
+  DeviceInputGet:TGPIODeviceInputGet;             {A Device specific DeviceInputGet method implementing the standard GPIO device interface (Manadatory)}
+  DeviceInputWait:TGPIODeviceInputWait;           {A Device specific DeviceInputWait method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
+  DeviceInputEvent:TGPIODeviceInputEvent;         {A Device specific DeviceInputEvent method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
+  DeviceInputCancel:TGPIODeviceInputCancel;       {A Device specific DeviceInputCancel method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
+  DeviceOutputSet:TGPIODeviceOutputSet;           {A Device specific DeviceOutputSet method implementing the standard GPIO device interface (Manadatory)}
+  DevicePullGet:TGPIODevicePullGet;               {A Device specific DevicePullGet method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
+  DevicePullSelect:TGPIODevicePullSelect;         {A Device specific DevicePullSelect method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
+  DeviceFunctionGet:TGPIODeviceFunctionGet;       {A Device specific DeviceFunctionGet method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
+  DeviceFunctionSelect:TGPIODeviceFunctionSelect; {A Device specific DeviceFunctionSelect method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
+  DeviceProperties:TGPIODeviceProperties;         {A Device specific DeviceProperties method implementing the standard GPIO device interfac (Or nil if the default method is suitable)e}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   Address:Pointer;                                {Device register base address}
+  Pins:array of TGPIOPin;                         {Device pins}
   Properties:TGPIOProperties;                     {Device properties}
+  {Statistics Properties}
+  GetCount:LongWord;
+  SetCount:LongWord;
+  WaitCount:LongWord;
+  EventCount:LongWord;
   {Internal Properties}                                                                        
   Prev:PGPIODevice;                               {Previous entry in GPIO table}
   Next:PGPIODevice;                               {Next entry in GPIO table}
@@ -151,17 +222,23 @@ procedure GPIOInit;
  
 {==============================================================================}
 {GPIO Functions}
+function GPIODeviceStart(GPIO:PGPIODevice):LongWord; 
+function GPIODeviceStop(GPIO:PGPIODevice):LongWord; 
+
 function GPIODeviceRead(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
 procedure GPIODeviceWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
  
 function GPIODeviceInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
-function GPIODeviceInputWait(GPIO:PGPIODevice;Pin,Timeout:LongWord):LongWord;
-function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
- 
+function GPIODeviceInputWait(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
+function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
+function GPIODeviceInputCancel(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+
+function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+
+function GPIODevicePullGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODevicePullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 
-function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
-function GPIODeviceOutputClear(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+function GPIODeviceFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODeviceFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 
 function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
@@ -181,13 +258,15 @@ function GPIODeviceNotification(GPIO:PGPIODevice;Callback:TGPIONotification;Data
 {==============================================================================}
 {RTL GPIO Functions}
 function SysGPIOInputGet(Pin:LongWord):LongWord;
-function SysGPIOInputWait(Pin,Timeout:LongWord):LongWord;
-function SysGPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+function SysGPIOInputWait(Pin,Trigger,Timeout:LongWord):LongWord;
+function SysGPIOInputEvent(Pin,Trigger,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
  
+function SysGPIOOutputSet(Pin,Level:LongWord):LongWord;   
+
+function SysGPIOPullGet(Pin:LongWord):LongWord;
 function SysGPIOPullSelect(Pin,Mode:LongWord):LongWord;
  
-function SysGPIOOutputSet(Pin:LongWord):LongWord;   
-function SysGPIOOutputClear(Pin:LongWord):LongWord; 
+function SysGPIOFunctionGet(Pin:LongWord):LongWord;
 function SysGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
 
 {==============================================================================}
@@ -198,10 +277,23 @@ function GPIODeviceSetDefault(GPIO:PGPIODevice):LongWord;
 
 function GPIODeviceCheck(GPIO:PGPIODevice):PGPIODevice;
 
+function GPIODeviceCreateEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Callback:TGPIOCallback;Data:Pointer;Timeout:LongWord):PGPIOEvent;
+function GPIODeviceDestroyEvent(GPIO:PGPIODevice;Event:PGPIOEvent):LongWord;
+
+function GPIODeviceRegisterEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Event:PGPIOEvent):LongWord;
+function GPIODeviceDeregisterEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Event:PGPIOEvent):LongWord;
+
 procedure GPIOLog(Level:LongWord;GPIO:PGPIODevice;const AText:String);
 procedure GPIOLogInfo(GPIO:PGPIODevice;const AText:String);
 procedure GPIOLogError(GPIO:PGPIODevice;const AText:String);
 procedure GPIOLogDebug(GPIO:PGPIODevice;const AText:String);
+
+function GPIOPinToString(Pin:LongWord):String;
+function GPIOLevelToString(Level:LongWord):String;
+function GPIOTriggerToString(Trigger:LongWord):String;
+
+function GPIOPullToString(Value:LongWord):String;
+function GPIOFunctionToString(Value:LongWord):String;
 
 {==============================================================================}
 {==============================================================================}
@@ -246,10 +338,11 @@ begin
  GPIOInputGetHandler:=SysGPIOInputGet;
  GPIOInputWaitHandler:=SysGPIOInputWait;
  GPIOInputEventHandler:=SysGPIOInputEvent;
+ GPIOOutputSetHandler:=SysGPIOOutputSet; 
+ GPIOPullGetHandler:=SysGPIOPullGet;
  GPIOPullSelectHandler:=SysGPIOPullSelect;
- //GPIOOutputSetHandler:=SysGPIOOutputSet; //To Do //Change definition in Platform
- //GPIOOutputClearHandler:=SysGPIOOutputClear; //To Do //Change definition in Platform
- //GPIOFunctionSelectHandler:=SysGPIOFunctionSelect; //To Do //Change definition in Platform
+ GPIOFunctionGetHandler:=SysGPIOFunctionGet;
+ GPIOFunctionSelectHandler:=SysGPIOFunctionSelect;
  
  GPIOInitialized:=True;
 end;
@@ -257,12 +350,135 @@ end;
 {==============================================================================}
 {==============================================================================}
 {GPIO Functions}
+function GPIODeviceStart(GPIO:PGPIODevice):LongWord; 
+begin
+ {}
+ Result:=0;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Start');
+ {$ENDIF}
+ 
+ {Check Disabled}
+ Result:=ERROR_SUCCESS;
+ if GPIO.GPIOState <> GPIO_STATE_DISABLED then Exit;
+
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(GPIO.DeviceStart) then
+     begin
+      {Call Device Start}
+      Result:=GPIO.DeviceStart(GPIO);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin    
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end; 
+ 
+    {Enable Device}
+    GPIO.GPIOState:=GPIO_STATE_ENABLED;
+    
+    {Notify Enable}
+    NotifierNotify(@GPIO.Device,DEVICE_NOTIFICATION_ENABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(GPIO.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function GPIODeviceStop(GPIO:PGPIODevice):LongWord; 
+begin
+ {}
+ Result:=0;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Stop');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_SUCCESS;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(GPIO.DeviceStop) then
+     begin
+      {Call Device Stop}
+      Result:=GPIO.DeviceStop(GPIO);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end;    
+   
+    {Disable Device}
+    GPIO.GPIOState:=GPIO_STATE_DISABLED;
+    
+    {Notify Disable}
+    NotifierNotify(@GPIO.Device,DEVICE_NOTIFICATION_DISABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(GPIO.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
 function GPIODeviceRead(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
 begin
  {}
  Result:=0;
- //To Do
  
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Read (Reg=' + IntToHex(Reg,8) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceRead) then
+    begin
+     {Call Device Read}
+     Result:=GPIO.DeviceRead(GPIO,Reg);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end;    
 end;
 
 {==============================================================================}
@@ -270,8 +486,27 @@ end;
 procedure GPIODeviceWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
 begin
  {}
- //To Do
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Write (Reg=' + IntToHex(Reg,8) + ' Value=' + IntToHex(Value,8) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceWrite) then
+    begin
+     {Call Device Write}
+     GPIO.DeviceWrite(GPIO,Reg,Value);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end;    
 end;
 
 {==============================================================================}
@@ -279,32 +514,205 @@ end;
 function GPIODeviceInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 begin
  {}
- Result:=0;
+ Result:=GPIO_LEVEL_UNKNOWN;
  
- //To Do
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Input Get (Pin=' + GPIOPinToString(Pin) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceInputGet) then
+    begin
+     {Call Device Input Get}
+     Result:=GPIO.DeviceInputGet(GPIO,Pin);
+    end
+   else
+    begin
+     Result:=ERROR_INVALID_PARAMETER;
+    end;    
+    
+   MutexUnlock(GPIO.Lock);
+  end;    
 end;
 
 {==============================================================================}
 
-function GPIODeviceInputWait(GPIO:PGPIODevice;Pin,Timeout:LongWord):LongWord;
+function GPIODeviceInputWait(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
 begin
  {}
- Result:=0;
+ Result:=GPIO_LEVEL_UNKNOWN;
  
- //To Do
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Input Wait (Pin=' + GPIOPinToString(Pin) + ' Trigger=' + GPIOTriggerToString(Trigger) + ' Timeout=' + IntToStr(Timeout) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceInputWait) then
+    begin
+     {Call Device Input Wait}
+     Result:=GPIO.DeviceInputWait(GPIO,Pin,Trigger,Timeout);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end;    
 end;
 
 {==============================================================================}
 
-function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- //To Do
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Input Event (Pin=' + GPIOPinToString(Pin) + ' Trigger=' + GPIOTriggerToString(Trigger) + ' Flags=' + IntToHex(Flags,8) + ' Timeout=' + IntToStr(Timeout) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceInputEvent) then
+    begin
+     {Call Device Input Event}
+     Result:=GPIO.DeviceInputEvent(GPIO,Pin,Trigger,Flags,Timeout,Callback,Data);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function GPIODeviceInputCancel(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Input Cancel (Pin=' + GPIOPinToString(Pin) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceInputCancel) then
+    begin
+     {Call Device Input Cancel}
+     Result:=GPIO.DeviceInputCancel(GPIO,Pin);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+ 
+function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Output Set (Pin=' + GPIOPinToString(Pin) + ' Level=' + GPIOLevelToString(Level) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceOutputSet) then
+    begin
+     {Call Device Output Set}
+     Result:=GPIO.DeviceOutputSet(GPIO,Pin,Level);
+    end
+   else
+    begin
+     Result:=ERROR_INVALID_PARAMETER;
+    end;    
+    
+   MutexUnlock(GPIO.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function GPIODevicePullGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+begin
+ {}
+ Result:=GPIO_PULL_UNKNOWN;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Pull Get (Pin=' + GPIOPinToString(Pin) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DevicePullGet) then
+    begin
+     {Call Device Pull Get}
+     Result:=GPIO.DevicePullGet(GPIO,Pin);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end;    
 end;
 
 {==============================================================================}
@@ -314,30 +722,63 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- //To Do
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Pull Select (Pin=' + GPIOPinToString(Pin) + ' Mode=' + GPIOPullToString(Mode) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DevicePullSelect) then
+    begin
+     {Call Device Pull Select}
+     Result:=GPIO.DevicePullSelect(GPIO,Pin,Mode);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
- 
-function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+
+function GPIODeviceFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 begin
  {}
- Result:=ERROR_INVALID_PARAMETER;
+ Result:=GPIO_FUNCTION_UNKNOWN;
  
- //To Do
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
-end;
-
-{==============================================================================}
-
-function GPIODeviceOutputClear(GPIO:PGPIODevice;Pin:LongWord):LongWord;
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Function Get (Pin=' + GPIOPinToString(Pin) + ')');
+ {$ENDIF}
  
- //To Do
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
  
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceFunctionGet) then
+    begin
+     {Call Device Function Get}
+     Result:=GPIO.DeviceFunctionGet(GPIO,Pin);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end;    
 end;
 
 {==============================================================================}
@@ -347,8 +788,32 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- //To Do
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Function Select (Pin=' + GPIOPinToString(Pin) + ' Mode=' + GPIOFunctionToString(Mode) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceFunctionSelect) then
+    begin
+     {Call Device Function Select}
+     Result:=GPIO.DeviceFunctionSelect(GPIO,Pin,Mode);
+    end;
+    
+   MutexUnlock(GPIO.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
@@ -358,8 +823,43 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- //To Do
+ {Check Properties}
+ if Properties = nil then Exit;
  
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF GPIO_DEBUG}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Properties');
+ {$ENDIF}
+ 
+ {Check Open}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(GPIO.DeviceProperties) then
+    begin
+     {Call Device Properites}
+     Result:=GPIO.DeviceProperties(GPIO,Properties);
+    end
+   else
+    begin
+     {Get Properties}
+     System.Move(GPIO.Properties,Properties^,SizeOf(TGPIOProperties));
+       
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+    end;  
+    
+   MutexUnlock(GPIO.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
@@ -398,16 +898,24 @@ begin
  {Update GPIO}
  Result.GPIOId:=DEVICE_ID_ANY;
  Result.GPIOState:=GPIO_STATE_DISABLED;
+ Result.DeviceStart:=nil;
+ Result.DeviceStop:=nil;
  Result.DeviceRead:=nil;
  Result.DeviceWrite:=nil;
+ Result.DeviceInputGet:=nil;
+ Result.DeviceInputWait:=nil;
+ Result.DeviceInputEvent:=nil;
+ Result.DeviceInputCancel:=nil;
  Result.DeviceOutputSet:=nil;
- Result.DeviceOutputClear:=nil;
+ Result.DevicePullGet:=nil;
+ Result.DevicePullSelect:=nil;
+ Result.DeviceFunctionGet:=nil;
  Result.DeviceFunctionSelect:=nil;
  Result.DeviceProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}
- Result.Lock:=MutexCreate;
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if GPIO_LOG_ENABLED then GPIOLogError(nil,'Failed to create lock for GPIO device');
@@ -460,6 +968,12 @@ begin
  if GPIO = nil then Exit;
  if GPIO.GPIOId <> DEVICE_ID_ANY then Exit;
  if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Interfaces}
+ if not(Assigned(GPIO.DeviceStart)) then Exit;
+ if not(Assigned(GPIO.DeviceStop)) then Exit;
+ if not(Assigned(GPIO.DeviceInputGet)) then Exit;
+ if not(Assigned(GPIO.DeviceOutputSet)) then Exit;
  
  {Check GPIO}
  Result:=ERROR_ALREADY_EXISTS;
@@ -709,9 +1223,12 @@ end;
 {==============================================================================}
 {RTL GPIO Functions}
 function SysGPIOInputGet(Pin:LongWord):LongWord;
+{Get the current state of a GPIO input pin}
+{Pin: The pin to get the state for (eg GPIO_PIN_1)}
+{Return: The current state (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
 begin
  {}
- Result:=0;
+ Result:=GPIO_LEVEL_UNKNOWN;
  
  if GPIODeviceDefault = nil then Exit;
 
@@ -720,34 +1237,84 @@ end;
 
 {==============================================================================}
 
-function SysGPIOInputWait(Pin,Timeout:LongWord):LongWord;
+function SysGPIOInputWait(Pin,Trigger,Timeout:LongWord):LongWord;
+{Wait for the state of a GPIO input pin to change}
+{Pin: The pin to wait for the state to change (eg GPIO_PIN_1)}
+{Trigger: The trigger event to wait for (eg GPIO_TRIGGER_HIGH)}
+{Timeout: Number of milliseconds to wait for the change (INFINITE to wait forever)}
+{Return: The state after the change (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure or timeout}
 begin
  {}
- Result:=0;
+ Result:=GPIO_LEVEL_UNKNOWN;
  
  if GPIODeviceDefault = nil then Exit;
 
- Result:=GPIODeviceInputWait(GPIODeviceDefault,Pin,Timeout);
+ Result:=GPIODeviceInputWait(GPIODeviceDefault,Pin,Trigger,Timeout);
 end;
 
 {==============================================================================}
 
-function SysGPIOInputEvent(Pin,Timeout:LongWord;Callback:TGPIOEvent;Data:Pointer):LongWord;
+function SysGPIOInputEvent(Pin,Trigger,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
+{Schedule a function to be called when the state of a GPIO input pin changes}
+{Pin: The pin to schedule the state change for (eg GPIO_PIN_1)}
+{Trigger: The trigger event which will cause the function to be called (eg GPIO_TRIGGER_HIGH)}
+{Timeout: The number of milliseconds before the scheduled trigger expires (INFINITE to never expire)}
+{Callback: The function to be called when the trigger occurs}
+{Data: A pointer to be pass to the function when the trigger occurs (Optional)}
+{Return: ERROR_SUCCESS if the trigger was scheduled successfully or another error code on failure}
+
+{Note: The pin and trigger that caused the event will be passed to the callback function}
 begin
  {}
- Result:=0;
+ Result:=ERROR_INVALID_PARAMETER;
  
  if GPIODeviceDefault = nil then Exit;
 
- Result:=GPIODeviceInputEvent(GPIODeviceDefault,Pin,Timeout,Callback,Data);
+ Result:=GPIODeviceInputEvent(GPIODeviceDefault,Pin,Trigger,GPIO_EVENT_FLAG_NONE,Timeout,Callback,Data);
+end;
+
+{==============================================================================}
+ 
+function SysGPIOOutputSet(Pin,Level:LongWord):LongWord;   
+{Set the state of a GPIO output pin}
+{Pin: The pin to set the state for (eg GPIO_PIN_1)}
+{Level: The state to set the pin to (eg GPIO_LEVEL_HIGH)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODeviceOutputSet(GPIODeviceDefault,Pin,Level);
+end;
+
+
+{==============================================================================}
+
+function SysGPIOPullGet(Pin:LongWord):LongWord;
+{Get the current pull state of a GPIO pin}
+{Pin: The pin to get the pull state for (eg GPIO_PIN_1)}
+{Return: The current pull state of the pin (eg GPIO_PULL_UP) or GPIO_PULL_UNKNOWN on failure}
+begin
+ {}
+ Result:=GPIO_PULL_UNKNOWN;
+ 
+ if GPIODeviceDefault = nil then Exit;
+
+ Result:=GPIODevicePullGet(GPIODeviceDefault,Pin);
 end;
 
 {==============================================================================}
  
 function SysGPIOPullSelect(Pin,Mode:LongWord):LongWord;
+{Change the pull state of a GPIO pin}
+{Pin: The pin to change the pull state for (eg GPIO_PIN_1)}
+{Mode: The pull state to set for the pin (eg GPIO_PULL_UP)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
- Result:=0;
+ Result:=ERROR_INVALID_PARAMETER;
  
  if GPIODeviceDefault = nil then Exit;
 
@@ -755,35 +1322,30 @@ begin
 end;
 
 {==============================================================================}
- 
-function SysGPIOOutputSet(Pin:LongWord):LongWord;   
+
+function SysGPIOFunctionGet(Pin:LongWord):LongWord;
+{Get the current function of a GPIO pin}
+{Pin: The pin to get the function for (eg GPIO_PIN_1)}
+{Return: The current function of the pin (eg GPIO_FUNCTION_IN) or GPIO_FUNCTION_UNKNOWN on failure}
 begin
  {}
- Result:=0;
+ Result:=GPIO_FUNCTION_UNKNOWN;
  
  if GPIODeviceDefault = nil then Exit;
 
- Result:=GPIODeviceOutputSet(GPIODeviceDefault,Pin);
-end;
-
-{==============================================================================}
-
-function SysGPIOOutputClear(Pin:LongWord):LongWord; 
-begin
- {}
- Result:=0;
- 
- if GPIODeviceDefault = nil then Exit;
-
- Result:=GPIODeviceOutputClear(GPIODeviceDefault,Pin);
+ Result:=GPIODeviceFunctionGet(GPIODeviceDefault,Pin);
 end;
 
 {==============================================================================}
 
 function SysGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
+{Change the function of a GPIO pin}
+{Pin: The pin to change the function for (eg GPIO_PIN_1)}
+{Mode: The function to set for the pin (eg GPIO_FUNCTION_OUT)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
- Result:=0;
+ Result:=ERROR_INVALID_PARAMETER;
  
  if GPIODeviceDefault = nil then Exit;
 
@@ -885,6 +1447,151 @@ end;
 
 {==============================================================================}
 
+function GPIODeviceCreateEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Callback:TGPIOCallback;Data:Pointer;Timeout:LongWord):PGPIOEvent;
+{Create a new event using the supplied parameters}
+
+{Note: Event must be registered by calling GPIODeviceRegisterEvent}
+{Note: Caller must hold the GPIO device lock}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Pin}
+ if Pin = nil then Exit;
+ 
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Create Event}
+ Result:=PGPIOEvent(GetMem(SizeOf(TGPIOEvent)));
+ if Result = nil then Exit;
+ 
+ {Update Event}
+ Result.Pin:=Pin;
+ Result.Callback:=Callback;
+ Result.Data:=Data;
+ Result.Timeout:=Timeout;
+ Result.Prev:=nil;
+ Result.Next:=nil;
+end;
+
+{==============================================================================}
+
+function GPIODeviceDestroyEvent(GPIO:PGPIODevice;Event:PGPIOEvent):LongWord;
+{Destroy an existing event}
+
+{Note: Event must be deregistered first by calling GPIODeviceDeregisterEvent}
+{Note: Caller must hold the GPIO device lock}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Event}
+ if Event = nil then Exit;
+
+ {Destroy Event}
+ FreeMem(Event);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function GPIODeviceRegisterEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Event:PGPIOEvent):LongWord;
+{Register an event in the event list of the supplied Pin}
+
+{Note: Event must be created by calling GPIODeviceCreateEvent}
+{Note: Caller must hold the GPIO device lock}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Pin}
+ if Pin = nil then Exit;
+ 
+ {Check Event}
+ if Event = nil then Exit;
+ 
+ {Link Event}
+ if Pin.Events = nil then
+  begin
+   Pin.Events:=Event;
+  end
+ else
+  begin
+   Event.Next:=Pin.Events;
+   Pin.Events.Prev:=Event;
+   Pin.Events:=Event;
+  end;
+  
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function GPIODeviceDeregisterEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Event:PGPIOEvent):LongWord;
+{Deregister an event from the event list of the supplied Pin}
+
+{Note: Event must be destroyed by calling GPIODeviceDestroyEvent}
+{Note: Caller must hold the GPIO device lock}
+var
+ Prev:PGPIOEvent;
+ Next:PGPIOEvent;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Pin}
+ if Pin = nil then Exit;
+
+ {Check Event}
+ if Event = nil then Exit;
+ 
+ {Unlink Event}
+ Prev:=Event.Prev;
+ Next:=Event.Next;
+ if Prev = nil then
+  begin
+   Pin.Events:=Next;
+   if Next <> nil then
+    begin
+     Next.Prev:=nil;
+    end;       
+  end
+ else
+  begin
+   Prev.Next:=Next;
+   if Next <> nil then
+    begin
+     Next.Prev:=Prev;
+    end;       
+  end;     
+ 
+ {Update Event}
+ Event.Prev:=nil;
+ Event.Next:=nil;
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
 procedure GPIOLog(Level:LongWord;GPIO:PGPIODevice;const AText:String);
 var
  WorkBuffer:String;
@@ -939,6 +1646,83 @@ procedure GPIOLogDebug(GPIO:PGPIODevice;const AText:String);
 begin
  {}
  GPIOLog(GPIO_LOG_LEVEL_DEBUG,GPIO,AText);
+end;
+
+{==============================================================================}
+
+function GPIOPinToString(Pin:LongWord):String;
+begin
+ {}
+ Result:='GPIO_PIN_UNKNOWN';
+ 
+ if Pin > GPIO_PIN_MAX then Exit;
+ 
+ Result:='GPIO_PIN_' + IntToStr(Pin);
+end;
+
+{==============================================================================}
+
+function GPIOLevelToString(Level:LongWord):String;
+begin
+ {}
+ Result:='GPIO_LEVEL_UNKNOWN';
+ 
+ case Level of
+  GPIO_LEVEL_LOW:Result:='GPIO_LEVEL_LOW';
+  GPIO_LEVEL_HIGH:Result:='GPIO_LEVEL_HIGH';
+ end;
+end;
+
+{==============================================================================}
+
+function GPIOTriggerToString(Trigger:LongWord):String;
+begin
+ {}
+ Result:='GPIO_TRIGGER_UNKNOWN';
+ 
+ case Trigger of
+  GPIO_TRIGGER_NONE:Result:='GPIO_TRIGGER_NONE';
+  GPIO_TRIGGER_LOW:Result:='GPIO_TRIGGER_LOW';
+  GPIO_TRIGGER_HIGH:Result:='GPIO_TRIGGER_HIGH';
+  GPIO_TRIGGER_RISING:Result:='GPIO_TRIGGER_RISING';
+  GPIO_TRIGGER_FALLING:Result:='GPIO_TRIGGER_FALLING'; 
+  GPIO_TRIGGER_ASYNC_RISING:Result:='GPIO_TRIGGER_ASYNC_RISING'; 
+  GPIO_TRIGGER_ASYNC_FALLING:Result:='GPIO_TRIGGER_ASYNC_FALLING';
+  GPIO_TRIGGER_EDGE:Result:='GPIO_TRIGGER_EDGE';
+ end;
+end;
+
+{==============================================================================}
+
+function GPIOPullToString(Value:LongWord):String;
+begin
+ {}
+ Result:='GPIO_PULL_UNKNOWN';
+ 
+ case Value of
+  GPIO_PULL_NONE:Result:='GPIO_PULL_NONE';
+  GPIO_PULL_UP:Result:='GPIO_PULL_UP';
+  GPIO_PULL_DOWN:Result:='GPIO_PULL_DOWN';
+ end;
+end;
+
+{==============================================================================}
+
+function GPIOFunctionToString(Value:LongWord):String;
+begin
+ {}
+ Result:='GPIO_FUNCTION_UNKNOWN';
+ 
+ case Value of
+  GPIO_FUNCTION_IN:Result:='GPIO_FUNCTION_IN';
+  GPIO_FUNCTION_OUT:Result:='GPIO_FUNCTION_OUT';
+  GPIO_FUNCTION_ALT0:Result:='GPIO_FUNCTION_ALT0';
+  GPIO_FUNCTION_ALT1:Result:='GPIO_FUNCTION_ALT1';
+  GPIO_FUNCTION_ALT2:Result:='GPIO_FUNCTION_ALT2';
+  GPIO_FUNCTION_ALT3:Result:='GPIO_FUNCTION_ALT3';
+  GPIO_FUNCTION_ALT4:Result:='GPIO_FUNCTION_ALT4';
+  GPIO_FUNCTION_ALT5:Result:='GPIO_FUNCTION_ALT5';
+ end;
 end;
 
 {==============================================================================}

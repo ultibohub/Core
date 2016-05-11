@@ -340,7 +340,7 @@ const
  DEVICE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Device messages}
 
 var 
- DEVICE_DEFAULT_LOG_LEVEL:LongWord = DEVICE_LOG_LEVEL_INFO; {Minimum level for Device messages.  Only messages with level greater than or equal to this will be printed} 
+ DEVICE_DEFAULT_LOG_LEVEL:LongWord = DEVICE_LOG_LEVEL_DEBUG; {Minimum level for Device messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {Device logging}
@@ -518,18 +518,19 @@ type
  {Device Entry}
  TDevice = record
   {Device Properties}
-  Signature:LongWord;   {Signature for entry validation}
-  DeviceId:LongWord;    {Unique Id of this Device in the Device table}
-  DeviceState:LongWord; {Device state (eg Registered/Unregistered)}
-  DeviceName:String;    {Descriptive name for the Device (eg Keyboard0, Storage0 or Network0 etc)}
-  DeviceClass:LongWord; {The class of this Device (eg DEVICE_CLASS_USB, DEVICE_CLASS_NETWORK, DEVICE_CLASS_STORAGE etc)}
-  DeviceBus:LongWord;   {The Bus type for the Device (eg DEVICE_BUS_USB)}
-  DeviceType:LongWord;  {A class specific Device type (eg KEYBOARD_TYPE_USB, MOUSE_TYPE_USB, NETWORK_TYPE_ETHERNET etc)}
-  DeviceFlags:LongWord; {The class specific Device flags}
-  DeviceData:Pointer;   {A pointer to a class specific Device interface (eg PUSBDevice, PNetworkDevice or PStorageDevice etc) (Used by Drivers)}
+  Signature:LongWord;       {Signature for entry validation}
+  DeviceId:LongWord;        {Unique Id of this Device in the Device table}
+  DeviceState:LongWord;     {Device state (eg Registered/Unregistered)}
+  DeviceName:String;        {The name of the Device (eg Keyboard0, Storage0 or Network0 etc)}
+  DeviceClass:LongWord;     {The class of this Device (eg DEVICE_CLASS_USB, DEVICE_CLASS_NETWORK, DEVICE_CLASS_STORAGE etc)}
+  DeviceBus:LongWord;       {The Bus type for the Device (eg DEVICE_BUS_USB)}
+  DeviceType:LongWord;      {A class specific Device type (eg KEYBOARD_TYPE_USB, MOUSE_TYPE_USB, NETWORK_TYPE_ETHERNET etc)}
+  DeviceFlags:LongWord;     {The class specific Device flags}
+  DeviceData:Pointer;       {A pointer to a class specific Device interface (eg PUSBDevice, PNetworkDevice or PStorageDevice etc) (Used by Drivers)}
+  DeviceDescription:String; {A description of the Device (eg BCM2835 PL011 UART)}
   {Internal Properties}
-  Prev:PDevice;         {Previous entry in Device table}
-  Next:PDevice;         {Next entry in Device table}
+  Prev:PDevice;             {Previous entry in Device table}
+  Next:PDevice;             {Next entry in Device table}
  end;
  
  {Notifier Entry}
@@ -627,7 +628,7 @@ type
   DeviceStart:TClockDeviceStart;                 {A device specific DeviceStart method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceStop:TClockDeviceStop;                   {A device specific DeviceStop method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceRead:TClockDeviceRead;                   {A device specific DeviceRead method implementing a standard clock device interface (Or nil if the default method is suitable)}
-  DeviceRead64:TClockDeviceRead64;               {A device specific DeviceRead64 method implementing a standard clock device interface}
+  DeviceRead64:TClockDeviceRead64;               {A device specific DeviceRead64 method implementing a standard clock device interface (Manadatory)}
   DeviceGetRate:TClockDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard clock device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
@@ -669,11 +670,11 @@ type
   {Timer Properties}
   TimerId:LongWord;                              {Unique Id of this Timer device in the Timer device table}
   TimerState:LongWord;                           {Timer device state (eg TIMER_STATE_ENABLED)}
-  DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard random device interface}
-  DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard random device interface}
-  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface}
-  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface}
-  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface}
+  DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard random device interface (Manadatory)}
+  DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard random device interface (Manadatory)}
+  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface (Manadatory)}
+  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface (Manadatory)}
+  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface (Manadatory)}
   DeviceGetRate:TTimerDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSetRate:TTimerDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceGetMaximum:TTimerDeviceGetMaximum;       {A device specific DeviceGetMaximum method implementing a standard random device interface (Or nil if the default method is suitable)}
@@ -721,12 +722,12 @@ type
   {Random Properties}
   RandomId:LongWord;                             {Unique Id of this Random device in the Random device table}
   RandomState:LongWord;                          {Random device state (eg RANDOM_STATE_ENABLED)}
-  DeviceStart:TRandomDeviceStart;                {A device specific DeviceStart method implementing a standard random device interface}
+  DeviceStart:TRandomDeviceStart;                {A device specific DeviceStart method implementing a standard random device interface (Manadatory)}
   DeviceStop:TRandomDeviceStop;                  {A device specific DeviceStop method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSeed:TRandomDeviceSeed;                  {A device specific DeviceSeed method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceReadByte:TRandomDeviceReadByte;          {A device specific DeviceReadByte method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceReadWord:TRandomDeviceReadWord;          {A device specific DeviceReadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
-  DeviceReadLongWord:TRandomDeviceReadLongWord;  {A device specific DeviceReadLongWord method implementing a standard random device interface}  
+  DeviceReadLongWord:TRandomDeviceReadLongWord;  {A device specific DeviceReadLongWord method implementing a standard random device interface (Manadatory)}  
   DeviceReadQuadWord:TRandomDeviceReadQuadWord;  {A device specific DeviceReadQuadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
   DeviceReadExtended:TRandomDeviceReadExtended;  {A device specific DeviceReadExtended method implementing a standard random device interface (Or nil if the default method is suitable)}  
   {Statistics Properties}
@@ -768,9 +769,9 @@ type
   MailboxState:LongWord;                         {Mailbox device state (eg MAILBOX_STATE_ENABLED)}
   DeviceStart:TMailboxDeviceStart;               {A device specific DeviceStart method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
   DeviceStop:TMailboxDeviceStop;                 {A device specific DeviceStop method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
-  DeviceReceive:TMailboxDeviceReceive;           {A device specific DeviceReceive method implementing a standard mailbox device interface}
-  DeviceSend:TMailboxDeviceSend;                 {A device specific DeviceSend method implementing a standard mailbox device interface}
-  DeviceCall:TMailboxDeviceCall;                 {A device specific DeviceCall method implementing a standard mailbox device interface}
+  DeviceReceive:TMailboxDeviceReceive;           {A device specific DeviceReceive method implementing a standard mailbox device interface (Manadatory)}
+  DeviceSend:TMailboxDeviceSend;                 {A device specific DeviceSend method implementing a standard mailbox device interface (Manadatory)}
+  DeviceCall:TMailboxDeviceCall;                 {A device specific DeviceCall method implementing a standard mailbox device interface (Manadatory)}
   DeviceGetTimeout:TMailboxDeviceGetTimeout;     {A device specific DeviceGetTimeout method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
   DeviceSetTimeout:TMailboxDeviceSetTimeout;     {A device specific DeviceSetTimeout method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
@@ -811,10 +812,10 @@ type
   {Watchdog Properties}
   WatchdogId:LongWord;                           {Unique Id of this Watchdog device in the Watchdog device table}
   WatchdogState:LongWord;                        {Watchdog device state (eg WATCHDOG_STATE_ENABLED)}
-  DeviceStart:TWatchdogDeviceStart;              {A device specific DeviceStart method implementing a standard watchdog device interface}
-  DeviceStop:TWatchdogDeviceStop;                {A device specific DeviceStop method implementing a standard watchdog device interface}
-  DeviceRefresh:TWatchdogDeviceRefresh;          {A device specific DeviceRefresh method implementing a standard watchdog device interface}
-  DeviceGetRemain:TWatchdogDeviceGetRemain;      {A device specific DeviceGetRemain method implementing a standard watchdog device interface}
+  DeviceStart:TWatchdogDeviceStart;              {A device specific DeviceStart method implementing a standard watchdog device interface (Manadatory)}
+  DeviceStop:TWatchdogDeviceStop;                {A device specific DeviceStop method implementing a standard watchdog device interface (Manadatory)}
+  DeviceRefresh:TWatchdogDeviceRefresh;          {A device specific DeviceRefresh method implementing a standard watchdog device interface (Manadatory)}
+  DeviceGetRemain:TWatchdogDeviceGetRemain;      {A device specific DeviceGetRemain method implementing a standard watchdog device interface (Manadatory)}
   DeviceGetTimeout:TWatchdogDeviceGetTimeout;    {A device specific DeviceGetTimeout method implementing a standard watchdog device interface (Or nil if the default method is suitable)}
   DeviceSetTimeout:TWatchdogDeviceSetTimeout;    {A device specific DeviceSetTimeout method implementing a standard watchdog device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
@@ -867,10 +868,15 @@ function DeviceDestroy(Device:PDevice):LongWord;
 function DeviceGetName(Device:PDevice):String;
 function DeviceSetName(Device:PDevice;const Name:String):LongWord;
 
+function DeviceGetDescription(Device:PDevice):String;
+function DeviceSetDescription(Device:PDevice;const Description:String):LongWord;
+
 function DeviceRegister(Device:PDevice):LongWord;
 function DeviceDeregister(Device:PDevice):LongWord;
 
 function DeviceFind(DeviceClass,DeviceId:LongWord):PDevice;
+function DeviceFindByName(const Name:String):PDevice;
+function DeviceFindByDescription(const Description:String):PDevice;
 function DeviceEnumerate(DeviceClass:LongWord;Callback:TDeviceEnumerate;Data:Pointer):LongWord;
 
 function DeviceNotification(Device:PDevice;DeviceClass:LongWord;Callback:TDeviceNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1358,6 +1364,7 @@ begin
  Device.DeviceState:=DEVICE_STATE_UNREGISTERED;
  Device.DeviceName:=''; 
  Device.DeviceClass:=DEVICE_CLASS_ANY;
+ Device.DeviceDescription:='';
 
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Created device (Handle=' + IntToHex(LongWord(Device),8) + ' Size=' + IntToStr(Size) + ')');
@@ -1388,6 +1395,9 @@ begin
  
  {Invalidate Device}
  Device.Signature:=0;
+ 
+ {Free the Description}
+ SetLength(Device.DeviceDescription,0);
  
  {Free the Name}
  SetLength(Device.DeviceName,0);
@@ -1453,6 +1463,66 @@ begin
     {Set Name}
     Device.DeviceName:=Name;
     UniqueString(Device.DeviceName);
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(DeviceTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceGetDescription(Device:PDevice):String;
+{Get the description of the supplied Device}
+begin
+ {}
+ Result:='';
+
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire Lock}
+ if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Description}
+    Result:=Device.DeviceDescription;
+    
+    {Return Result}
+    UniqueString(Result);
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(DeviceTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceSetDescription(Device:PDevice;const Description:String):LongWord;
+{Set the description of the supplied Device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Description}
+ if Length(Description) = 0 then Exit;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Acquire Lock}
+ if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Set Description}
+    Device.DeviceDescription:=Description;
+    UniqueString(Device.DeviceDescription);
 
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -1651,6 +1721,82 @@ begin
             Exit;
            end;
          end;       
+       end;
+       
+      {Get Next}
+      Device:=Device.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(DeviceTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceFindByName(const Name:String):PDevice;
+var
+ Device:PDevice;
+begin
+ {}
+ Result:=nil;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Device}
+    Device:=DeviceTable;
+    while Device <> nil do
+     begin
+      {Check State}
+      if Device.DeviceState = DEVICE_STATE_REGISTERED then
+       begin
+        {Check Name}
+        if Uppercase(Device.DeviceName) = Uppercase(Name) then
+         begin
+          Result:=Device;
+          Exit;
+         end;
+       end;
+       
+      {Get Next}
+      Device:=Device.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(DeviceTableLock);
+   end;
+  end;
+end;
+       
+{==============================================================================}
+
+function DeviceFindByDescription(const Description:String):PDevice;
+var
+ Device:PDevice;
+begin
+ {}
+ Result:=nil;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Device}
+    Device:=DeviceTable;
+    while Device <> nil do
+     begin
+      {Check State}
+      if Device.DeviceState = DEVICE_STATE_REGISTERED then
+       begin
+        {Check Description}
+        if Uppercase(Device.DeviceDescription) = Uppercase(Description) then
+         begin
+          Result:=Device;
+          Exit;
+         end;
        end;
        
       {Get Next}

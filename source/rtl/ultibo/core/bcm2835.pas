@@ -284,10 +284,10 @@ const
  BCM2835_IRQ_SMI            = 48;
  
  {GPIO}
- BCM2835_IRQ_GPIO_0         = 49;
- BCM2835_IRQ_GPIO_1         = 50;
- BCM2835_IRQ_GPIO_2         = 51;
- BCM2835_IRQ_GPIO_3         = 52;
+ BCM2835_IRQ_GPIO_0         = 49; {Bank0}
+ BCM2835_IRQ_GPIO_1         = 50; {Bank1}
+ BCM2835_IRQ_GPIO_2         = 51; {Bank2 (Non existent in BCM2835)}
+ BCM2835_IRQ_GPIO_ALL       = 52; {BCM2835_IRQ_GPIO_3} {Any Bank (all banks interrupt to allow GPIO FIQ)}
  
  {I2C}
  BCM2835_IRQ_I2C            = 53; {Also available as IRQ 79 in the IRQ_basic_pending register} 
@@ -539,7 +539,175 @@ const
  BCM2835_DMA_DREQ_SLIMBUS_DC8  = 30;
  BCM2835_DMA_DREQ_SLIMBUS_DC9  = 31;
  
- //To Do //More
+//const
+ {BSC (I2C) register bits (See 3.2)} 
+ //To Do  
+ 
+//const
+ {SPI0 register bits (See 10.5)} 
+ //To Do  
+ 
+//const
+ {I2C / SPI Slave register bits (See 11.2)}
+ //To Do  
+ 
+//const
+ {AUX (UART1, SPI1 and SPI2) register bits (See 2.1)}
+ //To Do  
+ 
+//const
+ {PCM / I2S register bits (See 8.8)}
+ //To Do  
+ 
+//const
+ {Pulse Width Modulator (PWM) register bits (See 9.6)}
+ //To Do  
+
+const
+ {PL011 UART Data register bits (See 13.4)}
+ BCM2835_PL011_DR_OE    = (1 shl 11);   {Overrun error}
+ BCM2835_PL011_DR_BE    = (1 shl 10);   {Break error}
+ BCM2835_PL011_DR_PE    = (1 shl 9);    {Parity error}
+ BCM2835_PL011_DR_FE    = (1 shl 8);    {Framing error}
+ BCM2835_PL011_DR_DATA  = ($FF shl 0);  {Receive / Transmit data}
+ BCM2835_PL011_DR_ERROR = BCM2835_PL011_DR_OE or BCM2835_PL011_DR_BE or BCM2835_PL011_DR_PE or BCM2835_PL011_DR_FE;
+
+ {PL011 UART Receive Status / Error Clear register bits (See 13.4)}
+ BCM2835_PL011_RSRECR_OE = (1 shl 3); {Overrun error}
+ BCM2835_PL011_RSRECR_BE = (1 shl 2); {Break error}
+ BCM2835_PL011_RSRECR_PE = (1 shl 1); {Parity error}
+ BCM2835_PL011_RSRECR_FE = (1 shl 0); {Framing error}
+ 
+ {PL011 UART Flag register bits (See 13.4)}
+ BCM2835_PL011_FR_RI   = (1 shl 8); {Unsupported, write zero, read as don't care}
+ BCM2835_PL011_FR_TXFE = (1 shl 7); {Transmit FIFO empty}
+ BCM2835_PL011_FR_RXFF = (1 shl 6); {Receive FIFO full}
+ BCM2835_PL011_FR_TXFF = (1 shl 5); {Transmit FIFO full} 
+ BCM2835_PL011_FR_RXFE = (1 shl 4); {Receive FIFO empty} 
+ BCM2835_PL011_FR_BUSY = (1 shl 3); {UART busy}
+ BCM2835_PL011_FR_DCD  = (1 shl 2); {Unsupported, write zero, read as don't care}
+ BCM2835_PL011_FR_DSR  = (1 shl 1); {Unsupported, write zero, read as don't care}
+ BCM2835_PL011_FR_CTS  = (1 shl 0); {Clear to send (This bit is the complement of the UART clear to send, nUARTCTS, modem status input. That is, the bit is 1 when nUARTCTS is LOW)}
+ 
+ {PL011 UART IrDA register bits (See 13.4)}
+  {This register is disabled, writing to it has no effect and reading returns 0}
+  
+ {PL011 UART Integer Baud Rate Divisor register bits (See 13.4)}
+ BCM2835_PL011_IBRD_MASK = ($FFFF shl 0);
+ 
+ {PL011 UART Fractional Baud Rate Divisor register bits (See 13.4)}
+ BCM2835_PL011_FBRD_MASK = ($3F shl 0);
+ 
+ {PL011 UART Line Control register bits (See 13.4)}
+ BCM2835_PL011_LCRH_SPS   = (1 shl 7); {Stick parity select}
+ BCM2835_PL011_LCRH_WLEN  = (3 shl 5); {Word length}
+ BCM2835_PL011_LCRH_WLEN8 = (3 shl 5); { 8 bits}
+ BCM2835_PL011_LCRH_WLEN7 = (2 shl 5); { 7 bits} 
+ BCM2835_PL011_LCRH_WLEN6 = (1 shl 5); { 6 bits} 
+ BCM2835_PL011_LCRH_WLEN5 = (0 shl 5); { 5 bits} 
+ BCM2835_PL011_LCRH_FEN   = (1 shl 4); {Enable FIFOs} 
+ BCM2835_PL011_LCRH_STP2  = (1 shl 3); {Two stop bits select}
+ BCM2835_PL011_LCRH_EPS   = (1 shl 2); {Even parity select (0 = odd parity / 1 = even parity)} 
+ BCM2835_PL011_LCRH_PEN   = (1 shl 1); {Parity enable} 
+ BCM2835_PL011_LCRH_BRK   = (1 shl 0); {Send break} 
+ 
+ {PL011 UART Control register bits (See 13.4)}
+ BCM2835_PL011_CR_CTSEN  = (1 shl 15); {CTS hardware flow control enable (If this bit is set to 1 data is only transmitted when the nUARTCTS signal is asserted)}
+ BCM2835_PL011_CR_RTSEN  = (1 shl 14); {RTS hardware flow control enable (If this bit is set to 1 data is only requested when there is space in the receive FIFO for it to be received)} 
+ BCM2835_PL011_CR_OUT2   = (1 shl 13); {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_CR_OUT1   = (1 shl 12); {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_CR_RTS    = (1 shl 11); {Request to send (This bit is the complement of the UART request to send, nUARTRTS, modem status output. That is, when the bit is programmed to a 1 then nUARTRTS is LOW)} 
+ BCM2835_PL011_CR_DTR    = (1 shl 10); {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_CR_RXE    = (1 shl 9);  {Receive enable}
+ BCM2835_PL011_CR_TXE    = (1 shl 8);  {Transmit enable} 
+ BCM2835_PL011_CR_LBE    = (1 shl 7);  {Loopback enable}
+ {Bits 6:3 Reserved - Write as 0, read as don't care}
+ BCM2835_PL011_CR_SIRLP  = (1 shl 2);  {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_CR_SIREN  = (1 shl 1);  {Unsupported, write zero, read as don't care}
+ BCM2835_PL011_CR_UARTEN = (1 shl 0);  {UART enable}
+ 
+ {PL011 UART Interrupt FIFO Level Select register bits (See 13.4)}
+ BCM2835_PL011_IFLS_RXIFPSEL    = (7 shl 9); {Unsupported, write zero, read as don't care}
+ BCM2835_PL011_IFLS_TXIFPSEL    = (7 shl 6); {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_IFLS_RXIFLSEL    = (7 shl 3); {Receive interrupt FIFO level select} 
+ BCM2835_PL011_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes 1/8 full}
+ BCM2835_PL011_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes 1/4 full} 
+ BCM2835_PL011_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes 1/2 full} 
+ BCM2835_PL011_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes 3/4 full} 
+ BCM2835_PL011_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes 7/8 full} 
+ BCM2835_PL011_IFLS_TXIFLSEL    = (7 shl 0); {Transmit interrupt FIFO level select} 
+ BCM2835_PL011_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes 1/8 full} 
+ BCM2835_PL011_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes 1/4 full} 
+ BCM2835_PL011_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes 1/2 full} 
+ BCM2835_PL011_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes 3/4 full}  
+ BCM2835_PL011_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes 7/8 full}  
+ 
+ {PL011 UART Interrupt Mask Set/Clear register bits (See 13.4)}
+ BCM2835_PL011_IMSC_OEIM   = (1 shl 10); {Overrun error interrupt mask}
+ BCM2835_PL011_IMSC_BEIM   = (1 shl 9);  {Break error interrupt mask} 
+ BCM2835_PL011_IMSC_PEIM   = (1 shl 8);  {Parity error interrupt mask} 
+ BCM2835_PL011_IMSC_FEIM   = (1 shl 7);  {Framing error interrupt mask} 
+ BCM2835_PL011_IMSC_RTIM   = (1 shl 6);  {Receive timeout interrupt mask} 
+ BCM2835_PL011_IMSC_TXIM   = (1 shl 5);  {Transmit interrupt mask}
+ BCM2835_PL011_IMSC_RXIM   = (1 shl 4);  {Receive interrupt mask} 
+ BCM2835_PL011_IMSC_DSRMIM = (1 shl 3);  {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_IMSC_DCDMIM = (1 shl 2);  {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_IMSC_CTSMIM = (1 shl 1);  {nUARTCTS modem interrupt mask} 
+ BCM2835_PL011_IMSC_RIMIM  = (1 shl 0);  {Unsupported, write zero, read as don't care}
+ 
+ {PL011 UART Raw Interrupt Status register bits (See 13.4)}
+ BCM2835_PL011_RIS_OERIS   = (1 shl 10); {Overrun error interrupt status}
+ BCM2835_PL011_RIS_BERIS   = (1 shl 9);  {Break error interrupt status}
+ BCM2835_PL011_RIS_PERIS   = (1 shl 8);  {Parity error interrupt status} 
+ BCM2835_PL011_RIS_FERIS   = (1 shl 7);  {Framing error interrupt status} 
+ BCM2835_PL011_RIS_RTRIS   = (1 shl 6);  {Receive timeout interrupt status} 
+ BCM2835_PL011_RIS_TXRIS   = (1 shl 5);  {Transmit interrupt status}
+ BCM2835_PL011_RIS_RXRIS   = (1 shl 4);  {Receive interrupt status} 
+ BCM2835_PL011_RIS_DSRMRIS = (1 shl 3);  {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_RIS_DCDMRIS = (1 shl 2);  {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_RIS_CTSMRIS = (1 shl 1);  {nUARTCTS modem interrupt status} 
+ BCM2835_PL011_RIS_RIMRIS  = (1 shl 0);  {Unsupported, write zero, read as don't care} 
+ 
+ {PL011 UART Masked Interrupt Status register bits (See 13.4)}
+ BCM2835_PL011_MIS_OEMIS   = (1 shl 10); {Overrun error masked interrupt status}
+ BCM2835_PL011_MIS_BEMIS   = (1 shl 9);  {Break error masked interrupt status} 
+ BCM2835_PL011_MIS_PEMIS   = (1 shl 8);  {Parity error masked interrupt status} 
+ BCM2835_PL011_MIS_FEMIS   = (1 shl 7);  {Framing error masked interrupt status}  
+ BCM2835_PL011_MIS_RTMIS   = (1 shl 6);  {Receive timeout masked interrupt status}  
+ BCM2835_PL011_MIS_TXMIS   = (1 shl 5);  {Transmit masked interrupt status}  
+ BCM2835_PL011_MIS_RXMIS   = (1 shl 4);  {Receive masked interrupt status}  
+ BCM2835_PL011_MIS_DSRMMIS = (1 shl 3);  {Unsupported, write zero, read as don't care}  
+ BCM2835_PL011_MIS_DCDMMIS = (1 shl 2);  {Unsupported, write zero, read as don't care}  
+ BCM2835_PL011_MIS_CTSMMIS = (1 shl 1);  {nUARTCTS modem masked interrupt status}  
+ BCM2835_PL011_MIS_RIMMIS  = (1 shl 0);  {Unsupported, write zero, read as don't care}  
+ 
+ {PL011 UART Interrupt Clear register bits (See 13.4)}
+ BCM2835_PL011_ICR_OEIC   = (1 shl 10); {Overrun error interrupt clear}
+ BCM2835_PL011_ICR_BEIC   = (1 shl 9);  {Break error interrupt clear}
+ BCM2835_PL011_ICR_PEIC   = (1 shl 8);  {Parity error interrupt clear} 
+ BCM2835_PL011_ICR_FEIC   = (1 shl 7);  {Framing error interrupt clear} 
+ BCM2835_PL011_ICR_RTIC   = (1 shl 6);  {Receive timeout interrupt clear} 
+ BCM2835_PL011_ICR_TXIC   = (1 shl 5);  {Transmit interrupt clear} 
+ BCM2835_PL011_ICR_RXIC   = (1 shl 4);  {Receive interrupt clear} 
+ BCM2835_PL011_ICR_DSRMIC = (1 shl 3);  {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_ICR_DCDMIC = (1 shl 2);  {Unsupported, write zero, read as don't care} 
+ BCM2835_PL011_ICR_CTSMIC = (1 shl 1);  {nUARTCTS modem interrupt clear} 
+ BCM2835_PL011_ICR_RIMIC  = (1 shl 0);  {Unsupported, write zero, read as don't care} 
+ 
+ {PL011 UART DMA Control register bits (See 13.4)}
+  {This register is disabled, writing to it has no effect and reading returns 0}
+
+ {PL011 UART Test Control register bits (See 13.4)}
+ 
+ {PL011 UART Integration Test Input register bits (See 13.4)}
+
+ {PL011 UART Integration Test Output register bits (See 13.4)}
+
+ {PL011 UART Test Data register bits (See 13.4)}
+
+//const
+ {ARM Timer register bits (See 14.2)}
+ //To Do  
  
 const
  {Power Management, Reset controller and Watchdog}
@@ -569,17 +737,17 @@ const
  BCM2835_PM_WDOG_TICKS_PER_SECOND      = (1 shl 16);
  BCM2835_PM_WDOG_TICKS_PER_MILLISECOND = (BCM2835_PM_WDOG_TICKS_PER_SECOND div 1000);
  
-const
- {Clock Management} 
- BCM2835_CM_PASSWORD               = $5A000000;
- 
 const 
  {Random Number Generator}
  BCM2835_RANDOM_DISABLE       = $00000000; {Disable Random Number Generator}
  BCM2835_RANDOM_ENABLE        = $00000001; {Enable Random Number Generator}
  BCM2835_RANDOM_DOUBLE_SPEED  = $00000002; {Double Speed Mode (Less Random)}
  
- //To Do //More //PCM/PWM/SPI/I2C/PL011 etc etc
+const
+ {Clock Management} 
+ BCM2835_CM_PASSWORD               = $5A000000;
+ 
+ //To Do  
  
 const
  {BCM2835 Mailboxes}
@@ -904,8 +1072,9 @@ const
 const
  {BCM2835 GPIO constants}
  BCM2835_GPIO_PIN_COUNT = 54;
+ BCM2835_GPIO_BANK_COUNT = 2;
  
- {Function Select Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
+ {Function Select Registers}
  BCM2835_GPFSEL0 = $00000000; {GPIO Function Select 0}
  BCM2835_GPFSEL1 = $00000004; {GPIO Function Select 1}
  BCM2835_GPFSEL2 = $00000008; {GPIO Function Select 2}
@@ -913,71 +1082,106 @@ const
  BCM2835_GPFSEL4 = $00000010; {GPIO Function Select 4}
  BCM2835_GPFSEL5 = $00000014; {GPIO Function Select 5}
  
- {Pin Output Set Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
+ {Pin Output Set Registers}
  BCM2835_GPSET0 = $0000001C; {GPIO Pin Output Set 0}
  BCM2835_GPSET1 = $00000020; {GPIO Pin Output Set 1}
  
- {Pin Output Clear Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
+ {Pin Output Clear Registers}
  BCM2835_GPCLR0 = $00000028; {GPIO Pin Output Clear 0}
  BCM2835_GPCLR1 = $0000002C; {GPIO Pin Output Clear 1}
  
- {Pin Level Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Level Registers}
+ BCM2835_GPLEV0 = $00000034; {GPIO Pin Level 0}
+ BCM2835_GPLEV1 = $00000038; {GPIO Pin Level 1}
  
- {Pin Event Detect Status Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Event Detect Status Registers}
+ BCM2835_GPEDS0 = $00000040; {GPIO Pin Event Detect Status 0}
+ BCM2835_GPEDS1 = $00000044; {GPIO Pin Event Detect Status 1}
 
- {Pin Rising Edge Detect Enable Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Rising Edge Detect Enable Registers}
+ BCM2835_GPREN0 = $0000004c; {GPIO Pin Rising Edge Detect Enable 0}
+ BCM2835_GPREN1 = $00000050; {GPIO Pin Rising Edge Detect Enable 1}
  
- {Pin Falling Edge Detect Enable Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Falling Edge Detect Enable Registers}
+ BCM2835_GPFEN0 = $00000058; {GPIO Pin Falling Edge Detect Enable 0}
+ BCM2835_GPFEN1 = $0000005c; {GPIO Pin Falling Edge Detect Enable 1}
  
- {Pin High Detect Enable Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin High Detect Enable Registers} 
+ BCM2835_GPHEN0 = $00000064; {GPIO Pin High Detect Enable 0}
+ BCM2835_GPHEN1 = $00000068; {GPIO Pin High Detect Enable 1}
  
- {Pin Low Detect Enable Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Low Detect Enable Registers}
+ BCM2835_GPLEN0 = $00000070; {GPIO Pin Low Detect Enable 0}
+ BCM2835_GPLEN1 = $00000074; {GPIO Pin Low Detect Enable 1}
  
- {Pin Async. Rising Edge Detect Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Async. Rising Edge Detect Registers}
+ BCM2835_GPAREN0 = $0000007c; {GPIO Pin Async. Rising Edge Detect 0}
+ BCM2835_GPAREN1 = $00000080; {GPIO Pin Async. Rising Edge Detect 1}
  
- {Pin Async. Falling Edge Detect Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Async. Falling Edge Detect Registers}
+ BCM2835_GPAFEN0 = $00000088; {GPIO Pin Async. Falling Edge Detect 0}
+ BCM2835_GPAFEN1 = $0000008c; {GPIO Pin Async. Falling Edge Detect 1}
  
- {Pin Pull-up/down Enable Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //BCM2835_GPPUD = 
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Pull-up/down Enable Registers}
+ BCM2835_GPPUD = $00000094; {GPIO Pin Pull-up/down Enable}
  
- {Pin Pull-up/down Enable Clock Registers} //To Do  //these are not needed, see PBCM2835GPIORegisters
- //BCM2835_GPPUDCLK0 = 
- //BCM2835_GPPUDCLK1 = 
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Pull-up/down Enable Clock Registers}
+ BCM2835_GPPUDCLK0 = $00000098; {GPIO Pin Pull-up/down Enable Clock 0}
+ BCM2835_GPPUDCLK1 = $0000009C; {GPIO Pin Pull-up/down Enable Clock 1}
  
  {Function Select Mask}
- BCM2835_GPFSEL_MASK = 7;     {Shift left by the appropriate value for each pin}
+ BCM2835_GPFSEL_MASK = 7;    
  
  {Function Select Values}
- //To Do //See: BCM2835-ARM-Peripherals.pdf
- 
- {Function Select Shifts}
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ BCM2835_GPFSEL_IN   = 0;
+ BCM2835_GPFSEL_OUT  = 1;
+ BCM2835_GPFSEL_ALT0 = 4;
+ BCM2835_GPFSEL_ALT1 = 5;
+ BCM2835_GPFSEL_ALT2 = 6;
+ BCM2835_GPFSEL_ALT3 = 7;
+ BCM2835_GPFSEL_ALT4 = 3;
+ BCM2835_GPFSEL_ALT5 = 2;
  
  {Pin Output Set Mask}
- BCM2835_GPSET_MASK = 1;     {Shift left by the appropriate value for each pin}
- 
- {Pin Output Set Values}
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ BCM2835_GPSET_MASK = 1;     
  
  {Pin Output Clear Mask}
- BCM2835_GPCLR_MASK = 1;     {Shift left by the appropriate value for each pin}
+ BCM2835_GPCLR_MASK = 1;     
  
- {Pin Output Clear Values}
- //To Do //See: BCM2835-ARM-Peripherals.pdf
+ {Pin Level Mask}
+ BCM2835_GPLEV_MASK = 1;   
  
- //To Do //Event detect/Rising/Falling/High/Low/Pullup/Pulldown etc etc
+ {Pin Event Detect Status Mask}
+ BCM2835_GPEDS_MASK = 1;
  
- //To Do //See Also: \u-boot-master\arch\arm\include\asm\arch-bcm2835\gpio.h
+ {Pin Rising Edge Detect Enable Mask}
+ BCM2835_GPREN_MASK = 1;
+ 
+ {Pin Falling Edge Detect Enable Mask}
+ BCM2835_GPFEN_MASK = 1;
+ 
+ {Pin High Detect Enable Mask}
+ BCM2835_GPHEN_MASK = 1;
+ 
+ {Pin Low Detect Enable Mask}
+ BCM2835_GPLEN_MASK = 1;
+ 
+ {Pin Async. Rising Edge Detect Mask}
+ BCM2835_GPAREN_MASK = 1;
+ 
+ {Pin Async. Falling Edge Detect Mask}
+ BCM2835_GPAFEN_MASK = 1;
+ 
+ {Pull-up/down Enable Mask}
+ BCM2835_GPPUD_MASK = 3;
+ 
+ {Pull-up/down Enable Values}
+ BCM2835_GPPUD_NONE = 0;
+ BCM2835_GPPUD_DOWN = 1;
+ BCM2835_GPPUD_UP   = 2;
+ 
+ {Pin Pull-up/down Enable Clock Mask}
+ BCM2835_GPPUDCLK_MASK = 1;
  
 {==============================================================================}
 type 
@@ -1189,6 +1393,7 @@ type
   Reserved03:LongWord;
   Reserved04:LongWord;
   FR:LongWord;       {Flag register}
+  Reserved05:LongWord;
   ILPR:LongWord;     {Not in use}
   IBRD:LongWord;     {Integer Baud rate divisor}
   FBRD:LongWord;     {Fractional Baud rate divisor}

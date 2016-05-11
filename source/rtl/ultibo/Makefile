@@ -469,7 +469,8 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    rt2x00lib \
 		    rt2800lib \
 		    rt2x00usb \
-		    rt2800usb
+		    rt2800usb \
+		    pl2303
 ULTIBO_CODEPAGE_UNITS=cp720oem \
 		      cp737oem \
 		      cp775oem \

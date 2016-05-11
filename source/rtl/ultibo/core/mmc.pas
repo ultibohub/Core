@@ -696,7 +696,7 @@ const
  MMC_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No MMC messages}
 
 var 
- MMC_DEFAULT_LOG_LEVEL:LongWord = MMC_LOG_LEVEL_DEBUG; //MMC_LOG_LEVEL_INFO; {Minimum level for MMC messages.  Only messages with level greater than or equal to this will be printed}
+ MMC_DEFAULT_LOG_LEVEL:LongWord = MMC_LOG_LEVEL_DEBUG; {Minimum level for MMC messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {MMC logging}

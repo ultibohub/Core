@@ -251,7 +251,7 @@ const
  SERVICE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Service messages}
 
 var 
- SERVICE_DEFAULT_LOG_LEVEL:LongWord = SERVICE_LOG_LEVEL_INFO; {Minimum level for Service messages.  Only messages with level greater than or equal to this will be printed} 
+ SERVICE_DEFAULT_LOG_LEVEL:LongWord = SERVICE_LOG_LEVEL_DEBUG; {Minimum level for Service messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {Service logging}

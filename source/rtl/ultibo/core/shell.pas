@@ -106,7 +106,7 @@ const
  SHELL_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Shell messages}
 
 var 
- SHELL_DEFAULT_LOG_LEVEL:LongWord = SHELL_LOG_LEVEL_DEBUG; //SHELL_LOG_LEVEL_INFO; {Minimum level for Shell messages.  Only messages with level greater than or equal to this will be printed} 
+ SHELL_DEFAULT_LOG_LEVEL:LongWord = SHELL_LOG_LEVEL_DEBUG; {Minimum level for Shell messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {Shell logging}

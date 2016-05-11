@@ -174,7 +174,7 @@ const
  STORAGE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Storage messages}
 
 var 
- STORAGE_DEFAULT_LOG_LEVEL:LongWord = STORAGE_LOG_LEVEL_INFO; {Minimum level for Storage messages.  Only messages with level greater than or equal to this will be printed}
+ STORAGE_DEFAULT_LOG_LEVEL:LongWord = STORAGE_LOG_LEVEL_DEBUG; {Minimum level for Storage messages.  Only messages with level greater than or equal to this will be printed}
  
 var 
  {Storage logging}

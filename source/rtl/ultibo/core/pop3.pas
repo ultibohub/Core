@@ -113,7 +113,7 @@ const
  POP3_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No POP3 messages}
 
 var 
- POP3_DEFAULT_LOG_LEVEL:LongWord = POP3_LOG_LEVEL_DEBUG; //POP3_LOG_LEVEL_INFO; {Minimum level for POP3 messages.  Only messages with level greater than or equal to this will be printed} 
+ POP3_DEFAULT_LOG_LEVEL:LongWord = POP3_LOG_LEVEL_DEBUG; {Minimum level for POP3 messages.  Only messages with level greater than or equal to this will be printed} 
  
 var 
  {POP3 logging}

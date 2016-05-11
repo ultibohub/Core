@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '27/4/2016';
+ ULTIBO_RELEASE_DATE             = '11/5/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.1.127';
+ ULTIBO_RELEASE_VERSION          = '1.1.145';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 1;
- ULTIBO_RELEASE_VERSION_REVISION = 127;
+ ULTIBO_RELEASE_VERSION_REVISION = 145;
  
 {==============================================================================}
 const
@@ -650,6 +650,10 @@ const
  GPIO_PIN_59  =  59;
  GPIO_PIN_60  =  60;
  
+ GPIO_PIN_MAX =  60;
+ 
+ GPIO_PIN_UNKNOWN = LongWord(-1); 
+ 
 const
  {GPIO Function constants}
  GPIO_FUNCTION_IN    =  0;
@@ -661,16 +665,35 @@ const
  GPIO_FUNCTION_ALT4  =  6;
  GPIO_FUNCTION_ALT5  =  7;
  
+ GPIO_FUNCTION_UNKNOWN = LongWord(-1); {Returned by GPIOFunctionGet on error (eg device does not support reading the function state)}
+ 
 const
  {GPIO Level constants}
  GPIO_LEVEL_LOW  =  0;
  GPIO_LEVEL_HIGH =  1;
 
+ GPIO_LEVEL_UNKNOWN = LongWord(-1); {Returned by GPIOInputGet/Wait on error (eg device does not exist)}
+ 
 const
  {GPIO Pull constants}
  GPIO_PULL_NONE  =  0;
  GPIO_PULL_UP    =  1;
  GPIO_PULL_DOWN  =  2;
+ 
+ GPIO_PULL_UNKNOWN = LongWord(-1); {Returned by GPIOPullGet on error (eg device does not support reading the PullUp/Down state)}
+ 
+const 
+ {GPIO Trigger constants}
+ GPIO_TRIGGER_NONE          = 0;
+ GPIO_TRIGGER_LOW           = 1;
+ GPIO_TRIGGER_HIGH          = 2;
+ GPIO_TRIGGER_RISING        = 3;
+ GPIO_TRIGGER_FALLING       = 4;
+ GPIO_TRIGGER_ASYNC_RISING  = 5;
+ GPIO_TRIGGER_ASYNC_FALLING = 6;
+ GPIO_TRIGGER_EDGE          = 7;
+ 
+ GPIO_TRIGGER_UNKNOWN       = LongWord(-1); {Passed to GPIO callback event when device does not support determining the trigger source}
  
 {==============================================================================}
 const
@@ -682,6 +705,37 @@ const
  {Virtual GPIO Function constants}
  VIRTUAL_GPIO_FUNCTION_IN  =  0;
  VIRTUAL_GPIO_FUNCTION_OUT =  1;
+ 
+{==============================================================================}
+const
+ {Serial Baud Rate constants}
+ SERIAL_BAUD_RATE_DEFAULT = 0;
+ 
+ SERIAL_BAUD_RATE_STANDARD = 115200;  {If SERIAL_BAUD_RATE_DEFAULT is passed to SerialOpen then this is the baud rate to use}
+ SERIAL_BAUD_RATE_FALLBACK = 9600;    {The fallback baud rate if SERIAL_BAUD_RATE_STANDARD is not supported by the device}
+ 
+ {Serial Data bit constants}
+ SERIAL_DATA_8BIT = 8; 
+ SERIAL_DATA_7BIT = 7;
+ SERIAL_DATA_6BIT = 6;
+ SERIAL_DATA_5BIT = 5;
+
+ {Serial Stop bit constants}
+ SERIAL_STOP_1BIT  = 1;
+ SERIAL_STOP_2BIT  = 2;
+ SERIAL_STOP_1BIT5 = 3;  {1.5 Stop bits}
+ 
+ {Serial Parity constants}
+ SERIAL_PARITY_NONE  = 0;
+ SERIAL_PARITY_ODD   = 1;
+ SERIAL_PARITY_EVEN  = 2;
+ SERIAL_PARITY_MARK  = 3;
+ SERIAL_PARITY_SPACE = 4;
+  
+ {Serial Flow Control constants}
+ SERIAL_FLOW_NONE    = 0;
+ SERIAL_FLOW_RTS_CTS = 1;
+ SERIAL_FLOW_DSR_DTR = 2;
  
 {==============================================================================}
 const
