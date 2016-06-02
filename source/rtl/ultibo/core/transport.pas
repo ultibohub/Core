@@ -59,10 +59,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,Devices,SysUtils,Classes,Network,Ultibo,UltiboClasses;
 
-//To Do //Look for:
-
-//--
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -70,7 +66,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,Devices,SysUtils,Cl
 {==============================================================================}
 const
  {Transport specific constants}
- {These items must also be included in Winsock.pas/Winsock2.pas} //To Do //No longer true since the addition of GlobalSock ? and other structure changes ?
  HOST_TYPE_DYNAMIC   = 0;
  HOST_TYPE_STATIC    = 1;
  HOST_TYPE_LOOPBACK  = 2;
@@ -172,14 +167,14 @@ type
  {Transport specific types}
  {Generic Transport}
  PTransportStatistics = ^TTransportStatistics;
- TTransportStatistics = packed record
-  PacketsIn:LongInt; //To Do //LongWord/Int64 ?
-  PacketsOut:LongInt;
-  BytesIn:LongInt; //To Do //Int64
-  BytesOut:LongInt; //To Do //Int64
-  ErrorsIn:LongInt;
-  ErrorsOut:LongInt;
-  PacketsLost:LongInt;
+ TTransportStatistics = record
+  PacketsIn:Int64;
+  PacketsOut:Int64;
+  BytesIn:Int64; 
+  BytesOut:Int64;
+  ErrorsIn:Int64;
+  ErrorsOut:Int64;
+  PacketsLost:Int64;
  end;
 
  {IP Transport}
@@ -207,17 +202,26 @@ type
  TNetworkTransport = class;
  TTransportCallback = function(ATransport:TNetworkTransport):Boolean of object;
   
+ TNetworkMonitor = class;
+ TMonitorCallback = function(AMonitor:TNetworkMonitor):Boolean of object;
+ 
+ TNetworkAuthenticator = class;
+ TAuthenticatorCallback = function(AAuthenticator:TNetworkAuthenticator):Boolean of object;
+ 
  TTransportManager = class(TObject)
-   constructor Create(AAdapters:TAdapterManager);
+   constructor Create(ASettings:TNetworkSettings;AAdapters:TAdapterManager);
    destructor Destroy; override;
   private
    {Internal Variables}
    FLock:TSynchronizerHandle;
+   FSettings:TNetworkSettings;
    FAdapters:TAdapterManager;
-
+   
    {Status Variables}
-   FTransports:TNetworkList;  {List of TNetworkTransport objects}
-
+   FTransports:TNetworkList;     {List of TNetworkTransport objects}
+   FMonitors:TNetworkList;       {List of TNetworkMonitor objects}
+   FAuthenticators:TNetworkList; {List of TNetworkAuthenticator objects}
+   
    {Event Variables}
    
    {Internal Methods}
@@ -227,8 +231,9 @@ type
    function WriterUnlock:Boolean;
   public
    {Public Properties}
+   property Settings:TNetworkSettings read FSettings;
    property Adapters:TAdapterManager read FAdapters;
-
+   
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean;
@@ -236,6 +241,19 @@ type
    function GetTransportByType(AFamily,APacketType:Word;ALock:Boolean;AState:LongWord):TNetworkTransport;
    function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TNetworkTransport;
    function GetTransportByNext(APrevious:TNetworkTransport;ALock,AUnlock:Boolean;AState:LongWord):TNetworkTransport;
+   
+   function AddMonitor(AMonitor:TNetworkMonitor):Boolean;
+   function RemoveMonitor(AMonitor:TNetworkMonitor):Boolean;
+   
+   function GetMonitorByMonitor(AMonitor:TNetworkMonitor;ALock:Boolean;AState:LongWord):TNetworkMonitor;
+   function GetMonitorByNext(APrevious:TNetworkMonitor;ALock,AUnlock:Boolean;AState:LongWord):TNetworkMonitor;
+   
+   function AddAuthenticator(AAuthenticator:TNetworkAuthenticator):Boolean;
+   function RemoveAuthenticator(AAuthenticator:TNetworkAuthenticator):Boolean;
+   
+   function GetAuthenticatorByType(AAuthType:Word;ALock:Boolean;AState:LongWord):TNetworkAuthenticator;
+   function GetAuthenticatorByAuthenticator(AAuthenticator:TNetworkAuthenticator;ALock:Boolean;AState:LongWord):TNetworkAuthenticator;
+   function GetAuthenticatorByNext(APrevious:TNetworkAuthenticator;ALock,AUnlock:Boolean;AState:LongWord):TNetworkAuthenticator;
    
    function StartTransports:Boolean;
    function StopTransports:Boolean;
@@ -245,6 +263,24 @@ type
    
    function BindTransports(AAdapter:TNetworkAdapter):Boolean;
    function UnbindTransports(AAdapter:TNetworkAdapter):Boolean;
+   
+   function StartMonitors:Boolean;
+   function StopMonitors:Boolean;
+   function ProcessMonitors:Boolean;
+   
+   function EnumerateMonitors(ACallback:TMonitorCallback):Boolean;
+   
+   function BindMonitors(AAdapter:TNetworkAdapter):Boolean;
+   function UnbindMonitors(AAdapter:TNetworkAdapter):Boolean;
+   
+   function StartAuthenticators:Boolean;
+   function StopAuthenticators:Boolean;
+   function ProcessAuthenticators:Boolean;
+   
+   function EnumerateAuthenticators(ACallback:TAuthenticatorCallback):Boolean;
+   
+   function BindAuthenticators(AAdapter:TNetworkAdapter):Boolean;
+   function UnbindAuthenticators(AAdapter:TNetworkAdapter):Boolean;
  end;
 
  TTransportAdapter = class;
@@ -516,6 +552,132 @@ type
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; virtual;
  end;
 
+ TMonitorAdapter = class(TListObject) {Downstream}
+   constructor Create;
+   destructor Destroy; override;
+  private
+   {Internal Variables}
+   FLock:TSynchronizerHandle;
+  public
+   {Status Variables}
+   Handle:THandle;                //To Do //Do these need lock protection ?
+   Adapter:TNetworkAdapter;
+
+   {Public Methods}
+   function ReaderLock:Boolean;
+   function ReaderUnlock:Boolean;
+   function WriterLock:Boolean;
+   function WriterUnlock:Boolean;
+ end;
+ 
+ TNetworkMonitor = class(TListObject) {eg Packet Capture}
+   constructor Create(AManager:TTransportManager);
+   destructor Destroy; override;
+  private
+   {Internal Variables}
+   FLock:TSynchronizerHandle;
+  protected
+   {Internal Variables}
+   FManager:TTransportManager;
+ 
+   {Status Variables}
+   FAdapters:TNetworkList;   {List of TMonitorAdapter objects}
+
+   {Event Methods}
+
+   {Internal Methods}
+   function GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TMonitorAdapter;
+   function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TMonitorAdapter;
+   function GetAdapterByNext(APrevious:TMonitorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TMonitorAdapter;
+
+   {Protected Methods}
+   function AddAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
+   function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
+  public
+   {Public Properties}
+   property Manager:TTransportManager read FManager;
+
+   {Public Methods}
+   function ReaderLock:Boolean;
+   function ReaderUnlock:Boolean;
+   function WriterLock:Boolean;
+   function WriterUnlock:Boolean;
+   
+   function StartMonitor:Boolean; virtual;
+   function StopMonitor:Boolean; virtual;
+   function ProcessMonitor:Boolean; virtual;
+
+   function BindMonitor(AAdapter:TNetworkAdapter):Boolean; virtual;
+   function UnbindMonitor(AAdapter:TNetworkAdapter):Boolean; virtual;
+ end;
+ 
+ TAuthenticatorAdapter = class(TListObject) {Downstream}
+   constructor Create;
+   destructor Destroy; override;
+  private
+   {Internal Variables}
+   FLock:TSynchronizerHandle;
+  public
+   {Status Variables}
+   Handle:THandle;                //To Do //Do these need lock protection ?
+   Adapter:TNetworkAdapter;
+
+   {Public Methods}
+   function ReaderLock:Boolean;
+   function ReaderUnlock:Boolean;
+   function WriterLock:Boolean;
+   function WriterUnlock:Boolean;
+ end;
+ 
+ TNetworkAuthenticator = class(TListObject) {eg EAP/RSN}
+   constructor Create(AManager:TTransportManager);
+   destructor Destroy; override;
+  private
+   {Internal Variables}
+   FLock:TSynchronizerHandle;
+  protected
+   {Internal Variables}
+   FManager:TTransportManager;
+ 
+   {Status Variables}
+   FAuthType:Word;
+   FInitDelay:LongWord;
+   FRetryCount:LongWord;
+   FRetryTimeout:LongWord;
+   FAdapters:TNetworkList;   {List of TAuthenticatorAdapter objects}
+
+   {Event Methods}
+
+   {Internal Methods}
+   function GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+   function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+   function GetAdapterByNext(APrevious:TAuthenticatorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+
+   {Protected Methods}
+   function AddAdapter(AAdapter:TNetworkAdapter;AAuthType:Word;ACipher,AKey,AEntity,AToken:Pointer):Boolean; virtual;
+   function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
+  public
+   {Public Properties}
+   property Manager:TTransportManager read FManager;
+   property AuthType:Word read FAuthType;
+   property InitDelay:LongWord read FInitDelay;
+   property RetryCount:LongWord read FRetryCount;
+   property RetryTimeout:LongWord read FRetryTimeout;
+
+   {Public Methods}
+   function ReaderLock:Boolean;
+   function ReaderUnlock:Boolean;
+   function WriterLock:Boolean;
+   function WriterUnlock:Boolean;
+   
+   function StartAuthenticator:Boolean; virtual;
+   function StopAuthenticator:Boolean; virtual;
+   function ProcessAuthenticator:Boolean; virtual;
+
+   function BindAuthenticator(AAdapter:TNetworkAdapter):Boolean; virtual;
+   function UnbindAuthenticator(AAdapter:TNetworkAdapter):Boolean; virtual;
+ end;
+ 
  TSocketList = class;
  TSocketState = class;
  TSocketBuffer = class;
@@ -1118,6 +1280,9 @@ procedure TransportInit;
 function TransportStart:LongWord;
 function TransportStop:LongWord;
 
+function TransportBind:LongWord;
+function TransportUnbind:LongWord;
+
 {==============================================================================}
 {Transport Functions}
 function InAddrToHost(const AAddress:TInAddr):TInAddr; inline;
@@ -1182,13 +1347,17 @@ var
 {==============================================================================}
 {==============================================================================}
 {TTransportManager}
-constructor TTransportManager.Create(AAdapters:TAdapterManager);
+constructor TTransportManager.Create(ASettings:TNetworkSettings;AAdapters:TAdapterManager);
 begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
+ FSettings:=ASettings;
  FAdapters:=AAdapters;
+ 
  FTransports:=TNetworkList.Create;
+ FMonitors:=TNetworkList.Create;
+ FAuthenticators:=TNetworkList.Create;
 end;
 
 {==============================================================================}
@@ -1198,7 +1367,10 @@ begin
  {}
  WriterLock;
  try
+  FAuthenticators.Free;
+  FMonitors.Free;
   FTransports.Free;
+  FSettings:=nil;
   FAdapters:=nil;
   inherited Destroy;
  finally 
@@ -1405,6 +1577,300 @@ end;
 
 {==============================================================================}
 
+function TTransportManager.AddMonitor(AMonitor:TNetworkMonitor):Boolean;
+begin
+ {}
+ ReaderLock;
+ try
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: AddMonitor');
+  {$ENDIF}
+
+  {Acquire Lock}
+  FMonitors.WriterLock;
+  try
+   {Add Monitor}
+   Result:=FMonitors.Add(AMonitor);
+  finally
+   {Release Lock}
+   FMonitors.WriterUnlock;
+  end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.RemoveMonitor(AMonitor:TNetworkMonitor):Boolean;
+begin
+ {}
+ ReaderLock;
+ try
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: RemoveMonitor');
+  {$ENDIF}
+
+  {Acquire Lock}
+  FMonitors.WriterLock;
+  try
+   {Remove Monitor}
+   Result:=FMonitors.Remove(AMonitor);
+  finally
+   {Release Lock}  
+   FMonitors.WriterUnlock;
+  end; 
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.GetMonitorByMonitor(AMonitor:TNetworkMonitor;ALock:Boolean;AState:LongWord):TNetworkMonitor;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ FMonitors.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Monitor}
+  Monitor:=TNetworkMonitor(FMonitors.First);
+  while Monitor <> nil do
+   begin
+    {Check Monitor}
+    if Monitor = AMonitor then
+     begin
+      {Lock Monitor} 
+      if ALock then if AState = NETWORK_LOCK_READ then Monitor.ReaderLock else Monitor.WriterLock;
+      
+      {Return Result}
+      Result:=Monitor;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Monitor:=TNetworkMonitor(Monitor.Next);
+   end;
+ finally 
+  FMonitors.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.GetMonitorByNext(APrevious:TNetworkMonitor;ALock,AUnlock:Boolean;AState:LongWord):TNetworkMonitor;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ FMonitors.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Previous}
+  if APrevious = nil then
+   begin
+    {Get First}
+    Monitor:=TNetworkMonitor(FMonitors.First);
+    if Monitor <> nil then
+     begin
+      {Lock Monitor}
+      if ALock then if AState = NETWORK_LOCK_READ then Monitor.ReaderLock else Monitor.WriterLock;
+      
+      {Return Result}
+      Result:=Monitor;
+     end;
+   end
+  else
+   begin
+    {Get Next}
+    Monitor:=TNetworkMonitor(APrevious.Next);
+    if Monitor <> nil then
+     begin
+      {Lock Monitor}
+      if ALock then if AState = NETWORK_LOCK_READ then Monitor.ReaderLock else Monitor.WriterLock;
+      
+      {Return Result}
+      Result:=Monitor;
+     end;
+
+    {Unlock Previous}
+    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+   end;   
+ finally 
+  FMonitors.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.AddAuthenticator(AAuthenticator:TNetworkAuthenticator):Boolean;
+begin
+ {}
+ ReaderLock;
+ try
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: AddAuthenticator');
+  {$ENDIF}
+
+  {Acquire Lock}
+  FAuthenticators.WriterLock;
+  try
+   {Add Authenticator}
+   Result:=FAuthenticators.Add(AAuthenticator);
+  finally
+   {Release Lock}
+   FAuthenticators.WriterUnlock;
+  end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.RemoveAuthenticator(AAuthenticator:TNetworkAuthenticator):Boolean;
+begin
+ {}
+ ReaderLock;
+ try
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: RemoveAuthenticator');
+  {$ENDIF}
+
+  {Acquire Lock}
+  FAuthenticators.WriterLock;
+  try
+   {Remove Authenticator}
+   Result:=FAuthenticators.Remove(AAuthenticator);
+  finally
+   {Release Lock}  
+   FAuthenticators.WriterUnlock;
+  end; 
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.GetAuthenticatorByType(AAuthType:Word;ALock:Boolean;AState:LongWord):TNetworkAuthenticator;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ FAuthenticators.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Authenticator}
+  Authenticator:=TNetworkAuthenticator(FAuthenticators.First);
+  while Authenticator <> nil do
+   begin
+    {Check Authenticator}
+    if Authenticator.AuthType = AAuthType then
+     begin
+      {Lock Authenticator} 
+      if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
+      
+      {Return Result}
+      Result:=Authenticator;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Authenticator:=TNetworkAuthenticator(Authenticator.Next);
+   end;
+ finally 
+  FAuthenticators.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.GetAuthenticatorByAuthenticator(AAuthenticator:TNetworkAuthenticator;ALock:Boolean;AState:LongWord):TNetworkAuthenticator;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ FAuthenticators.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Authenticator}
+  Authenticator:=TNetworkAuthenticator(FAuthenticators.First);
+  while Authenticator <> nil do
+   begin
+    {Check Authenticator}
+    if Authenticator = AAuthenticator then
+     begin
+      {Lock Authenticator} 
+      if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
+      
+      {Return Result}
+      Result:=Authenticator;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Authenticator:=TNetworkAuthenticator(Authenticator.Next);
+   end;
+ finally 
+  FAuthenticators.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.GetAuthenticatorByNext(APrevious:TNetworkAuthenticator;ALock,AUnlock:Boolean;AState:LongWord):TNetworkAuthenticator;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ FAuthenticators.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Previous}
+  if APrevious = nil then
+   begin
+    {Get First}
+    Authenticator:=TNetworkAuthenticator(FAuthenticators.First);
+    if Authenticator <> nil then
+     begin
+      {Lock Authenticator}
+      if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
+      
+      {Return Result}
+      Result:=Authenticator;
+     end;
+   end
+  else
+   begin
+    {Get Next}
+    Authenticator:=TNetworkAuthenticator(APrevious.Next);
+    if Authenticator <> nil then
+     begin
+      {Lock Authenticator}
+      if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
+      
+      {Return Result}
+      Result:=Authenticator;
+     end;
+
+    {Unlock Previous}
+    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+   end;   
+ finally 
+  FAuthenticators.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TTransportManager.StartTransports:Boolean;
 var
  Transport:TNetworkTransport;
@@ -1475,7 +1941,7 @@ begin
   Result:=True;
   
   {$IFDEF TRANSPORT_DEBUG}
-  //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: ProcessTransports');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: ProcessTransports');
   {$ENDIF}
   
   {Get Transport}
@@ -1609,6 +2075,432 @@ begin
     
       {Get Next}
       Transport:=TNetworkTransport(GetTransportByNext(Transport,True,True,NETWORK_LOCK_READ));
+     end;
+   end;   
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.StartMonitors:Boolean;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: StartMonitors');
+  {$ENDIF}
+  
+  {Get Monitor}
+  Monitor:=TNetworkMonitor(GetMonitorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Monitor <> nil do
+   begin
+    {Start Monitor}   
+    if not(Monitor.StartMonitor) then Result:=False;
+    
+    {Get Next}
+    Monitor:=TNetworkMonitor(GetMonitorByNext(Monitor,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.StopMonitors:Boolean;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: StopMonitors');
+  {$ENDIF}
+  
+  {Get Monitor}
+  Monitor:=TNetworkMonitor(GetMonitorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Monitor <> nil do
+   begin
+    {Stop Monitor}
+    if not(Monitor.StopMonitor) then Result:=False;
+    
+    {Get Next}
+    Monitor:=TNetworkMonitor(GetMonitorByNext(Monitor,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.ProcessMonitors:Boolean;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: ProcessMonitors');
+  {$ENDIF}
+  
+  {Get Monitor}
+  Monitor:=TNetworkMonitor(GetMonitorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Monitor <> nil do
+   begin
+    {Process Monitor}
+    if not(Monitor.ProcessMonitor) then Result:=False;
+    
+    {Get Next}
+    Monitor:=TNetworkMonitor(GetMonitorByNext(Monitor,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.EnumerateMonitors(ACallback:TMonitorCallback):Boolean;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {Check Callback}
+  if not Assigned(ACallback) then Exit;
+
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: EnumerateMonitors');
+  {$ENDIF}
+  
+  {Get Monitor}
+  Monitor:=TNetworkMonitor(GetMonitorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Monitor <> nil do
+   begin
+    {Enumerate Monitor}
+    if not(ACallback(Monitor)) then Result:=False;
+    
+    {Get Next}
+    Monitor:=TNetworkMonitor(GetMonitorByNext(Monitor,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.BindMonitors(AAdapter:TNetworkAdapter):Boolean;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: BindMonitors');
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then
+   begin
+    {Check Adapters}
+    if FAdapters = nil then Exit;
+    
+    {Enumerate Adapters}
+    Result:=FAdapters.EnumerateAdapters(BindMonitors);
+   end
+  else
+   begin
+    Result:=True;
+   
+    {Get Monitor}
+    Monitor:=TNetworkMonitor(GetMonitorByNext(nil,True,False,NETWORK_LOCK_READ));
+    while Monitor <> nil do
+     begin
+      {Bind Monitor}
+      if not(Monitor.BindMonitor(AAdapter)) then Result:=False;
+    
+      {Get Next}
+      Monitor:=TNetworkMonitor(GetMonitorByNext(Monitor,True,True,NETWORK_LOCK_READ));
+     end;
+   end;   
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.UnbindMonitors(AAdapter:TNetworkAdapter):Boolean;
+var
+ Monitor:TNetworkMonitor;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: UnbindMonitors');
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then
+   begin
+    {Check Adapters}
+    if FAdapters = nil then Exit;
+    
+    {Enumerate Adapters}
+    Result:=FAdapters.EnumerateAdapters(UnbindMonitors);
+   end
+  else
+   begin
+    Result:=True;
+   
+    {Get Monitor}
+    Monitor:=TNetworkMonitor(GetMonitorByNext(nil,True,False,NETWORK_LOCK_READ));
+    while Monitor <> nil do
+     begin
+      {Unbind Monitor}
+      if not(Monitor.UnbindMonitor(AAdapter)) then Result:=False;
+    
+      {Get Next}
+      Monitor:=TNetworkMonitor(GetMonitorByNext(Monitor,True,True,NETWORK_LOCK_READ));
+     end;
+   end;   
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.StartAuthenticators:Boolean;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: StartAuthenticators');
+  {$ENDIF}
+  
+  {Get Authenticator}
+  Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Authenticator <> nil do
+   begin
+    {Start Authenticator}   
+    if not(Authenticator.StartAuthenticator) then Result:=False;
+    
+    {Get Next}
+    Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(Authenticator,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.StopAuthenticators:Boolean;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: StopAuthenticators');
+  {$ENDIF}
+  
+  {Get Authenticator}
+  Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Authenticator <> nil do
+   begin
+    {Stop Authenticator}
+    if not(Authenticator.StopAuthenticator) then Result:=False;
+    
+    {Get Next}
+    Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(Authenticator,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.ProcessAuthenticators:Boolean;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: ProcessAuthenticators');
+  {$ENDIF}
+  
+  {Get Authenticator}
+  Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Authenticator <> nil do
+   begin
+    {Process Authenticator}
+    if not(Authenticator.ProcessAuthenticator) then Result:=False;
+    
+    {Get Next}
+    Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(Authenticator,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.EnumerateAuthenticators(ACallback:TAuthenticatorCallback):Boolean;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {Check Callback}
+  if not Assigned(ACallback) then Exit;
+
+  Result:=True;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: EnumerateAuthenticators');
+  {$ENDIF}
+  
+  {Get Authenticator}
+  Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Authenticator <> nil do
+   begin
+    {Enumerate Authenticator}
+    if not(ACallback(Authenticator)) then Result:=False;
+    
+    {Get Next}
+    Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(Authenticator,True,True,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.BindAuthenticators(AAdapter:TNetworkAdapter):Boolean;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: BindAuthenticators');
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then
+   begin
+    {Check Adapters}
+    if FAdapters = nil then Exit;
+    
+    {Enumerate Adapters}
+    Result:=FAdapters.EnumerateAdapters(BindAuthenticators);
+   end
+  else
+   begin
+    Result:=True;
+   
+    {Get Authenticator}
+    Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(nil,True,False,NETWORK_LOCK_READ));
+    while Authenticator <> nil do
+     begin
+      {Bind Authenticator}
+      if not(Authenticator.BindAuthenticator(AAdapter)) then Result:=False;
+    
+      {Get Next}
+      Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(Authenticator,True,True,NETWORK_LOCK_READ));
+     end;
+   end;   
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.UnbindAuthenticators(AAdapter:TNetworkAdapter):Boolean;
+var
+ Authenticator:TNetworkAuthenticator;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF TRANSPORT_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TransportManager: UnbindAuthenticators');
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then
+   begin
+    {Check Adapters}
+    if FAdapters = nil then Exit;
+    
+    {Enumerate Adapters}
+    Result:=FAdapters.EnumerateAdapters(UnbindAuthenticators);
+   end
+  else
+   begin
+    Result:=True;
+   
+    {Get Authenticator}
+    Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(nil,True,False,NETWORK_LOCK_READ));
+    while Authenticator <> nil do
+     begin
+      {Unbind Authenticator}
+      if not(Authenticator.UnbindAuthenticator(AAdapter)) then Result:=False;
+    
+      {Get Next}
+      Authenticator:=TNetworkAuthenticator(GetAuthenticatorByNext(Authenticator,True,True,NETWORK_LOCK_READ));
      end;
    end;   
  finally 
@@ -2847,6 +3739,597 @@ end;
 {==============================================================================}
 
 function TNetworkTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TMonitorAdapter}
+constructor TMonitorAdapter.Create;
+begin
+ {}
+ inherited Create;
+ FLock:=SynchronizerCreate;
+
+ Handle:=INVALID_HANDLE_VALUE;
+ Adapter:=nil;
+end;
+ 
+{==============================================================================}
+
+destructor TMonitorAdapter.Destroy; 
+begin
+ {}
+ WriterLock;
+ try
+  Adapter:=nil;
+  inherited Destroy;
+ finally 
+  {WriterUnlock;} {Can destroy Synchronizer while holding lock}
+  SynchronizerDestroy(FLock);
+ end;
+end;
+
+{==============================================================================}
+
+function TMonitorAdapter.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TMonitorAdapter.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TMonitorAdapter.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TMonitorAdapter.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TNetworkMonitor}
+constructor TNetworkMonitor.Create(AManager:TTransportManager);
+begin
+ {}
+ inherited Create;
+ FLock:=SynchronizerCreate;
+ 
+ FManager:=AManager;
+
+ FAdapters:=TNetworkList.Create;
+ if FManager <> nil then FManager.AddMonitor(Self);
+end;
+ 
+{==============================================================================}
+
+destructor TNetworkMonitor.Destroy; 
+begin
+ {}
+ WriterLock;
+ try
+  if FManager <> nil then FManager.RemoveMonitor(Self);
+  FAdapters.Free;
+  FManager:=nil;
+  inherited Destroy;
+ finally 
+  {WriterUnlock;} {Can destroy Synchronizer while holding lock}
+  SynchronizerDestroy(FLock);
+ end;
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TMonitorAdapter;
+var
+ Adapter:TMonitorAdapter;
+begin
+ {}
+ FAdapters.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Adapter}
+  Adapter:=TMonitorAdapter(FAdapters.First);
+  while Adapter <> nil do
+   begin
+    {Check Adapter}
+    if Adapter.Handle = AHandle then
+     begin
+      {Lock Adapter} 
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Adapter:=TMonitorAdapter(Adapter.Next);
+   end;
+ finally 
+  FAdapters.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TMonitorAdapter;
+var
+ Adapter:TMonitorAdapter;
+begin
+ {}
+ FAdapters.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Adapter}
+  Adapter:=TMonitorAdapter(FAdapters.First);
+  while Adapter <> nil do
+   begin
+    {Check Adapter}
+    if Adapter.Adapter = AAdapter then
+     begin
+      {Lock Adapter} 
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Adapter:=TMonitorAdapter(Adapter.Next);
+   end;
+ finally 
+  FAdapters.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.GetAdapterByNext(APrevious:TMonitorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TMonitorAdapter;
+var
+ Adapter:TMonitorAdapter;
+begin
+ {}
+ FAdapters.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Previous}
+  if APrevious = nil then
+   begin
+    {Get First}
+    Adapter:=TMonitorAdapter(FAdapters.First);
+    if Adapter <> nil then
+     begin
+      {Lock Adapter}
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+     end;
+   end
+  else
+   begin
+    {Get Next}
+    Adapter:=TMonitorAdapter(APrevious.Next);
+    if Adapter <> nil then
+     begin
+      {Lock Adapter}
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+     end;
+
+    {Unlock Previous}
+    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+   end;   
+ finally 
+  FAdapters.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.AddAdapter(AAdapter:TNetworkAdapter):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.StartMonitor:Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.StopMonitor:Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.ProcessMonitor:Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.BindMonitor(AAdapter:TNetworkAdapter):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.UnbindMonitor(AAdapter:TNetworkAdapter):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TAuthenticatorAdapter}
+constructor TAuthenticatorAdapter.Create;
+begin
+ {}
+ inherited Create;
+ FLock:=SynchronizerCreate;
+
+ Handle:=INVALID_HANDLE_VALUE;
+ Adapter:=nil;
+end;
+
+{==============================================================================}
+
+destructor TAuthenticatorAdapter.Destroy; 
+begin
+ {}
+ WriterLock;
+ try
+  Adapter:=nil;
+  inherited Destroy;
+ finally 
+  {WriterUnlock;} {Can destroy Synchronizer while holding lock}
+  SynchronizerDestroy(FLock);
+ end;
+end;
+
+{==============================================================================}
+
+function TAuthenticatorAdapter.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TAuthenticatorAdapter.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TAuthenticatorAdapter.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TAuthenticatorAdapter.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TNetworkAuthenticator}
+constructor TNetworkAuthenticator.Create(AManager:TTransportManager);
+begin
+ {}
+ inherited Create;
+ FLock:=SynchronizerCreate;
+ 
+ FManager:=AManager;
+ FAuthType:=AUTH_TYPE_UNKNOWN;
+ FInitDelay:=0;
+ FRetryCount:=1;
+ FRetryTimeout:=5000;
+ FAdapters:=TNetworkList.Create;
+ if FManager <> nil then FManager.AddAuthenticator(Self);
+end;
+
+{==============================================================================}
+
+destructor TNetworkAuthenticator.Destroy; 
+begin
+ {}
+ WriterLock;
+ try
+  if FManager <> nil then FManager.RemoveAuthenticator(Self);
+  FAdapters.Free;
+  FManager:=nil;
+  inherited Destroy;
+ finally 
+  {WriterUnlock;} {Can destroy Synchronizer while holding lock}
+  SynchronizerDestroy(FLock);
+ end;
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+var
+ Adapter:TAuthenticatorAdapter;
+begin
+ {}
+ FAdapters.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Adapter}
+  Adapter:=TAuthenticatorAdapter(FAdapters.First);
+  while Adapter <> nil do
+   begin
+    {Check Adapter}
+    if Adapter.Handle = AHandle then
+     begin
+      {Lock Adapter} 
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Adapter:=TAuthenticatorAdapter(Adapter.Next);
+   end;
+ finally 
+  FAdapters.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+var
+ Adapter:TAuthenticatorAdapter;
+begin
+ {}
+ FAdapters.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Adapter}
+  Adapter:=TAuthenticatorAdapter(FAdapters.First);
+  while Adapter <> nil do
+   begin
+    {Check Adapter}
+    if Adapter.Adapter = AAdapter then
+     begin
+      {Lock Adapter} 
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Adapter:=TAuthenticatorAdapter(Adapter.Next);
+   end;
+ finally 
+  FAdapters.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.GetAdapterByNext(APrevious:TAuthenticatorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+var
+ Adapter:TAuthenticatorAdapter;
+begin
+ {}
+ FAdapters.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Previous}
+  if APrevious = nil then
+   begin
+    {Get First}
+    Adapter:=TAuthenticatorAdapter(FAdapters.First);
+    if Adapter <> nil then
+     begin
+      {Lock Adapter}
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+     end;
+   end
+  else
+   begin
+    {Get Next}
+    Adapter:=TAuthenticatorAdapter(APrevious.Next);
+    if Adapter <> nil then
+     begin
+      {Lock Adapter}
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+     end;
+
+    {Unlock Previous}
+    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+   end;   
+ finally 
+  FAdapters.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.AddAdapter(AAdapter:TNetworkAdapter;AAuthType:Word;ACipher,AKey,AEntity,AToken:Pointer):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.StartAuthenticator:Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.StopAuthenticator:Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.ProcessAuthenticator:Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.BindAuthenticator(AAdapter:TNetworkAdapter):Boolean; 
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.UnbindAuthenticator(AAdapter:TNetworkAdapter):Boolean; 
 begin
  {Virtual Base Method}
  Result:=False;
@@ -5433,7 +6916,7 @@ begin
  if TransportInitialized then Exit;
 
  {Create Transport Manager}
- TransportManager:=TTransportManager.Create(AdapterManager);
+ TransportManager:=TTransportManager.Create(NetworkSettings,AdapterManager);
  
  TransportInitialized:=True;
 end;
@@ -5459,8 +6942,18 @@ begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network transports');
   end;
  
- //To Do
- 
+ {Start Monitors}
+ if not TransportManager.StartMonitors then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network monitors');
+  end;
+
+ {Start Authenticators}
+ if not TransportManager.StartAuthenticators then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network authenticators');
+  end;
+  
  {Set Started} 
  TransportStarted:=True;
  
@@ -5483,16 +6976,100 @@ begin
  {Check Manager}
  if TransportManager = nil then Exit;
  
+ {Stop Authenticators}
+ if not TransportManager.StopAuthenticators then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to stop one or more network authenticators');
+  end;
+ 
+ {Stop Monitors}
+ if not TransportManager.StopMonitors then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to stop one or more network monitors');
+  end;
+ 
  {Stop Transports}
  if not TransportManager.StopTransports then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to stop one or more network transports');
   end;
 
- //To Do
-
  {Set Started}
  TransportStarted:=False;    
+ 
+ {Return Result} 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function TransportBind:LongWord;
+begin
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ {Check Started}
+ if not(TransportStarted) then Exit;
+ 
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Manager}
+ if TransportManager = nil then Exit;
+
+ {Bind Transports}
+ if not TransportManager.BindTransports(nil) then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to bind one or more network transports');
+  end;
+ 
+ {Bind Monitors}
+ if not TransportManager.BindMonitors(nil) then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to bind one or more network monitors');
+  end;
+
+ {Bind Authenticators}
+ if not TransportManager.BindAuthenticators(nil) then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to bind one or more network authenticators');
+  end;
+  
+ {Return Result} 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function TransportUnbind:LongWord;
+begin
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ {Check Started}
+ if not(TransportStarted) then Exit;
+ 
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Manager}
+ if TransportManager = nil then Exit;
+
+ {Unbind Authenticators}
+ if not TransportManager.UnbindAuthenticators(nil) then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to unbind one or more network authenticators');
+  end;
+ 
+ {Unbind Monitors}
+ if not TransportManager.UnbindMonitors(nil) then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to unbind one or more network monitors');
+  end;
+ 
+ {Unbind Transports}
+ if not TransportManager.UnbindTransports(nil) then
+  begin
+   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to unbind one or more network transports');
+  end;
  
  {Return Result} 
  Result:=ERROR_SUCCESS;

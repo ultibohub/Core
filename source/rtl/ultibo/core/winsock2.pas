@@ -9953,12 +9953,12 @@ begin
   Result:=WSAEAFNOSUPPORT;
   SetLastError(WSAEAFNOSUPPORT);
   if (Family <> AF_UNSPEC) and (Family <> AF_INET) and (Family <> AF_INET6) then Exit;
-  if not(IP_TRANSPORT_ENABLED) and (Family = AF_INET) then Exit;
-  if not(IP6_TRANSPORT_ENABLED) and (Family = AF_INET6) then Exit;
+  if not(IP_TRANSPORT_ENABLED) and (Family = AF_INET) then Exit;   //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
+  if not(IP6_TRANSPORT_ENABLED) and (Family = AF_INET6) then Exit; //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
   if Family = AF_UNSPEC then
    begin
-    if IP_TRANSPORT_ENABLED and not(IP6_TRANSPORT_ENABLED) then Family:=AF_INET;
-    if not(IP_TRANSPORT_ENABLED) and IP6_TRANSPORT_ENABLED then Family:=AF_INET6;
+    if IP_TRANSPORT_ENABLED and not(IP6_TRANSPORT_ENABLED) then Family:=AF_INET;  //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
+    if not(IP_TRANSPORT_ENABLED) and IP6_TRANSPORT_ENABLED then Family:=AF_INET6; //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
    end;
    
   {Check Socket Type}
@@ -12108,8 +12108,8 @@ begin
         if pcbRequestInfoLen < SizeOf(TWSAFixedInfo) then Exit;
         WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
         if WSAFixedInfo = nil then Exit;
-        StrLCopy(WSAFixedInfo.HostName,PChar(TIPTransport(Transport).HostName),WSA_MAX_HOSTNAME_LEN);
-        StrLCopy(WSAFixedInfo.DomainName,PChar(TIPTransport(Transport).DomainName),WSA_MAX_DOMAIN_NAME_LEN);
+        StrLCopy(WSAFixedInfo.HostName,PChar(Transport.Manager.Settings.HostName),WSA_MAX_HOSTNAME_LEN);
+        StrLCopy(WSAFixedInfo.DomainName,PChar(Transport.Manager.Settings.DomainName),WSA_MAX_DOMAIN_NAME_LEN);
         WSAFixedInfo.DnsServerList.Next:=nil;
         StrLCopy(WSAFixedInfo.DnsServerList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransport(Transport).Nameservers[0]))),15);
          

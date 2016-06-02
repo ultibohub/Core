@@ -452,8 +452,15 @@ const
  
  {Timer Device Flags}
  TIMER_FLAG_NONE       = $00000000;
- TIMER_FLAG_WRAPPING   = $00000001;
- TIMER_FLAG_COUNTER    = $00000002;
+ TIMER_FLAG_WRAPPING   = $00000001; {Device provides a wrapping or self reloading counter}
+ TIMER_FLAG_COUNTER    = $00000002; {Device will appear as a continuously incrementing counter when read}
+ TIMER_FLAG_DOWN       = $00000004; {Device counts down from the starting value to zero (And optionally triggers an event)}
+ 
+ {Timer Event Flags}
+ TIMER_EVENT_FLAG_NONE      = $00000000;
+ TIMER_EVENT_FLAG_REPEAT    = $00000001; {Event will be repeated until cancelled}
+ TIMER_EVENT_FLAG_INTERRUPT = $00000002; {Event will be dispatched by interrupt handler (If applicable)}
+                                         {Caution: Events called by the interrupt handler must obey interrupt rules with regard to locks, memory allocation and latency}
  
 {==============================================================================}
 const
@@ -635,7 +642,7 @@ type
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
   Address:Pointer;                               {Device register base address}
-  Rate:LongWord;                                 {Device rate (MHz)}
+  Rate:LongWord;                                 {Device rate (Hz)}
   {Internal Properties}
   Prev:PClockDevice;                             {Previous entry in Clock device table}
   Next:PClockDevice;                             {Next entry in Clock device table}
@@ -644,6 +651,20 @@ type
 {==============================================================================}
 type
  {Timer specific types}
+ TTimerCallback = TCounterCallback; {Counter callbck from Platform}
+ 
+ {Timer Properties}
+ PTimerProperties = ^TTimerProperties;
+ TTimerProperties = record
+  Flags:LongWord;        {Device flags (eg TIMER_FLAG_WRAPPING)}
+  Bits:LongWord;         {Number of valid bits in timer read (eg 32 or 64)}
+  MinRate:LongWord;      {Device minimum clock rate (Hz)}
+  MaxRate:LongWord;      {Device maximum clock rate (Hz)}
+  MinInterval:LongWord;  {Device minimum interval (Milliseconds)}
+  MaxInterval:LongWord;  {Device maximum interval (Milliseconds)}
+ end;
+ 
+ {Timer Device}
  PTimerDevice = ^TTimerDevice;
  
  {Timer Enumeration Callback}
@@ -655,15 +676,15 @@ type
  TTimerDeviceStart = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceStop = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceRead = function(Timer:PTimerDevice):LongWord;
+ TTimerDeviceRead64 = function(Timer:PTimerDevice):Int64;
  TTimerDeviceWait = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceEvent = function(Timer:PTimerDevice;Event:TTimerEvent;Data:Pointer):LongWord;
+ TTimerDeviceEvent = function(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
  TTimerDeviceGetRate = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceSetRate = function(Timer:PTimerDevice;Rate:LongWord):LongWord;
- TTimerDeviceGetMaximum = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceGetInterval = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceSetInterval = function(Timer:PTimerDevice;Interval:LongWord):LongWord;
+ TTimerDeviceProperties = function(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
  
- {Timer Device}
  TTimerDevice = record
   {Device Properties}
   Device:TDevice;                                {The Device entry for this Timer device}
@@ -672,14 +693,15 @@ type
   TimerState:LongWord;                           {Timer device state (eg TIMER_STATE_ENABLED)}
   DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard random device interface (Manadatory)}
   DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard random device interface (Manadatory)}
-  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface (Manadatory)}
+  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface (Or nil if the default method is suitable)}
+  DeviceRead64:TTimerDeviceRead64;               {A device specific DeviceRead64 method implementing a standard random device interface (Manadatory)}
   DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface (Manadatory)}
   DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface (Manadatory)}
   DeviceGetRate:TTimerDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSetRate:TTimerDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceGetMaximum:TTimerDeviceGetMaximum;       {A device specific DeviceGetMaximum method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceGetInterval:TTimerDeviceGetInterval;     {A device specific DeviceGetInterval method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSetInterval:TTimerDeviceSetInterval;     {A device specific DeviceSetInterval method implementing a standard random device interface (Or nil if the default method is suitable)}
+  DeviceProperties:TTimerDeviceProperties;       {A device specific DeviceProperties method implementing a standard random device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
   WaitCount:LongWord;
@@ -687,9 +709,9 @@ type
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
   Address:Pointer;                               {Device register base address}
-  Rate:LongWord;                                 {Device rate (MHz)}
-  Maximum:LongWord;                              {Device maximum interval (Milliseconds)}
+  Rate:LongWord;                                 {Device rate (Hz)}
   Interval:LongWord;                             {Device interval (Milliseconds)}
+  Properties:TTimerProperties;                   {Device properties}
   {Internal Properties}
   Prev:PTimerDevice;                             {Previous entry in Timer device table}
   Next:PTimerDevice;                             {Next entry in Timer device table}
@@ -930,13 +952,14 @@ function ClockDeviceNotification(Clock:PClockDevice;Callback:TClockNotification;
 function TimerDeviceStart(Timer:PTimerDevice):LongWord;
 function TimerDeviceStop(Timer:PTimerDevice):LongWord;
 function TimerDeviceRead(Timer:PTimerDevice):LongWord;
+function TimerDeviceRead64(Timer:PTimerDevice):Int64;
 function TimerDeviceWait(Timer:PTimerDevice):LongWord;
-function TimerDeviceEvent(Timer:PTimerDevice;Event:TTimerEvent;Data:Pointer):LongWord;
+function TimerDeviceEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
 function TimerDeviceGetRate(Timer:PTimerDevice):LongWord;
 function TimerDeviceSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
-function TimerDeviceGetMaximum(Timer:PTimerDevice):LongWord;
 function TimerDeviceGetInterval(Timer:PTimerDevice):LongWord;
 function TimerDeviceSetInterval(Timer:PTimerDevice;Interval:LongWord):LongWord;
+function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
 
 function TimerDeviceCreate:PTimerDevice;
 function TimerDeviceCreateEx(Size:LongWord):PTimerDevice;
@@ -1024,8 +1047,19 @@ function SysClockRead:LongWord;
 function SysClockRead64:Int64;
 
 {==============================================================================}
-{RTL Timer Functions}
-//To Do
+{RTL Timer (Counter) Functions}
+function SysTimerAvailable:Boolean;
+
+function SysTimerRead:LongWord;
+function SysTimerRead64:Int64;
+function SysTimerWait:LongWord;
+function SysTimerEvent(Callback:TTimerCallback;Data:Pointer):LongWord;
+
+function SysTimerGetRate:LongWord;
+function SysTimerSetRate(Rate:LongWord):LongWord;
+
+function SysTimerGetInterval:LongWord;
+function SysTimerSetInterval(Interval:LongWord):LongWord;
 
 {==============================================================================}
 {RTL Random Functions}
@@ -1290,7 +1324,15 @@ begin
  {Register Platform Timer Handlers}
  if DEVICE_REGISTER_TIMER then
   begin
-   //To Do 
+   CounterAvailableHandler:=SysTimerAvailable;
+   CounterReadHandler:=SysTimerRead;
+   CounterRead64Handler:=SysTimerRead64;
+   CounterWaitHandler:=SysTimerWait;
+   CounterEventHandler:=SysTimerEvent;
+   CounterGetRateHandler:=SysTimerGetRate;
+   CounterSetRateHandler:=SysTimerSetRate;
+   CounterGetIntervalHandler:=SysTimerGetInterval;
+   CounterSetIntervalHandler:=SysTimerSetInterval;
   end; 
  
  {Register Platform Random Handlers}
@@ -3204,7 +3246,39 @@ begin
  if Assigned(Timer.DeviceRead) then
   begin
    Result:=Timer.DeviceRead(Timer);
+  end
+ else
+  begin
+   Result:=TimerDeviceRead64(Timer);
   end;
+end;
+
+{==============================================================================}
+
+function TimerDeviceRead64(Timer:PTimerDevice):Int64;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Read64');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Timer.DeviceRead64) then
+  begin
+   Result:=Timer.DeviceRead64(Timer);
+  end
+ else
+  begin
+   Result:=TimerDeviceRead(Timer);
+  end;  
 end;
 
 {==============================================================================}
@@ -3234,7 +3308,7 @@ end;
 
 {==============================================================================}
 
-function TimerDeviceEvent(Timer:PTimerDevice;Event:TTimerEvent;Data:Pointer):LongWord;
+function TimerDeviceEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3247,8 +3321,8 @@ begin
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Event');
  {$ENDIF}
  
- {Check Event}
- if not Assigned(Event) then Exit;
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
  
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
@@ -3256,7 +3330,7 @@ begin
  
  if Assigned(Timer.DeviceEvent) then
   begin
-   Result:=Timer.DeviceEvent(Timer,Event,Data);
+   Result:=Timer.DeviceEvent(Timer,Flags,Callback,Data);
   end;
 end;
 
@@ -3321,38 +3395,6 @@ begin
    Timer.Rate:=Rate;
    
    Result:=ERROR_SUCCESS;
-   
-   MutexUnlock(Timer.Lock);
-  end;  
-end;
-
-{==============================================================================}
-
-function TimerDeviceGetMaximum(Timer:PTimerDevice):LongWord;
-begin
- {}
- Result:=0;
- 
- {Check Timer}
- if Timer = nil then Exit;
- if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
- {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Get Maximum');
- {$ENDIF}
- 
- {Check Enabled}
- {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
- 
- if Assigned(Timer.DeviceGetMaximum) then
-  begin
-   Result:=Timer.DeviceGetMaximum(Timer);
-  end
- else
-  begin
-   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
-   
-   Result:=Timer.Maximum;
    
    MutexUnlock(Timer.Lock);
   end;  
@@ -3426,6 +3468,42 @@ end;
 
 {==============================================================================}
 
+function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Properties');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if Assigned(Timer.DeviceProperties) then
+  begin
+   Result:=Timer.DeviceProperties(Timer,Properties);
+  end
+ else
+  begin
+   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Get Properties}
+   System.Move(Timer.Properties,Properties^,SizeOf(TTimerProperties));
+
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+   
+   MutexUnlock(Timer.Lock);
+  end;  
+end;
+
+{==============================================================================}
+
 function TimerDeviceCreate:PTimerDevice;
 {Create a new Timer entry}
 {Return: Pointer to new Timer entry or nil if Timer could not be created}
@@ -3463,17 +3541,17 @@ begin
  Result.DeviceStart:=nil;
  Result.DeviceStop:=nil;
  Result.DeviceRead:=nil;
+ Result.DeviceRead64:=nil;
  Result.DeviceWait:=nil;
  Result.DeviceEvent:=nil;
  Result.DeviceGetRate:=nil;
  Result.DeviceSetRate:=nil;
- Result.DeviceGetMaximum:=nil;
  Result.DeviceGetInterval:=nil;
  Result.DeviceSetInterval:=nil;
+ Result.DeviceProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
  Result.Rate:=0;
- Result.Maximum:=0;
  Result.Interval:=0;
  
  {Create Lock}
@@ -3534,9 +3612,7 @@ begin
  {Check Interfaces}
  if not(Assigned(Timer.DeviceStart)) then Exit;
  if not(Assigned(Timer.DeviceStop)) then Exit;
- if not(Assigned(Timer.DeviceRead)) then Exit;
- if not(Assigned(Timer.DeviceWait)) then Exit;
- if not(Assigned(Timer.DeviceEvent)) then Exit;
+ if not(Assigned(Timer.DeviceRead)) and not(Assigned(Timer.DeviceRead64)) then Exit;
  
  {Check Timer}
  Result:=ERROR_ALREADY_EXISTS;
@@ -5503,7 +5579,129 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RTL Timer Functions}
+{RTL Timer (Counter) Functions}
+function SysTimerAvailable:Boolean;
+{Check if a timer device is available}
+begin
+ {}
+ Result:=(TimerDeviceDefault <> nil);
+end;
+
+{==============================================================================}
+
+function SysTimerRead:LongWord;
+{Read the current value of the default counter}
+{Return: The 32 bit current value of the current or 0 on failure}
+begin
+ {}
+ Result:=0;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceRead(TimerDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysTimerRead64:Int64;
+{Read the current value of the default counter}
+{Return: The 64 bit current value of the current or 0 on failure}
+begin
+ {}
+ Result:=0;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceRead64(TimerDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysTimerWait:LongWord;
+{Wait for the current interval to expire on the default counter}
+{Return: ERROR_SUCCESS if the interval expired or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceWait(TimerDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysTimerEvent(Callback:TTimerCallback;Data:Pointer):LongWord;
+{Schedule a function to be called when the current interval expires on the default counter}
+{Callback: The function to be called when the interval expires}
+{Data: A pointer to be pass to the function when the interval expires (Optional)}
+{Return: ERROR_SUCCESS if the callback was scheduled successfully or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceEvent(TimerDeviceDefault,TIMER_EVENT_FLAG_NONE,Callback,Data);
+end;
+
+{==============================================================================}
+
+function SysTimerGetRate:LongWord;
+{Get the current clock rate in Hz of the default counter}
+{Return: The current clock rate in Hz or 0 on failure}
+begin
+ {}
+ Result:=0;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceGetRate(TimerDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysTimerSetRate(Rate:LongWord):LongWord;
+{Set the current clock rate in Hz of the default counter}
+{Rate: The clock rate in Hz to set}
+{Return: ERROR_SUCCESS if the clock rate was set or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceSetRate(TimerDeviceDefault,Rate);
+end;
+
+{==============================================================================}
+
+function SysTimerGetInterval:LongWord;
+{Get the current interval in milliseconds of the default counter}
+{Return: The current interval in milliseconds or 0 on failure (or not set)}
+begin
+ {}
+ Result:=0;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceGetInterval(TimerDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysTimerSetInterval(Interval:LongWord):LongWord;
+{Set the current interval in milliseconds of the default counter}
+{Interval: The interval in milliseconds to set}
+{Return: ERROR_SUCCESS if the interval was set or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if TimerDeviceDefault = nil then Exit;
+
+ Result:=TimerDeviceSetInterval(TimerDeviceDefault,Interval);
+end;
 
 {==============================================================================}
 {==============================================================================}

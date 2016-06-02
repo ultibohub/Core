@@ -2965,7 +2965,7 @@ begin
  if RAWInitialized then Exit;
 
  {Create RAW Protocol}
- if RAW_PROTOCOL_ENABLED then 
+ if NetworkSettings.GetBooleanDefault('RAW_PROTOCOL_ENABLED',RAW_PROTOCOL_ENABLED) then 
   begin
    TRAWProtocol.Create(ProtocolManager,RAW_PROTOCOL_NAME);
   end; 

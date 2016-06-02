@@ -244,9 +244,10 @@ type
   private
    {Internal Variables}
    FNextPort:Word;
-
+   FReceiveBacklog:Integer;
+   
    {Status Variables}
-
+      
    {Internal Methods}
    function PacketHandler(AHandle:THandle;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
    function SegmentHandler(ASocket:TTCPSocket;ASource,ADest,APacket:Pointer;ASize:Integer):Boolean;
@@ -1018,7 +1019,7 @@ begin
          if ASocket.AcceptQueue.Count >= ASocket.BackLog then Exit;
          
          {Check Receive Backlog}
-         if ASocket.ReceiveQueue.Count >= TCP_RECEIVE_BACKLOG then Exit;
+         if ASocket.ReceiveQueue.Count >= FReceiveBacklog then Exit;
          
          {Clone Socket}
          Socket:=CloneSocket(ASocket,@IP.DestIP,@IP.SourceIP,TCP.DestPort,TCP.SourcePort,True,NETWORK_LOCK_READ);
@@ -4573,8 +4574,11 @@ begin
     Transport.ReaderUnlock;
    end; 
  
+  {Get Receive Backlog}
+  FReceiveBacklog:=Manager.Settings.GetIntegerDefault('TCP_RECEIVE_BACKLOG',TCP_RECEIVE_BACKLOG);
+  
   {Create Thread}
-  FThread:=TSocketThread.Create(Self,TCP_MESSAGESLOT_MAXIMUM);
+  FThread:=TSocketThread.Create(Self,Manager.Settings.GetIntegerDefault('TCP_MESSAGESLOT_MAXIMUM',TCP_MESSAGESLOT_MAXIMUM));
   {FThread.FreeOnTerminate:=True;} {Freed by StopProtocol}
   
   {Start Thread}
@@ -8739,7 +8743,7 @@ begin
  if TCPInitialized then Exit;
 
  {Create TCP Protocol}
- if TCP_PROTOCOL_ENABLED then
+ if NetworkSettings.GetBooleanDefault('TCP_PROTOCOL_ENABLED',TCP_PROTOCOL_ENABLED) then 
   begin
    TTCPProtocol.Create(ProtocolManager,TCP_PROTOCOL_NAME);
   end; 

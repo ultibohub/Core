@@ -499,7 +499,7 @@ const
  USB_PACKETID_STALL             =  $1e;
  USB_PACKETID_UNDEF_F           =  $0f;
  
- {USB Class Codes (Note that only the hub class is defined in the USB 2.0 specification itself the other standard class codes are defined in additional specifications)}
+ {USB Class Codes (bDeviceClass / bInterfaceClass) (Note that only the hub class is defined in the USB 2.0 specification itself the other standard class codes are defined in additional specifications)}
  USB_CLASS_CODE_INTERFACE_SPECIFIC             = $00; {Use class code info from Interface Descriptors }
  USB_CLASS_CODE_AUDIO                          = $01; {Audio device}
  USB_CLASS_CODE_COMMUNICATIONS_AND_CDC_CONTROL = $02; {Communication device class}
@@ -523,6 +523,20 @@ const
  USB_CLASS_CODE_VENDOR_SPECIFIC                = $ff; {Vendor Specific}
  
  {USB SubClass Codes (bInterfaceSubClass) (See: http://www.usb.org/developers/defined_class/)}
+ {Communications Devices}
+ USB_SUBCLASS_CDC_DLCM                         = $01; {Direct Line Control Model (USBPSTN1.2)}
+ USB_SUBCLASS_CDC_ACM                          = $02; {Abstract Control Model (USBPSTN1.2)}
+ USB_SUBCLASS_CDC_TCM                          = $03; {Telephone Control Model (USBPSTN1.2)}
+ USB_SUBCLASS_CDC_MCCM                         = $04; {Multi-Channel Control Model (USBISDN1.2)}
+ USB_SUBCLASS_CDC_CCM                          = $05; {CAPI Control Model (USBISDN1.2)}
+ USB_SUBCLASS_CDC_ETHERNET                     = $06; {Ethernet Networking Control Model (USBECM1.2)}
+ USB_SUBCLASS_CDC_WHCM                         = $08; {Wireless Handset Control Model (USBWMC1.1)}
+ USB_SUBCLASS_CDC_DMM                          = $09; {Device Management Model (USBWMC1.1)}
+ USB_SUBCLASS_CDC_MDLM                         = $0a; {Mobile Direct Line Model (USBWMC1.1)}
+ USB_SUBCLASS_CDC_OBEX                         = $0b; {OBEX (USBWMC1.1)}
+ USB_SUBCLASS_CDC_EEM                          = $0c; {Ethernet Emulation Model (USBEEM1.0)}
+ USB_SUBCLASS_CDC_NCM                          = $0d; {Network Control Model (USBNCM1.0)}
+ USB_SUBCLASS_CDC_MBIM                         = $0e; 
  {Still Image Devices}
  USB_SUBCLASS_IMAGE_DEFAULT                    = $01;
  {Mass Storage Devices}
@@ -561,6 +575,18 @@ const
  USB_SUBCLASS_APPLICATION_SPECIFIC_TMC         = $02;
  
  {USB Protocol Codes (bInterfaceProtocol) (See: http://www.usb.org/developers/defined_class/)}
+ {Communications Devices}
+ USB_PROTOCOL_CDC_ACM_NONE                     = 0;   {Abstract Control Model - No class specific protocol required}
+ USB_PROTOCOL_CDC_ACM_AT_V25TER                = 1;   {Abstract Control Model - AT Commands: V.250 etc}
+ USB_PROTOCOL_CDC_ACM_AT_PCCA101               = 2;   {Abstract Control Model - AT Commands defined by PCCA-101}
+ USB_PROTOCOL_CDC_ACM_AT_PCCA101_WAKE          = 3;   {Abstract Control Model - AT Commands defined by PCCA-101 & Annex O}
+ USB_PROTOCOL_CDC_ACM_AT_GSM                   = 4;   {Abstract Control Model - AT Commands defined by GSM 07.07}
+ USB_PROTOCOL_CDC_ACM_AT_3G                    = 5;   {Abstract Control Model - AT Commands defined by 3GPP 27.007}
+ USB_PROTOCOL_CDC_ACM_AT_CDMA                  = 6;   {Abstract Control Model - AT Commands defined by TIA for CDMA}
+ USB_PROTOCOL_CDC_ACM_VENDOR                   = $ff; {Abstract Control Model - Vendor-specific}
+ USB_PROTOCOL_CDC_EEM                          = 7;   {Ethernet Emulation Model}
+ USB_PROTOCOL_CDC_NCM_NTB                      = 1;   {Network Control Model - Network Transfer Block}
+ USB_PROTOCOL_CDC_MBIM_NTB                     = 2;   {Network Transfer Block}
  {Still Image Devices}
  USB_PROTOCOL_IMAGE_DEFAULT                    = $01;
  {Mass Storage Devices}
@@ -1407,7 +1433,8 @@ function USBBufferRelease(Buffer:Pointer):LongWord;
 function USBRequestAllocate(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Callback:TUSBRequestCompleted;Size:LongWord;DriverData:Pointer):PUSBRequest; inline;
 function USBRequestAllocateEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Callback:TUSBRequestCompleted;var Data:Pointer;Size:LongWord;DriverData:Pointer):PUSBRequest;
 function USBRequestRelease(Request:PUSBRequest):LongWord;
-function USBRequestInitialize(Request:PUSBRequest):LongWord; //To Do //Remove (Modify SMSC95XX first)
+function USBRequestInitialize(Request:PUSBRequest;Callback:TUSBRequestCompleted;Data:Pointer;Size:LongWord;DriverData:Pointer):LongWord;
+function USBRequestInitializeOld(Request:PUSBRequest):LongWord; //To Do //Remove (Modify SMSC95XX first)
 
 function USBRequestSubmit(Request:PUSBRequest):LongWord;
 function USBRequestCancel(Request:PUSBRequest):LongWord;
@@ -5238,6 +5265,7 @@ function USBBufferValidate(Device:PUSBDevice;Buffer:Pointer;Size:LongWord;var Fl
 {Flags: The returned flags for the validated buffer (eg USB_REQUEST_FLAG_SHARED)}
 {Return: USB_STATUS_SUCCESS on success or another error code on failure}
 var
+ HeapSize:LongWord;
  HeapFlags:LongWord;
 begin
  {}
@@ -5285,13 +5313,27 @@ begin
     begin
      {Set Flags}
      Flags:=Flags or USB_REQUEST_FLAG_SIZED;
-    end;
+    end
+   else
+    begin
+     {Get Heap Size}
+     HeapSize:=MemSize(Buffer);
+     if HeapSize <> 0 then
+      begin
+       {Check Host Multiplier}
+       if RoundUp(HeapSize,Device.Host.Multiplier) = HeapSize then
+        begin
+         {Set Flags}
+         Flags:=Flags or USB_REQUEST_FLAG_SIZED;
+        end;
+      end;  
+    end;    
    
    {Check Host Flags}
    if (Device.Host.Device.DeviceFlags and USBHOST_FLAG_SHARED) = USBHOST_FLAG_SHARED then
     begin
      {Check Flags}
-     if (Flags and (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED)) = (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED) then
+     if (Flags and (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
       begin
        {Set Flags}
        Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
@@ -5300,7 +5342,7 @@ begin
    else if (Device.Host.Device.DeviceFlags and USBHOST_FLAG_NOCACHE) = USBHOST_FLAG_NOCACHE then  
     begin
      {Check Flags}
-     if (Flags and (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED)) = (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED) then
+     if (Flags and (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
       begin
        {Set Flags}
        Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
@@ -5309,10 +5351,10 @@ begin
    else
     begin
      {Check Flags}
-     if (Flags and USB_REQUEST_FLAG_ALIGNED) = USB_REQUEST_FLAG_ALIGNED then
+     if (Flags and (USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
       begin
        {Set Flags}
-       //Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE; //To Do //This was missing ? //If we add it USB fails to bind devices, why ?
+       //Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE; //Testing
       end; 
     end;    
   end;
@@ -5487,8 +5529,64 @@ begin
 end;
 
 {==============================================================================}
+
+function USBRequestInitialize(Request:PUSBRequest;Callback:TUSBRequestCompleted;Data:Pointer;Size:LongWord;DriverData:Pointer):LongWord;
+{Initialize or Reinitialize an existing USB request}
+{Request: The request to be initialized}
+{Callback: The callback function to be called on completion of the request}
+{Data: The returned data buffer allocated for the request (Or nil if size is zero)}
+{Size: The size of the data buffer for the request}
+{DriverData: Device driver private data for the callback (Optional)}
+
+{Return: USB_STATUS_SUCCESS on success or another error code on failure}
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ {Check Device}
+ if Request.Device = nil then Exit;
+ if Request.Device.Host = nil then Exit;
+ if Request.Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Check Size}
+ {if Size = 0 then Exit;} {Size may be zero}
+ 
+ {Check Driver Data}
+ {if DriverData = nil then Exit;} {DriverData may be nil}
+ 
+ {Initialize Request}
+ Request.Data:=Data;
+ Request.Size:=Size;
+ Request.Callback:=Callback;
+ Request.DriverData:=DriverData;
+ Request.Status:=USB_STATUS_NOT_VALID;
+ Request.ResubmitThread:=INVALID_HANDLE_VALUE; 
+ Request.ResubmitSemaphore:=INVALID_HANDLE_VALUE;
+ 
+ {Check Size and Data}
+ if (Size > 0) and (Data <> nil) then
+  begin
+   {Validate Buffer}
+   if USBBufferValidate(Request.Device,Data,Size,Request.Flags) <> USB_STATUS_SUCCESS then Exit;
+  end
+ else
+  begin
+   Request.Flags:=USB_REQUEST_FLAG_NONE;
+  end;
+   
+ {Return Result}
+ Result:=USB_STATUS_SUCCESS;   
+end;
+
+{==============================================================================}
 //To Do //Remove (Modify SMSC95XX first)
-function USBRequestInitialize(Request:PUSBRequest):LongWord;
+function USBRequestInitializeOld(Request:PUSBRequest):LongWord;
 {Initialize a USB request}
 {Request: The request to be initialized}
 {Return: USB_STATUS_SUCCESS on success or another error code on failure}

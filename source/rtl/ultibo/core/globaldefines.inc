@@ -170,7 +170,7 @@ Global Defines
 
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
 {$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
-{$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
+{--$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
                                 
 {--$DEFINE PL2303_DEBUG}          {Enable debug output/counters for PL2303 driver (Default: Off)}
 

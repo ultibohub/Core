@@ -573,259 +573,514 @@ endif
 OBJPASDIR=$(RTL)/objpas
 GRAPHDIR=$(INC)/graph
 ifeq ($(FULL_TARGET),i386-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-go32v2)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-win32)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-os2)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-freebsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-beos)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-haiku)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-netbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-solaris)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-qnx)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-netware)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-openbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-wdosx)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-darwin)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-emx)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-watcom)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-netwlibc)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-wince)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-symbian)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-nativent)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-iphonesim)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-android)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-aros)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i386-ultibo)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-freebsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-netbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-amiga)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-atari)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-openbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-palmos)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),m68k-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-netbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-amiga)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-macos)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-darwin)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-morphos)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-wii)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc-aix)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),sparc-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),sparc-netbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),sparc-solaris)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),sparc-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-freebsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-netbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-solaris)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-openbsd)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-darwin)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-win64)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-iphonesim)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-aros)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-dragonfly)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),x86_64-ultibo)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-palmos)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-darwin)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-wince)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-gba)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-nds)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-symbian)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-android)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),arm-ultibo)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc64-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc64-darwin)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc64-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),powerpc64-aix)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),avr-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),armeb-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),armeb-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),mips-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),mipsel-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),mipsel-embedded)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),mipsel-android)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),jvm-java)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),jvm-android)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i8086-msdos)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),i8086-win16)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),aarch64-linux)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
 endif
 ifeq ($(FULL_TARGET),aarch64-darwin)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cp1251 cp866 cp8859_5 cp1253 cp8859_1 cp850 cp437 cp1252 cp646 cp874 cp856 cp1250 cp1254 cp1255 cp1256 cp1257 cp1258 cp852 cp8859_2 cpall sysconst $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils math classes fgl macpas typinfo types rtlconsts getopts lineinfo $(ULTIBO_UNITS) $(ULTIBO_CPU_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos ctypes charset cpall sysconst character fpwidestring $(ULTIBO_EXTRAS) $(ULTIBO_CPU_EXTRAS)
+endif
+ifeq ($(FULL_TARGET),i386-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-go32v2)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-win32)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-os2)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-freebsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-beos)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-haiku)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-netbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-solaris)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-qnx)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-netware)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-openbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-wdosx)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-darwin)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-emx)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-watcom)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-netwlibc)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-wince)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-symbian)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-nativent)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-iphonesim)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-android)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-aros)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i386-ultibo)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-freebsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-netbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-amiga)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-atari)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-openbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-palmos)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),m68k-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-netbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-amiga)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-macos)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-darwin)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-morphos)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-wii)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc-aix)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),sparc-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),sparc-netbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),sparc-solaris)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),sparc-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-freebsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-netbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-solaris)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-openbsd)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-darwin)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-win64)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-iphonesim)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-aros)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-dragonfly)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),x86_64-ultibo)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-palmos)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-darwin)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-wince)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-gba)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-nds)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-symbian)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-android)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),arm-ultibo)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc64-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc64-darwin)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc64-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),powerpc64-aix)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),avr-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),armeb-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),armeb-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),mips-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),mipsel-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),mipsel-embedded)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),mipsel-android)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),jvm-java)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),jvm-android)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i8086-msdos)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),i8086-win16)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),aarch64-linux)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
+endif
+ifeq ($(FULL_TARGET),aarch64-darwin)
+override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
 endif
 override INSTALL_FPCPACKAGE=y
 ifeq ($(FULL_TARGET),i386-linux)
@@ -2577,6 +2832,8 @@ fgl$(PPUEXT): $(OBJPASDIR)/fgl.pp objpas$(PPUEXT) types$(PPUEXT) system$(PPUEXT)
 	$(COMPILER) -Sg $(OBJPASDIR)/fgl.pp $(REDIR)
 dateutil$(PPUEXT) : $(OBJPASDIR)/dateutil.pp $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) -I$(OBJPASDIR) $(OBJPASDIR)/dateutil.pp
+character$(PPUEXT): sysutils$(PPUEXT) $(OBJPASDIR)/character.pas objpas$(PPUEXT) rtlconsts$(PPUEXT)
+	$(COMPILER) $(OBJPASDIR)/character.pas
 macpas$(PPUEXT) : $(INC)/macpas.pp objpas$(PPUEXT) math$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $(INC)/macpas.pp $(REDIR)
 ucomplex$(PPUEXT): $(INC)/ucomplex.pp math$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
@@ -2589,50 +2846,14 @@ lineinfo$(PPUEXT) : $(INC)/lineinfo.pp strings$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $(INC)/lineinfo.pp
 charset$(PPUEXT) : $(INC)/charset.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $<
-cp1251$(PPUEXT): $(RTL)/charmaps/cp1251.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1251.pas
-cp866$(PPUEXT): $(RTL)/charmaps/cp866.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp866.pas
-cp8859_5$(PPUEXT): $(RTL)/charmaps/cp8859_5.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp8859_5.pas
-cp1253$(PPUEXT): $(RTL)/charmaps/cp1253.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1253.pas
-cp8859_1$(PPUEXT): $(RTL)/charmaps/cp8859_1.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp8859_1.pas
-cp850$(PPUEXT): $(RTL)/charmaps/cp850.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp850.pas
-cp437$(PPUEXT): $(RTL)/charmaps/cp437.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp437.pas
-cp1252$(PPUEXT): $(RTL)/charmaps/cp1252.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1252.pas
-cp646$(PPUEXT): $(RTL)/charmaps/cp646.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp646.pas
-cp874$(PPUEXT): $(RTL)/charmaps/cp874.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp874.pas
-cp856$(PPUEXT): $(RTL)/charmaps/cp856.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp856.pas
-cp1250$(PPUEXT): $(RTL)/charmaps/cp1250.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1250.pas
-cp1254$(PPUEXT): $(RTL)/charmaps/cp1254.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1254.pas
-cp1255$(PPUEXT): $(RTL)/charmaps/cp1255.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1255.pas
-cp1256$(PPUEXT): $(RTL)/charmaps/cp1256.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1256.pas
-cp1257$(PPUEXT): $(RTL)/charmaps/cp1257.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1257.pas
-cp1258$(PPUEXT): $(RTL)/charmaps/cp1258.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp1258.pas
-cp852$(PPUEXT): $(RTL)/charmaps/cp852.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp852.pas
-cp8859_2$(PPUEXT): $(RTL)/charmaps/cp8859_2.pas system$(PPUEXT) charset$(PPUEXT)
-	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp8859_2.pas
 cpall$(PPUEXT): $(RTL)/charmaps/cpall.pas system$(PPUEXT) charset$(PPUEXT)
 	$(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cpall.pas
 iso7185$(PPUEXT) : $(INC)/iso7185.pp $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $(INC)/iso7185.pp
 extpas$(PPUEXT) : $(INC)/extpas.pp dos$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $(INC)/extpas.pp
+fpwidestring$(PPUEXT): $(OBJPASDIR)/fpwidestring.pp character$(PPUEXT)
+	$(COMPILER) $(OBJPASDIR)/fpwidestring.pp
 define CPU_UNITS_RULE
 $(1)$(PPUEXT): $(ARCH)/$(1).pp $(SYSTEMUNIT)$(PPUEXT)
 endef

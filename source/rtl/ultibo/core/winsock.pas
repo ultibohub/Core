@@ -2879,8 +2879,8 @@ begin
         if pcbRequestInfoLen < SizeOf(TWSAFixedInfo) then Exit;
         WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
         if WSAFixedInfo = nil then Exit;
-        StrLCopy(WSAFixedInfo.HostName,PChar(TIPTransport(Transport).HostName),WSA_MAX_HOSTNAME_LEN);
-        StrLCopy(WSAFixedInfo.DomainName,PChar(TIPTransport(Transport).DomainName),WSA_MAX_DOMAIN_NAME_LEN);
+        StrLCopy(WSAFixedInfo.HostName,PChar(Transport.Manager.Settings.HostName),WSA_MAX_HOSTNAME_LEN);
+        StrLCopy(WSAFixedInfo.DomainName,PChar(Transport.Manager.Settings.DomainName),WSA_MAX_DOMAIN_NAME_LEN);
         WSAFixedInfo.DnsServerList.Next:=nil;
         StrLCopy(WSAFixedInfo.DnsServerList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransport(Transport).Nameservers[0]))),15);
          

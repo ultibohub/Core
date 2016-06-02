@@ -2651,6 +2651,7 @@ begin
    {For OUT endpoints, flush the data to send into the DMA buffer}
    if ((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_DIRECTION) shr 15) = USB_DIRECTION_OUT then
     begin
+     //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
      if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
       begin
        {Flush the data cache}
@@ -2697,6 +2698,7 @@ begin
      {Copy the data to the DMA buffer}
      System.Move(Data^,Host.DMABuffers[Channel]^,((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0));
 
+     //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
      if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
       begin
        {Flush the data cache}
@@ -4643,6 +4645,7 @@ begin
      {Check the DMA compatibility}
      if (Request.Flags and USB_REQUEST_FLAG_COMPATIBLE) = USB_REQUEST_FLAG_COMPATIBLE then
       begin
+       //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
        if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
         begin
          {Invalidate the data cache}
@@ -4659,6 +4662,7 @@ begin
        {Update Statistics}
        Inc(Host.DMABufferReadCount);
        
+       //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
        if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
         begin
          {Invalidate the data cache}

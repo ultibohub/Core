@@ -2677,10 +2677,10 @@ begin
  if ICMP6Initialized then Exit;
 
  {Setup ICMP Protocol}
- if IP6_TRANSPORT_ENABLED then ICMP6_PROTOCOL_ENABLED:=True;
-
+ if NetworkSettings.GetBoolean('IP6_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('ICMP6_PROTOCOL_ENABLED',True);
+ 
  {Create ICMPv6 Protocol}
- if ICMP6_PROTOCOL_ENABLED then
+ if NetworkSettings.GetBooleanDefault('ICMP6_PROTOCOL_ENABLED',ICMP6_PROTOCOL_ENABLED) then 
   begin
    TICMP6Protocol.Create(ProtocolManager,ICMP6_PROTOCOL_NAME);
   end; 

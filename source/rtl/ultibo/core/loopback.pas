@@ -161,8 +161,8 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter:  Name = ' + APacketName);
   {$ENDIF}
  
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
  
   {Get Transport}
   Transport:=TLoopbackAdapterTransport(GetTransportByType(APacketType,AFrameType,False,NETWORK_LOCK_NONE)); {Do not lock}
@@ -209,10 +209,10 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter:  Packet = ' + PacketTypeToString(APacketType));
   {$ENDIF}
- 
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
 
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
+  
   {Get Transport}
   Transport:=TLoopbackAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
@@ -261,9 +261,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter: GetMTU (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
- 
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
  
   {Return Result}
   Result:=MAX_ETHERNET_PACKET - ETHERNET_HEADER_SIZE;
@@ -296,9 +296,9 @@ begin
   
  {Check Packet}
  if APacket = nil then Exit;
- 
- {Check Status}
- if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+ {Check State}
+ if FState = ADAPTER_STATE_DISABLED then Exit;
  
  {Check Thread}
  if FThread = nil then Exit;
@@ -347,9 +347,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter: GetHardwareAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
- 
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
  
   {Return Result}
   Result:=FHardwareAddress;
@@ -370,12 +370,15 @@ begin
   {$IFDEF LOOPBACK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter: StartAdapter (' + Name + ')');
   {$ENDIF}
- 
-  {Check Status} 
-  if FStatus <> ADAPTER_STATUS_UNKNOWN then Exit;
- 
+
+  {Check State}
+  if FState <> ADAPTER_STATE_DISABLED then Exit;
+
+  {Set State}
+  FState:=ADAPTER_STATE_ENABLED;
+  
   {Set Status}
-  FStatus:=ADAPTER_STATUS_READY;
+  FStatus:=ADAPTER_STATUS_UP;
  
   {Set Hardware Address}
   FHardwareAddress:=HARDWARE_LOOPBACK;
@@ -409,8 +412,8 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackAdapter: StopAdapter (' + Name + ')');
   {$ENDIF}
 
-  {Check Status} 
-  if FStatus <> ADAPTER_STATUS_READY then Exit;
+  {Check State}
+  if FState <> ADAPTER_STATE_ENABLED then Exit;
   
   {Check Thread}
   if FThread = nil then Exit;
@@ -437,11 +440,14 @@ begin
     Transport:=TLoopbackAdapterTransport(GetTransportByNext(Current,True,True,NETWORK_LOCK_READ));
     
     {Remove Transport}
-    RemoveTransport(THandle(Transport),Transport.PacketType);
+    RemoveTransport(THandle(Current),Current.PacketType);
    end;
  
+  {Reset State}
+  FState:=ADAPTER_STATE_DISABLED;
+ 
   {Reset Status}
-  FStatus:=ADAPTER_STATUS_UNKNOWN;
+  FStatus:=ADAPTER_STATUS_DOWN;
   
   {Reset Hardware Address}
   FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
@@ -465,8 +471,8 @@ begin
  {}
  Result:=False;
  
- {Check Status}
- if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+ {Check State}
+ if FState = ADAPTER_STATE_DISABLED then Exit;
 
  {Check Thread}
  if FThread = nil then Exit;
@@ -535,9 +541,9 @@ begin
  if LoopbackInitialized then Exit;
 
  {Create Loopback Adapter}
- if LOOPBACK_NETWORK_ENABLED then
+ if NetworkSettings.GetBooleanDefault('LOOPBACK_NETWORK_ENABLED',LOOPBACK_NETWORK_ENABLED) then 
   begin
-   TLoopbackAdapter.Create(AdapterManager,nil,'Loopback Adapter');
+   TLoopbackAdapter.Create(AdapterManager,nil,'Loopback');
   end; 
  
  LoopbackInitialized:=True;

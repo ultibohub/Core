@@ -745,6 +745,191 @@ type
  TMemoryBasicInformation = MEMORY_BASIC_INFORMATION;
  PMemoryBasicInformation = PMEMORY_BASIC_INFORMATION;
  
+type
+ {RGB Color Types}
+ FXPT16DOT16 = Longint;
+ LPFXPT16DOT16 = ^FXPT16DOT16;
+
+ FXPT2DOT30 = Longint;
+ LPFXPT2DOT30 = ^FXPT2DOT30;
+ 
+ PCieXyz = ^TCieXyz;
+ tagCIEXYZ = record
+   ciexyzX: FXPT2DOT30;
+   ciexyzY: FXPT2DOT30;
+   ciexyzZ: FXPT2DOT30;
+ end;
+ CIEXYZ = tagCIEXYZ;
+ LPCIEXYZ = ^CIEXYZ;
+ TCieXyz = CIEXYZ;
+
+ PCieXyzTriple = ^TCieXyzTriple;
+ tagCIEXYZTRIPLE = record
+   ciexyzRed: CIEXYZ;
+   ciexyzGreen: CIEXYZ;
+   ciexyzBlue: CIEXYZ;
+ end;
+ CIEXYZTRIPLE = tagCIEXYZTRIPLE;
+ LPCIEXYZTRIPLE = ^CIEXYZTRIPLE;
+ TCieXyzTriple = CIEXYZTRIPLE;
+ 
+type
+ {Bitmap Types}
+ PBitmap = ^TBitmap;
+ tagBITMAP = record
+   bmType: LONG;
+   bmWidth: LONG;
+   bmHeight: LONG;
+   bmWidthBytes: LONG;
+   bmPlanes: WORD;
+   bmBitsPixel: WORD;
+   bmBits: LPVOID;
+ end;
+ BITMAP = tagBITMAP;
+ LPBITMAP = ^BITMAP;
+ NPBITMAP = ^BITMAP;
+ TBitmap = BITMAP;
+ 
+ PRgbTriple = ^TRgbTriple;
+ tagRGBTRIPLE = packed record
+   rgbtBlue: BYTE;
+   rgbtGreen: BYTE;
+   rgbtRed: BYTE;
+ end;
+ RGBTRIPLE = tagRGBTRIPLE;
+ TRgbTriple = RGBTRIPLE;
+ 
+ PRgbQuad = ^TRgbQuad;
+ tagRGBQUAD = record
+   rgbBlue: BYTE;
+   rgbGreen: BYTE;
+   rgbRed: BYTE;
+   rgbReserved: BYTE;
+ end;
+ RGBQUAD = tagRGBQUAD;
+ LPRGBQUAD = ^RGBQUAD;
+ TRgbQuad = RGBQUAD;
+ 
+type
+ {Bitmap Header Types}
+ PBitmapCoreHeader = ^TBitmapCoreHeader;
+ tagBITMAPCOREHEADER = record
+   bcSize: DWORD;
+   bcWidth: WORD;
+   bcHeight: WORD;
+   bcPlanes: WORD;
+   bcBitCount: WORD;
+ end;
+ BITMAPCOREHEADER = tagBITMAPCOREHEADER;
+ LPBITMAPCOREHEADER = ^BITMAPCOREHEADER;
+ TBitmapCoreHeader = BITMAPCOREHEADER;
+
+ PBitmapInfoHeader = ^TBitmapInfoHeader;
+ tagBITMAPINFOHEADER = record
+   biSize: DWORD;
+   biWidth: LONG;
+   biHeight: LONG;
+   biPlanes: WORD;
+   biBitCount: WORD;
+   biCompression: DWORD;
+   biSizeImage: DWORD;
+   biXPelsPerMeter: LONG;
+   biYPelsPerMeter: LONG;
+   biClrUsed: DWORD;
+   biClrImportant: DWORD;
+ end;
+ BITMAPINFOHEADER = tagBITMAPINFOHEADER;
+ LPBITMAPINFOHEADER = ^BITMAPINFOHEADER;
+ TBitmapInfoHeader = BITMAPINFOHEADER;
+
+ PBitmapV4Header = ^TBitmapV4Header;
+ BITMAPV4HEADER = record
+   bV4Size: DWORD;
+   bV4Width: LONG;
+   bV4Height: LONG;
+   bV4Planes: WORD;
+   bV4BitCount: WORD;
+   bV4V4Compression: DWORD;
+   bV4SizeImage: DWORD;
+   bV4XPelsPerMeter: LONG;
+   bV4YPelsPerMeter: LONG;
+   bV4ClrUsed: DWORD;
+   bV4ClrImportant: DWORD;
+   bV4RedMask: DWORD;
+   bV4GreenMask: DWORD;
+   bV4BlueMask: DWORD;
+   bV4AlphaMask: DWORD;
+   bV4CSType: DWORD;
+   bV4Endpoints: CIEXYZTRIPLE;
+   bV4GammaRed: DWORD;
+   bV4GammaGreen: DWORD;
+   bV4GammaBlue: DWORD;
+ end;
+ LPBITMAPV4HEADER = ^BITMAPV4HEADER;
+ TBitmapV4Header = BITMAPV4HEADER;
+
+ PBitmapV5Header = ^TBitmapV5Header;
+ BITMAPV5HEADER = record
+   bV5Size: DWORD;
+   bV5Width: LONG;
+   bV5Height: LONG;
+   bV5Planes: WORD;
+   bV5BitCount: WORD;
+   bV5Compression: DWORD;
+   bV5SizeImage: DWORD;
+   bV5XPelsPerMeter: LONG;
+   bV5YPelsPerMeter: LONG;
+   bV5ClrUsed: DWORD;
+   bV5ClrImportant: DWORD;
+   bV5RedMask: DWORD;
+   bV5GreenMask: DWORD;
+   bV5BlueMask: DWORD;
+   bV5AlphaMask: DWORD;
+   bV5CSType: DWORD;
+   bV5Endpoints: CIEXYZTRIPLE;
+   bV5GammaRed: DWORD;
+   bV5GammaGreen: DWORD;
+   bV5GammaBlue: DWORD;
+   bV5Intent: DWORD;
+   bV5ProfileData: DWORD;
+   bV5ProfileSize: DWORD;
+   bV5Reserved: DWORD;
+ end;
+ LPBITMAPV5HEADER = ^BITMAPV5HEADER;
+ TBitmapV5Header = BITMAPV5HEADER;
+ 
+type
+ {Bitmap Info Types}
+ PBitmapInfo = ^TBitmapInfo;
+ tagBITMAPINFO = record
+   bmiHeader: BITMAPINFOHEADER;
+   bmiColors: array [0..0] of RGBQUAD;
+ end;
+ BITMAPINFO = tagBITMAPINFO;
+ LPBITMAPINFO = ^BITMAPINFO;
+ TBitmapInfo = BITMAPINFO;
+
+ PBitmapCoreInfo = ^TBitmapCoreInfo;
+ tagBITMAPCOREINFO = record
+   bmciHeader: BITMAPCOREHEADER;
+   bmciColors: array [0..0] of RGBTRIPLE;
+ end;
+ BITMAPCOREINFO = tagBITMAPCOREINFO;
+ LPBITMAPCOREINFO = ^BITMAPCOREINFO;
+ TBitmapCoreInfo = BITMAPCOREINFO;
+ 
+ PBitmapFileHeader = ^TBitmapFileHeader;
+ tagBITMAPFILEHEADER = packed record
+   bfType: WORD;
+   bfSize: DWORD;
+   bfReserved1: WORD;
+   bfReserved2: WORD;
+   bfOffBits: DWORD;
+ end;
+ BITMAPFILEHEADER = tagBITMAPFILEHEADER;
+ LPBITMAPFILEHEADER = ^BITMAPFILEHEADER;
+ TBitmapFileHeader = BITMAPFILEHEADER;
+ 
 {==============================================================================}
 {Compatibility variables}
 {var}

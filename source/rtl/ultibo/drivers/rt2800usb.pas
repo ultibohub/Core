@@ -457,6 +457,7 @@ type
  PRT2800USBRequest = ^TRT2800USBRequest;
  TRT2800USBRequest = record
   Index:LongWord;                     {The index of this request in the receive or transmit requests array}
+  Entry:PNetworkEntry;                {The network queue entry currently allocated to this endpoint}
   Request:PUSBRequest;                {The USB request allocated for this endpoint}
   Endpoint:PUSBEndpointDescriptor;    {The USB endpoint descriptor found during bind for this endpoint}
  end;
@@ -467,17 +468,14 @@ type
   {RT2X00 Properties}
   RT2X00:TRT2X00WiFiDevice;
   {USB Properties}
-  ReceiveMask:LongWord;                                                   {Bit mask of Receive requests}
-  ReceiveFree:LongWord;                                                   {Map of free Receive requests}
-  ReceiveRequests:array of PRT2800USBRequest;                             {Receive requests, 1 per Bulk IN Endpoint}
-  TransmitMask:LongWord;                                                  {Bit mask of Transmit requests}
-  TransmitFree:LongWord;                                                  {Map of free Transmit requests}
-  TransmitRequests:array of PRT2800USBRequest;                            {Transmit requests, 1 per Bulk OUT Endpoint}
-  //To Do
-  ReceiveEndpoint:PUSBEndpointDescriptor;                                 {Bulk IN Endpoint} //To Do //Remove //Now ReceiveRequests
-  TransmitEndpoint:PUSBEndpointDescriptor;                                {Bulk OUT Endpoint} //To Do //Remove //Now TransmitRequests
-  PendingCount:LongWord;                                                  {Number of USB requests pending for this network}
-  WaiterThread:TThreadId;                                                 {Thread waiting for pending requests to complete (for network close)}
+  ReceiveMask:LongWord;                          {Bit mask of Receive requests}
+  ReceiveFree:LongWord;                          {Map of free Receive requests}
+  ReceiveRequests:array of PRT2800USBRequest;    {Receive requests, 1 per Bulk IN Endpoint}
+  TransmitMask:LongWord;                         {Bit mask of Transmit requests}
+  TransmitFree:LongWord;                         {Map of free Transmit requests}
+  TransmitRequests:array of PRT2800USBRequest;   {Transmit requests, 1 per Bulk OUT Endpoint}
+  PendingCount:LongWord;                         {Number of USB requests pending for this network}
+  WaiterThread:TThreadId;                        {Thread waiting for pending requests to complete (for network close)}
  end;
  
 {==============================================================================}
@@ -496,8 +494,6 @@ procedure RT2800USBInit;
 {RT2800USB Network Functions}
 function RT2800USBDeviceOpen(Network:PNetworkDevice):LongWord;
 function RT2800USBDeviceClose(Network:PNetworkDevice):LongWord;
-function RT2800USBDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
-function RT2800USBDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function RT2800USBDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 
 function RT2800USBBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
@@ -549,6 +545,8 @@ function RT2800USBDetectAutorun(RT2X00:PRT2X00WiFiDevice):LongWord;
 
 function RT2800USBEnableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
 function RT2800USBDisableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2800USBReceiveProcessRXD(RT2X00:PRT2X00WiFiDevice;Descriptor:PRT2X00RXDescriptor;var Data:Pointer;var Size:LongWord;PacketLength:LongWord):Boolean;
 
 {==============================================================================}
 {==============================================================================}
@@ -1655,7 +1653,6 @@ var
  Count:LongWord;
  Status:LongWord;
  Device:PUSBDevice;
- Request:PUSBRequest;
  Entry:PNetworkEntry;
 begin
  {}
@@ -1670,7 +1667,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device Open');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Device Open');
  {$ENDIF}
  
  {Acquire the Lock}
@@ -1684,6 +1681,8 @@ begin
     {Set Result}
     Result:=ERROR_OPERATION_FAILED;
  
+    //To Do //Set State to OPENING ? //Need to return to closed on fail as well
+    
     {Load Firmware}
     Status:=RT2X00LoadFirmware(PRT2X00WiFiDevice(Network));
     if Status <> ERROR_SUCCESS then
@@ -1707,7 +1706,7 @@ begin
      
     try 
      {Allocate Receive Queue Buffer}
-     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),RT2800USB_MAX_RX_ENTRIES);
+     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211RXStatus),RT2800USB_MAX_RX_ENTRIES);
      if Network.ReceiveQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to create receive queue buffer');
@@ -1726,12 +1725,12 @@ begin
        Exit;
       end;
        
-     {Initialize Receive Queue Buffers}
+     {Allocate Receive Queue Buffers}
      Entry:=BufferIterate(Network.ReceiveQueue.Buffer,nil);
      while Entry <> nil do
       begin
        {Initialize Entry}
-       Entry.Size:=SIZE_4K; //To Do //Size per buffer //See drivers
+       Entry.Size:=RT2X00GetRXBufferSize(PRT2X00WiFiDevice(Network));
        Entry.Offset:=0;     //To Do //Offset //See drivers
        Entry.Count:=1;
        
@@ -1747,7 +1746,12 @@ begin
        
        {Initialize Packets}
        SetLength(Entry.Packets,Entry.Count);
-      
+       
+       {Initialize Packet}
+       Entry.Packets[0].Buffer:=Entry.Buffer;
+       Entry.Packets[0].Data:=Entry.Buffer + Entry.Offset;
+       Entry.Packets[0].Length:=Entry.Size - Entry.Offset;
+       
        Entry:=BufferIterate(Network.ReceiveQueue.Buffer,Entry);
       end;
      
@@ -1755,7 +1759,7 @@ begin
      SetLength(Network.ReceiveQueue.Entries,RT2800USB_MAX_RX_ENTRIES);
      
      {Allocate Transmit Queue Buffer}
-     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),RT2800USB_MAX_TX_ENTRIES);
+     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211TXInfo),RT2800USB_MAX_TX_ENTRIES);
      if Network.TransmitQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to create transmit queue buffer');
@@ -1786,13 +1790,18 @@ begin
        {Initialize Packets}
        SetLength(Entry.Packets,Entry.Count);
       
+       {Initialize Packet}
+       Entry.Packets[0].Buffer:=Entry.Buffer;
+       Entry.Packets[0].Data:=Entry.Buffer + Entry.Offset;
+       Entry.Packets[0].Length:=Entry.Size - Entry.Offset;
+       
        Entry:=BufferIterate(Network.TransmitQueue.Buffer,Entry);
       end;
      
      {Allocate Receive Requests}
      for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
       begin
-       PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request:=USBRequestAllocate(Device,PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Endpoint,RT2800USBReceiveComplete,0,Network);
+       PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request:=USBRequestAllocate(Device,PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Endpoint,RT2800USBReceiveComplete,0,PRT2800USBWiFiDevice(Network).ReceiveRequests[Count]);
        if PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request = nil then
         begin
          if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to allocate USB receive request');
@@ -1805,7 +1814,7 @@ begin
      {Allocate Transmit Requests}
      for Count:=0 to Length(PRT2800USBWiFiDevice(Network).TransmitRequests) - 1 do
       begin
-       PRT2800USBWiFiDevice(Network).TransmitRequests[Count].Request:=USBRequestAllocate(Device,PRT2800USBWiFiDevice(Network).TransmitRequests[Count].Endpoint,RT2800USBTransmitComplete,0,Network);
+       PRT2800USBWiFiDevice(Network).TransmitRequests[Count].Request:=USBRequestAllocate(Device,PRT2800USBWiFiDevice(Network).TransmitRequests[Count].Endpoint,RT2800USBTransmitComplete,0,PRT2800USBWiFiDevice(Network).TransmitRequests[Count]);
        if PRT2800USBWiFiDevice(Network).TransmitRequests[Count].Request = nil then
         begin
          if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to allocate USB transmit request');
@@ -1818,61 +1827,60 @@ begin
      {Submit Receive Requests}
      for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
       begin
-       {Update Pending}
-       Inc(PRT2800USBWiFiDevice(Network).PendingCount);
-     
-       //TO Do //BufferGet(Network.ReceiveQueue.Buffer)
-       
-       //To Do //USBRequestFill //Or redo USBRequestInitialize for this, same params as USBRequestAllocateEx ?
-       
-       {Submit Request}
-       Status:=USBRequestSubmit(Request);
-       if Status <> USB_STATUS_SUCCESS then
+       {Get Entry}
+       Entry:=BufferGet(Network.ReceiveQueue.Buffer);
+       if Entry <> nil then
         begin
-         if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to submit USB receive request: ' + USBStatusToString(Status));
-       
          {Update Pending}
-         Dec(PRT2800USBWiFiDevice(Network).PendingCount);
+         Inc(PRT2800USBWiFiDevice(Network).PendingCount);
          
-         //To Do //What to do here, can we cancel the other requests ? //Can't wait on the waiter thread notification, device is not detaching ?
-                 //Possibly just don't exit, allow the process to proceed unless Count = 0 ? //Yes
+         {Update Free}
+         PRT2800USBWiFiDevice(Network).ReceiveFree:=PRT2800USBWiFiDevice(Network).ReceiveFree xor (1 shl Count);
          
-         Result:=ERROR_OPERATION_FAILED;
-         Exit;
+         {Update Entry}
+         Entry.DriverData:=Network;
+         
+         {Update Request}
+         PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Entry:=Entry;
+         
+         {Reinitialize Request}
+         USBRequestInitialize(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request,RT2800USBReceiveComplete,Entry.Buffer,Entry.Size,PRT2800USBWiFiDevice(Network).ReceiveRequests[Count]);
+         
+         {Submit Request}
+         Status:=USBRequestSubmit(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request);
+         if Status <> USB_STATUS_SUCCESS then
+          begin
+           if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to submit USB receive request: ' + USBStatusToString(Status));
+         
+           {Update Pending}
+           Dec(PRT2800USBWiFiDevice(Network).PendingCount);
+           
+           {Update Free}
+           PRT2800USBWiFiDevice(Network).ReceiveFree:=PRT2800USBWiFiDevice(Network).ReceiveFree or (1 shl Count);
+           
+           {Update Entry}
+           Entry.DriverData:=nil;
+           
+           {Update Request}
+           PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Entry:=nil;
+           
+           {Free Entry}
+           BufferFree(Entry);
+          end;
         end;
-       if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Submitted receive request'); //To Do //Testing only
       end;
      
+     {Check Pending Count}
+     if PRT2800USBWiFiDevice(Network).PendingCount = 0 then
+      begin
+       Result:=ERROR_OPERATION_FAILED;
+       Exit;
+      end;
      
      
      /////////////////////////////////////////////////////////////////////////////////////////////////
      
-     {Allocate Receive Request} //To Do //Testing only
-     Request:=USBRequestAllocate(Device,PRT2800USBWiFiDevice(Network).ReceiveEndpoint,RT2800USBReceiveComplete,SIZE_8K,Network);  //SIZE_2K * 12 //To Do
-     if Request = nil then
-      begin
-       if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to allocate receive request');
-       Exit;
-      end;
-      
-     {Update Pending}
-     Inc(PRT2800USBWiFiDevice(Network).PendingCount);
-     
-     {Submit Request} //To Do //Testing only
-     Status:=USBRequestSubmit(Request);
-     if Status <> USB_STATUS_SUCCESS then
-      begin
-       if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to submit receive request: ' + USBStatusToString(Status));
-     
-       {Update Pending}
-       Dec(PRT2800USBWiFiDevice(Network).PendingCount);
-      
-       Exit;
-      end;
-     if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Submitted receive request'); //To Do //Testing only
-     
-     
-     //TO Do //Continuing
+     //To Do //Continuing
      //DoBulkIn //F:\Download\Ralink\DPO_RT5572_LinuxSTA_2.6.1.3_20121022\common\rtusb_bulk.c
      //RTUSBInitRxDesc
      //RTUSBBulkReceive
@@ -1884,8 +1892,6 @@ begin
      //To Do //rt2x00lib_enable_radio //Enable/Start Queues //Start watchdog monitoring
      
      /////////////////////////////////////////////////////////////////////////////////////////////////
-     
-     
      
      {Set State to Open}
      Network.NetworkState:=NETWORK_STATE_OPEN;
@@ -1908,6 +1914,7 @@ begin
        {Release Receive Requests}
        for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
         begin
+         //To Do //Cancel the request first ?
          USBRequestRelease(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request);
         end;
        
@@ -1949,10 +1956,8 @@ begin
        {Destroy Receive Queue Buffer}
        BufferDestroy(Network.ReceiveQueue.Buffer);
        
-       
-       
+       {Disable Radio}
        //To Do 
-       
       end;
     end;    
    finally
@@ -1985,7 +1990,7 @@ begin
  if Device = nil then Exit;
  
  {$IFDEF RT2800USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device Close');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Device Close');
  {$ENDIF}
  
  {Check State}
@@ -1996,56 +2001,24 @@ begin
  Result:=ERROR_OPERATION_FAILED;
  if NetworkDeviceSetState(Network,NETWORK_STATE_CLOSING) <> ERROR_SUCCESS then Exit;
 
- //To Do //rt2x00lib_stop
-end;
+ {Acquire the Lock}
+ if MutexLock(Network.Lock) = ERROR_SUCCESS then
+  begin
+   try
  
-{==============================================================================}
-
-function RT2800USBDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
-{Implementation of NetworkDeviceRead for the RT2800USB device}
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Setup Length}
- Length:=0;
- 
- {Check Network}
- if Network = nil then Exit;
- if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
- {Check Buffer}
- if Buffer = nil then Exit;
-
- {Check Size}
- if Size = 0 then Exit;
- 
- {Check State}
- Result:=ERROR_NOT_READY;
- if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
-
- //To Do
-end;
- 
-{==============================================================================}
-
-function RT2800USBDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
-{Implementation of NetworkDeviceWrite for the RT2800USB device}
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Setup Length}
- Length:=0;
- 
- {Check Network}
- if Network = nil then Exit;
- if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
- {Check Buffer}
- if Buffer = nil then Exit;
-
- //To Do
+    //To Do //rt2x00lib_stop
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(Network.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end;
  
 {==============================================================================}
@@ -2066,7 +2039,28 @@ begin
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
 
- //To Do
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Device Control');
+ {$ENDIF}
+ 
+ {Acquire the Lock}
+ if MutexLock(Network.Lock) = ERROR_SUCCESS then
+  begin
+   try
+ 
+    //To Do
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(Network.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end;
  
 {==============================================================================}
@@ -2077,11 +2071,32 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
 
+ {Setup Entry}
+ Entry:=nil;
+ 
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
- //To Do
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Allocate');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ {Set Result}
+ Result:=ERROR_OPERATION_FAILED;
+
+ {Wait for Entry}
+ Entry:=BufferGet(Network.TransmitQueue.Buffer);
+ if Entry <> nil then
+  begin
+   //To Do //Continuing //Update Packet ?
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
@@ -2092,11 +2107,36 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
 
+ {Check Entry}
+ if Entry = nil then Exit;
+ 
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
- //To Do
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Release');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(Network.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Free Entry}
+    Result:=BufferFree(Entry);
+   finally
+    {Release the Lock}
+    MutexUnlock(Network.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end;
 
 {==============================================================================}
@@ -2107,26 +2147,97 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
 
+ {Setup Entry}
+ Entry:=nil;
+ 
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
- //To Do
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Receive');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ {Wait for Entry}
+ if SemaphoreWait(Network.ReceiveQueue.Wait) = ERROR_SUCCESS then
+  begin
+   {Acquire the Lock}
+   if MutexLock(Network.Lock) = ERROR_SUCCESS then
+    begin
+     try
+      {Remove Entry}
+      Entry:=Network.ReceiveQueue.Entries[Network.ReceiveQueue.Start];
+      
+      {Update Start}
+      Network.ReceiveQueue.Start:=(Network.ReceiveQueue.Start + 1) mod RT2800USB_MAX_RX_ENTRIES;
+      
+      {Update Count}
+      Dec(Network.ReceiveQueue.Count);
+      
+      {Return Result}
+      Result:=ERROR_SUCCESS;
+     finally
+      {Release the Lock}
+      MutexUnlock(Network.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;  
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end;
 
 {==============================================================================}
 
 function RT2800USBBufferTransmit(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
- {Implementation of NetworkBufferTransmit for the RT2800USB device}
+{Implementation of NetworkBufferTransmit for the RT2800USB device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
 
+ {Check Entry}
+ if Entry = nil then Exit;
+ 
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
- //To Do
+ {$IFDEF RT2800USB_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Transmit');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(Network.Lock) = ERROR_SUCCESS then
+  begin
+   try
+ 
+    //To Do //Continuing //Use the TransmitQueue ? and Wait for completion ?
+                         //Need to check empty and do Submit ?
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(Network.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
 end;
 
 {==============================================================================}
@@ -2452,21 +2563,20 @@ begin
  {Device}
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceBus:=DEVICE_BUS_USB;
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceType:=NETWORK_TYPE_80211;
- RT2800USB.RT2X00.WiFi.Network.Device.DeviceFlags:=NETWORK_FLAG_NONE;     
+ RT2800USB.RT2X00.WiFi.Network.Device.DeviceFlags:=NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER;     
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceData:=Device;
  {Network}
  RT2800USB.RT2X00.WiFi.Network.NetworkState:=NETWORK_STATE_CLOSED;
  RT2800USB.RT2X00.WiFi.Network.NetworkStatus:=NETWORK_STATUS_DOWN;
  RT2800USB.RT2X00.WiFi.Network.DeviceOpen:=RT2800USBDeviceOpen;
  RT2800USB.RT2X00.WiFi.Network.DeviceClose:=RT2800USBDeviceClose;
- RT2800USB.RT2X00.WiFi.Network.DeviceRead:=RT2800USBDeviceRead;
- RT2800USB.RT2X00.WiFi.Network.DeviceWrite:=RT2800USBDeviceWrite;
  RT2800USB.RT2X00.WiFi.Network.DeviceControl:=RT2800USBDeviceControl;
  RT2800USB.RT2X00.WiFi.Network.BufferAllocate:=RT2800USBBufferAllocate;
  RT2800USB.RT2X00.WiFi.Network.BufferRelease:=RT2800USBBufferRelease;
  RT2800USB.RT2X00.WiFi.Network.BufferReceive:=RT2800USBBufferReceive;
  RT2800USB.RT2X00.WiFi.Network.BufferTransmit:=RT2800USBBufferTransmit;
  {WiFi}
+ //To Do //State/Status/Flags etc
  RT2800USB.RT2X00.WiFi.DeviceConfigure:=RT2800USBDeviceConfigure;
  RT2800USB.RT2X00.WiFi.DeviceConfigureFilter:=RT2800USBDeviceConfigureFilter;
  RT2800USB.RT2X00.WiFi.DeviceConfigureInterface:=RT2800USBDeviceConfigureInterface;
@@ -2505,10 +2615,7 @@ begin
  {USB}
  SetLength(RT2800USB.ReceiveRequests,USBDeviceCountEndpointsByType(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_BULK));
  SetLength(RT2800USB.TransmitRequests,USBDeviceCountEndpointsByType(Device,NetworkInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK));
- RT2800USB.ReceiveEndpoint:=ReceiveEndpoint;
- RT2800USB.TransmitEndpoint:=TransmitEndpoint; 
  RT2800USB.WaiterThread:=INVALID_HANDLE_VALUE;
- //To Do
 
  try
   {Create Data}
@@ -2581,7 +2688,10 @@ begin
     RT2800USB.ReceiveRequests[Count].Index:=Count;
     RT2800USB.ReceiveRequests[Count].Endpoint:=USBDeviceFindEndpointByTypeEx(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_BULK,Index);
     {Note: USB Request allocated by DeviceOpen}
+    {      Network Entry set by Receive (Submit)}
+    RT2800USB.ReceiveMask:=RT2800USB.ReceiveMask or (1 shl Count);
    end;
+  RT2800USB.ReceiveFree:=RT2800USB.ReceiveMask;
   
   {Create Transmit Requests / Assign OUT Endpoints}
   Index:=0;
@@ -2600,7 +2710,10 @@ begin
     RT2800USB.TransmitRequests[Count].Index:=Count;
     RT2800USB.TransmitRequests[Count].Endpoint:=USBDeviceFindEndpointByTypeEx(Device,NetworkInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK,Index);
     {Note: USB Request allocated by DeviceOpen}
+    {      Network Entry set by Transmit (Submit)}
+    RT2800USB.TransmitMask:=RT2800USB.TransmitMask or (1 shl Count);
    end;
+  RT2800USB.TransmitFree:=RT2800USB.TransmitMask;
   
   {Initialize Driver}
   if RT2X00DriverInit(@RT2800USB.RT2X00) <> ERROR_SUCCESS then
@@ -2744,156 +2857,356 @@ procedure RT2800USBReceiveWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request from the RT2800USB bulk IN endpoint}
 {Request: The USB request which has completed}
 var
- RXD:Pointer;
  Data:Pointer;
  Size:LongWord;
  RXINFO:Pointer;
  Value:LongWord;
  Status:LongWord;
  Message:TMessage;
+ RateIndex:LongWord;
  PacketLength:LongWord;
+ HeaderLength:LongWord;
+ Next:PNetworkEntry;
+ Entry:PNetworkEntry;
+ RXStatus:PIEEE80211RXStatus;
+ Descriptor:TRT2X00RXDescriptor;
  RT2800USB:PRT2800USBWiFiDevice;
+ RT2800USBRequest:PRT2800USBRequest;
 begin
  {}
  {Check Request}
  if Request = nil then Exit;
  
- {Get WiFi}
- RT2800USB:=PRT2800USBWiFiDevice(Request.DriverData);
- if RT2800USB <> nil then 
+ {Get Request}
+ RT2800USBRequest:=PRT2800USBRequest(Request.DriverData);
+ if (RT2800USBRequest <> nil) and (RT2800USBRequest.Request = Request) then
   begin
-   {Acquire the Lock}
-   if MutexLock(RT2800USB.RT2X00.WiFi.Network.Lock) = ERROR_SUCCESS then
+   {Get Entry}
+   Entry:=RT2800USBRequest.Entry;
+   if Entry <> nil then
     begin
-     try
-      {Update Statistics}
-      Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveCount); 
- 
-      {Check State}
-      if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
-       begin
-        {$IFDEF RT2800USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
-        {$ENDIF}
-      
-        {Update Request}
-        Request.Status:=USB_STATUS_DEVICE_DETACHED;
-       end;
- 
-      {Check Result} 
-      if Request.Status = USB_STATUS_SUCCESS then
-       begin
-        {$IFDEF RT2800USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Receive complete (Actual Size=' + IntToStr(Request.ActualSize) + ')');
-        {$ENDIF}
-        {RX frame format is :  | RXINFO | RXWI | header | L2 pad | payload | pad | RXD | USB pad |
-                                        |<----------- PacketLength ------------->|                  }
-        {Get Data and Size}
-        Data:=Request.Data;
-        Size:=Request.Size;
-        
-        {Get RXINFO}
-        RXINFO:=Data;
-        Value:=RT2X00ReadDescriptor(RXINFO,0);
-        {$IFDEF RT2800USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (RXINFO Value=' + IntToHex(Value,8) + ')');
-        {$ENDIF}
-        
-        {Get Packet Length}
-        PacketLength:=RT2X00GetRegister32(Value,RT2800USB_RXINFO_W0_USB_DMA_RX_PKT_LEN,0);
-        {$IFDEF RT2800USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (PacketLength=' + IntToStr(PacketLength) + ')');
-        {$ENDIF}
-        
-        {Check Packet Length}
-        if (PacketLength > 0) and (PacketLength < Size) then
-         begin
-          {Update Data and Size}
-          Inc(Data,RT2800USB_RXINFO_DESC_SIZE);
-          Dec(Size,RT2800USB_RXINFO_DESC_SIZE);
-          
-          {Get RXD}
-          RXD:=Data + PacketLength;
-          Value:=RT2X00ReadDescriptor(RXD,0);
-          {$IFDEF RT2800USB_DEBUG}
-          if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (RXD Value=' + IntToHex(Value,8) + ')');
-          {$ENDIF}
-          
-          {Update Data and Size}
-          
-          //To Do //
-         end
-        else
-         begin
-          if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive error (PacketLength=' + IntToStr(PacketLength) + ')');
-
+     {Get WiFi}
+     RT2800USB:=PRT2800USBWiFiDevice(Entry.DriverData);
+     if RT2800USB <> nil then 
+      begin
+       {Acquire the Lock}
+       if MutexLock(RT2800USB.RT2X00.WiFi.Network.Lock) = ERROR_SUCCESS then
+        begin
+         try
           {Update Statistics}
-          Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
-         end;         
-       end
-      else 
-       begin
-        if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed receive request (Status=' + USBStatusToString(Request.Status) + ')');
-   
-        {Update Statistics}
-        Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
-       end;
- 
-      {Update Pending}
-      Dec(RT2800USB.PendingCount); 
-        
-      {Check State}
-      if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
-       begin
-        {Check Pending}
-        if RT2800USB.PendingCount = 0 then
-         begin
-          {Check Waiter}
-          if RT2800USB.WaiterThread <> INVALID_HANDLE_VALUE then
+          Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveCount); 
+     
+          {Check State}
+          if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
            begin
             {$IFDEF RT2800USB_DEBUG}
-            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, sending message to waiter thread (Thread=' + IntToHex(RT2800USB.WaiterThread,8) + ')');
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
+            {$ENDIF}
+          
+            {Update Request}
+            Request.Status:=USB_STATUS_DEVICE_DETACHED;
+           end;
+     
+          {Check Result} 
+          if Request.Status = USB_STATUS_SUCCESS then
+           begin
+            {$IFDEF RT2800USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Receive complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
+            {$ENDIF}
+            {RX frame format is :  | RXINFO | RXWI | header | L2 pad | payload | pad | RXD | USB pad |
+                                            |<----------- PacketLength ------------->|                  }
+            {Get Data and Size}
+            Data:=Request.Data;
+            Size:=Request.ActualSize;
+            
+            {Get RXINFO}
+            RXINFO:=Data;
+            Value:=RT2X00ReadDescriptor(RXINFO,0);
+            
+            {$IFDEF RT2800USB_DEBUG}
+            //if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (RXINFO Value=' + IntToHex(Value,8) + ')'); //To Do
             {$ENDIF}
             
-            {Send Message}
-            FillChar(Message,SizeOf(TMessage),0);
-            ThreadSendMessage(RT2800USB.WaiterThread,Message);
-            RT2800USB.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
-         end;
-       end
-      else
-       begin      
-        {Update Pending}
-        Inc(RT2800USB.PendingCount);
- 
-        {$IFDEF RT2800USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Resubmitting receive request');
-        {$ENDIF}
-
-        {Resubmit Request}
-        Status:=USBRequestSubmit(Request);
-        if Status <> USB_STATUS_SUCCESS then
-         begin
-          if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed to resubmit receive request: ' + USBStatusToString(Status));
-   
+            {Get Packet Length}
+            PacketLength:=RT2X00GetRegister32(Value,RT2800USB_RXINFO_W0_USB_DMA_RX_PKT_LEN,0);
+            
+            {$IFDEF RT2800USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (PacketLength=' + IntToStr(PacketLength) + ')');
+            {$ENDIF}
+            
+            {Check Packet Length}
+            if (PacketLength > 0) and (PacketLength <= RT2X00_AGGREGATION_SIZE) then
+             begin
+              {Update Data and Size (Remove the RXINFO from start of buffer)}
+              Inc(Data,RT2800USB_RXINFO_DESC_SIZE);
+              Dec(Size,RT2800USB_RXINFO_DESC_SIZE);
+              
+              {Get Next}
+              Next:=nil;
+              if BufferAvailable(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Buffer) > 0 then
+               begin
+                Next:=BufferGet(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Buffer);
+               end;
+               
+              {Check Next} 
+              if Next <> nil then
+               begin
+                if RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count < RT2800USB_MAX_RX_ENTRIES then
+                 begin
+                  {Setup Descriptor}
+                  FillChar(Descriptor,SizeOf(TRT2X00RXDescriptor),0);
+                  
+                  {Process RXD}
+                  RT2800USBReceiveProcessRXD(@RT2800USB.RT2X00,@Descriptor,Data,Size,PacketLength);
+                  
+                  {Process RXWI}
+                  RT2800ReceiveProcessRXWI(@RT2800USB.RT2X00,@Descriptor,Data,Size);
+                  
+                  {$IFDEF RT2800USB_DEBUG}
+                  if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (Descriptor.Size=' + IntToStr(Descriptor.Size) + ')');
+                  {$ENDIF}
+                  
+                  {Check Descriptor Size}
+                  if (Descriptor.Size > 0) and (Descriptor.Size <= RT2X00_AGGREGATION_SIZE) then
+                   begin
+                    {The data behind the IEEE80211 header must be aligned on a 4 byte boundary}
+                    HeaderLength:=IEEE80211HeaderLengthFromBuffer(Data,Size);
+                    
+                    {$IFDEF RT2800USB_DEBUG}
+                    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (HeaderLength=' + IntToStr(HeaderLength) + ')');
+                    {$ENDIF}
+                    
+                    {Hardware might have stripped the IV/EIV/ICV data, it is possible that the data was provided
+                     separately (through hardware descriptor) in which case we should reinsert the data into the frame}
+                    if ((Descriptor.RXFlags and RT2X00_RXDONE_CRYPTO_IV) <> 0) and ((Descriptor.Flags and WIFI_RX_FLAG_IV_STRIPPED) <> 0) then
+                     begin
+                      RT2X00ReceiveInsertIV(@Descriptor,Data,Size,HeaderLength);
+                     end
+                    else if (HeaderLength <> 0) and (Descriptor.Size > HeaderLength) and ((Descriptor.RXFlags and RT2X00_RXDONE_L2PAD) <> 0) then
+                     begin
+                      RT2X00RemoveL2PAD(Data,Size,HeaderLength);
+                     end;
+                    
+                    {Update Size (Actual size from descriptor)}
+                    Size:=Descriptor.Size;
+                    
+                    {Translate the signal to the correct bitrate index}
+                    RateIndex:=RT2X00ReceiveReadSignal(@RT2800USB.RT2X00,@Descriptor);
+                    if (Descriptor.RateMode = RT2X00_RATE_MODE_HT_MIX) or (Descriptor.RateMode = RT2X00_RATE_MODE_HT_GREENFIELD) then
+                     begin
+                      Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_HT;
+                     end;
+                    
+                    //To Do //Continuing //rt2x00lib_rxdone_check_ps
+                    
+                    //To Do //Continuing //rt2x00lib_rxdone_check_ba
+                    
+                    {Update extra components}
+                    //To Do //Continuing //rt2x00link_update_stats
+                    //To Do //Continuing //rt2x00debug_update_crypto
+                    //To Do //Continuing //rt2x00debug_dump_frame
+                    
+                    {Setup RX Status}
+                    RXStatus:=PIEEE80211RXStatus(PtrUInt(Entry) + SizeOf(TNetworkEntry));
+                    FillChar(RXStatus^,SizeOf(TIEEE80211RXStatus),0);
+                    
+                    {Update RX Status}
+                    RXStatus.MACTime:=Descriptor.Timestamp;
+                    RXStatus.Band:=RT2800USB.RT2X00.CurrentBand;
+                    RXStatus.Frequency:=RT2800USB.RT2X00.CurrentFrequency;
+                    RXStatus.RateIndex:=RateIndex;
+                    RXStatus.Signal:=Descriptor.RSSI;
+                    RXStatus.Flags:=Descriptor.Flags;
+                    RXStatus.Antenna:=RT2800USB.RT2X00.Link.Antenna.ActiveAntenna.RX;
+                 
+                    {Update Packet}
+                    Entry.Packets[0].Buffer:=Entry.Buffer;
+                    Entry.Packets[0].Data:=Data;
+                    Entry.Packets[0].Length:=Size;
+                    
+                    {Update Entry}
+                    Entry.DriverData:=RXStatus;
+                    
+                    {Add Entry}
+                    RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Entries[(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Start + RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count) mod RT2800USB_MAX_RX_ENTRIES]:=Entry;
+                    
+                    {Update Count}
+                    Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count);
+                    
+                    {Signal Packet Received}
+                    SemaphoreSignal(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Wait);
+                    
+                    {$IFDEF RT2800USB_DEBUG}
+                    //if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (Queue Count=' + IntToStr(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count) + ')'); //To Do
+                    {$ENDIF}
+                   end
+                  else
+                   begin
+                    if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive error (Descriptor.Size=' + IntToStr(Descriptor.Size) + ')');
+                   
+                    {Free Entry}
+                    BufferFree(Entry);
+                    
+                    {Update Statistics}
+                    Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
+                   end;
+                 end
+                else
+                 begin
+                  if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive queue overrun, packet discarded');
+                  
+                  {Free Entry}
+                  BufferFree(Entry);
+                  
+                  {Update Statistics}
+                  Inc(RT2800USB.RT2X00.WiFi.Network.BufferOverruns); 
+                 end;
+               end
+              else
+               begin
+                if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: No receive buffer available, packet discarded');
+                
+                {Get Next}
+                Next:=Entry;
+                
+                {Update Statistics}
+                Inc(RT2800USB.RT2X00.WiFi.Network.BufferUnavailable); 
+               end;
+             end
+            else
+             begin
+              if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive error (PacketLength=' + IntToStr(PacketLength) + ')');
+    
+              {Get Next}
+              Next:=Entry;
+    
+              {Update Statistics}
+              Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
+             end;         
+           end
+          else 
+           begin
+            if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed receive request (Status=' + USBStatusToString(Request.Status) + ')');
+       
+            {Get Next}
+            Next:=Entry;
+            
+            {Update Statistics}
+            Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
+           end;
+     
           {Update Pending}
-          Dec(RT2800USB.PendingCount);
+          Dec(RT2800USB.PendingCount); 
+          
+          {Update Free}
+          RT2800USB.ReceiveFree:=RT2800USB.ReceiveFree or (1 shl RT2800USBRequest.Index);
+          
+          {Update Next}
+          Next.DriverData:=nil;
+          
+          {Update Request}
+          RT2800USBRequest.Entry:=nil;
+          
+          {Check State}
+          if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
+           begin
+            {Free Next}
+            BufferFree(Next);
+            
+            {Check Pending}
+            if RT2800USB.PendingCount = 0 then
+             begin
+              {Check Waiter}
+              if RT2800USB.WaiterThread <> INVALID_HANDLE_VALUE then
+               begin
+                {$IFDEF RT2800USB_DEBUG}
+                if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, sending message to waiter thread (Thread=' + IntToHex(RT2800USB.WaiterThread,8) + ')');
+                {$ENDIF}
+                
+                {Send Message}
+                FillChar(Message,SizeOf(TMessage),0);
+                ThreadSendMessage(RT2800USB.WaiterThread,Message);
+                RT2800USB.WaiterThread:=INVALID_HANDLE_VALUE;
+               end; 
+             end;
+           end
+          else
+           begin
+            {Check Next} 
+            if Next <> nil then
+             begin
+              {Update Pending}
+              Inc(RT2800USB.PendingCount);
+              
+              {Update Free}
+              RT2800USB.ReceiveFree:=RT2800USB.ReceiveFree xor (1 shl RT2800USBRequest.Index);
+              
+              {Update Next}
+              Next.DriverData:=RT2800USB;
+              
+              {Update Request}
+              RT2800USBRequest.Entry:=Next;
+              
+              {Reinitialize Request}
+              USBRequestInitialize(RT2800USBRequest.Request,RT2800USBReceiveComplete,Next.Buffer,Next.Size,RT2800USBRequest);
+              
+              {$IFDEF RT2800USB_DEBUG}
+              if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Resubmitting receive request');
+              {$ENDIF}
+              
+              {Resubmit Request}
+              Status:=USBRequestSubmit(RT2800USBRequest.Request);
+              if Status <> USB_STATUS_SUCCESS then
+               begin
+                if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed to resubmit receive request: ' + USBStatusToString(Status));
+              
+                {Update Pending}
+                Dec(RT2800USB.PendingCount);
+                
+                {Update Free}
+                RT2800USB.ReceiveFree:=RT2800USB.ReceiveFree or (1 shl RT2800USBRequest.Index);
+                
+                {Update Next}
+                Next.DriverData:=nil;
+                
+                {Update Request}
+                RT2800USBRequest.Entry:=nil;
+                
+                {Free Next}
+                BufferFree(Next);
+               end;
+             end
+            else
+             begin
+              if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: No receive buffer available, cannot resubmit receive request');
+              
+              {Update Statistics}
+              Inc(RT2800USB.RT2X00.WiFi.Network.BufferUnavailable); 
+             end;             
+           end;  
+         finally
+          {Release the Lock}
+          MutexUnlock(RT2800USB.RT2X00.WiFi.Network.Lock);
          end;
-       end;  
-     finally
-      {Release the Lock}
-      MutexUnlock(RT2800USB.RT2X00.WiFi.Network.Lock);
-     end;
+        end
+       else
+        begin
+         if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed to acquire lock');
+        end;
+      end
+     else
+      begin
+       if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive request invalid (WiFi)');
+      end;    
     end
    else
     begin
-     if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed to acquire lock');
-    end;
+     if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive request invalid (Entry)');
+    end;    
   end
  else
   begin
-   if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive request invalid');
+   if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive request invalid (Request)');
   end;    
 end;
 
@@ -2916,9 +3229,121 @@ end;
 procedure RT2800USBTransmitWorker(Request:PUSBRequest); 
 {Called (by a Worker thread) to process a completed USB request to the RT2800USB bulk OUT endpoint}
 {Request: The USB request which has completed}
+var
+ Message:TMessage;
+ Next:PNetworkEntry;
+ Entry:PNetworkEntry;
+ RT2800USB:PRT2800USBWiFiDevice;
+ RT2800USBRequest:PRT2800USBRequest;
 begin
  {}
- //To Do //
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ {Get Request}
+ RT2800USBRequest:=PRT2800USBRequest(Request.DriverData);
+ if (RT2800USBRequest <> nil) and (RT2800USBRequest.Request = Request) then
+  begin
+   {Get Entry}
+   Entry:=RT2800USBRequest.Entry;
+   if Entry <> nil then
+    begin
+     {Get WiFi}
+     RT2800USB:=PRT2800USBWiFiDevice(Entry.DriverData);
+     if RT2800USB <> nil then 
+      begin
+       {Acquire the Lock}
+       if MutexLock(RT2800USB.RT2X00.WiFi.Network.Lock) = ERROR_SUCCESS then
+        begin
+         try
+          {Update Statistics}
+          Inc(RT2800USB.RT2X00.WiFi.Network.TransmitCount); 
+     
+          {Check State}
+          if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
+           begin
+            {$IFDEF RT2800USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, setting transmit request status to USB_STATUS_DEVICE_DETACHED');
+            {$ENDIF}
+          
+            {Update Request}
+            Request.Status:=USB_STATUS_DEVICE_DETACHED;
+           end;
+          
+          {Check Result} 
+          if Request.Status = USB_STATUS_SUCCESS then
+           begin
+            {$IFDEF RT2800USB_DEBUG}
+            if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Transmit complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
+            {$ENDIF}
+          
+            //To Do //Continuing
+            
+            //Signal waiting thread (Semaphore)
+            //Get Next from Queue
+            //What about status of result ?
+            
+           end
+          else 
+           begin
+            if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed transmit request (Status=' + USBStatusToString(Request.Status) + ')');
+            
+            {Update Statistics}
+            Inc(RT2800USB.RT2X00.WiFi.Network.TransmitErrors); 
+           end;
+          
+          //To Do //Continuing
+          
+          {Update Pending}
+          Dec(RT2800USB.PendingCount); 
+          
+          {Update Free}
+          RT2800USB.TransmitFree:=RT2800USB.TransmitFree or (1 shl RT2800USBRequest.Index);
+          
+          {Check State}
+          if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
+           begin
+            {Check Pending}
+            if RT2800USB.PendingCount = 0 then
+             begin
+              {Check Waiter}
+              if RT2800USB.WaiterThread <> INVALID_HANDLE_VALUE then
+               begin
+                {$IFDEF RT2800USB_DEBUG}
+                if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, sending message to waiter thread (Thread=' + IntToHex(RT2800USB.WaiterThread,8) + ')');
+                {$ENDIF}
+                
+                {Send Message}
+                FillChar(Message,SizeOf(TMessage),0);
+                ThreadSendMessage(RT2800USB.WaiterThread,Message);
+                RT2800USB.WaiterThread:=INVALID_HANDLE_VALUE;
+               end; 
+             end;
+           end;
+         finally
+          {Release the Lock}
+          MutexUnlock(RT2800USB.RT2X00.WiFi.Network.Lock);
+         end;
+        end
+       else
+        begin
+         if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed to acquire lock');
+        end;
+      end
+     else
+      begin
+       if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Transmit request invalid (WiFi)');
+      end;    
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Transmit request invalid (Entry)');
+    end;    
+  end
+ else
+  begin
+   if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Transmit request invalid (Request)');
+  end;    
 end;
 
 {==============================================================================}
@@ -2978,7 +3403,9 @@ begin
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Driver init');
  {$ENDIF}
 
- {Nothing RT2800USB specific}
+ {Set TXINFO/RXINFO size}
+ RT2X00.TXINFOSize:=RT2800USB_TXINFO_DESC_SIZE;
+ RT2X00.RXINFOSize:=RT2800USB_RXINFO_DESC_SIZE;
 
  {Call RT2800 initialization}
  Result:=RT2800DriverInit(RT2X00);
@@ -3510,6 +3937,81 @@ begin
 
  {Disable Radio}
  Result:=RT2800DisableRadio(RT2X00);
+end;
+
+{==============================================================================}
+
+function RT2800USBReceiveProcessRXD(RT2X00:PRT2X00WiFiDevice;Descriptor:PRT2X00RXDescriptor;var Data:Pointer;var Size:LongWord;PacketLength:LongWord):Boolean;
+{rt2800usb_fill_rxdone}
+var
+ RXD:Pointer;
+ Value:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {Check Descriptor}
+ if Descriptor = nil then Exit;
+ 
+ {Check Data and Size}
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+
+ {Get RXD}
+ RXD:=Data + PacketLength;
+ Value:=RT2X00ReadDescriptor(RXD,0);
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(@RT2X00.WiFi.Network,'RT2800USB: (RXD Value=' + IntToHex(Value,8) + ')'); //To Do
+ {$ENDIF}
+ 
+ {CRC Error}
+ if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_CRC_ERROR,8) <> 0 then
+  begin
+   Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_FAILED_FCS_CRC;
+  end;
+  
+ {Cipher Status}
+ Descriptor.CipherStatus:=RT2X00GetRegister32(Value,RT2800USB_RXD_W0_CIPHER_ERROR,9);
+ 
+ {Decrypted}
+ if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_DECRYPTED,16) <> 0 then
+  begin
+   {Hardware has stripped IV/EIV data from 802.11 frame during decryption. Unfortunately the
+    descriptor doesn't contain any fields with the EIV/IV data either, so they can't be restored}
+   Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_IV_STRIPPED;
+   
+   {The hardware has already checked the Michael Mic and has stripped it from the frame}
+   Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_MMIC_STRIPPED;
+   
+   if Descriptor.CipherStatus = RT2X00_RX_CRYPTO_SUCCESS then
+    begin
+     Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_DECRYPTED;
+    end
+   else if Descriptor.CipherStatus = RT2X00_RX_CRYPTO_FAIL_MIC then
+    begin
+     Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_MMIC_ERROR;
+    end;
+  end;
+  
+ {My BSS}
+ if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_MY_BSS,7) <> 0 then  
+  begin
+   Descriptor.RXFlags:=Descriptor.RXFlags or RT2X00_RXDONE_MY_BSS;
+  end;
+ 
+ {L2 Pad}
+ if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_L2PAD,14) <> 0 then  
+  begin
+   Descriptor.RXFlags:=Descriptor.RXFlags or RT2X00_RXDONE_L2PAD;
+  end;
+  
+ {Update Size (Remove RXD from end of buffer)}
+ Size:=PacketLength;
+  
+ Result:=True;
 end;
 
 {==============================================================================}

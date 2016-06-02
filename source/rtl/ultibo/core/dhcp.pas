@@ -45,11 +45,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Transport,Protocol,IP,IPv6,ARP,UDP,Ultibo,UltiboClasses;
 
-//To Do //Look for:
-
-//ReaderConvert
-//WriterConvert
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -58,7 +53,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Tr
 const
  {DHCP specific constants}
  {BOOTP/DHCP Constants}
- BOOTP_DELAY   = 0;
+ BOOTP_DELAY   = 1000;  {Previously 0}
  BOOTP_TIMEOUT = 8000;  {Previously 4000} {We wait for 8 seconds for a BOOTP reply}
  BOOTP_RETRIES = 6;     {Previously 4}    {Try the request 6 times}
 
@@ -69,7 +64,7 @@ const
  BOOTP_MIN_RETRIES = 1;
  BOOTP_MAX_RETRIES = 100;
 
- DHCP_DELAY   = 0;
+ DHCP_DELAY   = 1000;   {Previously 0}
  DHCP_TIMEOUT = 8000;   {Previously 4000} {We wait for 8 seconds for a DHCP reply}
  DHCP_RETRIES = 6;      {Previously 4}    {Try the request 6 times}
 
@@ -597,15 +592,11 @@ begin
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Discover');
         {$ENDIF}
         
-        //To Do //ReaderConvert //No
-        
         {Set Configuring}
         AAdapter.Configuring:=True;
-        
-        //To Do //WriterConvert //No
         try
          {Delay Init}
-         Sleep(FInitDelay); //To Do 
+         Sleep(FInitDelay); 
          
          {Check the Adapter}
          if AAdapter.Configured then Exit;
@@ -694,12 +685,8 @@ begin
           FARP.UnloadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS);
          end;
         finally
-         //To Do //ReaderConvert 
-        
          {Reset Configuring}
          AAdapter.Configuring:=False;
-         
-         //To Do //WriterConvert
         end;
        end;
       CONFIG_ADAPTER_REBOOT:begin
@@ -708,15 +695,11 @@ begin
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Reboot');
         {$ENDIF}
         
-        //To Do //ReaderConvert
-        
         {Set Configuring}
         AAdapter.Configuring:=True;
-        
-        //To Do //WriterConvert
         try
          {Delay Init}
-         Sleep(FInitDelay); //To Do 
+         Sleep(FInitDelay); 
          
          {Check the Adapter}
          if AAdapter.Configured then Exit;
@@ -792,12 +775,8 @@ begin
           FARP.UnloadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS);
          end;
         finally
-         //To Do //ReaderConvert
-        
          {Reset Configuring}
          AAdapter.Configuring:=False;
-         
-         //To Do //WriterConvert
         end;
        end;
       CONFIG_ADAPTER_RELEASE,CONFIG_ADAPTER_RENEW,CONFIG_ADAPTER_REBIND,CONFIG_ADAPTER_INFORM:begin
@@ -806,12 +785,8 @@ begin
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Release/Renew/Rebind/Inform');
         {$ENDIF}
         
-        //To Do //ReaderConvert
-        
         {Set Configuring}
         AAdapter.Configuring:=True;
-        
-        //To Do //WriterConvert
         try
          Randomize;
          
@@ -890,12 +865,8 @@ begin
           Socket.ReaderUnlock;
          end;
         finally
-         //To Do //ReaderConvert
-        
          {Reset Configuring}
          AAdapter.Configuring:=False;
-         
-         //To Do //WriterConvert
         end;
        end;
      end;
@@ -1109,12 +1080,8 @@ begin
         {Check Message Type}
         if PByte(Option)^ <> DHCP_OFFER then Exit;
         
-        //To Do //ReaderConvert //etc throughout here
-        
         {Get the Address}
         TIPTransportAdapter(AAdapter).Address:=InAddrToHost(AHeader.YourIP);
-        
-        //To Do //WriterConvert
         
         {Get the Netmask}
         if not ExtractDHCPOption(SUBNET_MASK,AHeader,Option,Length) then Exit;
@@ -1161,7 +1128,8 @@ begin
           if Length >= 1 then
            begin
             PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
-            TIPTransport(ATransport.Transport).DomainName:=PChar(Option);
+            Manager.Settings.DomainName:=PChar(Option);
+            {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
          end;
         
@@ -1219,12 +1187,8 @@ begin
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then Exit;
         
-        //To Do //ReaderConvert //etc throughout here
-        
         {Get the Address}
         TIPTransportAdapter(AAdapter).Address:=InAddrToHost(AHeader.YourIP);
-        
-        //To Do //WriterConvert
         
         {Get the Netmask}
         if not ExtractDHCPOption(SUBNET_MASK,AHeader,Option,Length) then Exit;
@@ -1271,7 +1235,8 @@ begin
           if Length >= 1 then
            begin
             PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
-            TIPTransport(ATransport.Transport).DomainName:=PChar(Option);
+            Manager.Settings.DomainName:=PChar(Option);
+            {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
          end;
         
@@ -1328,11 +1293,7 @@ begin
         if not ExtractDHCPOption(DHCP_IP_ADDR_LEASE_TIME,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(LongWord) then Exit;
         
-        //To Do //ReaderConvert //etc throughout here
-        
         TIPTransportAdapter(AAdapter).LeaseTime:=(LongWordBEtoN(PLongWord(Option)^) * 1000);
-        
-        //To Do //WriterConvert
         
         {Get the Expiry Time}
         TIPTransportAdapter(AAdapter).ExpiryTime:=GetTickCount64 + TIPTransportAdapter(AAdapter).LeaseTime;
@@ -1367,8 +1328,6 @@ begin
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then Exit;
         
-        //To Do //ReaderConvert //etc throughout here
-        
         {Get the Gateway}
         if ExtractDHCPOption(ROUTERS_ON_SNET,AHeader,Option,Length) then
          begin
@@ -1377,8 +1336,6 @@ begin
             TIPTransportAdapter(AAdapter).Gateway:=InAddrToHost(PInAddr(Option)^);
            end;
          end;
-        
-        //To Do //WriterConvert
         
         {Get the Nameservers}
         if ExtractDHCPOption(DNS_SRV,AHeader,Option,Length) then
@@ -1401,7 +1358,8 @@ begin
           if Length >= 1 then
            begin
             PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
-            TIPTransport(ATransport.Transport).DomainName:=PChar(Option);
+            Manager.Settings.DomainName:=PChar(Option);
+            {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
          end;
         
@@ -1429,6 +1387,7 @@ function TDHCPConfig.SendDHCPDiscover(ASocket:TProtocolSocket;ATransport:TDHCPCo
 var
  Size:Integer;
  Option:Pointer;
+ HostName:String;
  SockAddr:TSockAddr;
  Header:TDHCPHeader;
  ClientId:TDHCPClientId;
@@ -1466,6 +1425,10 @@ begin
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
+    
+    {Host Name}
+    HostName:=Manager.Settings.HostName;
+    if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
@@ -1505,6 +1468,7 @@ function TDHCPConfig.SendDHCPRequest(ASocket:TProtocolSocket;ATransport:TDHCPCon
 var
  Size:Integer;
  Option:Pointer;
+ HostName:String;
  SockAddr:TSockAddr;
  Header:TDHCPHeader;
  ClientId:TDHCPClientId;
@@ -1542,6 +1506,10 @@ begin
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
+    
+    {Host Name}
+    HostName:=Manager.Settings.HostName;
+    if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
@@ -1725,6 +1693,7 @@ function TDHCPConfig.SendDHCPInform(ASocket:TProtocolSocket;ATransport:TDHCPConf
 var
  Size:Integer;
  Option:Pointer;
+ HostName:String;
  SockAddr:TSockAddr;
  Header:TDHCPHeader;
  ClientId:TDHCPClientId;
@@ -1762,6 +1731,10 @@ begin
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
+    
+    {Host Name}
+    HostName:=Manager.Settings.HostName;
+    if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
@@ -1940,6 +1913,7 @@ function TDHCPConfig.SendDHCPReboot(ASocket:TProtocolSocket;ATransport:TDHCPConf
 var
  Size:Integer;
  Option:Pointer;
+ HostName:String;
  SockAddr:TSockAddr;
  Header:TDHCPHeader;
  ClientId:TDHCPClientId;
@@ -1977,6 +1951,10 @@ begin
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
+    
+    {Host Name}
+    HostName:=Manager.Settings.HostName;
+    if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
@@ -2569,7 +2547,7 @@ begin
  
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TBOOTPConfigTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -2588,18 +2566,14 @@ begin
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Attempting BOOTP Configuration');
      {$ENDIF}
      
-     //To Do //ReaderConvert
-     
      {Set Configuring}
      AAdapter.Configuring:=True;
-     
-     //To Do //WriterConvert
      try
       {Check Address Family}
       case Transport.Transport.Family of
        AF_INET:begin
          {Delay Init}
-         Sleep(FInitDelay); //To Do 
+         Sleep(FInitDelay); 
          
          {Check the Adapter}
          if AAdapter.Configured then Exit;
@@ -2674,12 +2648,8 @@ begin
         end;
       end;
      finally
-      //To Do //ReaderConvert
-      
       {Reset Configuring}
       AAdapter.Configuring:=False;
-      
-      //To Do //WriterConvert
      end;
     end;
    CONFIG_ADAPTER_RELEASE:begin
@@ -2803,12 +2773,8 @@ begin
   {Check Address Family}
   case ATransport.Transport.Family of
    AF_INET:begin
-     //To Do //ReaderConvert //etc throughout here
-     
      {Get the Address}
      TIPTransportAdapter(AAdapter).Address:=InAddrToHost(AHeader.YourIP);
-     
-     //To Do //WriterConvert
      
      {Get the Netmask}
      if ExtractBOOTPOption(SUBNET_MASK,AHeader,Option,Length) then
@@ -2851,7 +2817,8 @@ begin
        if Length >= 1 then
         begin
          PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
-         TIPTransport(ATransport.Transport).DomainName:=PChar(Option);
+         Manager.Settings.DomainName:=PChar(Option);
+         {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
         end;
       end;
       
@@ -3328,12 +3295,8 @@ begin
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: Attempting ARP Configuration');
      {$ENDIF}
      
-     //To Do //ReaderConvert
-     
      {Set Configuring}
      AAdapter.Configuring:=True;
-     
-     //To Do //WriterConvert
      try
       {Check Address Family}
       case Transport.Transport.Family of
@@ -3365,19 +3328,11 @@ begin
             if LongWord(Address.S_addr) > LongWord(Range.S_addr) then Exit;
            end;
           
-          //To Do //ReaderConvert 
-          
           {Return the Address}
           TIPTransportAdapter(AAdapter).Address:=Address;
           
-          //To Do //WriterConvert
-          
-          //To Do //ReaderConvert
-          
           {Return the Netmask}
           if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Netmask) then TIPTransportAdapter(AAdapter).Netmask:=IP_CLASSC_NETMASK;
-          
-          //To Do //WriterConvert
           
           {Return Result}
           Result:=True;
@@ -3388,12 +3343,8 @@ begin
         end;
       end;
      finally
-      //To Do //ReaderConvert 
-     
       {Reset Configuring}
       AAdapter.Configuring:=False;
-      
-      //To Do //WriterConvert
      end;
     end;
    CONFIG_ADAPTER_RELEASE:begin
@@ -3684,12 +3635,8 @@ begin
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: Attempting RARP Configuration');
      {$ENDIF}
      
-     //To Do //ReaderConvert
-     
      {Set Configuring}
      AAdapter.Configuring:=True;
-     
-     //To Do //WriterConvert
      try
       {Check Address Family}
       case Transport.Transport.Family of
@@ -3700,27 +3647,19 @@ begin
          {Request Address}
          if not FRARP.ResolveHardware(AAdapter.Adapter,Address) then Exit;
          
-         //To Do //ReaderConvert
-         
          {Return the Address}
          TIPTransportAdapter(AAdapter).Address:=Address;
          
          {Return the Netmask (Guessed)}
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Netmask) then TIPTransportAdapter(AAdapter).Netmask:=IP_CLASSC_NETMASK;
          
-         //To Do //WriterConvert
-         
          {Return Result}
          Result:=True;
         end;
       end;
      finally
-      //To Do //ReaderConvert 
-     
       {Reset Configuring}
       AAdapter.Configuring:=False;
-      
-      //To Do //WriterConvert
      end;
     end;
    CONFIG_ADAPTER_RELEASE:begin
@@ -4010,12 +3949,8 @@ begin
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: Attempting Static Configuration');
      {$ENDIF}
      
-     //To Do //ReaderConvert
-     
      {Set Configuring}
      AAdapter.Configuring:=True;
-     
-     //To Do //WriterConvert
      try
       {Check Address Family}
       case Transport.Transport.Family of
@@ -4053,12 +3988,8 @@ begin
         end;
       end;
      finally
-      //To Do //ReaderConvert 
-      
       {Reset Configuring}
       AAdapter.Configuring:=False;
-      
-      //To Do //WriterConvert
      end;
     end;
    CONFIG_ADAPTER_RELEASE:begin
@@ -4409,12 +4340,8 @@ begin
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: Attempting Loopback Configuration');
      {$ENDIF}
      
-     //To Do //ReaderConvert
-     
      {Set Configuring}
      AAdapter.Configuring:=True;
-     
-     //To Do //WriterConvert
      try
       {Check Address Family}
       case Transport.Transport.Family of
@@ -4442,12 +4369,8 @@ begin
         end;
       end;
      finally
-      //To Do //ReaderConvert 
-      
       {Reset Configuring}
       AAdapter.Configuring:=False;
-      
-      //To Do //WriterConvert
      end;
     end;
    CONFIG_ADAPTER_RELEASE:begin
@@ -4746,39 +4669,42 @@ begin
  {}
  {Check Initialized}
  if DHCPInitialized then Exit;
-
+ 
+ {Setup Loopback Config}
+ if NetworkSettings.GetBoolean('LOOPBACK_NETWORK_ENABLED') then NetworkSettings.AddBoolean('LOOPBACK_CONFIG_ENABLED',True);
+ 
  {Create Loopback Config}
- if LOOPBACK_CONFIG_ENABLED then
+ if NetworkSettings.GetBooleanDefault('LOOPBACK_CONFIG_ENABLED',LOOPBACK_CONFIG_ENABLED) then
   begin
    TLoopbackConfig.Create(ProtocolManager);
   end; 
  
  {Create Static Config}
- if STATIC_CONFIG_ENABLED then
+ if NetworkSettings.GetBooleanDefault('STATIC_CONFIG_ENABLED',STATIC_CONFIG_ENABLED) then
   begin
    TStaticConfig.Create(ProtocolManager);
   end; 
  
  {Create DHCP Config}
- if DHCP_CONFIG_ENABLED then
+ if NetworkSettings.GetBooleanDefault('DHCP_CONFIG_ENABLED',DHCP_CONFIG_ENABLED) then  
   begin
    TDHCPConfig.Create(ProtocolManager);
   end; 
  
  {Create BOOTP Config}
- if BOOTP_CONFIG_ENABLED then
+ if NetworkSettings.GetBooleanDefault('BOOTP_CONFIG_ENABLED',BOOTP_CONFIG_ENABLED) then  
   begin
    TBOOTPConfig.Create(ProtocolManager);
   end; 
  
  {Create RARP Config}
- if RARP_CONFIG_ENABLED then
+ if NetworkSettings.GetBooleanDefault('RARP_CONFIG_ENABLED',RARP_CONFIG_ENABLED) then  
   begin
    TRARPConfig.Create(ProtocolManager);
   end; 
  
  {Create ARP Config}
- if ARP_CONFIG_ENABLED then 
+ if NetworkSettings.GetBooleanDefault('ARP_CONFIG_ENABLED',ARP_CONFIG_ENABLED) then  
   begin
    TARPConfig.Create(ProtocolManager);
   end; 

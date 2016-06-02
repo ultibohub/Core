@@ -34,6 +34,12 @@ Network Sockets
  Notes: All BSD functions that accept an Address or Port expect
         them to be in Network order. All other functions that take
         an Address or Port expect them to be in Host order
+        
+        This unit includes the interface normally provided by the sockets unit
+        in the FPC package rtl-extras. The rtl-extras package does not build
+        the sockets unit for target Ultibo as this unit will always be available
+        to provide the required functionality for any other package that uses
+        it.
 
 }
 
@@ -47,10 +53,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Network,Transport,Protocol,Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS;
 
-//To Do //See also: \source\packages\rtl-extra\src\win\sockets.pp
-//To Do //See also: \source\packages\rtl-extra\src\inc\sockets.inc
-//To Do //See also: \source\packages\rtl-extra\src\inc\socketsh.inc
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -63,6 +65,8 @@ const
  SOCKETS_CONFIG_TIMER_INTERVAL    = 1000;
  SOCKETS_FILTER_TIMER_INTERVAL    = 1000;
  SOCKETS_PROTOCOL_TIMER_INTERVAL  = 250;  {Previously 100}
+ SOCKETS_AUTH_TIMER_INTERVAL      = 1000;
+ SOCKETS_MONITOR_TIMER_INTERVAL   = 1000;
  SOCKETS_TRANSPORT_TIMER_INTERVAL = 1000;
  SOCKETS_ADAPTER_TIMER_INTERVAL   = 1000;
  
@@ -79,7 +83,8 @@ const
  EsockENOTSOCK         = WSAENOTSOCK;
  EsockEPROTONOSUPPORT  = WSAEPROTONOSUPPORT;
  EsockEWOULDBLOCK      = WSAEWOULDBLOCK;
-  
+ EsockADDRINUSE        = WSAEADDRINUSE;
+ 
  SHUT_RD          = SD_RECEIVE; {Aliases so we are cross-platform}
  SHUT_WR          = SD_SEND;
  SHUT_RDWR        = SD_BOTH;
@@ -313,6 +318,7 @@ const
  MSG_PEEK        = GlobalSock.MSG_PEEK;
  MSG_DONTROUTE   = GlobalSock.MSG_DONTROUTE;
 
+ MSG_INTERRUPT   = GlobalSock.MSG_INTERRUPT;
  MSG_MAXIOVLEN   = GlobalSock.MSG_MAXIOVLEN;
 
  MSG_PARTIAL     = GlobalSock.MSG_PARTIAL;
@@ -371,6 +377,12 @@ const
 
  IN6ADDR_ANY_INIT:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));
  IN6ADDR_LOOPBACK_INIT:TIn6Addr = (u6_addr8: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1));
+  
+const
+ NoAddress : in_addr  = (s_addr:0);
+ NoNet     : in_addr  = (s_addr:0);
+ NoAddress6: in6_addr = (u6_addr16:(0,0,0,0,0,0,0,0));
+ NoNet6    : in6_addr = (u6_addr16:(0,0,0,0,0,0,0,0));
   
 {==============================================================================}
 type
@@ -472,11 +484,11 @@ function Send(Sock:Longint;const Buf;BufLen,Flags:Longint):Longint;
 function SendTo(Sock:Longint;const Buf;BufLen,Flags:Longint;var Addr; AddrLen : Longint):Longint;
 function Recv(Sock:Longint;var Buf;BufLen,Flags:Longint):Longint;
 function RecvFrom(Sock : Longint; var Buf; Buflen,Flags : Longint; var Addr; var AddrLen : longint) : longint;
-function Connect(Sock:Longint;const Addr;Addrlen:Longint):Boolean;
+function Connect(Sock:Longint;const Addr;Addrlen:Longint):Boolean; overload;
 function Shutdown(Sock:Longint;How:Longint):Longint;
 function Bind(Sock:Longint;const Addr;AddrLen:Longint):Boolean;
 function Listen(Sock,MaxConnect:Longint):Boolean;
-function Accept(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
+function Accept(Sock:Longint;var Addr;var Addrlen:Longint):Longint; overload;
 function GetSocketName(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
 function GetPeerName(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
 function GetSocketOptions(Sock,Level,OptName:Longint;var OptVal;var optlen:longint):Longint;
@@ -524,10 +536,21 @@ function fpsetsockopt(s:cint; level:cint; optname:cint; optval:pointer; optlen :
 function fpsocketpair(d:cint; xtype:cint; protocol:cint; sv:pcint):cint;
 
 {==============================================================================}
+{RTL File/Text Sockets Functions}
+procedure Sock2Text(Sock:Longint;Var SockIn,SockOut:Text); deprecated;
+function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:File):Boolean; deprecated; overload;
+function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; deprecated; overload;
+function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; deprecated; overload;
+function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:file):Boolean; deprecated; overload;
+procedure Sock2File(Sock:Longint;Var SockIn,SockOut:File); deprecated;
+
+{==============================================================================}
 {Sockets Helper Functions}
 procedure SocketsProcessConfig(Data:Pointer);
 procedure SocketsProcessFilter(Data:Pointer);
 procedure SocketsProcessProtocol(Data:Pointer);
+procedure SocketsProcessAuth(Data:Pointer);
+procedure SocketsProcessMonitor(Data:Pointer);
 procedure SocketsProcessTransport(Data:Pointer);
 procedure SocketsProcessAdapter(Data:Pointer);
 
@@ -536,6 +559,31 @@ function SocketsNetworkDeviceRemove(Network:PNetworkDevice):LongWord;
 
 function SocketsNetworkDeviceEnum(Network:PNetworkDevice;Data:Pointer):LongWord;
 function SocketsNetworkDeviceNotify(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+
+{==============================================================================}
+{RTL Sockets Helper Functions}
+function htonl(host:cardinal):cardinal; inline; 
+function ntohl(net:cardinal):cardinal; inline; 
+function htons(host:word):word; inline;
+function ntohs(net:word):word; inline;
+
+function NetAddrToStr(Entry:in_addr):AnsiString;
+function HostAddrToStr(Entry:in_addr):AnsiString;
+function StrToHostAddr(IP:AnsiString):in_addr;
+function StrToNetAddr(IP:AnsiString):in_addr;
+
+{Netdb legacy compatibility}
+function HostToNet(Host:in_addr):in_addr; overload; deprecated;
+function NetToHost(Net:in_addr):in_addr; overload; deprecated;
+function HostToNet(Host:Longint):Longint; overload; deprecated;
+function NetToHost(Net:Longint):Longint; overload; deprecated;
+function ShortHostToNet(Host:Word):Word; deprecated;
+function ShortNetToHost(Net:Word):Word; deprecated;
+
+function HostAddrToStr6(Entry:Tin6_addr):AnsiString;
+function StrToHostAddr6(IP:String):Tin6_addr; 
+function NetAddrToStr6(Entry:Tin6_addr):AnsiString;
+function StrToNetAddr6(IP:AnsiString):TIn6_Addr;
 
 {==============================================================================}
 {==============================================================================}
@@ -556,6 +604,8 @@ var
  SocketsConfigTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsFilterTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsProtocolTimer:TTimerHandle = INVALID_HANDLE_VALUE;
+ SocketsAuthTimer:TTimerHandle = INVALID_HANDLE_VALUE;
+ SocketsMonitorTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsTransportTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsAdapterTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  
@@ -607,8 +657,11 @@ begin
  if TransportManager = nil then Exit;
  if ProtocolManager = nil then Exit;
 
+ {Check Settings}
+ if NetworkSettings = nil then Exit;
+ 
  {Check Clients}
- if DNSClient = nil then Exit;
+ if NetworkSettings.GetBoolean('DNS_CLIENT_ENABLED') and (DNSClient = nil) then Exit;
  
  {Acquire the Lock}
  if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
@@ -652,13 +705,13 @@ begin
       {Start Transports}
       if TransportStart <> ERROR_SUCCESS then Exit;
       {$IFDEF SOCKET_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Started transports');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Started transports and monitors');
       {$ENDIF}
        
       {Start Protocols}
       if ProtocolStart <> ERROR_SUCCESS then Exit;
       {$IFDEF SOCKET_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Started protocols');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Started protocols, filters and configs');
       {$ENDIF}
        
       {Start Clients}
@@ -667,15 +720,11 @@ begin
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Started clients');
       {$ENDIF}
        
-      {Bind Transports} //To Do //Move to TransportBind ?
-      if not TransportManager.BindTransports(nil) then
-       begin
-        if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to bind one or more network transports');
-       end;
-      
-      //To Do //Bind Protocols ? //No ?
-      
-      //To Do //Bind Clients ? //No ?
+      {Bind Transports}
+      if TransportBind <> ERROR_SUCCESS then Exit;
+      {$IFDEF SOCKET_DEBUG}
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Bound transports and monitors');
+      {$ENDIF}
       
       {Create Config Timer}
       SocketsConfigTimer:=TimerCreateEx(SOCKETS_CONFIG_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessConfig),nil); {Rescheduled by Timer Event}
@@ -685,7 +734,13 @@ begin
 
       {Create Protocol Timer}
       SocketsProtocolTimer:=TimerCreateEx(SOCKETS_PROTOCOL_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessProtocol),nil); {Rescheduled by Timer Event}
-
+      
+      {Create Auth Timer}
+      SocketsAuthTimer:=TimerCreateEx(SOCKETS_AUTH_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessAuth),nil); {Rescheduled by Timer Event}
+      
+      {Create Monitor Timer}
+      SocketsMonitorTimer:=TimerCreateEx(SOCKETS_MONITOR_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessMonitor),nil); {Rescheduled by Timer Event}
+      
       {Create Transport Timer}
       SocketsTransportTimer:=TimerCreateEx(SOCKETS_TRANSPORT_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessTransport),nil); {Rescheduled by Timer Event}
 
@@ -723,15 +778,18 @@ function SocketsStop:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
-
- {Check Clients}
- if DNSClient = nil then Exit;
  
  {Check Managers}
  if ProtocolManager = nil then Exit;
  if TransportManager = nil then Exit;
  if AdapterManager = nil then Exit;
 
+ {Check Settings}
+ if NetworkSettings = nil then Exit;
+ 
+ {Check Clients}
+ if NetworkSettings.GetBoolean('DNS_CLIENT_ENABLED') and (DNSClient = nil) then Exit;
+ 
  {Acquire the Lock}
  if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
   begin
@@ -764,6 +822,12 @@ begin
     {Destroy Transport Timer}
     TimerDestroy(SocketsTransportTimer);
 
+    {Destroy Monitor Timer}
+    TimerDestroy(SocketsMonitorTimer);
+
+    {Destroy Auth Timer}
+    TimerDestroy(SocketsAuthTimer);
+    
     {Destroy Protocol Timer}
     TimerDestroy(SocketsProtocolTimer);
 
@@ -773,15 +837,11 @@ begin
     {Destroy Config Timer}
     TimerDestroy(SocketsConfigTimer);
     
-    //To Do //Unbind Clients ? //No ?
-    
-    //To Do //Unbind Protocols ? //No ?
-    
-    {Unbind Transports} //To Do //Move to TransportUnbind ?
-    if not TransportManager.UnbindTransports(nil) then
-     begin
-      if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to unbind one or more network transports');
-     end;
+    {Unbind Transports}
+    if TransportUnbind <> ERROR_SUCCESS then Exit;
+    {$IFDEF SOCKET_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Unbound transports and monitors');
+    {$ENDIF}
     
     {Stop Clients}
     if DNSStop <> ERROR_SUCCESS then Exit;
@@ -792,13 +852,13 @@ begin
     {Stop Protocols}
     if ProtocolStop <> ERROR_SUCCESS then Exit;
     {$IFDEF SOCKET_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Stopped protocols');
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Stopped protocols, filters and configs');
     {$ENDIF}
    
     {Stop Transports}
     if TransportStop <> ERROR_SUCCESS then Exit;
     {$IFDEF SOCKET_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Stopped transports');
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Stopped transports and monitors');
     {$ENDIF}
   
     {Stop Adapters}
@@ -2050,6 +2110,328 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{RTL File/Text Sockets Functions}
+function fpRead(Handle:LongInt;var BufPtr;Size:DWORD):DWORD;
+var
+ Available:DWORD;
+ Socket:TProtocolSocket;
+begin
+ {}
+ Result:=0;
+ try
+  {Check Started}
+  SetLastError(WSANOTINITIALISED);
+  if SocketsStartupError <> ERROR_SUCCESS then Exit;
+ 
+  {Check Socket}
+  SetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(Handle);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(Handle,True,NETWORK_LOCK_READ) then Exit;
+ 
+  {IOCTL Socket}
+  if Socket.Protocol.IoctlSocket(Socket,FIONREAD,Available) = SOCKET_ERROR then Exit;
+ 
+  if Available > 0 then
+   begin
+    if Size > Available then Size:=Available;
+    
+    {Receive Socket}
+    Result:=DWORD(Socket.Protocol.Recv(Socket,BufPtr,Size,0));
+    if Result = DWORD(SOCKET_ERROR) then Result:=0;
+   end; 
+ 
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    SetLastError(WSAENOTSOCK);
+    {$IFDEF SOCKET_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpRead ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function fpWrite(Handle:LongInt;var BufPtr;Size:DWORD):DWORD;
+var
+ Socket:TProtocolSocket;
+begin
+ {}
+ Result:=0;
+ try
+  {Check Started}
+  SetLastError(WSANOTINITIALISED);
+  if SocketsStartupError <> ERROR_SUCCESS then Exit;
+  
+  {Check Socket}
+  SetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(Handle);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(Handle,True,NETWORK_LOCK_READ) then Exit;
+
+  {Send Socket}
+  Result:=DWORD(Socket.Protocol.Send(Socket,BufPtr,Size,0));
+  if Result = DWORD(SOCKET_ERROR) then Result:=0;
+  
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    SetLastError(WSAENOTSOCK);
+    {$IFDEF SOCKET_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpWrite ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
+end;
+
+{==============================================================================}
+  
+procedure OpenSock(var F:Text);
+begin
+ {}
+ if Textrec(F).Handle=UnusedHandle then
+  begin
+   Textrec(F).Mode:=fmClosed;
+  end 
+ else
+  begin
+   case Textrec(F).userdata[1] of
+    S_OUT:Textrec(F).Mode:=fmOutput;
+    S_IN:Textrec(F).Mode:=fmInput;
+   else
+    Textrec(F).Mode:=fmClosed;
+   end;
+  end; 
+end;
+
+{==============================================================================}
+
+procedure IOSock(var F:Text);
+var
+ Return:sizeint;
+ DefaultError:Word;
+begin
+ {}
+ with Textrec(F) do
+  begin
+   case Mode of
+     fmOutput:begin
+       repeat
+        {$ifdef use_readwrite}
+        Return:=fpWrite(Handle,BufPtr^,BufPos);
+        {$else}
+        Return:=fpSend(Handle,BufPtr,BufPos,0);
+        {$endif}
+       until (Return <> -1) or (SocketError <> EsockEINTR);
+       
+       BufEnd:=Return;
+       DefaultError:=101; {File write error}
+      end;
+     fmInput:begin
+       repeat
+        {$ifdef use_readwrite}
+        Return:=fpRead(Handle,BufPtr^,BufSize);
+        {$else}
+        Return:=fpRecv(Handle,BufPtr,BufSize,0);
+        {$endif}
+       until (Return <> -1) or (SocketError <> EsockEINTR);
+       
+       BufEnd:=Return;
+       DefaultError:=100; {File read error}
+      end;
+   end;
+   
+   if Return = -1 then
+    begin
+     case SocketError of
+      EsockEBADF,EsockENOTSOCK:InOutRes:=6; {Invalid file handle}
+      EsockEFAULT:InOutRes:=217;
+      EsockEINVAL:InOutRes:=218;
+     else
+      InOutRes:=DefaultError;
+     end;
+    end; 
+     
+   BufPos:=0;
+  end;
+end;
+
+{==============================================================================}
+
+procedure FlushSock(var F:Text);
+begin
+ {}
+ if (Textrec(F).Mode = fmOutput) and (Textrec(F).BufPos <> 0) then
+  begin
+   IOSock(F);
+   Textrec(F).BufPos:=0;
+  end;
+end;
+
+{==============================================================================}
+
+procedure CloseSock(var F:text);
+begin
+ {Nothing special has to be done here}
+end;
+
+{==============================================================================}
+
+procedure Sock2Text(Sock:Longint;Var SockIn,SockOut:Text); 
+{Set up two Pascal Text file descriptors for reading and writing}
+begin
+ {First the reading part.}
+ Assign(SockIn,'.');
+ Textrec(SockIn).Handle:=Sock;
+ Textrec(Sockin).userdata[1]:=S_IN;
+ TextRec(SockIn).OpenFunc:=@OpenSock;
+ TextRec(SockIn).InOutFunc:=@IOSock;
+ TextRec(SockIn).FlushFunc:=@FlushSock;
+ TextRec(SockIn).CloseFunc:=@CloseSock;
+ TextRec(SockIn).Mode:=fmInput;
+ 
+ case DefaultTextLineBreakStyle of
+  tlbsLF:TextRec(SockIn).LineEnd:=#10;
+  tlbsCRLF:TextRec(SockIn).LineEnd:=#13#10;
+  tlbsCR:TextRec(SockIn).LineEnd:=#13;
+ end;
+ 
+ {Now the writing part}
+ Assign(SockOut,'.');
+ Textrec(SockOut).Handle:=Sock;
+ Textrec(SockOut).userdata[1]:=S_OUT;
+ TextRec(SockOut).OpenFunc:=@OpenSock;
+ TextRec(SockOut).InOutFunc:=@IOSock;
+ TextRec(SockOut).FlushFunc:=@FlushSock;
+ TextRec(SockOut).CloseFunc:=@CloseSock;
+ TextRec(SockOut).Mode:=fmOutput;
+
+ case DefaultTextLineBreakStyle of
+  tlbsLF:TextRec(SockOut).LineEnd:=#10;
+  tlbsCRLF:TextRec(SockOut).LineEnd:=#13#10;
+  tlbsCR:TextRec(SockOut).LineEnd:=#13;
+ end;
+end;
+
+{==============================================================================}
+
+function DoAccept(Sock:longint;var addr:TInetSockAddr):longint;
+var
+ AddrLen:Longint;
+begin
+ {}
+ AddrLen:=SizeOf(Addr);
+ repeat
+  Result:=fpAccept(Sock,@Addr,@AddrLen);
+ until (Result <> -1) or (SocketError <> EsockEINTR);
+end;
+
+{==============================================================================}
+
+function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:File):Boolean; 
+var
+ S:longint;
+begin
+ {}
+ S:=DoAccept(Sock,addr);
+ if S > 0 then
+  begin
+   Sock2File(S,SockIn,SockOut);
+   Result:=True;
+  end
+ else
+  begin
+   Result:=False;
+  end; 
+end;
+
+{==============================================================================}
+
+function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; 
+var
+ S:longint;
+begin
+ {}
+ S:=DoAccept(Sock,addr);
+ if S > 0 then
+  begin
+   Sock2Text(S,SockIn,SockOut);
+   Result:=True;
+  end
+ else
+  begin
+   Result:=False;
+  end; 
+end;
+
+{==============================================================================}
+
+function DoConnect(Sock:longint;const addr:TInetSockAddr):Boolean;
+var
+ Res:longint;
+begin
+ {}
+ repeat
+  Res:=fpConnect(Sock,@Addr,SizeOF(TInetSockAddr));
+ until (Res <> -1) or (SocketError <> EsockEINTR);
+ Result:=(Res = 0);
+end;
+
+{==============================================================================}
+
+function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; 
+begin
+ {}
+ Result:=DoConnect(Sock,addr);
+ if Result then Sock2Text(Sock,SockIn,SockOut);
+end;
+
+{==============================================================================}
+
+function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:file):Boolean; 
+begin
+ {}
+ Result:=DoConnect(Sock,addr);
+ if Result then Sock2File(Sock,SockIn,SockOut);
+end;
+
+{==============================================================================}
+
+procedure Sock2File(Sock:Longint;Var SockIn,SockOut:File); 
+begin
+ {Input}
+ Assign(SockIn,'.');
+ FileRec(SockIn).Handle:=Sock;
+ FileRec(SockIn).RecSize:=1;
+ FileRec(Sockin).userdata[1]:=S_IN;
+ FileRec(SockIn).Mode:=fmInput;
+
+ {Output}
+ Assign(SockOut,'.');
+ FileRec(SockOut).Handle:=Sock;
+ FileRec(SockOut).RecSize:=1;
+ FileRec(SockOut).userdata[1]:=S_OUT;
+ FileRec(SockOut).Mode:=fmOutput;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {Sockets Helper Functions}
 procedure SocketsProcessConfig(Data:Pointer);
 begin
@@ -2112,6 +2494,50 @@ begin
  finally
   {Enable Timer}
   TimerEnable(SocketsProtocolTimer);
+ end; 
+end;
+
+{==============================================================================}
+
+procedure SocketsProcessAuth(Data:Pointer);
+begin
+ {}
+ try
+  {$IFDEF SOCKET_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Process authenticators');
+  {$ENDIF}
+ 
+  {Check Manager}
+  if TransportManager = nil then Exit;
+  
+  {Process Authenticators}
+  TransportManager.ProcessAuthenticators;
+  
+ finally
+  {Enable Timer}
+  TimerEnable(SocketsAuthTimer);
+ end; 
+end;
+
+{==============================================================================}
+
+procedure SocketsProcessMonitor(Data:Pointer);
+begin
+ {}
+ try
+  {$IFDEF SOCKET_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Process monitors');
+  {$ENDIF}
+ 
+  {Check Manager}
+  if TransportManager = nil then Exit;
+  
+  {Process Monitors}
+  TransportManager.ProcessMonitors;
+  
+ finally
+  {Enable Timer}
+  TimerEnable(SocketsMonitorTimer);
  end; 
 end;
 
@@ -2190,6 +2616,9 @@ begin
  if TransportManager = nil then Exit;
  if ProtocolManager = nil then Exit;
   
+ {Check Settings}
+ if NetworkSettings = nil then Exit;
+ 
  {Acquire the Lock}
  if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
   begin
@@ -2205,15 +2634,25 @@ begin
          if Adapter = nil then
           begin
            {Create Adapter}
-           if WIRED_NETWORK_ENABLED then
+           if NetworkSettings.GetBooleanDefault('WIRED_NETWORK_ENABLED',WIRED_NETWORK_ENABLED) then 
             begin
              Adapter:=TWiredAdapter.Create(AdapterManager,Event.Device,DeviceGetName(@Event.Device.Device));
-         
-             {Start Adapter}
-             Adapter.StartAdapter;
-         
-             {Bind Transports}
-             TransportManager.BindTransports(Adapter);
+             
+             {Check Adapter}
+             if not NetworkSettings.GetBoolean(Adapter.Name + '_DISABLED') then
+              begin
+               {Start Adapter}
+               Adapter.StartAdapter;
+               
+               {Bind Transports}
+               TransportManager.BindTransports(Adapter);
+               
+               {Bind Monitors}
+               TransportManager.BindMonitors(Adapter);
+               
+               {Bind Authenticators}
+               TransportManager.BindAuthenticators(Adapter);
+              end; 
             end; 
           end; 
         end;
@@ -2268,6 +2707,12 @@ begin
          Adapter:=AdapterManager.GetAdapterByDevice(Network,True,NETWORK_LOCK_READ);
          if Adapter <> nil then
           begin
+           {Unbind Authenticators}
+           TransportManager.UnbindAuthenticators(Adapter);
+
+           {Unbind Monitors}
+           TransportManager.UnbindMonitors(Adapter);
+
            {Unbind Transports}
            TransportManager.UnbindTransports(Adapter);
            
@@ -2316,6 +2761,9 @@ begin
  {Check Manager}
  if AdapterManager = nil then Exit;
  
+ {Check Settings}
+ if NetworkSettings = nil then Exit;
+ 
  {Acquire the Lock}
  if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
   begin
@@ -2331,7 +2779,7 @@ begin
          if Adapter = nil then
           begin
            {Create Adapter}
-           if WIRED_NETWORK_ENABLED then
+           if NetworkSettings.GetBooleanDefault('WIRED_NETWORK_ENABLED',WIRED_NETWORK_ENABLED) then 
             begin
              TWiredAdapter.Create(AdapterManager,Network,DeviceGetName(@Network.Device));
             end; 
@@ -2449,6 +2897,346 @@ begin
      end;
     end;
   end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{RTL Sockets Helper Functions}
+function htonl(host:cardinal):cardinal; inline; 
+begin
+ {}
+ {$IFDEF FPC_BIG_ENDIAN}
+ Result:=host;
+ {$ELSE}
+ Result:=SwapEndian(host);
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function ntohl(net:cardinal):cardinal; inline; 
+begin
+ {}
+ {$IFDEF FPC_BIG_ENDIAN}
+ Result:=net; 
+ {$ELSE}
+ Result:=SwapEndian(net);
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function htons(host:word):word; inline;
+begin
+ {}
+ {$IFDEF FPC_BIG_ENDIAN}
+ Result:=host;
+ {$ELSE}
+ Result:=SwapEndian(host);
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function ntohs(net:word):word; inline;
+begin
+ {}
+ {$IFDEF FPC_BIG_ENDIAN}
+ Result:=net;
+ {$ELSE}
+ Result:=SwapEndian(net);
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+type
+ Array4Int = array[1..4] of Byte;
+
+function NetAddrToStr(Entry:in_addr):AnsiString;
+var 
+ Count:LongInt;
+ Value:LongInt;
+ Dummy:AnsiString;
+begin
+ {}
+ Result:='';
+ 
+ Value:=Entry.S_addr;
+ for Count:=1 to 4 do
+  begin
+   Str(Array4Int(Value)[Count],Dummy);
+   Result:=Result + Dummy;
+   if Count < 4 then Result:=Result + '.';
+  end;
+end;
+
+{==============================================================================}
+
+function HostAddrToStr(Entry:in_addr):AnsiString;
+var
+ Value:in_addr;
+begin
+ {}
+ Value.S_addr:=htonl(Entry.S_addr);
+ Result:=NetAddrToStr(Value);
+end;
+
+{==============================================================================}
+
+function StrToHostAddr(IP:AnsiString):in_addr;
+var
+ Temp:in_addr;
+ Count,Index,Value:LongInt;
+ Dummy:AnsiString;
+begin
+ {}
+ Result.S_addr:=0;  { :=NoAddress; }
+ 
+ for Count:=1 to 4 do
+  begin
+   if Count < 4 then
+    begin
+     Index:=Pos('.',IP);
+     if Index = 0 then Exit;
+     
+     Dummy:=Copy(IP,1,Index - 1);
+     Delete(IP,1,Index);
+    end
+   else
+    begin
+     Dummy:=IP;
+    end; 
+       
+   Val(Dummy,Value,Index);
+   Array4Int(Temp.S_addr)[Count]:=Value;
+   if Index <> 0 then Exit;
+  end;
+  
+ Result.S_addr:=ntohl(Temp.S_addr);
+end;
+
+{==============================================================================}
+
+function StrToNetAddr(IP:AnsiString):in_addr;
+begin
+ {}
+ Result.S_addr:=htonl(StrToHostAddr(IP).S_addr);
+end;
+
+{==============================================================================}
+
+function HostToNet(Host:in_addr):in_addr;
+begin
+ {}
+ Result.S_addr:=htonl(Host.S_addr);
+end;
+
+{==============================================================================}
+
+function NetToHost(Net:in_addr):in_addr; 
+begin
+ {}
+  Result.S_addr:=ntohl(Net.S_addr);
+end;
+
+{==============================================================================}
+
+function HostToNet(Host:Longint):Longint; 
+begin
+ {}
+ Result:=htonl(Host);
+end;
+
+{==============================================================================}
+
+function NetToHost(Net:Longint):Longint; 
+begin
+ {}
+ Result:=ntohl(Net);
+end;
+
+{==============================================================================}
+
+function ShortHostToNet(Host:Word):Word; 
+begin
+ {}
+ Result:=htons(Host);
+end;
+
+{==============================================================================}
+
+function ShortNetToHost(Net:Word):Word; 
+begin
+ {}
+ Result:=ntohs(Net);
+end;
+
+{==============================================================================}
+
+const 
+ DigitTab:ShortString = ('0123456789ABCDEF');
+ 
+function LocalIntToHex(Value:Integer;Digits:LongInt):AnsiString;
+begin
+ {}
+ SetLength(Result,4);
+ Result[4]:=DigitTab[1 +(Value and 15)];
+ Result[3]:=DigitTab[1 +((Value shr 4) and 15)];
+ Result[2]:=DigitTab[1 +((Value shr 8) and 15)];
+ Result[1]:=DigitTab[1 +((Value shr 12) and 15)];;
+end;
+
+{==============================================================================}
+
+function HostAddrToStr6(Entry:Tin6_addr):AnsiString;
+//To Do //This needs testing
+var
+ Count:Byte;
+ ZC1,ZC2:Byte;
+ ZR1,ZR2:set of Byte;
+ Skipped:Boolean;
+begin
+ {}
+ ZR1:=[];
+ ZR2:=[];
+ ZC1:=0;
+ ZC2:=0;
+ 
+ for Count:=0 to 7 do
+  begin
+   if Entry.u6_addr16[Count] = 0 then
+    begin
+     Include(ZR2,Count);
+     Inc(ZC2);
+    end
+   else
+    begin
+     if ZC1 < ZC2 then
+      begin
+       ZC1:=ZC2;
+       ZR1:=ZR2;
+       ZC2:=0;
+       ZR2:=[];
+      end;
+    end;
+  end;
+  
+ if ZC1 < ZC2 then
+  begin
+   ZC1:=ZC2;
+   ZR1:=ZR2;
+  end;
+  
+ SetLength(Result,8 * 5 - 1);
+ SetLength(Result,0);
+ Skipped:=False;
+ 
+ for Count:=0 to 7 do
+  begin
+   if not(Count in ZR1) then
+    begin
+     if Skipped then
+      begin
+       if Result = '' then Result:='::' else Result:=Result + ':';
+         
+       Skipped:=False;
+      end;
+     
+     //FIXME: is that shortnettohost really proper there? I wouldn't be too sure...
+     Result:=Result + LocalIntToHex(ShortNetToHost(Entry.u6_addr16[Count]),1) + ':';
+    end
+   else
+    begin
+     Skipped:=True;
+    end;
+  end;
+  
+ if Skipped then
+  begin
+   if Result = '' then Result:='::' else Result:=Result + ':';
+  end;
+  
+ if Result = '' then Result:='::';
+ 
+ if not(7 in ZR1) then SetLength(Result,Length(Result) - 1);
+end;
+
+{==============================================================================}
+
+function StrToHostAddr6(IP:String):Tin6_addr; 
+//To Do //This needs testing
+var
+ Part:String;
+ Value:Word;
+ Code:Integer;
+ Index:Integer;
+ ZeroAt:Integer;
+ IPv6:TIn6_addr;
+ Position:Integer;
+Begin
+ {}
+ FillChar(IPv6,SizeOf(IPv6),0);
+ 
+ { Every 16-bit block is converted at its own and stored into Result. When }
+ { the '::' zero-spacer is found, its location is stored. Afterwards the   }
+ { address is shifted and zero-filled.                                     }
+ Index:=0;
+ ZeroAt:=-1;
+ Code:=0;
+ Position:=Pos(':',IP);
+ while (Position > 0) and (Length(IP) > 0) and (Index < 8) do
+  begin
+   Part:='$' + Copy(IP,1,Position - 1);
+   Delete(IP,1,Position);
+   
+   if Length(Part) > 1 then Val(Part,Value,Code) else Value:=0; { is there a digit after the '$'? }
+   
+   IPv6.u6_addr16[Index]:=htons(Value);
+   
+   if Code <> 0 then
+    begin
+     FillChar(IPv6,SizeOf(IPv6),0);
+     Exit;
+    end;
+    
+   if IP[1] = ':' then
+    begin
+     ZeroAt:=Index;
+     Delete(IP,1,1);
+    end;
+    
+   Inc(Index);
+   Position:=Pos(':',IP);
+   if Position = 0 then Position:=Length(IP) + 1;
+  end;
+    
+ { Address      a:b:c::f:g:h }
+ { Result now   a : b : c : f : g : h : 0 : 0, ZeroAt = 2, Index = 6 }
+ { Result after a : b : c : 0 : 0 : f : g : h }
+ if ZeroAt >= 0 then
+  begin
+   System.Move(IPv6.u6_addr16[ZeroAt + 1],IPv6.u6_addr16[(8 - Index) + ZeroAt + 1],2 * (Index - ZeroAt - 1));
+   FillChar(IPv6.u6_addr16[ZeroAt + 1],2 * (8 - Index),0);
+  end;
+
+ Result:=IPv6;
+End;
+
+{==============================================================================}
+
+function NetAddrToStr6(Entry:Tin6_addr):AnsiString;
+begin
+ {}
+ Result:=HostAddrToStr6(Entry);
+end;
+
+{==============================================================================}
+
+function StrToNetAddr6(IP:AnsiString):TIn6_Addr;
+begin
+ {}
+ Result:=StrToHostAddr6(IP);
 end;
 
 {==============================================================================}

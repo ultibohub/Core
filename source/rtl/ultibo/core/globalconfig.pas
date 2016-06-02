@@ -870,27 +870,30 @@ var
  SOCKETS_AUTOSTART:LongBool = True;       {If True then auto start the sockets layer on boot (Only if Sockets unit included)} 
  SOCKETS_ASYNCSTART:LongBool = True;      {If True then auto start asynchronously using a worker thread instead of the main thread}
  
+ {Client configuration}
+ DNS_CLIENT_ENABLED:LongBool = True;            {DNS client is enabled if True}
+ 
  {Protocol configuration}
  RAW_PROTOCOL_ENABLED:LongBool = True;          {Raw socket protocol is enabled if True}
  UDP_PROTOCOL_ENABLED:LongBool = True;          {UDP protocol is enabled if True}
  TCP_PROTOCOL_ENABLED:LongBool = True;          {TCP protocol is enabled if True}
  ICMP_PROTOCOL_ENABLED:LongBool = True;         {ICMP protocol is enabled if True}
- ICMP6_PROTOCOL_ENABLED:LongBool = False; //True;        {ICMPv6 protocol is enabled if True}
+ ICMP6_PROTOCOL_ENABLED:LongBool = False;       {ICMPv6 protocol is enabled if True}
  IGMP_PROTOCOL_ENABLED:LongBool = True;         {IGMP protocol is enabled if True}
 
  TCP_RECEIVE_BACKLOG:LongWord = SIZE_1K;        {Queue length for SYN received connections (per listening socket)}
  TCP_MESSAGESLOT_MAXIMUM:LongWord = SIZE_2K;    {Maximum number of messages for TCP socket thread messageslot}
  
  ARP_CONFIG_ENABLED:LongBool = True;            {ARP configuration is enabled if True}
- RARP_CONFIG_ENABLED:LongBool = True;           {RARP configuration is enabled if True}
- BOOTP_CONFIG_ENABLED:LongBool = False; //True;          {BOOTP configuration is enabled if True}
+ RARP_CONFIG_ENABLED:LongBool = False;          {RARP configuration is enabled if True}
+ BOOTP_CONFIG_ENABLED:LongBool = False;         {BOOTP configuration is enabled if True}
  DHCP_CONFIG_ENABLED:LongBool = True;           {DHCP configuration is enabled if True}
  STATIC_CONFIG_ENABLED:LongBool = True;         {Static configuration is enabled if True}
  LOOPBACK_CONFIG_ENABLED:LongBool = True;       {Loopback configuration is enabled if True}
  
  {Transport configuration}
  IP_TRANSPORT_ENABLED:LongBool = True;          {IP transport is enabled if True}
- IP6_TRANSPORT_ENABLED:LongBool = False; //True;         {IPv6 transport is enabled if True}
+ IP6_TRANSPORT_ENABLED:LongBool = False;        {IPv6 transport is enabled if True}
  ARP_TRANSPORT_ENABLED:LongBool = True;         {ARP transport is enabled if True}
  RARP_TRANSPORT_ENABLED:LongBool = True;        {RARP transport is enabled if True}
  

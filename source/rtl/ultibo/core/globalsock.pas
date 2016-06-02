@@ -342,7 +342,7 @@ const
  MSG_PEEK        = $2;             {peek at incoming message }
  MSG_DONTROUTE   = $4;             {send without using routing tables }
 
- MSG_INTERRUPT   = $10; {/* send/recv in the interrupt context */}
+ MSG_INTERRUPT   = $10;            {send/recv in the interrupt context}
  MSG_MAXIOVLEN   = 16;
 
  MSG_PARTIAL     = $8000;          {partial send or recv for message xport }
@@ -766,6 +766,7 @@ type
    0: (S_un_b: SunB);
    1: (S_un_w: SunW);
    2: (S_addr: u_long);
+   3: (S_bytes: packed array[1..4] of Byte);
  end;
  TInAddr = in_addr;
 

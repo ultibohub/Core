@@ -312,6 +312,10 @@ type
  TWorkerTask = procedure(Data:Pointer); 
  TWorkerCallback = procedure(Data:Pointer); 
 
+type
+ {Prototype for Counter Callback Handlers}
+ TCounterCallback = procedure(Data:Pointer);
+ 
 type 
  {Prototype for GPIO Callback Handlers}
  TGPIOCallback = procedure(Data:Pointer;Pin,Trigger:LongWord);
@@ -329,6 +333,21 @@ type
  TActivityLEDEnable = procedure;
  TActivityLEDOn = procedure;
  TActivityLEDOff = procedure;
+ 
+type
+ {Prototypes for Counter Handlers}
+ TCounterAvailable = function:Boolean;
+ 
+ TCounterRead = function:LongWord;
+ TCounterRead64 = function:Int64;
+ TCounterWait = function:LongWord;
+ TCounterEvent = function(Callback:TCounterCallback;Data:Pointer):LongWord;
+ 
+ TCounterGetRate = function:LongWord;
+ TCounterSetRate = function(Rate:LongWord):LongWord;
+ 
+ TCounterGetInterval = function:LongWord;
+ TCounterSetInterval = function(Interval:LongWord):LongWord;
  
 type
  {Prototypes for Mailbox Handlers}
@@ -592,6 +611,14 @@ type
  TVirtualGPIOOutputSet = function(Pin:LongWord):LongWord;
  TVirtualGPIOOutputClear = function(Pin:LongWord):LongWord; 
  TVirtualGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
+ 
+//type
+ {Prototypes for SPI Handlers}
+ //To Do
+ 
+//type
+ {Prototypes for I2C Handlers}
+ //To Do
  
 //type
  {Prototypes for PWM Handlers}
@@ -907,6 +934,21 @@ var
  ActivityLEDOffHandler:TActivityLEDOff;
 
 var
+ {Counter Handlers}
+ CounterAvailableHandler:TCounterAvailable;
+ 
+ CounterReadHandler:TCounterRead;
+ CounterRead64Handler:TCounterRead64;
+ CounterWaitHandler:TCounterWait;
+ CounterEventHandler:TCounterEvent;
+ 
+ CounterGetRateHandler:TCounterGetRate;
+ CounterSetRateHandler:TCounterSetRate;
+ 
+ CounterGetIntervalHandler:TCounterGetInterval;
+ CounterSetIntervalHandler:TCounterSetInterval;
+ 
+var
  {Mailbox Handlers}
  MailboxReceiveHandler:TMailboxReceive; 
  MailboxSendHandler:TMailboxSend;
@@ -1170,6 +1212,14 @@ var
  VirtualGPIOFunctionSelectHandler:TVirtualGPIOFunctionSelect;
  
 //var
+ {SPI Handlers}
+ //To Do
+
+//var
+ {I2C Handlers}
+ //To Do
+ 
+//var
  {PWM Handlers}
  //To Do
  
@@ -1387,8 +1437,19 @@ procedure ActivityLEDOn; inline;
 procedure ActivityLEDOff; inline;
 
 {==============================================================================}
-{Timer Functions}
-//To Do //See Timer device
+{Counter Functions (Timer device)}
+function CounterAvailable:Boolean; inline;
+
+function CounterRead:LongWord; inline;
+function CounterRead64:Int64; inline;
+function CounterWait:LongWord; inline;
+function CounterEvent(Callback:TCounterCallback;Data:Pointer):LongWord; inline;
+
+function CounterGetRate:LongWord; inline;
+function CounterSetRate(Rate:LongWord):LongWord; inline;
+
+function CounterGetInterval:LongWord; inline;
+function CounterSetInterval(Interval:LongWord):LongWord; inline;
 
 {==============================================================================}
 {Mailbox Functions}
@@ -1677,6 +1738,14 @@ function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
 function VirtualGPIOOutputSet(Pin:LongWord):LongWord; inline;
 function VirtualGPIOOutputClear(Pin:LongWord):LongWord; inline;
 function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
+
+{==============================================================================}
+{SPI Functions}
+//To Do
+
+{==============================================================================}
+{I2C Functions}
+//To Do
 
 {==============================================================================}
 {PWM Functions}
@@ -2468,6 +2537,163 @@ begin
  if Assigned(ActivityLEDOffHandler) then
   begin
    ActivityLEDOffHandler;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Counter Functions (Timer device)}
+function CounterAvailable:Boolean; inline;
+{Check if a counter is currently available}
+begin
+ {}
+ if Assigned(CounterAvailableHandler) then
+  begin
+   Result:=CounterAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterRead:LongWord; inline;
+{Read the current value of the default counter}
+{Return: The 32 bit current value of the current or 0 on failure}
+begin
+ {}
+ if Assigned(CounterReadHandler) then
+  begin
+   Result:=CounterReadHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterRead64:Int64; inline;
+{Read the current value of the default counter}
+{Return: The 64 bit current value of the current or 0 on failure}
+begin
+ {}
+ if Assigned(CounterRead64Handler) then
+  begin
+   Result:=CounterRead64Handler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterWait:LongWord; inline;
+{Wait for the current interval to expire on the default counter}
+{Return: ERROR_SUCCESS if the interval expired or another error code on failure}
+begin
+ {}
+ if Assigned(CounterWaitHandler) then
+  begin
+   Result:=CounterWaitHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterEvent(Callback:TCounterCallback;Data:Pointer):LongWord; inline;
+{Schedule a function to be called when the current interval expires on the default counter}
+{Callback: The function to be called when the interval expires}
+{Data: A pointer to be pass to the function when the interval expires (Optional)}
+{Return: ERROR_SUCCESS if the callback was scheduled successfully or another error code on failure}
+begin
+ {}
+ if Assigned(CounterEventHandler) then
+  begin
+   Result:=CounterEventHandler(Callback,Data);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterGetRate:LongWord; inline;
+{Get the current clock rate in Hz of the default counter}
+{Return: The current clock rate in Hz or 0 on failure}
+begin
+ {}
+ if Assigned(CounterGetRateHandler) then
+  begin
+   Result:=CounterGetRateHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterSetRate(Rate:LongWord):LongWord; inline;
+{Set the current clock rate in Hz of the default counter}
+{Rate: The clock rate in Hz to set}
+{Return: ERROR_SUCCESS if the clock rate was set or another error code on failure}
+begin
+ {}
+ if Assigned(CounterSetRateHandler) then
+  begin
+   Result:=CounterSetRateHandler(Rate);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterGetInterval:LongWord; inline;
+{Get the current interval in milliseconds of the default counter}
+{Return: The current interval in milliseconds or 0 on failure (or not set)}
+begin
+ {}
+ if Assigned(CounterGetIntervalHandler) then
+  begin
+   Result:=CounterGetIntervalHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function CounterSetInterval(Interval:LongWord):LongWord; inline;
+{Set the current interval in milliseconds of the default counter}
+{Interval: The interval in milliseconds to set}
+{Return: ERROR_SUCCESS if the interval was set or another error code on failure}
+begin
+ {}
+ if Assigned(CounterSetIntervalHandler) then
+  begin
+   Result:=CounterSetIntervalHandler(Interval);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 
@@ -5227,6 +5453,18 @@ begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
+
+{==============================================================================}
+{==============================================================================}
+{SPI Functions}
+
+{==============================================================================}
+{==============================================================================}
+{I2C Functions}
+
+{==============================================================================}
+{==============================================================================}
+{PWM Functions}
 
 {==============================================================================}
 {==============================================================================}

@@ -491,7 +491,10 @@ function SMSC95XXDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;
 function SMSC95XXDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 
-//To Do //BufferAllocate/BufferRelease/BufferReceive/BufferTransmit
+function SMSC95XXBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+function SMSC95XXBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+function SMSC95XXBufferReceive(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+function SMSC95XXBufferTransmit(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
 
 {==============================================================================}
 {SMSC95XX USB Functions}
@@ -645,7 +648,7 @@ begin
       Request:=BufferGet(Network.TransmitBuffer);
       
       {Initialize Request}
-      USBRequestInitialize(Request); //Remove //Critical
+      USBRequestInitializeOld(Request); //To Do //Remove
       
       {Initialize Request}
       Request.Device:=Device;
@@ -1073,6 +1076,10 @@ begin
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
  
+ {$IFDEF SMSC95XX_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMSC95XX: Device Control');
+ {$ENDIF}
+ 
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
@@ -1150,6 +1157,110 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;  
+end;
+
+{==============================================================================}
+
+function SMSC95XXBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+{Implementation of NetworkBufferAllocate for the SMSC95XX device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Setup Entry}
+ Entry:=nil;
+ 
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF SMSC95XX_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMSC95XX: Buffer Allocate');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function SMSC95XXBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+{Implementation of NetworkBufferRelease for the SMSC95XX device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Entry}
+ if Entry = nil then Exit;
+ 
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF SMSC95XX_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMSC95XX: Buffer Release');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function SMSC95XXBufferReceive(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
+{Implementation of NetworkBufferReceive for the SMSC95XX device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Setup Entry}
+ Entry:=nil;
+ 
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF SMSC95XX_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMSC95XX: Buffer Receive');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function SMSC95XXBufferTransmit(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+{Implementation of NetworkBufferTransmit for the SMSC95XX device}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Entry}
+ if Entry = nil then Exit;
+ 
+ {Check Network}
+ if Network = nil then Exit;
+ if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF SMSC95XX_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMSC95XX: Buffer Transmit');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
+ 
+ //To Do
 end;
 
 {==============================================================================}
@@ -1309,16 +1420,20 @@ begin
  {Device}
  Network.Network.Device.DeviceBus:=DEVICE_BUS_USB;
  Network.Network.Device.DeviceType:=NETWORK_TYPE_ETHERNET;
- Network.Network.Device.DeviceFlags:=NETWORK_FLAG_NONE;     
+ Network.Network.Device.DeviceFlags:=NETWORK_FLAG_NONE; //To Do //NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER
  Network.Network.Device.DeviceData:=Device;
  {Network}
  Network.Network.NetworkState:=NETWORK_STATE_CLOSED;
  Network.Network.NetworkStatus:=NETWORK_STATUS_DOWN;
  Network.Network.DeviceOpen:=SMSC95XXDeviceOpen;
  Network.Network.DeviceClose:=SMSC95XXDeviceClose;
- Network.Network.DeviceRead:=SMSC95XXDeviceRead;
- Network.Network.DeviceWrite:=SMSC95XXDeviceWrite;
+ Network.Network.DeviceRead:=SMSC95XXDeviceRead; //To Do //Remove
+ Network.Network.DeviceWrite:=SMSC95XXDeviceWrite; //To Do //Remove
  Network.Network.DeviceControl:=SMSC95XXDeviceControl;
+ Network.Network.BufferAllocate:=SMSC95XXBufferAllocate;
+ Network.Network.BufferRelease:=SMSC95XXBufferRelease;
+ Network.Network.BufferReceive:=SMSC95XXBufferReceive;
+ Network.Network.BufferTransmit:=SMSC95XXBufferTransmit;
  {Driver}
  {USB}
  Network.ReceiveEndpoint:=ReceiveEndpoint;

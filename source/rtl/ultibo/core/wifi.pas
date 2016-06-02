@@ -1,5 +1,5 @@
 {
-Ultibo WiFi (WPA) interface unit.
+Ultibo WiFi (IEEE 802.11 / WPA) interface unit.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
 
@@ -26,12 +26,20 @@ Credits
   Linux - \include\net\cfg80211.h
           \include\net\mac80211.h
           \include\linux\ieee80211.h
+
+          \net\mac80211\rx.c
   
+          \net\wireless\chan.c
+          \net\wireless\util.c
+          
 References
 ==========
 
  Based on information from sources of WPA supplicant, the Linux kernel and others
  
+ Linux Wireless - https://wireless.wiki.kernel.org/en/developers/Documentation/ieee80211
+                  https://wireless.wiki.kernel.org/en/developers/documentation/mac80211
+                  
 WiFi
 ====
 
@@ -115,7 +123,12 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,Ne
 //To Do //In general terms WPA appears to the network stack as a Transport layer
         //sending and receiving 2 specific packet types:
         //EAP-over-LAN (EAPOL) $888E and RSN pre-authentication $88C7
-                      
+                   
+//To Do //radiotap support
+        //See: http://www.radiotap.org/
+        //See: /include/net/ieee80211_radiotap.h               
+        //See: \net\mac80211\rx.c
+        
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -240,6 +253,8 @@ const
  
  IEEE80211_FIRST_TSPEC_TSID      = 8;
  IEEE80211_NUM_TIDS              = 16;
+ 
+ IEEE80211_MAX_CHAINS            = 4;
  
  {Number of user priorities 802.11 uses}
  IEEE80211_NUM_UPS               = 8;
@@ -1394,11 +1409,46 @@ const
  WIFI_TX_POWER_LIMITED   = 1; {limit TX power by the mBm parameter}
  WIFI_TX_POWER_FIXED     = 2; {fix TX power to the mBm parameter}
  
+ {WiFi RX Flags} {As per Linux mac80211.h RX_FLAG_*}
+ WIFI_RX_FLAG_MMIC_ERROR	        = (1 shl 0);  {Michael MIC error was reported on this frame}
+ WIFI_RX_FLAG_DECRYPTED             = (1 shl 1);  {This frame was decrypted in hardware}
+ WIFI_RX_FLAG_MMIC_STRIPPED         = (1 shl 3);  {The Michael MIC is stripped off this frame,verification has been done by the hardware}
+ WIFI_RX_FLAG_IV_STRIPPED           = (1 shl 4);  {The IV/ICV are stripped from this frame}
+ WIFI_RX_FLAG_FAILED_FCS_CRC        = (1 shl 5);  {Set this flag if the FCS check failed on	the frame}
+ WIFI_RX_FLAG_FAILED_PLCP_CRC       = (1 shl 6);  {Set this flag if the PCLP check failed on the frame}
+ WIFI_RX_FLAG_MACTIME_START         = (1 shl 7);  {The timestamp passed in the RX status MACTime field is valid and contains the time the first symbol of the MPDU was received}
+ WIFI_RX_FLAG_SHORTPRE              = (1 shl 8);  {Short preamble was used for this frame}
+ WIFI_RX_FLAG_HT                    = (1 shl 9);  {HT MCS was used and RateIndex is MCS index}
+ WIFI_RX_FLAG_40MHZ                 = (1 shl 10); {HT40 (40 MHz) was used}
+ WIFI_RX_FLAG_SHORT_GI              = (1 shl 11); {Short guard interval was used}
+ WIFI_RX_FLAG_NO_SIGNAL_VAL         = (1 shl 12); {The signal strength value is not present. Valid only for data frames (mainly A-MPDU)}
+ WIFI_RX_FLAG_HT_GF                 = (1 shl 13); {This frame was received in a HT-greenfield transmission}
+ WIFI_RX_FLAG_AMPDU_DETAILS         = (1 shl 14); {A-MPDU details are known}
+ WIFI_RX_FLAG_AMPDU_REPORT_ZEROLEN  = (1 shl 15); {Driver reports 0-length subframes}
+ WIFI_RX_FLAG_AMPDU_IS_ZEROLEN      = (1 shl 16); {This is a zero-length subframe}
+ WIFI_RX_FLAG_AMPDU_LAST_KNOWN      = (1 shl 17); {Last subframe is known}
+ WIFI_RX_FLAG_AMPDU_IS_LAST         = (1 shl 18); {This subframe is the last subframe of the A-MPDU}
+ WIFI_RX_FLAG_AMPDU_DELIM_CRC_ERROR = (1 shl 19); {A delimiter CRC error has been detected on this subframe}
+ WIFI_RX_FLAG_AMPDU_DELIM_CRC_KNOWN = (1 shl 20); {The delimiter CRC field is known}
+ WIFI_RX_FLAG_MACTIME_END           = (1 shl 21); {The timestamp passed in the RX status MACTime field is valid and contains the time the last symbol of the MPDU (including FCS) was received}
+ WIFI_RX_FLAG_VHT                   = (1 shl 22); {HT MCS was used and RateIndex is MCS index}
+ WIFI_RX_FLAG_LDPC                  = (1 shl 23); {LDPC was used}
+ WIFI_RX_FLAG_STBC_MASK             = (1 shl 26) or (1 shl 27); {STBC 2 bit bitmask. 1 - Nss=1, 2 - Nss=2, 3 - Nss=3}
+ WIFI_RX_FLAG_10MHZ                 = (1 shl 28); {10 MHz (half channel) was used}
+ WIFI_RX_FLAG_5MHZ                  = (1 shl 29); {5 MHz (quarter channel) was used}
+ WIFI_RX_FLAG_AMSDU_MORE            = (1 shl 30); {Some drivers may prefer to report separate A-MSDU subframes instead of a one huge frame for performance reasons}
+ WIFI_RX_FLAG_RADIOTAP_VENDOR_DATA  = (1 shl 31); {This frame contains vendor-specific radiotap data in the data (before the frame)}
+ 
+ {WiFi RX VHT Flags} {As per Linux mac80211.h RX_VHT_FLAG_*}
+ WIFI_RX_VHT_FLAG_80MHZ	 = (1 shl 0); {80 MHz was used}
+ WIFI_RX_VHT_FLAG_160MHZ = (1 shl 1); {160 MHz was used}
+ WIFI_RX_VHT_FLAG_BF     = (1 shl 2); {packet was beamformed}
+ 
 {==============================================================================}
 type
  {IEEE80211 specific types} {As per Linux ieee80211.h}
  {$PACKRECORDS 2}
- PIEEE80211Header = ^TIEEE80211Header;
+ PIEEE80211Header = ^TIEEE80211Header; {From Linux ieee80211.h ieee80211_hdr}
  TIEEE80211Header = record {Not Packed}
   FrameControl:Word; {LE16}
   DurationId:Word;   {LE16}
@@ -1411,7 +1461,7 @@ type
  {$PACKRECORDS DEFAULT}
  
  {$PACKRECORDS 2}
- PIEEE80211Header3Address = ^TIEEE80211Header3Address;
+ PIEEE80211Header3Address = ^TIEEE80211Header3Address; {From Linux ieee80211.h ieee80211_hdr_3addr}
  TIEEE80211Header3Address = record {Not Packed}
   FrameControl:Word; {LE16}
   DurationId:Word;   {LE16}
@@ -1423,7 +1473,7 @@ type
  {$PACKRECORDS DEFAULT}
 
  {$PACKRECORDS 2}
- PIEEE80211QOSHeader = ^TIEEE80211QOSHeader;
+ PIEEE80211QOSHeader = ^TIEEE80211QOSHeader; {From Linux ieee80211.h ieee80211_qos_hdr}
  TIEEE80211QOSHeader = record {Not Packed}
   FrameControl:Word; {LE16}
   DurationId:Word;   {LE16}
@@ -1434,11 +1484,9 @@ type
   QoSControl:Word;      {LE16}
  end; 
  {$PACKRECORDS DEFAULT}
- 
- //To Do //ieee80211_has_tods/ieee80211_has_fromds etc from ieee80211.h
 
  {$PACKRECORDS 2}
- PIEEE80211SHeader = ^TIEEE80211SHeader;
+ PIEEE80211SHeader = ^TIEEE80211SHeader; {From Linux ieee80211.h ieee80211s_hdr}
  TIEEE80211SHeader = record {Not Packed}
   Flags:Byte;
   TTL:Byte;
@@ -1499,7 +1547,7 @@ type
   NewCenterFreqSeg1:Byte;
  end;
  
- PIEEE80211TrafficIndicationMapIE = ^TIEEE80211TrafficIndicationMapIE; {Traffic Indication Map information element} {From Linux ieee80211.h ieee80211_tim}
+ PIEEE80211TrafficIndicationMapIE = ^TIEEE80211TrafficIndicationMapIE; {Traffic Indication Map information element} {From Linux ieee80211.h ieee80211_tim_ie}
  TIEEE80211TrafficIndicationMapIE = packed record
   DTIMCount:Byte;
   DTIMPeriod:Byte;
@@ -1535,7 +1583,7 @@ type
   LinkMargin:Byte;
  end;
  
- TIEEE80211ManagementAuth = packed record
+ TIEEE80211ManagementAuth = packed record {From Linux ieee80211.h ieee80211_mgmt}
   AuthAlgorithm:Word;   {LE16}
   AuthTransaction:Word; {LE16}
   StatusCode:Word;      {LE16}
@@ -1543,18 +1591,18 @@ type
   Variable:array[0..0] of Byte; 
  end; 
  
- TIEEE80211ManagementDeauth = packed record
+ TIEEE80211ManagementDeauth = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ReasonCode:Word; {LE16}
  end;
 
- TIEEE80211ManagementAssocRequest = packed record
+ TIEEE80211ManagementAssocRequest = packed record {From Linux ieee80211.h ieee80211_mgmt}
   CapabilitiesInfo:Word; {LE16}
   ListenInterval:Word;   {LE16}
   {followed by SSID and Supported rates}
   Variable:array[0..0] of Byte; 
  end;
 
- TIEEE80211ManagementAssocResponse = packed record
+ TIEEE80211ManagementAssocResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
   CapabilitiesInfo:Word; {LE16}
   StatusCode:Word;       {LE16}
   AID:Word;              {LE16}
@@ -1562,7 +1610,7 @@ type
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementReassocRequest = packed record
+ TIEEE80211ManagementReassocRequest = packed record {From Linux ieee80211.h ieee80211_mgmt}
   CapabilitiesInfo:Word; {LE16}
   ListenInterval:Word;   {LE16}
   CurrentAP:THardwareAddress;
@@ -1570,11 +1618,11 @@ type
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementDisassoc = packed record
+ TIEEE80211ManagementDisassoc = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ReasonCode:Word; {LE16}
  end;
  
- TIEEE80211ManagementBeacon = packed record
+ TIEEE80211ManagementBeacon = packed record {From Linux ieee80211.h ieee80211_mgmt}
   Timestamp:Int64;       {LE64}
   BeaconInterval:Word;   {LE16}
   CapabilitiesInfo:Word; {LE16}
@@ -1582,12 +1630,12 @@ type
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementProbeRequest = packed record
+ TIEEE80211ManagementProbeRequest = packed record {From Linux ieee80211.h ieee80211_mgmt}
   {only variable items: SSID, Supported rates}
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementProbeResponse = packed record
+ TIEEE80211ManagementProbeResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
   Timestamp:Int64;       {LE64}
   BeaconInterval:Word;   {LE16}
   CapabilitiesInfo:Word; {LE16}
@@ -1595,25 +1643,25 @@ type
   Variable:array[0..0] of Byte; 
  end;
 
- TIEEE80211ManagementActionWMEAction = packed record
+ TIEEE80211ManagementActionWMEAction = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   StatusCode:Byte;
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementActionChannelSwitch = packed record
+ TIEEE80211ManagementActionChannelSwitch = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementActionExtChannelSwitch = packed record
+ TIEEE80211ManagementActionExtChannelSwitch = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   Data:TIEEE80211ExtChannelSwitchIE;
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementActionMeasurement = packed record
+ TIEEE80211ManagementActionMeasurement = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   ElementID:Byte;
@@ -1621,7 +1669,7 @@ type
   Element:TIEEE80211MeasurementIE;
  end;
  
- TIEEE80211ManagementActionAddBARequest = packed record
+ TIEEE80211ManagementActionAddBARequest = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   Capability:Word;          {LE16}
@@ -1629,7 +1677,7 @@ type
   StartSequenceNumber:Word; {LE16}
  end;
  
- TIEEE80211ManagementActionAddBAResponse = packed record
+ TIEEE80211ManagementActionAddBAResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   Status:Word;     {LE16}
@@ -1637,50 +1685,50 @@ type
   Timeout:Word;    {LE16}
  end;
 
- TIEEE80211ManagementActionDelBA = packed record
+ TIEEE80211ManagementActionDelBA = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   Params:Word;     {LE16}
   ReasonCode:Word; {LE16}
  end;
  
- TIEEE80211ManagementActionSelfProt = packed record
+ TIEEE80211ManagementActionSelfProt = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementActionMeshAction = packed record
+ TIEEE80211ManagementActionMeshAction = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   Variable:array[0..0] of Byte; 
  end;
 
- TIEEE80211ManagementActionSAQuery = packed record
+ TIEEE80211ManagementActionSAQuery = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   TransID:array[0..WLAN_SA_QUERY_TR_ID_LEN - 1] of Byte;
  end;
 
- TIEEE80211ManagementActionHTSMPS = packed record
+ TIEEE80211ManagementActionHTSMPS = packed record {From Linux ieee80211.h ieee80211_mgmt}
   Action:Byte;
   SMPSControl:Byte;
  end;
 
- TIEEE80211ManagementActionHTNotifyChannelWidth = packed record
+ TIEEE80211ManagementActionHTNotifyChannelWidth = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   ChannelWidth:Byte;
  end;
  
- TIEEE80211ManagementActionTDLSDiscoverResponse = packed record
+ TIEEE80211ManagementActionTDLSDiscoverResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   Capability:Word; {LE16}
   Variable:array[0..0] of Byte; 
  end;
  
- TIEEE80211ManagementActionVHTOpmodeNotify = packed record
+ TIEEE80211ManagementActionVHTOpmodeNotify = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   OperatingMode:Byte;
  end;
 
- TIEEE80211ManagementActionTPCReport = packed record
+ TIEEE80211ManagementActionTPCReport = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   TPCElementID:Byte;
@@ -1688,7 +1736,7 @@ type
   TPC:TIEEE80211TPCReportIE;
  end;
  
- TIEEE80211ManagementAction = packed record
+ TIEEE80211ManagementAction = packed record {From Linux ieee80211.h ieee80211_mgmt}
   case Integer of
    0:(WMEAction:TIEEE80211ManagementAuth);
    1:(ChannelSwitch:TIEEE80211ManagementActionChannelSwitch);
@@ -1708,7 +1756,7 @@ type
  end;
  
  {$PACKRECORDS 2}
- PIEEE80211Management = ^TIEEE80211Management;
+ PIEEE80211Management = ^TIEEE80211Management; {From Linux ieee80211.h ieee80211_mgmt}
  TIEEE80211Management = record {Not Packed}
   FrameControl:Word; {LE16}
   Duration:Word;     {LE16}
@@ -2095,7 +2143,7 @@ type
   SyncTSF:Int64;               {Last beacon's/probe response's TSF timestamp (could be old as it may have been received during scanning long ago)}
   SyncDeviceTS:LongWord;       {The device timestamp corresponding to the SyncTSF}
   SyncDTIMCount:Byte;          {Only valid when IEEE80211_HW_TIMING_BEACON_ONLY is requested}
-  BasicRates:LongWord;         {Bitmap of basic rates, each bit stands for an index into the rate table configured by the driver in	the current band}
+  BasicRates:LongWord;         {Bitmap of basic rates, each bit stands for an index into the rate table configured by the driver in the current band}
   BeaconRate:PIEEE80211Rate;   {Associated AP's beacon TX rate}
   MulticastRate:array[0..IEEE80211_NUM_BANDS - 1] of Integer; {Per-band multicast rate index + 1 (0: disabled)}
   HTOperationMode:Word;        {HT operation mode like in  TIEEE80211HTOperation}
@@ -2113,6 +2161,90 @@ type
   TXPower:LongInt;             {TX power in dBm}
   TXPowerType:LongWord;        {TX power adjustment used to control per packet Transmit Power Control (TPC) in driver for the current interface (WIFI_TX_POWER_*)}
   P2PNOAAttribute:TIEEE80211P2PNOAAttribute; {P2P NoA attribute for P2P powersave}
+ end;
+ 
+ PIEEE80211RXStatus = ^TIEEE80211RXStatus;
+ TIEEE80211RXStatus = record  {From Linux mac80211.h ieee80211_rx_status}
+  MACTime:Int64;            {Value in microseconds of the 64-bit Time Synchronization Function (TSF) timer when the first data symbol (MPDU) arrived at the hardware}
+  DeviceTimestamp:LongWord; {Arbitrary timestamp for the device} //To Do //Remove ?
+  AMPDUReference:LongWord;  {A-MPDU reference number, must be a different value for each A-MPDU but the same for each subframe within one A-MPDU}
+  Flags:LongWord;           {WIFI_RX_FLAG_*}
+  Frequency:Word;           {Frequency the radio was tuned to when receiving this frame, in MHz}
+  VHTFlags:Byte;            {WIFI_RX_VHT_FLAG_*}
+  RateIndex:Byte;           {Index of data rate into band's supported rates or MCS index if HT or VHT is used (WIFI_RX_FLAG_HT/WIFI_RX_FLAG_VHT)}
+  VHTNSS:Byte;              {Number of streams (VHT only)}
+  RXFlags:Byte;             {Internal RX flags (IEEE80211_RX_*)}
+  Band:Byte;                {The active band when this frame was received}
+  Antenna:Byte;             {Antenna used}
+  Signal:Byte;              {Signal strength when receiving this frame, either in dBm, in dB or	unspecified depending on the hardware capabilities flags IEEE80211_HW_SIGNAL_*}
+  Chains:Byte;              {Bitmask of receive chains for which separate signal strength values were filled}
+  ChainSignal:array[0..IEEE80211_MAX_CHAINS - 1] of Byte; {Per-chain signal strength, in dBm (unlike Signal, doesn't support dB or unspecified units)}
+  AMPDUDelimiterCRC:Byte;   {A-MPDU delimiter CRC}
+ end;
+ 
+ PIEEE80211TXInfo = ^TIEEE80211TXInfo;
+ TIEEE80211TXInfo = record  {From Linux mac80211.h ieee80211_tx_info}
+  //To Do //From ieee80211_tx_info
+ end;
+ 
+ PIEEE80211InformationElements = ^TIEEE80211InformationElements;  {From Linux ieee80211_i.h ieee802_11_elems}
+ TIEEE80211InformationElements = record
+  Address:Pointer;
+  Size:LongWord;
+  
+  {Information Elements}
+  LinkIdentifier:PIEEE80211TDLSLinkIdentifierIE;
+  ChannelSwitchTiming:PIEEE80211ChannelSwitchTiming;
+  ExtendedCapabilities:Pointer;
+  SSID:Pointer; 
+  SupportedRates:Pointer;
+  DSParameters:Pointer;
+  TrafficIndicationMap:PIEEE80211TrafficIndicationMapIE;
+  ChallengeText:Pointer;
+  RSN:Pointer;
+  ERPInfo:Pointer;
+  ExtendedSupportedRates:Pointer;
+  WMMInfo:Pointer;
+  WMMParam:Pointer;
+  HTCapabilities:PIEEE80211HTCapabilities; 
+  HTOperation:PIEEE80211HTOperation;
+  VHTCapabilities:PIEEE80211VHTCapabilities;
+  VHTOperation:PIEEE80211VHTOperation;
+  MeshConfiguration:PIEEE80211MeshConfigurationIE;
+  MeshID:Pointer;
+  PeerManagement:Pointer;
+  MeshAwakeWindow:Word; {LE16}
+  PREQ:Pointer;
+  PREP:Pointer;
+  PERR:Pointer;
+  RootAnnouncement:PIEEE80211RootAnnouncementIE;
+  ChannelSwitch:PIEEE80211ChannelSwitchIE;
+  ExtChannelSwitch:PIEEE80211ExtChannelSwitchIE;
+  WidebandChannelSwitch:PIEEE80211WidebandChannelSwitchIE;
+  Country:Pointer;
+  PowerConstraint:Pointer;
+  CiscoDTPC:Pointer;
+  TimeoutInterval:PIEEE80211TimeoutIntervalIE;
+  OpmodeNotification:Pointer;
+  SecondaryChannelOffset:PIEEE80211SecondaryChannelOffsetIE;
+  MeshChannelSwitchParams:PIEEE80211MeshChannelSwitchParamsIE;
+  
+  {Lengths of Elements}
+  ExtendedCapabilitiesLength:Byte;
+  SSIDLength:Byte;
+  SupportedRatesLength:Byte;
+  TrafficIndicationMapLength:Byte; 
+  ChallengeTextLength:Byte; 
+  RSNLength:Byte;
+  ExtendedSupportedRatesLength:Byte;
+  WMMInfoLength:Byte; 
+  WMMParamLength:Byte; 
+  MeshIDLength:Byte; 
+  PeerManagementLength:Byte; 
+  PREQLength:Byte; 
+  PREPLength:Byte; 
+  PERRLength:Byte; 
+  CountryLength:Byte;
  end;
  
 {==============================================================================}
@@ -2225,10 +2357,11 @@ type
   {Driver Properties}
   //To Do
  end; 
-
+ 
 {==============================================================================}
 type
  {WiFi specific classes}
+ //TWiFiServiceSet = class;
  TWiFiAdapter = class(TNetworkAdapter)
    constructor Create(AManager:TAdapterManager;ADevice:PNetworkDevice;const AName:String);
   private
@@ -2239,6 +2372,14 @@ type
    FHardwareAddress:THardwareAddress;
    FBroadcastAddress:THardwareAddress;
    FMulticastAddresses:TMulticastAddresses;
+   
+   {Internal Methods}
+   function CheckReceiveFrame(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
+   
+   function ReceiveHandler(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
+   
+   function ScanReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
+   function DataReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
   protected
    {Inherited Methods}
 
@@ -2395,12 +2536,67 @@ function WiFiNetworkDeviceNotify(Device:PDevice;Data:Pointer;Notification:LongWo
 
 {==============================================================================}
 {IEEE80211 Helper Functions}
+function IEEE80211HasToDS(FrameControl:Word):Boolean; inline;
+function IEEE80211HasFromDS(FrameControl:Word):Boolean; inline;
+function IEEE80211HasA4(FrameControl:Word):Boolean; inline;
+
+function IEEE80211HasMoreFrags(FrameControl:Word):Boolean; inline;
+function IEEE80211HasRetry(FrameControl:Word):Boolean; inline;
+function IEEE80211HasPM(FrameControl:Word):Boolean; inline;
+function IEEE80211HasMoreData(FrameControl:Word):Boolean; inline;
+function IEEE80211HasProtected(FrameControl:Word):Boolean; inline;
+function IEEE80211HasOrder(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsMgmt(FrameControl:Word):Boolean; inline;
+function IEEE80211IsCtl(FrameControl:Word):Boolean; inline;
+function IEEE80211IsData(FrameControl:Word):Boolean; inline;
+function IEEE80211IsDataQoS(FrameControl:Word):Boolean; inline;
+function IEEE80211IsDataPresent(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsAssocReq(FrameControl:Word):Boolean; inline;
+function IEEE80211IsAssocResp(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsReassocReq(FrameControl:Word):Boolean; inline;
+function IEEE80211IsReassocResp(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsProbeReq(FrameControl:Word):Boolean; inline;
+function IEEE80211IsProbeResp(FrameControl:Word):Boolean; inline;
+function IEEE80211IsBeacon(FrameControl:Word):Boolean; inline;
+function IEEE80211IsATIM(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsDisassoc(FrameControl:Word):Boolean; inline;
+function IEEE80211IsAuth(FrameControl:Word):Boolean; inline;
+function IEEE80211IsDeauth(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsAction(FrameControl:Word):Boolean; inline;
+function IEEE80211IsBackReq(FrameControl:Word):Boolean; inline;
+function IEEE80211IsBack(FrameControl:Word):Boolean; inline;
+function IEEE80211IsPSPoll(FrameControl:Word):Boolean; inline;
+function IEEE80211IsRTS(FrameControl:Word):Boolean; inline;
+function IEEE80211IsCTS(FrameControl:Word):Boolean; inline;
+function IEEE80211IsACK(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsCFEnd(FrameControl:Word):Boolean; inline;
+function IEEE80211IsCFEndAck(FrameControl:Word):Boolean; inline;
+function IEEE80211IsNullFunc(FrameControl:Word):Boolean; inline;
+function IEEE80211IsQoSNullFunc(FrameControl:Word):Boolean; inline;
+function IEEE80211IsBufferableMMPDU(FrameControl:Word):Boolean; inline;
+
+function IEEE80211IsFirstFrag(SequenceControl:Word):Boolean; inline;
+
+function IEEE80211HeaderLength(FrameControl:Word):LongWord;
+function IEEE80211HeaderLengthFromBuffer(Data:Pointer;Size:LongWord):LongWord;
+
 function IEEE80211MCSToChains(MCS:PIEEE80211MCSInfo):Byte;
 
 function IEEE80211ChannelToFrequency(Channel:Integer;Band:LongWord):Integer;
 function IEEE80211FrequencyToChannel(Frequency:Integer):Integer;
 
 procedure IEEE80211InitializeChannelDefinition(Definition:PIEEE80211ChannelDefinition;Channel:PIEEE80211Channel;ChannelType:LongWord);
+
+function IEEE80211FindInformationElement(Identifier:Byte;InformationElement:PByte;ElementLength:LongWord):PByte;
+
+function IEEE80211ParseInformationElements(Buffer:Pointer;Size:LongWord;Action:Boolean;Elements:PIEEE80211InformationElements):Boolean;
 
 {==============================================================================}
 {==============================================================================}
@@ -2428,6 +2624,196 @@ begin
  FillChar(FBroadcastAddress,SizeOf(THardwareAddress),0);
  FillChar(FMulticastAddresses,SizeOf(TMulticastAddresses),0);
 end;
+
+{==============================================================================}
+
+function TWiFiAdapter.CheckReceiveFrame(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
+{Check if a received frame is valid to continue processing or should be dropped}
+
+{should_drop_frame}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Packet} 
+ if APacket = nil then Exit;
+ 
+ {Check Status}
+ if AStatus = nil then Exit;
+ 
+ {Check Frame Errors}
+ if (AStatus.Flags and (WIFI_RX_FLAG_FAILED_FCS_CRC or WIFI_RX_FLAG_FAILED_PLCP_CRC or WIFI_RX_FLAG_AMPDU_IS_ZEROLEN)) <> 0 then Exit;
+ 
+ {Check Frame Size}
+ if APacket.Length < 16 then Exit;
+ 
+ {Check Control Frames}
+ if IEEE80211IsCtl(PIEEE80211Header(APacket.Data).FrameControl) and not(IEEE80211IsPSPoll(PIEEE80211Header(APacket.Data).FrameControl)) and not(IEEE80211IsBackReq(PIEEE80211Header(APacket.Data).FrameControl)) then Exit;
+ 
+ Result:=True;
+end;
+ 
+{==============================================================================}
+ 
+function TWiFiAdapter.ReceiveHandler(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
+{__ieee80211_rx_handle_packet / ieee80211_prepare_and_rx_handle}
+var
+ FrameType:Word;
+ PacketType:Word;
+ FrameControl:Word;
+ Transport:TAdapterTransport; 
+begin
+ {}
+ Result:=False;
+ 
+ {Check Packet} 
+ if APacket = nil then Exit;
+ 
+ {Check Status}
+ if AStatus = nil then Exit;
+ 
+ {Get Frame Control}
+ FrameControl:=PIEEE80211Header(APacket.Data).FrameControl;
+
+ {$IFDEF WIFI_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Receiving Frame (FrameControl=' + IntToHex(FrameControl,4) + ')');
+ {$ENDIF}
+ 
+ {Check Management}
+ if IEEE80211IsMgmt(FrameControl) then
+  begin
+   {Check Length (Drop if too short)}
+   if APacket.Length < IEEE80211HeaderLength(FrameControl) then Exit;
+  end;
+ 
+ {Check Beacon / Probe Response}
+ if IEEE80211IsProbeResp(FrameControl) or IEEE80211IsBeacon(FrameControl) then
+  begin
+   Result:=ScanReceiver(APacket,AStatus);
+  end;
+  
+ {Check Data}
+ if IEEE80211IsData(FrameControl) then
+  begin
+   Result:=DataReceiver(APacket,AStatus);
+  end
+ else
+  begin 
+ 
+   //To Do //Continuing //ieee80211_prepare_and_rx_handle
+   
+  end; 
+end;
+ 
+{==============================================================================}
+ 
+function TWiFiAdapter.ScanReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
+{ieee80211_scan_rx}
+var
+ Buffer:Pointer;
+ Offset:LongWord;
+ Management:PIEEE80211Management;
+ Elements:TIEEE80211InformationElements;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Packet} 
+ if APacket = nil then Exit;
+ 
+ {Check Status}
+ if AStatus = nil then Exit;
+
+ {$IFDEF WIFI_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Scan Receive');
+ {$ENDIF}
+
+ {Get Management}
+ Management:=PIEEE80211Management(APacket.Data);
+ 
+ {Check Length (Drop if too short)}
+ if APacket.Length < 24 then Exit;
+
+ {$IFDEF WIFI_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: FrameControl=' + IntToHex(Management.FrameControl,4));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Duration=' + IntToHex(Management.Duration,4));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: DestinationAddress=' + HardwareAddressToString(Management.DestinationAddress));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: SourceAddress=' + HardwareAddressToString(Management.SourceAddress));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: BSSID=' + HardwareAddressToString(Management.BSSID));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: SequenceControl=' + IntToHex(Management.SequenceControl,4));
+ {$ENDIF}
+ 
+ {Check Type}
+ if IEEE80211IsProbeResp(Management.FrameControl) then
+  begin
+   {Elements Buffer}
+   Buffer:=@Management.ProbeResponse.Variable;
+   
+   {Elements Offset}
+   Offset:=PtrUInt(Buffer) - PtrUInt(Management);
+   
+   {$IFDEF WIFI_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProbeResponse.Timestamp=' + IntToHex(Management.ProbeResponse.Timestamp,16));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProbeResponse.BeaconInterval=' + IntToHex(Management.ProbeResponse.BeaconInterval,4));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProbeResponse.CapabilitiesInfo=' + IntToHex(Management.ProbeResponse.CapabilitiesInfo,4));
+   {$ENDIF}
+  end
+ else if IEEE80211IsBeacon(Management.FrameControl) then 
+  begin
+   {Elements Buffer}
+   Buffer:=@Management.Beacon.Variable;
+  
+   {Elements Offset}
+   Offset:=PtrUInt(Buffer) - PtrUInt(Management);
+   
+   {$IFDEF WIFI_DEBUG}
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Beacon.Timestamp=' + IntToHex(Management.Beacon.Timestamp,16));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Beacon.BeaconInterval=' + IntToHex(Management.Beacon.BeaconInterval,4));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Beacon.CapabilitiesInfo=' + IntToHex(Management.Beacon.CapabilitiesInfo,4));
+   {$ENDIF}
+  end
+ else
+  begin
+   {Invalid}
+   Exit;
+  end;  
+ 
+ {Check Offset}
+ if Offset > APacket.Length then Exit;
+ 
+ {Parse Elements}
+ if not IEEE80211ParseInformationElements(Buffer + Offset,APacket.Length - Offset,False,@Elements) then Exit;
+ 
+ //check Offset ? - Done
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Offset=' + IntToStr(Offset));
+ 
+ //To Do //Continuing //ieee802_11_parse_elems
+ 
+ //To Do //Continuing
+ 
+ Result:=True;
+end;
+ 
+{==============================================================================}
+
+function TWiFiAdapter.DataReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
+{ieee80211_prepare_and_rx_handle}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Packet} 
+ if APacket = nil then Exit;
+ 
+ {Check Status}
+ if AStatus = nil then Exit;
+
+ {$IFDEF WIFI_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Data Receive');
+ {$ENDIF}
+ 
+ //To Do //Continuing
+end;
  
 {==============================================================================}
 
@@ -2447,8 +2833,8 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Name = ' + APacketName);
   {$ENDIF}
   
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
   
   {Check Device}
   if FDevice = nil then Exit;
@@ -2459,7 +2845,7 @@ begin
  
   {Check Frame Type}
   case AFrameType of 
-   FRAME_TYPE_ETHERNET_II:begin
+   FRAME_TYPE_ETHERNET_II:begin //To Do //Continuing //FRAME_TYPE_ETHERNET_8022
      {Check Media Type}
      if FMediaType <> MEDIA_TYPE_ETHERNET then Exit;
     end;
@@ -2510,9 +2896,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Packet = ' + PacketTypeToString(APacketType));
   {$ENDIF}
-  
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
   
   {Get Transport}
   Transport:=TAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
@@ -2564,9 +2950,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetMTU (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
- 
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
 
   {Check Device}
   if FDevice = nil then Exit;
@@ -2588,7 +2974,9 @@ var
  Size:Integer;
  Length:LongWord;
  Buffer:Pointer;
- Packet:PPacketFragment;
+ Entry:PNetworkEntry;
+ Packet:PNetworkPacket;
+ Fragment:PPacketFragment;
  Ethernet:PEthernetHeader;
  Transport:TAdapterTransport;
 begin
@@ -2606,18 +2994,21 @@ begin
   
  {Check Packet}
  if APacket = nil then Exit;
-  
- {Check Status}
- if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+ {Check State}
+ if FState = ADAPTER_STATE_DISABLED then Exit;
  
  {Check Device}
  if FDevice = nil then Exit;
+ 
+ {Check Flags}
+ if (FDevice.Device.DeviceFlags and NETWORK_FLAG_TX_BUFFER) = 0 then Exit;
  
  {Get Transport}
  Transport:=TAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
-  //To Do
+  //To Do //Continuing
  finally 
   Transport.ReaderUnlock;
  end; 
@@ -2637,8 +3028,8 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
  
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
 
   {Check Device}
   if FDevice = nil then Exit;
@@ -2665,9 +3056,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetHardwareAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
- 
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
   
   {Check Device}
   if FDevice = nil then Exit;
@@ -2695,9 +3086,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Address = ' + HardwareAddressToString(AAddress));
   {$ENDIF}
-  
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
   
   {Check Device}
   if FDevice = nil then Exit;
@@ -2730,9 +3121,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetBroadcastAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
- 
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
 
   {Check Device}
   if FDevice = nil then Exit;
@@ -2757,9 +3148,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetMulticastAddresses (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
-  
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
 
   {Check Device}
   if FDevice = nil then Exit;
@@ -2784,9 +3175,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Address = ' + HardwareAddressToString(AAddress));
   {$ENDIF}
-  
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
 
   {Check Device}
   if FDevice = nil then Exit;
@@ -2811,9 +3202,9 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Address = ' + HardwareAddressToString(AAddress));
   {$ENDIF}
-  
-  {Check Status}
-  if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
 
   {Check Device}
   if FDevice = nil then Exit;
@@ -2839,8 +3230,8 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: StartAdapter (' + Name + ')');
   {$ENDIF}
   
-  {Check Status} 
-  if FStatus <> ADAPTER_STATUS_UNKNOWN then Exit;
+  {Check State}
+  if FState <> ADAPTER_STATE_DISABLED then Exit;
   
   {Check Device}
   if FDevice = nil then Exit;
@@ -2850,6 +3241,10 @@ begin
    NETWORK_TYPE_80211:FMediaType:=MEDIA_TYPE_ETHERNET;
   end;
   if FMediaType = MEDIA_TYPE_UNKNOWN then Exit;   
+  
+  {Check Flags}
+  if (FDevice.Device.DeviceFlags and NETWORK_FLAG_RX_BUFFER) = 0 then Exit;
+  if (FDevice.Device.DeviceFlags and NETWORK_FLAG_TX_BUFFER) = 0 then Exit;
   
   //To Do //See ieee80211_do_open for other stuff (IFTYPES etc)
   
@@ -2878,8 +3273,11 @@ begin
      
     //To Do
     
-    {Set Status}
-    FStatus:=ADAPTER_STATUS_READY;
+    {Set State}
+    FState:=ADAPTER_STATE_ENABLED;
+    
+    {Set Status (Down until Associated)}
+    FStatus:=ADAPTER_STATUS_DOWN;
 
     {Get Properties}
     FDefaultAddress:=GetDefaultAddress(INVALID_HANDLE_VALUE);
@@ -2919,8 +3317,8 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: StopAdapter (' + Name + ')');
   {$ENDIF}
 
-  {Check Status} 
-  if FStatus <> ADAPTER_STATUS_READY then Exit;
+  {Check State}
+  if FState <> ADAPTER_STATE_ENABLED then Exit;
   
   {Check Device}
   if FDevice = nil then Exit;
@@ -2953,11 +3351,14 @@ begin
       Transport:=TAdapterTransport(GetTransportByNext(Current,True,True,NETWORK_LOCK_READ));
     
       {Remove Transport}
-      RemoveTransport(THandle(Transport),Transport.PacketType);
+      RemoveTransport(THandle(Current),Current.PacketType);
      end;
   
+    {Reset State}
+    FState:=ADAPTER_STATE_DISABLED;
+  
     {Reset Status}
-    FStatus:=ADAPTER_STATUS_UNKNOWN;
+    FStatus:=ADAPTER_STATUS_DOWN;
   
     {Reset Properties}
     FillChar(FDefaultAddress,SizeOf(THardwareAddress),0);
@@ -2976,12 +3377,19 @@ end;
 {==============================================================================}
 
 function TWiFiAdapter.ProcessAdapter:Boolean;
+{ieee80211_rx}
+var
+ Rate:PIEEE80211Rate;
+ Entry:PNetworkEntry;
+ Packet:PNetworkPacket;
+ Status:PIEEE80211RXStatus;
+ SupportedBand:PIEEE80211SupportedBand;
 begin
  {}
  Result:=False;
  
- {Check Status}
- if FStatus = ADAPTER_STATUS_UNKNOWN then Exit;
+ {Check State}
+ if FState = ADAPTER_STATE_DISABLED then Exit;
 
  {Check Device}
  if FDevice = nil then Exit;
@@ -2989,8 +3397,102 @@ begin
  {Check Thread}
  if FThread = nil then Exit;
 
- Sleep(1000); //To Do
- //To Do
+ {Check Flags}
+ if (FDevice.Device.DeviceFlags and NETWORK_FLAG_RX_BUFFER) = 0 then Exit;
+ 
+ {Receive Buffer}
+ if NetworkBufferReceive(FDevice,Entry) = ERROR_SUCCESS then
+  begin
+   try
+    {$IFDEF WIFI_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProcessAdapter (' + Name + ')');
+    {$ENDIF}
+ 
+    {Get Packet}
+    Packet:=@Entry.Packets[0]; //To Do //Multiple packets per entry
+    
+    {$IFDEF WIFI_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Packet Length = ' + IntToStr(Packet.Length));
+    {$ENDIF}
+    
+    {Get Status}
+    Status:=PIEEE80211RXStatus(Entry.DriverData);
+    
+    {$IFDEF WIFI_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Status.Band = ' + IntToStr(Status.Band));
+    {$ENDIF}
+    
+    {Check Band}
+    if Status.Band >= IEEE80211_NUM_BANDS then Exit;
+    
+    {Get Band}
+    SupportedBand:=PWiFiDevice(FDevice).Bands[Status.Band];
+    if SupportedBand = nil then Exit;
+    
+    //To Do //Continuing //Check Reconfig/Quiescing/Suspended ? //ieee80211_rx
+    
+    {Check Status}
+    Rate:=nil;
+    if (Status.Flags and WIFI_RX_FLAG_FAILED_PLCP_CRC) = 0 then
+     begin
+      {Validate the rate, unless a PLCP error means that we probably can't have a valid rate here anyway}
+      if (Status.Flags and WIFI_RX_FLAG_HT) <> 0 then
+       begin
+        {RateIndex is MCS index, which can be [0-76] as documented on:
+        
+         http://wireless.kernel.org/en/developers/Documentation/ieee80211/802.11n
+        
+         Anything else would be some sort of driver or hardware error}
+        if Status.RateIndex > 76 then
+         begin        
+          if NETWORK_LOG_ENABLED then NetworkLogError(FDevice,'WiFiAdapter: HT rate not in MCS index range [0-76] (RateIndex= ' + IntToStr(Status.RateIndex) + ')');
+          Exit;
+         end;
+       end
+      else if (Status.Flags and WIFI_RX_FLAG_VHT) <> 0 then 
+       begin
+        if (Status.RateIndex > 9) or (Status.VHTNSS = 0) or (Status.VHTNSS > 8) then
+         begin
+          if NETWORK_LOG_ENABLED then NetworkLogError(FDevice,'WiFiAdapter: VHT rate with invalid data (RateIndex= ' + IntToStr(Status.RateIndex) + ' VHTNSS=' + IntToStr(Status.VHTNSS) + ')');
+          Exit;
+         end;
+       end
+      else
+       begin
+        if Status.RateIndex >= SupportedBand.RateCount then
+         begin
+          if NETWORK_LOG_ENABLED then NetworkLogError(FDevice,'WiFiAdapter: Rate index exceeds supported rate count (RateIndex= ' + IntToStr(Status.RateIndex) + ')');
+          Exit;
+         end;
+        
+        {Get Rate}
+        Rate:=@SupportedBand.Rates[Status.RateIndex];
+       end;       
+     end;
+    
+    //To Do //Continuing //ieee80211_rx_monitor //radiotap not supported yet //Add TAdapterMonitor class
+    
+    if CheckReceiveFrame(Packet,Status) then
+     begin
+      //To Do //Continuing //ieee80211_tpt_led_trig_rx
+      
+      {Call Receive Handler}
+      ReceiveHandler(Packet,Status);
+     end
+    else
+     begin
+      {$IFDEF WIFI_DEBUG}
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Dropping received frame (FrameControl=' + IntToHex(PIEEE80211Header(Packet.Data).FrameControl,4) + ' Length=' + IntToStr(Packet.Length) +')');
+      {$ENDIF}
+     end;
+     
+    {Return Result}
+    Result:=True;
+   finally
+    {Release Buffer}
+    NetworkBufferRelease(FDevice,Entry);
+   end;
+  end; 
 end;
  
 {==============================================================================}
@@ -3097,9 +3599,9 @@ begin
   
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   {Get Adapter}
   Adapter:=TEAPOLTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
@@ -3253,7 +3755,7 @@ begin
     Adapter:=TEAPOLTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
     
     {Remove Adapter} 
-    RemoveAdapter(Adapter.Adapter);
+    RemoveAdapter(Current.Adapter); 
    end;
   
   {Return Result}
@@ -3297,13 +3799,14 @@ begin
   
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:   State = ' + AdapterStateToString(AAdapter.State));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:   Status = ' + AdapterStatusToString(AAdapter.Status));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:   Media = ' + MediaTypeToString(AAdapter.MediaType));
   {$ENDIF}
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   Result:=True;
   
@@ -3488,9 +3991,9 @@ begin
   
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   {Get Adapter}
   Adapter:=TRSNTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
@@ -3644,7 +4147,7 @@ begin
     Adapter:=TRSNTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
     
     {Remove Adapter} 
-    RemoveAdapter(Adapter.Adapter);
+    RemoveAdapter(Current.Adapter);
    end;
   
   {Return Result}
@@ -3688,13 +4191,14 @@ begin
   
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:   State = ' + AdapterStateToString(AAdapter.State));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:   Status = ' + AdapterStatusToString(AAdapter.Status));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:   Media = ' + MediaTypeToString(AAdapter.MediaType));
   {$ENDIF}
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   Result:=True;
   
@@ -3785,13 +4289,13 @@ begin
  if WiFiInitialized then Exit;
  
  {Create EAPOL Transport}
- if EAPOL_TRANSPORT_ENABLED then
+ if NetworkSettings.GetBooleanDefault('EAPOL_TRANSPORT_ENABLED',EAPOL_TRANSPORT_ENABLED) then 
   begin
    TEAPOLTransport.Create(TransportManager,EAPOL_TRANSPORT_NAME);
   end; 
  
  {Create RSN Transport}
- if RSN_TRANSPORT_ENABLED then
+ if NetworkSettings.GetBooleanDefault('RSN_TRANSPORT_ENABLED',RSN_TRANSPORT_ENABLED) then 
   begin
    TRSNTransport.Create(TransportManager,RSN_TRANSPORT_NAME);
   end; 
@@ -4019,9 +4523,18 @@ begin
  if not Assigned(WiFi.DeviceConfigureInterface) then Exit;
 
  {Check Network Functions}
- //To Do //if not Assigned(WiFi.Network.BufferTransmit) then Exit;
  if not Assigned(WiFi.Network.DeviceOpen) then Exit;
  if not Assigned(WiFi.Network.DeviceClose) then Exit;
+ if not Assigned(WiFi.Network.DeviceRead) then
+  begin
+   if not Assigned(WiFi.Network.BufferReceive) then Exit;
+   if not Assigned(WiFi.Network.BufferRelease) then Exit;
+  end;
+ if not Assigned(WiFi.Network.DeviceWrite) then
+  begin
+   if not Assigned(WiFi.Network.BufferAllocate) then Exit;
+   if not Assigned(WiFi.Network.BufferTransmit) then Exit;
+  end;
  
  {Check Optional Flags}
  //if Assigned(WiFi.DeviceRemainOnChannel) then //To Do
@@ -4321,6 +4834,9 @@ begin
  if AdapterManager = nil then Exit;
  if TransportManager = nil then Exit;
 
+ {Check Settings}
+ if NetworkSettings = nil then Exit;
+ 
  {Check Started}
  if WiFiStarted then
   begin
@@ -4332,15 +4848,25 @@ begin
       if Adapter = nil then
        begin
         {Create Adapter}
-        if WIRELESS_NETWORK_ENABLED then
+        if NetworkSettings.GetBooleanDefault('WIRELESS_NETWORK_ENABLED',WIRELESS_NETWORK_ENABLED) then 
          begin
           Adapter:=TWiFiAdapter.Create(AdapterManager,Event.Device,DeviceGetName(@Event.Device.Device));
       
-          {Start Adapter}
-          Adapter.StartAdapter;
-      
-          {Bind Transports}
-          TransportManager.BindTransports(Adapter);
+          {Check Adapter}
+          if not NetworkSettings.GetBoolean(Adapter.Name + '_DISABLED') then
+           begin
+            {Start Adapter}
+            Adapter.StartAdapter;
+            
+            {Bind Transports}
+            TransportManager.BindTransports(Adapter);
+            
+            {Bind Monitors}
+            TransportManager.BindMonitors(Adapter);
+            
+            {Bind Authenticators}
+            TransportManager.BindAuthenticators(Adapter);
+           end; 
          end; 
        end; 
      end;
@@ -4382,6 +4908,12 @@ begin
       Adapter:=AdapterManager.GetAdapterByDevice(Network,True,NETWORK_LOCK_READ);
       if Adapter <> nil then
        begin
+        {Unbind Authenticators}
+        TransportManager.UnbindAuthenticators(Adapter);
+       
+        {Unbind Monitors}
+        TransportManager.UnbindMonitors(Adapter);
+
         {Unbind Transports}
         TransportManager.UnbindTransports(Adapter);
         
@@ -4425,6 +4957,9 @@ begin
  {Check Manager}
  if AdapterManager = nil then Exit;
 
+ {Check Settings}
+ if NetworkSettings = nil then Exit;
+ 
  {Check Started}
  if not WiFiStarted then
   begin
@@ -4436,7 +4971,7 @@ begin
       if Adapter = nil then
        begin
         {Create Adapter}
-        if WIRELESS_NETWORK_ENABLED then
+        if NetworkSettings.GetBooleanDefault('WIRELESS_NETWORK_ENABLED',WIRELESS_NETWORK_ENABLED) then 
          begin
           TWiFiAdapter.Create(AdapterManager,Network,DeviceGetName(@Network.Device));
          end; 
@@ -4527,7 +5062,472 @@ end;
 {==============================================================================}
 {==============================================================================}
 {IEEE80211 Helper Functions}
+function IEEE80211HasToDS(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_TODS is set}
+{ieee80211_has_tods}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_TODS) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HasFromDS(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_FROMDS is set}
+{ieee80211_has_fromds}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_FROMDS) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HasA4(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_TODS and IEEE80211_FCTL_FROMDS are set}
+{ieee80211_has_a4}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_TODS or IEEE80211_FCTL_FROMDS)) = (IEEE80211_FCTL_TODS or IEEE80211_FCTL_FROMDS);
+end;
+
+{==============================================================================}
+
+function IEEE80211HasMoreFrags(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_MOREFRAGS is set}
+{ieee80211_has_morefrags}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_MOREFRAGS) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HasRetry(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_RETRY is set}
+{ieee80211_has_retry}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_RETRY) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HasPM(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_PM is set}
+{ieee80211_has_pm}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_PM) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HasMoreData(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_MOREDATA is set}
+{ieee80211_has_moredata}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_MOREDATA) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HasProtected(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_PROTECTED is set}
+{ieee80211_has_protected}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_PROTECTED) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HasOrder(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FCTL_ORDER is set}
+{ieee80211_has_order}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_ORDER) <> 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211IsMgmt(FrameControl:Word):Boolean; inline;
+{Check if type is IEEE80211_FTYPE_MGMT}
+{ieee80211_is_mgmt}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_FTYPE) = IEEE80211_FTYPE_MGMT;
+end;
+
+{==============================================================================}
+
+function IEEE80211IsCtl(FrameControl:Word):Boolean; inline;
+{Check if type is IEEE80211_FTYPE_CTL}
+{ieee80211_is_ctl}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_FTYPE) = IEEE80211_FTYPE_CTL;
+end;
+
+{==============================================================================}
+
+function IEEE80211IsData(FrameControl:Word):Boolean; inline;
+{Check if type is IEEE80211_FTYPE_DATA}
+{ieee80211_is_data}
+begin
+ {}
+ Result:=(FrameControl and IEEE80211_FCTL_FTYPE) = IEEE80211_FTYPE_DATA;
+end;
+
+{==============================================================================}
+
+function IEEE80211IsDataQoS(FrameControl:Word):Boolean; inline;
+{Check if type is IEEE80211_FTYPE_DATA and IEEE80211_STYPE_QOS_DATA is set}
+{ieee80211_is_data_qos}
+begin
+ {}
+ {Mask with QOS_DATA rather than IEEE80211_FCTL_STYPE as we just need to check the one bit}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_STYPE_QOS_DATA)) = (IEEE80211_FTYPE_DATA or IEEE80211_STYPE_QOS_DATA);
+end;
+
+{==============================================================================}
+
+function IEEE80211IsDataPresent(FrameControl:Word):Boolean; inline;
+{Check if type is IEEE80211_FTYPE_DATA and has data}
+{ieee80211_is_data_present}
+begin
+ {}
+ {Mask with 0x40 and test that that bit is clear to only return true for the data-containing substypes}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or $40)) = IEEE80211_FTYPE_DATA;
+end;
+
+{==============================================================================}
+
+function IEEE80211IsAssocReq(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_ASSOC_REQ}
+{ieee80211_is_assoc_req}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ASSOC_REQ);
+end;
+
+{==============================================================================}
+
+function IEEE80211IsAssocResp(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_ASSOC_RESP}
+{ieee80211_is_assoc_resp}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ASSOC_RESP); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsReassocReq(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_REASSOC_REQ}
+{ieee80211_is_reassoc_req}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_REASSOC_REQ); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsReassocResp(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_REASSOC_RESP}
+{ieee80211_is_reassoc_resp}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_REASSOC_RESP); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsProbeReq(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_PROBE_REQ}
+{ieee80211_is_probe_req}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_PROBE_REQ); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsProbeResp(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_PROBE_RESP}
+{ieee80211_is_probe_resp}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_PROBE_RESP); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsBeacon(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_BEACON}
+{ieee80211_is_beacon}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_BEACON); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsATIM(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_ATIM}
+{ieee80211_is_atim}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ATIM); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsDisassoc(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_DISASSOC}
+{ieee80211_is_disassoc}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_DISASSOC);
+end;
+
+{==============================================================================}
+
+function IEEE80211IsAuth(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_AUTH}
+{ieee80211_is_auth}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_AUTH); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsDeauth(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_DEAUTH}
+{ieee80211_is_deauth}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_DEAUTH); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsAction(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_MGMT && IEEE80211_STYPE_ACTION}
+{ieee80211_is_action}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ACTION); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsBackReq(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_BACK_REQ}
+{ieee80211_is_back_req}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_BACK_REQ); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsBack(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_BACK}
+{ieee80211_is_back}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_BACK); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsPSPoll(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_PSPOLL}
+{ieee80211_is_pspoll}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_PSPOLL); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsRTS(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_RTS}
+{ieee80211_is_rts}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_RTS); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsCTS(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_CTS}
+{ieee80211_is_cts}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CTS); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsACK(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_ACK}
+{ieee80211_is_ack}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_ACK); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsCFEnd(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_CFEND}
+{ieee80211_is_cfend}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CFEND); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsCFEndAck(FrameControl:Word):Boolean; inline;
+{Check if IEEE80211_FTYPE_CTL && IEEE80211_STYPE_CFENDACK}
+{ieee80211_is_cfendack}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CFENDACK); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsNullFunc(FrameControl:Word):Boolean; inline;
+{Check if frame is a regular (non-QoS) nullfunc frame}
+{ieee80211_is_nullfunc}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_DATA or IEEE80211_STYPE_NULLFUNC); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsQoSNullFunc(FrameControl:Word):Boolean; inline;
+{Check if frame is a QoS nullfunc frame}
+{ieee80211_is_qos_nullfunc}
+begin
+ {}
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_DATA or IEEE80211_STYPE_QOS_NULLFUNC); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsBufferableMMPDU(FrameControl:Word):Boolean; inline;
+{Check if frame is bufferable MMPDU}
+{ieee80211_is_bufferable_mmpdu}
+begin
+ {}
+ {IEEE 802.11-2012, definition of "bufferable management frame" note that this ignores the IBSS special case}
+ Result:=IEEE80211IsMgmt(FrameControl) and (IEEE80211IsAction(FrameControl) or IEEE80211IsDisassoc(FrameControl) or IEEE80211IsDeauth(FrameControl)); 
+end;
+
+{==============================================================================}
+
+function IEEE80211IsFirstFrag(SequenceControl:Word):Boolean; inline;
+{Check if IEEE80211_SCTL_FRAG is not set}
+{ieee80211_is_first_frag}
+begin
+ {}
+ Result:=(SequenceControl and IEEE80211_SCTL_FRAG) = 0;
+end;
+
+{==============================================================================}
+
+function IEEE80211HeaderLength(FrameControl:Word):LongWord;
+{ieee80211_hdrlen}
+var
+ HeaderLength:LongWord;
+begin
+ {}
+ HeaderLength:=24;
+ 
+ if IEEE80211IsData(FrameControl) then
+  begin
+   if IEEE80211HasA4(FrameControl) then
+    begin
+     HeaderLength:=30;
+    end;
+   if IEEE80211IsDataQoS(FrameControl) then
+    begin
+     HeaderLength:=HeaderLength + IEEE80211_QOS_CTL_LEN;
+     if IEEE80211HasOrder(FrameControl) then
+      begin
+       HeaderLength:=HeaderLength + IEEE80211_HT_CTL_LEN;
+      end;
+    end;
+   
+   Result:=HeaderLength;
+   Exit;
+  end;
+  
+ if IEEE80211IsMgmt(FrameControl) then
+  begin
+   if IEEE80211HasOrder(FrameControl) then
+    begin
+     HeaderLength:=HeaderLength + IEEE80211_HT_CTL_LEN;
+    end;
+  
+   Result:=HeaderLength;
+   Exit;
+  end;
+ 
+ if IEEE80211IsCtl(FrameControl) then
+  begin
+   {ACK and CTS are 10 bytes, all others 16. To see how
+    to get this condition consider
+      subtype mask:   0b0000000011110000 (0x00F0)
+      ACK subtype:    0b0000000011010000 (0x00D0)
+      CTS subtype:    0b0000000011000000 (0x00C0)
+      bits that matter:         ^^^      (0x00E0)
+      value of those: 0b0000000011000000 (0x00C0)}
+   if FrameControl and $00E0 = $00C0 then
+    begin
+     HeaderLength:=10;
+    end
+   else
+    begin
+     HeaderLength:=16;
+    end;
+  end;
+ 
+ Result:=HeaderLength;
+end;
+
+{==============================================================================}
+
+function IEEE80211HeaderLengthFromBuffer(Data:Pointer;Size:LongWord):LongWord;
+{ieee80211_get_hdrlen_from_skb}
+var
+ HeaderLength:LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if Data = nil then Exit;
+ if Size < 10 then Exit;
+ 
+ HeaderLength:=IEEE80211HeaderLength(PIEEE80211Header(Data).FrameControl);
+ if HeaderLength > Size then Exit;
+ 
+ Result:=HeaderLength;
+end;
+
+{==============================================================================}
+
 function IEEE80211MCSToChains(MCS:PIEEE80211MCSInfo):Byte;
+{ieee80211_mcs_to_chains}
 begin
  {}
  Result:=1;
@@ -4547,13 +5547,12 @@ begin
   begin
    Result:=2;
   end;
- 
- //From ieee80211_mcs_to_chains in \net\mac80211\util.c
 end;
 
 {==============================================================================}
 
 function IEEE80211ChannelToFrequency(Channel:Integer;Band:LongWord):Integer;
+{ieee80211_channel_to_frequency}
 begin
  {}
  Result:=0;
@@ -4589,13 +5588,12 @@ begin
      end; 
    end;
  end;
- 
- //From ieee80211_channel_to_frequency in \net\wireless\util.c
 end;
 
 {==============================================================================}
 
 function IEEE80211FrequencyToChannel(Frequency:Integer):Integer;
+{ieee80211_frequency_to_channel}
 begin
  {}
  {See 802.11 17.3.8.3.2 and Annex J}
@@ -4623,13 +5621,12 @@ begin
   begin
    Result:=0; 
   end;
-  
- //From ieee80211_frequency_to_channel in \net\wireless\util.c
 end;
 
 {==============================================================================}
 
 procedure IEEE80211InitializeChannelDefinition(Definition:PIEEE80211ChannelDefinition;Channel:PIEEE80211Channel;ChannelType:LongWord);
+{cfg80211_chandef_create}
 begin
  {}
  if Definition = nil then exit;
@@ -4660,8 +5657,412 @@ begin
     if NETWORK_LOG_ENABLED then NetworkLogError(nil,'WiFi: Invalid ChannelType=' + IntToStr(ChannelType));
    end;   
  end;
+end;
 
- //From cfg80211_chandef_create in \net\wireless\chan.c
+{==============================================================================}
+
+function IEEE80211FindInformationElement(Identifier:Byte;InformationElement:PByte;ElementLength:LongWord):PByte;
+{cfg80211_find_ie}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Element}
+ if InformationElement = nil then Exit;
+ 
+ while (ElementLength > 2) and (InformationElement[0] <> Identifier) do
+  begin
+   Dec(ElementLength,InformationElement[1] + 2);
+   Inc(InformationElement,InformationElement[1] + 2);
+  end;
+  
+ if ElementLength < 2 then Exit;
+ if ElementLength < (2 + InformationElement[1]) then Exit;
+  
+ Result:=InformationElement;
+end;
+
+{==============================================================================}
+
+function IEEE80211ParseInformationElements(Buffer:Pointer;Size:LongWord;Action:Boolean;Elements:PIEEE80211InformationElements):Boolean;
+{ieee802_11_parse_elems_crc}
+var
+ Current:PByte;
+ Remain:LongWord;
+ Identifier:Byte;
+ ElementLength:Byte;
+ ParseError:Boolean;
+ ParseFailed:Boolean;
+ InformationElement:PByte;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Elements}
+ if Elements = nil then Exit;
+ 
+ {Setup Elements}
+ FillChar(Elements^,SizeOf(TIEEE80211InformationElements),0);
+ Elements.Address:=Buffer;
+ Elements.Size:=Size;
+ 
+ {Parse Elements}
+ Remain:=Size;
+ Current:=Buffer;
+ ParseError:=False;
+ while Remain >= 2 do
+  begin
+   {Get Identifier}
+   Identifier:=Current^;
+   Inc(Current);
+   
+   {Get Length}
+   ElementLength:=Current^;
+   Inc(Current);
+   
+   {Check Remain}
+   Dec(Remain,2);
+   if ElementLength > Remain then
+    begin
+     ParseError:=True;
+     Break;
+    end;
+    
+   ParseFailed:=False;
+   
+   case Identifier of 
+	WLAN_EID_LINK_ID:begin
+      if (ElementLength + 2) <> SizeOf(TIEEE80211TDLSLinkIdentifierIE) then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.LinkIdentifier:=PIEEE80211TDLSLinkIdentifierIE(Current - 2);
+       end;
+     end;  
+    WLAN_EID_CHAN_SWITCH_TIMING:begin
+      if ElementLength <> SizeOf(TIEEE80211ChannelSwitchTiming) then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.ChannelSwitchTiming:=PIEEE80211ChannelSwitchTiming(Current);
+       end;       
+     end;
+    WLAN_EID_EXT_CAPABILITY:begin
+      Elements.ExtendedCapabilities:=Current;
+      Elements.ExtendedCapabilitiesLength:=ElementLength;
+     end;
+    WLAN_EID_SSID:begin
+      Elements.SSID:=Current;
+      Elements.SSIDLength:=ElementLength;
+     end;
+    WLAN_EID_SUPP_RATES:begin
+      Elements.SupportedRates:=Current;
+      Elements.SupportedRatesLength:=ElementLength;
+     end;
+    WLAN_EID_DS_PARAMS:begin
+      if ElementLength >= 1 then
+       begin
+        Elements.DSParameters:=Current;
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_TIM:begin
+      if ElementLength >= SizeOf(TIEEE80211TrafficIndicationMapIE) then
+       begin
+        Elements.TrafficIndicationMap:=PIEEE80211TrafficIndicationMapIE(Current);
+        Elements.TrafficIndicationMapLength:=ElementLength;
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_CHALLENGE:begin
+      Elements.ChallengeText:=Current;
+      Elements.ChallengeTextLength:=ElementLength;
+     end;
+    WLAN_EID_VENDOR_SPECIFIC:begin
+      {Microsoft OUI (00:50:F2)}
+      if (ElementLength >= 4) and (Current[0] = $00) and (Current[1] = $50) and (Current[2] = $f2) then
+       begin
+        {OUI Type 2 - WMM IE}
+        if (ElementLength >= 5) and (Current[3] = 2) then
+         begin
+          if Current[4] = 0 then
+           begin
+            Elements.WMMInfo:=Current;
+            Elements.WMMInfoLength:=ElementLength;
+           end
+          else if Current[4] = 1 then
+           begin
+            Elements.WMMParam:=Current;
+            Elements.WMMParamLength:=ElementLength;
+           end;
+         end
+        
+       end;
+     end;
+    WLAN_EID_RSN:begin
+      Elements.RSN:=Current;
+      Elements.RSNLength:=ElementLength;
+     end;
+    WLAN_EID_ERP_INFO:
+      if ElementLength >= 1 then
+       begin
+        Elements.ERPInfo:=Current;
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+    WLAN_EID_EXT_SUPP_RATES:begin
+      Elements.ExtendedSupportedRates:=Current;
+      Elements.ExtendedSupportedRatesLength:=ElementLength;
+     end;
+    WLAN_EID_HT_CAPABILITY:begin
+      if ElementLength >= SizeOf(TIEEE80211HTCapabilities) then
+       begin
+        Elements.HTCapabilities:=PIEEE80211HTCapabilities(Current);
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_HT_OPERATION:begin
+      if ElementLength >= SizeOf(TIEEE80211HTOperation) then
+       begin
+        Elements.HTOperation:=PIEEE80211HTOperation(Current);
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_VHT_CAPABILITY:begin
+      if ElementLength >= SizeOf(TIEEE80211VHTCapabilities) then
+       begin
+        Elements.VHTCapabilities:=PIEEE80211VHTCapabilities(Current);
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_VHT_OPERATION:begin
+      if ElementLength >= SizeOf(TIEEE80211VHTOperation) then
+       begin
+        Elements.VHTOperation:=PIEEE80211VHTOperation(Current);
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_OPMODE_NOTIF:begin
+      if ElementLength > 0 then
+       begin
+        Elements.OpmodeNotification:=Current;
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_MESH_ID:begin
+      Elements.MeshID:=Current;
+      Elements.MeshIDLength:=ElementLength;
+     end;
+    WLAN_EID_MESH_CONFIG:begin
+      if ElementLength >= SizeOf(TIEEE80211MeshConfigurationIE) then
+       begin
+        Elements.MeshConfiguration:=PIEEE80211MeshConfigurationIE(Current);
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;    
+    WLAN_EID_PEER_MGMT:begin
+      Elements.PeerManagement:=Current;
+      Elements.PeerManagementLength:=ElementLength;
+     end;
+    WLAN_EID_MESH_AWAKE_WINDOW:begin
+      if ElementLength >= 2 then
+       begin
+        Elements.MeshAwakeWindow:=PWord(Current)^;
+       end;
+     end;
+    WLAN_EID_PREQ:begin
+      Elements.PREQ:=Current;
+      Elements.PREQLength:=ElementLength;
+     end;
+    WLAN_EID_PREP:begin
+      Elements.PREP:=Current;
+      Elements.PREPLength:=ElementLength;
+     end;
+    WLAN_EID_PERR:begin
+      Elements.PERR:=Current;
+      Elements.PERRLength:=ElementLength;
+     end;
+    WLAN_EID_RANN:begin
+      if ElementLength >= SizeOf(TIEEE80211RootAnnouncementIE) then
+       begin
+        Elements.RootAnnouncement:=PIEEE80211RootAnnouncementIE(Current);
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+    WLAN_EID_CHANNEL_SWITCH:begin
+      if ElementLength <> SizeOf(TIEEE80211ChannelSwitchIE) then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.ChannelSwitch:=PIEEE80211ChannelSwitchIE(Current);
+       end;       
+     end;
+    WLAN_EID_EXT_CHANSWITCH_ANN:begin
+      if ElementLength <> SizeOf(TIEEE80211ExtChannelSwitchIE) then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.ExtChannelSwitch:=PIEEE80211ExtChannelSwitchIE(Current);
+       end;       
+     end;
+    WLAN_EID_SECONDARY_CHANNEL_OFFSET:begin
+      if ElementLength <> SizeOf(TIEEE80211SecondaryChannelOffsetIE) then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.SecondaryChannelOffset:=PIEEE80211SecondaryChannelOffsetIE(Current);
+       end;       
+     end;
+    WLAN_EID_CHAN_SWITCH_PARAM:begin
+      if ElementLength <> SizeOf(TIEEE80211MeshChannelSwitchParamsIE) then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.MeshChannelSwitchParams:=PIEEE80211MeshChannelSwitchParamsIE(Current);
+       end;       
+     end;
+    WLAN_EID_WIDE_BW_CHANNEL_SWITCH:begin
+      if not(Action) or (ElementLength <> SizeOf(TIEEE80211WidebandChannelSwitchIE)) then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.WidebandChannelSwitch:=PIEEE80211WidebandChannelSwitchIE(Current);
+       end;       
+     end;
+    WLAN_EID_CHANNEL_SWITCH_WRAPPER:begin
+      if Action then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        {We only care about the wide bandwidth channel switch element, so parse it out manually}
+        InformationElement:=IEEE80211FindInformationElement(WLAN_EID_WIDE_BW_CHANNEL_SWITCH,Current,ElementLength);
+        if InformationElement <> nil then
+         begin
+          if InformationElement[1] = SizeOf(TIEEE80211WidebandChannelSwitchIE) then
+           begin
+            Elements.WidebandChannelSwitch:=PIEEE80211WidebandChannelSwitchIE(InformationElement + 2);
+           end
+          else
+           begin
+            ParseFailed:=True;
+           end;
+         end;
+       end;
+     end;
+    WLAN_EID_COUNTRY:begin
+      Elements.Country:=Current;
+      Elements.CountryLength:=ElementLength;
+     end;
+    WLAN_EID_PWR_CONSTRAINT:begin
+      if ElementLength <> 1 then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin
+        Elements.PowerConstraint:=Current;
+       end;
+     end;
+    WLAN_EID_CISCO_VENDOR_SPECIFIC:begin
+      {Lots of different options exist, get the Dynamic Transmit Power Control element}
+      if ElementLength < 4 then
+       begin
+        ParseFailed:=True;
+       end
+      else
+       begin      
+        {Cisco OUI and DTPC tag (0x00)}
+        if (Current[0] = $00) and (Current[1] = $40) and (Current[2] = $96) and (Current[3] = $00) then
+         begin
+          if ElementLength <> 6 then
+           begin
+            ParseFailed:=True;
+           end
+          else
+           begin
+            Elements.CiscoDTPC:=Current;
+           end;           
+         end;
+       end; 
+     end;
+    WLAN_EID_TIMEOUT_INTERVAL:begin
+      if ElementLength >= SizeOf(TIEEE80211TimeoutIntervalIE) then
+       begin
+        Elements.TimeoutInterval:=PIEEE80211TimeoutIntervalIE(Current);
+       end
+      else
+       begin
+        ParseFailed:=True;
+       end;       
+     end;
+   end;
+   
+   
+   {Check Error}
+   if ParseFailed then
+    begin
+     ParseError:=True;
+    end;
+    
+   {Update Position}
+   Dec(Remain,ElementLength);
+   Inc(Current,ElementLength);
+  end;
+ 
+ if Remain <> 0 then
+  begin
+   ParseError:=True;
+  end;
+  
+ Result:=not(ParseError);
 end;
 
 {==============================================================================}

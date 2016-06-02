@@ -52,12 +52,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Network,Transport,Ultibo,UltiboClasses;
 
-//To Do //Look for:
-
-//--
-
-//Timers
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -65,7 +59,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,Sy
 {==============================================================================}
 {const}
  {Protocol specific constants}
- {These items must also be included in Winsock.pas/Winsock2.pas} //To Do //No longer true since the addition of GlobalSock ? and other structure changes ?
  
 const
  {Generic Protocol}
@@ -144,14 +137,14 @@ type
  {Protocol specific types}
  {Generic Protocol}
  PProtocolStatistics = ^TProtocolStatistics;
- TProtocolStatistics = packed record
-  PacketsIn:LongInt; //To Do //LongWord/Int64 ?
-  PacketsOut:LongInt;
-  BytesIn:LongInt; //To Do //Int64 
-  BytesOut:LongInt; //To Do //Int64 
-  ErrorsIn:LongInt;
-  ErrorsOut:LongInt;
-  PacketsLost:LongInt;
+ TProtocolStatistics = record
+  PacketsIn:Int64; 
+  PacketsOut:Int64;
+  BytesIn:Int64;
+  BytesOut:Int64;
+  ErrorsIn:Int64;
+  ErrorsOut:Int64;
+  PacketsLost:Int64;
  end;
 
  {Protocol Timer}
@@ -188,13 +181,14 @@ type
  TConfigCallback = function(AConfig:TNetworkConfig):Boolean of object;
  
  TProtocolManager = class(TObject)
-   constructor Create(ATransports:TTransportManager);
+   constructor Create(ASettings:TNetworkSettings;ATransports:TTransportManager);
    destructor Destroy; override;
   private
    {Internal Variables}
    FLock:TSynchronizerHandle;
+   FSettings:TNetworkSettings;
    FTransports:TTransportManager;
-
+   
    {Status Variables}
    FProtocols:TNetworkList;   {List of TNetworkProtocol objects}
    FFilters:TNetworkList;     {List of TNetworkFilter objects} 
@@ -210,8 +204,9 @@ type
    function WriterUnlock:Boolean;
   public
    {Public Properties}
+   property Settings:TNetworkSettings read FSettings;
    property Transports:TTransportManager read FTransports;
-
+   
    {Public Methods}
    function AddProtocol(AProtocol:TNetworkProtocol):Boolean;
    function RemoveProtocol(AProtocol:TNetworkProtocol):Boolean;
@@ -770,13 +765,14 @@ var
 {==============================================================================}
 {==============================================================================}
 {TProtocolManager}
-constructor TProtocolManager.Create(ATransports:TTransportManager);
+constructor TProtocolManager.Create(ASettings:TNetworkSettings;ATransports:TTransportManager);
 begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+ FSettings:=ASettings;
  FTransports:=ATransports;
+ 
  FProtocols:=TNetworkList.Create;
  FFilters:=TNetworkList.Create;
  FConfigs:=TNetworkList.Create;
@@ -792,6 +788,7 @@ begin
   FConfigs.Free;
   FFilters.Free;
   FProtocols.Free;
+  FSettings:=nil;
   FTransports:=nil;
   inherited Destroy;
  finally 
@@ -1422,7 +1419,7 @@ begin
   Result:=True;
   
   {$IFDEF PROTOCOL_DEBUG}
-  //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessSockets');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessSockets');
   {$ENDIF}
   
   {Get Protocol}
@@ -1452,7 +1449,7 @@ begin
   Result:=True;
   
   {$IFDEF PROTOCOL_DEBUG}
-  //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessProtocols');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessProtocols');
   {$ENDIF}
   
   {Get Protocol}
@@ -1665,7 +1662,7 @@ begin
   Result:=True;
   
   {$IFDEF PROTOCOL_DEBUG}
-  //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessFilters');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessFilters');
   {$ENDIF}
   
   {Get Filter}
@@ -1855,7 +1852,7 @@ begin
   Config:=TNetworkConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
   while Config <> nil do
    begin
-    {Stp Config}
+    {Stop Config}
     if not(Config.StopConfig) then Result:=False;
     
     {Get Next}
@@ -1878,7 +1875,7 @@ begin
   Result:=True;
   
   {$IFDEF PROTOCOL_DEBUG}
-  //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessConfigs');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessConfigs');
   {$ENDIF}
   
   {Get Config}
@@ -4597,7 +4594,7 @@ begin
  if ProtocolInitialized then Exit;
 
  {Create Protocol Manager}
- ProtocolManager:=TProtocolManager.Create(TransportManager);
+ ProtocolManager:=TProtocolManager.Create(NetworkSettings,TransportManager);
  
  ProtocolInitialized:=True;
 end;
@@ -4635,7 +4632,7 @@ begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network configs');
   end;
   
- //To Do
+ //To Do //Clients
  
  {Set Started} 
  ProtocolStarted:=True;
@@ -4659,6 +4656,8 @@ begin
  {Check Manager}
  if ProtocolManager = nil then Exit;
  
+ //To Do //Clients
+ 
  {Stop Configs}
  if not ProtocolManager.StopConfigs then
   begin
@@ -4676,8 +4675,6 @@ begin
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to stop one or more network protocols');
   end;
-
- //To Do
 
  {Set Started}
  ProtocolStarted:=False;    

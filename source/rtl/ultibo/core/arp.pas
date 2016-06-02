@@ -1088,10 +1088,10 @@ begin
   
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
-  
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
+ 
   {Get Adapter}
   Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
   if Adapter = nil then
@@ -1324,13 +1324,14 @@ begin
   
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   State = ' + AdapterStateToString(AAdapter.State));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Status = ' + AdapterStatusToString(AAdapter.Status));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
   {$ENDIF}
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
 
   Result:=True; 
  finally 
@@ -2512,9 +2513,9 @@ begin
   
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   {Get Adapter}
   Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
@@ -2742,14 +2743,15 @@ begin
   
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   State = ' + AdapterStateToString(AAdapter.State));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Status = ' + AdapterStatusToString(AAdapter.Status));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
   {$ENDIF}
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
 
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
+  
   Result:=True; 
  finally 
   ReaderUnlock;
@@ -3040,20 +3042,21 @@ begin
  if ARPInitialized then Exit;
 
  {Setup ARP Transport}
- if IP_TRANSPORT_ENABLED then ARP_TRANSPORT_ENABLED:=True;
- if ARP_CONFIG_ENABLED then ARP_TRANSPORT_ENABLED:=True;
+ if NetworkSettings.GetBoolean('IP_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('ARP_TRANSPORT_ENABLED',True);
+ if NetworkSettings.GetBoolean('ARP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('ARP_TRANSPORT_ENABLED',True);
  
  {Setup RARP Transport}
- if RARP_CONFIG_ENABLED then RARP_TRANSPORT_ENABLED:=True;
+ if NetworkSettings.GetBoolean('IP_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('RARP_TRANSPORT_ENABLED',True);
+ if NetworkSettings.GetBoolean('RARP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('RARP_TRANSPORT_ENABLED',True);
  
  {Create ARP Transport}
- if ARP_TRANSPORT_ENABLED then
+ if NetworkSettings.GetBooleanDefault('ARP_TRANSPORT_ENABLED',ARP_TRANSPORT_ENABLED) then 
   begin
    TARPTransport.Create(TransportManager,ARP_TRANSPORT_NAME);
   end; 
 
  {Create RARP Transport}
- if RARP_TRANSPORT_ENABLED then
+ if NetworkSettings.GetBooleanDefault('RARP_TRANSPORT_ENABLED',RARP_TRANSPORT_ENABLED) then 
   begin
    TRARPTransport.Create(TransportManager,RARP_TRANSPORT_NAME);
   end; 

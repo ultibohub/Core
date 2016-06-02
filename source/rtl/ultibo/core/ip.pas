@@ -68,10 +68,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,Network,Transport,Protocol,ARP,Ultibo,UltiboUtils,UltiboClasses;
 
-//To Do //Look for:
-
-//--
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -260,6 +256,7 @@ type
    RenewalTime:Int64;    {DHCP Renewal Time}
    RebindingTime:Int64;  {DHCP Rebinding Time}
    
+   ConfigDefault:Word;   {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
    ConfigAddress:TInAddr;
    ConfigNetmask:TInAddr;
    ConfigGateway:TInAddr;
@@ -286,6 +283,7 @@ type
    RenewalTime:Int64;    {DHCP Renewal Time}
    RebindingTime:Int64;  {DHCP Rebinding Time}
    
+   ConfigDefault:Word;   {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
    ConfigAddress:TInAddr;
    ConfigNetmask:TInAddr;
    ConfigGateway:TInAddr;
@@ -345,8 +343,6 @@ type
    FAddresses:TNetworkList;
 
    {Status Variables}
-   FHostName:String;            //To Do //Locking around HostName/DomainName (Maybe a TNameEntry object in Transport ?)
-   FDomainName:String;                                //Or does the reference count on strings provide enough protection ?
    FNameservers:TIPNameservers; //To Do //Change Nameservers to an object type (eg Transport.TNameserverEntry and TIPNameserverEntry) (Part of TNetworkList)
    FNameserverLock:TMutexHandle;                      //Then do Add/Remove/GetNameserverByNext etc)
                                                       
@@ -361,14 +357,20 @@ type
    function CheckFragment(ABuffer:Pointer):Boolean;
 
    function GetNextIPId(AIncrement:Boolean):Word;
+ 
+   function GetIPNameserver(ACount:LongWord):TInAddr;
+   
+   function GetAdapterConfigType(const AName:String):Word;
+   function GetAdapterConfigAddress(const AName:String):TInAddr;
+   function GetAdapterConfigNetmask(const AName:String):TInAddr;
+   function GetAdapterConfigGateway(const AName:String):TInAddr;
+   function GetAdapterConfigServer(const AName:String):TInAddr;
   protected
    {Inherited Methods}
    function FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; override;
    function ForwardPacket(AAdapter:TTransportAdapter;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; override;
   public
    {Public Properties}
-   property HostName:String read FHostName write FHostName;
-   property DomainName:String read FDomainName write FDomainName;
    property Nameservers:TIPNameservers read FNameservers;
 
    property Forwarding:LongWord read FForwarding write FForwarding;
@@ -1167,6 +1169,7 @@ begin
  RenewalTime:=0;
  RebindingTime:=0;
  
+ ConfigDefault:=CONFIG_TYPE_AUTO;
  LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
  LongWord(ConfigGateway.S_addr):=INADDR_ANY;
@@ -1193,6 +1196,7 @@ begin
  RenewalTime:=0;
  RebindingTime:=0;
  
+ ConfigDefault:=CONFIG_TYPE_AUTO;
  LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
  LongWord(ConfigGateway.S_addr):=INADDR_ANY;
@@ -1223,8 +1227,6 @@ begin
  FNetworks:=TNetworkList.Create;
  FAddresses:=TNetworkList.Create;
 
- FHostName:=Platform.HostGetName;
- FDomainName:=Platform.HostGetDomain;
  FillChar(FNameservers,SizeOf(TIPNameservers),0);
  FNameserverLock:=MutexCreate;
 
@@ -1601,6 +1603,135 @@ end;
 
 {==============================================================================}
 
+function TIPTransport.GetIPNameserver(ACount:LongWord):TInAddr;
+{Get the nameserver address from the network settings}
+var
+ Value:String;
+begin
+ {}
+ LongWord(Result.S_addr):=INADDR_NONE;
+ 
+ Value:=Uppercase(Manager.Settings.GetString('IP_NAMESERVER' + IntToStr(ACount)));
+ if Length(Value) <> 0 then
+  begin
+   Result:=InAddrToHost(StringToInAddr(Value));
+  end; 
+end;
+ 
+{==============================================================================}
+
+function TIPTransport.GetAdapterConfigType(const AName:String):Word;
+{Get the adapter config type from the network settings}
+var
+ Value:String;
+begin
+ {}
+ Result:=CONFIG_TYPE_AUTO;
+ 
+ Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_CONFIG'));
+ if Length(Value) <> 0 then
+  begin
+   Result:=StrToIntDef(Value,CONFIG_TYPE_UNKNOWN);
+   if Result > CONFIG_TYPE_PSEUDO then {CONFIG_TYPE_LOOPBACK not allowed}
+    begin
+     if Value = 'STATIC' then
+      begin
+       Result:=CONFIG_TYPE_STATIC;
+      end
+     else if Value = 'RARP' then
+      begin
+       Result:=CONFIG_TYPE_RARP;
+      end
+     else if Value = 'BOOTP' then
+      begin
+       Result:=CONFIG_TYPE_BOOTP;
+      end
+     else if Value = 'DHCP' then
+      begin
+       Result:=CONFIG_TYPE_DHCP;
+      end
+     else if Value = 'PSEUDO' then
+      begin
+       Result:=CONFIG_TYPE_PSEUDO;
+      end
+     else
+      begin
+       Result:=CONFIG_TYPE_AUTO;
+      end;      
+    end; 
+  end; 
+end;
+
+{==============================================================================}
+
+function TIPTransport.GetAdapterConfigAddress(const AName:String):TInAddr;
+{Get the adapter address from the network settings}
+var
+ Value:String;
+begin
+ {}
+ LongWord(Result.S_addr):=INADDR_NONE;
+ 
+ Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_ADDRESS'));
+ if Length(Value) <> 0 then
+  begin
+   Result:=InAddrToHost(StringToInAddr(Value));
+  end; 
+end;
+
+{==============================================================================}
+
+function TIPTransport.GetAdapterConfigNetmask(const AName:String):TInAddr;
+{Get the adapter netmask from the network settings}
+var
+ Value:String;
+begin
+ {}
+ LongWord(Result.S_addr):=INADDR_NONE;
+ 
+ Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_NETMASK'));
+ if Length(Value) <> 0 then
+  begin
+   Result:=InAddrToHost(StringToInAddr(Value));
+  end; 
+end;
+
+{==============================================================================}
+
+function TIPTransport.GetAdapterConfigGateway(const AName:String):TInAddr;
+{Get the adapter gateway from the network settings}
+var
+ Value:String;
+begin
+ {}
+ LongWord(Result.S_addr):=INADDR_NONE;
+ 
+ Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_GATEWAY'));
+ if Length(Value) <> 0 then
+  begin
+   Result:=InAddrToHost(StringToInAddr(Value));
+  end; 
+end;
+
+{==============================================================================}
+
+function TIPTransport.GetAdapterConfigServer(const AName:String):TInAddr;
+{Get the adapter server from the network settings}
+var
+ Value:String;
+begin
+ {}
+ LongWord(Result.S_addr):=INADDR_NONE;
+ 
+ Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_SERVER'));
+ if Length(Value) <> 0 then
+  begin
+   Result:=InAddrToHost(StringToInAddr(Value));
+  end; 
+end;
+
+{==============================================================================}
+
 function TIPTransport.FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
 {Filter a received packet}
 {Source: The source IP address of the received fragment (Set by Packet or Fragment Handler)}
@@ -1853,8 +1984,8 @@ begin
   {Check Adapter}
   if AAdapter = nil then Exit;
   
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   {Get Adapter}
   Adapter:=TIPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
@@ -1888,6 +2019,7 @@ begin
       Adapter.ConfigType:=AConfigType;
       Adapter.Configured:=False;
       Adapter.Configuring:=False;
+      Adapter.ConfigDefault:=AConfigType;
       if AAddress <> nil then Adapter.ConfigAddress:=TInAddr(AAddress^);
       if ANetmask <> nil then Adapter.ConfigNetmask:=TInAddr(ANetmask^);
       if AGateway <> nil then Adapter.ConfigGateway:=TInAddr(AGateway^);
@@ -2031,9 +2163,6 @@ begin
            {Check for Release}
            if FAutoRelease then
             begin
-             
-             //To Do //WriterConvert ?
-             
              {Call Config Handler}
              if Config.ConfigHandler(THandle(Config),Adapter,CONFIG_ADAPTER_RELEASE) then
               begin
@@ -3115,6 +3244,9 @@ end;
 
 function TIPTransport.StartTransport:Boolean;
 {Start this transport ready for sending and receiving}
+var
+ Count:LongWord;
+ Nameserver:TInAddr;
 begin
  {}
  ReaderLock;
@@ -3135,6 +3267,16 @@ begin
   {Locate RARP Transport}
   FRARP:=TRARPTransport(Manager.GetTransportByType(AF_UNSPEC,PACKET_TYPE_RARP,False,NETWORK_LOCK_NONE)); {Do not lock} //To Do //AddTransport (TTransportTransport/TIPTransportTransport ?) //Client ?
   if FRARP = nil then Exit;
+  
+  {Add Nameservers}
+  for Count:=1 to MAX_NAME_SERVERS do
+   begin
+    Nameserver:=GetIPNameserver(Count);
+    if not CompareDefault(Nameserver) and not CompareBroadcast(Nameserver) then
+     begin
+      AddNameserver(Nameserver);
+     end;
+   end;  
   
   {Return Result}
   Result:=True;
@@ -3172,7 +3314,7 @@ begin
     Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
     
     {Remove Adapter} 
-    RemoveAdapter(Adapter.Adapter);
+    RemoveAdapter(Current.Adapter);
    end;
  
   {Flush all Addresses}
@@ -3234,16 +3376,15 @@ begin
    {Get Current}
    Current:=Adapter;
    Adapter:=nil;
-    
+   
+   {Note: No need to convert to write lock as this function is serialized by the caller}
+   
    {Check for Unconfigured}
-   if (not Current.Configured) and (not Current.Configuring) then
+   if not(Current.Configured) and not(Current.Configuring) and (Current.Adapter.Status = ADAPTER_STATUS_UP) then
     begin
      {Check for Retry}
      if (Current.RetryTime <> 0) and (Current.RetryTime < CurrentTime) then
       begin
-       
-       //To Do //ReaderConvert ?
-       
        {Configure Adapter}
        case Current.ConfigType of
         CONFIG_TYPE_STATIC:begin
@@ -3528,68 +3669,84 @@ begin
       end;
     end;
     
-   {Check for Lease}
-   if (Current.Configured) and (Current.LeaseTime <> 0) then
+   {Check for Configured}
+   if Current.Configured then
     begin
-     {Check for Renew}
-     if (Current.RenewalTime <> 0) and (Current.RenewalTime < CurrentTime) then
+     {Check Status}
+     if Current.Adapter.Status = ADAPTER_STATUS_UP then
       begin
-       {Call Config Handlers}
-       Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
-       while Config <> nil do
+       {Check for Lease}
+       if Current.LeaseTime <> 0 then
         begin
-         if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+         {Check for Renew}
+         if (Current.RenewalTime <> 0) and (Current.RenewalTime < CurrentTime) then
           begin
-           if Assigned(Config.ConfigHandler) then
+           {Call Config Handlers}
+           Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
+           while Config <> nil do
             begin
+             if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+              begin
+               if Assigned(Config.ConfigHandler) then
+                begin
+                  
+                 //To Do //Must implement a Retry Count and/or a Timeout backoff
+                  
+                 Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW);
+                 
+                end;
+              end;
               
-             //To Do //Must implement a Retry Count and/or a Timeout backoff
-              
-             Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW);
-             
-            end;
-          end;
-          
-         {Get Next} 
-         Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
-        end;
-      end;
-     
-     {Check for Rebind}
-     if (Current.RebindingTime <> 0) and (Current.RebindingTime < CurrentTime) then
-      begin
-       {Call Config Handlers}
-       Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
-       while Config <> nil do
-        begin
-         if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
-          begin
-           if Assigned(Config.ConfigHandler) then
-            begin
-             
-             //To Do //Must implement a Retry Count and/or a Timeout backoff
-              
-             Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND);
-             
+             {Get Next} 
+             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
             end;
           end;
          
-         {Get Next} 
-         Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
+         {Check for Rebind}
+         if (Current.RebindingTime <> 0) and (Current.RebindingTime < CurrentTime) then
+          begin
+           {Call Config Handlers}
+           Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
+           while Config <> nil do
+            begin
+             if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+              begin
+               if Assigned(Config.ConfigHandler) then
+                begin
+                 
+                 //To Do //Must implement a Retry Count and/or a Timeout backoff
+                  
+                 Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND);
+                 
+                end;
+              end;
+             
+             {Get Next} 
+             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
+            end;
+          end;
+          
+         {Check for Expire}
+         if (Current.ExpiryTime <> 0) and (Current.ExpiryTime < CurrentTime) then
+          begin
+           {Get Next}
+           Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
+            
+           {Remove Adapter}
+           RemoveAdapter(Current.Adapter);
+           
+           //To Do //This should unconfigure the adapter and start again instead of removing it
+          end;
         end;
-      end;
-      
-     {Check for Expire}
-     if (Current.ExpiryTime <> 0) and (Current.ExpiryTime < CurrentTime) then
+      end
+     else
       begin
-       {Get Next}
-       Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-        
-       {Remove Adapter}
-       RemoveAdapter(Current.Adapter);
-      end;
+       //To do //Unconfigure
+       
+       //Current.ConfigType:=Current.ConfigDefault;
+      end;      
     end;
-     
+    
    {Get Next}
    if Adapter = nil then Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
   end;
@@ -3604,6 +3761,17 @@ function TIPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 var
+ Address:PInAddr;
+ Netmask:PInAddr;
+ Gateway:PInAddr;
+ Server:PInAddr;
+ 
+ ConfigType:Word;
+ ConfigAddress:TInAddr;
+ ConfigNetmask:TInAddr;
+ ConfigGateway:TInAddr;
+ ConfigServer:TInAddr;
+ 
  Adapter:TIPTransportAdapter;
 begin
  {}
@@ -3620,13 +3788,14 @@ begin
   
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   State = ' + AdapterStateToString(AAdapter.State));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Status = ' + AdapterStatusToString(AAdapter.Status));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
   {$ENDIF}
   
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   Result:=True;
   
@@ -3642,19 +3811,111 @@ begin
   Adapter:=TIPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
    begin
+    {Set Addresses}
+    Address:=nil;
+    Netmask:=nil;
+    Gateway:=nil;
+    Server:=nil;
+    
     {Check Type}
     case AAdapter.AdapterType of
      ADAPTER_TYPE_LOOPBACK:begin
        {Add Adapter}
-       Result:=AddAdapter(AAdapter,CONFIG_TYPE_LOOPBACK,nil,nil,nil,nil);
+       Result:=AddAdapter(AAdapter,CONFIG_TYPE_LOOPBACK,Address,Netmask,Gateway,Server);
       end;
      ADAPTER_TYPE_WIRED:begin
+       {Get Settings}
+       {IP_CONFIG}
+       ConfigType:=GetAdapterConfigType(AAdapter.Name);
+       if ConfigType <> CONFIG_TYPE_AUTO then
+        begin       
+         {IP_ADDRESS}
+         Address:=nil;
+         ConfigAddress:=GetAdapterConfigAddress(AAdapter.Name);
+         if not CompareDefault(ConfigAddress) and not CompareBroadcast(ConfigAddress) then
+          begin
+           Address:=@ConfigAddress;
+          end;
+         {IP_NETMASK}
+         Netmask:=nil;
+         ConfigNetmask:=GetAdapterConfigNetmask(AAdapter.Name);
+         if not CompareDefault(ConfigNetmask) and not CompareBroadcast(ConfigNetmask) then
+          begin
+           Netmask:=@ConfigNetmask;
+          end;
+         {IP_GATEWAY}
+         Gateway:=nil;
+         ConfigGateway:=GetAdapterConfigGateway(AAdapter.Name);
+         if not CompareDefault(ConfigGateway) and not CompareBroadcast(ConfigGateway) then
+          begin
+           Gateway:=@ConfigGateway;
+          end;
+         {IP_SERVER}
+         Server:=nil;
+         ConfigServer:=GetAdapterConfigServer(AAdapter.Name);
+         if not CompareDefault(ConfigServer) and not CompareBroadcast(ConfigServer) then
+          begin
+           Server:=@ConfigServer;
+          end;
+        end; 
+       
+       {$IFDEF IP_DEBUG}
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   ConfigType = ' + ConfigTypeToString(ConfigType));
+       if NETWORK_LOG_ENABLED and (Address <> nil) then NetworkLogDebug(nil,'IP:   Address = ' + InAddrToString(InAddrToNetwork(Address^)));
+       if NETWORK_LOG_ENABLED and (Netmask <> nil) then NetworkLogDebug(nil,'IP:   Netmask = ' + InAddrToString(InAddrToNetwork(Netmask^)));
+       if NETWORK_LOG_ENABLED and (Gateway <> nil) then NetworkLogDebug(nil,'IP:   Gateway = ' + InAddrToString(InAddrToNetwork(Gateway^)));
+       if NETWORK_LOG_ENABLED and (Server <> nil) then NetworkLogDebug(nil,'IP:   Server = ' + InAddrToString(InAddrToNetwork(Server^)));
+       {$ENDIF}
+  
        {Add Adapter}
-       Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
+       Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
       end;     
      ADAPTER_TYPE_WIRELESS:begin 
+       {Get Settings}
+       {IP_CONFIG}
+       ConfigType:=GetAdapterConfigType(AAdapter.Name);
+       if ConfigType <> CONFIG_TYPE_AUTO then
+        begin       
+         {IP_ADDRESS}
+         Address:=nil;
+         ConfigAddress:=GetAdapterConfigAddress(AAdapter.Name);
+         if not CompareDefault(ConfigAddress) and not CompareBroadcast(ConfigAddress) then
+          begin
+           Address:=@ConfigAddress;
+          end;
+         {IP_NETMASK}
+         Netmask:=nil;
+         ConfigNetmask:=GetAdapterConfigNetmask(AAdapter.Name);
+         if not CompareDefault(ConfigNetmask) and not CompareBroadcast(ConfigNetmask) then
+          begin
+           Netmask:=@ConfigNetmask;
+          end;
+         {IP_GATEWAY}
+         Gateway:=nil;
+         ConfigGateway:=GetAdapterConfigGateway(AAdapter.Name);
+         if not CompareDefault(ConfigGateway) and not CompareBroadcast(ConfigGateway) then
+          begin
+           Gateway:=@ConfigGateway;
+          end;
+         {IP_SERVER}
+         Server:=nil;
+         ConfigServer:=GetAdapterConfigServer(AAdapter.Name);
+         if not CompareDefault(ConfigServer) and not CompareBroadcast(ConfigServer) then
+          begin
+           Server:=@ConfigServer;
+          end;
+        end; 
+
+       {$IFDEF IP_DEBUG}
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   ConfigType = ' + ConfigTypeToString(ConfigType));
+       if NETWORK_LOG_ENABLED and (Address <> nil) then NetworkLogDebug(nil,'IP:   Address = ' + InAddrToString(InAddrToNetwork(Address^)));
+       if NETWORK_LOG_ENABLED and (Netmask <> nil) then NetworkLogDebug(nil,'IP:   Netmask = ' + InAddrToString(InAddrToNetwork(Netmask^)));
+       if NETWORK_LOG_ENABLED and (Gateway <> nil) then NetworkLogDebug(nil,'IP:   Gateway = ' + InAddrToString(InAddrToNetwork(Gateway^)));
+       if NETWORK_LOG_ENABLED and (Server <> nil) then NetworkLogDebug(nil,'IP:   Server = ' + InAddrToString(InAddrToNetwork(Server^)));
+       {$ENDIF}
+        
        {Add Adapter}
-       Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
+       Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
       end;     
     end;
    end
@@ -3834,7 +4095,7 @@ begin
       Result:=Host;
       Exit;
      end
-    else if Lowercase(Name + AddLeadingDot(FDomainName)) = Lowercase(AName) then
+    else if Lowercase(Name + AddLeadingDot(Manager.Settings.DomainName)) = Lowercase(AName) then
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
@@ -4109,8 +4370,8 @@ var
 begin
  {}
  {$IFDEF IP_DEBUG}
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushHosts');
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushHosts');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
  {$ENDIF}
   
  {Get Tick Count}
@@ -4444,8 +4705,8 @@ var
 begin
  {}
  {$IFDEF IP_DEBUG}
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushRoutes');
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushRoutes');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
  {$ENDIF}
  
  {Get Tick Count}
@@ -4760,8 +5021,8 @@ var
 begin
  {}
  {$IFDEF IP_DEBUG}
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushAddresses');
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushAddresses');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
  {$ENDIF}
 
  {Get Address}
@@ -6083,7 +6344,7 @@ begin
  if IPInitialized then Exit;
 
  {Create IP Transport}
- if IP_TRANSPORT_ENABLED then
+ if NetworkSettings.GetBooleanDefault('IP_TRANSPORT_ENABLED',IP_TRANSPORT_ENABLED) then 
   begin
    TIPTransport.Create(TransportManager,IP_TRANSPORT_NAME);
   end; 

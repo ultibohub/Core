@@ -4005,11 +4005,12 @@ begin
  if UDPInitialized then Exit;
 
  {Setup UDP Protocol}
- if DHCP_CONFIG_ENABLED then UDP_PROTOCOL_ENABLED:=True;
- if BOOTP_CONFIG_ENABLED then UDP_PROTOCOL_ENABLED:=True;
+ if NetworkSettings.GetBoolean('DNS_CLIENT_ENABLED') then NetworkSettings.AddBoolean('UDP_PROTOCOL_ENABLED',True);
+ if NetworkSettings.GetBoolean('DHCP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('UDP_PROTOCOL_ENABLED',True);
+ if NetworkSettings.GetBoolean('BOOTP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('UDP_PROTOCOL_ENABLED',True);
  
  {Create UDP Protocol}
- if UDP_PROTOCOL_ENABLED then
+ if NetworkSettings.GetBooleanDefault('UDP_PROTOCOL_ENABLED',UDP_PROTOCOL_ENABLED) then 
   begin
    TUDPProtocol.Create(ProtocolManager,UDP_PROTOCOL_NAME);
   end; 

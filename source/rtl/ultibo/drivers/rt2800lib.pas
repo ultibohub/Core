@@ -646,41 +646,41 @@ const
  {RF_CSR_CFG1 (RF control register)}
  RT2800_RF_CSR_CFG1     = $1024;
 
- RT2800_RF_CSR_CFG1_REGID_AND_VALUE     = $00ffffff; {REGID_AND_VALUE: Register value to program into RF}
- RT2800_RF_CSR_CFG1_RFGAP      = $1f000000; {RFGAP: Gap between BB_CONTROL_RF and RF_LE}
+ RT2800_RF_CSR_CFG1_REGID_AND_VALUE = $00ffffff; {REGID_AND_VALUE: Register value to program into RF}
+ RT2800_RF_CSR_CFG1_RFGAP           = $1f000000; {RFGAP: Gap between BB_CONTROL_RF and RF_LE}
                                                      {  0: 3 system clock cycle (37.5usec)}
                                                      {  1: 5 system clock cycle (62.5usec)}
                                              
  {RF_CSR_CFG2 (RF control register)}
  RT2800_RF_CSR_CFG2     = $1028;
 
- RT2800_RF_CSR_CFG2_VALUE      = $00ffffff; {VALUE: Register value to program into RF}
+ RT2800_RF_CSR_CFG2_VALUE = $00ffffff; {VALUE: Register value to program into RF}
 
  {LED_CFG (LED control)}
  RT2800_LED_CFG      = $102c;
 
- RT2800_LED_CFG_ON_PERIOD      = $000000ff; {ON_PERIOD: LED active time (ms) during TX (only used for LED mode 1)}
- RT2800_LED_CFG_OFF_PERIOD      = $0000ff00; {OFF_PERIOD: LED inactive time (ms) during TX (only used for LED mode 1)}
- RT2800_LED_CFG_SLOW_BLINK_PERIOD     = $003f0000; {SLOW_BLINK_PERIOD: LED blink interval in seconds (only used for LED mode 2)}
- RT2800_LED_CFG_R_LED_MODE      = $03000000; {color LED's:}
- RT2800_LED_CFG_G_LED_MODE      = $0c000000; { 0: off / 1: blinking upon TX2 / 2: periodic slow blinking / 3: always on}
- RT2800_LED_CFG_Y_LED_MODE      = $30000000;
- RT2800_LED_CFG_LED_POLAR      = $40000000; {LED polarity: 0: active low / 1: active high}
+ RT2800_LED_CFG_ON_PERIOD         = $000000ff; {ON_PERIOD: LED active time (ms) during TX (only used for LED mode 1)}
+ RT2800_LED_CFG_OFF_PERIOD        = $0000ff00; {OFF_PERIOD: LED inactive time (ms) during TX (only used for LED mode 1)}
+ RT2800_LED_CFG_SLOW_BLINK_PERIOD = $003f0000; {SLOW_BLINK_PERIOD: LED blink interval in seconds (only used for LED mode 2)}
+ RT2800_LED_CFG_R_LED_MODE        = $03000000; {color LED's:}
+ RT2800_LED_CFG_G_LED_MODE        = $0c000000; { 0: off / 1: blinking upon TX2 / 2: periodic slow blinking / 3: always on}
+ RT2800_LED_CFG_Y_LED_MODE        = $30000000;
+ RT2800_LED_CFG_LED_POLAR         = $40000000; {LED polarity: 0: active low / 1: active high}
 
  {AMPDU_BA_WINSIZE (Force BlockAck window size)}
  RT2800_AMPDU_BA_WINSIZE  = $1040;
 
- RT2800_AMPDU_BA_WINSIZE_FORCE_WINSIZE_ENABLE     = $00000020; {FORCE_WINSIZE_ENABLE: 0: Disable forcing of BlockAck window size / 1: Enable forcing of BlockAck window size, overwrites values BlockAck window size values in the TXWI}
- RT2800_AMPDU_BA_WINSIZE_FORCE_WINSIZE     = $0000001f; {FORCE_WINSIZE: BlockAck window size}
+ RT2800_AMPDU_BA_WINSIZE_FORCE_WINSIZE_ENABLE = $00000020; {FORCE_WINSIZE_ENABLE: 0: Disable forcing of BlockAck window size / 1: Enable forcing of BlockAck window size, overwrites values BlockAck window size values in the TXWI}
+ RT2800_AMPDU_BA_WINSIZE_FORCE_WINSIZE        = $0000001f; {FORCE_WINSIZE: BlockAck window size}
 
  {XIFS_TIME_CFG (MAC timing)}
  RT2800_XIFS_TIME_CFG     = $1100;
 
- RT2800_XIFS_TIME_CFG_CCKM_SIFS_TIME     = $000000ff; {CCKM_SIFS_TIME: unit 1us. Applied after CCK RX/TX}
- RT2800_XIFS_TIME_CFG_OFDM_SIFS_TIME     = $0000ff00; {OFDM_SIFS_TIME: unit 1us. Applied after OFDM RX/TX}
- RT2800_XIFS_TIME_CFG_OFDM_XIFS_TIME     = $000f0000; {OFDM_XIFS_TIME: unit 1us. Applied after OFDM RX when MAC doesn't reference BBP signal BBRXEND}
- RT2800_XIFS_TIME_CFG_EIFS      = $1ff00000; {EIFS: unit 1us}
- RT2800_XIFS_TIME_CFG_BB_RXEND_ENABLE     = $20000000; {BB_RXEND_ENABLE: reference RXEND signal to begin XIFS defer}
+ RT2800_XIFS_TIME_CFG_CCKM_SIFS_TIME  = $000000ff; {CCKM_SIFS_TIME: unit 1us. Applied after CCK RX/TX}
+ RT2800_XIFS_TIME_CFG_OFDM_SIFS_TIME  = $0000ff00; {OFDM_SIFS_TIME: unit 1us. Applied after OFDM RX/TX}
+ RT2800_XIFS_TIME_CFG_OFDM_XIFS_TIME  = $000f0000; {OFDM_XIFS_TIME: unit 1us. Applied after OFDM RX when MAC doesn't reference BBP signal BBRXEND}
+ RT2800_XIFS_TIME_CFG_EIFS            = $1ff00000; {EIFS: unit 1us}
+ RT2800_XIFS_TIME_CFG_BB_RXEND_ENABLE = $20000000; {BB_RXEND_ENABLE: reference RXEND signal to begin XIFS defer}
          
  {BKOFF_SLOT_CFG}
  RT2800_BKOFF_SLOT_CFG     = $1104;
@@ -1361,17 +1361,17 @@ const
  triggered, the hw seems to simply drop further tx results}
  RT2800_TX_STA_FIFO     = $1718;
 
- RT2800_TX_STA_FIFO_VALID      = $00000001; {VALID: 1: this tx result is valid 0: no valid tx result -> driver should stop reading}
- RT2800_TX_STA_FIFO_PID_TYPE      = $0000001e; {PID_TYPE: The PID latched from the PID field in the TXWI, can be used to match a frame with its tx result (even though the PID isonly 4 bits wide)}
- RT2800_TX_STA_FIFO_PID_QUEUE      = $00000006; {PID_QUEUE: Part of PID_TYPE, this is the queue index number (0-3)}
- RT2800_TX_STA_FIFO_PID_ENTRY      = $00000018; {PID_ENTRY: Part of PID_TYPE, this is the queue entry index number (1-3; This identification number is calculated by ((idx % 3; + 1)}
+ RT2800_TX_STA_FIFO_VALID           = $00000001; {VALID: 1: this tx result is valid 0: no valid tx result -> driver should stop reading}
+ RT2800_TX_STA_FIFO_PID_TYPE        = $0000001e; {PID_TYPE: The PID latched from the PID field in the TXWI, can be used to match a frame with its tx result (even though the PID isonly 4 bits wide)}
+ RT2800_TX_STA_FIFO_PID_QUEUE       = $00000006; {PID_QUEUE: Part of PID_TYPE, this is the queue index number (0-3)}
+ RT2800_TX_STA_FIFO_PID_ENTRY       = $00000018; {PID_ENTRY: Part of PID_TYPE, this is the queue entry index number (1-3; This identification number is calculated by ((idx % 3; + 1)}
  RT2800_TX_STA_FIFO_TX_SUCCESS      = $00000020; {TX_SUCCESS: Indicates tx success (1; or failure (0)}
- RT2800_TX_STA_FIFO_TX_AGGRE      = $00000040; {TX_AGGRE: Indicates if the frame was part of an aggregate (1; or not (0)}
- RT2800_TX_STA_FIFO_TX_ACK_REQUIRED     = $00000080; {TX_ACK_REQUIRED: Indicates if the frame needed to get ack'ed (1; or not (0)}
- RT2800_TX_STA_FIFO_WCID      = $0000ff00; {WCID: The wireless client ID.}
- RT2800_TX_STA_FIFO_SUCCESS_RATE     = $ffff0000;
- RT2800_TX_STA_FIFO_MCS       = $007f0000; {MCS: The tx rate used during the last transmission of this frame, be it successful or not.}
- RT2800_TX_STA_FIFO_PHYMODE      = $c0000000; {PHYMODE: The phymode used for the transmission.}
+ RT2800_TX_STA_FIFO_TX_AGGRE        = $00000040; {TX_AGGRE: Indicates if the frame was part of an aggregate (1; or not (0)}
+ RT2800_TX_STA_FIFO_TX_ACK_REQUIRED = $00000080; {TX_ACK_REQUIRED: Indicates if the frame needed to get ack'ed (1; or not (0)}
+ RT2800_TX_STA_FIFO_WCID            = $0000ff00; {WCID: The wireless client ID.}
+ RT2800_TX_STA_FIFO_SUCCESS_RATE    = $ffff0000;
+ RT2800_TX_STA_FIFO_MCS             = $007f0000; {MCS: The tx rate used during the last transmission of this frame, be it successful or not.}
+ RT2800_TX_STA_FIFO_PHYMODE         = $c0000000; {PHYMODE: The phymode used for the transmission.}
 
  {TX_AGG_CNT (Debug counter)}
  RT2800_TX_AGG_CNT     = $171c;
@@ -2725,6 +2725,10 @@ function RT2800GetGainCalibrationDelta(RT2X00:PRT2X00WiFiDevice):LongInt;
 
 function RT2800CompensateTXPower(RT2X00:PRT2X00WiFiDevice;IsRateB,Band:LongWord;PowerLevel:LongInt;TXPower:Byte;Delta:LongInt):Byte;
 
+function RT2800AGCtoRSSI(RT2X00:PRT2X00WiFiDevice;RXWI2:LongWord):LongInt;
+
+function RT2800ReceiveProcessRXWI(RT2X00:PRT2X00WiFiDevice;Descriptor:PRT2X00RXDescriptor;var Data:Pointer;var Size:LongWord):Boolean;
+
 function RT2800_MAC_WCID_ENTRY(Index:LongWord):LongWord; inline;
 function RT2800_PAIRWISE_KEY_ENTRY(Index:LongWord):LongWord; inline;
 function RT2800_MAC_IVEIV_ENTRY(Index:LongWord):LongWord; inline;
@@ -2836,6 +2840,10 @@ begin
  
  {Set RSSI offset}
  RT2X00.RSSIOffset:=RT2800_DEFAULT_RSSI_OFFSET;
+ 
+ {Set TXWI/RXWI size}
+ RT2X00.TXWISize:=RT2800GetTXWISize(RT2X00);
+ RT2X00.RXWISize:=RT2800GetRXWISize(RT2X00);
  
  Result:=ERROR_SUCCESS;
 end;
@@ -7748,6 +7756,7 @@ end;
 {==============================================================================}
 
 function RT2800GetEeprom16(RT2X00:PRT2X00WiFiDevice;ID:Word):Word;
+{rt2800_eeprom_read}
 var
  Offset:Word;
 begin
@@ -8197,7 +8206,147 @@ begin
  //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (Result=' + IntToStr(Result) + ')'); //To Do 
  {$ENDIF}
 end;
+
+{==============================================================================}
+
+function RT2800AGCtoRSSI(RT2X00:PRT2X00WiFiDevice;RXWI2:LongWord):LongInt;
+var
+ Value:Word;
+ RSSI0:ShortInt;
+ RSSI1:ShortInt;
+ RSSI2:ShortInt;
+ Offset0:Byte;
+ Offset1:Byte;
+ Offset2:Byte;
+begin
+ {}
+ Result:=0;
  
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: RT2800AGCtoRSSI'); //To Do 
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800:  (RXWI2=' + IntToHex(RXWI2,8) + ')'); //To Do 
+ {$ENDIF}
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ RSSI0:=RT2X00GetRegister32(RXWI2,RT2800_RXWI_W2_RSSI0,0);
+ RSSI1:=RT2X00GetRegister32(RXWI2,RT2800_RXWI_W2_RSSI1,8);
+ RSSI2:=RT2X00GetRegister32(RXWI2,RT2800_RXWI_W2_RSSI2,16);
+ 
+ if RT2X00.CurrentBand  = IEEE80211_BAND_2GHZ then
+  begin
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_BG);
+   Offset0:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET0,0);
+   Offset1:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG_OFFSET1,8);
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_BG2);
+   Offset2:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_BG2_OFFSET2,0);
+  end
+ else
+  begin
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_A);
+   Offset0:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A_OFFSET0,0);
+   Offset1:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A_OFFSET1,8);
+   Value:=RT2800GetEeprom16(RT2X00,RT2800_EEPROM_RSSI_A2);
+   Offset2:=RT2X00GetRegister16(Value,RT2800_EEPROM_RSSI_A2_OFFSET2,0);
+  end;
+  
+ {Convert the value from the descriptor into the RSSI value If the value in the descriptor is 0, it is considered invalid and the default (extremely low) rssi value is assumed}
+ if RSSI0 <> 0 then RSSI0:=(-12 - Offset0 - RT2X00.LNAGain - RSSI0) else RSSI0:=-128;
+ if RSSI1 <> 0 then RSSI1:=(-12 - Offset1 - RT2X00.LNAGain - RSSI1) else RSSI1:=-128;
+ if RSSI2 <> 0 then RSSI2:=(-12 - Offset2 - RT2X00.LNAGain - RSSI2) else RSSI2:=-128;
+ 
+ {RX Status only accepts a single RSSI value. Calculating the average doesn't deliver a fair answer either since
+  -60:-60 would be considered equally good as -50:-70 while the second is the one which gives less energy...}
+ RSSI0:=Max(RSSI0,RSSI1);
+ Result:=Max(RSSI0,RSSI2);
+ 
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: (Result=' + IntToStr(Result) + ')'); //To Do 
+ {$ENDIF}
+end;
+ 
+{==============================================================================}
+ 
+function RT2800ReceiveProcessRXWI(RT2X00:PRT2X00WiFiDevice;Descriptor:PRT2X00RXDescriptor;var Data:Pointer;var Size:LongWord):Boolean;
+{rt2800_process_rxwi}
+var
+ RXWI:Pointer;
+ Value:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {Check Descriptor}
+ if Descriptor = nil then Exit;
+ 
+ {Check Data and Size}
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+
+ {Get RXWI}
+ RXWI:=Data;
+ 
+ {Get Word0}
+ Value:=RT2X00ReadDescriptor(RXWI,0);
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(@RT2X00.WiFi.Network,'RT2800: (RXWI Word0 Value=' + IntToHex(Value,8) + ')'); //To Do 
+ {$ENDIF}
+ 
+ {Cipher}
+ Descriptor.Cipher:=RT2X00GetRegister32(Value,RT2800_RXWI_W0_UDF,13);
+ 
+ {Size}
+ Descriptor.Size:=RT2X00GetRegister32(Value,RT2800_RXWI_W0_MPDU_TOTAL_BYTE_COUNT,16);
+
+ {Get Word1}
+ Value:=RT2X00ReadDescriptor(RXWI,1);
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(@RT2X00.WiFi.Network,'RT2800: (RXWI Word1 Value=' + IntToHex(Value,8) + ')'); //To Do 
+ {$ENDIF}
+
+ {Short GI}
+ if RT2X00GetRegister32(Value,RT2800_RXWI_W1_SHORT_GI,24) <> 0 then
+  begin
+   Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_SHORT_GI;
+  end;
+  
+ {Bandwidth}
+ if RT2X00GetRegister32(Value,RT2800_RXWI_W1_BW,23) <> 0 then
+  begin
+   Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_40MHZ;
+  end; 
+ 
+ {RX rate (always use MCS as signal type)}
+ Descriptor.RXFlags:=Descriptor.RXFlags or RT2X00_RXDONE_SIGNAL_MCS;
+ Descriptor.Signal:=RT2X00GetRegister32(Value,RT2800_RXWI_W1_MCS,16);
+ Descriptor.RateMode:=RT2X00GetRegister32(Value,RT2800_RXWI_W1_PHYMODE,30);
+ 
+ {Mask off 0x8 bit to remove the short preamble flag}
+ if Descriptor.RateMode = RT2X00_RATE_MODE_CCK then
+  begin
+   Descriptor.Signal:=Descriptor.Signal and not($8);
+  end; 
+
+ {Get Word2}
+ Value:=RT2X00ReadDescriptor(RXWI,2);
+ {$IFDEF RT2800USB_DEBUG}
+ //if NETWORK_LOG_ENABLED then NetworkLogDebug(@RT2X00.WiFi.Network,'RT2800: (RXWI Word2 Value=' + IntToHex(Value,8) + ')'); //To Do 
+ {$ENDIF}
+ 
+ {Convert descriptor AGC value to RSSI value}
+ Descriptor.RSSI:=RT2800AGCtoRSSI(RT2X00,Value);
+ 
+ {Update Data and Size (Remove RXWI from start of buffer)}
+ Inc(Data,RT2X00.RXWISize);
+ Dec(Size,RT2X00.RXWISize);
+ 
+ Result:=True;
+end;
+
 {==============================================================================}
 
 function RT2800_MAC_WCID_ENTRY(Index:LongWord):LongWord; inline;

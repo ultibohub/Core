@@ -3678,7 +3678,7 @@ begin
  if IGMPInitialized then Exit;
 
  {Create IGMP Protocol}
- if IGMP_PROTOCOL_ENABLED then
+ if NetworkSettings.GetBooleanDefault('IGMP_PROTOCOL_ENABLED',IGMP_PROTOCOL_ENABLED) then
   begin
    TIGMPProtocol.Create(ProtocolManager,IGMP_PROTOCOL_NAME);
   end; 

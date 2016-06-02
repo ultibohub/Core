@@ -219,6 +219,7 @@ type
    RenewalTime:Int64;    {DHCP Renewal Time}
    RebindingTime:Int64;  {DHCP Rebinding Time}
 
+   ConfigDefault:Word;   {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
    ConfigAddress:TIn6Addr;
    ConfigNetmask:TIn6Addr;
    ConfigGateway:TIn6Addr;
@@ -245,6 +246,7 @@ type
    RenewalTime:Int64;    {DHCP Renewal Time}
    RebindingTime:Int64;  {DHCP Rebinding Time}
    
+   ConfigDefault:Word;   {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
    ConfigAddress:TIn6Addr;
    ConfigNetmask:TIn6Addr;
    ConfigGateway:TIn6Addr;
@@ -302,8 +304,6 @@ type
    FAddresses:TNetworkList;
 
    {Status Variables}
-   FHostName:String;
-   FDomainName:String;
    FDefaultAddress:TIn6Addr;
    FLoopbackAddress:TIn6Addr;
    FBroadcastAddress:TIn6Addr;
@@ -321,14 +321,20 @@ type
    function CheckFragment(ABuffer:Pointer):Boolean;
 
    function GetNextIP6Id(AIncrement:Boolean):Word;
+ 
+   function GetIP6Nameserver(ACount:LongWord):TIn6Addr;
+ 
+   function GetAdapterConfigType(const AName:String):Word;
+   function GetAdapterConfigAddress(const AName:String):TIn6Addr;
+   function GetAdapterConfigNetmask(const AName:String):TIn6Addr;
+   function GetAdapterConfigGateway(const AName:String):TIn6Addr;
+   function GetAdapterConfigServer(const AName:String):TIn6Addr;
   protected
    {Inherited Methods}
    function FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; override;
    function ForwardPacket(AAdapter:TTransportAdapter;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; override;
   public
    {Public Properties}
-   property HostName:String read FHostName write FHostName;
-   property DomainName:String read FDomainName write FDomainName;
    property Nameservers:TIP6Nameservers read FNameservers;
 
    property DefaultHopLimit:LongWord read FDefaultHopLimit write FDefaultHopLimit;
@@ -1002,6 +1008,7 @@ begin
  //LongWord(Network.S_addr):=INADDR_ANY;
  //LongWord(Directed.S_addr):=INADDR_BROADCAST;
  
+ ConfigDefault:=CONFIG_TYPE_AUTO;
  //LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  //LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
  //LongWord(ConfigGateway.S_addr):=INADDR_ANY;
@@ -1023,6 +1030,7 @@ begin
  //LongWord(Network.S_addr):=INADDR_ANY;
  //LongWord(Directed.S_addr):=INADDR_BROADCAST;
  
+ ConfigDefault:=CONFIG_TYPE_AUTO;
  //LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  //LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
  //LongWord(ConfigGateway.S_addr):=INADDR_ANY;
@@ -1051,8 +1059,6 @@ begin
  FNetworks:=TNetworkList.Create;
  FAddresses:=TNetworkList.Create;
  
- FHostName:=Platform.HostGetName;
- FDomainName:=Platform.HostGetDomain;
  FillChar(FNameservers,SizeOf(TIP6Nameservers),0);
  FNameserverLock:=MutexCreate;   
  
@@ -1217,6 +1223,93 @@ end;
 
 {==============================================================================}
 
+function TIP6Transport.GetIP6Nameserver(ACount:LongWord):TIn6Addr;
+{Get the nameserver address from the network settings}
+begin
+ {}
+ Result:=IN6ADDR_ANY;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function TIP6Transport.GetAdapterConfigType(const AName:String):Word;
+{Get the adapter config type from the network settings}
+var
+ Value:String;
+begin
+ {}
+ Result:=CONFIG_TYPE_AUTO;
+ 
+ Value:=Uppercase(Manager.Settings.GetString(AName + '_IP6_CONFIG'));
+ if Length(Value) <> 0 then
+  begin
+   Result:=StrToIntDef(Value,CONFIG_TYPE_UNKNOWN);
+   if (Result <> CONFIG_TYPE_STATIC) and (Result <> CONFIG_TYPE_DHCP) then
+    begin
+     if Value = 'STATIC' then
+      begin
+       Result:=CONFIG_TYPE_STATIC;
+      end
+     else if Value = 'DHCP' then
+      begin
+       Result:=CONFIG_TYPE_DHCP;
+      end
+     else
+      begin
+       Result:=CONFIG_TYPE_AUTO;
+      end;      
+    end; 
+  end; 
+end;
+
+{==============================================================================}
+
+function TIP6Transport.GetAdapterConfigAddress(const AName:String):TIn6Addr;
+{Get the adapter address from the network settings}
+begin
+ {}
+ Result:=IN6ADDR_ANY;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function TIP6Transport.GetAdapterConfigNetmask(const AName:String):TIn6Addr;
+{Get the adapter netmask from the network settings}
+begin
+ {}
+ Result:=IN6ADDR_ANY;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function TIP6Transport.GetAdapterConfigGateway(const AName:String):TIn6Addr;
+{Get the adapter gateway from the network settings}
+begin
+ {}
+ Result:=IN6ADDR_ANY;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function TIP6Transport.GetAdapterConfigServer(const AName:String):TIn6Addr;
+{Get the adapter server from the network settings}
+begin
+ {}
+ Result:=IN6ADDR_ANY;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
 function TIP6Transport.FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
 {Filter a received packet}
 {Source: The source IP6 address of the received fragment (Set by Packet or Fragment Handler)}
@@ -1342,8 +1435,8 @@ begin
   {Check Adapter}
   if AAdapter = nil then Exit;
  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   {Get Adapter}
   Adapter:=TIP6TransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
@@ -1365,6 +1458,7 @@ begin
       Adapter.ConfigType:=AConfigType;
       Adapter.Configured:=False;
       Adapter.Configuring:=False;
+      Adapter.ConfigDefault:=AConfigType;
       if AAddress <> nil then Adapter.ConfigAddress:=TIn6Addr(AAddress^);
       if ANetmask <> nil then Adapter.ConfigNetmask:=TIn6Addr(ANetmask^);
       if AGateway <> nil then Adapter.ConfigGateway:=TIn6Addr(AGateway^);
@@ -1476,9 +1570,6 @@ begin
            {Check for Release}
            if FAutoRelease then
             begin
-             
-             //To Do //WriterConvert ?
-             
              {Call Config Handler}
              if Config.ConfigHandler(THandle(Config),Adapter,CONFIG_ADAPTER_RELEASE) then
               begin
@@ -1995,6 +2086,9 @@ end;
 
 function TIP6Transport.StartTransport:Boolean;
 {Start this transport ready for sending and receiving}
+var
+ Count:LongWord;
+ Nameserver:TIn6Addr;
 begin
  {}
  ReaderLock;
@@ -2006,6 +2100,12 @@ begin
  
   {Check Manager}
   if Manager = nil then Exit;
+ 
+  {Add Nameservers}
+  for Count:=1 to MAX_NAME_SERVERS do
+   begin
+    //To Do
+   end; 
  
   {Return Result}
   Result:=True;
@@ -2043,7 +2143,7 @@ begin
     Adapter:=TIP6TransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
     
     {Remove Adapter} 
-    RemoveAdapter(Adapter.Adapter);
+    RemoveAdapter(Current.Adapter);
    end;
  
   {Flush all Addresses}
@@ -2100,8 +2200,10 @@ begin
    Current:=Adapter;
    Adapter:=nil;
     
+   {Note: No need to convert to write lock as this function is serialized by the caller}
+   
    {Check for Unconfigured}
-   if (not Current.Configured) and (not Current.Configuring) then
+   if not(Current.Configured) and not(Current.Configuring) and (Current.Adapter.Status = ADAPTER_STATUS_UP) then
     begin
      {Check for Retry}
      if (Current.RetryTime <> 0) and (Current.RetryTime < CurrentTime) then
@@ -2113,60 +2215,74 @@ begin
       end;
     end;
     
-   {Check for Lease}
-   if (Current.Configured) and (Current.LeaseTime <> 0) then
+   {Check for Configured}
+   if Current.Configured then
     begin
-     {Check for Renew}
-     if (Current.RenewalTime <> 0) and (Current.RenewalTime < CurrentTime) then
+     {Check Status}
+     if Current.Adapter.Status = ADAPTER_STATUS_UP then
       begin
-       {Call Config Handlers}
-       Config:=TIP6TransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
-       while Config <> nil do
+       {Check for Lease}
+       if Current.LeaseTime <> 0 then
         begin
-         if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+         {Check for Renew}
+         if (Current.RenewalTime <> 0) and (Current.RenewalTime < CurrentTime) then
           begin
-           if Assigned(Config.ConfigHandler) then
+           {Call Config Handlers}
+           Config:=TIP6TransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
+           while Config <> nil do
             begin
-              
-             //To Do //Must implement a Retry Count and/or a Timeout backoff
-              
-             Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW);
+             if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+              begin
+               if Assigned(Config.ConfigHandler) then
+                begin
+                  
+                 //To Do //Must implement a Retry Count and/or a Timeout backoff
+                  
+                 Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW);
+                end;
+              end;
+             Config:=TIP6TransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
             end;
           end;
-         Config:=TIP6TransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
-        end;
-      end;
-     
-     {Check for Rebind}
-     if (Current.RebindingTime <> 0) and (Current.RebindingTime < CurrentTime) then
-      begin
-       {Call Config Handlers}
-       Config:=TIP6TransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
-       while Config <> nil do
-        begin
-         if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+         
+         {Check for Rebind}
+         if (Current.RebindingTime <> 0) and (Current.RebindingTime < CurrentTime) then
           begin
-           if Assigned(Config.ConfigHandler) then
+           {Call Config Handlers}
+           Config:=TIP6TransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
+           while Config <> nil do
             begin
-             
-             //To Do //Must implement a Retry Count and/or a Timeout backoff
-              
-             Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND);
+             if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+              begin
+               if Assigned(Config.ConfigHandler) then
+                begin
+                 
+                 //To Do //Must implement a Retry Count and/or a Timeout backoff
+                  
+                 Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND);
+                end;
+              end;
+             Config:=TIP6TransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
             end;
           end;
-         Config:=TIP6TransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
+          
+         {Check for Expire}
+         if (Current.ExpiryTime <> 0) and (Current.ExpiryTime < CurrentTime) then
+          begin
+           {Get Next}
+           Adapter:=TIP6TransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
+            
+           {Remove Adapter}
+           RemoveAdapter(Current.Adapter);
+          end;
         end;
-      end;
-      
-     {Check for Expire}
-     if (Current.ExpiryTime <> 0) and (Current.ExpiryTime < CurrentTime) then
+      end
+     else
       begin
-       {Get Next}
-       Adapter:=TIP6TransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-        
-       {Remove Adapter}
-       RemoveAdapter(Current.Adapter);
-      end;
+       //To do //Unconfigure
+       
+       //Current.ConfigType:=Current.ConfigDefault;
+      end;      
     end;
      
    {Get Next}
@@ -2183,6 +2299,17 @@ function TIP6Transport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 var
+ Address:PIn6Addr;
+ Netmask:PIn6Addr;
+ Gateway:PIn6Addr;
+ Server:PIn6Addr;
+
+ ConfigType:Word;
+ ConfigAddress:TIn6Addr;
+ ConfigNetmask:TIn6Addr;
+ ConfigGateway:TIn6Addr;
+ ConfigServer:TIn6Addr;
+
  Adapter:TIP6TransportAdapter;
 begin
  {}
@@ -2199,13 +2326,14 @@ begin
   
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:   State = ' + AdapterStateToString(AAdapter.State));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:   Status = ' + AdapterStatusToString(AAdapter.Status));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:   Media = ' + MediaTypeToString(AAdapter.MediaType));
   {$ENDIF}
-  
-  {Check Status}
-  if AAdapter.Status <> ADAPTER_STATUS_READY then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
   
   Result:=True;
   
@@ -2221,19 +2349,43 @@ begin
   Adapter:=TIP6TransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
    begin
+    {Set Addresses}
+    Address:=nil;
+    Netmask:=nil;
+    Gateway:=nil;
+    Server:=nil;
+
     {Check Type}
     case AAdapter.AdapterType of
      ADAPTER_TYPE_LOOPBACK:begin
        {Add Adapter}
-       Result:=AddAdapter(AAdapter,CONFIG_TYPE_LOOPBACK,nil,nil,nil,nil);
+       Result:=AddAdapter(AAdapter,CONFIG_TYPE_LOOPBACK,Address,Netmask,Gateway,Server);
       end;
      ADAPTER_TYPE_WIRED:begin
+       {Get Settings}
+       {IP6_CONFIG}
+       ConfigType:=GetAdapterConfigType(AAdapter.Name);
+       if ConfigType <> CONFIG_TYPE_AUTO then
+        begin       
+         //To Do
+         
+        end; 
+     
        {Add Adapter}
-       Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
+       Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
       end;     
      ADAPTER_TYPE_WIRELESS:begin
+       {Get Settings}
+       {IP6_CONFIG}
+       ConfigType:=GetAdapterConfigType(AAdapter.Name);
+       if ConfigType <> CONFIG_TYPE_AUTO then
+        begin       
+         //To Do
+         
+        end; 
+       
        {Add Adapter}
-       Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
+       Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
       end;     
     end;
    end
@@ -2413,7 +2565,7 @@ begin
       Result:=Host;
       Exit;
      end
-    else if Lowercase(Name + AddLeadingDot(FDomainName)) = Lowercase(AName) then
+    else if Lowercase(Name + AddLeadingDot(Manager.Settings.DomainName)) = Lowercase(AName) then
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
@@ -4476,7 +4628,7 @@ begin
  if IP6Initialized then Exit;
 
  {Create IPv6 Transport}
- if IP6_TRANSPORT_ENABLED then
+ if NetworkSettings.GetBooleanDefault('IP6_TRANSPORT_ENABLED',IP6_TRANSPORT_ENABLED) then 
   begin
    TIP6Transport.Create(TransportManager,IP6_TRANSPORT_NAME);
   end; 

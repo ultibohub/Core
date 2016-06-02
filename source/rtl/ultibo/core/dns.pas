@@ -1814,7 +1814,7 @@ begin
    NameBuffer:=StripTrailingDot(AName);
    
    {Check for Blank}
-   if (NameBuffer = '') or (Lowercase(NameBuffer) = '..localmachine') or (Lowercase(NameBuffer) = Lowercase(Transport.HostName)) then
+   if (NameBuffer = '') or (Lowercase(NameBuffer) = '..localmachine') or (Lowercase(NameBuffer) = Lowercase(FProtocol.Manager.Settings.HostName)) then
     begin
      {Check the Addresses}
      Count:=0;
@@ -1827,7 +1827,7 @@ begin
          Inc(Count);
          
          {Return Address Entry if found}
-         Result:=AddressEntryToHostEnt(AddressEntry,Transport.HostName + AddLeadingDot(Transport.DomainName),Count);
+         Result:=AddressEntryToHostEnt(AddressEntry,FProtocol.Manager.Settings.HostName + AddLeadingDot(FProtocol.Manager.Settings.DomainName),Count);
          SetLastError(ERROR_SUCCESS);
         end
        else if AddressEntry.AddressType = ADDRESS_TYPE_SECONDARY then 
@@ -1835,7 +1835,7 @@ begin
          Inc(Count);
          
          {Return Address Entry if found}
-         Result:=AddressEntryToHostEnt(AddressEntry,Transport.HostName + AddLeadingDot(Transport.DomainName),Count);
+         Result:=AddressEntryToHostEnt(AddressEntry,FProtocol.Manager.Settings.HostName + AddLeadingDot(FProtocol.Manager.Settings.DomainName),Count);
          SetLastError(ERROR_SUCCESS);
         end;
         
@@ -1867,7 +1867,7 @@ begin
    else
     begin
      {Check the Domain}
-     if Pos('.',NameBuffer) = 0 then NameBuffer:=NameBuffer + AddLeadingDot(Transport.DomainName);
+     if Pos('.',NameBuffer) = 0 then NameBuffer:=NameBuffer + AddLeadingDot(FProtocol.Manager.Settings.DomainName);
 
      {Check the Cache}
      HostEntry:=Transport.GetHostByName(NameBuffer,True); 
@@ -1981,8 +1981,8 @@ begin
    {Get the Host Name}
    SetLastError(WSAEFAULT);
    if AName = nil then Exit;
-   if ALength < Length(Transport.HostName) then Exit;
-   StrLCopy(AName,PChar(Transport.HostName),ALength);
+   if ALength < Length(FProtocol.Manager.Settings.HostName) then Exit;
+   StrLCopy(AName,PChar(FProtocol.Manager.Settings.HostName),ALength);
   
    {Return Result}
    Result:=NO_ERROR;
@@ -2337,7 +2337,10 @@ begin
  if DNSInitialized then Exit;
 
  {Create DNS Client}
- DNSClient:=TDNSClient.Create(ProtocolManager.GetProtocolByType(IPPROTO_UDP,SOCK_DGRAM,False,NETWORK_LOCK_NONE)); //To Do //Pass Manager //Move to StartClient ?
+ if NetworkSettings.GetBooleanDefault('DNS_CLIENT_ENABLED',DNS_CLIENT_ENABLED) then
+  begin
+   DNSClient:=TDNSClient.Create(ProtocolManager.GetProtocolByType(IPPROTO_UDP,SOCK_DGRAM,False,NETWORK_LOCK_NONE)); //To Do //Pass Manager //Move to StartClient
+  end; 
  
  DNSInitialized:=True;
 end;

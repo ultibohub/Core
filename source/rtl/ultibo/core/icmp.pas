@@ -4117,10 +4117,10 @@ begin
  if ICMPInitialized then Exit;
 
  {Setup ICMP Protocol}
- if IP_TRANSPORT_ENABLED then ICMP_PROTOCOL_ENABLED:=True;
+ if NetworkSettings.GetBoolean('IP_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('ICMP_PROTOCOL_ENABLED',True);
  
  {Create ICMP Protocol}
- if ICMP_PROTOCOL_ENABLED then
+ if NetworkSettings.GetBooleanDefault('ICMP_PROTOCOL_ENABLED',ICMP_PROTOCOL_ENABLED) then 
   begin
    TICMPProtocol.Create(ProtocolManager,ICMP_PROTOCOL_NAME);
   end; 

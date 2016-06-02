@@ -89,8 +89,8 @@ const
  //RT2X00_SHORT_EIFS       = RT2X00_SIFS + RT2X00_SHORT_DIFS +  RT2X00_GET_DURATION(RT2X00_IEEE80211_HEADER + RT2X00_ACK_SIZE,10); //To Do //rt2x00.h
  
  {Extra TX headroom for alignment purposes}
- RT2X00_ALIGN_SIZE  = 4; {Only whole frame needs alignment}
- RT2X00_L2PAD_SIZE  = 8; {Both header & payload need alignment}
+ RT2X00_ALIGN_EXTRA  = 4; {RT2X00_ALIGN_SIZE}{Only whole frame needs alignment}
+ RT2X00_L2PAD_EXTRA  = 8; {RT2X00_L2PAD_SIZE}{Both header & payload need alignment}
  
  {RT chip constants (The chipset on the device is composed of an RT and RF chip)}
  RT2X00_RT2460     = $2460;
@@ -121,7 +121,7 @@ const
  RT2X00_REQUIRE_DMA           = 1 shl 3;
  RT2X00_REQUIRE_COPY_IV       = 1 shl 4;
  RT2X00_REQUIRE_L2PAD         = 1 shl 5;
- RT2X00_REQUIRE_TXSTATUS_FIFO = 1 shl 6; //To Do //Remove ?
+ RT2X00_REQUIRE_TXSTATUS_FIFO = 1 shl 6;
  RT2X00_REQUIRE_SW_SEQNO      = 1 shl 7;
  RT2X00_REQUIRE_HT_TX_DESC    = 1 shl 8;
  RT2X00_REQUIRE_PS_AUTOWAKE   = 1 shl 9;
@@ -152,6 +152,44 @@ const
  RT2X00_RX_CRYPTO_FAIL_ICV = 1;
  RT2X00_RX_CRYPTO_FAIL_MIC = 2;
  RT2X00_RX_CRYPTO_FAIL_KEY = 3;
+
+ {RX descriptor flags}
+ RT2X00_RXDONE_SIGNAL_PLCP    = (1 shl 0); {Signal field contains the plcp value}
+ RT2X00_RXDONE_SIGNAL_BITRATE = (1 shl 1); {Signal field contains the bitrate value}
+ RT2X00_RXDONE_SIGNAL_MCS     = (1 shl 2); {Signal field contains the mcs value}
+ RT2X00_RXDONE_MY_BSS         = (1 shl 3); {Does this frame originate from device's BSS}
+ RT2X00_RXDONE_CRYPTO_IV      = (1 shl 4); {Driver provided IV/EIV data}
+ RT2X00_RXDONE_CRYPTO_ICV     = (1 shl 5); {Driver provided ICV data}
+ RT2X00_RXDONE_L2PAD          = (1 shl 6); {802.11 payload has been padded to 4-byte boundary}
+ 
+ RT2X00_RXDONE_SIGNAL_MASK    = (RT2X00_RXDONE_SIGNAL_PLCP or RT2X00_RXDONE_SIGNAL_BITRATE or RT2X00_RXDONE_SIGNAL_MCS);
+ 
+ {TX descriptor flags}
+ RT2X00_ENTRY_TXD_RTS_FRAME        = (1 shl 0);  {This frame is a RTS frame}
+ RT2X00_ENTRY_TXD_CTS_FRAME        = (1 shl 1);  {This frame is a CTS-to-self frame}
+ RT2X00_ENTRY_TXD_GENERATE_SEQ     = (1 shl 2);  {This frame requires sequence counter}
+ RT2X00_ENTRY_TXD_FIRST_FRAGMENT   = (1 shl 3);  {This is the first frame}
+ RT2X00_ENTRY_TXD_MORE_FRAG        = (1 shl 4);  {This frame is followed by another fragment}
+ RT2X00_ENTRY_TXD_REQ_TIMESTAMP    = (1 shl 5);  {Require timestamp to be inserted}
+ RT2X00_ENTRY_TXD_BURST            = (1 shl 6);  {This frame belongs to the same burst event}
+ RT2X00_ENTRY_TXD_ACK              = (1 shl 7);  {An ACK is required for this frame}
+ RT2X00_ENTRY_TXD_RETRY_MODE       = (1 shl 8);  {When set, the long retry count is used}
+ RT2X00_ENTRY_TXD_ENCRYPT          = (1 shl 9);  {This frame should be encrypted}
+ RT2X00_ENTRY_TXD_ENCRYPT_PAIRWISE = (1 shl 10); {Use pairwise key table (instead of shared)}
+ RT2X00_ENTRY_TXD_ENCRYPT_IV       = (1 shl 11); {Generate IV/EIV in hardware}
+ RT2X00_ENTRY_TXD_ENCRYPT_MMIC     = (1 shl 12); {Generate MIC in hardware}
+ RT2X00_ENTRY_TXD_HT_AMPDU         = (1 shl 13); {This frame is part of an AMPDU}
+ RT2X00_ENTRY_TXD_HT_BW_40         = (1 shl 14); {Use 40MHz Bandwidth}
+ RT2X00_ENTRY_TXD_HT_SHORT_GI      = (1 shl 15); {Use short GI}
+ RT2X00_ENTRY_TXD_HT_MIMO_PS       = (1 shl 16); {The receiving STA is in dynamic SM PS mode}
+ 
+ {TX complete flags}
+ RT2X00_TXDONE_UNKNOWN         = (1 shl 0); {Hardware could not determine success of transmission}
+ RT2X00_TXDONE_SUCCESS         = (1 shl 1); {Frame was successfully sent}
+ RT2X00_TXDONE_FALLBACK        = (1 shl 2); {Hardware used fallback rates for retries}
+ RT2X00_TXDONE_FAILURE         = (1 shl 3); {Frame was not successfully sent}
+ RT2X00_TXDONE_EXCESSIVE_RETRY = (1 shl 4); {In addition to TXDONE_FAILURE, the frame transmission failed due to excessive retries}
+ RT2X00_TXDONE_AMPDU           = (1 shl 5);
  
  {Antenna constants}
  RT2X00_ANTENNA_SW_DIVERSITY = 0;
@@ -383,6 +421,35 @@ type
   //To Do //rt2x00intf_conf
  end;
  
+ PRT2X00RXDescriptor = ^TRT2X00RXDescriptor; {rxdone_entry_desc}
+ TRT2X00RXDescriptor = record
+  Timestamp:Int64;                {RX Timestamp}
+  Signal:LongInt;                 {Signal of the received frame}
+  RSSI:LongInt;                   {RSSI of the received frame}
+  Size:LongWord;                  {Data size of the received frame}
+  Flags:LongWord;                 {Receive flags (WIFI_RX_FLAG_*)}
+  RXFlags:LongWord;               {Receive flags (RT2X00_RXDONE_*)}
+  RateMode:Word;                  {Rate mode (RT2X00_RATE_MODE_*)}
+  Cipher:Byte;                    {Cipher type used during decryption}
+  CipherStatus:Byte;              {Decryption status}
+  IV:array[0..1] of LongWord;     {IV/EIV data used during decryption}
+  ICV:LongWord;                   {ICV data used during decryption}
+ end;
+ 
+ PRT2X00TXDescriptor = ^TRT2X00TXDescriptor; {txentry_desc}
+ TRT2X00TXDescriptor = record
+  Flags:LongWord;
+  Length:Word;
+  HeaderLength:Word;
+  //To Do //txentry_desc
+ end;
+ 
+ PRT2X00TXComplete = ^TRT2X00TXComplete; {txdone_entry_desc}
+ TRT2X00TXComplete = record
+  Flags:LongWord; {Transmit flags (RT2X00_TXDONE_*)}
+  Retry:LongWord; {Retry count}
+ end;
+ 
  {RT2X00 Device}
  PRT2X00WiFiDevice = ^TRT2X00WiFiDevice;
  
@@ -493,6 +560,13 @@ type
   EepromSize:LongWord;                     {EEPROM size}
   CSRLock:TMutexHandle;                    {Protect against concurrent indirect register access (BBP, RF, MCU)}
   //To Do
+  
+  TXWISize:LongWord;                       {Size of the TXWI field in the TX frame}
+  RXWISize:LongWord;                       {Size of the RXWI field in the RX frame}
+  TXINFOSize:LongWord;                     {Size of the TXINFO field in the TX frame}
+  RXINFOSize:LongWord;                     {Size of the RXINFO field in the RX frame}
+  
+  ExtraTXHeadroom:LongWord;                {Extra headroom required for TX frames}
  end; 
   
  
@@ -604,9 +678,23 @@ procedure RT2X00SetRegister32(var Reg:LongWord;Mask,Shift,Value:LongWord); inlin
 function RT2X00ReadDescriptor(Descriptor:PLongWord;Index:Byte):LongWord; inline;
 procedure RT2X00WriteDescriptor(Descriptor:PLongWord;Index:Byte;Value:LongWord); inline;
 
-function RT2X00GetRate(Value:Word):PRT2X00Rate;
+function RT2X00GetRate(Value:Word):PRT2X00Rate; inline;
+function RT2X00GetRateMCS(Value:Word):LongInt; inline;
+
+function RT2X00GetTXBufferSize(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2X00GetTXBufferOffset(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2X00GetRXBufferSize(RT2X00:PRT2X00WiFiDevice):LongWord;
+function RT2X00GetRXBufferOffset(RT2X00:PRT2X00WiFiDevice):LongWord;
+
+function RT2X00InsertL2PAD(var Data:Pointer;var Size:LongWord;HeaderLength:LongWord):Boolean;
+function RT2X00RemoveL2PAD(var Data:Pointer;var Size:LongWord;HeaderLength:LongWord):Boolean;
+
+function RT2X00ReceiveReadSignal(RT2X00:PRT2X00WiFiDevice;Descriptor:PRT2X00RXDescriptor):LongWord;
+function RT2X00ReceiveInsertIV(Descriptor:PRT2X00RXDescriptor;var Data:Pointer;var Size:LongWord;HeaderLength:LongWord):Boolean;
 
 function RT2X00_RATE_MCS(Mode,MCS:Word):Word; inline;
+function RT2X00_L2PAD_SIZE(HeaderLength:LongWord):LongWord; inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -621,8 +709,6 @@ implementation
 {==============================================================================}
 {RT2X00LIB Functions}
 function RT2X00DriverInit(RT2X00:PRT2X00WiFiDevice):LongWord;
-var
- ExtraTXHeadroom:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -653,11 +739,11 @@ begin
  {Get TX Headroom value}
  if RT2X00IsUSB(RT2X00) then
   begin
-   ExtraTXHeadroom:=0; //To Do //tx[0].winfo_size + tx[0].desc_size; //rt2x00dev_extra_tx_headroom
+   RT2X00.ExtraTXHeadroom:=RT2X00.TXWISize + RT2X00.TXINFOSize;
   end
  else
   begin
-   ExtraTXHeadroom:=0; //To Do //tx[0].winfo_size //rt2x00dev_extra_tx_headroom
+   RT2X00.ExtraTXHeadroom:=RT2X00.TXWISize;
   end;  
  
  {Determine which operating modes are supported}
@@ -676,16 +762,16 @@ begin
  //To Do //rt2x00lib_probe_hw
  
  {Initialize extra TX headroom required}
- RT2X00.WiFi.Hardware.ExtraTXHeadroom:=Max(IEEE80211_TX_STATUS_HEADROOM,ExtraTXHeadroom);
+ RT2X00.WiFi.Hardware.ExtraTXHeadroom:=Max(IEEE80211_TX_STATUS_HEADROOM,RT2X00.ExtraTXHeadroom);
  
  {Take TX headroom required for alignment into account}
  if RT2X00GetRequirement(RT2X00,RT2X00_REQUIRE_L2PAD) then
   begin
-   Inc(RT2X00.WiFi.Hardware.ExtraTXHeadroom,RT2X00_L2PAD_SIZE);
+   Inc(RT2X00.WiFi.Hardware.ExtraTXHeadroom,RT2X00_L2PAD_EXTRA);
   end
  else if RT2X00GetRequirement(RT2X00,RT2X00_REQUIRE_DMA) then
   begin
-   Inc(RT2X00.WiFi.Hardware.ExtraTXHeadroom,RT2X00_ALIGN_SIZE);
+   Inc(RT2X00.WiFi.Hardware.ExtraTXHeadroom,RT2X00_ALIGN_EXTRA);
   end;
   
  {Allocate tx status FIFO}
@@ -2090,7 +2176,8 @@ end;
 
 {==============================================================================}
   
-function RT2X00GetRate(Value:Word):PRT2X00Rate;
+function RT2X00GetRate(Value:Word):PRT2X00Rate; inline;
+{rt2x00_get_rate}
 begin
  {}
  Result:=@RT2X00SupportedRates[Value and $ff];
@@ -2098,12 +2185,234 @@ end;
   
 {==============================================================================}
   
+function RT2X00GetRateMCS(Value:Word):LongInt; inline;
+{rt2x00_get_rate_mcs}
+begin
+ {}
+ Result:=Value and $00ff;
+end;
+
+{==============================================================================}
+  
+function RT2X00GetTXBufferSize(RT2X00:PRT2X00WiFiDevice):LongWord;
+{}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ //To Do //Continuing 
+end;
+
+{==============================================================================}
+
+function RT2X00GetTXBufferOffset(RT2X00:PRT2X00WiFiDevice):LongWord;
+{}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ //To Do //Continuing 
+ //See RT2X00DriverInit / ExtraTXHeadroom
+end;
+
+{==============================================================================}
+  
+function RT2X00GetRXBufferSize(RT2X00:PRT2X00WiFiDevice):LongWord;
+{rt2x00queue_alloc_rxskb}
+var
+ HeadSize:LongWord;
+ TailSize:LongWord;
+ FrameSize:LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ {The frame size includes descriptor size, because the hardware directly receives the frame into the buffer}
+ FrameSize:=RT2X00_AGGREGATION_SIZE + RT2X00.RXINFOSize + RT2X00.RXWISize;
+ 
+ {The payload should be aligned to a 4-byte boundary, this means we need at least 3 bytes for moving the frame into the correct offset}
+ HeadSize:=4;
+ 
+ {For IV/EIV/ICV assembly we must make sure there is at least 8 bytes bytes available in headroom for IV/EIV and 8 bytes for ICV data as tailroom}
+ TailSize:=0;
+ if RT2X00GetCapability(RT2X00,RT2X00_CAPABILITY_HW_CRYPTO) then
+  begin
+   HeadSize:=HeadSize + 8;
+   TailSize:=TailSize + 8;
+  end;
+ 
+ {Return Result}
+ Result:=FrameSize + HeadSize + TailSize;
+end;
+
+{==============================================================================}
+
+function RT2X00GetRXBufferOffset(RT2X00:PRT2X00WiFiDevice):LongWord;
+{}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+
+ //To Do //Continuing 
+ //See above HeadSize
+end;
+
+{==============================================================================}
+
+function RT2X00InsertL2PAD(var Data:Pointer;var Size:LongWord;HeaderLength:LongWord):Boolean;
+{rt2x00queue_insert_l2pad}
+var
+ L2PAD:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+ 
+ if Size > HeaderLength then L2PAD:=RT2X00_L2PAD_SIZE(HeaderLength) else L2PAD:=0;
+ 
+ if L2PAD > 0 then
+  begin
+   {Update Data and Size (Add bytes to start of buffer)}
+   Dec(Data,L2PAD);
+   Inc(Size,L2PAD);
+   
+   {Move Header Back}
+   System.Move(Pointer(Data + L2PAD)^,Data^,HeaderLength);
+  end; 
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RT2X00RemoveL2PAD(var Data:Pointer;var Size:LongWord;HeaderLength:LongWord):Boolean;
+{rt2x00queue_remove_l2pad}
+var
+ L2PAD:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+ 
+ if Size > HeaderLength then L2PAD:=RT2X00_L2PAD_SIZE(HeaderLength) else L2PAD:=0;
+ 
+ if L2PAD > 0 then
+  begin
+   {Move Header Forward}
+   System.Move(Data^,Pointer(Data + L2PAD)^,HeaderLength);
+   
+   {Update Data and Size (Remove bytes from start of buffer)}
+   Inc(Data,L2PAD);
+   Dec(Size,L2PAD);
+  end; 
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RT2X00ReceiveReadSignal(RT2X00:PRT2X00WiFiDevice;Descriptor:PRT2X00RXDescriptor):LongWord;
+{rt2x00lib_rxdone_read_signal}
+var
+ Count:LongWord;
+ Signal:LongInt;
+ Rate:PRT2X00Rate;
+ SignalType:LongWord;
+ SupportedBand:PIEEE80211SupportedBand;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Device}
+ if RT2X00 = nil then Exit;
+ 
+ {Check Descriptor}
+ if Descriptor = nil then Exit;
+ 
+ {Get Signal}
+ Signal:=Descriptor.Signal;
+ SignalType:=(Descriptor.RXFlags and RT2X00_RXDONE_SIGNAL_MASK);
+ 
+ {Check Rate Mode}
+ case Descriptor.RateMode of
+  RT2X00_RATE_MODE_CCK,RT2X00_RATE_MODE_OFDM:begin
+    {For non-HT rates the MCS value needs to contain the actually used rate modulation (CCK or OFDM)}
+    if (Descriptor.RXFlags and RT2X00_RXDONE_SIGNAL_MCS) <> 0 then
+     begin
+      Signal:=RT2X00_RATE_MCS(Descriptor.RateMode,Signal);
+     end;
+     
+    SupportedBand:=RT2X00.WiFi.Bands[RT2X00.CurrentBand];
+    for Count:=0 to SupportedBand.RateCount - 1 do
+     begin
+      Rate:=RT2X00GetRate(SupportedBand.Rates[Count].HardwareRate);
+      
+      if ((SignalType = RT2X00_RXDONE_SIGNAL_PLCP) and (Rate.PLCP = Signal)) or ((SignalType = RT2X00_RXDONE_SIGNAL_BITRATE) and (Rate.BitRate = Signal)) or ((SignalType = RT2X00_RXDONE_SIGNAL_MCS) and (Rate.MCS = Signal)) then
+       begin
+        Result:=Count;
+       end;
+     end;
+   end;
+  RT2X00_RATE_MODE_HT_MIX,RT2X00_RATE_MODE_HT_GREENFIELD:begin
+    if (Signal >= 0) and (Signal <= 76) then
+     begin
+      Result:=Signal;
+     end;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function RT2X00ReceiveInsertIV(Descriptor:PRT2X00RXDescriptor;var Data:Pointer;var Size:LongWord;HeaderLength:LongWord):Boolean;
+{rt2x00crypto_rx_insert_iv}
+begin
+ {}
+ Result:=False;
+ 
+ if Descriptor = nil then Exit;
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+ 
+ //To Do //Continuing //See rt2x00crypto_rx_insert_iv not used by RT2800USB
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+  
 function RT2X00_RATE_MCS(Mode,MCS:Word):Word; inline;
+{RATE_MCS}
 begin
  {}
  Result:=((Mode and $00ff) shl 8) or (MCS and $00ff);
 end;
   
+{==============================================================================}
+  
+function RT2X00_L2PAD_SIZE(HeaderLength:LongWord):LongWord; inline;
+{L2PAD_SIZE}
+begin
+ {}
+ Result:=(-HeaderLength and 3);
+end;
+ 
 {==============================================================================}
 {==============================================================================}
 
