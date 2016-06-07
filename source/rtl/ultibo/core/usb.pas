@@ -8693,7 +8693,7 @@ begin
  
  LoggingOutput('[USB Device ' + IntToStr(Device.Address) + ']');
  
- USBLogDeviceDescriptor(Device,@Device.Descriptor);
+ USBLogDeviceDescriptor(Device,Device.Descriptor);
  USBLogDeviceConfiguration(Device);
 
  LoggingOutput('');

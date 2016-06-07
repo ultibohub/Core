@@ -34,6 +34,7 @@ units=$(SYSTEMUNIT) \
        sysconst \
        character \
        fpwidestring \
+       $(ULTIBO_FONTS) \
        $(ULTIBO_EXTRAS) \
        $(ULTIBO_CPU_EXTRAS)
 
@@ -194,6 +195,12 @@ ULTIBO_UNITS=globalconfig \
              cifs \
              services \
              shell
+             
+ULTIBO_FONTS=Latin1_8x8 \
+             Latin1_8x10 \
+             Latin1_8x12 \
+             Latin1_8x14 \
+             Sun_12x22
              
 ULTIBO_EXTRAS=consoleshell \
               remoteshell \
@@ -554,6 +561,14 @@ $(foreach unit,$(ULTIBO_UNITS),$(eval $(call ULTIBO_UNITS_RULE,$(unit))))
 $(addsuffix $(PPUEXT),$(ULTIBO_UNITS)):
 	$(COMPILER) $<
 
+define ULTIBO_FONTS_RULE
+$(1)$(PPUEXT): fonts/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(ULTIBO_FONTS),$(eval $(call ULTIBO_FONTS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(ULTIBO_FONTS)):
+	$(COMPILER) $<
 
 define ULTIBO_EXTRAS_RULE
 $(1)$(PPUEXT): extra/$(1).pas $(SYSTEMUNIT)$(PPUEXT)

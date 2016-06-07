@@ -5668,12 +5668,12 @@ begin
      begin
       {Get Character}
       Character:=0;
-      case Font.CharWidth of 
+      case Font.CharWidth of
        8:Character:=PFontChars8(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
-       16:Character:=PFontChars16(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
-       32:Character:=PFontChars32(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
+       9..16:Character:=PFontChars16(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
+       17..32:Character:=PFontChars32(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
       end;
-      
+       
       {Map Character}
       for Column:=Font.CharWidth - 1 downto 0 do
        begin
@@ -5806,10 +5806,10 @@ begin
        begin
         {Get Character}
         Character:=0;
-        case Font.CharWidth of 
+        case Font.CharWidth of
          8:Character:=PFontChars8(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
-         16:Character:=PFontChars16(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
-         32:Character:=PFontChars32(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
+         9..16:Character:=PFontChars16(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
+         17..32:Character:=PFontChars32(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
         end;
         
         {Map Character}
