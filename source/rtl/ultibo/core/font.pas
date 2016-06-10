@@ -111,7 +111,7 @@ const
  FONT_FLAG_UNICODE    = $00000001; {Font includes a unicode translation table}
  FONT_FLAG_CODEPAGE   = $00000002; {Font has a specified codepage}
  FONT_FLAG_BIGENDIAN  = $00000004; {Font characters are in big endian order (Only applies to characters larger than one byte)}
- FONT_FLAG_RIGHTALIGN = $00000004; {Font characters are right aligned, no need to shift during load}
+ FONT_FLAG_RIGHTALIGN = $00000008; {Font characters are right aligned, no need to shift during load}
  
 {==============================================================================}
 //const
