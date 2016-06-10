@@ -107,10 +107,11 @@ const
  FONT_MODE_RGBA32 = 3; {A font with 32 bits RGBA per pixel in the character data}
  
  {Font Flag constants}
- FONT_FLAG_NONE      = $00000000;
- FONT_FLAG_UNICODE   = $00000001; {Font includes a unicode translation table}
- FONT_FLAG_CODEPAGE  = $00000002; {Font has a specified codepage}
- FONT_FLAG_BIGENDIAN = $00000004; {Font characters are in big endian order (Only applies to characters larger than one byte)}
+ FONT_FLAG_NONE       = $00000000;
+ FONT_FLAG_UNICODE    = $00000001; {Font includes a unicode translation table}
+ FONT_FLAG_CODEPAGE   = $00000002; {Font has a specified codepage}
+ FONT_FLAG_BIGENDIAN  = $00000004; {Font characters are in big endian order (Only applies to characters larger than one byte)}
+ FONT_FLAG_RIGHTALIGN = $00000004; {Font characters are right aligned, no need to shift during load}
  
 {==============================================================================}
 //const
@@ -665,6 +666,7 @@ var
  Shift:LongWord;
  Row:LongWord;
  Count:LongWord;
+ Buffer8:PByte;
  Buffer16:PWord;
  Buffer32:PLongWord;
 begin
@@ -767,69 +769,101 @@ begin
  System.Move(Data.Data[0],Font.CharData^,TotalSize);
   
  {Update Data}
- if Font.CharWidth > 8 then
-  begin
-   case Font.CharWidth of
-    9..16:begin
-      {Get Buffer}
-      Buffer16:=Font.CharData;
-      
-      {Check Swap}
-      Swap:=True;
-      if (Font.FontFlags and FONT_FLAG_BIGENDIAN) <> 0 then
+ case Font.CharWidth of
+  1..8:begin
+    {Get Buffer}
+    Buffer8:=Font.CharData;
+  
+    {No Swap}
+    
+    {Check Shift}
+    Shift:=0;
+    if (Font.FontFlags and FONT_FLAG_RIGHTALIGN) = 0 then
+     begin
+      Shift:=8 - Font.CharWidth;
+     end; 
+    
+    {Update Characters}
+    if Shift > 0 then
+     begin
+      for Count:=0 to Font.CharCount - 1 do
        begin
-        Swap:=False;
-       end;
-       
-      {Check Shift}
-      Shift:=16 - Font.CharWidth;
-
-      {Update Characters}
-      if Swap or (Shift > 1) then
-       begin
-        for Count:=0 to Font.CharCount - 1 do
+        for Row:=0 to Font.CharHeight - 1 do
          begin
-          for Row:=0 to Font.CharHeight - 1 do
-           begin
-            if Swap then Buffer16^:=SwapEndian(Buffer16^);
-            Buffer16^:=Buffer16^ shr Shift;
-            
-            Inc(Buffer16);
-           end;
+          Buffer8^:=Buffer8^ shr Shift;
+          
+          Inc(Buffer8);
          end;
        end;
      end;
-    17..32:begin
-      {Get Buffer}
-      Buffer32:=Font.CharData;
-      
-      {Check Swap}
-      Swap:=True;
-      if (Font.FontFlags and FONT_FLAG_BIGENDIAN) <> 0 then
-       begin
-        Swap:=False;
-       end;
-       
-      {Check Shift}
+   end;
+  9..16:begin
+    {Get Buffer}
+    Buffer16:=Font.CharData;
+    
+    {Check Swap}
+    Swap:=True;
+    if (Font.FontFlags and FONT_FLAG_BIGENDIAN) <> 0 then
+     begin
+      Swap:=False;
+     end;
+     
+    {Check Shift}
+    Shift:=0;
+    if (Font.FontFlags and FONT_FLAG_RIGHTALIGN) = 0 then
+     begin
       Shift:=16 - Font.CharWidth;
+     end; 
 
-      {Update Characters}
-      if Swap or (Shift > 1) then
+    {Update Characters}
+    if Swap or (Shift > 0) then
+     begin
+      for Count:=0 to Font.CharCount - 1 do
        begin
-        for Count:=0 to Font.CharCount - 1 do
+        for Row:=0 to Font.CharHeight - 1 do
          begin
-          for Row:=0 to Font.CharHeight - 1 do
-           begin
-            if Swap then Buffer32^:=SwapEndian(Buffer32^);
-            Buffer32^:=Buffer32^ shr Shift;
-            
-            Inc(Buffer32);
-           end;
+          if Swap then Buffer16^:=SwapEndian(Buffer16^);
+          Buffer16^:=Buffer16^ shr Shift;
+          
+          Inc(Buffer16);
          end;
        end;
-     end;      
+     end;
    end;
-  end;
+  17..32:begin
+    {Get Buffer}
+    Buffer32:=Font.CharData;
+    
+    {Check Swap}
+    Swap:=True;
+    if (Font.FontFlags and FONT_FLAG_BIGENDIAN) <> 0 then
+     begin
+      Swap:=False;
+     end;
+     
+    {Check Shift}
+    Shift:=0;
+    if (Font.FontFlags and FONT_FLAG_RIGHTALIGN) = 0 then
+     begin
+      Shift:=32 - Font.CharWidth;
+     end; 
+
+    {Update Characters}
+    if Swap or (Shift > 0) then
+     begin
+      for Count:=0 to Font.CharCount - 1 do
+       begin
+        for Row:=0 to Font.CharHeight - 1 do
+         begin
+          if Swap then Buffer32^:=SwapEndian(Buffer32^);
+          Buffer32^:=Buffer32^ shr Shift;
+          
+          Inc(Buffer32);
+         end;
+       end;
+     end;
+   end;      
+ end;
   
  {Insert Font}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then

@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '7/6/2016';
+ ULTIBO_RELEASE_DATE             = '10/6/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.015';
+ ULTIBO_RELEASE_VERSION          = '1.2.021';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 015;
+ ULTIBO_RELEASE_VERSION_REVISION = 021;
  
 {==============================================================================}
 const
