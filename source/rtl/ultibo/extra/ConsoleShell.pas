@@ -194,7 +194,7 @@ function ConsoleShellFindByDevice(Console:PConsoleDevice):TConsoleShell;
 
 {==============================================================================}
 {Console Shell Helper Functions}
-function ConsoleShellDeviceAdd(Console:PConsoleDevice):LongWord;
+function ConsoleShellDeviceAdd(Console:PConsoleDevice;Force:Boolean):LongWord;
 function ConsoleShellDeviceRemove(Console:PConsoleDevice):LongWord;
 
 function ConsoleShellDeviceEnum(Console:PConsoleDevice;Data:Pointer):LongWord;
@@ -809,7 +809,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Console Shell Helper Functions}
-function ConsoleShellDeviceAdd(Console:PConsoleDevice):LongWord;
+function ConsoleShellDeviceAdd(Console:PConsoleDevice;Force:Boolean):LongWord;
 var
  ConsoleShell:TConsoleShell;
 begin
@@ -820,7 +820,7 @@ begin
  if ConsoleShellFindByDevice(Console) = nil then
   begin
    {Create Console Shell}
-   if CONSOLE_SHELL_ENABLED then
+   if (CONSOLE_SHELL_ENABLED and not(ConsoleDeviceCheckFlag(Console,CONSOLE_FLAG_SINGLE_WINDOW))) or Force then
     begin
      ConsoleShell:=TConsoleShell.Create(Console);
      ConsoleShell.Name:=CONSOLE_SHELL_NAME + ' (' + DeviceGetName(@Console.Device) + ')';
@@ -881,7 +881,7 @@ begin
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit; 
  
  {Add Console}
- Result:=ConsoleShellDeviceAdd(Console);
+ Result:=ConsoleShellDeviceAdd(Console,False);
 end;
 
 {==============================================================================}
@@ -910,7 +910,7 @@ begin
    if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit; 
    
    {Add Console}
-   Result:=ConsoleShellDeviceAdd(Console);
+   Result:=ConsoleShellDeviceAdd(Console,False);
   end
  else if (Notification and DEVICE_NOTIFICATION_OPEN) <> 0 then
   begin
@@ -918,7 +918,7 @@ begin
    if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit; 
 
    {Add Console}
-   Result:=ConsoleShellDeviceAdd(Console);
+   Result:=ConsoleShellDeviceAdd(Console,False);
   end
  else if (Notification and DEVICE_NOTIFICATION_DEREGISTER) <> 0 then
   begin

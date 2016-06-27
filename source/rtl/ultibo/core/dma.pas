@@ -136,11 +136,11 @@ type
   {DMA Properties}
   DMAId:LongWord;                          {Unique Id of this DMA host in the DMA host table}
   DMAState:LongWord;                       {DMA state (eg DMA_STATE_ENABLED)}
-  HostStart:TDMAHostStart;                 {A Host specific HostStart method implementing the standard DMA host interface (Manadatory)}
-  HostStop:TDMAHostStop;                   {A Host specific HostStop method implementing the standard DMA host interface (Manadatory)}
+  HostStart:TDMAHostStart;                 {A Host specific HostStart method implementing the standard DMA host interface (Mandatory)}
+  HostStop:TDMAHostStop;                   {A Host specific HostStop method implementing the standard DMA host interface (Mandatory)}
   HostReset:TDMAHostReset;                 {A Host specific HostReset method implementing the standard DMA host interface (Or nil if the default method is suitable)}
-  HostSubmit:TDMAHostSubmit;               {A Host specific HostSubmit method implementing the standard DMA host interface (Manadatory)}
-  HostCancel:TDMAHostCancel;               {A Host specific HostCancel method implementing the standard DMA host interface (Manadatory)}
+  HostSubmit:TDMAHostSubmit;               {A Host specific HostSubmit method implementing the standard DMA host interface (Mandatory)}
+  HostCancel:TDMAHostCancel;               {A Host specific HostCancel method implementing the standard DMA host interface (Mandatory)}
   HostProperties:TDMAHostProperties;       {A Host specific HostProperties method implementing the standard DMA host interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                       {Host lock}

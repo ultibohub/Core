@@ -472,7 +472,8 @@ var
  
  CONSOLE_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE; {The default Font for the console}
 
- CONSOLE_LINE_WRAP:LongBool = True;              {If True then wrap long lines to the next line when writing to the console (Sets CONSOLE_FLAG_LINE_WRAP on device)}
+ CONSOLE_LINE_WRAP:LongBool = True;              {If True then wrap long lines to the next line when writing to the console (Sets CONSOLE_FLAG_LINE_WRAP on device / WINDOW_FLAG_LINE_WRAP on windows)}
+ CONSOLE_AUTO_SCROLL:LongBool = True;            {If True then automatically scroll up on reaching the last line of the console (Sets CONSOLE_FLAG_AUTO_SCROLL on device / WINDOW_FLAG_AUTO_SCROLL on windows)}
  
  CONSOLE_DMA_BOX:LongBool = True;                {If True then use DMA (If avaialable) to draw console window boxes (Sets CONSOLE_FLAG_DMA_BOX on device)}
  CONSOLE_DMA_LINE:LongBool = True;               {If True then use DMA (If avaialable) to draw console window lines (Sets CONSOLE_FLAG_DMA_LINE on device)}
@@ -668,13 +669,18 @@ var
  BCM2708DMA_BUS_ADDRESSES:LongBool;         {BCM2708 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
  BCM2708DMA_CACHE_COHERENT:LongBool;        {BCM2708 DMA control blocks and DMA buffers are considered cache coherent if True}
  
+ BCM2708I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2708 I2C driver can do combined Write/Read transactions}
+ 
  BCM2708SDHCI_FIQ_ENABLED:LongBool;         {The BCM2708 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2708FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2708 Framebuffer device}
  BCM2708FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2708 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
- BCM2708_REGISTER_SPI:LongBool = True;      {If True then register the BCM2708 SPI device during boot (Only if BCM2708 unit included)}
- BCM2708_REGISTER_I2C:LongBool = True;      {If True then register the BCM2708 I2C device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2708 SPI0 device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2708 SPI1 device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2708 SPI2 device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2708 I2C0 device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2708 I2C1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_DMA:LongBool = True;      {If True then register the BCM2708 DMA host during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PWM:LongBool = True;      {If True then register the BCM2708 PWM device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PCM:LongBool = True;      {If True then register the BCM2708 PCM device during boot (Only if BCM2708 unit included)}
@@ -682,6 +688,8 @@ var
  BCM2708_REGISTER_UART0:LongBool = True;    {If True then register the BCM2708 UART0 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_UART1:LongBool = True;    {If True then register the BCM2708 UART1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2708 SPI slave device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2708 I2C slave device during boot (Only if BCM2708 unit included)}
 
  BCM2708_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2708 Clock device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2708 Timer device during boot (Only if BCM2708 unit included)}
@@ -698,13 +706,18 @@ var
  BCM2709DMA_BUS_ADDRESSES:LongBool;         {BCM2709 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
  BCM2709DMA_CACHE_COHERENT:LongBool;        {BCM2709 DMA control blocks and DMA buffers are considered cache coherent if True}
 
+ BCM2709I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2709 I2C driver can do combined Write/Read transactions}
+ 
  BCM2709SDHCI_FIQ_ENABLED:LongBool;         {The BCM2709 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2709FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2709 Framebuffer device}
  BCM2709FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2709 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
- BCM2709_REGISTER_SPI:LongBool = True;      {If True then register the BCM2709 SPI device during boot (Only if BCM2709 unit included)}
- BCM2709_REGISTER_I2C:LongBool = True;      {If True then register the BCM2709 I2C device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2709 SPI0 device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2709 SPI1 device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2709 SPI2 device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2709 I2C0 device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2709 I2C1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_DMA:LongBool = True;      {If True then register the BCM2709 DMA host during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PWM:LongBool = True;      {If True then register the BCM2709 PWM device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PCM:LongBool = True;      {If True then register the BCM2709 PCM device during boot (Only if BCM2709 unit included)}
@@ -712,6 +725,8 @@ var
  BCM2709_REGISTER_UART0:LongBool = True;    {If True then register the BCM2709 UART0 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_UART1:LongBool = True;    {If True then register the BCM2709 UART1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2709 SPI slave device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2709 I2C slave device during boot (Only if BCM2709 unit included)}
 
  BCM2709_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2709 Clock device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2709 Timer device during boot (Only if BCM2709 unit included)}
@@ -728,13 +743,18 @@ var
  BCM2710DMA_BUS_ADDRESSES:LongBool;         {BCM2710 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
  BCM2710DMA_CACHE_COHERENT:LongBool;        {BCM2710 DMA control blocks and DMA buffers are considered cache coherent if True}
 
+ BCM2710I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2710 I2C driver can do combined Write/Read transactions}
+ 
  BCM2710SDHCI_FIQ_ENABLED:LongBool;         {The BCM2710 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2710FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2710 Framebuffer device}
  BCM2710FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2710 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
- BCM2710_REGISTER_SPI:LongBool = True;      {If True then register the BCM2710 SPI device during boot (Only if BCM2710 unit included)}
- BCM2710_REGISTER_I2C:LongBool = True;      {If True then register the BCM2710 I2C device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2710 SPI0 device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2710 SPI1 device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2710 SPI2 device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2710 I2C0 device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2710 I2C1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_DMA:LongBool = True;      {If True then register the BCM2710 DMA host during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PWM:LongBool = True;      {If True then register the BCM2710 PWM device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PCM:LongBool = True;      {If True then register the BCM2710 PCM device during boot (Only if BCM2710 unit included)}
@@ -742,6 +762,8 @@ var
  BCM2710_REGISTER_UART0:LongBool = True;    {If True then register the BCM2710 UART0 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_UART1:LongBool = True;    {If True then register the BCM2710 UART1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2710 SPI slave device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2710 I2C slave device during boot (Only if BCM2710 unit included)}
 
  BCM2710_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2710 Clock device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2710 Timer device during boot (Only if BCM2710 unit included)}
@@ -882,7 +904,6 @@ var
  IGMP_PROTOCOL_ENABLED:LongBool = True;         {IGMP protocol is enabled if True}
 
  TCP_RECEIVE_BACKLOG:LongWord = SIZE_1K;        {Queue length for SYN received connections (per listening socket)}
- TCP_MESSAGESLOT_MAXIMUM:LongWord = SIZE_2K;    {Maximum number of messages for TCP socket thread messageslot}
  
  ARP_CONFIG_ENABLED:LongBool = True;            {ARP configuration is enabled if True}
  RARP_CONFIG_ENABLED:LongBool = False;          {RARP configuration is enabled if True}
@@ -987,9 +1008,17 @@ var
 var
  {PL2303}
  PL2303_MAX_TRANSMIT:LongWord;                  {The maximum transmit size of the PL2303 USB to Serial converter (Defaults to maximum supported by the device if not specified)}
+
+ {DS1307}
+ DS1307_CHIP_TYPE:LongWord;                     {The specific chip to support in the DS1307 driver (See the DS1307_CHIP_* constants in the driver)}
+ DS1307_I2C_ADDRESS:Word = $68;                 {The I2C address to use for the DS1307 RTC device}
+ DS1307_I2C_DEVICE:String = 'I2C0';             {The I2C device (Name or Description) to use for the DS1307 RTC device}
  
  {RT2800USB}
  RT2800USB_HARDWARE_ENCRYPTION_DISABLED:LongBool; {If True then use software only encryption for RT2800USB}
+ 
+ {AF16x2LCD}
+ AF16X2LCD_AUTOSTART:LongBool = True;           {If True then auto start the AF16x2LCD device on boot (Only if AF16x2LCD unit included)}
  
 {==============================================================================}
 {Global handlers}
@@ -1035,6 +1064,9 @@ function Int64BEtoN(const Value:Int64):Int64; inline;
 
 function Int64NtoLE(const Value:Int64):Int64; inline;
 function Int64LEtoN(const Value:Int64):Int64; inline;
+
+function BCDtoBin(Value:Byte):Byte; inline;
+function BintoBCD(Value:Byte):Byte; inline;
 
 function GetLastError:LongWord; inline;
 procedure SetLastError(LastError:LongWord); inline;
@@ -1316,6 +1348,22 @@ function Int64LEtoN(const Value:Int64):Int64; inline;
 begin
  {}
  Result:=LEtoN(Value);
+end;
+
+{==============================================================================}
+
+function BCDtoBin(Value:Byte):Byte; inline;
+begin
+ {}
+ Result:=(Value and $0F) + ((Value shr 4) * 10);
+end;
+
+{==============================================================================}
+
+function BintoBCD(Value:Byte):Byte; inline;
+begin
+ {}
+ Result:=((Value div 10) shl 4) + (Value mod 10);
 end;
 
 {==============================================================================}

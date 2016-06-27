@@ -1626,14 +1626,14 @@ begin
   if not ADevice.Readable then Exit;
   
   {Get Image}
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
   
   {Read Image}
   Result:=Image.Read(ASector,ACount,ABuffer);
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1659,14 +1659,14 @@ begin
   if not ADevice.Writeable then Exit;
 
   {Get Image}
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
   
   {Write Image}
   Result:=Image.Write(ASector,ACount,ABuffer);
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1687,14 +1687,14 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   {Nothing}
   Result:=True;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1715,13 +1715,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.LockMedia;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1742,13 +1742,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.UnlockMedia;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1769,13 +1769,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.EjectMedia;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1796,13 +1796,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.MediaReady;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1823,13 +1823,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.MediaChanged;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1850,13 +1850,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.MediaLocked;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1877,13 +1877,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=VIRTUAL_DEVICE_DESCRIPTION + ' (' + ImageTypeToString(Image.ImageType) + ')';
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1904,14 +1904,14 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   {Nothing (Always support LBA)}
   Result:=True;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1932,13 +1932,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.MediaType;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1959,13 +1959,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.FloppyType;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -1986,13 +1986,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Ready;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2013,13 +2013,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Locked;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2049,13 +2049,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Readable;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2076,13 +2076,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Writeable;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2103,7 +2103,7 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   case Image.MediaType of
@@ -2113,7 +2113,7 @@ begin
   end;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2134,7 +2134,7 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
   
   case Image.MediaType of
@@ -2144,7 +2144,7 @@ begin
   end;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2165,13 +2165,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Cylinders;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2192,13 +2192,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Heads;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2219,13 +2219,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Sectors;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2246,13 +2246,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=((Image.Cylinders shr Image.LogicalShiftCount) and $FFFFFFFE); {Round to even multiple}
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2273,13 +2273,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=(Image.Heads shl Image.LogicalShiftCount);
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2300,13 +2300,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.Sectors;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2327,13 +2327,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.SectorSize;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2354,13 +2354,13 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
 
-  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByDevice(ADevice,True,FILESYS_LOCK_AUTO);
   if Image = nil then Exit;
  
   Result:=Image.SectorCount;
   
   {Unlock Image}
-  Image.ReaderUnlock;
+  if not(Image.WriterOwner) then Image.ReaderUnlock else Image.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -2598,7 +2598,7 @@ begin
  {}
  Result:=False;
  
- if not ReaderLock then Exit;
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -2610,7 +2610,7 @@ begin
     Result:=inherited CreatePartition(AParent,APartitionId,ACount,AActive);
    end;
  finally  
-  ReaderUnlock;
+  WriterUnlock;
  end; 
 end;
 
@@ -3529,6 +3529,12 @@ begin
  {}
  Result:=False;
 
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskMemoryImage.Read');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                         Sector = ' + IntToStr(ASector));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                         Count = ' + IntToStr(ACount));
+ {$ENDIF}
+ 
  if FDriver = nil then Exit;
  if FController = nil then Exit;
 
@@ -3560,35 +3566,33 @@ var
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
-  if FController = nil then Exit;
 
-  {Check Open}
-  if FData = nil then Exit;
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskMemoryImage.Write');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                         Sector = ' + IntToStr(ASector));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                         Count = ' + IntToStr(ACount));
+ {$ENDIF}
+ 
+ if FDriver = nil then Exit;
+ if FController = nil then Exit;
 
-  {Check Write}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
+ {Check Open}
+ if FData = nil then Exit;
 
-  {Setup Write}
-  Start:=ASector; {Allow for Int64 Result}
-  Count:=ACount;
-  Start:=(Start shl FSectorShiftCount);
-  Count:=(Count shl FSectorShiftCount);
+ {Check Write}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
 
-  {Perform Write}
-  System.Move(ABuffer,Pointer(PtrUInt(FData) + PtrUInt(Start))^,Count);
+ {Setup Write}
+ Start:=ASector; {Allow for Int64 Result}
+ Count:=ACount;
+ Start:=(Start shl FSectorShiftCount);
+ Count:=(Count shl FSectorShiftCount);
 
-  Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskMemoryImage.Write ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Perform Write}
+ System.Move(ABuffer,Pointer(PtrUInt(FData) + PtrUInt(Start))^,Count);
+
+ Result:=True;
 end;
 
 {==============================================================================}

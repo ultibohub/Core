@@ -27,10 +27,31 @@ Credits
 References
 ==========
 
+ SPI - https://en.wikipedia.org/wiki/Serial_Peripheral_Interface_Bus
 
 SPI Devices
 ===========
 
+ SPI (Serial Peripheral Interface) is a synchronous serial bus for communication with peripheral
+ components.
+ 
+ The SPI protocol is not defined by any actual standard but some psuedo standards exist with all
+ of the available devices. SPI is a master-slave protocol where the master asserts the chip select
+ line (CS) to select the slave device before sending data one byte at a time.
+
+ For every byte written to the bus by the master the selected slave returns a byte as well so for
+ every write there is an equivalent read. SPI can also operate in either 4 wire (standard) or 3 wire
+ (bidirectional) modes.
+ 
+ Due to the lack of formal standards and the range of devices that exist various options are provided
+ to allow setting clock phase and polarity as well chip select polarity.
+ 
+ For the purpose of this interface a device is the SPI controller attached to the local system
+ and may be either a master or a slave. Since the protocol does not include any form of enumeration
+ or identification the interface does not attempt to represent the devices connected to the bus,
+ any driver written to communicate with a connected SPI device should know (or allow configuration
+ of) the chip select for the for the device and the specific message format required for that device.
+ 
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -61,6 +82,18 @@ const
  
  {SPI Device Flags}
  SPI_FLAG_NONE          = $00000000;
+ SPI_FLAG_SLAVE         = $00000001; {Device is a slave not a master}
+ SPI_FLAG_4WIRE         = $00000002; {Device supports 4 wire operation (CS/MISO/MOSI/SCLK)}
+ SPI_FLAG_3WIRE         = $00000004; {Device supports 3 wire operation (CS/MIMO/SCLK)}
+ SPI_FLAG_LOSSI         = $00000008; {Device supports LoSSI (Low Speed Serial) mode (CS/SCL/SDA)}
+ SPI_FLAG_CPOL          = $00000010; {Device supports Clock Polarity setting}
+ SPI_FLAG_CPHA          = $00000020; {Device supports Clock Phase setting}
+ SPI_FLAG_CSPOL         = $00000040; {Device supports Chip Select Polarity setting}
+ SPI_FLAG_NO_CS         = $00000080; {Device supports Chip Select None (CS handled externally)}
+ 
+ {SPI Transfer Flags}
+ SPI_TRANSFER_NONE  = $00000000;
+ SPI_TRANSFER_DMA   = $00000001; {Use DMA for transfer (Write/Read) (Note: Buffers must be DMA compatible)}
  
  {SPI logging}
  SPI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SPI debugging messages}
@@ -82,7 +115,23 @@ type
  {SPI Properties}
  PSPIProperties = ^TSPIProperties;
  TSPIProperties = record
-  //To Do
+  Flags:LongWord;          {Device flags (eg SPI_FLAG_SLAVE)}
+  MaxSize:LongWord;        {Maximum supported data transfer size}
+  MinClock:LongWord;       {Minimum supported clock rate}
+  MaxClock:LongWord;       {Maximum supported clock rate}
+  SelectCount:LongWord;    {Number of chip selects supported}
+  Mode:LongWord;           {Current mode (eg SPI_MODE_4WIRE)}
+  ClockRate:LongWord;      {Current clock rate}
+  ClockPhase:LongWord;     {Current clock phase (CPHA) (eg SPI_CLOCK_PHASE_LOW)}
+  ClockPolarity:LongWord;  {Current clock polarity (CPOL) (eg SPI_CLOCK_POLARITY_LOW)}
+  SelectPolarity:LongWord; {Default chip select polarity (eg SPI_CS_POLARITY_LOW)}
+ end;
+ 
+ {SPI Chip Select}
+ PSPIChipSelect = ^TSPIChipSelect;
+ TSPIChipSelect = record
+  Pin:LongWord;            {The GPIO pin for this chip select (eg GPIO_PIN_46)(GPIO_PIN_UNKNOWN for internal)}
+  Polarity:LongWord;       {The chip select polarity for this chip select (eg SPI_CS_POLARITY_LOW)}
  end;
  
  {SPI Device}
@@ -94,26 +143,68 @@ type
  TSPINotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
  
  {SPI Device Methods}
- //To Do
+ TSPIDeviceStart = function(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
+ TSPIDeviceStop = function(SPI:PSPIDevice):LongWord;
+ 
+ TSPIDeviceRead = function(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+ TSPIDeviceWrite = function(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+ TSPIDeviceWriteRead = function(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+
+ TSPIDeviceGetMode = function(SPI:PSPIDevice):LongWord;
+ TSPIDeviceSetMode = function(SPI:PSPIDevice;Mode:LongWord):LongWord;
+ 
+ TSPIDeviceGetClockRate = function(SPI:PSPIDevice):LongWord;
+ TSPIDeviceSetClockRate = function(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+
+ TSPIDeviceGetClockPhase = function(SPI:PSPIDevice):LongWord;
+ TSPIDeviceSetClockPhase = function(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
+
+ TSPIDeviceGetClockPolarity = function(SPI:PSPIDevice):LongWord;
+ TSPIDeviceSetClockPolarity = function(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
+ 
+ TSPIDeviceGetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;
+ TSPIDeviceSetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+ 
  TSPIDeviceProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
  
  TSPIDevice = record
   {Device Properties}
-  Device:TDevice;                                 {The Device entry for this SPI}
-  {SPI Properties}
-  SPIId:LongWord;                                 {Unique Id of this SPI in the SPI table}
-  SPIState:LongWord;                              {SPI state (eg SPI_STATE_ENABLED)}
-  //To Do
-  DeviceProperties:TSPIDeviceProperties;          {A Device specific DeviceProperties method implementing the standard SPI device interface}
+  Device:TDevice;                                      {The Device entry for this SPI}
+  {SPI Properties}                                     
+  SPIId:LongWord;                                      {Unique Id of this SPI in the SPI table}
+  SPIState:LongWord;                                   {SPI state (eg SPI_STATE_ENABLED)}
+  SPIMode:LongWord;                                    {SPI mode (eg SPI_MODE_4WIRE)}
+  DeviceStart:TSPIDeviceStart;                         {A Device specific DeviceStart method implementing the standard SPI device interface (Mandatory)}
+  DeviceStop:TSPIDeviceStop;                           {A Device specific DeviceStop method implementing the standard SPI device interface (Mandatory)}
+  DeviceRead:TSPIDeviceRead;                           {A Device specific DeviceRead method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceWrite:TSPIDeviceWrite;                         {A Device specific DeviceWrite method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceWriteRead:TSPIDeviceWriteRead;                 {A Device specific DeviceWriteRead method implementing the standard SPI device interface (Mandatory)}
+  DeviceGetMode:TSPIDeviceGetMode;                     {A Device specific DeviceGetMode method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceSetMode:TSPIDeviceSetMode;                     {A Device specific DeviceSetMode method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceGetClockRate:TSPIDeviceGetClockRate;           {A Device specific DeviceGetClockRate method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceSetClockRate:TSPIDeviceSetClockRate;           {A Device specific DeviceSetClockRate method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceGetClockPhase:TSPIDeviceGetClockPhase;         {A Device specific DeviceGetClockPhase method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceSetClockPhase:TSPIDeviceSetClockPhase;         {A Device specific DeviceSetClockPhase method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceGetClockPolarity:TSPIDeviceGetClockPolarity;   {A Device specific DeviceGetClockPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceSetClockPolarity:TSPIDeviceSetClockPolarity;   {A Device specific DeviceSetClockPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceGetSelectPolarity:TSPIDeviceGetSelectPolarity; {A Device specific DeviceGetSelectPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceSetSelectPolarity:TSPIDeviceSetSelectPolarity; {A Device specific DeviceSetSelectPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceProperties:TSPIDeviceProperties;               {A Device specific DeviceProperties method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
-  //To Do
+  TransferCount:LongWord;
+  TransferErrors:LongWord;
   {Driver Properties}
-  Lock:TMutexHandle;                              {Device lock}
-  //To Do
-  Properties:TSPIProperties;                      {Device properties}
-  {Internal Properties}                                                                        
-  Prev:PSPIDevice;                                {Previous entry in SPI table}
-  Next:PSPIDevice;                                {Next entry in SPI table}
+  Lock:TMutexHandle;                                   {Device lock}
+  Wait:TSemaphoreHandle;                               {Write/Read wait event}
+  ClockRate:LongWord;                                  {Clock rate (Hz)}
+  ClockPhase:LongWord;                                 {Clock Phase (eg SPI_CLOCK_PHASE_LOW)}
+  ClockPolarity:LongWord;                              {Clock Polarity (eg SPI_CLOCK_POLARITY_LOW)}
+  SelectPolarity:LongWord;                             {Default Chip Select Polarity (eg SPI_CS_POLARITY_LOW)}
+  Properties:TSPIProperties;                           {Device properties}
+  ChipSelects:array[0..SPI_CS_MAX] of TSPIChipSelect;  {Chip selects}
+  {Internal Properties}                                                                             
+  Prev:PSPIDevice;                                     {Previous entry in SPI table}
+  Next:PSPIDevice;                                     {Next entry in SPI table}
  end; 
  
 {==============================================================================}
@@ -126,9 +217,28 @@ procedure SPIInit;
  
 {==============================================================================}
 {SPI Functions}
+function SPIDeviceStart(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
+function SPIDeviceStop(SPI:PSPIDevice):LongWord;
  
-//To Do
+function SPIDeviceRead(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function SPIDeviceWrite(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function SPIDeviceWriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
+function SPIDeviceGetMode(SPI:PSPIDevice):LongWord;
+function SPIDeviceSetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
+ 
+function SPIDeviceGetClockRate(SPI:PSPIDevice):LongWord;
+function SPIDeviceSetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+
+function SPIDeviceGetClockPhase(SPI:PSPIDevice):LongWord;
+function SPIDeviceSetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
+
+function SPIDeviceGetClockPolarity(SPI:PSPIDevice):LongWord;
+function SPIDeviceSetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
+ 
+function SPIDeviceGetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word):LongWord;
+function SPIDeviceSetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+ 
 function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
   
 function SPIDeviceCreate:PSPIDevice;
@@ -145,6 +255,29 @@ function SPIDeviceNotification(SPI:PSPIDevice;Callback:TSPINotification;Data:Poi
 
 {==============================================================================}
 {RTL SPI Functions}
+function SysSPIAvailable:Boolean; 
+ 
+function SysSPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord; 
+function SysSPIStop:LongWord; 
+ 
+function SysSPIRead(ChipSelect:Word;Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function SysSPIWrite(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function SysSPIWriteRead(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ 
+function SysSPIGetMode:LongWord;
+function SysSPISetMode(Mode:LongWord):LongWord;
+ 
+function SysSPIGetClockRate:LongWord;
+function SysSPISetClockRate(ClockRate:LongWord):LongWord;
+
+function SysSPIGetClockPhase:LongWord;
+function SysSPISetClockPhase(ClockPhase:LongWord):LongWord;
+
+function SysSPIGetClockPolarity:LongWord;
+function SysSPISetClockPolarity(ClockPolarity:LongWord):LongWord;
+ 
+function SysSPIGetSelectPolarity(ChipSelect:Word):LongWord;
+function SysSPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWord;
 
 {==============================================================================}
 {SPI Helper Functions}
@@ -158,7 +291,13 @@ procedure SPILog(Level:LongWord;SPI:PSPIDevice;const AText:String);
 procedure SPILogInfo(SPI:PSPIDevice;const AText:String); inline;
 procedure SPILogError(SPI:PSPIDevice;const AText:String); inline;
 procedure SPILogDebug(SPI:PSPIDevice;const AText:String); inline;
- 
+
+function SPIChipSelectToString(ChipSelect:Word):String; 
+function SPIModeToString(Mode:LongWord):String;
+function SPIClockPhaseToString(Phase:LongWord):String;
+function SPIClockPolarityToString(Polarity:LongWord):String;
+function SPISelectPolarityToString(Polarity:LongWord):String;
+
 {==============================================================================}
 {==============================================================================}
 
@@ -199,7 +338,22 @@ begin
  SPIDeviceDefault:=nil;
  
  {Register Platform SPI Handlers}
- //To Do
+ SPIAvailableHandler:=SysSPIAvailable;
+ SPIStartHandler:=SysSPIStart;
+ SPIStopHandler:=SysSPIStop;
+ SPIReadHandler:=SysSPIRead;
+ SPIWriteHandler:=SysSPIWrite;
+ SPIWriteReadHandler:=SysSPIWriteRead;
+ SPIGetModeHandler:=SysSPIGetMode;
+ SPISetModeHandler:=SysSPISetMode;
+ SPIGetClockRateHandler:=SysSPIGetClockRate;
+ SPISetClockRateHandler:=SysSPISetClockRate;
+ SPIGetClockPhaseHandler:=SysSPIGetClockPhase;
+ SPISetClockPhaseHandler:=SysSPISetClockPhase;
+ SPIGetClockPolarityHandler:=SysSPIGetClockPolarity;
+ SPISetClockPolarityHandler:=SysSPISetClockPolarity;
+ SPIGetSelectPolarityHandler:=SysSPIGetSelectPolarity;
+ SPISetSelectPolarityHandler:=SysSPISetSelectPolarity;
  
  SPIInitialized:=True;
 end;
@@ -207,18 +361,818 @@ end;
 {==============================================================================}
 {==============================================================================}
 {SPI Functions}
-
-//To Do
-
-{==============================================================================}
- 
-function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
+function SPIDeviceStart(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
+{Start the specified SPI device ready for writing and reading}
+{SPI: The SPI device to start}
+{Mode: The device mode to set (eg SPI_MODE_4WIRE)}
+{ClockRate: The clock rate to set for the device}
+{ClockPhase: The clock phase to set (eg SPI_CLOCK_PHASE_LOW)}
+{ClockPolarity: The clock polarity to set (eg SPI_CLOCK_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- //To Do
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Start (Mode=' + SPIModeToString(Mode) + ' ClockRate=' + IntToStr(ClockRate) + ' ClockPhase=' + SPIClockPhaseToString(ClockPhase) + ' ClockPolarity=' + SPIClockPolarityToString(ClockPolarity) + ')');
+ {$ENDIF}
+ 
+ {Check Disabled}
+ Result:=ERROR_SUCCESS;
+ if SPI.SPIState <> SPI_STATE_DISABLED then Exit;
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceStart) then
+     begin
+      {Call Device Start}
+      Result:=SPI.DeviceStart(SPI,Mode,ClockRate,ClockPhase,ClockPolarity);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end;
+     
+    {Enable Device}
+    SPI.SPIState:=SPI_STATE_ENABLED;
+    
+    {Notify Enable}
+    NotifierNotify(@SPI.Device,DEVICE_NOTIFICATION_ENABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(SPI.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function SPIDeviceStop(SPI:PSPIDevice):LongWord;
+{Stop the specified SPI device and terminate writing and reading}
+{SPI: The SPI device to stop}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Stop');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_SUCCESS;
+ if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceStop) then
+     begin
+      {Call Device Stop}
+      Result:=SPI.DeviceStop(SPI);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end;    
+  
+    {Disable Device}
+    SPI.SPIState:=SPI_STATE_DISABLED;
+    
+    {Notify Disable}
+    NotifierNotify(@SPI.Device,DEVICE_NOTIFICATION_DISABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(SPI.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+ 
+function SPIDeviceRead(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Read data from the specified SPI device}
+{Because SPI writes and then reads for each byte, dummy data will be written for each byte to be read}
+{SPI: The SPI device to read from}
+{ChipSelect: The chip select for the slave to read from (eg SPI_CS_0)}
+{Dest: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Flags: The flags for this transfer (eg SPI_TRANSFER_DMA)}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Dest = nil then Exit;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Read (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceRead) then
+    begin
+     {Call Device Read}
+     Result:=SPI.DeviceRead(SPI,ChipSelect,Dest,Size,Flags,Count);
+    end
+   else
+    begin
+     {Default Method}
+     if Assigned(SPI.DeviceWriteRead) then
+      begin
+       {Call Device Write Read}
+       Result:=SPI.DeviceWriteRead(SPI,ChipSelect,nil,Dest,Size,Flags,Count);
+      end
+     else
+      begin
+       Result:=ERROR_INVALID_PARAMETER;
+      end;    
+    end;    
+    
+   MutexUnlock(SPI.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function SPIDeviceWrite(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Write data to the specified SPI device}
+{Because SPI writes and then reads for each byte, received data will be discarded for each by written}
+{SPI: The SPI device to write to}
+{ChipSelect: The chip select for the slave to write to (eg SPI_CS_0)}
+{Source: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Flags: The flags for this transfer (eg SPI_TRANSFER_DMA)}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Source = nil then Exit;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Write (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceWrite) then
+    begin
+     {Call Device Write}
+     Result:=SPI.DeviceWrite(SPI,ChipSelect,Source,Size,Flags,Count);
+    end
+   else
+    begin
+     {Default Method}
+     if Assigned(SPI.DeviceWriteRead) then
+      begin
+       {Call Device Write Read}
+       Result:=SPI.DeviceWriteRead(SPI,ChipSelect,Source,nil,Size,Flags,Count);
+      end
+     else
+      begin
+       Result:=ERROR_INVALID_PARAMETER;
+      end;    
+    end;    
+    
+   MutexUnlock(SPI.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function SPIDeviceWriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Write data to and Read data from the specified SPI device in one operation}
+{Because SPI writes and then reads for each byte, both the source and dest buffers must be the same size}
+{SPI: The SPI device to write to and read from}
+{ChipSelect: The chip select for the slave to write to and read from (eg SPI_CS_0)}
+{Source: Pointer to a buffer of data to transmit}
+{Dest: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Flags: The flags for this transfer (eg SPI_TRANSFER_DMA)}
+{Count: The number of bytes written and read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffers}
+ if (Source = nil) and (Dest = nil) then Exit;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Write Read (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceWriteRead) then
+    begin
+     {Call Device Write Read}
+     Result:=SPI.DeviceWriteRead(SPI,ChipSelect,Source,Dest,Size,Flags,Count);
+    end
+   else
+    begin
+     Result:=ERROR_INVALID_PARAMETER;
+    end;    
+    
+   MutexUnlock(SPI.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function SPIDeviceGetMode(SPI:PSPIDevice):LongWord;
+{Get the device mode of the specified SPI device}
+{SPI: The SPI device to get device mode from}
+{Return: The device mode or SPI_MODE_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_MODE_UNKNOWN;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Mode');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceGetMode) then
+    begin
+     {Call Device Get Mode}
+     Result:=SPI.DeviceGetMode(SPI);
+    end
+   else
+    begin
+     {Get Mode}
+     Result:=SPI.SPIMode;
+    end;  
+    
+   MutexUnlock(SPI.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceSetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
+{Set the device mode for the specified SPI device}
+{SPI: The SPI device to set device mode for}
+{Mode: The device mode to set (eg SPI_MODE_4WIRE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Mode (Mode=' + SPIModeToString(Mode) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceSetMode) then
+     begin
+      {Call Device Set Mode}
+      Result:=SPI.DeviceSetMode(SPI,Mode);
+     end
+    else
+     begin
+      {Check Mode}
+      if Mode = SPI_MODE_UNKNOWN then Exit;
+      
+      {Set Mode}
+      SPI.SPIMode:=Mode;
+      SPI.Properties.Mode:=Mode;
+      
+      Result:=ERROR_SUCCESS;
+     end;  
+   finally  
+    MutexUnlock(SPI.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+ 
+function SPIDeviceGetClockRate(SPI:PSPIDevice):LongWord;
+{Get the clock rate of the specified SPI device}
+{SPI: The SPI device to get clock rate from}
+{Return: The clock rate in Hz or 0 on failure}
+begin
+ {}
+ Result:=0;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Rate');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceGetClockRate) then
+    begin
+     {Call Device Get Clock Rate}
+     Result:=SPI.DeviceGetClockRate(SPI);
+    end
+   else
+    begin
+     {Get Clock Rate}
+     Result:=SPI.ClockRate;
+    end;  
+    
+   MutexUnlock(SPI.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceSetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+{Set the clock rate for the specified SPI device}
+{SPI: The SPI device to set clock rate for}
+{ClockRate: The clock rate to set in Hz}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Rate (ClockRate=' + IntToStr(ClockRate) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceSetClockRate) then
+     begin
+      {Call Device Set Clock Rate}
+      Result:=SPI.DeviceSetClockRate(SPI,ClockRate);
+     end
+    else
+     begin
+      {Check Clock Rate}
+      if ClockRate = 0 then Exit;
+      
+      {Set Clock Rate}
+      SPI.ClockRate:=ClockRate;
+      SPI.Properties.ClockRate:=ClockRate;
+      
+      Result:=ERROR_SUCCESS;
+     end;  
+   finally  
+    MutexUnlock(SPI.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceGetClockPhase(SPI:PSPIDevice):LongWord;
+{Get the clock phase of the specified SPI device}
+{SPI: The SPI device to get clock phase from}
+{Return: The clock phase or SPI_CLOCK_PHASE_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_CLOCK_PHASE_UNKNOWN;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Phase');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceGetClockPhase) then
+    begin
+     {Call Device Get Clock Phase}
+     Result:=SPI.DeviceGetClockPhase(SPI);
+    end
+   else
+    begin
+     {Get Clock Phase}
+     Result:=SPI.ClockPhase;
+    end;  
+    
+   MutexUnlock(SPI.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceSetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
+{Set the clock phase for the specified SPI device}
+{SPI: The SPI device to set clock phase for}
+{ClockPhase: The clock phase to set (eg SPI_CLOCK_PHASE_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Phase (ClockPhase=' + SPIClockPhaseToString(ClockPhase) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceSetClockPhase) then
+     begin
+      {Call Device Set Clock Phase}
+      Result:=SPI.DeviceSetClockPhase(SPI,ClockPhase);
+     end
+    else
+     begin
+      {Check Clock Phase}
+      if ClockPhase = SPI_CLOCK_PHASE_UNKNOWN then Exit;
+      
+      {Set Clock Phase}
+      SPI.ClockPhase:=ClockPhase;
+      SPI.Properties.ClockPhase:=ClockPhase;
+      
+      Result:=ERROR_SUCCESS;
+     end;  
+   finally  
+    MutexUnlock(SPI.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceGetClockPolarity(SPI:PSPIDevice):LongWord;
+{Get the clock polarity of the specified SPI device}
+{SPI: The SPI device to get clock polarity from}
+{Return: The clock polarity or SPI_CLOCK_POLARITY_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_CLOCK_POLARITY_UNKNOWN;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Polarity');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceGetClockPolarity) then
+    begin
+     {Call Device Get Clock Polarity}
+     Result:=SPI.DeviceGetClockPolarity(SPI);
+    end
+   else
+    begin
+     {Get Clock Polarity}
+     Result:=SPI.ClockPolarity;
+    end;  
+    
+   MutexUnlock(SPI.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceSetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
+{Set the clock polarity for the specified SPI device}
+{SPI: The SPI device to set clock polarity for}
+{ClockPolarity: The clock polarity to set (eg SPI_CLOCK_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Polarity (ClockPolarity=' + SPIClockPolarityToString(ClockPolarity) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceSetClockPolarity) then
+     begin
+      {Call Device Set Clock Polarity}
+      Result:=SPI.DeviceSetClockPolarity(SPI,ClockPolarity);
+     end
+    else
+     begin
+      {Check Clock Polarity}
+      if ClockPolarity = SPI_CLOCK_POLARITY_UNKNOWN then Exit;
+      
+      {Set Clock Polarity}
+      SPI.ClockPolarity:=ClockPolarity;
+      SPI.Properties.ClockPolarity:=ClockPolarity;
+      
+      Result:=ERROR_SUCCESS;
+     end;  
+   finally  
+    MutexUnlock(SPI.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+ 
+function SPIDeviceGetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word):LongWord;
+{Get the chip select polarity of the specified SPI device}
+{SPI: The SPI device to get chip select polarity from}
+{ChipSelect: The chip select number to get polarity from (SPI_CS_NONE for default)}
+{Return: The chip select polarity or SPI_CS_POLARITY_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_CS_POLARITY_UNKNOWN;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Select Polarity (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceGetSelectPolarity) then
+     begin
+      {Call Device Get Select Polarity}
+      Result:=SPI.DeviceGetSelectPolarity(SPI,ChipSelect);
+     end
+    else
+     begin
+      {Check Chip Select}
+      if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
+      
+      if ChipSelect = SPI_CS_NONE then
+       begin
+        {Get Default Select Polarity}
+        Result:=SPI.SelectPolarity;
+       end
+      else
+       begin
+        {Get Chip Select Polarity}
+        Result:=SPI.ChipSelects[ChipSelect].Polarity;
+       end;
+     end;  
+   finally  
+    MutexUnlock(SPI.Lock);
+   end; 
+  end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceSetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+{Set the chip select polarity for the specified SPI device}
+{SPI: The SPI device to set chip select polarity for}
+{ChipSelect: The chip select number to set polarity for (SPI_CS_NONE for default)}
+{SelectPolarity: The chip select polarity to set (eg SPI_CS_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Select Polarity (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' SelectPolarity=' + SPISelectPolarityToString(SelectPolarity) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(SPI.DeviceSetSelectPolarity) then
+     begin
+      {Call Device Set Select Polarity}
+      Result:=SPI.DeviceSetSelectPolarity(SPI,ChipSelect,SelectPolarity);
+     end
+    else
+     begin
+      {Check Chip Select}
+      if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
+      
+      {Check Select Polarity}
+      if SelectPolarity = SPI_CS_POLARITY_UNKNOWN then Exit;
+      
+      if ChipSelect = SPI_CS_NONE then
+       begin
+        {Set Default Select Polarity}
+        SPI.SelectPolarity:=SelectPolarity;
+        SPI.Properties.SelectPolarity:=SelectPolarity;
+       end 
+      else
+       begin
+        {Set Chip Select Polarity}
+        SPI.ChipSelects[ChipSelect].Polarity:=SelectPolarity;
+       end;       
+      
+      Result:=ERROR_SUCCESS;
+     end;  
+   finally  
+    MutexUnlock(SPI.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+ 
+function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
+{Get the properties for the specified SPI device}
+{SPI: The SPI device to get properties from}
+{Properties: Pointer to a TSPIProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Properties}
+ if Properties = nil then Exit;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SPI_DEBUG}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Properties');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(SPI.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(SPI.DeviceProperties) then
+    begin
+     {Call Device Properites}
+     Result:=SPI.DeviceProperties(SPI,Properties);
+    end
+   else
+    begin
+     {Get Properties}
+     System.Move(SPI.Properties,Properties^,SizeOf(TSPIProperties));
+       
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+    end;  
+    
+   MutexUnlock(SPI.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
@@ -237,6 +1191,8 @@ function SPIDeviceCreateEx(Size:LongWord):PSPIDevice;
 {Create a new SPI entry}
 {Size: Size in bytes to allocate for new SPI (Including the SPI entry)}
 {Return: Pointer to new SPI entry or nil if SPI could not be created}
+var
+ Count:LongWord;
 begin
  {}
  Result:=nil;
@@ -257,12 +1213,35 @@ begin
  {Update SPI}
  Result.SPIId:=DEVICE_ID_ANY;
  Result.SPIState:=SPI_STATE_DISABLED;
- //To Do
+ Result.DeviceStart:=nil;
+ Result.DeviceStop:=nil;
+ Result.DeviceRead:=nil;
+ Result.DeviceWrite:=nil;
+ Result.DeviceWriteRead:=nil;
+ Result.DeviceGetMode:=nil;
+ Result.DeviceSetMode:=nil;
+ Result.DeviceGetClockRate:=nil;
+ Result.DeviceSetClockRate:=nil;
+ Result.DeviceGetClockPhase:=nil;
+ Result.DeviceSetClockPhase:=nil;
+ Result.DeviceGetClockPolarity:=nil;
+ Result.DeviceSetClockPolarity:=nil;
+ Result.DeviceGetSelectPolarity:=nil;
+ Result.DeviceSetSelectPolarity:=nil;
  Result.DeviceProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
+ Result.Wait:=INVALID_HANDLE_VALUE;
+ Result.ClockRate:=0;
+ Result.ClockPhase:=SPI_CLOCK_PHASE_UNKNOWN;
+ Result.ClockPolarity:=SPI_CLOCK_POLARITY_UNKNOWN;
+ Result.SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
+ for Count:=0 to SPI_CS_MAX do
+  begin
+   Result.ChipSelects[Count].Polarity:=SPI_CS_POLARITY_UNKNOWN;
+  end;
  
  {Create Lock}
- Result.Lock:=MutexCreate;
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if SPI_LOG_ENABLED then SPILogError(nil,'Failed to create lock for SPI device');
@@ -315,6 +1294,11 @@ begin
  if SPI = nil then Exit;
  if SPI.SPIId <> DEVICE_ID_ANY then Exit;
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Interfaces}
+ if not(Assigned(SPI.DeviceStart)) then Exit;
+ if not(Assigned(SPI.DeviceStop)) then Exit;
+ if not(Assigned(SPI.DeviceWriteRead)) then Exit;
  
  {Check SPI}
  Result:=ERROR_ALREADY_EXISTS;
@@ -563,7 +1547,256 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL SPI Functions}
+function SysSPIAvailable:Boolean; 
+{Check if an SPI device is available}
+begin
+ {}
+ Result:=(SPIDeviceDefault <> nil);
+end;
 
+{==============================================================================}
+ 
+function SysSPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord; 
+{Start the default SPI device ready for writing and reading}
+{Mode: The device mode to set (eg SPI_MODE_4WIRE)}
+{ClockRate: The clock rate to set for the device}
+{ClockPhase: The clock phase to set (eg SPI_CLOCK_PHASE_LOW)}
+{ClockPolarity: The clock polarity to set (eg SPI_CLOCK_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceStart(SPIDeviceDefault,Mode,ClockRate,ClockPhase,ClockPolarity);
+end;
+
+{==============================================================================}
+
+function SysSPIStop:LongWord; 
+{Stop the default SPI device and terminate writing and reading}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceStop(SPIDeviceDefault);
+end;
+
+{==============================================================================}
+ 
+function SysSPIRead(ChipSelect:Word;Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+{Read data from the default SPI device}
+{Because SPI writes and then reads for each byte, dummy data will be written for each byte to be read}
+{ChipSelect: The chip select for the slave to read from (eg SPI_CS_0)}
+{Dest: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceRead(SPIDeviceDefault,ChipSelect,Dest,Size,SPI_TRANSFER_NONE,Count);
+end;
+
+{==============================================================================}
+
+function SysSPIWrite(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+{Write data to the default SPI device}
+{Because SPI writes and then reads for each byte, received data will be discarded for each by written}
+{ChipSelect: The chip select for the slave to write to (eg SPI_CS_0)}
+{Source: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceWrite(SPIDeviceDefault,ChipSelect,Source,Size,SPI_TRANSFER_NONE,Count);
+end;
+
+{==============================================================================}
+
+function SysSPIWriteRead(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+{Write data to and Read data from the default SPI device in one operation}
+{Because SPI writes and then reads for each byte, both the source and dest buffers must be the same size}
+{ChipSelect: The chip select for the slave to write to and read from (eg SPI_CS_0)}
+{Source: Pointer to a buffer of data to transmit}
+{Dest: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Count: The number of bytes written and read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceWriteRead(SPIDeviceDefault,ChipSelect,Source,Dest,Size,SPI_TRANSFER_NONE,Count);
+end;
+
+{==============================================================================}
+ 
+function SysSPIGetMode:LongWord;
+{Get the device mode of the default SPI device}
+{Return: The device mode or SPI_MODE_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_MODE_UNKNOWN;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceGetMode(SPIDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysSPISetMode(Mode:LongWord):LongWord;
+{Set the device mode for the default SPI device}
+{Mode: The device mode to set (eg SPI_MODE_4WIRE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceSetMode(SPIDeviceDefault,Mode);
+end;
+
+{==============================================================================}
+ 
+function SysSPIGetClockRate:LongWord;
+{Get the clock rate of the default SPI device}
+{Return: The clock rate in Hz or 0 on failure}
+begin
+ {}
+ Result:=0;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceGetClockRate(SPIDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysSPISetClockRate(ClockRate:LongWord):LongWord;
+{Set the clock rate for the default SPI device}
+{ClockRate: The clock rate to set in Hz}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceSetClockRate(SPIDeviceDefault,ClockRate);
+end;
+
+{==============================================================================}
+
+function SysSPIGetClockPhase:LongWord;
+{Get the clock phase of the default SPI device}
+{Return: The clock phase or SPI_CLOCK_PHASE_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_CLOCK_PHASE_UNKNOWN;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceGetClockPhase(SPIDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysSPISetClockPhase(ClockPhase:LongWord):LongWord;
+{Set the clock phase for the default SPI device}
+{ClockPhase: The clock phase to set (eg SPI_CLOCK_PHASE_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceSetClockPhase(SPIDeviceDefault,ClockPhase);
+end;
+
+{==============================================================================}
+
+function SysSPIGetClockPolarity:LongWord;
+{Get the clock polarity of the default SPI device}
+{Return: The clock polarity or SPI_CLOCK_POLARITY_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_CLOCK_POLARITY_UNKNOWN;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceGetClockPolarity(SPIDeviceDefault);
+end;
+
+{==============================================================================}
+
+function SysSPISetClockPolarity(ClockPolarity:LongWord):LongWord;
+{Set the clock polarity for the default SPI device}
+{ClockPolarity: The clock polarity to set (eg SPI_CLOCK_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceSetClockPolarity(SPIDeviceDefault,ClockPolarity);
+end;
+
+{==============================================================================}
+ 
+function SysSPIGetSelectPolarity(ChipSelect:Word):LongWord;
+{Get the chip select polarity of the default SPI device}
+{ChipSelect: The chip select number to get polarity from (SPI_CS_NONE for default)}
+{Return: The chip select polarity or SPI_CS_POLARITY_UNKNOWN on failure}
+begin
+ {}
+ Result:=SPI_CS_POLARITY_UNKNOWN;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceGetSelectPolarity(SPIDeviceDefault,ChipSelect);
+end;
+
+{==============================================================================}
+
+function SysSPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+{Set the chip select polarity for the default SPI device}
+{ChipSelect: The chip select number to set polarity for (SPI_CS_NONE for default)}
+{SelectPolarity: The chip select polarity to set (eg SPI_CS_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if SPIDeviceDefault = nil then Exit;
+ 
+ Result:=SPIDeviceSetSelectPolarity(SPIDeviceDefault,ChipSelect,SelectPolarity);
+end;
+ 
 {==============================================================================}
 {==============================================================================}
 {SPI Helper Functions}
@@ -713,6 +1946,71 @@ procedure SPILogDebug(SPI:PSPIDevice;const AText:String); inline;
 begin
  {}
  SPILog(SPI_LOG_LEVEL_DEBUG,SPI,AText);
+end;
+
+{==============================================================================}
+
+function SPIChipSelectToString(ChipSelect:Word):String; 
+begin
+ {}
+ Result:='SPI_CS_UNKNOWN';
+ 
+ if ChipSelect > SPI_CS_MAX then Exit;
+ 
+ Result:='SPI_CS_' + IntToStr(ChipSelect);
+end;
+
+{==============================================================================}
+
+function SPIModeToString(Mode:LongWord):String;
+begin
+ {}
+ Result:='SPI_MODE_UNKNOWN';
+ 
+ case Mode of
+  SPI_MODE_4WIRE:Result:='SPI_MODE_4WIRE';
+  SPI_MODE_3WIRE:Result:='SPI_MODE_3WIRE';
+  SPI_MODE_LOSSI:Result:='SPI_MODE_LOSSI';
+ end;
+end;
+
+{==============================================================================}
+
+function SPIClockPhaseToString(Phase:LongWord):String;
+begin
+ {}
+ Result:='SPI_CLOCK_PHASE_UNKNOWN';
+ 
+ case Phase of
+  SPI_CLOCK_PHASE_LOW:Result:='SPI_CLOCK_PHASE_LOW';
+  SPI_CLOCK_PHASE_HIGH:Result:='SPI_CLOCK_PHASE_HIGH';
+ end;
+end;
+
+{==============================================================================}
+
+function SPIClockPolarityToString(Polarity:LongWord):String;
+begin
+ {}
+ Result:='SPI_CLOCK_POLARITY_UNKNOWN';
+ 
+ case Polarity of
+  SPI_CLOCK_POLARITY_LOW:Result:='SPI_CLOCK_POLARITY_LOW';
+  SPI_CLOCK_POLARITY_HIGH:Result:='SPI_CLOCK_POLARITY_HIGH';
+ end;
+end;
+
+{==============================================================================}
+
+function SPISelectPolarityToString(Polarity:LongWord):String;
+begin
+ {}
+ Result:='SPI_CS_POLARITY_UNKNOWN';
+ 
+ case Polarity of
+  SPI_CS_POLARITY_LOW:Result:='SPI_CS_POLARITY_LOW';
+  SPI_CS_POLARITY_HIGH:Result:='SPI_CS_POLARITY_HIGH';
+ end;
 end;
 
 {==============================================================================}

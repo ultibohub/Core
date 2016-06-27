@@ -183,15 +183,15 @@ type
   {GPIO Properties}
   GPIOId:LongWord;                                {Unique Id of this GPIO in the GPIO table}
   GPIOState:LongWord;                             {GPIO state (eg GPIO_STATE_ENABLED)}
-  DeviceStart:TGPIODeviceStart;                   {A Device specific DeviceStart method implementing the standard GPIO device interface (Manadatory)}
-  DeviceStop:TGPIODeviceStop;                     {A Device specific DeviceStop method implementing the standard GPIO device interface (Manadatory)}
+  DeviceStart:TGPIODeviceStart;                   {A Device specific DeviceStart method implementing the standard GPIO device interface (Mandatory)}
+  DeviceStop:TGPIODeviceStop;                     {A Device specific DeviceStop method implementing the standard GPIO device interface (Mandatory)}
   DeviceRead:TGPIODeviceRead;                     {A Device specific DeviceRead method implementing the standard GPIO device interface (Or nil if the default method is suitable)}
   DeviceWrite:TGPIODeviceWrite;                   {A Device specific DeviceWrite method implementing the standard GPIO device interface (Or nil if the default method is suitable)}
-  DeviceInputGet:TGPIODeviceInputGet;             {A Device specific DeviceInputGet method implementing the standard GPIO device interface (Manadatory)}
+  DeviceInputGet:TGPIODeviceInputGet;             {A Device specific DeviceInputGet method implementing the standard GPIO device interface (Mandatory)}
   DeviceInputWait:TGPIODeviceInputWait;           {A Device specific DeviceInputWait method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DeviceInputEvent:TGPIODeviceInputEvent;         {A Device specific DeviceInputEvent method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DeviceInputCancel:TGPIODeviceInputCancel;       {A Device specific DeviceInputCancel method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
-  DeviceOutputSet:TGPIODeviceOutputSet;           {A Device specific DeviceOutputSet method implementing the standard GPIO device interface (Manadatory)}
+  DeviceOutputSet:TGPIODeviceOutputSet;           {A Device specific DeviceOutputSet method implementing the standard GPIO device interface (Mandatory)}
   DevicePullGet:TGPIODevicePullGet;               {A Device specific DevicePullGet method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DevicePullSelect:TGPIODevicePullSelect;         {A Device specific DevicePullSelect method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DeviceFunctionGet:TGPIODeviceFunctionGet;       {A Device specific DeviceFunctionGet method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
@@ -335,6 +335,8 @@ begin
  GPIODeviceDefault:=nil;
  
  {Register Platform GPIO Handlers}
+ {Do not register GPIOReadHandler}
+ {Do not register GPIOWriteHandler}
  GPIOInputGetHandler:=SysGPIOInputGet;
  GPIOInputWaitHandler:=SysGPIOInputWait;
  GPIOInputEventHandler:=SysGPIOInputEvent;
@@ -353,7 +355,7 @@ end;
 function GPIODeviceStart(GPIO:PGPIODevice):LongWord; 
 begin
  {}
- Result:=0;
+ Result:=ERROR_INVALID_PARAMETER;
  
  {Check GPIO}
  if GPIO = nil then Exit;
@@ -404,7 +406,7 @@ end;
 function GPIODeviceStop(GPIO:PGPIODevice):LongWord; 
 begin
  {}
- Result:=0;
+ Result:=ERROR_INVALID_PARAMETER;
  
  {Check GPIO}
  if GPIO = nil then Exit;
@@ -466,7 +468,6 @@ begin
  {$ENDIF}
  
  {Check Enabled}
- Result:=ERROR_NOT_SUPPORTED;
  if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
  
  if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
@@ -525,7 +526,6 @@ begin
  {$ENDIF}
  
  {Check Enabled}
- Result:=ERROR_NOT_SUPPORTED;
  if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
  
  if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
@@ -560,7 +560,6 @@ begin
  {$ENDIF}
  
  {Check Enabled}
- Result:=ERROR_NOT_SUPPORTED;
  if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
  
  if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
@@ -700,7 +699,6 @@ begin
  {$ENDIF}
  
  {Check Enabled}
- Result:=ERROR_NOT_SUPPORTED;
  if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
  
  if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
@@ -766,7 +764,6 @@ begin
  {$ENDIF}
  
  {Check Enabled}
- Result:=ERROR_NOT_SUPPORTED;
  if GPIO.GPIOState <> GPIO_STATE_ENABLED then Exit;
  
  if MutexLock(GPIO.Lock) = ERROR_SUCCESS then

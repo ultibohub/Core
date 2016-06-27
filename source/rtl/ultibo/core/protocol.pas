@@ -240,8 +240,9 @@ type
    
    function StartProtocols:Boolean;
    function StopProtocols:Boolean;
-   function ProcessSockets:Boolean; //To do //Remove ?
    function ProcessProtocols:Boolean;
+
+   function ProcessSockets:Boolean;
    
    function EnumerateProtocols(ACallback:TProtocolCallback):Boolean;
    
@@ -391,18 +392,18 @@ type
 
    function StartProtocol:Boolean; virtual;
    function StopProtocol:Boolean; virtual;
-   function ProcessSockets:Boolean; virtual;
    function ProcessProtocol:Boolean; virtual;
+
+   function ProcessSockets:Boolean; virtual;
+   function ProcessSocket(ASocket:TProtocolSocket):Boolean; virtual;
    
    function BindProtocol(ATransport:TNetworkTransport):Boolean; virtual;
    function UnbindProtocol(ATransport:TNetworkTransport):Boolean; virtual;
    
-   function SendSocket(ASocket:TProtocolSocket):Boolean; virtual;
-   function ReceiveSocket:TProtocolSocket; virtual;
-   
    function CheckTimer:Boolean; virtual;
    function ProcessTimer:Boolean; virtual;
    
+   function SendSocket(ASocket:TProtocolSocket):Boolean; virtual;
    function ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocket(ASocket:TProtocolSocket):Boolean; virtual;
  end;
@@ -417,7 +418,9 @@ type
    FLock:TMutexHandle;
    FInterval:LongWord;
    FCheckTimer:TTimerHandle;
-   FProcessTimer:TTimerHandle;
+   FProcessSemaphore:TSemaphoreHandle;
+   
+   FCount:LongWord;
    
    FFirst:PSocketTimerItem;
    FLast:PSocketTimerItem;
@@ -426,13 +429,16 @@ type
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
    
-   function Dequeue:TProtocolSocket;
+   function Dequeue(AMax:Integer):TProtocolSocket;
    
    function FirstKey:Integer;
    function InsertKey(ASocket:TProtocolSocket;AKey:Integer):Boolean;
    function DeleteKey(ASocket:TProtocolSocket):Boolean;
    function DecrementKey:Integer;
   public   
+   {Public Properties}
+   property Count:LongWord read FCount;
+   
    {Public Methods}
    function StartTimer(AInterval:LongWord):Boolean;
    function StopTimer:Boolean;
@@ -445,20 +451,17 @@ type
  end;
  
  TSocketThread = class(TThread)
-   constructor Create(AProtocol:TNetworkProtocol;AMaximum:LongWord);
+   constructor Create(AProtocol:TNetworkProtocol);
    destructor Destroy; override;
   protected
    {Internal Variables}
    FProtocol:TNetworkProtocol;
-   
-   FMessageslot:TMessageslotHandle;
    
    {Internal Methods}
    procedure Execute; override;
   public   
    {Public Methods}
    function SendSocket(ASocket:TProtocolSocket):Boolean;
-   function ReceiveSocket:TProtocolSocket;
  end;
  
  TProtocolPort = class(TListObject)
@@ -748,7 +751,6 @@ function ProtocolStop:LongWord;
 {==============================================================================}
 {Protocol Helper Functions}
 procedure ProtocolCheckTimer(Data:Pointer);
-procedure ProtocolProcessTimer(Data:Pointer);
 
 {==============================================================================}
 {==============================================================================}
@@ -1408,36 +1410,6 @@ begin
 end;
 
 {==============================================================================}
- //To do //Remove ?
-function TProtocolManager.ProcessSockets:Boolean;
-var
- Protocol:TNetworkProtocol;
-begin
- {}
- ReaderLock;
- try
-  Result:=True;
-  
-  {$IFDEF PROTOCOL_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessSockets');
-  {$ENDIF}
-  
-  {Get Protocol}
-  Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
-  while Protocol <> nil do
-   begin
-    {Process Sockets}
-    if not(Protocol.ProcessSockets) then Result:=False;
-    
-    {Get Next}
-    Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,False,NETWORK_LOCK_READ));
-   end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
 
 function TProtocolManager.ProcessProtocols:Boolean;
 var
@@ -1458,6 +1430,36 @@ begin
    begin
     {Process Protocol}
     if not(Protocol.ProcessProtocol) then Result:=False;
+    
+    {Get Next}
+    Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,False,NETWORK_LOCK_READ));
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TProtocolManager.ProcessSockets:Boolean;
+var
+ Protocol:TNetworkProtocol;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=True;
+  
+  {$IFDEF PROTOCOL_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessSockets');
+  {$ENDIF}
+  
+  {Get Protocol}
+  Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Protocol <> nil do
+   begin
+    {Process Sockets}
+    if not(Protocol.ProcessSockets) then Result:=False;
     
     {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,False,NETWORK_LOCK_READ));
@@ -2835,6 +2837,14 @@ end;
 
 {==============================================================================}
 
+function TNetworkProtocol.ProcessProtocol:Boolean;
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
 function TNetworkProtocol.ProcessSockets:Boolean;
 begin
  {Virtual Base Method}
@@ -2843,7 +2853,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.ProcessProtocol:Boolean;
+function TNetworkProtocol.ProcessSocket(ASocket:TProtocolSocket):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -2863,37 +2873,6 @@ function TNetworkProtocol.UnbindProtocol(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.SendSocket(ASocket:TProtocolSocket):Boolean; 
-begin
- {}
- Result:=False;
- 
- {Check Thread}
- if FThread = nil then Exit;
-
- {Check Socket}
- {if ASocket = nil then Exit;} {Do not check, used by StopProtocol to release waiting thread}
- 
- {Send Socket}
- Result:=FThread.SendSocket(ASocket);
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.ReceiveSocket:TProtocolSocket; 
-begin
- {}
- Result:=nil;
- 
- {Check Thread}
- if FThread = nil then Exit;
- 
- {Receive Socket}
- Result:=FThread.ReceiveSocket;
 end;
 
 {==============================================================================}
@@ -2922,6 +2901,23 @@ begin
 
  {Process Timer}
  Result:=FTimer.ProcessTimer;
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.SendSocket(ASocket:TProtocolSocket):Boolean; 
+begin
+ {}
+ Result:=False;
+ 
+ {Check Timer}
+ if FTimer = nil then Exit;
+
+ {Check Socket}
+ {if ASocket = nil then Exit;} {Do not check, used by StopProtocol to release waiting thread}
+ 
+ {Send Socket}
+ Result:=FTimer.ScheduleSocket(ASocket,0);
 end;
 
 {==============================================================================}
@@ -2970,7 +2966,9 @@ begin
  FLock:=MutexCreate;
  FInterval:=0;
  FCheckTimer:=INVALID_HANDLE_VALUE;
- FProcessTimer:=INVALID_HANDLE_VALUE;
+ FProcessSemaphore:=INVALID_HANDLE_VALUE;
+ 
+ FCount:=0;
  
  FFirst:=nil;
  FLast:=nil;
@@ -2983,8 +2981,8 @@ begin
  {}
  AcquireLock;
  try
-  if FProcessTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FProcessTimer);
-  FProcessTimer:=INVALID_HANDLE_VALUE;
+  if FProcessSemaphore <> INVALID_HANDLE_VALUE then SemaphoreDestroy(FProcessSemaphore);
+  FProcessSemaphore:=INVALID_HANDLE_VALUE;
   if FCheckTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FCheckTimer);
   FCheckTimer:=INVALID_HANDLE_VALUE;
   
@@ -3015,8 +3013,9 @@ end;
 
 {==============================================================================}
 
-function TSocketTimer.Dequeue:TProtocolSocket;
-{Get and remove the first socket from the timer list}
+function TSocketTimer.Dequeue(AMax:Integer):TProtocolSocket;
+{Get and remove the first socket from the timer list if the key is less than or equal to Max}
+{Max: The maximum value of the key for the page to be dequeued}
 {Return: Dequeued Socket or nil on failure}
 var
  Item:PSocketTimerItem;
@@ -3030,24 +3029,38 @@ begin
   Item:=FFirst;
   if Item <> nil then
    begin
-    {Remove First}
-    FFirst:=Item.Next;
-   
-    {Check Next}
-    if Item.Next = nil then
+    {Check Key}
+    if Item.Key <= AMax then
      begin
-      FLast:=nil;
-     end
-    else
-     begin
-      Item.Next.Prev:=nil;
+      {Remove First}
+      FFirst:=Item.Next;
+      
+      {Check Next}
+      if Item.Next = nil then
+       begin
+        FLast:=nil;
+       end
+      else
+       begin
+        Item.Next.Prev:=nil;
+       end;
+      
+      {Check First}
+      if FFirst <> nil then
+       begin
+        {Update Key}
+        Inc(FFirst.Key,Item.Key);
+       end;
+      
+      {Decrement Count}
+      Dec(FCount);
+      
+      {Return Result}
+      Result:=TProtocolSocket(Item.Socket);
+      
+      {Release Item}
+      FreeMem(Item);
      end;
-    
-    {Return Result}
-    Result:=TProtocolSocket(Item.Socket);
-    
-    {Release Item}
-    FreeMem(Item);
    end;
  finally
   ReleaseLock;
@@ -3157,6 +3170,9 @@ begin
      end;      
    end;
   
+  {Increment Count}
+  Inc(FCount);
+  
   {Return Result} 
   Result:=True;       
  finally
@@ -3236,6 +3252,9 @@ begin
       Inc(Next.Key,Item.Key);
      end;
      
+    {Decrement Count}
+    Dec(FCount);
+     
     {Release Item}
     FreeMem(Item);
     
@@ -3293,24 +3312,24 @@ begin
   {Check Interval}
   if AInterval < 1 then Exit;
   
-  {Check Timers}
+  {Check Timer/Semaphore}
   if FCheckTimer <> INVALID_HANDLE_VALUE then Exit;
-  if FProcessTimer <> INVALID_HANDLE_VALUE then Exit;
+  if FProcessSemaphore <> INVALID_HANDLE_VALUE then Exit;
   
   {Set Interval}
   FInterval:=AInterval;
   
+  {Create Process Semaphore}
+  FProcessSemaphore:=SemaphoreCreate(0);
+  if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
+  
   {Create Check Timer}
   FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(ProtocolCheckTimer),FProtocol); {Rescheduled Automatically}
-  if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
-  
-  {Create Process Timer}
-  FProcessTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(ProtocolProcessTimer),FProtocol); {Rescheduled by Timer Event}
-  if FProcessTimer = INVALID_HANDLE_VALUE then
+  if FCheckTimer = INVALID_HANDLE_VALUE then
    begin
-    {Destroy Check Timer}
-    TimerDestroy(FCheckTimer);
-    FCheckTimer:=INVALID_HANDLE_VALUE;
+    {Destroy Process Semaphore}
+    SemaphoreDestroy(FProcessSemaphore);
+    FProcessSemaphore:=INVALID_HANDLE_VALUE;
     
     Exit;
    end; 
@@ -3331,17 +3350,17 @@ begin
  
  if not AcquireLock then Exit;
  try
-  {Check Timers}
+  {Check Timer/Semaphore}
   if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
-  if FProcessTimer = INVALID_HANDLE_VALUE then Exit;
+  if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
   
   {Destroy Check Timer}
   if TimerDestroy(FCheckTimer) <> ERROR_SUCCESS then Exit;
   FCheckTimer:=INVALID_HANDLE_VALUE;
 
-  {Destroy Process Timer}
-  if TimerDestroy(FProcessTimer) <> ERROR_SUCCESS then Exit;
-  FProcessTimer:=INVALID_HANDLE_VALUE;
+  {Destroy Process Semaphore}
+  if SemaphoreDestroy(FProcessSemaphore) <> ERROR_SUCCESS then Exit;
+  FProcessSemaphore:=INVALID_HANDLE_VALUE;
   
   {Reset Interval}
   FInterval:=0;
@@ -3363,46 +3382,38 @@ begin
  {Decrement Key}
  if DecrementKey <= 0 then
   begin
-   {Return Result}
-   Result:=True;
+   {Signal Semaphore}
+   Result:=(SemaphoreSignal(FProcessSemaphore) = ERROR_SUCCESS);
   end;
 end;
 
 {==============================================================================}
    
 function TSocketTimer.ProcessTimer:Boolean;
-{Note: Calls to ProcessTimer must be serialized so that multiple threads
- do not call simultaneously. This is done by creating the timer as non
- rescheduled and having this routine reenable the timer on completion}
 var
  Socket:TProtocolSocket;
 begin
  {}
  Result:=False;
- try
-  {Check Protocol}
-  if FProtocol = nil then Exit;
+
+ {Check Protocol}
+ if FProtocol = nil then Exit;
    
-  {Setup Result}
-  Result:=True;
-     
-  {Get First Key}
-  while FirstKey <= 0 do 
-   begin
-    {Dequeue Socket}
-    Socket:=Dequeue;
-       
-    {Send Socket}
-    if not FProtocol.SendSocket(Socket) then
-     begin
-      {Insert Key (Default)}
-      Result:=InsertKey(Socket,FInterval);
-     end; 
-   end;
- finally 
-  {Enable Timer}
-  TimerEnable(FProcessTimer);
- end; 
+ {Wait Semaphore}
+ if SemaphoreWait(FProcessSemaphore) = ERROR_SUCCESS then
+  begin
+   {Dequeue Socket}
+   Socket:=Dequeue(0);
+   while Socket <> nil do
+    begin
+     {Process Socket}
+     Result:=FProtocol.ProcessSocket(Socket);
+     if not Result then Exit;
+      
+     {Dequeue Socket}
+     Socket:=Dequeue(0);
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -3411,28 +3422,20 @@ function TSocketTimer.ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):
 begin
  {}
  Result:=False;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
 
  {Check Timeout} 
  if ATimeout < 1 then
   begin
-   {Check Protocol}
-   if FProtocol = nil then Exit;
-   
-   {Send Socket}
-   Result:=FProtocol.SendSocket(ASocket);
-   if not Result then
-    begin
-     {Insert Key (Default)}
-     Result:=InsertKey(ASocket,FInterval);
-    end;
+   {Insert Key (Immediate)}
+   Result:=InsertKey(ASocket,0);
   end
  else
   begin
-   {Insert Key}
-   Result:=InsertKey(ASocket,ATimeout + FInterval); {Allow one extra interval to account for first decrement} 
+   {Insert Key (Scheduled)}
+   Result:=InsertKey(ASocket,ATimeout + FInterval); {Allow one extra interval to account for first decrement}
   end;  
 end;
 
@@ -3453,12 +3456,11 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TSocketThread}
-constructor TSocketThread.Create(AProtocol:TNetworkProtocol;AMaximum:LongWord);
+constructor TSocketThread.Create(AProtocol:TNetworkProtocol);
 begin
  {}
  inherited Create(True,THREAD_STACK_DEFAULT_SIZE);
  FProtocol:=AProtocol;
- FMessageslot:=MessageslotCreateEx(AMaximum,MESSAGESLOT_FLAG_NONE);
 end;
 
 {==============================================================================}
@@ -3466,7 +3468,6 @@ end;
 destructor TSocketThread.Destroy; 
 begin
  {}
- MessageslotDestroy(FMessageslot);
  inherited Destroy;
 end;
 
@@ -3493,8 +3494,8 @@ begin
     {Check Protocol}
     if FProtocol <> nil then
      begin
-      {Process Sockets}
-      FProtocol.ProcessSockets;
+      {Process Timer}
+      FProtocol.ProcessTimer;
      end;
    end;  
  except
@@ -3508,51 +3509,18 @@ end;
 {==============================================================================}
 
 function TSocketThread.SendSocket(ASocket:TProtocolSocket):Boolean;
-var
- Message:TMessage;
- ResultCode:LongWord;
 begin
  {}
  Result:=False;
  
+ {Check Protocol}
+ if FProtocol = nil then Exit;
+ 
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check, used by StopProtocol to release waiting thread}
  
- {Send Message}
- FillChar(Message,SizeOf(TMessage),0);
- Message.Msg:=LongWord(ASocket);
- ResultCode:=MessageslotSend(FMessageslot,Message);
- if ResultCode = ERROR_SUCCESS then
-  begin
-   Result:=True;
-  end
- else
-  begin
-   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'SocketThread: SendSocket failure (Error=' + ErrorToString(ResultCode) + ')');
-  end;  
-end;
-
-{==============================================================================}
-
-function TSocketThread.ReceiveSocket:TProtocolSocket;
-var
- Message:TMessage;
- ResultCode:LongWord;
-begin
- {}
- Result:=nil;
- 
- {Receive Message}
- FillChar(Message,SizeOf(TMessage),0);
- ResultCode:=MessageslotReceive(FMessageslot,Message);
- if ResultCode = ERROR_SUCCESS then
-  begin
-   Result:=TProtocolSocket(Message.Msg);
-  end
- else
-  begin
-   if NETWORK_LOG_ENABLED then NetworkLogError(nil,'SocketThread: ReceiveSocket failure (Error=' + ErrorToString(ResultCode) + ')');
-  end;  
+ {Send Socket}
+ Result:=FProtocol.SendSocket(ASocket);
 end;
 
 {==============================================================================}
@@ -4703,23 +4671,6 @@ begin
  
  {Check Timer}
  Protocol.CheckTimer;
-end;
-
-{==============================================================================}
-
-procedure ProtocolProcessTimer(Data:Pointer);
-var
- Protocol:TNetworkProtocol;
-begin
- {}
- {Check Data}
- if Data = nil then Exit;
-  
- {Get Protocol}
- Protocol:=TNetworkProtocol(Data);
-  
- {Process Timer}
- Protocol.ProcessTimer;
 end;
  
 {==============================================================================}

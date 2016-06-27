@@ -4336,8 +4336,8 @@ begin
    {Connect}    
    if Connect then
     begin
-     {Set Receive Size}
-     ReceiveSize:=SIZE_2M;
+     {Setup Receive Size}
+     ReceiveSize:=SIZE_2M; //To Do //This should be set by the caller (Modify TWinsockTCPClient to allow setting before connect)
      
      {Write Request}
      if not FRequest.WriteRequest then Exit;

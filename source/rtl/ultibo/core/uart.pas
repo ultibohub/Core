@@ -179,10 +179,10 @@ type
   UARTMode:LongWord;                              {UART mode (eg UART_MODE_SERIAL)}
   UARTState:LongWord;                             {UART state (eg UART_STATE_ENABLED)}
   UARTStatus:LongWord;                            {UART status (eg UART_STATUS_RX_FULL)(May not be real time status depending on the driver)}
-  DeviceOpen:TUARTDeviceOpen;                     {A Device specific DeviceOpen method implementing the standard UART device interface (Manadatory)}
-  DeviceClose:TUARTDeviceClose;                   {A Device specific DeviceClose method implementing the standard UART device interface (Manadatory)}
-  DeviceRead:TUARTDeviceRead;                     {A Device specific DeviceRead method implementing the standard UART device interface (Manadatory)}
-  DeviceWrite:TUARTDeviceWrite;                   {A Device specific DeviceWrite method implementing the standard UART device interface (Manadatory)}
+  DeviceOpen:TUARTDeviceOpen;                     {A Device specific DeviceOpen method implementing the standard UART device interface (Mandatory)}
+  DeviceClose:TUARTDeviceClose;                   {A Device specific DeviceClose method implementing the standard UART device interface (Mandatory)}
+  DeviceRead:TUARTDeviceRead;                     {A Device specific DeviceRead method implementing the standard UART device interface (Mandatory)}
+  DeviceWrite:TUARTDeviceWrite;                   {A Device specific DeviceWrite method implementing the standard UART device interface (Mandatory)}
   DeviceStatus:TUARTDeviceStatus;                 {A Device specific DeviceStatus method implementing the standard UART device interface (Or nil if the default method is suitable)}
   DeviceProperties:TUARTDeviceProperties;         {A Device specific DeviceProperties method implementing the standard UART device interface (Or nil if the default method is suitable)}
   {Driver Properties}
@@ -559,7 +559,7 @@ begin
     end;  
     
    MutexUnlock(UART.Lock);
-  end
+  end;
 end;
 
 {==============================================================================}

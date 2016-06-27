@@ -61,6 +61,8 @@ const
  
  {RTC Device Flags}
  RTC_FLAG_NONE          = $00000000;
+ RTC_FLAG_ALARM         = $00000001; {Device supports one or more alarms}
+ RTC_FLAG_WATCHDOG      = $00000002; {Device has a watchdog timer function}
  
  {RTC logging}
  RTC_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {RTC debugging messages}
@@ -82,7 +84,10 @@ type
  {RTC Properties}
  PRTCProperties = ^TRTCProperties;
  TRTCProperties = record
-  //To Do
+  Flags:LongWord;      {Device flags (eg RTC_FLAG_ALARM)}
+  MinTime:Int64;       {Minimum time value represented by the device (Normally the power on reset value)}
+  MaxTime:Int64;       {Maximum time value represented by the device (Time when a rollover will occur)}
+  AlarmCount:LongWord; {Number of alarms supported by the device (0 if not supported)}
  end;
  
  {RTC Device}
@@ -94,8 +99,10 @@ type
  TRTCNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
  
  {RTC Device Methods}
+ TRTCDeviceStart = function(RTC:PRTCDevice):LongWord;
+ TRTCDeviceStop = function(RTC:PRTCDevice):LongWord;
  TRTCDeviceGetTime = function(RTC:PRTCDevice):Int64;
- TRTCDeviceSetTime = function(RTC:PRTCDevice;const Time:Int64):LongWord;
+ TRTCDeviceSetTime = function(RTC:PRTCDevice;const Time:Int64):Int64;
  TRTCDeviceProperties = function(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
  
  TRTCDevice = record
@@ -104,14 +111,16 @@ type
   {RTC Properties}
   RTCId:LongWord;                                 {Unique Id of this RTC in the RTC table}
   RTCState:LongWord;                              {RTC state (eg RTC_STATE_ENABLED)}
+  DeviceStart:TRTCDeviceStart;                    {A Device specific DeviceStart method implementing the standard RTC device interface}
+  DeviceStop:TRTCDeviceStop;                      {A Device specific DeviceStop method implementing the standard RTC device interface}
   DeviceGetTime:TRTCDeviceGetTime;                {A Device specific DeviceGetTime method implementing the standard RTC device interface}
   DeviceSetTime:TRTCDeviceSetTime;                {A Device specific DeviceSetTime method implementing the standard RTC device interface}
   DeviceProperties:TRTCDeviceProperties;          {A Device specific DeviceProperties method implementing the standard RTC device interface}
   {Statistics Properties}
-  //To Do
+  GetCount:LongWord;
+  SetCount:LongWord;
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
-  //To Do
   Properties:TRTCProperties;                      {Device properties}
   {Internal Properties}                                                                        
   Prev:PRTCDevice;                                {Previous entry in RTC table}
@@ -128,8 +137,11 @@ procedure RTCInit;
  
 {==============================================================================}
 {RTC Functions}
+function RTCDeviceStart(RTC:PRTCDevice):LongWord;
+function RTCDeviceStop(RTC:PRTCDevice):LongWord;
+
 function RTCDeviceGetTime(RTC:PRTCDevice):Int64;
-function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):LongWord;
+function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):Int64;
  
 function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
   
@@ -150,7 +162,7 @@ function RTCDeviceNotification(RTC:PRTCDevice;Callback:TRTCNotification;Data:Poi
 function SysRTCAvailable:Boolean;
 
 function SysRTCGetTime:Int64;
-function SysRTCSetTime(const Time:Int64):LongWord;
+function SysRTCSetTime(const Time:Int64):Int64;
 
 {==============================================================================}
 {RTC Helper Functions}
@@ -159,6 +171,11 @@ function RTCDeviceGetDefault:PRTCDevice; inline;
 function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord; 
 
 function RTCDeviceCheck(RTC:PRTCDevice):PRTCDevice;
+
+function RTCTimeIsValid(const Time:TSystemTime):Boolean;
+
+function RTCSystemTimeToFileTime(const SystemTime:TSystemTime;var FileTime:Int64):Boolean;
+function RTCFileTimeToSystemTime(const FileTime:Int64;var SystemTime:TSystemTime):Boolean;
 
 procedure RTCLog(Level:LongWord;RTC:PRTCDevice;const AText:String);
 procedure RTCLogInfo(RTC:PRTCDevice;const AText:String); inline;
@@ -215,22 +232,152 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTC Functions}
-function RTCDeviceGetTime(RTC:PRTCDevice):Int64;
+function RTCDeviceStart(RTC:PRTCDevice):LongWord;
 begin
  {}
- Result:=0;
- //To Do
+ Result:=ERROR_INVALID_PARAMETER;
  
+ {Check RTC}
+ if RTC = nil then Exit;
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF RTC_DEBUG}
+ if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Start');
+ {$ENDIF}
+ 
+ {Check Disabled}
+ Result:=ERROR_SUCCESS;
+ if RTC.RTCState <> RTC_STATE_DISABLED then Exit;
+ 
+ if MutexLock(RTC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(RTC.DeviceStart) then
+     begin
+      {Call Device Start}
+      Result:=RTC.DeviceStart(RTC);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end;
+     
+    {Enable Device}
+    RTC.RTCState:=RTC_STATE_ENABLED;
+    
+    {Notify Enable}
+    NotifierNotify(@RTC.Device,DEVICE_NOTIFICATION_ENABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(RTC.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
 
-function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):LongWord;
+function RTCDeviceStop(RTC:PRTCDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check RTC}
+ if RTC = nil then Exit;
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF RTC_DEBUG}
+ if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Stop');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_SUCCESS;
+ if RTC.RTCState <> RTC_STATE_ENABLED then Exit;
+ 
+ if MutexLock(RTC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(RTC.DeviceStop) then
+     begin
+      {Call Device Stop}
+      Result:=RTC.DeviceStop(RTC);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end;    
+  
+    {Disable Device}
+    RTC.RTCState:=RTC_STATE_DISABLED;
+    
+    {Notify Disable}
+    NotifierNotify(@RTC.Device,DEVICE_NOTIFICATION_DISABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(RTC.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function RTCDeviceGetTime(RTC:PRTCDevice):Int64;
 begin
  {}
  Result:=0;
- //To Do
  
+ {Check RTC}
+ if RTC = nil then Exit;
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF RTC_DEBUG}
+ if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Get Time');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ if RTC.RTCState <> RTC_STATE_ENABLED then Exit;
+ 
+ if Assigned(RTC.DeviceGetTime) then
+  begin
+   Result:=RTC.DeviceGetTime(RTC);
+  end;
+end;
+
+{==============================================================================}
+
+function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):Int64;
+begin
+ {}
+ Result:=0;
+ 
+ {Check RTC}
+ if RTC = nil then Exit;
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF RTC_DEBUG}
+ if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Set Time (Time=' + IntToStr(Time) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ if RTC.RTCState <> RTC_STATE_ENABLED then Exit;
+ 
+ if Assigned(RTC.DeviceSetTime) then
+  begin
+   Result:=RTC.DeviceSetTime(RTC,Time);
+  end;
 end;
  
 {==============================================================================}
@@ -240,8 +387,37 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- //To Do
+ {Check Properties}
+ if Properties = nil then Exit;
  
+ {Check RTC}
+ if RTC = nil then Exit;
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {$IFDEF RTC_DEBUG}
+ if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Properties');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if RTC.RTCState <> RTC_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if Assigned(RTC.DeviceProperties) then
+  begin
+   Result:=RTC.DeviceProperties(RTC,Properties);
+  end
+ else
+  begin
+   if MutexLock(RTC.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Get Properties}
+   System.Move(RTC.Properties,Properties^,SizeOf(TRTCProperties));
+
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+   
+   MutexUnlock(RTC.Lock);
+  end;  
 end;
 
 {==============================================================================}
@@ -280,13 +456,15 @@ begin
  {Update RTC}
  Result.RTCId:=DEVICE_ID_ANY;
  Result.RTCState:=RTC_STATE_DISABLED;
+ Result.DeviceStart:=nil;
+ Result.DeviceStop:=nil;
  Result.DeviceGetTime:=nil;
  Result.DeviceSetTime:=nil;
  Result.DeviceProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}
- Result.Lock:=MutexCreate;
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if RTC_LOG_ENABLED then RTCLogError(nil,'Failed to create lock for RTC device');
@@ -339,6 +517,12 @@ begin
  if RTC = nil then Exit;
  if RTC.RTCId <> DEVICE_ID_ANY then Exit;
  if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Interfaces}
+ if not(Assigned(RTC.DeviceStart)) then Exit;
+ if not(Assigned(RTC.DeviceStop)) then Exit;
+ if not(Assigned(RTC.DeviceGetTime)) then Exit;
+ if not(Assigned(RTC.DeviceSetTime)) then Exit;
  
  {Check RTC}
  Result:=ERROR_ALREADY_EXISTS;
@@ -597,6 +781,8 @@ end;
 {==============================================================================}
 
 function SysRTCGetTime:Int64;
+{Get the current time from a RTC device}
+{Returned time is 100 nanosecond ticks since 1 January 1601}
 begin
  {}
  Result:=0;
@@ -608,7 +794,11 @@ end;
 
 {==============================================================================}
 
-function SysRTCSetTime(const Time:Int64):LongWord;
+function SysRTCSetTime(const Time:Int64):Int64;
+{Set the current time for a RTC device}
+{Time: The time to be set}
+{Return: The device time after setting (or 0 on failure)}
+{Time and returned time is 100 nanosecond ticks since 1 January 1601}
 begin
  {}
  Result:=0;
@@ -709,6 +899,69 @@ begin
     CriticalSectionUnlock(RTCDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function RTCTimeIsValid(const Time:TSystemTime):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ if Time.Year < 1900 then Exit;
+ if (Time.Month < 1) or (Time.Month > 12) then Exit;
+ if (Time.Day < 1) or (Time.Day > 31) then Exit;
+ if (Time.Hour >= 24) then Exit;
+ if (Time.Minute >= 60) then Exit;
+ if (Time.Second >= 60) then Exit;
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RTCSystemTimeToFileTime(const SystemTime:TSystemTime;var FileTime:Int64):Boolean;
+{System time is assumed to be UTC and returned file time is UTC}
+var
+ DateTime:TDateTime;
+begin
+ {}
+ Result:=False;
+
+ {Setup FileTime}
+ FileTime:=0;
+ 
+ {Convert to DateTime}
+ DateTime:=SystemTimeToDateTime(SystemTime);
+ 
+ {Convert to FileTime}
+ FileTime:=((Trunc(DateTime) * TIME_TICKS_PER_DAY) + TIME_TICKS_TO_1899) + ((Round(Frac(DateTime) * PASCAL_TIME_MILLISECONDS_PER_DAY) * TIME_TICKS_PER_MILLISECOND));
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RTCFileTimeToSystemTime(const FileTime:Int64;var SystemTime:TSystemTime):Boolean;
+{File time is assumed to be UTC and returned system time is UTC}
+var
+ DateTime:TDateTime;
+begin
+ {}
+ Result:=False;
+
+ {Setup SystemTime}
+ FillChar(SystemTime,SizeOf(TSystemTime),0);
+ 
+ if FileTime < TIME_TICKS_TO_1899 then Exit;
+ 
+ {Convert to DateTime}
+ DateTime:=((FileTime - TIME_TICKS_TO_1899) div TIME_TICKS_PER_DAY) + (((FileTime - TIME_TICKS_TO_1899) mod TIME_TICKS_PER_DAY) / TIME_TICKS_PER_DAY);
+ 
+ {Convert to SystemTime}
+ DateTimeToSystemTime(DateTime,SystemTime);
+ 
+ Result:=True;
 end;
 
 {==============================================================================}

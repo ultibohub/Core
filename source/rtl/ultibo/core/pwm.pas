@@ -214,6 +214,9 @@ begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
+ {Check Properties}
+ if Properties = nil then Exit;
+ 
  //To Do
  
 end;

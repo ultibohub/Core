@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '10/6/2016';
+ ULTIBO_RELEASE_DATE             = '27/6/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.021';
+ ULTIBO_RELEASE_VERSION          = '1.2.047';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 021;
+ ULTIBO_RELEASE_VERSION_REVISION = 047;
  
 {==============================================================================}
 const
@@ -244,10 +244,596 @@ const
  
 {==============================================================================}
 const
- {Universal key constants}
- KEY_NONE = 0;
- //To Do //KEY_ etc
+ {Universal key code constants}
+ {Keyboard key codes are based on the Unicode standard with each key code mapped to the code point for that character (See http://unicode.org or http://unicode-table.com)}
+ {Keyboard keymaps map the scan code value to the key code value for the specific keyboard layout and include alternate mappings for Shift and AltGr}
+ {Non character codes for keys like Home, End, Arrows, F1..F24, Shift, Caps Lock etc are mapped in the Unicode Private Use Area (E000-F8FF)}
+ {These are the values reported in the KeyCode field of the TKeyboardData structure returned by the KeyboardRead function}
+ {Control Characters (0000-001F)}
+ KEY_CODE_NONE      = $0000; {0}
+ KEY_CODE_BACKSPACE = $0008; {8}
+ KEY_CODE_TAB       = $0009; {9}
+ KEY_CODE_ENTER     = $000D; {13}
+ KEY_CODE_ESCAPE    = $001B; {27}
+ KEY_CODE_DELETE    = $007F; {127}
 
+ {Basic Latin Characters (0020-007F)}
+ {Punctuation}
+ KEY_CODE_SPACE         = $0020; {32}
+ KEY_CODE_EXCLAMATION   = $0021; {33}
+ KEY_CODE_QUOTATION     = $0022; {34}
+ KEY_CODE_NUMBER        = $0023; {35} {Hash / Pound}
+ KEY_CODE_DOLLAR        = $0024; {36}
+ KEY_CODE_PERCENT       = $0025; {37}
+ KEY_CODE_AMPERSAND     = $0026; {38}
+ KEY_CODE_APOSTROPHE    = $0027; {39}
+ KEY_CODE_LEFT_BRACKET  = $0028; {40}
+ KEY_CODE_RIGHT_BRACKET = $0029; {41}
+ KEY_CODE_ASTERISK      = $002A; {42}
+ KEY_CODE_PLUS          = $002B; {43}
+ KEY_CODE_COMMA         = $002C; {44}
+ KEY_CODE_MINUS         = $002D; {45}
+ KEY_CODE_PERIOD        = $002E; {46}
+ KEY_CODE_SLASH         = $002F; {47}
+ {Numerals}
+ KEY_CODE_0             = $0030; {48}
+ KEY_CODE_1             = $0031; {49}
+ KEY_CODE_2             = $0032; {50}
+ KEY_CODE_3             = $0033; {51}
+ KEY_CODE_4             = $0034; {52}
+ KEY_CODE_5             = $0035; {53}
+ KEY_CODE_6             = $0036; {54}
+ KEY_CODE_7             = $0037; {55}
+ KEY_CODE_8             = $0038; {56}
+ KEY_CODE_9             = $0039; {57}
+ {Punctuation}
+ KEY_CODE_COLON         = $003A; {58}
+ KEY_CODE_SEMICOLON     = $003B; {59}
+ KEY_CODE_LESSTHAN      = $003C; {60}
+ KEY_CODE_EQUALS        = $003D; {61}
+ KEY_CODE_GREATERTHAN   = $003E; {62}
+ KEY_CODE_QUESTION      = $003F; {63}
+ KEY_CODE_AT            = $0040; {64}
+ {Capital Characters}
+ KEY_CODE_CAPITAL_A     = $0041; {65}
+ KEY_CODE_CAPITAL_B     = $0042; {66}
+ KEY_CODE_CAPITAL_C     = $0043; {67}
+ KEY_CODE_CAPITAL_D     = $0044; {68}
+ KEY_CODE_CAPITAL_E     = $0045; {69}
+ KEY_CODE_CAPITAL_F     = $0046; {70}
+ KEY_CODE_CAPITAL_G     = $0047; {71}
+ KEY_CODE_CAPITAL_H     = $0048; {72}
+ KEY_CODE_CAPITAL_I     = $0049; {73}
+ KEY_CODE_CAPITAL_J     = $004A; {74}
+ KEY_CODE_CAPITAL_K     = $004B; {75}
+ KEY_CODE_CAPITAL_L     = $004C; {76}
+ KEY_CODE_CAPITAL_M     = $004D; {77}
+ KEY_CODE_CAPITAL_N     = $004E; {78}
+ KEY_CODE_CAPITAL_O     = $004F; {79}
+ KEY_CODE_CAPITAL_P     = $0050; {80}
+ KEY_CODE_CAPITAL_Q     = $0051; {81}
+ KEY_CODE_CAPITAL_R     = $0052; {82}
+ KEY_CODE_CAPITAL_S     = $0053; {83}
+ KEY_CODE_CAPITAL_T     = $0054; {84}
+ KEY_CODE_CAPITAL_U     = $0055; {85}
+ KEY_CODE_CAPITAL_V     = $0056; {86}
+ KEY_CODE_CAPITAL_W     = $0057; {87}
+ KEY_CODE_CAPITAL_X     = $0058; {88}
+ KEY_CODE_CAPITAL_Y     = $0059; {89}
+ KEY_CODE_CAPITAL_Z     = $005A; {90}
+ {Punctuation}
+ KEY_CODE_LEFT_SQUARE   = $005B; {91}
+ KEY_CODE_BACKSLASH     = $005C; {92}
+ KEY_CODE_RIGHT_SQUARE  = $005D; {93}
+ KEY_CODE_CARET         = $005E; {94} {Circumflex}
+ KEY_CODE_UNDERSCORE    = $005F; {95}
+ KEY_CODE_GRAVE         = $0060; {96}
+ {Lowercase Characters}
+ KEY_CODE_A             = $0061; {97}
+ KEY_CODE_B             = $0062; {98}
+ KEY_CODE_C             = $0063; {99}
+ KEY_CODE_D             = $0064; {100}
+ KEY_CODE_E             = $0065; {101}
+ KEY_CODE_F             = $0066; {102}
+ KEY_CODE_G             = $0067; {103}
+ KEY_CODE_H             = $0068; {104}
+ KEY_CODE_I             = $0069; {105}
+ KEY_CODE_J             = $006A; {106}
+ KEY_CODE_K             = $006B; {107}
+ KEY_CODE_L             = $006C; {108}
+ KEY_CODE_M             = $006D; {109}
+ KEY_CODE_N             = $006E; {110}
+ KEY_CODE_O             = $006F; {111}
+ KEY_CODE_P             = $0070; {112}
+ KEY_CODE_Q             = $0071; {113}
+ KEY_CODE_R             = $0072; {114}
+ KEY_CODE_S             = $0073; {115}
+ KEY_CODE_T             = $0074; {116}
+ KEY_CODE_U             = $0075; {117}
+ KEY_CODE_V             = $0076; {118}
+ KEY_CODE_W             = $0077; {119}
+ KEY_CODE_X             = $0078; {120}
+ KEY_CODE_Y             = $0079; {121}
+ KEY_CODE_Z             = $007A; {122}
+ {Punctuation}
+ KEY_CODE_LEFT_BRACE    = $007B; {123} {Curly Bracket}
+ KEY_CODE_PIPE          = $007C; {124} {Vertical Bar}
+ KEY_CODE_RIGHT_BRACE   = $007D; {125} {Curly Bracket}
+ KEY_CODE_TILDE         = $007E; {126}
+ {KEY_CODE_DELETE (See above)}
+ 
+ {Latin-1 Supplement Characters (0080-00FF) (Partial, add extras as required)}
+ KEY_CODE_INVERTED_EXCLAMATION = $00A1;
+ KEY_CODE_CENT                 = $00A2;
+ KEY_CODE_POUND                = $00A3;
+ KEY_CODE_CURRENCY             = $00A4;
+ KEY_CODE_YEN                  = $00A5;
+ KEY_CODE_BROKEN_BAR           = $00A6;
+ KEY_CODE_SECTION              = $00A7;
+ KEY_CODE_DIAERESIS            = $00A8;
+ KEY_CODE_COPYRIGHT            = $00A9;
+ KEY_CODE_FEMININE             = $00AA;
+ KEY_CODE_LEFT_DOUBLE_ANGLE    = $00AB;
+ KEY_CODE_NOT                  = $00AC;
+ KEY_CODE_REGISTERED           = $00AE;
+ KEY_CODE_MACRON               = $00AF;
+ KEY_CODE_DEGREE               = $00B0;
+ KEY_CODE_PLUS_MINUS           = $00B1;
+ KEY_CODE_SUPERSCRIPT_2        = $00B2;
+ KEY_CODE_SUPERSCRIPT_3        = $00B3;
+ KEY_CODE_ACUTE                = $00B4;
+ KEY_CODE_MICRO                = $00B5;
+ KEY_CODE_PILCROW              = $00B6;
+ KEY_CODE_MIDDLE_DOT           = $00B7;
+ KEY_CODE_CEDILLA              = $00B8;
+ KEY_CODE_SUPERSCRIPT_1        = $00B9;
+ KEY_CODE_MASCULINE            = $00BA;
+ KEY_CODE_RIGHT_DOUBLE_ANGLE   = $00BB;
+ KEY_CODE_ONE_QUARTER          = $00BC;
+ KEY_CODE_ONE_HALF             = $00BD;
+ KEY_CODE_THREE_QUARTER        = $00BE;
+ KEY_CODE_INVERTED_QUESTION    = $00BF;
+ KEY_CODE_CAPITAL_GRAVE_A      = $00C0;
+ KEY_CODE_CAPITAL_ACUTE_A      = $00C1;
+ KEY_CODE_CAPITAL_CIRCUMFLEX_A = $00C2;
+ KEY_CODE_CAPITAL_TILDE_A      = $00C3;
+ KEY_CODE_CAPITAL_DIAERESIS_A  = $00C4;
+ KEY_CODE_CAPITAL_RING_A       = $00C5;
+ KEY_CODE_CAPITAL_AE           = $00C6;
+ KEY_CODE_CAPITAL_CEDILLA_C    = $00C7;
+ KEY_CODE_CAPITAL_GRAVE_E      = $00C8;
+ KEY_CODE_CAPITAL_ACUTE_E      = $00C9;
+ KEY_CODE_CAPITAL_CIRCUMFLEX_E = $00CA;
+ KEY_CODE_CAPITAL_DIAERESIS_E  = $00CB;
+ KEY_CODE_CAPITAL_GRAVE_I      = $00CC;
+ KEY_CODE_CAPITAL_ACUTE_I      = $00CD;
+ KEY_CODE_CAPITAL_CIRCUMFLEX_I = $00CE;
+ KEY_CODE_CAPITAL_DIAERESIS_I  = $00CF;
+ KEY_CODE_CAPITAL_ETH          = $00D0;
+ KEY_CODE_CAPITAL_TILDE_N      = $00D1;
+ KEY_CODE_CAPITAL_GRAVE_O      = $00D2;
+ KEY_CODE_CAPITAL_ACUTE_O      = $00D3;
+ KEY_CODE_CAPITAL_CIRCUMFLEX_O = $00D4;
+ KEY_CODE_CAPITAL_TILDE_O      = $00D5;
+ KEY_CODE_CAPITAL_DIAERESIS_O  = $00D6;
+ KEY_CODE_MULTIPLY             = $00D7;
+ KEY_CODE_CAPITAL_STROKE_O     = $00D8;
+ KEY_CODE_CAPITAL_GRAVE_U      = $00D9;
+ KEY_CODE_CAPITAL_ACUTE_U      = $00DA;
+ KEY_CODE_CAPITAL_CIRCUMFLEX_U = $00DB;
+ KEY_CODE_CAPITAL_DIAERESIS_U  = $00DC;
+ KEY_CODE_CAPITAL_ACUTE_Y      = $00DD;
+ KEY_CODE_CAPITAL_THORN        = $00DE;
+ KEY_CODE_SHARP_S              = $00DF;
+ KEY_CODE_GRAVE_A              = $00E0;
+ KEY_CODE_ACUTE_A              = $00E1;
+ KEY_CODE_CIRCUMFLEX_A         = $00E2;
+ KEY_CODE_TILDE_A              = $00E3;
+ KEY_CODE_DIAERESIS_A          = $00E4;
+ KEY_CODE_RING_A               = $00E5;
+ KEY_CODE_AE                   = $00E6;
+ KEY_CODE_CEDILLA_C            = $00E7;
+ KEY_CODE_GRAVE_E              = $00E8;
+ KEY_CODE_ACUTE_E              = $00E9;
+ KEY_CODE_CIRCUMFLEX_E         = $00EA;
+ KEY_CODE_DIAERESIS_E          = $00EB;
+ KEY_CODE_GRAVE_I              = $00EC;
+ KEY_CODE_ACUTE_I              = $00ED;
+ KEY_CODE_CIRCUMFLEX_I         = $00EE;
+ KEY_CODE_DIAERESIS_I          = $00EF;
+ KEY_CODE_ETH                  = $00F0;
+ KEY_CODE_TILDE_N              = $00F1;
+ KEY_CODE_GRAVE_O              = $00F2;
+ KEY_CODE_ACUTE_O              = $00F3;
+ KEY_CODE_CIRCUMFLEX_O         = $00F4;
+ KEY_CODE_TILDE_O              = $00F5;
+ KEY_CODE_DIAERESIS_O          = $00F6;
+ KEY_CODE_DIVISION             = $00F7;
+ KEY_CODE_STROKE_O             = $00F8;
+ KEY_CODE_GRAVE_U              = $00F9;
+ KEY_CODE_ACUTE_U              = $00FA;
+ KEY_CODE_CIRCUMFLEX_U         = $00FB;
+ KEY_CODE_DIAERESIS_U          = $00FC;
+ KEY_CODE_ACUTE_Y              = $00FD;
+ KEY_CODE_THORN                = $00FE;
+ KEY_CODE_DIAERESIS_Y          = $00FF;
+
+ {Private Area (E000-F8FF)}
+ {Non Character Codes}
+ KEY_CODE_CAPSLOCK            = $E000; 
+ KEY_CODE_F1                  = $E001; 
+ KEY_CODE_F2                  = $E002; 
+ KEY_CODE_F3                  = $E003; 
+ KEY_CODE_F4                  = $E004; 
+ KEY_CODE_F5                  = $E005; 
+ KEY_CODE_F6                  = $E006; 
+ KEY_CODE_F7                  = $E007; 
+ KEY_CODE_F8                  = $E008; 
+ KEY_CODE_F9                  = $E009; 
+ KEY_CODE_F10                 = $E00A; 
+ KEY_CODE_F11                 = $E00B; 
+ KEY_CODE_F12                 = $E00C; 
+ KEY_CODE_PRINTSCREEN         = $E00D; 
+ KEY_CODE_SCROLLLOCK          = $E00E; 
+ KEY_CODE_PAUSE               = $E00F; 
+ KEY_CODE_INSERT              = $E010; 
+ KEY_CODE_HOME                = $E011; 
+ KEY_CODE_PAGEUP              = $E012; 
+ KEY_CODE_END                 = $E013; 
+ KEY_CODE_PAGEDN              = $E014; 
+ KEY_CODE_RIGHT_ARROW         = $E015; 
+ KEY_CODE_LEFT_ARROW          = $E016; 
+ KEY_CODE_DOWN_ARROW          = $E017; 
+ KEY_CODE_UP_ARROW            = $E018; 
+ KEY_CODE_NUMLOCK             = $E019; 
+ KEY_CODE_APPLICATION         = $E01A; 
+ KEY_CODE_POWER               = $E01B; 
+ KEY_CODE_F13                 = $E01C; 
+ KEY_CODE_F14                 = $E01D; 
+ KEY_CODE_F15                 = $E01E; 
+ KEY_CODE_F16                 = $E01F; 
+ KEY_CODE_F17                 = $E020; 
+ KEY_CODE_F18                 = $E021; 
+ KEY_CODE_F19                 = $E022; 
+ KEY_CODE_F20                 = $E023; 
+ KEY_CODE_F21                 = $E024; 
+ KEY_CODE_F22                 = $E025; 
+ KEY_CODE_F23                 = $E026; 
+ KEY_CODE_F24                 = $E027; 
+ KEY_CODE_EXECUTE             = $E028; 
+ KEY_CODE_HELP                = $E029; 
+ KEY_CODE_MENU                = $E02A; 
+ KEY_CODE_SELECT              = $E02B; 
+ KEY_CODE_STOP                = $E02C; 
+ KEY_CODE_AGAIN               = $E02D; 
+ KEY_CODE_UNDO                = $E02E; 
+ KEY_CODE_CUT                 = $E02F; 
+ KEY_CODE_COPY                = $E030; 
+ KEY_CODE_PASTE               = $E031; 
+ KEY_CODE_FIND                = $E032; 
+ KEY_CODE_MUTE                = $E033; 
+ KEY_CODE_VOLUMEUP            = $E034; 
+ KEY_CODE_VOLUMEDOWN          = $E035; 
+ KEY_CODE_LOCKING_CAPSLOCK    = $E036; 
+ KEY_CODE_LOCKING_NUMLOCK     = $E037; 
+ KEY_CODE_LOCKING_SCROLLLOCK  = $E038; 
+ KEY_CODE_INTERNATIONAL1      = $E039; 
+ KEY_CODE_INTERNATIONAL2      = $E03A; 
+ KEY_CODE_INTERNATIONAL3      = $E03B; 
+ KEY_CODE_INTERNATIONAL4      = $E03C; 
+ KEY_CODE_INTERNATIONAL5      = $E03D; 
+ KEY_CODE_INTERNATIONAL6      = $E03E; 
+ KEY_CODE_INTERNATIONAL7      = $E03F; 
+ KEY_CODE_INTERNATIONAL8      = $E040; 
+ KEY_CODE_INTERNATIONAL9      = $E041; 
+ KEY_CODE_LANG1               = $E042; 
+ KEY_CODE_LANG2               = $E043; 
+ KEY_CODE_LANG3               = $E044; 
+ KEY_CODE_LANG4               = $E045; 
+ KEY_CODE_LANG5               = $E046; 
+ KEY_CODE_LANG6               = $E047; 
+ KEY_CODE_LANG7               = $E048; 
+ KEY_CODE_LANG8               = $E049; 
+ KEY_CODE_LANG9               = $E04A; 
+ KEY_CODE_ALT_ERASE           = $E04B; 
+ KEY_CODE_SYSREQ              = $E04C; 
+ KEY_CODE_CANCEL              = $E04D; 
+ KEY_CODE_CLEAR               = $E04E; 
+ KEY_CODE_PRIOR               = $E04F; 
+ KEY_CODE_RETURN              = $E050; 
+ KEY_CODE_SEPARATOR           = $E051; 
+ KEY_CODE_OUT                 = $E052; 
+ KEY_CODE_OPER                = $E053; 
+ KEY_CODE_CLEAR_AGAIN         = $E054; 
+ KEY_CODE_CRSEL_PROPS         = $E055; 
+ KEY_CODE_EXSEL               = $E056; 
+ KEY_CODE_00                  = $E057; 
+ KEY_CODE_000                 = $E058; 
+ KEY_CODE_THOUSANDS_SEPARATOR = $E059; 
+ KEY_CODE_DECIMAL_SEPARATOR   = $E05A; 
+ KEY_CODE_CURRENCY_UNIT       = $E05B; 
+ KEY_CODE_CURRENCY_SUBUNIT    = $E05C; 
+ KEY_CODE_XOR                 = $E05D; 
+ KEY_CODE_MEM_STORE           = $E05E; 
+ KEY_CODE_MEM_RECALL          = $E05F; 
+ KEY_CODE_MEM_CLEAR           = $E060; 
+ KEY_CODE_MEM_ADD             = $E061; 
+ KEY_CODE_MEM_SUBTRACT        = $E062; 
+ KEY_CODE_MEM_MULTIPLY        = $E063; 
+ KEY_CODE_MEM_DIVIDE          = $E064; 
+ KEY_CODE_CLEAR_ENTRY         = $E065; 
+ KEY_CODE_BINARY              = $E066; 
+ KEY_CODE_OCTAL               = $E067; 
+ KEY_CODE_DECIMAL             = $E068; 
+ KEY_CODE_HEX                 = $E069; 
+ KEY_CODE_CTRL                = $E06A; 
+ KEY_CODE_SHIFT               = $E06B; 
+ KEY_CODE_ALT                 = $E06C; 
+ KEY_CODE_GUI                 = $E06D; 
+ KEY_CODE_DOUBLE_AMPERSAND    = $E06E;  
+ KEY_CODE_DOUBLE_PIPE         = $E06F;  
+ 
+ 
+ KEY_CODE_TRANSLATE_START     = $0080; {Key codes below this are direct characters in all code pages}
+ KEY_CODE_PRIVATE_START       = $E000; {Key codes in this range are private area mappings for non character keys}
+ KEY_CODE_PRIVATE_END         = $F8FF;
+ 
+const 
+ {Universal scan code constants}
+ {Keyboard scan codes are based on the USB HID Usages (See Section 10 of the Universal Serial Bus HID Usage Tables v1.12)}
+ {These are the values reported in the ScanCode field of the TKeyboardData structure returned by the KeyboardRead function}
+ {Any keyboard driver supporting legacy keyboards (eg PC/AT or PS/2) should translate the reported codes to be compatible with this set}
+ SCAN_CODE_NONE                    = 0;   {Reserved (no event indicated)}
+ SCAN_CODE_ROLLOVER                = 1;   {Keyboard ErrorRollOver}
+ SCAN_CODE_POSTFAIL                = 2;   {Keyboard POSTFail}
+ SCAN_CODE_ERROR                   = 3;   {Keyboard ErrorUndefined}
+ SCAN_CODE_A                       = 4;   {Keyboard a or A}
+ SCAN_CODE_B                       = 5;   {Keyboard b or B}
+ SCAN_CODE_C                       = 6;   {Keyboard c or C}
+ SCAN_CODE_D                       = 7;   {Keyboard d or D}
+ SCAN_CODE_E                       = 8;   {Keyboard e or E}
+ SCAN_CODE_F                       = 9;   {Keyboard f or F}
+ SCAN_CODE_G                       = 10;  {Keyboard g or G}
+ SCAN_CODE_H                       = 11;  {Keyboard h or H}
+ SCAN_CODE_I                       = 12;  {Keyboard i or I}
+ SCAN_CODE_J                       = 13;  {Keyboard j or J}
+ SCAN_CODE_K                       = 14;  {Keyboard k or K}
+ SCAN_CODE_L                       = 15;  {Keyboard l or L}
+ SCAN_CODE_M                       = 16;  {Keyboard m or M}
+ SCAN_CODE_N                       = 17;  {Keyboard n or N}
+ SCAN_CODE_O                       = 18;  {Keyboard o or O}
+ SCAN_CODE_P                       = 19;  {Keyboard p or P}
+ SCAN_CODE_Q                       = 20;  {Keyboard q or Q}
+ SCAN_CODE_R                       = 21;  {Keyboard r or R}
+ SCAN_CODE_S                       = 22;  {Keyboard s or S}
+ SCAN_CODE_T                       = 23;  {Keyboard t or T}
+ SCAN_CODE_U                       = 24;  {Keyboard u or U}
+ SCAN_CODE_V                       = 25;  {Keyboard v or V}
+ SCAN_CODE_W                       = 26;  {Keyboard w or W}
+ SCAN_CODE_X                       = 27;  {Keyboard x or X}
+ SCAN_CODE_Y                       = 28;  {Keyboard y or Y}
+ SCAN_CODE_Z                       = 29;  {Keyboard z or Z}
+ SCAN_CODE_1                       = 30;  {Keyboard 1 or !}
+ SCAN_CODE_2                       = 31;  {Keyboard 2 or @}
+ SCAN_CODE_3                       = 32;  {Keyboard 3 or #}
+ SCAN_CODE_4                       = 33;  {Keyboard 4 or $}
+ SCAN_CODE_5                       = 34;  {Keyboard 5 or %}
+ SCAN_CODE_6                       = 35;  {Keyboard 6 or ^}
+ SCAN_CODE_7                       = 36;  {Keyboard 7 or &}
+ SCAN_CODE_8                       = 37;  {Keyboard 8 or *}
+ SCAN_CODE_9                       = 38;  {Keyboard 9 or (}
+ SCAN_CODE_0                       = 39;  {Keyboard 0 or )}
+ SCAN_CODE_ENTER                   = 40;  {Keyboard Enter)}
+ SCAN_CODE_ESCAPE                  = 41;  {Keyboard Escape}
+ SCAN_CODE_BACKSPACE               = 42;  {Keyboard Backspace}
+ SCAN_CODE_TAB                     = 43;  {Keyboard Tab}       
+ SCAN_CODE_SPACE                   = 44;  {Keyboard Spacebar}  
+ SCAN_CODE_MINUS                   = 45;  {Keyboard - or _}
+ SCAN_CODE_EQUALS                  = 46;  {Keyboard = or +}
+ SCAN_CODE_LEFT_SQUARE             = 47;  {Keyboard [ or Left Brace}
+ SCAN_CODE_RIGHT_SQUARE            = 48;  {Keyboard ] or Right Brace}
+ SCAN_CODE_BACKSLASH               = 49;  {Keyboard \ or |}
+ SCAN_CODE_NONUS_NUMBER            = 50;  {Keyboard Non-US # and ~}
+ SCAN_CODE_SEMICOLON               = 51;  {Keyboard ; or :}
+ SCAN_CODE_APOSTROPHE              = 52;  {Keyboard ' or "}
+ SCAN_CODE_GRAVE                   = 53;  {Keyboard ` or ~}
+ SCAN_CODE_COMMA                   = 54;  {Keyboard , or <}
+ SCAN_CODE_PERIOD                  = 55;  {Keyboard . or >}
+ SCAN_CODE_SLASH                   = 56;  {Keyboard / or ?}
+ SCAN_CODE_CAPSLOCK                = 57;  {Keyboard Caps Lock}
+ SCAN_CODE_F1                      = 58;  {Keyboard F1}
+ SCAN_CODE_F2                      = 59;  {Keyboard F2}
+ SCAN_CODE_F3                      = 60;  {Keyboard F3}
+ SCAN_CODE_F4                      = 61;  {Keyboard F4}
+ SCAN_CODE_F5                      = 62;  {Keyboard F5}
+ SCAN_CODE_F6                      = 63;  {Keyboard F6}
+ SCAN_CODE_F7                      = 64;  {Keyboard F7}
+ SCAN_CODE_F8                      = 65;  {Keyboard F8}
+ SCAN_CODE_F9                      = 66;  {Keyboard F9}
+ SCAN_CODE_F10                     = 67;  {Keyboard F10}
+ SCAN_CODE_F11                     = 68;  {Keyboard F11}
+ SCAN_CODE_F12                     = 69;  {Keyboard F12}
+ SCAN_CODE_PRINTSCREEN             = 70;  {Keyboard Print Screen}
+ SCAN_CODE_SCROLLLOCK              = 71;  {Keyboard Scroll Lock}
+ SCAN_CODE_PAUSE                   = 72;  {Keyboard Pause}
+ SCAN_CODE_INSERT                  = 73;  {Keyboard Insert}
+ SCAN_CODE_HOME                    = 74;  {Keyboard Home}
+ SCAN_CODE_PAGEUP                  = 75;  {Keyboard PageUp}
+ SCAN_CODE_DELETE                  = 76;  {Keyboard Delete}
+ SCAN_CODE_END                     = 77;  {Keyboard End}
+ SCAN_CODE_PAGEDN                  = 78;  {Keyboard PageDn}
+ SCAN_CODE_RIGHT_ARROW             = 79;  {Keyboard Right Arrow}
+ SCAN_CODE_LEFT_ARROW              = 80;  {Keyboard Left Arrow}
+ SCAN_CODE_DOWN_ARROW              = 81;  {Keyboard Down Arrow}
+ SCAN_CODE_UP_ARROW                = 82;  {Keyboard Up Arrow}
+ SCAN_CODE_NUMLOCK                 = 83;  {Keyboard Num Lock}
+ SCAN_CODE_KEYPAD_SLASH            = 84;  {Keypad /}                 
+ SCAN_CODE_KEYPAD_ASTERISK         = 85;  {Keypad *}                 
+ SCAN_CODE_KEYPAD_MINUS            = 86;  {Keypad -}                 
+ SCAN_CODE_KEYPAD_PLUS             = 87;  {Keypad +}                
+ SCAN_CODE_KEYPAD_ENTER            = 88;  {Keypad Enter}             
+ SCAN_CODE_KEYPAD_1                = 89;  {Keypad 1 and End}         
+ SCAN_CODE_KEYPAD_2                = 90;  {Keypad 2 and Down Arrow}  
+ SCAN_CODE_KEYPAD_3                = 91;  {Keypad 3 and PageDn}                       
+ SCAN_CODE_KEYPAD_4                = 92;  {Keypad 4 and Left Arrow}
+ SCAN_CODE_KEYPAD_5                = 93;  {Keypad 5}
+ SCAN_CODE_KEYPAD_6                = 94;  {Keypad 6 and Right Arrow}
+ SCAN_CODE_KEYPAD_7                = 95;  {Keypad 7 and Home}
+ SCAN_CODE_KEYPAD_8                = 96;  {Keypad 8 and Up Arrow}
+ SCAN_CODE_KEYPAD_9                = 97;  {Keypad 9 and PageUp}
+ SCAN_CODE_KEYPAD_0                = 98;  {Keypad 0 and Insert}
+ SCAN_CODE_KEYPAD_PERIOD           = 99;  {Keypad . and Delete}
+ SCAN_CODE_NONUS_BACKSLASH         = 100; {Keyboard Non-US \ and |}
+ SCAN_CODE_APPLICATION             = 101; {Keyboard Application}
+ SCAN_CODE_POWER                   = 102; {Keyboard Power}
+ SCAN_CODE_KEYPAD_EQUALS           = 103; {Keypad =}
+ SCAN_CODE_F13                     = 104; {Keyboard F13}
+ SCAN_CODE_F14                     = 105; {Keyboard F14}
+ SCAN_CODE_F15                     = 106; {Keyboard F15}
+ SCAN_CODE_F16                     = 107; {Keyboard F16}
+ SCAN_CODE_F17                     = 108; {Keyboard F17}
+ SCAN_CODE_F18                     = 109; {Keyboard F18}
+ SCAN_CODE_F19                     = 110; {Keyboard F19}
+ SCAN_CODE_F20                     = 111; {Keyboard F20}
+ SCAN_CODE_F21                     = 112; {Keyboard F21}
+ SCAN_CODE_F22                     = 113; {Keyboard F22}
+ SCAN_CODE_F23                     = 114; {Keyboard F23}
+ SCAN_CODE_F24                     = 115; {Keyboard F24}
+ SCAN_CODE_EXECUTE                 = 116; {Keyboard Execute}
+ SCAN_CODE_HELP                    = 117; {Keyboard Help}
+ SCAN_CODE_MENU                    = 118; {Keyboard Menu}
+ SCAN_CODE_SELECT                  = 119; {Keyboard Select}
+ SCAN_CODE_STOP                    = 120; {Keyboard Stop}
+ SCAN_CODE_AGAIN                   = 121; {Keyboard Again}
+ SCAN_CODE_UNDO                    = 122; {Keyboard Undo}
+ SCAN_CODE_CUT                     = 123; {Keyboard Cut}
+ SCAN_CODE_COPY                    = 124; {Keyboard Copy}
+ SCAN_CODE_PASTE                   = 125; {Keyboard Paste}
+ SCAN_CODE_FIND                    = 126; {Keyboard Find}
+ SCAN_CODE_MUTE                    = 127; {Keyboard Mute}
+ SCAN_CODE_VOLUMEUP                = 128; {Keyboard Volume Up}
+ SCAN_CODE_VOLUMEDN                = 129; {Keyboard Volume Down}
+ SCAN_CODE_LOCKING_CAPSLOCK        = 130; {Keyboard Locking Caps Lock}
+ SCAN_CODE_LOCKING_NUMLOCK         = 131; {Keyboard Locking Num Lock}
+ SCAN_CODE_LOCKING_SCROLLLOCK      = 132; {Keyboard Locking Scroll Lock}
+ SCAN_CODE_KEYPAD_COMMA            = 133; {Keypad Comma}
+ SCAN_CODE_KEYPAD_EQUAL_SIGN       = 134; {Keypad Equal Sign}
+ SCAN_CODE_INTERNATIONAL1          = 135; {Keyboard International1}
+ SCAN_CODE_INTERNATIONAL2          = 136; {Keyboard International2}
+ SCAN_CODE_INTERNATIONAL3          = 137; {Keyboard International3}
+ SCAN_CODE_INTERNATIONAL4          = 138; {Keyboard International4}
+ SCAN_CODE_INTERNATIONAL5          = 139; {Keyboard International5}
+ SCAN_CODE_INTERNATIONAL6          = 140; {Keyboard International6}
+ SCAN_CODE_INTERNATIONAL7          = 141; {Keyboard International7}
+ SCAN_CODE_INTERNATIONAL8          = 142; {Keyboard International8}
+ SCAN_CODE_INTERNATIONAL9          = 143; {Keyboard International9}
+ SCAN_CODE_LANG1                   = 144; {Keyboard LANG1}
+ SCAN_CODE_LANG2                   = 145; {Keyboard LANG2}
+ SCAN_CODE_LANG3                   = 146; {Keyboard LANG3}
+ SCAN_CODE_LANG4                   = 147; {Keyboard LANG4}
+ SCAN_CODE_LANG5                   = 148; {Keyboard LANG5}
+ SCAN_CODE_LANG6                   = 149; {Keyboard LANG6}
+ SCAN_CODE_LANG7                   = 150; {Keyboard LANG7}
+ SCAN_CODE_LANG8                   = 151; {Keyboard LANG8}
+ SCAN_CODE_LANG9                   = 152; {Keyboard LANG9}
+ SCAN_CODE_ALT_ERASE               = 153; {Keyboard Alternate Erase}
+ SCAN_CODE_SYSREQ                  = 154; {Keyboard SysReq/Attention}
+ SCAN_CODE_CANCEL                  = 155; {Keyboard Cancel}
+ SCAN_CODE_CLEAR                   = 156; {Keyboard Clear}
+ SCAN_CODE_PRIOR                   = 157; {Keyboard Prior}
+ SCAN_CODE_RETURN                  = 158; {Keyboard Return}
+ SCAN_CODE_SEPARATOR               = 159; {Keyboard Separator}
+ SCAN_CODE_OUT                     = 160; {Keyboard Out}
+ SCAN_CODE_OPER                    = 161; {Keyboard Oper}
+ SCAN_CODE_CLEAR_AGAIN             = 162; {Keyboard Clear/Again}
+ SCAN_CODE_CRSEL_PROPS             = 163; {Keyboard CrSel/Props}
+ SCAN_CODE_EXSEL                   = 164; {Keyboard ExSel}
+ {Codes 165 to 175 Reserved}
+ SCAN_CODE_KEYPAD_00               = 176; {Keypad 00}
+ SCAN_CODE_KEYPAD_000              = 177; {Keypad 000}
+ SCAN_CODE_THOUSANDS_SEPARATOR     = 178; {Thousands Separator}
+ SCAN_CODE_DECIMAL_SEPARATOR       = 179; {Decimal Separator}
+ SCAN_CODE_CURRENCY_UNIT           = 180; {Currency Unit}
+ SCAN_CODE_CURRENCY_SUBUNIT        = 181; {Currenct Sub-unit}
+ SCAN_CODE_KEYPAD_LEFT_BRACKET     = 182; {Keypad (}
+ SCAN_CODE_KEYPAD_RIGHT_BRACKET    = 183; {Keypad )}
+ SCAN_CODE_KEYPAD_LEFT_BRACE       = 184; {Keypad Left Brace}
+ SCAN_CODE_KEYPAD_RIGHT_BRACE      = 185; {Keypad Right Brace}
+ SCAN_CODE_KEYPAD_TAB              = 186; {Keypad Tab}
+ SCAN_CODE_KEYPAD_BACKSPACE        = 187; {Keypad Backspace}
+ SCAN_CODE_KEYPAD_A                = 188; {Keypad A}
+ SCAN_CODE_KEYPAD_B                = 189; {Keypad B}
+ SCAN_CODE_KEYPAD_C                = 190; {Keypad C}
+ SCAN_CODE_KEYPAD_D                = 191; {Keypad D}
+ SCAN_CODE_KEYPAD_E                = 192; {Keypad E}
+ SCAN_CODE_KEYPAD_F                = 193; {Keypad F}
+ SCAN_CODE_KEYPAD_XOR              = 194; {Keypad XOR}
+ SCAN_CODE_KEYPAD_CARET            = 195; {Keypad ^}
+ SCAN_CODE_KEYPAD_PERCENT          = 196; {Keypad %}
+ SCAN_CODE_KEYPAD_LESSTHAN         = 197; {Keypad <}
+ SCAN_CODE_KEYPAD_GREATERTHAN      = 198; {Keypad >}
+ SCAN_CODE_KEYPAD_AMPERSAND        = 199; {Keypad &}
+ SCAN_CODE_KEYPAD_DOUBLE_AMPERSAND = 200; {Keypad &&}
+ SCAN_CODE_KEYPAD_PIPE             = 201; {Keypad |}
+ SCAN_CODE_KEYPAD_DOUBLE_PIPE      = 202; {Keypad ||}
+ SCAN_CODE_KEYPAD_COLON            = 203; {Keypad :}
+ SCAN_CODE_KEYPAD_NUMBER           = 204; {Keypad #}
+ SCAN_CODE_KEYPAD_SPACE            = 205; {Keypad Space}
+ SCAN_CODE_KEYPAD_AT               = 206; {Keypad @}
+ SCAN_CODE_KEYPAD_EXCLAMATION      = 207; {Keypad !}
+ SCAN_CODE_KEYPAD_MEM_STORE        = 208; {Keypad Memory Store}
+ SCAN_CODE_KEYPAD_MEM_RECALL       = 209; {Keypad Memory Recall}
+ SCAN_CODE_KEYPAD_MEM_CLEAR        = 210; {Keypad Memory Clear}
+ SCAN_CODE_KEYPAD_MEM_ADD          = 211; {Keypad Memory Add}
+ SCAN_CODE_KEYPAD_MEM_SUB          = 212; {Keypad Memory Subtract}
+ SCAN_CODE_KEYPAD_MEM_MULTIPLY     = 213; {Keypad Memory Multiply}
+ SCAN_CODE_KEYPAD_MEM_DIVIDE       = 214; {Keypad Memory Divide}
+ SCAN_CODE_KEYPAD_PLUS_MINUS       = 215; {Keypad +/-}
+ SCAN_CODE_KEYPAD_CLEAR            = 216; {Keypad Clear}
+ SCAN_CODE_KEYPAD_CLEAR_ENTRY      = 217; {Keypad Clear Entry}
+ SCAN_CODE_KEYPAD_BINARY           = 218; {Keypad Binary}
+ SCAN_CODE_KEYPAD_OCTAL            = 219; {Keypad Octal}
+ SCAN_CODE_KEYPAD_DECIMAL          = 220; {Keypad Decimal}
+ SCAN_CODE_KEYPAD_HEX              = 221; {Keypad Hexadecimal}
+ {Codes 222 to 223 Reserved}
+ SCAN_CODE_LEFT_CTRL               = 224; {Keyboard LeftControl}
+ SCAN_CODE_LEFT_SHIFT              = 225; {Keyboard LeftShift}
+ SCAN_CODE_LEFT_ALT                = 226; {Keyboard LeftAlt}
+ SCAN_CODE_LEFT_GUI                = 227; {Keyboard Left GUI}
+ SCAN_CODE_RIGHT_CTRL              = 228; {Keyboard RightControl}
+ SCAN_CODE_RIGHT_SHIFT             = 229; {Keyboard RightShift}
+ SCAN_CODE_RIGHT_ALT               = 230; {Keyboard RightAlt}
+ SCAN_CODE_RIGHT_GUI               = 231; {Keyboard Right GUI}
+ {Codes 232 to 65535 Reserved}
+ 
+ {Alternate names for above}
+ SCAN_CODE_EXCLAMATION             = 30;  {Keyboard 1 or !}
+ SCAN_CODE_AT                      = 31;  {Keyboard 2 or @}
+ SCAN_CODE_NUMBER                  = 32;  {Keyboard 3 or #}
+ SCAN_CODE_CURRENCY                = 33;  {Keyboard 4 or $}
+ SCAN_CODE_PERCENT                 = 34;  {Keyboard 5 or %}
+ SCAN_CODE_CARET                   = 35;  {Keyboard 6 or ^}
+ SCAN_CODE_AMPERSAND               = 36;  {Keyboard 7 or &}
+ SCAN_CODE_ASTERISK                = 37;  {Keyboard 8 or *}
+ SCAN_CODE_LEFT_BRACKET            = 38;  {Keyboard 9 or (}
+ SCAN_CODE_RIGHT_BRACKET           = 39;  {Keyboard 0 or )}
+ 
+ SCAN_CODE_DASH                    = 45;  {Keyboard - or _}
+ SCAN_CODE_UNDERSCORE              = 45;  {Keyboard - or _}
+ SCAN_CODE_PLUS                    = 46;  {Keyboard = or +}
+ SCAN_CODE_LEFT_BRACE              = 47;  {Keyboard [ or Left Brace}
+ SCAN_CODE_RIGHT_BRACE             = 48;  {Keyboard ] or Right Brace}
+ SCAN_CODE_PIPE                    = 49;  {Keyboard \ or |}
+ SCAN_CODE_NONUS_TILDE             = 50;  {Keyboard Non-US # and ~}
+ SCAN_CODE_COLON                   = 51;  {Keyboard ; or :}
+ SCAN_CODE_QUOTATION               = 52;  {Keyboard ' or "}
+ SCAN_CODE_TILDE                   = 53;  {Keyboard ` or ~}
+ SCAN_CODE_LESSTHAN                = 54;  {Keyboard , or <}
+ SCAN_CODE_GREATERTHAN             = 55;  {Keyboard . or >}
+ SCAN_CODE_QUESTION                = 56;  {Keyboard / or ?}
+ 
+ SCAN_CODE_ALTGR                   = 230; {Keyboard RightAlt}
+ 
 {==============================================================================}
 const
  {Universal color constants}
@@ -337,7 +923,8 @@ const
  TIME_TICKS_TO_1899 = 94353120000000000;    {Offset between 1/1/1601 (Ultibo) and 30/12/1899 (FreePascal)}
  TIME_TICKS_TO_1970 = 116444736000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/1970 (Unix/Linux)}
  TIME_TICKS_TO_1980 = 119600064000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/1980 (DOS)}
-
+ TIME_TICKS_TO_2001 = 126227808000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/2001 (Clock is assumed not set if time is less than this)}
+ 
  TIME_TICKS_PER_10MILLISECONDS = 100000;    {10^7 / 10^2}
  
 const
@@ -739,6 +1326,60 @@ const
  
 {==============================================================================}
 const
+ {I2C Address constants}
+ I2C_ADDRESS_INVALID = Word(-1);
+
+{==============================================================================}
+const
+ {SPI Mode constants}
+ SPI_MODE_4WIRE = 0;
+ SPI_MODE_3WIRE = 1;
+ SPI_MODE_LOSSI = 2;
+ 
+ SPI_MODE_UNKNOWN = LongWord(-1); {Returned by SPIGetMode on error (eg device does not exist)}
+ 
+ {SPI Chip Select constants}
+ SPI_CS_0    = 0;
+ SPI_CS_1    = 1;
+ SPI_CS_2    = 2;
+ SPI_CS_3    = 3;
+ SPI_CS_4    = 4;
+ SPI_CS_5    = 5;
+ SPI_CS_6    = 6;
+ SPI_CS_7    = 7;   
+ SPI_CS_8    = 8;   
+ SPI_CS_9    = 9;   
+ SPI_CS_10   = 10;   
+ SPI_CS_11   = 11;   
+ SPI_CS_12   = 12;   
+ SPI_CS_13   = 13;   
+ SPI_CS_14   = 14;   
+ SPI_CS_15   = 15;   
+ 
+ SPI_CS_MAX  = 15;
+ 
+ SPI_CS_NONE = LongWord(-1);    {Special value for No Chip Select to allow external control of additional CS lines}
+ 
+ {SPI Clock Phase (CPHA) constants}
+ SPI_CLOCK_PHASE_LOW  = 0; {Clock edge rising or falling for data input/output}
+ SPI_CLOCK_PHASE_HIGH = 1; {See https://en.wikipedia.org/wiki/Serial_Peripheral_Interface_Bus for more information}
+ 
+ SPI_CLOCK_PHASE_UNKNOWN = LongWord(-1); {Returned by SPIGetClockPhase on error (eg device does not exist)}
+ 
+ {SPI Clock Polarity (CPOL) constants}
+ SPI_CLOCK_POLARITY_LOW  = 0; {Clock is low when not transmitting}
+ SPI_CLOCK_POLARITY_HIGH = 1; {Clock is high when not transmitting}
+ 
+ SPI_CLOCK_POLARITY_UNKNOWN = LongWord(-1); {Returned by SPIGetClockPolarity on error (eg device does not exist)}
+ 
+ {SPI Chip Select Polarity (CSPOL) constants}
+ SPI_CS_POLARITY_LOW  = 0; {Chip select is active low (Default)}
+ SPI_CS_POLARITY_HIGH = 1; {Chip select is active high}
+ 
+ SPI_CS_POLARITY_UNKNOWN = LongWord(-1); {Returned by SPIGetSelectPolarity on error (eg device does not exist)}
+ 
+{==============================================================================}
+const
  {Power ID constants}
  POWER_ID_MMC0   = 0;
  POWER_ID_MMC1   = 1;
@@ -830,6 +1471,10 @@ const
  CONSOLE_POSITION_TOPRIGHT    = 6;  {Console Window will appear in the top right corner of the console}
  CONSOLE_POSITION_BOTTOMLEFT  = 7;  {Console Window will appear in the bottom left corner of the console}
  CONSOLE_POSITION_BOTTOMRIGHT = 8;  {Console Window will appear in the bottom right corner of the console}
+
+ CONSOLE_POSITION_FULLSCREEN  = 9;  {Console Window will occupy the entire screen (Without any border or desktop)(If supported)}
+ 
+ CONSOLE_POSITION_UNKNOWN = LongWord(-1);
  
 {==============================================================================}
 const

@@ -1086,6 +1086,8 @@ begin
  BCM2708FRAMEBUFFER_ALIGNEMENT:=SIZE_256;
  BCM2708FRAMEBUFFER_CACHED:=False; {GPU_MEMORY_CACHED} {Always False on RPi}
  
+ BCM2708_REGISTER_I2C0:=False; {I2C0 is not available on the header except on original Revision 1 boards}
+ 
  {Setup DWCOTG}
  DWCOTG_IRQ:=BCM2835_IRQ_USB;
  DWCOTG_POWER_ID:=POWER_ID_USB0;

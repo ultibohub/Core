@@ -234,6 +234,8 @@ begin
      {Create Client}
      HTTPClient:=THTTPClient.Create;
      try
+      {Set Receive Size}
+      HTTPClient.ReceiveSize:=SIZE_2M; //To Do //This doesn't work until after Connect (Add to TWinsockTCPClient)
       try
        {Create Temp File}
        FileStream:=TFSFileStream.Create(TempName,fmCreate);

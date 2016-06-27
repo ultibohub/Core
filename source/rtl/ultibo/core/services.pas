@@ -2946,8 +2946,14 @@ begin
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Setting Clock Time');
    {$ENDIF}
    
-   {Set Time}
-   ClockSetTime(Current);
+   {Check Time}
+   if Current <> ClockGetTime then
+    begin
+     {Set Time}
+     ClockSetTime(Current,True);
+     
+     if SERVICE_LOG_ENABLED then ServiceLogInfo('NTP: Setting time to ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Current))));
+    end; 
    
    {Set Initial Clock}
    Client.InitialClockGet:=True;

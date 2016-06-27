@@ -54,12 +54,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,SysUtils;
 
-//To Do //Mouse Logging
-
-//To Do //Change from InputBuffer to Mouse.Buffer etc
-
-//To Do //Change USBMouseDeviceRead to return all data available up to buffer size
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -113,7 +107,7 @@ const
  MOUSE_CONTROL_SET_FLAG         = 2;  {Set Flag}
  MOUSE_CONTROL_CLEAR_FLAG       = 3;  {Clear Flag}
  MOUSE_CONTROL_FLUSH_BUFFER     = 4;  {Flush Buffer}
- //To Do //Acceleration/SwapButtons etc
+ //To Do //Acceleration etc
 
  {Mouse Buffer Size}
  MOUSE_BUFFER_SIZE = 512; 

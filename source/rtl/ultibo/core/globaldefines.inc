@@ -98,11 +98,12 @@ Global Defines
  {$DEFINE FAT_DEBUG}
  {$DEFINE CDFS_DEBUG}
  {$DEFINE NTFS_DEBUG}
- {$DEFINE EXTFS_DEBUG}
- {$DEFINE HPFS_DEBUG}
- {$DEFINE NSS_DEBUG}
- {$DEFINE NWFS_DEBUG}
+ {$DEFINE EXTFS_DEBUG} 
+ {$DEFINE HPFS_DEBUG} 
+ {$DEFINE NSS_DEBUG} 
+ {$DEFINE NWFS_DEBUG} 
  {$DEFINE VIRTUAL_DEBUG}
+ {$DEFINE CACHE_DEBUG} 
 {$ENDIF}
 
 {--$DEFINE NETWORK_DEBUG}         {Enable debug output/counters for Network services (Default: Off) (Do not enable when network logging is active)}
@@ -136,6 +137,8 @@ Global Defines
 
 {--$DEFINE VIDEO_DEBUG}           {Enable debug output/counters for Video devices (Default: Off)}
 {--$DEFINE AUDIO_DEBUG}           {Enable debug output/counters for Audio devices (Default: Off)}
+
+{--$DEFINE RTC_DEBUG}           {Enable debug output/counters for RTC devices (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}
@@ -173,6 +176,11 @@ Global Defines
 {--$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
                                 
 {--$DEFINE PL2303_DEBUG}          {Enable debug output/counters for PL2303 driver (Default: Off)}
+{--$DEFINE DS1307_DEBUG}          {Enable debug output/counters for DS1307 driver (Default: Off)}
+
+{--$DEFINE MCP230XX_DEBUG}        {Enable debug output/counters for MCP230XX driver (Default: Off)}
+{--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
+{--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

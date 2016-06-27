@@ -612,13 +612,49 @@ type
  TVirtualGPIOOutputClear = function(Pin:LongWord):LongWord; 
  TVirtualGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
  
-//type
+type
  {Prototypes for SPI Handlers}
- //To Do
+ TSPIAvailable = function:Boolean;
  
-//type
+ TSPIStart = function(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
+ TSPIStop = function:LongWord;
+ 
+ TSPIRead = function(ChipSelect:Word;Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ TSPIWrite = function(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ TSPIWriteRead = function(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ 
+ TSPIGetMode = function:LongWord;
+ TSPISetMode = function(Mode:LongWord):LongWord;
+ 
+ TSPIGetClockRate = function:LongWord;
+ TSPISetClockRate = function(ClockRate:LongWord):LongWord;
+
+ TSPIGetClockPhase = function:LongWord;
+ TSPISetClockPhase = function(ClockPhase:LongWord):LongWord;
+
+ TSPIGetClockPolarity = function:LongWord;
+ TSPISetClockPolarity = function(ClockPolarity:LongWord):LongWord;
+ 
+ TSPIGetSelectPolarity = function(ChipSelect:Word):LongWord;
+ TSPISetSelectPolarity = function(ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+ 
+type
  {Prototypes for I2C Handlers}
- //To Do
+ TI2CAvailable = function:Boolean;
+ 
+ TI2CStart = function(Rate:LongWord):LongWord;
+ TI2CStop = function:LongWord;
+ 
+ TI2CRead = function(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ TI2CWrite = function(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ TI2CWriteRead = function(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ TI2CWriteWrite = function(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ 
+ TI2CGetRate = function:LongWord;
+ TI2CSetRate = function(Rate:LongWord):LongWord;
+ 
+ TI2CGetAddress = function:Word;
+ TI2CSetAddress = function(Address:Word):LongWord;
  
 //type
  {Prototypes for PWM Handlers}
@@ -629,7 +665,7 @@ type
  TRTCAvailable = function:Boolean;
  
  TRTCGetTime = function:Int64;
- TRTCSetTime = function(const Time:Int64):LongWord;
+ TRTCSetTime = function(const Time:Int64):Int64;
  
 type
  {Prototypes for Serial Handlers}
@@ -872,6 +908,7 @@ var
  ClockLast:LongWord;                    {The timer value of the last clock tick}
  ClockTicks:LongWord;                   {Current number of clock ticks (When this reaches CLOCK_TICKS_PER_SECOND then ClockSeconds is incremented and this is reset to zero)}
  ClockSeconds:LongWord;                 {Current number of clock seconds (This forms the system clock)}
+ ClockRTCInvalid:LongBool;              {True if available time from RTC is invalid}
  
  {$IFDEF CLOCK_DEBUG}
  ClockInterruptCounter:Int64;
@@ -1211,13 +1248,49 @@ var
  VirtualGPIOOutputClearHandler:TVirtualGPIOOutputClear;
  VirtualGPIOFunctionSelectHandler:TVirtualGPIOFunctionSelect;
  
-//var
+var
  {SPI Handlers}
- //To Do
+ SPIAvailableHandler:TSPIAvailable;
+ 
+ SPIStartHandler:TSPIStart;
+ SPIStopHandler:TSPIStop;
+ 
+ SPIReadHandler:TSPIRead;
+ SPIWriteHandler:TSPIWrite;
+ SPIWriteReadHandler:TSPIWriteRead;
+ 
+ SPIGetModeHandler:TSPIGetMode;
+ SPISetModeHandler:TSPISetMode;
+ 
+ SPIGetClockRateHandler:TSPIGetClockRate;
+ SPISetClockRateHandler:TSPISetClockRate;
 
-//var
+ SPIGetClockPhaseHandler:TSPIGetClockPhase;
+ SPISetClockPhaseHandler:TSPISetClockPhase;
+
+ SPIGetClockPolarityHandler:TSPIGetClockPolarity;
+ SPISetClockPolarityHandler:TSPISetClockPolarity;
+ 
+ SPIGetSelectPolarityHandler:TSPIGetSelectPolarity;
+ SPISetSelectPolarityHandler:TSPISetSelectPolarity;
+
+var
  {I2C Handlers}
- //To Do
+ I2CAvailableHandler:TI2CAvailable;
+ 
+ I2CStartHandler:TI2CStart;
+ I2CStopHandler:TI2CStop;
+ 
+ I2CReadHandler:TI2CRead;
+ I2CWriteHandler:TI2CWrite;
+ I2CWriteReadHandler:TI2CWriteRead;
+ I2CWriteWriteHandler:TI2CWriteWrite;
+ 
+ I2CGetRateHandler:TI2CGetRate;
+ I2CSetRateHandler:TI2CSetRate;
+ 
+ I2CGetAddressHandler:TI2CGetAddress;
+ I2CSetAddressHandler:TI2CSetAddress;
  
 //var
  {PWM Handlers}
@@ -1582,7 +1655,7 @@ function PowerSetState(PowerId,State:LongWord;Wait:Boolean):LongWord; inline;
 {==============================================================================}
 {Clock Functions}
 function ClockGetTime:Int64;
-function ClockSetTime(const Time:Int64):LongWord;
+function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
 
 function ClockGetCount:LongWord; inline;
 function ClockGetTotal:Int64; inline;
@@ -1741,11 +1814,47 @@ function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 
 {==============================================================================}
 {SPI Functions}
-//To Do
+function SPIAvailable:Boolean; inline;
+ 
+function SPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord; inline;
+function SPIStop:LongWord; inline;
+ 
+function SPIRead(ChipSelect:Word;Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function SPIWrite(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function SPIWriteRead(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+ 
+function SPIGetMode:LongWord; inline;
+function SPISetMode(Mode:LongWord):LongWord; inline;
+ 
+function SPIGetClockRate:LongWord; inline;
+function SPISetClockRate(ClockRate:LongWord):LongWord; inline;
+
+function SPIGetClockPhase:LongWord; inline;
+function SPISetClockPhase(ClockPhase:LongWord):LongWord; inline;
+
+function SPIGetClockPolarity:LongWord; inline;
+function SPISetClockPolarity(ClockPolarity:LongWord):LongWord; inline;
+ 
+function SPIGetSelectPolarity(ChipSelect:Word):LongWord; inline;
+function SPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWord; inline;
 
 {==============================================================================}
 {I2C Functions}
-//To Do
+function I2CAvailable:Boolean; inline;
+ 
+function I2CStart(Rate:LongWord):LongWord; inline;
+function I2CStop:LongWord; inline;
+ 
+function I2CRead(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CWrite(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CWriteRead(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CWriteWrite(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+
+function I2CGetRate:LongWord; inline;
+function I2CSetRate(Rate:LongWord):LongWord; inline;
+ 
+function I2CGetAddress:Word; inline;
+function I2CSetAddress(Address:Word):LongWord; inline;
 
 {==============================================================================}
 {PWM Functions}
@@ -1756,7 +1865,7 @@ function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 function RTCAvailable:Boolean; inline;
 
 function RTCGetTime:Int64; inline;
-function RTCSetTime(const Time:Int64):LongWord; inline;
+function RTCSetTime(const Time:Int64):Int64; inline;
 
 {==============================================================================}
 {Serial Functions}
@@ -3981,14 +4090,33 @@ begin
  {Get Current Time}
  Result:=ClockBase + (Result * TIME_TICKS_PER_SECOND);
  
- //To Do //Add RTC support //RTCAvailable/RTCGetTime etc //Initialization of clock as well
+ {Check Current Time}
+ if (Result < TIME_TICKS_TO_2001) and RTCAvailable and not(ClockRTCInvalid) then
+  begin
+   {Assume Clock not set}
+   {Get RTC Time}
+   Result:=RTCGetTime;
+   
+   {Check RTC Time}
+   if Result < TIME_TICKS_TO_2001 then
+    begin
+     {Assume RTC not set}
+     ClockRTCInvalid:=True;
+    end
+   else 
+    begin
+     {Set Clock Time}
+     ClockSetTime(Result,False);
+    end;
+  end;
 end;
 
 {==============================================================================}
 
-function ClockSetTime(const Time:Int64):LongWord;
+function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
 {Set the current system time in 100 nanosecond ticks since 1/1/1601}
 {Time: The time to be set}
+{RTC: Set the default RTC (real time clock) if available}
 {Return: The system time after setting}
 {Note: This is the same time format as Windows FILE_TIME and is intended to allow
        compatibility with file system functions etc.}
@@ -4028,7 +4156,12 @@ begin
  {Release Lock}
  if ClockLock.Lock <> INVALID_HANDLE_VALUE then ClockLock.ReleaseLock(ClockLock.Lock);
  
- //To Do //Add RTC support //RTCAvailable/RTCSetTime
+ {Check RTC}
+ if RTC and RTCAvailable then
+  begin
+   {Set RTC Time}
+   RTCSetTime(Time);
+  end;
 end;
 
 {==============================================================================}
@@ -5457,10 +5590,514 @@ end;
 {==============================================================================}
 {==============================================================================}
 {SPI Functions}
+function SPIAvailable:Boolean; inline;
+{Check if an SPI device is available}
+begin
+ {}
+ if Assigned(SPIAvailableHandler) then
+  begin
+   Result:=SPIAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
 
+{==============================================================================}
+ 
+function SPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord; inline;
+{Start the default SPI device ready for writing and reading}
+{Mode: The device mode to set (eg SPI_MODE_4WIRE)}
+{ClockRate: The clock rate to set for the device}
+{ClockPhase: The clock phase to set (eg SPI_CLOCK_PHASE_LOW)}
+{ClockPolarity: The clock polarity to set (eg SPI_CLOCK_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPIStartHandler) then
+  begin
+   Result:=SPIStartHandler(Mode,ClockRate,ClockPhase,ClockPolarity);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function SPIStop:LongWord; inline;
+{Stop the default SPI device and terminate writing and reading}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPIStopHandler) then
+  begin
+   Result:=SPIStopHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function SPIRead(ChipSelect:Word;Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Read data from the default SPI device}
+{Because SPI writes and then reads for each byte, dummy data will be written for each byte to be read}
+{ChipSelect: The chip select for the slave to read from (eg SPI_CS_0)}
+{Dest: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPIReadHandler) then
+  begin
+   Result:=SPIReadHandler(ChipSelect,Dest,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function SPIWrite(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Write data to the default SPI device}
+{Because SPI writes and then reads for each byte, received data will be discarded for each by written}
+{ChipSelect: The chip select for the slave to write to (eg SPI_CS_0)}
+{Source: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPIWriteHandler) then
+  begin
+   Result:=SPIWriteHandler(ChipSelect,Source,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function SPIWriteRead(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Write data to and Read data from the default SPI device in one operation}
+{Because SPI writes and then reads for each byte, both the source and dest buffers must be the same size}
+{ChipSelect: The chip select for the slave to write to and read from (eg SPI_CS_0)}
+{Source: Pointer to a buffer of data to transmit}
+{Dest: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Count: The number of bytes written and read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPIWriteReadHandler) then
+  begin
+   Result:=SPIWriteReadHandler(ChipSelect,Source,Dest,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function SPIGetMode:LongWord; inline;
+{Get the device mode of the default SPI device}
+{Return: The device mode or SPI_MODE_UNKNOWN on failure}
+begin
+ {}
+ if Assigned(SPIGetModeHandler) then
+  begin
+   Result:=SPIGetModeHandler;
+  end
+ else
+  begin
+   Result:=SPI_MODE_UNKNOWN;
+  end;
+end;
+
+{==============================================================================}
+
+function SPISetMode(Mode:LongWord):LongWord; inline;
+{Set the device mode for the default SPI device}
+{Mode: The device mode to set (eg SPI_MODE_4WIRE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPISetModeHandler) then
+  begin
+   Result:=SPISetModeHandler(Mode);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function SPIGetClockRate:LongWord; inline;
+{Get the clock rate of the default SPI device}
+{Return: The clock rate in Hz or 0 on failure}
+begin
+ {}
+ if Assigned(SPIGetClockRateHandler) then
+  begin
+   Result:=SPIGetClockRateHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function SPISetClockRate(ClockRate:LongWord):LongWord; inline;
+{Set the clock rate for the default SPI device}
+{ClockRate: The clock rate to set in Hz}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPISetClockRateHandler) then
+  begin
+   Result:=SPISetClockRateHandler(ClockRate);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function SPIGetClockPhase:LongWord; inline;
+{Get the clock phase of the default SPI device}
+{Return: The clock phase or SPI_CLOCK_PHASE_UNKNOWN on failure}
+begin
+ {}
+ if Assigned(SPIGetClockPhaseHandler) then
+  begin
+   Result:=SPIGetClockPhaseHandler;
+  end
+ else
+  begin
+   Result:=SPI_CLOCK_PHASE_UNKNOWN;
+  end;
+end;
+
+{==============================================================================}
+
+function SPISetClockPhase(ClockPhase:LongWord):LongWord; inline;
+{Set the clock phase for the default SPI device}
+{ClockPhase: The clock phase to set (eg SPI_CLOCK_PHASE_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPISetClockPhaseHandler) then
+  begin
+   Result:=SPISetClockPhaseHandler(ClockPhase);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function SPIGetClockPolarity:LongWord; inline;
+{Get the clock polarity of the default SPI device}
+{Return: The clock polarity or SPI_CLOCK_POLARITY_UNKNOWN on failure}
+begin
+ {}
+ if Assigned(SPIGetClockPolarityHandler) then
+  begin
+   Result:=SPIGetClockPolarityHandler;
+  end
+ else
+  begin
+   Result:=SPI_CLOCK_POLARITY_UNKNOWN;
+  end;
+end;
+
+{==============================================================================}
+
+function SPISetClockPolarity(ClockPolarity:LongWord):LongWord; inline;
+{Set the clock polarity for the default SPI device}
+{ClockPolarity: The clock polarity to set (eg SPI_CLOCK_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPISetClockPolarityHandler) then
+  begin
+   Result:=SPISetClockPolarityHandler(ClockPolarity);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function SPIGetSelectPolarity(ChipSelect:Word):LongWord; inline;
+{Get the chip select polarity of the default SPI device}
+{ChipSelect: The chip select number to get polarity from (SPI_CS_NONE for default)}
+{Return: The chip select polarity or SPI_CS_POLARITY_UNKNOWN on failure}
+begin
+ {}
+ if Assigned(SPIGetSelectPolarityHandler) then
+  begin
+   Result:=SPIGetSelectPolarityHandler(ChipSelect);
+  end
+ else
+  begin
+   Result:=SPI_CS_POLARITY_UNKNOWN;
+  end;
+end;
+
+{==============================================================================}
+
+function SPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWord; inline;
+{Set the chip select polarity for the default SPI device}
+{ChipSelect: The chip select number to set polarity for (SPI_CS_NONE for default)}
+{SelectPolarity: The chip select polarity to set (eg SPI_CS_POLARITY_LOW)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(SPISetSelectPolarityHandler) then
+  begin
+   Result:=SPISetSelectPolarityHandler(ChipSelect,SelectPolarity);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+ 
 {==============================================================================}
 {==============================================================================}
 {I2C Functions}
+function I2CAvailable:Boolean; inline;
+{Check if an I2C device is available}
+begin
+ {}
+ if Assigned(I2CAvailableHandler) then
+  begin
+   Result:=I2CAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+ 
+function I2CStart(Rate:LongWord):LongWord; inline;
+{Start the default I2C device ready for reading and writing}
+{Rate: The clock rate to set for the device (0 to use the default rate)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CStartHandler) then
+  begin
+   Result:=I2CStartHandler(Rate);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CStop:LongWord; inline;
+{Stop the default I2C device and terminate reading and writing}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CStopHandler) then
+  begin
+   Result:=I2CStopHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+
+{==============================================================================}
+ 
+function I2CRead(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Read data from the default I2C device}
+{Address: The slave address to read from (I2C_ADDRESS_INVALID to use the current address)}
+{Buffer: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CReadHandler) then
+  begin
+   Result:=I2CReadHandler(Address,Buffer,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CWrite(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Write data to the default I2C device}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Buffer: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CWriteHandler) then
+  begin
+   Result:=I2CWriteHandler(Address,Buffer,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CWriteRead(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Write data to and Read data from the default I2C device in one operation}
+{Useful for devices that require a register address specified before a read (eg EEPROM devices)}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Initial: Pointer to the initial buffer to transmit}
+{Len: The size of the initial buffer}
+{Data: Pointer to a buffer to receive the data}
+{Size: The size of the data buffer}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CWriteReadHandler) then
+  begin
+   Result:=I2CWriteReadHandler(Address,Initial,Len,Data,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CWriteWrite(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Write 2 data blocks to the default I2C device in one operation}
+{Useful for devices that require a register address specified before a write (eg EEPROM devices)}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Initial: Pointer to the initial buffer to transmit}
+{Len: The size of the initial buffer}
+{Data: Pointer to a buffer of data to transmit}
+{Size: The size of the data buffer}
+{Count: The number of bytes of data written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CWriteWriteHandler) then
+  begin
+   Result:=I2CWriteWriteHandler(Address,Initial,Len,Data,Size,Count);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function I2CGetRate:LongWord; inline;
+{Get the clock rate of the default I2C device}
+{Return: The clock rate in Hz or 0 on failure}
+begin
+ {}
+ if Assigned(I2CGetRateHandler) then
+  begin
+   Result:=I2CGetRateHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CSetRate(Rate:LongWord):LongWord; inline;
+{Set the clock rate for the default I2C device}
+{Rate: The clock rate to set in Hz}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CSetRateHandler) then
+  begin
+   Result:=I2CSetRateHandler(Rate);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function I2CGetAddress:Word; inline;
+{Get the slave address for the default I2C device}
+{Return: The slave address or I2C_ADDRESS_INVALID on failure}
+begin
+ {}
+ if Assigned(I2CGetAddressHandler) then
+  begin
+   Result:=I2CGetAddressHandler;
+  end
+ else
+  begin
+   Result:=I2C_ADDRESS_INVALID;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CSetAddress(Address:Word):LongWord; inline;
+{Set the slave address for the default I2C device}
+{Address: The slave address to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(I2CSetAddressHandler) then
+  begin
+   Result:=I2CSetAddressHandler(Address);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -5503,10 +6140,10 @@ end;
 
 {==============================================================================}
 
-function RTCSetTime(const Time:Int64):LongWord; inline;
+function RTCSetTime(const Time:Int64):Int64; inline;
 {Set the current time for a Real Time Clock device}
 {Time: The time to be set}
-{Return: The device time after setting}
+{Return: The device time after setting (or 0 on failure)}
 {Time and returned time is 100 nanosecond ticks since 1 January 1601}
 {The same format as the ClockSetTime function}
 begin

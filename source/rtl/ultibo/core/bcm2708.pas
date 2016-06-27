@@ -33,6 +33,14 @@ Credits
    Linux - \drivers\dma\bcm2708-dmaengine.c - Copyright 2013-2014 Florian Meier and Gellert Weisz
    Linux - \drivers\dma\bcm2835-dma.c - Copyright 2013 Florian Meier
    
+   Linux - \drivers\tty\serial\amba-pl011.c - Copyright (C) 2010 ST-Ericsson SA and others
+   
+   Linux - \drivers\i2c\busses\i2c-bcm2708.c - Copyright (C) 2012 Chris Boot & Frank Buss
+   Linux - \drivers\i2c\busses\i2c-bcm2835.c
+   
+   Linux - \drivers\spi\spi-bcm2835.c - Copyright (C) 2015 Martin Sperl and others
+   Linux - \drivers\spi\spi-bcm2835aux.c - Copyright (C) 2015 Martin Sperl
+   
 References
 ==========
 
@@ -49,14 +57,25 @@ References
  RPi SPI
  
   http://elinux.org/RPi_SPI
+  https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md
+ 
+ I2C/SPI Slave
+ 
+  https://github.com/hendric-git/bsc-slave  
+  https://github.com/rLoopTeam/bsc-slave
  
 BCM2708 Devices
 ===============
 
  This unit provides the BCM2708 specific implementations of the following devices:
 
-  SPI
-  I2C
+  SPI0
+  I2C0
+  I2C1
+  SPI1
+  SPI2
+  I2C Slave
+  SPI Slave
   DMA
   PWM
   PCM
@@ -74,15 +93,46 @@ BCM2708 Devices
   
   And MIPI CSI-2 (Camera Serial Interface) ?
   And DSI (Display Serial Interface) ?
+  
+BCM2708 SPI0 Device
+===================
+
+ The BCM2708 has a single master mode SPI controller that supports 3 wire, 2 wire and LoSSI modes of operation. It also has
+ 2 auxiliary SPI masters which do not support DMA mode (see SPI1/2 below).
  
+ The main SPI0 controller supports polled, interrupt and DMA modes and includes 3 chip selects although only CS0 and 1 are
+ available on the 26 or 40 pin header. 
  
-BCM2708 SPI Device
-==================
+ By default SPI0 can appear on GPIO pins 7 to 11 (CS1, CS0, MISO, MOSI, SCLK) using alternate function 0 or on GPIO pins 35
+ to 39 (CS1, CS0, MISO, MOSI, SCLK) using alternate function 0, only pins 7 to 11 are available on the header.
 
+BCM2708 I2C0/1 Device
+=====================
 
-BCM2708 I2C Device
-==================
+ The BCM2708 has 3 Broadcom Serial Controller (BSC) devices which are fast mode (400Kz) masters numbered BSC0, BSC1 and BSC2.
+ 
+ Device BSC2 is dedicated to the HDMI interface and is not availale for use by the ARM processor. All BSC devices contain a
+ 16 byte FIFO, support 7 bit and 10 bit addressing and have software configurable clock timing.
+ 
+ By default BSC0 can appear on GPIO pins 0 and 1 (Alternate function 0), 28 and 29 (Alternate function 0) or 44 and 45 (Alternate
+ function 1). Unfortunately on all except the Revision 1 models none of these pins are available on the 26 or 40 pin header.
+ 
+ Device BSC1 can appear on GPIO pins 2 and 3 (Alternate function 0) or 44 and 45 (Alternate function 2) but only pins 2 and 3 are
+ exposed on the 26 or 40 pin header.
+ 
+BCM2708 SPI1/2 Device
+=====================
 
+ The BCM2708 has 2 additional SPI universal masters available as part of the AUX device which support interrupt mode but not
+ DMA and therefore only allow limited bandwidth transfers due to the CPU overhead required to sustain high data rates.
+ 
+ Both devices support 3 chip selects, by default SPI1 is available on GPIO pins 16 to 21 (CS2, CS1, CS0, MISO, MOSI, SCLK)
+ using alternate function 4 and SPI2 is available on GPIO pins 40 to 45 (MISO, MOSI, SCLK, CS0, CS1, CS2) using alternate
+ function 4. Only pins 16 to 21 are available on the header and only on the 40 pin header of the Raspberry Pi A+/B+/Zero/2B/3B.
+
+BCM2708 SPI/I2C Slave Device
+============================
+ 
  
 BCM2708 DMA Device
 ==================
@@ -283,9 +333,59 @@ uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform{$IFNDEF CONSOLE_EARLY
 const
  {BCM2708 specific constants}
  
- {BCM2708 SPI constants}
+ {BCM2708 SPI0 constants}
+ BCM2708_SPI0_DESCRIPTION = 'BCM2835 SPI0 Master';
  
- {BCM2708 I2C constants}
+ BCM2708_SPI0_MAX_SIZE = $FFFF;
+
+ BCM2708_SPI0_MIN_CLOCK = 3814;       {Default minimum based on the default settings from the firmware (Recalculated during open)}
+ BCM2708_SPI0_MAX_CLOCK = 125000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
+
+ BCM2708_SPI0_MIN_DIVIDER = 2;        {Divider is always rounded down to an even number and a value of 0 sets the divider to 65536}
+ BCM2708_SPI0_MAX_DIVIDER = $FFFE;    {Divider is always rounded down to an even number}
+
+ BCM2708_SPI0_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ 
+ BCM2708_SPI0_MODE_IRQ = 0;
+ BCM2708_SPI0_MODE_DMA = 1;
+ 
+ {BCM2708 BSCI2C (BSC0/1/2) constants}
+ BCM2708_BSCI2C_MAX_SIZE = $FFFF;
+ 
+ BCM2708_BSCI2C_MIN_CLOCK = 3814;       {Default minimum based on the default settings from the firmware (Recalculated during open)}
+ BCM2708_BSCI2C_MAX_CLOCK = 125000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
+ BCM2708_BSCI2C_DEFAULT_CLOCK = 100000; 
+ 
+ BCM2708_BSCI2C_MIN_DIVIDER = 2;        {Divider is always rounded down to an even number and a value of 0 sets the divider to 32768}
+ BCM2708_BSCI2C_MAX_DIVIDER = $FFFE;    {Divider is always rounded down to an even number}
+ 
+ BCM2708_BSCI2C_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ 
+ BCM2708_BSCI2C_MODE_WRITE = 0;
+ BCM2708_BSCI2C_MODE_READ  = 1;
+ 
+ {BCM2708 I2C0 (BSC0) constants}
+ BCM2708_I2C0_DESCRIPTION = 'BCM2835 BSC0 Master I2C';
+ 
+ {BCM2708 I2C1 (BSC1) constants}
+ BCM2708_I2C1_DESCRIPTION = 'BCM2835 BSC1 Master I2C';
+ 
+ {BCM2708 SPI AUX (SPI1/2) constants}
+ //To Do //Continuing
+ 
+ {BCM2708 SPI1 constants}
+ BCM2708_SPI1_DESCRIPTION = 'BCM2835 AUX SPI1 Master';
+
+ {BCM2708 SPI2 constants}
+ BCM2708_SPI2_DESCRIPTION = 'BCM2835 AUX SPI2 Master';
+ 
+ {BCM2708 SPIBSC Slave constants}
+ 
+ {BCM2708 I2C Slave constants}
+ BCM2708_I2CSLAVE_DESCRIPTION = 'BCM2835 I2C Slave';
+
+ {BCM2708 SPI Slave constants}
+ BCM2708_SPISLAVE_DESCRIPTION = 'BCM2835 SPI Slave';
  
  {BCM2708 DMA constants}
  BCM2708_DMA_DESCRIPTION = 'BCM2835 DMA';
@@ -412,9 +512,67 @@ const
 type
  {BCM2708 specific types}
  
- {BCM2708 SPI types}
+ {BCM2708 SPI0 types}
+ PBCM2708SPI0Device = ^TBCM2708SPI0Device;
+ TBCM2708SPI0Device = record
+  {SPI Properties}
+  SPI:TSPIDevice;
+  {BCM2708 Properties}
+  Address:Pointer;                 {Device register base address}
+  CoreClock:LongWord;              {Core clock rate}
+  {Transfer Properties}
+  Mode:LongWord;                   {Mode of current transfer (BCM2708_SPI0_MODE_IRQ / BCM2708_SPI0_MODE_DMA)}
+  Source:Pointer;                  {Pointer to the source for current transfer (nil if reading only)}
+  Dest:Pointer;                    {Pointer to the destination for current transfer (nil if writing only)}
+  Count:LongWord;                  {Count of bytes for current transfer}
+  SourceRemain:LongWord;           {Source bytes remaining for current transfer}
+  DestRemain:LongWord;             {Destination bytes remaining for current transfer}
+  {Statistics Properties}          
+  InterruptCount:LongWord;         {Number of interrupt requests received by the device}
+ end;
  
- {BCM2708 I2C types}
+ {BCM2708 BSCI2C (I2C0/1) types}
+ PBCM2708BSCI2CDevice = ^TBCM2708BSCI2CDevice;
+ TBCM2708BSCI2CDevice = record
+  {I2C Properties}
+  I2C:TI2CDevice;
+  {BCM2708 Properties}
+  Address:Pointer;                 {Device register base address}
+  CoreClock:LongWord;              {Core clock rate}
+  SDAPin:LongWord;                 {GPIO pin for the SDA line}
+  SCLPin:LongWord;                 {GPIO pin for the SCL line}                 
+  SDAFunction:LongWord;            {GPIO function for the SDA line}
+  SCLFunction:LongWord;            {GPIO function for the SCL line}
+  {Transfer Properties}
+  Index:LongWord;                  {Index of this device in the IRQData array (Set during device initialization)}
+  Mode:LongWord;                   {Mode of current transfer (BCM2708_BSCI2C_MODE_WRITE / BCM2708_BSCI2C_MODE_READ)}
+  Data:Pointer;                    {Pointer to the data for current transfer}
+  Count:LongWord;                  {Count of bytes for current transfer}
+  Remain:LongWord;                 {Bytes remaining for current transfer}
+  {Statistics Properties}          
+  InterruptCount:LongWord;         {Number of interrupt requests received by the device}
+ end;
+ 
+ PBCM2708BSCI2CIRQData = ^TBCM2708BSCI2CIRQData; {BSC I2C devices share a single interrupt}
+ TBCM2708BSCI2CIRQData = record
+  Count:LongWord;
+  Lock:TSpinHandle;
+  Devices:array[0..2] of PBCM2708BSCI2CDevice;
+ end; 
+ 
+ {BCM2708 SPI AUX (SPI1/2) types}
+ PBCM2708SPIAUXDevice = ^TBCM2708SPIAUXDevice;
+ TBCM2708SPIAUXDevice = record
+  {SPI Properties}
+  SPI:TSPIDevice;
+  {BCM2708 Properties}
+  Address:Pointer;                 {Device register base address}
+  CoreClock:LongWord;              {Core clock rate}
+  {Transfer Properties}
+  //To Do //Continuing
+ end;
+ 
+ {BCM2708 SPI/I2C Slave types}
  
  {BCM2708 DMA types}
  PBCM2708DMAHost = ^TBCM2708DMAHost;
@@ -562,10 +720,48 @@ procedure BCM2708Init;
 {BCM2708 Functions}
 
 {==============================================================================}
-{BCM2708 SPI Functions}
+{BCM2708 SPI0 Functions}
+function BCM2708SPI0Start(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
+function BCM2708SPI0Stop(SPI:PSPIDevice):LongWord;
+
+function BCM2708SPI0WriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+
+function BCM2708SPI0SetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
+function BCM2708SPI0SetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+function BCM2708SPI0SetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
+function BCM2708SPI0SetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
+function BCM2708SPI0SetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
  
+procedure BCM2708SPI0ReadFIFO(SPI:PBCM2708SPI0Device);
+procedure BCM2708SPI0WriteFIFO(SPI:PBCM2708SPI0Device);
+
+procedure BCM2708SPI0InterruptHandler(SPI:PBCM2708SPI0Device);
+
 {==============================================================================}
-{BCM2708 I2C Functions}
+{BCM2708 BSCI2C (I2C0/1) Functions}
+function BCM2708BSCI2CStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
+function BCM2708BSCI2CStop(I2C:PI2CDevice):LongWord;
+ 
+function BCM2708BSCI2CRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2708BSCI2CWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2708BSCI2CWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2708BSCI2CWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+ 
+function BCM2708BSCI2CSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
+ 
+function BCM2708BSCI2CSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
+
+procedure BCM2708BSCI2CFillFIFO(I2C:PBCM2708BSCI2CDevice);
+procedure BCM2708BSCI2CDrainFIFO(I2C:PBCM2708BSCI2CDevice);
+
+procedure BCM2708BSCI2CInterruptHandler(IRQData:PBCM2708BSCI2CIRQData);
+
+{==============================================================================}
+{BCM2708 SPI AUX (SPI1/2) Functions}
+//To Do //Continuing
+
+{==============================================================================}
+{BCM2708 SPI/I2C Slave Functions}
 
 {==============================================================================}
 {BCM2708 DMA Functions}
@@ -593,6 +789,9 @@ procedure BCM2708DMADataToControlBlock(Request:PDMARequest;Data:PDMAData;Block:P
 {BCM2708 GPIO Functions}
 function BCM2708GPIOStart(GPIO:PGPIODevice):LongWord; 
 function BCM2708GPIOStop(GPIO:PGPIODevice):LongWord; 
+ 
+function BCM2708GPIORead(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
+procedure BCM2708GPIOWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
  
 function BCM2708GPIOInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function BCM2708GPIOInputWait(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
@@ -695,6 +894,8 @@ var
  {BCM2708 specific variables}
  BCM2708Initialized:Boolean;
 
+ BCM2708BSCI2CIRQData:TBCM2708BSCI2CIRQData;
+ 
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -706,6 +907,9 @@ var
  BCM2708SDHCIHost:PBCM2708SDHCIHost; 
 
  BCM2708GPIO:PBCM2708GPIODevice;
+ BCM2708SPI0:PBCM2708SPI0Device;
+ BCM2708I2C0:PBCM2708BSCI2CDevice;
+ BCM2708I2C1:PBCM2708BSCI2CDevice;
  BCM2708UART0:PBCM2708UART0Device;
  
  BCM2708Clock:PBCM2708Clock;
@@ -721,6 +925,10 @@ begin
  
  {Initialize BCM2708SDHCI_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2708SDHCI_FIQ_ENABLED:=False;
+ 
+ {Initialize IRQ Data}
+ FillChar(BCM2708BSCI2CIRQData,SizeOf(TBCM2708BSCI2CIRQData),0);
+ BCM2708BSCI2CIRQData.Lock:=SpinCreate;
  
  {$IFNDEF CONSOLE_EARLY_INIT}
  {Register Platform GPU Memory Handlers}
@@ -779,19 +987,7 @@ begin
  CursorSetInfoHandler:=RPiCursorSetInfo;
  CursorSetStateHandler:=RPiCursorSetState;
  {$ENDIF}
- 
- {Create SPI}
- if BCM2708_REGISTER_SPI then
-  begin
-   //To Do
-  end; 
- 
- {Create I2C}
- if BCM2708_REGISTER_I2C then
-  begin
-   //To Do
-  end;
- 
+  
  {Create DMA}
  if BCM2708_REGISTER_DMA then
   begin
@@ -884,6 +1080,8 @@ begin
      BCM2708GPIO.GPIO.GPIOState:=GPIO_STATE_DISABLED;
      BCM2708GPIO.GPIO.DeviceStart:=BCM2708GPIOStart;
      BCM2708GPIO.GPIO.DeviceStop:=BCM2708GPIOStop;
+     BCM2708GPIO.GPIO.DeviceRead:=BCM2708GPIORead;
+     BCM2708GPIO.GPIO.DeviceWrite:=BCM2708GPIOWrite;
      BCM2708GPIO.GPIO.DeviceInputGet:=BCM2708GPIOInputGet;
      BCM2708GPIO.GPIO.DeviceInputWait:=BCM2708GPIOInputWait; 
      BCM2708GPIO.GPIO.DeviceInputEvent:=BCM2708GPIOInputEvent;
@@ -924,6 +1122,164 @@ begin
     begin
      if GPIO_LOG_ENABLED then GPIOLogError(nil,'BCM2708: Failed to create new GPIO device');
     end;
+  end;
+ 
+ {Create SPI0}
+ if BCM2708_REGISTER_SPI0 then
+  begin
+   BCM2708SPI0:=PBCM2708SPI0Device(SPIDeviceCreateEx(SizeOf(TBCM2708SPI0Device)));
+   if BCM2708SPI0 <> nil then
+    begin
+     {Update SPI0}
+     {Device}
+     BCM2708SPI0.SPI.Device.DeviceBus:=DEVICE_BUS_MMIO;
+     BCM2708SPI0.SPI.Device.DeviceType:=SPI_TYPE_NONE;
+     BCM2708SPI0.SPI.Device.DeviceFlags:=SPI_FLAG_4WIRE or SPI_FLAG_3WIRE or SPI_FLAG_LOSSI or SPI_FLAG_CPOL or SPI_FLAG_CPHA or SPI_FLAG_CSPOL or SPI_FLAG_NO_CS;
+     BCM2708SPI0.SPI.Device.DeviceData:=nil;
+     BCM2708SPI0.SPI.Device.DeviceDescription:=BCM2708_SPI0_DESCRIPTION;
+     {SPI}
+     BCM2708SPI0.SPI.SPIState:=SPI_STATE_DISABLED;
+     BCM2708SPI0.SPI.SPIMode:=SPI_MODE_4WIRE;
+     BCM2708SPI0.SPI.DeviceStart:=BCM2708SPI0Start;
+     BCM2708SPI0.SPI.DeviceStop:=BCM2708SPI0Stop;
+     BCM2708SPI0.SPI.DeviceWriteRead:=BCM2708SPI0WriteRead;
+     BCM2708SPI0.SPI.DeviceSetMode:=BCM2708SPI0SetMode;
+     BCM2708SPI0.SPI.DeviceSetClockRate:=BCM2708SPI0SetClockRate;
+     BCM2708SPI0.SPI.DeviceSetClockPhase:=BCM2708SPI0SetClockPhase;
+     BCM2708SPI0.SPI.DeviceSetClockPolarity:=BCM2708SPI0SetClockPolarity;
+     BCM2708SPI0.SPI.DeviceSetSelectPolarity:=BCM2708SPI0SetSelectPolarity;
+     {Driver}
+     BCM2708SPI0.SPI.Properties.Flags:=BCM2708SPI0.SPI.Device.DeviceFlags;
+     BCM2708SPI0.SPI.Properties.MaxSize:=BCM2708_SPI0_MAX_SIZE;
+     BCM2708SPI0.SPI.Properties.MinClock:=BCM2708_SPI0_MIN_CLOCK;
+     BCM2708SPI0.SPI.Properties.MaxClock:=BCM2708_SPI0_MAX_CLOCK;
+     BCM2708SPI0.SPI.Properties.SelectCount:=3;
+     BCM2708SPI0.SPI.Properties.Mode:=SPI_MODE_4WIRE;
+     BCM2708SPI0.SPI.Properties.ClockRate:=0;
+     BCM2708SPI0.SPI.Properties.ClockPhase:=SPI_CLOCK_PHASE_UNKNOWN;
+     BCM2708SPI0.SPI.Properties.ClockPolarity:=SPI_CLOCK_POLARITY_UNKNOWN;
+     BCM2708SPI0.SPI.Properties.SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
+     {BCM2708}
+     BCM2708SPI0.Address:=Pointer(BCM2835_SPI0_REGS_BASE);
+     BCM2708SPI0.CoreClock:=BCM2708_SPI0_CORE_CLOCK;
+     
+     {Register SPI0}
+     Status:=SPIDeviceRegister(@BCM2708SPI0.SPI);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if SPI_LOG_ENABLED then SPILogError(nil,'BCM2708: Failed to register new SPI0 device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if SPI_LOG_ENABLED then SPILogError(nil,'BCM2708: Failed to create new SPI0 device');
+    end; 
+  end; 
+  
+ {Create I2C0}
+ if BCM2708_REGISTER_I2C0 then
+  begin
+   BCM2708I2C0:=PBCM2708BSCI2CDevice(I2CDeviceCreateEx(SizeOf(TBCM2708BSCI2CDevice)));
+   if BCM2708I2C0 <> nil then
+    begin
+     {Update I2C0}
+     {Device}
+     BCM2708I2C0.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
+     BCM2708I2C0.I2C.Device.DeviceType:=I2C_TYPE_NONE;
+     BCM2708I2C0.I2C.Device.DeviceFlags:=I2C_FLAG_10BIT;
+     BCM2708I2C0.I2C.Device.DeviceData:=nil;
+     BCM2708I2C0.I2C.Device.DeviceDescription:=BCM2708_I2C0_DESCRIPTION;
+     {I2C}
+     BCM2708I2C0.I2C.I2CState:=I2C_STATE_DISABLED;
+     BCM2708I2C0.I2C.DeviceStart:=BCM2708BSCI2CStart;
+     BCM2708I2C0.I2C.DeviceStop:=BCM2708BSCI2CStop;
+     BCM2708I2C0.I2C.DeviceRead:=BCM2708BSCI2CRead;
+     BCM2708I2C0.I2C.DeviceWrite:=BCM2708BSCI2CWrite;
+     BCM2708I2C0.I2C.DeviceWriteRead:=BCM2708BSCI2CWriteRead;
+     BCM2708I2C0.I2C.DeviceWriteWrite:=BCM2708BSCI2CWriteWrite;
+     BCM2708I2C0.I2C.DeviceSetRate:=BCM2708BSCI2CSetRate;
+     BCM2708I2C0.I2C.DeviceSetAddress:=BCM2708BSCI2CSetAddress;
+     {Driver}
+     BCM2708I2C0.I2C.Properties.Flags:=BCM2708I2C0.I2C.Device.DeviceFlags;
+     BCM2708I2C0.I2C.Properties.MaxSize:=BCM2708_BSCI2C_MAX_SIZE;
+     BCM2708I2C0.I2C.Properties.MinClock:=BCM2708_BSCI2C_MIN_CLOCK;
+     BCM2708I2C0.I2C.Properties.MaxClock:=BCM2708_BSCI2C_MAX_CLOCK;
+     BCM2708I2C0.I2C.Properties.ClockRate:=0;
+     BCM2708I2C0.I2C.Properties.SlaveAddress:=I2C_ADDRESS_INVALID;
+     {BCM2708}
+     BCM2708I2C0.Address:=Pointer(BCM2835_BSC0_REGS_BASE);
+     BCM2708I2C0.CoreClock:=BCM2708_BSCI2C_CORE_CLOCK;
+     BCM2708I2C0.SDAPin:=GPIO_PIN_0;
+     BCM2708I2C0.SCLPin:=GPIO_PIN_1;
+     BCM2708I2C0.SDAFunction:=GPIO_FUNCTION_ALT0;
+     BCM2708I2C0.SCLFunction:=GPIO_FUNCTION_ALT0;
+     {Transfer}
+     BCM2708I2C0.Index:=0; {BSC0}
+     
+     {Register I2C0}
+     Status:=I2CDeviceRegister(@BCM2708I2C0.I2C);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2708: Failed to register new I2C0 device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2708: Failed to create new I2C0 device');
+    end; 
+  end;
+
+ {Create I2C1}
+ if BCM2708_REGISTER_I2C1 then
+  begin
+   BCM2708I2C1:=PBCM2708BSCI2CDevice(I2CDeviceCreateEx(SizeOf(TBCM2708BSCI2CDevice)));
+   if BCM2708I2C1 <> nil then
+    begin
+     {Update I2C1}
+     {Device}
+     BCM2708I2C1.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
+     BCM2708I2C1.I2C.Device.DeviceType:=I2C_TYPE_NONE;
+     BCM2708I2C1.I2C.Device.DeviceFlags:=I2C_FLAG_10BIT;
+     BCM2708I2C1.I2C.Device.DeviceData:=nil;
+     BCM2708I2C1.I2C.Device.DeviceDescription:=BCM2708_I2C1_DESCRIPTION;
+     {I2C}
+     BCM2708I2C1.I2C.I2CState:=I2C_STATE_DISABLED;
+     BCM2708I2C1.I2C.DeviceStart:=BCM2708BSCI2CStart;
+     BCM2708I2C1.I2C.DeviceStop:=BCM2708BSCI2CStop;
+     BCM2708I2C1.I2C.DeviceRead:=BCM2708BSCI2CRead;
+     BCM2708I2C1.I2C.DeviceWrite:=BCM2708BSCI2CWrite;
+     BCM2708I2C1.I2C.DeviceWriteRead:=BCM2708BSCI2CWriteRead;
+     BCM2708I2C1.I2C.DeviceWriteWrite:=BCM2708BSCI2CWriteWrite;
+     BCM2708I2C1.I2C.DeviceSetRate:=BCM2708BSCI2CSetRate;
+     BCM2708I2C1.I2C.DeviceSetAddress:=BCM2708BSCI2CSetAddress;
+     {Driver}
+     BCM2708I2C1.I2C.Properties.Flags:=BCM2708I2C1.I2C.Device.DeviceFlags;
+     BCM2708I2C1.I2C.Properties.MaxSize:=BCM2708_BSCI2C_MAX_SIZE;
+     BCM2708I2C1.I2C.Properties.MinClock:=BCM2708_BSCI2C_MIN_CLOCK;
+     BCM2708I2C1.I2C.Properties.MaxClock:=BCM2708_BSCI2C_MAX_CLOCK;
+     BCM2708I2C1.I2C.Properties.ClockRate:=0;
+     BCM2708I2C1.I2C.Properties.SlaveAddress:=I2C_ADDRESS_INVALID;
+     {BCM2708}
+     BCM2708I2C1.Address:=Pointer(BCM2835_BSC1_REGS_BASE);
+     BCM2708I2C1.CoreClock:=BCM2708_BSCI2C_CORE_CLOCK;
+     BCM2708I2C1.SDAPin:=GPIO_PIN_2;
+     BCM2708I2C1.SCLPin:=GPIO_PIN_3;
+     BCM2708I2C1.SDAFunction:=GPIO_FUNCTION_ALT0;
+     BCM2708I2C1.SCLFunction:=GPIO_FUNCTION_ALT0;
+     {Transfer}
+     BCM2708I2C1.Index:=1; {BSC1}
+     
+     {Register I2C1}
+     Status:=I2CDeviceRegister(@BCM2708I2C1.I2C);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2708: Failed to register new I2C1 device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2708: Failed to create new I2C1 device');
+    end; 
   end;
  
  {Create UART0}
@@ -1211,11 +1567,1527 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{BCM2708 SPI Functions}
+{BCM2708 SPI0 Functions}
+function BCM2708SPI0Start(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
+var
+ Control:LongWord;
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Start (Mode=' + SPIModeToString(Mode) + ' ClockRate=' + IntToStr(ClockRate) + ' ClockPhase=' + SPIClockPhaseToString(ClockPhase) + ' ClockPolarity=' + SPIClockPolarityToString(ClockPolarity) + ')');
+ {$ENDIF}
+ 
+ {Update Core Clock}
+ PBCM2708SPI0Device(SPI).CoreClock:=ClockGetRate(CLOCK_ID_CORE);
+ if PBCM2708SPI0Device(SPI).CoreClock = 0 then PBCM2708SPI0Device(SPI).CoreClock:=BCM2708_SPI0_CORE_CLOCK;
+
+ {Update Properties}
+ SPI.Properties.MinClock:=PBCM2708SPI0Device(SPI).CoreClock div BCM2708_SPI0_MAX_DIVIDER;
+ SPI.Properties.MaxClock:=PBCM2708SPI0Device(SPI).CoreClock div BCM2708_SPI0_MIN_DIVIDER;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708:  CoreClock=' + IntToStr(PBCM2708SPI0Device(SPI).CoreClock) + ' MinClock=' + IntToStr(SPI.Properties.MinClock) + ' MaxClock=' + IntToStr(SPI.Properties.MaxClock));
+ {$ENDIF}
+ 
+ {Check Mode}
+ if Mode > SPI_MODE_LOSSI then Exit;
+ 
+ {Check Clock Rate}
+ if (ClockRate < SPI.Properties.MinClock) or (ClockRate > SPI.Properties.MaxClock) then Exit;
+ 
+ {Check Clock Phase}
+ if ClockPhase > SPI_CLOCK_PHASE_HIGH then Exit;
+ 
+ {Check Clock Polarity}
+ if ClockPolarity > SPI_CLOCK_POLARITY_HIGH then Exit;
+ 
+ {Enable GPIO Pins (CS1, CS0, MISO, MOSI, SCLK)}
+ GPIOFunctionSelect(GPIO_PIN_7,GPIO_FUNCTION_ALT0);
+ GPIOFunctionSelect(GPIO_PIN_8,GPIO_FUNCTION_ALT0);
+ GPIOFunctionSelect(GPIO_PIN_9,GPIO_FUNCTION_ALT0);
+ GPIOFunctionSelect(GPIO_PIN_10,GPIO_FUNCTION_ALT0);
+ GPIOFunctionSelect(GPIO_PIN_11,GPIO_FUNCTION_ALT0);
+ 
+ {Get Divider}
+ Divider:=PBCM2708SPI0Device(SPI).CoreClock div ClockRate;
+ if (Divider and 1) <> 0 then Inc(Divider);
+
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708:  ClockRate=' + IntToStr(ClockRate) + ' Divider=' + IntToStr(Divider));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Reset Control and Status} 
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=BCM2835_SPI0_CS_CLEAR_RX or BCM2835_SPI0_CS_CLEAR_TX;
+
+ {Setup Control}
+ Control:=0;
+ 
+ {Set Mode}
+ case Mode of
+  SPI_MODE_LOSSI:Control:=Control or BCM2835_SPI0_CS_LEN;
+ end;
+ 
+ {Set Clock Phase}
+ if ClockPhase = SPI_CLOCK_PHASE_HIGH then Control:=Control or BCM2835_SPI0_CS_CPHA;
+ 
+ {Set Clock Polarity}
+ if ClockPolarity = SPI_CLOCK_POLARITY_HIGH then Control:=Control or BCM2835_SPI0_CS_CPOL;
+ 
+ {Set Clock Divider}
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CLK:=(Divider and BCM2835_SPI0_CLK_CDIV);
+
+ {Set Control and Status}
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Create Wait Semaphore}
+ SPI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
+ if SPI.Wait = INVALID_HANDLE_VALUE then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Request IRQ}
+ RequestIRQ(IRQ_ROUTING,BCM2835_IRQ_SPI,TInterruptHandler(BCM2708SPI0InterruptHandler),SPI);
+ 
+ {Update Properties}
+ SPI.SPIMode:=Mode;
+ SPI.ClockRate:=ClockRate;
+ SPI.ClockPhase:=ClockPhase;
+ SPI.ClockPolarity:=ClockPolarity;
+ SPI.SelectPolarity:=SPI_CS_POLARITY_LOW;
+ SPI.Properties.Mode:=Mode;
+ SPI.Properties.ClockRate:=ClockRate;
+ SPI.Properties.ClockPhase:=ClockPhase;
+ SPI.Properties.ClockPolarity:=ClockPolarity;
+ SPI.Properties.SelectPolarity:=SPI_CS_POLARITY_LOW;
+ SPI.ChipSelects[0].Pin:=GPIO_PIN_UNKNOWN;
+ SPI.ChipSelects[0].Polarity:=SPI_CS_POLARITY_LOW;
+ SPI.ChipSelects[1].Pin:=GPIO_PIN_UNKNOWN;
+ SPI.ChipSelects[1].Polarity:=SPI_CS_POLARITY_LOW;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2708SPI0Stop(SPI:PSPIDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Stop');
+ {$ENDIF}
+ 
+ {Release IRQ}
+ ReleaseIRQ(IRQ_ROUTING,BCM2835_IRQ_SPI,TInterruptHandler(BCM2708SPI0InterruptHandler),SPI);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Reset Control and Status} 
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=BCM2835_SPI0_CS_CLEAR_RX or BCM2835_SPI0_CS_CLEAR_TX;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Destroy Wait Semaphore}
+ SemaphoreDestroy(SPI.Wait);
+ 
+ {Reset Transfer}
+ PBCM2708SPI0Device(SPI).Mode:=BCM2708_SPI0_MODE_IRQ;
+ PBCM2708SPI0Device(SPI).Source:=nil;
+ PBCM2708SPI0Device(SPI).Dest:=nil;
+ PBCM2708SPI0Device(SPI).Count:=0;
+ PBCM2708SPI0Device(SPI).SourceRemain:=0;
+ PBCM2708SPI0Device(SPI).DestRemain:=0;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2708SPI0WriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+var
+ Control:LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffers}
+ if (Source = nil) and (Dest = nil) then Exit;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Write Read (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Size}
+ if Size > BCM2708_SPI0_MAX_SIZE then Exit;
+ 
+ {Check Chip Select}
+ if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_2) then Exit;
+ 
+ {Update Statistics}
+ Inc(SPI.TransferCount);
+ 
+ {Write from Source / Read to Dest}
+ if Size > 0 then
+  begin
+   //To Do //Flags: SPI_TRANSFER_DMA
+   
+   {Setup Data}
+   PBCM2708SPI0Device(SPI).Mode:=BCM2708_SPI0_MODE_IRQ;
+   PBCM2708SPI0Device(SPI).Source:=Source;
+   PBCM2708SPI0Device(SPI).Dest:=Dest;
+   PBCM2708SPI0Device(SPI).Count:=0;
+   PBCM2708SPI0Device(SPI).SourceRemain:=Size;
+   PBCM2708SPI0Device(SPI).DestRemain:=Size;
+ 
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Get Control and Status}
+   Control:=PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS and not(BCM2835_SPI0_CS_CS_MASK);
+   
+   {Set Mode}
+   if (SPI.SPIMode = SPI_MODE_3WIRE) and (Dest <> nil) then
+    begin
+     Control:=Control or BCM2835_SPI0_CS_REN;
+    end
+   else  
+    begin
+     Control:=Control and not(BCM2835_SPI0_CS_REN);
+    end;
+   
+   {Set Chip Select}
+   if ChipSelect = SPI_CS_NONE then
+    begin
+     Control:=Control or (BCM2835_SPI0_CS_CS_MASK); {Select the reserved value}
+    end
+   else
+    begin
+     Control:=Control or (ChipSelect and BCM2835_SPI0_CS_CS_MASK);
+    end;
+    
+   {Note: Cannot fill FIFO when TA bit is not set, interrupt handler will fill on first IRQ} 
+   
+   {Set Control (Active/Interrupt/Clear)}
+   Control:=Control or (BCM2835_SPI0_CS_INTR or BCM2835_SPI0_CS_INTD or BCM2835_SPI0_CS_TA or BCM2835_SPI0_CS_CLEAR_RX or BCM2835_SPI0_CS_CLEAR_TX);
+   
+   {Set Control and Status}
+   PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Wait for Completion}
+   if SemaphoreWait(SPI.Wait) = ERROR_SUCCESS then
+    begin
+     {Get Count}
+     Count:=PBCM2708SPI0Device(SPI).Count;
+     
+     {Check Count}
+     if Count < Size then
+      begin
+       if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2708: Write failure or timeout'); 
+       
+       {Update Statistics}
+       Inc(SPI.TransferErrors);
+      end;
+    end
+   else
+    begin
+     if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2708: Wait failure on write'); 
+     
+     Result:=ERROR_OPERATION_FAILED;
+    end;
+   
+   {Reset Data}
+   PBCM2708SPI0Device(SPI).Source:=nil;
+   PBCM2708SPI0Device(SPI).Dest:=nil;
+   PBCM2708SPI0Device(SPI).Count:=0;
+   PBCM2708SPI0Device(SPI).SourceRemain:=0;
+   PBCM2708SPI0Device(SPI).DestRemain:=0;
+  end;
+  
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+  
+ {Return Result}
+ if (Size = Count) then Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function BCM2708SPI0SetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
+var
+ Control:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Set Mode (Mode=' + SPIModeToString(Mode) + ')');
+ {$ENDIF}
+
+ {Check Mode}
+ if Mode > SPI_MODE_LOSSI then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Control and Status}
+ Control:=PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS;
+ 
+ {Set Mode}
+ case Mode of
+  SPI_MODE_4WIRE:begin
+    {Disable LEN/REN/LEN_LONG/DMA_LEN}
+    Control:=Control and not(BCM2835_SPI0_CS_LEN or BCM2835_SPI0_CS_REN or BCM2835_SPI0_CS_LEN_LONG or BCM2835_SPI0_CS_DMA_LEN);
+   end; 
+  SPI_MODE_3WIRE:begin
+    {Disable LEN/LEN_LONG/DMA_LEN}
+    Control:=Control and not(BCM2835_SPI0_CS_LEN or BCM2835_SPI0_CS_LEN_LONG or BCM2835_SPI0_CS_DMA_LEN);
+   end; 
+  SPI_MODE_LOSSI:begin
+    {Disable REN}
+    Control:=Control and not(BCM2835_SPI0_CS_REN);
+    
+    {Enable LEN}
+    Control:=Control or BCM2835_SPI0_CS_LEN;
+   end; 
+ end;
+ 
+ {Set Control and Status}
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ SPI.SPIMode:=Mode;
+ SPI.Properties.Mode:=Mode;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function BCM2708SPI0SetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+var
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Set Clock Rate (ClockRate=' + IntToStr(ClockRate) + ')');
+ {$ENDIF}
+ 
+ {Check Clock Rate}
+ if (ClockRate < SPI.Properties.MinClock) or (ClockRate > SPI.Properties.MaxClock) then Exit;
+ 
+ {Get Divider}
+ Divider:=PBCM2708SPI0Device(SPI).CoreClock div ClockRate;
+ if (Divider and 1) <> 0 then Inc(Divider);
+
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708:  Divider=' + IntToStr(Divider));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+
+ {Set Clock Divider} 
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CLK:=(Divider and BCM2835_SPI0_CLK_CDIV);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ SPI.ClockRate:=ClockRate;
+ SPI.Properties.ClockRate:=ClockRate;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function BCM2708SPI0SetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
+var
+ Control:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Set Clock Phase (ClockPhase=' + SPIClockPhaseToString(ClockPhase) + ')');
+ {$ENDIF}
+
+ {Check Clock Phase}
+ if ClockPhase > SPI_CLOCK_PHASE_HIGH then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Control and Status}
+ Control:=PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS;
+
+ {Set Clock Phase}
+ if ClockPhase = SPI_CLOCK_PHASE_HIGH then
+  begin
+   {Enable CPHA}
+   Control:=Control or BCM2835_SPI0_CS_CPHA;
+  end
+ else
+  begin
+   {Disable CPHA}
+   Control:=Control and not(BCM2835_SPI0_CS_CPHA);
+  end;  
+ 
+ {Set Control and Status}
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ SPI.ClockPhase:=ClockPhase;
+ SPI.Properties.ClockPhase:=ClockPhase;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function BCM2708SPI0SetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
+var
+ Control:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Set Clock Polarity (ClockPolarity=' + SPIClockPolarityToString(ClockPolarity) + ')');
+ {$ENDIF}
+
+ {Check Clock Polarity}
+ if ClockPolarity > SPI_CLOCK_POLARITY_HIGH then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Control and Status}
+ Control:=PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS;
+ 
+ {Set Clock Polarity}
+ if ClockPolarity = SPI_CLOCK_POLARITY_HIGH then
+  begin 
+   {Enable CPOL}
+   Control:=Control or BCM2835_SPI0_CS_CPOL;
+  end
+ else 
+  begin
+   {Disable CPOL}
+   Control:=Control and not(BCM2835_SPI0_CS_CPOL);
+  end;  
+ 
+ {Set Control and Status}
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ SPI.ClockPolarity:=ClockPolarity;
+ SPI.Properties.ClockPolarity:=ClockPolarity;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function BCM2708SPI0SetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+var
+ Control:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Set Select Polarity (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' SelectPolarity=' + SPISelectPolarityToString(SelectPolarity) + ')');
+ {$ENDIF}
+
+ {Check Chip Select}
+ if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_2) then Exit;
+ 
+ {Check Select Polarity}
+ if SelectPolarity > SPI_CS_POLARITY_HIGH then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Control and Status}
+ Control:=PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS;
+ 
+ {Set Select Polarity}
+ if ChipSelect = SPI_CS_NONE then
+  begin
+   if SelectPolarity = SPI_CS_POLARITY_HIGH then
+    begin
+     {Enable CSPOL}
+     Control:=Control or BCM2835_SPI0_CS_CSPOL;
+    end
+   else
+    begin
+     {Disable CSPOL}
+     Control:=Control and not(BCM2835_SPI0_CS_CSPOL);
+    end;
+  end
+ else
+  begin 
+   if SelectPolarity = SPI_CS_POLARITY_HIGH then
+    begin
+     {Enable CSPOL0/1/2}
+     Control:=Control or (BCM2835_SPI0_CS_CSPOL0 shl ChipSelect);
+    end
+   else
+    begin
+     {Disable CSPOL0/1/2}
+     Control:=Control and not(BCM2835_SPI0_CS_CSPOL0 shl ChipSelect);
+    end;
+  end;  
+ 
+ {Set Control and Status}
+ PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ if ChipSelect = SPI_CS_NONE then
+  begin
+   SPI.SelectPolarity:=SelectPolarity;
+   SPI.Properties.SelectPolarity:=SelectPolarity;
+  end
+ else
+  begin
+   SPI.ChipSelects[ChipSelect].Polarity:=SelectPolarity;
+  end;  
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS; 
+end;
+
+{==============================================================================}
+
+procedure BCM2708SPI0ReadFIFO(SPI:PBCM2708SPI0Device);
+{Caller will hold the SPI device lock}
+{Note: Called from within the interrupt handler}
+var
+ Data:LongWord;
+begin
+ {}
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {Check Data}
+ while (SPI.DestRemain > 0) and ((PBCM2835SPI0Registers(SPI.Address).CS and BCM2835_SPI0_CS_RXD) <> 0) do
+  begin
+   {Read Data}
+   Data:=(PBCM2835SPI0Registers(SPI.Address).FIFO and BCM2835_SPI0_FIFO_IRQ_DATA);
+   if SPI.Dest <> nil then
+    begin
+     PByte(SPI.Dest)^:=Data;
+     
+     {Update Dest}
+     Inc(SPI.Dest);
+    end; 
+   
+   {Update Remain}
+   Inc(SPI.Count);
+   Dec(SPI.DestRemain);
+  end;
+end;
  
 {==============================================================================}
+
+procedure BCM2708SPI0WriteFIFO(SPI:PBCM2708SPI0Device);
+{Caller will hold the SPI device lock}
+{Note: Called from within the interrupt handler}
+var
+ Data:LongWord;
+begin
+ {}
+ {Check SPI}
+ if SPI = nil then Exit;
+ 
+ {Check Space}
+ while (SPI.SourceRemain > 0) and ((PBCM2835SPI0Registers(SPI.Address).CS and BCM2835_SPI0_CS_TXD) <> 0) do
+  begin
+   {Write Data}
+   if SPI.Source <> nil then
+    begin
+     Data:=PLongWord(SPI.Source)^;
+     
+     {Update Source}
+     Inc(SPI.Source);
+    end
+   else
+    begin
+     Data:=0;
+    end;    
+   PBCM2835SPI0Registers(SPI.Address).FIFO:=(Data and BCM2835_SPI0_FIFO_IRQ_DATA);
+ 
+   {Update Remain}
+   Dec(SPI.SourceRemain);
+  end;
+end;
+ 
 {==============================================================================}
-{BCM2708 I2C Functions}
+ 
+procedure BCM2708SPI0InterruptHandler(SPI:PBCM2708SPI0Device);
+var
+ Control:LongWord;
+begin
+ {}
+ {Check SPI}
+ if SPI = nil then Exit;
+
+ {Update Statistics}
+ Inc(SPI.InterruptCount);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Read FIFO}
+ BCM2708SPI0ReadFIFO(SPI);
+
+ {Write FIFO}
+ BCM2708SPI0WriteFIFO(SPI);
+ 
+ {Get Control and Status}
+ Control:=PBCM2835SPI0Registers(SPI.Address).CS;
+ 
+ {Check Done}
+ if ((Control and BCM2835_SPI0_CS_DONE) <> 0) and (SPI.SourceRemain = 0) then
+  begin
+   {Read remaining FIFO}
+   BCM2708SPI0ReadFIFO(SPI);
+  
+   {Reset Control (Active/Interrupt/DMA/Clear)}
+   Control:=Control and not(BCM2835_SPI0_CS_INTR or BCM2835_SPI0_CS_INTD or BCM2835_SPI0_CS_DMAEN or BCM2835_SPI0_CS_TA);
+   Control:=Control or (BCM2835_SPI0_CS_CLEAR_RX or BCM2835_SPI0_CS_CLEAR_TX);
+   
+   {Set Control and Status}
+   PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+   
+   {Set Data Length}
+   PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).DLEN:=0;
+  
+   {Signal Semaphore}
+   SemaphoreSignal(SPI.SPI.Wait);
+  end;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{BCM2708 BSCI2C (I2C0/1) Functions}
+function BCM2708BSCI2CStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
+var
+ Slave:LongWord;
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Start (Rate=' + IntToStr(Rate) + ')');
+ {$ENDIF}
+ 
+ {Update Core Clock}
+ PBCM2708BSCI2CDevice(I2C).CoreClock:=ClockGetRate(CLOCK_ID_CORE);
+ if PBCM2708BSCI2CDevice(I2C).CoreClock = 0 then PBCM2708BSCI2CDevice(I2C).CoreClock:=BCM2708_BSCI2C_CORE_CLOCK; 
+ 
+ {Update Properties}
+ I2C.Properties.MinClock:=PBCM2708BSCI2CDevice(I2C).CoreClock div BCM2708_BSCI2C_MAX_DIVIDER;
+ I2C.Properties.MaxClock:=PBCM2708BSCI2CDevice(I2C).CoreClock div BCM2708_BSCI2C_MIN_DIVIDER;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  CoreClock=' + IntToStr(PBCM2708BSCI2CDevice(I2C).CoreClock) + ' MinClock=' + IntToStr(I2C.Properties.MinClock) + ' MaxClock=' + IntToStr(I2C.Properties.MaxClock));
+ {$ENDIF}
+ 
+ {Check Rate}
+ if (Rate <> 0) and ((Rate < I2C.Properties.MinClock) or (Rate > I2C.Properties.MaxClock)) then Exit;
+ 
+ {Enable GPIO Pins}
+ GPIOFunctionSelect(PBCM2708BSCI2CDevice(I2C).SDAPin,PBCM2708BSCI2CDevice(I2C).SDAFunction);
+ GPIOFunctionSelect(PBCM2708BSCI2CDevice(I2C).SCLPin,PBCM2708BSCI2CDevice(I2C).SCLFunction);
+
+ {Get Divider}
+ if Rate = 0 then Rate:=BCM2708_BSCI2C_DEFAULT_CLOCK;
+ Divider:=PBCM2708BSCI2CDevice(I2C).CoreClock div Rate;
+ if (Divider and 1) <> 0 then Inc(Divider);
+
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Rate=' + IntToStr(Rate) + ' Divider=' + IntToStr(Divider));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Reset Control (Disable I2C)} 
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=0;
+ 
+ {Reset Status}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+ 
+ {Set Divider}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).CDIV:=(Divider and BCM2835_BSC_CDIV_MASK);
+
+ {Get Slave}
+ Slave:=(PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).A and BCM2835_BSC_A_MASK);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+
+ {Create Wait Semaphore}
+ I2C.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
+ if I2C.Wait = INVALID_HANDLE_VALUE then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Update IRQ Data}
+ if SpinLock(BCM2708BSCI2CIRQData.Lock) = ERROR_SUCCESS then
+  begin
+   BCM2708BSCI2CIRQData.Devices[PBCM2708BSCI2CDevice(I2C).Index]:=PBCM2708BSCI2CDevice(I2C);
+   Inc(BCM2708BSCI2CIRQData.Count);
+   
+   {Check Count}
+   if BCM2708BSCI2CIRQData.Count = 1 then
+    begin
+     {Request IRQ}
+     RequestIRQ(IRQ_ROUTING,BCM2835_IRQ_I2C,TInterruptHandler(BCM2708BSCI2CInterruptHandler),@BCM2708BSCI2CIRQData);
+    end;
+    
+   SpinUnlock(BCM2708BSCI2CIRQData.Lock);
+  end;
+
+ {Update Properties}
+ I2C.ClockRate:=Rate;
+ I2C.SlaveAddress:=Slave;
+ I2C.Properties.ClockRate:=Rate;
+ I2C.Properties.SlaveAddress:=Slave;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2708BSCI2CStop(I2C:PI2CDevice):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Stop');
+ {$ENDIF}
+ 
+ {Update IRQ Data}
+ if SpinLock(BCM2708BSCI2CIRQData.Lock) = ERROR_SUCCESS then
+  begin
+   BCM2708BSCI2CIRQData.Devices[PBCM2708BSCI2CDevice(I2C).Index]:=nil;
+   Dec(BCM2708BSCI2CIRQData.Count);
+   
+   {Check Count}
+   if BCM2708BSCI2CIRQData.Count = 0 then
+    begin
+     {Release IRQ}
+     ReleaseIRQ(IRQ_ROUTING,BCM2835_IRQ_I2C,TInterruptHandler(BCM2708BSCI2CInterruptHandler),@BCM2708BSCI2CIRQData);
+    end;
+    
+   SpinUnlock(BCM2708BSCI2CIRQData.Lock);
+  end;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Reset Control (Disable I2C)} 
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=0;
+ 
+ {Reset Status}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Destroy Wait Semaphore}
+ SemaphoreDestroy(I2C.Wait);
+ 
+ {Reset Transfer}
+ PBCM2708BSCI2CDevice(I2C).Mode:=BCM2708_BSCI2C_MODE_WRITE;
+ PBCM2708BSCI2CDevice(I2C).Data:=nil;
+ PBCM2708BSCI2CDevice(I2C).Count:=0;
+ PBCM2708BSCI2CDevice(I2C).Remain:=0;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+ 
+function BCM2708BSCI2CRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Size}
+ if Size > BCM2708_BSCI2C_MAX_SIZE then Exit;
+ 
+ {Update Statistics}
+ Inc(I2C.ReadCount);
+ 
+ {Read to Buffer}
+ if Size > 0 then
+  begin
+   {Setup Data}
+   PBCM2708BSCI2CDevice(I2C).Mode:=BCM2708_BSCI2C_MODE_READ;
+   PBCM2708BSCI2CDevice(I2C).Data:=Buffer;
+   PBCM2708BSCI2CDevice(I2C).Count:=0;
+   PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+  
+   {Reset Status}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+
+   {Setup Length}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).DLEN:=(Size and BCM2835_BSC_DLEN_MASK);
+   
+   {Setup Address}
+   if (Address <> I2C_ADDRESS_INVALID) and (Address <> I2C.SlaveAddress) then
+    begin
+     {Update Properties}
+     I2C.SlaveAddress:=Address;
+     I2C.Properties.SlaveAddress:=Address;
+    
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).A:=(Address and BCM2835_BSC_A_MASK);
+    end;    
+   
+   {Setup Control (Enable / Interrupt Receive / Interrupt Done / Start / Clear / Read)}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_I2CEN or BCM2835_BSC_C_INTR or BCM2835_BSC_C_INTD or BCM2835_BSC_C_ST or BCM2835_BSC_C_CLEAR or BCM2835_BSC_C_READ;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Wait for Completion}
+   if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
+    begin
+     {Get Count}
+     Count:=PBCM2708BSCI2CDevice(I2C).Count;
+     
+     {Check Count}
+     if Count < Size then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Read failure or timeout'); 
+       
+       {Update Statistics}
+       Inc(I2C.ReadErrors);
+      end;
+    end
+   else
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Wait failure on read'); 
+     
+     Result:=ERROR_OPERATION_FAILED;
+    end;
+    
+   {Reset Data}
+   PBCM2708BSCI2CDevice(I2C).Data:=nil;
+   PBCM2708BSCI2CDevice(I2C).Count:=0;
+   PBCM2708BSCI2CDevice(I2C).Remain:=0;
+  end;
+  
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+  
+ {Return Result}
+ if (Size = Count) then Result:=ERROR_SUCCESS; 
+end; 
+
+{==============================================================================}
+
+function BCM2708BSCI2CWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Size}
+ if Size > BCM2708_BSCI2C_MAX_SIZE then Exit;
+ 
+ {Update Statistics}
+ Inc(I2C.WriteCount);
+ 
+ {Write from Buffer}
+ if Size > 0 then
+  begin
+   {Setup Data}
+   PBCM2708BSCI2CDevice(I2C).Mode:=BCM2708_BSCI2C_MODE_WRITE;
+   PBCM2708BSCI2CDevice(I2C).Data:=Buffer;
+   PBCM2708BSCI2CDevice(I2C).Count:=0;
+   PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+  
+   {Reset Status}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+
+   {Setup Length}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).DLEN:=(Size and BCM2835_BSC_DLEN_MASK);
+   
+   {Setup Address}
+   if (Address <> I2C_ADDRESS_INVALID) and (Address <> I2C.SlaveAddress) then      
+    begin
+     {Update Properties}
+     I2C.SlaveAddress:=Address;
+     I2C.Properties.SlaveAddress:=Address;
+     
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).A:=(Address and BCM2835_BSC_A_MASK);
+    end;    
+   
+   {Setup Control (Clear)}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_CLEAR;
+   
+   {Fill FIFO}
+   BCM2708BSCI2CFillFIFO(PBCM2708BSCI2CDevice(I2C));
+   
+   {Setup Control (Enable / Interrupt Transmit / Interrupt Done / Start)}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_I2CEN or BCM2835_BSC_C_INTT or BCM2835_BSC_C_INTD or BCM2835_BSC_C_ST;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Wait for Completion}
+   if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
+    begin
+     {Get Count}
+     Count:=PBCM2708BSCI2CDevice(I2C).Count;
+     
+     {Check Count}
+     if Count < Size then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Write failure or timeout'); 
+       
+       {Update Statistics}
+       Inc(I2C.WriteErrors);
+      end;
+    end
+   else
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Wait failure on write'); 
+     
+     Result:=ERROR_OPERATION_FAILED;
+    end;
+    
+   {Reset Data}
+   PBCM2708BSCI2CDevice(I2C).Data:=nil;
+   PBCM2708BSCI2CDevice(I2C).Count:=0;
+   PBCM2708BSCI2CDevice(I2C).Remain:=0;
+  end;
+  
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+  
+ {Return Result}
+ if (Size = Count) then Result:=ERROR_SUCCESS; 
+end; 
+
+{==============================================================================}
+
+function BCM2708BSCI2CWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+var
+ Status:LongWord;
+ Retries:LongWord;
+ Written:LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffers}
+ if Initial = nil then Exit;
+ if Data = nil then Exit;
+ 
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Sizes}
+ if Len > BCM2708_BSCI2C_MAX_SIZE then Exit;
+ if Size > BCM2708_BSCI2C_MAX_SIZE then Exit;
+
+ {Check Len}
+ if (Len > BCM2835_BSC_FIFO_SIZE) or not(BCM2708I2C_COMBINED_WRITEREAD) then
+  begin
+   Written:=0;
+   
+   {Write Initial}
+   Result:=BCM2708BSCI2CWrite(I2C,Address,Initial,Len,Written);
+   if Result = ERROR_SUCCESS then
+    begin
+     {Read Data}
+     Result:=BCM2708BSCI2CRead(I2C,Address,Data,Size,Count);
+    end;
+  end
+ else
+  begin
+   {Write from Initial}
+   if Len > 0 then
+    begin
+     {Setup Data}
+     PBCM2708BSCI2CDevice(I2C).Mode:=BCM2708_BSCI2C_MODE_WRITE;
+     PBCM2708BSCI2CDevice(I2C).Data:=Initial;
+     PBCM2708BSCI2CDevice(I2C).Count:=0;
+     PBCM2708BSCI2CDevice(I2C).Remain:=Len;
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Reset Status}
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+     
+     {Setup Length}
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).DLEN:=(Len and BCM2835_BSC_DLEN_MASK);
+     
+     {Setup Address}
+     if (Address <> I2C_ADDRESS_INVALID) and (Address <> I2C.SlaveAddress) then      
+      begin
+       {Update Properties}
+       I2C.SlaveAddress:=Address;
+       I2C.Properties.SlaveAddress:=Address;
+       
+       PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).A:=(Address and BCM2835_BSC_A_MASK);
+      end;    
+     
+     {Setup Control (Clear)}
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_CLEAR;
+     
+     {Fill FIFO}
+     BCM2708BSCI2CFillFIFO(PBCM2708BSCI2CDevice(I2C));
+     
+     {Setup Control (Enable / Start) (No Interrupts)}
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_I2CEN or BCM2835_BSC_C_ST;
+     
+     {Poll Transfer Active}
+     Retries:=200;
+     Status:=PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S;
+     while ((Status and (BCM2835_BSC_S_TA or BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE)) = 0) and (Retries > 0) do
+      begin
+       Status:=PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S;
+       
+       Dec(Retries);
+      end; 
+
+     {Memory Barrier}
+     DataMemoryBarrier; {After the Last Read} 
+      
+     {Check Result}
+     if (Status and (BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR) <> 0) or (Retries = 0) then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Write failure or timeout'); 
+       
+       {Update Statistics}
+       Inc(I2C.WriteErrors);
+       
+       Result:=ERROR_OPERATION_FAILED;
+      end
+     else if Size > 0 then
+      begin
+       {Read to Data}
+       {Setup Data}
+       PBCM2708BSCI2CDevice(I2C).Mode:=BCM2708_BSCI2C_MODE_READ;
+       PBCM2708BSCI2CDevice(I2C).Data:=Data;
+       PBCM2708BSCI2CDevice(I2C).Count:=0;
+       PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+       
+       {Memory Barrier}
+       DataMemoryBarrier; {Before the First Write}
+       
+       {Setup Length}
+       PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).DLEN:=(Size and BCM2835_BSC_DLEN_MASK);
+       
+       {Setup Control (Enable / Interrupt Receive / Interrupt Done / Start / Read) (No Clear)}
+       PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_I2CEN or BCM2835_BSC_C_INTR or BCM2835_BSC_C_INTD or BCM2835_BSC_C_ST or BCM2835_BSC_C_READ;
+       
+       {Memory Barrier}
+       DataMemoryBarrier; {After the Last Read} 
+       
+       {Wait for Completion}
+       if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
+        begin
+         {Get Count}
+         Count:=PBCM2708BSCI2CDevice(I2C).Count;
+         
+         {Check Count}
+         if Count < Size then
+          begin
+           if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Read failure or timeout'); 
+           
+           {Update Statistics}
+           Inc(I2C.ReadErrors);
+          end;
+        end
+       else
+        begin
+         if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Wait failure on read'); 
+         
+         Result:=ERROR_OPERATION_FAILED;
+        end;
+      end;
+      
+     {Reset Data}
+     PBCM2708BSCI2CDevice(I2C).Data:=nil;
+     PBCM2708BSCI2CDevice(I2C).Count:=0;
+     PBCM2708BSCI2CDevice(I2C).Remain:=0;
+    end;
+  
+  
+   {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+   if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Return Count=' + IntToStr(Count));
+   {$ENDIF}
+    
+   {Return Result}
+   if (Size = Count) then Result:=ERROR_SUCCESS; 
+  end;  
+end;
+
+{==============================================================================}
+
+function BCM2708BSCI2CWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffers}
+ if Initial = nil then Exit;
+ if Data = nil then Exit;
+ 
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+ 
+ {Check Sizes}
+ if Len > BCM2835_BSC_FIFO_SIZE then Exit;
+ if Size > BCM2708_BSCI2C_MAX_SIZE then Exit;
+
+ {Write from Initial and Data}
+ if (Len > 0) and (Size > 0) then
+  begin
+   {Setup Data}
+   PBCM2708BSCI2CDevice(I2C).Mode:=BCM2708_BSCI2C_MODE_WRITE;
+   PBCM2708BSCI2CDevice(I2C).Data:=Data;
+   PBCM2708BSCI2CDevice(I2C).Count:=0;
+   PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+     
+   {Reset Status}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+ 
+   {Setup Length}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).DLEN:=((Size + Len) and BCM2835_BSC_DLEN_MASK);
+ 
+   {Setup Address}
+   if (Address <> I2C_ADDRESS_INVALID) and (Address <> I2C.SlaveAddress) then      
+    begin
+     {Update Properties}
+     I2C.SlaveAddress:=Address;
+     I2C.Properties.SlaveAddress:=Address;
+     
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).A:=(Address and BCM2835_BSC_A_MASK);
+    end;    
+   
+   {Setup Control (Clear)}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_CLEAR;
+ 
+   {Write Initial to FIFO}
+   while (PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S and BCM2835_BSC_S_TXD) <> 0 do
+    begin
+     {Write Initial}
+     PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).FIFO:=(PLongWord(Initial)^ and BCM2835_BSC_FIFO_MASK);
+   
+     {Update Initial}
+     Inc(Initial);
+     Dec(Len);
+     
+     if Len = 0 then Break;
+    end; 
+   
+   {Fill FIFO from Data}
+   BCM2708BSCI2CFillFIFO(PBCM2708BSCI2CDevice(I2C));
+   
+   {Setup Control (Enable / Interrupt Transmit / Interrupt Done / Start)}
+   PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_I2CEN or BCM2835_BSC_C_INTT or BCM2835_BSC_C_INTD or BCM2835_BSC_C_ST;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Wait for Completion}
+   if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
+    begin
+     {Get Count}
+     Count:=PBCM2708BSCI2CDevice(I2C).Count;
+     
+     {Check Count}
+     if Count < Size then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Write failure or timeout'); 
+       
+       {Update Statistics}
+       Inc(I2C.WriteErrors);
+      end;
+    end
+   else
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Wait failure on write'); 
+     
+     Result:=ERROR_OPERATION_FAILED;
+    end;
+    
+   {Reset Data}
+   PBCM2708BSCI2CDevice(I2C).Data:=nil;
+   PBCM2708BSCI2CDevice(I2C).Count:=0;
+   PBCM2708BSCI2CDevice(I2C).Remain:=0;
+  end;
+  
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+  
+ {Return Result}
+ if (Size = Count) then Result:=ERROR_SUCCESS; 
+end; 
+   
+{==============================================================================}
+ 
+function BCM2708BSCI2CSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
+var
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Set Rate (Rate=' + IntToStr(Rate) + ')');
+ {$ENDIF}
+ 
+ {Check Rate}
+ if (Rate < I2C.Properties.MinClock) or (Rate > I2C.Properties.MaxClock) then Exit;
+ 
+ {Get Divider}
+ Divider:=PBCM2708BSCI2CDevice(I2C).CoreClock div Rate;
+ if (Divider and 1) <> 0 then Inc(Divider);
+
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Divider=' + IntToStr(Divider));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Set Divider}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).CDIV:=(Divider and BCM2835_BSC_CDIV_MASK);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ I2C.ClockRate:=Rate;
+ I2C.Properties.ClockRate:=Rate;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS; 
+end; 
+
+{==============================================================================}
+ 
+function BCM2708BSCI2CSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708: BSCI2C Set Address (Address=' + IntToHex(Address,4) + ')');
+ {$ENDIF}
+
+ {Check Address}
+ if Address = I2C_ADDRESS_INVALID then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Set Address}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).A:=(Address and BCM2835_BSC_A_MASK);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ I2C.SlaveAddress:=Address;
+ I2C.Properties.SlaveAddress:=Address;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS; 
+end; 
+
+{==============================================================================}
+
+procedure BCM2708BSCI2CFillFIFO(I2C:PBCM2708BSCI2CDevice);
+{Caller will hold the I2C device lock}
+{Note: Called from within the interrupt handler}
+begin
+ {}
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {Check Mode}
+ if I2C.Mode = BCM2708_BSCI2C_MODE_READ then Exit;
+ 
+ {Check Space}
+ while (I2C.Remain > 0) and ((PBCM2835BSCRegisters(I2C.Address).S and BCM2835_BSC_S_TXD) <> 0) do
+  begin
+   {Write Data}
+   PBCM2835BSCRegisters(I2C.Address).FIFO:=(PLongWord(I2C.Data)^ and BCM2835_BSC_FIFO_MASK);
+   
+   {Update Data}
+   Inc(I2C.Data);
+   Inc(I2C.Count);
+   Dec(I2C.Remain);
+  end;
+end;
+
+{==============================================================================}
+
+procedure BCM2708BSCI2CDrainFIFO(I2C:PBCM2708BSCI2CDevice);
+{Caller will hold the I2C device lock}
+{Note: Called from within the interrupt handler}
+begin
+ {}
+ {Check I2C}
+ if I2C = nil then Exit;
+ 
+ {Check Mode}
+ if I2C.Mode = BCM2708_BSCI2C_MODE_WRITE then Exit;
+ 
+ {Check Data}
+ while (I2C.Remain > 0) and ((PBCM2835BSCRegisters(I2C.Address).S and BCM2835_BSC_S_RXD) <> 0) do
+  begin
+   {Read Data}
+   PByte(I2C.Data)^:=(PBCM2835BSCRegisters(I2C.Address).FIFO and BCM2835_BSC_FIFO_MASK);
+   
+   {Update Data}
+   Inc(I2C.Data);
+   Inc(I2C.Count);
+   Dec(I2C.Remain);
+  end;
+end;
+
+{==============================================================================}
+
+procedure BCM2708BSCI2CInterruptHandler(IRQData:PBCM2708BSCI2CIRQData);
+{Note: Thread submitting the current request will hold the I2C device lock}
+var
+ Count:LongWord;
+ Status:LongWord;
+ I2C:PBCM2708BSCI2CDevice;
+begin
+ {}
+ {Check IRQ Data}
+ if IRQData = nil then Exit;
+ 
+ {Check Count}
+ if IRQData.Count > 0 then
+  begin
+   for Count:=0 to 2 do
+    begin
+     {Check Device}
+     I2C:=IRQData.Devices[Count];
+     if (I2C <> nil) and (I2C.Data <> nil) then
+      begin
+       {Memory Barrier}
+       DataMemoryBarrier; {Before the First Write}
+
+       {Read Status}
+       Status:=PBCM2835BSCRegisters(I2C.Address).S;
+       
+       {Check Status}
+       if (Status and (BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR)) <> 0 then
+        begin
+         {Error}
+         {Update Statistics}
+         Inc(I2C.InterruptCount);
+         
+         {Reset Control (Disable I2C)} 
+         PBCM2835BSCRegisters(I2C.Address).C:=0;
+         
+         {Reset Status}
+         PBCM2835BSCRegisters(I2C.Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+         
+         {Signal Semaphore}
+         SemaphoreSignal(I2C.I2C.Wait);
+        end
+       else if (Status and BCM2835_BSC_S_DONE) <> 0 then
+        begin
+         {Completed}
+         {Update Statistics}
+         Inc(I2C.InterruptCount);
+
+         {Check Mode}
+         if I2C.Mode = BCM2708_BSCI2C_MODE_READ then
+          begin
+           {Drain FIFO}
+           BCM2708BSCI2CDrainFIFO(I2C);
+          end;
+          
+         {Reset Control (Disable I2C)} 
+         PBCM2835BSCRegisters(I2C.Address).C:=0;
+         
+         {Reset Status}
+         PBCM2835BSCRegisters(I2C.Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
+         
+         {Signal Semaphore}
+         SemaphoreSignal(I2C.I2C.Wait);
+        end
+       else if (Status and BCM2835_BSC_S_RXR) <> 0 then 
+        begin
+         {Receive}
+         {Update Statistics}
+         Inc(I2C.InterruptCount);
+
+         {Drain FIFO}
+         BCM2708BSCI2CDrainFIFO(I2C);
+        end
+       else if (Status and BCM2835_BSC_S_TXW) <> 0 then 
+        begin
+         {Transmit}
+         {Update Statistics}
+         Inc(I2C.InterruptCount);
+
+         {Fill FIFO}
+         BCM2708BSCI2CFillFIFO(I2C);
+        end;
+       
+       {Memory Barrier}
+       DataMemoryBarrier; {After the Last Read} 
+      end;
+    end;
+  end;
+end; 
+
+{==============================================================================}
+{==============================================================================}
+{BCM2708 SPI AUX (SPI1/2) Functions}
+//To Do //Continuing
+
+{==============================================================================}
+{==============================================================================}
+{BCM2708 SPI/I2C Slave Functions}
 
 {==============================================================================}
 {==============================================================================}
@@ -2394,6 +4266,46 @@ begin
   end;
  
  Result:=ERROR_SUCCESS;  
+end;
+
+{==============================================================================}
+
+function BCM2708GPIORead(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
+begin
+ {}
+ Result:=0;
+ 
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2708: GPIO Read (Reg=' + IntToHex(Reg,8) + ')');
+ {$ENDIF}
+ 
+ {Read Register}
+ Result:=PLongWord(GPIO.Address + Reg)^;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+procedure BCM2708GPIOWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
+begin
+ {}
+ {Check GPIO}
+ if GPIO = nil then Exit;
+ 
+ {$IF DEFINED(BCM2708_DEBUG) or DEFINED(GPIO_DEBUG)}
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2708: GPIO Write (Reg=' + IntToHex(Reg,8) + ' Value=' + IntToHex(Value,8) + ')');
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+   
+ {Write Value}
+ PLongWord(GPIO.Address + Reg)^:=Value;
 end;
 
 {==============================================================================}

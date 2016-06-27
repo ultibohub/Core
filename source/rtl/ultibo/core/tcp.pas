@@ -106,7 +106,7 @@ const
  {Note: Some TCP definitions are in the Protocol or IP modules}
  TCP_PROTOCOL_NAME = 'TCP';
  
- TCP_TIMER_INTERVAL = 5; //10;   {10ms timer interval for TCP} //TestingRpi
+ TCP_TIMER_INTERVAL = 1;    {1ms timer interval for TCP}
  
  {TCP Constants}
  MIN_TCP_PACKET = 20;       {Not Counting Adapter and Transport Header}
@@ -119,8 +119,9 @@ const
 
  TCP_TIMEOUT = 0;           {Wait forever on a TCP Read/Write}
  TCP_BUFFER_SIZE = 262144;  {65536;} {TCP Send/Receive Buffer Sizes}
- TCP_WINDOW_SIZE = 64240;   {32768;}   {Sliding Window Receive Size (44 x MSS)}
-
+ TCP_WINDOW_SIZE = 16060;   {64240;} {Sliding Window Receive Size (44 x MSS)}
+ TCP_INITIAL_WINDOW = 8192; {Initial Window to advertise in SYN packet} 
+ 
  TCP_WINDOW_TIMEOUT = 300;  {Time to wait before probing small/zero Window}
  TCP_ACK_TIMEOUT = 200;     {Max Delayed Ack Time}
 
@@ -305,8 +306,10 @@ type
    {Public Methods}
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
-   function ProcessSockets:Boolean; override;
    function ProcessProtocol:Boolean; override;
+   
+   function ProcessSockets:Boolean; override;
+   function ProcessSocket(ASocket:TProtocolSocket):Boolean; override;
  end;
 
  TTCPState = class;
@@ -4016,7 +4019,11 @@ begin
   begin
    {Check for Connected}
    SetLastError(WSAENOTCONN);
-   if not ASocket.SocketState.Connected then Exit;
+   if not ASocket.SocketState.Connected then
+    begin
+     {Check for CLOSWAIT}
+     if TTCPState(ASocket.ProtocolState).State <> TCP_STATE_CLOSWAIT then Exit;
+    end;
    
    {Check for Bound}
    SetLastError(WSAEINVAL);
@@ -4078,7 +4085,7 @@ begin
       end;
      
      {Check for Disconnecting}
-     if ASocket.SocketState.Disconnecting then
+     if (ASocket.SocketState.Disconnecting) and (TTCPSocket(ASocket).RecvData.GetAvailable = 0) then
       begin
        SetLastError(ASocket.SocketError);
        Result:=0;
@@ -4578,7 +4585,7 @@ begin
   FReceiveBacklog:=Manager.Settings.GetIntegerDefault('TCP_RECEIVE_BACKLOG',TCP_RECEIVE_BACKLOG);
   
   {Create Thread}
-  FThread:=TSocketThread.Create(Self,Manager.Settings.GetIntegerDefault('TCP_MESSAGESLOT_MAXIMUM',TCP_MESSAGESLOT_MAXIMUM));
+  FThread:=TSocketThread.Create(Self);
   {FThread.FreeOnTerminate:=True;} {Freed by StopProtocol}
   
   {Start Thread}
@@ -4676,8 +4683,31 @@ end;
 
 {==============================================================================}
 
+function TTCPProtocol.ProcessProtocol:Boolean;
+{Process periodic tasks for this protocol}
+begin
+ {}
+ {Close old Sockets}
+ FlushSockets(False);
+ 
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
 function TTCPProtocol.ProcessSockets:Boolean;
 {Process periodic tasks for protocol sockets}
+begin
+ {}
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TTCPProtocol.ProcessSocket(ASocket:TProtocolSocket):Boolean; 
+{Process periodic tasks for a protocol socket}
 var
  Size:Word;
  Flags:Byte;
@@ -4691,9 +4721,9 @@ var
 begin
  {}
  Result:=False;
-  
+ 
  {Get Socket}
- Socket:=TTCPSocket(ReceiveSocket);
+ Socket:=TTCPSocket(ASocket);
  if Socket <> nil then
   begin
    {Check Socket}
@@ -4714,7 +4744,7 @@ begin
           Options:=TTCPOptions(Socket.ProtocolOptions).Options;
           if not CreateTCPOptions(Socket,Options,Flags) then Exit;
          end;
-      
+        
         {Send the Segment}
         Result:=(SendSegment(Socket,@TIPState(Socket.TransportState).LocalAddress,@TIPState(Socket.TransportState).RemoteAddress,Socket.ProtocolState.LocalPort,Socket.ProtocolState.RemotePort,Sequence,Acknowledge,Window,Urgent,Flags,Options,Data,Size) <> SOCKET_ERROR);
        end;
@@ -4724,19 +4754,6 @@ begin
      end;     
     end;  
   end;
-end;
-
-{==============================================================================}
-
-function TTCPProtocol.ProcessProtocol:Boolean;
-{Process periodic tasks for this protocol}
-begin
- {}
- {Close old Sockets}
- FlushSockets(False);
- 
- {Return Result}
- Result:=True;
 end;
 
 {==============================================================================}
@@ -6230,7 +6247,7 @@ end;
 {==============================================================================}
 
 function TTCPSocket.SendSegment(var ASequence,AAcknowledge:LongWord;var AWindow,AUrgent:Word;var AFlags:Byte;var AData:Pointer;var ASize:Word):Boolean;
-{Used by Process Sockets to get segments/acks for Sending}
+{Used by Process Socket to get segments/acks for Sending}
 
 {Note: Size can return zero and Data can return nil}
 begin
@@ -7171,7 +7188,7 @@ begin
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
-  FlushSegments(False);
+  {FlushSegments(False);}
   
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: ReadSegment');
@@ -7370,7 +7387,7 @@ begin
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
-  FlushSegments(False);
+  {FlushSegments(False);}
   
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: AcknowledgeSegments');
@@ -7403,8 +7420,6 @@ begin
           
           {Set Acknowledged}
           Acknowledged:=True;
-          //{Signal the Thread} //Remove
-          //TProtocolSocket(FSocket).SendSocket;
           
           {$IFDEF TCP_DEBUG}
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Acknowledge Segment'); 
@@ -7422,7 +7437,7 @@ begin
       Segment:=Segment.Next;
      end;
     
-    {Signal the Thread} //TestingRPi
+    {Signal the Thread}
     if Acknowledged then TProtocolSocket(FSocket).SendSocket;
     
     {Move the LastAcknowledge}
@@ -8288,7 +8303,7 @@ begin
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
-  FlushSegments(False);
+  {FlushSegments(False);}
   
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: WriteSegment');
@@ -8486,9 +8501,9 @@ begin
            end;
            
           {Schedule the Thread} 
-          TProtocolSocket(FSocket).ScheduleSocket(TCP_ACK_TIMEOUT);
+          if not(Sequenced) then TProtocolSocket(FSocket).ScheduleSocket(TCP_ACK_TIMEOUT);
           
-          {Signal the Thread} //TestingRPi 
+          {Signal the Thread}
           if Sequenced then TProtocolSocket(FSocket).SendSocket;
          end;
        end
@@ -8585,7 +8600,7 @@ begin
           Inc(FUsed,Segment.Size);
           
           {Schedule the Thread} 
-          TProtocolSocket(FSocket).ScheduleSocket(TCP_ACK_TIMEOUT);
+          if (Current = nil) or (Current.Acknowledged) then TProtocolSocket(FSocket).ScheduleSocket(TCP_ACK_TIMEOUT);
          end;
        end; 
 
@@ -8623,7 +8638,7 @@ begin
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
-  FlushSegments(False);
+  {FlushSegments(False);}
   
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: AcknowledgeSegments');
@@ -8631,7 +8646,7 @@ begin
   
   {Get the Defaults}
   AAcknowledge:=LastAcknowledge;
-  AWindow:=(WindowSize shr WindowScale);
+  AWindow:=Min((WindowSize shr WindowScale),FFree);
   
   {Check the Acknowledge}
   if LastAcknowledge = NextSequence then Exit;
@@ -8647,8 +8662,8 @@ begin
       {Check Sequence (is this segment in order)}
       if SequenceLEQ(Segment.LastSequence,NextSequence) then
        begin
-        {Check ACK Timeout (Unless Force, Override or another ACK is ready}
-        if (AForce) or (Result) or (DelayOverride(Segment)) or ((Segment.Timeout + TCP_ACK_TIMEOUT) < CurrentTime) then
+        {Check ACK Timeout (Unless Force, Override, another ACK is ready or segment contains FIN)}
+        if (AForce) or (Result) or (DelayOverride(Segment)) or ((Segment.Timeout + TCP_ACK_TIMEOUT) < CurrentTime) or ((Segment.Control and TCP_FLAG_FIN) = TCP_FLAG_FIN) then
          begin
           {Acknowledge Segment}
           Segment.Acknowledged:=True;
@@ -8656,10 +8671,7 @@ begin
           AAcknowledge:=LastAcknowledge;
           
           {Update Window}
-          //AWindow:=(WindowSize shr WindowScale);
-          //To Do //Use LastAck/NextSeq/FAvailable/FFree/FUsed ??
-          //Need to account for FFree in this ??
-          AWindow:=(WindowSize shr WindowScale) - (NextSequence - LastAcknowledge);
+          AWindow:=Min((WindowSize shr WindowScale) - (NextSequence - LastAcknowledge),FFree);
           
           {Return Result}
           Result:=True;

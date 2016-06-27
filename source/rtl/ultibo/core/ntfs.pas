@@ -11737,17 +11737,21 @@ begin
    {Create FileNames}
    if not CreateFileNames then Exit;
   
-   {Create ObjIds}
-   if not CreateObjIds then Exit;
-  
-   {Create Owners}
-   if not CreateOwners then Exit;
-  
-   {Create Quotas}
-   if not CreateQuotas then Exit;
-  
-   {Create Reparses}
-   if not CreateReparses then Exit;
+   {Check Version}
+   if FNTFSType <> ntNTFS12 then
+    begin
+     {Create ObjIds}
+     if not CreateObjIds then Exit;
+     
+     {Create Owners}
+     if not CreateOwners then Exit;
+     
+     {Create Quotas}
+     if not CreateQuotas then Exit;
+     
+     {Create Reparses}
+     if not CreateReparses then Exit;
+    end; 
   
    {Create LogFiles}
    if not CreateLogFiles then Exit;

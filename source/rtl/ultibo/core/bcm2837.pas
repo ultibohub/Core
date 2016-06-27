@@ -264,7 +264,7 @@ const
  {Pixelvalve}
  BCM2837_IRQ_PIXELVALVE1    = 42;
  
- {I2C / SPI}
+ {I2C / SPI Slave}
  BCM2837_IRQ_I2CSPI         = 43;
  
  {DSI1}
@@ -541,13 +541,93 @@ const
  BCM2837_DMA_DREQ_SLIMBUS_DC8  = 30;
  BCM2837_DMA_DREQ_SLIMBUS_DC9  = 31;
  
-//const
- {BSC (I2C) register bits (See 3.2)} 
- //To Do  
+const
+ {BSC (I2C0/1/2) Control register bits (See 3.2)} 
+ BCM2837_BSC_C_I2CEN = (1 shl 15); {I2C Enable (0 = BSC controller is disabled / 1 = BSC controller is enabled)}
+ BCM2837_BSC_C_INTR  = (1 shl 10); {INTR Interrupt on RX (0 = Don t generate interrupts on RXR condition / 1 = Generate interrupt while RXR = 1)}
+ BCM2837_BSC_C_INTT  = (1 shl 9);  {INTT Interrupt on TX (0 = Don t generate interrupts on TXW condition / 1 = Generate interrupt while TXW = 1)} 
+ BCM2837_BSC_C_INTD  = (1 shl 8);  {INTD Interrupt on DONE (0 = Don t generate interrupts on DONE condition / 1 = Generate interrupt while DONE = 1)} 
+ BCM2837_BSC_C_ST    = (1 shl 7);  {ST Start Transfer (0 = No action / 1 = Start a new transfer. One shot operation. Read back as 0)} 
+ BCM2837_BSC_C_CLEAR = (1 shl 5);  {CLEAR FIFO Clear (00 = No action / x1 = Clear FIFO. One shot operation / 1x = Clear FIFO. One shot operation)} 
+ BCM2837_BSC_C_READ  = (1 shl 0);  {READ Read Transfer (0 = Write Packet Transfer / 1 = Read Packet Transfer)} 
+
+ {BSC (I2C0/1/2) Status register bits (See 3.2)} 
+ BCM2837_BSC_S_CLKT = (1 shl 9); {CLKT Clock Stretch Timeout (0 = No errors detected. 1 = Slave has held the SCL signal low (clock stretching) for longer and that specified in the I2CCLKT register Cleared by writing 1 to the field)} 
+ BCM2837_BSC_S_ERR  = (1 shl 8); {ERR ACK Error (0 = No errors detected. 1 = Slave has not acknowledged its address. Cleared by writing 1 to the field)}  
+ BCM2837_BSC_S_RXF  = (1 shl 7); {RXF - FIFO Full (0 = FIFO is not full. 1 = FIFO is full. If a read is underway, no further serial data will be received until data is read from FIFO)}  
+ BCM2837_BSC_S_TXE  = (1 shl 6); {TXE - FIFO Empty (0 = FIFO is not empty. 1 = FIFO is empty. If a write is underway, no further serial data can be transmitted until data is written to the FIFO)}  
+ BCM2837_BSC_S_RXD  = (1 shl 5); {RXD - FIFO contains Data (0 = FIFO is empty. 1 = FIFO contains at least 1 byte. Cleared by reading sufficient data from FIFO)}  
+ BCM2837_BSC_S_TXD  = (1 shl 4); {TXD - FIFO can accept Data (0 = FIFO is full. The FIFO cannot accept more data. 1 = FIFO has space for at least 1 byte)}  
+ BCM2837_BSC_S_RXR  = (1 shl 3); {RXR - FIFO needs Reading (full) (0 = FIFO is less than full and a read is underway. 1 = FIFO is or more full and a read is underway. Cleared by reading sufficient data from the FIFO)}  
+ BCM2837_BSC_S_TXW  = (1 shl 2); {TXW - FIFO needs Writing (full) (0 = FIFO is at least full and a write is underway (or sufficient data to send). 1 = FIFO is less then full and a write is underway. Cleared by writing sufficient data to the FIFO)}
+ BCM2837_BSC_S_DONE = (1 shl 1); {DONE Transfer Done (0 = Transfer not completed. 1 = Transfer complete. Cleared by writing 1 to the field)} 
+ BCM2837_BSC_S_TA   = (1 shl 0); {TA Transfer Active (0 = Transfer not active. 1 = Transfer active)} 
  
-//const
+ {BSC (I2C0/1/2) Data Length register bits (See 3.2)} 
+ BCM2837_BSC_DLEN_MASK = $FFFF; {Data Length. (Writing to DLEN specifies the number of bytes to be transmitted/received. Reading from DLEN when TA = 1 or DONE = 1, returns the number of bytes still to be transmitted or received)}
+
+ {BSC (I2C0/1/2) Slave Address register bits (See 3.2)} 
+ BCM2837_BSC_A_MASK = $7F; {Slave Address.}
+ 
+ {BSC (I2C0/1/2) Data FIFO register bits (See 3.2)} 
+ BCM2837_BSC_FIFO_MASK = $FF; {Writes to the register write transmit data to the FIFO. Reads from register reads received data from the FIFO.}
+ BCM2837_BSC_FIFO_SIZE = 16;
+ 
+ {BSC (I2C0/1/2) Clock Divider register bits (See 3.2)} 
+ BCM2837_BSC_CDIV_MASK = $FFFF; {Clock Divider (SCL = core clock / CDIV) (CDIV is always rounded down to an even number)}
+ 
+ {BSC (I2C0/1/2) Data Delay register bits (See 3.2)} 
+ BCM2837_BSC_DEL_FEDL_MASK = ($FFFF shl 16); {FEDL Falling Edge Delay (Number of core clock cycles to wait after the falling edge of SCL before outputting next bit of data)}
+ BCM2837_BSC_DEL_REDL_MASK = ($FFFF shl 0);  {REDL Rising Edge Delay (Number of core clock cycles to wait after the rising edge of SCL before reading the next bit of data)}
+ 
+ {BSC (I2C0/1/2) Clock Stretch Timeout register bits (See 3.2)} 
+ BCM2837_BSC_CLKT_TOUT_MASK = $FFFF; {TOUT Clock Stretch Timeout Value (Number of SCL clock cycles to wait after the rising edge of SCL before deciding that the slave is not responding)}
+ 
+const
  {SPI0 register bits (See 10.5)} 
- //To Do  
+ BCM2837_SPI0_CS_LEN_LONG = (1 shl 25); {Enable Long data word in Lossi mode if DMA_LEN is set (0 = writing to the FIFO will write a single byte / 1 = writing to the FIFO will write a 32 bit word)}
+ BCM2837_SPI0_CS_DMA_LEN  = (1 shl 24); {Enable DMA mode in Lossi mode}
+ BCM2837_SPI0_CS_CSPOL2   = (1 shl 23); {Chip Select 2 Polarity (0 = Chip select is active low / 1 = Chip select is active high)}
+ BCM2837_SPI0_CS_CSPOL1   = (1 shl 22); {Chip Select 1 Polarity (0 = Chip select is active low / 1 = Chip select is active high)}
+ BCM2837_SPI0_CS_CSPOL0   = (1 shl 21); {Chip Select 0 Polarity (0 = Chip select is active low / 1 = Chip select is active high)}
+ BCM2837_SPI0_CS_RXF      = (1 shl 20); {RXF - RX FIFO Full (0 = RXFIFO is not full / 1 = RX FIFO is full. No further serial data will be sent/received until data is read from FIFO)}
+ BCM2837_SPI0_CS_RXR      = (1 shl 19); {RXR RX FIFO needs Reading (full) (0 = RX FIFO is less than full (or not active TA = 0) / 1 = RX FIFO is or more full. Cleared by reading sufficient data from the RX FIFO or setting TA to 0)}
+ BCM2837_SPI0_CS_TXD      = (1 shl 18); {TXD TX FIFO can accept Data (0 = TX FIFO is full and so cannot accept more data / 1 = TX FIFO has space for at least 1 byte)}
+ BCM2837_SPI0_CS_RXD      = (1 shl 17); {RXD RX FIFO contains Data (0 = RX FIFO is empty / 1 = RX FIFO contains at least 1 byte)}
+ BCM2837_SPI0_CS_DONE     = (1 shl 16); {DONE Transfer Done (0 = Transfer is in progress (or not active TA = 0) / 1 = Transfer is complete. Cleared by writing more data to the TX FIFO or setting TA to 0)}
+ BCM2837_SPI0_CS_TE_EN    = (1 shl 15); {Unused}
+ BCM2837_SPI0_CS_LMONO    = (1 shl 14); {Unused}
+ BCM2837_SPI0_CS_LEN      = (1 shl 13); {LEN LoSSI enable (0 = The serial interface will behave as an SPI master / 1 = The serial interface will behave as a LoSSI master)}
+ BCM2837_SPI0_CS_REN      = (1 shl 12); {REN Read Enable. If this bit is set, the SPI peripheral will be able to send data to this device (0 = We intend to write to the SPI peripheral / 1 = We intend to read from the SPI peripheral)}
+ BCM2837_SPI0_CS_ADCS     = (1 shl 11); {ADCS Automatically Deassert Chip Select (0 = Don t automatically deassert chip select at the end of a DMA transfer chip select is manually controlled by software. / 1 = Automatically deassert chip select at the end of a DMA transfer as determined by SPIDLEN)}
+ BCM2837_SPI0_CS_INTR     = (1 shl 10); {INTR Interrupt on RXR (0 = Don t generate interrupts on RX FIFO condition / 1 = Generate interrupt while RXR = 1)}
+ BCM2837_SPI0_CS_INTD     = (1 shl 9);  {INTD Interrupt on Done (0 = Don t generate interrupt on transfer complete / 1 = Generate interrupt when DONE = 1)}
+ BCM2837_SPI0_CS_DMAEN    = (1 shl 8);  {DMAEN DMA Enable (0 = No DMA requests will be issued / 1 = Enable DMA operation. Peripheral generates data requests. These will be taken in four-byte words until the SPIDLEN has been reached}
+ BCM2837_SPI0_CS_TA       = (1 shl 7);  {Transfer Active (0 = Transfer not active / 1 = Transfer active)}
+ BCM2837_SPI0_CS_CSPOL    = (1 shl 6);  {Chip Select Polarity (0 = Chip select lines are active low / 1 = Chip select lines are active high}
+ BCM2837_SPI0_CS_CLEAR_RX = (1 shl 5);  {CLEAR FIFO Clear (00 = No action / x1 = Clear TX FIFO. One shot operation / 1x = Clear RX FIFO. One shot operation)}
+ BCM2837_SPI0_CS_CLEAR_TX = (1 shl 4);  {As above}
+ BCM2837_SPI0_CS_CPOL     = (1 shl 3);  {Clock Polarity (0 = Rest state of clock = low / 1 = Rest state of clock = high)}
+ BCM2837_SPI0_CS_CPHA     = (1 shl 2);  {Clock Phase (0 = First SCLK transition at middle of data bit / 1 = First SCLK transition at beginning of data bit)}
+ BCM2837_SPI0_CS_CS_0     = (0 shl 0);  {Chip Select (00 = Chip select 0 / 01 = Chip select 1 / 10 = Chip select 2 / 11 = Reserved}
+ BCM2837_SPI0_CS_CS_1     = (1 shl 0);  {As above}
+ BCM2837_SPI0_CS_CS_2     = (2 shl 0);  {As above}
+ 
+ BCM2837_SPI0_CS_CS_MASK  = (3 shl 0);
+ 
+ BCM2837_SPI0_FIFO_DMA_DATA = $FFFFFFFF; {DMA Mode (DMAEN set) If TA is clear, the first 32-bit write to this register will control SPIDLEN and SPICS. Subsequent reads and writes will be taken as four-byte data words to be read/written to the FIFOs}
+ BCM2837_SPI0_FIFO_IRQ_DATA = $000000FF; {Poll/Interrupt Mode (DMAEN clear, TA set) Writes to the register write bytes to TX FIFO. Reads from register read bytes from the RX FIFO}
+                                       
+ BCM2837_SPI0_CLK_CDIV    = $0000FFFF; {Clock Divider (SCLK = Core Clock / CDIV) If CDIV is set to 0, the divisor is 65536. The divisor must be a multiple of 2. Odd numbers rounded down. The maximum SPI clock rate is of the APB clock}
+ 
+ BCM2837_SPI0_DLEN_LEN    = $0000FFFF; {Data Length. The number of bytes to transfer. This field is only valid for DMA mode (DMAEN set) and controls how many bytes to transmit (and therefore receive)}
+ 
+ BCM2837_SPI0_LTOH_TOH    = $0000000F; {This sets the Output Hold delay in APB clocks (A value of 0 causes a 1 clock delay)}
+ 
+ BCM2837_SPI0_DC_RPANIC   = ($FF shl 24); {DMA Read Panic Threshold (Generate the Panic signal to the RX DMA engine whenever the RX FIFO level is greater than this amount)}
+ BCM2837_SPI0_DC_RDREQ    = ($FF shl 16); {DMA Read Request Threshold (Generate A DREQ to the RX DMA engine whenever the RX FIFO level is greater than this amount) (RX DREQ is also generated if thetransfer has finished but the RXFIFO isn't empty)}
+ BCM2837_SPI0_DC_TPANIC   = ($FF shl 8);  {DMA Write Panic Threshold (Generate the Panic signal to the TX DMA engine whenever the TX FIFO level is less than or equal to this amount)}
+ BCM2837_SPI0_DC_TDREQ    = ($FF shl 0);  {DMA Write Request Threshold (Generate a DREQ signal to the TX DMA engine whenever the TX FIFO level is less than or equal to this amount)}
  
 //const
  {I2C / SPI Slave register bits (See 11.2)}

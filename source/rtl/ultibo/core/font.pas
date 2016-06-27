@@ -112,6 +112,7 @@ const
  FONT_FLAG_CODEPAGE   = $00000002; {Font has a specified codepage}
  FONT_FLAG_BIGENDIAN  = $00000004; {Font characters are in big endian order (Only applies to characters larger than one byte)}
  FONT_FLAG_RIGHTALIGN = $00000008; {Font characters are right aligned, no need to shift during load}
+ FONT_FLAG_VARIABLE   = $00000010; {Font characters are variable width rather than fixed}
  
 {==============================================================================}
 //const
@@ -295,6 +296,12 @@ function FontGetWidth(Handle:TFontHandle):LongWord;
 function FontGetHeight(Handle:TFontHandle):LongWord;
 
 function FontGetProperties(Handle:TFontHandle;Properties:PFontProperties):LongWord;
+
+function FontCharWidth(Handle:TFontHandle;Character:Word):LongWord;
+function FontCharHeight(Handle:TFontHandle;Character:Word):LongWord;
+
+function FontTextWidth(Handle:TFontHandle;const Text:String):LongWord;
+function FontTextHeight(Handle:TFontHandle;const Text:String):LongWord;
 
 function FontFindByName(const Name:String):TFontHandle; 
 function FontFindByDescription(const Description:String):TFontHandle; 
@@ -1146,6 +1153,126 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;  
+end;
+
+{==============================================================================}
+
+function FontCharWidth(Handle:TFontHandle;Character:Word):LongWord;
+var
+ Font:PFontEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Font}
+ Font:=PFontEntry(Handle);
+ if Font = nil then Exit;
+ if Font.Signature <> FONT_SIGNATURE then Exit;
+ 
+ {Check Flags}
+ if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
+  begin
+   {Get Width}
+   Result:=Font.CharWidth;
+  end
+ else
+  begin
+   {Calculate Width}
+   //To Do
+  end;
+end;
+
+{==============================================================================}
+
+function FontCharHeight(Handle:TFontHandle;Character:Word):LongWord;
+var
+ Font:PFontEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Font}
+ Font:=PFontEntry(Handle);
+ if Font = nil then Exit;
+ if Font.Signature <> FONT_SIGNATURE then Exit;
+ 
+ {Check Flags}
+ if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
+  begin
+   {Get Height}
+   Result:=Font.CharHeight;
+  end
+ else
+  begin
+   {Calculate Height}
+   //To Do
+  end;
+end;
+
+{==============================================================================}
+
+function FontTextWidth(Handle:TFontHandle;const Text:String):LongWord;
+var
+ Font:PFontEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Font}
+ Font:=PFontEntry(Handle);
+ if Font = nil then Exit;
+ if Font.Signature <> FONT_SIGNATURE then Exit;
+ 
+ {Check Flags}
+ if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
+  begin
+   {Get Width}
+   Result:=Font.CharWidth * Length(Text);
+  end
+ else
+  begin
+   {Calculate Width}
+   //To Do
+  end;
+end;
+
+{==============================================================================}
+
+function FontTextHeight(Handle:TFontHandle;const Text:String):LongWord;
+var
+ Font:PFontEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Font}
+ Font:=PFontEntry(Handle);
+ if Font = nil then Exit;
+ if Font.Signature <> FONT_SIGNATURE then Exit;
+ 
+ {Check Flags}
+ if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
+  begin
+   {Get Height}
+   Result:=Font.CharHeight;
+  end
+ else
+  begin
+   {Calculate Height}
+   //To Do
+  end;
 end;
 
 {==============================================================================}

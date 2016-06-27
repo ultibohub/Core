@@ -63,19 +63,30 @@ const
  CONSOLE_TYPE_FRAMEBUFFER = 1;
  CONSOLE_TYPE_SERIAL      = 2;
  CONSOLE_TYPE_REMOTE      = 3;
+ CONSOLE_TYPE_LCD         = 4;
  
  {Console Device States}
  CONSOLE_STATE_CLOSED   = 0;
  CONSOLE_STATE_OPEN     = 1;
  
  {Console Device Flags}
- CONSOLE_FLAG_NONE       = $00000000;
- CONSOLE_FLAG_LINE_WRAP  = $00000001; {Wrap long lines to the next line if set}
- CONSOLE_FLAG_DMA_BOX    = $00000002;
- CONSOLE_FLAG_DMA_LINE   = $00000004;
- CONSOLE_FLAG_DMA_FILL   = $00000008;
- CONSOLE_FLAG_DMA_CLEAR  = $00000010;
- CONSOLE_FLAG_DMA_SCROLL = $00000020;
+ CONSOLE_FLAG_NONE            = $00000000;
+ CONSOLE_FLAG_LINE_WRAP       = $00000001; {Wrap long lines to the next line if set}
+ CONSOLE_FLAG_DMA_BOX         = $00000002; {Use DMA to draw boxes (Where applicable)}
+ CONSOLE_FLAG_DMA_LINE        = $00000004; {Use DMA to draw lines (Where applicable)}
+ CONSOLE_FLAG_DMA_FILL        = $00000008; {Use DMA to draw fill blocks (Where applicable)}
+ CONSOLE_FLAG_DMA_CLEAR       = $00000010; {Use DMA to draw clock blocks (Where applicable)}
+ CONSOLE_FLAG_DMA_SCROLL      = $00000020; {Use DMA to scroll blocks (Where applicable)}
+ CONSOLE_FLAG_SINGLE_WINDOW   = $00000040; {Console supports only one window (Not multiple)}
+ CONSOLE_FLAG_HARDWARE_CURSOR = $00000080; {Console supports a hardware cursor}
+ CONSOLE_FLAG_SINGLE_CURSOR   = $00000100; {Console supports only one cursor (Not one per window)}
+ CONSOLE_FLAG_BLINK_CURSOR    = $00000200; {Console supports blinking cursor}
+ CONSOLE_FLAG_TEXT_MODE       = $00000400; {Console supports text mode settings}
+ CONSOLE_FLAG_TEXT_BLINK      = $00000800; {Console supports blinking text}
+ CONSOLE_FLAG_COLOR           = $00001000; {Console supports colors}
+ CONSOLE_FLAG_FONT            = $00002000; {Console supports fonts} 
+ CONSOLE_FLAG_FULLSCREEN      = $00004000; {Console supports creating a fullscreen window}
+ CONSOLE_FLAG_AUTO_SCROLL     = $00008000; {Automatically scroll up on reaching the last line}
  
  {Console Device Modes}
  CONSOLE_MODE_NONE      = 0;
@@ -92,10 +103,15 @@ const
  {Console Window Modes}
  WINDOW_MODE_NONE       = 0;
  WINDOW_MODE_TEXT       = 1;
+ WINDOW_MODE_GRAPHICS   = 2;
  
  {Console Window Flags}
- WINDOW_FLAG_NONE       = $00000000;
- WINDOW_FLAG_LINE_WRAP  = $00000001; {Wrap long lines to the next line if set}
+ WINDOW_FLAG_NONE        = $00000000;
+ WINDOW_FLAG_LINE_WRAP   = $00000001; {Wrap long lines to the next line if set}
+ WINDOW_FLAG_BUFFERED    = $00000002; {Buffer output for scroll back and redraw}
+ WINDOW_FLAG_FULLSCREEN  = $00000004; {Window occupies the full screen}
+ WINDOW_FLAG_AUTO_SCROLL = $00000008; {Automatically scroll up on reaching the last line}
+ WINDOW_FLAG_CHARACTER   = $00000010; {Console for this Window is character mode only}
  
  {Console Cursor Modes}
  CURSOR_MODE_INSERT    = 0;
@@ -175,7 +191,7 @@ type
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
   Width:LongWord;                                {Console Width}
-  Height:LongWord;                               {Console Hieight}
+  Height:LongWord;                               {Console Height}
   Forecolor:LongWord;                            {Foreground Color}
   Backcolor:LongWord;                            {Background Color}
   Borderwidth:LongWord;                          {Border Width}
@@ -232,6 +248,7 @@ type
   CursorX:LongWord;                              {Cursor X}  {Window Relative (Characters)}
   CursorY:LongWord;                              {Cursor Y}  {Window Relative (Characters)}
   CursorMode:LongWord;                           {Cursor Mode (eg CURSOR_MODE_INSERT)}
+  CursorBlink:Boolean;                           {Cursor Blink On/Off}
   CursorState:TCursorState;                      {Cursor State On/Off}
   CursorTimer:TTimerHandle;                      {Cursor Timer (or INVALID_HANDLE_VALUE)}
   {Driver Properties}
@@ -289,6 +306,11 @@ function ConsoleDeviceDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):Lo
 
 function ConsoleDeviceGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
 
+function ConsoleDeviceCheckFlag(Console:PConsoleDevice;Flag:LongWord):Boolean;
+
+function ConsoleDeviceGetMode(Console:PConsoleDevice):LongWord;
+function ConsoleDeviceGetState(Console:PConsoleDevice):LongWord;
+
 function ConsoleDeviceCreate:PConsoleDevice;
 function ConsoleDeviceCreateEx(Size:LongWord):PConsoleDevice;
 function ConsoleDeviceDestroy(Console:PConsoleDevice):LongWord;
@@ -314,6 +336,12 @@ function ConsoleWindowHide(Handle:TWindowHandle):LongWord;
 function ConsoleWindowFind(Console:PConsoleDevice;Position:LongWord):TWindowHandle;
 function ConsoleWindowEnumerate(Console:PConsoleDevice;Callback:TConsoleWindowEnumerate;Data:Pointer):LongWord;
 
+function ConsoleWindowCheckFlag(Handle:TWindowHandle;Flag:LongWord):Boolean;
+
+function ConsoleWindowGetMode(Handle:TWindowHandle):LongWord;
+function ConsoleWindowGetState(Handle:TWindowHandle):LongWord;
+
+function ConsoleWindowGetPosition(Handle:TWindowHandle):LongWord;
 function ConsoleWindowSetPosition(Handle:TWindowHandle;Position:LongWord):LongWord;
 
 function ConsoleWindowGetMinX(Handle:TWindowHandle):LongWord;
@@ -351,12 +379,15 @@ function ConsoleWindowSetFont(Handle:TWindowHandle;Font:TFontHandle):LongWord;
 
 function ConsoleWindowGetCursorXY(Handle:TWindowHandle;var X,Y:LongWord):LongWord;
 function ConsoleWindowSetCursorXY(Handle:TWindowHandle;X,Y:LongWord):LongWord;
+function ConsoleWindowGetCursorBlink(Handle:TWindowHandle):Boolean;
+function ConsoleWindowSetCursorBlink(Handle:TWindowHandle;CursorBlink:Boolean):LongWord;
 function ConsoleWindowGetCursorState(Handle:TWindowHandle):TCursorState;
 function ConsoleWindowSetCursorState(Handle:TWindowHandle;CursorState:TCursorState):LongWord;
 
 function ConsoleWindowCursorOn(Handle:TWindowHandle):LongWord;
 function ConsoleWindowCursorOff(Handle:TWindowHandle):LongWord;
 function ConsoleWindowCursorMove(Handle:TWindowHandle;X,Y:LongWord):LongWord;
+function ConsoleWindowCursorBlink(Handle:TWindowHandle;Enabled:Boolean):LongWord;
 
 function ConsoleWindowScrollUp(Handle:TWindowHandle;Row,Lines:LongWord):LongWord;
 function ConsoleWindowScrollDown(Handle:TWindowHandle;Row,Lines:LongWord):LongWord;
@@ -825,6 +856,72 @@ end;
  
 {==============================================================================}
 
+function ConsoleDeviceCheckFlag(Console:PConsoleDevice;Flag:LongWord):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Open}
+ {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
+ 
+ if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Check Flag}
+ Result:=((Console.Device.DeviceFlags and Flag) <> 0);
+ 
+ MutexUnlock(Console.Lock);
+end;
+ 
+{==============================================================================}
+
+function ConsoleDeviceGetMode(Console:PConsoleDevice):LongWord;
+begin
+ {}
+ Result:=CONSOLE_MODE_NONE;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Open}
+ {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
+
+ if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Mode}
+ Result:=Console.ConsoleMode;
+ 
+ MutexUnlock(Console.Lock);
+end;
+ 
+{==============================================================================}
+
+function ConsoleDeviceGetState(Console:PConsoleDevice):LongWord;
+begin
+ {}
+ Result:=CONSOLE_STATE_CLOSED;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Open}
+ {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
+
+ if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get State}
+ Result:=Console.ConsoleState;
+ 
+ MutexUnlock(Console.Lock);
+end;
+ 
+{==============================================================================}
+
 function ConsoleDeviceCreate:PConsoleDevice;
 {Create a new Console entry}
 {Return: Pointer to new Console entry or nil if Console could not be created}
@@ -886,16 +983,8 @@ begin
  Result.WindowCount:=0;
  Result.WindowDefault:=INVALID_HANDLE_VALUE;
  
- {Setup Flags}
- if CONSOLE_LINE_WRAP then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_LINE_WRAP;
- if CONSOLE_DMA_BOX then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_BOX;
- if CONSOLE_DMA_LINE then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_LINE;
- if CONSOLE_DMA_FILL then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_FILL;
- if CONSOLE_DMA_CLEAR then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_CLEAR;
- if CONSOLE_DMA_SCROLL then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or CONSOLE_FLAG_DMA_SCROLL;
- 
  {Create Lock}
- Result.Lock:=MutexCreate;
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create lock for console device');
@@ -966,18 +1055,33 @@ begin
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {Check Interfaces}
- if not(Assigned(Console.DeviceOpen)) then Exit;
- if not(Assigned(Console.DeviceClose)) then Exit;
- if not(Assigned(Console.DeviceClear)) then Exit;
- if not(Assigned(Console.DeviceScroll)) then Exit;
- if not(Assigned(Console.DeviceDrawBox)) then Exit;
- if not(Assigned(Console.DeviceDrawLine)) then Exit;
- if not(Assigned(Console.DeviceDrawChar)) then Exit;
- if not(Assigned(Console.DeviceDrawText)) then Exit;
- if not(Assigned(Console.DeviceDrawPixel)) then Exit;
- if not(Assigned(Console.DeviceDrawBlock)) then Exit;
- if not(Assigned(Console.DeviceDrawWindow)) then Exit;
- if not(Assigned(Console.DeviceGetPosition)) then Exit;
+ if Console.ConsoleMode = CONSOLE_MODE_CHARACTER then
+  begin
+   if not(Assigned(Console.DeviceOpen)) then Exit;
+   if not(Assigned(Console.DeviceClose)) then Exit;
+   if not(Assigned(Console.DeviceClear)) then Exit;
+   if not(Assigned(Console.DeviceScroll)) then Exit;
+   if not(Assigned(Console.DeviceDrawChar)) then Exit;
+   if not(Assigned(Console.DeviceDrawText)) then Exit;
+   if not(Assigned(Console.DeviceDrawBlock)) then Exit;
+   if not(Assigned(Console.DeviceDrawWindow)) then Exit;
+   if not(Assigned(Console.DeviceGetPosition)) then Exit;
+  end
+ else
+  begin 
+   if not(Assigned(Console.DeviceOpen)) then Exit;
+   if not(Assigned(Console.DeviceClose)) then Exit;
+   if not(Assigned(Console.DeviceClear)) then Exit;
+   if not(Assigned(Console.DeviceScroll)) then Exit;
+   if not(Assigned(Console.DeviceDrawBox)) then Exit;
+   if not(Assigned(Console.DeviceDrawLine)) then Exit;
+   if not(Assigned(Console.DeviceDrawChar)) then Exit;
+   if not(Assigned(Console.DeviceDrawText)) then Exit;
+   if not(Assigned(Console.DeviceDrawPixel)) then Exit;
+   if not(Assigned(Console.DeviceDrawBlock)) then Exit;
+   if not(Assigned(Console.DeviceDrawWindow)) then Exit;
+   if not(Assigned(Console.DeviceGetPosition)) then Exit;
+  end; 
  
  {Check Console}
  Result:=ERROR_ALREADY_EXISTS;
@@ -1298,240 +1402,249 @@ begin
  if Size < SizeOf(TConsoleWindow) then Exit;
  
  {Check Position}
- {if Position < CONSOLE_POSITION_FULL then Exit;}
- if Position > CONSOLE_POSITION_BOTTOMRIGHT then Exit;
- if ConsoleWindowFind(Console,Position) <> INVALID_HANDLE_VALUE then Exit;
- 
- {Check Position}
- case Position of
-  CONSOLE_POSITION_FULL:begin
-    {Fail on all other positions}
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_TOP) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-   end;
-  CONSOLE_POSITION_TOP:begin
-    {Fail on top positions}
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
+ if Position = CONSOLE_POSITION_FULLSCREEN then
+  begin
+   if ConsoleWindowGetCount(Console) <> 0 then Exit;
+   if not ConsoleDeviceCheckFlag(Console,CONSOLE_FLAG_FULLSCREEN) then Exit;
+  end
+ else
+  begin 
+   {if Position < CONSOLE_POSITION_FULL then Exit;}
+   if Position > CONSOLE_POSITION_BOTTOMRIGHT then Exit;
+   if ConsoleWindowFind(Console,Position) <> INVALID_HANDLE_VALUE then Exit;
+   if ConsoleWindowFind(Console,CONSOLE_POSITION_FULLSCREEN) <> INVALID_HANDLE_VALUE then Exit;
+   
+   {Check Position}
+   case Position of
+    CONSOLE_POSITION_FULL:begin
+      {Fail on all other positions}
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOP) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
+     end;
+    CONSOLE_POSITION_TOP:begin
+      {Fail on top positions}
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
+      
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOM) <> ERROR_SUCCESS then Exit;
+       end;
+      
+      {Get Left}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
+       end;
+       
+      {Get Right} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
+     end;
+    CONSOLE_POSITION_BOTTOM:begin
+      {Fail on bottom positions}
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
     
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOM) <> ERROR_SUCCESS then Exit;
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOP) <> ERROR_SUCCESS then Exit;
+       end;
+      
+      {Get Left}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
+       end;
+       
+      {Get Right} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
      end;
+    CONSOLE_POSITION_LEFT:begin
+      {Fail on left positions}
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
     
-    {Get Left}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
-     end;
-     
-    {Get Right} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
-     end;
-   end;
-  CONSOLE_POSITION_BOTTOM:begin
-    {Fail on bottom positions}
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-  
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOP) <> ERROR_SUCCESS then Exit;
-     end;
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
+       end;
     
-    {Get Left}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
+      {Get Top}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
+       
+      {Get Bottom} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
      end;
-     
-    {Get Right} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
+    CONSOLE_POSITION_RIGHT:begin
+      {Fail on right positions}
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
+      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
+    
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
+       end;
+    
+      {Get Top}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
+       end;
+       
+      {Get Bottom} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
+       end;
      end;
-   end;
-  CONSOLE_POSITION_LEFT:begin
-    {Fail on left positions}
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
-  
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
+    CONSOLE_POSITION_TOPLEFT:begin
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
+       end;
+    
+      {Get Top}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
+    
+      {Get Left}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
+       end;
      end;
-  
-    {Get Top}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
+    CONSOLE_POSITION_TOPRIGHT:begin 
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
+       end;
+    
+      {Get Top}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
+       end;
+       
+      {Get Right} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
      end;
-     
-    {Get Bottom} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
+    CONSOLE_POSITION_BOTTOMLEFT:begin 
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
+       end;
+    
+      {Get Bottom} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
+    
+      {Get Left}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
+       end;
      end;
-   end;
-  CONSOLE_POSITION_RIGHT:begin
-    {Fail on right positions}
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-    if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-  
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
+    CONSOLE_POSITION_BOTTOMRIGHT:begin 
+      {Get Full}
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
+       end;
+    
+      {Get Bottom} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Bottom Left}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
+       end;
+       
+      {Get Right} 
+      Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
+      if Handle <> INVALID_HANDLE_VALUE then
+       begin
+        {Move to Top Right}
+        if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
+       end;
      end;
-  
-    {Get Top}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
-     end;
-     
-    {Get Bottom} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
-     end;
-   end;
-  CONSOLE_POSITION_TOPLEFT:begin
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
-     end;
-  
-    {Get Top}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
-     end;
-  
-    {Get Left}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
-     end;
-   end;
-  CONSOLE_POSITION_TOPRIGHT:begin 
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
-     end;
-  
-    {Get Top}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
-     end;
-     
-    {Get Right} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
-     end;
-   end;
-  CONSOLE_POSITION_BOTTOMLEFT:begin 
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
-     end;
-  
-    {Get Bottom} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
-     end;
-  
-    {Get Left}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
-     end;
-   end;
-  CONSOLE_POSITION_BOTTOMRIGHT:begin 
-    {Get Full}
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
-     end;
-  
-    {Get Bottom} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Bottom Left}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
-     end;
-     
-    {Get Right} 
-    Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Move to Top Right}
-      if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
-     end;
-   end;
- end; 
+   end; 
+  end;  
  
  {Get Position}
  if ConsoleDeviceGetPosition(Console,Position,X1,Y1,X2,Y2) <> ERROR_SUCCESS then Exit;
@@ -1583,6 +1696,7 @@ begin
     Window.CursorX:=1;
     Window.CursorY:=1;
     Window.CursorMode:=CURSOR_MODE_INSERT;
+    Window.CursorBlink:=False;
     Window.CursorState:=CURSOROFF;
     Window.CursorTimer:=INVALID_HANDLE_VALUE;
     {Driver}
@@ -1590,7 +1704,13 @@ begin
     Window.Console:=Console;
     
     {Setup Flags}
+    if Position = CONSOLE_POSITION_FULLSCREEN then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_FULLSCREEN;
+    if Console.ConsoleMode = CONSOLE_MODE_CHARACTER then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_CHARACTER;
     if (CONSOLE_LINE_WRAP) or ((Console.Device.DeviceFlags and CONSOLE_FLAG_LINE_WRAP) <> 0) then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_LINE_WRAP;
+    if (CONSOLE_AUTO_SCROLL) or ((Console.Device.DeviceFlags and CONSOLE_FLAG_AUTO_SCROLL) <> 0) then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_AUTO_SCROLL;
+    
+    {Check Border}
+    if Position = CONSOLE_POSITION_FULLSCREEN then Window.Borderwidth:=0; //To do //Would this be better based on another criteria ?
     
     {Get Font}
     if Window.Font = INVALID_HANDLE_VALUE then Window.Font:=Console.Font;
@@ -1666,7 +1786,7 @@ begin
     Window.Rows:=Window.Height;
     
     {Create Lock}
-    Window.Lock:=MutexCreate;
+    Window.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
     if Window.Lock = INVALID_HANDLE_VALUE then
      begin
       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create lock for console window');
@@ -1942,7 +2062,7 @@ begin
  
  {Check Position}
  {if Position < CONSOLE_POSITION_FULL then Exit;}
- if Position > CONSOLE_POSITION_BOTTOMRIGHT then Exit;
+ if (Position <> CONSOLE_POSITION_FULLSCREEN) and (Position > CONSOLE_POSITION_BOTTOMRIGHT) then Exit;
 
  {Check Console}
  if Console = nil then Exit;
@@ -2014,6 +2134,114 @@ end;
 
 {==============================================================================}
 
+function ConsoleWindowCheckFlag(Handle:TWindowHandle;Flag:LongWord):Boolean;
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Check Flag}
+ Result:=((Window.WindowFlags and Flag) <> 0);
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowGetMode(Handle:TWindowHandle):LongWord;
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=WINDOW_MODE_NONE;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Mode}
+ Result:=Window.WindowMode;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowGetState(Handle:TWindowHandle):LongWord;
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=WINDOW_STATE_INVISIBLE;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get State}
+ Result:=Window.WindowState;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowGetPosition(Handle:TWindowHandle):LongWord;
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=CONSOLE_POSITION_UNKNOWN;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Position}
+ Result:=Window.Position;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
 function ConsoleWindowSetPosition(Handle:TWindowHandle;Position:LongWord):LongWord;
 var
  X1:LongWord;
@@ -2030,7 +2258,7 @@ begin
 
  {Check Position}
  {if Position < CONSOLE_POSITION_FULL then Exit;}
- if Position > CONSOLE_POSITION_BOTTOMRIGHT then Exit;
+ if (Position <> CONSOLE_POSITION_FULLSCREEN) and (Position > CONSOLE_POSITION_BOTTOMRIGHT) then Exit;
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -2951,6 +3179,72 @@ end;
 
 {==============================================================================}
 
+function ConsoleWindowGetCursorBlink(Handle:TWindowHandle):Boolean;
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Cursor Blink}
+ Result:=Window.CursorBlink;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowSetCursorBlink(Handle:TWindowHandle;CursorBlink:Boolean):LongWord;
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Check Cursor Blink}
+ if Window.CursorBlink then
+  begin
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+ 
+   {Check Cursor Blink}
+   if not(CursorBlink) then Result:=ConsoleWindowCursorBlink(Handle,CursorBlink) else Result:=ERROR_SUCCESS;
+  end
+ else
+  begin
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+   
+   {Check Cursor Blink}
+   if CursorBlink then Result:=ConsoleWindowCursorBlink(Handle,CursorBlink) else Result:=ERROR_SUCCESS;
+  end; 
+end;
+
+{==============================================================================}
+
 function ConsoleWindowGetCursorState(Handle:TWindowHandle):TCursorState;
 var
  Window:PConsoleWindow;
@@ -3041,7 +3335,9 @@ begin
    {Set Cursor State}
    Window.CursorState:=CURSORON;
    
-   //To Do //Create timer etc
+   //To Do //Check WINDOW_STATE_VISIBLE
+   
+   //To Do //Check Hardware Cursor / Create timer etc
  
    Result:=ERROR_SUCCESS;
 
@@ -3083,7 +3379,9 @@ begin
    {Set Cursor State}
    Window.CursorState:=CURSOROFF;
    
-   //To Do //Destroy timer etc
+   //To Do //Check WINDOW_STATE_VISIBLE
+   
+   //To Do //Check Hardware Cursor / Destroy timer etc
  
    Result:=ERROR_SUCCESS;
 
@@ -3130,7 +3428,9 @@ begin
    if Window.CursorState = CURSORON then
     begin
    
-     //To Do //Move Cursor
+     //To Do //Check WINDOW_STATE_VISIBLE
+     
+     //To Do //Check Hardware Cursor / Move Cursor
      
     end; 
    
@@ -3146,6 +3446,67 @@ begin
   end; 
 end;
 
+{==============================================================================}
+
+function ConsoleWindowCursorBlink(Handle:TWindowHandle;Enabled:Boolean):LongWord;
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Check Cursor State}
+ if Window.CursorState = CURSORON then
+  begin
+   {Check Cursor Blink}
+   if Window.CursorBlink and not(Enabled) then
+    begin
+    
+     //To Do //Check WINDOW_STATE_VISIBLE
+     
+     //To Do //Check Hardware Cursor / Destroy timer etc
+     
+    end
+   else if not(Window.CursorBlink) and Enabled then
+    begin
+    
+     //To Do //Check WINDOW_STATE_VISIBLE
+     
+     //To Do //Check Hardware Cursor / Create timer etc
+     
+    end;
+
+   {Set Cursor Blink}
+   Window.CursorBlink:=Enabled;
+   
+   Result:=ERROR_SUCCESS;
+
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+  end
+ else
+  begin
+   {Set Cursor Blink}
+   Window.CursorBlink:=Enabled;
+   
+   Result:=ERROR_SUCCESS;
+   
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+  end; 
+end;
+  
 {==============================================================================}
 
 function ConsoleWindowScrollUp(Handle:TWindowHandle;Row,Lines:LongWord):LongWord;
@@ -3170,6 +3531,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3194,6 +3556,14 @@ begin
   X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth); 
   Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (Row * Window.FontHeight); {Start at bottom of Row}
  
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(X2);
+    Dec(Y2);
+   end;
+  
   {Console Scroll}
   Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_UP);
   if Result <> ERROR_SUCCESS then Exit;
@@ -3233,20 +3603,21 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-
+  
   {Check Row}
   if Row < 1 then Exit;
   if ((Window.MinY - 1) + Row) >= Window.MaxY then Exit; {Cannot scroll last Row}
   
   {Check Lines}
   if Lines < 1 then Exit; {Must be at least 1 line}
-  if ((Window.MinY - 1) + Row + Lines) >= Window.MaxY then Exit; {Cannot discard the starting Row}
+  if ((Window.MinY - 1) + Row + Lines) > Window.MaxY then Exit; {Cannot discard the starting Row} {Note: Previously >= MaxY}
   
   {Calculate Count}
   Count:=Lines * (Window.FontHeight);
@@ -3257,12 +3628,27 @@ begin
   X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth); 
   Y2:=(Window.Y1 + Window.Borderwidth + Window.OffsetY + (Window.MaxY * Window.FontHeight)) - (Lines * Window.FontHeight); {Start at bottom minus Lines}
  
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(X2);
+    Dec(Y2);
+   end;
+  
   {Console Scroll}
   Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_DOWN);
   if Result <> ERROR_SUCCESS then Exit;
   
   {Recalculate Y2}
   Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row + Lines - 1) * Window.FontHeight);
+  
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(Y2);
+   end;
   
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,X1,Y1,X2,Y2,Window.Backcolor);
@@ -3288,6 +3674,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3319,6 +3706,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3354,6 +3742,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3404,6 +3793,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3468,6 +3858,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3565,6 +3956,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3662,6 +4054,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3779,6 +4172,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3894,6 +4288,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -4028,6 +4423,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ //To Do //Check WINDOW_STATE_VISIBLE
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -6128,8 +6524,11 @@ begin
  else if Window.WindowState = WINDOW_STATE_VISIBLE then
   begin 
    {Draw Border}
-   Result:=FramebufferConsoleDrawBox(Console,Window.X1,Window.Y1,Window.X2,Window.Y2,Window.Bordercolor,Window.Borderwidth);
-   if Result <> ERROR_SUCCESS then Exit;
+   if Window.Borderwidth > 0 then
+    begin
+     Result:=FramebufferConsoleDrawBox(Console,Window.X1,Window.Y1,Window.X2,Window.Y2,Window.Bordercolor,Window.Borderwidth);
+     if Result <> ERROR_SUCCESS then Exit;
+    end; 
    
    {Draw Window}
    Result:=FramebufferConsoleDrawBlock(Console,Window.X1 + Window.Borderwidth,Window.Y1 + Window.Borderwidth,Window.X2 - Window.Borderwidth,Window.Y2 - Window.Borderwidth,Window.Backcolor);
@@ -6231,7 +6630,7 @@ begin
  
  {Check Position}
  {if Position < CONSOLE_POSITION_FULL then Exit;}
- if Position > CONSOLE_POSITION_BOTTOMRIGHT then Exit;
+ if (Position <> CONSOLE_POSITION_FULLSCREEN) and (Position > CONSOLE_POSITION_BOTTOMRIGHT) then Exit;
  
  {Check Console}
  if Console = nil then Exit;
@@ -6323,6 +6722,12 @@ begin
        
        Result:=ERROR_SUCCESS;
       end;
+     CONSOLE_POSITION_FULLSCREEN:begin
+       {Fullscreen Window}
+       
+       //To Do //Continuing
+       
+      end;     
     end;
    finally
     MutexUnlock(Console.Lock);
@@ -6448,7 +6853,7 @@ begin
      {Device}
      Console.Console.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      Console.Console.Device.DeviceType:=CONSOLE_TYPE_FRAMEBUFFER;
-     Console.Console.Device.DeviceFlags:=CONSOLE_FLAG_NONE;
+     Console.Console.Device.DeviceFlags:=CONSOLE_FLAG_BLINK_CURSOR or CONSOLE_FLAG_COLOR or CONSOLE_FLAG_FONT or CONSOLE_FLAG_FULLSCREEN;
      Console.Console.Device.DeviceData:=@Framebuffer.Device;
      {Console}
      Console.Console.ConsoleState:=CONSOLE_STATE_CLOSED;
@@ -6465,6 +6870,7 @@ begin
      Console.Console.DeviceDrawBlock:=FramebufferConsoleDrawBlock;
      Console.Console.DeviceDrawWindow:=FramebufferConsoleDrawWindow;
      Console.Console.DeviceGetPosition:=FramebufferConsoleGetPosition;
+     Console.Console.FontRatio:=1; {Font ratio 1 for Pixel console}
      {Framebuffer}
      Console.Framebuffer:=Framebuffer;
      Console.DesktopOffset:=FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET;
@@ -6472,6 +6878,7 @@ begin
      
      {Setup Flags}
      if CONSOLE_LINE_WRAP then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_LINE_WRAP;
+     if CONSOLE_AUTO_SCROLL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_AUTO_SCROLL;
      if CONSOLE_DMA_BOX then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_BOX;
      if CONSOLE_DMA_LINE then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_LINE;
      if CONSOLE_DMA_FILL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_FILL;

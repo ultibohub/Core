@@ -72,7 +72,7 @@ unit FileSystem;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,Storage,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Logging,Storage,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
 
 
 //To Do //TFileSystem.RenameFile - Final //RemoveRef changes (plus Recheck all)
@@ -134,7 +134,8 @@ const
  FILESYS_LOCK_NONE  = 0;
  FILESYS_LOCK_READ  = 1;
  FILESYS_LOCK_WRITE = 2;
-
+ FILESYS_LOCK_AUTO  = 3; {Not intended for use in all situations, use with extreme caution}
+ 
  {FileSystem Cache}
  FILESYS_CACHE_THREAD_NAME    = 'Filesystem Cache';      {Thread name for Filesystem cache threads}
  FILESYS_CACHE_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL; {Thread priority for Filesystem cache threads}
@@ -2877,6 +2878,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   function WriterOwner:Boolean;
    
    function ImageInit:Boolean; virtual;
 
@@ -5798,7 +5800,17 @@ begin
     if Image = AImage then
      begin
       {Lock Image} 
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
       
       Result:=True;
       Exit;
@@ -5831,7 +5843,17 @@ begin
     if Image.ImageNo = AImageNo then
      begin
       {Lock Image} 
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
       
       Result:=Image;
       Exit;
@@ -5863,7 +5885,17 @@ begin
     if Uppercase(Image.Name) = Uppercase(AName) then
      begin
       {Lock Image} 
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
      
       Result:=Image;
       Exit;
@@ -5895,7 +5927,17 @@ begin
     if Image.Device = ADevice then
      begin
       {Lock Image} 
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
       
       Result:=Image;
       Exit;
@@ -5928,7 +5970,17 @@ begin
     if Image.Controller = AController then
      begin
       {Lock Image} 
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
       
       Result:=Image;
       Exit;
@@ -5961,7 +6013,17 @@ begin
     if Image.Controller = AController then
      begin
       {Lock Image} 
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
       
       Result.Add(Image);
      end;
@@ -5992,7 +6054,17 @@ begin
     if Image <> nil then
      begin
       {Lock Image}
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
       
       {Return Result}
       Result:=Image;
@@ -6005,14 +6077,34 @@ begin
     if Image <> nil then
      begin
       {Lock Image}
-      if ALock then if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+      if ALock then 
+       begin
+        if AState = FILESYS_LOCK_AUTO then
+         begin
+          if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
+         end
+        else
+         begin        
+          if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
+         end; 
+       end; 
       
       {Return Result}
       Result:=Image;
      end;
 
     {Unlock Previous}
-    if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+    if AUnlock then 
+     begin
+      if AState = FILESYS_LOCK_AUTO then
+       begin
+        if not(APrevious.WriterOwner) then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+       end
+      else
+       begin        
+        if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+       end; 
+     end; 
    end;   
  finally
   FImages.ReaderUnlock;
@@ -11171,7 +11263,7 @@ begin
   if TrimRight(ADevice) = '' then Exit;
   
   {Get the Device}
-  Device:=GetDeviceByName(ADevice,True,FILESYS_LOCK_READ);
+  Device:=GetDeviceByName(ADevice,True,FILESYS_LOCK_WRITE);
   if Device = nil then Exit;
   
   {Get the Parent}
@@ -11184,7 +11276,7 @@ begin
   if Parent <> nil then Parent.WriterUnlock;
   
   {Unlock Device}
-  Device.ReaderUnlock;
+  Device.WriterUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -12580,12 +12672,12 @@ begin
   {Get the Volume}
   Volume:=Drive.Volume;
   if Volume = nil then Exit;
-  //To Do //Lock
+  //To Do //WriterLock
   
   Result:=Volume.FormatVolume(AFloppyType,AFileSysType);
 
   {Unlock Drive}
-  if not Result then Drive.WriterUnlock;
+  if not Result then Drive.WriterUnlock; //To Do //Is this correct?
  finally  
   ReaderUnlock;
  end; 
@@ -20956,7 +21048,7 @@ begin
   if FDriveNo < MIN_DRIVE then Exit;
   if FDriveNo > NON_DRIVE then Exit;
   
-  Result:=FDriver.DeleteSlash(DRIVE_NAMES[FDriveNo],False,True);
+  Result:=DRIVE_ROOTS[FDriveNo];
  finally  
   ReleaseLock;
  end; 
@@ -21947,6 +22039,11 @@ begin
  {}
  Result:=False;
  
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskController.LBAtoLCHS');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                 LBA = ' + IntToStr(LBA));
+ {$ENDIF}
+ 
  if ADevice = nil then Exit;
  
  Cylinder:=LBA div (ADevice.LogicalHeads * ADevice.LogicalSectors);
@@ -21965,6 +22062,11 @@ var
 begin
  {}
  Result:=False;
+ 
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskController.LBAtoPCHS');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                 LBA = ' + IntToStr(LBA));
+ {$ENDIF}
  
  if ADevice = nil then Exit;
  
@@ -23372,8 +23474,8 @@ var
 begin
  {}
  Result:=False;
-
- if not ReaderLock then Exit;
+ 
+ if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.CreatePartition (Name=' + Name + ')');
@@ -23405,7 +23507,7 @@ begin
     Recognizer:=FDriver.GetRecognizerByNext(Recognizer,True,True,FILESYS_LOCK_READ); 
    end;
  finally  
-  ReaderUnlock;
+  WriterUnlock;
  end; 
 end;
 
@@ -26306,7 +26408,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- FLocalLock:=MutexCreate;
+ FLocalLock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  
  FDriver:=ADriver;
  if FDriver <> nil then FDriver.AddImage(Self);
@@ -26535,6 +26637,10 @@ begin
  {}
  if not AcquireLock then Exit;
  try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskImage.SetDevice');
+  {$ENDIF}
+
   if FDriver = nil then Exit;
   if FDevice = ADevice then Exit;
  
@@ -26575,6 +26681,15 @@ function TDiskImage.WriterUnlock:Boolean;
 begin
  {}
  Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TDiskImage.WriterOwner:Boolean;
+{Return True if the current thread is the writer owner}
+begin
+ {}
+ Result:=(SynchronizerWriterOwner(FLock) = GetCurrentThreadID);
 end;
 
 {==============================================================================}
@@ -27823,6 +27938,12 @@ begin
  {Base Implementation}
  Result:=False;
  
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetEndCHS');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
+ {$ENDIF}
+ 
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
@@ -27877,6 +27998,12 @@ var
 begin
  {Base Implementation}
  Result:=False;
+ 
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetStartCHS');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
+ {$ENDIF}
  
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
@@ -28094,6 +28221,13 @@ begin
  {Base Implementation} {Will be overridden by most Partitioners}
  Result:=False;
  
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.InitPartition');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  PartitionId = ' + PartitionIdToString(APartitionId));
+ {$ENDIF}
+ 
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
  
@@ -28109,6 +28243,10 @@ function TDiskPartitioner.CreatePartitionRecord(ADevice:TDiskDevice;ARecord:PPar
 begin
  {}
  Result:=False;
+ 
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.CreatePartitionRecord');
+ {$ENDIF}
  
  if ARecord = nil then Exit;
 
@@ -28140,6 +28278,14 @@ var
 begin
  {}
  Result:=False;
+ 
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.CreatePartitionEntry');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Offset = ' + IntToStr(AOffset));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  PartitionId = ' + PartitionIdToString(APartitionId));
+ {$ENDIF}
  
  if ADevice = nil then Exit;
 
@@ -28180,6 +28326,13 @@ begin
  {Base Implementation}
  Result:=False;
  
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.FillSectors');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Sector = ' + IntToStr(ASector));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Value = ' + IntToStr(AValue));
+ {$ENDIF}
+ 
  if ADevice = nil then Exit;
  if ADevice.SectorSize = 0 then Exit;
 
@@ -28219,6 +28372,12 @@ begin
  {Base Implementation}
  Result:=False;
  
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.ReadSectors');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Sector = ' + IntToStr(ASector));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
+ {$ENDIF}
+ 
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.SectorCount = 0 then Exit;
@@ -28247,6 +28406,12 @@ function TDiskPartitioner.WriteSectors(ADevice:TDiskDevice;APartition:TDiskParti
 begin
  {Base Implementation}
  Result:=False;
+ 
+ {$IFDEF FILESYS_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.WriteSectors');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Sector = ' + IntToStr(ASector));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
+ {$ENDIF}
  
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
@@ -28335,6 +28500,10 @@ begin
  
  if not ReaderLock then Exit;
  try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.CreatePartition');
+  {$ENDIF}
+
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
   if ADevice = nil then Exit;
@@ -38548,7 +38717,7 @@ begin
   if ACacheMode <> cmNONE then
    begin
     {Allocate the Memory}
-    FBuffer:=GetMem(CacheSize);
+    FBuffer:=GetAlignedMem(CacheSize,PageSize);
     if FBuffer = nil then Exit;
     
     {Allocate the Pages}
@@ -40794,7 +40963,7 @@ begin
   if PageSize > CacheSize then Exit;
   PageCount:=CacheSize div PageSize;
   
-  {$IFDEF FILESYS_DEBUG}
+  {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('OpenCache: CacheSize = ' + IntToStr(CacheSize) + ' CacheKeys = ' + IntToStr(CacheKeys) + ' PageSize = ' + IntToStr(PageSize));
   {$ENDIF}
   
@@ -40807,7 +40976,7 @@ begin
     FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
     
     {Allocate the Memory}
-    FBuffer:=GetMem(CacheSize);
+    FBuffer:=GetAlignedMem(CacheSize,PageSize);
     if FBuffer = nil then Exit;
     
     {Allocate the Pages}
@@ -41276,7 +41445,7 @@ begin
  
  if not AcquireLock then Exit;
  try
-  {$IFDEF FILESYS_DEBUG}
+  {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('GetDevicePage: Sector = ' + IntToStr(ASector));
   {$ENDIF}
   
@@ -41288,7 +41457,7 @@ begin
   SectorStart:=(ASector and ADevice.PageMask);
   KeyHash:=(SectorStart shr ADevice.PageShift);
   
-  {$IFDEF FILESYS_DEBUG}
+  {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('GetDevicePage: SectorStart = ' + IntToStr(SectorStart) + ' KeyHash = ' + IntToStr(KeyHash));
   {$ENDIF}
   
@@ -41302,7 +41471,7 @@ begin
       {Check Page Sector}
       if Page.Sector = SectorStart then
        begin
-        {$IFDEF FILESYS_DEBUG}
+        {$IFDEF CACHE_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('GetDevicePage: Page.Sector = ' + IntToStr(Page.Sector) + ' Page.Count = ' + IntToStr(Page.Count));
         {$ENDIF}
         
@@ -41358,7 +41527,7 @@ begin
  
  if not AcquireLock then Exit;
  try
-  {$IFDEF FILESYS_DEBUG}
+  {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('AllocDevicePage: Sector = ' + IntToStr(ASector));
   {$ENDIF}
   
@@ -41377,7 +41546,7 @@ begin
     if ADevice.PageCount = 0 then Exit;
     ADevice.PageShift:=CalculatePageShift(ADevice);
     ADevice.PageMask:=CalculatePageMask(ADevice);
-    {$IFDEF FILESYS_DEBUG}
+    {$IFDEF CACHE_DEBUG}
     if FILESYS_LOG_ENABLED then
      begin
       FileSysLogDebug('AllocDevicePage: Device = ' + ADevice.Name);
@@ -41396,7 +41565,7 @@ begin
     SectorCount:=(ADevice.SectorCount - SectorStart);
    end;
    
-  {$IFDEF FILESYS_DEBUG}
+  {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('AllocDevicePage: SectorCount = ' + IntToStr(SectorCount) + ' SectorStart = ' + IntToStr(SectorStart));
   {$ENDIF}
 
@@ -41406,7 +41575,7 @@ begin
    begin
     THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
     
-    {$IFDEF FILESYS_DEBUG}
+    {$IFDEF CACHE_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('AllocDevicePage: KeyHash = ' + IntToStr(THashCachePage(Page).KeyHash));
     {$ENDIF}
     
@@ -41449,7 +41618,7 @@ begin
        begin
         THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
         
-        {$IFDEF FILESYS_DEBUG}
+        {$IFDEF CACHE_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('AllocDevicePage: KeyHash = ' + IntToStr(THashCachePage(Page).KeyHash));
         {$ENDIF}
         
@@ -41700,7 +41869,7 @@ begin
  {}
  Result:=False;
 
- {$IFDEF FILESYS_DEBUG}
+ {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FlushPageEx (Page=' + IntToHex(LongWord(APage),8) + ' FirstDirty=' + IntToHex(LongWord(FFirstDirty),8) + ')');
  {$ENDIF}
  
@@ -41777,7 +41946,7 @@ begin
    
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
-  {$IFDEF FILESYS_DEBUG}
+  {$IFDEF CACHE_DEBUG}
    end
   else
    begin
@@ -43141,7 +43310,7 @@ begin
     FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
     
     {Allocate the Memory}
-    FBuffer:=GetMem(CacheSize);
+    FBuffer:=GetAlignedMem(CacheSize,PageSize);
     if FBuffer = nil then Exit;
     
     {Allocate the Pages}

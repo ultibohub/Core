@@ -143,8 +143,9 @@ const
  DEVICE_BUS_SPI              = 14; {Serial Peripheral Interface device}
  DEVICE_BUS_MMIO             = 15; {Memory Mapped IO device (No Bus)}
  DEVICE_BUS_PCIE             = 16;
+ DEVICE_BUS_I2C              = 17; {I2C connected device}
  
- DEVICE_BUS_MAX              = 16;
+ DEVICE_BUS_MAX              = 17;
  
  {Device Bus Names}
  DEVICE_BUS_NAMES:array[DEVICE_BUS_NONE..DEVICE_BUS_MAX] of String = (
@@ -164,7 +165,8 @@ const
   'DEVICE_BUS_SERIAL',
   'DEVICE_BUS_SPI',
   'DEVICE_BUS_MMIO',
-  'DEVICE_BUS_PCIE');
+  'DEVICE_BUS_PCIE',
+  'DEVICE_BUS_I2C');
  
  {Device States}
  DEVICE_STATE_UNREGISTERED   = 0;
@@ -635,7 +637,7 @@ type
   DeviceStart:TClockDeviceStart;                 {A device specific DeviceStart method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceStop:TClockDeviceStop;                   {A device specific DeviceStop method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceRead:TClockDeviceRead;                   {A device specific DeviceRead method implementing a standard clock device interface (Or nil if the default method is suitable)}
-  DeviceRead64:TClockDeviceRead64;               {A device specific DeviceRead64 method implementing a standard clock device interface (Manadatory)}
+  DeviceRead64:TClockDeviceRead64;               {A device specific DeviceRead64 method implementing a standard clock device interface (Mandatory)}
   DeviceGetRate:TClockDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard clock device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
@@ -691,12 +693,12 @@ type
   {Timer Properties}
   TimerId:LongWord;                              {Unique Id of this Timer device in the Timer device table}
   TimerState:LongWord;                           {Timer device state (eg TIMER_STATE_ENABLED)}
-  DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard random device interface (Manadatory)}
-  DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard random device interface (Manadatory)}
+  DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard random device interface (Mandatory)}
+  DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard random device interface (Mandatory)}
   DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceRead64:TTimerDeviceRead64;               {A device specific DeviceRead64 method implementing a standard random device interface (Manadatory)}
-  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface (Manadatory)}
-  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface (Manadatory)}
+  DeviceRead64:TTimerDeviceRead64;               {A device specific DeviceRead64 method implementing a standard random device interface (Mandatory)}
+  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface (Mandatory)}
+  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface (Mandatory)}
   DeviceGetRate:TTimerDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSetRate:TTimerDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceGetInterval:TTimerDeviceGetInterval;     {A device specific DeviceGetInterval method implementing a standard random device interface (Or nil if the default method is suitable)}
@@ -744,12 +746,12 @@ type
   {Random Properties}
   RandomId:LongWord;                             {Unique Id of this Random device in the Random device table}
   RandomState:LongWord;                          {Random device state (eg RANDOM_STATE_ENABLED)}
-  DeviceStart:TRandomDeviceStart;                {A device specific DeviceStart method implementing a standard random device interface (Manadatory)}
+  DeviceStart:TRandomDeviceStart;                {A device specific DeviceStart method implementing a standard random device interface (Mandatory)}
   DeviceStop:TRandomDeviceStop;                  {A device specific DeviceStop method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSeed:TRandomDeviceSeed;                  {A device specific DeviceSeed method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceReadByte:TRandomDeviceReadByte;          {A device specific DeviceReadByte method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceReadWord:TRandomDeviceReadWord;          {A device specific DeviceReadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
-  DeviceReadLongWord:TRandomDeviceReadLongWord;  {A device specific DeviceReadLongWord method implementing a standard random device interface (Manadatory)}  
+  DeviceReadLongWord:TRandomDeviceReadLongWord;  {A device specific DeviceReadLongWord method implementing a standard random device interface (Mandatory)}  
   DeviceReadQuadWord:TRandomDeviceReadQuadWord;  {A device specific DeviceReadQuadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
   DeviceReadExtended:TRandomDeviceReadExtended;  {A device specific DeviceReadExtended method implementing a standard random device interface (Or nil if the default method is suitable)}  
   {Statistics Properties}
@@ -791,9 +793,9 @@ type
   MailboxState:LongWord;                         {Mailbox device state (eg MAILBOX_STATE_ENABLED)}
   DeviceStart:TMailboxDeviceStart;               {A device specific DeviceStart method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
   DeviceStop:TMailboxDeviceStop;                 {A device specific DeviceStop method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
-  DeviceReceive:TMailboxDeviceReceive;           {A device specific DeviceReceive method implementing a standard mailbox device interface (Manadatory)}
-  DeviceSend:TMailboxDeviceSend;                 {A device specific DeviceSend method implementing a standard mailbox device interface (Manadatory)}
-  DeviceCall:TMailboxDeviceCall;                 {A device specific DeviceCall method implementing a standard mailbox device interface (Manadatory)}
+  DeviceReceive:TMailboxDeviceReceive;           {A device specific DeviceReceive method implementing a standard mailbox device interface (Mandatory)}
+  DeviceSend:TMailboxDeviceSend;                 {A device specific DeviceSend method implementing a standard mailbox device interface (Mandatory)}
+  DeviceCall:TMailboxDeviceCall;                 {A device specific DeviceCall method implementing a standard mailbox device interface (Mandatory)}
   DeviceGetTimeout:TMailboxDeviceGetTimeout;     {A device specific DeviceGetTimeout method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
   DeviceSetTimeout:TMailboxDeviceSetTimeout;     {A device specific DeviceSetTimeout method implementing a standard mailbox device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
@@ -834,10 +836,10 @@ type
   {Watchdog Properties}
   WatchdogId:LongWord;                           {Unique Id of this Watchdog device in the Watchdog device table}
   WatchdogState:LongWord;                        {Watchdog device state (eg WATCHDOG_STATE_ENABLED)}
-  DeviceStart:TWatchdogDeviceStart;              {A device specific DeviceStart method implementing a standard watchdog device interface (Manadatory)}
-  DeviceStop:TWatchdogDeviceStop;                {A device specific DeviceStop method implementing a standard watchdog device interface (Manadatory)}
-  DeviceRefresh:TWatchdogDeviceRefresh;          {A device specific DeviceRefresh method implementing a standard watchdog device interface (Manadatory)}
-  DeviceGetRemain:TWatchdogDeviceGetRemain;      {A device specific DeviceGetRemain method implementing a standard watchdog device interface (Manadatory)}
+  DeviceStart:TWatchdogDeviceStart;              {A device specific DeviceStart method implementing a standard watchdog device interface (Mandatory)}
+  DeviceStop:TWatchdogDeviceStop;                {A device specific DeviceStop method implementing a standard watchdog device interface (Mandatory)}
+  DeviceRefresh:TWatchdogDeviceRefresh;          {A device specific DeviceRefresh method implementing a standard watchdog device interface (Mandatory)}
+  DeviceGetRemain:TWatchdogDeviceGetRemain;      {A device specific DeviceGetRemain method implementing a standard watchdog device interface (Mandatory)}
   DeviceGetTimeout:TWatchdogDeviceGetTimeout;    {A device specific DeviceGetTimeout method implementing a standard watchdog device interface (Or nil if the default method is suitable)}
   DeviceSetTimeout:TWatchdogDeviceSetTimeout;    {A device specific DeviceSetTimeout method implementing a standard watchdog device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
@@ -3471,7 +3473,10 @@ end;
 function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
 begin
  {}
- Result:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Properties}
+ if Properties = nil then Exit;
  
  {Check Timer}
  if Timer = nil then Exit;

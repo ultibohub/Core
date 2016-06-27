@@ -951,6 +951,10 @@ const
   '','A:\','B:\','C:\','D:\','E:\','F:\','G:\','H:\','I:\','J:\','K:\','L:\','M:\',
   'N:\','O:\','P:\','Q:\','R:\','S:\','T:\','U:\','V:\','W:\','X:\','Y:\','Z:\','\\');
 
+ DRIVE_ROOTS:array[DEFAULT_DRIVE..NON_DRIVE] of String = (
+  '','A:','B:','C:','D:','E:','F:','G:','H:','I:','J:','K:','L:','M:',
+  'N:','O:','P:','Q:','R:','S:','T:','U:','V:','W:','X:','Y:','Z:','\\');
+  
  DRIVE_MASKS:array[MIN_DRIVE..MAX_DRIVE] of LongWord = (
   $00000001,$00000002,$00000004,$00000008,
   $00000010,$00000020,$00000040,$00000080,
@@ -2478,7 +2482,7 @@ begin
  Result:=False;
  if SystemTimeToFileTime(lpSystemTime,FileTime) then
   begin
-   ClockSetTime(Int64(FileTime));
+   ClockSetTime(Int64(FileTime),True);
    
    Result:=True;
   end;
@@ -2512,7 +2516,7 @@ begin
   begin
    if LocalFileTimeToFileTime(LocalFileTime,FileTime) then
     begin
-     ClockSetTime(Int64(FileTime));
+     ClockSetTime(Int64(FileTime),True);
      
      Result:=True;
     end;
@@ -2777,7 +2781,7 @@ procedure SetCurrentTime(const ATime:TFileTime);
 {Set the current system time in UTC from a FileTime value}
 begin
  {}
- ClockSetTime(Int64(ATime));
+ ClockSetTime(Int64(ATime),True);
 end;
 
 {==============================================================================}

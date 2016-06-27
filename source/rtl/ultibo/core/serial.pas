@@ -196,10 +196,10 @@ type
   SerialId:LongWord;                              {Unique Id of this Serial device in the Serial device table}
   SerialState:LongWord;                           {Serial state (eg SERIAL_STATE_OPEN)}
   SerialStatus:LongWord;                          {Serial status (eg SERIAL_STATUS_RX_FULL)(May not be real time status depending on the driver)}
-  DeviceOpen:TSerialDeviceOpen;                   {A Device specific DeviceOpen method implementing the standard Serial device interface (Manadatory)}
-  DeviceClose:TSerialDeviceClose;                 {A Device specific DeviceClose method implementing the standard Serial device interface (Manadatory)}
-  DeviceRead:TSerialDeviceRead;                   {A Device specific DeviceRead method implementing the standard Serial device interface (Manadatory)}
-  DeviceWrite:TSerialDeviceWrite;                 {A Device specific DeviceWrite method implementing the standard Serial device interface (Manadatory)}
+  DeviceOpen:TSerialDeviceOpen;                   {A Device specific DeviceOpen method implementing the standard Serial device interface (Mandatory)}
+  DeviceClose:TSerialDeviceClose;                 {A Device specific DeviceClose method implementing the standard Serial device interface (Mandatory)}
+  DeviceRead:TSerialDeviceRead;                   {A Device specific DeviceRead method implementing the standard Serial device interface (Mandatory)}
+  DeviceWrite:TSerialDeviceWrite;                 {A Device specific DeviceWrite method implementing the standard Serial device interface (Mandatory)}
   DeviceStatus:TSerialDeviceStatus;               {A Device specific DeviceStatus method implementing the standard Serial device interface (Or nil if the default method is suitable)}
   DeviceProperties:TSerialDeviceProperties;       {A Device specific DeviceProperties method implementing the standard Serial device interface (Or nil if the default method is suitable)}
   {Driver Properties}
