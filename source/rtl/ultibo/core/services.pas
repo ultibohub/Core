@@ -349,6 +349,8 @@ type
   FInitialClockGet:Boolean;      {Has the time been obtained at least once}
   FInitialClockCount:LongWord;   {How many times have we tried to obtain the initial clock}
   
+  FTimerHandle:TTimerHandle;     {Handle for the NTP update timer}
+  
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;  
@@ -361,6 +363,8 @@ type
   
   procedure SetInitialClockGet(AInitialClockGet:Boolean);
   procedure SetInitialClockCount(AInitialClockCount:LongWord);
+  
+  procedure SetTimerHandle(ATimerHandle:TTimerHandle);
  public
   {Public Properties}
   property PollInterval:LongWord read FPollInterval write SetPollInterval;
@@ -371,6 +375,8 @@ type
   
   property InitialClockGet:Boolean read FInitialClockGet write SetInitialClockGet;
   property InitialClockCount:LongWord read FInitialClockCount write SetInitialClockCount;
+  
+  property TimerHandle:TTimerHandle read FTimerHandle write SetTimerHandle;
   
   {Public Methods}
   function GetTime:Int64;
@@ -719,6 +725,8 @@ begin
  FInitialClockGet:=False;
  FInitialClockCount:=0;
  
+ FTimerHandle:=INVALID_HANDLE_VALUE;
+ 
  RemoteHost:=NTP_SERVER_DEFAULT;
  RemotePort:=NTP_PORT_DEFAULT;
 end;
@@ -730,6 +738,9 @@ begin
  {}
  AcquireLock;
  try
+  if FTimerHandle <> INVALID_HANDLE_VALUE then TimerDestroy(FTimerHandle);
+  FTimerHandle:=INVALID_HANDLE_VALUE;
+  
   inherited Destroy;
  finally
   ReleaseLock;
@@ -827,6 +838,18 @@ end;
 
 {==============================================================================}
 
+procedure TNTPClient.SetTimerHandle(ATimerHandle:TTimerHandle);
+begin
+ {}
+ if not AcquireLock then Exit;
+ 
+ FTimerHandle:=ATimerHandle;
+ 
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
 function TNTPClient.GetTime:Int64;
 var
  Leap:Byte;
@@ -860,24 +883,43 @@ begin
   
    {Set Polling Receive Timeout}
    ReceiveTimeout:=PollTimeout;
-  
+ 
    {Create NTP Request}
    NTPRequest:=AllocMem(SizeOf(TNTPPacket));
    if NTPRequest = nil then Exit;
    try
-    {Setup NTP Request}
-    NTPRequest.LeapVersionMode:=(NTP_LEAP_NONE shl 6) or (NTP_VERSION shl 3) or (NTP_MODE_CLIENT shl 0);
-    NTPRequest.TransmitTimestamp:=ClockTimeToNTPTimestamp(ClockGetTime);
-   
     {Set Polling Retries}
     Count:=PollRetries;
     while Count > 0 do
      begin
+      {Connect}
+      if not Connected then
+       begin
+        if not Connect then Exit;
+        {$IFDEF NTP_DEBUG}
+        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Connected');
+        {$ENDIF}
+        
+        {Set Polling Send Timeout}
+        SendTimeout:=PollTimeout;
+        
+        {Set Polling Receive Timeout}
+        ReceiveTimeout:=PollTimeout;
+       end;
+     
+      {$IFDEF NTP_DEBUG}
+      if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Sending Request');
+      {$ENDIF}
+      
+      {Setup NTP Request}
+      NTPRequest.LeapVersionMode:=(NTP_LEAP_NONE shl 6) or (NTP_VERSION shl 3) or (NTP_MODE_CLIENT shl 0);
+      NTPRequest.TransmitTimestamp:=ClockTimeToNTPTimestamp(ClockGetTime);
+      
       {Send NTP Request}
       if SendData(NTPRequest,SizeOf(TNTPPacket)) = SizeOf(TNTPPacket) then
        begin
         {$IFDEF NTP_DEBUG}
-        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Request Sent');
+        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Request Sent to ' + RemoteHost + ' on port ' + IntToStr(RemotePort));
         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Leap = ' + IntToHex((NTPRequest.LeapVersionMode shr 6) and NTP_LEAP_MASK,2));
         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Version = ' + IntToHex((NTPRequest.LeapVersionMode shr 3) and NTP_VERSION_MASK,2));
         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Mode = ' + IntToHex((NTPRequest.LeapVersionMode shr 0) and NTP_MODE_MASK,2));
@@ -896,6 +938,10 @@ begin
         NTPReply:=AllocMem(SizeOf(TNTPPacket));
         if NTPReply = nil then Exit;
         try
+         {$IFDEF NTP_DEBUG}
+         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Receiving Reply');
+         {$ENDIF}
+      
          {Receive NTP Reply}
          if RecvData(NTPReply,SizeOf(TNTPPacket)) > 0 then
           begin
@@ -987,14 +1033,18 @@ begin
            {Get Time}
            Result:=NTPTimestampToClockTime(NTPReply.TransmitTimestamp);
            Exit;
-          end;
+          end;          
         finally
          FreeMem(NTPReply);
         end;     
-       end;
+       end;       
     
       Dec(Count);
       Sleep(RetryTimeout);
+
+      {$IFDEF NTP_DEBUG}
+      if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Retrying Request (Retries remaining=' + IntToStr(Count) + ')');
+      {$ENDIF}
      end;
    finally
     FreeMem(NTPRequest);
@@ -2853,7 +2903,7 @@ begin
      NTPClient:=TNTPClient.Create;
      
      {Create Timer}
-     TimerCreateEx(NTP_POLLING_INTERVAL * MILLISECONDS_PER_SECOND,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_IMMEDIATE or TIMER_FLAG_WORKER,TTimerEvent(NTPUpdateTime),NTPClient); {Rescheduled Automatically}
+     NTPClient.TimerHandle:=TimerCreateEx(NTPClient.PollInterval * MILLISECONDS_PER_SECOND,TIMER_STATE_ENABLED,TIMER_FLAG_IMMEDIATE or TIMER_FLAG_WORKER,TTimerEvent(NTPUpdateTime),NTPClient); {Rescheduled by Timer Event}
     end; 
   end;
  
@@ -2943,9 +2993,10 @@ begin
  if Current <> 0 then
   begin
    {$IFDEF NTP_DEBUG}
-   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Setting Clock Time');
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Get Time success');
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Returned time is ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Current))));
    {$ENDIF}
-   
+
    {Check Time}
    if Current <> ClockGetTime then
     begin
@@ -2957,14 +3008,34 @@ begin
    
    {Set Initial Clock}
    Client.InitialClockGet:=True;
+   
+   {$IFDEF NTP_DEBUG}
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Scheduling Update in ' + IntToStr(Client.PollInterval) + ' seconds');
+   {$ENDIF}
+   
+   {Enable Timer}
+   TimerEnable(Client.TimerHandle);
   end
  else
   begin
+   {$IFDEF NTP_DEBUG}
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Get Time failure');
+   {$ENDIF}
+   
    {Check Initial Clock}
-   if not Client.InitialClockGet then
+   if Client.InitialClockGet then
     begin
      {$IFDEF NTP_DEBUG}
-     if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Scheduling Retry');
+     if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Scheduling Update in ' + IntToStr(Client.PollInterval) + ' seconds');
+     {$ENDIF}
+    
+     {Enable Timer}
+     TimerEnable(Client.TimerHandle);
+    end
+   else 
+    begin
+     {$IFDEF NTP_DEBUG}
+     if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Scheduling Retry in ' + IntToStr(Client.RetryTimeout * Min(Client.InitialClockCount + 1,10)) + ' milliseconds');
      {$ENDIF}
      
      {Increment Clock Count}
