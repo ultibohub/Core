@@ -251,6 +251,8 @@ function GPIODeviceRegister(GPIO:PGPIODevice):LongWord;
 function GPIODeviceDeregister(GPIO:PGPIODevice):LongWord;
 
 function GPIODeviceFind(GPIOId:LongWord):PGPIODevice;
+function GPIODeviceFindByName(const Name:String):PGPIODevice; inline;
+function GPIODeviceFindByDescription(const Description:String):PGPIODevice; inline;
 function GPIODeviceEnumerate(Callback:TGPIOEnumerate;Data:Pointer):LongWord;
  
 function GPIODeviceNotification(GPIO:PGPIODevice;Callback:TGPIONotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1150,6 +1152,22 @@ begin
     CriticalSectionUnlock(GPIODeviceTableLock);
    end;
   end;
+end;
+    
+{==============================================================================}
+    
+function GPIODeviceFindByName(const Name:String):PGPIODevice; inline;
+begin
+ {}
+ Result:=PGPIODevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function GPIODeviceFindByDescription(const Description:String):PGPIODevice; inline;
+begin
+ {}
+ Result:=PGPIODevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

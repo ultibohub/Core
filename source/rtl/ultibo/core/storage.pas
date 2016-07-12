@@ -397,6 +397,8 @@ function StorageDeviceRegister(Storage:PStorageDevice):LongWord;
 function StorageDeviceDeregister(Storage:PStorageDevice):LongWord;
 
 function StorageDeviceFind(StorageId:LongWord):PStorageDevice;
+function StorageDeviceFindByName(const Name:String):PStorageDevice; inline;
+function StorageDeviceFindByDescription(const Description:String):PStorageDevice; inline;
 function StorageDeviceEnumerate(Callback:TStorageEnumerate;Data:Pointer):LongWord;
 
 function StorageDeviceNotification(Storage:PStorageDevice;Callback:TStorageNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1041,6 +1043,22 @@ begin
     CriticalSectionUnlock(StorageTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function StorageDeviceFindByName(const Name:String):PStorageDevice; inline;
+begin
+ {}
+ Result:=PStorageDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function StorageDeviceFindByDescription(const Description:String):PStorageDevice; inline;
+begin
+ {}
+ Result:=PStorageDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

@@ -812,6 +812,10 @@ function BCM2709WatchdogGetRemain(Watchdog:PWatchdogDevice):LongWord;
 function BCM2709FramebufferAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 function BCM2709FramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 
+function BCM2709FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+
+function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+
 function BCM2709FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 
 {==============================================================================}
@@ -1068,7 +1072,7 @@ begin
      {Device}
      BCM2709SPI0.SPI.Device.DeviceBus:=DEVICE_BUS_MMIO;
      BCM2709SPI0.SPI.Device.DeviceType:=SPI_TYPE_NONE;
-     BCM2709SPI0.SPI.Device.DeviceFlags:=SPI_FLAG_4WIRE or SPI_FLAG_3WIRE or SPI_FLAG_LOSSI or SPI_FLAG_CPOL or SPI_FLAG_CPHA or SPI_FLAG_CSPOL or SPI_FLAG_NO_CS;
+     BCM2709SPI0.SPI.Device.DeviceFlags:=SPI_FLAG_4WIRE or SPI_FLAG_3WIRE or SPI_FLAG_LOSSI or SPI_FLAG_CPOL or SPI_FLAG_CPHA or SPI_FLAG_CSPOL or SPI_FLAG_NO_CS or SPI_FLAG_DMA;
      BCM2709SPI0.SPI.Device.DeviceData:=nil;
      BCM2709SPI0.SPI.Device.DeviceDescription:=BCM2709_SPI0_DESCRIPTION;
      {SPI}
@@ -1456,16 +1460,19 @@ begin
      {Device}
      BCM2709Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2709Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-     BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_NONE;
+     BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK;
      BCM2709Framebuffer.Framebuffer.Device.DeviceData:=nil;
      {Framebuffer}
      BCM2709Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
      BCM2709Framebuffer.Framebuffer.DeviceAllocate:=BCM2709FramebufferAllocate;
      BCM2709Framebuffer.Framebuffer.DeviceRelease:=BCM2709FramebufferRelease;
+     BCM2709Framebuffer.Framebuffer.DeviceBlank:=BCM2709FramebufferBlank;
+     BCM2709Framebuffer.Framebuffer.DeviceCommit:=BCM2709FramebufferCommit;
      BCM2709Framebuffer.Framebuffer.DeviceSetProperties:=BCM2709FramebufferSetProperties;
      {Driver}
      
      {Setup Flags}
+     if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
      if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
      if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;
      
@@ -7172,6 +7179,49 @@ begin
   end;
 end;
 
+{==============================================================================}
+
+function BCM2709FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Blank}
+ if Blank then
+  begin
+   Result:=FramebufferSetState(0);
+  end
+ else
+  begin
+   Result:=FramebufferSetState(1);
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Flags}
+ if ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0) and BCM2709FRAMEBUFFER_CACHED then
+  begin
+   {Clean Cache}
+   CleanAndInvalidateDataCacheRange(Address,Size);
+  end;
+ 
+ Result:=ERROR_SUCCESS; 
+end;
+ 
 {==============================================================================}
 
 function BCM2709FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;

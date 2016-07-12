@@ -103,7 +103,7 @@ end;
 
 procedure TThread.Resume;
 begin
-  if ResumeThread(FHandle) = 1 then FSuspended := False;
+  if ResumeThread(FHandle) = 0 then FSuspended := False;
 end;
 
 procedure TThread.Terminate;

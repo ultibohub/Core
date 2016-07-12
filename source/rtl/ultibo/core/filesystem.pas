@@ -51624,7 +51624,8 @@ begin
 
  {Write File}
  Result:=FileSysDriver.FileWrite(Handle,Address^,Len);
- if Result = 0 then
+ //if Result = 0 then //TestingEOF
+ if Result = -1 then
   begin
    InOutRes:=6;
   end;
@@ -51646,7 +51647,8 @@ begin
 
  {Read File}
  Result:=FileSysDriver.FileRead(Handle,Address^,Len);
- if Result = 0 then
+ //if Result = 0 then //TestingEOF
+ if Result = -1 then
   begin
    InOutRes:=6;
   end;
@@ -51769,7 +51771,7 @@ procedure SystemDoOpen(var F;Name:PFileTextRecChar;Flags:LongInt;NameChangeable:
 {FileRec and TextRec have both Handle and Mode as the first items so they could use the same routine for opening/creating.
  When (Flags and $00100) The file will be Appended
  When (Flags and $01000) The file will be Truncated/rewritten
- When (Flags and $10000) There is no check for Cclose (needed for TextFiles)
+ When (Flags and $10000) There is no check for Close (needed for TextFiles)
 }
 begin
  {}

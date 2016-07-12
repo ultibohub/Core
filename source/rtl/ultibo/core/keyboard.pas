@@ -613,6 +613,8 @@ function KeyboardDeviceRegister(Keyboard:PKeyboardDevice):LongWord;
 function KeyboardDeviceDeregister(Keyboard:PKeyboardDevice):LongWord;
 
 function KeyboardDeviceFind(KeyboardId:LongWord):PKeyboardDevice;
+function KeyboardDeviceFindByName(const Name:String):PKeyboardDevice; inline;
+function KeyboardDeviceFindByDescription(const Description:String):PKeyboardDevice; inline;
 function KeyboardDeviceEnumerate(Callback:TKeyboardEnumerate;Data:Pointer):LongWord;
 
 function KeyboardDeviceNotification(Keyboard:PKeyboardDevice;Callback:TKeyboardNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1524,7 +1526,23 @@ begin
    end;
   end;
 end;
-       
+   
+{==============================================================================}
+   
+function KeyboardDeviceFindByName(const Name:String):PKeyboardDevice; inline;
+begin
+ {}
+ Result:=PKeyboardDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function KeyboardDeviceFindByDescription(const Description:String):PKeyboardDevice; inline;
+begin
+ {}
+ Result:=PKeyboardDevice(DeviceFindByDescription(Description));
+end;
+      
 {==============================================================================}
 
 function KeyboardDeviceEnumerate(Callback:TKeyboardEnumerate;Data:Pointer):LongWord;

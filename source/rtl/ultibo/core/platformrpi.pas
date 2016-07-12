@@ -373,6 +373,10 @@ function RPiFramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties:
 function RPiFramebufferDeviceAllocateAlt(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 function RPiFramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
 
+function RPiFramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+
+function RPiFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+
 function RPiFramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {$ENDIF}
 {==============================================================================}
@@ -1130,16 +1134,19 @@ begin
    {Device}
    RPiFramebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
    RPiFramebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-   RPiFramebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_NONE;
+   RPiFramebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK;
    RPiFramebuffer.Device.DeviceData:=nil;
    {Framebuffer}
    RPiFramebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
    RPiFramebuffer.DeviceAllocate:=RPiFramebufferDeviceAllocate;
    RPiFramebuffer.DeviceRelease:=RPiFramebufferDeviceRelease;
+   RPiFramebuffer.DeviceBlank:=RPiFramebufferDeviceBlank;
+   RPiFramebuffer.DeviceCommit:=RPiFramebufferDeviceCommit;
    RPiFramebuffer.DeviceSetProperties:=RPiFramebufferDeviceSetProperties;
    {Driver}
  
    {Setup Flags}
+   if BCM2708FRAMEBUFFER_CACHED then RPiFramebuffer.Device.DeviceFlags:=RPiFramebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
    if BCM2708FRAMEBUFFER_CACHED then RPiFramebuffer.Device.DeviceFlags:=RPiFramebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
    if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPiFramebuffer.Device.DeviceFlags:=RPiFramebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;
    
@@ -4356,7 +4363,8 @@ begin
   Tag.Header.Tag:=BCM2835_MBOX_TAG_SET_BLANK_SCREEN;
   Tag.Header.Size:=SizeOf(TBCM2835MailboxTagBlankScreen) - SizeOf(TBCM2835MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.State:=State; {BCM2835_MBOX_BLANK_SCREEN_REQ_ON}
+  Tag.Request.State:=0;
+  if State = 0 then Tag.Request.State:=BCM2835_MBOX_BLANK_SCREEN_REQ_ON;
  
   {Setup Footer}
   Footer:=PBCM2835MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2835MailboxTagBlankScreen)));
@@ -6753,6 +6761,49 @@ begin
 end;
    
 {==============================================================================}
+   
+function RPiFramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Blank}
+ if Blank then
+  begin
+   Result:=RPiFramebufferSetState(0);
+  end
+ else
+  begin
+   Result:=RPiFramebufferSetState(1);
+  end;
+end;
+
+{==============================================================================}
+
+function RPiFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Flags}
+ if ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0) and BCM2708FRAMEBUFFER_CACHED then
+  begin
+   {Clean Cache}
+   CleanAndInvalidateDataCacheRange(Address,Size);
+  end;
+ 
+ Result:=ERROR_SUCCESS; 
+end;
+   
+{==============================================================================}
 
 function RPiFramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 begin
@@ -6956,7 +7007,7 @@ begin
  case ClockId of 
   CLOCK_ID_MMC0:Result:=BCM2835_MBOX_CLOCK_ID_EMMC;
   CLOCK_ID_UART0:Result:=BCM2835_MBOX_CLOCK_ID_UART;
-  CLOCK_ID_UART1:Result:=BCM2835_MBOX_CLOCK_ID_UART;
+  CLOCK_ID_UART1:Result:=BCM2835_MBOX_CLOCK_ID_CORE; {UART1 runs from core clock}
   CLOCK_ID_CPU:Result:=BCM2835_MBOX_CLOCK_ID_ARM;
   CLOCK_ID_CORE:Result:=BCM2835_MBOX_CLOCK_ID_CORE;
   CLOCK_ID_GPU:Result:=BCM2835_MBOX_CLOCK_ID_CORE;

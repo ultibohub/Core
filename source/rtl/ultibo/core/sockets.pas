@@ -65,6 +65,7 @@ const
  SOCKETS_CONFIG_TIMER_INTERVAL    = 1000;
  SOCKETS_FILTER_TIMER_INTERVAL    = 1000;
  SOCKETS_PROTOCOL_TIMER_INTERVAL  = 250;  {Previously 100}
+ SOCKETS_SOCKET_TIMER_INTERVAL   = 1000;
  SOCKETS_AUTH_TIMER_INTERVAL      = 1000;
  SOCKETS_MONITOR_TIMER_INTERVAL   = 1000;
  SOCKETS_TRANSPORT_TIMER_INTERVAL = 1000;
@@ -549,6 +550,7 @@ procedure Sock2File(Sock:Longint;Var SockIn,SockOut:File); deprecated;
 procedure SocketsProcessConfig(Data:Pointer);
 procedure SocketsProcessFilter(Data:Pointer);
 procedure SocketsProcessProtocol(Data:Pointer);
+procedure SocketsProcessSocket(Data:Pointer);
 procedure SocketsProcessAuth(Data:Pointer);
 procedure SocketsProcessMonitor(Data:Pointer);
 procedure SocketsProcessTransport(Data:Pointer);
@@ -604,6 +606,7 @@ var
  SocketsConfigTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsFilterTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsProtocolTimer:TTimerHandle = INVALID_HANDLE_VALUE;
+ SocketsSocketTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsAuthTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsMonitorTimer:TTimerHandle = INVALID_HANDLE_VALUE;
  SocketsTransportTimer:TTimerHandle = INVALID_HANDLE_VALUE;
@@ -735,6 +738,9 @@ begin
       {Create Protocol Timer}
       SocketsProtocolTimer:=TimerCreateEx(SOCKETS_PROTOCOL_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessProtocol),nil); {Rescheduled by Timer Event}
       
+      {Create Socket Timer}
+      SocketsSocketTimer:=TimerCreateEx(SOCKETS_SOCKET_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessSocket),nil); {Rescheduled by Timer Event}
+
       {Create Auth Timer}
       SocketsAuthTimer:=TimerCreateEx(SOCKETS_AUTH_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessAuth),nil); {Rescheduled by Timer Event}
       
@@ -827,6 +833,9 @@ begin
 
     {Destroy Auth Timer}
     TimerDestroy(SocketsAuthTimer);
+    
+    {Destroy Socket Timer}
+    TimerDestroy(SocketsSocketTimer);
     
     {Destroy Protocol Timer}
     TimerDestroy(SocketsProtocolTimer);
@@ -2494,6 +2503,28 @@ begin
  finally
   {Enable Timer}
   TimerEnable(SocketsProtocolTimer);
+ end; 
+end;
+
+{==============================================================================}
+
+procedure SocketsProcessSocket(Data:Pointer);
+begin
+ {}
+ try
+  {$IFDEF SOCKET_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Process sockets');
+  {$ENDIF}
+ 
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+  
+  {Process Sockets}
+  ProtocolManager.ProcessSockets;
+  
+ finally
+  {Enable Timer}
+  TimerEnable(SocketsSocketTimer);
  end; 
 end;
 

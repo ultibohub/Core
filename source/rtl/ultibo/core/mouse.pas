@@ -277,6 +277,8 @@ function MouseDeviceRegister(Mouse:PMouseDevice):LongWord;
 function MouseDeviceDeregister(Mouse:PMouseDevice):LongWord;
 
 function MouseDeviceFind(MouseId:LongWord):PMouseDevice;
+function MouseDeviceFindByName(const Name:String):PMouseDevice; inline;
+function MouseDeviceFindByDescription(const Description:String):PMouseDevice; inline;
 function MouseDeviceEnumerate(Callback:TMouseEnumerate;Data:Pointer):LongWord;
 
 function MouseDeviceNotification(Mouse:PMouseDevice;Callback:TMouseNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1052,6 +1054,22 @@ begin
     CriticalSectionUnlock(MouseTableLock);
    end;
   end;
+end;
+       
+{==============================================================================}
+       
+function MouseDeviceFindByName(const Name:String):PMouseDevice; inline;
+begin
+ {}
+ Result:=PMouseDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function MouseDeviceFindByDescription(const Description:String):PMouseDevice; inline;
+begin
+ {}
+ Result:=PMouseDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

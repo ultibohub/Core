@@ -515,7 +515,8 @@ var
  FRAMEBUFFER_DEFAULT_OVERSCAN_BOTTOM:LongWord;                 {The default (Detected / Configured) Framebuffer Bottom overscan in pixels}
  FRAMEBUFFER_DEFAULT_OVERSCAN_LEFT:LongWord;                   {The default (Detected / Configured) Framebuffer Left overscan in pixels}
  FRAMEBUFFER_DEFAULT_OVERSCAN_RIGHT:LongWord;                  {The default (Detected / Configured) Framebuffer Right overscan in pixels}
-
+ FRAMEBUFFER_DEFAULT_ROTATION:LongWord = FRAMEBUFFER_ROTATION_0; {The default (Detected / Configured) Framebuffer rotation on degress (Where Applicable)}
+ 
 {==============================================================================}
 {Command Line and Environment configuration}
 var
@@ -785,6 +786,8 @@ var
  
  LOCALE_DEFAULT:LongWord; {LCID}           {The current default locale}
  
+ KEYMAP_DEFAULT:String;                    {The name of the default keymap}
+ 
 {==============================================================================}
 {Disk, Controller, Filesystem and Cache configuration}
 var
@@ -1009,6 +1012,12 @@ var
  {PL2303}
  PL2303_MAX_TRANSMIT:LongWord;                  {The maximum transmit size of the PL2303 USB to Serial converter (Defaults to maximum supported by the device if not specified)}
 
+ {FTDI Serial}
+ FTDISERIAL_MAX_TRANSMIT:LongWord;              {The maximum transmit size of the FTDI USB to Serial converter (Defaults to maximum supported by the device if not specified)}
+ 
+ {USB CDC ACM}
+ CDCACM_MAX_TRANSMIT:LongWord;                  {The maximum transmit size for USB CDC ACM Serial devices (Defaults to maximum supported by the device if not specified)}
+ 
  {DS1307}
  DS1307_CHIP_TYPE:LongWord;                     {The specific chip to support in the DS1307 driver (See the DS1307_CHIP_* constants in the driver)}
  DS1307_I2C_ADDRESS:Word = $68;                 {The I2C address to use for the DS1307 RTC device}

@@ -97,6 +97,26 @@ type
 
 {==============================================================================}
 type
+ {Color Format types} 
+ PColorFormatARGB32 = ^TColorFormatARGB32;
+ TColorFormatARGB32 = packed record
+  Alpha:Byte;
+  Red:Byte;
+  Green:Byte;
+  Blue:Byte;
+ end;
+ 
+ //To Do //Continuing
+ 
+ PColorFormatRGB24 = ^TColorFormatRGB24;
+ TColorFormatRGB24 = packed record
+  Red:Byte;
+  Green:Byte;
+  Blue:Byte;
+ end;
+ 
+{==============================================================================}
+type
  {Compatibility types} 
  {Boolean types}
  BOOL = LongBool;

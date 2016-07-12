@@ -926,6 +926,7 @@ function DriverRegister(Driver:PDriver):LongWord;
 function DriverDeregister(Driver:PDriver):LongWord;
 
 function DriverFind(DriverClass,DriverId:LongWord):PDriver;
+function DriverFindByName(const Name:String):PDriver;
 function DriverEnumerate(DriverClass:LongWord;Callback:TDriverEnumerate;Data:Pointer):LongWord;
 
 {==============================================================================}
@@ -945,6 +946,8 @@ function ClockDeviceRegister(Clock:PClockDevice):LongWord;
 function ClockDeviceDeregister(Clock:PClockDevice):LongWord;
 
 function ClockDeviceFind(ClockId:LongWord):PClockDevice;
+function ClockDeviceFindByName(const Name:String):PClockDevice; inline;
+function ClockDeviceFindByDescription(const Description:String):PClockDevice; inline;
 function ClockDeviceEnumerate(Callback:TClockEnumerate;Data:Pointer):LongWord;
 
 function ClockDeviceNotification(Clock:PClockDevice;Callback:TClockNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -971,6 +974,8 @@ function TimerDeviceRegister(Timer:PTimerDevice):LongWord;
 function TimerDeviceDeregister(Timer:PTimerDevice):LongWord;
 
 function TimerDeviceFind(TimerId:LongWord):PTimerDevice;
+function TimerDeviceFindByName(const Name:String):PTimerDevice; inline;
+function TimerDeviceFindByDescription(const Description:String):PTimerDevice; inline;
 function TimerDeviceEnumerate(Callback:TTimerEnumerate;Data:Pointer):LongWord;
 
 function TimerDeviceNotification(Timer:PTimerDevice;Callback:TTimerNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -995,6 +1000,8 @@ function RandomDeviceRegister(Random:PRandomDevice):LongWord;
 function RandomDeviceDeregister(Random:PRandomDevice):LongWord;
 
 function RandomDeviceFind(RandomId:LongWord):PRandomDevice;
+function RandomDeviceFindByName(const Name:String):PRandomDevice; inline;
+function RandomDeviceFindByDescription(const Description:String):PRandomDevice; inline;
 function RandomDeviceEnumerate(Callback:TRandomEnumerate;Data:Pointer):LongWord;
 
 function RandomDeviceNotification(Random:PRandomDevice;Callback:TRandomNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1017,6 +1024,8 @@ function MailboxDeviceRegister(Mailbox:PMailboxDevice):LongWord;
 function MailboxDeviceDeregister(Mailbox:PMailboxDevice):LongWord;
 
 function MailboxDeviceFind(MailboxId:LongWord):PMailboxDevice;
+function MailboxDeviceFindByName(const Name:String):PMailboxDevice; inline;
+function MailboxDeviceFindByDescription(const Description:String):PMailboxDevice; inline;
 function MailboxDeviceEnumerate(Callback:TMailboxEnumerate;Data:Pointer):LongWord;
 
 function MailboxDeviceNotification(Mailbox:PMailboxDevice;Callback:TMailboxNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1039,6 +1048,8 @@ function WatchdogDeviceRegister(Watchdog:PWatchdogDevice):LongWord;
 function WatchdogDeviceDeregister(Watchdog:PWatchdogDevice):LongWord;
 
 function WatchdogDeviceFind(WatchdogId:LongWord):PWatchdogDevice;
+function WatchdogDeviceFindByName(const Name:String):PWatchdogDevice; inline;
+function WatchdogDeviceFindByDescription(const Description:String):PWatchdogDevice; inline;
 function WatchdogDeviceEnumerate(Callback:TWatchdogEnumerate;Data:Pointer):LongWord;
 
 function WatchdogDeviceNotification(Watchdog:PWatchdogDevice;Callback:TWatchdogNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -2613,6 +2624,44 @@ end;
 
 {==============================================================================}
 
+function DriverFindByName(const Name:String):PDriver;
+var
+ Driver:PDriver;
+begin
+ {}
+ Result:=nil;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Driver}
+    Driver:=DriverTable;
+    while Driver <> nil do
+     begin
+      {Check State}
+      if Driver.DriverState = DRIVER_STATE_REGISTERED then
+       begin
+        {Check Name}
+        if Uppercase(Driver.DriverName) = Uppercase(Name) then
+         begin
+          Result:=Driver;
+          Exit;
+         end;
+       end;
+       
+      {Get Next}
+      Driver:=Driver.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(DriverTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
 function DriverEnumerate(DriverClass:LongWord;Callback:TDriverEnumerate;Data:Pointer):LongWord;
 var
  Driver:PDriver;
@@ -3089,6 +3138,22 @@ begin
     CriticalSectionUnlock(ClockDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function ClockDeviceFindByName(const Name:String):PClockDevice; inline;
+begin
+ {}
+ Result:=PClockDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function ClockDeviceFindByDescription(const Description:String):PClockDevice; inline;
+begin
+ {}
+ Result:=PClockDevice(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}
@@ -3801,6 +3866,22 @@ end;
 
 {==============================================================================}
 
+function TimerDeviceFindByName(const Name:String):PTimerDevice; inline;
+begin
+ {}
+ Result:=PTimerDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function TimerDeviceFindByDescription(const Description:String):PTimerDevice; inline;
+begin
+ {}
+ Result:=PTimerDevice(DeviceFindByDescription(Description));
+end;
+
+{==============================================================================}
+
 function TimerDeviceEnumerate(Callback:TTimerEnumerate;Data:Pointer):LongWord;
 var
  Timer:PTimerDevice;
@@ -4390,6 +4471,22 @@ end;
 
 {==============================================================================}
 
+function RandomDeviceFindByName(const Name:String):PRandomDevice; inline;
+begin
+ {}
+ Result:=PRandomDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function RandomDeviceFindByDescription(const Description:String):PRandomDevice; inline;
+begin
+ {}
+ Result:=PRandomDevice(DeviceFindByDescription(Description));
+end;
+
+{==============================================================================}
+
 function RandomDeviceEnumerate(Callback:TRandomEnumerate;Data:Pointer):LongWord;
 var
  Random:PRandomDevice;
@@ -4956,6 +5053,22 @@ end;
 
 {==============================================================================}
 
+function MailboxDeviceFindByName(const Name:String):PMailboxDevice; inline;
+begin
+ {}
+ Result:=PMailboxDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function MailboxDeviceFindByDescription(const Description:String):PMailboxDevice; inline;
+begin
+ {}
+ Result:=PMailboxDevice(DeviceFindByDescription(Description));
+end;
+
+{==============================================================================}
+
 function MailboxDeviceEnumerate(Callback:TMailboxEnumerate;Data:Pointer):LongWord;
 var
  Mailbox:PMailboxDevice;
@@ -5491,6 +5604,22 @@ begin
     CriticalSectionUnlock(WatchdogDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function WatchdogDeviceFindByName(const Name:String):PWatchdogDevice; inline;
+begin
+ {}
+ Result:=PWatchdogDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function WatchdogDeviceFindByDescription(const Description:String):PWatchdogDevice; inline;
+begin
+ {}
+ Result:=PWatchdogDevice(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}

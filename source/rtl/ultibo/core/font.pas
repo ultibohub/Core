@@ -667,6 +667,7 @@ function FontLoadEx(Header:PFontHeader;Data:PFontData;Unicode:PFontUnicode;Size:
 {Properties: Pointer to a font properties record to use instead of the header (Optional)}
 var
  Font:PFontEntry;
+ RowSize:LongWord;
  TotalSize:LongWord;
  
  Swap:Boolean;
@@ -701,7 +702,9 @@ begin
    if Header.Count < FONT_MIN_COUNT then Exit;
    
    {Get Size}
-   TotalSize:=(((Header.Width + 7) div 8) * Header.Height) * Header.Count;
+   RowSize:=((Header.Width + 7) div 8);
+   if RowSize = 3 then Inc(RowSize); {Account for fonts 17 to 24 bits wide}
+   TotalSize:=(RowSize * Header.Height) * Header.Count;
    
    {Check Size}
    if Size < TotalSize then Exit;
@@ -738,7 +741,9 @@ begin
    if Properties.CharCount < FONT_MIN_COUNT then Exit;
  
    {Get Size}
-   TotalSize:=(((Properties.CharWidth + 7) div 8) * Properties.CharHeight) * Properties.CharCount;
+   RowSize:=((Properties.CharWidth + 7) div 8);
+   if RowSize = 3 then Inc(RowSize); {Account for fonts 17 to 24 bits wide}
+   TotalSize:=(RowSize * Properties.CharHeight) * Properties.CharCount;
    
    {Check Size}
    if Size < TotalSize then Exit;

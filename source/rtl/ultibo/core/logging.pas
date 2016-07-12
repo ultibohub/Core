@@ -173,6 +173,8 @@ function LoggingDeviceDeregister(Logging:PLoggingDevice):LongWord;
 function LoggingDeviceFind(LoggingId:LongWord):PLoggingDevice;
 function LoggingDeviceFindByType(LoggingType:LongWord):PLoggingDevice;
 function LoggingDeviceFindByDevice(Device:PDevice):PLoggingDevice;
+function LoggingDeviceFindByName(const Name:String):PLoggingDevice; inline;
+function LoggingDeviceFindByDescription(const Description:String):PLoggingDevice; inline;
 
 function LoggingDeviceEnumerate(Callback:TLoggingEnumerate;Data:Pointer):LongWord;
 
@@ -930,6 +932,22 @@ begin
     CriticalSectionUnlock(LoggingDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function LoggingDeviceFindByName(const Name:String):PLoggingDevice; inline;
+begin
+ {}
+ Result:=PLoggingDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function LoggingDeviceFindByDescription(const Description:String):PLoggingDevice; inline;
+begin
+ {}
+ Result:=PLoggingDevice(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}

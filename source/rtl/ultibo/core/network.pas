@@ -1082,6 +1082,8 @@ function NetworkDeviceRegister(Network:PNetworkDevice):LongWord;
 function NetworkDeviceDeregister(Network:PNetworkDevice):LongWord;
 
 function NetworkDeviceFind(NetworkId:LongWord):PNetworkDevice;
+function NetworkDeviceFindByName(const Name:String):PNetworkDevice; inline;
+function NetworkDeviceFindByDescription(const Description:String):PNetworkDevice; inline;
 function NetworkDeviceEnumerate(Callback:TNetworkEnumerate;Data:Pointer):LongWord;
 
 function NetworkDeviceNotification(Network:PNetworkDevice;Callback:TNetworkNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -5834,6 +5836,22 @@ begin
     CriticalSectionUnlock(NetworkTableLock);
    end;
   end;
+end;
+       
+{==============================================================================}
+       
+function NetworkDeviceFindByName(const Name:String):PNetworkDevice; inline;
+begin
+ {}
+ Result:=PNetworkDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function NetworkDeviceFindByDescription(const Description:String):PNetworkDevice; inline;
+begin
+ {}
+ Result:=PNetworkDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

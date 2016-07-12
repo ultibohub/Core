@@ -139,6 +139,8 @@ function PWMDeviceRegister(PWM:PPWMDevice):LongWord;
 function PWMDeviceDeregister(PWM:PPWMDevice):LongWord;
 
 function PWMDeviceFind(PWMId:LongWord):PPWMDevice;
+function PWMDeviceFindByName(const Name:String):PPWMDevice; inline;
+function PWMDeviceFindByDescription(const Description:String):PPWMDevice; inline;
 function PWMDeviceEnumerate(Callback:TPWMEnumerate;Data:Pointer):LongWord;
  
 function PWMDeviceNotification(PWM:PPWMDevice;Callback:TPWMNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -494,6 +496,22 @@ begin
     CriticalSectionUnlock(PWMDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function PWMDeviceFindByName(const Name:String):PPWMDevice; inline;
+begin
+ {}
+ Result:=PPWMDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function PWMDeviceFindByDescription(const Description:String):PPWMDevice; inline;
+begin
+ {}
+ Result:=PPWMDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

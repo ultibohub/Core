@@ -64,20 +64,30 @@ const
  
  {Framebuffer Device Flags}
  FRAMEBUFFER_FLAG_NONE      = $00000000;
- FRAMEBUFFER_FLAG_CACHED    = $00000001;   {If set framebuffer is in cached memory and cache cleaning should be used}
- FRAMEBUFFER_FLAG_SWAP      = $00000002;   {If set framebuffer uses reversed colors (BGR instead of RGB)}
+ FRAMEBUFFER_FLAG_DMA       = $00000001;  {If set the framebuffer supports DMA for read/write operations}
+ FRAMEBUFFER_FLAG_MARK      = $00000002;  {If set the framebuffer requires mark after write operations}
+ FRAMEBUFFER_FLAG_COMMIT    = $00000004;  {If set the framebuffer requires commit after write operations}
+ FRAMEBUFFER_FLAG_BLANK     = $00000008;  {If set the framebuffer supports blanking the screen}
+ FRAMEBUFFER_FLAG_CACHED    = $00000010;  {If set framebuffer is in cached memory and cache cleaning should be used} //To Do //Remove when console changes completed
+ FRAMEBUFFER_FLAG_SWAP      = $00000020;  {If set framebuffer uses reversed colors (BGR instead of RGB)}             //To Do //Remove when console changes completed
+ 
+ {Framebuffer Transfer Flags}
+ FRAMEBUFFER_TRANSFER_NONE = $00000000;
+ FRAMEBUFFER_TRANSFER_DMA  = $00000001; {Use DMA for transfer operations (Note: Buffers must be DMA compatible)}
  
 {==============================================================================}
 type
  {Framebuffer specific types}
  PFramebufferProperties = ^TFramebufferProperties;
  TFramebufferProperties = record
+  Flags:LongWord;                                {Framebuffer device flags (eg FRAMEBUFFER_FLAG_CACHED) (Ignored for Allocate / SetProperties)}
   Address:LongWord;                              {Framebuffer address (Ignored for Allocate / SetProperties)}
   Size:LongWord;                                 {Framebuffer size (Bytes) (Ignored for Allocate / SetProperties)}
   Pitch:LongWord;                                {Framebuffer pitch (Bytes per Line) (Ignored for Allocate / SetProperties)}
   Depth:LongWord;                                {Framebuffer depth (Bits per Pixel)(8/16/24/32)}
   Order:LongWord;                                {Framebuffer pixel order (BGR/RGB)}
   Mode:LongWord;                                 {Framebuffer alpha mode (Enabled/Reversed/Ignored)}
+  Format:LongWord;                               {Framebuffer color format (eg COLOR_FORMAT_ARGB32) (Ignored for Allocate / SetProperties)}
   PhysicalWidth:LongWord;                        {Framebuffer Physical Width (Pixels)}
   PhysicalHeight:LongWord;                       {Framebuffer Physical Height (Pixels)}
   VirtualWidth:LongWord;                         {Framebuffer Virtual Width (Pixels)}
@@ -88,6 +98,7 @@ type
   OverscanBottom:LongWord;                       {Framebuffer Overscan Bottom (Pixels)}                                  
   OverscanLeft:LongWord;                         {Framebuffer Overscan Left (Pixels)}                                
   OverscanRight:LongWord;                        {Framebuffer Overscan Right (Pixels)}                                 
+  Rotation:LongWord;                             {Framebuffer Rotation (eg FRAMEBUFFER_ROTATION_180)}
  end;
  
  PFramebufferDevice = ^TFramebufferDevice;
@@ -100,6 +111,23 @@ type
  {Framebuffer Device Methods}
  TFramebufferDeviceAllocate = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
  TFramebufferDeviceRelease = function(Framebuffer:PFramebufferDevice):LongWord;
+ 
+ TFramebufferDeviceBlank = function(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+ 
+ TFramebufferDeviceRead = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
+ TFramebufferDeviceWrite = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
+
+ TFramebufferDeviceMark = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
+ TFramebufferDeviceCommit = function(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+ 
+ TFramebufferDeviceGetRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
+ TFramebufferDevicePutRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
+ TFramebufferDeviceCopyRect = function(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Width,Height,Flags:LongWord):LongWord;
+ TFramebufferDeviceFillRect = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;
+ 
+ //TFramebufferDeviceGetPalette //To Do //8 bit color only
+ //TFramebufferDeviceSetPalette //To Do //8 bit color only
+ 
  TFramebufferDeviceGetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
  TFramebufferDeviceSetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
  
@@ -110,13 +138,28 @@ type
   {Framebuffer Properties}
   FramebufferId:LongWord;                        {Unique Id of this Framebuffer device in the Framebuffer device table}
   FramebufferState:LongWord;                     {Framebuffer device state (eg FRAMEBUFFER_STATE_ENABLED)}
-  DeviceAllocate:TFramebufferDeviceAllocate;     {A device specific DeviceAllocate method implementing a standard framebuffer device interface}
-  DeviceRelease:TFramebufferDeviceRelease;       {A device specific DeviceRelease method implementing a standard framebuffer device interface}
+  DeviceAllocate:TFramebufferDeviceAllocate;     {A device specific DeviceAllocate method implementing a standard framebuffer device interface (Mandatory)}
+  DeviceRelease:TFramebufferDeviceRelease;       {A device specific DeviceRelease method implementing a standard framebuffer device interface (Mandatory)}
+  DeviceBlank:TFramebufferDeviceBlank;           {A device specific DeviceBlank method implementing a standard framebuffer device interface (Optional)}
+  DeviceRead:TFramebufferDeviceRead;             {A device specific DeviceRead method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceWrite:TFramebufferDeviceWrite;           {A device specific DeviceWrite method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceMark:TFramebufferDeviceMark;             {A device specific DeviceMark method implementing a standard framebuffer device interface (Optional)}
+  DeviceCommit:TFramebufferDeviceCommit;         {A device specific DeviceCommit method implementing a standard framebuffer device interface (Optional)}
+  DeviceGetRect:TFramebufferDeviceGetRect;       {A device specific DeviceGetRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DevicePutRect:TFramebufferDevicePutRect;       {A device specific DevicePutRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceCopyRect:TFramebufferDeviceCopyRect;     {A device specific DeviceCopyRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceFillRect:TFramebufferDeviceFillRect;     {A device specific DeviceFillRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceGetProperties:TFramebufferDeviceGetProperties; {A device specific DeviceGetProperties method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
-  DeviceSetProperties:TFramebufferDeviceSetProperties; {A device specific DeviceSetProperties method implementing a standard framebuffer device interface}
+  DeviceSetProperties:TFramebufferDeviceSetProperties; {A device specific DeviceSetProperties method implementing a standard framebuffer device interface (Mandatory)}
   {Statistics Properties}
   AllocateCount:LongWord;
   ReleaseCount:LongWord;
+  ReadCount:LongWord;
+  WriteCount:LongWord;
+  GetCount:LongWord;
+  PutCount:LongWord;
+  CopyCount:LongWord;
+  FillCount:LongWord;
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
   Address:LongWord;                              {Framebuffer address}
@@ -125,6 +168,7 @@ type
   Depth:LongWord;                                {Framebuffer depth (Bits per Pixel)(8/16/24/32)}
   Order:LongWord;                                {Framebuffer pixel order (BGR/RGB)}
   Mode:LongWord;                                 {Framebuffer alpha mode (Enabled/Reversed/Ignored)}
+  Format:LongWord;                               {Framebuffer color format (eg COLOR_FORMAT_ARGB32)}
   PhysicalWidth:LongWord;                        {Framebuffer Physical Width (Pixels)}
   PhysicalHeight:LongWord;                       {Framebuffer Physical Height (Pixels)}
   VirtualWidth:LongWord;                         {Framebuffer Virtual Width (Pixels)}
@@ -135,6 +179,10 @@ type
   OverscanBottom:LongWord;                       {Framebuffer Overscan Bottom (Pixels)}                                  
   OverscanLeft:LongWord;                         {Framebuffer Overscan Left (Pixels)}                                
   OverscanRight:LongWord;                        {Framebuffer Overscan Right (Pixels)}                                 
+  Rotation:LongWord;                             {Framebuffer Rotation (eg FRAMEBUFFER_ROTATION_180)}
+  {Buffer Properties}
+  LineBuffer:Pointer;                            {Buffer for line fills}
+  CopyBuffer:Pointer;                            {Buffer for overlapped copy}
   {Internal Properties}
   Prev:PFramebufferDevice;                       {Previous entry in Framebuffer device table}
   Next:PFramebufferDevice;                       {Next entry in Framebuffer device table}
@@ -158,8 +206,26 @@ procedure FramebufferInit;
 {Framebuffer Functions}
 function FramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 function FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
+
+function FramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+ 
+function FramebufferDeviceRead(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
+function FramebufferDeviceWrite(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
+
+function FramebufferDeviceMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
+function FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+ 
+function FramebufferDeviceGetRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
+function FramebufferDevicePutRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
+function FramebufferDeviceCopyRect(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Width,Height,Flags:LongWord):LongWord;
+function FramebufferDeviceFillRect(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;
+
 function FramebufferDeviceGetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 function FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+
+function FramebufferDeviceCheckFlag(Framebuffer:PFramebufferDevice;Flag:LongWord):Boolean;
+
+function FramebufferDeviceGetFormat(Framebuffer:PFramebufferDevice):LongWord;
 
 function FramebufferDeviceCreate:PFramebufferDevice;
 function FramebufferDeviceCreateEx(Size:LongWord):PFramebufferDevice;
@@ -169,6 +235,8 @@ function FramebufferDeviceRegister(Framebuffer:PFramebufferDevice):LongWord;
 function FramebufferDeviceDeregister(Framebuffer:PFramebufferDevice):LongWord;
 
 function FramebufferDeviceFind(FramebufferId:LongWord):PFramebufferDevice;
+function FramebufferDeviceFindByName(const Name:String):PFramebufferDevice; inline;
+function FramebufferDeviceFindByDescription(const Description:String):PFramebufferDevice; inline;
 function FramebufferDeviceEnumerate(Callback:TFramebufferEnumerate;Data:Pointer):LongWord;
 
 function FramebufferDeviceNotification(Framebuffer:PFramebufferDevice;Callback:TFramebufferNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -185,7 +253,7 @@ function FramebufferDeviceSetDefault(Framebuffer:PFramebufferDevice):LongWord;
 
 function FramebufferDeviceCheck(Framebuffer:PFramebufferDevice):PFramebufferDevice;
 
-function FramebufferDeviceSwap(Value:LongWord):LongWord;
+function FramebufferDeviceSwap(Value:LongWord):LongWord; inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -272,6 +340,10 @@ end;
 {==============================================================================}
 {Framebuffer Functions}
 function FramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+{Allocate and enable a framebuffer device using supplied properties or defaults}
+{Framebuffer: The framebuffer device to allocate}
+{Properties: The framebuffer properties (Width/Height/Depth etc) to use for allocation (Optional)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -312,6 +384,9 @@ end;
 {==============================================================================}
 
 function FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
+{Disable and release a framebuffer device}
+{Framebuffer: The framebuffer device to release}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -342,12 +417,1126 @@ begin
  {Notify Disable}
  NotifierNotify(@Framebuffer.Device,DEVICE_NOTIFICATION_DISABLE);
  
+ {Update Framebuffer}
+ {Buffers}
+ if Framebuffer.LineBuffer <> nil then
+  begin
+   if DMAAvailable then DMAReleaseBuffer(Framebuffer.LineBuffer) else FreeMem(Framebuffer.LineBuffer);
+   Framebuffer.LineBuffer:=nil;
+  end;
+ if Framebuffer.CopyBuffer <> nil then
+  begin
+   if DMAAvailable then DMAReleaseBuffer(Framebuffer.CopyBuffer) else FreeMem(Framebuffer.CopyBuffer);
+   Framebuffer.CopyBuffer:=nil;
+  end;
+  
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 
+function FramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+{Blank (Turn off) the display of a framebuffer device}
+{Framebuffer: The framebuffer device to blank}
+{Blank: Turn off the display if True / Turn on the display if False}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not all framebuffer devices support blank, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+{      Devices that support blank should set the flag FRAMEBUFFER_FLAG_BLANK}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Blank (Blank=' + BooleanToString(Blank) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceBlank) then
+  begin
+   Result:=Framebuffer.DeviceBlank(Framebuffer,Blank);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
+end;
+
+{==============================================================================}
+ 
+function FramebufferDeviceRead(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
+{Read one or more pixels from framebuffer device memory to a supplied buffer}
+{Framebuffer: The framebuffer device to read from}
+{X: The column to start reading from}
+{Y: The row to start reading from}
+{Buffer: Pointer to a buffer to receive the read pixels}
+{Len: The number of pixels to read starting at X,Y}
+{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Pixel data will be returned in the color format of the framebuffer}
+{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache cleaning before a DMA read}
+var
+ Data:TDMAData;
+ Size:LongWord;
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Len}
+ if Len = 0 then Exit;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ if Framebuffer.Address = 0 then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Read (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Len=' + IntToStr(Len) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceRead) then
+  begin
+   Result:=Framebuffer.DeviceRead(Framebuffer,X,Y,Buffer,Len,Flags);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check X, Y}
+    if X >= Framebuffer.PhysicalWidth then Exit;
+    if Y >= Framebuffer.PhysicalHeight then Exit;
+    
+    {Get Size}
+    Size:=Len * (Framebuffer.Depth shr 3);
+
+    {Get Address}
+    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+
+    {Check Size}
+    if (Address + Size) > (Framebuffer.Address + Framebuffer.Size) then Exit;
+    
+    {Check DMA}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+     begin
+      {Check Cache}
+      if not(DMA_CACHE_COHERENT) then
+       begin
+        {Clean Cache (Dest)}
+        CleanDataCacheRange(LongWord(Buffer),Size);
+       end;
+
+      {Create Data}
+      FillChar(Data,SizeOf(TDMAData),0);
+      Data.Source:=Pointer(Address);
+      Data.Dest:=Buffer;
+      Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
+      Data.StrideLength:=0;
+      Data.SourceStride:=0;
+      Data.DestStride:=0;
+      Data.Size:=Size;
+      
+      {Perform Read}
+      DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+     end
+    else
+     begin
+      {Read Pixels}
+      System.Move(Pointer(Address)^,Buffer^,Size);
+      
+      {Memory Barrier}
+      DataMemoryBarrier;  {After the Last Read}
+     end;
+    
+    {Update Statistics}
+    Inc(Framebuffer.ReadCount);
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceWrite(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
+{Write one or more pixels to framebuffer device memory from a supplied buffer}
+{Framebuffer: The framebuffer device to write to}
+{X: The column to start writing from}
+{Y: The row to start writing from}
+{Buffer: Pointer to a buffer containing the pixels to write}
+{Len: The number of pixels to write starting at X,Y}
+{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must ensure pixel data is in the correct color format for the framebuffer}
+{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
+var
+ Data:TDMAData;
+ Size:LongWord;
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Len}
+ if Len = 0 then Exit;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Write (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Len=' + IntToStr(Len) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceWrite) then
+  begin
+   Result:=Framebuffer.DeviceWrite(Framebuffer,X,Y,Buffer,Len,Flags);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check X, Y}
+    if X >= Framebuffer.PhysicalWidth then Exit;
+    if Y >= Framebuffer.PhysicalHeight then Exit;
+    
+    {Get Size}
+    Size:=Len * (Framebuffer.Depth shr 3);
+
+    {Get Address}
+    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+
+    {Check Size}
+    if (Address + Size) > (Framebuffer.Address + Framebuffer.Size) then Exit;
+    
+    {Check DMA}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+     begin
+      {Create Data}
+      FillChar(Data,SizeOf(TDMAData),0);
+      Data.Source:=Buffer;
+      Data.Dest:=Pointer(Address);
+      Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.StrideLength:=0;
+      Data.SourceStride:=0;
+      Data.DestStride:=0;
+      Data.Size:=Size;
+      
+      {Perform Write}
+      DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+     end
+    else
+     begin
+      {Memory Barrier}
+      DataMemoryBarrier;  {Before the First Write}
+     
+      {Write Pixels}
+      System.Move(Buffer^,Pointer(Address)^,Size);
+     end;
+   
+    {Check Commit}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+     begin
+      Framebuffer.DeviceCommit(Framebuffer,Address,Size,Flags);
+     end;
+    
+    {Check Mark}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+     begin
+      {Assume full lines}
+      Framebuffer.DeviceMark(Framebuffer,0,Y,Framebuffer.PhysicalWidth,(Size div Framebuffer.Pitch) + 1,Flags);
+     end;
+   
+    {Update Statistics}
+    Inc(Framebuffer.WriteCount);
+   
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
+{Mark a region written to the framebuffer and signal the device to take any neccessary actions}
+{Framebuffer: The framebuffer device to mark}
+{X: The starting column of the mark}
+{Y: The starting row of the mark}
+{Width: The number of columns to mark}
+{Height: The number of rows to mark}
+{Flags: The flags used for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not all framebuffer devices support mark, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+{      Devices that support and require mark should set the flag FRAMEBUFFER_FLAG_MARK}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Mark (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceMark) then
+  begin
+   Result:=Framebuffer.DeviceMark(Framebuffer,X,Y,Width,Height,Flags);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+{Commit a region written to the framebuffer and signal the device to take any neccessary actions}
+{Framebuffer: The framebuffer device to commit}
+{Address: The starting address of the commit}
+{Size: The size in bytes of the commit}
+{Flags: The flags used for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not all framebuffer devices support commit, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+{      Devices that support and require commit should set the flag FRAMEBUFFER_FLAG_COMMIT}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Commit (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceCommit) then
+  begin
+   Result:=Framebuffer.DeviceCommit(Framebuffer,Address,Size,Flags);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
+end;
+
+{==============================================================================}
+ 
+function FramebufferDeviceGetRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
+{Get a rectangular area of pixels from framebuffer memory to a supplied buffer}
+{Framebuffer: The framebuffer device to get from}
+{X: The starting column of the get}
+{Y: The starting row of the get}
+{Buffer: Pointer to a block of memory large enough to hold the pixels in a contiguous block of rows}
+{Width: The number of columns to get}
+{Height: The number of rows to get}
+{Skip: The number of pixels to skip in the buffer after each row (Optional)}
+{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Pixel data will be returned in the color format of the framebuffer}
+{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache cleaning before a DMA read}
+var
+ Data:TDMAData;
+ Size:LongWord;
+ Count:LongWord;
+ Stride:LongWord;
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Get Rect (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceGetRect) then
+  begin
+   Result:=Framebuffer.DeviceGetRect(Framebuffer,X,Y,Buffer,Width,Height,Skip,Flags);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check X, Y}
+    if X >= Framebuffer.PhysicalWidth then Exit;
+    if Y >= Framebuffer.PhysicalHeight then Exit;
+    if X + (Width - 1) >= Framebuffer.PhysicalWidth then Exit;
+    if Y + (Height - 1) >= Framebuffer.PhysicalHeight then Exit;
+    
+    {Get Skip (Normally 0)}
+    Skip:=Skip * (Framebuffer.Depth shr 3); 
+    
+    {Get Size}
+    Size:=Width * (Framebuffer.Depth shr 3);
+    
+    {Get Stride}
+    Stride:=Framebuffer.Pitch - Size;
+    
+    {Get Address}
+    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+    
+    {Check DMA}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+     begin
+      {Check Cache}
+      if not(DMA_CACHE_COHERENT) then
+       begin
+        {Clean Cache (Dest)}
+        CleanDataCacheRange(LongWord(Buffer),Size * Height);
+       end;
+
+      {Create Data}
+      FillChar(Data,SizeOf(TDMAData),0);
+      Data.Source:=Pointer(Address);
+      Data.Dest:=Buffer;
+      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
+      Data.StrideLength:=Size;
+      Data.SourceStride:=Stride;
+      Data.DestStride:=Skip;
+      Data.Size:=Data.StrideLength * Height;
+      
+      {Perform Get}
+      DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+     end
+    else
+     begin
+      {Get Rectangle}
+      Count:=Y;
+      while Count <= Y + (Height - 1) do
+       begin
+        {Read Pixels}
+        System.Move(Pointer(Address)^,Buffer^,Size);
+        
+        {Next Line}
+        Inc(Count);
+        Inc(Address,Size + Stride);
+        Inc(Buffer,Size + Skip);
+       end; 
+       
+      {Memory Barrier}
+      DataMemoryBarrier;  {After the Last Read}
+     end; 
+   
+    {Update Statistics}
+    Inc(Framebuffer.GetCount);
+   
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDevicePutRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
+{Put a rectangular area of pixels from a supplied buffer to framebuffer memory}
+{Framebuffer: The framebuffer device to put to}
+{X: The starting column of the put}
+{Y: The starting row of the put}
+{Buffer: Pointer to a block of memory containing the pixels in a contiguous block of rows}
+{Width: The number of columns to put}
+{Height: The number of rows to put}
+{Skip: The number of pixels to skip in the buffer after each row (Optional)}
+{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must ensure pixel data is in the correct color format for the framebuffer}
+{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
+var
+ Data:TDMAData;
+ Size:LongWord;
+ Count:LongWord;
+ Start:LongWord;
+ Stride:LongWord;
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Put Rect (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DevicePutRect) then
+  begin
+   Result:=Framebuffer.DevicePutRect(Framebuffer,X,Y,Buffer,Width,Height,Skip,Flags);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check X, Y}
+    if X >= Framebuffer.PhysicalWidth then Exit;
+    if Y >= Framebuffer.PhysicalHeight then Exit;
+    if X + (Width - 1) >= Framebuffer.PhysicalWidth then Exit;
+    if Y + (Height - 1) >= Framebuffer.PhysicalHeight then Exit;
+    
+    {Get Skip (Normally 0)}
+    Skip:=Skip * (Framebuffer.Depth shr 3); 
+    
+    {Get Size}
+    Size:=Width * (Framebuffer.Depth shr 3);
+    
+    {Get Stride}
+    Stride:=Framebuffer.Pitch - Size;
+    
+    {Get Address}
+    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+
+    {Check DMA}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+     begin
+      {Create Data}
+      FillChar(Data,SizeOf(TDMAData),0);
+      Data.Source:=Buffer;
+      Data.Dest:=Pointer(Address);
+      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.StrideLength:=Size;
+      Data.SourceStride:=Skip;
+      Data.DestStride:=Stride;
+      Data.Size:=Data.StrideLength * Height;
+      
+      {Perform Put}
+      DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+     end
+    else
+     begin
+      {Memory Barrier}
+      DataMemoryBarrier;  {Before the First Write}
+
+      {Get Start (Save Address)}
+      Start:=Address;
+      
+      {Put Rectangle}
+      Count:=Y;
+      while Count <= Y + (Height - 1) do
+       begin
+        {Write Pixels}
+        System.Move(Buffer^,Pointer(Start)^,Size);
+        
+        {Next Line}
+        Inc(Count);
+        Inc(Buffer,Size + Skip);
+        Inc(Start,Size + Stride);
+       end; 
+     end; 
+   
+    {Check Commit}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+     begin
+      Framebuffer.DeviceCommit(Framebuffer,Address,(Size + Stride) * Height,Flags);
+     end;
+    
+    {Check Mark}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+     begin
+      Framebuffer.DeviceMark(Framebuffer,X,Y,Width,Height,Flags);
+     end;
+   
+    {Update Statistics}
+    Inc(Framebuffer.PutCount);
+   
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceCopyRect(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Width,Height,Flags:LongWord):LongWord;
+{Copy a rectangular area of pixels within framebuffer memory}
+{Framebuffer: The framebuffer device to copy on}
+{X1: The starting column to copy from}
+{Y1: The starting row to copy from}
+{X2: The starting column to copy to}
+{Y2: The starting row to copy to}
+{Width: The number of columns to copy}
+{Height: The number of rows to copy}
+{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache clean/invalidate before or after a DMA read/write}
+var
+ Data:TDMAData;
+ Next:PDMAData;
+ First:PDMAData;
+ Size:LongWord;
+ Lines:LongWord;
+ Count:LongWord;
+ Start:LongWord;
+ Buffer:Pointer;
+ Stride:LongInt; {Allow for negative stride}
+ Source:LongWord;
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Copy Rect (X1=' + IntToStr(X1) + ' Y1=' + IntToStr(Y1) + ' X2=' + IntToStr(X2) + ' Y2=' + IntToStr(Y2) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceCopyRect) then
+  begin
+   Result:=Framebuffer.DeviceCopyRect(Framebuffer,X1,Y1,X2,Y2,Width,Height,Flags);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check X1, Y1}
+    if X1 >= Framebuffer.PhysicalWidth then Exit;
+    if Y1 >= Framebuffer.PhysicalHeight then Exit;
+    if X1 + (Width - 1) >= Framebuffer.PhysicalWidth then Exit;
+    if Y1 + (Height - 1) >= Framebuffer.PhysicalHeight then Exit;
+
+    {Check X2, Y2}
+    if X2 >= Framebuffer.PhysicalWidth then Exit;
+    if Y2 >= Framebuffer.PhysicalHeight then Exit;
+    if X2 + (Width - 1) >= Framebuffer.PhysicalWidth then Exit;
+    if Y2 + (Height - 1) >= Framebuffer.PhysicalHeight then Exit;
+    
+    {Get Size}
+    Size:=Width * (Framebuffer.Depth shr 3);
+    
+    {Check Direction}
+    if (Y1 = Y2) and (X2 > X1) then
+     begin
+      {Overlapped Copy}
+      {Get Stride}
+      Stride:=Framebuffer.Pitch - Size;
+      
+      {Check Buffer}
+      if Framebuffer.CopyBuffer = nil then
+       begin
+        {Get Buffer}
+        if DMAAvailable then
+         begin
+          {Allocate DMA Buffer}
+          Framebuffer.CopyBuffer:=DMAAllocateBuffer(SIZE_64K);
+         end
+        else
+         begin
+          {Allocate Normal Buffer (No DMA)}
+          if SysInitCompleted then Framebuffer.CopyBuffer:=GetMem(SIZE_64K);
+         end;
+       end;
+      {Get Buffer}
+      Buffer:=Framebuffer.CopyBuffer;
+      if Buffer = nil then Buffer:=GetMem(SIZE_64K);
+      if Buffer = nil then Exit;
+      
+      {Get Source}
+      Source:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+      
+      {Get Address}
+      Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+      
+      {Check DMA}
+      if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+       begin
+        {Check Cached}
+        if not(DMA_CACHE_COHERENT) then
+         begin
+          {Clean Cache}
+          CleanDataCacheRange(LongWord(Buffer),SIZE_64K);
+         end;
+         
+        {Get Lines}
+        Lines:=(SIZE_64K - SIZE_16K) div Size;
+        
+        {Get First}
+        First:=PDMAData(Buffer + (Size * Lines));
+        Next:=First;
+        
+        {Create Data}
+        Count:=Y1;
+        while Count <= Y1 + (Height - 1) do
+         begin
+          {Check Lines}
+          if ((Y1 + Height) - Count) < Lines then Lines:=((Y1 + Height) - Count);
+          
+          {Create Data (To Buffer)}
+          FillChar(Next^,SizeOf(TDMAData),0);
+          Next.Source:=Pointer(Framebuffer.Address + (Count * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+          Next.Dest:=Buffer;
+          Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+          Next.StrideLength:=Size;
+          Next.SourceStride:=Stride;
+          Next.DestStride:=Stride;
+          Next.Size:=Size * Lines;
+          Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
+         
+          {Get Next}
+          Next:=Next.Next;
+          
+          {Create Data (From Buffer)}
+          FillChar(Next^,SizeOf(TDMAData),0);
+          Next.Source:=Buffer;
+          Next.Dest:=Pointer(Framebuffer.Address + (Count * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+          Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+          Next.StrideLength:=Size;
+          Next.SourceStride:=Stride;
+          Next.DestStride:=Stride;
+          Next.Size:=Size * Lines;
+          Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
+          
+          Inc(Count,Lines);
+         
+          if Count > Y1 + (Height - 1) then
+           begin
+            Next.Next:=nil;
+           end
+          else
+           begin
+            Next:=Next.Next;
+           end;
+         end; 
+         
+        {Perform Copy}
+        DMATransfer(First,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+       end
+      else
+       begin
+        {Memory Barrier}
+        DataMemoryBarrier;  {Before the First Write}
+      
+        {Get Start (Save Address)}
+        Start:=Address;
+      
+        {Copy Rectangle}
+        Count:=Y1;
+        while Count <= Y1 + (Height - 1) do
+         begin
+          {Copy Pixels (To Buffer)}
+          System.Move(Pointer(Source)^,Buffer^,Size);
+          
+          {Copy Pixels (From Buffer)}
+          System.Move(Buffer^,Pointer(Start)^,Size);
+          
+          {Next Line}
+          Inc(Count);
+          Inc(Source,Size + Stride);
+          Inc(Start,Size + Stride);
+         end; 
+       
+        {Memory Barrier}
+        DataMemoryBarrier;  {After the Last Read}
+       end; 
+       
+      {Check Buffer}
+      if Buffer <> Framebuffer.CopyBuffer then FreeMem(Buffer);
+     end
+    else
+     begin
+      {Normal Copy}
+      if Y2 <= Y1 then
+       begin
+        {Top to Bottom}
+        {Get Stride}
+        Stride:=Framebuffer.Pitch - Size;
+        
+        {Get Source}
+        Source:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+        
+        {Get Address}
+        Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+        
+        {Check DMA}
+        if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+         begin
+          {Create Data}
+          FillChar(Data,SizeOf(TDMAData),0);
+          Data.Source:=Pointer(Source);
+          Data.Dest:=Pointer(Address);
+          Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+          Data.StrideLength:=Size;
+          Data.SourceStride:=Stride;
+          Data.DestStride:=Stride;
+          Data.Size:=Data.StrideLength * Height;
+          
+          {Perform Copy}
+          DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+         end
+        else
+         begin
+          {Memory Barrier}
+          DataMemoryBarrier;  {Before the First Write}
+        
+          {Get Start (Save Address)}
+          Start:=Address;
+        
+          {Copy Rectangle}
+          Count:=Y1;
+          while Count <= Y1 + (Height - 1) do
+           begin
+            {Copy Pixels}
+            System.Move(Pointer(Source)^,Pointer(Start)^,Size);
+            
+            {Next Line}
+            Inc(Count);
+            Inc(Source,Size + Stride);
+            Inc(Start,Size + Stride);
+           end; 
+         
+          {Memory Barrier}
+          DataMemoryBarrier;  {After the Last Read}
+         end; 
+       end
+      else
+       begin
+        {Bottom to Top}
+        {Get Stride}
+        Stride:=-(Framebuffer.Pitch + Size); {Negative Stride}
+        
+        {Get Source}
+        Source:=(Framebuffer.Address + ((Y1 + Height - 1) * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+        
+        {Get Address}
+        Address:=(Framebuffer.Address + ((Y2 + Height - 1) * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+        
+        {Check DMA}
+        if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+         begin
+          {Create Data}
+          FillChar(Data,SizeOf(TDMAData),0);
+          Data.Source:=Pointer(Source);
+          Data.Dest:=Pointer(Address);
+          Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
+          Data.StrideLength:=Size;
+          Data.SourceStride:=Stride;
+          Data.DestStride:=Stride;
+          Data.Size:=Data.StrideLength * Height;
+          
+          {Perform Copy}
+          DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+         end
+        else
+         begin
+          {Memory Barrier}
+          DataMemoryBarrier;  {Before the First Write}
+          
+          {Copy Rectangle}
+          Count:=Y1 + (Height - 1);
+          while Count >= Y1 do
+           begin
+            {Copy Pixels}
+            System.Move(Pointer(Source)^,Pointer(Address)^,Size);
+
+            {Next Line}
+            Dec(Count);
+            Inc(Source,Size + Stride); {Negative Stride}
+            Inc(Address,Size + Stride); {Negative Stride}
+           end; 
+         
+          {Memory Barrier}
+          DataMemoryBarrier;  {After the Last Read}
+         end; 
+         
+        {Get Stride (Positive - Required for commit)}
+        Stride:=Framebuffer.Pitch - Size;
+         
+        {Get Address (Start - Required for commit)}
+        Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+       end;       
+     end;     
+   
+    {Check Commit}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+     begin
+      Framebuffer.DeviceCommit(Framebuffer,Address,(Size + Stride) * Height,Flags);
+     end;
+    
+    {Check Mark}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+     begin
+      Framebuffer.DeviceMark(Framebuffer,X2,Y2,Width,Height,Flags);
+     end;
+   
+    {Update Statistics}
+    Inc(Framebuffer.CopyCount);
+   
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceFillRect(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;
+{Fill a rectangular area of pixels within framebuffer memory}
+{Framebuffer: The framebuffer device to fill on}
+{X: The starting column of the fill}
+{Y: The starting row of the fill}
+{Width: The number of columns to fill}
+{Height: The number of rows to fill}
+{Color: The color to use for the fill}
+{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Color must be specified in the correct format for the framebuffer}
+{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
+var
+ Data:TDMAData;
+ Size:LongWord;
+ Count:LongWord;
+ Start:LongWord;
+ Buffer:Pointer;
+ Stride:LongWord;
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Color}
+ if Color = COLOR_NONE then Exit;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Fill Rect (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ' Color=' + IntToHex(Color,8) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceFillRect) then
+  begin
+   Result:=Framebuffer.DeviceFillRect(Framebuffer,X,Y,Width,Height,Color,Flags);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check X, Y}
+    if X >= Framebuffer.PhysicalWidth then Exit;
+    if Y >= Framebuffer.PhysicalHeight then Exit;
+    if X + (Width - 1) >= Framebuffer.PhysicalWidth then Exit;
+    if Y + (Height - 1) >= Framebuffer.PhysicalHeight then Exit;
+   
+    {Get Size}
+    Size:=Width * (Framebuffer.Depth shr 3);
+    
+    {Get Stride}
+    Stride:=Framebuffer.Pitch - Size;
+    
+    {Get Address}
+    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+
+    {Check Buffer}
+    if Framebuffer.LineBuffer = nil then
+     begin
+      {Get Buffer}
+      if DMAAvailable then
+       begin
+        {Allocate DMA Buffer}
+        Framebuffer.LineBuffer:=DMAAllocateBufferEx(Framebuffer.Pitch);
+       end
+      else
+       begin
+        {Allocate Normal Buffer (No DMA)}
+        if SysInitCompleted then Framebuffer.LineBuffer:=GetMem(Framebuffer.Pitch);
+       end;
+     end;
+    {Get Buffer}
+    Buffer:=Framebuffer.LineBuffer;
+    if Buffer = nil then Buffer:=GetMem(Framebuffer.Pitch);
+    if Buffer = nil then Exit;
+    
+    {Fill Source}
+    Count:=0;
+    while Count < Size do
+     begin
+      PLongWord(Buffer + Count)^:=Color;
+        
+      Inc(Count,(Framebuffer.Depth shr 3));
+     end;
+    
+    {Check DMA}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+     begin
+      {Check Cached}
+      if not(DMA_CACHE_COHERENT) then
+       begin
+        {Clean Cache}
+        CleanDataCacheRange(LongWord(Buffer),Size);
+       end;
+    
+      {Create Data}
+      FillChar(Data,SizeOf(TDMAData),0);
+      Data.Source:=Buffer;
+      Data.Dest:=Pointer(Address);
+      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.StrideLength:=Size;
+      Data.SourceStride:=0;
+      Data.DestStride:=Stride;
+      Data.Size:=Data.StrideLength * Height;
+      
+      {Perform Fill}
+      DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
+     end
+    else
+     begin
+      {Memory Barrier}
+      DataMemoryBarrier;  {Before the First Write}
+    
+      {Get Start (Save Address)}
+      Start:=Address;
+    
+      {Fill Rectangle}
+      Count:=Y;
+      while Count <= Y + (Height - 1) do
+       begin
+        {Write Pixels}
+        System.Move(Buffer^,Pointer(Start)^,Size);
+        
+        {Next Line}
+        Inc(Count);
+        Inc(Start,Size + Stride);
+       end; 
+     end; 
+   
+    {Check Commit}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+     begin
+      Framebuffer.DeviceCommit(Framebuffer,Address,(Size + Stride) * Height,Flags);
+     end;
+    
+    {Check Mark}
+    if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+     begin
+      Framebuffer.DeviceMark(Framebuffer,X,Y,Width,Height,Flags);
+     end;
+   
+    {Update Statistics}
+    Inc(Framebuffer.FillCount);
+   
+    {Check Buffer}
+    if Buffer <> Framebuffer.LineBuffer then FreeMem(Buffer);
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
 function FramebufferDeviceGetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+{Get the current properties from a framebuffer device}
+{Framebuffer: The framebuffer device to get properties from}
+{Properties: Pointer to a TFramebufferProperties structure to return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -373,15 +1562,18 @@ begin
   end
  else
   begin
+   {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    
    {Get Properties}
+   Properties.Flags:=Framebuffer.Device.DeviceFlags;
    Properties.Address:=Framebuffer.Address;
    Properties.Size:=Framebuffer.Size;
    Properties.Pitch:=Framebuffer.Pitch;
    Properties.Depth:=Framebuffer.Depth;
    Properties.Order:=Framebuffer.Order;
    Properties.Mode:=Framebuffer.Mode;
+   Properties.Format:=Framebuffer.Format;
    Properties.PhysicalWidth:=Framebuffer.PhysicalWidth;
    Properties.PhysicalHeight:=Framebuffer.PhysicalHeight;
    Properties.VirtualWidth:=Framebuffer.VirtualWidth;
@@ -392,10 +1584,12 @@ begin
    Properties.OverscanBottom:=Framebuffer.OverscanBottom;
    Properties.OverscanLeft:=Framebuffer.OverscanLeft;
    Properties.OverscanRight:=Framebuffer.OverscanRight;
+   Properties.Rotation:=Framebuffer.Rotation;
    
    {Return Result}
    Result:=ERROR_SUCCESS;
    
+   {Unlock Framebuffer}
    MutexUnlock(Framebuffer.Lock);
   end;  
 end;
@@ -403,6 +1597,12 @@ end;
 {==============================================================================}
 
 function FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+{Set the current properties for a framebuffer device}
+{Framebuffer: The framebuffer device to set properties for}
+{Properties: Pointer to a TFramebufferProperties structure containing the properties}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Changing certain properties may cause the framebuffer to be reallocated}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -419,13 +1619,57 @@ begin
  {$ENDIF}
  
  {Check Enabled}
- Result:=ERROR_NOT_SUPPORTED;
- if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;} {Allow when disabled}
  
  if Assigned(Framebuffer.DeviceSetProperties) then
   begin
    Result:=Framebuffer.DeviceSetProperties(Framebuffer,Properties);
   end;
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceCheckFlag(Framebuffer:PFramebufferDevice;Flag:LongWord):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Enabled}
+ {if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Check Flag}
+ Result:=((Framebuffer.Device.DeviceFlags and Flag) <> 0);
+ 
+ MutexUnlock(Framebuffer.Lock);
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceGetFormat(Framebuffer:PFramebufferDevice):LongWord;
+begin
+ {}
+ Result:=COLOR_FORMAT_UNKNOWN;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Enabled}
+ {if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;} {Allow when disabled}
+
+ if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Format}
+ Result:=Framebuffer.Format;
+ 
+ MutexUnlock(Framebuffer.Lock);
 end;
 
 {==============================================================================}
@@ -466,6 +1710,15 @@ begin
  Result.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
  Result.DeviceAllocate:=nil;
  Result.DeviceRelease:=nil;
+ Result.DeviceBlank:=nil;
+ Result.DeviceRead:=nil;
+ Result.DeviceWrite:=nil;
+ Result.DeviceMark:=nil;
+ Result.DeviceCommit:=nil;
+ Result.DeviceGetRect:=nil;
+ Result.DevicePutRect:=nil;
+ Result.DeviceCopyRect:=nil;
+ Result.DeviceFillRect:=nil;
  Result.DeviceGetProperties:=nil;
  Result.DeviceSetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
@@ -475,6 +1728,7 @@ begin
  Result.Depth:=FRAMEBUFFER_DEPTH_32;
  Result.Order:=FRAMEBUFFER_ORDER_RGB;
  Result.Mode:=FRAMEBUFFER_MODE_ENABLED;
+ Result.Format:=COLOR_FORMAT_RGBA32;
  Result.PhysicalWidth:=0;
  Result.PhysicalHeight:=0;
  Result.VirtualWidth:=0;
@@ -485,9 +1739,10 @@ begin
  Result.OverscanBottom:=0; 
  Result.OverscanLeft:=0;  
  Result.OverscanRight:=0;  
+ Result.Rotation:=FRAMEBUFFER_ROTATION_0;
  
  {Create Lock}
- Result.Lock:=MutexCreate;
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create lock for framebuffer device');
@@ -716,7 +1971,7 @@ begin
          end;
        end;
 
-       {Get Next}
+      {Get Next}
       Framebuffer:=Framebuffer.Next;
      end;
    finally
@@ -724,6 +1979,22 @@ begin
     CriticalSectionUnlock(FramebufferDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceFindByName(const Name:String):PFramebufferDevice; inline;
+begin
+ {}
+ Result:=PFramebufferDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceFindByDescription(const Description:String):PFramebufferDevice; inline;
+begin
+ {}
+ Result:=PFramebufferDevice(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}
@@ -895,7 +2166,7 @@ end;
 
 {==============================================================================}
 
-function FramebufferDeviceSwap(Value:LongWord):LongWord;
+function FramebufferDeviceSwap(Value:LongWord):LongWord; inline;
 begin
  {}
  Result:=(Value and $FF00FF00) or ((Value and $00FF0000) shr 16) or ((Value and $000000FF) shl 16);

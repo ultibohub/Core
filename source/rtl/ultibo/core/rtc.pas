@@ -153,6 +153,8 @@ function RTCDeviceRegister(RTC:PRTCDevice):LongWord;
 function RTCDeviceDeregister(RTC:PRTCDevice):LongWord;
 
 function RTCDeviceFind(RTCId:LongWord):PRTCDevice;
+function RTCDeviceFindByName(const Name:String):PRTCDevice; inline;
+function RTCDeviceFindByDescription(const Description:String):PRTCDevice; inline;
 function RTCDeviceEnumerate(Callback:TRTCEnumerate;Data:Pointer):LongWord;
  
 function RTCDeviceNotification(RTC:PRTCDevice;Callback:TRTCNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -702,6 +704,22 @@ begin
     CriticalSectionUnlock(RTCDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function RTCDeviceFindByName(const Name:String):PRTCDevice; inline;
+begin
+ {}
+ Result:=PRTCDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function RTCDeviceFindByDescription(const Description:String):PRTCDevice; inline;
+begin
+ {}
+ Result:=PRTCDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

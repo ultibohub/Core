@@ -122,6 +122,8 @@ const
  UART_STATUS_PARITY_ERROR  = SERIAL_STATUS_PARITY_ERROR;
  UART_STATUS_FRAMING_ERROR = SERIAL_STATUS_FRAMING_ERROR;
  UART_STATUS_OVERRUN_ERROR = SERIAL_STATUS_OVERRUN_ERROR;
+ UART_STATUS_DCD           = SERIAL_STATUS_DCD;
+ UART_STATUS_RI            = SERIAL_STATUS_RI;
  
  {UART logging}
  UART_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {UART debugging messages}
@@ -229,6 +231,8 @@ function UARTDeviceRegister(UART:PUARTDevice):LongWord;
 function UARTDeviceDeregister(UART:PUARTDevice):LongWord;
 
 function UARTDeviceFind(UARTId:LongWord):PUARTDevice;
+function UARTDeviceFindByName(const Name:String):PUARTDevice; inline;
+function UARTDeviceFindByDescription(const Description:String):PUARTDevice; inline;
 function UARTDeviceEnumerate(Callback:TUARTEnumerate;Data:Pointer):LongWord;
  
 function UARTDeviceNotification(UART:PUARTDevice;Callback:TUARTNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -969,6 +973,22 @@ begin
     CriticalSectionUnlock(UARTDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function UARTDeviceFindByName(const Name:String):PUARTDevice; inline;
+begin
+ {}
+ Result:=PUARTDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function UARTDeviceFindByDescription(const Description:String):PUARTDevice; inline;
+begin
+ {}
+ Result:=PUARTDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

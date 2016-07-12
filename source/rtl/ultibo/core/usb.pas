@@ -419,6 +419,11 @@ const
  USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER          = 6;
  USB_DESCRIPTOR_TYPE_OTHER_SPEED_CONFIGURATION = 7;
  USB_DESCRIPTOR_TYPE_INTERFACE_POWER           = 8;
+ USB_DESCRIPTOR_TYPE_CLASS_DEVICE              = $21; {(USB_REQUEST_TYPE_CLASS shl 5) or USB_DESCRIPTOR_TYPE_DEVICE} {See USB Device Class Definition for Audio Devices Specification}
+ USB_DESCRIPTOR_TYPE_CLASS_CONFIGURATION       = $22; {(USB_REQUEST_TYPE_CLASS shl 5) or USB_DESCRIPTOR_TYPE_CONFIGURATION}
+ USB_DESCRIPTOR_TYPE_CLASS_STRING              = $23; {(USB_REQUEST_TYPE_CLASS shl 5) or USB_DESCRIPTOR_TYPE_STRING}
+ USB_DESCRIPTOR_TYPE_CLASS_INTERFACE           = $24; {(USB_REQUEST_TYPE_CLASS shl 5) or USB_DESCRIPTOR_TYPE_INTERFACE}
+ USB_DESCRIPTOR_TYPE_CLASS_ENDPOINT            = $25; {(USB_REQUEST_TYPE_CLASS shl 5) or USB_DESCRIPTOR_TYPE_ENDPOINT}
  USB_DESCRIPTOR_TYPE_HUB                       = $29;
  
  {Values for bmRequestType (bit 7) in type TUSBControlSetupData (See Table 9-2 of Section 9.3 of the USB 2.0 specification)}
@@ -573,6 +578,8 @@ const
  USB_SUBCLASS_APPLICATION_SPECIFIC_DFU         = $01;
  USB_SUBCLASS_APPLICATION_SPECIFIC_IRDA        = $02;
  USB_SUBCLASS_APPLICATION_SPECIFIC_TMC         = $02;
+ {Vendor Specific}
+ USB_SUBCLASS_VENDOR_SPECIFIC                  = $ff; {Vendor Specific}
  
  {USB Protocol Codes (bInterfaceProtocol) (See: http://www.usb.org/developers/defined_class/)}
  {Communications Devices}
@@ -946,12 +953,35 @@ const
 {==============================================================================}
 type
  {USB Device, Driver and Host specific types}
- PUSBDeviceId = ^TUSBDeviceId;
+ PUSBDeviceId = ^TUSBDeviceId; {USB Device Id record for driver device identification (Not part of USB specification)}
  TUSBDeviceId = record
   idVendor:Word;
   idProduct:Word;
  end;
 
+ PUSBInterfaceId = ^TUSBInterfaceId; {USB Interface Id record for driver device identification (Not part of USB specification)}
+ TUSBInterfaceId = record
+  bInterfaceClass:Byte;
+  bInterfaceSubClass:Byte;
+  bInterfaceProtocol:Byte;
+ end;
+ 
+ PUSBDeviceAndInterfaceId = ^TUSBDeviceAndInterfaceId; {USB Device and Interface Id record for driver device identification (Not part of USB specification)}
+ TUSBDeviceAndInterfaceId = record
+  idVendor:Word;
+  idProduct:Word;
+  bInterfaceClass:Byte;
+  bInterfaceSubClass:Byte;
+  bInterfaceProtocol:Byte;
+ end;
+ 
+ PUSBDeviceAndInterfaceNo = ^TUSBDeviceAndInterfaceNo; {USB Device and Interface No record for driver device identification (Not part of USB specification)}
+ TUSBDeviceAndInterfaceNo = record
+  idVendor:Word;
+  idProduct:Word;
+  bInterfaceNumber:Byte;
+ end;
+ 
  {USB Control Request SETUP data (See Table 9-2 in Section 9.3 of the USB 2.0 specification)}
  PUSBControlSetupData = ^TUSBControlSetupData;
  TUSBControlSetupData = packed record
@@ -1119,6 +1149,8 @@ type
   Endpoints:array of PUSBEndpointDescriptor;  {All available endpoint descriptors on this interface (Set by USB core)}
   Alternates:array of PUSBAlternate;          {All available alternate settings for this interface (Set by USB core)}
   Description:array[0..127] of Char;          {Null terminated description string (ASCII encoded, English if available) of this interface}
+  ClassData:PByte;                            {Pointer to the start of any class specific descriptors for this interface (Set by USB core)}
+  ClassSize:LongWord;                         {Size of any class specific descriptors for this interface (Set by USB core)}
   DriverData:Pointer;                         {Private data for the driver of this USB interface}
  end; 
  
@@ -1393,6 +1425,8 @@ function USBDeviceAllocate(Host:PUSBHost;Parent:PUSBDevice):PUSBDevice;
 function USBDeviceRelease(Device:PUSBDevice):LongWord;
 
 function USBDeviceFind(USBId:LongWord):PUSBDevice;
+function USBDeviceFindByName(const Name:String):PUSBDevice; inline;
+function USBDeviceFindByDescription(const Description:String):PUSBDevice; inline;
 function USBDeviceEnumerate(Callback:TUSBDeviceEnumerate;Data:Pointer):LongWord;
 
 function USBDeviceNotification(Device:PUSBDevice;Callback:TUSBDeviceNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1406,6 +1440,7 @@ function USBDriverRegister(Driver:PUSBDriver):LongWord;
 function USBDriverDeregister(Driver:PUSBDriver):LongWord;
 
 function USBDriverFind(DriverId:LongWord):PUSBDriver;
+function USBDriverFindByName(const Name:String):PUSBDriver; inline;
 function USBDriverEnumerate(Callback:TUSBDriverEnumerate;Data:Pointer):LongWord;
 
 //Host Methods
@@ -1419,6 +1454,8 @@ function USBHostRegister(Host:PUSBHost):LongWord;
 function USBHostDeregister(Host:PUSBHost):LongWord;
 
 function USBHostFind(HostId:LongWord):PUSBHost;
+function USBHostFindByName(const Name:String):PUSBHost; inline;
+function USBHostFindByDescription(const Description:String):PUSBHost; inline;
 function USBHostEnumerate(Callback:TUSBHostEnumerate;Data:Pointer):LongWord;
 
 function USBHostNotification(Host:PUSBHost;Callback:TUSBHostNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1463,6 +1500,8 @@ function USBHubAllocate(Device:PUSBDevice):PUSBHub;
 function USBHubRelease(Hub:PUSBHub):LongWord;
 
 function USBHubFind(HubId:LongWord):PUSBHub;
+function USBHubFindByName(const Name:String):PUSBHub; inline;
+function USBHubFindByDescription(const Description:String):PUSBHub; inline;
 function USBHubEnumerate(Callback:TUSBHubEnumerate;Data:Pointer):LongWord;
 
 function USBHubNotification(Hub:PUSBHub;Callback:TUSBHubNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1512,6 +1551,13 @@ function USBIsControlRequest(Request:PUSBRequest):Boolean;
 function USBIsBulkRequest(Request:PUSBRequest):Boolean;     
 function USBIsInterruptRequest(Request:PUSBRequest):Boolean;  
 function USBIsIsochronousRequest(Request:PUSBRequest):Boolean;     
+
+function USBIsInEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+function USBIsOutEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+
+function USBIsBulkEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+function USBIsInterruptEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+function USBIsIsochronousEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
 
 function USBDeviceToString(Device:PUSBDevice):String;
 function USBStatusToString(Status:LongWord):String;
@@ -2267,6 +2313,8 @@ function USBDeviceReadConfiguration(Device:PUSBDevice;Index:Byte):LongWord;
 var
  Offset:PtrUInt;
  Status:LongWord;
+ ClassSize:LongWord;
+ ClassOffset:PtrUInt;
  EndpointIndex:Integer;
  InterfaceIndex:Integer;
  AlternateSetting:LongWord;
@@ -2337,6 +2385,10 @@ begin
     {Create Interfaces}
     SetLength(Device.Configurations[Index].Interfaces,Device.Configurations[Index].Descriptor.bNumInterfaces);
     
+    {Reset Class}
+    ClassSize:=0;
+    ClassOffset:=0;
+    
     {Get First Descriptor}
     Offset:=0;
     EndpointIndex:=-1;
@@ -2358,8 +2410,69 @@ begin
     
       {Check Descriptor Type}
       case Descriptor.bDescriptorType of
+       USB_DESCRIPTOR_TYPE_DEVICE:begin
+         {Device Descriptor}
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Device,'Found device descriptor (bDescriptorType=' + IntToHex(Descriptor.bDescriptorType,2) + ' bLength=' + IntToStr(Descriptor.bLength) + ')');
+         {$ENDIF}
+         
+         {Check Offset}
+         if (Offset + SizeOf(TUSBDeviceDescriptor)) > Configuration.wTotalLength then
+          begin
+           if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (Device exceeds total length)');
+      
+           Result:=USB_STATUS_INVALID_DATA;
+           Exit;
+          end;
+          
+         {Reset Class}
+         ClassSize:=0;
+         ClassOffset:=0;
+        end;
+       USB_DESCRIPTOR_TYPE_CONFIGURATION:begin
+         {Configuration Descriptor}
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Device,'Found configuration descriptor (bDescriptorType=' + IntToHex(Descriptor.bDescriptorType,2) + ' bLength=' + IntToStr(Descriptor.bLength) + ')'); 
+         {$ENDIF}
+         
+         {Check Offset}
+         if (Offset + SizeOf(TUSBConfigurationDescriptor)) > Configuration.wTotalLength then
+          begin
+           if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (Configuration exceeds total length)');
+      
+           Result:=USB_STATUS_INVALID_DATA;
+           Exit;
+          end;
+          
+         {Reset Class}
+         ClassSize:=0;
+         ClassOffset:=0;
+        end;
+       USB_DESCRIPTOR_TYPE_STRING:begin
+         {String Descriptor}
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Device,'Found string descriptor (bDescriptorType=' + IntToHex(Descriptor.bDescriptorType,2) + ' bLength=' + IntToStr(Descriptor.bLength) + ')');
+         {$ENDIF}
+         
+         {Check Offset}
+         if (Offset + SizeOf(TUSBStringDescriptor)) > Configuration.wTotalLength then
+          begin
+           if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (String exceeds total length)');
+      
+           Result:=USB_STATUS_INVALID_DATA;
+           Exit;
+          end;
+          
+         {Reset Class}
+         ClassSize:=0;
+         ClassOffset:=0;
+        end;   
        USB_DESCRIPTOR_TYPE_INTERFACE:begin
          {Interface Descriptor}
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Device,'Found interface descriptor (bDescriptorType=' + IntToHex(Descriptor.bDescriptorType,2) + ' bLength=' + IntToStr(Descriptor.bLength) + ')');
+         {$ENDIF}
+         
          {Check Offset}
          if (Offset + SizeOf(TUSBInterfaceDescriptor)) > Configuration.wTotalLength then
           begin
@@ -2383,10 +2496,27 @@ begin
            //To Do
            
           end;          
-      
+          
          {Check Alternate Setting}
          if PUSBInterfaceDescriptor(Descriptor).bAlternateSetting = 0 then
           begin
+           {Check Class}
+           if (InterfaceIndex >= 0) and (AlternateSetting = 0) and (ClassOffset <> 0) and (ClassSize <> 0) then
+            begin
+             {Update Interface}
+             Device.Configurations[Index].Interfaces[InterfaceIndex].ClassData:=PByte(PtrUInt(Device.Configurations[Index].Descriptor) + ClassOffset);
+             Device.Configurations[Index].Interfaces[InterfaceIndex].ClassSize:=ClassSize;
+             
+             {$IFDEF USB_DEBUG}
+             if USB_LOG_ENABLED then USBLogDebug(Device,'Added class specific data to interface ' + IntToStr(InterfaceIndex)); 
+             if USB_LOG_ENABLED then USBLogDebug(Device,' ClassData=' + IntToHex(LongWord(Device.Configurations[Index].Interfaces[InterfaceIndex].ClassData),8) + ' ClassSize=' + IntToStr(Device.Configurations[Index].Interfaces[InterfaceIndex].ClassSize)); 
+             {$ENDIF}
+            end;
+           
+           {Reset Class}
+           ClassSize:=0;
+           ClassOffset:=0;
+          
            {Increment Interface}
            Inc(InterfaceIndex);
            
@@ -2423,6 +2553,10 @@ begin
              Exit;
             end;
 
+           {Reset Class}
+           ClassSize:=0;
+           ClassOffset:=0;
+            
            {Reset Endpoint}
            EndpointIndex:=-1;
 
@@ -2458,6 +2592,10 @@ begin
         end;
        USB_DESCRIPTOR_TYPE_ENDPOINT:begin
          {Endpoint Descriptor}
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Device,'Found endpoint descriptor (bDescriptorType=' + IntToHex(Descriptor.bDescriptorType,2) + ' bLength=' + IntToStr(Descriptor.bLength) + ')'); 
+         {$ENDIF}
+         
          {Check Interface}
          if InterfaceIndex < 0 then
           begin
@@ -2475,6 +2613,23 @@ begin
            Result:=USB_STATUS_INVALID_DATA;
            Exit;
           end;
+          
+         {Check Class}
+         if (InterfaceIndex >= 0) and (AlternateSetting = 0) and (ClassOffset <> 0) and (ClassSize <> 0) then
+          begin
+           {Update Interface}
+           Device.Configurations[Index].Interfaces[InterfaceIndex].ClassData:=PByte(PtrUInt(Device.Configurations[Index].Descriptor) + ClassOffset);
+           Device.Configurations[Index].Interfaces[InterfaceIndex].ClassSize:=ClassSize;
+           
+           {$IFDEF USB_DEBUG}
+           if USB_LOG_ENABLED then USBLogDebug(Device,'Added class specific data to interface ' + IntToStr(InterfaceIndex));
+           if USB_LOG_ENABLED then USBLogDebug(Device,' ClassData=' + IntToHex(LongWord(Device.Configurations[Index].Interfaces[InterfaceIndex].ClassData),8) + ' ClassSize=' + IntToStr(Device.Configurations[Index].Interfaces[InterfaceIndex].ClassSize)); 
+           {$ENDIF}
+          end;
+         
+         {Reset Class}
+         ClassSize:=0;
+         ClassOffset:=0;
       
          {Check Alternate Setting} 
          if AlternateSetting = 0 then
@@ -2494,6 +2649,31 @@ begin
            Device.Configurations[Index].Interfaces[InterfaceIndex].Alternates[AlternateSetting - 1].Endpoints[EndpointIndex]:=PUSBEndpointDescriptor(Descriptor);
           end;          
         end;
+       else
+        begin
+         {Other Descriptor}
+         {$IFDEF USB_DEBUG}
+         if USB_LOG_ENABLED then USBLogDebug(Device,'Found other descriptor (bDescriptorType=' + IntToHex(Descriptor.bDescriptorType,2) + ' bLength=' + IntToStr(Descriptor.bLength) + ')');
+         {$ENDIF}
+         
+         {Check for Class}
+         if (Descriptor.bDescriptorType and $F0) = (USB_REQUEST_TYPE_CLASS shl 5) then
+          begin
+           {Update Class}
+           Inc(ClassSize,Descriptor.bLength);
+           if ClassOffset = 0 then ClassOffset:=Offset;
+           
+           {$IFDEF USB_DEBUG}
+           if USB_LOG_ENABLED then USBLogDebug(Device,' ClassOffset=' + IntToHex(ClassOffset,8) + ' ClassSize=' + IntToStr(ClassSize));
+           {$ENDIF}
+          end
+         else
+          begin
+           {Reset Class}
+           ClassSize:=0;
+           ClassOffset:=0;
+          end;          
+        end;        
       end;
  
       {Get Next Descriptor}
@@ -3611,6 +3791,9 @@ begin
      {Unbind Driver (Device)}
      Device.Driver.DriverUnbind(Device,nil);
      
+     {Reset Driver}
+     Device.Driver:=nil;
+     
      {Set Status to Unbound}
      USBDeviceSetStatus(Device,USB_STATUS_UNBOUND);
      
@@ -3632,6 +3815,9 @@ begin
            
            {Unbind Driver (Interface)}
            Interrface.Driver.DriverUnbind(Device,Interrface);
+           
+           {Reset Driver}
+           Interrface.Driver:=nil;
            
            Status:=USB_STATUS_SUCCESS;
           end;
@@ -3658,6 +3844,9 @@ begin
      {Unbind Driver (Device)}
      Device.Driver.DriverUnbind(Device,nil);
      
+     {Reset Driver}
+     Device.Driver:=nil;
+     
      {Set Status to Unbound}
      USBDeviceSetStatus(Device,USB_STATUS_UNBOUND);
      
@@ -3679,6 +3868,9 @@ begin
            
            {Unbind Driver (Interface)}
            Interrface.Driver.DriverUnbind(Device,Interrface);
+           
+           {Reset Driver}
+           Interrface.Driver:=nil;
            
            Status:=USB_STATUS_SUCCESS;
           end;
@@ -4277,6 +4469,22 @@ end;
 
 {==============================================================================}
 
+function USBDeviceFindByName(const Name:String):PUSBDevice; inline;
+begin
+ {}
+ Result:=PUSBDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function USBDeviceFindByDescription(const Description:String):PUSBDevice; inline;
+begin
+ {}
+ Result:=PUSBDevice(DeviceFindByDescription(Description));
+end;
+
+{==============================================================================}
+
 function USBDeviceEnumerate(Callback:TUSBDeviceEnumerate;Data:Pointer):LongWord;
 var
  Device:PUSBDevice;
@@ -4656,6 +4864,14 @@ begin
     CriticalSectionUnlock(USBDriverTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function USBDriverFindByName(const Name:String):PUSBDriver; inline;
+begin
+ {}
+ Result:=PUSBDriver(DriverFindByName(Name));
 end;
 
 {==============================================================================}
@@ -5121,6 +5337,22 @@ begin
     CriticalSectionUnlock(USBHostTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function USBHostFindByName(const Name:String):PUSBHost; inline;
+begin
+ {}
+ Result:=PUSBHost(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function USBHostFindByDescription(const Description:String):PUSBHost; inline;
+begin
+ {}
+ Result:=PUSBHost(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}
@@ -6564,6 +6796,22 @@ begin
     CriticalSectionUnlock(USBHubTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function USBHubFindByName(const Name:String):PUSBHub; inline;
+begin
+ {}
+ Result:=PUSBHub(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function USBHubFindByDescription(const Description:String):PUSBHub; inline;
+begin
+ {}
+ Result:=PUSBHub(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}
@@ -8072,6 +8320,81 @@ begin
  
  {Check Endpoint and Transfer Type}
  Result:=(Request.Endpoint <> nil) and ((Request.Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = USB_TRANSFER_TYPE_ISOCHRONOUS);
+end;
+
+{==============================================================================}
+
+function USBIsInEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+{Returns True is Endpoint is an IN endpoint or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Endpoint}
+ if Endpoint = nil then Exit;
+ 
+ {Check Endpoint Direction}
+ Result:=(Endpoint.bEndpointAddress shr 7) = USB_DIRECTION_IN;
+end;
+
+{==============================================================================}
+
+function USBIsOutEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+{Returns True is Endpoint is an OUT endpoint or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Endpoint}
+ if Endpoint = nil then Exit;
+ 
+ {Check Endpoint Direction}
+ Result:=(Endpoint.bEndpointAddress shr 7) = USB_DIRECTION_OUT;
+end;
+
+{==============================================================================}
+
+function USBIsBulkEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+{Returns True is Endpoint is a BULK endpoint or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Endpoint}
+ if Endpoint = nil then Exit;
+ 
+ {Check Endpoint Type}
+ Result:=(Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = USB_TRANSFER_TYPE_BULK;
+end;
+
+{==============================================================================}
+
+function USBIsInterruptEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+{Returns True is Endpoint is a INTERRUPT endpoint or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Endpoint}
+ if Endpoint = nil then Exit;
+ 
+ {Check Endpoint Type}
+ Result:=(Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = USB_TRANSFER_TYPE_INTERRUPT;
+end;
+
+{==============================================================================}
+
+function USBIsIsochronousEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
+{Returns True is Endpoint is a ISOCHRONOUS endpoint or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Endpoint}
+ if Endpoint = nil then Exit;
+ 
+ {Check Endpoint Type}
+ Result:=(Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = USB_TRANSFER_TYPE_ISOCHRONOUS;
 end;
 
 {==============================================================================}

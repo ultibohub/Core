@@ -123,6 +123,8 @@ const
  SERIAL_STATUS_PARITY_ERROR  = $00000400; {Parity error reported}
  SERIAL_STATUS_FRAMING_ERROR = $00000800; {Framing error reported}
  SERIAL_STATUS_OVERRUN_ERROR = $00001000; {Overrun error reported}
+ SERIAL_STATUS_DCD           = $00002000; {DCD (Data Carrier Detect) is set (If applicable)}
+ SERIAL_STATUS_RI            = $00004000; {RI (Ring Indicator) is set (If applicable)}
  
  {Serial logging}
  SERIAL_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Serial debugging messages}
@@ -150,8 +152,8 @@ type
  PSerialProperties = ^TSerialProperties;
  TSerialProperties = record
   Flags:LongWord;         {Device flags (eg SERIAL_FLAG_DATA_8BIT)}
-  MinRate:LongWord;       {Minimum supported baud rate}
-  MaxRate:LongWord;       {Maximum supported baud rate}
+  MinRate:LongWord;       {Minimum supported baud rate (0 for any rate supported)}
+  MaxRate:LongWord;       {Maximum supported baud rate (0 for any rate supported)}
   BaudRate:LongWord;      {Current baud rate setting}
   DataBits:LongWord;      {Current data bits setting}
   StopBits:LongWord;      {Current stop bits setting}
@@ -264,6 +266,8 @@ function SerialDeviceRegister(Serial:PSerialDevice):LongWord;
 function SerialDeviceDeregister(Serial:PSerialDevice):LongWord;
 
 function SerialDeviceFind(SerialId:LongWord):PSerialDevice;
+function SerialDeviceFindByName(const Name:String):PSerialDevice; inline;
+function SerialDeviceFindByDescription(const Description:String):PSerialDevice; inline;
 function SerialDeviceEnumerate(Callback:TSerialEnumerate;Data:Pointer):LongWord;
  
 function SerialDeviceNotification(Serial:PSerialDevice;Callback:TSerialNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1001,6 +1005,22 @@ begin
    end;
   end;
 end;
+     
+{==============================================================================}
+
+function SerialDeviceFindByName(const Name:String):PSerialDevice; inline;
+begin
+ {}
+ Result:=PSerialDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function SerialDeviceFindByDescription(const Description:String):PSerialDevice; inline;
+begin
+ {}
+ Result:=PSerialDevice(DeviceFindByDescription(Description));
+end;
        
 {==============================================================================}
 
@@ -1673,9 +1693,9 @@ function SerialLoggingDeviceParameters(Serial:PSerialDevice;const Parameters:Str
     Value:='';
    end
   else
-   begin	
+   begin
     Result:=Copy(Value,1,PosIdx - 1);
-    Delete(Value,1,PosIdx + (Length(Delimiter) - 1));		
+    Delete(Value,1,PosIdx + (Length(Delimiter) - 1));
    end;
  end;
  

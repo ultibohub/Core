@@ -34,7 +34,7 @@ Console
  Notes: Console coordinates X,Y are based on either pixels or characters depending on the console mode (Pixel or Character)
         Console coordinates begin at 0,0 and extend to Width - 1, Height - 1
         
-        Console Window coordinates X,Y are always based on characters, beginning at 1,1 and extend to Cols,Rows
+        Console Window coordinates X,Y are always based on characters, beginning at 1,1 and extending to Cols,Rows
       
 
 }
@@ -74,8 +74,8 @@ const
  CONSOLE_FLAG_LINE_WRAP       = $00000001; {Wrap long lines to the next line if set}
  CONSOLE_FLAG_DMA_BOX         = $00000002; {Use DMA to draw boxes (Where applicable)}
  CONSOLE_FLAG_DMA_LINE        = $00000004; {Use DMA to draw lines (Where applicable)}
- CONSOLE_FLAG_DMA_FILL        = $00000008; {Use DMA to draw fill blocks (Where applicable)}
- CONSOLE_FLAG_DMA_CLEAR       = $00000010; {Use DMA to draw clock blocks (Where applicable)}
+ CONSOLE_FLAG_DMA_FILL        = $00000008; {Use DMA to fill blocks (Where applicable)}
+ CONSOLE_FLAG_DMA_CLEAR       = $00000010; {Use DMA to clear blocks (Where applicable)}
  CONSOLE_FLAG_DMA_SCROLL      = $00000020; {Use DMA to scroll blocks (Where applicable)}
  CONSOLE_FLAG_SINGLE_WINDOW   = $00000040; {Console supports only one window (Not multiple)}
  CONSOLE_FLAG_HARDWARE_CURSOR = $00000080; {Console supports a hardware cursor}
@@ -139,6 +139,15 @@ type
   Y2:LongWord;
  end;
  
+ PConsoleProperties = ^TConsoleProperties;
+ TConsoleProperties = record
+  Flags:LongWord;               {Console device flags (eg CONSOLE_FLAG_FULLSCREEN)}
+  Mode:LongWord;                {Console device mode (eg CONSOLE_MODE_PIXEL)}
+  Width:LongWord;               {Console Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Height:LongWord;              {Console Height (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Format:LongWord;              {Color Format (eg COLOR_FORMAT_ARGB32)(Only applicable if CONSOLE_MODE_PIXEL)}
+ end;
+ 
  PConsoleDevice = ^TConsoleDevice;
  
  {Console Enumeration Callback}
@@ -157,8 +166,16 @@ type
  TConsoleDeviceDrawText = function(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
  TConsoleDeviceDrawPixel = function(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
  TConsoleDeviceDrawBlock = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
+ TConsoleDeviceDrawImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
  TConsoleDeviceDrawWindow = function(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
+ 
+ TConsoleDeviceGetPixel = function(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+ TConsoleDeviceGetImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+ 
+ TConsoleDeviceCopyImage = function(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;
+ 
  TConsoleDeviceGetPosition = function(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
+ TConsoleDeviceGetProperties = function(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;
  
  PConsoleWindow = ^TConsoleWindow;
  
@@ -170,31 +187,39 @@ type
   ConsoleId:LongWord;                            {Unique Id of this Console device in the Console device table}
   ConsoleState:LongWord;                         {Console device state (eg CONSOLE_STATE_OPEN)}
   ConsoleMode:LongWord;                          {Console device mode (eg CONSOLE_MODE_PIXEL)}
-  DeviceOpen:TConsoleDeviceOpen;                 {A device specific DeviceOpen method implementing a standard console device interface}
-  DeviceClose:TConsoleDeviceClose;               {A device specific DeviceClose method implementing a standard console device interface}
-  DeviceClear:TConsoleDeviceClear;               {A device specific DeviceClear method implementing a standard console device interface}
-  DeviceScroll:TConsoleDeviceScroll;             {A device specific DeviceScroll method implementing a standard console device interface}
-  DeviceDrawBox:TConsoleDeviceDrawBox;           {A device specific DeviceDrawBox method implementing a standard console device interface}
-  DeviceDrawLine:TConsoleDeviceDrawLine;         {A device specific DeviceDrawLine method implementing a standard console device interface}
-  DeviceDrawChar:TConsoleDeviceDrawChar;         {A device specific DeviceDrawChar method implementing a standard console device interface}
-  DeviceDrawText:TConsoleDeviceDrawText;         {A device specific DeviceDrawText method implementing a standard console device interface}
-  DeviceDrawPixel:TConsoleDeviceDrawPixel;       {A device specific DeviceDrawPixel method implementing a standard console device interface}
-  DeviceDrawBlock:TConsoleDeviceDrawBlock;       {A device specific DeviceDrawBlock method implementing a standard console device interface}
-  DeviceDrawWindow:TConsoleDeviceDrawWindow;     {A device specific DeviceDrawWindow method implementing a standard console device interface}
-  DeviceGetPosition:TConsoleDeviceGetPosition;   {A device specific DeviceGetPosition method implementing a standard console device interface}
+  DeviceOpen:TConsoleDeviceOpen;                 {A device specific DeviceOpen method implementing a standard console device interface (Mandatory)}
+  DeviceClose:TConsoleDeviceClose;               {A device specific DeviceClose method implementing a standard console device interface (Mandatory)}
+  DeviceClear:TConsoleDeviceClear;               {A device specific DeviceClear method implementing a standard console device interface (Mandatory)}
+  DeviceScroll:TConsoleDeviceScroll;             {A device specific DeviceScroll method implementing a standard console device interface (Mandatory)}
+  DeviceDrawBox:TConsoleDeviceDrawBox;           {A device specific DeviceDrawBox method implementing a standard console device interface (Mandatory for CONSOLE_MODE_PIXEL)}
+  DeviceDrawLine:TConsoleDeviceDrawLine;         {A device specific DeviceDrawLine method implementing a standard console device interface (Mandatory for CONSOLE_MODE_PIXEL)}
+  DeviceDrawChar:TConsoleDeviceDrawChar;         {A device specific DeviceDrawChar method implementing a standard console device interface (Mandatory)}
+  DeviceDrawText:TConsoleDeviceDrawText;         {A device specific DeviceDrawText method implementing a standard console device interface (Mandatory)}
+  DeviceDrawPixel:TConsoleDeviceDrawPixel;       {A device specific DeviceDrawPixel method implementing a standard console device interface (Mandatory for CONSOLE_MODE_PIXEL)}
+  DeviceDrawBlock:TConsoleDeviceDrawBlock;       {A device specific DeviceDrawBlock method implementing a standard console device interface (Mandatory)}
+  DeviceDrawImage:TConsoleDeviceDrawImage;       {A device specific DeviceDrawImage method implementing a standard console device interface (Mandatory for CONSOLE_MODE_PIXEL)}
+  DeviceDrawWindow:TConsoleDeviceDrawWindow;     {A device specific DeviceDrawWindow method implementing a standard console device interface (Mandatory)}
+  DeviceGetPixel:TConsoleDeviceGetPixel;         {A device specific DeviceGetPixel method implementing a standard console device interface (Mandatory for CONSOLE_MODE_PIXEL)}
+  DeviceGetImage:TConsoleDeviceGetImage;         {A device specific DeviceGetImage method implementing a standard console device interface (Mandatory for CONSOLE_MODE_PIXEL)}
+  DeviceCopyImage:TConsoleDeviceCopyImage;       {A device specific DeviceCopyImage method implementing a standard console device interface (Mandatory for CONSOLE_MODE_PIXEL)}
+  DeviceGetPosition:TConsoleDeviceGetPosition;   {A device specific DeviceGetPosition method implementing a standard console device interface (Mandatory)}
+  DeviceGetProperties:TConsoleDeviceGetProperties; {A device specific DeviceGetProperties method implementing a standard console device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   OpenCount:LongWord;
   CloseCount:LongWord;
   ClearCount:LongWord;
   ScrollCount:LongWord;
   DrawCount:LongWord;
+  GetCount:LongWord;
+  CopyCount:LongWord;
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
-  Width:LongWord;                                {Console Width}
-  Height:LongWord;                               {Console Height}
+  Width:LongWord;                                {Console Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Height:LongWord;                               {Console Height (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Format:LongWord;                               {Color Format (eg COLOR_FORMAT_ARGB32)(Only applicable if CONSOLE_MODE_PIXEL)}
   Forecolor:LongWord;                            {Foreground Color}
   Backcolor:LongWord;                            {Background Color}
-  Borderwidth:LongWord;                          {Border Width}
+  Borderwidth:LongWord;                          {Border Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
   Bordercolor:LongWord;                          {Border Color}
   {Font Properties}
   Font:TFontHandle;                              {Console Font}
@@ -220,22 +245,23 @@ type
   WindowState:LongWord;                          {Console Window State (eg WINDOW_STATE_VISIBLE)}
   WindowMode:LongWord;                           {Console Window Mode (eg WINDOW_MODE_TEXT)}
   WindowFlags:LongWord;                          {Console Window Flags (eg WINDOW_FLAG_LINE_WRAP)}
-  X1:LongWord;                                   {Window X1} {Console Relative (Pixels / Characters depending on Console mode)} 
-  Y1:LongWord;                                   {Window Y1} {Console Relative (Pixels / Characters depending on Console mode)}  
-  X2:LongWord;                                   {Window X2} {Console Relative (Pixels / Characters depending on Console mode)}  
-  Y2:LongWord;                                   {Window Y2} {Console Relative (Pixels / Characters depending on Console mode)}  
-  Width:LongWord;                                {Window Width in Columns (Characters)}
-  Height:LongWord;                               {Window Height in Rows (Characters)}
-  OffsetX:LongWord;                              {Window X Offset (Pixels / Characters depending on Console mode)}
-  OffsetY:LongWord;                              {Window Y Offset (Pixels / Characters depending on Console mode)}
-  MinX:LongWord;                                 {Viewport X1} {Window Relative (Characters)}
-  MinY:LongWord;                                 {Viewport Y1} {Window Relative (Characters)}
-  MaxX:LongWord;                                 {Viewport X2} {Window Relative (Characters)}
-  MaxY:LongWord;                                 {Viewport Y2} {Window Relative (Characters)}
-  X:LongWord;                                    {Current X}  {Window Relative (Characters)}
-  Y:LongWord;                                    {Current Y}  {Window Relative (Characters)}
-  Cols:LongWord;                                 {Viewport Columns (Characters)}
-  Rows:LongWord;                                 {Viewport Rows (Characters)}
+  X1:LongWord;                                   {Window X1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Y1:LongWord;                                   {Window Y1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  X2:LongWord;                                   {Window X2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Y2:LongWord;                                   {Window Y2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Width:LongWord;                                {Window Width in Columns (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  Height:LongWord;                               {Window Height in Rows (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  OffsetX:LongWord;                              {Window X Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  OffsetY:LongWord;                              {Window Y Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  MinX:LongWord;                                 {Viewport X1} {Window Relative (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  MinY:LongWord;                                 {Viewport Y1} {Window Relative (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  MaxX:LongWord;                                 {Viewport X2} {Window Relative (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  MaxY:LongWord;                                 {Viewport Y2} {Window Relative (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  X:LongWord;                                    {Current X}  {Window Relative (Characters for WINDOW_MODE_TEXT / Not used for WINDOW_MODE_GRAPHICS)}
+  Y:LongWord;                                    {Current Y}  {Window Relative (Characters for WINDOW_MODE_TEXT / Not used for WINDOW_MODE_GRAPHICS)}
+  Cols:LongWord;                                 {Viewport Columns (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  Rows:LongWord;                                 {Viewport Rows (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
+  Format:LongWord;                               {Color Format (eg COLOR_FORMAT_ARGB32)(Only applicable if CONSOLE_MODE_PIXEL)}
   Forecolor:LongWord;                            {Current Foreground Color}
   Backcolor:LongWord;                            {Current Background Color}
   Borderwidth:LongWord;                          {Current Border Width}
@@ -245,8 +271,8 @@ type
   FontWidth:LongWord;                            {Font Width (Pixels)}
   FontHeight:LongWord;                           {Font Height (Pixels)}
   {Cursor Properties}
-  CursorX:LongWord;                              {Cursor X}  {Window Relative (Characters)}
-  CursorY:LongWord;                              {Cursor Y}  {Window Relative (Characters)}
+  CursorX:LongWord;                              {Cursor X}  {Window Relative (Characters for WINDOW_MODE_TEXT / Not used for WINDOW_MODE_GRAPHICS)}
+  CursorY:LongWord;                              {Cursor Y}  {Window Relative (Characters for WINDOW_MODE_TEXT / Not used for WINDOW_MODE_GRAPHICS)}
   CursorMode:LongWord;                           {Cursor Mode (eg CURSOR_MODE_INSERT)}
   CursorBlink:Boolean;                           {Cursor Blink On/Off}
   CursorState:TCursorState;                      {Cursor State On/Off}
@@ -302,9 +328,16 @@ function ConsoleDeviceDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char
 function ConsoleDeviceDrawText(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
 function ConsoleDeviceDrawPixel(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
 function ConsoleDeviceDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
+function ConsoleDeviceDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
 function ConsoleDeviceDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
 
+function ConsoleDeviceGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+function ConsoleDeviceGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+ 
+function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+
 function ConsoleDeviceGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
+function ConsoleDeviceGetProperties(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;
 
 function ConsoleDeviceCheckFlag(Console:PConsoleDevice;Flag:LongWord):Boolean;
 
@@ -320,6 +353,8 @@ function ConsoleDeviceDeregister(Console:PConsoleDevice):LongWord;
 
 function ConsoleDeviceFind(ConsoleId:LongWord):PConsoleDevice;
 function ConsoleDeviceFindByDevice(Device:PDevice):PConsoleDevice;
+function ConsoleDeviceFindByName(const Name:String):PConsoleDevice; inline;
+function ConsoleDeviceFindByDescription(const Description:String):PConsoleDevice; inline;
 function ConsoleDeviceEnumerate(Callback:TConsoleEnumerate;Data:Pointer):LongWord;
 
 function ConsoleDeviceNotification(Console:PConsoleDevice;Callback:TConsoleNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -349,8 +384,8 @@ function ConsoleWindowGetMinY(Handle:TWindowHandle):LongWord;
 function ConsoleWindowGetMaxX(Handle:TWindowHandle):LongWord;
 function ConsoleWindowGetMaxY(Handle:TWindowHandle):LongWord;
 
-function ConsoleWindowGetRect(Handle:TWindowHandle):TConsoleRect;
-function ConsoleWindowSetRect(Handle:TWindowHandle;const ARect:TConsoleRect):LongWord;
+function ConsoleWindowGetRect(Handle:TWindowHandle):TConsoleRect; inline;
+function ConsoleWindowSetRect(Handle:TWindowHandle;const ARect:TConsoleRect):LongWord; inline;
 
 function ConsoleWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
 function ConsoleWindowSetViewport(Handle:TWindowHandle;X1,Y1,X2,Y2:LongWord):LongWord;
@@ -368,6 +403,10 @@ function ConsoleWindowSetPoint(Handle:TWindowHandle;const APoint:TConsolePoint):
 
 function ConsoleWindowGetCols(Handle:TWindowHandle):LongWord;
 function ConsoleWindowGetRows(Handle:TWindowHandle):LongWord;
+
+function ConsoleWindowGetWidth(Handle:TWindowHandle):LongWord;
+function ConsoleWindowGetHeight(Handle:TWindowHandle):LongWord;
+function ConsoleWindowGetFormat(Handle:TWindowHandle):LongWord;
 
 function ConsoleWindowGetForecolor(Handle:TWindowHandle):LongWord;
 function ConsoleWindowSetForecolor(Handle:TWindowHandle;Color:LongWord):LongWord;
@@ -459,8 +498,14 @@ function FramebufferConsoleDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch
 function FramebufferConsoleDrawText(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
 function FramebufferConsoleDrawPixel(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
 function FramebufferConsoleDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
+function FramebufferConsoleDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
 function FramebufferConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
 function FramebufferConsoleDrawDesktop(Console:PConsoleDevice):LongWord;
+
+function FramebufferConsoleGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+function FramebufferConsoleGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+ 
+function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
 
 function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
 
@@ -704,6 +749,10 @@ begin
  if Assigned(Console.DeviceDrawBox) then
   begin
    Result:=Console.DeviceDrawBox(Console,X1,Y1,X2,Y2,Color,Width);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 
@@ -725,6 +774,10 @@ begin
  if Assigned(Console.DeviceDrawLine) then
   begin
    Result:=Console.DeviceDrawLine(Console,X1,Y1,X2,Y2,Color,Width);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 
@@ -788,6 +841,10 @@ begin
  if Assigned(Console.DeviceDrawPixel) then
   begin
    Result:=Console.DeviceDrawPixel(Console,X,Y,Color);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 
@@ -814,6 +871,31 @@ end;
 
 {==============================================================================}
 
+function ConsoleDeviceDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {Check Open}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
+ 
+ if Assigned(Console.DeviceDrawImage) then
+  begin
+   Result:=Console.DeviceDrawImage(Console,X,Y,Buffer,Width,Height,Format,Skip);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
 function ConsoleDeviceDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
 begin
  {}
@@ -835,6 +917,81 @@ end;
  
 {==============================================================================}
  
+function ConsoleDeviceGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {Check Open}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
+ 
+ if Assigned(Console.DeviceGetPixel) then
+  begin
+   Result:=Console.DeviceGetPixel(Console,X,Y,Color);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function ConsoleDeviceGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {Check Open}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
+ 
+ if Assigned(Console.DeviceGetImage) then
+  begin
+   Result:=Console.DeviceGetImage(Console,X,Y,Buffer,Width,Height,Format,Skip);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {Check Open}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
+ 
+ if Assigned(Console.DeviceCopyImage) then
+  begin
+   Result:=Console.DeviceCopyImage(Console,Source,Dest,Width,Height);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
 function ConsoleDeviceGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
 begin
  {}
@@ -852,6 +1009,50 @@ begin
   begin
    Result:=Console.DeviceGetPosition(Console,Position,X1,Y1,X2,Y2);
   end;
+end;
+ 
+{==============================================================================}
+ 
+function ConsoleDeviceGetProperties(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Properties}
+ if Properties = nil then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Get Properties');
+ {$ENDIF}
+ 
+ {Check Open}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
+ 
+ if Assigned(Console.DeviceGetProperties) then
+  begin
+   Result:=Console.DeviceGetProperties(Console,Properties);
+  end
+ else
+  begin
+   if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Get Properties}
+   Properties.Flags:=Console.Device.DeviceFlags;
+   Properties.Mode:=Console.ConsoleMode;
+   Properties.Width:=Console.Width;
+   Properties.Height:=Console.Height;
+   Properties.Format:=Console.Format;
+ 
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+   
+   MutexUnlock(Console.Lock);
+  end;  
 end;
  
 {==============================================================================}
@@ -967,11 +1168,17 @@ begin
  Result.DeviceDrawText:=nil;
  Result.DeviceDrawPixel:=nil;
  Result.DeviceDrawBlock:=nil;
+ Result.DeviceDrawImage:=nil;
  Result.DeviceDrawWindow:=nil;
+ Result.DeviceGetPixel:=nil;
+ Result.DeviceGetImage:=nil;
+ Result.DeviceCopyImage:=nil;
  Result.DeviceGetPosition:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Width:=0;        
  Result.Height:=0;       
+ Result.Format:=COLOR_FORMAT_UNKNOWN;
  Result.Forecolor:=CONSOLE_DEFAULT_FORECOLOR;    
  Result.Backcolor:=CONSOLE_DEFAULT_BACKCOLOR;     
  Result.Borderwidth:=CONSOLE_DEFAULT_BORDERWIDTH;   
@@ -1079,7 +1286,11 @@ begin
    if not(Assigned(Console.DeviceDrawText)) then Exit;
    if not(Assigned(Console.DeviceDrawPixel)) then Exit;
    if not(Assigned(Console.DeviceDrawBlock)) then Exit;
+   if not(Assigned(Console.DeviceDrawImage)) then Exit;
    if not(Assigned(Console.DeviceDrawWindow)) then Exit;
+   if not(Assigned(Console.DeviceGetPixel)) then Exit;
+   if not(Assigned(Console.DeviceGetImage)) then Exit;
+   if not(Assigned(Console.DeviceCopyImage)) then Exit;
    if not(Assigned(Console.DeviceGetPosition)) then Exit;
   end; 
  
@@ -1306,6 +1517,22 @@ end;
 
 {==============================================================================}
 
+function ConsoleDeviceFindByName(const Name:String):PConsoleDevice; inline;
+begin
+ {}
+ Result:=PConsoleDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function ConsoleDeviceFindByDescription(const Description:String):PConsoleDevice; inline;
+begin
+ {}
+ Result:=PConsoleDevice(DeviceFindByDescription(Description));
+end;
+
+{==============================================================================}
+
 function ConsoleDeviceEnumerate(Callback:TConsoleEnumerate;Data:Pointer):LongWord;
 var
  Console:PConsoleDevice;
@@ -1373,6 +1600,8 @@ end;
 {Text Console Functions}
 function ConsoleWindowCreate(Console:PConsoleDevice;Position:LongWord;Default:Boolean):TWindowHandle;
 {Create a new Console window}
+{Console: The console device to create the new window on}
+{Position: The console position to create the new window at (eg CONSOLE_POSITION_FULL)}
 {Return: Handle to new Console window or INVALID_HANDLE_VALUE if Console window could not be created}
 begin
  {}
@@ -1383,6 +1612,12 @@ end;
 
 function ConsoleWindowCreateEx(Console:PConsoleDevice;Font:TFontHandle;Size,State,Mode,Position:LongWord;Default:Boolean):TWindowHandle;
 {Create a new Console window}
+{Console: The console device to create the new window on}
+{Font: The handle of the default font for the new console window}
+{Size: The size in bytes to allocate for the new window entry (Defaults to SizeOf(TConsoleWindow))}
+{State: The state of the new console window (WINDOW_STATE_VISIBLE or WINDOW_STATE_INVISIBLE)}
+{Mode: The mode of the new console window (Normally WINDOW_MODE_TEXT)}
+{Position: The console position to create the new window at (eg CONSOLE_POSITION_FULL)}
 {Return: Handle to new Console window or INVALID_HANDLE_VALUE if Console window could not be created}
 var
  X1:LongWord;
@@ -1399,7 +1634,11 @@ begin
  Result:=INVALID_HANDLE_VALUE;
  
  {Check Size}
+ if Size = 0 then Size:=SizeOf(TConsoleWindow);
  if Size < SizeOf(TConsoleWindow) then Exit;
+ 
+ {Check Mode}
+ {if Mode <> WINDOW_MODE_TEXT then Exit;} {Do not check mode, allow for expansion}
  
  {Check Position}
  if Position = CONSOLE_POSITION_FULLSCREEN then
@@ -1417,15 +1656,8 @@ begin
    {Check Position}
    case Position of
     CONSOLE_POSITION_FULL:begin
-      {Fail on all other positions}
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOP) <> INVALID_HANDLE_VALUE then Exit;
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM) <> INVALID_HANDLE_VALUE then Exit;
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT) <> INVALID_HANDLE_VALUE then Exit;
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT) <> INVALID_HANDLE_VALUE then Exit;
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
-      if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
+      {Fail if any other windows exist}
+      if ConsoleWindowGetCount(Console) <> 0 then Exit;
      end;
     CONSOLE_POSITION_TOP:begin
       {Fail on top positions}
@@ -1684,6 +1916,7 @@ begin
     Window.Y:=1;
     Window.Cols:=0;
     Window.Rows:=0;
+    Window.Format:=Console.Format;
     Window.Forecolor:=WINDOW_DEFAULT_FORECOLOR;
     Window.Backcolor:=WINDOW_DEFAULT_BACKCOLOR;
     Window.Borderwidth:=WINDOW_DEFAULT_BORDERWIDTH;
@@ -1825,7 +2058,7 @@ begin
        Unlock:=False;
         
        {Draw Window}
-       ConsoleDeviceDrawWindow(Console,TWindowHandle(Window));
+       if State = WINDOW_STATE_VISIBLE then ConsoleDeviceDrawWindow(Console,TWindowHandle(Window));
        
        {Return Result}
        Result:=TWindowHandle(Window);
@@ -1853,6 +2086,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowDestroy(Handle:TWindowHandle):LongWord;
+{Close and Destroy an existing console window}
+{Handle: The handle of the window to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Unlock:Boolean;
  Prev:PConsoleWindow;
@@ -1889,12 +2125,16 @@ begin
     try 
      Unlock:=True;
      
-     {Set State}
-     Window.WindowState:=WINDOW_STATE_INVISIBLE;
+     {Check State}
+     if Window.WindowState = WINDOW_STATE_VISIBLE then
+      begin
+       {Set State}
+       Window.WindowState:=WINDOW_STATE_INVISIBLE;
     
-     {Draw Window}
-     Result:=ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
-     if Result <> ERROR_SUCCESS then Exit;
+       {Draw Window}
+       Result:=ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
+       if Result <> ERROR_SUCCESS then Exit;
+      end; 
 
      {Unlink Window}    
      Prev:=Window.Prev;
@@ -1972,6 +2212,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowShow(Handle:TWindowHandle):LongWord;
+{Make an existing console window visible and show it on screen}
+{Handle: The handle of the window to show}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Window:PConsoleWindow;
 begin
@@ -2013,6 +2256,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowHide(Handle:TWindowHandle):LongWord;
+{Make an existing console window invisible and hide it on screen}
+{Handle: The handle of the window to hide}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Window:PConsoleWindow;
 begin
@@ -2054,6 +2300,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowFind(Console:PConsoleDevice;Position:LongWord):TWindowHandle;
+{Find an existing console window in the position specified}
+{Console: The console device to find the window on}
+{Position: The window position to find (eg CONSOLE_POSITION_FULL)}
+{Return: The handle of the existing window or INVALID_HANDLE_VALUE if not found}
 var
  Window:PConsoleWindow;
 begin
@@ -2096,6 +2346,11 @@ end;
 {==============================================================================}
 
 function ConsoleWindowEnumerate(Console:PConsoleDevice;Callback:TConsoleWindowEnumerate;Data:Pointer):LongWord;
+{Enumerate existing console windows on the specified console device}
+{Console: The console device to enumerate windows for}
+{Callback: The function to call for each window enumerated}
+{Data: A pointer to private data to be passed to the callback (Optional)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Window:PConsoleWindow;
 begin
@@ -2135,6 +2390,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowCheckFlag(Handle:TWindowHandle;Flag:LongWord):Boolean;
+{Check an existing console window to determine if a flag is set or not}
+{Handle: The handle of the window to check}
+{Flag: The window flag to check for (eg WINDOW_FLAG_LINE_WRAP)}
+{Return: True if the flag is set, False if not set}
 var
  Window:PConsoleWindow;
 begin
@@ -2162,6 +2421,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetMode(Handle:TWindowHandle):LongWord;
+{Get the window mode of an existing console window}
+{Handle: The handle of the window to get the mode for}
+{Return: The window mode (eg WINDOW_MODE_TEXT)}
 var
  Window:PConsoleWindow;
 begin
@@ -2189,6 +2451,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetState(Handle:TWindowHandle):LongWord;
+{Get the window state of an existing console window}
+{Handle: The handle of the window to get the state for}
+{Return: The window state (eg WINDOW_STATE_INVISIBLE)}
 var
  Window:PConsoleWindow;
 begin
@@ -2216,6 +2481,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetPosition(Handle:TWindowHandle):LongWord;
+{Get the position of an existing console window}
+{Handle: The handle of the window to get the position for}
+{Return: The window position (eg CONSOLE_POSITION_FULL)}
 var
  Window:PConsoleWindow;
 begin
@@ -2243,6 +2511,12 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetPosition(Handle:TWindowHandle;Position:LongWord):LongWord;
+{Set the position of an existing console window}
+{Handle: The handle of the window to set the position for}
+{Position: The new window position to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: The function will return ERROR_INVALID_PARAMETER if another window exists at the position}
 var
  X1:LongWord;
  Y1:LongWord;
@@ -2267,7 +2541,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check for WINDOW_MODE_TEXT //All of these ? //Maybe not this one ?
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2285,7 +2559,7 @@ begin
    Window.WindowState:=WINDOW_STATE_INVISIBLE;
    
    {Draw Window}
-   ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
+   if State = WINDOW_STATE_VISIBLE then ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
    
    {Get Position}
    if ConsoleDeviceGetPosition(Window.Console,Position,X1,Y1,X2,Y2) <> ERROR_SUCCESS then Exit;
@@ -2351,7 +2625,7 @@ begin
    Window.WindowState:=State;
    
    {Draw Window}
-   ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
+   if State = WINDOW_STATE_VISIBLE then ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
   end;
  finally
   {Unlock Window}
@@ -2362,6 +2636,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetMinX(Handle:TWindowHandle):LongWord;
+{Get the current minimum X of the window viewport for an existing console window}
+{Handle: The handle of the window to get MinX for}
+{Return: The minimum X value for the current window viewport}
+
 {Note: For Text Console functions, X is based on character columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2376,6 +2654,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2390,6 +2669,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetMinY(Handle:TWindowHandle):LongWord;
+{Get the current minimum Y of the window viewport for an existing console window}
+{Handle: The handle of the window to get MinY for}
+{Return: The minimum Y value for the current window viewport}
+
 {Note: For Text Console functions, Y is based on character rows not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2404,6 +2687,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2418,6 +2702,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetMaxX(Handle:TWindowHandle):LongWord;
+{Get the current maximum X of the window viewport for an existing console window}
+{Handle: The handle of the window to get MaxX for}
+{Return: The maximum X value for the current window viewport}
+
 {Note: For Text Console functions, X is based on character columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2432,6 +2720,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2446,6 +2735,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetMaxY(Handle:TWindowHandle):LongWord;
+{Get the current maximum Y of the window viewport for an existing console window}
+{Handle: The handle of the window to get MaxY for}
+{Return: The maximum Y value for the current window viewport}
+
 {Note: For Text Console functions, Y is based on character rows not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2460,6 +2753,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2473,7 +2767,11 @@ end;
 
 {==============================================================================}
 
-function ConsoleWindowGetRect(Handle:TWindowHandle):TConsoleRect;
+function ConsoleWindowGetRect(Handle:TWindowHandle):TConsoleRect; inline;
+{Get the rectangle X1,Y1,X2,Y2 of the window viewport for an existing console window}
+{Handle: The handle of the window to get the rectangle for}
+{Return: The rectangle of the current window viewport}
+
 {Note: For Text Console functions, Rect is based on character rows and columns not screen pixels}
 begin
  {}
@@ -2482,7 +2780,12 @@ end;
 
 {==============================================================================}
 
-function ConsoleWindowSetRect(Handle:TWindowHandle;const ARect:TConsoleRect):LongWord;
+function ConsoleWindowSetRect(Handle:TWindowHandle;const ARect:TConsoleRect):LongWord; inline;
+{Set the rectangle X1,Y1,X2,Y2 of the window viewport for an existing console window}
+{Handle: The handle of the window to set the rectangle for}
+{Rect: The rectangle to set for the window viewport}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, Rect is based on character rows and columns not screen pixels}
 begin
  {}
@@ -2492,6 +2795,14 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
+{Get the X1,Y1,X2,Y2 of the window viewport for an existing console window}
+{Handle: The handle of the window to get the viewport for}
+{X1: The left edge of the current viewport}
+{Y1: The top edge of the current viewport}
+{X2: The right edge of the current viewport}
+{Y2: The bottom edge of the current viewport}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, Viewport is based on character rows and columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2506,6 +2817,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2525,6 +2837,14 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetViewport(Handle:TWindowHandle;X1,Y1,X2,Y2:LongWord):LongWord;
+{Set the X1,Y1,X2,Y2 of the window viewport for an existing console window}
+{Handle: The handle of the window to get the viewport for}
+{X1: The left edge of the window viewport}
+{Y1: The top edge of the window viewport}
+{X2: The right edge of the window viewport}
+{Y2: The bottom edge of the window viewport}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, Viewport is based on character rows and columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2539,6 +2859,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2572,6 +2893,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetX(Handle:TWindowHandle):LongWord;
+{Get the current X (Column) position of an existing console window}
+{Handle: The handle of the window to get X for}
+{Return: The X value for the window}
+
 {Note: For Text Console functions, X is based on character columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2586,6 +2911,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2600,6 +2926,11 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetX(Handle:TWindowHandle;X:LongWord):LongWord;
+{Set the current X (Column) position of an existing console window}
+{Handle: The handle of the window to set X for}
+{X: The new X value to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, X is based on character columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2614,6 +2945,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2640,6 +2972,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetY(Handle:TWindowHandle):LongWord;
+{Get the current Y (Row) position of an existing console window}
+{Handle: The handle of the window to get Y for}
+{Return: The Y value for the window}
+
 {Note: For Text Console functions, Y is based on character rows not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2654,6 +2990,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2668,6 +3005,11 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetY(Handle:TWindowHandle;Y:LongWord):LongWord;
+{Set the current Y (Row) position of an existing console window}
+{Handle: The handle of the window to set Y for}
+{Y: The new Y value to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, Y is based on character rows not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2682,6 +3024,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2708,6 +3051,12 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetXY(Handle:TWindowHandle;var X,Y:LongWord):LongWord;
+{Get the current X and Y positions of an existing console window}
+{Handle: The handle of the window to get X and Y for}
+{X: The returned X value}
+{Y: The returned Y value}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2722,6 +3071,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2739,6 +3089,12 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetXY(Handle:TWindowHandle;X,Y:LongWord):LongWord;
+{Set the current X and Y positions of an existing console window}
+{Handle: The handle of the window to set X and Y for}
+{X: The new X value}
+{Y: The new Y value}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
 var
  Window:PConsoleWindow;
@@ -2753,6 +3109,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2780,6 +3137,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetPoint(Handle:TWindowHandle):TConsolePoint;
+{Get the point X,Y of an existing console window}
+{Handle: The handle of the window to get the point for}
+{Return: The current point of the window}
+
 {Note: For Text Console functions, Point is based on character rows and columns not screen pixels}
 begin
  {}
@@ -2789,6 +3150,11 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetPoint(Handle:TWindowHandle;const APoint:TConsolePoint):LongWord;
+{Set the point X,Y of an existing console window}
+{Handle: The handle of the window to set the point for}
+{Point: The new point to set for the window}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, Point is based on character rows and columns not screen pixels}
 begin
  {}
@@ -2798,6 +3164,11 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetCols(Handle:TWindowHandle):LongWord;
+{Get the current columns of the window viewport for an existing console window}
+{Handle: The handle of the window to get columns for}
+{Return: The columns value for the current window viewport}
+
+{Note: For Text Console functions, Columns is based on character columns not screen pixels}
 var
  Window:PConsoleWindow;
 begin
@@ -2811,6 +3182,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2825,6 +3197,11 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetRows(Handle:TWindowHandle):LongWord;
+{Get the current rows of the window viewport for an existing console window}
+{Handle: The handle of the window to get rows for}
+{Return: The rows value for the current window viewport}
+
+{Note: For Text Console functions, Rows is based on character rows not screen pixels}
 var
  Window:PConsoleWindow;
 begin
@@ -2838,6 +3215,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2851,7 +3229,12 @@ end;
 
 {==============================================================================}
 
-function ConsoleWindowGetForecolor(Handle:TWindowHandle):LongWord;
+function ConsoleWindowGetWidth(Handle:TWindowHandle):LongWord;
+{Get the absolute width of an existing console window}
+{Handle: The handle of the window to get the width for}
+{Return: The absolute width of the window}
+
+{Note: For Text Console functions, Width is based on character columns not screen pixels}
 var
  Window:PConsoleWindow;
 begin
@@ -2865,6 +3248,102 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Width}
+ Result:=Window.Width;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowGetHeight(Handle:TWindowHandle):LongWord;
+{Get the absolute height of an existing console window}
+{Handle: The handle of the window to get the height for}
+{Return: The absolute height of the window}
+
+{Note: For Text Console functions, Height is based on character rows not screen pixels}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Height}
+ Result:=Window.Height;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowGetFormat(Handle:TWindowHandle):LongWord;
+{Get the color format of an existing console window}
+{Handle: The handle of the window to get the format for}
+{Return: The color format of the window (eg COLOR_FORMAT_ARGB32)}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Get Format}
+ Result:=Window.Format;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowGetForecolor(Handle:TWindowHandle):LongWord;
+{Get the current foreground color of an existing console window}
+{Handle: The handle of the window to get the foreground color for}
+{Return: The foreground color of the window (eg COLOR_WHITE)}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2879,6 +3358,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetForecolor(Handle:TWindowHandle;Color:LongWord):LongWord;
+{Set the current foreground color of an existing console window}
+{Handle: The handle of the window to set the foreground color for}
+{Color: The foreground color to set (eg COLOR_WHITE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Window:PConsoleWindow;
 begin
@@ -2895,6 +3378,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2911,6 +3395,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetBackcolor(Handle:TWindowHandle):LongWord;
+{Get the current background color of an existing console window}
+{Handle: The handle of the window to get the background color for}
+{Return: The background color of the window (eg COLOR_BLACK)}
 var
  Window:PConsoleWindow;
 begin
@@ -2924,6 +3411,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2938,6 +3426,10 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetBackcolor(Handle:TWindowHandle;Color:LongWord):LongWord;
+{Set the current background color of an existing console window}
+{Handle: The handle of the window to set the background color for}
+{Color: The background color to set (eg COLOR_BLACK)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Window:PConsoleWindow;
 begin
@@ -2954,6 +3446,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2970,6 +3463,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowGetFont(Handle:TWindowHandle):TFontHandle;
+{Get the default font of an existing console window}
+{Handle: The handle of the window to get the default font for}
+{Return: The font handle of the default font or INVALID_HANDLE_VALUE on error}
 var
  Window:PConsoleWindow;
 begin
@@ -2983,6 +3479,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -2997,6 +3494,12 @@ end;
 {==============================================================================}
 
 function ConsoleWindowSetFont(Handle:TWindowHandle;Font:TFontHandle):LongWord;
+{Set the default font of an existing console window}
+{Handle: The handle of the window to set the default font for}
+{Font: The font handle of the default font to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: For Text Console windows, setting the font also clears the window}
 var
  RemainX:LongWord;
  RemainY:LongWord;
@@ -3017,6 +3520,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3085,7 +3589,7 @@ begin
     if Window.CursorY > Window.Rows then Window.CursorY:=1;
    
     {Draw Window}
-    ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
+    if Window.WindowState = WINDOW_STATE_VISIBLE then ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window));
     
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -3112,6 +3616,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3142,6 +3647,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3193,6 +3699,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3220,6 +3727,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3259,6 +3767,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3286,6 +3795,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3325,6 +3835,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3335,9 +3846,11 @@ begin
    {Set Cursor State}
    Window.CursorState:=CURSORON;
    
-   //To Do //Check WINDOW_STATE_VISIBLE
-   
-   //To Do //Check Hardware Cursor / Create timer etc
+   {Check Visible}
+   if Window.WindowState = WINDOW_STATE_VISIBLE then
+    begin
+     //To Do //Check Hardware Cursor / Create timer etc
+    end; 
  
    Result:=ERROR_SUCCESS;
 
@@ -3369,6 +3882,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3379,9 +3893,11 @@ begin
    {Set Cursor State}
    Window.CursorState:=CURSOROFF;
    
-   //To Do //Check WINDOW_STATE_VISIBLE
-   
-   //To Do //Check Hardware Cursor / Destroy timer etc
+   {Check Visible}
+   if Window.WindowState = WINDOW_STATE_VISIBLE then
+    begin
+     //To Do //Check Hardware Cursor / Destroy timer etc
+    end; 
  
    Result:=ERROR_SUCCESS;
 
@@ -3413,6 +3929,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3427,11 +3944,11 @@ begin
    {Check Cursor State}
    if Window.CursorState = CURSORON then
     begin
-   
-     //To Do //Check WINDOW_STATE_VISIBLE
-     
-     //To Do //Check Hardware Cursor / Move Cursor
-     
+     {Check Visible}
+     if Window.WindowState = WINDOW_STATE_VISIBLE then
+      begin
+       //To Do //Check Hardware Cursor / Move Cursor
+      end; 
     end; 
    
    Result:=ERROR_SUCCESS;
@@ -3462,6 +3979,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3472,23 +3990,26 @@ begin
    {Check Cursor Blink}
    if Window.CursorBlink and not(Enabled) then
     begin
-    
-     //To Do //Check WINDOW_STATE_VISIBLE
+     {Set Cursor Blink}
+     Window.CursorBlink:=Enabled;
      
-     //To Do //Check Hardware Cursor / Destroy timer etc
-     
+     {Check Visible}
+     if Window.WindowState = WINDOW_STATE_VISIBLE then
+      begin
+       //To Do //Check Hardware Cursor / Destroy timer etc
+      end; 
     end
    else if not(Window.CursorBlink) and Enabled then
     begin
-    
-     //To Do //Check WINDOW_STATE_VISIBLE
+     {Set Cursor Blink}
+     Window.CursorBlink:=Enabled;
      
-     //To Do //Check Hardware Cursor / Create timer etc
-     
+     {Check Visible}
+     if Window.WindowState = WINDOW_STATE_VISIBLE then
+      begin
+       //To Do //Check Hardware Cursor / Create timer etc
+      end; 
     end;
-
-   {Set Cursor Blink}
-   Window.CursorBlink:=Enabled;
    
    Result:=ERROR_SUCCESS;
 
@@ -3531,7 +4052,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+ 
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3603,7 +4131,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3674,7 +4209,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3682,7 +4224,7 @@ begin
   {Check Console}
   if Window.Console = nil then Exit;
  
-  //To Do //
+  //To Do //Continuing
   
  finally
   {Unlock Window}
@@ -3706,7 +4248,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3714,7 +4263,7 @@ begin
   {Check Console}
   if Window.Console = nil then Exit;
  
-  //To Do //
+  //To Do //Continuing
   
  finally
   {Unlock Window}
@@ -3725,6 +4274,9 @@ end;
 {==============================================================================}
 
 function ConsoleWindowClear(Handle:TWindowHandle):LongWord;
+{Clear the current viewport of an existing console window}
+{Handle: The handle of the window to clear}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  ClearX1:LongWord;
  ClearY1:LongWord;
@@ -3742,7 +4294,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3775,6 +4334,15 @@ end;
 {==============================================================================}
 
 function ConsoleWindowClearEx(Handle:TWindowHandle;X1,Y1,X2,Y2:LongWord;Cursor:Boolean):LongWord;
+{Clear part of the the current viewport of an existing console window}
+{Handle: The handle of the window to clear}
+{X1: The left edge of the area to clear (relative to current viewport)}
+{Y1: The top edge of the area to clear (relative to current viewport)}
+{X2: The right edge of the area to clear (relative to current viewport)}
+{Y2: The bottom edge of the area to clear (relative to current viewport)}
+{Cursor: If True update the cursor position after clearing}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
 {Note: For Text Console functions, Window is based on screen character rows and columns not screen pixels}
 var
  ClearX1:LongWord;
@@ -3793,7 +4361,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3858,7 +4433,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3956,7 +4538,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -4054,7 +4643,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -4172,7 +4768,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -4288,7 +4891,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -4423,7 +5033,14 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- //To Do //Check WINDOW_STATE_VISIBLE
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+
+ {Check Visible}
+ if Window.WindowState <> WINDOW_STATE_VISIBLE then
+  begin
+   Result:=ERROR_SUCCESS;
+   Exit;
+  end;
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -4544,6 +5161,8 @@ end;
 {==============================================================================}
 {CRT Console Functions}
 procedure ConsoleAssignCrt(var F:Text);
+{Compatible with RTL Crt unit function AssignCrt}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/assigncrt.html}
 begin
  {}
  TextIOOpen(F,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
@@ -4552,6 +5171,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleClrEol;
+{Compatible with RTL Crt unit function ClrEol}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/clreol.html}
 var
  Handle:TWindowHandle;
 begin
@@ -4567,6 +5188,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleClrScr;
+{Compatible with RTL Crt unit function ClrScr}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/clrscr.html}
 var
  Handle:TWindowHandle;
 begin
@@ -4582,6 +5205,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleDelay(MS:Word);
+{Compatible with RTL Crt unit function Delay}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/delay.html}
 begin
  {}
  ThreadSleep(MS);
@@ -4590,6 +5215,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleDelLine;
+{Compatible with RTL Crt unit function DelLine}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/delline.html}
 var
  Handle:TWindowHandle;
 begin
@@ -4605,6 +5232,9 @@ end;
 {==============================================================================}
 
 procedure ConsoleGotoXY(X,Y:Integer);
+{Compatible with RTL Crt unit function GotoXY}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/gotoxy.html}
+
 {Note: For CRT Console functions, X and Y are based on character rows and columns not screen pixels}
 var
  Handle:TWindowHandle;
@@ -4621,6 +5251,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleHighVideo;
+{Compatible with RTL Crt unit function HighVideo}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/highvideo.html}
 begin
  {}
  {No function under Ultibo}
@@ -4629,6 +5261,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleInsLine;
+{Compatible with RTL Crt unit function InsLine}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/insline.html}
 var
  Handle:TWindowHandle;
 begin
@@ -4644,6 +5278,8 @@ end;
 {==============================================================================}
 
 function ConsoleKeypressed:Boolean;
+{Compatible with RTL Crt unit function KeyPressed}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/keypressed.html}
 begin
  {}
  Result:=False; //To Do //Need ConsolePeekChar ?
@@ -4655,6 +5291,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleLowVideo;
+{Compatible with RTL Crt unit function LowVideo}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/lowvideo.html}
 begin
  {}
  {No function under Ultibo}
@@ -4663,6 +5301,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleNormVideo;
+{Compatible with RTL Crt unit function NormVideo}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/normvideo.html}
 begin
  {}
  {No function under Ultibo}
@@ -4671,6 +5311,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleNoSound;
+{Compatible with RTL Crt unit function NoSound}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/nosound.html}
 begin
  {}
  {No function under Ultibo}
@@ -4679,14 +5321,23 @@ end;
 {==============================================================================}
 
 function ConsoleReadKey:Char;
+{Compatible with RTL Crt unit function ReadKey}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/readkey.html}
+{Note: For extended key scan codes see: http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html}
 begin
  {}
  ConsoleReadChar(Result,nil);
+ 
+ //To Do //Implement extended key code functionality
+         //Here or in ConsoleReadChar ?
+         //Need to check what RTL Read() / ReadLn() uses and expects
 end;
 
 {==============================================================================}
 
 procedure ConsoleSound(Hz:Word);
+{Compatible with RTL Crt unit function Sound}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/sound.html}
 begin
  {}
  {No function under Ultibo}
@@ -4695,6 +5346,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleTextBackground(Color:LongWord);
+{Compatible with RTL Crt unit function TextBackground}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/textbackground.html}
 var
  Handle:TWindowHandle;
 begin
@@ -4710,6 +5363,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleTextColor(Color:LongWord);
+{Compatible with RTL Crt unit function TextColor}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/textcolor.html}
 var
  Handle:TWindowHandle;
 begin
@@ -4725,6 +5380,8 @@ end;
 {==============================================================================}
 
 procedure ConsoleTextMode(Mode:Integer);
+{Compatible with RTL Crt unit function TextMode}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/textmode.html}
 begin
  {}
  {No function under Ultibo}
@@ -4733,6 +5390,9 @@ end;
 {==============================================================================}
 
 function ConsoleWhereX:Integer;
+{Compatible with RTL Crt unit function WhereX}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/wherex.html}
+
 {Note: For CRT Console functions, X is based on character columns not screen pixels}
 var
  Handle:TWindowHandle;
@@ -4751,6 +5411,9 @@ end;
 {==============================================================================}
 
 function ConsoleWhereY:Integer;
+{Compatible with RTL Crt unit function WhereY}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/wherey.html}
+
 {Note: For CRT Console functions, Y is based on character row not screen pixels}
 var
  Handle:TWindowHandle;
@@ -4769,6 +5432,9 @@ end;
 {==============================================================================}
 
 procedure ConsoleWindow(X1,Y1,X2,Y2:Integer);
+{Compatible with RTL Crt unit function Window}
+{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/window.html}
+
 {Note: For CRT Console functions, X1, Y1, X2 and Y2 are based on character rows and columns not screen pixels}
 var
  Handle:TWindowHandle;
@@ -4945,6 +5611,7 @@ begin
       {Update Console}
       Console.Width:=Properties.PhysicalWidth;
       Console.Height:=Properties.PhysicalHeight;
+      Console.Format:=Properties.Format;
       
       {Check Colors}
       if Console.Forecolor = COLOR_NONE then Console.Forecolor:=CONSOLE_DEFAULT_FORECOLOR;
@@ -5029,6 +5696,7 @@ begin
     {Console}
     Console.Width:=0;
     Console.Height:=0;
+    Console.Format:=COLOR_FORMAT_UNKNOWN;
     {Framebuffer}
     PFramebufferConsole(Console).DesktopX:=0;
     PFramebufferConsole(Console).DesktopY:=0;
@@ -6495,6 +7163,64 @@ end;
 
 {==============================================================================}
 
+function FramebufferConsoleDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+var
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X, Y}
+    if X >= Console.Width then Exit;
+    if Y >= Console.Height then Exit;
+    if X + Width > Console.Width then Exit;
+    if Y + Height > Console.Height then Exit;
+ 
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+ 
+    {Check Format}
+    if (Format = COLOR_FORMAT_UNKNOWN) or (Format = Console.Format) then
+     begin
+      {Framebuffer Put}
+      Result:=FramebufferDevicePutRect(Framebuffer,X,Y,Buffer,Width,Height,Skip,FRAMEBUFFER_TRANSFER_DMA); {Buffer is safe for DMA put}
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Exit; //To Do //Continuing //Convert and put image
+     end;
+ 
+    {Update Statistics}
+    Inc(Console.DrawCount);
+ 
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+ 
+{==============================================================================}
+
 function FramebufferConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
 {Note: Caller must hold the Window lock}
 var
@@ -6623,6 +7349,182 @@ end;
 
 {==============================================================================}
 
+function FramebufferConsoleGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+var
+ Address:LongWord;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X, Y}
+    if X >= Console.Width then Exit;
+    if Y >= Console.Height then Exit;
+   
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+    if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+    if Framebuffer.Address = 0 then Exit;
+ 
+    {Lock Framebuffer}
+    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+ 
+    {Get Address}
+    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+ 
+    {Read Pixel}
+    Color:=PLongWord(Address)^;
+ 
+    {Memory Barrier}
+    DataMemoryBarrier;  {After the Last Read}
+ 
+    {Check Swap}
+    if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_SWAP) <> 0 then
+     begin
+      Color:=FramebufferDeviceSwap(Color);
+     end;
+ 
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+    
+    {Update Statistics}
+    Inc(Console.GetCount);
+    
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferConsoleGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+var
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X, Y}
+    if X >= Console.Width then Exit;
+    if Y >= Console.Height then Exit;
+    if X + Width > Console.Width then Exit;
+    if Y + Height > Console.Height then Exit;
+ 
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Format}
+    if (Format = COLOR_FORMAT_UNKNOWN) or (Format = Console.Format) then
+     begin
+      {Framebuffer Get}
+      Result:=FramebufferDeviceGetRect(Framebuffer,X,Y,Buffer,Width,Height,Skip,FRAMEBUFFER_TRANSFER_NONE); {No DMA due to unknown buffer}
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Exit; //To Do //Continuing //Get and convert image
+     end;
+ 
+    {Update Statistics}
+    Inc(Console.GetCount);
+ 
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+var
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Source}
+    if Source.X >= Console.Width then Exit;
+    if Source.Y >= Console.Height then Exit;
+    if Source.X + Width > Console.Width then Exit;
+    if Source.Y + Height > Console.Height then Exit;
+ 
+    {Check Dest}
+    if Dest.X >= Console.Width then Exit;
+    if Dest.Y >= Console.Height then Exit;
+    if Dest.X + Width > Console.Width then Exit;
+    if Dest.Y + Height > Console.Height then Exit;
+    
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Framebuffer Copy}
+    Result:=FramebufferDeviceCopyRect(Framebuffer,Source.X,Source.Y,Dest.X,Dest.Y,Width,Height,FRAMEBUFFER_TRANSFER_DMA);
+    if Result <> ERROR_SUCCESS then Exit;
+ 
+    {Update Statistics}
+    Inc(Console.CopyCount);
+    
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
 function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
 begin
  {}
@@ -6724,9 +7626,12 @@ begin
       end;
      CONSOLE_POSITION_FULLSCREEN:begin
        {Fullscreen Window}
+       X1:=0;
+       Y1:=0;
+       X2:=Console.Width - 1;
+       Y2:=Console.Height - 1;
        
-       //To Do //Continuing
-       
+       Result:=ERROR_SUCCESS;
       end;     
     end;
    finally
@@ -6851,7 +7756,7 @@ begin
     begin
      {Update Console}
      {Device}
-     Console.Console.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     Console.Console.Device.DeviceBus:=Framebuffer.Device.DeviceBus; 
      Console.Console.Device.DeviceType:=CONSOLE_TYPE_FRAMEBUFFER;
      Console.Console.Device.DeviceFlags:=CONSOLE_FLAG_BLINK_CURSOR or CONSOLE_FLAG_COLOR or CONSOLE_FLAG_FONT or CONSOLE_FLAG_FULLSCREEN;
      Console.Console.Device.DeviceData:=@Framebuffer.Device;
@@ -6868,7 +7773,11 @@ begin
      Console.Console.DeviceDrawText:=FramebufferConsoleDrawText;
      Console.Console.DeviceDrawPixel:=FramebufferConsoleDrawPixel;
      Console.Console.DeviceDrawBlock:=FramebufferConsoleDrawBlock;
+     Console.Console.DeviceDrawImage:=FramebufferConsoleDrawImage;
      Console.Console.DeviceDrawWindow:=FramebufferConsoleDrawWindow;
+     Console.Console.DeviceGetPixel:=FramebufferConsoleGetPixel;
+     Console.Console.DeviceGetImage:=FramebufferConsoleGetImage;
+     Console.Console.DeviceCopyImage:=FramebufferConsoleCopyImage;
      Console.Console.DeviceGetPosition:=FramebufferConsoleGetPosition;
      Console.Console.FontRatio:=1; {Font ratio 1 for Pixel console}
      {Framebuffer}

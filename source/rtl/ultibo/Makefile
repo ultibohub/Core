@@ -376,6 +376,7 @@ ULTIBO_UNITS=globalconfig \
 	     pwm \
 	     rtc \
 	     usb \
+	     usbcdc \
 	     mmc \
 	     mmcspi \
 	     bluetooth \
@@ -455,7 +456,8 @@ ULTIBO_UNITS=globalconfig \
 	     nfs \
 	     cifs \
 	     services \
-	     shell
+	     shell \
+	     graphicsconsole
 ULTIBO_FONTS=Latin1_8x8 \
 	     Latin1_8x10 \
 	     Latin1_8x12 \
@@ -476,6 +478,8 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    rt2x00usb \
 		    rt2800usb \
 		    pl2303 \
+		    ftdiserial \
+		    usbcdcacm \
 		    ds1307 \
 		    mcp230xx \
 		    hd44780 \

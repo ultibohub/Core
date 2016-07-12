@@ -138,6 +138,8 @@ function I2SDeviceRegister(I2S:PI2SDevice):LongWord;
 function I2SDeviceDeregister(I2S:PI2SDevice):LongWord;
 
 function I2SDeviceFind(I2SId:LongWord):PI2SDevice;
+function I2SDeviceFindByName(const Name:String):PI2SDevice; inline;
+function I2SDeviceFindByDescription(const Description:String):PI2SDevice; inline;
 function I2SDeviceEnumerate(Callback:TI2SEnumerate;Data:Pointer):LongWord;
  
 function I2SDeviceNotification(I2S:PI2SDevice;Callback:TI2SNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -496,6 +498,22 @@ begin
     CriticalSectionUnlock(I2SDeviceTableLock);
    end;
   end;
+end;
+       
+{==============================================================================}
+       
+function I2SDeviceFindByName(const Name:String):PI2SDevice; inline;
+begin
+ {}
+ Result:=PI2SDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function I2SDeviceFindByDescription(const Description:String):PI2SDevice; inline;
+begin
+ {}
+ Result:=PI2SDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

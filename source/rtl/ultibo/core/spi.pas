@@ -90,6 +90,7 @@ const
  SPI_FLAG_CPHA          = $00000020; {Device supports Clock Phase setting}
  SPI_FLAG_CSPOL         = $00000040; {Device supports Chip Select Polarity setting}
  SPI_FLAG_NO_CS         = $00000080; {Device supports Chip Select None (CS handled externally)}
+ SPI_FLAG_DMA           = $00000100; {Device supports DMA transfers}
  
  {SPI Transfer Flags}
  SPI_TRANSFER_NONE  = $00000000;
@@ -249,6 +250,8 @@ function SPIDeviceRegister(SPI:PSPIDevice):LongWord;
 function SPIDeviceDeregister(SPI:PSPIDevice):LongWord;
 
 function SPIDeviceFind(SPIId:LongWord):PSPIDevice;
+function SPIDeviceFindByName(const Name:String):PSPIDevice; inline;
+function SPIDeviceFindByDescription(const Description:String):PSPIDevice; inline;
 function SPIDeviceEnumerate(Callback:TSPIEnumerate;Data:Pointer):LongWord;
  
 function SPIDeviceNotification(SPI:PSPIDevice;Callback:TSPINotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1478,6 +1481,22 @@ begin
     CriticalSectionUnlock(SPIDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function SPIDeviceFindByName(const Name:String):PSPIDevice; inline;
+begin
+ {}
+ Result:=PSPIDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function SPIDeviceFindByDescription(const Description:String):PSPIDevice; inline;
+begin
+ {}
+ Result:=PSPIDevice(DeviceFindByDescription(Description));
 end;
        
 {==============================================================================}

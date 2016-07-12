@@ -449,6 +449,8 @@ function SCSIDeviceRegister(SCSI:PSCSIDevice):LongWord;
 function SCSIDeviceDeregister(SCSI:PSCSIDevice):LongWord;
 
 function SCSIDeviceFind(SCSIId:LongWord):PSCSIDevice;
+function SCSIDeviceFindByName(const Name:String):PSCSIDevice; inline;
+function SCSIDeviceFindByDescription(const Description:String):PSCSIDevice; inline;
 function SCSIDeviceEnumerate(Callback:TSCSIEnumerate;Data:Pointer):LongWord;
  
 function SCSIDeviceNotification(SCSI:PSCSIDevice;Callback:TSCSINotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -929,6 +931,22 @@ begin
     CriticalSectionUnlock(SCSITableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function SCSIDeviceFindByName(const Name:String):PSCSIDevice; inline;
+begin
+ {}
+ Result:=PSCSIDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function SCSIDeviceFindByDescription(const Description:String):PSCSIDevice; inline;
+begin
+ {}
+ Result:=PSCSIDevice(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}

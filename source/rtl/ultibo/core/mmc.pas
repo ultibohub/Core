@@ -1831,6 +1831,8 @@ function MMCDeviceRegister(MMC:PMMCDevice):LongWord;
 function MMCDeviceDeregister(MMC:PMMCDevice):LongWord;
 
 function MMCDeviceFind(MMCId:LongWord):PMMCDevice;
+function MMCDeviceFindByName(const Name:String):PMMCDevice; inline;
+function MMCDeviceFindByDescription(const Description:String):PMMCDevice; inline;
 function MMCDeviceEnumerate(Callback:TMMCEnumerate;Data:Pointer):LongWord;
 
 function MMCDeviceNotification(MMC:PMMCDevice;Callback:TMMCNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -4716,6 +4718,22 @@ begin
     CriticalSectionUnlock(MMCDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function MMCDeviceFindByName(const Name:String):PMMCDevice; inline;
+begin
+ {}
+ Result:=PMMCDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function MMCDeviceFindByDescription(const Description:String):PMMCDevice; inline;
+begin
+ {}
+ Result:=PMMCDevice(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}

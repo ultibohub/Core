@@ -878,6 +878,10 @@ function BCM2708WatchdogGetRemain(Watchdog:PWatchdogDevice):LongWord;
 function BCM2708FramebufferAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 function BCM2708FramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 
+function BCM2708FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+
+function BCM2708FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+
 function BCM2708FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 
 {==============================================================================}
@@ -1134,7 +1138,7 @@ begin
      {Device}
      BCM2708SPI0.SPI.Device.DeviceBus:=DEVICE_BUS_MMIO;
      BCM2708SPI0.SPI.Device.DeviceType:=SPI_TYPE_NONE;
-     BCM2708SPI0.SPI.Device.DeviceFlags:=SPI_FLAG_4WIRE or SPI_FLAG_3WIRE or SPI_FLAG_LOSSI or SPI_FLAG_CPOL or SPI_FLAG_CPHA or SPI_FLAG_CSPOL or SPI_FLAG_NO_CS;
+     BCM2708SPI0.SPI.Device.DeviceFlags:=SPI_FLAG_4WIRE or SPI_FLAG_3WIRE or SPI_FLAG_LOSSI or SPI_FLAG_CPOL or SPI_FLAG_CPHA or SPI_FLAG_CSPOL or SPI_FLAG_NO_CS or SPI_FLAG_DMA;
      BCM2708SPI0.SPI.Device.DeviceData:=nil;
      BCM2708SPI0.SPI.Device.DeviceDescription:=BCM2708_SPI0_DESCRIPTION;
      {SPI}
@@ -1522,16 +1526,19 @@ begin
      {Device}
      BCM2708Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2708Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-     BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_NONE;
+     BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK;
      BCM2708Framebuffer.Framebuffer.Device.DeviceData:=nil;
      {Framebuffer}
      BCM2708Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
      BCM2708Framebuffer.Framebuffer.DeviceAllocate:=BCM2708FramebufferAllocate;
      BCM2708Framebuffer.Framebuffer.DeviceRelease:=BCM2708FramebufferRelease;
+     BCM2708Framebuffer.Framebuffer.DeviceBlank:=BCM2708FramebufferBlank;
+     BCM2708Framebuffer.Framebuffer.DeviceCommit:=BCM2708FramebufferCommit;
      BCM2708Framebuffer.Framebuffer.DeviceSetProperties:=BCM2708FramebufferSetProperties;
      {Driver}
      
      {Setup Flags}
+     if BCM2708FRAMEBUFFER_CACHED then BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2708Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
      if BCM2708FRAMEBUFFER_CACHED then BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2708Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
      if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2708Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP; 
      
@@ -7236,6 +7243,49 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
+end;
+
+{==============================================================================}
+
+function BCM2708FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Blank}
+ if Blank then
+  begin
+   Result:=FramebufferSetState(0);
+  end
+ else
+  begin
+   Result:=FramebufferSetState(1);
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2708FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Flags}
+ if ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0) and BCM2708FRAMEBUFFER_CACHED then
+  begin
+   {Clean Cache}
+   CleanAndInvalidateDataCacheRange(Address,Size);
+  end;
+ 
+ Result:=ERROR_SUCCESS; 
 end;
 
 {==============================================================================}

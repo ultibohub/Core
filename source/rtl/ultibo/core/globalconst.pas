@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '29/6/2016';
+ ULTIBO_RELEASE_DATE             = '12/7/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.051';
+ ULTIBO_RELEASE_VERSION          = '1.2.073';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 051;
+ ULTIBO_RELEASE_VERSION_REVISION = 073;
  
 {==============================================================================}
 const
@@ -863,6 +863,20 @@ const
  COLOR_CYAN      = $FF00FFFF;
  COLOR_WHITE     = $FFFFFFFF;
  
+ {Color format constants}
+ COLOR_FORMAT_ARGB32 = 0; {32 bits per pixel Alpha/Red/Green/Blue (ARGB8888)}
+ COLOR_FORMAT_ABGR32 = 1; {32 bits per pixel Alpha/Blue/Green/Red (ABGR8888)}
+ COLOR_FORMAT_RGBA32 = 2; {32 bits per pixel Red/Green/Blue/Alpha (RGBA8888)}
+ COLOR_FORMAT_BGRA32 = 3; {32 bits per pixel Blue/Green/Red/Alpha (BGRA8888)}
+ COLOR_FORMAT_RGB24  = 4; {24 bits per pixel Red/Green/Blue (RGB888)}
+ COLOR_FORMAT_BGR24  = 5; {24 bits per pixel Blue/Green/Red (BGR888)}
+ COLOR_FORMAT_RGB18  = 6; {18 bits per pixel Red/Green/Blue (RGB666)}
+ COLOR_FORMAT_RGB16  = 7; {16 bits per pixel Red/Green/Blue (RGB565)}
+ COLOR_FORMAT_RGB15  = 8; {15 bits per pixel Red/Green/Blue (RGB555)}
+ COLOR_FORMAT_RGB8   = 9; {8 bits per pixel Red/Green/Blue (RGB332)} 
+ 
+ COLOR_FORMAT_UNKNOWN = LongWord(-1); 
+ 
 {==============================================================================}
 const
  {Universal size constants (From /include/linux/sizes.h)}
@@ -1494,6 +1508,13 @@ const
  FRAMEBUFFER_MODE_ENABLED  = 0;  {Alpha channel enabled (0 = Fully opaque)}
  FRAMEBUFFER_MODE_REVERSED = 1;  {Alpha channel reversed (0 = Fully transparent)}
  FRAMEBUFFER_MODE_IGNORED  = 2;  {Alpha channel ignored}
+ 
+const 
+ {Framebuffer Rotation constants}
+ FRAMEBUFFER_ROTATION_0   = 0;   {No rotation}
+ FRAMEBUFFER_ROTATION_90  = 1;   {90 degree rotation}
+ FRAMEBUFFER_ROTATION_180 = 2;   {180 degree rotation}
+ FRAMEBUFFER_ROTATION_270 = 3;   {270 degree rotation}
  
 {==============================================================================}
 const

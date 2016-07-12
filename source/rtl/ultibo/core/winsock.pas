@@ -898,6 +898,12 @@ begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to allocate TLS index');
   end;
  
+ {Set WSMaxSockets}
+ WSMaxSockets:=WINSOCK_MAX_SOCKETS;
+ 
+ {Set WSMaxDatagram}
+ WSMaxDatagram:=WINSOCK_MAX_UDP;
+ 
  WSInitialized:=True;
 end;
 

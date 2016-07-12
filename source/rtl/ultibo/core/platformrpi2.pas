@@ -426,6 +426,10 @@ function RPi2FramebufferDeviceAllocate(Framebuffer:PFramebufferDevice;Properties
 function RPi2FramebufferDeviceAllocateAlt(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 function RPi2FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
 
+function RPi2FramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+
+function RPi2FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+
 function RPi2FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {$ENDIF}
 {==============================================================================}
@@ -1525,16 +1529,19 @@ begin
    {Device}
    RPi2Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
    RPi2Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-   RPi2Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_NONE;
+   RPi2Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK;
    RPi2Framebuffer.Device.DeviceData:=nil;
    {Framebuffer}
    RPi2Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
    RPi2Framebuffer.DeviceAllocate:=RPi2FramebufferDeviceAllocate;
    RPi2Framebuffer.DeviceRelease:=RPi2FramebufferDeviceRelease;
+   RPi2Framebuffer.DeviceBlank:=RPi2FramebufferDeviceBlank;
+   RPi2Framebuffer.DeviceCommit:=RPi2FramebufferDeviceCommit;
    RPi2Framebuffer.DeviceSetProperties:=RPi2FramebufferDeviceSetProperties;
    {Driver}
  
    {Setup Flags}
+   if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
    if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
    if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;
    
@@ -5023,7 +5030,8 @@ begin
   Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_BLANK_SCREEN;
   Tag.Header.Size:=SizeOf(TBCM2836MailboxTagBlankScreen) - SizeOf(TBCM2836MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
-  Tag.Request.State:=State; {BCM2836_MBOX_BLANK_SCREEN_REQ_ON}
+  Tag.Request.State:=0;
+  if State = 0 then Tag.Request.State:=BCM2836_MBOX_BLANK_SCREEN_REQ_ON;
  
   {Setup Footer}
   Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagBlankScreen)));
@@ -7877,6 +7885,49 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
+end;
+   
+{==============================================================================}
+   
+function RPi2FramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Blank}
+ if Blank then
+  begin
+   Result:=RPi2FramebufferSetState(0);
+  end
+ else
+  begin
+   Result:=RPi2FramebufferSetState(1);
+  end;
+end;
+
+{==============================================================================}
+
+function RPi2FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Check Flags}
+ if ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0) and BCM2709FRAMEBUFFER_CACHED then
+  begin
+   {Clean Cache}
+   CleanAndInvalidateDataCacheRange(Address,Size);
+  end;
+ 
+ Result:=ERROR_SUCCESS; 
 end;
    
 {==============================================================================}

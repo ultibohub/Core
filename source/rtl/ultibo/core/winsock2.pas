@@ -1745,6 +1745,7 @@ type
   
   function GetData:Pointer; virtual;
   function GetSize:Integer; virtual;
+  function GetCount:Integer; virtual;
   
   procedure SetBuffer(ABuffer:TWinsock2UDPServerBuffer); virtual;
   procedure SetLastError(ALastError:LongInt); virtual;
@@ -1759,6 +1760,7 @@ type
   
   property Data:Pointer read GetData;
   property Size:Integer read GetSize;
+  property Count:Integer read GetCount;
   
   function SendData(AData:Pointer;ACount:Integer):Integer; override;
   
@@ -1858,17 +1860,20 @@ type
   FActive:Boolean;
   FData:Pointer;
   FSize:Integer;
+  FCount:Integer;
   {}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
   
   function GetActive:Boolean;
   procedure SetActive(AActive:Boolean);
+  procedure SetCount(ACount:Integer);
  public
   {}
   property Active:Boolean read GetActive write SetActive;
   property Data:Pointer read FData;
   property Size:Integer read FSize;
+  property Count:Integer read FCount write SetCount;
  end;
  
  TWinsock2UDPServerBuffers = class(TWinsock2SocketBuffers)
@@ -1899,7 +1904,7 @@ type
   procedure ReleaseBuffer(ABuffer:TWinsock2UDPServerBuffer);
 
   procedure DeleteAll;
-  function Delete(ABuffer:TWinsock2UDPServerBuffer):Boolean; //To Do //Remove ? //Not Used ?
+  function Delete(ABuffer:TWinsock2UDPServerBuffer):Boolean;
  end;
  
  TUDPExecuteEvent = function(AThread:TWinsock2UDPServerThread):Boolean of Object;
@@ -1937,6 +1942,8 @@ type
   procedure SetLastError(ALastError:LongInt); virtual;
 
   function DoExecute(AThread:TWinsock2UDPServerThread):Boolean; virtual;
+  
+  function SendToSocketEx(AHandle:THandle;ASockAddr:PSockAddr;ASockLen:Integer;AData:Pointer;ASize:Integer;var ACount:Integer):LongInt; override;
  public
   {}
   property Active:Boolean read FActive write SetActive;
@@ -1947,8 +1954,6 @@ type
   property OnExecute:TUDPExecuteEvent read FOnExecute write FOnExecute;
   property OnCreateThread:TUDPCreateThreadEvent read FOnCreateThread write FOnCreateThread;
   property OnCreateBuffer:TUDPCreateBufferEvent read FOnCreateBuffer write FOnCreateBuffer;
-  
-  //To Do //SendToSocket(Ex) //make public and override to apply lock
  end;
  
 {==============================================================================}
@@ -7751,6 +7756,18 @@ begin
 end;
   
 {==============================================================================}
+  
+function TWinsock2UDPServer.GetCount:Integer;   
+begin
+ {}
+ Result:=0;
+ 
+ if FBuffer = nil then Exit;
+ 
+ Result:=FBuffer.Count;
+end;
+
+{==============================================================================}
 
 procedure TWinsock2UDPServer.SetBuffer(ABuffer:TWinsock2UDPServerBuffer); 
 begin
@@ -7771,13 +7788,18 @@ end;
 function TWinsock2UDPServer.SendData(AData:Pointer;ACount:Integer):Integer; 
 begin
  {}
- Result:=0;
- FLastError:=WSANOTINITIALISED;
- if WS2StartupError <> ERROR_SUCCESS then Exit;
- 
- //To Do //See: TWinsock2UDPSocket.SendData 
-         //See: TWinshoeUDPServer.SendBuffer
-                       
+ if FUseListener then
+  begin
+   Result:=0;
+   FLastError:=WSAEINVAL;
+   if FListener = nil then Exit; 
+  
+   Result:=FListener.SendData(AData,ACount);
+  end
+ else
+  begin
+   Result:=inherited SendData(AData,ACount);
+  end;  
 end;
 
 {==============================================================================}
@@ -7785,13 +7807,18 @@ end;
 function TWinsock2UDPServer.SendDataTo(const AHost:String;APort:Word;AData:Pointer;ACount:Integer):Integer; 
 begin
  {}
- Result:=0;
- FLastError:=WSANOTINITIALISED;
- if WS2StartupError <> ERROR_SUCCESS then Exit;
- 
- //To Do //See: TWinsock2UDPSocket.SendDataTo 
-         //See: TWinshoeUDPServer.SendBuffer
-                       
+ if FUseListener then
+  begin
+   Result:=0;
+   FLastError:=WSAEINVAL;
+   if FListener = nil then Exit; 
+  
+   Result:=FListener.SendDataTo(AHost,APort,AData,ACount);
+  end
+ else
+  begin
+   Result:=inherited SendDataTo(AHost,APort,AData,ACount);
+  end;  
 end;
 
 {==============================================================================}
@@ -7962,7 +7989,6 @@ end;
 
 procedure TWinsock2UDPListenerThread.Execution; 
 var
- Count:Integer;
  Success:Boolean;
  SockAddr:PSockAddr;
  SockAddrLength:Integer;
@@ -7990,14 +8016,14 @@ begin
   try
    {RecvFrom}
    FListener.SetLastError(ERROR_SUCCESS);
-   Count:=Winsock2.recvfrom(FListener.Handle,Buffer.Data^,Buffer.Size,0,SockAddr^,SockAddrLength); 
-   if Count = SOCKET_ERROR then
+   Buffer.Count:=Winsock2.recvfrom(FListener.Handle,Buffer.Data^,Buffer.Size,0,SockAddr^,SockAddrLength); 
+   if Buffer.Count = SOCKET_ERROR then
     begin
      FListener.SetLastError(Winsock2.WSAGetLastError);
     end
    else
     begin
-     if Count = 0 then
+     if Buffer.Count = 0 then
       begin
        FListener.SetLastError(ERROR_SUCCESS);
       end
@@ -8283,6 +8309,7 @@ begin
  FActive:=False;
  FData:=nil;
  FSize:=ASize;
+ FCount:=0;
  
  if FSize <> 0 then FData:=GetMem(FSize);
 end;
@@ -8340,6 +8367,18 @@ begin
  if not AcquireLock then Exit;
 
  FActive:=AActive;
+
+ ReleaseLock;
+end;
+   
+{==============================================================================}
+   
+procedure TWinsock2UDPServerBuffer.SetCount(ACount:Integer);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FCount:=ACount;
 
  ReleaseLock;
 end;
@@ -8491,7 +8530,8 @@ procedure TWinsock2UDPServerBuffers.ReleaseBuffer(ABuffer:TWinsock2UDPServerBuff
 begin
  {}
  if ABuffer = nil then Exit;
- 
+
+ ABuffer.Count:=0; 
  ABuffer.Active:=False;
 
  if Count > FMax then 
@@ -8519,7 +8559,7 @@ begin
 end;
 
 {==============================================================================}
-//To Do //Remove ? //Not Used ?
+
 function TWinsock2UDPServerBuffers.Delete(ABuffer:TWinsock2UDPServerBuffer):Boolean;
 begin
  {}
@@ -8659,6 +8699,19 @@ begin
 end;
 
 {==============================================================================}
+
+function TWinsock2UDPListener.SendToSocketEx(AHandle:THandle;ASockAddr:PSockAddr;ASockLen:Integer;AData:Pointer;ASize:Integer;var ACount:Integer):LongInt;
+begin
+ {}
+ AcquireLock;
+ try
+  Result:=inherited SendToSocketEx(AHandle,ASockAddr,ASockLen,AData,ASize,ACount);
+ finally
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Initialization Functions}
 procedure WS2Init;
@@ -8687,6 +8740,12 @@ begin
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to allocate TLS index');
   end;
+ 
+ {Set WS2MaxSockets}
+ WS2MaxSockets:=WINSOCK2_MAX_SOCKETS;
+ 
+ {Set WS2MaxDatagram}
+ WS2MaxDatagram:=WINSOCK2_MAX_UDP;
  
  WS2Initialized:=True;
 end;

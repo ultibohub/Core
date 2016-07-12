@@ -76,8 +76,8 @@ const
  PL2303_MAX_FLOW = SERIAL_FLOW_DSR_DTR;
  
  {PL2303 device models}
- PL2303_TYPE_01 = 0;	{Type 0 and 1 (difference unknown)}
- PL2303_TYPE_HX = 1;	{HX version of the PL2303 chip}
+ PL2303_TYPE_01 = 0; {Type 0 and 1 (difference unknown)}
+ PL2303_TYPE_HX = 1; {HX version of the PL2303 chip}
  
  {PL2303 Bulk IN/OUT sizes}
  PL2303_BULK_IN_SIZE  = 256;
@@ -153,7 +153,7 @@ const
   3000000,
   6000000);
  
- {Vendor and device ID constants}
+ {PL2303 Vendor and Product ID constants}
  PL2303_VENDOR_ID               = $067b;
  PL2303_PRODUCT_ID              = $2303;
  PL2303_PRODUCT_ID_RSAQ2        = $04bb;
@@ -295,6 +295,7 @@ const
  PL2303_SMART_VENDOR_ID         = $0b8c;
  PL2303_SMART_PRODUCT_ID        = $2303;
  
+ {PL2303 Device ID constants}
  PL2303_DEVICE_ID_COUNT = 54; {Number of supported Device IDs}
  
  PL2303_DEVICE_ID:array[0..PL2303_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
@@ -364,6 +365,7 @@ type
   Model:LongWord;                           {Device model (eg PL2303_TYPE_01)}
   Quirks:LongWord;                          {Unusual behaviours of specific chip versions}
   Control:LongWord;                         {Status of the control lines RTS and DTR}
+  TransmitActive:LongBool;                  {True if a Transmit request is currently in progress}
   ReceiveRequest:PUSBRequest;               {USB request Bulk IN Endpoint}
   ReceiveEndpoint:PUSBEndpointDescriptor;   {PL2303 Bulk IN Endpoint}
   TransmitRequest:PUSBRequest;              {USB request for Bulk OUT Endpoint}
@@ -746,6 +748,9 @@ begin
    {Update Pending}
    Dec(PPL2303SerialDevice(Serial).PendingCount);
    
+   {Cancel Interrupt Request}
+   USBRequestCancel(PPL2303SerialDevice(Serial).InterruptRequest);
+   
    {Release Receive}
    FreeMem(Serial.Receive.Data);
 
@@ -1058,7 +1063,7 @@ begin
         end;
         
        {Check Empty}
-       if Empty then
+       if Empty and not(PPL2303SerialDevice(Serial).TransmitActive) then
         begin
          {Start Transmit}
          PL2303TransmitStart(PPL2303SerialDevice(Serial).TransmitRequest);
@@ -1321,7 +1326,6 @@ function PL2303DriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord
 {Interrface: The USB interface to unbind from (or nil for whole device)}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
- Message:TMessage;
  Serial:PPL2303SerialDevice;
 begin
  {}
@@ -1409,7 +1413,7 @@ begin
         {$ENDIF}
         
         {Update Status}
-        Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus and not(PL2303_UART_STATE_TRANSIENT_MASK);
+        Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus and not(SERIAL_STATUS_BREAK_ERROR or SERIAL_STATUS_PARITY_ERROR or SERIAL_STATUS_FRAMING_ERROR or SERIAL_STATUS_OVERRUN_ERROR);
         
         {Check Size}
         if Request.ActualSize > 0 then
@@ -1600,6 +1604,9 @@ begin
    {Update Pending}
    Inc(Serial.PendingCount);
  
+   {Set Active}
+   Serial.TransmitActive:=True;
+ 
    {$IFDEF PL2303_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Submitting transmit request');
    {$ENDIF}
@@ -1609,6 +1616,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed to submit transmit request: ' + USBStatusToString(Status));
+   
+     {Reset Active}
+     Serial.TransmitActive:=False;
    
      {Update Pending}
      Dec(Serial.PendingCount);
@@ -1666,6 +1676,9 @@ begin
         Inc(Serial.Serial.TransmitErrors); 
        end;
       
+      {Reset Active}
+      Serial.TransmitActive:=False;
+      
       {Update Pending}
       Dec(Serial.PendingCount); 
       
@@ -1716,10 +1729,6 @@ procedure PL2303TransmitComplete(Request:PUSBRequest);
 {Called when a USB request to the PL2303 bulk OUT endpoint completes}
 {Request: The USB request which has completed}
 {Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
-var
- Status:LongWord;
- Message:TMessage;
- Serial:PPL2303SerialDevice;
 begin
  {}
  {Check Request}
@@ -1800,9 +1809,17 @@ begin
              begin
               Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_CTS;
              end;
+            if (State and PL2303_UART_DCD) <> 0 then
+             begin
+              Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_DCD;
+             end;
             if (State and PL2303_UART_DSR) <> 0 then
              begin
               Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_DSR;
+             end;
+            if (State and PL2303_UART_RING) <> 0 then
+             begin
+              Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_RI;
              end;
            end;
            
