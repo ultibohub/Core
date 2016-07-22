@@ -1471,7 +1471,6 @@ function USBRequestAllocate(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Ca
 function USBRequestAllocateEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Callback:TUSBRequestCompleted;var Data:Pointer;Size:LongWord;DriverData:Pointer):PUSBRequest;
 function USBRequestRelease(Request:PUSBRequest):LongWord;
 function USBRequestInitialize(Request:PUSBRequest;Callback:TUSBRequestCompleted;Data:Pointer;Size:LongWord;DriverData:Pointer):LongWord;
-function USBRequestInitializeOld(Request:PUSBRequest):LongWord; //To Do //Remove (Modify SMSC95XX first)
 
 function USBRequestSubmit(Request:PUSBRequest):LongWord;
 function USBRequestCancel(Request:PUSBRequest):LongWord;
@@ -5532,64 +5531,64 @@ begin
      {Set Flags}
      Flags:=Flags or USB_REQUEST_FLAG_NOCACHE;
     end;
-  
-   {Check Host Alignment}
-   if Align(Buffer,Device.Host.Alignment) = Buffer then
-    begin
-     {Set Flags}
-     Flags:=Flags or USB_REQUEST_FLAG_ALIGNED;
-    end;
-   
-   {Check Host Multiplier}
-   if RoundUp(Size,Device.Host.Multiplier) = Size then
-    begin
-     {Set Flags}
-     Flags:=Flags or USB_REQUEST_FLAG_SIZED;
-    end
-   else
-    begin
-     {Get Heap Size}
-     HeapSize:=MemSize(Buffer);
-     if HeapSize <> 0 then
-      begin
-       {Check Host Multiplier}
-       if RoundUp(HeapSize,Device.Host.Multiplier) = HeapSize then
-        begin
-         {Set Flags}
-         Flags:=Flags or USB_REQUEST_FLAG_SIZED;
-        end;
-      end;  
-    end;    
-   
-   {Check Host Flags}
-   if (Device.Host.Device.DeviceFlags and USBHOST_FLAG_SHARED) = USBHOST_FLAG_SHARED then
-    begin
-     {Check Flags}
-     if (Flags and (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
-      begin
-       {Set Flags}
-       Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
-      end;
-    end
-   else if (Device.Host.Device.DeviceFlags and USBHOST_FLAG_NOCACHE) = USBHOST_FLAG_NOCACHE then  
-    begin
-     {Check Flags}
-     if (Flags and (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
-      begin
-       {Set Flags}
-       Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
-      end;
-    end
-   else
-    begin
-     {Check Flags}
-     if (Flags and (USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
-      begin
-       {Set Flags}
-       //Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE; //Testing
-      end; 
-    end;    
   end;
+ 
+ {Check Host Alignment}
+ if Align(Buffer,Device.Host.Alignment) = Buffer then
+  begin
+   {Set Flags}
+   Flags:=Flags or USB_REQUEST_FLAG_ALIGNED;
+  end;
+ 
+ {Check Host Multiplier}
+ if RoundUp(Size,Device.Host.Multiplier) = Size then
+  begin
+   {Set Flags}
+   Flags:=Flags or USB_REQUEST_FLAG_SIZED;
+  end
+ else
+  begin
+   {Get Heap Size}
+   HeapSize:=MemSize(Buffer);
+   if HeapSize <> 0 then
+    begin
+     {Check Host Multiplier}
+     if RoundUp(HeapSize,Device.Host.Multiplier) = HeapSize then
+      begin
+       {Set Flags}
+       Flags:=Flags or USB_REQUEST_FLAG_SIZED;
+      end;
+    end;  
+  end;    
+ 
+ {Check Host Flags}
+ if (Device.Host.Device.DeviceFlags and USBHOST_FLAG_SHARED) = USBHOST_FLAG_SHARED then
+  begin
+   {Check Flags}
+   if (Flags and (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_SHARED or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
+    begin
+     {Set Flags}
+     Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
+    end;
+  end
+ else if (Device.Host.Device.DeviceFlags and USBHOST_FLAG_NOCACHE) = USBHOST_FLAG_NOCACHE then  
+  begin
+   {Check Flags}
+   if (Flags and (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_NOCACHE or USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
+    begin
+     {Set Flags}
+     Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
+    end;
+  end
+ else
+  begin
+   {Check Flags}
+   if (Flags and (USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED)) = (USB_REQUEST_FLAG_ALIGNED or USB_REQUEST_FLAG_SIZED) then
+    begin
+     {Set Flags}
+     Flags:=Flags or USB_REQUEST_FLAG_COMPATIBLE;
+    end; 
+  end;    
   
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
@@ -5816,27 +5815,6 @@ begin
  Result:=USB_STATUS_SUCCESS;   
 end;
 
-{==============================================================================}
-//To Do //Remove (Modify SMSC95XX first)
-function USBRequestInitializeOld(Request:PUSBRequest):LongWord;
-{Initialize a USB request}
-{Request: The request to be initialized}
-{Return: USB_STATUS_SUCCESS on success or another error code on failure}
-begin
- {}
- Result:=USB_STATUS_INVALID_PARAMETER;
- 
- if Request = nil then Exit;
- 
- FillChar(Request^,SizeOf(TUSBRequest),0);
- 
- Request.ResubmitThread:=INVALID_HANDLE_VALUE; 
- Request.ResubmitSemaphore:=INVALID_HANDLE_VALUE;
- 
- {Return Result}
- Result:=USB_STATUS_SUCCESS;
-end;
-//To Do //Remove (Modify SMSC95XX first)
 {==============================================================================}
 
 function USBRequestSubmit(Request:PUSBRequest):LongWord;

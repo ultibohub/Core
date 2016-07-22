@@ -844,7 +844,7 @@ begin
       if not(DMA_CACHE_COHERENT) then
        begin
         {Clean Cache (Dest)}
-        CleanDataCacheRange(LongWord(Buffer),Size * Height);
+        CleanDataCacheRange(LongWord(Buffer),(Size + Skip) * Height);
        end;
 
       {Create Data}

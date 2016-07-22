@@ -51624,7 +51624,6 @@ begin
 
  {Write File}
  Result:=FileSysDriver.FileWrite(Handle,Address^,Len);
- //if Result = 0 then //TestingEOF
  if Result = -1 then
   begin
    InOutRes:=6;
@@ -51647,7 +51646,6 @@ begin
 
  {Read File}
  Result:=FileSysDriver.FileRead(Handle,Address^,Len);
- //if Result = 0 then //TestingEOF
  if Result = -1 then
   begin
    InOutRes:=6;

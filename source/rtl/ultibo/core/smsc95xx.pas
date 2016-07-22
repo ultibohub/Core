@@ -92,8 +92,10 @@ const
  SMSC95XX_HS_USB_PKT_SIZE = 512;
  SMSC95XX_FS_USB_PKT_SIZE = 64;
  
- SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE = (16 * 1024 + 5 * SMSC95XX_HS_USB_PKT_SIZE); 
- SMSC95XX_DEFAULT_FS_BURST_CAP_SIZE = (6 * 1024 + 33 * SMSC95XX_FS_USB_PKT_SIZE); 
+ SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE = (16 * 1024) + (5 * SMSC95XX_HS_USB_PKT_SIZE); 
+ SMSC95XX_DEFAULT_FS_BURST_CAP_SIZE = (6 * 1024) + (33 * SMSC95XX_FS_USB_PKT_SIZE); 
+ 
+ SMSC95XX_MAX_SINGLE_PACKET_SIZE = 2048; {Maximum size of a bulk IN receive when burst cap and multiple frames is not in use}
  
  SMSC95XX_DEFAULT_BULK_IN_DELAY = $2000;
  
@@ -617,7 +619,7 @@ begin
      end;
      
     {Create Transmit Buffer}
-    Network.TransmitBuffer:=BufferCreate(SizeOf(TUSBRequest) + ETHERNET_MAX_PACKET_SIZE + SMSC95XX_TX_OVERHEAD,SMSC95XX_MAX_TX_REQUESTS);
+    Network.TransmitBuffer:=BufferCreate(SizeOf(TUSBRequest),SMSC95XX_MAX_TX_REQUESTS);
     if Network.TransmitBuffer = INVALID_HANDLE_VALUE then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to create transmit buffer');
@@ -648,14 +650,10 @@ begin
       Request:=BufferGet(Network.TransmitBuffer);
       
       {Initialize Request}
-      USBRequestInitializeOld(Request); //To Do //Remove
-      
-      {Initialize Request}
       Request.Device:=Device;
       Request.Endpoint:=PSMSC95XXNetworkDevice(Network).TransmitEndpoint;
-      Request.Data:=Pointer(PtrUInt(Request) + PtrUInt(SizeOf(TUSBRequest)));
-      Request.Callback:=SMSC95XXTransmitComplete;
-      Request.DriverData:=Network;
+      Request.Data:=USBBufferAllocate(Device,ETHERNET_MAX_PACKET_SIZE + SMSC95XX_TX_OVERHEAD);
+      USBRequestInitialize(Request,SMSC95XXTransmitComplete,Request.Data,ETHERNET_MAX_PACKET_SIZE + SMSC95XX_TX_OVERHEAD,Network);
       
       Requests[Count]:=Request;
      end;
@@ -691,7 +689,7 @@ begin
       {Update Pending}
       Inc(PSMSC95XXNetworkDevice(Network).PendingCount);
        
-      {$IFDEF USB_DEBUG}
+      {$IFDEF SMSC95XX_DEBUG}
       if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Submitting receive request');
       {$ENDIF}
       
@@ -723,8 +721,11 @@ begin
     Device.LastError:=USB_STATUS_SUCCESS;
     //To Do //Change to individual functions
     SMSC95XXSetRegisterBits(Device,SMSC95XX_LED_GPIO_CONFIG,SMSC95XX_LED_GPIO_CONFIG_SPD_LED or SMSC95XX_LED_GPIO_CONFIG_LNK_LED or SMSC95XX_LED_GPIO_CONFIG_FDX_LED);
+    
     SMSC95XXSetRegisterBits(Device,SMSC95XX_MAC_CONTROL,SMSC95XX_MAC_CONTROL_TX_ENABLE or SMSC95XX_MAC_CONTROL_RX_ENABLE);
+    
     SMSC95XXWriteRegister(Device,SMSC95XX_TX_CONFIG,SMSC95XX_TX_CONFIG_ON);
+    
     Status:=Device.LastError;
     if Status <> USB_STATUS_SUCCESS then
      begin
@@ -797,7 +798,7 @@ begin
     {Check Pending}
     if PSMSC95XXNetworkDevice(Network).PendingCount <> 0 then
      begin
-      {$IFDEF USB_DEBUG}
+      {$IFDEF SMSC95XX_DEBUG}
       if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Waiting for ' + IntToStr(PSMSC95XXNetworkDevice(Network).PendingCount) + ' pending requests to complete');
       {$ENDIF}
 
@@ -823,15 +824,24 @@ begin
     NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_CLOSE); 
        
     {Disable Transmit and Receive}
-    Device.LastError:=USB_STATUS_SUCCESS;
-    //To Do //Change to individual functions
-    SMSC95XXWriteRegister(Device,SMSC95XX_TX_CONFIG,SMSC95XX_TX_CONFIG_STOP);
-    SMSC95XXClearRegisterBits(Device,SMSC95XX_MAC_CONTROL,SMSC95XX_MAC_CONTROL_TX_ENABLE or SMSC95XX_MAC_CONTROL_RX_ENABLE);
-    SMSC95XXClearRegisterBits(Device,SMSC95XX_LED_GPIO_CONFIG,SMSC95XX_LED_GPIO_CONFIG_SPD_LED or SMSC95XX_LED_GPIO_CONFIG_LNK_LED or SMSC95XX_LED_GPIO_CONFIG_FDX_LED);
-    Status:=Device.LastError;
+    Status:=SMSC95XXWriteRegister(Device,SMSC95XX_TX_CONFIG,SMSC95XX_TX_CONFIG_STOP);
+    if Status <> USB_STATUS_SUCCESS then
+     begin
+      if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to set transmit config stop: ' + USBStatusToString(Status));
+      Exit;
+     end;
+    
+    Status:=SMSC95XXClearRegisterBits(Device,SMSC95XX_MAC_CONTROL,SMSC95XX_MAC_CONTROL_TX_ENABLE or SMSC95XX_MAC_CONTROL_RX_ENABLE);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to disable transmit and receive: ' + USBStatusToString(Status));
+      Exit;
+     end;
+    
+    Status:=SMSC95XXClearRegisterBits(Device,SMSC95XX_LED_GPIO_CONFIG,SMSC95XX_LED_GPIO_CONFIG_SPD_LED or SMSC95XX_LED_GPIO_CONFIG_LNK_LED or SMSC95XX_LED_GPIO_CONFIG_FDX_LED);
+    if Status <> USB_STATUS_SUCCESS then
+     begin
+      if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to disable GPIO LEDs: ' + USBStatusToString(Status));
       Exit;
      end;
  
@@ -945,8 +955,8 @@ var
  Unlock:Boolean;
  Status:LongWord;
  Request:PUSBRequest;
- TransmitCommandA:LongWord;
- TransmitCommandB:LongWord;
+ //TransmitCommandA:LongWord;
+ //TransmitCommandB:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -986,18 +996,16 @@ begin
         beginning that contain device-specific flags.  These two fields are
         required, although we essentially just use them to tell the hardware we
         are transmitting one (1) packet with no extra bells and whistles}
-       TransmitCommandA:=Size or SMSC95XX_TX_COMMAND_A_FIRST_SEG or SMSC95XX_TX_COMMAND_A_LAST_SEG;
-       PLongWord(PtrUInt(Request.Data) + 0)^:=TransmitCommandA; //--LongWordNToBE(TransmitCommandA); //TestingRPi
-       //--PByte(PtrUInt(Request.Data) + 0)^:=(TransmitCommandA shr 0) and $FF;   
-       //--PByte(PtrUInt(Request.Data) + 1)^:=(TransmitCommandA shr 8) and $FF;
-       //--PByte(PtrUInt(Request.Data) + 2)^:=(TransmitCommandA shr 16) and $FF;
-       //--PByte(PtrUInt(Request.Data) + 3)^:=(TransmitCommandA shr 24) and $FF;   //To Do //Isn't this just a LongSwap into a PLongWord ? //To Do BEtoN()
-       TransmitCommandB:=Size;
-       PLongWord(PtrUInt(Request.Data) + 4)^:=TransmitCommandB; //--LongWordNToBE(TransmitCommandB); //TestingRPi
-       //--PByte(PtrUInt(Request.Data) + 4)^:=(TransmitCommandB shr 0) and $FF;
-       //--PByte(PtrUInt(Request.Data) + 5)^:=(TransmitCommandB shr 8) and $FF;
-       //--PByte(PtrUInt(Request.Data) + 6)^:=(TransmitCommandB shr 16) and $FF;
-       //--PByte(PtrUInt(Request.Data) + 7)^:=(TransmitCommandB shr 24) and $FF;   //To Do //Isn't this just a LongSwap into a PLongWord ? //To Do BEtoN()
+       //TransmitCommandA:=Size or SMSC95XX_TX_COMMAND_A_FIRST_SEG or SMSC95XX_TX_COMMAND_A_LAST_SEG;
+       //PLongWord(PtrUInt(Request.Data) + 0)^:=LongWordNToLE(TransmitCommandA);
+       
+       PLongWord(PtrUInt(Request.Data) + 0)^:=LongWordNToLE(Size or SMSC95XX_TX_COMMAND_A_FIRST_SEG or SMSC95XX_TX_COMMAND_A_LAST_SEG);
+      
+       //TransmitCommandB:=Size;
+       //PLongWord(PtrUInt(Request.Data) + 4)^:=LongWordNToLE(TransmitCommandB);
+       
+       PLongWord(PtrUInt(Request.Data) + 4)^:=LongWordNToLE(Size);
+       
        System.Move(Buffer^,Pointer(PtrUInt(Request.Data) + PtrUInt(SMSC95XX_TX_OVERHEAD))^,Size); //To Do //Critical //Non copy transmit to be implemented !!
  
        {Update Request}
@@ -1006,7 +1014,7 @@ begin
        {Update Pending}
        Inc(PSMSC95XXNetworkDevice(Network).PendingCount);
     
-       {$IFDEF USB_DEBUG}
+       {$IFDEF SMSC95XX_DEBUG}
        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Submitting transmit request');
        {$ENDIF}
 
@@ -1286,13 +1294,16 @@ begin
  {Check Device}
  if Device = nil then Exit;
 
- {$IFDEF USB_DEBUG}
+ {$IFDEF SMSC95XX_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
  {$ENDIF}
  
  {Check Interface (Bind to device only)}
  if Interrface <> nil then
   begin
+   {$IFDEF SMSC95XX_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Interface bind not supported by driver');
+   {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1301,6 +1312,9 @@ begin
  {Check SMSC95XX Device}
  if SMSC95XXCheckDevice(Device) <> USB_STATUS_SUCCESS then
   begin
+   {$IFDEF SMSC95XX_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Device not found in supported device list');
+   {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1309,6 +1323,9 @@ begin
  {Check Device Speed}
  if Device.Speed <> USB_SPEED_HIGH then
   begin
+   {$IFDEF SMSC95XX_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Device speed is not USB_SPEED_HIGH');
+   {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1318,6 +1335,9 @@ begin
  NetworkInterface:=USBDeviceFindInterfaceByIndex(Device,0);
  if NetworkInterface = nil then
   begin
+   {$IFDEF SMSC95XX_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Device has no available interface');
+   {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1327,6 +1347,9 @@ begin
  ReceiveEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_BULK);
  if ReceiveEndpoint = nil then
   begin
+   {$IFDEF SMSC95XX_DEBUG}
+    if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Device has no BULK IN endpoint');
+   {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1336,6 +1359,9 @@ begin
  TransmitEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK);
  if TransmitEndpoint = nil then
   begin
+   {$IFDEF SMSC95XX_DEBUG}
+    if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Device has no BULK OUT endpoint');
+   {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1345,6 +1371,9 @@ begin
  InterruptEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_INTERRUPT);
  if InterruptEndpoint = nil then
   begin
+   {$IFDEF SMSC95XX_DEBUG}
+    if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Device has no INTERRUPT IN endpoint');
+   {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1353,15 +1382,15 @@ begin
  {Check Configuration}
  if Device.ConfigurationValue = 0 then
   begin
-   {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Device,'Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
+   {$IFDEF SMSC95XX_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
    {$ENDIF}
    
    {Set Configuration}
    Status:=USBDeviceSetConfiguration(Device,Device.Configuration.Descriptor.bConfigurationValue);
    if Status <> USB_STATUS_SUCCESS then
     begin
-     if USB_LOG_ENABLED then USBLogError(Device,'Failed to set device configuration: ' + USBStatusToString(Status));
+     if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to set device configuration: ' + USBStatusToString(Status));
      
      {Return Result}
      Result:=Status;
@@ -1369,39 +1398,77 @@ begin
     end;
   end;
  
- //Critical //Do this more sensibly //Same for NetworkOpen
- Device.LastError:=USB_STATUS_SUCCESS;
- 
  {Resetting the SMSC LAN95XX via its registers should not be necessary because the USB code already performed a reset on the USB port it's attached to}
  
  {Get MAC address}
  Address:=AllocMem(SizeOf(THardwareAddress));
  SMSC95XXGetMacAddress(Device,Address);
- {$IFDEF USB_DEBUG}
+ {$IFDEF SMSC95XX_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Default Address = ' + HardwareAddressToString(Address^));
  {$ENDIF}
+ 
  if CompareHardwareBroadcast(Address^) then
   begin
    {Set MAC address}
    Address^:=StringToHardwareAddress(SMSC95XX_MAC_ADDRESS); 
-   {$IFDEF USB_DEBUG}
+   {$IFDEF SMSC95XX_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Hardware Address = ' + HardwareAddressToString(Address^));
    {$ENDIF}
-   SMSC95XXSetMacAddress(Device,Address);
+   
+   Status:=SMSC95XXSetMacAddress(Device,Address);
+   if Status <> USB_STATUS_SUCCESS then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to set mac address: ' + USBStatusToString(Status));
+     FreeMem(Address);
+     
+     {Return Result}
+     Result:=USB_STATUS_DEVICE_UNSUPPORTED;
+     Exit;
+    end;
   end; 
  FreeMem(Address);
  
  {Allow multiple Ethernet frames to be received in a single USB transfer. Also set a couple flags of unknown function}
- SMSC95XXSetRegisterBits(Device,SMSC95XX_HW_CONFIG,SMSC95XX_HW_CONFIG_MEF or SMSC95XX_HW_CONFIG_BIR or SMSC95XX_HW_CONFIG_BCE);
+ Status:=SMSC95XXSetRegisterBits(Device,SMSC95XX_HW_CONFIG,SMSC95XX_HW_CONFIG_MEF or SMSC95XX_HW_CONFIG_BIR or SMSC95XX_HW_CONFIG_BCE);
+ if Status <> USB_STATUS_SUCCESS then
+  begin
+   if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to set hardware config: ' + USBStatusToString(Status));
+   
+   {Return Result}
+   Result:=USB_STATUS_DEVICE_UNSUPPORTED;
+   Exit;
+  end;
  
  {Set the maximum USB (not network) packets per USB Receive transfer. Required when SMSC95XX_HW_CONFIG_MEF is set}
- SMSC95XXWriteRegister(Device,SMSC95XX_BURST_CAP,SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE div SMSC95XX_HS_USB_PKT_SIZE);
- 
- {Check for error and return}
- if Device.LastError <> USB_STATUS_SUCCESS then
+ Status:=SMSC95XXWriteRegister(Device,SMSC95XX_BURST_CAP,SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE div SMSC95XX_HS_USB_PKT_SIZE);
+ if Status <> USB_STATUS_SUCCESS then
   begin
+   if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to set burst cap size: ' + USBStatusToString(Status));
+   
    {Return Result}
-   Result:=Device.LastError;
+   Result:=USB_STATUS_DEVICE_UNSUPPORTED;
+   Exit;
+  end;
+ 
+ {Set the USB Bulk IN delay (How long to delay a bulk IN request once a packet has been received)}
+ Status:=SMSC95XXWriteRegister(Device,SMSC95XX_BULK_IN_DELAY,SMSC95XX_DEFAULT_BULK_IN_DELAY);
+ if Status <> USB_STATUS_SUCCESS then
+  begin
+   if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to set bulk IN delay: ' + USBStatusToString(Status));
+   
+   {Return Result}
+   Result:=USB_STATUS_DEVICE_UNSUPPORTED;
+   Exit;
+  end;
+
+ {Set the Advanced flow control register with a default value}
+ Status:=SMSC95XXWriteRegister(Device,SMSC95XX_AFC_CONFIG,SMSC95XX_AFC_CONFIG_DEFAULT);
+ if Status <> USB_STATUS_SUCCESS then
+  begin
+   if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to set AFC config: ' + USBStatusToString(Status));
+   
+   {Return Result}
+   Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
  
@@ -1483,7 +1550,7 @@ begin
  {Check Driver}
  if Device.Driver <> SMSC95XXDriver then Exit;
  
- {$IFDEF USB_DEBUG}
+ {$IFDEF SMSC95XX_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
  {$ENDIF}
  
@@ -1539,7 +1606,7 @@ begin
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
-        {$IFDEF USB_DEBUG}
+        {$IFDEF SMSC95XX_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
       
@@ -1550,8 +1617,8 @@ begin
       {Check Result} 
       if Request.Status = USB_STATUS_SUCCESS then
        begin
-        {$IFDEF USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Receive complete');
+        {$IFDEF SMSC95XX_DEBUG}
+        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Receive complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
         {$ENDIF}
         
         Data:=Request.Data;
@@ -1560,13 +1627,12 @@ begin
         while Pointer(PtrUInt(Data) + SMSC95XX_RX_OVERHEAD + ETHERNET_HEADER_SIZE + ETHERNET_CRC_SIZE) <= DataEnd do
          begin
           {Get the Receive status word, which contains information about the next Ethernet frame}
-          //--ReceiveStatus:=(PByte(PtrUInt(Data) + 0)^ shl 0) or (PByte(PtrUInt(Data) + 1)^ shl 8) or (PByte(PtrUInt(Data) + 2)^ shl 16) or (PByte(PtrUInt(Data) + 3)^ shl 24); //To Do //Isn't this just a LongSwap from a PLongWord ? //To Do BEtoN()
-          ReceiveStatus:=PLongWord(PtrUInt(Data) + 0)^; //--LongWordBEToN(PLongWord(PtrUInt(Data) + 0)^); //TestingRPi
+          ReceiveStatus:=LongWordLEToN(PLongWord(PtrUInt(Data) + 0)^);
           
           {Extract FrameLength, which specifies the length of the next Ethernet frame from the MAC destination address to end of the
           CRC following the payload. (This does not include the Rx status word, which we instead account for in SMSC95XX_RX_OVERHEAD)}
           FrameLength:=(ReceiveStatus and SMSC95XX_RX_STATUS_FL) shr 16;
-     
+          
           {Check Receive Status and Frame Length}
           if ((ReceiveStatus and SMSC95XX_RX_STATUS_ES) <> 0) or ((FrameLength + SMSC95XX_RX_OVERHEAD) > (PtrUInt(DataEnd) - PtrUInt(Data))) or (FrameLength > (ETHERNET_MAX_PACKET_SIZE + ETHERNET_CRC_SIZE)) or (FrameLength < (ETHERNET_HEADER_SIZE + ETHERNET_CRC_SIZE)) then
            begin
@@ -1610,7 +1676,7 @@ begin
                 {Update Count}
                 Inc(Network.Network.Buffer.Count);
        
-                {$IFDEF USB_DEBUG}
+                {$IFDEF SMSC95XX_DEBUG}
                 if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Receiving packet (Length=' + IntToStr(Packet.Length) + ', Count=' + IntToStr(Network.Network.Buffer.Count) + ')');
                 {$ENDIF}
       
@@ -1655,7 +1721,7 @@ begin
           {Check Waiter}
           if Network.WaiterThread <> INVALID_HANDLE_VALUE then
            begin
-            {$IFDEF USB_DEBUG}
+            {$IFDEF SMSC95XX_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
             {$ENDIF}
             
@@ -1671,7 +1737,7 @@ begin
         {Update Pending}
         Inc(Network.PendingCount);
  
-        {$IFDEF USB_DEBUG}
+        {$IFDEF SMSC95XX_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Resubmitting receive request');
         {$ENDIF}
 
@@ -1742,7 +1808,7 @@ begin
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
-        {$IFDEF USB_DEBUG}
+        {$IFDEF SMSC95XX_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, setting transmit request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
       
@@ -1753,7 +1819,7 @@ begin
       {Check Result} 
       if Request.Status = USB_STATUS_SUCCESS then
        begin
-        {$IFDEF USB_DEBUG}
+        {$IFDEF SMSC95XX_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Transmit complete');
         {$ENDIF}
        end
@@ -1780,7 +1846,7 @@ begin
           {Check Waiter}
           if Network.WaiterThread <> INVALID_HANDLE_VALUE then
            begin
-            {$IFDEF USB_DEBUG}
+            {$IFDEF SMSC95XX_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
             {$ENDIF}
             
@@ -1843,6 +1909,8 @@ begin
     begin
      try
 
+      if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Interrupt complete'); //To Do
+      
       //To Do
  
      finally

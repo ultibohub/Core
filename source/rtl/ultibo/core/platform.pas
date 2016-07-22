@@ -823,12 +823,21 @@ type
  
 type
  {Prototypes for Console Handlers} 
+ TConsoleGetKey = function(var ACh:Char;AUserData:Pointer):Boolean;
+ TConsolePeekKey = function(var ACh:Char;AUserData:Pointer):Boolean;
+ 
  TConsoleWriteChar = function(ACh:Char;AUserData:Pointer):Boolean;
  TConsoleReadChar = function(var ACh:Char;AUserData:Pointer):Boolean;
+ TConsoleReadWideChar = function(var ACh:WideChar;AUserData:Pointer):Boolean;
  
  TConsoleHideMouse = function(AUserData:Pointer):Boolean;
  TConsoleShowMouse = function(X,Y:LongWord;AUserData:Pointer):Boolean;
  TConsoleReadMouse = function(var X,Y,Buttons:LongWord;AUserData:Pointer):Boolean;
+
+type 
+ {Prototypes for CodePage Handlers}
+ TCodePageToWideChar = function(Ch:Char):WideChar;
+ TWideCharToCodePage = function(Ch:WideChar):Char;
  
 type
  {Prototypes for Name Handlers}
@@ -1453,12 +1462,21 @@ var
 
 var
  {Console Handlers}
+ ConsoleGetKeyHandler:TConsoleGetKey;
+ ConsolePeekKeyHandler:TConsolePeekKey;
+ 
  ConsoleWriteCharHandler:TConsoleWriteChar;
  ConsoleReadCharHandler:TConsoleReadChar;
+ ConsoleReadWideCharHandler:TConsoleReadWideChar;
  
  ConsoleHideMouseHandler:TConsoleHideMouse;
  ConsoleShowMouseHandler:TConsoleShowMouse;
  ConsoleReadMouseHandler:TConsoleReadMouse;
+
+var
+ {CodePage Handlers}
+ CodePageToWideCharHandler:TCodePageToWideChar;
+ WideCharToCodePageHandler:TWideCharToCodePage;
  
 var
  {Name Handlers}
@@ -1998,12 +2016,21 @@ function TextIOReadData(ARead:TTextIOReadChar;AUserData:Pointer;ABuffer:PChar;AC
 
 {==============================================================================}
 {Console Functions}
+function ConsoleGetKey(var ACh:Char;AUserData:Pointer):Boolean; inline;
+function ConsolePeekKey(var ACh:Char;AUserData:Pointer):Boolean; inline;
+
 function ConsoleWriteChar(ACh:Char;AUserData:Pointer):Boolean; inline;
 function ConsoleReadChar(var ACh:Char;AUserData:Pointer):Boolean; inline;
+function ConsoleReadWideChar(var ACh:WideChar;AUserData:Pointer):Boolean; inline;
 
 function ConsoleHideMouse(AUserData:Pointer):Boolean; inline;
 function ConsoleShowMouse(X,Y:LongWord;AUserData:Pointer):Boolean; inline;
 function ConsoleReadMouse(var X,Y,Buttons:LongWord;AUserData:Pointer):Boolean; inline;
+
+{==============================================================================}
+{CodePage Functions}
+function CodePageToWideChar(Ch:Char):WideChar; inline;
+function WideCharToCodePage(Ch:WideChar):Char; inline;
 
 {==============================================================================}
 {Name Functions}
@@ -7538,6 +7565,40 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Console Functions}
+function ConsoleGetKey(var ACh:Char;AUserData:Pointer):Boolean; inline;
+begin
+ {}
+ if Assigned(ConsoleGetKeyHandler) then
+  begin
+   Result:=ConsoleGetKeyHandler(ACh,AUserData);
+  end
+ else
+  begin
+   ACh:=#0;
+   
+   Result:=False; {Default False}
+  end;  
+end;  
+
+{==============================================================================}
+
+function ConsolePeekKey(var ACh:Char;AUserData:Pointer):Boolean; inline;
+begin
+ {}
+ if Assigned(ConsolePeekKeyHandler) then
+  begin
+   Result:=ConsolePeekKeyHandler(ACh,AUserData);
+  end
+ else
+  begin
+   ACh:=#0;
+   
+   Result:=False; {Default False}
+  end;  
+end;  
+
+{==============================================================================}
+
 function ConsoleWriteChar(ACh:Char;AUserData:Pointer):Boolean; inline;
 begin
  {}
@@ -7559,6 +7620,23 @@ begin
  if Assigned(ConsoleReadCharHandler) then
   begin
    Result:=ConsoleReadCharHandler(ACh,AUserData);
+  end
+ else
+  begin
+   ACh:=#0;
+   
+   Result:=True; {Default True}
+  end;  
+end;  
+
+{==============================================================================}
+
+function ConsoleReadWideChar(var ACh:WideChar;AUserData:Pointer):Boolean; inline;
+begin
+ {}
+ if Assigned(ConsoleReadWideCharHandler) then
+  begin
+   Result:=ConsoleReadWideCharHandler(ACh,AUserData);
   end
  else
   begin
@@ -7615,6 +7693,39 @@ function ConsoleReadMouse(var X,Y,Buttons:LongWord;AUserData:Pointer):Boolean; i
    
    Result:=True; {Default True}
   end;  
+end;
+
+{==============================================================================}
+{==============================================================================}
+{CodePage Functions}
+function CodePageToWideChar(Ch:Char):WideChar; inline;
+begin
+ {}
+ if Assigned(CodePageToWideCharHandler) then
+  begin
+   Result:=CodePageToWideCharHandler(Ch);
+  end
+ else
+  begin
+   {Default}
+   Word(Result):=Byte(Ch);
+  end;  
+end;
+
+{==============================================================================}
+
+function WideCharToCodePage(Ch:WideChar):Char; inline;
+begin
+ {}
+ if Assigned(WideCharToCodePageHandler) then
+  begin
+   Result:=WideCharToCodePageHandler(Ch);
+  end
+ else
+  begin
+   {Default}
+   Byte(Result):=Word(Ch) and $FF;
+  end; 
 end;
 
 {==============================================================================}

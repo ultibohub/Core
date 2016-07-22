@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '12/7/2016';
+ ULTIBO_RELEASE_DATE             = '22/7/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.073';
+ ULTIBO_RELEASE_VERSION          = '1.2.089';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 073;
+ ULTIBO_RELEASE_VERSION_REVISION = 089;
  
 {==============================================================================}
 const
@@ -458,6 +458,13 @@ const
  KEY_CODE_THORN                = $00FE;
  KEY_CODE_DIAERESIS_Y          = $00FF;
 
+ {General Punctuation (2000-206F) (Partial, add extras as required)}
+ KEY_CODE_LEFT_QUOTE          = $2018;
+ KEY_CODE_RIGHT_QUOTE         = $2019;
+ 
+ {Currency Symbols (20A0-20CF) (Partial, add extras as required)}
+ KEY_CODE_EURO                = $20AC;
+ 
  {Private Area (E000-F8FF)}
  {Non Character Codes}
  KEY_CODE_CAPSLOCK            = $E000; 
@@ -572,8 +579,8 @@ const
  KEY_CODE_GUI                 = $E06D; 
  KEY_CODE_DOUBLE_AMPERSAND    = $E06E;  
  KEY_CODE_DOUBLE_PIPE         = $E06F;  
- 
- 
+ KEY_CODE_CENTER              = $E070;
+  
  KEY_CODE_TRANSLATE_START     = $0080; {Key codes below this are direct characters in all code pages}
  KEY_CODE_PRIVATE_START       = $E000; {Key codes in this range are private area mappings for non character keys}
  KEY_CODE_PRIVATE_END         = $F8FF;
@@ -676,7 +683,7 @@ const
  SCAN_CODE_KEYPAD_2                = 90;  {Keypad 2 and Down Arrow}  
  SCAN_CODE_KEYPAD_3                = 91;  {Keypad 3 and PageDn}                       
  SCAN_CODE_KEYPAD_4                = 92;  {Keypad 4 and Left Arrow}
- SCAN_CODE_KEYPAD_5                = 93;  {Keypad 5}
+ SCAN_CODE_KEYPAD_5                = 93;  {Keypad 5 and Center}
  SCAN_CODE_KEYPAD_6                = 94;  {Keypad 6 and Right Arrow}
  SCAN_CODE_KEYPAD_7                = 95;  {Keypad 7 and Home}
  SCAN_CODE_KEYPAD_8                = 96;  {Keypad 8 and Up Arrow}
@@ -832,7 +839,10 @@ const
  SCAN_CODE_GREATERTHAN             = 55;  {Keyboard . or >}
  SCAN_CODE_QUESTION                = 56;  {Keyboard / or ?}
  
- SCAN_CODE_ALTGR                   = 230; {Keyboard RightAlt}
+ SCAN_CODE_ALTGR                   = SCAN_CODE_RIGHT_ALT; {Keyboard RightAlt}
+ 
+ SCAN_CODE_KEYPAD_FIRST            = SCAN_CODE_NUMLOCK;
+ SCAN_CODE_KEYPAD_LAST             = SCAN_CODE_KEYPAD_PERIOD;
  
 {==============================================================================}
 const

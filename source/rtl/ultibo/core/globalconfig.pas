@@ -415,7 +415,7 @@ var
  SCHEDULER_FIQ_ENABLED:LongBool;                    {The Scheduler uses Fast Interrupt Requests (FIQ) instead of IRQ}
  SCHEDULER_SWI_ENABLED:LongBool;                    {The Scheduler uses Software Interrupts for rescheduling instead of direct context switch}
  
- SCHEDULER_SECONDARY_WAIT:LongBool = True;          {If True all secondary CPUs wait until initialization is completed}
+ SCHEDULER_SECONDARY_WAIT:LongBool = False;         {If True all secondary CPUs wait until initialization is completed}
  SCHEDULER_SECONDARY_DISABLED:LongBool;             {If True all secondary CPUs will be put to sleep during boot}
  
  SCHEDULER_IDLE_WAIT:LongBool;                      {If True then the idle loop will wait in low power state on each iteration (May affect utilization calculation)}
@@ -475,15 +475,17 @@ var
  CONSOLE_LINE_WRAP:LongBool = True;              {If True then wrap long lines to the next line when writing to the console (Sets CONSOLE_FLAG_LINE_WRAP on device / WINDOW_FLAG_LINE_WRAP on windows)}
  CONSOLE_AUTO_SCROLL:LongBool = True;            {If True then automatically scroll up on reaching the last line of the console (Sets CONSOLE_FLAG_AUTO_SCROLL on device / WINDOW_FLAG_AUTO_SCROLL on windows)}
  
- CONSOLE_DMA_BOX:LongBool = True;                {If True then use DMA (If avaialable) to draw console window boxes (Sets CONSOLE_FLAG_DMA_BOX on device)}
- CONSOLE_DMA_LINE:LongBool = True;               {If True then use DMA (If avaialable) to draw console window lines (Sets CONSOLE_FLAG_DMA_LINE on device)}
- CONSOLE_DMA_FILL:LongBool = True;               {If True then use DMA (If avaialable) to fill console windows (Sets CONSOLE_FLAG_DMA_FILL on device)}
- CONSOLE_DMA_CLEAR:LongBool = True;              {If True then use DMA (If avaialable) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
- CONSOLE_DMA_SCROLL:LongBool = True;             {If True then use DMA (If avaialable) to scroll console windows (Sets CONSOLE_FLAG_DMA_SCROLL on device)}
+ CONSOLE_DMA_BOX:LongBool = True;                {If True then use DMA (If available) to draw console window boxes (Sets CONSOLE_FLAG_DMA_BOX on device)}
+ CONSOLE_DMA_LINE:LongBool = True;               {If True then use DMA (If available) to draw console window lines (Sets CONSOLE_FLAG_DMA_LINE on device)}
+ CONSOLE_DMA_FILL:LongBool = True;               {If True then use DMA (If available) to fill console windows (Sets CONSOLE_FLAG_DMA_FILL on device)}
+ CONSOLE_DMA_CLEAR:LongBool = True;              {If True then use DMA (If available) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
+ CONSOLE_DMA_SCROLL:LongBool = True;             {If True then use DMA (If available) to scroll console windows (Sets CONSOLE_FLAG_DMA_SCROLL on device)}
  
  CONSOLE_REGISTER_LOGGING:LongBool = False;      {If True then register any Console device as a Logging device (Only if Console unit included)}
  CONSOLE_LOGGING_DEFAULT:LongBool = False;       {If True then a Console device can be the default Logging device}
  CONSOLE_LOGGING_POSITION:LongWord = CONSOLE_POSITION_RIGHT; {The default Console Window position for the console Logging device}
+ 
+ CONSOLE_CRT_POSITION:LongWord = CONSOLE_POSITION_FULL; {The default Console Window position for the CRT unit (Only if CRT unit included)}
  
 var
  {Window}
@@ -535,7 +537,7 @@ var
  TIMEZONE_TIME_ADJUST:LongInt;      {The current time offset between Local and Adjusted time (Minutes)}
  
  TIMEZONE_UPDATE_LAST:Int64;        {The clock time of the last timezone update check}
- TIMEZONE_UPDATE_CURRENT:longBool;  {If true then a timezone update check is in progress}
+ TIMEZONE_UPDATE_CURRENT:LongBool;  {If true then a timezone update check is in progress}
  
  TIMEZONE_DEFAULT_NAME:String;      {The name of the default timezone}
  
@@ -597,6 +599,17 @@ var
  
  {Virtual GPIO}
  VIRTUAL_GPIO_PIN_COUNT:LongWord;      {The number of Virtual GPIO pins available on this board}
+ 
+ {Keyboard}
+ KEYBOARD_NUM_LOCK_DEFAULT:LongBool = True;     {If True then set Num Lock to On by default for all keyboards (Default: True)}
+ KEYBOARD_CAPS_LOCK_DEFAULT:LongBool = False;   {If True then set Caps Lock to On by default for all keyboards}
+ KEYBOARD_SCROLL_LOCK_DEFAULT:LongBool = False; {If True then set Scroll Lock to On by default for all keyboards}
+ 
+ KEYBOARD_CTRL_ALT_IS_ALTGR:LongBool = False;      {If True then pressing Ctrl+Alt acts as the AltGr key}
+ KEYBOARD_SHIFT_IS_CAPS_LOCK_OFF:LongBool = False; {If True then pressing Shift turns Off Caps Lock}
+ 
+ {Mouse}
+ MOUSE_SWAP_BUTTONS_DEFAULT:LongBool = False;   {If True then set Swap Buttons (Left <-> Right) to On by default for all mice}
  
  {USB}
  USB_AUTOSTART:LongBool = True;        {If True then auto start the USB subsystem on boot (Only if USB unit included)}
@@ -786,7 +799,7 @@ var
  
  LOCALE_DEFAULT:LongWord; {LCID}           {The current default locale}
  
- KEYMAP_DEFAULT:String;                    {The name of the default keymap}
+ KEYMAP_DEFAULT:String = 'US';             {The name of the default keymap}
  
 {==============================================================================}
 {Disk, Controller, Filesystem and Cache configuration}

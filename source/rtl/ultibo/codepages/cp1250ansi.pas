@@ -201,6 +201,10 @@ begin
  LoadPage(CP_ANSI_1250,@CPANSI1250,@CP1250Lower,@CP1250Upper);
  InstallTrans(CP_ANSI_1250,@CP1250TO852);
 
+ {Check Environment Variables}
+ //To Do //Check CODEPAGE_ANSI_DEFAULT //If 1250 then SetACP(1250) etc
+         //For 852 OEM check CODEPAGE_OEM_DEFAULT //If 852 then SetOEMCP(852) etc
+ 
  CP1250ANSIInitialized:=True;
 end;
 

@@ -409,6 +409,10 @@ const
  WORKER_THREAD_NAME = 'Worker';
  RTL_THREAD_NAME    = 'RTL Thread';
  
+ {Thread priority constants}
+ TIMER_THREAD_PRIORITY  = THREAD_PRIORITY_NORMAL;
+ WORKER_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL;
+ 
  {Thread create constants}
  THREAD_CREATE_NONE      = $00000000;
  THREAD_CREATE_SUSPENDED = $00000004;
@@ -1167,6 +1171,8 @@ var
  SchedulerMigrationCounter:Int64;                  {Number of times scheduler select invoked a thread migration (CPU 0 only)}
  
  SchedulerTerminationCounter:array of Int64;       {Number of threads destroyed by scheduler reschedule (After termination quantum)(One per CPU)}
+
+ SchedulerSecondaryWaitCounter:array of Int64;     {Number of wait cycles performed by secondary CPUs while waiting for init completion (One per CPU)}
  {$ENDIF}
  
  {$IFDEF LOCK_DEBUG}
@@ -2561,7 +2567,10 @@ begin
      Halt;
     end;
    {Setup Timer Thread}
+   {Name}
    ThreadSetName(Thread,TIMER_THREAD_NAME + IntToStr(Count));
+   {Priority}
+   ThreadSetPriority(Thread,TIMER_THREAD_PRIORITY);
   end; 
 
  {Create Worker Lock}
@@ -2586,7 +2595,11 @@ begin
      Halt;
     end;
    {Setup Worker Thread}
+   {Name}
    ThreadSetName(Thread,WORKER_THREAD_NAME + IntToStr(WorkerThreadNext));
+   {Priority}
+   ThreadSetPriority(Thread,WORKER_THREAD_PRIORITY);
+   
    Inc(WorkerThreadNext);
   end;
  
@@ -2596,7 +2609,7 @@ begin
  ThreadsInitialized:=True;
  
  {Synchronization Barrier}
- DataSynchronizationBarrier; //TestingRpi2/TestingRpi1
+ DataSynchronizationBarrier;
  
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -2847,6 +2860,9 @@ begin
 
  {Setup SchedulerTerminationCounter}
  SetLength(SchedulerTerminationCounter,SCHEDULER_CPU_COUNT);
+
+ {Setup SchedulerSecondaryWaitCounter}
+ SetLength(SchedulerSecondaryWaitCounter,SCHEDULER_CPU_COUNT);
  {$ENDIF}
  
  {$IFDEF INTERRUPT_DEBUG}
@@ -3387,11 +3403,15 @@ begin
  {Wait for Ready}
  while SCHEDULER_SECONDARY_WAIT and not(SysInitializationCompleted) do
   begin
+   {$IFDEF SCHEDULER_DEBUG}
+   Inc(SchedulerSecondaryWaitCounter[CPUID]);
+   {$ENDIF}
+   
    {Nothing}
   end;
   
  {Synchronization Barrier}
- DataSynchronizationBarrier; //TestingRpi2/TestingRpi1
+ DataSynchronizationBarrier;
   
  if SCHEDULER_FIQ_ENABLED then
   begin

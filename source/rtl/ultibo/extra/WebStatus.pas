@@ -43,7 +43,7 @@ unit WebStatus;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
-     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Mouse,Console,Framebuffer,Font,Logging,Timezone,Locale,Unicode;
+     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Console,Framebuffer,Font,Logging,Timezone,Locale,Unicode;
 
 //To Do //Look for:
 
@@ -2961,7 +2961,7 @@ begin
  AddHeader(AResponse,GetTitle,Self); 
  
  {Add Country Code}
- AddItem(AResponse,'Country Code:',IntToStr(COUNTRY_DEFAULT));
+ AddItem(AResponse,'Country Code:',IntToStr(COUNTRY_DEFAULT)); //To Do //Change to API ?
  AddBlank(AResponse);
  
  {Add ANSI Code Page}
@@ -2974,6 +2974,10 @@ begin
  
  {Add Default Locale}
  AddItem(AResponse,'Default Locale:',IntToStr(GetSystemDefaultLCID));
+ AddBlank(AResponse);
+ 
+ {Add Default Keymap}
+ AddItem(AResponse,'Default Keymap:',KeymapGetName(KeymapGetDefault));
  AddBlank(AResponse);
  
  //To Do
@@ -4867,48 +4871,18 @@ begin
  //To Do
  AddBlank(AResponse);
 
- {Add }
- AddBold(AResponse,'','');
+ {Add Country, CodePage, Locale and Language}
+ AddBold(AResponse,'Country, CodePage, Locale and Language','');
  AddBlank(AResponse);
- //To Do
+ AddItemEx(AResponse,'COUNTRY_DEFAULT:',IntToStr(COUNTRY_DEFAULT),2);
+ AddItemEx(AResponse,'CODEPAGE_OEM_DEFAULT:',IntToStr(CODEPAGE_OEM_DEFAULT),2);
+ AddItemEx(AResponse,'CODEPAGE_ANSI_DEFAULT:',IntToStr(CODEPAGE_ANSI_DEFAULT),2);
+ AddItemEx(AResponse,'CODEPAGE_CONSOLE_INPUT:',IntToStr(CODEPAGE_CONSOLE_INPUT),2);
+ AddItemEx(AResponse,'CODEPAGE_CONSOLE_OUTPUT:',IntToStr(CODEPAGE_CONSOLE_OUTPUT),2);
+ AddItemEx(AResponse,'LOCALE_DEFAULT:',IntToStr(LOCALE_DEFAULT),2);
+ AddItemEx(AResponse,'KEYMAP_DEFAULT:',KEYMAP_DEFAULT,2);
  AddBlank(AResponse);
-
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
-
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
-
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
-
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
-
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
-
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
-
+ 
  {Add }
  AddBold(AResponse,'','');
  AddBlank(AResponse);

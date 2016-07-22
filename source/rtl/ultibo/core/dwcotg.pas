@@ -743,8 +743,20 @@ type
   StartOfFrameInterruptCount:LongWord;                           {Number of start of frame interrupts received by the host controller} 
   ResubmitCount:LongWord;                                        {Number of requests resubmitted for later retry}
   StartOfFrameCount:LongWord;                                    {Number of requests resubmitted to wait for start of frame}
-  DMABufferReadCount:LongWord;                                   {Number of IN requests that required a DMA buffer}
-  DMABufferWriteCount:LongWord;                                  {Number of OUT requests that required a DMA buffer}
+  DMABufferReadCount:LongWord;                                   {Number of IN requests that required a DMA buffer copy}
+  DMABufferWriteCount:LongWord;                                  {Number of OUT requests that required a DMA buffer copy}
+  
+  NAKReponseCount:LongWord;                                      {Number of NAK responses received by the host controller}
+  NYETResponseCount:LongWord;                                    {Number of NYET responses received by the host controller}
+  StallResponseCount:LongWord;                                   {Number of Stall responses received by the host controller}
+  
+  AHBErrorCount:LongWord;                                        {Number of AHB errors received by the host controller}
+  TransactionErrorCount:LongWord;                                {Number of transaction errors received by the host controller}
+  BabbleErrorCount:LongWord;                                     {Number of babble errors received by the host controller}
+  ExcessTransactionCount:LongWord;                               {Number of excess transaction errors received by the host controller}
+  FrameListRolloverCount:LongWord;                               {Number of frame list rollover errors received by the host controller}
+  DataToggleErrorCount:LongWord;                                 {Number of data toggle errors received by the host controller}
+  FrameOverrunCount:LongWord;                                    {Number of frame overrun errors received by the host controller}
  end;
  
 {==============================================================================}
@@ -1039,7 +1051,11 @@ begin
    else
     begin
      PDWCUSBHost(Host).DMABuffers[Count]:=GetAlignedMem(RoundUp(USB_MAX_PACKET_SIZE,DWCOTG_DMA_MULTIPLIER),DWCOTG_DMA_ALIGNMENT);
-    end; 
+    end;
+   if not(DWCOTG_DMA_CACHE_COHERENT) then
+    begin
+     CleanDataCacheRange(LongWord(PDWCUSBHost(Host).DMABuffers[Count]),RoundUp(USB_MAX_PACKET_SIZE,DWCOTG_DMA_MULTIPLIER));
+    end;
   end;
 
  {Check Host}
@@ -2651,13 +2667,21 @@ begin
    {For OUT endpoints, flush the data to send into the DMA buffer}
    if ((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_DIRECTION) shr 15) = USB_DIRECTION_OUT then
     begin
-     //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
-     if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
+     if not(DWCOTG_DMA_CACHE_COHERENT) then
       begin
        {Flush the data cache}
        CleanDataCacheRange(LongWord(Data),((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0));
       end; 
-    end;   
+    end
+   else
+    begin
+     {For IN endpoints, ensure there is no uncommitted data in the DMA buffer region}
+     if not(DWCOTG_DMA_CACHE_COHERENT) then 
+      begin
+       {Flush the data cache}
+       CleanDataCacheRange(LongWord(Data),((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0));
+      end; 
+    end;
   end
  else
   begin
@@ -2698,8 +2722,7 @@ begin
      {Copy the data to the DMA buffer}
      System.Move(Data^,Host.DMABuffers[Channel]^,((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0));
 
-     //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
-     if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
+     if not(DWCOTG_DMA_CACHE_COHERENT) then
       begin
        {Flush the data cache}
        CleanDataCacheRange(LongWord(Host.DMABuffers[Channel]),((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0));
@@ -4395,6 +4418,9 @@ begin
 
    {Hardware stall, transfer failed}
    InterruptStatus:=DWC_STATUS_STALLED;
+   
+   {Update Statistics}
+   Inc(Host.StallResponseCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_AHB_ERROR) <> 0 then
   begin
@@ -4404,6 +4430,9 @@ begin
 
    {AHB error, transfer failed}
    InterruptStatus:=DWC_STATUS_FAILED;
+   
+   {Update Statistics}
+   Inc(Host.AHBErrorCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_TRANSACTION_ERROR) <> 0 then
   begin
@@ -4413,6 +4442,9 @@ begin
 
    {Transaction error, transfer failed}
    InterruptStatus:=DWC_STATUS_FAILED;
+   
+   {Update Statistics}
+   Inc(Host.TransactionErrorCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_BABBLE_ERROR) <> 0 then
   begin
@@ -4422,6 +4454,9 @@ begin
 
    {Babble error, transfer failed}
    InterruptStatus:=DWC_STATUS_FAILED;
+   
+   {Update Statistics}
+   Inc(Host.BabbleErrorCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_EXCESS_TRANSACTION_ERROR) <> 0 then
   begin
@@ -4431,6 +4466,9 @@ begin
 
    {Excess transaction error, transfer failed}
    InterruptStatus:=DWC_STATUS_FAILED;
+   
+   {Update Statistics}
+   Inc(Host.ExcessTransactionCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_FRAME_LIST_ROLLOVER) <> 0 then
   begin
@@ -4440,6 +4478,9 @@ begin
 
    {Frame list rollover error, transfer failed}
    InterruptStatus:=DWC_STATUS_FAILED;
+   
+   {Update Statistics}
+   Inc(Host.FrameListRolloverCount); 
   end
  else if ((Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_NYET_RESPONSE_RECEIVED) <> 0) and not(Request.CompleteSplit) then
   begin
@@ -4449,6 +4490,9 @@ begin
 
    {NYET response when not complete split, transfer failed}
    InterruptStatus:=DWC_STATUS_FAILED;
+   
+   {Update Statistics}
+   Inc(Host.NYETResponseCount); 
   end
  else if ((Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_DATA_TOGGLE_ERROR) <> 0) and ((HostChannel.Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_DIRECTION) = (USB_DIRECTION_OUT shl 15)) then
   begin
@@ -4458,6 +4502,9 @@ begin
 
    {Data toggle error on an OUT request, transfer failed}
    InterruptStatus:=DWC_STATUS_FAILED;
+   
+   {Update Statistics}
+   Inc(Host.DataToggleErrorCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_FRAME_OVERRUN) <> 0 then
   begin
@@ -4467,6 +4514,9 @@ begin
 
    {Frame overrun error, restart transaction}
    InterruptStatus:=DWC_STATUS_TRANSACTION_RESTART;
+   
+   {Update Statistics}
+   Inc(Host.FrameOverrunCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_NYET_RESPONSE_RECEIVED) <> 0 then
   begin
@@ -4488,6 +4538,9 @@ begin
     
    {NYET response on a complete split, restart transaction} 
    InterruptStatus:=DWC_STATUS_TRANSACTION_RESTART;
+   
+   {Update Statistics}
+   Inc(Host.NYETResponseCount); 
   end
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_NAK_RESPONSE_RECEIVED) <> 0 then
   begin
@@ -4501,6 +4554,9 @@ begin
    
    {NAK response, resubmit the transfer}
    InterruptStatus:=DWC_STATUS_TRANSFER_RESUBMIT;
+   
+   {Update Statistics}
+   Inc(Host.NAKReponseCount); 
   end
  else 
   begin
@@ -4645,8 +4701,7 @@ begin
      {Check the DMA compatibility}
      if (Request.Flags and USB_REQUEST_FLAG_COMPATIBLE) = USB_REQUEST_FLAG_COMPATIBLE then
       begin
-       //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
-       if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
+       if not(DWCOTG_DMA_CACHE_COHERENT) then
         begin
          {Invalidate the data cache}
          InvalidateDataCacheRange(LongWord(PtrUInt(Request.CurrentData) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred);
@@ -4662,8 +4717,7 @@ begin
        {Update Statistics}
        Inc(Host.DMABufferReadCount);
        
-       //To Do //Change this to not(DWCOTG_DMA_CACHE_COHERENT) ?
-       if not(DWCOTG_DMA_SHARED_MEMORY) and not(DWCOTG_DMA_NOCACHE_MEMORY) then
+       if not(DWCOTG_DMA_CACHE_COHERENT) then
         begin
          {Invalidate the data cache}
          InvalidateDataCacheRange(LongWord(PtrUInt(Host.DMABuffers[Channel]) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred);

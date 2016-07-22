@@ -2453,7 +2453,7 @@ begin
  if Interrface <> nil then
   begin
    {$IFDEF RT2800USB_DEBUG}
-    if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Interface bind not supported by driver');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Interface bind not supported by driver');
    {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2464,7 +2464,7 @@ begin
  if RT2800USBCheckDevice(Device) <> USB_STATUS_SUCCESS then
   begin
    {$IFDEF RT2800USB_DEBUG}
-    if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device not found in supported device list');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device not found in supported device list');
    {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2475,7 +2475,7 @@ begin
  if Device.Speed <> USB_SPEED_HIGH then
   begin
    {$IFDEF RT2800USB_DEBUG}
-    if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device speed is not USB_SPEED_HIGH');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device speed is not USB_SPEED_HIGH');
    {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2487,7 +2487,7 @@ begin
  if NetworkInterface = nil then
   begin
    {$IFDEF RT2800USB_DEBUG}
-    if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device has no available interface');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device has no available interface');
    {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2502,7 +2502,7 @@ begin
  if ReceiveEndpoint = nil then
   begin
    {$IFDEF RT2800USB_DEBUG}
-    if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device has no BULK IN endpoint');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device has no BULK IN endpoint');
    {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2517,7 +2517,7 @@ begin
  if TransmitEndpoint = nil then
   begin
    {$IFDEF RT2800USB_DEBUG}
-    if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device has no BULK OUT endpoint');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Device has no BULK OUT endpoint');
    {$ENDIF}
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2531,14 +2531,14 @@ begin
  if Device.ConfigurationValue = 0 then
   begin
    {$IFDEF RT2800USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Device,'Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
    {$ENDIF}
    
    {Set Configuration}
    Status:=USBDeviceSetConfiguration(Device,Device.Configuration.Descriptor.bConfigurationValue);
    if Status <> USB_STATUS_SUCCESS then
     begin
-     if USB_LOG_ENABLED then USBLogError(Device,'Failed to set device configuration: ' + USBStatusToString(Status));
+     if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to set device configuration: ' + USBStatusToString(Status));
      
      {Return Result}
      Result:=Status;

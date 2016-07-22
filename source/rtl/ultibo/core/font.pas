@@ -265,7 +265,7 @@ type
   CharMask:LongWord;             {Transparency mask for a bitmap font (Not used for a pixel font)}
   CodePage:LongWord;             {Font codepage (CP_ACP if not specified)}
   CharData:Pointer;              {Font character pixel or bitmap data}
-  UnicodeData:Pointer;           {Font unicode translation data (Only if FONT_FLAG_UNICODE)}
+  UnicodeData:PFontUnicode;      {Font unicode translation data (Only if FONT_FLAG_UNICODE)}
   {Internal Properties}
   Prev:PFontEntry;               {Previous entry in Font table}
   Next:PFontEntry;               {Next entry in Font table}
@@ -684,6 +684,9 @@ begin
  {Check Data}
  if Data = nil then Exit;
 
+ {Check Unicode}
+ {if Unicode = nil then Exit;} {May be nil}
+ 
  {Check Header}
  if (Header = nil) and (Properties = nil) then Exit;
  

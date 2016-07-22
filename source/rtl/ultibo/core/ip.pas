@@ -759,7 +759,7 @@ var
  Fragment:PIPFragment;
 begin
  {}
- ReaderLock;
+ if not(WriterOwner) then ReaderLock else WriterLock;
  try
   Result:=False;
   
@@ -791,7 +791,7 @@ begin
   {Return Result}
   Result:=True;
  finally 
-  ReaderUnlock;
+  if not(WriterOwner) then ReaderUnlock else WriterUnlock;
  end; 
 end;
 
@@ -803,7 +803,7 @@ procedure TIPBuffer.FlushFragments(APacket:PIPPacket);
 {Note: Caller must hold the Packet lock}
 begin
  {}
- ReaderLock;
+ if not(WriterOwner) then ReaderLock else WriterLock;
  try
   {Check Packet}
   if APacket = nil then Exit;
@@ -815,7 +815,7 @@ begin
     RemoveFragment(APacket);
    end;
  finally 
-  ReaderUnlock;
+  if not(WriterOwner) then ReaderUnlock else WriterUnlock;
  end; 
 end;
 
@@ -938,7 +938,7 @@ begin
  if APacket = nil then Exit;
 
  {Acquire the Lock}
- MutexLock(APacket.Lock);
+ if MutexLock(APacket.Lock) <> ERROR_SUCCESS then Exit;
   
  {Remove any Fragments}
  FlushFragments(APacket);
@@ -1456,6 +1456,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  GetPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Id = ' + IntToStr(WordBEtoN(IP.Id)));
  {$ENDIF}
+ 
  Packet:=FFragments.GetPacket(IP.Id,IP.Protocol,IP.SourceIP,IP.DestIP,True);
  if Packet = nil then
   begin
@@ -1464,6 +1465,7 @@ begin
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  AddPacket');
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Id = ' + IntToStr(WordBEtoN(IP.Id)));
    {$ENDIF}
+   
    Packet:=FFragments.AddPacket(IP.Id,IP.Protocol,IP.SourceIP,IP.DestIP,True);
    if Packet = nil then Exit;
 

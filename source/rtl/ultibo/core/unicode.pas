@@ -147,6 +147,11 @@ function OemToCharBuffA(lpszSrc:LPCSTR;lpszDst:LPSTR;cchDstLength:DWORD):BOOL;
 function OemToCharBuffW(lpszSrc:LPCSTR;lpszDst:LPWSTR;cchDstLength:DWORD):BOOL;
 
 {==============================================================================}
+{RTL Unicode Functions}
+function SysCodePageToWideChar(Ch:Char):WideChar; 
+function SysWideCharToCodePage(Ch:WideChar):Char; 
+
+{==============================================================================}
 {RTL Unicode String Manager Functions}
 procedure SysWide2AnsiMove(Source:PWideChar;var Dest:RawByteString;cp:TSystemCodePage;Len:SizeInt);
 procedure SysAnsi2WideMove(Source:PChar;cp:TSystemCodePage;var Dest:WideString;Len:SizeInt);
@@ -236,6 +241,10 @@ begin
  
  {Set Unicode String Manager}
  SetUnicodeStringManager(UnicodeStringManager);
+ 
+ {Setup Platform Unicode Handlers}
+ CodePageToWideCharHandler:=SysCodePageToWideChar;
+ WideCharToCodePageHandler:=SysWideCharToCodePage;
  
  UnicodeInitialized:=True;
 end;
@@ -1382,6 +1391,35 @@ begin
   end;
   
  Result:=True; {Always returns True}
+end;
+
+{==============================================================================}
+{==============================================================================}
+{RTL Unicode Functions}
+function SysCodePageToWideChar(Ch:Char):WideChar; 
+{ANSI to Unicode conversion (Char to WideChar)}
+{Note: Currently only supports SBCS}
+begin
+ {}
+ Result:=#0;
+ 
+ if AnsiPage = nil then Exit;
+ 
+ Result:=WideChar(AnsiPage.CodeTable.Values[Byte(Ch)]);
+end;
+
+{==============================================================================}
+
+function SysWideCharToCodePage(Ch:WideChar):Char; 
+{Unicode to ANSI conversion (WideChar to Char)}
+{Note: Currently only supports SBCS}
+begin
+ {}
+ Result:=#0;
+ 
+ if AnsiPage = nil then Exit;
+ 
+ Result:=Char(AnsiPage.UnicodeTable.Values[Word(Ch)]);
 end;
 
 {==============================================================================}

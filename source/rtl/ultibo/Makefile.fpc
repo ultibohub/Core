@@ -26,6 +26,7 @@ units=$(SYSTEMUNIT) \
        $(ULTIBO_UNITS) \
        $(ULTIBO_CPU_UNITS) \
        $(ULTIBO_DRIVER_UNITS) \
+       $(ULTIBO_KEYMAP_UNITS) \
        $(ULTIBO_CODEPAGE_UNITS) \
        dos \
        ctypes \
@@ -227,6 +228,13 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     mcp230xx \
                     hd44780 \
                     af16x2lcd
+
+ULTIBO_KEYMAP_UNITS=keymap_us \
+                    keymap_uk \
+                    keymap_de \
+                    keymap_fr \
+                    keymap_es \
+                    keymap_us_intl
 
 ULTIBO_CODEPAGE_UNITS=cp720oem \
                       cp737oem \
@@ -621,6 +629,19 @@ endef
 $(foreach unit,$(ULTIBO_DRIVER_UNITS),$(eval $(call ULTIBO_DRIVER_UNITS_RULE,$(unit))))
 
 $(addsuffix $(PPUEXT),$(ULTIBO_DRIVER_UNITS)):
+	$(COMPILER) $<
+    
+#
+# Ultibo Keymap specific rules
+#
+
+define ULTIBO_KEYMAP_UNITS_RULE
+$(1)$(PPUEXT): keymaps/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+endef
+
+$(foreach unit,$(ULTIBO_KEYMAP_UNITS),$(eval $(call ULTIBO_KEYMAP_UNITS_RULE,$(unit))))
+
+$(addsuffix $(PPUEXT),$(ULTIBO_KEYMAP_UNITS)):
 	$(COMPILER) $<
     
 #

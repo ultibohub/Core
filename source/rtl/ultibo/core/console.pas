@@ -5280,12 +5280,11 @@ end;
 function ConsoleKeypressed:Boolean;
 {Compatible with RTL Crt unit function KeyPressed}
 {See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/keypressed.html}
+var
+ Ch:Char;
 begin
  {}
- Result:=False; //To Do //Need ConsolePeekChar ?
-                //See notes in ConsoleReadChar
-                //This needs to use the function registered by Keyboard to handle console reads
-                //Call ConsoleReadChar, it will call the handler
+ Result:=ConsolePeekKey(Ch,nil);
 end;
 
 {==============================================================================}
@@ -5326,11 +5325,7 @@ function ConsoleReadKey:Char;
 {Note: For extended key scan codes see: http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html}
 begin
  {}
- ConsoleReadChar(Result,nil);
- 
- //To Do //Implement extended key code functionality
-         //Here or in ConsoleReadChar ?
-         //Need to check what RTL Read() / ReadLn() uses and expects
+ ConsoleGetKey(Result,nil);
 end;
 
 {==============================================================================}
@@ -5528,33 +5523,90 @@ end;
 {==============================================================================}
 
 procedure ConsoleRead(var AText:String);
+{Read text from console input and echo to screen}
 begin
  {}
- //To Do //See notes in ConsoleReadChar
-         //This needs to use the function registered by Keyboard to handle console reads
-         //Call ConsoleReadChar, it will call the handler
-               
-         //while ConsolePeekChar do ConsoleReadChar etc ?
+ ConsoleReadLn(AText);
 end;
 
 {==============================================================================}
 
 procedure ConsoleReadLn(var AText:String);
+{Read text from console input and echo to screen}
+var
+ Ch:Char;
+ Done:Boolean;
+ SaveX:Integer;
+ SaveY:Integer;
 begin
  {}
- //To Do //See notes in ConsoleReadChar
-         //This needs to use the function registered by Keyboard to handle console reads
-         //Call ConsoleReadChar, it will call the handler
-               
-         //ConsoleReadChar until line end character ? (see ConsoleWindowWriteChr etc)
+ AText:='';
+ Done:=False;
+ SaveX:=ConsoleWhereX;
+ SaveY:=ConsoleWhereY;
+ repeat
+  Ch:=ConsoleReadKey;
+  case Ch of
+   #0:begin
+     {Extended key}
+     Ch:=ConsoleReadKey;
+    end;
+   #13:begin
+     {Return}
+     ConsoleWriteLn('');
+     Done:=True;
+    end;
+   #27:begin
+     {Escape}
+     ConsoleGotoXY(SaveX,SaveY);
+     ConsoleClrEol;
+     AText:='';
+    end;
+   else 
+    begin
+     {Others}
+     ConsoleWriteChr(Ch);
+     AText:=AText + Ch;
+    end;
+  end;
+ until Done;
 end;
 
 {==============================================================================}
 
 procedure ConsoleReadChr(var AChr:Char);
+{Read characters from console input and echo to screen}
+var
+ Ch:Char;
+ Done:Boolean;
 begin
  {}
- ConsoleReadChar(AChr,nil);
+ AChr:=#0;
+ Done:=False;
+ repeat
+  Ch:=ConsoleReadKey;
+  case Ch of
+   #0:begin
+     {Extended key}
+     Ch:=ConsoleReadKey;
+    end;
+   #13:begin
+     {Return}
+     ConsoleWriteLn('');
+     Done:=True;
+    end;
+   else
+    begin  
+     {Others}    
+     ConsoleWriteChr(Ch);
+     AChr:=Ch;
+     ConsoleWriteLn('');
+     Done:=True;
+    end;
+  end;
+ until Done;
+ 
+ {ConsoleReadChar(AChr,nil);} {Modified to behave similar to Read()}
 end;
 
 {==============================================================================}

@@ -178,7 +178,7 @@ Global Defines
 {--$DEFINE PL2303_DEBUG}          {Enable debug output/counters for PL2303 driver (Default: Off)}
 {--$DEFINE DS1307_DEBUG}          {Enable debug output/counters for DS1307 driver (Default: Off)}
 {--$DEFINE CDCACM_DEBUG}          {Enable debug output/counters for USB CDC ACM driver (Default: Off)}
-{$DEFINE FTDISERIAL_DEBUG}      {Enable debug output/counters for FTDI Serial driver (Default: Off)}
+{--$DEFINE FTDISERIAL_DEBUG}      {Enable debug output/counters for FTDI Serial driver (Default: Off)}
 
 {--$DEFINE MCP230XX_DEBUG}        {Enable debug output/counters for MCP230XX driver (Default: Off)}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
