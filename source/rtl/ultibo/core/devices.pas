@@ -43,6 +43,7 @@ Drivers
 Clock Devices
 =============
 
+
 Timer Devices
 =============
 
@@ -228,7 +229,7 @@ const
  DEVICE_CLASS_DMA             = 37; {A DMA Controller Device (Implementing a standard DMA controller interface)}
  DEVICE_CLASS_SCSIHOST        = 38; {A SCSI Host Device (Implementing a standard SCSI host interface)}
  DEVICE_CLASS_ATAHOST         = 39; {An ATA Host Device (Implementing a standard ATA host interface)}
- DEVICE_CLASS_TIMER           = 40; {A Timer Device}
+ DEVICE_CLASS_TIMER           = 40; {A Timer or Counter Device}
  DEVICE_CLASS_RANDOM          = 41; {A Random Number Generator Device}
  DEVICE_CLASS_FRAMEBUFFER     = 42; {A Frame Buffer Device}
  DEVICE_CLASS_WATCHDOG        = 43; {A Watchdog Timer Device}
@@ -240,8 +241,10 @@ const
  DEVICE_CLASS_PCM             = 49; {A PCM Sound Device (Implementing a standard PCM device interface)}
  DEVICE_CLASS_I2S             = DEVICE_CLASS_PCM;
  DEVICE_CLASS_PWM             = 50; {A Pulse Width Modulation (PWM) Device}
+ DEVICE_CLASS_1WIRE           = 51; {A 1-Wire Device (Implementing a standard W1 device interface)}
+ DEVICE_CLASS_CLOCK_MANAGER   = 52; {A Clock Manager Device}
 
- DEVICE_CLASS_MAX             = 50;
+ DEVICE_CLASS_MAX             = 52;
  
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
  
@@ -297,7 +300,9 @@ const
   'DEVICE_CLASS_USBHUB',
   'DEVICE_CLASS_LOGGING',
   'DEVICE_CLASS_PCM',
-  'DEVICE_CLASS_PWM');
+  'DEVICE_CLASS_PWM',
+  'DEVICE_CLASS_1WIRE',
+  'DEVICE_CLASS_CLOCK_MANAGER');
  
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
@@ -1242,6 +1247,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure DevicesInit;
+{Initialize the Devices unit and device, notifier and driver tables}
+
+{Note: Called only during system startup}
 begin
  {}
  {Check Initialized}

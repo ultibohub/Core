@@ -374,6 +374,7 @@ ULTIBO_UNITS=globalconfig \
 	     spi \
 	     i2s \
 	     pwm \
+	     w1 \
 	     rtc \
 	     usb \
 	     usbcdc \
@@ -467,7 +468,10 @@ ULTIBO_EXTRAS=consoleshell \
 	      remoteshell \
 	      shellfilesystem \
 	      shellupdate \
-	      webstatus
+	      webstatus \
+	      wiringi2c \
+	      wiringserial \
+	      wiringspi
 ULTIBO_CPU_UNITS=
 ULTIBO_CPU_EXTRAS=
 ULTIBO_DRIVER_UNITS=rtlwifi \

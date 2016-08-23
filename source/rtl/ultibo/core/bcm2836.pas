@@ -644,9 +644,54 @@ const
  {PCM / I2S register bits (See 8.8)}
  //To Do  
  
-//const
- {Pulse Width Modulator (PWM) register bits (See 9.6)}
- //To Do  
+const
+ {Pulse Width Modulator (PWM) Control register bits (See 9.6)}
+ BCM2836_PWM_CTL_MSEN2 = (1 shl 15); {Channel 2 M/S Enable (0: PWM algorithm is used / 1: M/S transmission is used)}
+ {Bit 14 Reserved - Write as 0, read as don't care}
+ BCM2836_PWM_CTL_USEF2 = (1 shl 13); {Channel 2 Use Fifo (0: Data register is transmitted / 1: Fifo is used for transmission)}
+ BCM2836_PWM_CTL_POLA2 = (1 shl 12); {Channel 2 Polarity (0 : 0=low 1=high / 1: 1=low 0=high)}
+ BCM2836_PWM_CTL_SBIT2 = (1 shl 11); {Channel 2 Silence Bit (Defines the state of the output when no transmission takes place)}
+ BCM2836_PWM_CTL_RPTL2 = (1 shl 10); {Channel 2 Repeat Last Data (0: Transmission interrupts when FIFO is empty / 1: Last data in FIFO is transmitted repetedly until FIFO is not empty)}
+ BCM2836_PWM_CTL_MODE2 = (1 shl 9);  {Channel 2 Mode (0: PWM mode / 1: Serialiser mode)}
+ BCM2836_PWM_CTL_PWEN2 = (1 shl 8);  {Channel 2 Enable (0: Channel is disabled / 1: Channel is enabled)}
+ BCM2836_PWM_CTL_MSEN1 = (1 shl 7);  {Channel 1 M/S Enable (0: PWM algorithm is used / 1: M/S transmission is used)}
+ BCM2836_PWM_CTL_CLRF1 = (1 shl 6);  {Clear Fifo (1: Clears FIFO / 0: Has no effect) (This is a single shot operation. This bit always reads 0)}
+ BCM2836_PWM_CTL_USEF1 = (1 shl 5);  {Channel 1 Use Fifo (0: Data register is transmitted / 1: Fifo is used for transmission)}
+ BCM2836_PWM_CTL_POLA1 = (1 shl 4);  {Channel 1 Polarity (0 : 0=low 1=high / 1: 1=low 0=high)}
+ BCM2836_PWM_CTL_SBIT1 = (1 shl 3);  {Channel 1 Silence Bit (Defines the state of the output when no transmission takes place)}
+ BCM2836_PWM_CTL_RPTL1 = (1 shl 2);  {Channel 1 Repeat Last Data (0: Transmission interrupts when FIFO is empty / 1: Last data in FIFO is transmitted repetedly until FIFO is not empty)}
+ BCM2836_PWM_CTL_MODE1 = (1 shl 1);  {Channel 1 Mode (0: PWM mode / 1: Serialiser mode)}
+ BCM2836_PWM_CTL_PWEN1 = (1 shl 0);  {Channel 1 Enable (0: Channel is disabled / 1: Channel is enabled)}
+ 
+ {Pulse Width Modulator (PWM) Status register bits (See 9.6)}
+ BCM2836_PWM_STA_STA4  = (1 shl 12); {Channel 4 State}
+ BCM2836_PWM_STA_STA3  = (1 shl 11); {Channel 3 State}
+ BCM2836_PWM_STA_STA2  = (1 shl 10); {Channel 2 State}
+ BCM2836_PWM_STA_STA1  = (1 shl 9);  {Channel 1 State}
+ BCM2836_PWM_STA_BERR  = (1 shl 8);  {Bus Error Flag}
+ BCM2836_PWM_STA_GAPO4 = (1 shl 7);  {Channel 4 Gap Occurred Flag}
+ BCM2836_PWM_STA_GAPO3 = (1 shl 6);  {Channel 3 Gap Occurred Flag}
+ BCM2836_PWM_STA_GAPO2 = (1 shl 5);  {Channel 2 Gap Occurred Flag}
+ BCM2836_PWM_STA_GAPO1 = (1 shl 4);  {Channel 1 Gap Occurred Flag}
+ BCM2836_PWM_STA_RERR1 = (1 shl 3);  {Fifo Read Error Flag}
+ BCM2836_PWM_STA_WERR1 = (1 shl 2);  {Fifo Write Error Flag}
+ BCM2836_PWM_STA_EMPT1 = (1 shl 1);  {Fifo Empty Flag}
+ BCM2836_PWM_STA_FULL1 = (1 shl 0);  {Fifo Full Flag}
+ 
+ {Pulse Width Modulator (PWM) DMA configuration register bits (See 9.6)}
+ BCM2836_PWM_DMAC_ENAB  = (1 shl 31);  {DMA Enable (0: DMA disabled / 1: DMA enabled)}
+ BCM2836_PWM_DMAC_PANIC = ($FF shl 8); {DMA Threshold for PANIC signal (Default: 0x7)}
+ BCM2836_PWM_DMAC_DREQ  = ($FF shl 0); {DMA Threshold for DREQ signal (Default: 0x7)}
+ 
+ {Pulse Width Modulator (PWM) Registers}
+ BCM2836_PWM_CTL  = $00000000; {PWM Control}
+ BCM2836_PWM_STA  = $00000004; {PWM Status}
+ BCM2836_PWM_DMAC = $00000008; {PWM DMA Configuration}
+ BCM2836_PWM_RNG1 = $00000010; {PWM Channel 1 Range}
+ BCM2836_PWM_DAT1 = $00000014; {PWM Channel 1 Data}
+ BCM2836_PWM_FIF1 = $00000018; {PWM FIFO Input}
+ BCM2836_PWM_RNG2 = $00000020; {PWM Channel 2 Range}
+ BCM2836_PWM_DAT2 = $00000024; {PWM Channel 2 Data}
  
 const
  {PL011 UART Data register bits (See 13.4)}
@@ -829,10 +874,135 @@ const
  BCM2836_RANDOM_DOUBLE_SPEED  = $00000002; {Double Speed Mode (Less Random)}
  
 const
- {Clock Management} 
+ {Clock Management (See Section 6)} 
  BCM2836_CM_PASSWORD               = $5A000000;
  
- //To Do  
+ {Clock Manager CM_*CTL register bits (See 6.3)}
+ BCM2836_CM_CTL_MASH_0         = (0 shl 9); {MASH control - 0 = integer division}
+ BCM2836_CM_CTL_MASH_1         = (1 shl 9); {MASH control - 1 = 1-stage MASH (equivalent to non-MASH dividers)}
+ BCM2836_CM_CTL_MASH_2         = (2 shl 9); {MASH control - 2 = 2-stage MASH}
+ BCM2836_CM_CTL_MASH_3         = (3 shl 9); {MASH control - 3 = 3-stage MASH (To avoid lock-ups and glitches do not change this control while BUSY=1 and do not change this control at the same time as asserting ENAB)}
+ BCM2836_CM_CTL_FLIP           = (1 shl 8); {MASH control - Invert the clock generator output (To avoid output glitches do not switch this control while BUSY=1)}
+ BCM2836_CM_CTL_BUSY           = (1 shl 7); {Clock generator is running (To avoid glitches and lock-ups, clock sources and setups must not be changed while this flag is set)}
+ BCM2836_CM_CTL_GATE           = (1 shl 6); {Unused}
+ BCM2836_CM_CTL_KILL           = (1 shl 5); {Kill the clock generator (0 = no action / 1 = stop and reset the clock generator) (This is intended for test/debug only)}
+ BCM2836_CM_CTL_ENAB           = (1 shl 4); {Enable the clock generator}
+ 
+ BCM2836_CM_CTL_SRC_GND        = (0 shl 0); {Clock source - GND}
+ BCM2836_CM_CTL_SRC_OSC        = (1 shl 0); {Clock source - Oscillator}
+ BCM2836_CM_CTL_SRC_TESTDEBUG0 = (2 shl 0); {Clock source - Testdebug0}
+ BCM2836_CM_CTL_SRC_TESTDEBUG1 = (3 shl 0); {Clock source - Testdebug1}
+ BCM2836_CM_CTL_SRC_PLLAPER    = (4 shl 0); {Clock source - PLLA per}
+ BCM2836_CM_CTL_SRC_PLLCPER    = (5 shl 0); {Clock source - PLLC per}
+ BCM2836_CM_CTL_SRC_PLLDPER    = (6 shl 0); {Clock source - PLLD per}
+ BCM2836_CM_CTL_SRC_HDMIAUX    = (7 shl 0); {Clock source - HDMI auxiliary}
+ 
+ {Clock Manager CM_*DIV register bits (See 6.3)}
+ BCM2836_CM_DIV_INT_MASK  = $00FFF000; {Integer part of divisor (This value has a minimum limit determined by the MASH setting) (To avoid lock-ups and glitches do not change this control while BUSY=1)}
+ BCM2836_CM_DIV_FRAC_MASK = $00000FFF; {Fractional part of divisor (To avoid lock-ups and glitches do not change this control while BUSY=1)}
+ 
+ {Clock Manager Registers}
+ BCM2836_CM_GNRICCTL =  $00000000; {Generic Clock Control}
+ BCM2836_CM_GNRICDIV =  $00000004; {Generic Clock Divisor}
+ BCM2836_CM_VPUCTL   =  $00000008; {VPU Clock Control}
+ BCM2836_CM_VPUDIV   =  $0000000C; {VPU Clock Divisor}
+ BCM2836_CM_SYSCTL   =  $00000010; {System Clock Control}
+ BCM2836_CM_SYSDIV   =  $00000014; {System Clock Divisor}
+ BCM2836_CM_PERIACTL =  $00000018; {PERIA Clock Control}
+ BCM2836_CM_PERIADIV =  $0000001C; {PERIA Clock Divisor}
+ BCM2836_CM_PERIICTL =  $00000020; {PERII Clock Control}
+ BCM2836_CM_PERIIDIV =  $00000024; {PERII Clock Divisor}
+ BCM2836_CM_H264CTL  =  $00000028; {H264 Clock Control}
+ BCM2836_CM_H264DIV  =  $0000002C; {H264 Clock Divisor}
+ BCM2836_CM_ISPCTL   =  $00000030; {ISP Clock Control}
+ BCM2836_CM_ISPDIV   =  $00000034; {ISP Clock Divisor}
+ BCM2836_CM_V3DCTL   =  $00000038; {V3D Clock Control}
+ BCM2836_CM_V3DDIV   =  $0000003C; {V3D Clock Divisor}
+ BCM2836_CM_CAM0CTL  =  $00000040; {Camera 0 Clock Control}
+ BCM2836_CM_CAM0DIV  =  $00000044; {Camera 0 Clock Divisor}
+ BCM2836_CM_CAM1CTL  =  $00000048; {Camera 1 Clock Control}
+ BCM2836_CM_CAM1DIV  =  $0000004C; {Camera 1 Clock Divisor}
+ BCM2836_CM_CCP2CTL  =  $00000050; {CCP2 Clock Control}
+ BCM2836_CM_CCP2DIV  =  $00000054; {CCP2 Clock Divisor}
+ BCM2836_CM_DSI0ECTL =  $00000058; {DSI0E Clock Control}
+ BCM2836_CM_DSI0EDIV =  $0000005C; {DSI0E Clock Divisor}
+ BCM2836_CM_DSI0PCTL =  $00000060; {DSI0P Clock Control}
+ BCM2836_CM_DSI0PDIV =  $00000064; {DSI0P Clock Divisor}
+ BCM2836_CM_DPICTL   =  $00000068; {DPI Clock Control}
+ BCM2836_CM_DPIDIV   =  $0000006C; {DPI Clock Divisor}
+ BCM2836_CM_GP0CTL   =  $00000070; {General Purpose 0 Clock Control}
+ BCM2836_CM_GP0DIV   =  $00000074; {General Purpose 0 Clock Divisor}
+ BCM2836_CM_GP1CTL   =  $00000078; {General Purpose 1 Clock Control}
+ BCM2836_CM_GP1DIV   =  $0000007C; {General Purpose 1 Clock Divisor}
+ BCM2836_CM_GP2CTL   =  $00000080; {General Purpose 2 Clock Control}
+ BCM2836_CM_GP2DIV   =  $00000084; {General Purpose 2 Clock Divisor}
+ BCM2836_CM_HSMCTL   =  $00000088; {HSM Clock Control}
+ BCM2836_CM_HSMDIV   =  $0000008C; {HSM Clock Divisor}
+ BCM2836_CM_OTPCTL   =  $00000090; {OTP Clock Control}
+ BCM2836_CM_OTPDIV   =  $00000094; {OTP Clock Divisor}
+ BCM2836_CM_PCMCTL   =  $00000098; {PCM / I2S Clock Control}
+ BCM2836_CM_PCMDIV   =  $0000009C; {PCM / I2S Clock Divisor}
+ BCM2836_CM_PWMCTL   =  $000000A0; {PWM Clock Control}
+ BCM2836_CM_PWMDIV   =  $000000A4; {PWM Clock Divisor}
+ BCM2836_CM_SLIMCTL  =  $000000A8; {SLIM Clock Control}
+ BCM2836_CM_SLIMDIV  =  $000000AC; {SLIM Clock Divisor}
+ BCM2836_CM_SMICTL   =  $000000B0; {SMI Clock Control}
+ BCM2836_CM_SMIDIV   =  $000000B4; {SMI Clock Divisor}
+ BCM2836_CM_TCNTCTL  =  $000000C0; {TCNT Clock Control}
+ BCM2836_CM_TCNTDIV  =  $000000C4; {TCNT Clock Divisor}
+ BCM2836_CM_TECCTL   =  $000000C8; {TEC Clock Control}
+ BCM2836_CM_TECDIV   =  $000000CC; {TEC Clock Divisor}
+ BCM2836_CM_TD0CTL   =  $000000D0; {TD0 Clock Control}
+ BCM2836_CM_TD0DIV   =  $000000D4; {TD0 Clock Divisor}
+ BCM2836_CM_TD1CTL   =  $000000D8; {TD1 Clock Control}
+ BCM2836_CM_TD1DIV   =  $000000DC; {TD1 Clock Divisor}
+ BCM2836_CM_TSENSCTL =  $000000E0; {TSENS Clock Control}
+ BCM2836_CM_TSENSDIV =  $000000E4; {TSENS Clock Divisor}
+ BCM2836_CM_TIMERCTL =  $000000E8; {Timer Clock Control}
+ BCM2836_CM_TIMERDIV =  $000000EC; {Timer Clock Divisor}
+ BCM2836_CM_UARTCTL  =  $000000F0; {UART Clock Control}
+ BCM2836_CM_UARTDIV  =  $000000F4; {UART Clock Divisor}
+ BCM2836_CM_VECCTL   =  $000000F8; {VEC Clock Control}
+ BCM2836_CM_VECDIV   =  $000000FC; {VEC Clock Divisor}
+ 
+ BCM2836_CM_OSCCOUNT =  $00000100; {Oscillator Count}
+ BCM2836_CM_PLLA     =  $00000104; {PLLA}
+ BCM2836_CM_PLLC     =  $00000108; {PLLC}
+ BCM2836_CM_PLLD     =  $0000010C; {PLLD}
+ BCM2836_CM_PLLH     =  $00000110; {PLLH}
+ BCM2836_CM_LOCK     =  $00000114; {Lock}
+ BCM2836_CM_EVENT    =  $00000118; {Event}
+ BCM2836_CM_INTEN    =  $00000118; {INTEN}
+ BCM2836_CM_DSI0HSCK =  $00000120; {DSI0HSCK}
+ BCM2836_CM_CKSM     =  $00000124; {CKSM}
+ BCM2836_CM_OSCFREQI =  $00000128; {Oscillator Frequency Integer}
+ BCM2836_CM_OSCFREQF =  $0000012C; {Oscillator Frequency Fraction}
+ BCM2836_CM_PLLTCTL  =  $00000130; {PLLT Control}
+ BCM2836_CM_PLLTCNT0 =  $00000134; {PLLT0 Count}
+ BCM2836_CM_PLLTCNT1 =  $00000138; {PLLT1 Count}
+ BCM2836_CM_PLLTCNT2 =  $0000013C; {PLLT2 Count}
+ BCM2836_CM_PLLTCNT3 =  $00000140; {PLLT3 Count}
+ BCM2836_CM_TDCLKEN  =  $00000144; {TD Clock Enable}
+ BCM2836_CM_BURSTCTL =  $00000148; {Burst Control}
+ BCM2836_CM_BURSTCNT =  $0000014C; {Burst Count}
+ BCM2836_CM_DSI1ECTL =  $00000158; {DSI1E Clock Control}
+ BCM2836_CM_DSI1EDIV =  $0000015C; {DSI1E Clock Divisor}
+ BCM2836_CM_DSI1PCTL =  $00000160; {DSI1P Clock Control}
+ BCM2836_CM_DSI1PDIV =  $00000164; {DSI1P Clock Divisor}
+ BCM2836_CM_DFTCTL   =  $00000168; {DFT Clock Control}
+ BCM2836_CM_DFTDIV   =  $0000016C; {DFT Clock Divisor}
+ BCM2836_CM_PLLB     =  $00000170; {PLLB}
+ 
+ BCM2836_CM_PULSECTL =  $00000190; {Pulse Clock Control}
+ BCM2836_CM_PULSEDIV =  $00000194; {Pulse Clock Divisor}
+ BCM2836_CM_SDCCTL   =  $000001A8; {SDC Clock Control}
+ BCM2836_CM_SDCDIV   =  $000001AC; {SDC Clock Divisor}
+ BCM2836_CM_ARMCTL   =  $000001B0; {ARM Clock Control}
+ BCM2836_CM_ARMDIV   =  $000001B4; {ARM Clock Divisor}
+ BCM2836_CM_AVEOCTL  =  $000001B8; {AVEO Clock Control}
+ BCM2836_CM_AVEODIV  =  $000001BC; {AVEO Clock Divisor}
+ BCM2836_CM_EMMCCTL  =  $000001C0; {EMMC Clock Control}
+ BCM2836_CM_EMMCDIV  =  $000001C4; {EMMC Clock Divisor}
  
 const
  {BCM2836 Mailboxes}

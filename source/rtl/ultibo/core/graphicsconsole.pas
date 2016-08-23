@@ -154,9 +154,11 @@ function GraphicsWindowGetMaxY(Handle:TWindowHandle):LongWord;
 
 function GraphicsWindowGetRect(Handle:TWindowHandle):TConsoleRect; inline;
 function GraphicsWindowSetRect(Handle:TWindowHandle;const ARect:TConsoleRect):LongWord; inline;
+function GraphicsWindowResetRect(Handle:TWindowHandle):LongWord; inline;
 
 function GraphicsWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
 function GraphicsWindowSetViewport(Handle:TWindowHandle;X1,Y1,X2,Y2:LongWord):LongWord;
+function GraphicsWindowResetViewport(Handle:TWindowHandle):LongWord; 
 
 function GraphicsWindowGetCols(Handle:TWindowHandle):LongWord;
 function GraphicsWindowGetRows(Handle:TWindowHandle):LongWord;
@@ -1033,6 +1035,17 @@ end;
 
 {==============================================================================}
 
+function GraphicsWindowResetRect(Handle:TWindowHandle):LongWord; inline;
+{Reset the window viewport for an existing console window to the maximum size}
+{Handle: The handle of the window to reset the viewport for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=GraphicsWindowResetViewport(Handle);
+end;
+
+{==============================================================================}
+
 function GraphicsWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
 {Get the X1,Y1,X2,Y2 of the window viewport for an existing console window}
 {Handle: The handle of the window to get the viewport for}
@@ -1128,6 +1141,46 @@ begin
   end; 
 end;
 
+{==============================================================================}
+
+function GraphicsWindowResetViewport(Handle:TWindowHandle):LongWord; 
+{Reset the window viewport for an existing console window to the maximum size}
+{Handle: The handle of the window to reset the viewport for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Window:PGraphicsWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+  
+ {Get Window}
+ Window:=PGraphicsWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Reset Viewport}
+ Window.MinX:=0;
+ Window.MinY:=0;
+ Window.MaxX:=Window.Width - 1;
+ Window.MaxY:=Window.Height - 1;
+ {Window.X}{No X,Y on graphics windows}
+ {Window.Y}
+ Window.Cols:=Window.Width;
+ Window.Rows:=Window.Height;
+ 
+ Result:=ERROR_SUCCESS;
+
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end; 
+ 
 {==============================================================================}
 
 function GraphicsWindowGetCols(Handle:TWindowHandle):LongWord;

@@ -352,9 +352,11 @@ function RPi3CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongW
 function RPi3DMAGetChannels:LongWord;
 
 function RPi3VirtualGPIOInputGet(Pin:LongWord):LongWord; 
-function RPi3VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
-function RPi3VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; 
 function RPi3VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
+{Note: These are to be removed in the next release}
+function RPi3VirtualGPIOOutputSetOld(Pin:LongWord):LongWord;
+function RPi3VirtualGPIOOutputClearOld(Pin:LongWord):LongWord;
 
 {==============================================================================}
 {RPi3 Thread Functions}
@@ -738,8 +740,10 @@ begin
  {Register Platform Virtual GPIO Handlers}
  VirtualGPIOInputGetHandler:=RPi3VirtualGPIOInputGet;
  VirtualGPIOOutputSetHandler:=RPi3VirtualGPIOOutputSet;
- VirtualGPIOOutputClearHandler:=RPi3VirtualGPIOOutputClear;
  VirtualGPIOFunctionSelectHandler:=RPi3VirtualGPIOFunctionSelect;
+ {Note: These are to be removed in the next release}
+ VirtualGPIOOutputSetOldHandler:=RPi3VirtualGPIOOutputSetOld;
+ VirtualGPIOOutputClearOldHandler:=RPi3VirtualGPIOOutputClearOld;
  
  {Register Threads SchedulerInit Handler}
  SchedulerInitHandler:=RPi3SchedulerInit;
@@ -1385,7 +1389,7 @@ begin
  if CacheLineSize > BCM2710DMA_ALIGNMENT then BCM2710DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > BCM2710DMA_MULTIPLIER then BCM2710DMA_MULTIPLIER:=CacheLineSize;
  
- BCM2710FRAMEBUFFER_ALIGNEMENT:=SIZE_256;
+ BCM2710FRAMEBUFFER_ALIGNMENT:=SIZE_256;
  BCM2710FRAMEBUFFER_CACHED:=GPU_MEMORY_CACHED;
  
  BCM2710_REGISTER_I2C0:=False; {I2C0 is not available on the header except on original Revision 1 boards}
@@ -1846,7 +1850,7 @@ begin
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B:begin 
     {LED On}
-    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0);
+    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_HIGH);
    end;
  end;
 end;
@@ -1859,7 +1863,7 @@ begin
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B:begin 
     {LED Off}
-    VirtualGPIOOutputClear(VIRTUAL_GPIO_PIN_0);
+    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_LOW);
    end;
  end;
 end;
@@ -6642,7 +6646,7 @@ var
  Address:LongWord;
 begin
  {}
- Result:=0;
+ Result:=GPIO_LEVEL_UNKNOWN;
  
  {Check Pin}
  if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
@@ -6667,7 +6671,105 @@ end;
 
 {==============================================================================}
 
-function RPi3VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; 
+var
+ Address:LongWord;
+ Enable:Word;
+ Disable:Word;
+ Difference:SmallInt;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Pin}
+ if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
+ 
+ {Check Level}
+ if Level > GPIO_LEVEL_HIGH then Exit;
+ 
+ {Check Address}
+ if VirtualGPIOBuffer.Address = 0 then
+  begin
+   {Get Buffer}
+   if RPi3VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
+   
+   {Update Address}
+   VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
+  end;
+ 
+ {Check Address}
+ if VirtualGPIOBuffer.Address > 0 then
+  begin
+   {Get Enable/Disable counts}
+   Enable:=VirtualGPIOBuffer.EnableDisable[Pin] shr 16;
+   Disable:=VirtualGPIOBuffer.EnableDisable[Pin] shr 0;
+   
+   {Get Difference}
+   Difference:=Enable - Disable;
+   
+   {Check Level}
+   if Level = GPIO_LEVEL_HIGH then
+    begin
+     {Check State}
+     if Difference <= 0 then
+      begin
+       {Pin is Clear}
+       Inc(Enable);
+       
+       {Set Enable/Disable counts}
+       VirtualGPIOBuffer.EnableDisable[Pin]:=(Enable shl 16) or (Disable shl 0);
+       
+       {Write Value}
+       PLongWord(VirtualGPIOBuffer.Address + (Pin * SizeOf(LongWord)))^:=VirtualGPIOBuffer.EnableDisable[Pin];
+       
+       {Clean Cache}
+       CleanDataCacheRange(VirtualGPIOBuffer.Address,BCM2837_VIRTUAL_GPIO_PIN_COUNT * SizeOf(LongWord));
+      end;
+    end
+   else
+    begin
+     {Check State}
+     if Difference > 0 then
+      begin
+       {Pin is Set}
+       Inc(Disable);
+       
+       {Set Enable/Disable counts}
+       VirtualGPIOBuffer.EnableDisable[Pin]:=(Enable shl 16) or (Disable shl 0);
+       
+       {Write Value}
+       PLongWord(VirtualGPIOBuffer.Address + (Pin * SizeOf(LongWord)))^:=VirtualGPIOBuffer.EnableDisable[Pin];
+     
+       {Clean Cache}
+       CleanDataCacheRange(VirtualGPIOBuffer.Address,BCM2837_VIRTUAL_GPIO_PIN_COUNT * SizeOf(LongWord));
+      end;
+    end;
+    
+   Result:=ERROR_SUCCESS; 
+  end;
+end;
+
+{==============================================================================}
+
+function RPi3VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Pin}
+ if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
+
+ {Check Mode}
+ case Mode of
+  VIRTUAL_GPIO_FUNCTION_OUT:begin
+    Result:=ERROR_SUCCESS; 
+   end;
+ end;
+end;
+
+{==============================================================================}
+{Note: These are to be removed in the next release}
+function RPi3VirtualGPIOOutputSetOld(Pin:LongWord):LongWord; 
 var
  Address:LongWord;
  Enable:Word;
@@ -6722,7 +6824,7 @@ end;
 
 {==============================================================================}
 
-function RPi3VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOOutputClearOld(Pin:LongWord):LongWord; 
 var
  Address:LongWord;
  Enable:Word;
@@ -6773,24 +6875,6 @@ begin
     
    Result:=ERROR_SUCCESS; 
   end;
-end;
-
-{==============================================================================}
-
-function RPi3VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Pin}
- if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
-
- {Check Mode}
- case Mode of
-  VIRTUAL_GPIO_FUNCTION_OUT:begin
-    Result:=ERROR_SUCCESS; 
-   end;
- end;
 end;
 
 {==============================================================================}
@@ -7522,7 +7606,7 @@ begin
      Tag.Allocate.Header.Tag:=BCM2837_MBOX_TAG_ALLOCATE_BUFFER;
      Tag.Allocate.Header.Size:=SizeOf(TBCM2837MailboxTagAllocateBuffer) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Allocate.Header.Length:=SizeOf(Tag.Allocate.Request);
-     Tag.Allocate.Request.Alignment:=BCM2710FRAMEBUFFER_ALIGNEMENT;
+     Tag.Allocate.Request.Alignment:=BCM2710FRAMEBUFFER_ALIGNMENT;
      
      {Setup Tag (Pitch)}
      Tag.Pitch.Header.Tag:=BCM2837_MBOX_TAG_GET_PITCH;
@@ -7979,7 +8063,14 @@ begin
   CLOCK_ID_ISP:Result:=BCM2837_MBOX_CLOCK_ID_ISP;
   CLOCK_ID_SDRAM:Result:=BCM2837_MBOX_CLOCK_ID_SDRAM;
   CLOCK_ID_PIXEL:Result:=BCM2837_MBOX_CLOCK_ID_PIXEL;
-  CLOCK_ID_PWM:Result:=BCM2837_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_PWM0:Result:=BCM2837_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_PWM1:Result:=BCM2837_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_I2C0:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_I2C1:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_I2C2:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI0:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI1:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI2:Result:=BCM2837_MBOX_CLOCK_ID_CORE;
  end; 
 end;
 

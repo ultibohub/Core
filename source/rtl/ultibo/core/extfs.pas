@@ -93,6 +93,9 @@ type
    {Public Variables}
 
    {Public Methods}
+   function RecognizePartitionId(APartitionId:Byte):Boolean; override;
+   function RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; override;
+   
    function RecognizePartition(APartition:TDiskPartition):Boolean; override;
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; override;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; override;
@@ -181,6 +184,53 @@ begin
  Result:='EXTFS';
 end;
 
+{==============================================================================}
+
+function TEXTFSRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+
+  case APartitionId of
+   pidLinuxExtended,pidExtended,pidExtLBA:begin
+     {Linux or DOS Extended Partition}
+     Result:=True;
+    end;
+   pidLinuxSwap:begin
+     {Linux Swap Partition}
+     Result:=True;
+    end;
+   pidLinuxNative:begin
+     {Linux Native Partition}
+     Result:=True;
+    end;
+  end;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
+{==============================================================================}
+  
+function TEXTFSRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+
+  //To Do
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
 {==============================================================================}
 
 function TEXTFSRecognizer.RecognizePartition(APartition:TDiskPartition):Boolean;

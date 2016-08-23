@@ -199,7 +199,7 @@ var
  {Begin timezone builder data}
 const
  {Timezone count}
- TIMEZONE_COUNT = 108;
+ TIMEZONE_COUNT = 131;
 
 type 
  {Timezone List}
@@ -212,7 +212,7 @@ type
 var
  {Timezone List}
  TimezoneList:TTimezoneList = (
-  TimezoneCount:108;
+  TimezoneCount:131;
   TimezoneData:(
 
    {Afghanistan Standard Time}
@@ -237,6 +237,30 @@ var
     DaylightName:('Alaskan Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:2;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Aleutian Standard Time}
+   (Name:('Aleutian Standard Time');
+    Description:('(UTC-10:00) Aleutian Islands');
+    Bias:600;
+    StandardName:('Aleutian Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:11;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Aleutian Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:2;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Altai Standard Time}
+   (Name:('Altai Standard Time');
+    Description:('(UTC+07:00) Barnaul, Gorno-Altaysk');
+    Bias:-420;
+    StandardName:('Altai Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Altai Daylight Time');
+    DaylightBias:60;
+    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:5;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Arab Standard Time}
@@ -277,7 +301,7 @@ var
 
    {Argentina Standard Time}
    (Name:('Argentina Standard Time');
-    Description:('(UTC-03:00) Buenos Aires');
+    Description:('(UTC-03:00) City of Buenos Aires');
     Bias:180;
     StandardName:('Argentina Standard Time');
     StandardBias:0;
@@ -285,6 +309,18 @@ var
     DaylightName:('Argentina Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Astrakhan Standard Time}
+   (Name:('Astrakhan Standard Time');
+    Description:('(UTC+04:00) Astrakhan, Ulyanovsk');
+    Bias:-240;
+    StandardName:('Astrakhan Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Astrakhan Daylight Time');
+    DaylightBias:60;
+    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:5;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Atlantic Standard Time}
@@ -311,6 +347,18 @@ var
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Aus Central W. Standard Time}
+   (Name:('Aus Central W. Standard Time');
+    Description:('(UTC+08:45) Eucla');
+    Bias:-525;
+    StandardName:('Aus Central W. Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Aus Central W. Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {AUS Eastern Standard Time}
    (Name:('AUS Eastern Standard Time');
     Description:('(UTC+10:00) Canberra, Melbourne, Sydney');
@@ -329,10 +377,10 @@ var
     Bias:-240;
     StandardName:('Azerbaijan Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:0;wDay:5;wHour:5;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Azerbaijan Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:4;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Azores Standard Time}
@@ -379,6 +427,18 @@ var
     StandardBias:0;
     StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Belarus Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Bougainville Standard Time}
+   (Name:('Bougainville Standard Time');
+    Description:('(UTC+11:00) Bougainville Island');
+    Bias:-660;
+    StandardName:('Bougainville Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Bougainville Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
@@ -527,6 +587,18 @@ var
     DaylightStart:(wYear:0;wMonth:4;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Chatham Islands Standard Time}
+   (Name:('Chatham Islands Standard Time');
+    Description:('(UTC+12:45) Chatham Islands');
+    Bias:-765;
+    StandardName:('Chatham Islands Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:4;wDayOfWeek:0;wDay:1;wHour:3;wMinute:45;wSecond:0;wMilliseconds:0);
+    DaylightName:('Chatham Islands Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:9;wDayOfWeek:0;wDay:5;wHour:2;wMinute:45;wSecond:0;wMilliseconds:0);
+   ),
+
    {China Standard Time}
    (Name:('China Standard Time');
     Description:('(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi');
@@ -537,6 +609,18 @@ var
     DaylightName:('China Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Cuba Standard Time}
+   (Name:('Cuba Standard Time');
+    Description:('(UTC-05:00) Havana');
+    Bias:300;
+    StandardName:('Cuba Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:11;wDayOfWeek:0;wDay:1;wHour:1;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Cuba Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:2;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Dateline Standard Time}
@@ -577,7 +661,7 @@ var
 
    {E. Europe Standard Time}
    (Name:('E. Europe Standard Time');
-    Description:('(UTC+02:00) E. Europe');
+    Description:('(UTC+02:00) Chisinau');
     Bias:-120;
     StandardName:('E. Europe Standard Time');
     StandardBias:0;
@@ -597,6 +681,18 @@ var
     DaylightName:('E. South America Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:10;wDayOfWeek:6;wDay:3;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+   ),
+
+   {Easter Island Standard Time}
+   (Name:('Easter Island Standard Time');
+    Description:('(UTC-06:00) Easter Island');
+    Bias:360;
+    StandardName:('Easter Island Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:5;wDayOfWeek:6;wDay:2;wHour:22;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Easter Island Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:8;wDayOfWeek:6;wDay:2;wHour:22;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Eastern Standard Time}
@@ -629,15 +725,15 @@ var
     Bias:-120;
     StandardName:('Egypt Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:4;wDay:5;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
     DaylightName:('Egypt Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightStart:(wYear:0;wMonth:7;wDayOfWeek:4;wDay:1;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
    ),
 
    {Ekaterinburg Standard Time}
    (Name:('Ekaterinburg Standard Time');
-    Description:('(UTC+05:00) Ekaterinburg (RTZ 4)');
+    Description:('(UTC+05:00) Ekaterinburg');
     Bias:-300;
     StandardName:('Russia TZ 4 Standard Time');
     StandardBias:0;
@@ -656,7 +752,7 @@ var
     StandardStart:(wYear:0;wMonth:1;wDayOfWeek:0;wDay:3;wHour:3;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Fiji Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:10;wDayOfWeek:0;wDay:4;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightStart:(wYear:0;wMonth:11;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {FLE Standard Time}
@@ -685,7 +781,7 @@ var
 
    {GMT Standard Time}
    (Name:('GMT Standard Time');
-    Description:('(UTC) Dublin, Edinburgh, Lisbon, London');
+    Description:('(UTC+00:00) Dublin, Edinburgh, Lisbon, London');
     Bias:0;
     StandardName:('GMT Standard Time');
     StandardBias:0;
@@ -701,7 +797,7 @@ var
     Bias:180;
     StandardName:('Greenland Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:6;wDay:4;wHour:23;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:6;wDay:5;wHour:23;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Greenland Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:5;wHour:22;wMinute:0;wSecond:0;wMilliseconds:0);
@@ -709,7 +805,7 @@ var
 
    {Greenwich Standard Time}
    (Name:('Greenwich Standard Time');
-    Description:('(UTC) Monrovia, Reykjavik');
+    Description:('(UTC+00:00) Monrovia, Reykjavik');
     Bias:0;
     StandardName:('Greenwich Standard Time');
     StandardBias:0;
@@ -729,6 +825,18 @@ var
     DaylightName:('GTB Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:3;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Haiti Standard Time}
+   (Name:('Haiti Standard Time');
+    Description:('(UTC-05:00) Haiti');
+    Bias:300;
+    StandardName:('Haiti Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Haiti Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Hawaiian Standard Time}
@@ -761,10 +869,10 @@ var
     Bias:-210;
     StandardName:('Iran Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:9;wDayOfWeek:1;wDay:3;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    StandardStart:(wYear:0;wMonth:9;wDayOfWeek:2;wDay:3;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
     DaylightName:('Iran Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:3;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:1;wDay:3;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Israel Standard Time}
@@ -793,7 +901,7 @@ var
 
    {Kaliningrad Standard Time}
    (Name:('Kaliningrad Standard Time');
-    Description:('(UTC+02:00) Kaliningrad (RTZ 1)');
+    Description:('(UTC+02:00) Kaliningrad');
     Bias:-120;
     StandardName:('Russia TZ 1 Standard Time');
     StandardBias:0;
@@ -851,14 +959,38 @@ var
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Lord Howe Standard Time}
+   (Name:('Lord Howe Standard Time');
+    Description:('(UTC+10:30) Lord Howe Island');
+    Bias:-630;
+    StandardName:('Lord Howe Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:4;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Lord Howe Daylight Time');
+    DaylightBias:-30;
+    DaylightStart:(wYear:0;wMonth:10;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {Magadan Standard Time}
    (Name:('Magadan Standard Time');
-    Description:('(UTC+10:00) Magadan');
-    Bias:-600;
+    Description:('(UTC+11:00) Magadan');
+    Bias:-660;
     StandardName:('Magadan Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:4;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Magadan Daylight Time');
+    DaylightBias:60;
+    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:5;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Marquesas Standard Time}
+   (Name:('Marquesas Standard Time');
+    Description:('(UTC-09:30) Marquesas Islands');
+    Bias:570;
+    StandardName:('Marquesas Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Marquesas Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
@@ -893,7 +1025,7 @@ var
     Bias:-120;
     StandardName:('Middle East Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:6;wDay:4;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:6;wDay:5;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
     DaylightName:('Middle East Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:5;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
@@ -905,22 +1037,22 @@ var
     Bias:180;
     StandardName:('Montevideo Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:2;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Montevideo Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:4;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Morocco Standard Time}
    (Name:('Morocco Standard Time');
-    Description:('(UTC) Casablanca');
+    Description:('(UTC+00:00) Casablanca');
     Bias:0;
     StandardName:('Morocco Standard Time');
     StandardBias:0;
     StandardStart:(wYear:0;wMonth:10;wDayOfWeek:0;wDay:5;wHour:3;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Morocco Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:7;wDayOfWeek:0;wDay:3;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightStart:(wYear:0;wMonth:7;wDayOfWeek:0;wDay:2;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Mountain Standard Time}
@@ -961,7 +1093,7 @@ var
 
    {N. Central Asia Standard Time}
    (Name:('N. Central Asia Standard Time');
-    Description:('(UTC+06:00) Novosibirsk (RTZ 5)');
+    Description:('(UTC+06:00) Novosibirsk');
     Bias:-360;
     StandardName:('Russia TZ 5 Standard Time');
     StandardBias:0;
@@ -1019,9 +1151,21 @@ var
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:2;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Norfolk Standard Time}
+   (Name:('Norfolk Standard Time');
+    Description:('(UTC+11:00) Norfolk Island');
+    Bias:-660;
+    StandardName:('Norfolk Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Norfolk Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {North Asia East Standard Time}
    (Name:('North Asia East Standard Time');
-    Description:('(UTC+08:00) Irkutsk (RTZ 7)');
+    Description:('(UTC+08:00) Irkutsk');
     Bias:-480;
     StandardName:('Russia TZ 7 Standard Time');
     StandardBias:0;
@@ -1033,7 +1177,7 @@ var
 
    {North Asia Standard Time}
    (Name:('North Asia Standard Time');
-    Description:('(UTC+07:00) Krasnoyarsk (RTZ 6)');
+    Description:('(UTC+07:00) Krasnoyarsk');
     Bias:-420;
     StandardName:('Russia TZ 6 Standard Time');
     StandardBias:0;
@@ -1043,16 +1187,28 @@ var
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
-   {Pacific SA Standard Time}
-   (Name:('Pacific SA Standard Time');
-    Description:('(UTC-03:00) Santiago');
-    Bias:180;
-    StandardName:('Pacific SA Standard Time');
+   {North Korea Standard Time}
+   (Name:('North Korea Standard Time');
+    Description:('(UTC+08:30) Pyongyang');
+    Bias:-510;
+    StandardName:('North Korea Standard Time');
     StandardBias:0;
     StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
-    DaylightName:('Pacific SA Daylight Time');
+    DaylightName:('North Korea Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Pacific SA Standard Time}
+   (Name:('Pacific SA Standard Time');
+    Description:('(UTC-04:00) Santiago');
+    Bias:240;
+    StandardName:('Pacific SA Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:5;wDayOfWeek:6;wDay:2;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    DaylightName:('Pacific SA Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:8;wDayOfWeek:6;wDay:2;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
    ),
 
    {Pacific Standard Time}
@@ -1073,10 +1229,10 @@ var
     Bias:480;
     StandardName:('Pacific Standard Time (Mexico)');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:11;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Pacific Daylight Time (Mexico)');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:4;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:2;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Pakistan Standard Time}
@@ -1097,7 +1253,7 @@ var
     Bias:240;
     StandardName:('Paraguay Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:3;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    StandardStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:5;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
     DaylightName:('Paraguay Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:10;wDayOfWeek:6;wDay:1;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
@@ -1117,7 +1273,7 @@ var
 
    {Russia Time Zone 10}
    (Name:('Russia Time Zone 10');
-    Description:('(UTC+11:00) Chokurdakh (RTZ 10)');
+    Description:('(UTC+11:00) Chokurdakh');
     Bias:-660;
     StandardName:('Russia TZ 10 Standard Time');
     StandardBias:0;
@@ -1129,7 +1285,7 @@ var
 
    {Russia Time Zone 11}
    (Name:('Russia Time Zone 11');
-    Description:('(UTC+12:00) Anadyr, Petropavlovsk-Kamchatsky (RTZ 11)');
+    Description:('(UTC+12:00) Anadyr, Petropavlovsk-Kamchatsky');
     Bias:-720;
     StandardName:('Russia TZ 11 Standard Time');
     StandardBias:0;
@@ -1141,7 +1297,7 @@ var
 
    {Russia Time Zone 3}
    (Name:('Russia Time Zone 3');
-    Description:('(UTC+04:00) Izhevsk, Samara (RTZ 3)');
+    Description:('(UTC+04:00) Izhevsk, Samara');
     Bias:-240;
     StandardName:('Russia TZ 3 Standard Time');
     StandardBias:0;
@@ -1153,7 +1309,7 @@ var
 
    {Russian Standard Time}
    (Name:('Russian Standard Time');
-    Description:('(UTC+03:00) Moscow, St. Petersburg, Volgograd (RTZ 2)');
+    Description:('(UTC+03:00) Moscow, St. Petersburg, Volgograd');
     Bias:-180;
     StandardName:('Russia TZ 2 Standard Time');
     StandardBias:0;
@@ -1199,16 +1355,40 @@ var
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Saint Pierre Standard Time}
+   (Name:('Saint Pierre Standard Time');
+    Description:('(UTC-03:00) Saint Pierre and Miquelon');
+    Bias:180;
+    StandardName:('Saint Pierre Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:11;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Saint Pierre Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:2;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Sakhalin Standard Time}
+   (Name:('Sakhalin Standard Time');
+    Description:('(UTC+11:00) Sakhalin');
+    Bias:-660;
+    StandardName:('Sakhalin Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Sakhalin Daylight Time');
+    DaylightBias:60;
+    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:5;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {Samoa Standard Time}
    (Name:('Samoa Standard Time');
     Description:('(UTC+13:00) Samoa');
     Bias:-780;
     StandardName:('Samoa Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:4;wDayOfWeek:0;wDay:1;wHour:1;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:4;wDayOfWeek:0;wDay:1;wHour:4;wMinute:0;wSecond:0;wMilliseconds:0);
     DaylightName:('Samoa Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:9;wDayOfWeek:0;wDay:5;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightStart:(wYear:0;wMonth:9;wDayOfWeek:0;wDay:5;wHour:3;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {SE Asia Standard Time}
@@ -1268,7 +1448,7 @@ var
     StandardStart:(wYear:0;wMonth:10;wDayOfWeek:4;wDay:5;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
     DaylightName:('Syria Daylight Time');
     DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:4;wDayOfWeek:4;wDay:1;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:5;wDay:5;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Taipei Standard Time}
@@ -1295,6 +1475,18 @@ var
     DaylightStart:(wYear:0;wMonth:10;wDayOfWeek:0;wDay:1;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Tocantins Standard Time}
+   (Name:('Tocantins Standard Time');
+    Description:('(UTC-03:00) Araguaina');
+    Bias:180;
+    StandardName:('Tocantins Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Tocantins Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {Tokyo Standard Time}
    (Name:('Tokyo Standard Time');
     Description:('(UTC+09:00) Osaka, Sapporo, Tokyo');
@@ -1305,6 +1497,18 @@ var
     DaylightName:('Tokyo Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {Tomsk Standard Time}
+   (Name:('Tomsk Standard Time');
+    Description:('(UTC+07:00) Tomsk');
+    Bias:-420;
+    StandardName:('Tomsk Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:5;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Tomsk Daylight Time');
+    DaylightBias:60;
+    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:5;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Tonga Standard Time}
@@ -1319,6 +1523,18 @@ var
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Transbaikal Standard Time}
+   (Name:('Transbaikal Standard Time');
+    Description:('(UTC+09:00) Chita');
+    Bias:-540;
+    StandardName:('Transbaikal Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Transbaikal Daylight Time');
+    DaylightBias:60;
+    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:5;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {Turkey Standard Time}
    (Name:('Turkey Standard Time');
     Description:('(UTC+02:00) Istanbul');
@@ -1331,13 +1547,25 @@ var
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:3;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {Turks And Caicos Standard Time}
+   (Name:('Turks And Caicos Standard Time');
+    Description:('(UTC-04:00) Turks and Caicos');
+    Bias:240;
+    StandardName:('Turks and Caicos Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('Turks and Caicos Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {Ulaanbaatar Standard Time}
    (Name:('Ulaanbaatar Standard Time');
     Description:('(UTC+08:00) Ulaanbaatar');
     Bias:-480;
     StandardName:('Ulaanbaatar Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:9;wDayOfWeek:5;wDay:5;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    StandardStart:(wYear:0;wMonth:9;wDayOfWeek:5;wDay:4;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
     DaylightName:('Ulaanbaatar Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
@@ -1403,6 +1631,30 @@ var
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {UTC-08}
+   (Name:('UTC-08');
+    Description:('(UTC-08:00) Coordinated Universal Time-08');
+    Bias:480;
+    StandardName:('UTC-08');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('UTC-08');
+    DaylightBias:0;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {UTC-09}
+   (Name:('UTC-09');
+    Description:('(UTC-09:00) Coordinated Universal Time-09');
+    Bias:540;
+    StandardName:('UTC-09');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightName:('UTC-09');
+    DaylightBias:0;
+    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {UTC-11}
    (Name:('UTC-11');
     Description:('(UTC-11:00) Coordinated Universal Time-11');
@@ -1417,19 +1669,19 @@ var
 
    {Venezuela Standard Time}
    (Name:('Venezuela Standard Time');
-    Description:('(UTC-04:30) Caracas');
-    Bias:270;
+    Description:('(UTC-04:00) Caracas');
+    Bias:240;
     StandardName:('Venezuela Standard Time');
     StandardBias:0;
-    StandardStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    StandardStart:(wYear:0;wMonth:5;wDayOfWeek:0;wDay:1;wHour:2;wMinute:30;wSecond:0;wMilliseconds:0);
     DaylightName:('Venezuela Daylight Time');
-    DaylightBias:-60;
-    DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+    DaylightBias:30;
+    DaylightStart:(wYear:0;wMonth:1;wDayOfWeek:5;wDay:1;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {Vladivostok Standard Time}
    (Name:('Vladivostok Standard Time');
-    Description:('(UTC+10:00) Vladivostok, Magadan (RTZ 9)');
+    Description:('(UTC+10:00) Vladivostok');
     Bias:-600;
     StandardName:('Russia TZ 9 Standard Time');
     StandardBias:0;
@@ -1475,6 +1727,18 @@ var
     DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:0;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
+   {W. Mongolia Standard Time}
+   (Name:('W. Mongolia Standard Time');
+    Description:('(UTC+07:00) Hovd');
+    Bias:-420;
+    StandardName:('W. Mongolia Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:9;wDayOfWeek:5;wDay:4;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    DaylightName:('W. Mongolia Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:5;wHour:2;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
    {West Asia Standard Time}
    (Name:('West Asia Standard Time');
     Description:('(UTC+05:00) Ashgabat, Tashkent');
@@ -1485,6 +1749,18 @@ var
     DaylightName:('West Asia Daylight Time');
     DaylightBias:-60;
     DaylightStart:(wYear:0;wMonth:0;wDayOfWeek:0;wDay:0;wHour:0;wMinute:0;wSecond:0;wMilliseconds:0);
+   ),
+
+   {West Bank Standard Time}
+   (Name:('West Bank Standard Time');
+    Description:('(UTC+02:00) Gaza, Hebron');
+    Bias:-120;
+    StandardName:('West Bank Gaza Standard Time');
+    StandardBias:0;
+    StandardStart:(wYear:0;wMonth:10;wDayOfWeek:4;wDay:3;wHour:23;wMinute:59;wSecond:59;wMilliseconds:999);
+    DaylightName:('West Bank Gaza Daylight Time');
+    DaylightBias:-60;
+    DaylightStart:(wYear:0;wMonth:3;wDayOfWeek:6;wDay:5;wHour:1;wMinute:0;wSecond:0;wMilliseconds:0);
    ),
 
    {West Pacific Standard Time}
@@ -1501,7 +1777,7 @@ var
 
    {Yakutsk Standard Time}
    (Name:('Yakutsk Standard Time');
-    Description:('(UTC+09:00) Yakutsk (RTZ 8)');
+    Description:('(UTC+09:00) Yakutsk');
     Bias:-540;
     StandardName:('Russia TZ 8 Standard Time');
     StandardBias:0;

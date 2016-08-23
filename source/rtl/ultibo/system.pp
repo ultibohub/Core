@@ -93,6 +93,9 @@ type
  {Process Functions}
  TSysGetProcessID = function:SizeUInt;
  
+ {Random Functions}
+ TSysRandomize = procedure;
+ 
  {File Functions}
  TSysDoClose = procedure(handle:longint);
  TSysDoErase = procedure(p:pchar;pchangeable:boolean);
@@ -115,6 +118,9 @@ type
 var
  {Process Functions}
  SysGetProcessIDHandler:TSysGetProcessID;
+ 
+ {Random Functions}
+ SysRandomizeHandler:TSysRandomize;
  
  {File Functions}
  SysDoCloseHandler:TSysDoClose;
@@ -227,38 +233,45 @@ begin
 end;
 {$endif FPC_HAS_FEATURE_COMMANDARGS}
 
-const
+{const
   QRAN_SHIFT  = 15;
   QRAN_MASK   = ((1 shl QRAN_SHIFT) - 1);
   QRAN_MAX    = QRAN_MASK;
   QRAN_A      = 1664525;
-  QRAN_C      = 1013904223;
+  QRAN_C      = 1013904223;}
 
 {$ifdef FPC_HAS_FEATURE_RANDOM}
-procedure randomize();
+procedure Randomize();
 begin
-  RandSeed := 63458;
+ if Assigned(SysRandomizeHandler) then
+  begin
+   SysRandomizeHandler();
+  end
+ else
+  begin 
+   RandSeed:=63458;
+  end; 
 end;
 
-procedure randomize(value: integer);
+{procedure randomize(value: integer);
 begin
   RandSeed := value;
-end;
+end;}
 
-function random(): integer;
+{function random(): integer;
 begin
   RandSeed := QRAN_A * RandSeed + QRAN_C;
   random := (RandSeed shr 16) and QRAN_MAX;
-end;
+end;}
 
-function random(value: integer): integer;
+{function random(value: integer): integer;
 var
   a: integer;
 begin
   RandSeed := QRAN_A * RandSeed + QRAN_C;
   a := (RandSeed shr 16) and QRAN_MAX;
   random := (a * value) shr 15;
-end;
+end;}
 {$endif FPC_HAS_FEATURE_RANDOM}
 
 {*****************************************************************************

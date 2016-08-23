@@ -92,6 +92,8 @@ type
   function GetTitle:String;
   procedure SetTitle(const ATitle:String);
   function GetCaption:String;
+  
+  function NormalizedDateTimeToStr(const DateTime:TDateTime):String;
  protected
   {Internal Variables}
 
@@ -147,6 +149,8 @@ type
   {Internal Methods}
   function GetTitle:String;
   function GetCaption:String;
+  
+  function NormalizedDateTimeToStr(const DateTime:TDateTime):String;
  protected
   {Internal Variables}
   FCaption:String; //To Do //Hash ?
@@ -920,6 +924,21 @@ end;
 
 {==============================================================================}
 
+function TWebStatusMain.NormalizedDateTimeToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ if DateTime = 0 then 
+  begin
+   Result:='N/A';
+  end
+ else
+  begin
+   Result:=DateTimeToStr(DateTime);
+  end;  
+end;
+
+{==============================================================================}
+
 function TWebStatusMain.MakeBold(const AName:String):String;
 begin
  {}
@@ -1491,10 +1510,10 @@ begin
  AddItem(AResponse,'Timezone:',GetCurrentTimezone);
  AddBlank(AResponse);
  AddItemEx(AResponse,'Daylight Start:',GetTimezoneDaylightStart,2);
- AddItemEx(AResponse,'Daylight Date:',DateTimeToStr(GetTimezoneDaylightDate),2);
+ AddItemEx(AResponse,'Daylight Date:',NormalizedDateTimeToStr(GetTimezoneDaylightDate),2);
  AddBlank(AResponse);
  AddItemEx(AResponse,'Standard Start:',GetTimezoneStandardStart,2);
- AddItemEx(AResponse,'Standard Date:',DateTimeToStr(GetTimezoneStandardDate),2);
+ AddItemEx(AResponse,'Standard Date:',NormalizedDateTimeToStr(GetTimezoneStandardDate),2);
 
  //To Do //Locale
  
@@ -1617,6 +1636,18 @@ begin
  ReleaseLock;
 end;
 
+{==============================================================================}
+
+function TWebStatusSub.NormalizedDateTimeToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ Result:='';
+ 
+ if FMain = nil then Exit;
+
+ Result:=FMain.NormalizedDateTimeToStr(DateTime);
+end;
+ 
 {==============================================================================}
 
 function TWebStatusSub.MakeBold(const AName:String):String;
@@ -1951,7 +1982,7 @@ begin
  {Add Clock Rates}
  AddBlank(AResponse);
  AddItem(AResponse,'Clock Rate','');
- for Count:=CLOCK_ID_MMC0 to CLOCK_ID_PWM do
+ for Count:=CLOCK_ID_MMC0 to CLOCK_ID_SPI3 do
   begin
    AddItemEx(AResponse,ClockIDToString(Count) + ':',IntToStr(ClockGetRate(Count)),3);
   end; 
@@ -1959,7 +1990,7 @@ begin
  {Add Clock States}
  AddBlank(AResponse);
  AddItem(AResponse,'Clock State','');
- for Count:=CLOCK_ID_MMC0 to CLOCK_ID_PWM do
+ for Count:=CLOCK_ID_MMC0 to CLOCK_ID_SPI3 do
   begin
    AddItemEx(AResponse,ClockIDToString(Count) + ':',ClockStateToString(ClockGetState(Count)),3);
   end; 
@@ -1967,7 +1998,7 @@ begin
  {Add Clock Min/Max}
  AddBlank(AResponse);
  AddItem(AResponse,'Clock Min/Max Rate','');
- for Count:=CLOCK_ID_MMC0 to CLOCK_ID_PWM do
+ for Count:=CLOCK_ID_MMC0 to CLOCK_ID_SPI3 do
   begin
    AddItemEx(AResponse,ClockIDToString(Count) + ':',IntToStr(ClockGetMinRate(Count)) + ' / ' + IntToStr(ClockGetMaxRate(Count)),3);
   end; 

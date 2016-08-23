@@ -687,7 +687,7 @@ var
  
  BCM2708SDHCI_FIQ_ENABLED:LongBool;         {The BCM2708 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
- BCM2708FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2708 Framebuffer device}
+ BCM2708FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2708 Framebuffer device}
  BCM2708FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2708 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
  BCM2708_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2708 SPI0 device during boot (Only if BCM2708 unit included)}
@@ -704,6 +704,7 @@ var
  BCM2708_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2708 SPI slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2708 I2C slave device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2708 PWM Audio device during boot (Only if BCM2708 unit included)}
 
  BCM2708_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2708 Clock device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2708 Timer device during boot (Only if BCM2708 unit included)}
@@ -724,7 +725,7 @@ var
  
  BCM2709SDHCI_FIQ_ENABLED:LongBool;         {The BCM2709 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
- BCM2709FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2709 Framebuffer device}
+ BCM2709FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2709 Framebuffer device}
  BCM2709FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2709 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
  BCM2709_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2709 SPI0 device during boot (Only if BCM2709 unit included)}
@@ -741,7 +742,8 @@ var
  BCM2709_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2709 SPI slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2709 I2C slave device during boot (Only if BCM2709 unit included)}
-
+ BCM2709_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2709 PWM Audio device during boot (Only if BCM2709 unit included)}
+ 
  BCM2709_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2709 Clock device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2709 Timer device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2709 Random device during boot (Only if BCM2709 unit included)}
@@ -761,7 +763,7 @@ var
  
  BCM2710SDHCI_FIQ_ENABLED:LongBool;         {The BCM2710 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
- BCM2710FRAMEBUFFER_ALIGNEMENT:LongWord;    {The memory alignement for the BCM2710 Framebuffer device}
+ BCM2710FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2710 Framebuffer device}
  BCM2710FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2710 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
  BCM2710_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2710 SPI0 device during boot (Only if BCM2710 unit included)}
@@ -778,6 +780,7 @@ var
  BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2710 SPI slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2710 I2C slave device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2710 PWM Audio device during boot (Only if BCM2710 unit included)}
 
  BCM2710_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2710 Clock device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2710 Timer device during boot (Only if BCM2710 unit included)}
@@ -1796,7 +1799,16 @@ begin
   CLOCK_ID_ISP:Result:='CLOCK_ID_ISP';
   CLOCK_ID_SDRAM:Result:='CLOCK_ID_SDRAM';
   CLOCK_ID_PIXEL:Result:='CLOCK_ID_PIXEL';
-  CLOCK_ID_PWM:Result:='CLOCK_ID_PWM';
+  CLOCK_ID_PWM0:Result:='CLOCK_ID_PWM0';
+  CLOCK_ID_PWM1:Result:='CLOCK_ID_PWM1';
+  CLOCK_ID_I2C0:Result:='CLOCK_ID_I2C0';
+  CLOCK_ID_I2C1:Result:='CLOCK_ID_I2C1';
+  CLOCK_ID_I2C2:Result:='CLOCK_ID_I2C2';
+  CLOCK_ID_I2C3:Result:='CLOCK_ID_I2C3';
+  CLOCK_ID_SPI0:Result:='CLOCK_ID_SPI0';
+  CLOCK_ID_SPI1:Result:='CLOCK_ID_SPI1';
+  CLOCK_ID_SPI2:Result:='CLOCK_ID_SPI2';
+  CLOCK_ID_SPI3:Result:='CLOCK_ID_SPI3';
  end;
 end;
 

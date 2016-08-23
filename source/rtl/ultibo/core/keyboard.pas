@@ -39,7 +39,11 @@ References
  Pascal Keyboard scan codes
  
    http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html
-   
+  
+ ASCII Control codes
+ 
+   https://en.wikipedia.org/wiki/ASCII
+ 
 Keyboard Devices
 ================
 

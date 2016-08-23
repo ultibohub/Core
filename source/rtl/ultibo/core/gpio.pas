@@ -259,6 +259,8 @@ function GPIODeviceNotification(GPIO:PGPIODevice;Callback:TGPIONotification;Data
 
 {==============================================================================}
 {RTL GPIO Functions}
+function SysGPIOAvailable:Boolean;
+
 function SysGPIOInputGet(Pin:LongWord):LongWord;
 function SysGPIOInputWait(Pin,Trigger,Timeout:LongWord):LongWord;
 function SysGPIOInputEvent(Pin,Trigger,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
@@ -337,6 +339,7 @@ begin
  GPIODeviceDefault:=nil;
  
  {Register Platform GPIO Handlers}
+ GPIOAvailableHandler:=SysGPIOAvailable;
  {Do not register GPIOReadHandler}
  {Do not register GPIOWriteHandler}
  GPIOInputGetHandler:=SysGPIOInputGet;
@@ -1237,6 +1240,15 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL GPIO Functions}
+function SysGPIOAvailable:Boolean;
+{Check if a GPIO device is available}
+begin
+ {}
+ Result:=(GPIODeviceDefault <> nil);
+end;
+
+{==============================================================================}
+
 function SysGPIOInputGet(Pin:LongWord):LongWord;
 {Get the current state of a GPIO input pin}
 {Pin: The pin to get the state for (eg GPIO_PIN_1)}

@@ -386,9 +386,11 @@ function ConsoleWindowGetMaxY(Handle:TWindowHandle):LongWord;
 
 function ConsoleWindowGetRect(Handle:TWindowHandle):TConsoleRect; inline;
 function ConsoleWindowSetRect(Handle:TWindowHandle;const ARect:TConsoleRect):LongWord; inline;
+function ConsoleWindowResetRect(Handle:TWindowHandle):LongWord; inline;
 
 function ConsoleWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
 function ConsoleWindowSetViewport(Handle:TWindowHandle;X1,Y1,X2,Y2:LongWord):LongWord;
+function ConsoleWindowResetViewport(Handle:TWindowHandle):LongWord; 
 
 function ConsoleWindowGetX(Handle:TWindowHandle):LongWord;
 function ConsoleWindowSetX(Handle:TWindowHandle;X:LongWord):LongWord;
@@ -1624,7 +1626,6 @@ var
  Y1:LongWord;
  X2:LongWord;
  Y2:LongWord;
- Unlock:Boolean;
  RemainX:LongWord;
  RemainY:LongWord;
  Handle:TWindowHandle;
@@ -1888,8 +1889,6 @@ begin
  if MutexLock(Console.Lock) = ERROR_SUCCESS then 
   begin
    try
-    Unlock:=True;
-    
     {Create Window}
     Window:=PConsoleWindow(AllocMem(Size));
     if Window = nil then Exit;
@@ -2052,10 +2051,6 @@ begin
         begin
          Console.WindowDefault:=TWindowHandle(Window);
         end;
-
-       {Release Lock}
-       MutexUnlock(Console.Lock);
-       Unlock:=False;
         
        {Draw Window}
        if State = WINDOW_STATE_VISIBLE then ConsoleDeviceDrawWindow(Console,TWindowHandle(Window));
@@ -2078,7 +2073,7 @@ begin
       FreeMem(Window);
      end;  
    finally
-    if Unlock then MutexUnlock(Console.Lock);
+    MutexUnlock(Console.Lock);
    end; 
   end;
 end;
@@ -2794,6 +2789,17 @@ end;
 
 {==============================================================================}
 
+function ConsoleWindowResetRect(Handle:TWindowHandle):LongWord; inline;
+{Reset the window viewport for an existing console window to the maximum size}
+{Handle: The handle of the window to reset the viewport for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ConsoleWindowResetViewport(Handle);
+end;
+
+{==============================================================================}
+
 function ConsoleWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
 {Get the X1,Y1,X2,Y2 of the window viewport for an existing console window}
 {Handle: The handle of the window to get the viewport for}
@@ -2890,6 +2896,47 @@ begin
   end; 
 end;
 
+{==============================================================================}
+
+function ConsoleWindowResetViewport(Handle:TWindowHandle):LongWord; 
+{Reset the window viewport for an existing console window to the maximum size}
+{Handle: The handle of the window to reset the viewport for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+  
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+ 
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Reset Viewport}
+ Window.MinX:=1;
+ Window.MinY:=1;
+ Window.MaxX:=Window.Width;
+ Window.MaxY:=Window.Height;
+ Window.X:=1;
+ Window.Y:=1;
+ Window.Cols:=Window.Width;
+ Window.Rows:=Window.Height;
+ 
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+ 
+ {Set Cursor XY}
+ Result:=ConsoleWindowSetCursorXY(Handle,Window.X,Window.Y);
+end;
+ 
 {==============================================================================}
 
 function ConsoleWindowGetX(Handle:TWindowHandle):LongWord;
@@ -4196,7 +4243,17 @@ end;
 {==============================================================================}
 
 function ConsoleWindowScrollLeft(Handle:TWindowHandle;Row,Col,Lines,Chars:LongWord):LongWord;
+{Row is the starting row (Y) for the scroll left, all rows from Row down to Row + Lines will be scrolled left}
+{Lines is the number of rows to the scroll left, all rows from Row down to Row + Lines will be scrolled left}
+{Col is the starting column (X) for the scroll left, all cols from left plus Chars to Col with be scrolled left}
+{Chars is the number of characters to scroll left, Chars number of columnss at the left will be discarded}
+{The starting Col will be blanked with the background color}
 var
+ X1:LongWord;
+ Y1:LongWord;
+ X2:LongWord;
+ Y2:LongWord;
+ Count:LongWord;
  Window:PConsoleWindow;
 begin
  {}
@@ -4224,8 +4281,48 @@ begin
   {Check Console}
   if Window.Console = nil then Exit;
  
-  //To Do //Continuing
+  {Check Row}
+  if Row < 1 then Exit;
+  if ((Window.MinY - 1) + Row) > Window.MaxY then Exit;
+ 
+  {Check Lines}
+  if Lines < 1 then Exit; {Must be at least 1 line}
+  if ((Window.MinY - 1) + (Row - 1) + Lines) > Window.MaxY then Exit;
   
+  {Check Col}
+  if Col < 2 then Exit; {Cannot scroll Col 1}
+  if ((Window.MinX - 1) + Col) > Window.MaxX then Exit;
+  
+  {Check Chars}
+  if Chars < 1 then Exit; {Must be at least 1 character}
+  if Chars >= Col then Exit; {Cannot discard the starting Col}
+  
+  {Calculate Count}
+  Count:=Chars * (Window.FontWidth);
+  
+  {Calculate X1,Y1,X2,Y2}
+  X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + (Chars * Window.FontWidth); {Start at left plus Chars};
+  Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row - 1) * Window.FontHeight); {Start at top of Row}
+  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + (Col * Window.FontWidth); {Start at right of Col}
+  Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (((Row - 1) + Lines) * Window.FontHeight); {Start at bottom of Row plus Lines}
+  
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(X2);
+    Dec(Y2);
+   end;
+  
+  {Console Scroll}
+  Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_LEFT);
+  if Result <> ERROR_SUCCESS then Exit;
+  
+  {Recalculate X1}
+  X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Col - Chars) * Window.FontWidth);
+  
+  {Console Draw Block}
+  Result:=ConsoleDeviceDrawBlock(Window.Console,X1,Y1,X2,Y2,Window.Backcolor);
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
@@ -4235,7 +4332,17 @@ end;
 {==============================================================================}
 
 function ConsoleWindowScrollRight(Handle:TWindowHandle;Row,Col,Lines,Chars:LongWord):LongWord;
+{Row is the starting row (Y) for the scroll right, all rows from Row down to Row + Lines will be scrolled right}
+{Lines is the number of rows to the scroll right, all rows from Row down to Row + Lines will be scrolled right}
+{Col is the starting column (X) for the scroll right, all rows from right minus Chars to Col will be scrolled right}
+{Chars is the number of characters to scroll right, Chars number of columns at the right will be discarded}
+{The starting Col will be blanked with the background color}
 var
+ X1:LongWord;
+ Y1:LongWord;
+ X2:LongWord;
+ Y2:LongWord;
+ Count:LongWord;
  Window:PConsoleWindow;
 begin
  {}
@@ -4263,8 +4370,55 @@ begin
   {Check Console}
   if Window.Console = nil then Exit;
  
-  //To Do //Continuing
+  {Check Row}
+  if Row < 1 then Exit;
+  if ((Window.MinY - 1) + Row) > Window.MaxY then Exit;
   
+  {Check Lines}
+  if Lines < 1 then Exit; {Must be at least 1 line}
+  if ((Window.MinY - 1) + (Row - 1) + Lines) > Window.MaxY then Exit;
+  
+  {Check Col}
+  if Col < 1 then Exit;
+  if ((Window.MinX - 1) + Col) >= Window.MaxX then Exit; {Cannot scroll last Col}
+  
+  {Check Chars}
+  if Lines < 1 then Exit; {Must be at least 1 character}
+  if ((Window.MinX - 1) + Col + Chars) > Window.MaxX then Exit; {Cannot discard the starting Col}
+  
+  {Calculate Count}
+  Count:=Chars * (Window.FontWidth);
+ 
+  {Calculate X1,Y1,X2,Y2}
+  X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Col - 1) * Window.FontWidth); {Start at left of Col}
+  Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row - 1) * Window.FontHeight); {Start at top of Row}
+  X2:=(Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth)) - (Chars * Window.FontWidth); {Start at right minus Chars}
+  Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (((Row - 1) + Lines) * Window.FontHeight); {Start at bottom of Row plus Lines}
+  
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(X2);
+    Dec(Y2);
+   end;
+ 
+  {Console Scroll}
+  Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_RIGHT);
+  if Result <> ERROR_SUCCESS then Exit;
+ 
+  {Recalculate X2}
+  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Col + Chars - 1) * Window.FontWidth); 
+  
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(Y2);
+   end;
+  
+  {Console Draw Block}
+  Result:=ConsoleDeviceDrawBlock(Window.Console,X1,Y1,X2,Y2,Window.Backcolor);
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
@@ -4314,6 +4468,14 @@ begin
   ClearY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight);
   ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth); 
   ClearY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + (Window.MaxY * Window.FontHeight);
+ 
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(ClearX2);
+    Dec(ClearY2);
+   end;
  
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,ClearX1,ClearY1,ClearX2,ClearY2,Window.Backcolor);
@@ -4392,17 +4554,25 @@ begin
   ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + (X2 * Window.FontWidth); 
   ClearY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (Y2 * Window.FontHeight); 
  
+  {Check Character Mode}
+  if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
+   begin
+    {Allow for Character mode}
+    Dec(ClearX2);
+    Dec(ClearY2);
+   end;
+ 
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,ClearX1,ClearY1,ClearX2,ClearY2,Window.Backcolor);
   if Result <> ERROR_SUCCESS then Exit;
   
-  {Update X,Y}
-  Window.X:=1;
-  Window.Y:=1;
-  
   {Check Cursor}
   if Cursor then
    begin
+    {Update X,Y}
+    Window.X:=1;
+    Window.Y:=1;
+  
     {Update Cursor}
     //To Do //Set CursorX,CursorY, move cursor if on etc
    end;   
@@ -4416,7 +4586,6 @@ end;
 
 function ConsoleWindowWrite(Handle:TWindowHandle;const AText:String):LongWord;
 var
- Unlock:Boolean;
  WriteX:LongWord;
  WriteY:LongWord;
  WriteBuffer:String;
@@ -4445,8 +4614,6 @@ begin
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
-  Unlock:=True;
-  
   {Check Console}
   if Window.Console = nil then Exit;
 
@@ -4478,18 +4645,14 @@ begin
     if Window.Y > Window.Rows then
      begin
       Window.Y:=Window.Rows;
-
-      {Release Lock}
-      MutexUnlock(Window.Lock);
-      Unlock:=False;
       
-      {Console Scroll Up}
-      Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
-      if Result <> ERROR_SUCCESS then Exit;
-      
-      {Acquire Lock}
-      if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-      Unlock:=True;
+      {Check Scroll}
+      if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+       begin
+        {Console Scroll Up}
+        Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
+        if Result <> ERROR_SUCCESS then Exit;
+       end; 
      end;     
     
     {Check Wrap}
@@ -4508,7 +4671,7 @@ begin
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
-  if Unlock then MutexUnlock(Window.Lock);
+  MutexUnlock(Window.Lock);
  end; 
 end;
   
@@ -4517,7 +4680,6 @@ end;
 function ConsoleWindowWriteEx(Handle:TWindowHandle;const AText:String;X,Y:LongWord;Forecolor,Backcolor:LongWord):LongWord;
 {Note: For Text Console functions, X and Y are based on screen character rows and columns not screen pixels}
 var
- Unlock:Boolean;
  WriteX:LongWord;
  WriteY:LongWord;
  WriteBuffer:String;
@@ -4550,8 +4712,6 @@ begin
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
-  Unlock:=True;
-  
   {Check Console}
   if Window.Console = nil then Exit;
 
@@ -4590,17 +4750,13 @@ begin
      begin
       Y:=Window.Rows;
 
-      {Release Lock}
-      MutexUnlock(Window.Lock);
-      Unlock:=False;
-      
-      {Console Scroll Up}
-      Result:=ConsoleWindowScrollUp(Handle,Y,1);
-      if Result <> ERROR_SUCCESS then Exit;
-      
-      {Acquire Lock}
-      if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-      Unlock:=True;
+      {Check Scroll}
+      if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+       begin
+        {Console Scroll Up}
+        Result:=ConsoleWindowScrollUp(Handle,Y,1);
+        if Result <> ERROR_SUCCESS then Exit;
+       end; 
      end;     
     
     {Check Wrap}
@@ -4618,7 +4774,7 @@ begin
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
-  if Unlock then MutexUnlock(Window.Lock);
+  MutexUnlock(Window.Lock);
  end; 
 end;
 
@@ -4626,7 +4782,6 @@ end;
 
 function ConsoleWindowWriteLn(Handle:TWindowHandle;const AText:String):LongWord;
 var
- Unlock:Boolean;
  WriteX:LongWord;
  WriteY:LongWord;
  WriteBuffer:String;
@@ -4655,8 +4810,6 @@ begin
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
-  Unlock:=True;
-
   {Check Console}
   if Window.Console = nil then Exit;
 
@@ -4688,18 +4841,14 @@ begin
     if Window.Y > Window.Rows then
      begin
       Window.Y:=Window.Rows;
-
-      {Release Lock}
-      MutexUnlock(Window.Lock);
-      Unlock:=False;
       
-      {Console Scroll Up}
-      Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
-      if Result <> ERROR_SUCCESS then Exit;
-      
-      {Acquire Lock}
-      if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-      Unlock:=True;
+      {Check Scroll}
+      if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+       begin
+        {Console Scroll Up}
+        Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
+        if Result <> ERROR_SUCCESS then Exit;
+       end; 
      end;     
     
     {Check Wrap}
@@ -4717,18 +4866,14 @@ begin
   if Window.Y > Window.Rows then
    begin
     Window.Y:=Window.Rows;
-
-    {Release Lock}
-    MutexUnlock(Window.Lock);
-    Unlock:=False;
     
-    {Console Scroll Up}
-    Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
-    if Result <> ERROR_SUCCESS then Exit;
-    
-    {Acquire Lock}
-    if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-    Unlock:=True;
+    {Check Scroll}
+    if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+     begin
+      {Console Scroll Up}
+      Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
+      if Result <> ERROR_SUCCESS then Exit;
+     end; 
    end;     
   
   {Update Cursor} 
@@ -4738,7 +4883,7 @@ begin
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
-  if Unlock then MutexUnlock(Window.Lock);
+  MutexUnlock(Window.Lock);
  end; 
 end;
   
@@ -4747,7 +4892,6 @@ end;
 function ConsoleWindowWriteLnEx(Handle:TWindowHandle;const AText:String;X,Y:LongWord;Forecolor,Backcolor:LongWord):LongWord;
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
 var
- Unlock:Boolean;
  WriteX:LongWord;
  WriteY:LongWord;
  WriteBuffer:String;
@@ -4780,8 +4924,6 @@ begin
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
-  Unlock:=True;
-
   {Check Console}
   if Window.Console = nil then Exit;
 
@@ -4820,17 +4962,13 @@ begin
      begin
       Y:=Window.Rows;
 
-      {Release Lock}
-      MutexUnlock(Window.Lock);
-      Unlock:=False;
-      
-      {Console Scroll Up}
-      Result:=ConsoleWindowScrollUp(Handle,Y,1);
-      if Result <> ERROR_SUCCESS then Exit;
-      
-      {Acquire Lock}
-      if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-      Unlock:=True;
+      {Check Scroll}
+      if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+       begin
+        {Console Scroll Up}
+        Result:=ConsoleWindowScrollUp(Handle,Y,1);
+        if Result <> ERROR_SUCCESS then Exit;
+       end; 
      end;     
     
     {Check Wrap}
@@ -4849,17 +4987,13 @@ begin
    begin
     Y:=Window.Rows;
 
-    {Release Lock}
-    MutexUnlock(Window.Lock);
-    Unlock:=False;
-    
-    {Console Scroll Up}
-    Result:=ConsoleWindowScrollUp(Handle,Y,1);
-    if Result <> ERROR_SUCCESS then Exit;
-    
-    {Acquire Lock}
-    if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-    Unlock:=True;
+    {Check Scroll}
+    if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+     begin
+      {Console Scroll Up}
+      Result:=ConsoleWindowScrollUp(Handle,Y,1);
+      if Result <> ERROR_SUCCESS then Exit;
+     end; 
    end;     
   
   {No Cursor Update}
@@ -4868,7 +5002,7 @@ begin
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
-  if Unlock then MutexUnlock(Window.Lock);
+  MutexUnlock(Window.Lock);
  end; 
 end;
 
@@ -4876,7 +5010,6 @@ end;
 
 function ConsoleWindowWriteChr(Handle:TWindowHandle;AChr:Char):LongWord;
 var
- Unlock:Boolean;
  WriteX:LongWord;
  WriteY:LongWord;
  Window:PConsoleWindow;
@@ -4903,8 +5036,6 @@ begin
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
-  Unlock:=True;
-
   {Check Console}
   if Window.Console = nil then Exit;
 
@@ -4919,18 +5050,14 @@ begin
         if Window.Y > Window.Rows then
          begin
           Window.Y:=Window.Rows;
-      
-          {Release Lock}
-          MutexUnlock(Window.Lock);
-          Unlock:=False;
           
-          {Console Scroll Up}
-          Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
-          if Result <> ERROR_SUCCESS then Exit;
-          
-          {Acquire Lock}
-          if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-          Unlock:=True;
+          {Check Scroll}
+          if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+           begin
+            {Console Scroll Up}
+            Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
+            if Result <> ERROR_SUCCESS then Exit;
+           end; 
          end;     
        end;
      end;
@@ -4944,18 +5071,14 @@ begin
         if Window.Y > Window.Rows then
          begin
           Window.Y:=Window.Rows;
-      
-          {Release Lock}
-          MutexUnlock(Window.Lock);
-          Unlock:=False;
           
-          {Console Scroll Up}
-          Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
-          if Result <> ERROR_SUCCESS then Exit;
-          
-          {Acquire Lock}
-          if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-          Unlock:=True;
+          {Check Scroll}
+          if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+           begin
+            {Console Scroll Up}
+            Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
+            if Result <> ERROR_SUCCESS then Exit;
+           end; 
          end;     
        end;
      end;
@@ -4982,18 +5105,14 @@ begin
      if Window.Y > Window.Rows then
       begin
        Window.Y:=Window.Rows;
-   
-       {Release Lock}
-       MutexUnlock(Window.Lock);
-       Unlock:=False;
        
-       {Console Scroll Up}
-       Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
-       if Result <> ERROR_SUCCESS then Exit;
-       
-       {Acquire Lock}
-       if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-       Unlock:=True;
+       {Check Scroll}
+       if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+        begin
+         {Console Scroll Up}
+         Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
+         if Result <> ERROR_SUCCESS then Exit;
+        end; 
       end; 
     end;
   end;
@@ -5005,7 +5124,7 @@ begin
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
-  if Unlock then MutexUnlock(Window.Lock);
+  MutexUnlock(Window.Lock);
  end; 
 end;
   
@@ -5014,7 +5133,6 @@ end;
 function ConsoleWindowWriteChrEx(Handle:TWindowHandle;AChr:Char;X,Y:LongWord;Forecolor,Backcolor:LongWord):LongWord;
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
 var
- Unlock:Boolean;
  WriteX:LongWord;
  WriteY:LongWord;
  Window:PConsoleWindow;
@@ -5045,8 +5163,6 @@ begin
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
-  Unlock:=True;
-
   {Check Console}
   if Window.Console = nil then Exit;
 
@@ -5068,17 +5184,13 @@ begin
          begin
           Y:=Window.Rows;
       
-          {Release Lock}
-          MutexUnlock(Window.Lock);
-          Unlock:=False;
-          
-          {Console Scroll Up}
-          Result:=ConsoleWindowScrollUp(Handle,Y,1);
-          if Result <> ERROR_SUCCESS then Exit;
-          
-          {Acquire Lock}
-          if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-          Unlock:=True;
+          {Check Scroll}
+          if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+           begin
+            {Console Scroll Up}
+            Result:=ConsoleWindowScrollUp(Handle,Y,1);
+            if Result <> ERROR_SUCCESS then Exit;
+           end; 
          end;     
        end;
      end;
@@ -5092,18 +5204,14 @@ begin
         if Y > Window.Rows then
          begin
           Y:=Window.Rows;
-      
-          {Release Lock}
-          MutexUnlock(Window.Lock);
-          Unlock:=False;
           
-          {Console Scroll Up}
-          Result:=ConsoleWindowScrollUp(Handle,Y,1);
-          if Result <> ERROR_SUCCESS then Exit;
-          
-          {Acquire Lock}
-          if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-          Unlock:=True;
+          {Check Scroll}
+          if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+           begin
+            {Console Scroll Up}
+            Result:=ConsoleWindowScrollUp(Handle,Y,1);
+            if Result <> ERROR_SUCCESS then Exit;
+           end; 
          end;     
        end;
      end;
@@ -5130,18 +5238,14 @@ begin
      if Y > Window.Rows then
       begin
        Y:=Window.Rows;
-   
-       {Release Lock}
-       MutexUnlock(Window.Lock);
-       Unlock:=False;
        
-       {Console Scroll Up}
-       Result:=ConsoleWindowScrollUp(Handle,Y,1);
-       if Result <> ERROR_SUCCESS then Exit;
-       
-       {Acquire Lock}
-       if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-       Unlock:=True;
+       {Check Scroll}
+       if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
+        begin
+         {Console Scroll Up}
+         Result:=ConsoleWindowScrollUp(Handle,Y,1);
+         if Result <> ERROR_SUCCESS then Exit;
+        end; 
       end;     
     end;
   end;
@@ -5153,7 +5257,7 @@ begin
   
  finally
   {Unlock Window}
-  if Unlock then MutexUnlock(Window.Lock);
+  MutexUnlock(Window.Lock);
  end; 
 end;
 
@@ -5538,6 +5642,7 @@ var
  Done:Boolean;
  SaveX:Integer;
  SaveY:Integer;
+ CurrentX:Integer;
 begin
  {}
  AText:='';
@@ -5550,6 +5655,21 @@ begin
    #0:begin
      {Extended key}
      Ch:=ConsoleReadKey;
+    end;
+   #8:begin
+     {Backspace}
+     CurrentX:=ConsoleWhereX;
+     if (Length(AText) > 0) and (CurrentX > 1) then
+      begin
+       ConsoleGotoXY(CurrentX - 1,ConsoleWhereY);
+       ConsoleWriteChr(#32);
+       ConsoleGotoXY(CurrentX - 1,ConsoleWhereY);
+       Delete(AText,Length(AText),1);
+      end;
+    end;
+   #9:begin
+     {Tab}
+     {Ignore}
     end;
    #13:begin
      {Return}
@@ -5632,7 +5752,6 @@ end;
 {Framebuffer Console Functions}
 function FramebufferConsoleOpen(Console:PConsoleDevice):LongWord;
 var
- Unlock:Boolean;
  Framebuffer:PFramebufferDevice;
  Properties:TFramebufferProperties;
 begin
@@ -5646,8 +5765,6 @@ begin
  if MutexLock(Console.Lock) = ERROR_SUCCESS then 
   begin
    try
-    Unlock:=True;
-    
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
     
@@ -5688,15 +5805,11 @@ begin
       {Update Statistics}
       Inc(Console.OpenCount);
       
-      {Release Lock}
-      MutexUnlock(Console.Lock);
-      Unlock:=False;
-      
       {Draw Desktop}
       Result:=FramebufferConsoleDrawDesktop(Console);
      end;
    finally
-    if Unlock then MutexUnlock(Console.Lock);
+    MutexUnlock(Console.Lock);
    end; 
   end
  else
@@ -5709,7 +5822,6 @@ end;
 
 function FramebufferConsoleClose(Console:PConsoleDevice):LongWord;
 var
- Unlock:Boolean;
  Framebuffer:PFramebufferDevice;
 begin
  {}
@@ -5722,8 +5834,6 @@ begin
  if MutexLock(Console.Lock) = ERROR_SUCCESS then 
   begin
    try
-    Unlock:=True;
-
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
     
@@ -5731,18 +5841,10 @@ begin
     if Framebuffer = nil then Exit;
     if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
     if Framebuffer.Address = 0 then Exit;
-   
-    {Release Lock}
-    MutexUnlock(Console.Lock);
-    Unlock:=False;
 
     {Clear Console}
     Result:=FramebufferConsoleClear(Console,COLOR_BLACK);
     if Result <> ERROR_SUCCESS then Exit;
-    
-    {Acquire Lock}
-    if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
-    Unlock:=True;
     
     {Update Console}
     {Console}
@@ -5773,7 +5875,7 @@ begin
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
-    if Unlock then MutexUnlock(Console.Lock);
+    MutexUnlock(Console.Lock);
    end; 
   end
  else
@@ -7317,8 +7419,6 @@ end;
 
 function FramebufferConsoleDrawDesktop(Console:PConsoleDevice):LongWord;
 var
- Unlock:Boolean;
-
  TitleX:LongWord;
  TitleY:LongWord;
  TitleOffset:LongWord;
@@ -7345,8 +7445,6 @@ begin
  if MutexLock(Console.Lock) = ERROR_SUCCESS then 
   begin
    try
-    Unlock:=True;
-     
     {Get Desktop}
     DesktopColor:=PFramebufferConsole(Console).DesktopColor;
     
@@ -7367,10 +7465,6 @@ begin
     TitleForecolor:=Console.Forecolor;
     TitleBackcolor:=PFramebufferConsole(Console).DesktopColor;
     
-    {Release Lock}
-    MutexUnlock(Console.Lock);
-    Unlock:=False;
-    
     {Draw Desktop}
     Result:=FramebufferConsoleClear(Console,DesktopColor);
     if Result <> ERROR_SUCCESS then Exit;
@@ -7390,7 +7484,7 @@ begin
       Result:=FramebufferConsoleDrawText(Console,TitleFont,FRAMEBUFFER_CONSOLE_TITLE,TitleX,TitleY,TitleForecolor,TitleBackcolor,Length(FRAMEBUFFER_CONSOLE_TITLE));
      end; 
    finally
-    if Unlock then MutexUnlock(Console.Lock);
+    MutexUnlock(Console.Lock);
    end; 
   end
  else

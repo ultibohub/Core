@@ -1450,6 +1450,8 @@ type
    function GetRecognizerByImage(AImage:TDiskImage;ALock:Boolean;AState:LongWord):TRecognizer;
    function GetRecognizerByVolume(AVolume:TDiskVolume;ALock:Boolean;AState:LongWord):TRecognizer;
    function GetRecognizerByPartition(APartition:TDiskPartition;ALock:Boolean;AState:LongWord):TRecognizer;
+   function GetRecognizerByPartitionId(APartitionId:Byte;ALock:Boolean;AState:LongWord):TRecognizer;       
+   function GetRecognizerByBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64;ALock:Boolean;AState:LongWord):TRecognizer;
    function GetRecognizerByNext(APrevious:TRecognizer;ALock,AUnlock:Boolean;AState:LongWord):TRecognizer;
 
    {Redirector Methods}
@@ -2985,6 +2987,9 @@ type
    function WriterConvert:Boolean;
 
    {Partition/Volume Methods}
+   function RecognizePartitionId(APartitionId:Byte):Boolean; virtual;
+   function RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; virtual;
+
    function RecognizePartition(APartition:TDiskPartition):Boolean; virtual;
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; virtual;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; virtual;
@@ -4810,6 +4815,8 @@ type
    {Public Variables}
 
    {Public Methods}
+   function RecognizePartitionId(APartitionId:Byte):Boolean; override;
+
    function RecognizePartition(APartition:TDiskPartition):Boolean; override;
  end;
 
@@ -8509,6 +8516,71 @@ begin
   while Recognizer <> nil do
    begin
     if Recognizer.RecognizePartition(APartition) then
+     begin
+      {Lock Recognizer} 
+      if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
+
+      Result:=Recognizer;
+      Exit;
+     end;
+     
+    Recognizer:=TRecognizer(Recognizer.Next);
+   end;
+ finally
+  FRecognizers.ReaderUnlock;
+ end;   
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.GetRecognizerByPartitionId(APartitionId:Byte;ALock:Boolean;AState:LongWord):TRecognizer;       
+var
+ Recognizer:TRecognizer;
+begin
+ {}
+ Result:=nil;
+
+ if not FRecognizers.ReaderLock then Exit;
+ try
+  if APartitionId = pidUnused then Exit;
+
+  Recognizer:=TRecognizer(FRecognizers.First);
+  while Recognizer <> nil do
+   begin
+    if Recognizer.RecognizePartitionId(APartitionId) then
+     begin
+      {Lock Recognizer} 
+      if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
+
+      Result:=Recognizer;
+      Exit;
+     end;
+     
+    Recognizer:=TRecognizer(Recognizer.Next);
+   end;
+ finally
+  FRecognizers.ReaderUnlock;
+ end;   
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.GetRecognizerByBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64;ALock:Boolean;AState:LongWord):TRecognizer;
+var
+ Recognizer:TRecognizer;
+begin
+ {}
+ Result:=nil;
+
+ if not FRecognizers.ReaderLock then Exit;
+ try
+  if ABootSector = nil then Exit;
+  if ASectorCount = 0 then Exit;
+
+  Recognizer:=TRecognizer(FRecognizers.First);
+  while Recognizer <> nil do
+   begin
+    if Recognizer.RecognizeBootSector(ABootSector,AStartSector,ASectorCount) then
      begin
       {Lock Recognizer} 
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
@@ -23291,42 +23363,46 @@ begin
       if not FController.MediaReady(Self) then Exit; {was MediaReady}
       if not FDriver.Cache.DeviceRead(Self,0,1,BootRecord^) then Exit;
       
-      {Check Boot Record}
-      if BootRecord.Signature <> BOOT_RECORD_SIGNATURE then Exit;
-      
-      {Scan Partition Table}
-      for Count:=MIN_PARTITION to MAX_PARTITION do
+      {Check Boot Sector}
+      if FDriver.GetRecognizerByBootSector(PBootSector(BootRecord),0,FSectorCount,False,FILESYS_LOCK_NONE) = nil then
        begin
-        PartitionEntry:=BootRecord.PartitionTable.PartitionEntry[Count];
-        if (PartitionEntry.TypeIndicator <> pidUnused) and (PartitionEntry.SectorCount <> 0) then
+        {Check Boot Record}
+        if BootRecord.Signature <> BOOT_RECORD_SIGNATURE then Exit;
+        
+        {Scan Partition Table}
+        for Count:=MIN_PARTITION to MAX_PARTITION do
          begin
-          {Entry is not Unused so create a Partition object}
-          Partition:=FDriver.GetPartitionByEntryNo(Self,nil,Count,False,FILESYS_LOCK_NONE); {Do not lock}
-          if Partition = nil then
+          PartitionEntry:=BootRecord.PartitionTable.PartitionEntry[Count];
+          if (PartitionEntry.TypeIndicator <> pidUnused) and (PartitionEntry.SectorCount <> 0) then
            begin
-            {Partition does not already Exist}
-            Partition:=TDiskPartition.Create(FDriver,Self,nil,FDriver.GetNextPartitionNo(Self,False));
-            Partition.EntryNo:=Count;
-            Partition.PartitionInit;
-            
-            {Get the Recognizer for this Partition}
-            FDriver.GetRecognizerByPartition(Partition,False,FILESYS_LOCK_NONE); {Do not lock}
+            {Entry is not Unused so create a Partition object}
+            Partition:=FDriver.GetPartitionByEntryNo(Self,nil,Count,False,FILESYS_LOCK_NONE); {Do not lock}
+            if Partition = nil then
+             begin
+              {Partition does not already Exist}
+              Partition:=TDiskPartition.Create(FDriver,Self,nil,FDriver.GetNextPartitionNo(Self,False));
+              Partition.EntryNo:=Count;
+              Partition.PartitionInit;
+              
+              {Get the Recognizer for this Partition}
+              FDriver.GetRecognizerByPartition(Partition,False,FILESYS_LOCK_NONE); {Do not lock}
+             end;
            end;
          end;
-       end;
-      
-      {Check for Extended Partitions}
-      for Count:=MIN_PARTITION to MAX_PARTITION do
-       begin
-        Partition:=FDriver.GetPartitionByEntryNo(Self,nil,Count,True,FILESYS_LOCK_WRITE);
-        if Partition <> nil then
+        
+        {Check for Extended Partitions}
+        for Count:=MIN_PARTITION to MAX_PARTITION do
          begin
-          Partition.LocatePartitions;
-          
-          {Unlock Partition}
-          Partition.WriterUnlock;
+          Partition:=FDriver.GetPartitionByEntryNo(Self,nil,Count,True,FILESYS_LOCK_WRITE);
+          if Partition <> nil then
+           begin
+            Partition.LocatePartitions;
+            
+            {Unlock Partition}
+            Partition.WriterUnlock;
+           end;
          end;
-       end;
+       end;  
       
       Result:=True;
      finally
@@ -27303,6 +27379,22 @@ function TRecognizer.WriterConvert:Boolean;
 begin
  {}
  Result:=(SynchronizerWriterConvert(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+begin
+ {Virtual Base Method - No Function}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+begin
+ {Virtual Base Method - No Function}
+ Result:=False;
 end;
 
 {==============================================================================}
@@ -46604,6 +46696,15 @@ end;
 
 {==============================================================================}
 
+function TDefaultRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean;
+{Note: Default recognizer does not recognize any partition Ids}
+begin
+ {}
+ Result:=False;
+end;
+
+{==============================================================================}
+
 function TDefaultRecognizer.RecognizePartition(APartition:TDiskPartition):Boolean;
 {Note: Remove PartitionId from here when recognized by another module}
 {Note: Caller must hold the partition lock}
@@ -46708,6 +46809,7 @@ begin
    pidUnknown098,
    pidSysV,
    pidNetware286,
+   pidNWFS,
    pidUnknown102,
    pidNovell103,
    pidNovell104,
@@ -46997,6 +47099,7 @@ begin
      pidUnknown098,
      pidSysV,
      pidNetware286,
+     pidNWFS,
      pidUnknown102,
      pidNovell103,
      pidNovell104,

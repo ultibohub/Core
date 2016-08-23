@@ -322,6 +322,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure SPIInit;
+{Initialize the SPI unit and SPI device table}
+
+{Note: Called only during system startup}
 begin
  {}
  {Check Initialized}

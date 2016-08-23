@@ -567,6 +567,9 @@ type
    property SwapSerial:Boolean read FSwapSerial write FSwapSerial;
 
    {Public Methods}
+   function RecognizePartitionId(APartitionId:Byte):Boolean; override;
+   function RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; override;
+   
    function RecognizePartition(APartition:TDiskPartition):Boolean; override;
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; override;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; override;
@@ -1612,6 +1615,40 @@ function TCDFSRecognizer.GetName:String;
 begin
  {}
  Result:='CDFS';
+end;
+
+{==============================================================================}
+
+function TCDFSRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+ 
+  {Nothing - CDFS does not support Partitions}
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TCDFSRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+ 
+  {Nothing - CDFS does not support "Removable" media}
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}

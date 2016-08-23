@@ -87,7 +87,7 @@ unit Ultibo;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Locale,Timezone,Console,Font,Unicode,Security,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Locale,Timezone,Unicode,Security,SysUtils;
 
  //To do //Look for:
   

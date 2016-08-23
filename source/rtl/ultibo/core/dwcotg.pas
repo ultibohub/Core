@@ -1026,8 +1026,16 @@ begin
  {Check Host}
  if Host = nil then Exit;
 
+ {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+ if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Starting USB Host');
+ {$ENDIF}
+ 
  {Setup Registers}
  PDWCUSBHost(Host).Registers:=PDWCRegisters(DWCOTG_REGS_BASE);
+ 
+ {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+ if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: DWCOTG_REGS_BASE = ' + IntToHex(DWCOTG_REGS_BASE,8));
+ {$ENDIF}
  
  {Create Host Lock}
  PDWCUSBHost(Host).Lock:=SpinCreate;
@@ -1168,6 +1176,10 @@ begin
  
  {Check Host}
  if Host = nil then Exit;
+ 
+ {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+ if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Stopping USB Host');
+ {$ENDIF}
  
  {Release the IRQ/FIQ}
  if DWCOTG_FIQ_ENABLED then

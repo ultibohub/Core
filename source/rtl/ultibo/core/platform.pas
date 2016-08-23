@@ -585,6 +585,8 @@ type
  
 type
  {Prototypes for GPIO Handlers}
+ TGPIOAvailable = function:Boolean;
+ 
  TGPIORead = function(Reg:LongWord):LongWord;
  TGPIOWrite = procedure(Reg,Value:LongWord);
  
@@ -599,18 +601,16 @@ type
 
  TGPIOFunctionGet = function(Pin:LongWord):LongWord;
  TGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
-
- {Note: These are to be removed when GPIO unit and driver are completed}
- TGPIOOutputSetOld = procedure(Reg,Value:LongWord); 
- TGPIOOutputClearOld = procedure(Reg,Value:LongWord); 
- TGPIOFunctionSelectOld = procedure(Reg,Value:LongWord);
  
 type
  {Prototypes for Virtual GPIO Handlers}
  TVirtualGPIOInputGet = function(Pin:LongWord):LongWord;
- TVirtualGPIOOutputSet = function(Pin:LongWord):LongWord;
- TVirtualGPIOOutputClear = function(Pin:LongWord):LongWord; 
+ TVirtualGPIOOutputSet = function(Pin,Level:LongWord):LongWord;
  TVirtualGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
+ 
+ {Note: These are to be removed in the next release}
+ TVirtualGPIOOutputSetOld = function(Pin:LongWord):LongWord;
+ TVirtualGPIOOutputClearOld = function(Pin:LongWord):LongWord; 
  
 type
  {Prototypes for SPI Handlers}
@@ -656,9 +656,20 @@ type
  TI2CGetAddress = function:Word;
  TI2CSetAddress = function(Address:Word):LongWord;
  
-//type
+type
  {Prototypes for PWM Handlers}
- //To Do
+ TPWMAvailable = function:Boolean;
+ 
+ TPWMStart = function:LongWord;
+ TPWMStop = function:LongWord;
+ 
+ TPWMWrite = function(Value:LongWord):LongWord;
+ 
+ TPWMSetMode = function(Mode:LongWord):LongWord;
+ TPWMSetRange = function(Range:LongWord):LongWord;
+ TPWMSetFrequency = function(Frequency:LongWord):LongWord;
+ 
+ TPWMConfigure = function(DutyNS,PeriodNS:LongWord):LongWord;
  
 type
  {Prototypes for RTC Handlers}
@@ -1230,6 +1241,8 @@ var
  
 var
  {GPIO Handlers} 
+ GPIOAvailableHandler:TGPIOAvailable;
+ 
  GPIOReadHandler:TGPIORead;
  GPIOWriteHandler:TGPIOWrite;
  
@@ -1245,17 +1258,15 @@ var
  GPIOFunctionGetHandler:TGPIOFunctionGet;
  GPIOFunctionSelectHandler:TGPIOFunctionSelect;
  
- {Note: These are to be removed when GPIO unit and driver are completed}
- GPIOOutputSetOldHandler:TGPIOOutputSetOld;
- GPIOOutputClearOldHandler:TGPIOOutputClearOld;
- GPIOFunctionSelectOldHandler:TGPIOFunctionSelectOld;
- 
 var
  {Virtual GPIO Handlers} 
  VirtualGPIOInputGetHandler:TVirtualGPIOInputGet;
  VirtualGPIOOutputSetHandler:TVirtualGPIOOutputSet;
- VirtualGPIOOutputClearHandler:TVirtualGPIOOutputClear;
  VirtualGPIOFunctionSelectHandler:TVirtualGPIOFunctionSelect;
+
+ {Note: These are to be removed in the next release}
+ VirtualGPIOOutputSetOldHandler:TVirtualGPIOOutputSetOld;
+ VirtualGPIOOutputClearOldHandler:TVirtualGPIOOutputClearOld;
  
 var
  {SPI Handlers}
@@ -1301,9 +1312,20 @@ var
  I2CGetAddressHandler:TI2CGetAddress;
  I2CSetAddressHandler:TI2CSetAddress;
  
-//var
+var
  {PWM Handlers}
- //To Do
+ PWMAvailableHandler:TPWMAvailable;
+ 
+ PWMStartHandler:TPWMStart;
+ PWMStopHandler:TPWMStop;
+ 
+ PWMWriteHandler:TPWMWrite;
+ 
+ PWMSetModeHandler:TPWMSetMode;
+ PWMSetRangeHandler:TPWMSetRange;
+ PWMSetFrequencyHandler:TPWMSetFrequency;
+ 
+ PWMConfigureHandler:TPWMConfigure;
  
 var
  {RTC Handlers} 
@@ -1803,6 +1825,8 @@ function DMAGetChannels:LongWord; inline;
 
 {==============================================================================}
 {GPIO Functions}
+function GPIOAvailable:Boolean; inline;
+
 function GPIORead(Reg:LongWord):LongWord; inline;
 procedure GPIOWrite(Reg,Value:LongWord); inline;
 
@@ -1818,17 +1842,15 @@ function GPIOPullSelect(Pin,Mode:LongWord):LongWord; inline;
 function GPIOFunctionGet(Pin:LongWord):LongWord; inline;
 function GPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 
-{Note: These are to be removed when GPIO unit and driver are completed}
-procedure GPIOOutputSetOld(Reg,Value:LongWord); inline;  
-procedure GPIOOutputClearOld(Reg,Value:LongWord); inline; 
-procedure GPIOFunctionSelectOld(Reg,Value:LongWord); inline;
-
 {==============================================================================}
 {Virtual GPIO Functions}
 function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
-function VirtualGPIOOutputSet(Pin:LongWord):LongWord; inline;
-function VirtualGPIOOutputClear(Pin:LongWord):LongWord; inline;
+function VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
 function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
+
+{Note: These are to be removed in the next release}
+function VirtualGPIOOutputSetOld(Pin:LongWord):LongWord; inline;
+function VirtualGPIOOutputClearOld(Pin:LongWord):LongWord; inline;
 
 {==============================================================================}
 {SPI Functions}
@@ -1876,7 +1898,18 @@ function I2CSetAddress(Address:Word):LongWord; inline;
 
 {==============================================================================}
 {PWM Functions}
-//To Do
+function PWMAvailable:Boolean; inline;
+ 
+function PWMStart:LongWord; inline;
+function PWMStop:LongWord; inline;
+ 
+function PWMWrite(Value:LongWord):LongWord; inline;
+ 
+function PWMSetMode(Mode:LongWord):LongWord; inline;
+function PWMSetRange(Range:LongWord):LongWord; inline;
+function PWMSetFrequency(Frequency:LongWord):LongWord; inline;
+ 
+function PWMConfigure(DutyNS,PeriodNS:LongWord):LongWord; inline;
 
 {==============================================================================}
 {RTC Functions}
@@ -2065,6 +2098,7 @@ procedure MillisecondDelayEx(Milliseconds:LongWord;Wait:Boolean);
 
 {==============================================================================}
 {RTL Functions}
+procedure SysRandomize;
 function SysGetTickCount:DWORD;
 function SysGetTickCount64:ULONGLONG;
 procedure SysGetLocalTime(var SystemTime:TSystemTime);
@@ -2140,7 +2174,8 @@ begin
  ShutdownSemaphore.SignalSemaphore:=nil;
  
  {Setup System Handlers}
-  {Nothing}
+ {Random Functions}
+ SysRandomizeHandler:=SysRandomize;
  
  {Setup SysUtils Handlers}
  {Locale Functions}
@@ -5296,6 +5331,22 @@ end;
 {==============================================================================}
 {==============================================================================}
 {GPIO Functions}
+function GPIOAvailable:Boolean; inline;
+{Check if a GPIO device is available}
+begin
+ {}
+ if Assigned(GPIOAvailableHandler) then
+  begin
+   Result:=GPIOAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
 function GPIORead(Reg:LongWord):LongWord; inline;
 {Perform a direct read from a GPIO register}
 {Reg: The memory register to read from}
@@ -5494,63 +5545,6 @@ begin
 end;
 
 {==============================================================================}
-{Note: These are to be removed when GPIO unit and driver are completed}
-procedure GPIOOutputSetOld(Reg,Value:LongWord); inline;
-begin
- {}
- if Assigned(GPIOOutputSetOldHandler) then
-  begin
-   GPIOOutputSetOldHandler(Reg,Value);
-  end
- else
-  begin
-   {Memory Barrier}
-   DataMemoryBarrier; {Before the First Write}
-   
-   {Write Value}
-   PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
-  end; 
-end;
-
-{==============================================================================}
-
-procedure GPIOOutputClearOld(Reg,Value:LongWord); inline;
-begin
- {}
- if Assigned(GPIOOutputClearOldHandler) then
-  begin
-   GPIOOutputClearOldHandler(Reg,Value);
-  end
- else
-  begin
-   {Memory Barrier}
-   DataMemoryBarrier; {Before the First Write}
-   
-   {Write Value}
-   PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
-  end; 
-end;
-
-{==============================================================================}
-
-procedure GPIOFunctionSelectOld(Reg,Value:LongWord); inline;
-begin
- {}
- if Assigned(GPIOFunctionSelectOldHandler) then
-  begin
-   GPIOFunctionSelectOldHandler(Reg,Value);
-  end
- else
-  begin
-   {Memory Barrier}
-   DataMemoryBarrier; {Before the First Write}
-   
-   {Write Value}
-   PLongWord(GPIO_REGS_BASE + Reg)^:=Value;
-  end; 
-end;
-
-{==============================================================================}
 {==============================================================================}
 {Virtual GPIO Functions}
 function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
@@ -5571,27 +5565,12 @@ end;
 
 {==============================================================================}
 
-function VirtualGPIOOutputSet(Pin:LongWord):LongWord; inline;
+function VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
 begin
  {}
  if Assigned(VirtualGPIOOutputSetHandler) then
   begin
-   Result:=VirtualGPIOOutputSetHandler(Pin);
-  end
- else
-  begin
-   Result:=ERROR_CALL_NOT_IMPLEMENTED;
-  end;
-end;
-
-{==============================================================================}
-
-function VirtualGPIOOutputClear(Pin:LongWord):LongWord; inline; 
-begin
- {}
- if Assigned(VirtualGPIOOutputClearHandler) then
-  begin
-   Result:=VirtualGPIOOutputClearHandler(Pin);
+   Result:=VirtualGPIOOutputSetHandler(Pin,Level);
   end
  else
   begin
@@ -5607,6 +5586,36 @@ begin
  if Assigned(VirtualGPIOFunctionSelectHandler) then
   begin
    Result:=VirtualGPIOFunctionSelectHandler(Pin,Mode);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function VirtualGPIOOutputSetOld(Pin:LongWord):LongWord; inline;
+begin
+ {}
+ if Assigned(VirtualGPIOOutputSetOldHandler) then
+  begin
+   Result:=VirtualGPIOOutputSetOldHandler(Pin);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function VirtualGPIOOutputClearOld(Pin:LongWord):LongWord; inline; 
+begin
+ {}
+ if Assigned(VirtualGPIOOutputClearOldHandler) then
+  begin
+   Result:=VirtualGPIOOutputClearOldHandler(Pin);
   end
  else
   begin
@@ -6129,6 +6138,152 @@ end;
 {==============================================================================}
 {==============================================================================}
 {PWM Functions}
+function PWMAvailable:Boolean; inline;
+{Check if a PWM device is available}
+begin
+ {}
+ if Assigned(PWMAvailableHandler) then
+  begin
+   Result:=PWMAvailableHandler;
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+{==============================================================================}
+
+function PWMStart:LongWord; inline;
+{Start the default PWM device}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(PWMStartHandler) then
+  begin
+   Result:=PWMStartHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function PWMStop:LongWord; inline;
+{Stop the default PWM device}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(PWMStopHandler) then
+  begin
+   Result:=PWMStopHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function PWMWrite(Value:LongWord):LongWord; inline;
+{Write a value to the default PWM device}
+{Value: The value to write}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: The exact meaning of value may depend on the device and other configured options,
+       in many cases the value will represent the "on" time of each pulse with regard to 
+       the duty cycle of the waveform output by the device}
+begin
+ {}
+ if Assigned(PWMWriteHandler) then
+  begin
+   Result:=PWMWriteHandler(Value);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function PWMSetMode(Mode:LongWord):LongWord; inline;
+{Set the mode for the default PWM device}
+{Mode: The mode value to set (eg PWM_MODE_MARKSPACE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(PWMSetModeHandler) then
+  begin
+   Result:=PWMSetModeHandler(Mode);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function PWMSetRange(Range:LongWord):LongWord; inline;
+{Set the range for the default PWM device}
+{Range: The range value to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: The exact meaning of range may depend on the device and other configured options,
+       in many cases the range will represent the period of one full cycle of the 
+       waveform output by the device}   
+begin
+ {}
+ if Assigned(PWMSetRangeHandler) then
+  begin
+   Result:=PWMSetRangeHandler(Range);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function PWMSetFrequency(Frequency:LongWord):LongWord; inline;
+{Set the clock frequency for the default PWM device}
+{Frequency: The frequency to set in Hz}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(PWMSetFrequencyHandler) then
+  begin
+   Result:=PWMSetFrequencyHandler(Frequency);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+ 
+function PWMConfigure(DutyNS,PeriodNS:LongWord):LongWord; inline;
+{Set the configuration of the default PWM device}
+{DutyNS: The "on" time part of the cycle (Nanoseconds)}
+{PeriodNS: The duration of one full cycle (Nanoseconds)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ if Assigned(PWMConfigureHandler) then
+  begin
+   Result:=PWMConfigureHandler(DutyNS,PeriodNS);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -8093,6 +8248,14 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL Functions}
+procedure SysRandomize;
+begin
+ {}
+ RandSeed:=ClockGetTime;
+end;
+
+{==============================================================================}
+
 function SysGetTickCount:DWORD;
 begin
  {}

@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '22/7/2016';
+ ULTIBO_RELEASE_DATE             = '23/8/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.089';
+ ULTIBO_RELEASE_VERSION          = '1.2.127';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 089;
+ ULTIBO_RELEASE_VERSION_REVISION = 127;
  
 {==============================================================================}
 const
@@ -1451,7 +1451,16 @@ const
  CLOCK_ID_ISP     = 13;
  CLOCK_ID_SDRAM   = 14;
  CLOCK_ID_PIXEL   = 15;
- CLOCK_ID_PWM     = 16;
+ CLOCK_ID_PWM0    = 16;
+ CLOCK_ID_PWM1    = 17;
+ CLOCK_ID_I2C0    = 18;
+ CLOCK_ID_I2C1    = 19;
+ CLOCK_ID_I2C2    = 20;
+ CLOCK_ID_I2C3    = 21;
+ CLOCK_ID_SPI0    = 22;
+ CLOCK_ID_SPI1    = 23;
+ CLOCK_ID_SPI2    = 24;
+ CLOCK_ID_SPI3    = 25;
  
 const
  {Clock State constants}
@@ -1572,6 +1581,8 @@ const
  LOGGING_FACILITY_SERIAL     = 28; {Serial log messages}
  LOGGING_FACILITY_SPI        = 29; {SPI log messages}
  LOGGING_FACILITY_UART       = 30; {UART log messages}
+ LOGGING_FACILITY_AUDIO      = 31; {Audio log messages}
+ LOGGING_FACILITY_1WIRE      = 32; {1-Wire log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 

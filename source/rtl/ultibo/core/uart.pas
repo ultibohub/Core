@@ -287,6 +287,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure UARTInit;
+{Initialize the UART unit and UART device table}
+
+{Note: Called only during system startup}
 begin
  {}
  {Check Initialized}

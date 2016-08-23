@@ -35,6 +35,8 @@ References
  
  AZERTY keyboard - https://en.wikipedia.org/wiki/AZERTY
  
+ AltGr Key - https://en.wikipedia.org/wiki/AltGr_key
+ 
  Caps Lock - https://en.wikipedia.org/wiki/Caps_lock
  
  Dead Key - https://en.wikipedia.org/wiki/Dead_key

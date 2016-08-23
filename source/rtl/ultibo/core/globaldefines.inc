@@ -71,6 +71,7 @@ Global Defines
 {--$DEFINE HEAP_DEBUG}            {Enable debug output/counters for heap manager (Default: Off)}
 {--$DEFINE THREAD_DEBUG}          {Enable debug output/counters for thread internals (Default: Off)}
 {--$DEFINE PLATFORM_DEBUG}        {Enable debug output/counters for platform internals (Default: Off)}
+{$DEFINE LOADER_DEBUG}          {Enable debug output/counters for loader internals (Default: Off)}
 {--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off) (Do not enable when console logging is active)}
 {--$DEFINE LOGGING_DEBUG}         {Enable debug output/counters for logging devices (Default: Off)}
 
@@ -241,6 +242,31 @@ Global Defines
  {$DEFINE HEAP_LOCK_IRQFIQ} 
  {$DEFINE LOGGING_LOCK_IRQFIQ} 
 {$ENDIF}
+
+{==============================================================================}
+{==============================================================================}
+{Loader definitions}
+{$DEFINE LOADER_EXPORT_SYSTEM}      {Enable the library loader to export symbols for System unit (Default: On)} 
+{--$DEFINE LOADER_EXPORT_OBJPAS}    {Enable the library loader to export symbols for ObjPas unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_CLASSES}   {Enable the library loader to export symbols for Classes unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_SYSUTILS}  {Enable the library loader to export symbols for SysUtils unit (Default: Off)} 
+
+{--$DEFINE LOADER_EXPORT_HEAP}      {Enable the library loader to export symbols for Heap unit (Default: Off)}
+{--$DEFINE LOADER_EXPORT_THREADS}   {Enable the library loader to export symbols for Threads unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_PLATFORM}  {Enable the library loader to export symbols for Platform unit (Default: Off)} 
+
+{--$DEFINE LOADER_EXPORT_DEVICE}    {Enable the library loader to export symbols for Device unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_CONSOLE}   {Enable the library loader to export symbols for Console unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_LOGGING}   {Enable the library loader to export symbols for Logging unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_DMA}       {Enable the library loader to export symbols for DMA unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_USB}       {Enable the library loader to export symbols for USB unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_MMC}       {Enable the library loader to export symbols for MMC unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_SPI}       {Enable the library loader to export symbols for SPI unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_I2C}       {Enable the library loader to export symbols for I2C unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_PWM}       {Enable the library loader to export symbols for PWM unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_PCM}       {Enable the library loader to export symbols for PCM unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_GPIO}      {Enable the library loader to export symbols for GPIO unit (Default: Off)} 
+{--$DEFINE LOADER_EXPORT_UART}      {Enable the library loader to export symbols for UART unit (Default: Off)} 
 
 {==============================================================================}
 {==============================================================================}

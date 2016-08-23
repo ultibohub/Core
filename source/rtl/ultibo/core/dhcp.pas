@@ -1127,7 +1127,7 @@ begin
          begin
           if Length >= 1 then
            begin
-            PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
+            PByte(PtrUInt(Option) + PtrUInt(Length))^:=0; {Not Length + 1}
             Manager.Settings.DomainName:=PChar(Option);
             {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
@@ -1234,7 +1234,7 @@ begin
          begin
           if Length >= 1 then
            begin
-            PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
+            PByte(PtrUInt(Option) + PtrUInt(Length))^:=0; {Not Length + 1}
             Manager.Settings.DomainName:=PChar(Option);
             {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
@@ -1357,7 +1357,7 @@ begin
          begin
           if Length >= 1 then
            begin
-            PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
+            PByte(PtrUInt(Option) + PtrUInt(Length))^:=0; {Not Length + 1}
             Manager.Settings.DomainName:=PChar(Option);
             {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
@@ -2816,7 +2816,7 @@ begin
       begin
        if Length >= 1 then
         begin
-         PByte(PtrUInt(Option) + PtrUInt(Length + 1))^:=0;
+         PByte(PtrUInt(Option) + PtrUInt(Length))^:=0; {Not Length + 1}
          Manager.Settings.DomainName:=PChar(Option);
          {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
         end;

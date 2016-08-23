@@ -20410,9 +20410,26 @@ end;
 {==============================================================================}
 
 function SysBasicEventWaitFor(Timeout:Cardinal;State:PEventState):LongInt;
+const
+ wrSignaled  = 0;
+ wrTimeout   = 1;
+ wrAbandoned = 2;
+ wrError     = 3;
+ 
+var
+ Status:LongWord;
 begin
  {}
- Result:=EventWaitEx(TEventHandle(State),Timeout);
+ Status:=EventWaitEx(TEventHandle(State),Timeout);
+ case Status of
+  ERROR_SUCCESS:Result:=wrSignaled;
+  ERROR_WAIT_TIMEOUT:Result:=wrTimeout;
+  ERROR_WAIT_ABANDONED:Result:=wrAbandoned;
+ else
+  begin
+   Result:=wrError;
+  end;
+ end;
 end;
 
 {==============================================================================}

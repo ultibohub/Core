@@ -44,12 +44,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Storage,FileSystem,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
 
-//To Do //Look for:
-
-//Critical
-
-//except
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -560,8 +554,7 @@ type
    {Protected Variables}
    FFlags:LongWord;
 
-   FExtents:TLinkedObjList;
-   FExtentLock:TMutexHandle;
+   FExtents:TFileSysList;            {List of Virtual Disk Extents}
    
    FBase:TVirtualDiskExtent;         {The first extent of the image}
    FCurrent:TVirtualDiskExtent;      {The current delta extent if applicable}
@@ -585,9 +578,9 @@ type
    function RemoveExtent(AExtent:TVirtualDiskExtent):Boolean; virtual;
 
    function SetExtent(AExtent:TVirtualDiskExtent):Boolean; virtual;
-   function GetExtent(const ASector:Int64;AWrite:Boolean):TVirtualDiskExtent; virtual;
+   function GetExtent(const ASector:Int64;AWrite,ALock:Boolean):TVirtualDiskExtent; virtual;
 
-   function FindExtent(const AFilename:String):TVirtualDiskExtent; virtual;
+   function FindExtent(const AFilename:String;ALock:Boolean):TVirtualDiskExtent; virtual;
 
    {Table Methods}
    function LoadTables:Boolean; virtual;
@@ -619,7 +612,7 @@ type
    {Public Properties}
    property Flags:LongWord read FFlags write FFlags;
 
-   property Extents:TLinkedObjList read FExtents;
+   property Extents:TFileSysList read FExtents;
 
    property Base:TVirtualDiskExtent read FBase;
    property Current:TVirtualDiskExtent read FCurrent;
@@ -896,7 +889,7 @@ type
    function AddExtent(AParent:TVirtualDiskExtent;const AFilename:String):TVirtualDiskExtent; override;
 
    function SetExtent(AExtent:TVirtualDiskExtent):Boolean; override;
-   function GetExtent(const ASector:Int64;AWrite:Boolean):TVirtualDiskExtent; override;
+   function GetExtent(const ASector:Int64;AWrite,ALock:Boolean):TVirtualDiskExtent; override;
 
    {Table Methods}
    function LoadTables:Boolean; override;
@@ -984,7 +977,7 @@ type
    function AddExtent(AParent:TVirtualDiskExtent;const AFilename:String):TVirtualDiskExtent; override;
 
    function SetExtent(AExtent:TVirtualDiskExtent):Boolean; override;
-   function GetExtent(const ASector:Int64;AWrite:Boolean):TVirtualDiskExtent; override;
+   function GetExtent(const ASector:Int64;AWrite,ALock:Boolean):TVirtualDiskExtent; override;
 
    {Table Methods}
    function LoadTables:Boolean; override;
@@ -1112,12 +1105,14 @@ type
  end;
 
  TVirtualDiskExtent = class(TListObject) {Represents an Extent (usually a file) forming part of a virtual disk}
-   constructor Create(AImage:TVirtualDiskImage;ADelta,AParent:TVirtualDiskExtent); //To Do //Pass ALock:TMutexHandle to allow sharing
+   constructor Create(AImage:TVirtualDiskImage;ADelta,AParent:TVirtualDiskExtent);
    destructor Destroy; override;
   private
    {Private Variables}
+   FLock:TMutexHandle;
 
    {Private Methods}
+   
   protected
    {Parent Objects}
    FImage:TVirtualDiskImage;
@@ -1165,6 +1160,9 @@ type
    {Public Variables}
 
    {Public Methods}
+   function AcquireLock:Boolean;
+   function ReleaseLock:Boolean;
+
    function IsFixed:Boolean; virtual;
    function IsDynamic:Boolean; virtual;
 
@@ -1223,8 +1221,8 @@ type
 
    {Protected Variables}
    FTable:TVirtualDiskVpcTable; {VirtualPC images contain only one Table per Extent}
-   FGroups:TLinkedObjList;      {Block bitmap Groups}
-   //FGroupLock:TMutexHandle; //To do
+   FGroups:TFileSysList;        {Block bitmap Groups}
+   FGroupLocal:TMutexHandle;    {Local Lock shared by all Block bitmap Groups}
 
    {Protected Methods}
   public
@@ -1234,7 +1232,7 @@ type
    property Sparse:PVpcDynamicDiskHeader read FSparse;
 
    property Table:TVirtualDiskVpcTable read FTable;
-   property Groups:TLinkedObjList read FGroups;
+   property Groups:TFileSysList read FGroups;
    
    property HeaderOffset:Int64 read FHeaderOffset write FHeaderOffset;
    property HeaderSize:LongWord read FHeaderSize write FHeaderSize;
@@ -1454,15 +1452,15 @@ type
    {Parent Objects}
 
    {Protected Variables}
-   FBlocks:TLinkedObjList;   {Block bitmap Blocks}
-   //FBlockLock:TMutexHandle; //To do
+   FBlocks:TFileSysList;     {Block bitmap Blocks}
+   FBlockLocal:TMutexHandle; {Local Lock shared by all Block bitmap Blocks}
 
    {Protected Methods}
   public
    {Public Properties}
    property GroupNo:LongWord read FGroupNo write FGroupNo;
 
-   property Blocks:TLinkedObjList read FBlocks;
+   property Blocks:TFileSysList read FBlocks;
 
    {Public Variables}
 
@@ -2440,7 +2438,7 @@ begin
   else if (FImage.Attributes and iaPartition) = iaPartition then
    begin
     case FMediaType of
-     mtFIXED:begin //To Do //Critical //mtREMOVABLE
+     mtFIXED:begin {Not mtREMOVABLE}
        {Create a Partition}
        Partition:=FDriver.GetPartitionByEntryNo(Self,nil,MIN_PARTITION,False,FILESYS_LOCK_NONE); {Do not lock}
        if Partition = nil then
@@ -2464,7 +2462,7 @@ begin
   else if (FImage.Attributes and iaVolume) = iaVolume then
    begin
     case FMediaType of
-     mtFIXED:begin //To Do //Critical //mtREMOVABLE
+     mtFIXED:begin {Not mtREMOVABLE}
        {Create a Partition}
        Partition:=FDriver.GetPartitionByEntryNo(Self,nil,MIN_PARTITION,False,FILESYS_LOCK_NONE); {Do not lock}
        if Partition = nil then
@@ -2488,7 +2486,7 @@ begin
   else if (FImage.Attributes and iaDrive) = iaDrive then
    begin
     case FMediaType of
-     mtFIXED:begin //To Do //Critical //mtREMOVABLE
+     mtFIXED:begin {Not mtREMOVABLE}
        {Create a Partition}
        Partition:=FDriver.GetPartitionByEntryNo(Self,nil,MIN_PARTITION,False,FILESYS_LOCK_NONE); {Do not lock}
        if Partition = nil then
@@ -2562,7 +2560,7 @@ begin
         
        Result:=True;
       end;
-     mtFIXED:begin //To Do //Critical //mtREMOVABLE
+     mtFIXED:begin {Not mtREMOVABLE}
        Result:=True;
       end;
     end;
@@ -2581,7 +2579,7 @@ begin
         
        Result:=True;
       end;
-     mtFIXED:begin //To Do //Critical //mtREMOVABLE
+     mtFIXED:begin {Not mtREMOVABLE}
        Result:=True;
       end;
     end;
@@ -2909,8 +2907,7 @@ begin
  inherited Create(ADriver,AController,AName,AImageNo);
  FFlags:=virtualFlagNone;
 
- FExtents:=TLinkedObjList.Create;
- FExtentLock:=MutexCreate;
+ FExtents:=TFileSysList.Create;
 
  FBase:=nil;
  FCurrent:=nil;
@@ -2925,7 +2922,6 @@ begin
  try
   CloseExtents;
   FExtents.Free;
-  MutexDestroy(FExtentLock);
  
   FBase:=nil;
   FCurrent:=nil;
@@ -3188,6 +3184,8 @@ var
 begin
  {Base Implementation}
  Result:=False;
+
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
 
@@ -3203,6 +3201,7 @@ begin
     Extent.Handle:=INVALID_HANDLE_VALUE;
     if Extent = FBase then FBase:=nil;
     if Extent = FCurrent then FCurrent:=nil;
+    
     Extent:=TVirtualDiskExtent(Extent.Next);
    end;
 
@@ -3210,14 +3209,9 @@ begin
   FExtents.ClearList;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImage.CloseExtents ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -3262,7 +3256,7 @@ end;
 
 {==============================================================================}
 
-function TVirtualDiskImage.GetExtent(const ASector:Int64;AWrite:Boolean):TVirtualDiskExtent;
+function TVirtualDiskImage.GetExtent(const ASector:Int64;AWrite,ALock:Boolean):TVirtualDiskExtent;
 begin
  {Virtual Base Method - No Function}
  Result:=nil;
@@ -3270,32 +3264,32 @@ end;
 
 {==============================================================================}
 
-function TVirtualDiskImage.FindExtent(const AFilename:String):TVirtualDiskExtent;
+function TVirtualDiskImage.FindExtent(const AFilename:String;ALock:Boolean):TVirtualDiskExtent;
 var
  Extent:TVirtualDiskExtent;
 begin
  {Base Implementation}
  Result:=nil;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
-  {Close Extents}
+  {Check Extents}
   Extent:=TVirtualDiskExtent(FExtents.First);
   while Extent <> nil do
    begin
     if Uppercase(Extent.Filename) = Uppercase(AFilename) then
      begin
+      if ALock then Extent.AcquireLock;
+      
       Result:=Extent;
       Exit;
      end;
+     
     Extent:=TVirtualDiskExtent(Extent.Next);
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImage.FindExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -3522,6 +3516,7 @@ end;
 {==============================================================================}
 
 function TVirtualDiskMemoryImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
@@ -3537,29 +3532,30 @@ begin
  
  if FDriver = nil then Exit;
  if FController = nil then Exit;
-
+ 
  {Check Open}
  if FData = nil then Exit;
-
+ 
  {Check Read}
  if ASector >= FSectorCount then Exit;
  if (ASector + ACount) > FSectorCount then Exit;
-
+ 
  {Setup Read}
  Start:=ASector; {Allow for Int64 Result}
  Count:=ACount;
  Start:=(Start shl FSectorShiftCount);
  Count:=(Count shl FSectorShiftCount);
-
+ 
  {Perform Read}
  System.Move(Pointer(PtrUInt(FData) + PtrUInt(Start))^,ABuffer,Count);
-
+ 
  Result:=True;
 end;
 
 {==============================================================================}
 
 function TVirtualDiskMemoryImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
@@ -3575,23 +3571,23 @@ begin
  
  if FDriver = nil then Exit;
  if FController = nil then Exit;
-
+ 
  {Check Open}
  if FData = nil then Exit;
-
+ 
  {Check Write}
  if ASector >= FSectorCount then Exit;
  if (ASector + ACount) > FSectorCount then Exit;
-
+ 
  {Setup Write}
  Start:=ASector; {Allow for Int64 Result}
  Count:=ACount;
  Start:=(Start shl FSectorShiftCount);
  Count:=(Count shl FSectorShiftCount);
-
+ 
  {Perform Write}
  System.Move(ABuffer,Pointer(PtrUInt(FData) + PtrUInt(Start))^,Count);
-
+ 
  Result:=True;
 end;
 
@@ -3612,6 +3608,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -3645,14 +3643,9 @@ begin
   if FData = nil then Exit;
 
   Result:=FImageNo;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskMemoryImage.CreateImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -3661,6 +3654,8 @@ function TVirtualDiskMemoryImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -3677,14 +3672,9 @@ begin
   FData:=nil;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskMemoryImage.CloseImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -3779,79 +3769,65 @@ end;
 {==============================================================================}
 
 function TVirtualDiskFileImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
-  if FController = nil then Exit;
+ 
+ if FDriver = nil then Exit;
+ if FController = nil then Exit;
 
-  {Check Open}
-  if FHandle = INVALID_HANDLE_VALUE then Exit;
+ {Check Open}
+ if FHandle = INVALID_HANDLE_VALUE then Exit;
 
-  {Check Read}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
+ {Check Read}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
 
-  {Setup Read}
-  Start:=ASector; {Allow for Int64 Result}
-  Count:=ACount;
-  Start:=(Start shl FSectorShiftCount);
-  Count:=(Count shl FSectorShiftCount);
+ {Setup Read}
+ Start:=ASector; {Allow for Int64 Result}
+ Count:=ACount;
+ Start:=(Start shl FSectorShiftCount);
+ Count:=(Count shl FSectorShiftCount);
 
-  {Perform Read}
-  FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
-  Result:=(FDriver.FileRead(FHandle,ABuffer,Count) = Count);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskFileImage.Read ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Perform Read}
+ FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
+ Result:=(FDriver.FileRead(FHandle,ABuffer,Count) = Count);
 end;
 
 {==============================================================================}
 
 function TVirtualDiskFileImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
-  if FController = nil then Exit;
+ 
+ if FDriver = nil then Exit;
+ if FController = nil then Exit;
 
-  {Check Open}
-  if FHandle = INVALID_HANDLE_VALUE then Exit;
+ {Check Open}
+ if FHandle = INVALID_HANDLE_VALUE then Exit;
 
-  {Check Write}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
+ {Check Write}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
 
-  {Setup Write}
-  Start:=ASector; {Allow for Int64 Result}
-  Count:=ACount;
-  Start:=(Start shl FSectorShiftCount);
-  Count:=(Count shl FSectorShiftCount);
+ {Setup Write}
+ Start:=ASector; {Allow for Int64 Result}
+ Count:=ACount;
+ Start:=(Start shl FSectorShiftCount);
+ Count:=(Count shl FSectorShiftCount);
 
-  {Perform Write}
-  FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
-  Result:=(FDriver.FileWrite(FHandle,ABuffer,Count) = Count);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskFileImage.Write ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Perform Write}
+ FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
+ Result:=(FDriver.FileWrite(FHandle,ABuffer,Count) = Count);
 end;
 
 {==============================================================================}
@@ -3862,6 +3838,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -3899,14 +3877,9 @@ begin
   FDriver.FileTruncate(FHandle);
 
   Result:=FImageNo;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskFileImage.CreateImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -3917,6 +3890,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -3948,14 +3923,9 @@ begin
   if FHandle = INVALID_HANDLE_VALUE then Exit;
 
   Result:=FImageNo;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskFileImage.OpenImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -3964,6 +3934,8 @@ function TVirtualDiskFileImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -3980,14 +3952,9 @@ begin
   FHandle:=INVALID_HANDLE_VALUE;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskFileImage.CloseImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -3996,7 +3963,16 @@ function TVirtualDiskFileImage.ResizeImage(const ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  if FDriver = nil then Exit;
+  if FController = nil then Exit;
+  
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -4439,115 +4415,101 @@ end;
 {==============================================================================}
 
 function TVirtualDiskDeviceImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
-  if FController = nil then Exit;
 
-  {Check Open}
-  if FHandle = INVALID_HANDLE_VALUE then Exit;
+ if FDriver = nil then Exit;
+ if FController = nil then Exit;
 
-  {Check Read}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
+ {Check Open}
+ if FHandle = INVALID_HANDLE_VALUE then Exit;
 
-  {Setup Read}
-  Start:=ASector; {Allow for Int64 Result}
-  Count:=ACount;
-  Start:=(Start shl FSectorShiftCount);
-  Count:=(Count shl FSectorShiftCount);
+ {Check Read}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
 
-  {Perform Read}
-  if (FAttributes and iaDisk) = iaDisk then
-   begin
-    FDriver.SeekDevice(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.ReadDevice(FHandle,ABuffer,Count) = Count);
-   end
-  else if (FAttributes and iaPartition) = iaPartition then
-   begin
-    FDriver.SeekPartition(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.ReadPartition(FHandle,ABuffer,Count) = Count);
-   end
-  else if (FAttributes and iaVolume) = iaVolume then
-   begin
-    FDriver.SeekVolume(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.ReadVolume(FHandle,ABuffer,Count) = Count);
-   end
-  else if (FAttributes and iaDrive) = iaDrive then
-   begin
-    FDriver.SeekDrive(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.ReadDrive(FHandle,ABuffer,Count) = Count);
-   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskDeviceImage.Read ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Setup Read}
+ Start:=ASector; {Allow for Int64 Result}
+ Count:=ACount;
+ Start:=(Start shl FSectorShiftCount);
+ Count:=(Count shl FSectorShiftCount);
+
+ {Perform Read}
+ if (FAttributes and iaDisk) = iaDisk then
+  begin
+   FDriver.SeekDevice(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.ReadDevice(FHandle,ABuffer,Count) = Count);
+  end
+ else if (FAttributes and iaPartition) = iaPartition then
+  begin
+   FDriver.SeekPartition(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.ReadPartition(FHandle,ABuffer,Count) = Count);
+  end
+ else if (FAttributes and iaVolume) = iaVolume then
+  begin
+   FDriver.SeekVolume(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.ReadVolume(FHandle,ABuffer,Count) = Count);
+  end
+ else if (FAttributes and iaDrive) = iaDrive then
+  begin
+   FDriver.SeekDrive(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.ReadDrive(FHandle,ABuffer,Count) = Count);
+  end;
 end;
 
 {==============================================================================}
 
 function TVirtualDiskDeviceImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
-  if FController = nil then Exit;
 
-  {Check Open}
-  if FHandle = INVALID_HANDLE_VALUE then Exit;
+ if FDriver = nil then Exit;
+ if FController = nil then Exit;
 
-  {Check Write}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
+ {Check Open}
+ if FHandle = INVALID_HANDLE_VALUE then Exit;
 
-  {Setup Write}
-  Start:=ASector; {Allow for Int64 Result}
-  Count:=ACount;
-  Start:=(Start shl FSectorShiftCount);
-  Count:=(Count shl FSectorShiftCount);
+ {Check Write}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
 
-  {Perform Write}
-  if (FAttributes and iaDisk) = iaDisk then
-   begin
-    FDriver.SeekDevice(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.WriteDevice(FHandle,ABuffer,Count) = Count);
-   end
-  else if (FAttributes and iaPartition) = iaPartition then
-   begin
-    FDriver.SeekPartition(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.WritePartition(FHandle,ABuffer,Count) = Count);
-   end
-  else if (FAttributes and iaVolume) = iaVolume then
-   begin
-    FDriver.SeekVolume(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.WriteVolume(FHandle,ABuffer,Count) = Count);
-   end
-  else if (FAttributes and iaDrive) = iaDrive then
-   begin
-    FDriver.SeekDrive(FHandle,Start,soFromBeginning);
-    Result:=(FDriver.WriteDrive(FHandle,ABuffer,Count) = Count);
-   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskDeviceImage.Write ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Setup Write}
+ Start:=ASector; {Allow for Int64 Result}
+ Count:=ACount;
+ Start:=(Start shl FSectorShiftCount);
+ Count:=(Count shl FSectorShiftCount);
+
+ {Perform Write}
+ if (FAttributes and iaDisk) = iaDisk then
+  begin
+   FDriver.SeekDevice(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.WriteDevice(FHandle,ABuffer,Count) = Count);
+  end
+ else if (FAttributes and iaPartition) = iaPartition then
+  begin
+   FDriver.SeekPartition(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.WritePartition(FHandle,ABuffer,Count) = Count);
+  end
+ else if (FAttributes and iaVolume) = iaVolume then
+  begin
+   FDriver.SeekVolume(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.WriteVolume(FHandle,ABuffer,Count) = Count);
+  end
+ else if (FAttributes and iaDrive) = iaDrive then
+  begin
+   FDriver.SeekDrive(FHandle,Start,soFromBeginning);
+   Result:=(FDriver.WriteDrive(FHandle,ABuffer,Count) = Count);
+  end;
 end;
 
 {==============================================================================}
@@ -4583,6 +4545,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -4646,14 +4610,9 @@ begin
 
     Result:=FImageNo;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskDeviceImage.OpenImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -4662,6 +4621,8 @@ function TVirtualDiskDeviceImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -4681,14 +4642,9 @@ begin
   FHandle:=INVALID_HANDLE_VALUE;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskDeviceImage.CloseImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -4772,79 +4728,65 @@ end;
 {==============================================================================}
 
 function TVirtualDiskIsoImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
-  if FController = nil then Exit;
 
-  {Check Open}
-  if FHandle = INVALID_HANDLE_VALUE then Exit;
+ if FDriver = nil then Exit;
+ if FController = nil then Exit;
 
-  {Check Read}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
+ {Check Open}
+ if FHandle = INVALID_HANDLE_VALUE then Exit;
 
-  {Setup Read}
-  Start:=ASector; {Allow for Int64 Result}
-  Count:=ACount;
-  Start:=(Start shl FSectorShiftCount);
-  Count:=(Count shl FSectorShiftCount);
+ {Check Read}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
 
-  {Perform Read}
-  FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
-  Result:=(FDriver.FileRead(FHandle,ABuffer,Count) = Count);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskIsoImage.Read ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Setup Read}
+ Start:=ASector; {Allow for Int64 Result}
+ Count:=ACount;
+ Start:=(Start shl FSectorShiftCount);
+ Count:=(Count shl FSectorShiftCount);
+
+ {Perform Read}
+ FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
+ Result:=(FDriver.FileRead(FHandle,ABuffer,Count) = Count);
 end;
 
 {==============================================================================}
 
 function TVirtualDiskIsoImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:Int64;
  Count:Integer;
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
-  if FController = nil then Exit;
 
-  {Check Open}
-  if FHandle = INVALID_HANDLE_VALUE then Exit;
+ if FDriver = nil then Exit;
+ if FController = nil then Exit;
 
-  {Check Write}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
+ {Check Open}
+ if FHandle = INVALID_HANDLE_VALUE then Exit;
 
-  {Setup Write}
-  Start:=ASector; {Allow for Int64 Result}
-  Count:=ACount;
-  Start:=(Start shl FSectorShiftCount);
-  Count:=(Count shl FSectorShiftCount);
+ {Check Write}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
 
-  {Perform Write}
-  FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
-  Result:=(FDriver.FileWrite(FHandle,ABuffer,Count) = Count);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskIsoImage.Write ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Setup Write}
+ Start:=ASector; {Allow for Int64 Result}
+ Count:=ACount;
+ Start:=(Start shl FSectorShiftCount);
+ Count:=(Count shl FSectorShiftCount);
+
+ {Perform Write}
+ FDriver.FileSeekEx(FHandle,Start,soFromBeginning);
+ Result:=(FDriver.FileWrite(FHandle,ABuffer,Count) = Count);
 end;
 
 {==============================================================================}
@@ -4863,6 +4805,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -4900,14 +4844,9 @@ begin
   FDriver.FileTruncate(FHandle);
 
   Result:=FImageNo;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskIsoImage.CreateImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -4918,6 +4857,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -4949,14 +4890,9 @@ begin
   if FHandle = INVALID_HANDLE_VALUE then Exit;
 
   Result:=FImageNo;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskIsoImage.OpenImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -4965,6 +4901,8 @@ function TVirtualDiskIsoImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -4981,14 +4919,9 @@ begin
   FHandle:=INVALID_HANDLE_VALUE;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskFileImage.CloseImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -4997,7 +4930,13 @@ function TVirtualDiskIsoImage.ResizeImage(const ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+
+ if not WriterLock then Exit;
+ try
+  //To Do
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5094,18 +5033,22 @@ end;
 {==============================================================================}
 
 function TVirtualDiskBochsImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 begin
  {}
  Result:=False;
+ 
  //To Do //
 end;
 
 {==============================================================================}
 
 function TVirtualDiskBochsImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 begin
  {}
  Result:=False;
+ 
  //To Do //
 end;
 
@@ -5115,6 +5058,7 @@ function TVirtualDiskBochsImage.Allocated(ASector:LongWord;ACount:Word):Word;
 begin
  {}
  Result:=ACount;
+ 
  //To Do //
 end;
 
@@ -5124,7 +5068,13 @@ function TVirtualDiskBochsImage.CreateImage(AMediaType:TMediaType;AFloppyType:TF
 begin
  {}
  Result:=0;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5133,7 +5083,13 @@ function TVirtualDiskBochsImage.OpenImage(AMediaType:TMediaType;AFloppyType:TFlo
 begin
  {}
  Result:=0;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5142,7 +5098,13 @@ function TVirtualDiskBochsImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5151,7 +5113,13 @@ function TVirtualDiskBochsImage.ResizeImage(const ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5260,24 +5228,34 @@ function TVirtualDiskVmwareImage.ImageInit:Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVmwareImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 begin
  {}
  Result:=False;
+ 
  //To Do //
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVmwareImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 begin
  {}
  Result:=False;
+ 
  //To Do //
 end;
 
@@ -5341,7 +5319,13 @@ function TVirtualDiskVmwareImage.CreateImage(AMediaType:TMediaType;AFloppyType:T
 begin
  {}
  Result:=0;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5350,7 +5334,13 @@ function TVirtualDiskVmwareImage.OpenImage(AMediaType:TMediaType;AFloppyType:TFl
 begin
  {}
  Result:=0;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5359,7 +5349,13 @@ function TVirtualDiskVmwareImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5368,7 +5364,13 @@ function TVirtualDiskVmwareImage.ResizeImage(const ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5377,7 +5379,13 @@ function TVirtualDiskVmwareImage.CreateSnapshot:Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5386,7 +5394,13 @@ function TVirtualDiskVmwareImage.DeleteSnapshot:Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5395,7 +5409,13 @@ function TVirtualDiskVmwareImage.MergeSnapshot:Boolean;
 begin
  {}
  Result:=False;
- //To Do //
+ 
+ if not WriterLock then Exit;
+ try
+  //To Do //
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5469,11 +5489,13 @@ begin
  try
   Offset:=0;
   Checksum:=0;
+  
   while Offset < SizeOf(TVpcHardDiskFooter) do
    begin
     Inc(Checksum,Byte(Pointer(LongWord(AFooter) + Offset)^));
     Inc(Offset,SizeOf(Byte));
    end;
+   
   Result:=not(Checksum);
  finally
   AFooter.Checksum:=Original;
@@ -5495,11 +5517,13 @@ begin
  try
   Offset:=0;
   Checksum:=0;
+  
   while Offset < SizeOf(TVpcDynamicDiskHeader) do
    begin
     Inc(Checksum,Byte(Pointer(LongWord(ASparse) + Offset)^));
     Inc(Offset,SizeOf(Byte));
    end;
+   
   Result:=not(Checksum);
  finally
   ASparse.Checksum:=Original;
@@ -5515,6 +5539,7 @@ begin
  {}
  Result:=AValue;
  if ASectorSize = 0 then Exit;
+ 
  Count:=(AValue div ASectorSize);
  if (Count * ASectorSize) < AValue then Inc(Count); //To Do //This needs to be shl/shr based
  Result:=(Count * ASectorSize);
@@ -5527,6 +5552,7 @@ begin
  {}
  Result:=False;
  if FBase = nil then Exit;
+ 
  Result:=True;
 end;
 
@@ -5537,6 +5563,7 @@ begin
  {}
  Result:=0;
  if not Ready then Exit;
+ 
  Result:=WordBEtoN(TVirtualDiskVpcExtent(FBase).Footer.DiskGeometry.Cylinders);
  if Result = 0 then Result:=inherited GetCylinders;
 end;
@@ -5548,6 +5575,7 @@ begin
  {}
  Result:=0;
  if not Ready then Exit;
+ 
  Result:=TVirtualDiskVpcExtent(FBase).Footer.DiskGeometry.Heads;
  if Result = 0 then Result:=inherited GetHeads;
 end;
@@ -5559,6 +5587,7 @@ begin
  {}
  Result:=0;
  if not Ready then Exit;
+ 
  Result:=TVirtualDiskVpcExtent(FBase).Footer.DiskGeometry.Sectors;
  if Result = 0 then Result:=inherited GetSectors;
 end;
@@ -5585,6 +5614,7 @@ end;
 {==============================================================================}
 
 function TVirtualDiskVpcImage.ReadExtent(AExtent:TVirtualDiskExtent;ASector:LongWord;ACount:Word;var ABuffer):Word;
+{Note: Caller must hold the extent lock}
 var
  Offset:Int64;         {Absolute Offset of Read from file}
  Count:LongWord;       {Count of Bytes to Read from file}
@@ -5602,6 +5632,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -5610,6 +5642,7 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.ReadExtent - Name = ' + AExtent.Filename);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
+  
   {Check Read}
   if ASector < AExtent.StartSector then Exit;
   if ASector >= (AExtent.StartSector + AExtent.SectorCount) then Exit;
@@ -5622,6 +5655,7 @@ begin
     Offset:=((ASector - AExtent.StartSector) shl FSectorShiftCount);
     Count:=Min(ACount,(AExtent.SectorCount - (ASector - AExtent.StartSector))) shl FSectorShiftCount;
     if AExtent.HasDelta then Count:=Min(ACount,1) shl FSectorShiftCount; {Only Read 1 sector if Delta exists}
+    
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
@@ -5630,6 +5664,7 @@ begin
     {Read Extent}
     FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
     if FDriver.FileRead(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+    
     Result:=(Count shr FSectorShiftCount);
    end
   else
@@ -5655,19 +5690,24 @@ begin
      begin
       {Check Delta}
       if AExtent.IsDelta then Exit;
+      
       {Get Block}
       BlockStart:=(BlockNo shl AExtent.BlockShiftCount);                       {Get the Block Start Sector (Multiply BlockNo by BlockShift)}
       BlockCount:=(AExtent.BlockSize shr FSectorShiftCount);                   {Get the Block Sector Count (Divide BlockSize by SectorSize)}
+      
       {Get Count}
       Count:=Min(ACount,(BlockCount - (ASector - BlockStart))) shl FSectorShiftCount;
       if AExtent.HasDelta then Count:=Min(ACount,1) shl FSectorShiftCount; {Only Read 1 sector if Delta exists}
+      
       {$IFDEF VIRTUAL_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockStart = ' + IntToHex(BlockStart,8));
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockCount = ' + IntToHex(BlockCount,8));
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
       {$ENDIF}
+      
       {Read Extent (Zero)}
       ZeroMemory(@ABuffer,Count);
+      
       Result:=(Count shr FSectorShiftCount);
      end
     else
@@ -5675,6 +5715,7 @@ begin
       {Get Block}
       Block:=TVirtualDiskVpcBlock(GetBlock(Table,ASector,False));                {Get the Block}
       if Block = nil then Exit;
+      
       {Test Block (Used)}
       BitmapCount:=TestBlock(Block,ASector,ACount,True);
       if BitmapCount = 0 then
@@ -5682,17 +5723,22 @@ begin
         {Start Bit is Free}
         {Check Delta}
         if AExtent.IsDelta then Exit;
+        
         {Test Block (Free)}
         BitmapCount:=TestBlock(Block,ASector,ACount,False);
         if BitmapCount = 0 then Exit;
+        
         {Get Count}
         Count:=Min(ACount,BitmapCount) shl FSectorShiftCount;
         if AExtent.HasDelta then Count:=Min(ACount,1) shl FSectorShiftCount; {Only Read 1 sector if Delta exists}
+        
         {$IFDEF VIRTUAL_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
         {$ENDIF}
+        
         {Read Extent (Zero)}
         ZeroMemory(@ABuffer,Count);
+        
         Result:=(Count shr FSectorShiftCount);
        end
       else
@@ -5702,30 +5748,29 @@ begin
         Offset:=Block.DataOffset + ((ASector - Block.StartSector) shl FSectorShiftCount);
         Count:=Min(ACount,BitmapCount) shl FSectorShiftCount;
         if AExtent.HasDelta then Count:=Min(ACount,1) shl FSectorShiftCount; {Only Read 1 sector if Delta exists}
+        
         {$IFDEF VIRTUAL_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
         {$ENDIF}
+        
         {Read Extent}
         FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
         if FDriver.FileRead(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+        
         Result:=(Count shr FSectorShiftCount);
        end;
      end;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.ReadExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.WriteExtent(AExtent:TVirtualDiskExtent;ASector:LongWord;ACount:Word;const ABuffer):Word;
+{Note: Caller must hold the extent lock}
 var
  Offset:Int64;         {Absolute Offset of Write to file}
  Count:LongWord;       {Count of Bytes to Write to file}
@@ -5742,6 +5787,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -5750,6 +5797,7 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.WriteExtent - Name = ' + AExtent.Filename);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
+  
   {Check Write}
   if not Writeable then Exit;
   if ASector < AExtent.StartSector then Exit;
@@ -5762,13 +5810,16 @@ begin
     {Get Offset}
     Offset:=((ASector - AExtent.StartSector) shl FSectorShiftCount);
     Count:=Min(ACount,(AExtent.SectorCount - (ASector - AExtent.StartSector))) shl FSectorShiftCount;
+    
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
     {$ENDIF}
+    
     {Write Extent}
     FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
     if FDriver.FileWrite(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+    
     Result:=(Count shr FSectorShiftCount);
    end
   else
@@ -5777,6 +5828,7 @@ begin
     Table:=TVirtualDiskVpcExtent(AExtent).Table;
     if Table = nil then Exit;
     if Table.Data = nil then Exit;
+    
     {Get Block}
     BlockNo:=(ASector shr AExtent.BlockShiftCount);                                {Get the Block No}
     TableOffset:=(BlockNo shl 2);                                                  {Get the Table Offset (Multiply BlockNo by 4)}
@@ -5787,24 +5839,29 @@ begin
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   TableOffset = ' + IntToHex(TableOffset,8));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   TableValue = ' + IntToHex(TableValue,8));
     {$ENDIF}
+    
     {Check Block}
     if TableValue = vpcUnallocatedBlock then
      begin
       {Get Block}
       Block:=TVirtualDiskVpcBlock(GetBlock(Table,ASector,True));                {Get the Block}
       if Block = nil then Exit;
+      
       {Get Size}
       BlockSize:=AExtent.BlockSize + RoundToSector(Block.BlockSize,vpcSectorSize); {Block Size plus Bitmap Size}
+      
       {Get Buffer}
       Buffer:=GetMem(BlockSize);
       if Buffer = nil then Exit;
       try
        {Allocate Block}
        TableValue:=(TVirtualDiskVpcExtent(AExtent).FooterOffset) shr FSectorShiftCount;
+       
        {Extend File}
        ZeroMemory(Buffer,BlockSize);
        FDriver.FileSeekEx(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).FooterOffset,soFromBeginning);
        if FDriver.FileWrite(AExtent.Handle,Buffer^,BlockSize) <> Integer(BlockSize) then Exit;
+       
        {Update Block}
        Block.BlockOffset:=TVirtualDiskVpcExtent(AExtent).FooterOffset;
        Block.DataOffset:=Block.BlockOffset + RoundToSector(Block.BlockSize,vpcSectorSize);
@@ -5816,19 +5873,24 @@ begin
        {Update Extent}
        TVirtualDiskVpcExtent(AExtent).FooterOffset:=TVirtualDiskVpcExtent(AExtent).FooterOffset + BlockSize;
        if not SetExtent(AExtent) then Exit;
+       
        {Get Offset}
        Offset:=Block.DataOffset + ((ASector - Block.StartSector) shl FSectorShiftCount);
        Count:=Min(ACount,(Block.SectorCount - (ASector - Block.StartSector))) shl FSectorShiftCount;
+       
        {$IFDEF VIRTUAL_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
        if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
        {$ENDIF}
+       
        {Update Block}
        if not MarkBlock(Block,ASector,(Count shr FSectorShiftCount),True) then Exit;
        if not SetBlock(Block) then Exit;
+       
        {Write Extent}
        FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
        if FDriver.FileWrite(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+       
        Result:=(Count shr FSectorShiftCount);
       finally
        FreeMem(Buffer);
@@ -5839,30 +5901,30 @@ begin
       {Get Block}
       Block:=TVirtualDiskVpcBlock(GetBlock(Table,ASector,True));                {Get the Block}
       if Block = nil then Exit;
+      
       {Get Offset}
       Offset:=Block.DataOffset + ((ASector - Block.StartSector) shl FSectorShiftCount);
       Count:=Min(ACount,(Block.SectorCount - (ASector - Block.StartSector))) shl FSectorShiftCount;
+      
       {$IFDEF VIRTUAL_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
       {$ENDIF}
+      
       {Update Block}
       if not MarkBlock(Block,ASector,(Count shr FSectorShiftCount),True) then Exit;
       if not SetBlock(Block) then Exit;
+      
       {Write Extent}
       FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
       if FDriver.FileWrite(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+      
       Result:=(Count shr FSectorShiftCount);
      end;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.WriteExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5876,6 +5938,8 @@ var
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LoadExtents');
@@ -5889,17 +5953,21 @@ begin
     begin
      {Set Base}
      FBase:=Extent;
+     
      {Load Delta Extents}
      WorkBuffer:=LocateDelta(Extent);
      while Length(WorkBuffer) <> 0 do
       begin
        {Save Parent}
        Parent:=Extent;
+       
        {Load Extent}
        Extent:=TVirtualDiskVpcExtent(LoadExtent(nil,Parent,WorkBuffer));
        if Extent = nil then Exit;
+       
        WorkBuffer:=LocateDelta(Extent);
       end;
+     
      {Set Current}
      FCurrent:=Extent; {Last Delta loaded must be Current (Will be same as Base if no Deltas loaded)}
     end
@@ -5907,19 +5975,24 @@ begin
     begin
      {Save Delta}
      Delta:=Extent;
+     
      {Locate Delta Extents}
      WorkBuffer:=LocateDelta(Extent);
      while Length(WorkBuffer) <> 0 do
       begin
        {Save Parent}
        Parent:=Extent;
+       
        {Load Extent}
        Extent:=TVirtualDiskVpcExtent(LoadExtent(nil,Parent,WorkBuffer));
        if Extent = nil then Exit;
+       
        WorkBuffer:=LocateDelta(Extent);
       end;
+     
      {Set Current}
      FCurrent:=Extent; {Last Delta loaded must be Current}
+     
      {Locate Parent Extents}
      WorkBuffer:=LocateParent(Delta);
      if Length(WorkBuffer) = 0 then Exit;
@@ -5928,17 +6001,22 @@ begin
        {Load Extent}
        Extent:=TVirtualDiskVpcExtent(LoadExtent(Delta,nil,WorkBuffer));
        if Extent = nil then Exit;
+       
        {Save Delta}
        Delta:=Extent;
        if Extent.IsBase then Break;
+       
        WorkBuffer:=LocateParent(Delta);
       end;
+     
      {Set Base}
      if Extent.IsBase then FBase:=Extent; {Last Parent loaded must be Base}
     end;
+    
    {Check Loaded}
    if FBase = nil then Exit;
    if FCurrent = nil then Exit;
+   
    Result:=True;
 
    {$IFDEF VIRTUAL_DEBUG}
@@ -5949,14 +6027,9 @@ begin
   finally
    if not Result then CloseExtents;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LoadExtents ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -5965,6 +6038,7 @@ function TVirtualDiskVpcImage.CheckExtent(ADelta,AParent:TVirtualDiskExtent;cons
 {Check that the passed file is a valid VirtualPC extent}
 {If delta is provided, check that passed file is the parent of the delta}
 {If parent is provided, check that passed file is the delta of the parent}
+{Note: Caller must hold the delta and parent locks}
 var
  Handle:THandle;
  Header:TVpcHardDiskFooter;
@@ -5973,131 +6047,144 @@ var
 begin
  {}
  Result:=False;
+ 
+ if FDriver = nil then Exit;
+ if Length(AFilename) = 0 then Exit;
+
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Name = ' + AFilename);
+ {$ENDIF}
+
+ {Open File}
+ if not FDriver.FileExists(AFilename) then Exit;
+ Handle:=FDriver.FileOpen(AFilename,fmOpenRead or fmShareDenyNone);
+ if Handle = INVALID_HANDLE_VALUE then Exit;
  try
-  if FDriver = nil then Exit;
-  if Length(AFilename) = 0 then Exit;
-
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Name = ' + AFilename);
-  {$ENDIF}
-
-  {Open File}
-  if not FDriver.FileExists(AFilename) then Exit;
-  Handle:=FDriver.FileOpen(AFilename,fmOpenRead or fmShareDenyNone);
-  if Handle = INVALID_HANDLE_VALUE then Exit;
-  try
-   {Read Footer}
-   if FDriver.FileSizeEx(Handle) < SizeOf(TVpcHardDiskFooter) then Exit;
-   FDriver.FileSeekEx(Handle,0 - SizeOf(TVpcHardDiskFooter),soFromEnd);
-   if FDriver.FileRead(Handle,Footer,SizeOf(TVpcHardDiskFooter)) <> SizeOf(TVpcHardDiskFooter) then Exit;
-   {Check Cookie}
-   if Footer.Cookie = vpcFooterCookie then
-    begin
-     {$IFDEF VIRTUAL_DEBUG}
-     if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Footer.Checksum),8));
-     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumFooter(@Footer),8));
-     {$ENDIF}
-     
-     {Check Footer}
-     if LongWordBEtoN(Footer.Version) <> vpcFooterVersion then Exit;
-     if LongWordBEtoN(Footer.Checksum) <> ChecksumFooter(@Footer) then Exit;
-     {Check Delta}
-     if ADelta <> nil then
-      begin
-       {$IFDEF VIRTUAL_DEBUG}
-       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Delta = ' + GUIDToString(TVirtualDiskVpcExtent(ADelta).Footer.UniqueId));
-       {$ENDIF}
-       if not CompareGUID(Footer.UniqueId,TVirtualDiskVpcExtent(ADelta).Sparse.ParentUniqueId) then Exit;
-      end;
-     {Check Parent}
-     if AParent <> nil then
-      begin
-       {$IFDEF VIRTUAL_DEBUG}
-       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AParent).Footer.UniqueId));
-       {$ENDIF}
-       if LongWordBEtoN(Footer.DiskType) <> vpcDiskTypeDifferencing then Exit;
-       if Int64BEtoN(Footer.DataOffset) = vpcFixedDiskTableOffset then Exit;
-       {Read Sparse}
-       FDriver.FileSeekEx(Handle,Int64BEtoN(Footer.DataOffset),soFromBeginning);
-       if FDriver.FileRead(Handle,Sparse,SizeOf(TVpcDynamicDiskHeader)) <> SizeOf(TVpcDynamicDiskHeader) then Exit;
-       {Check Cookie}
-       if Sparse.Cookie <> vpcDynamicCookie then Exit;
-       {$IFDEF VIRTUAL_DEBUG}
-       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Sparse.Checksum),8));
-       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumSparse(@Sparse),8));
-       {$ENDIF}
-       {Check Sparse}
-       if LongWordBEtoN(Sparse.HeaderVersion) <> vpcDynamicVersion then Exit;
-       if LongWordBEtoN(Sparse.Checksum) <> ChecksumSparse(@Sparse) then Exit;
-       if not CompareGUID(Sparse.ParentUniqueId,TVirtualDiskVpcExtent(AParent).Footer.UniqueId) then Exit;
-      end;
-     Result:=True;
-    end
-   else
-    begin
-     {Read Header}
-     FDriver.FileSeekEx(Handle,0,soFromBeginning);
-     if FDriver.FileRead(Handle,Header,SizeOf(TVpcHardDiskFooter)) <> SizeOf(TVpcHardDiskFooter) then Exit;
-     {Check Cookie}
-     if Header.Cookie = vpcFooterCookie then
-      begin
-       {$IFDEF VIRTUAL_DEBUG}
-       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Header.Checksum),8));
-       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumFooter(@Header),8));
-       {$ENDIF}
-       {Check Header}
-       if LongWordBEtoN(Header.Version) <> vpcFooterVersion then Exit;
-       if LongWordBEtoN(Header.Checksum) <> ChecksumFooter(@Header) then Exit;
-       {Check Delta}
-       if ADelta <> nil then
-        begin
-         {$IFDEF VIRTUAL_DEBUG}
-         if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Delta = ' + GUIDToString(TVirtualDiskVpcExtent(ADelta).Footer.UniqueId));
-         {$ENDIF}
-         if not CompareGUID(Footer.UniqueId,TVirtualDiskVpcExtent(ADelta).Sparse.ParentUniqueId) then Exit;
-        end;
-       {Check Parent}
-       if AParent <> nil then
-        begin
-         {$IFDEF VIRTUAL_DEBUG}
-         if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AParent).Footer.UniqueId));
-         {$ENDIF}
-         if LongWordBEtoN(Header.DiskType) <> vpcDiskTypeDifferencing then Exit;
-         if Int64BEtoN(Header.DataOffset) = vpcFixedDiskTableOffset then Exit;
-         {Read Sparse}
-         FDriver.FileSeekEx(Handle,Int64BEtoN(Header.DataOffset),soFromBeginning);
-         if FDriver.FileRead(Handle,Sparse,SizeOf(TVpcDynamicDiskHeader)) <> SizeOf(TVpcDynamicDiskHeader) then Exit;
-         {Check Cookie}
-         if Sparse.Cookie <> vpcDynamicCookie then Exit;
-         {$IFDEF VIRTUAL_DEBUG}
-         if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Sparse.Checksum),8));
-         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumSparse(@Sparse),8));
-         {$ENDIF}
-         {Check Sparse}
-         if LongWordBEtoN(Sparse.HeaderVersion) <> vpcDynamicVersion then Exit;
-         if LongWordBEtoN(Sparse.Checksum) <> ChecksumSparse(@Sparse) then Exit;
-         if not CompareGUID(Sparse.ParentUniqueId,TVirtualDiskVpcExtent(AParent).Header.UniqueId) then Exit;
-        end;
-       Result:=True;
-      end
-     else
-      begin
-       //To Do //Look for Split files //Create Split file example to confirm behaviour
-                     //Instead we could just fail the check and call CheckSplit
-                     //which would set the Split Flag in the Image, LoadExtent(s) could then act on that Flag
-      end;
-    end;
-  finally
-   {Close File}
-   FDriver.FileClose(Handle);
-  end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
+  {Read Footer}
+  if FDriver.FileSizeEx(Handle) < SizeOf(TVpcHardDiskFooter) then Exit;
+  FDriver.FileSeekEx(Handle,0 - SizeOf(TVpcHardDiskFooter),soFromEnd);
+  if FDriver.FileRead(Handle,Footer,SizeOf(TVpcHardDiskFooter)) <> SizeOf(TVpcHardDiskFooter) then Exit;
+  
+  {Check Cookie}
+  if Footer.Cookie = vpcFooterCookie then
    begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.CheckExtent ' + E.Message);
+    {$IFDEF VIRTUAL_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Footer.Checksum),8));
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumFooter(@Footer),8));
+    {$ENDIF}
+    
+    {Check Footer}
+    if LongWordBEtoN(Footer.Version) <> vpcFooterVersion then Exit;
+    if LongWordBEtoN(Footer.Checksum) <> ChecksumFooter(@Footer) then Exit;
+    
+    {Check Delta}
+    if ADelta <> nil then
+     begin
+      {$IFDEF VIRTUAL_DEBUG}
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Delta = ' + GUIDToString(TVirtualDiskVpcExtent(ADelta).Footer.UniqueId));
+      {$ENDIF}
+      
+      if not CompareGUID(Footer.UniqueId,TVirtualDiskVpcExtent(ADelta).Sparse.ParentUniqueId) then Exit;
+     end;
+    
+    {Check Parent}
+    if AParent <> nil then
+     begin
+      {$IFDEF VIRTUAL_DEBUG}
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AParent).Footer.UniqueId));
+      {$ENDIF}
+      
+      if LongWordBEtoN(Footer.DiskType) <> vpcDiskTypeDifferencing then Exit;
+      if Int64BEtoN(Footer.DataOffset) = vpcFixedDiskTableOffset then Exit;
+      
+      {Read Sparse}
+      FDriver.FileSeekEx(Handle,Int64BEtoN(Footer.DataOffset),soFromBeginning);
+      if FDriver.FileRead(Handle,Sparse,SizeOf(TVpcDynamicDiskHeader)) <> SizeOf(TVpcDynamicDiskHeader) then Exit;
+      
+      {Check Cookie}
+      if Sparse.Cookie <> vpcDynamicCookie then Exit;
+      
+      {$IFDEF VIRTUAL_DEBUG}
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Sparse.Checksum),8));
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumSparse(@Sparse),8));
+      {$ENDIF}
+      
+      {Check Sparse}
+      if LongWordBEtoN(Sparse.HeaderVersion) <> vpcDynamicVersion then Exit;
+      if LongWordBEtoN(Sparse.Checksum) <> ChecksumSparse(@Sparse) then Exit;
+      if not CompareGUID(Sparse.ParentUniqueId,TVirtualDiskVpcExtent(AParent).Footer.UniqueId) then Exit;
+     end;
+     
+    Result:=True;
+   end
+  else
+   begin
+    {Read Header}
+    FDriver.FileSeekEx(Handle,0,soFromBeginning);
+    if FDriver.FileRead(Handle,Header,SizeOf(TVpcHardDiskFooter)) <> SizeOf(TVpcHardDiskFooter) then Exit;
+    
+    {Check Cookie}
+    if Header.Cookie = vpcFooterCookie then
+     begin
+      {$IFDEF VIRTUAL_DEBUG}
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Header.Checksum),8));
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumFooter(@Header),8));
+      {$ENDIF}
+      
+      {Check Header}
+      if LongWordBEtoN(Header.Version) <> vpcFooterVersion then Exit;
+      if LongWordBEtoN(Header.Checksum) <> ChecksumFooter(@Header) then Exit;
+      
+      {Check Delta}
+      if ADelta <> nil then
+       begin
+        {$IFDEF VIRTUAL_DEBUG}
+        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Delta = ' + GUIDToString(TVirtualDiskVpcExtent(ADelta).Footer.UniqueId));
+        {$ENDIF}
+        
+        if not CompareGUID(Footer.UniqueId,TVirtualDiskVpcExtent(ADelta).Sparse.ParentUniqueId) then Exit;
+       end;
+       
+      {Check Parent}
+      if AParent <> nil then
+       begin
+        {$IFDEF VIRTUAL_DEBUG}
+        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AParent).Footer.UniqueId));
+        {$ENDIF}
+        
+        if LongWordBEtoN(Header.DiskType) <> vpcDiskTypeDifferencing then Exit;
+        if Int64BEtoN(Header.DataOffset) = vpcFixedDiskTableOffset then Exit;
+        
+        {Read Sparse}
+        FDriver.FileSeekEx(Handle,Int64BEtoN(Header.DataOffset),soFromBeginning);
+        if FDriver.FileRead(Handle,Sparse,SizeOf(TVpcDynamicDiskHeader)) <> SizeOf(TVpcDynamicDiskHeader) then Exit;
+        
+        {Check Cookie}
+        if Sparse.Cookie <> vpcDynamicCookie then Exit;
+        
+        {$IFDEF VIRTUAL_DEBUG}
+        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.CheckExtent - Original Checksum = ' + IntToHex(LongWordBEtoN(Sparse.Checksum),8));
+        if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 Calculated Checksum = ' + IntToHex(ChecksumSparse(@Sparse),8));
+        {$ENDIF}
+        
+        {Check Sparse}
+        if LongWordBEtoN(Sparse.HeaderVersion) <> vpcDynamicVersion then Exit;
+        if LongWordBEtoN(Sparse.Checksum) <> ChecksumSparse(@Sparse) then Exit;
+        if not CompareGUID(Sparse.ParentUniqueId,TVirtualDiskVpcExtent(AParent).Header.UniqueId) then Exit;
+       end;
+       
+      Result:=True;
+     end
+    else
+     begin
+      //To Do //Look for Split files //Create Split file example to confirm behaviour
+                    //Instead we could just fail the check and call CheckSplit
+                    //which would set the Split Flag in the Image, LoadExtent(s) could then act on that Flag
+     end;
    end;
-  {$ENDIF}
+ finally
+  {Close File}
+  FDriver.FileClose(Handle);
  end;
 end;
 
@@ -6111,6 +6198,8 @@ var
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if Length(AFilename) = 0 then Exit;
@@ -6135,13 +6224,16 @@ begin
     {Get Size}
     FileSize:=FDriver.FileSizeEx(Extent.Handle);
     if FileSize < SizeOf(TVpcHardDiskFooter) then Exit;
+    
     {Read Footer}
     FDriver.FileSeekEx(Extent.Handle,FileSize - SizeOf(TVpcHardDiskFooter),soFromBeginning);
     if FDriver.FileRead(Extent.Handle,TVirtualDiskVpcExtent(Extent).Footer^,SizeOf(TVpcHardDiskFooter)) <> SizeOf(TVpcHardDiskFooter) then Exit;
+    
     {Check Footer}
     if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Footer.Version) <> vpcFooterVersion then Exit;
     if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Footer.Checksum) <> ChecksumFooter(TVirtualDiskVpcExtent(Extent).Footer) then Exit;
     if (Int64BEtoN(TVirtualDiskVpcExtent(Extent).Footer.CurrentSize) mod vpcSectorSize) <> 0 then Exit;
+    
     {Update Flags}
     Extent.Flags:=virtualFlagNone;
     if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Footer.DiskType) = vpcDiskTypeFixed then Extent.Flags:=Extent.Flags or virtualFlagBase;
@@ -6149,14 +6241,17 @@ begin
     if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Footer.DiskType) = vpcDiskTypeFixed then Extent.Flags:=Extent.Flags or virtualFlagFixed;
     if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Footer.DiskType) = vpcDiskTypeDynamic then Extent.Flags:=Extent.Flags or virtualFlagDynamic;
     if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Footer.DiskType) = vpcDiskTypeDifferencing then Extent.Flags:=Extent.Flags or virtualFlagDelta;
+    
     {Check Fixed}
     if Extent.IsFixed then
      begin
       {Fixed}
       {Zero Header}
       ZeroMemory(TVirtualDiskVpcExtent(Extent).Header,SizeOf(TVpcHardDiskFooter));
+      
       {Zero Sparse}
       ZeroMemory(TVirtualDiskVpcExtent(Extent).Sparse,SizeOf(TVpcDynamicDiskHeader));
+      
       {Update Extent}
       Extent.DataOffset:=0;  {Fixed Disk data starts at the beginning of the file}
       Extent.BlockSize:=0;   {No tables or blocks in a Fixed Disk}
@@ -6176,19 +6271,23 @@ begin
       {Read Header}
       FDriver.FileSeekEx(Extent.Handle,0,soFromBeginning);
       if FDriver.FileRead(Extent.Handle,TVirtualDiskVpcExtent(Extent).Header^,SizeOf(TVpcHardDiskFooter)) <> SizeOf(TVpcHardDiskFooter) then Exit;
+      
       {Check Header}
       if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Header.Version) <> vpcFooterVersion then Exit;
       if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Header.Checksum) <> ChecksumFooter(TVirtualDiskVpcExtent(Extent).Header) then Exit;
       if (Int64BEtoN(TVirtualDiskVpcExtent(Extent).Header.CurrentSize) mod vpcSectorSize) <> 0 then Exit;
       if Int64BEtoN(TVirtualDiskVpcExtent(Extent).Header.DataOffset) = vpcFixedDiskTableOffset then Exit;
+      
       {Read Sparse}
       FDriver.FileSeekEx(Extent.Handle,Int64BEtoN(TVirtualDiskVpcExtent(Extent).Header.DataOffset),soFromBeginning);
       if FDriver.FileRead(Extent.Handle,TVirtualDiskVpcExtent(Extent).Sparse^,SizeOf(TVpcDynamicDiskHeader)) <> SizeOf(TVpcDynamicDiskHeader) then Exit;
+      
       {Check Sparse}
       if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Sparse.HeaderVersion) <> vpcDynamicVersion then Exit;
       if LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Sparse.Checksum) <> ChecksumSparse(TVirtualDiskVpcExtent(Extent).Sparse) then Exit;
       if (LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Sparse.BlockSize) mod vpcSectorSize) <> 0 then Exit;
       if Int64BEtoN(TVirtualDiskVpcExtent(Extent).Sparse.DataOffset) <> vpcDynamicDiskDataOffset then Exit;
+      
       {Update Extent}
       Extent.DataOffset:=RoundToSector(LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Sparse.MaxTableEntries) shl 2,vpcSectorSize) + SizeOf(TVpcHardDiskFooter) + SizeOf(TVpcDynamicDiskHeader);
       Extent.BlockSize:=LongWordBEtoN(TVirtualDiskVpcExtent(Extent).Sparse.BlockSize);
@@ -6202,12 +6301,16 @@ begin
       TVirtualDiskVpcExtent(Extent).SparseOffset:=Int64BetoN(TVirtualDiskVpcExtent(Extent).Header.DataOffset);
       TVirtualDiskVpcExtent(Extent).SparseSize:=SizeOf(TVpcDynamicDiskHeader);
      end;
+    
     {Check Extent}
     if Extent.SectorCount = 0 then Exit;
+    
     {Update Delta}
     if ADelta <> nil then ADelta.Parent:=Extent;
+    
     {Update Parent}
     if AParent <> nil then AParent.Delta:=Extent;
+    
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LoadExtent - DataOffset = ' + IntToStr(Extent.DataOffset) + ' (May be invalid)');
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  BlockSize = ' + IntToStr(Extent.BlockSize));
@@ -6216,8 +6319,10 @@ begin
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  BlockShiftCount = ' + IntToStr(Extent.BlockShiftCount));
     {Note: Do not use the Extent.DataOffset value in VPC images, use Block.DataOffset}
     {$ENDIF}
+    
     {Add Extent}
     FExtents.Add(Extent);
+    
     Result:=Extent;
    finally
     if Result = nil then FDriver.FileClose(Extent.Handle);
@@ -6225,22 +6330,20 @@ begin
   finally
    if Result = nil then Extent.Free;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LoadExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.AddExtent(AParent:TVirtualDiskExtent;const AFilename:String):TVirtualDiskExtent;
+{Note: Caller must hold the parent lock}
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
 
@@ -6250,22 +6353,20 @@ begin
 
   //To Do //Create a new Extent //Required for Create Image
 
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.AddExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.SetExtent(AExtent:TVirtualDiskExtent):Boolean;
+{Note: Caller must hold the extent lock}
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -6282,6 +6383,7 @@ begin
    begin
     {Get Checksum}
     TVirtualDiskVpcExtent(AExtent).Footer.Checksum:=LongWordNtoBE(ChecksumFooter(TVirtualDiskVpcExtent(AExtent).Footer));
+    
     {Write Footer}
     FDriver.FileSeekEx(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).FooterOffset,soFromBeginning);
     if FDriver.FileWrite(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).Footer^,TVirtualDiskVpcExtent(AExtent).FooterSize) <> Integer(TVirtualDiskVpcExtent(AExtent).FooterSize) then Exit;
@@ -6292,37 +6394,35 @@ begin
    begin
     {Get Checksum}
     TVirtualDiskVpcExtent(AExtent).Header.Checksum:=LongWordNtoBE(ChecksumFooter(TVirtualDiskVpcExtent(AExtent).Header));
+    
     {Write Header}
     FDriver.FileSeekEx(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).HeaderOffset,soFromBeginning);
     if FDriver.FileWrite(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).Header^,TVirtualDiskVpcExtent(AExtent).HeaderSize) <> Integer(TVirtualDiskVpcExtent(AExtent).HeaderSize) then Exit;
 
     {Get Checksum}
     TVirtualDiskVpcExtent(AExtent).Footer.Checksum:=LongWordNtoBE(ChecksumFooter(TVirtualDiskVpcExtent(AExtent).Footer));
+    
     {Write Footer}
     FDriver.FileSeekEx(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).FooterOffset,soFromBeginning);
     if FDriver.FileWrite(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).Footer^,TVirtualDiskVpcExtent(AExtent).FooterSize) <> Integer(TVirtualDiskVpcExtent(AExtent).FooterSize) then Exit;
 
     {Get Checksum}
     TVirtualDiskVpcExtent(AExtent).Sparse.Checksum:=LongWordNtoBE(ChecksumSparse(TVirtualDiskVpcExtent(AExtent).Sparse));
+    
     {Write Sparse}
     FDriver.FileSeekEx(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).SparseOffset,soFromBeginning);
     if FDriver.FileWrite(AExtent.Handle,TVirtualDiskVpcExtent(AExtent).Sparse^,TVirtualDiskVpcExtent(AExtent).SparseSize) <> Integer(TVirtualDiskVpcExtent(AExtent).SparseSize) then Exit;
 
     Result:=True;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.SetExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
-function TVirtualDiskVpcImage.GetExtent(const ASector:Int64;AWrite:Boolean):TVirtualDiskExtent;
+function TVirtualDiskVpcImage.GetExtent(const ASector:Int64;AWrite,ALock:Boolean):TVirtualDiskExtent;
 var
  BlockNo:LongWord;
  TableOffset:LongWord;
@@ -6332,6 +6432,8 @@ var
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if ASector >= FSectorCount then Exit;
 
@@ -6347,6 +6449,8 @@ begin
      begin
       if (ASector >= Extent.StartSector) and (ASector < (Extent.StartSector + Extent.SectorCount)) then
        begin
+        if ALock then Extent.AcquireLock;
+        
         Result:=Extent;
        end;
      end;
@@ -6362,6 +6466,8 @@ begin
         {Check Fixed}
         if Extent.IsFixed then
          begin
+          if ALock then Extent.AcquireLock;
+          
           Result:=Extent;
           Exit;
          end
@@ -6369,6 +6475,9 @@ begin
          begin
           if TVirtualDiskVpcExtent(Extent).Table = nil then Exit;
           if TVirtualDiskVpcExtent(Extent).Table.Data = nil then Exit;
+          
+          if ALock then Extent.AcquireLock;
+          
           Result:=Extent;
           Exit;
          end
@@ -6390,23 +6499,21 @@ begin
             {Test Block (One or More Sectors Allocated)}
             if TestBlock(Block,ASector,1,True) > 0 then
              begin
+              if ALock then Extent.AcquireLock;
+              
               Result:=Extent;
               Exit;
              end;
            end;
          end;
        end;
+       
       Extent:=Extent.Parent;
      end;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.GetExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -6417,6 +6524,8 @@ var
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LoadTables');
@@ -6427,29 +6536,28 @@ begin
   while Extent <> nil do
    begin
     if LoadTable(Extent,0) = nil then Exit;
+    
     Extent:=TVirtualDiskExtent(Extent.Next);
    end;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LoadTables ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.LoadTable(AExtent:TVirtualDiskExtent;ATableNo:LongWord):TVirtualDiskTable;
+{Note: Caller must hold the extent tables writer lock}
 var
  Data:Pointer;
  Table:TVirtualDiskVpcTable;
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -6461,10 +6569,12 @@ begin
 
   {Get Table}
   Table:=TVirtualDiskVpcExtent(AExtent).Table;
+  
   {Check Fixed}
   if AExtent.IsFixed then
    begin
     Table.Data:=nil;
+    
     Result:=Table;
    end
   else
@@ -6473,13 +6583,16 @@ begin
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 TableOffset = ' + IntToStr(Int64BEtoN(TVirtualDiskVpcExtent(AExtent).Sparse.TableOffset)));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 MaxTableEntries = ' + IntToStr(LongWordBEtoN(TVirtualDiskVpcExtent(AExtent).Sparse.MaxTableEntries)));
     {$ENDIF}
+    
     {Update Table}
     Table.TableOffset:=Int64BEtoN(TVirtualDiskVpcExtent(AExtent).Sparse.TableOffset);
     Table.TableSize:=RoundToSector(LongWordBEtoN(TVirtualDiskVpcExtent(AExtent).Sparse.MaxTableEntries) shl 2,vpcSectorSize);
     Table.StartSector:=TVirtualDiskVpcExtent(AExtent).StartSector;
     Table.SectorCount:=TVirtualDiskVpcExtent(AExtent).SectorCount;
+    
     {Check Table}
     if Table.TableSize = 0 then Exit;
+    
     {Alloc Table}
     Data:=GetMem(Table.TableSize);
     if Data = nil then Exit;
@@ -6487,34 +6600,36 @@ begin
      {Load Table}
      FDriver.FileSeekEx(AExtent.Handle,Table.TableOffset,soFromBeginning);
      if FDriver.FileRead(AExtent.Handle,Data^,Table.TableSize) <> Integer(Table.TableSize) then Exit;
+     
      {$IFDEF VIRTUAL_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LoadTable - TableSize = ' + IntToStr(Table.TableSize));
      {$ENDIF}
+     
      Table.Data:=Data;
+     
      {Load Blocks}
      if not LoadBlocks(Table) then Exit;
+     
      Result:=Table;
     finally
      if Result = nil then Table.Data:=nil;
      if Result = nil then FreeMem(Data);
     end;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LoadTable ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.AddTable(AExtent:TVirtualDiskExtent):TVirtualDiskTable;
+{Note: Caller must hold the extent lock}
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -6525,22 +6640,20 @@ begin
 
   //To Do //Create a new Table //Required for Create Image
 
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.AddTable ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.SetTable(ATable:TVirtualDiskTable):Boolean;
+{Note: Caller must hold the table extent lock}
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if ATable = nil then Exit;
@@ -6566,19 +6679,15 @@ begin
 
     Result:=True;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.SetTable ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.LoadBlocks(ATable:TVirtualDiskTable):Boolean;
+{Note: Caller must hold the extent tables writer lock}
 var
  GroupNo:LongWord;
  BlockNo:LongWord;
@@ -6587,6 +6696,8 @@ var
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if ATable = nil then Exit;
   if ATable.Extent = nil then Exit;
@@ -6604,6 +6715,7 @@ begin
    begin
     {Check Loaded}
     if TVirtualDiskVpcExtent(ATable.Extent).Groups.Count > 0 then Exit;
+    
     {Load Groups}
     GroupNo:=0;
     while GroupNo <= vpcMaxBlockGroup do {Groups 0 to 255}
@@ -6611,32 +6723,33 @@ begin
       Group:=TVirtualDiskVpcGroup.Create(Self,ATable);
       Group.GroupNo:=GroupNo;
       TVirtualDiskVpcExtent(ATable.Extent).Groups.Add(Group);
+      
       {Load Blocks}
       BlockNo:=GroupNo;
       while BlockNo < LongWordBEtoN(TVirtualDiskVpcExtent(ATable.Extent).Sparse.MaxTableEntries) do
        begin
         Block:=TVirtualDiskVpcBlock(LoadBlock(ATable,BlockNo));
         if Block = nil then Exit;
+        
         Group.Blocks.Add(Block);
+        
         Inc(BlockNo,vpcBlockGroupOffset); {Increment by 256}
        end;
+       
       Inc(GroupNo);
      end;
+     
     Result:=True;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LoadBlocks ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.LoadBlock(ATable:TVirtualDiskTable;ABlockNo:LongWord):TVirtualDiskBlock;
+{Note: Caller must hold the extent tables writer lock}
 var
  Data:Pointer;
  TableOffset:LongWord;
@@ -6644,6 +6757,8 @@ var
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if ATable = nil then Exit;
@@ -6664,9 +6779,11 @@ begin
     try
      {Check Table}
      if TVirtualDiskVpcTable(ATable).Data = nil then Exit;
+     
      {Get Offset}
      TableOffset:=(ABlockNo shl 2);
      Block.BlockNo:=ABlockNo;
+     
      {Check Block (Block is Allocated)}
      if LongWordBEtoN(LongWord(Pointer(LongWord(TVirtualDiskVpcTable(ATable).Data) + TableOffset)^)) <> vpcUnallocatedBlock then
       begin
@@ -6682,11 +6799,14 @@ begin
        Block.BlockSize:=(LongWordBEtoN(TVirtualDiskVpcExtent(ATable.Extent).Sparse.BlockSize) shr FSectorShiftCount) shr 3; {BlockSize div SectorSize div 8 (Bits per Byte = 8)}
        Block.DataOffset:=0;
       end;
+     
      Block.StartSector:=ABlockNo shl ATable.Extent.BlockShiftCount;
      Block.SectorCount:=LongWordBEtoN(TVirtualDiskVpcExtent(ATable.Extent).Sparse.BlockSize) shr FSectorShiftCount;
      if (ATable.Extent.SectorCount - Block.StartSector) < Block.SectorCount then Block.SectorCount:=(ATable.Extent.SectorCount - Block.StartSector);
+     
      {Check Block}
      if Block.BlockSize = 0 then Exit;
+     
      {Alloc Block}
      Data:=GetMem(Block.BlockSize);
      if Data = nil then Exit;
@@ -6701,6 +6821,7 @@ begin
         FDriver.FileSeekEx(ATable.Extent.Handle,Block.BlockOffset,soFromBeginning);
         if FDriver.FileRead(ATable.Extent.Handle,Data^,Block.BlockSize) <> Integer(Block.BlockSize) then Exit;
        end;
+      
       {$IFDEF VIRTUAL_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LoadBlock - BlockSize = ' + IntToStr(Block.BlockSize));
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 BlockOffset = ' + IntToStr(Block.BlockOffset));
@@ -6708,7 +6829,9 @@ begin
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 StartSector = ' + IntToStr(Block.StartSector));
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 SectorCount = ' + IntToStr(Block.SectorCount));
       {$ENDIF}
+      
       Block.Data:=Data;
+      
       Result:=Block;
      finally
       if Result = nil then Block.Data:=nil;
@@ -6718,22 +6841,20 @@ begin
      if Result = nil then Block.Free;
     end;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LoadBlock ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.AddBlock(ATable:TVirtualDiskTable):TVirtualDiskBlock;
+{Note: Caller must hold the table extent lock}
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if ATable = nil then Exit;
@@ -6745,22 +6866,20 @@ begin
 
   //To Do //Create a new Table //Required for Create Image
 
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.AddBlock ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.SetBlock(ABlock:TVirtualDiskBlock):Boolean;
+{Note: Caller must hold the block table extent lock}
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if ABlock = nil then Exit;
@@ -6790,20 +6909,16 @@ begin
 
     Result:=True;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.SetBlock ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.GetBlock(ATable:TVirtualDiskTable;const ASector:Int64;AWrite:Boolean):TVirtualDiskBlock;
 {The Write parameter is ignored for Block lookups}
+{Note: Caller must hold the table extent lock}
 var
  GroupNo:LongWord;
  BlockNo:LongWord;
@@ -6813,6 +6928,8 @@ var
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if ATable = nil then Exit;
   if ATable.Extent = nil then Exit;
@@ -6823,8 +6940,10 @@ begin
 
   {Get Block}
   BlockNo:=(ASector shr ATable.Extent.BlockShiftCount);
+  
   {Get Group}
   GroupNo:=BlockNo and vpcBlockGroupMask;
+  
   {Find Group}
   Group:=TVirtualDiskVpcGroup(TVirtualDiskVpcExtent(ATable.Extent).Groups.First);
   while Group <> nil do
@@ -6839,20 +6958,17 @@ begin
           Result:=Block;
           Exit;
          end;
+        
         Block:=TVirtualDiskVpcBlock(Block.Next);
        end;
       Exit;
      end;
+     
     Group:=TVirtualDiskVpcGroup(Group.Next);
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.GetBlock ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -6861,32 +6977,34 @@ function TVirtualDiskVpcImage.TestBlock(ABlock:TVirtualDiskBlock;const ASector:I
 {Test Count sectors from Sector in the Block bitmap for Free or Used}
 {Sector is the sector number in the block to start from}
 {Sector must be greater than or equal to block start sector}
+
+{Note: Caller must hold the block table extent lock}
 var
  Start:LongWord;
 begin
  {}
  Result:=0;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if ABlock = nil then Exit;
 
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.TestBlock - BlockNo = ' + IntToStr(TVirtualDiskVpcBlock(ABlock).BlockNo) + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount) + ' Used = ' + BoolToStr(AUsed));
   {$ENDIF}
+  
   {Check Sector}
   if ASector < ABlock.StartSector then Exit;
   if ASector >= (ABlock.StartSector + ABlock.SectorCount) then Exit;
+  
   {Get Start} {Block Sector Count must not exceed 32 bit value}
   Start:=(ASector - ABlock.StartSector);
+  
   {Test Bitmap}
   Result:=TestBitmap(TVirtualDiskVpcBlock(ABlock).Data,ABlock.SectorCount,Start,ACount,AUsed);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.TestBlock ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -6895,36 +7013,39 @@ function TVirtualDiskVpcImage.MarkBlock(ABlock:TVirtualDiskBlock;const ASector:I
 {Mark Count sectors from Sector in the Block bitmap as Free or Used}
 {Sector is the sector number in the block to start from}
 {Sector must be greater than or equal to block start sector}
+
+{Note: Caller must hold the block table extent lock}
 var
  Start:LongWord;
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if ABlock = nil then Exit;
 
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.MarkBlock - BlockNo = ' + IntToStr(TVirtualDiskVpcBlock(ABlock).BlockNo) + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount) + ' Used = ' + BoolToStr(AUsed));
   {$ENDIF}
+  
   {Check Sector}
   if ASector < ABlock.StartSector then Exit;
   if ASector >= (ABlock.StartSector + ABlock.SectorCount) then Exit;
+  
   {Check Count}
   if ACount = 0 then Exit;
   if ACount > ABlock.SectorCount then Exit;
   if (ASector + ACount) > (ABlock.StartSector + ABlock.SectorCount) then Exit;
+  
   {Get Start} {Block Sector Count must not exceed 32 bit value}
   Start:=(ASector - ABlock.StartSector);
+  
   {Mark Bitmap}
   Result:=MarkBitmap(TVirtualDiskVpcBlock(ABlock).Data,ABlock.SectorCount,Start,ACount,AUsed);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.MarkBlock ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -6949,79 +7070,76 @@ var
 begin
  {}
  Result:=0;
- try
-  if ABuffer = nil then Exit;
+ 
+ if ABuffer = nil then Exit;
 
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.TestBitmap - Size = ' + IntToStr(ASize) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount) + ' Used = ' + BoolToStr(AUsed));
-  {$ENDIF}
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.TestBitmap - Size = ' + IntToStr(ASize) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount) + ' Used = ' + BoolToStr(AUsed));
+ {$ENDIF}
 
-  {Get Size}
-  Size:=(ASize shr 5); {Divide by 32}
-  if (Size shl 5) < ASize then Inc(Size);
-  {Get Start}
-  Start:=(AStart shr 5); {Divide by 32}
-  {Get Params}
-  Block:=Start;
-  Offset:=(Block shl 2); {Multiply by 4}
-  Bit:=AStart - ((AStart shr 5) shl 5); {Divide by 32 / Multiply by 32} {If less than 32 then will subtract 0 from start}
-  Remain:=(ASize - AStart);
-  while Block < Size do
-   begin
-    {Get Bits}
-    Bits:=Min(Remain,vpcBitmapMaskBits);
-    if Bit > 0 then Bits:=Min(Remain,(vpcBitmapMaskBits - Bit));
-    {$IFDEF VIRTUAL_DEBUG}
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.TestBitmap - Block = ' + IntToStr(Block) + ' Offset = ' + IntToStr(Offset) + ' Remain = ' + IntToStr(Remain) + ' Bit = ' + IntToStr(Bit) + ' Bits = ' + IntToStr(Bits));
-    {$ENDIF}
-    {Test Bits}
-    if (Bit = 0) and (LongWord(Pointer(LongWord(ABuffer) + Offset)^) = vpcBitmapMaskNone) then
-     begin
-      {All Free}
-      if AUsed then Exit;
-      Inc(Result,32);
-     end
-    else if (Bit = 0) and (LongWord(Pointer(LongWord(ABuffer) + Offset)^) = vpcBitmapMaskAll) then
-     begin
-      {All Used}
-      if not AUsed then Exit;
-      Inc(Result,32);
-     end
-    else
-     begin
-      {Used and Free}
-      for Current:=Bit to (Bit + (Bits - 1)) do
-       begin
-        if AUsed then
-         begin
-          {Test Used}
-          if (LongWord(Pointer(LongWord(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMaskNone then Exit;
-          Inc(Result);
-         end
-        else
-         begin
-          {Test Free}
-          if (LongWord(Pointer(LongWord(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMasks[Current] then Exit;
-          Inc(Result);
-         end;
-       end;
-     end;
-    {Update Params}
-    Bit:=0;
-    Inc(Block);
-    Inc(Offset,4);
-    Dec(Remain,Bits);
-    if Remain = 0 then Break;
-    if Result >= ACount then Exit;
-   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.TestBitmap ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Get Size}
+ Size:=(ASize shr 5); {Divide by 32}
+ if (Size shl 5) < ASize then Inc(Size);
+ 
+ {Get Start}
+ Start:=(AStart shr 5); {Divide by 32}
+ 
+ {Get Params}
+ Block:=Start;
+ Offset:=(Block shl 2); {Multiply by 4}
+ Bit:=AStart - ((AStart shr 5) shl 5); {Divide by 32 / Multiply by 32} {If less than 32 then will subtract 0 from start}
+ Remain:=(ASize - AStart);
+ while Block < Size do
+  begin
+   {Get Bits}
+   Bits:=Min(Remain,vpcBitmapMaskBits);
+   if Bit > 0 then Bits:=Min(Remain,(vpcBitmapMaskBits - Bit));
+   
+   {$IFDEF VIRTUAL_DEBUG}
+   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.TestBitmap - Block = ' + IntToStr(Block) + ' Offset = ' + IntToStr(Offset) + ' Remain = ' + IntToStr(Remain) + ' Bit = ' + IntToStr(Bit) + ' Bits = ' + IntToStr(Bits));
+   {$ENDIF}
+   
+   {Test Bits}
+   if (Bit = 0) and (LongWord(Pointer(LongWord(ABuffer) + Offset)^) = vpcBitmapMaskNone) then
+    begin
+     {All Free}
+     if AUsed then Exit;
+     Inc(Result,32);
+    end
+   else if (Bit = 0) and (LongWord(Pointer(LongWord(ABuffer) + Offset)^) = vpcBitmapMaskAll) then
+    begin
+     {All Used}
+     if not AUsed then Exit;
+     Inc(Result,32);
+    end
+   else
+    begin
+     {Used and Free}
+     for Current:=Bit to (Bit + (Bits - 1)) do
+      begin
+       if AUsed then
+        begin
+         {Test Used}
+         if (LongWord(Pointer(LongWord(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMaskNone then Exit;
+         Inc(Result);
+        end
+       else
+        begin
+         {Test Free}
+         if (LongWord(Pointer(LongWord(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMasks[Current] then Exit;
+         Inc(Result);
+        end;
+      end;
+    end;
+    
+   {Update Params}
+   Bit:=0;
+   Inc(Block);
+   Inc(Offset,4);
+   Dec(Remain,Bits);
+   if Remain = 0 then Break;
+   if Result >= ACount then Exit;
+  end;
 end;
 
 {==============================================================================}
@@ -7046,84 +7164,83 @@ var
 begin
  {}
  Result:=False;
- try
-  if ABuffer = nil then Exit;
+ 
+ if ABuffer = nil then Exit;
 
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.MarkBitmap - Size = ' + IntToStr(ASize) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount) + ' Used = ' + BoolToStr(AUsed));
-  {$ENDIF}
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.MarkBitmap - Size = ' + IntToStr(ASize) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount) + ' Used = ' + BoolToStr(AUsed));
+ {$ENDIF}
 
-  {Get Size}
-  Size:=(ASize shr 5); {Divide by 32}
-  if (Size shl 5) < ASize then Inc(Size);
-  {Get Start}
-  Start:=(AStart shr 5); {Divide by 32}
-  {Get Params}
-  Block:=Start;
-  Offset:=(Block shl 2); {Multiply by 4}
-  Bit:=AStart - ((AStart shr 5) shl 5); {Divide by 32 / Multiply by 32} {If less than 32 then will subtract 0 from start}
-  Remain:=ACount;
-  while Block < Size do
-   begin
-    {Get Bits}
-    Bits:=Min(Remain,vpcBitmapMaskBits);
-    if Bit > 0 then Bits:=Min(Remain,(vpcBitmapMaskBits - Bit));
-    {$IFDEF VIRTUAL_DEBUG}
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.MarkBitmap - Block = ' + IntToStr(Block) + ' Offset = ' + IntToStr(Offset) + ' Remain = ' + IntToStr(Remain) + ' Bit = ' + IntToStr(Bit) + ' Bits = ' + IntToStr(Bits));
-    {$ENDIF}
-    {Mark Bits}
-    if (Bit = 0) and (Bits = vpcBitmapMaskBits) then
-     begin
-      {Mark All}
-      if AUsed then
-       begin
-        {Mark Used}
-        LongWord(Pointer(LongWord(ABuffer) + Offset)^):=vpcBitmapMaskAll;
-       end
-      else
-       begin
-        {Mark Free}
-        LongWord(Pointer(LongWord(ABuffer) + Offset)^):=vpcBitmapMaskNone;
-       end;
-     end
-    else
-     begin
-      {Mark Some}
-      for Current:=Bit to (Bit + (Bits - 1)) do
-       begin
-        if AUsed then
-         begin
-          {Mark Used}
-          LongWord(Pointer(LongWord(ABuffer) + Offset)^):=LongWord(Pointer(LongWord(ABuffer) + Offset)^) or vpcBitmapMasks[Current];
-         end
-        else
-         begin
-          {Mark Free}
-          LongWord(Pointer(LongWord(ABuffer) + Offset)^):=LongWord(Pointer(LongWord(ABuffer) + Offset)^) and not(vpcBitmapMasks[Current]);
-         end;
-       end;
-     end;
-    {Update Params}
-    Bit:=0;
-    Inc(Block);
-    Inc(Offset,4);
-    Dec(Remain,Bits);
-    if Remain = 0 then Break;
-   end;
-  Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.MarkBitmap ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Get Size}
+ Size:=(ASize shr 5); {Divide by 32}
+ if (Size shl 5) < ASize then Inc(Size);
+ 
+ {Get Start}
+ Start:=(AStart shr 5); {Divide by 32}
+ 
+ {Get Params}
+ Block:=Start;
+ Offset:=(Block shl 2); {Multiply by 4}
+ Bit:=AStart - ((AStart shr 5) shl 5); {Divide by 32 / Multiply by 32} {If less than 32 then will subtract 0 from start}
+ Remain:=ACount;
+ while Block < Size do
+  begin
+   {Get Bits}
+   Bits:=Min(Remain,vpcBitmapMaskBits);
+   if Bit > 0 then Bits:=Min(Remain,(vpcBitmapMaskBits - Bit));
+   
+   {$IFDEF VIRTUAL_DEBUG}
+   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.MarkBitmap - Block = ' + IntToStr(Block) + ' Offset = ' + IntToStr(Offset) + ' Remain = ' + IntToStr(Remain) + ' Bit = ' + IntToStr(Bit) + ' Bits = ' + IntToStr(Bits));
+   {$ENDIF}
+   
+   {Mark Bits}
+   if (Bit = 0) and (Bits = vpcBitmapMaskBits) then
+    begin
+     {Mark All}
+     if AUsed then
+      begin
+       {Mark Used}
+       LongWord(Pointer(LongWord(ABuffer) + Offset)^):=vpcBitmapMaskAll;
+      end
+     else
+      begin
+       {Mark Free}
+       LongWord(Pointer(LongWord(ABuffer) + Offset)^):=vpcBitmapMaskNone;
+      end;
+    end
+   else
+    begin
+     {Mark Some}
+     for Current:=Bit to (Bit + (Bits - 1)) do
+      begin
+       if AUsed then
+        begin
+         {Mark Used}
+         LongWord(Pointer(LongWord(ABuffer) + Offset)^):=LongWord(Pointer(LongWord(ABuffer) + Offset)^) or vpcBitmapMasks[Current];
+        end
+       else
+        begin
+         {Mark Free}
+         LongWord(Pointer(LongWord(ABuffer) + Offset)^):=LongWord(Pointer(LongWord(ABuffer) + Offset)^) and not(vpcBitmapMasks[Current]);
+        end;
+      end;
+    end;
+    
+   {Update Params}
+   Bit:=0;
+   Inc(Block);
+   Inc(Offset,4);
+   Dec(Remain,Bits);
+   if Remain = 0 then Break;
+  end;
+  
+ Result:=True;
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.LocateDelta(AExtent:TVirtualDiskExtent):String;
+{Note: Caller must hold the extent lock}
 var
  Path:String;
  WorkBuffer:String;
@@ -7132,49 +7249,48 @@ var
 begin
  {}
  Result:='';
- try
-  if FDriver = nil then Exit;
-  if AExtent = nil then Exit;
+ 
+ if FDriver = nil then Exit;
+ if AExtent = nil then Exit;
 
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateDelta - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Footer.UniqueId));
-  {$ENDIF}
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateDelta - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Footer.UniqueId));
+ {$ENDIF}
 
-  {Locate Delta in current path (VUD)}
-  Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
-  {Search current path}
-  ResultCode:=FDriver.FindFirstEx(Path + vpcUndoMask,SearchRec);
-  while ResultCode = 0 do
-   begin
-    if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-     begin
-      {Check Extent}
-      WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
-      {$IFDEF VIRTUAL_DEBUG}
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateDelta - Checking = ' + WorkBuffer);
-      {$ENDIF}
-      if FindExtent(WorkBuffer) = nil then
-       begin
-        if CheckExtent(nil,AExtent,WorkBuffer) then Result:=WorkBuffer;
-       end;
-     end;
-    if Length(Result) > 0 then Break;
-    ResultCode:=FDriver.FindNextEx(SearchRec);
-   end;
-  FDriver.FindCloseEx(SearchRec);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LocateDelta ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Locate Delta in current path (VUD)}
+ Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
+ 
+ {Search current path}
+ ResultCode:=FDriver.FindFirstEx(Path + vpcUndoMask,SearchRec);
+ while ResultCode = 0 do
+  begin
+   if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+    begin
+     {Check Extent}
+     WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
+     
+     {$IFDEF VIRTUAL_DEBUG}
+     if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateDelta - Checking = ' + WorkBuffer);
+     {$ENDIF}
+     
+     if FindExtent(WorkBuffer,False) = nil then
+      begin
+       if CheckExtent(nil,AExtent,WorkBuffer) then Result:=WorkBuffer;
+      end;
+    end;
+    
+   if Length(Result) > 0 then Break;
+   
+   ResultCode:=FDriver.FindNextEx(SearchRec);
+  end;
+  
+ FDriver.FindCloseEx(SearchRec);
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.LocateParent(AExtent:TVirtualDiskExtent):String;
+{Note: Caller must hold the extent lock}
 var
  Path:String;
  WorkBuffer:String;
@@ -7183,95 +7299,89 @@ var
 begin
  {}
  Result:='';
- try
-  if FDriver = nil then Exit;
-  if AExtent = nil then Exit;
-
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Delta = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Footer.UniqueId));
-  {$ENDIF}
-
-  if AExtent.IsDelta then
-   begin
-    {$IFDEF VIRTUAL_DEBUG}
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Sparse.ParentUniqueId));
-    {$ENDIF}
-    {Locate Parent in current path (VHD)}
-    Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
-    ResultCode:=FDriver.FindFirstEx(Path + vpcFileMask,SearchRec);
-    while ResultCode = 0 do
-     begin
-      if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-       begin
-        WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
-        {$IFDEF VIRTUAL_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Checking = ' + WorkBuffer);
-        {$ENDIF}
-        if FindExtent(WorkBuffer) = nil then
-         begin
-          if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
-         end;
-       end;
-      if Length(Result) > 0 then Break;
-      ResultCode:=FDriver.FindNextEx(SearchRec);
-     end;
-    FDriver.FindCloseEx(SearchRec);
-    if Length(Result) > 0 then Exit;
-    {Locate Parent in current path (VUD)}
-    Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
-    ResultCode:=FDriver.FindFirstEx(Path + vpcUndoMask,SearchRec);
-    while ResultCode = 0 do
-     begin
-      if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-       begin
-        WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
-        {$IFDEF VIRTUAL_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Checking = ' + WorkBuffer);
-        {$ENDIF}
-        if FindExtent(WorkBuffer) = nil then
-         begin
-          if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
-         end;
-       end;
-      if Length(Result) > 0 then Break;
-      ResultCode:=FDriver.FindNextEx(SearchRec);
-     end;
-    FDriver.FindCloseEx(SearchRec);
-   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LocateParent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ 
+ if FDriver = nil then Exit;
+ if AExtent = nil then Exit;
+ 
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Delta = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Footer.UniqueId));
+ {$ENDIF}
+ 
+ if AExtent.IsDelta then
+  begin
+   {$IFDEF VIRTUAL_DEBUG}
+   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Parent = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Sparse.ParentUniqueId));
+   {$ENDIF}
+   
+   {Locate Parent in current path (VHD)}
+   Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
+   ResultCode:=FDriver.FindFirstEx(Path + vpcFileMask,SearchRec);
+   while ResultCode = 0 do
+    begin
+     if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+      begin
+       WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
+       
+       {$IFDEF VIRTUAL_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Checking = ' + WorkBuffer);
+       {$ENDIF}
+       
+       if FindExtent(WorkBuffer,False) = nil then
+        begin
+         if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
+        end;
+      end;
+      
+     if Length(Result) > 0 then Break;
+     ResultCode:=FDriver.FindNextEx(SearchRec);
+    end;
+    
+   FDriver.FindCloseEx(SearchRec);
+   if Length(Result) > 0 then Exit;
+   
+   {Locate Parent in current path (VUD)}
+   Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
+   ResultCode:=FDriver.FindFirstEx(Path + vpcUndoMask,SearchRec);
+   while ResultCode = 0 do
+    begin
+     if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+      begin
+       WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
+       
+       {$IFDEF VIRTUAL_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateParent - Checking = ' + WorkBuffer);
+       {$ENDIF}
+       
+       if FindExtent(WorkBuffer,False) = nil then
+        begin
+         if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
+        end;
+      end;
+      
+     if Length(Result) > 0 then Break;
+     ResultCode:=FDriver.FindNextEx(SearchRec);
+    end;
+    
+   FDriver.FindCloseEx(SearchRec);
+  end;
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.LocateSibling(AExtent:TVirtualDiskExtent):String;
+{Note: Caller must hold the extent lock}
 begin
  {}
  Result:='';
- try
-  if FDriver = nil then Exit;
-  if AExtent = nil then Exit;
+ 
+ if FDriver = nil then Exit;
+ if AExtent = nil then Exit;
 
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateSibling - Extent = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Footer.UniqueId));
-  {$ENDIF}
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVpcImage.LocateSibling - Extent = ' + GUIDToString(TVirtualDiskVpcExtent(AExtent).Footer.UniqueId));
+ {$ENDIF}
 
-  //To Do //
-
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.LocateSibling ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ //To Do //
 end;
 
 {==============================================================================}
@@ -7280,60 +7390,69 @@ function TVirtualDiskVpcImage.ImageInit:Boolean;
 begin
  {}
  Result:=False;
- if FDriver = nil then Exit;
- if FImageNo = 0 then Exit;
-
- if not Ready then
-  begin
-   FLocked:=False;
-   FChanged:=False;
-   FAttributes:=GetAttributes;
-
-   {FImageType:=itUNKNOWN;} {Do not Reset}
-   {FMediaType:=mtUNKNOWN;} {Do not Reset}
-   FFloppyType:=ftUNKNOWN;
-
-   FSectorSize:=0;
-   FSectorCount:=0;
-   FSectorShiftCount:=0;
-
-   FCylinders:=0;
-   FHeads:=0;
-   FSectors:=0;
-   FLogicalShiftCount:=0;
-
-   FPartitionId:=pidUnused;
-   FFileSysType:=fsUNKNOWN;
-   Result:=True;
-  end
- else
-  begin
-   {FLocked:=False;}        {Do not Reset}
-   {FChanged:=False;}       {Do not Reset}
-   FAttributes:=GetAttributes;
-
-   {FImageType:=itUNKNOWN;} {Do not Reset}
-   {FMediaType:=mtUNKNOWN;} {Do not Reset}
-   {FFloppyType:=ftUNKNOWN;}{Do not Reset}
-
-   FSectorSize:=GetSectorSize;
-   FSectorCount:=GetSectorCount;
-   FSectorShiftCount:=GetSectorShiftCount;
-
-   FSectors:=GetSectors;    {Must be SHC not CHS} {Not for VirtualBox but retain for compatibility}
-   FHeads:=GetHeads;
-   FCylinders:=GetCylinders;
-   FLogicalShiftCount:=GetLogicalShiftCount;
-
-   FPartitionId:=pidUnused;
-   FFileSysType:=fsUNKNOWN;
-   Result:=True;
-  end;
+ 
+ if not WriterLock then Exit;
+ try
+  if FDriver = nil then Exit;
+  if FImageNo = 0 then Exit;
+ 
+  if not Ready then
+   begin
+    FLocked:=False;
+    FChanged:=False;
+    FAttributes:=GetAttributes;
+ 
+    {FImageType:=itUNKNOWN;} {Do not Reset}
+    {FMediaType:=mtUNKNOWN;} {Do not Reset}
+    FFloppyType:=ftUNKNOWN;
+ 
+    FSectorSize:=0;
+    FSectorCount:=0;
+    FSectorShiftCount:=0;
+ 
+    FCylinders:=0;
+    FHeads:=0;
+    FSectors:=0;
+    FLogicalShiftCount:=0;
+ 
+    FPartitionId:=pidUnused;
+    FFileSysType:=fsUNKNOWN;
+    
+    Result:=True;
+   end
+  else
+   begin
+    {FLocked:=False;}        {Do not Reset}
+    {FChanged:=False;}       {Do not Reset}
+    FAttributes:=GetAttributes;
+ 
+    {FImageType:=itUNKNOWN;} {Do not Reset}
+    {FMediaType:=mtUNKNOWN;} {Do not Reset}
+    {FFloppyType:=ftUNKNOWN;}{Do not Reset}
+ 
+    FSectorSize:=GetSectorSize;
+    FSectorCount:=GetSectorCount;
+    FSectorShiftCount:=GetSectorShiftCount;
+ 
+    FSectors:=GetSectors;    {Must be SHC not CHS} {Not for VirtualBox but retain for compatibility}
+    FHeads:=GetHeads;
+    FCylinders:=GetCylinders;
+    FLogicalShiftCount:=GetLogicalShiftCount;
+ 
+    FPartitionId:=pidUnused;
+    FFileSysType:=fsUNKNOWN;
+    
+    Result:=True;
+   end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:LongWord;     {Next Sector to Read from Extent}
  Length:Word;        {Number of sectors Read from Extent}
@@ -7345,45 +7464,43 @@ var
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
 
-  {Check Open}
-  if FBase = nil then Exit;
+ if FDriver = nil then Exit;
 
-  {Check Read}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
-  {Get Start}
-  Offset:=0;
-  Start:=ASector;
-  Remain:=ACount;
-  while Remain > 0 do
-   begin
-    {Get Extent}
-    Extent:=GetExtent(Start,False);
-    if Extent = nil then Exit;
-    {Read Extent}
-    Length:=ReadExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
-    if Length = 0 then Exit;
-    Inc(Start,Length);
-    Dec(Remain,Length);
-    Inc(Offset,(Length shl FSectorShiftCount));
-   end;
-  Result:=(Remain = 0);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.Read ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Check Open}
+ if FBase = nil then Exit;
+
+ {Check Read}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
+ 
+ {Get Start}
+ Offset:=0;
+ Start:=ASector;
+ Remain:=ACount;
+ while Remain > 0 do
+  begin
+   {Get Extent}
+   Extent:=GetExtent(Start,False,True);
+   if Extent = nil then Exit;
+
+   {Read Extent}
+   Length:=ReadExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Extent.ReleaseLock;
+   if Length = 0 then Exit;
+    
+   Inc(Start,Length);
+   Dec(Remain,Length);
+   Inc(Offset,(Length shl FSectorShiftCount));
+  end;
+  
+ Result:=(Remain = 0);
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVpcImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:LongWord;     {Next Sector to Write to Extent}
  Length:Word;        {Number of sectors Written to Extent}
@@ -7395,41 +7512,38 @@ var
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
 
-  {Check Open}
-  if FBase = nil then Exit;
+ if FDriver = nil then Exit;
 
-  {Check Write}
-  if not Writeable then Exit;
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
-  {Get Start}
-  Offset:=0;
-  Start:=ASector;
-  Remain:=ACount;
-  while Remain > 0 do
-   begin
-    {Get Extent}
-    Extent:=GetExtent(Start,True);
-    if Extent = nil then Exit;
-    {Write Extent}
-    Length:=WriteExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
-    if Length = 0 then Exit;
-    Inc(Start,Length);
-    Dec(Remain,Length);
-    Inc(Offset,(Length shl FSectorShiftCount));
-   end;
-  Result:=(Remain = 0);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.Write ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Check Open}
+ if FBase = nil then Exit;
+
+ {Check Write}
+ if not Writeable then Exit;
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
+ 
+ {Get Start}
+ Offset:=0;
+ Start:=ASector;
+ Remain:=ACount;
+ while Remain > 0 do
+  begin
+   {Get Extent}
+   Extent:=GetExtent(Start,True,True);
+   if Extent = nil then Exit;
+   
+   {Write Extent}
+   Length:=WriteExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Extent.ReleaseLock;
+   if Length = 0 then Exit;
+   
+   Inc(Start,Length);
+   Dec(Remain,Length);
+   Inc(Offset,(Length shl FSectorShiftCount));
+  end;
+  
+ Result:=(Remain = 0);
 end;
 
 {==============================================================================}
@@ -7438,18 +7552,8 @@ function TVirtualDiskVpcImage.Allocated(ASector:LongWord;ACount:Word):Word;
 begin
  {}
  Result:=ACount;
- try
 
-  //To Do //Use TestExtent ?  //Required for Copy Image / Resize Image etc
-
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.Allocated ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ //To Do //Use TestExtent ?  //Required for Copy Image / Resize Image etc
 end;
 
 {==============================================================================}
@@ -7458,6 +7562,8 @@ function TVirtualDiskVpcImage.CreateImage(AMediaType:TMediaType;AFloppyType:TFlo
 begin
  {}
  Result:=0;
+
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -7477,14 +7583,9 @@ begin
 
   {Add Table}
   //To Do //
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.CreateImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7493,6 +7594,8 @@ function TVirtualDiskVpcImage.OpenImage(AMediaType:TMediaType;AFloppyType:TFlopp
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -7528,14 +7631,9 @@ begin
   if not LoadTables then Exit;
 
   Result:=FImageNo;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.OpenImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7544,6 +7642,8 @@ function TVirtualDiskVpcImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -7559,14 +7659,9 @@ begin
   if not CloseExtents then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.CloseImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7575,16 +7670,13 @@ function TVirtualDiskVpcImage.ResizeImage(const ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.ResizeImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7593,16 +7685,13 @@ function TVirtualDiskVpcImage.CreateSnapshot:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.CreateSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7611,16 +7700,13 @@ function TVirtualDiskVpcImage.DeleteSnapshot:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.DeleteSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7629,16 +7715,13 @@ function TVirtualDiskVpcImage.MergeSnapshot:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVpcImage.MergeSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7765,6 +7848,7 @@ end;
 {==============================================================================}
 
 function TVirtualDiskVboxImage.ReadExtent(AExtent:TVirtualDiskExtent;ASector:LongWord;ACount:Word;var ABuffer):Word;
+{Note: Caller must hold the extent lock}
 var
  Offset:Int64;         {Absolute Offset of Read from file}
  Count:LongWord;       {Count of Bytes to Read from file}
@@ -7780,6 +7864,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -7788,20 +7874,24 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.ReadExtent - Name = ' + AExtent.Filename);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
+  
   {Check Read}
   if ASector < AExtent.StartSector then Exit;
   if ASector >= (AExtent.StartSector + AExtent.SectorCount) then Exit;
   {if (ASector + ACount) > (AExtent.StartSector + AExtent.SectorCount) then Exit;} {Allow Read greater than SectorCount, return actual Count}
+  
   {Get Table}
   Table:=TVirtualDiskVboxExtent(AExtent).Table;
   if Table = nil then Exit;
   if Table.Data = nil then Exit;
+  
   {Get Block}
   BlockNo:=(ASector shr AExtent.BlockShiftCount);                  {Get the Block No}
   TableOffset:=(BlockNo shl 2);                                    {Get the Table Offset (Multiply BlockNo by 4)}
   TableValue:=LongWord(Pointer(LongWord(Table.Data) + TableOffset)^);  {Get the Table Value}
   BlockStart:=(BlockNo shl AExtent.BlockShiftCount);               {Get the Block Start Sector (Multiply BlockNo by BlockShift)}
   BlockCount:=(AExtent.BlockSize shr FSectorShiftCount);           {Get the Block Sector Count (Divide BlockSize by SectorSize)}
+  
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockNo = ' + IntToHex(BlockNo,8));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   TableOffset = ' + IntToHex(TableOffset,8));
@@ -7809,16 +7899,20 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockStart = ' + IntToHex(BlockStart,8));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockCount = ' + IntToHex(BlockCount,8));
   {$ENDIF}
+  
   {Check Block}
   if TableValue = vboxUnallocatedBlock then
    begin
     {Get Count}
     Count:=Min(ACount,(BlockCount - (ASector - BlockStart))) shl FSectorShiftCount;
+    
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
     {$ENDIF}
+    
     {Read Extent (Zero)}
     ZeroMemory(@ABuffer,Count);
+    
     Result:=(Count shr FSectorShiftCount);
    end
   else
@@ -7826,28 +7920,27 @@ begin
     {Get Offset}
     Offset:=(TableValue shl (AExtent.BlockShiftCount + FSectorShiftCount)) + AExtent.DataOffset + ((ASector - BlockStart) shl FSectorShiftCount);
     Count:=Min(ACount,(BlockCount - (ASector - BlockStart))) shl FSectorShiftCount;
+    
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
     {$ENDIF}
+    
     {Read Extent}
     FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
     if FDriver.FileRead(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+    
     Result:=(Count shr FSectorShiftCount);
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.ReadExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.WriteExtent(AExtent:TVirtualDiskExtent;ASector:LongWord;ACount:Word;const ABuffer):Word;
+{Note: Caller must hold the extent lock}
 var
  Offset:Int64;         {Absolute Offset of Write to file}
  Count:LongWord;       {Count of Bytes to Write to file}
@@ -7864,6 +7957,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -7872,21 +7967,25 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.WriteExtent - Name = ' + AExtent.Filename);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                    Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
+  
   {Check Write}
   if not Writeable then Exit;
   if ASector < AExtent.StartSector then Exit;
   if ASector >= (AExtent.StartSector + AExtent.SectorCount) then Exit;
   {if (ASector + ACount) > (AExtent.StartSector + AExtent.SectorCount) then Exit;} {Allow Write greater than SectorCount, return actual Count}
+  
   {Get Table}
   Table:=TVirtualDiskVboxExtent(AExtent).Table;
   if Table = nil then Exit;
   if Table.Data = nil then Exit;
+  
   {Get Block}
   BlockNo:=(ASector shr AExtent.BlockShiftCount);                  {Get the Block No}
   TableOffset:=(BlockNo shl 2);                                    {Get the Table Offset (Multiply BlockNo by 4)}
   TableValue:=LongWord(Pointer(LongWord(Table.Data) + TableOffset)^);  {Get the Table Value}
   BlockStart:=(BlockNo shl AExtent.BlockShiftCount);               {Get the Block Start Sector (Multiply BlockNo by BlockShift)}
   BlockCount:=(AExtent.BlockSize shr FSectorShiftCount);           {Get the Block Sector Count (Divide BlockSize by SectorSize)}
+  
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockNo = ' + IntToHex(BlockNo,8));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   TableOffset = ' + IntToHex(TableOffset,8));
@@ -7894,6 +7993,7 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockStart = ' + IntToHex(BlockStart,8));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockCount = ' + IntToHex(BlockCount,8));
   {$ENDIF}
+  
   {Check Block}
   if TableValue = vboxUnallocatedBlock then
    begin
@@ -7906,9 +8006,11 @@ begin
       try
        {Allocate Block}
        TableValue:=(FDriver.FileSizeEx(AExtent.Handle) - AExtent.DataOffset) shr (AExtent.BlockShiftCount + FSectorShiftCount);
+       
        {$IFDEF VIRTUAL_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   TableValue = ' + IntToHex(TableValue,8));
        {$ENDIF}
+       
        {Extend File}
        if AExtent.IsDelta then
         begin
@@ -7924,22 +8026,28 @@ begin
          FDriver.FileSeekEx(AExtent.Handle,0,soFromEnd);
          if FDriver.FileWrite(AExtent.Handle,Buffer^,AExtent.BlockSize) <> Integer(AExtent.BlockSize) then Exit;
         end;
+        
        {Update Table}
        LongWord(Pointer(LongWord(Table.Data) + TableOffset)^):=TableValue;
        if not SetTable(Table) then Exit;
+       
        {Update Extent}
        Inc(TVirtualDiskVboxExtent(AExtent).Header.AllocatedBlocks);
        if not SetExtent(AExtent) then Exit;
+       
        {Get Offset}
        Offset:=(TableValue shl (AExtent.BlockShiftCount + FSectorShiftCount)) + AExtent.DataOffset + ((ASector - BlockStart) shl FSectorShiftCount);
        Count:=Min(ACount,(BlockCount - (ASector - BlockStart))) shl FSectorShiftCount;
+       
        {$IFDEF VIRTUAL_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
        if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
        {$ENDIF}
+       
        {Write Extent}
        FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
        if FDriver.FileWrite(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+       
        Result:=(Count shr FSectorShiftCount);
       finally
        FreeMem(Buffer);
@@ -7951,23 +8059,21 @@ begin
     {Get Offset}
     Offset:=(TableValue shl (AExtent.BlockShiftCount + FSectorShiftCount)) + AExtent.DataOffset + ((ASector - BlockStart) shl FSectorShiftCount);
     Count:=Min(ACount,(BlockCount - (ASector - BlockStart))) shl FSectorShiftCount;
+    
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Offset = ' + IntToHex(Offset,16));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Count = ' + IntToHex(Count,8));
     {$ENDIF}
+    
     {Write Extent}
     FDriver.FileSeekEx(AExtent.Handle,Offset,soFromBeginning);
     if FDriver.FileWrite(AExtent.Handle,ABuffer,Count) <> Integer(Count) then Exit;
+    
     Result:=(Count shr FSectorShiftCount);
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.WriteExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7981,6 +8087,8 @@ var
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LoadExtents');
@@ -7994,17 +8102,21 @@ begin
     begin
      {Set Base}
      FBase:=Extent;
+     
      {Load Delta Extents}
      WorkBuffer:=LocateDelta(Extent);
      while Length(WorkBuffer) <> 0 do
       begin
        {Save Parent}
        Parent:=Extent;
+       
        {Load Extent}
        Extent:=TVirtualDiskVboxExtent(LoadExtent(nil,Parent,WorkBuffer));
        if Extent = nil then Exit;
+       
        WorkBuffer:=LocateDelta(Extent);
       end;
+      
      {Set Current}
      FCurrent:=Extent; {Last Delta loaded must be Current (Will be same as Base if no Deltas loaded)}
     end
@@ -8012,19 +8124,24 @@ begin
     begin
      {Save Delta}
      Delta:=Extent;
+     
      {Locate Delta Extents}
      WorkBuffer:=LocateDelta(Extent);
      while Length(WorkBuffer) <> 0 do
       begin
        {Save Parent}
        Parent:=Extent;
+       
        {Load Extent}
        Extent:=TVirtualDiskVboxExtent(LoadExtent(nil,Parent,WorkBuffer));
        if Extent = nil then Exit;
+       
        WorkBuffer:=LocateDelta(Extent);
       end;
+      
      {Set Current}
      FCurrent:=Extent; {Last Delta loaded must be Current}
+     
      {Locate Parent Extents}
      WorkBuffer:=LocateParent(Delta);
      if Length(WorkBuffer) = 0 then Exit;
@@ -8033,17 +8150,22 @@ begin
        {Load Extent}
        Extent:=TVirtualDiskVboxExtent(LoadExtent(Delta,nil,WorkBuffer));
        if Extent = nil then Exit;
+       
        {Save Delta}
        Delta:=Extent;
        if Extent.IsBase then Break;
+       
        WorkBuffer:=LocateParent(Delta);
       end;
+      
      {Set Base}
      if Extent.IsBase then FBase:=Extent; {Last Parent loaded must be Base}
     end;
+    
    {Check Loaded}
    if FBase = nil then Exit;
    if FCurrent = nil then Exit;
+   
    Result:=True;
 
    {$IFDEF VIRTUAL_DEBUG}
@@ -8054,14 +8176,9 @@ begin
   finally
    if not Result then CloseExtents;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.LoadExtents ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -8070,62 +8187,61 @@ function TVirtualDiskVboxImage.CheckExtent(ADelta,AParent:TVirtualDiskExtent;con
 {Check that the passed file is a valid VirtualBox extent}
 {If delta is provided, check that passed file is the parent of the delta}
 {If parent is provided, check that passed file is the delta of the parent}
+{Note: Caller must hold the delta and parent locks}
 var
  Handle:THandle;
  Header:TVboxDiskHeader;
 begin
  {}
  Result:=False;
+ 
+ if FDriver = nil then Exit;
+ if Length(AFilename) = 0 then Exit;
+
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.CheckExtent - Name = ' + AFilename);
+ {$ENDIF}
+
+ {Open File}
+ if not FDriver.FileExists(AFilename) then Exit;
+ Handle:=FDriver.FileOpen(AFilename,fmOpenRead or fmShareDenyNone);
+ if Handle = INVALID_HANDLE_VALUE then Exit;
  try
-  if FDriver = nil then Exit;
-  if Length(AFilename) = 0 then Exit;
-
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.CheckExtent - Name = ' + AFilename);
-  {$ENDIF}
-
-  {Open File}
-  if not FDriver.FileExists(AFilename) then Exit;
-  Handle:=FDriver.FileOpen(AFilename,fmOpenRead or fmShareDenyNone);
-  if Handle = INVALID_HANDLE_VALUE then Exit;
-  try
-   {Read Header}
-   FDriver.FileSeekEx(Handle,0,soFromBeginning);
-   if FDriver.FileRead(Handle,Header,SizeOf(TVboxDiskHeader)) <> SizeOf(TVboxDiskHeader) then Exit;
-   {Check Header}
-   if Header.Signature <> vboxDiskSignature then Exit;
-   if Header.Version <> vboxDiskVersion then Exit;
-   if Header.SectorSize < MIN_SECTOR_SIZE then Exit;
-   if (Header.BlockSize mod Header.SectorSize) <> 0 then Exit;
-   {Check Delta}
-   if ADelta <> nil then
-    begin
-     {$IFDEF VIRTUAL_DEBUG}
-     if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.CheckExtent - Delta = ' + GUIDToString(TVirtualDiskVboxExtent(ADelta).Header.UUID));
-     {$ENDIF}
-     if not CompareGUID(Header.UUID,TVirtualDiskVboxExtent(ADelta).Header.LinkUUID) then Exit;
-    end;
-   {Check Parent}
-   if AParent <> nil then
-    begin
-     {$IFDEF VIRTUAL_DEBUG}
-     if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.CheckExtent - Parent = ' + GUIDToString(TVirtualDiskVboxExtent(AParent).Header.UUID));
-     {$ENDIF}
-     if (Header.DiskType <> vboxDiskTypeDifferencing) and (Header.DiskType <> vboxDiskTypeDynamic) then Exit; {Sometimes VirtualBox marks Differencing disks as Dynamic}
-     if not CompareGUID(Header.LinkUUID,TVirtualDiskVboxExtent(AParent).Header.UUID) then Exit;
-    end;
-   Result:=True;
-  finally
-   {Close File}
-   FDriver.FileClose(Handle);
-  end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
+  {Read Header}
+  FDriver.FileSeekEx(Handle,0,soFromBeginning);
+  if FDriver.FileRead(Handle,Header,SizeOf(TVboxDiskHeader)) <> SizeOf(TVboxDiskHeader) then Exit;
+  
+  {Check Header}
+  if Header.Signature <> vboxDiskSignature then Exit;
+  if Header.Version <> vboxDiskVersion then Exit;
+  if Header.SectorSize < MIN_SECTOR_SIZE then Exit;
+  if (Header.BlockSize mod Header.SectorSize) <> 0 then Exit;
+  
+  {Check Delta}
+  if ADelta <> nil then
    begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.CheckExtent ' + E.Message);
+    {$IFDEF VIRTUAL_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.CheckExtent - Delta = ' + GUIDToString(TVirtualDiskVboxExtent(ADelta).Header.UUID));
+    {$ENDIF}
+    
+    if not CompareGUID(Header.UUID,TVirtualDiskVboxExtent(ADelta).Header.LinkUUID) then Exit;
    end;
-  {$ENDIF}
+   
+  {Check Parent}
+  if AParent <> nil then
+   begin
+    {$IFDEF VIRTUAL_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.CheckExtent - Parent = ' + GUIDToString(TVirtualDiskVboxExtent(AParent).Header.UUID));
+    {$ENDIF}
+    
+    if (Header.DiskType <> vboxDiskTypeDifferencing) and (Header.DiskType <> vboxDiskTypeDynamic) then Exit; {Sometimes VirtualBox marks Differencing disks as Dynamic}
+    if not CompareGUID(Header.LinkUUID,TVirtualDiskVboxExtent(AParent).Header.UUID) then Exit;
+   end;
+   
+  Result:=True;
+ finally
+  {Close File}
+  FDriver.FileClose(Handle);
  end;
 end;
 
@@ -8138,6 +8254,8 @@ var
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if Length(AFilename) = 0 then Exit;
@@ -8162,13 +8280,16 @@ begin
     {Read Header}
     FDriver.FileSeekEx(Extent.Handle,0,soFromBeginning);
     if FDriver.FileRead(Extent.Handle,TVirtualDiskVboxExtent(Extent).Header^,SizeOf(TVboxDiskHeader)) <> SizeOf(TVboxDiskHeader) then Exit;
+    
     {Check Header}
     if TVirtualDiskVboxExtent(Extent).Header.Signature <> vboxDiskSignature then Exit;
     if TVirtualDiskVboxExtent(Extent).Header.Version <> vboxDiskVersion then Exit;
     if TVirtualDiskVboxExtent(Extent).Header.SectorSize < MIN_SECTOR_SIZE then Exit;
     if (TVirtualDiskVboxExtent(Extent).Header.BlockSize mod TVirtualDiskVboxExtent(Extent).Header.SectorSize) <> 0 then Exit;
+    
     {Update Image}
     FSectorSize:=TVirtualDiskVboxExtent(Extent).Header.SectorSize;
+    
     {Update Flags}
     Extent.Flags:=virtualFlagNone;
     if NullGUID(TVirtualDiskVboxExtent(Extent).Header.LinkUUID) then Extent.Flags:=Extent.Flags or virtualFlagBase;
@@ -8176,6 +8297,7 @@ begin
     if TVirtualDiskVboxExtent(Extent).Header.DiskType = vboxDiskTypeStatic then Extent.Flags:=Extent.Flags or virtualFlagFixed;
     if TVirtualDiskVboxExtent(Extent).Header.DiskType = vboxDiskTypeDynamic then Extent.Flags:=Extent.Flags or virtualFlagDynamic;
     if TVirtualDiskVboxExtent(Extent).Header.DiskType = vboxDiskTypeDifferencing then Extent.Flags:=Extent.Flags or virtualFlagDelta;
+    
     {Update Extent}
     Extent.DataOffset:=TVirtualDiskVboxExtent(Extent).Header.DataOffset;
     Extent.BlockSize:=TVirtualDiskVboxExtent(Extent).Header.BlockSize;
@@ -8184,12 +8306,16 @@ begin
     Extent.BlockShiftCount:=Extent.GetBlockShiftCount;
     TVirtualDiskVboxExtent(Extent).HeaderOffset:=0;
     TVirtualDiskVboxExtent(Extent).HeaderSize:=SizeOf(TVboxDiskHeader);
+    
     {Check Extent}
     if Extent.SectorCount = 0 then Exit;
+    
     {Update Delta}
     if ADelta <> nil then ADelta.Parent:=Extent;
+    
     {Update Parent}
     if AParent <> nil then AParent.Delta:=Extent;
+    
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LoadExtent - DataOffset = ' + IntToStr(Extent.DataOffset));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockSize = ' + IntToStr(Extent.BlockSize));
@@ -8197,8 +8323,10 @@ begin
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   SectorCount = ' + IntToStr(Extent.SectorCount));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockShiftCount = ' + IntToStr(Extent.BlockShiftCount));
     {$ENDIF}
+    
     {Add Extent}
     FExtents.Add(Extent);
+    
     Result:=Extent;
    finally
     if Result = nil then FDriver.FileClose(Extent.Handle);
@@ -8206,22 +8334,20 @@ begin
   finally
    if Result = nil then Extent.Free;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.LoadExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.AddExtent(AParent:TVirtualDiskExtent;const AFilename:String):TVirtualDiskExtent;
+{Note: Caller must hold the parent lock}
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
 
@@ -8231,22 +8357,20 @@ begin
 
   //To Do //Create a new Extent //Required for Create Image
 
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.AddExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.SetExtent(AExtent:TVirtualDiskExtent):Boolean;
+{Note: Caller must hold the extent lock}
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -8263,19 +8387,14 @@ begin
   if FDriver.FileWrite(AExtent.Handle,TVirtualDiskVboxExtent(AExtent).Header^,TVirtualDiskVboxExtent(AExtent).HeaderSize) <> Integer(TVirtualDiskVboxExtent(AExtent).HeaderSize) then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.SetExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
-function TVirtualDiskVboxImage.GetExtent(const ASector:Int64;AWrite:Boolean):TVirtualDiskExtent;
+function TVirtualDiskVboxImage.GetExtent(const ASector:Int64;AWrite,ALock:Boolean):TVirtualDiskExtent;
 var
  BlockNo:LongWord;
  TableOffset:LongWord;
@@ -8283,6 +8402,8 @@ var
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if ASector >= FSectorCount then Exit;
 
@@ -8298,6 +8419,8 @@ begin
      begin
       if (ASector >= Extent.StartSector) and (ASector < (Extent.StartSector + Extent.SectorCount)) then
        begin
+        if ALock then Extent.AcquireLock;
+        
         Result:=Extent;
        end;
      end;
@@ -8312,27 +8435,27 @@ begin
        begin
         if TVirtualDiskVboxExtent(Extent).Table = nil then Exit;
         if TVirtualDiskVboxExtent(Extent).Table.Data = nil then Exit;
+        
         {Get Block}
         BlockNo:=(ASector shr Extent.BlockShiftCount);
         TableOffset:=(BlockNo shl 2);
+        
         {Check Block (Block is Allocated or Extent is Base)}
         if (LongWord(Pointer(LongWord(TVirtualDiskVboxExtent(Extent).Table.Data) + TableOffset)^) <> vboxUnallocatedBlock) or (Extent.IsBase) then
          begin
+          if ALock then Extent.AcquireLock;
+          
           Result:=Extent;
           Exit;
          end;
        end;
+       
       Extent:=Extent.Parent;
      end;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.GetExtent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -8343,6 +8466,8 @@ var
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LoadTables');
@@ -8353,29 +8478,28 @@ begin
   while Extent <> nil do
    begin
     if LoadTable(Extent,0) = nil then Exit;
+    
     Extent:=TVirtualDiskExtent(Extent.Next);
    end;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.LoadTables ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.LoadTable(AExtent:TVirtualDiskExtent;ATableNo:LongWord):TVirtualDiskTable;
+{Note: Caller must hold the extent tables writer lock}
 var
  Data:Pointer;
  Table:TVirtualDiskVboxTable;
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -8390,13 +8514,16 @@ begin
 
   {Get Table}
   Table:=TVirtualDiskVboxExtent(AExtent).Table;
+  
   {Update Table}
   Table.TableOffset:=TVirtualDiskVboxExtent(AExtent).Header.BlocksOffset;
   Table.TableSize:=TVirtualDiskVboxExtent(AExtent).Header.TotalBlocks shl 2;
   Table.StartSector:=TVirtualDiskVboxExtent(AExtent).StartSector;
   Table.SectorCount:=TVirtualDiskVboxExtent(AExtent).SectorCount;
+  
   {Check Table}
   if Table.TableSize = 0 then Exit;
+  
   {Alloc Table}
   Data:=GetMem(Table.TableSize);
   if Data = nil then Exit;
@@ -8404,30 +8531,31 @@ begin
    {Load Table}
    FDriver.FileSeekEx(AExtent.Handle,Table.TableOffset,soFromBeginning);
    if FDriver.FileRead(AExtent.Handle,Data^,Table.TableSize) <> Integer(Table.TableSize) then Exit;
+   
    {$IFDEF VIRTUAL_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LoadTable - TableSize = ' + IntToStr(Table.TableSize));
    {$ENDIF}
+   
    Table.Data:=Data;
+   
    Result:=Table;
   finally
    if Result = nil then FreeMem(Data);
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.LoadTable ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.AddTable(AExtent:TVirtualDiskExtent):TVirtualDiskTable;
+{Note: Caller must hold the extent lock}
 begin
  {}
  Result:=nil;
+ 
+ if not FExtents.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if AExtent = nil then Exit;
@@ -8438,22 +8566,20 @@ begin
 
   //To Do //Create a new Table //Required for Create Image
 
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.AddTable ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.SetTable(ATable:TVirtualDiskTable):Boolean;
+{Note: Caller must hold the table extent lock}
 begin
  {}
  Result:=False;
+ 
+ if not FExtents.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if ATable = nil then Exit;
@@ -8471,19 +8597,15 @@ begin
   if FDriver.FileWrite(ATable.Extent.Handle,TVirtualDiskVboxTable(ATable).Data^,ATable.TableSize) <> Integer(ATable.TableSize) then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.SetTable ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  FExtents.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.LocateDelta(AExtent:TVirtualDiskExtent):String;
+{Note: Caller must hold the extent lock}
 var
  Path:String;
  WorkBuffer:String;
@@ -8493,91 +8615,96 @@ var
 begin
  {}
  Result:='';
- try
-  if FDriver = nil then Exit;
-  if AExtent = nil then Exit;
+ 
+ if FDriver = nil then Exit;
+ if AExtent = nil then Exit;
 
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateDelta - Parent = ' + GUIDToString(TVirtualDiskVboxExtent(AExtent).Header.UUID));
-  {$ENDIF}
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateDelta - Parent = ' + GUIDToString(TVirtualDiskVboxExtent(AExtent).Header.UUID));
+ {$ENDIF}
 
-  if AExtent.IsBase then
-   begin
-    {Locate Delta in Snapshots path}
-    Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True) + vboxDeltaPath;
-    {Search Machines path}
-    ResultCode:=FDriver.FindFirstEx(Path + vboxPathMask,FolderRec);
-    while ResultCode = 0 do
-     begin
-      if (FolderRec.FindData.cFileName[0] <> '.') and (FolderRec.FindData.cFileName <> '..') then
-       begin
-        if (FolderRec.FindData.dwFileAttributes and faDirectory) = faDirectory then
-         begin
-          {Search Snapshots path}
-          ResultCode:=FDriver.FindFirstEx(Path + FolderRec.FindData.cFileName + vboxSnapshotPath + vboxFileMask,SearchRec);
-          while ResultCode = 0 do
-           begin
-            if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-             begin
-              {Check Extent}
-              WorkBuffer:=FDriver.GetLongName(Path + FolderRec.FindData.cFileName + vboxSnapshotPath + SearchRec.FindData.cFileName);
-              {$IFDEF VIRTUAL_DEBUG}
-              if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateDelta - Checking = ' + WorkBuffer);
-              {$ENDIF}
-              if FindExtent(WorkBuffer) = nil then
-               begin
-                if CheckExtent(nil,AExtent,WorkBuffer) then Result:=WorkBuffer;
-               end;
-             end;
-            if Length(Result) > 0 then Break;
-            ResultCode:=FDriver.FindNextEx(SearchRec);
-           end;
-          FDriver.FindCloseEx(SearchRec);
-         end;
-       end;
-      if Length(Result) > 0 then Break;
-      ResultCode:=FDriver.FindNextEx(FolderRec);
-     end;
-    FDriver.FindCloseEx(FolderRec);
-   end
-  else if AExtent.IsDelta then
-   begin
-    {Locate Delta in current path}
-    Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
-    {Search current path}
-    ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
-    while ResultCode = 0 do
-     begin
-      if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-       begin
-        {Check Extent}
-        WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
-        {$IFDEF VIRTUAL_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateDelta - Checking = ' + WorkBuffer);
-        {$ENDIF}
-        if FindExtent(WorkBuffer) = nil then
-         begin
-          if CheckExtent(nil,AExtent,WorkBuffer) then Result:=WorkBuffer;
-         end;
-       end;
-      if Length(Result) > 0 then Break;
-      ResultCode:=FDriver.FindNextEx(SearchRec);
-     end;
-    FDriver.FindCloseEx(SearchRec);
-   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.LocateDelta ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ if AExtent.IsBase then
+  begin
+   {Locate Delta in Snapshots path}
+   Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True) + vboxDeltaPath;
+   
+   {Search Machines path}
+   ResultCode:=FDriver.FindFirstEx(Path + vboxPathMask,FolderRec);
+   while ResultCode = 0 do
+    begin
+     if (FolderRec.FindData.cFileName[0] <> '.') and (FolderRec.FindData.cFileName <> '..') then
+      begin
+       if (FolderRec.FindData.dwFileAttributes and faDirectory) = faDirectory then
+        begin
+         {Search Snapshots path}
+         ResultCode:=FDriver.FindFirstEx(Path + FolderRec.FindData.cFileName + vboxSnapshotPath + vboxFileMask,SearchRec);
+         while ResultCode = 0 do
+          begin
+           if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+            begin
+             {Check Extent}
+             WorkBuffer:=FDriver.GetLongName(Path + FolderRec.FindData.cFileName + vboxSnapshotPath + SearchRec.FindData.cFileName);
+             
+             {$IFDEF VIRTUAL_DEBUG}
+             if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateDelta - Checking = ' + WorkBuffer);
+             {$ENDIF}
+             
+             if FindExtent(WorkBuffer,False) = nil then
+              begin
+               if CheckExtent(nil,AExtent,WorkBuffer) then Result:=WorkBuffer;
+              end;
+            end;
+            
+           if Length(Result) > 0 then Break;
+           ResultCode:=FDriver.FindNextEx(SearchRec);
+          end;
+          
+         FDriver.FindCloseEx(SearchRec);
+        end;
+      end;
+      
+     if Length(Result) > 0 then Break;
+     ResultCode:=FDriver.FindNextEx(FolderRec);
+    end;
+    
+   FDriver.FindCloseEx(FolderRec);
+  end
+ else if AExtent.IsDelta then
+  begin
+   {Locate Delta in current path}
+   Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
+   
+   {Search current path}
+   ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
+   while ResultCode = 0 do
+    begin
+     if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+      begin
+       {Check Extent}
+       WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
+       
+       {$IFDEF VIRTUAL_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateDelta - Checking = ' + WorkBuffer);
+       {$ENDIF}
+       
+       if FindExtent(WorkBuffer,False) = nil then
+        begin
+         if CheckExtent(nil,AExtent,WorkBuffer) then Result:=WorkBuffer;
+        end;
+      end;
+      
+     if Length(Result) > 0 then Break;
+     ResultCode:=FDriver.FindNextEx(SearchRec);
+    end;
+    
+   FDriver.FindCloseEx(SearchRec);
+  end;
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.LocateParent(AExtent:TVirtualDiskExtent):String;
+{Note: Caller must hold the extent lock}
 var
  Path:String;
  WorkBuffer:String;
@@ -8586,89 +8713,95 @@ var
 begin
  {}
  Result:='';
- try
-  if FDriver = nil then Exit;
-  if AExtent = nil then Exit;
+ 
+ if FDriver = nil then Exit;
+ if AExtent = nil then Exit;
 
-  {$IFDEF VIRTUAL_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Delta = ' + GUIDToString(TVirtualDiskVboxExtent(AExtent).Header.UUID));
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Parent = ' + GUIDToString(TVirtualDiskVboxExtent(AExtent).Header.LinkUUID));
-  {$ENDIF}
+ {$IFDEF VIRTUAL_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Delta = ' + GUIDToString(TVirtualDiskVboxExtent(AExtent).Header.UUID));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Parent = ' + GUIDToString(TVirtualDiskVboxExtent(AExtent).Header.LinkUUID));
+ {$ENDIF}
 
-  if AExtent.IsDelta then
-   begin
-    {Locate Parent in current path}
-    Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
-    ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
-    while ResultCode = 0 do
-     begin
-      if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-       begin
-        WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
-        {$IFDEF VIRTUAL_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Checking = ' + WorkBuffer);
-        {$ENDIF}
-        if FindExtent(WorkBuffer) = nil then
-         begin
-          if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
-         end;
-       end;
-      if Length(Result) > 0 then Break;
-      ResultCode:=FDriver.FindNextEx(SearchRec);
-     end;
-    FDriver.FindCloseEx(SearchRec);
-    if Length(Result) > 0 then Exit;
-    {Locate Parent in VDI path}
-    Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True) + vboxParentPath;
-    ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
-    while ResultCode = 0 do
-     begin
-      if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-       begin
-        WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
-        {$IFDEF VIRTUAL_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Checking = ' + WorkBuffer);
-        {$ENDIF}
-        if FindExtent(WorkBuffer) = nil then
-         begin
-          if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
-         end;
-       end;
-      if Length(Result) > 0 then Break;
-      ResultCode:=FDriver.FindNextEx(SearchRec);
-     end;
-    FDriver.FindCloseEx(SearchRec);
-    if Length(Result) > 0 then Exit;
-    {Locate Parent in HardDisks path}
-    Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True) + vboxNewParentPath;
-    ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
-    while ResultCode = 0 do
-     begin
-      if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
-       begin
-        WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
-        {$IFDEF VIRTUAL_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Checking = ' + WorkBuffer);
-        {$ENDIF}
-        if FindExtent(WorkBuffer) = nil then
-         begin
-          if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
-         end;
-       end;
-      if Length(Result) > 0 then Break;
-      ResultCode:=FDriver.FindNextEx(SearchRec);
-     end;
-    FDriver.FindCloseEx(SearchRec);
-    if Length(Result) > 0 then Exit;
-   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.LocateParent ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ if AExtent.IsDelta then
+  begin
+   {Locate Parent in current path}
+   Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True);
+   ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
+   while ResultCode = 0 do
+    begin
+     if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+      begin
+       WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
+       
+       {$IFDEF VIRTUAL_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Checking = ' + WorkBuffer);
+       {$ENDIF}
+       
+       if FindExtent(WorkBuffer,False) = nil then
+        begin
+         if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
+        end;
+      end;
+      
+     if Length(Result) > 0 then Break;
+     ResultCode:=FDriver.FindNextEx(SearchRec);
+    end;
+    
+   FDriver.FindCloseEx(SearchRec);
+   if Length(Result) > 0 then Exit;
+   
+   {Locate Parent in VDI path}
+   Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True) + vboxParentPath;
+   ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
+   while ResultCode = 0 do
+    begin
+     if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+      begin
+       WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
+       
+       {$IFDEF VIRTUAL_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Checking = ' + WorkBuffer);
+       {$ENDIF}
+       
+       if FindExtent(WorkBuffer,False) = nil then
+        begin
+         if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
+        end;
+      end;
+      
+     if Length(Result) > 0 then Break;
+     ResultCode:=FDriver.FindNextEx(SearchRec);
+    end;
+    
+   FDriver.FindCloseEx(SearchRec);
+   if Length(Result) > 0 then Exit;
+   
+   {Locate Parent in HardDisks path}
+   Path:=FDriver.AddSlash(FDriver.GetPathName(AExtent.Filename),False,True) + vboxNewParentPath;
+   ResultCode:=FDriver.FindFirstEx(Path + vboxFileMask,SearchRec);
+   while ResultCode = 0 do
+    begin
+     if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
+      begin
+       WorkBuffer:=FDriver.GetLongName(Path + SearchRec.FindData.cFileName);
+       
+       {$IFDEF VIRTUAL_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskVboxImage.LocateParent - Checking = ' + WorkBuffer);
+       {$ENDIF}
+       
+       if FindExtent(WorkBuffer,False) = nil then
+        begin
+         if CheckExtent(AExtent,nil,WorkBuffer) then Result:=WorkBuffer;
+        end;
+      end;
+      
+     if Length(Result) > 0 then Break;
+     ResultCode:=FDriver.FindNextEx(SearchRec);
+    end;
+    
+   FDriver.FindCloseEx(SearchRec);
+   if Length(Result) > 0 then Exit;
+  end;
 end;
 
 {==============================================================================}
@@ -8677,60 +8810,69 @@ function TVirtualDiskVboxImage.ImageInit:Boolean;
 begin
  {}
  Result:=False;
- if FDriver = nil then Exit;
- if FImageNo = 0 then Exit;
-
- if not Ready then
-  begin
-   FLocked:=False;
-   FChanged:=False;
-   FAttributes:=GetAttributes;
-
-   {FImageType:=itUNKNOWN;} {Do not Reset}
-   {FMediaType:=mtUNKNOWN;} {Do not Reset}
-   FFloppyType:=ftUNKNOWN;
-
-   FSectorSize:=0;
-   FSectorCount:=0;
-   FSectorShiftCount:=0;
-
-   FCylinders:=0;
-   FHeads:=0;
-   FSectors:=0;
-   FLogicalShiftCount:=0;
-
-   FPartitionId:=pidUnused;
-   FFileSysType:=fsUNKNOWN;
-   Result:=True;
-  end
- else
-  begin
-   {FLocked:=False;}        {Do not Reset}
-   {FChanged:=False;}       {Do not Reset}
-   FAttributes:=GetAttributes;
-
-   {FImageType:=itUNKNOWN;} {Do not Reset}
-   {FMediaType:=mtUNKNOWN;} {Do not Reset}
-   {FFloppyType:=ftUNKNOWN;}{Do not Reset}
-
-   FSectorSize:=GetSectorSize;
-   FSectorCount:=GetSectorCount;
-   FSectorShiftCount:=GetSectorShiftCount;
-
-   FSectors:=GetSectors;    {Must be SHC not CHS} {Not for VirtualBox but retain for compatibility}
-   FHeads:=GetHeads;
-   FCylinders:=GetCylinders;
-   FLogicalShiftCount:=GetLogicalShiftCount;
-
-   FPartitionId:=pidUnused;
-   FFileSysType:=fsUNKNOWN;
-   Result:=True;
-  end;
+ 
+ if not WriterLock then Exit;
+ try
+  if FDriver = nil then Exit;
+  if FImageNo = 0 then Exit;
+ 
+  if not Ready then
+   begin
+    FLocked:=False;
+    FChanged:=False;
+    FAttributes:=GetAttributes;
+ 
+    {FImageType:=itUNKNOWN;} {Do not Reset}
+    {FMediaType:=mtUNKNOWN;} {Do not Reset}
+    FFloppyType:=ftUNKNOWN;
+ 
+    FSectorSize:=0;
+    FSectorCount:=0;
+    FSectorShiftCount:=0;
+ 
+    FCylinders:=0;
+    FHeads:=0;
+    FSectors:=0;
+    FLogicalShiftCount:=0;
+ 
+    FPartitionId:=pidUnused;
+    FFileSysType:=fsUNKNOWN;
+    
+    Result:=True;
+   end
+  else
+   begin
+    {FLocked:=False;}        {Do not Reset}
+    {FChanged:=False;}       {Do not Reset}
+    FAttributes:=GetAttributes;
+ 
+    {FImageType:=itUNKNOWN;} {Do not Reset}
+    {FMediaType:=mtUNKNOWN;} {Do not Reset}
+    {FFloppyType:=ftUNKNOWN;}{Do not Reset}
+ 
+    FSectorSize:=GetSectorSize;
+    FSectorCount:=GetSectorCount;
+    FSectorShiftCount:=GetSectorShiftCount;
+ 
+    FSectors:=GetSectors;    {Must be SHC not CHS} {Not for VirtualBox but retain for compatibility}
+    FHeads:=GetHeads;
+    FCylinders:=GetCylinders;
+    FLogicalShiftCount:=GetLogicalShiftCount;
+ 
+    FPartitionId:=pidUnused;
+    FFileSysType:=fsUNKNOWN;
+    
+    Result:=True;
+   end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.Read(ASector:LongWord;ACount:Word;var ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:LongWord;     {Next Sector to Read from Extent}
  Length:Word;        {Number of sectors Read from Extent}
@@ -8742,45 +8884,43 @@ var
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
 
-  {Check Open}
-  if FBase = nil then Exit;
+ if FDriver = nil then Exit;
 
-  {Check Read}
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
-  {Get Start}
-  Offset:=0;
-  Start:=ASector;
-  Remain:=ACount;
-  while Remain > 0 do
-   begin
-    {Get Extent}
-    Extent:=GetExtent(Start,False);
-    if Extent = nil then Exit;
-    {Read Extent}
-    Length:=ReadExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
-    if Length = 0 then Exit;
-    Inc(Start,Length);
-    Dec(Remain,Length);
-    Inc(Offset,(Length shl FSectorShiftCount));
-   end;
-  Result:=(Remain = 0);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.Read ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Check Open}
+ if FBase = nil then Exit;
+
+ {Check Read}
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
+ 
+ {Get Start}
+ Offset:=0;
+ Start:=ASector;
+ Remain:=ACount;
+ while Remain > 0 do
+  begin
+   {Get Extent}
+   Extent:=GetExtent(Start,False,True);
+   if Extent = nil then Exit;
+   
+   {Read Extent}
+   Length:=ReadExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Extent.ReleaseLock;
+   if Length = 0 then Exit;
+   
+   Inc(Start,Length);
+   Dec(Remain,Length);
+   Inc(Offset,(Length shl FSectorShiftCount));
+  end;
+  
+ Result:=(Remain = 0);
 end;
 
 {==============================================================================}
 
 function TVirtualDiskVboxImage.Write(ASector:LongWord;ACount:Word;const ABuffer):Boolean;
+{Note: Caller must hold the image lock}
 var
  Start:LongWord;     {Next Sector to Write to Extent}
  Length:Word;        {Number of sectors Written to Extent}
@@ -8792,41 +8932,38 @@ var
 begin
  {}
  Result:=False;
- try
-  if FDriver = nil then Exit;
 
-  {Check Open}
-  if FBase = nil then Exit;
+ if FDriver = nil then Exit;
 
-  {Check Write}
-  if not Writeable then Exit;
-  if ASector >= FSectorCount then Exit;
-  if (ASector + ACount) > FSectorCount then Exit;
-  {Get Start}
-  Offset:=0;
-  Start:=ASector;
-  Remain:=ACount;
-  while Remain > 0 do
-   begin
-    {Get Extent}
-    Extent:=GetExtent(Start,True);
-    if Extent = nil then Exit;
-    {Write Extent}
-    Length:=WriteExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
-    if Length = 0 then Exit;
-    Inc(Start,Length);
-    Dec(Remain,Length);
-    Inc(Offset,(Length shl FSectorShiftCount));
-   end;
-  Result:=(Remain = 0);
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.Write ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ {Check Open}
+ if FBase = nil then Exit;
+
+ {Check Write}
+ if not Writeable then Exit;
+ if ASector >= FSectorCount then Exit;
+ if (ASector + ACount) > FSectorCount then Exit;
+ 
+ {Get Start}
+ Offset:=0;
+ Start:=ASector;
+ Remain:=ACount;
+ while Remain > 0 do
+  begin
+   {Get Extent}
+   Extent:=GetExtent(Start,True,True);
+   if Extent = nil then Exit;
+   
+   {Write Extent}
+   Length:=WriteExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Extent.ReleaseLock;
+   if Length = 0 then Exit;
+   
+   Inc(Start,Length);
+   Dec(Remain,Length);
+   Inc(Offset,(Length shl FSectorShiftCount));
+  end;
+  
+ Result:=(Remain = 0);
 end;
 
 {==============================================================================}
@@ -8835,18 +8972,8 @@ function TVirtualDiskVboxImage.Allocated(ASector:LongWord;ACount:Word):Word;
 begin
  {}
  Result:=ACount;
- try
 
-  //To Do //Use TestExtent ?  //Required for Copy Image / Resize Image etc
-
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.Allocated ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ //To Do //Use TestExtent ?  //Required for Copy Image / Resize Image etc
 end;
 
 {==============================================================================}
@@ -8855,6 +8982,8 @@ function TVirtualDiskVboxImage.CreateImage(AMediaType:TMediaType;AFloppyType:TFl
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -8874,14 +9003,9 @@ begin
 
   {Add Table}
   //To Do //
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.CreateImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -8890,6 +9014,8 @@ function TVirtualDiskVboxImage.OpenImage(AMediaType:TMediaType;AFloppyType:TFlop
 begin
  {}
  Result:=0;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -8925,14 +9051,9 @@ begin
   if not LoadTables then Exit;
 
   Result:=FImageNo;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.OpenImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -8941,6 +9062,8 @@ function TVirtualDiskVboxImage.CloseImage:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -8956,14 +9079,9 @@ begin
   if not CloseExtents then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.CloseImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -8972,16 +9090,13 @@ function TVirtualDiskVboxImage.ResizeImage(const ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.ResizeImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -8990,16 +9105,13 @@ function TVirtualDiskVboxImage.CreateSnapshot:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.CreateSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9008,16 +9120,13 @@ function TVirtualDiskVboxImage.DeleteSnapshot:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.DeleteSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9026,16 +9135,13 @@ function TVirtualDiskVboxImage.MergeSnapshot:Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not WriterLock then Exit;
  try
   //To Do
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskVboxImage.MergeSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  WriterUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9252,33 +9358,34 @@ function TVirtualDiskResizer.AcceptImage(AImage:TDiskImage;const ASize:Int64):Bo
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
 
   {Check Image}
   if AImage = nil then Exit;
+  
   {Check Type}
   case AImage.ImageType of
    itMEMORY,itFILE,itDEVICE,itISO,itBOCHS,itVMWARE,itVPC,itVBOX:begin
      {Shrink / Expand Image}
      {Cannot Resize if not Writeable}
      if not AImage.Writeable then Exit;
+     
      {Cannot Resize a Device}
      if AImage.ImageType = itDEVICE then Exit;
+     
      {Shrink / Expand Image}
      if ASize = 0 then Exit;
+     
      Result:=True;
     end;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskResizer.AcceptImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9288,6 +9395,8 @@ function TVirtualDiskResizer.ShrinkImage(AImage:TDiskImage;const ASize:Int64):Bo
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9299,14 +9408,9 @@ begin
   if not AcceptImage(AImage,ASize) then Exit;
 
   //To Do //
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskResizer.ShrinkImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9316,6 +9420,8 @@ function TVirtualDiskResizer.ExpandImage(AImage:TDiskImage;const ASize:Int64):Bo
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9327,14 +9433,9 @@ begin
   if not AcceptImage(AImage,ASize) then Exit;
 
   //To Do //
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskResizer.ExpandImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9367,33 +9468,34 @@ function TVirtualDiskCopier.AcceptImage(AImage,ADest:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
 
   {Check Image}
   if AImage = nil then Exit;
+  
   {Check Type}
   case AImage.ImageType of
    itMEMORY,itFILE,itDEVICE,itISO,itBOCHS,itVMWARE,itVPC,itVBOX:begin
      {Copy Image}
      if ADest = nil then Exit;
+     
      {Cannot Copy if not Writeable}
      if not ADest.Writeable then Exit;
+     
      {Cannot Copy if not same Size}
      if AImage.SectorSize <> ADest.SectorSize then Exit;
      if AImage.SectorCount <> ADest.SectorCount then Exit;
+     
      Result:=True;
     end;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskCopier.AcceptImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9403,6 +9505,8 @@ function TVirtualDiskCopier.CopyImage(AImage,ADest:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9414,14 +9518,9 @@ begin
   if not AcceptImage(AImage,ADest) then Exit;
 
   //To Do //Read from Source/Write to Dest for SectorCount sectors
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskCopier.CopyImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9454,29 +9553,21 @@ function TVirtualDiskImager.CreateImageByType(const AName:String;AImageType:TIma
 begin
  {}
  Result:=nil;
- try
-  if FDriver = nil then Exit;
-  if FRecognizer = nil then Exit;
-  if FController = nil then Exit;
 
-  {Check Image Type}
-  case AImageType of
-   itMEMORY:Result:=TVirtualDiskMemoryImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-   itFILE:Result:=TVirtualDiskFileImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-   itDEVICE:Result:=TVirtualDiskDeviceImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-   itISO:Result:=TVirtualDiskIsoImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-   itBOCHS:Result:=TVirtualDiskBochsImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-   itVMWARE:Result:=TVirtualDiskVmwareImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-   itVPC:Result:=TVirtualDiskVpcImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-   itVBOX:Result:=TVirtualDiskVboxImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
-  end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.CreateImageByType ' + E.Message);
-   end;
-  {$ENDIF}
+ if FDriver = nil then Exit;
+ if FRecognizer = nil then Exit;
+ if FController = nil then Exit;
+
+ {Check Image Type}
+ case AImageType of
+  itMEMORY:Result:=TVirtualDiskMemoryImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
+  itFILE:Result:=TVirtualDiskFileImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
+  itDEVICE:Result:=TVirtualDiskDeviceImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
+  itISO:Result:=TVirtualDiskIsoImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
+  itBOCHS:Result:=TVirtualDiskBochsImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
+  itVMWARE:Result:=TVirtualDiskVmwareImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
+  itVPC:Result:=TVirtualDiskVpcImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
+  itVBOX:Result:=TVirtualDiskVboxImage.Create(FDriver,FController,AName,FDriver.GetNextImageNo);
  end;
 end;
 
@@ -9487,6 +9578,8 @@ function TVirtualDiskImager.AcceptImage(AImage:TDiskImage;const AName:String;AIm
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9563,6 +9656,7 @@ begin
    begin
     {Check Image}
     if AImage = nil then Exit;
+    
     {Check Type}
     case AImage.ImageType of
      itMEMORY,itFILE,itDEVICE,itISO,itBOCHS,itVMWARE,itVPC,itVBOX:begin
@@ -9571,14 +9665,9 @@ begin
       end;
     end;
    end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.AcceptImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9590,6 +9679,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9612,14 +9703,9 @@ begin
   finally
    if (Result = 0) and (AImage = nil) then Image.Free;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.CreateImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9631,6 +9717,8 @@ var
 begin
  {}
  Result:=0;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9653,14 +9741,9 @@ begin
   finally
    if (Result = 0) and (AImage = nil) then Image.Free;
   end;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.OpenImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9670,6 +9753,8 @@ function TVirtualDiskImager.CloseImage(AImage:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9684,14 +9769,9 @@ begin
   if not AImage.ImageInit then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.CloseImage ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9701,6 +9781,8 @@ function TVirtualDiskImager.AcceptSnapshot(AImage:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9714,15 +9796,9 @@ begin
      Result:=True;
     end;
   end;
-
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.AcceptSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9732,6 +9808,8 @@ function TVirtualDiskImager.CreateSnapshot(AImage:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9745,14 +9823,9 @@ begin
   if not AImage.CreateSnapshot then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.CreateSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9762,6 +9835,8 @@ function TVirtualDiskImager.DeleteSnapshot(AImage:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9775,14 +9850,9 @@ begin
   if not AImage.DeleteSnapshot then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.DeleteSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9792,6 +9862,8 @@ function TVirtualDiskImager.MergeSnapshot(AImage:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
+ 
+ if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FRecognizer = nil then Exit;
@@ -9805,14 +9877,9 @@ begin
   if not AImage.MergeSnapshot then Exit;
 
   Result:=True;
- except
-  {$IFDEF VIRTUAL_DEBUG}
-  on E: Exception do
-   begin
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('Exception: TVirtualDiskImager.MergeSnapshot ' + E.Message);
-   end;
-  {$ENDIF}
- end;
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -9822,6 +9889,8 @@ constructor TVirtualDiskExtent.Create(AImage:TVirtualDiskImage;ADelta,AParent:TV
 begin
  {}
  inherited Create;
+ FLock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
+
  FImage:=AImage;
  FDelta:=ADelta;
  FParent:=AParent;
@@ -9840,10 +9909,17 @@ end;
 destructor TVirtualDiskExtent.Destroy;
 begin
  {}
- FImage:=nil;
- FDelta:=nil;
- FParent:=nil;
- inherited Destroy;
+ AcquireLock;
+ try
+  FImage:=nil;
+  FDelta:=nil;
+  FParent:=nil;
+  
+  inherited Destroy;
+ finally 
+  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+  MutexDestroy(FLock);
+ end;
 end;
 
 {==============================================================================}
@@ -9851,8 +9927,14 @@ end;
 function TVirtualDiskExtent.GetFilename:String;
 begin
  {}
+ Result:='';
+ 
+ if not AcquireLock then Exit;
+ 
  Result:=FFilename;
  UniqueString(Result);
+ 
+ ReleaseLock;
 end;
 
 {==============================================================================}
@@ -9860,8 +9942,12 @@ end;
 procedure TVirtualDiskExtent.SetFilename(const AFilename:String);
 begin
  {}
+ if not AcquireLock then Exit;
+ 
  FFilename:=AFilename;
  UniqueString(FFilename);
+ 
+ ReleaseLock;
 end;
 
 {==============================================================================}
@@ -9870,14 +9956,32 @@ function TVirtualDiskExtent.GetBlockShiftCount:LongWord;
 begin
  {Base Implementation}
  Result:=0;
+ 
  if FImage = nil then Exit;
  if FBlockSize = 0 then Exit;
  if FImage.SectorSize = 0 then Exit;
+ 
  while (FBlockSize shr Result) > FImage.SectorSize do
   begin
    Inc(Result);
   end;
  if (FBlockSize shr Result) < FImage.SectorSize then Result:=0;
+end;
+
+{==============================================================================}
+
+function TVirtualDiskExtent.AcquireLock:Boolean;
+begin
+ {}
+ Result:=(MutexLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TVirtualDiskExtent.ReleaseLock:Boolean;
+begin
+ {}
+ Result:=(MutexUnlock(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -9958,7 +10062,8 @@ begin
  FFooter:=GetMem(SizeOf(TVpcHardDiskFooter));
  FSparse:=GetMem(SizeOf(TVpcDynamicDiskHeader));
  FTable:=TVirtualDiskVpcTable.Create(AImage,Self);
- FGroups:=TLinkedObjList.Create;
+ FGroups:=TFileSysList.Create;
+ FGroupLocal:=MutexCreate;
 end;
 
 {==============================================================================}
@@ -9966,14 +10071,20 @@ end;
 destructor TVirtualDiskVpcExtent.Destroy;
 begin
  {}
- if FGroups <> nil then FGroups.Free;
- FGroups:=nil;
- if FTable <> nil then FTable.Free;
- FTable:=nil;
- FreeMem(FHeader);
- FreeMem(FFooter);
- FreeMem(FSparse);
- inherited Destroy;
+ AcquireLock;
+ try
+  if FGroups <> nil then FGroups.Free;
+  FGroups:=nil;
+  MutexDestroy(FGroupLocal);
+  if FTable <> nil then FTable.Free;
+  FTable:=nil;
+  FreeMem(FHeader);
+  FreeMem(FFooter);
+  FreeMem(FSparse);
+ finally 
+  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+  inherited Destroy;
+ end; 
 end;
 
 {==============================================================================}
@@ -10002,10 +10113,15 @@ end;
 destructor TVirtualDiskVboxExtent.Destroy;
 begin
  {}
- if FTable <> nil then FTable.Free;
- FTable:=nil;
- FreeMem(FHeader);
- inherited Destroy;
+ AcquireLock;
+ try
+  if FTable <> nil then FTable.Free;
+  FTable:=nil;
+  FreeMem(FHeader);
+ finally 
+  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+  inherited Destroy;
+ end; 
 end;
 
 {==============================================================================}
@@ -10117,7 +10233,8 @@ constructor TVirtualDiskVpcGroup.Create(AImage:TVirtualDiskImage;ATable:TVirtual
 begin
  {}
  inherited Create;
- FBlocks:=TLinkedObjList.Create;
+ FBlocks:=TFileSysList.Create;
+ FBlockLocal:=MutexCreate;
 end;
 
 {==============================================================================}
@@ -10127,6 +10244,7 @@ begin
  {}
  if FBlocks <> nil then FBlocks.Free;
  FBlocks:=nil;
+ MutexDestroy(FBlockLocal);
  inherited Destroy;
 end;
 
@@ -10234,6 +10352,7 @@ var
 begin
  {}
  Result:=nil;
+ 
  {Check Size}
  if ASize > 0 then
   begin
@@ -10265,11 +10384,14 @@ var
 begin
  {}
  Result:=False;
+ 
  if APointer = nil then Exit;
+ 
  {Check Size}
  if ASize > 0 then
   begin
    System.Move(APointer^,AData,ASize);
+   
    {Check Swap}
    if ASwap then
     begin
@@ -10281,6 +10403,7 @@ begin
       end;
     end;
   end;
+  
  Result:=True;
 end;
 
@@ -10297,6 +10420,7 @@ var
 begin
  {}
  Result:='';
+ 
  {Check Size}
  if ASize > 0 then
   begin
@@ -10309,11 +10433,14 @@ begin
      try
       {Get Length}
       Length:=(ASize shr 1);
+      
       {Check Count}
       Count:=Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(Buffer),Length,nil,0,nil,nil);
+      
       {$IFDEF VIRTUAL_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('VirtualDataToString - Size = ' + IntToStr(ASize) + ' Length = ' + IntToStr(Length) + ' Count = ' + IntToStr(Count));
       {$ENDIF}
+      
       if Count <= Length then
        begin
         SetString(Result,nil,Count); {Count does not include null terminator}
@@ -10334,6 +10461,7 @@ begin
      {$IFDEF VIRTUAL_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('VirtualDataToString - Size = ' + IntToStr(ASize));
      {$ENDIF}
+     
      SetString(Result,nil,ASize); {Size does not include null terminator}
      Unicode.OemToCharBuff(PChar(@AData),PChar(Result),ASize);
      {if Byte(Result[ASize]) = 0 then SetLength(Result,ASize - 1);} {Some CDs contain illegal null terminators}
@@ -10374,11 +10502,14 @@ begin
        try
         {Get Length}
         Size:=(ASize shr 1);
+        
         {Check Count}
         Count:=Unicode.MultiByteToWideChar(CP_ACP,0,PChar(AString),Length(AString),nil,0);
+        
         {$IFDEF VIRTUAL_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('VirtualStringToData - Size = ' + IntToStr(ASize) + ' Length = ' + IntToStr(Size) + ' Count = ' + IntToStr(Count));
         {$ENDIF}
+        
         if Count > Size then Exit;
         if Unicode.MultiByteToWideChar(CP_ACP,0,PChar(AString),Length(AString),PWideChar(Buffer),Size) = 0 then Exit;
         if not VirtualPointerToData(Buffer,AData,ASize,True) then Exit;
@@ -10386,6 +10517,7 @@ begin
         FreeMem(Buffer);
        end;
       end;
+      
      Result:=True;
     end
    else
@@ -10393,11 +10525,13 @@ begin
      {$IFDEF VIRTUAL_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('VirtualStringToData - Size = ' + IntToStr(ASize));
      {$ENDIF}
+     
      FillChar(AData,ASize,0);
      if Length(AString) > 0 then
       begin
        Unicode.CharToOemBuff(PChar(AString),PChar(@AData),ASize);
       end;
+      
      Result:=True;
     end;
   end;

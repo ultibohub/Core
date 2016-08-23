@@ -824,7 +824,7 @@ begin
  {Get Board Revision}
  Revision:=RPiBoardGetRevision;
  
- {Check Board Revision} //To Do //See: https://github.com/AndrewFromMelbourne/raspberry_pi_revision
+ {Check Board Revision}
  if (Revision and BCM2835_BOARD_REVISION_ENCODED_FLAG) <> 0 then
   begin
    {New Style Revision}
@@ -1087,7 +1087,7 @@ begin
  if CacheLineSize > BCM2708DMA_ALIGNMENT then BCM2708DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > BCM2708DMA_MULTIPLIER then BCM2708DMA_MULTIPLIER:=CacheLineSize;
  
- BCM2708FRAMEBUFFER_ALIGNEMENT:=SIZE_256;
+ BCM2708FRAMEBUFFER_ALIGNMENT:=SIZE_256;
  BCM2708FRAMEBUFFER_CACHED:=False; {GPU_MEMORY_CACHED} {Always False on RPi}
  
  BCM2708_REGISTER_I2C0:=False; {I2C0 is not available on the header except on original Revision 1 boards}
@@ -1554,34 +1554,46 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPIA,BOARD_TYPE_RPIB:begin
-    {Read current value of GPFSEL} {Moved to new GPIO functions below}
-    (*Value:=GPIORead(RPI_GPIO_ACTLED_GPFSEL);
-    {Mask off relevant bits}
-    Value:=Value and not(RPI_GPIO_ACTLED_GPFMASK shl RPI_GPIO_ACTLED_GPFSHIFT);
-    {Include required bits}
-    Value:=Value or (1 shl RPI_GPIO_ACTLED_GPFSHIFT);
-    {Write new value to GPFSEL} 
-    GPIOFunctionSelectOld(RPI_GPIO_ACTLED_GPFSEL,Value);*)
-    
-    {Disable Pull Up/Down}
-    GPIOPullSelect(GPIO_PIN_16,GPIO_PULL_NONE);
-    {Enable Output}
-    GPIOFunctionSelect(GPIO_PIN_16,GPIO_FUNCTION_OUT);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {Read current value of GPFSEL}
+      Value:=GPIORead(RPI_GPIO_ACTLED_GPFSEL);
+      {Mask off relevant bits}
+      Value:=Value and not(RPI_GPIO_ACTLED_GPFMASK shl RPI_GPIO_ACTLED_GPFSHIFT);
+      {Include required bits}
+      Value:=Value or (1 shl RPI_GPIO_ACTLED_GPFSHIFT);
+      {Write new value to GPFSEL} 
+      GPIOWrite(RPI_GPIO_ACTLED_GPFSEL,Value);
+     end
+    else
+     begin
+      {Disable Pull Up/Down}
+      GPIOPullSelect(GPIO_PIN_16,GPIO_PULL_NONE);
+      {Enable Output}
+      GPIOFunctionSelect(GPIO_PIN_16,GPIO_FUNCTION_OUT);
+     end; 
    end;
   BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI_ZERO:begin
-    {Read current value of GPFSEL} {Moved to new GPIO functions below}
-    (*Value:=GPIORead(RPIPLUS_GPIO_ACTLED_GPFSEL);
-    {Mask off relevant bits}
-    Value:=Value and not(RPIPLUS_GPIO_ACTLED_GPFMASK shl RPIPLUS_GPIO_ACTLED_GPFSHIFT);
-    {Include required bits}
-    Value:=Value or (1 shl RPIPLUS_GPIO_ACTLED_GPFSHIFT);
-    {Write new value to GPFSEL} 
-    GPIOFunctionSelectOld(RPIPLUS_GPIO_ACTLED_GPFSEL,Value);*)
-    
-    {Disable Pull Up/Down}
-    GPIOPullSelect(GPIO_PIN_47,GPIO_PULL_NONE);
-    {Enable Output}
-    GPIOFunctionSelect(GPIO_PIN_47,GPIO_FUNCTION_OUT);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {Read current value of GPFSEL}
+      Value:=GPIORead(RPIPLUS_GPIO_ACTLED_GPFSEL);
+      {Mask off relevant bits}
+      Value:=Value and not(RPIPLUS_GPIO_ACTLED_GPFMASK shl RPIPLUS_GPIO_ACTLED_GPFSHIFT);
+      {Include required bits}
+      Value:=Value or (1 shl RPIPLUS_GPIO_ACTLED_GPFSHIFT);
+      {Write new value to GPFSEL} 
+      GPIOWrite(RPIPLUS_GPIO_ACTLED_GPFSEL,Value);
+     end
+    else
+     begin
+      {Disable Pull Up/Down}
+      GPIOPullSelect(GPIO_PIN_47,GPIO_PULL_NONE);
+      {Enable Output}
+      GPIOFunctionSelect(GPIO_PIN_47,GPIO_FUNCTION_OUT);
+     end; 
    end;
  end;
 end;
@@ -1593,19 +1605,43 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPIA,BOARD_TYPE_RPIB:begin
-    {LED On}
-    {GPIOOutputClearOld(RPI_GPIO_ACTLED_GPCLR,(RPI_GPIO_ACTLED_GPMASK shl RPI_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_16,GPIO_LEVEL_LOW);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED On}
+      GPIOWrite(RPI_GPIO_ACTLED_GPCLR,(RPI_GPIO_ACTLED_GPMASK shl RPI_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED On}
+      GPIOOutputSet(GPIO_PIN_16,GPIO_LEVEL_LOW);
+     end; 
    end;
   BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS:begin
-    {LED On}
-    {GPIOOutputSetOld(RPIPLUS_GPIO_ACTLED_GPSET,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED On}
+      GPIOWrite(RPIPLUS_GPIO_ACTLED_GPSET,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED On}
+      GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
+     end; 
    end;
   BOARD_TYPE_RPI_ZERO:begin
-    {LED On}
-    {GPIOOutputClearOld(RPIPLUS_GPIO_ACTLED_GPCLR,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED On}
+      GPIOWrite(RPIPLUS_GPIO_ACTLED_GPCLR,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED On}
+      GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
+     end; 
    end;  
  end;
 end;
@@ -1617,19 +1653,43 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPIA,BOARD_TYPE_RPIB:begin
-    {LED Off}
-    {GPIOOutputSetOld(RPI_GPIO_ACTLED_GPSET,(RPI_GPIO_ACTLED_GPMASK shl RPI_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_16,GPIO_LEVEL_HIGH);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED Off}
+      GPIOWrite(RPI_GPIO_ACTLED_GPSET,(RPI_GPIO_ACTLED_GPMASK shl RPI_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED Off}
+      GPIOOutputSet(GPIO_PIN_16,GPIO_LEVEL_HIGH);
+     end; 
    end;
   BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS:begin
-    {LED Off}
-    {GPIOOutputClearOld(RPIPLUS_GPIO_ACTLED_GPCLR,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED Off}
+      GPIOWrite(RPIPLUS_GPIO_ACTLED_GPCLR,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED Off}
+      GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
+     end; 
    end;
   BOARD_TYPE_RPI_ZERO:begin
-    {LED Off}
-    {GPIOOutputSetOld(RPIPLUS_GPIO_ACTLED_GPSET,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED Off}
+      GPIOWrite(RPIPLUS_GPIO_ACTLED_GPSET,(RPIPLUS_GPIO_ACTLED_GPMASK shl RPIPLUS_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED Off}
+      GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
+     end; 
    end;  
  end;
 end;
@@ -6537,7 +6597,7 @@ begin
      Tag.Allocate.Header.Tag:=BCM2835_MBOX_TAG_ALLOCATE_BUFFER;
      Tag.Allocate.Header.Size:=SizeOf(TBCM2835MailboxTagAllocateBuffer) - SizeOf(TBCM2835MailboxTagHeader);
      Tag.Allocate.Header.Length:=SizeOf(Tag.Allocate.Request);
-     Tag.Allocate.Request.Alignment:=BCM2708FRAMEBUFFER_ALIGNEMENT;
+     Tag.Allocate.Request.Alignment:=BCM2708FRAMEBUFFER_ALIGNMENT;
      
      {Setup Tag (Pitch)}
      Tag.Pitch.Header.Tag:=BCM2835_MBOX_TAG_GET_PITCH;
@@ -7016,7 +7076,14 @@ begin
   CLOCK_ID_ISP:Result:=BCM2835_MBOX_CLOCK_ID_ISP;
   CLOCK_ID_SDRAM:Result:=BCM2835_MBOX_CLOCK_ID_SDRAM;
   CLOCK_ID_PIXEL:Result:=BCM2835_MBOX_CLOCK_ID_PIXEL;
-  CLOCK_ID_PWM:Result:=BCM2835_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_PWM0:Result:=BCM2835_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_PWM1:Result:=BCM2835_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_I2C0:Result:=BCM2835_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_I2C1:Result:=BCM2835_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_I2C2:Result:=BCM2835_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI0:Result:=BCM2835_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI1:Result:=BCM2835_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI2:Result:=BCM2835_MBOX_CLOCK_ID_CORE;
  end; 
 end;
 

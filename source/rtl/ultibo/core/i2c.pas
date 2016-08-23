@@ -268,6 +268,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure I2CInit;
+{Initialize the I2C unit and I2C device table}
+
+{Note: Called only during system startup}
 begin
  {}
  {Check Initialized}

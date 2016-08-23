@@ -582,10 +582,11 @@ begin
            HD44780WriteChar(PHD44780Console(Console),Chr(PByte(PHD44780Console(Console).Buffer + (CurrentX + ((CurrentY - Count) * Console.Width)))^));
            
            Inc(CurrentX);
-           if CurrentX > X2 then Break;
            
            {Update Cursor}
            PHD44780Console(Console).CursorX:=CurrentX;
+           
+           if CurrentX > X2 then Break;
           end;
           
          if CurrentY = Y2 then Break;
@@ -624,10 +625,11 @@ begin
            HD44780WriteChar(PHD44780Console(Console),Chr(PByte(PHD44780Console(Console).Buffer + (CurrentX + ((CurrentY + Count) * Console.Width)))^));
            
            Inc(CurrentX);
-           if CurrentX > X2 then Break;
            
            {Update Cursor}
            PHD44780Console(Console).CursorX:=CurrentX;
+           
+           if CurrentX > X2 then Break;
           end;
           
          if CurrentY = Y1 then Break;
@@ -673,10 +675,11 @@ begin
             HD44780WriteChar(PHD44780Console(Console),Chr(PByte(PHD44780Console(Console).Buffer + ((CurrentX - Count) + (CurrentY * Console.Width)))^));
             
             Inc(CurrentX);
-            if CurrentX > X2 then Break;
             
             {Update Cursor}
             PHD44780Console(Console).CursorX:=CurrentX - Count;
+            
+            if CurrentX > X2 then Break;
            end;
        
           if CurrentY = Y2 then Break;
@@ -725,10 +728,11 @@ begin
             HD44780WriteChar(PHD44780Console(Console),Chr(PByte(PHD44780Console(Console).Buffer + ((CurrentX + Count) + (CurrentY * Console.Width)))^));
             
             Inc(CurrentX);
-            if CurrentX > X2 then Break;
             
             {Update Cursor}
             PHD44780Console(Console).CursorX:=CurrentX + Count;
+            
+            if CurrentX > X2 then Break;
            end;
        
           if CurrentY = Y2 then Break;
@@ -988,10 +992,11 @@ begin
         HD44780WriteChar(PHD44780Console(Console),Chr(32));
       
         Inc(CurrentX);
-        if CurrentX > X2 then Break;
         
         {Update Cursor}
         PHD44780Console(Console).CursorX:=CurrentX;
+        
+        if CurrentX > X2 then Break;
        end; 
        
       Inc(CurrentY);

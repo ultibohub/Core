@@ -341,6 +341,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure SerialInit;
+{Initialize the Serial unit and Serial device table}
+
+{Note: Called only during system startup}
 var
  WorkInt:LongWord;
  WorkBuffer:String;

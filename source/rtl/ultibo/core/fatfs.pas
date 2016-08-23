@@ -309,6 +309,9 @@ type
    property NumericTail:Boolean read FNumericTail write FNumericTail;
 
    {Public Methods}
+   function RecognizePartitionId(APartitionId:Byte):Boolean; override;
+   function RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; override;
+
    function RecognizePartition(APartition:TDiskPartition):Boolean; override;
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; override;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; override;
@@ -1021,6 +1024,82 @@ end;
 
 {==============================================================================}
 
+function TFATRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+
+  case APartitionId of
+   pidExtended:begin
+     {DOS Extended Partition}
+     Result:=True;
+    end;
+   pidExtLBA:begin
+     {DOS Extended LBA Partition}
+     if not CheckLBA then Exit;
+     
+     Result:=True;
+    end; 
+   pidFAT12:begin
+     {FAT 12 Partition}
+     Result:=True;
+    end; 
+   pidFAT16:begin
+     {FAT 16 Partition (under 32M)}
+     Result:=True;
+    end; 
+   pidFAT16HUGE:begin
+     {FAT 16 Partition (over 32M)}
+     Result:=True;
+    end; 
+   pidFAT32:begin
+     {FAT 32 Partition}
+     if not CheckFAT32 then Exit;
+     
+     Result:=True;
+    end;
+   pidFAT32LBA:begin
+     {FAT 32 Partition LBA}
+     if not CheckLBA then Exit;
+     if not CheckFAT32 then Exit;
+     
+     Result:=True;
+    end;
+   pidFAT16LBA:begin
+     {FAT 16 Partition LBA}
+     if not CheckLBA then Exit;
+     
+     Result:=True;
+    end;
+  end;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TFATRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+
+  Result:=CheckBootSector(ABootSector,AStartSector,ASectorCount);
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
+{==============================================================================}
+
 function TFATRecognizer.RecognizePartition(APartition:TDiskPartition):Boolean;
 {Note: Caller must hold the partition lock}
 begin
@@ -1079,6 +1158,7 @@ begin
     end;
    pidFAT32LBA:begin
      {FAT 32 Partition LBA}
+     if not CheckLBA then Exit;
      if not CheckFAT32 then Exit;
      APartition.Recognized:=True;
      

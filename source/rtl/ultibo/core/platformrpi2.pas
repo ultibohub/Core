@@ -386,9 +386,11 @@ function RPi2CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongW
 function RPi2DMAGetChannels:LongWord;
 
 function RPi2VirtualGPIOInputGet(Pin:LongWord):LongWord; 
-function RPi2VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
-function RPi2VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
+function RPi2VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; 
 function RPi2VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
+{Note: These are to be removed in the next release}
+function RPi2VirtualGPIOOutputSetOld(Pin:LongWord):LongWord; 
+function RPi2VirtualGPIOOutputClearOld(Pin:LongWord):LongWord; 
 
 {==============================================================================}
 {RPi2 Thread Functions}
@@ -772,8 +774,10 @@ begin
  {Register Platform Virtual GPIO Handlers}
  VirtualGPIOInputGetHandler:=RPi2VirtualGPIOInputGet;
  VirtualGPIOOutputSetHandler:=RPi2VirtualGPIOOutputSet;
- VirtualGPIOOutputClearHandler:=RPi2VirtualGPIOOutputClear;
  VirtualGPIOFunctionSelectHandler:=RPi2VirtualGPIOFunctionSelect;
+ {Note: These are to be removed in the next release}
+ VirtualGPIOOutputSetOldHandler:=RPi2VirtualGPIOOutputSetOld;
+ VirtualGPIOOutputClearOldHandler:=RPi2VirtualGPIOOutputClearOld;
  
  {Register Threads SchedulerInit Handler}
  SchedulerInitHandler:=RPi2SchedulerInit;
@@ -1482,7 +1486,7 @@ begin
  if CacheLineSize > BCM2709DMA_ALIGNMENT then BCM2709DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > BCM2709DMA_MULTIPLIER then BCM2709DMA_MULTIPLIER:=CacheLineSize;
  
- BCM2709FRAMEBUFFER_ALIGNEMENT:=SIZE_256;
+ BCM2709FRAMEBUFFER_ALIGNMENT:=SIZE_256;
  BCM2709FRAMEBUFFER_CACHED:=GPU_MEMORY_CACHED;
  
  BCM2709_REGISTER_I2C0:=False; {I2C0 is not available on the header except on original Revision 1 boards}
@@ -1943,19 +1947,25 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
-    {Read current value of GPFSEL} {Moved to new GPIO functions below}
-    (*Value:=GPIORead(RPI2_GPIO_ACTLED_GPFSEL);
-    {Mask off relevant bits}
-    Value:=Value and not(RPI2_GPIO_ACTLED_GPFMASK shl RPI2_GPIO_ACTLED_GPFSHIFT);
-    {Include required bits}
-    Value:=Value or (1 shl RPI2_GPIO_ACTLED_GPFSHIFT);
-    {Write new value to GPFSEL} 
-    GPIOFunctionSelectOld(RPI2_GPIO_ACTLED_GPFSEL,Value);*)
-    
-    {Disable Pull Up/Down}
-    GPIOPullSelect(GPIO_PIN_47,GPIO_PULL_NONE);
-    {Enable Output}
-    GPIOFunctionSelect(GPIO_PIN_47,GPIO_FUNCTION_OUT);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {Read current value of GPFSEL}
+      Value:=GPIORead(RPI2_GPIO_ACTLED_GPFSEL);
+      {Mask off relevant bits}
+      Value:=Value and not(RPI2_GPIO_ACTLED_GPFMASK shl RPI2_GPIO_ACTLED_GPFSHIFT);
+      {Include required bits}
+      Value:=Value or (1 shl RPI2_GPIO_ACTLED_GPFSHIFT);
+      {Write new value to GPFSEL} 
+      GPIOWrite(RPI2_GPIO_ACTLED_GPFSEL,Value);
+     end
+    else
+     begin
+      {Disable Pull Up/Down}
+      GPIOPullSelect(GPIO_PIN_47,GPIO_PULL_NONE);
+      {Enable Output}
+      GPIOFunctionSelect(GPIO_PIN_47,GPIO_FUNCTION_OUT);
+     end; 
    end;
   BOARD_TYPE_RPI3B:begin 
     {Virtual GPIO}
@@ -1971,13 +1981,21 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
-    {LED On}
-    {GPIOOutputSetOld(RPI2_GPIO_ACTLED_GPSET,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED On}
+      GPIOWrite(RPI2_GPIO_ACTLED_GPSET,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED On}
+      GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
+     end; 
    end;
   BOARD_TYPE_RPI3B:begin 
     {LED On}
-    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0);
+    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_HIGH);
    end;
  end;
 end;
@@ -1989,13 +2007,21 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B:begin
-    {LED Off}
-    {GPIOOutputClearOld(RPI2_GPIO_ACTLED_GPCLR,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));} {Moved to new GPIO functions below}
-    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
+    {Check Available}
+    if not GPIOAvailable then
+     begin
+      {LED Off}
+      GPIOWrite(RPI2_GPIO_ACTLED_GPCLR,(RPI2_GPIO_ACTLED_GPMASK shl RPI2_GPIO_ACTLED_GPSHIFT));
+     end
+    else
+     begin
+      {LED Off}
+      GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
+     end; 
    end;
   BOARD_TYPE_RPI3B:begin 
     {LED Off}
-    VirtualGPIOOutputClear(VIRTUAL_GPIO_PIN_0);
+    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_LOW);
    end;
  end;
 end;
@@ -6784,7 +6810,7 @@ var
  Address:LongWord;
 begin
  {}
- Result:=0;
+ Result:=GPIO_LEVEL_UNKNOWN;
  
  {Check Pin}
  if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
@@ -6809,7 +6835,105 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOOutputSet(Pin:LongWord):LongWord; 
+function RPi2VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; 
+var
+ Address:LongWord;
+ Enable:Word;
+ Disable:Word;
+ Difference:SmallInt;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Pin}
+ if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
+ 
+ {Check Level}
+ if Level > GPIO_LEVEL_HIGH then Exit;
+ 
+ {Check Address}
+ if VirtualGPIOBuffer.Address = 0 then
+  begin
+   {Get Buffer}
+   if RPi2VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
+   
+   {Update Address}
+   VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
+  end;
+ 
+ {Check Address}
+ if VirtualGPIOBuffer.Address > 0 then
+  begin
+   {Get Enable/Disable counts}
+   Enable:=VirtualGPIOBuffer.EnableDisable[Pin] shr 16;
+   Disable:=VirtualGPIOBuffer.EnableDisable[Pin] shr 0;
+   
+   {Get Difference}
+   Difference:=Enable - Disable;
+   
+   {Check Level}
+   if Level = GPIO_LEVEL_HIGH then
+    begin
+     {Check State}
+     if Difference <= 0 then
+      begin
+       {Pin is Clear}
+       Inc(Enable);
+       
+       {Set Enable/Disable counts}
+       VirtualGPIOBuffer.EnableDisable[Pin]:=(Enable shl 16) or (Disable shl 0);
+       
+       {Write Value}
+       PLongWord(VirtualGPIOBuffer.Address + (Pin * SizeOf(LongWord)))^:=VirtualGPIOBuffer.EnableDisable[Pin];
+       
+       {Clean Cache}
+       CleanDataCacheRange(VirtualGPIOBuffer.Address,BCM2837_VIRTUAL_GPIO_PIN_COUNT * SizeOf(LongWord));
+      end;
+    end
+   else
+    begin
+     {Check State}
+     if Difference > 0 then
+      begin
+       {Pin is Set}
+       Inc(Disable);
+       
+       {Set Enable/Disable counts}
+       VirtualGPIOBuffer.EnableDisable[Pin]:=(Enable shl 16) or (Disable shl 0);
+       
+       {Write Value}
+       PLongWord(VirtualGPIOBuffer.Address + (Pin * SizeOf(LongWord)))^:=VirtualGPIOBuffer.EnableDisable[Pin];
+     
+       {Clean Cache}
+       CleanDataCacheRange(VirtualGPIOBuffer.Address,BCM2837_VIRTUAL_GPIO_PIN_COUNT * SizeOf(LongWord));
+      end;
+    end;
+    
+   Result:=ERROR_SUCCESS; 
+  end;
+end;
+
+{==============================================================================}
+
+function RPi2VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Pin}
+ if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
+
+ {Check Mode}
+ case Mode of
+  VIRTUAL_GPIO_FUNCTION_OUT:begin
+    Result:=ERROR_SUCCESS; 
+   end;
+ end;
+end;
+
+{==============================================================================}
+{Note: These are to be removed in the next release}
+function RPi2VirtualGPIOOutputSetOld(Pin:LongWord):LongWord; 
 var
  Address:LongWord;
  Enable:Word;
@@ -6864,7 +6988,7 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOOutputClear(Pin:LongWord):LongWord; 
+function RPi2VirtualGPIOOutputClearOld(Pin:LongWord):LongWord; 
 var
  Address:LongWord;
  Enable:Word;
@@ -6915,24 +7039,6 @@ begin
     
    Result:=ERROR_SUCCESS; 
   end;
-end;
-
-{==============================================================================}
-
-function RPi2VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Pin}
- if Pin >= BCM2837_VIRTUAL_GPIO_PIN_COUNT then Exit;
-
- {Check Mode}
- case Mode of
-  VIRTUAL_GPIO_FUNCTION_OUT:begin
-    Result:=ERROR_SUCCESS; 
-   end;
- end;
 end;
 
 {==============================================================================}
@@ -7664,7 +7770,7 @@ begin
      Tag.Allocate.Header.Tag:=BCM2836_MBOX_TAG_ALLOCATE_BUFFER;
      Tag.Allocate.Header.Size:=SizeOf(TBCM2836MailboxTagAllocateBuffer) - SizeOf(TBCM2836MailboxTagHeader);
      Tag.Allocate.Header.Length:=SizeOf(Tag.Allocate.Request);
-     Tag.Allocate.Request.Alignment:=BCM2709FRAMEBUFFER_ALIGNEMENT;
+     Tag.Allocate.Request.Alignment:=BCM2709FRAMEBUFFER_ALIGNMENT;
      
      {Setup Tag (Pitch)}
      Tag.Pitch.Header.Tag:=BCM2836_MBOX_TAG_GET_PITCH;
@@ -8153,7 +8259,14 @@ begin
   CLOCK_ID_ISP:Result:=BCM2836_MBOX_CLOCK_ID_ISP;
   CLOCK_ID_SDRAM:Result:=BCM2836_MBOX_CLOCK_ID_SDRAM;
   CLOCK_ID_PIXEL:Result:=BCM2836_MBOX_CLOCK_ID_PIXEL;
-  CLOCK_ID_PWM:Result:=BCM2836_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_PWM0:Result:=BCM2836_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_PWM1:Result:=BCM2836_MBOX_CLOCK_ID_PWM;
+  CLOCK_ID_I2C0:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_I2C1:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_I2C2:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI0:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI1:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_SPI2:Result:=BCM2836_MBOX_CLOCK_ID_CORE;
  end; 
 end;
 

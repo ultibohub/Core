@@ -152,6 +152,9 @@ type
    property DefaultSecurity:Boolean read FDefaultSecurity write FDefaultSecurity;
 
    {Public Methods}
+   function RecognizePartitionId(APartitionId:Byte):Boolean; override;
+   function RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; override;
+   
    function RecognizePartition(APartition:TDiskPartition):Boolean; override;
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; override;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; override;
@@ -967,6 +970,57 @@ begin
  Result:='NTFS';
 end;
 
+{==============================================================================}
+
+function TNTFSRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+
+  case APartitionId of
+   pidExtended:begin
+     {DOS Extended Partition}
+     Result:=True;
+    end;
+   pidExtLBA:begin
+     {DOS Extended LBA Partition}
+     if not CheckLBA then Exit;
+  
+     Result:=True;
+    end;
+   pidHPFSNTFS:begin
+     {NTFS or HPFS Partition}
+     if not CheckNTFS then Exit;
+     
+     Result:=True;
+    end;
+  end;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+  
+function TNTFSRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+  
+  Result:=CheckBootSector(ABootSector,AStartSector,ASectorCount);
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
 {==============================================================================}
 
 function TNTFSRecognizer.RecognizePartition(APartition:TDiskPartition):Boolean;

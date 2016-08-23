@@ -40,6 +40,8 @@ Credits
    Linux - \drivers\spi\spi-bcm2835.c - Copyright (C) 2015 Martin Sperl and others
    Linux - \drivers\spi\spi-bcm2835aux.c - Copyright (C) 2015 Martin Sperl
  
+   Linux - \drivers\pwm\pwm-bcm2835.c - Copyright (C) 2014 Bart Tanghe
+ 
 References
 ==========
 
@@ -76,7 +78,8 @@ BCM2710 Devices
   I2C Slave
   SPI Slave
   DMA
-  PWM
+  PWM0
+  PWM1
   PCM
   GPIO
   UART0
@@ -116,6 +119,8 @@ BCM2710 I2C0/1 Device
  By default BSC0 can appear on GPIO pins 0 and 1 (Alternate function 0), 28 and 29 (Alternate function 0) or 44 and 45 (Alternate
  function 1). Unfortunately on all except the Revision 1 models none of these pins are available on the 26 or 40 pin header.
  
+ Note: On the Raspberry Pi A+/B+/Zero/2B/3B the ID EEPROM pins on the 40 pin header are actually connected to GPIO 0 and 1 (BSC0)
+ 
  Device BSC1 can appear on GPIO pins 2 and 3 (Alternate function 0) or 44 and 45 (Alternate function 2) but only pins 2 and 3 are
  exposed on the 26 or 40 pin header.
  
@@ -149,8 +154,21 @@ BCM2710 DMA Device
  Channel 0 and 15 are Bulk channels which have an additional FIFO for faster transfers (8 beat burst per read)
 
 
-BCM2710 PWM Device
-==================
+BCM2710 PWM0/1 Device
+=====================
+
+ The BCM2710 has a single PWM controller with 2 independent output bit streams with multiple algorithms for generating the output
+ pulse. The PWM controller supports either a single data register (independent per channel) or a 16 x 32 FIFO which also supports
+ DMA mode transmission.
+ 
+ On the Raspberry Pi PWM0 and PWM1 are also connected via GPIO pins 40 and 45 (40 and 41 on the Raspberry Pi 3B) to the audio circuit
+ and allow playback of digital audio signals via the 3 or 4 pole line jack (depending on model).
+
+ PWM0 is available on GPIO pins 12 (function 0), 18 (function 5), 40 (function 0) and 52 (function 1).
+ PWM1 is available on GPIO pins 13 (function 0), 19 (function 5), 41, 45 (function 0) and 53 (function 1).
+ 
+ On the Raspberry Pi A and B only pin 18 is exposed on the 26 pin header.
+ On the Raspberry Pi A+/B+/Zero/2B/3B pins 12, 18 and 19 are exposed on the 40 pin header.
 
 
 BCM2710 PCM Device
@@ -254,7 +272,7 @@ unit BCM2710;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi3{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,MMC,Framebuffer,SysUtils; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi3{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,MMC,Framebuffer,Audio,SysUtils; 
 
 {==============================================================================}
 {Global definitions}
@@ -336,13 +354,21 @@ const
  BCM2710_DMA_MAX_Y_COUNT  = $3FFF;               {Maximum number of X length transfers in 2D stride}
  BCM2710_DMA_MAX_X_LENGTH = $FFFF;               {Maximum X transfer length in 2D stride}
  
- BCM2710_DMA_CB_ALIGNMENT = 32;                  {Alignement required for DMA control blocks}
+ BCM2710_DMA_CB_ALIGNMENT = 32;                  {Alignment required for DMA control blocks}
  
  BCM2710_DMA_LITE_BURST_LENGTH = 1;              {Burst length for DMA Lite channels}
  BCM2710_DMA_NORMAL_BURST_LENGTH = 2;            {Burst length for normal channels}
  BCM2710_DMA_BULK_BURST_LENGTH = 8;              {Burst length for DMA Bulk channels}
  
  {BCM2710 PWM constants}
+ BCM2710_PWM_MIN_PERIOD = 108;          {Default based on 19.2MHz PWM clock (Oscillator source)}
+ BCM2710_PWM_DEFAULT_CLOCK = 19200000;  {Default to the 19.2MHz oscillator clock}
+ 
+ {BCM2710 PWM0 constants}
+ BCM2710_PWM0_DESCRIPTION = 'BCM2837 PWM0';
+
+ {BCM2710 PWM1 constants}
+ BCM2710_PWM1_DESCRIPTION = 'BCM2837 PWM1';
  
  {BCM2710 PCM constants}
  
@@ -535,6 +561,30 @@ type
  end;
  
  {BCM2710 PWM types}
+ PBCM2710PWMDevice = ^TBCM2710PWMDevice;
+ PBCM2710PWMAudio = ^TBCM2710PWMAudio;
+ 
+ TBCM2710PWMDevice = record
+  {PWM Properties}
+  PWM:TPWMDevice;
+  {BCM2710 Properties}
+  Address:Pointer;                 {Device register base address}
+  Channel:LongWord;                {Channel for this device}
+  Scaler:LongWord;                 {Scaler for Duty cycle and Period}
+  Pair:PBCM2710PWMDevice;          {The paired PWM device for the other channel}
+  {Audio Properties}
+  Audio:PBCM2710PWMAudio;          {The associated PWM Audio device}
+ end; 
+
+ TBCM2710PWMAudio = record
+  {Audio Properties}
+  Audio:TAudioDevice;
+  {BCM2710 Properties}
+  //To Do 
+  {PWM Properties}
+  PWM0:PBCM2710PWMDevice;          {The PWM device for channel 0}
+  PWM1:PBCM2710PWMDevice;          {The PWM device for channel 1}
+ end;
  
  {BCM2710 PCM types}
  
@@ -711,7 +761,24 @@ function BCM2710DMAPeripheralToDREQ(Peripheral:LongWord):LongWord;
 procedure BCM2710DMADataToControlBlock(Request:PDMARequest;Data:PDMAData;Block:PBCM2837DMAControlBlock;Bulk,Lite:Boolean);
 
 {==============================================================================}
-{BCM2710 PWM Functions}
+{BCM2710 PWM0/1 Functions}
+function BCM2710PWMStart(PWM:PPWMDevice):LongWord; 
+function BCM2710PWMStop(PWM:PPWMDevice):LongWord; 
+
+function BCM2710PWMWrite(PWM:PPWMDevice;Value:LongWord):LongWord; 
+ 
+function BCM2710PWMSetGPIO(PWM:PPWMDevice;GPIO:LongWord):LongWord;
+function BCM2710PWMResetGPIO(PWM:PPWMDevice;GPIO:LongWord):LongWord;
+function BCM2710PWMSetMode(PWM:PPWMDevice;Mode:LongWord):LongWord;
+function BCM2710PWMSetRange(PWM:PPWMDevice;Range:LongWord):LongWord;
+function BCM2710PWMSetFrequency(PWM:PPWMDevice;Frequency:LongWord):LongWord;
+function BCM2710PWMSetPolarity(PWM:PPWMDevice;Polarity:LongWord):LongWord;
+
+function BCM2710PWMConfigure(PWM:PPWMDevice;DutyNS,PeriodNS:LongWord):LongWord;
+
+function BCM2710PWMClockStart(PWM:PPWMDevice;Frequency:LongWord):LongWord; 
+function BCM2710PWMClockStop(PWM:PPWMDevice):LongWord; 
+function BCM2710PWMClockEnabled(PWM:PPWMDevice):Boolean;
 
 {==============================================================================}
 {BCM2710 PCM Functions}
@@ -845,6 +912,8 @@ var
  BCM2710SPI0:PBCM2710SPI0Device;
  BCM2710I2C0:PBCM2710BSCI2CDevice;
  BCM2710I2C1:PBCM2710BSCI2CDevice;
+ BCM2710PWM0:PBCM2710PWMDevice;
+ BCM2710PWM1:PBCM2710PWMDevice;
  BCM2710UART0:PBCM2710UART0Device;
  
  BCM2710Clock:PBCM2710Clock;
@@ -984,12 +1053,6 @@ begin
     begin
      if DMA_LOG_ENABLED then DMALogError(nil,'BCM2710: Failed to create new DMA host');
     end;
-  end;
-  
- {Create PWM}
- if BCM2710_REGISTER_PWM then
-  begin
-   //To Do
   end;
   
  {Create PCM}
@@ -1215,6 +1278,125 @@ begin
     begin
      if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2710: Failed to create new I2C1 device');
     end; 
+  end;
+  
+ {Create PWM0}
+ if BCM2710_REGISTER_PWM then
+  begin
+   BCM2710PWM0:=PBCM2710PWMDevice(PWMDeviceCreateEx(SizeOf(TBCM2710PWMDevice)));
+   if BCM2710PWM0 <> nil then
+    begin
+     {Update PWM0}
+     {Device}
+     BCM2710PWM0.PWM.Device.DeviceBus:=DEVICE_BUS_MMIO;
+     BCM2710PWM0.PWM.Device.DeviceType:=PWM_TYPE_NONE;
+     BCM2710PWM0.PWM.Device.DeviceFlags:=PWM_FLAG_GPIO or PWM_FLAG_MODE or PWM_FLAG_RANGE or PWM_FLAG_FREQUENCY or PWM_FLAG_POLARITY;
+     BCM2710PWM0.PWM.Device.DeviceData:=nil;
+     BCM2710PWM0.PWM.Device.DeviceDescription:=BCM2710_PWM0_DESCRIPTION;
+     {PWM}
+     BCM2710PWM0.PWM.PWMState:=PWM_STATE_DISABLED;
+     BCM2710PWM0.PWM.DeviceStart:=BCM2710PWMStart;
+     BCM2710PWM0.PWM.DeviceStop:=BCM2710PWMStop;
+     BCM2710PWM0.PWM.DeviceWrite:=BCM2710PWMWrite;
+     BCM2710PWM0.PWM.DeviceSetGPIO:=BCM2710PWMSetGPIO;
+     BCM2710PWM0.PWM.DeviceSetMode:=BCM2710PWMSetMode;
+     BCM2710PWM0.PWM.DeviceSetRange:=BCM2710PWMSetRange;
+     BCM2710PWM0.PWM.DeviceSetFrequency:=BCM2710PWMSetFrequency;
+     BCM2710PWM0.PWM.DeviceSetPolarity:=BCM2710PWMSetPolarity;
+     BCM2710PWM0.PWM.DeviceConfigure:=BCM2710PWMConfigure;
+     {Driver}
+     BCM2710PWM0.PWM.Properties.Flags:=BCM2710PWM0.PWM.Device.DeviceFlags;
+     BCM2710PWM0.PWM.Properties.GPIO:=GPIO_PIN_UNKNOWN;
+     BCM2710PWM0.PWM.Properties.Mode:=PWM_MODE_MARKSPACE;
+     BCM2710PWM0.PWM.Properties.Range:=0;
+     BCM2710PWM0.PWM.Properties.Frequency:=0;
+     BCM2710PWM0.PWM.Properties.Polarity:=PWM_POLARITY_NORMAL;
+     BCM2710PWM0.PWM.Properties.DutyNS:=0;
+     BCM2710PWM0.PWM.Properties.PeriodNS:=0;
+     BCM2710PWM0.PWM.Properties.MinPeriod:=BCM2710_PWM_MIN_PERIOD;
+     {BCM2710}
+     BCM2710PWM0.Address:=Pointer(BCM2837_PWM_REGS_BASE);
+     BCM2710PWM0.Channel:=0; {PWM0 (PWM Channel 1)}
+     
+     {Register PWM0}
+     Status:=PWMDeviceRegister(@BCM2710PWM0.PWM);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if PWM_LOG_ENABLED then PWMLogError(nil,'BCM2710: Failed to register new PWM0 device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if PWM_LOG_ENABLED then PWMLogError(nil,'BCM2710: Failed to create new PWM0 device');
+    end; 
+  end;
+
+ {Create PWM1}
+ if BCM2710_REGISTER_PWM then
+  begin
+   BCM2710PWM1:=PBCM2710PWMDevice(PWMDeviceCreateEx(SizeOf(TBCM2710PWMDevice)));
+   if BCM2710PWM1 <> nil then
+    begin
+     {Update PWM1}
+     {Device}
+     BCM2710PWM1.PWM.Device.DeviceBus:=DEVICE_BUS_MMIO;
+     BCM2710PWM1.PWM.Device.DeviceType:=PWM_TYPE_NONE;
+     BCM2710PWM1.PWM.Device.DeviceFlags:=PWM_FLAG_GPIO or PWM_FLAG_MODE or PWM_FLAG_RANGE or PWM_FLAG_FREQUENCY or PWM_FLAG_POLARITY;
+     BCM2710PWM1.PWM.Device.DeviceData:=nil;
+     BCM2710PWM1.PWM.Device.DeviceDescription:=BCM2710_PWM1_DESCRIPTION;
+     {PWM}
+     BCM2710PWM1.PWM.PWMState:=PWM_STATE_DISABLED;
+     BCM2710PWM1.PWM.DeviceStart:=BCM2710PWMStart;
+     BCM2710PWM1.PWM.DeviceStop:=BCM2710PWMStop;
+     BCM2710PWM1.PWM.DeviceWrite:=BCM2710PWMWrite;
+     BCM2710PWM1.PWM.DeviceSetGPIO:=BCM2710PWMSetGPIO;
+     BCM2710PWM1.PWM.DeviceSetMode:=BCM2710PWMSetMode;
+     BCM2710PWM1.PWM.DeviceSetRange:=BCM2710PWMSetRange;
+     BCM2710PWM1.PWM.DeviceSetFrequency:=BCM2710PWMSetFrequency;
+     BCM2710PWM1.PWM.DeviceSetPolarity:=BCM2710PWMSetPolarity;
+     BCM2710PWM1.PWM.DeviceConfigure:=BCM2710PWMConfigure;
+     {Driver}
+     BCM2710PWM1.PWM.Properties.Flags:=BCM2710PWM1.PWM.Device.DeviceFlags;
+     BCM2710PWM1.PWM.Properties.GPIO:=GPIO_PIN_UNKNOWN;
+     BCM2710PWM1.PWM.Properties.Mode:=PWM_MODE_MARKSPACE;
+     BCM2710PWM1.PWM.Properties.Range:=0;
+     BCM2710PWM1.PWM.Properties.Frequency:=0;
+     BCM2710PWM1.PWM.Properties.Polarity:=PWM_POLARITY_NORMAL;
+     BCM2710PWM1.PWM.Properties.DutyNS:=0;
+     BCM2710PWM1.PWM.Properties.PeriodNS:=0;
+     BCM2710PWM1.PWM.Properties.MinPeriod:=BCM2710_PWM_MIN_PERIOD;
+     {BCM2710}
+     BCM2710PWM1.Address:=Pointer(BCM2837_PWM_REGS_BASE);
+     BCM2710PWM1.Channel:=1; {PWM1 (PWM Channel 2)}
+     BCM2710PWM1.Pair:=BCM2710PWM0;
+     
+     {Update PWM0 (Pair)}
+     if BCM2710PWM0 <> nil then
+      begin
+       BCM2710PWM0.Pair:=BCM2710PWM1;
+      end;
+      
+     {Register PWM1}
+     Status:=PWMDeviceRegister(@BCM2710PWM1.PWM);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if PWM_LOG_ENABLED then PWMLogError(nil,'BCM2710: Failed to register new PWM1 device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if PWM_LOG_ENABLED then PWMLogError(nil,'BCM2710: Failed to create new PWM1 device');
+    end; 
+  end;
+  
+ {Create PWM Audio}
+ if BCM2710_REGISTER_PWMAUDIO then
+  begin
+   //To Do
+   
+   //To Do //BCM2710PWM0.Audio:=
+   //To Do //BCM2710PWM1.Audio:=
+   //To Do //BCM2710PWMAudio.PWM0/PWM1:=
   end;
   
  {Create UART0}
@@ -4049,7 +4231,861 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{BCM2710 PWM Functions}
+{BCM2710 PWM0/1 Functions}
+function BCM2710PWMStart(PWM:PPWMDevice):LongWord; 
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Start');
+ {$ENDIF}
+ 
+ {Check Settings}
+ if PWM.Range = 0 then Exit;
+ if PWM.Frequency = 0 then Exit;
+ 
+ {Check GPIO}
+ if PWM.GPIO = GPIO_PIN_UNKNOWN then
+  begin
+   {Check Channel}
+   case PBCM2710PWMDevice(PWM).Channel of
+    0:begin
+      {Set GPIO 18}
+      if BCM2710PWMSetGPIO(PWM,GPIO_PIN_18) <> ERROR_SUCCESS then Exit;
+     end; 
+    1:begin
+      {Set GPIO 19}
+      if BCM2710PWMSetGPIO(PWM,GPIO_PIN_19) <> ERROR_SUCCESS then Exit;
+     end;
+    else
+     begin
+      Exit;
+     end;   
+   end;   
+  end;
+  
+ {Start Clock}
+ if BCM2710PWMClockStart(PWM,PWM.Frequency) <> ERROR_SUCCESS then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Enable PWEN}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL or BCM2837_PWM_CTL_PWEN1;
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Enable PWEN}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL or BCM2837_PWM_CTL_PWEN2;
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  CTL=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  STA=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).STA,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  RNG1=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG1,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  DAT1=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT1,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  RNG2=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG2,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  DAT2=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT2,8));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMStop(PWM:PPWMDevice):LongWord; 
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Stop');
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Disable PWEN}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_PWEN1);
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Disable PWEN}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_PWEN2);
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+ 
+ {Stop Clock}
+ if BCM2710PWMClockStop(PWM) <> ERROR_SUCCESS then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  CTL=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  STA=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).STA,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  RNG1=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG1,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  DAT1=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT1,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  RNG2=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG2,8));
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  DAT2=' + IntToHex(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT2,8));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMWrite(PWM:PPWMDevice;Value:LongWord):LongWord; 
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Write (Value=' + IntToHex(Value,4) + ')');
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Set Data}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT1:=Value;
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Set Data}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT2:=Value;
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+ 
+function BCM2710PWMSetGPIO(PWM:PPWMDevice;GPIO:LongWord):LongWord;
+var
+ BoardType:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Set GPIO (GPIO=' + IntToStr(GPIO) + ')');
+ {$ENDIF}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Check GPIO}
+    case GPIO of
+     GPIO_PIN_12,GPIO_PIN_40:begin
+       {Function Select 0}
+       GPIOFunctionSelect(GPIO,GPIO_FUNCTION_ALT0);
+      end;
+     GPIO_PIN_18:begin
+       {Function Select 5}
+       GPIOFunctionSelect(GPIO,GPIO_FUNCTION_ALT5);
+      end;
+     GPIO_PIN_52:begin
+       {Do Not Set}
+       Exit;
+      end;
+     else
+      begin
+       Exit;
+      end;      
+    end; 
+    
+    {Reset GPIO}
+    if GPIO <> GPIO_PIN_12 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_12);
+    if GPIO <> GPIO_PIN_40 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_40);
+    if GPIO <> GPIO_PIN_18 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_18);
+    {if GPIO <> GPIO_PIN_52 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_52);}
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Get Board Type}
+    BoardType:=BoardGetType;
+    
+    {Check GPIO}
+    case GPIO of
+     GPIO_PIN_13:begin
+       {Function Select 0}
+       GPIOFunctionSelect(GPIO,GPIO_FUNCTION_ALT0);
+      end;
+     GPIO_PIN_41:begin
+       {Check Board Type}
+       case BoardType of
+        BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI2B,BOARD_TYPE_RPI_ZERO:begin
+          {Do Not Set}
+          Exit;
+         end;
+        else
+         begin        
+          {Function Select 0}
+          GPIOFunctionSelect(GPIO,GPIO_FUNCTION_ALT0);
+         end; 
+       end;  
+      end;
+     GPIO_PIN_45:begin
+       {Check Board Type}
+       case BoardType of
+        BOARD_TYPE_RPI3B:begin
+          {Do Not Set}
+          Exit;
+         end;
+        else 
+         begin
+          {Function Select 0}
+          GPIOFunctionSelect(GPIO,GPIO_FUNCTION_ALT0);
+         end;
+       end;
+      end;
+     GPIO_PIN_19:begin
+       {Function Select 5}
+       GPIOFunctionSelect(GPIO,GPIO_FUNCTION_ALT5);
+      end;
+     GPIO_PIN_53:begin
+       {Do Not Set}
+       Exit;
+      end;
+     else
+      begin
+       Exit;
+      end;      
+    end; 
+    
+    {Reset GPIO}
+    if GPIO <> GPIO_PIN_13 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_13);
+    if GPIO <> GPIO_PIN_41 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_41);
+    if GPIO <> GPIO_PIN_45 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_45);
+    if GPIO <> GPIO_PIN_19 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_19);
+    {if GPIO <> GPIO_PIN_53 then BCM2710PWMResetGPIO(PWM,GPIO_PIN_53);}
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+ 
+ {Update Properties}
+ PWM.GPIO:=GPIO;
+ PWM.Properties.GPIO:=GPIO;
+
+ {Delay} 
+ MicrosecondDelay(110);
+  
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMResetGPIO(PWM:PPWMDevice;GPIO:LongWord):LongWord;
+var
+ BoardType:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Reset GPIO (GPIO=' + IntToStr(GPIO) + ')');
+ {$ENDIF}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Check GPIO}
+    case GPIO of
+     GPIO_PIN_12,GPIO_PIN_18:begin 
+       {Function Select IN}
+       GPIOFunctionSelect(GPIO,GPIO_FUNCTION_IN);
+      end;
+     GPIO_PIN_40:begin 
+       {Function Select IN}
+       GPIOFunctionSelect(GPIO,GPIO_FUNCTION_IN);
+      end;
+     GPIO_PIN_52:begin
+       {Do Not Reset}
+      end;
+     else
+      begin
+       Exit;
+      end;      
+    end; 
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Get Board Type}
+    BoardType:=BoardGetType;
+
+    {Check GPIO}
+    case GPIO of
+     GPIO_PIN_13,GPIO_PIN_19:begin
+       {Function Select IN}
+       GPIOFunctionSelect(GPIO,GPIO_FUNCTION_IN);
+      end;
+     GPIO_PIN_41:begin
+       {Check Board Type}
+       case BoardType of
+        BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI2B,BOARD_TYPE_RPI_ZERO:begin
+          {Do Not Reset}
+         end;
+        else
+         begin        
+          {Function Select IN}
+          GPIOFunctionSelect(GPIO,GPIO_FUNCTION_IN);
+         end;
+       end;
+      end; 
+     GPIO_PIN_45:begin
+       {Check Board Type}
+       case BoardType of
+        BOARD_TYPE_RPI3B:begin
+          {Do Not Reset}
+         end;
+        else 
+         begin
+          {Function Select IN}
+          GPIOFunctionSelect(GPIO,GPIO_FUNCTION_IN);
+         end;
+       end;
+      end;
+     GPIO_PIN_53:begin
+       {Do Not Reset}
+      end;
+     else
+      begin
+       Exit;
+      end;      
+    end; 
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+    
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+    
+{==============================================================================}
+
+function BCM2710PWMSetMode(PWM:PPWMDevice;Mode:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Set Mode (Mode=' + IntToStr(Mode) + ')');
+ {$ENDIF}
+ 
+ {Check Mode}
+ if Mode > PWM_MODE_SERIALIZED then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Check Mode}
+    case Mode of
+     PWM_MODE_MARKSPACE:begin
+       {Mark Space (Enable MSEN)}
+       PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_MODE1)) or BCM2837_PWM_CTL_MSEN1;
+      end;
+     PWM_MODE_BALANCED:begin
+       {Balanced (Disable MSEN / MODE)}
+       PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_MODE1 or BCM2837_PWM_CTL_MSEN1));
+      end;
+     PWM_MODE_SERIALIZED:begin
+       {Serialized (Enable MODE)}
+       PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_MSEN1)) or BCM2837_PWM_CTL_MODE1;
+      end;
+    end;
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    case Mode of
+     PWM_MODE_MARKSPACE:begin
+       {Mark Space (Enable MSEN)}
+       PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_MODE2)) or BCM2837_PWM_CTL_MSEN2;
+      end;
+     PWM_MODE_BALANCED:begin
+       {Balanced (Disable MSEN / MODE)}
+       PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_MODE2 or BCM2837_PWM_CTL_MSEN2));
+      end;
+     PWM_MODE_SERIALIZED:begin
+       {Serialized (Enable MODE)}
+       PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=(PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_MSEN2)) or BCM2837_PWM_CTL_MODE2;
+      end;
+    end;
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ PWM.Mode:=Mode;
+ PWM.Properties.Mode:=Mode;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMSetRange(PWM:PPWMDevice;Range:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Set Range (Range=' + IntToStr(Range) + ')');
+ {$ENDIF}
+ 
+ {Check Range}
+ if Range = 0 then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Set Range}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG1:=Range;
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Set Range}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG2:=Range;
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+ 
+ {Update Properties}
+ PWM.Range:=Range;
+ PWM.Properties.Range:=Range;
+ 
+ {Delay}
+ {MicrosecondDelay(10);}
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMSetFrequency(PWM:PPWMDevice;Frequency:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Set Frequency (Frequency=' + IntToStr(Frequency) + ')');
+ {$ENDIF}
+ 
+ {Check Frequency}
+ if Frequency = 0 then Exit;
+ 
+ {Check Pair}
+ if PBCM2710PWMDevice(PWM).Pair <> nil then
+  begin
+   {Check Enabled}
+   if PBCM2710PWMDevice(PWM).Pair.PWM.PWMState = PWM_STATE_ENABLED then Exit;
+  end;
+  
+ {Stop Clock}
+ if BCM2710PWMClockStop(PWM) <> ERROR_SUCCESS then Exit;
+ 
+ {Check Enabled}
+ if PWM.PWMState = PWM_STATE_ENABLED then
+  begin
+   {Start Clock}
+   if BCM2710PWMClockStart(PWM,Frequency) <> ERROR_SUCCESS then Exit;
+  end; 
+ 
+ {Update Scaler}
+ PBCM2710PWMDevice(PWM).Scaler:=NANOSECONDS_PER_SECOND div Frequency;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  Scaler=' + IntToStr(PBCM2710PWMDevice(PWM).Scaler));
+ {$ENDIF}
+ 
+ {Update Properties}
+ PWM.Frequency:=Frequency;
+ PWM.Properties.Frequency:=Frequency;
+ 
+ {Check Pair}
+ if PBCM2710PWMDevice(PWM).Pair <> nil then
+  begin
+   {Update Scaler}
+   PBCM2710PWMDevice(PWM).Pair.Scaler:=NANOSECONDS_PER_SECOND div Frequency;
+   
+   {Update Properties}
+   PBCM2710PWMDevice(PWM).Pair.PWM.Frequency:=Frequency;
+   PBCM2710PWMDevice(PWM).Pair.PWM.Properties.Frequency:=Frequency;
+  end;
+  
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMSetPolarity(PWM:PPWMDevice;Polarity:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Set Polarity (Polarity=' + IntToStr(Polarity) + ')');
+ {$ENDIF}
+ 
+ {Check Polarity}
+ if Polarity > PWM_POLARITY_INVERSE then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Check Polarity}
+    if Polarity = PWM_POLARITY_INVERSE then
+     begin
+      {Inverse (Enable POLA)}
+      PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL or BCM2837_PWM_CTL_POLA1;
+     end
+    else
+     begin
+      {Normal (Disable POLA)}
+      PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_POLA1);
+     end;
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Check Polarity}
+    if Polarity = PWM_POLARITY_INVERSE then
+     begin
+      {Inverse (Enable POLA)}
+      PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL or BCM2837_PWM_CTL_POLA2;
+     end
+    else
+     begin
+      {Normal (Disable POLA)}
+      PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL:=PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).CTL and not(BCM2837_PWM_CTL_POLA2);
+     end;
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+    
+ {Update Properties}
+ PWM.Polarity:=Polarity;
+ PWM.Properties.Polarity:=Polarity;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMConfigure(PWM:PPWMDevice;DutyNS,PeriodNS:LongWord):LongWord;
+var
+ Data:LongWord;
+ Range:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Configure (DutyNS=' + IntToStr(DutyNS) + ' PeriodNS=' + IntToStr(PeriodNS) + ')');
+ {$ENDIF}
+ 
+ {Check Period}
+ if PeriodNS <= PWM.Properties.MinPeriod then Exit;
+ 
+ {Check Scaler}
+ if PBCM2710PWMDevice(PWM).Scaler = 0 then Exit;
+ 
+ {Get Data}
+ Data:=DutyNS div PBCM2710PWMDevice(PWM).Scaler;
+
+ {Get Range}
+ Range:=PeriodNS div PBCM2710PWMDevice(PWM).Scaler;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Channel}
+ case PBCM2710PWMDevice(PWM).Channel of
+  0:begin
+    {PWM0 (PWM Channel 1)}
+    {Set Data}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT1:=Data;
+
+    {Set Range}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG1:=Range;
+   end;
+  1:begin
+    {PWM1 (PWM Channel 2)}
+    {Set Data}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).DAT2:=Data;
+    
+    {Set Range}
+    PBCM2837PWMRegisters(PBCM2710PWMDevice(PWM).Address).RNG2:=Range;
+   end;
+  else
+   begin
+    Exit;
+   end;   
+ end;
+ 
+ {Update Properties}
+ PWM.Range:=Range;
+ PWM.DutyNS:=DutyNS;
+ PWM.PeriodNS:=PeriodNS;
+ PWM.Properties.Range:=Range;
+ PWM.Properties.DutyNS:=DutyNS;
+ PWM.Properties.PeriodNS:=PeriodNS;
+ 
+ {Delay}
+ {MicrosecondDelay(10);}
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMClockStart(PWM:PPWMDevice;Frequency:LongWord):LongWord; 
+var
+ DivisorI:LongWord;
+ DivisorR:LongWord;
+ DivisorF:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Clock Start');
+ {$ENDIF}
+ 
+ {Check Frequency} 
+ if Frequency = 0 then Exit;
+
+ {Check Enabled}
+ if not BCM2710PWMClockEnabled(PWM) then
+  begin
+   {Get Divisors}
+   DivisorI:=BCM2710_PWM_DEFAULT_CLOCK div Frequency;
+   DivisorR:=BCM2710_PWM_DEFAULT_CLOCK mod Frequency;
+   DivisorF:=Trunc((DivisorR * 4096) / BCM2710_PWM_DEFAULT_CLOCK);
+   
+   if DivisorI > 4095 then DivisorI:=4095;
+  
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+  
+   {Set Dividers}
+   PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMDIV)^:=BCM2837_CM_PASSWORD or (DivisorI shl 12) or DivisorF;
+   {Delay}
+   MicrosecondDelay(10);
+  
+   {Set Source}   
+   PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^:=BCM2837_CM_PASSWORD or BCM2837_CM_CTL_SRC_OSC;
+   {Delay}
+   MicrosecondDelay(10);
+  
+   {Start Clock}   
+   PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^:=BCM2837_CM_PASSWORD or PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^ or BCM2837_CM_CTL_ENAB;
+   {Delay}
+   MicrosecondDelay(110);
+   
+   {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+   if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  DivisorI=' + IntToStr(DivisorI));
+   if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  DivisorF=' + IntToStr(DivisorF));
+   if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  PWMCTL=' + IntToHex(PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^,8));
+   if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  PWMDIV=' + IntToHex(PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMDIV)^,8));
+   {$ENDIF}
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+  end;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;  
+end; 
+ 
+{==============================================================================}
+
+function BCM2710PWMClockStop(PWM:PPWMDevice):LongWord; 
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Clock Stop');
+ {$ENDIF}
+
+ {Check Pair}
+ if PBCM2710PWMDevice(PWM).Pair <> nil then
+  begin
+   {Check Enabled}
+   if PBCM2710PWMDevice(PWM).Pair.PWM.PWMState = PWM_STATE_ENABLED then
+    begin
+     {Return Result}
+     Result:=ERROR_SUCCESS;  
+     Exit;
+    end; 
+  end;
+ 
+ {Check Enabled}
+ if BCM2710PWMClockEnabled(PWM) then
+  begin
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+  
+   {Stop the Clock}
+   PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^:=BCM2837_CM_PASSWORD or (PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^ and not(BCM2837_CM_CTL_ENAB));
+   {Delay}
+   MicrosecondDelay(110);
+   
+   {Wait for not Busy}
+   while (PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^ and BCM2837_CM_CTL_BUSY) <> 0 do
+    begin
+     {Delay}
+     MicrosecondDelay(1);
+    end;
+    
+   {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+   if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  PWMCTL=' + IntToHex(PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^,8));
+   if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  PWMDIV=' + IntToHex(PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMDIV)^,8));
+   {$ENDIF}
+    
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+  end;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;  
+end; 
+
+{==============================================================================}
+
+function BCM2710PWMClockEnabled(PWM:PPWMDevice):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check PWM}
+ if PWM = nil then Exit;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710: PWM Clock Enabled');
+ {$ENDIF}
+ 
+ {Check Clock}
+ if (PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^ and BCM2837_CM_CTL_ENAB) <> 0 then
+  begin
+   {Return Result}
+   Result:=True;
+  end;
+ 
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(PWM_DEBUG)}
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2710:  PWMCTL=' + IntToHex(PLongWord(BCM2837_CM_REGS_BASE + BCM2837_CM_PWMCTL)^,8));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end; 
 
 {==============================================================================}
 {==============================================================================}
@@ -7048,7 +8084,7 @@ begin
      Tag.Allocate.Header.Tag:=BCM2837_MBOX_TAG_ALLOCATE_BUFFER;
      Tag.Allocate.Header.Size:=SizeOf(TBCM2837MailboxTagAllocateBuffer) - SizeOf(TBCM2837MailboxTagHeader);
      Tag.Allocate.Header.Length:=SizeOf(Tag.Allocate.Request);
-     Tag.Allocate.Request.Alignment:=BCM2710FRAMEBUFFER_ALIGNEMENT;
+     Tag.Allocate.Request.Alignment:=BCM2710FRAMEBUFFER_ALIGNMENT;
      
      {Setup Tag (Pitch)}
      Tag.Pitch.Header.Tag:=BCM2837_MBOX_TAG_GET_PITCH;
