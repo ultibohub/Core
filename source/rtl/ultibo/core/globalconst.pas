@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '23/8/2016';
+ ULTIBO_RELEASE_DATE             = '6/9/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.127';
+ ULTIBO_RELEASE_VERSION          = '1.2.147';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 127;
+ ULTIBO_RELEASE_VERSION_REVISION = 147;
  
 {==============================================================================}
 const
@@ -1355,6 +1355,9 @@ const
 
 {==============================================================================}
 const
+ {SPI Protocol constants}
+ //To Do //Continuing
+ 
  {SPI Mode constants}
  SPI_MODE_4WIRE = 0;
  SPI_MODE_3WIRE = 1;
@@ -1583,6 +1586,9 @@ const
  LOGGING_FACILITY_UART       = 30; {UART log messages}
  LOGGING_FACILITY_AUDIO      = 31; {Audio log messages}
  LOGGING_FACILITY_1WIRE      = 32; {1-Wire log messages}
+ LOGGING_FACILITY_TOUCH      = 33; {Touch log messages}
+ LOGGING_FACILITY_VIDEO      = 34; {Video log messages}
+ LOGGING_FACILITY_CODEC      = 35; {Codec log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 

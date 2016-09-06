@@ -206,14 +206,14 @@ ULTIBO_FONTS=Latin1_8x8 \
              Latin1_8x14 \
              Sun_12x22
              
-ULTIBO_EXTRAS=consoleshell \
-              remoteshell \
-              shellfilesystem \
-              shellupdate \
-              webstatus \
-              wiringi2c \
-              wiringserial \
-              wiringspi
+ULTIBO_EXTRAS=ConsoleShell \
+              RemoteShell \
+              ShellFilesystem \
+              ShellUpdate \
+              WebStatus \
+              WiringI2C \
+              WiringSerial \
+              WiringSPI
               
 ULTIBO_CPU_UNITS=
 ULTIBO_CPU_EXTRAS=
@@ -268,7 +268,7 @@ override ULTIBO_UNITS+=bcm2835 \
                        platformarmv6 \
                        platformrpi
 ULTIBO_CPU_UNITS=bootrpi
-ULTIBO_CPU_EXTRAS=raspberrypi
+ULTIBO_CPU_EXTRAS=RaspberryPi
 endif
 ifeq ($(SUBARCH),armv7a)
 CPU_UNITS=
@@ -302,8 +302,8 @@ ULTIBO_CPU_UNITS=bootrpi2 \
                  bootodroidu3 \
                  bootodroidxu3 \
                  bootpcduino
-ULTIBO_CPU_EXTRAS=raspberrypi2 \
-                  raspberrypi3
+ULTIBO_CPU_EXTRAS=RaspberryPi2 \
+                  RaspberryPi3
 endif
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
