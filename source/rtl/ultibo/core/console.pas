@@ -75,7 +75,7 @@ const
  CONSOLE_FLAG_DMA_BOX         = $00000002; {Use DMA to draw boxes (Where applicable)}
  CONSOLE_FLAG_DMA_LINE        = $00000004; {Use DMA to draw lines (Where applicable)}
  CONSOLE_FLAG_DMA_FILL        = $00000008; {Use DMA to fill blocks (Where applicable)}
- CONSOLE_FLAG_DMA_CLEAR       = $00000010; {Use DMA to clear blocks (Where applicable)}
+ CONSOLE_FLAG_DMA_CLEAR       = $00000010; {Use DMA to clear blocks (Where applicable)} 
  CONSOLE_FLAG_DMA_SCROLL      = $00000020; {Use DMA to scroll blocks (Where applicable)}
  CONSOLE_FLAG_SINGLE_WINDOW   = $00000040; {Console supports only one window (Not multiple)}
  CONSOLE_FLAG_HARDWARE_CURSOR = $00000080; {Console supports a hardware cursor}
@@ -87,6 +87,10 @@ const
  CONSOLE_FLAG_FONT            = $00002000; {Console supports fonts} 
  CONSOLE_FLAG_FULLSCREEN      = $00004000; {Console supports creating a fullscreen window}
  CONSOLE_FLAG_AUTO_SCROLL     = $00008000; {Automatically scroll up on reaching the last line}
+ CONSOLE_FLAG_DMA_TEXT        = $00010000; {Use DMA to draw text (Where applicable)}
+ CONSOLE_FLAG_COLOR_REVERSE   = $00020000; {Console requires colors to be reversed for underlying hardware}
+ 
+ CONSOLE_FLAG_DMA_MASK = CONSOLE_FLAG_DMA_BOX or CONSOLE_FLAG_DMA_LINE or CONSOLE_FLAG_DMA_FILL or CONSOLE_FLAG_DMA_CLEAR or CONSOLE_FLAG_DMA_SCROLL or CONSOLE_FLAG_DMA_TEXT;
  
  {Console Device Modes}
  CONSOLE_MODE_NONE      = 0;
@@ -300,10 +304,12 @@ type
   DesktopHeight:LongWord;                        {Desktop Height} {Console Relative (Pixels)}
   DesktopOffset:LongWord;                        {Desktop Offset}
   DesktopColor:LongWord;                         {Desktop Color}
+  {Buffer Properties}
+  LineBuffer:Pointer;                            {Buffer for device reads and writes (Size of one line)}
   {DMA Properties}
-  FillSize:LongWord;                             {Size of the DMA fill buffer (From DMAAllocateBufferEx)}
-  FillBuffer:Pointer;                            {Buffer for DMA memory fills}
-  ScrollBuffer:Pointer;                          {Buffer for DMA scroll right (Overlapped)}
+  //FillSize:LongWord;                             {Size of the DMA fill buffer (From DMAAllocateBufferEx)}  //To Do //Remove
+  //FillBuffer:Pointer;                            {Buffer for DMA memory fills}                             //To Do //Remove
+  //ScrollBuffer:Pointer;                          {Buffer for DMA scroll right (Overlapped)}                //To Do //Remove
  end;
  
 {==============================================================================}
@@ -492,19 +498,28 @@ function FramebufferConsoleOpen(Console:PConsoleDevice):LongWord;
 function FramebufferConsoleClose(Console:PConsoleDevice):LongWord;
 
 function FramebufferConsoleClear(Console:PConsoleDevice;Color:LongWord):LongWord;
+//function FramebufferConsoleClearOld(Console:PConsoleDevice;Color:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleScroll(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord;
+//function FramebufferConsoleScrollOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord; //To Do //Remove
 
 function FramebufferConsoleDrawBox(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+//function FramebufferConsoleDrawBoxOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleDrawLine(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+//function FramebufferConsoleDrawLineOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;
+//function FramebufferConsoleDrawCharOld(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleDrawText(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
+//function FramebufferConsoleDrawTextOld(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleDrawPixel(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
+//function FramebufferConsoleDrawPixelOld(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
+//function FramebufferConsoleDrawBlockOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
 function FramebufferConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
 function FramebufferConsoleDrawDesktop(Console:PConsoleDevice):LongWord;
 
 function FramebufferConsoleGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+//function FramebufferConsoleGetPixelOld(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord; //To Do //Remove
 function FramebufferConsoleGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
  
 function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
@@ -694,6 +709,7 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceClear(Console:PConsoleDevice;Color:LongWord):LongWord;
+{Note: Color must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -736,6 +752,7 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceDrawBox(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+{Note: Color must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -761,6 +778,7 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceDrawLine(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+{Note: Color must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -786,6 +804,7 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;
+{Note: Forecolor and Backcolor must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -807,6 +826,7 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceDrawText(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
+{Note: Forecolor and Backcolor must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -828,6 +848,7 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceDrawPixel(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
+{Note: Color must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -853,6 +874,7 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
+{Note: Color must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -874,6 +896,8 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+//To Do //Continuing
+{Skip: The number of pixels to skip in the buffer after each row (Optional)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -920,6 +944,7 @@ end;
 {==============================================================================}
  
 function ConsoleDeviceGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+{Note: Color is returned in the default color format (See COLOR_FORMAT_DEFAULT)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -945,6 +970,8 @@ end;
 {==============================================================================}
 
 function ConsoleDeviceGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+//To Do //Continuing
+{Skip: The number of pixels to skip in the buffer after each row (Optional)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -4244,7 +4271,7 @@ end;
 
 function ConsoleWindowScrollLeft(Handle:TWindowHandle;Row,Col,Lines,Chars:LongWord):LongWord;
 {Row is the starting row (Y) for the scroll left, all rows from Row down to Row + Lines will be scrolled left}
-{Lines is the number of rows to the scroll left, all rows from Row down to Row + Lines will be scrolled left}
+{Lines is the number of rows to scroll left, all rows from Row down to Row + Lines will be scrolled left}
 {Col is the starting column (X) for the scroll left, all cols from left plus Chars to Col with be scrolled left}
 {Chars is the number of characters to scroll left, Chars number of columnss at the left will be discarded}
 {The starting Col will be blanked with the background color}
@@ -4333,7 +4360,7 @@ end;
 
 function ConsoleWindowScrollRight(Handle:TWindowHandle;Row,Col,Lines,Chars:LongWord):LongWord;
 {Row is the starting row (Y) for the scroll right, all rows from Row down to Row + Lines will be scrolled right}
-{Lines is the number of rows to the scroll right, all rows from Row down to Row + Lines will be scrolled right}
+{Lines is the number of rows to scroll right, all rows from Row down to Row + Lines will be scrolled right}
 {Col is the starting column (X) for the scroll right, all rows from right minus Chars to Col will be scrolled right}
 {Chars is the number of characters to scroll right, Chars number of columns at the right will be discarded}
 {The starting Col will be blanked with the background color}
@@ -5751,6 +5778,8 @@ end;
 {==============================================================================}
 {Framebuffer Console Functions}
 function FramebufferConsoleOpen(Console:PConsoleDevice):LongWord;
+{Implementation of ConsoleDeviceOpen API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceOpen instead}
 var
  Framebuffer:PFramebufferDevice;
  Properties:TFramebufferProperties;
@@ -5821,6 +5850,8 @@ end;
 {==============================================================================}
 
 function FramebufferConsoleClose(Console:PConsoleDevice):LongWord;
+{Implementation of ConsoleDeviceClose API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceClose instead}
 var
  Framebuffer:PFramebufferDevice;
 begin
@@ -5856,18 +5887,31 @@ begin
     PFramebufferConsole(Console).DesktopY:=0;
     PFramebufferConsole(Console).DesktopWidth:=0;
     PFramebufferConsole(Console).DesktopHeight:=0;
-    {DMA}
-    if PFramebufferConsole(Console).FillBuffer <> nil then
+    {Buffer}
+    if PFramebufferConsole(Console).LineBuffer <> nil then
+     begin
+      if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_MASK) <> 0) and (DMAAvailable) then
+       begin
+        DMAReleaseBuffer(PFramebufferConsole(Console).LineBuffer);
+       end
+      else
+       begin
+        FreeMem(PFramebufferConsole(Console).LineBuffer);
+       end;
+      PFramebufferConsole(Console).LineBuffer:=nil;
+     end;
+    {DMA} //To Do //Remove
+    (*if PFramebufferConsole(Console).FillBuffer <> nil then 
      begin
       DMAReleaseBuffer(PFramebufferConsole(Console).FillBuffer);
       PFramebufferConsole(Console).FillSize:=0;
       PFramebufferConsole(Console).FillBuffer:=nil;
      end;
-    if PFramebufferConsole(Console).ScrollBuffer <> nil then
+    if PFramebufferConsole(Console).ScrollBuffer <> nil then 
      begin
       DMAReleaseBuffer(PFramebufferConsole(Console).ScrollBuffer);
       PFramebufferConsole(Console).ScrollBuffer:=nil;
-     end;
+     end;*)
      
     {Update Statistics}
     Inc(Console.CloseCount);
@@ -5887,6 +5931,66 @@ end;
 {==============================================================================}
 
 function FramebufferConsoleClear(Console:PConsoleDevice;Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceClear API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceClear instead}
+var
+ Flags:LongWord;
+ ColorFormat:LongWord;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Color}
+ if Color = COLOR_NONE then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+    
+    {Get Flags}
+    Flags:=FRAMEBUFFER_TRANSFER_NONE;
+    if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_CLEAR) <> 0 then
+     begin
+      Flags:=FRAMEBUFFER_TRANSFER_DMA;
+     end;
+     
+    {Get Color}
+    ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
+    
+    {Framebuffer Fill}
+    Result:=FramebufferDeviceFillRect(Framebuffer,0,0,Console.Width,Console.Height,ColorFormat,Flags);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Statistics}
+    Inc(Console.ClearCount);
+    
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleClearOld(Console:PConsoleDevice;Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceClear API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceClear instead}
 var
  Data:TDMAData;
  Count:LongWord;
@@ -6004,11 +6108,113 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleScroll(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord;
+{Implementation of ConsoleDeviceScroll API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceScroll instead}
+var
+ Flags:LongWord;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check X1, Y1, X2, Y2 (Must be a line or box)}
+ if X1 > X2 then Exit;
+ if Y1 > Y2 then Exit;
+ if (X1 = X2) and (Y1 = Y2) then Exit; {This would be a pixel}
+ 
+ {Check Count}
+ if Count < 1 then Exit;
+ 
+ {Check Direction}
+ if Direction > CONSOLE_DIRECTION_RIGHT then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X1, Y1, X2, Y2}
+    if X1 >= Console.Width then Exit;
+    if Y1 >= Console.Height then Exit;
+    if X2 >= Console.Width then Exit;
+    if Y2 >= Console.Height then Exit;
+ 
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+
+    {Get Flags}
+    Flags:=FRAMEBUFFER_TRANSFER_NONE;
+    if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_SCROLL) <> 0 then
+     begin
+      Flags:=FRAMEBUFFER_TRANSFER_DMA;
+     end;
+    
+    {Check Direction}
+    case Direction of
+     CONSOLE_DIRECTION_UP:begin
+       {Check Count}
+       if Count > Y1 then Exit;
+    
+       {Framebuffer Copy}
+       Result:=FramebufferDeviceCopyRect(Framebuffer,X1,Y1,X1,(Y1 - Count),((X2 - X1) + 1),((Y2 - Y1) + 1),Flags);
+       if Result <> ERROR_SUCCESS then Exit;
+      end;
+     CONSOLE_DIRECTION_DOWN:begin
+       {Check Count}
+       if (Y2 + Count) >= Console.Height then Exit;
+    
+       {Framebuffer Copy}
+       Result:=FramebufferDeviceCopyRect(Framebuffer,X1,Y1,X1,(Y1 + Count),((X2 - X1) + 1),((Y2 - Y1) + 1),Flags);
+       if Result <> ERROR_SUCCESS then Exit;
+      end;
+     CONSOLE_DIRECTION_LEFT:begin
+       {Check Count}
+       if Count > X1 then Exit;
+
+       {Framebuffer Copy}
+       Result:=FramebufferDeviceCopyRect(Framebuffer,X1,Y1,(X1 - Count),Y1,((X2 - X1) + 1),((Y2 - Y1) + 1),Flags);
+       if Result <> ERROR_SUCCESS then Exit;
+      end;
+     CONSOLE_DIRECTION_RIGHT:begin
+       {Check Count}
+       if (X2 + Count) >= Console.Width then Exit;
+      
+       {Framebuffer Copy}
+       Result:=FramebufferDeviceCopyRect(Framebuffer,X1,Y1,(X1 + Count),Y1,((X2 - X1) + 1),((Y2 - Y1) + 1),Flags);
+       if Result <> ERROR_SUCCESS then Exit;
+      end;
+    end;
+          
+    {Update Statistics}
+    Inc(Console.ScrollCount);
+     
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleScrollOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord; 
+{Implementation of ConsoleDeviceScroll API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceScroll instead}
 var
  Data:TDMAData;
  Next:PDMAData;
@@ -6369,11 +6575,105 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleDrawBox(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawBox API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawBox instead}
+var
+ Flags:LongWord;
+ ColorFormat:LongWord;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check X1, Y1, X2, Y2 (Must be a box}
+ if X1 >= X2 then Exit;
+ if Y1 >= Y2 then Exit;
+ 
+ {Check Color}
+ if Color = COLOR_NONE then Exit;
+ 
+ {Check Width}
+ if Width < 1 then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X1, Y1, X2, Y2}
+    if X1 >= Console.Width then Exit;
+    if Y1 >= Console.Height then Exit;
+    if X2 >= Console.Width then Exit;
+    if Y2 >= Console.Height then Exit;
+
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+
+    {Get Flags}
+    Flags:=FRAMEBUFFER_TRANSFER_NONE;
+    if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_BOX) <> 0 then
+     begin
+      Flags:=FRAMEBUFFER_TRANSFER_DMA;
+     end;
+    
+    {Get Color}
+    ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
+    
+    {Lock Framebuffer}
+    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+    
+    {Draw Top}
+    Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,((X2 - X1) + 1),Width,ColorFormat,Flags);
+    if Result = ERROR_SUCCESS then
+     begin
+      {Draw Bottom}
+      Result:=FramebufferDeviceFillRect(Framebuffer,X1,((Y2 - Width) + 1),((X2 - X1) + 1),Width,ColorFormat,Flags);
+      if Result = ERROR_SUCCESS then
+       begin
+        {Draw Left}
+        Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,Width,((Y2 - Y1) + 1),ColorFormat,Flags);
+        if Result = ERROR_SUCCESS then
+         begin
+          {Draw Right}
+          Result:=FramebufferDeviceFillRect(Framebuffer,((X2 - Width) + 1),Y1,Width,((Y2 - Y1) + 1),ColorFormat,Flags);
+         end;
+       end;
+     end;
+    
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock); 
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Statistics}
+    Inc(Console.DrawCount);
+    
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleDrawBoxOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawBox API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawBox instead}
 var
  Size:LongWord;
  Count:LongWord;
@@ -6587,11 +6887,96 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleDrawLine(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawLine API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawLine instead}
+var
+ Flags:LongWord;
+ ColorFormat:LongWord;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check X1, Y1, X2, Y2 (Must be a line)}
+ if X1 > X2 then Exit;
+ if Y1 > Y2 then Exit;
+ if (X1 = X2) and (Y1 = Y2) then Exit;   {This would be a pixel}
+ if (X1 <> X2) and (Y1 <> Y2) then Exit; {This would be a box}
+ 
+ {Check Color}
+ if Color = COLOR_NONE then Exit;
+ 
+ {Check Width}
+ if Width < 1 then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X1, Y1, X2, Y2}
+    if X1 >= Console.Width then Exit;
+    if Y1 >= Console.Height then Exit;
+    if X2 >= Console.Width then Exit;
+    if Y2 >= Console.Height then Exit;
+
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+
+    {Get Flags}
+    Flags:=FRAMEBUFFER_TRANSFER_NONE;
+    if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_LINE) <> 0 then
+     begin
+      Flags:=FRAMEBUFFER_TRANSFER_DMA;
+     end;
+    
+    {Get Color}
+    ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
+    
+    {Get Direction}
+    if X1 = X2 then
+     begin
+      {Vertical}
+      Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,Width,((Y2 - Y1) + 1),ColorFormat,Flags);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else if Y1 = Y2 then 
+     begin
+      {Horizontal}
+      Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,((X2 - X1) + 1),Width,ColorFormat,Flags);
+      if Result <> ERROR_SUCCESS then Exit;
+     end;
+    
+    {Update Statistics}
+    Inc(Console.DrawCount);
+    
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleDrawLineOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawLine API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawLine instead}
 var
  Size:LongWord;
  Data:TDMAData;
@@ -6821,11 +7206,155 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawChar API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawChar instead}
+var
+ Row:LongWord;
+ Column:LongWord;
+ Buffer:Pointer;
+ Offset:LongWord;
+ Character:LongWord;
+
+ Flags:LongWord;
+ Bytes:LongWord;
+ Reverse:Boolean;
+ Font:PFontEntry;
+ Framebuffer:PFramebufferDevice;
+ Properties:TFramebufferProperties;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check Colors}
+ if Forecolor = COLOR_NONE then Exit;
+ if Backcolor = COLOR_NONE then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Get Font}
+    Font:=PFontEntry(Handle);
+    if Font = nil then Exit;
+    if Font.Signature <> FONT_SIGNATURE then Exit;
+
+    {Check X, Y}
+    if X >= Console.Width then Exit;
+    if Y >= Console.Height then Exit;
+    if X + Font.CharWidth > Console.Width then Exit;
+    if Y + Font.CharHeight > Console.Height then Exit;
+    
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+
+    {Get Flags}
+    Flags:=FRAMEBUFFER_TRANSFER_NONE;
+    if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_TEXT) <> 0 then
+     begin
+      Flags:=FRAMEBUFFER_TRANSFER_DMA;
+     end;
+    
+    {Get Bytes}
+    Bytes:=ColorFormatToBytes(Console.Format);
+    if Bytes = 0 then Exit;
+    
+    {Get Reverse}
+    Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
+    
+    {Check Buffer}
+    if PFramebufferConsole(Console).LineBuffer = nil then
+     begin
+      {Get Properties}
+      if FramebufferDeviceGetProperties(Framebuffer,@Properties) <> ERROR_SUCCESS then Exit;
+      
+      {Check DMA}
+      if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_MASK) <> 0) and (DMAAvailable) then
+       begin
+        PFramebufferConsole(Console).LineBuffer:=DMAAllocateBuffer(Properties.Pitch);
+       end
+      else
+       begin
+        PFramebufferConsole(Console).LineBuffer:=GetMem(Properties.Pitch);
+       end; 
+     end; 
+    {Get Buffer}
+    Buffer:=PFramebufferConsole(Console).LineBuffer;
+    if Buffer = nil then Exit;
+    
+    {Lock Framebuffer}
+    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+    
+    {Set Result}
+    Result:=ERROR_SUCCESS;
+    
+    {Get Rows}
+    for Row:=0 to Font.CharHeight - 1 do
+     begin
+      {Get Character}
+      Character:=0;
+      case Font.CharWidth of
+       8:Character:=PFontChars8(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
+       9..16:Character:=PFontChars16(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
+       17..32:Character:=PFontChars32(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
+      end;
+       
+      {Map Character}
+      Offset:=(Font.CharWidth - 1) * Bytes;
+      for Column:=Font.CharWidth - 1 downto 0 do
+       begin
+        if (Character and $01) = $01 then
+         begin
+          ColorDefaultToFormat(Console.Format,Forecolor,Pointer(Buffer + Offset),Reverse);
+         end
+        else
+         begin
+          ColorDefaultToFormat(Console.Format,Backcolor,Pointer(Buffer + Offset),Reverse);
+         end;  
+        
+        Dec(Offset,Bytes);
+        Character:=Character shr 1;
+       end;
+       
+      {Framebuffer Write}
+      Result:=FramebufferDeviceWrite(Framebuffer,X,Y + Row,Buffer,Font.CharWidth,Flags);
+      if Result <> ERROR_SUCCESS then Break;
+     end;
+    
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Statistics}
+    Inc(Console.DrawCount);
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleDrawCharOld(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord; 
+{Implementation of ConsoleDeviceDrawChar API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawChar instead}
 var
  Row:LongWord;
  Column:LongWord;
@@ -6946,11 +7475,170 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleDrawText(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawText API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawText instead}
+var
+ Row:LongWord;
+ Count:LongWord;
+ Column:LongWord;
+ Buffer:Pointer;
+ Offset:LongWord;
+ Character:LongWord;
+
+ Flags:LongWord;
+ Bytes:LongWord;
+ Reverse:Boolean;
+ Font:PFontEntry;
+ Framebuffer:PFramebufferDevice;
+ Properties:TFramebufferProperties;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check Text}
+ if Length(Text) = 0 then Exit;
+ 
+ {Check Colors}
+ if Forecolor = COLOR_NONE then Exit;
+ if Backcolor = COLOR_NONE then Exit;
+ 
+ {Check Length}
+ if Len < 1 then Exit;
+ if Len > Length(Text) then Len:=Length(Text);
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Get Font}
+    Font:=PFontEntry(Handle);
+    if Font = nil then Exit;
+    if Font.Signature <> FONT_SIGNATURE then Exit;
+    
+    {Check X, Y}
+    if X >= Console.Width then Exit;
+    if Y >= Console.Height then Exit;
+    if X + (Font.CharWidth * Len) > Console.Width then Exit;
+    if Y + Font.CharHeight > Console.Height then Exit;
+    
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+    
+    {Get Flags}
+    Flags:=FRAMEBUFFER_TRANSFER_NONE;
+    if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_TEXT) <> 0 then
+     begin
+      Flags:=FRAMEBUFFER_TRANSFER_DMA;
+     end;
+    
+    {Get Bytes}
+    Bytes:=ColorFormatToBytes(Console.Format);
+    if Bytes = 0 then Exit;
+    
+    {Get Reverse}
+    Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
+    
+    {Check Buffer}
+    if PFramebufferConsole(Console).LineBuffer = nil then
+     begin
+      {Get Properties}
+      if FramebufferDeviceGetProperties(Framebuffer,@Properties) <> ERROR_SUCCESS then Exit;
+      
+      {Check DMA}
+      if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_MASK) <> 0) and (DMAAvailable) then
+       begin
+        PFramebufferConsole(Console).LineBuffer:=DMAAllocateBuffer(Properties.Pitch);
+       end
+      else
+       begin
+        PFramebufferConsole(Console).LineBuffer:=GetMem(Properties.Pitch);
+       end; 
+     end; 
+    {Get Buffer}
+    Buffer:=PFramebufferConsole(Console).LineBuffer;
+    if Buffer = nil then Exit;
+
+    {Lock Framebuffer}
+    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+    
+    {Set Result}
+    Result:=ERROR_SUCCESS;
+    
+    {Get Rows}
+    for Row:=0 to Font.CharHeight - 1 do
+     begin
+      {Get Text}
+      Offset:=0;
+      for Count:=1 to Len do
+       begin
+        {Get Character}
+        Character:=0;
+        case Font.CharWidth of
+         8:Character:=PFontChars8(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
+         9..16:Character:=PFontChars16(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
+         17..32:Character:=PFontChars32(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
+        end;
+        
+        {Map Character}
+        Inc(Offset,Font.CharWidth * Bytes);
+        for Column:=Font.CharWidth - 1 downto 0 do
+         begin
+          Dec(Offset,Bytes);
+          if (Character and $01) = $01 then
+           begin
+            ColorDefaultToFormat(Console.Format,Forecolor,Pointer(Buffer + Offset),Reverse);
+           end
+          else
+           begin
+            ColorDefaultToFormat(Console.Format,Backcolor,Pointer(Buffer + Offset),Reverse);
+           end;
+          
+          Character:=Character shr 1;
+         end;
+         
+        Inc(Offset,Font.CharWidth * Bytes); 
+       end;
+       
+      {Framebuffer Write}
+      Result:=FramebufferDeviceWrite(Framebuffer,X,Y + Row,Buffer,Font.CharWidth * Len,Flags);
+      if Result <> ERROR_SUCCESS then Break;
+     end;
+    
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Statistics}
+    Inc(Console.DrawCount);
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleDrawTextOld(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord; 
+{Implementation of ConsoleDeviceDrawText API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawText instead}
 var
  Row:LongWord;
  Count:LongWord;
@@ -7087,11 +7775,95 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleDrawPixel(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawPixel API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawPixel instead}
+var
+ Address:Pointer;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Color}
+ if Color = COLOR_NONE then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X, Y}
+    if X >= Console.Width then Exit;
+    if Y >= Console.Height then Exit;
+   
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+
+    {Set Result}
+    Result:=ERROR_SUCCESS;
+    
+    {Lock Framebuffer}
+    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+    
+    {Get Address}
+    Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y);
+    if Address <> nil then
+     begin
+      {Memory Barrier}
+      DataMemoryBarrier;  {Before the First Write}
+      
+      {Draw Pixel}
+      ColorDefaultToFormat(Console.Format,Color,Address,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
+      
+      {Check Commit}
+      if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+       begin
+        Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),ColorFormatToBytes(Console.Format),FRAMEBUFFER_TRANSFER_NONE);
+       end;
+      
+      {Check Mark}
+      if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+       begin
+        {Assume full lines}
+        Framebuffer.DeviceMark(Framebuffer,0,Y,Framebuffer.PhysicalWidth,1,FRAMEBUFFER_TRANSFER_NONE);
+       end;
+     end
+    else
+     begin
+      Result:=ERROR_OPERATION_FAILED;
+     end;     
+    
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock); 
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Statistics}
+    Inc(Console.DrawCount);
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleDrawPixelOld(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawPixel API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawPixel instead}
 var
  Address:LongWord;
  Framebuffer:PFramebufferDevice;
@@ -7162,11 +7934,81 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawBlock API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawBlock instead}
+var
+ Flags:LongWord;
+ ColorFormat:LongWord;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check X1, Y1, X2, Y2 (Must be a line, box or pixel)}
+ if X1 > X2 then Exit;
+ if Y1 > Y2 then Exit;
+ 
+ {Check Color}
+ if Color = COLOR_NONE then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X1, Y1, X2, Y2}
+    if X1 >= Console.Width then Exit;
+    if Y1 >= Console.Height then Exit;
+    if X2 >= Console.Width then Exit;
+    if Y2 >= Console.Height then Exit;
+
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+
+    {Get Flags}
+    Flags:=FRAMEBUFFER_TRANSFER_NONE;
+    if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_FILL) <> 0 then
+     begin
+      Flags:=FRAMEBUFFER_TRANSFER_DMA;
+     end;
+    
+    {Get Color}
+    ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
+    
+    {Framebuffer Fill}
+    Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,((X2 - X1) + 1),((Y2 - Y1) + 1),ColorFormat,Flags);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Statistics}
+    Inc(Console.DrawCount);
+    
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleDrawBlockOld(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord; 
+{Implementation of ConsoleDeviceDrawBlock API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawBlock instead}
 var
  Size:LongWord;
  Data:TDMAData;
@@ -7313,12 +8155,21 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawImage API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawImage instead}
 var
+ Count:LongWord;
+ Offset:LongWord;
+ Line:Pointer;
+ Address:Pointer;
+ Reverse:Boolean;
+ FormatBytes:LongWord;
+ ConsoleBytes:LongWord;
  Framebuffer:PFramebufferDevice;
 begin
  {}
@@ -7346,8 +8197,11 @@ begin
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
  
+    {Get Reverse}
+    Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
+ 
     {Check Format}
-    if (Format = COLOR_FORMAT_UNKNOWN) or (Format = Console.Format) then
+    if (Format = COLOR_FORMAT_UNKNOWN) or ((Format = Console.Format) and not(Reverse)) then
      begin
       {Framebuffer Put}
       Result:=FramebufferDevicePutRect(Framebuffer,X,Y,Buffer,Width,Height,Skip,FRAMEBUFFER_TRANSFER_DMA); {Buffer is safe for DMA put}
@@ -7355,14 +8209,155 @@ begin
      end
     else
      begin
-      Exit; //To Do //Continuing //Convert and put image
+      {Get Format Bytes}
+      FormatBytes:=ColorFormatToBytes(Format);
+        
+      {Get Console Bytes}
+      ConsoleBytes:=ColorFormatToBytes(Console.Format);
+
+      {Lock Framebuffer}
+      if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+      
+      {Set Result}
+      Result:=ERROR_SUCCESS;
+      
+      {Set Offset}
+      Offset:=0;
+      
+      {Check Format}
+      if Format = COLOR_FORMAT_DEFAULT then
+       begin
+        {Draw Lines}
+        for Count:=0 to Height - 1 do
+         begin
+          {Get Address}
+          Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y + Count);
+          if Address <> nil then
+           begin
+            {Memory Barrier}
+            DataMemoryBarrier;  {Before the First Write}
+           
+            {Convert from Format (COLOR_FORMAT_DEFAULT) to Console.Format}
+            PixelsDefaultToFormat(Console.Format,Pointer(Buffer + Offset),Address,Width,Reverse);
+            
+            {Check Commit}
+            if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+             begin
+              Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
+             end;
+             
+            {Check Mark}
+            if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+             begin
+              {Assume full lines}
+              Framebuffer.DeviceMark(Framebuffer,0,Y + Count,Framebuffer.PhysicalWidth,1,FRAMEBUFFER_TRANSFER_NONE);
+             end;
+           end
+          else
+           begin
+            Result:=ERROR_OPERATION_FAILED;
+            Break;
+           end;
+           
+          {Update Offset}
+          Inc(Offset,(Width + Skip) * FormatBytes);
+         end;
+       end
+      else if Console.Format = COLOR_FORMAT_DEFAULT then
+       begin
+        {Draw Lines}
+        for Count:=0 to Height - 1 do
+         begin
+          {Get Address}
+          Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y + Count);
+          if Address <> nil then
+           begin
+            {Memory Barrier}
+            DataMemoryBarrier;  {Before the First Write}
+        
+            {Convert from Format to Console.Format (COLOR_FORMAT_DEFAULT)}
+            PixelsFormatToDefault(Format,Pointer(Buffer + Offset),Address,Width,Reverse);
+            
+            {Check Commit}
+            if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+             begin
+              Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
+             end;
+             
+            {Check Mark}
+            if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+             begin
+              {Assume full lines}
+              Framebuffer.DeviceMark(Framebuffer,0,Y + Count,Framebuffer.PhysicalWidth,1,FRAMEBUFFER_TRANSFER_NONE);
+             end;
+           end
+          else
+           begin
+            Result:=ERROR_OPERATION_FAILED;
+            Break;
+           end;
+           
+          {Update Offset}
+          Inc(Offset,(Width + Skip) * FormatBytes);
+         end;
+       end
+      else
+       begin
+        {Allocate Line}
+        Line:=GetMem(Width * ColorFormatToBytes(COLOR_FORMAT_DEFAULT));
+        if Line <> nil then
+         begin
+          {Draw Lines}
+          for Count:=0 to Height - 1 do
+           begin
+            {Get Address}
+            Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y + Count);
+            if Address <> nil then
+             begin
+              {Memory Barrier}
+              DataMemoryBarrier;  {Before the First Write}
+          
+              {Convert from Format to Default (COLOR_FORMAT_DEFAULT)}
+              PixelsFormatToDefault(Format,Pointer(Buffer + Offset),Line,Width,False);
+              
+              {Convert from Default (COLOR_FORMAT_DEFAULT) to Console.Format}
+              PixelsDefaultToFormat(Console.Format,Line,Address,Width,Reverse);
+              
+              {Check Commit}
+              if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
+               begin
+                Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
+               end;
+               
+              {Check Mark}
+              if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
+               begin
+                {Assume full lines}
+                Framebuffer.DeviceMark(Framebuffer,0,Y + Count,Framebuffer.PhysicalWidth,1,FRAMEBUFFER_TRANSFER_NONE);
+               end;
+             end
+            else
+             begin
+              Result:=ERROR_OPERATION_FAILED;
+              Break;
+             end;
+             
+            {Update Offset}
+            Inc(Offset,(Width + Skip) * FormatBytes);
+           end;
+                  
+          {Free Line}
+          FreeMem(Line);
+         end;         
+       end;       
+      
+      {Unlock Framebuffer}
+      MutexUnlock(Framebuffer.Lock);
+      if Result <> ERROR_SUCCESS then Exit;
      end;
  
     {Update Statistics}
     Inc(Console.DrawCount);
- 
-    {Get Result}
-    Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
    end; 
@@ -7376,6 +8371,8 @@ end;
 {==============================================================================}
 
 function FramebufferConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
+{Implementation of ConsoleDeviceDrawWindow API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawWindow instead}
 {Note: Caller must hold the Window lock}
 var
  Window:PConsoleWindow;
@@ -7418,9 +8415,12 @@ end;
 {==============================================================================}
 
 function FramebufferConsoleDrawDesktop(Console:PConsoleDevice):LongWord;
+{Internal function used by FramebufferConsole to draw the console desktop}
+{Note: Not intended to be called directly by applications}
 var
  TitleX:LongWord;
  TitleY:LongWord;
+ TitleLen:LongWord;
  TitleOffset:LongWord;
  TitleFont:TFontHandle;
  TitleForecolor:LongWord;
@@ -7459,6 +8459,7 @@ begin
     {Get Title}
     TitleX:=PFramebufferConsole(Console).DesktopOffset;
     TitleY:=(PFramebufferConsole(Console).DesktopOffset - FontGetHeight(Console.Font)) div 2;
+    TitleLen:=Length(FRAMEBUFFER_CONSOLE_TITLE);
     TitleFont:=Console.Font;
     TitleOffset:=PFramebufferConsole(Console).DesktopOffset;
     if FontGetHeight(Console.Font) > TitleOffset then TitleOffset:=0;
@@ -7480,8 +8481,14 @@ begin
     {Check Title}
     if TitleOffset > 0 then
      begin
+      {Check Length}
+      if (TitleX + (TitleLen * FontGetWidth(Console.Font))) > Console.Width then 
+       begin
+        TitleLen:=(Console.Width - (TitleX + 1)) div FontGetWidth(Console.Font);
+       end;
+
       {Draw Title}
-      Result:=FramebufferConsoleDrawText(Console,TitleFont,FRAMEBUFFER_CONSOLE_TITLE,TitleX,TitleY,TitleForecolor,TitleBackcolor,Length(FRAMEBUFFER_CONSOLE_TITLE));
+      Result:=FramebufferConsoleDrawText(Console,TitleFont,FRAMEBUFFER_CONSOLE_TITLE,TitleX,TitleY,TitleForecolor,TitleBackcolor,TitleLen);
      end; 
    finally
     MutexUnlock(Console.Lock);
@@ -7496,6 +8503,74 @@ end;
 {==============================================================================}
 
 function FramebufferConsoleGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceGetPixel API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceGetPixel instead}
+var
+ Address:Pointer;
+ Framebuffer:PFramebufferDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check X, Y}
+    if X >= Console.Width then Exit;
+    if Y >= Console.Height then Exit;
+   
+    {Get Framebuffer}
+    Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+    
+    {Check Framebuffer}
+    if Framebuffer = nil then Exit;
+
+    {Set Result}
+    Result:=ERROR_SUCCESS;
+    
+    {Lock Framebuffer}
+    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+    
+    {Get Address}
+    Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y);
+    if Address <> nil then
+     begin
+      {Get Pixel}
+      ColorFormatAltToDefault(Console.Format,Address,Color,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
+      
+      {Memory Barrier}
+      DataMemoryBarrier;  {After the Last Read}
+     end
+    else
+     begin
+      Result:=ERROR_OPERATION_FAILED;
+     end;     
+    
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock); 
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Statistics}
+    Inc(Console.GetCount);
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+//To Do //Remove
+(*function FramebufferConsoleGetPixelOld(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord; 
+{Implementation of ConsoleDeviceGetPixel API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceGetPixel instead}
 var
  Address:LongWord;
  Framebuffer:PFramebufferDevice;
@@ -7556,12 +8631,21 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end;
+end;*)
 
 {==============================================================================}
 
 function FramebufferConsoleGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+{Implementation of ConsoleDeviceGetImage API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceGetImage instead}
 var
+ Count:LongWord;
+ Offset:LongWord;
+ Line:Pointer;
+ Address:Pointer;
+ Reverse:Boolean;
+ FormatBytes:LongWord;
+ ConsoleBytes:LongWord;
  Framebuffer:PFramebufferDevice;
 begin
  {}
@@ -7589,8 +8673,11 @@ begin
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
     
+    {Get Reverse}
+    Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
+    
     {Check Format}
-    if (Format = COLOR_FORMAT_UNKNOWN) or (Format = Console.Format) then
+    if (Format = COLOR_FORMAT_UNKNOWN) or ((Format = Console.Format) and not(Reverse)) then
      begin
       {Framebuffer Get}
       Result:=FramebufferDeviceGetRect(Framebuffer,X,Y,Buffer,Width,Height,Skip,FRAMEBUFFER_TRANSFER_NONE); {No DMA due to unknown buffer}
@@ -7598,14 +8685,116 @@ begin
      end
     else
      begin
-      Exit; //To Do //Continuing //Get and convert image
+      {Get Format Bytes}
+      FormatBytes:=ColorFormatToBytes(Format);
+        
+      {Get Console Bytes}
+      ConsoleBytes:=ColorFormatToBytes(Console.Format);
+
+      {Lock Framebuffer}
+      if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+      
+      {Set Result}
+      Result:=ERROR_SUCCESS;
+      
+      {Set Offset}
+      Offset:=0;
+      
+      {Check Format}
+      if Format = COLOR_FORMAT_DEFAULT then
+       begin
+        {Get Lines}
+        for Count:=0 to Height - 1 do
+         begin
+          {Get Address}
+          Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y + Count);
+          if Address <> nil then
+           begin
+            {Convert from Console.Format to Format (COLOR_FORMAT_DEFAULT)}
+            PixelsFormatAltToDefault(Console.Format,Address,Pointer(Buffer + Offset),Width,Reverse);
+           
+            {Memory Barrier}
+            DataMemoryBarrier;  {After the Last Read}
+           end
+          else
+           begin
+            Result:=ERROR_OPERATION_FAILED;
+            Break;
+           end;
+           
+          {Update Offset}
+          Inc(Offset,(Width + Skip) * FormatBytes);
+         end;
+       end
+      else if Console.Format = COLOR_FORMAT_DEFAULT then
+       begin
+        {Get Lines}
+        for Count:=0 to Height - 1 do
+         begin
+          {Get Address}
+          Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y + Count);
+          if Address <> nil then
+           begin
+            {Convert from Console.Format (COLOR_FORMAT_DEFAULT) to Format}
+            PixelsDefaultAltToFormat(Format,Address,Pointer(Buffer + Offset),Width,Reverse);
+                    
+            {Memory Barrier}
+            DataMemoryBarrier;  {After the Last Read}
+           end
+          else
+           begin
+            Result:=ERROR_OPERATION_FAILED;
+            Break;
+           end;
+           
+          {Update Offset}
+          Inc(Offset,(Width + Skip) * FormatBytes);
+         end;
+       end
+      else
+       begin
+        {Allocate Line}
+        Line:=GetMem(Width * ColorFormatToBytes(COLOR_FORMAT_DEFAULT));
+        if Line <> nil then
+         begin
+          {Draw Lines}
+          for Count:=0 to Height - 1 do
+           begin
+            {Get Address}
+            Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y + Count);
+            if Address <> nil then
+             begin
+              {Convert from Console.Format to Default (COLOR_FORMAT_DEFAULT)}
+              PixelsFormatAltToDefault(Console.Format,Address,Line,Width,Reverse);
+              
+              {Convert from Default (COLOR_FORMAT_DEFAULT) to Format}
+              PixelsDefaultToFormat(Format,Line,Pointer(Buffer + Offset),Width,False);
+                
+              {Memory Barrier}
+              DataMemoryBarrier;  {After the Last Read}
+             end
+            else
+             begin
+              Result:=ERROR_OPERATION_FAILED;
+              Break;
+             end;
+             
+            {Update Offset}
+            Inc(Offset,(Width + Skip) * FormatBytes);
+           end;
+                  
+          {Free Line}
+          FreeMem(Line);
+         end;         
+       end;       
+      
+      {Unlock Framebuffer}
+      MutexUnlock(Framebuffer.Lock);
+      if Result <> ERROR_SUCCESS then Exit;
      end;
  
     {Update Statistics}
     Inc(Console.GetCount);
- 
-    {Get Result}
-    Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
    end; 
@@ -7619,6 +8808,8 @@ end;
 {==============================================================================}
 
 function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+{Implementation of ConsoleDeviceCopyImage API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceCopyImage instead}
 var
  Framebuffer:PFramebufferDevice;
 begin
@@ -7672,6 +8863,8 @@ end;
 {==============================================================================}
 
 function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
+{Implementation of ConsoleDeviceGetPosition API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceGetPosition instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7935,10 +9128,12 @@ begin
      if CONSOLE_LINE_WRAP then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_LINE_WRAP;
      if CONSOLE_AUTO_SCROLL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_AUTO_SCROLL;
      if CONSOLE_DMA_BOX then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_BOX;
+     if CONSOLE_DMA_TEXT then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_TEXT;
      if CONSOLE_DMA_LINE then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_LINE;
      if CONSOLE_DMA_FILL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_FILL;
      if CONSOLE_DMA_CLEAR then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_CLEAR;
      if CONSOLE_DMA_SCROLL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_SCROLL;
+     if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_SWAP) <> 0 then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_COLOR_REVERSE;
      
      {Register Console}
      Status:=ConsoleDeviceRegister(@Console.Console);

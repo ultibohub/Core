@@ -46,6 +46,19 @@ Global Defines
 
 {==============================================================================}
 {==============================================================================}
+{System inlining definitions}
+
+{==============================================================================}
+{==============================================================================}
+{Subsystem inlining definitions}
+{$DEFINE SPIN_INLINE}             {Inline parts of Spin lock handling for performance (Default: On)}
+{$DEFINE MUTEX_INLINE}            {Inline parts of Mutex handling for performance (Default: On)}
+
+{$DEFINE LIST_INLINE}             {Inline parts of List handling for performance (Default: On)}
+{$DEFINE QUEUE_INLINE}            {Inline parts of Queue handling for performance (Default: On)}
+
+{==============================================================================}
+{==============================================================================}
 {System statistics definitions}
 {--$DEFINE IRQ_STATISTICS}        {Enable statistics collection for IRQ handling (Default: Off)}
 {--$DEFINE FIQ_STATISTICS}        {Enable statistics collection for FIQ handling (Default: Off)}
@@ -86,6 +99,7 @@ Global Defines
 {--$DEFINE GPIO_DEBUG}            {Enable debug output/counters for GPIO devices (Default: Off)}
 {--$DEFINE UART_DEBUG}            {Enable debug output/counters for UART devices (Default: Off) (Do not enable when serial logging is active)}
 {--$DEFINE BLUETOOTH_DEBUG}       {Enable debug output/counters for Bluetooth devices/drivers/hosts (Default: Off)}
+{--$DEFINE FRAMEBUFFER_DEBUG}     {Enable debug output/counters for Framebuffer devices (Default: Off)}
 
 {--$DEFINE STORAGE_DEBUG}         {Enable debug output/counters for Storage devices (Default: Off)}
 {$IFDEF STORAGE_DEBUG}
@@ -130,12 +144,14 @@ Global Defines
 
 {--$DEFINE KEYBOARD_DEBUG}        {Enable debug output/counters for Keyboard devices (Default: Off)}
 {--$DEFINE MOUSE_DEBUG}           {Enable debug output/counters for Mouse devices (Default: Off)}
+{--$DEFINE TOUCH_DEBUG}           {Enable debug output/counters for Touch devices (Default: Off)}
 
 {$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
 {--$DEFINE VPN_DEBUG}             {Enable debug output/counters for VPN devices (Default: Off)}
 
 {--$DEFINE SERIAL_DEBUG}          {Enable debug output/counters for Serial devices (Default: Off) (Do not enable when serial logging is active)}
 
+{--$DEFINE CODEC_DEBUG}           {Enable debug output/counters for Codec devices (Default: Off)}
 {--$DEFINE VIDEO_DEBUG}           {Enable debug output/counters for Video devices (Default: Off)}
 {--$DEFINE AUDIO_DEBUG}           {Enable debug output/counters for Audio devices (Default: Off)}
 
@@ -182,12 +198,16 @@ Global Defines
 {--$DEFINE FTDISERIAL_DEBUG}      {Enable debug output/counters for FTDI Serial driver (Default: Off)}
 
 {--$DEFINE MCP230XX_DEBUG}        {Enable debug output/counters for MCP230XX driver (Default: Off)}
+{--$DEFINE STMPE_DEBUG}           {Enable debug output/counters for STMPE driver (Default: Off)}
+{$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
+
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
-{$DEFINE ILI9340_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
+{--$DEFINE ILI9340_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
+{--$DEFINE HX8357D_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
 
 {--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
-{$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
-{$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
+{--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
+{--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

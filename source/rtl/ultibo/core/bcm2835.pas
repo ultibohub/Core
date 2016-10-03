@@ -324,63 +324,65 @@ const
  
  {IRQs 64 to 84 appear in the IRQ_basic_pending register}
  {ARM Timer}
- BCM2835_IRQ_ARM_TIMER      = 64;  {ARM IRQ 0}
- 
- {ARM Mailbox}
- BCM2835_IRQ_ARM_MAILBOX    = 65;  {ARM IRQ 1}
- 
- {ARM Doorbell}
- BCM2835_IRQ_ARM_DOORBELL0  = 66;  {ARM IRQ 2}
- BCM2835_IRQ_ARM_DOORBELL1  = 67;  {ARM IRQ 3}
- 
- {ARM GPU Halted}
- BCM2835_IRQ_ARM_GPU0HALTED = 68;  {ARM IRQ 4}
- BCM2835_IRQ_ARM_GPU1HALTED = 69;  {ARM IRQ 5}
+ BCM2835_IRQ_ARM_TIMER        = 64;  {ARM IRQ 0}
+                              
+ {ARM Mailbox}                
+ BCM2835_IRQ_ARM_MAILBOX      = 65;  {ARM IRQ 1}
+                              
+ {ARM Doorbell}               
+ BCM2835_IRQ_ARM_DOORBELL0    = 66;  {ARM IRQ 2}
+ BCM2835_IRQ_ARM_DOORBELL1    = 67;  {ARM IRQ 3}
+                              
+ {ARM GPU Halted}             
+ BCM2835_IRQ_ARM_GPU0HALTED   = 68;  {ARM IRQ 4}
+ BCM2835_IRQ_ARM_GPU1HALTED   = 69;  {ARM IRQ 5}
  
  {ARM Illegal Access}
  BCM2835_IRQ_ARM_ILLEGALTYPE0 = 70;  {ARM IRQ 6}
  BCM2835_IRQ_ARM_ILLEGALTYPE1 = 71;  {ARM IRQ 7}
  
  {ARM Pending}
- BCM2835_IRQ_ARM_PENDING0   = 72;
- BCM2835_IRQ_ARM_PENDING1   = 73;
+ BCM2835_IRQ_ARM_PENDING0     = 72;  {ARM IRQ 8}
+ BCM2835_IRQ_ARM_PENDING1     = 73;  {ARM IRQ 9}
+                              
+ {ARM JPEG}                   
+ BCM2835_IRQ_ARM_JPEG         = 74;  {ARM IRQ 10}
+                              
+ {ARM USB}                    
+ BCM2835_IRQ_ARM_USB          = 75;  {ARM IRQ 11}
+                              
+ {ARM 3D}                     
+ BCM2835_IRQ_ARM_3D           = 76;  {ARM IRQ 12}
+                              
+ {ARM DMA}                    
+ BCM2835_IRQ_ARM_DMA2         = 77;  {ARM IRQ 13}
+ BCM2835_IRQ_ARM_DMA3         = 78;  {ARM IRQ 14}
+                              
+ {ARM I2C}                    
+ BCM2835_IRQ_ARM_I2C          = 79;  {ARM IRQ 15}
+                              
+ {ARM SPI}                    
+ BCM2835_IRQ_ARM_SPI          = 80;  {ARM IRQ 16}
+                              
+ {ARM I2SPCM}                 
+ BCM2835_IRQ_ARM_I2SPCM       = 81;  {ARM IRQ 17}
+                              
+ {ARM SDIO}                   
+ BCM2835_IRQ_ARM_SDIO         = 82;  {ARM IRQ 18}
+                              
+ {ARM PL011 UART}             
+ BCM2835_IRQ_ARM_PL011        = 83;  {ARM IRQ 19}
+                              
+ {ARM SDHCI}                  
+ BCM2835_IRQ_ARM_SDHCI        = 84;  {ARM IRQ 20}
  
- {ARM JPEG}
- BCM2835_IRQ_ARM_JPEG       = 74;
- 
- {ARM USB}
- BCM2835_IRQ_ARM_USB        = 75;
- 
- {ARM 3D}
- BCM2835_IRQ_ARM_3D         = 76;
- 
- {ARM DMA}
- BCM2835_IRQ_ARM_DMA2       = 77;
- BCM2835_IRQ_ARM_DMA3       = 78;
- 
- {ARM I2C}
- BCM2835_IRQ_ARM_I2C        = 79;
- 
- {ARM SPI}
- BCM2835_IRQ_ARM_SPI        = 80;
- 
- {ARM I2SPCM}
- BCM2835_IRQ_ARM_I2SPCM     = 81;
- 
- {ARM SDIO}
- BCM2835_IRQ_ARM_SDIO       = 82;
- 
- {ARM PL011 UART}
- BCM2835_IRQ_ARM_PL011      = 83;
- 
- {ARM SDHCI}
- BCM2835_IRQ_ARM_SDHCI      = 84;
+ {IRQs 85 to 95 (ARM IRQs 21 to 31) are not assigned}
  
  {Number of IRQs shared between the GPU and ARM (These correspond to the IRQs that show up in the IRQ_pending_1 and IRQ_pending_2 registers)}
  BCM2835_GPU_IRQ_COUNT   = 64;
 
  {Number of ARM specific IRQs (These correspond to IRQs that show up in the first 8 bits of IRQ_basic_pending)}
- BCM2835_ARM_IRQ_COUNT = 8;
+ BCM2835_ARM_IRQ_COUNT = 32; {Previously 8}
 
  {Total number of IRQs available}
  BCM2835_IRQ_COUNT = BCM2835_GPU_IRQ_COUNT + BCM2835_ARM_IRQ_COUNT; {72}
@@ -830,9 +832,27 @@ const
 
  {PL011 UART Test Data register bits (See 13.4)}
 
-//const
+const
+ {ARM Interrupt Controller register bits (See 7.5)}
+ BCM2835_ARM_INTERRUPT_FIQ_ENABLE = (1 shl 7);   {FIQ enable (Set this bit to 1 to enable FIQ generation. If set to 0 bits 6:0 are don't care)}
+ BCM2835_ARM_INTERRUPT_FIQ_SOURCE = ($7F shl 0); {Select FIQ Source (0..127)}
+ 
+const
  {ARM Timer register bits (See 14.2)}
- //To Do  
+ BCM2835_ARM_TIMER_CONTROL_COUNTER_PRESCALE = ($FF shl 16); {Free running counter pre-scaler (Freq is sys_clk/(prescale+1))}
+ BCM2835_ARM_TIMER_CONTROL_COUNTER_ENABLED  = (1 shl 9);    {0 : Free running counter Disabled / 1 : Free running counter Enabled}
+ BCM2835_ARM_TIMER_CONTROL_DEBUG_HALT       = (1 shl 8);    {0 : Timers keeps running if ARM is in debug halted mode / 1 : Timers halted if ARM is in debug halted mode}
+ BCM2835_ARM_TIMER_CONTROL_TIMER_ENABLED    = (1 shl 7);    {0 : Timer disabled / 1 : Timer enabled}
+ BCM2835_ARM_TIMER_CONTROL_INT_ENABLED      = (1 shl 5);    {0 : Timer interrupt disabled / 1 : Timer interrupt enabled}
+ BCM2835_ARM_TIMER_CONTROL_PRESCALE         = (3 shl 2);    {Pre-scale bits: 00 : pre-scale is clock / 1 (No pre-scale) / 01 : pre-scale is clock / 16 / 10 : pre-scale is clock / 256 / 11 : pre-scale is clock / 1}
+ BCM2835_ARM_TIMER_CONTROL_32BIT            = (1 shl 1);    {0 : 16-bit counters / 1 : 32-bit counter}
+ BCM2835_ARM_TIMER_CONTROL_ONESHOT          = (1 shl 0);    {0 = wrapping mode (default) / 1 = one-shot mode (Not supported by BCM2835)}
+ 
+ BCM2835_ARM_TIMER_RAW_IRQ_PENDING = (1 shl 0); {0 : The interrupt pending bits is clear / 1 : The interrupt pending bit is set}
+ 
+ BCM2835_ARM_TIMER_MASKED_IRQ_PENDING = (1 shl 0); {0 : Interrupt line not asserted / 1 :Interrupt line is asserted, (the interrupt pending and the interrupt enable bit are set)}
+
+ BCM2835_ARM_TIMER_PREDIVIDER_MASK = ($3FF shl 0); {Pre-divider value (timer_clock = apb_clock/(pre_divider+1))}
  
 const
  {Power Management, Reset controller and Watchdog}
@@ -1027,7 +1047,7 @@ const
  BCM2835_MAILBOX_STATUS_FULL  = $80000000;
  BCM2835_MAILBOX_STATUS_EMPTY = $40000000;
  
- {BCM2835 mailbox property tags (See https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface)}
+ {BCM2835 mailbox property tags (See https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface)(or \include\soc\bcm2835\raspberrypi-firmware.h)}
  {VideoCore}
  BCM2835_MBOX_TAG_GET_FIRMWARE_REV  = $00000001;
  {Hardware}
@@ -1084,6 +1104,9 @@ const
  
  BCM2835_MBOX_TAG_GET_CUSTOMER_OTP  = $00030021;
  BCM2835_MBOX_TAG_SET_CUSTOMER_OTP  = $00038021;
+ 
+ BCM2835_MBOX_TAG_GET_DOMAIN_STATE  = $00030030;
+ BCM2835_MBOX_TAG_SET_DOMAIN_STATE  = $00038030;
  {Frame Buffer}
  BCM2835_MBOX_TAG_ALLOCATE_BUFFER	= $00040001; {If the requested alignment is unsupported then the current base and size (which may be 0 if not allocated) is returned and no change occurs}
  BCM2835_MBOX_TAG_RELEASE_BUFFER	= $00048001; {Releases and disables the frame buffer}
@@ -1104,7 +1127,7 @@ const
  BCM2835_MBOX_TAG_SET_DEPTH		    = $00048005;
 
  BCM2835_MBOX_TAG_GET_PIXEL_ORDER	= $00040006;
- BCM2835_MBOX_TAG_TEST_PIXEL_ORDER	= $00044005;
+ BCM2835_MBOX_TAG_TEST_PIXEL_ORDER	= $00044006;
  BCM2835_MBOX_TAG_SET_PIXEL_ORDER	= $00048006;
 
  BCM2835_MBOX_TAG_GET_ALPHA_MODE	= $00040007;
@@ -1145,6 +1168,8 @@ const
  
  BCM2835_MBOX_TAG_SET_CURSOR_INFO   = $00008010; {00008011} {These were reversed in the documentation, see Linux \include\soc\bcm2835\raspberrypi-firmware.h}
  BCM2835_MBOX_TAG_SET_CURSOR_STATE  = $00008011; {00008010}
+ {VCHIQ}
+ BCM2835_MBOX_TAG_VCHIQ_INIT        = $00048010;
  {Config}
  BCM2835_MBOX_TAG_GET_COMMAND_LINE  = $00050001;
  {Shared Resource Management} 
@@ -2667,6 +2692,49 @@ type
   case Integer of
   0:(Request:TBCM2835MailboxTagPaletteRequest);
   1:(Response:TBCM2835MailboxTagPaletteResponse);
+ end;
+ 
+ {Get Touch Buffer}
+ TBCM2835MailboxTagGetTouchResponse = record
+  Address:LongWord; 
+ end;
+ 
+ PBCM2835MailboxTagGetTouch = ^TBCM2835MailboxTagGetTouch;
+ TBCM2835MailboxTagGetTouch = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagNoRequest);
+  1:(Response:TBCM2835MailboxTagGetTouchResponse);
+ end;
+ 
+ {Get Virtual GPIO Buffer}
+ TBCM2835MailboxTagGetVirtualGPIOResponse = record
+  Address:LongWord; 
+ end;
+ 
+ PBCM2835MailboxTagGetVirtualGPIO = ^TBCM2835MailboxTagGetVirtualGPIO;
+ TBCM2835MailboxTagGetVirtualGPIO = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagNoRequest);
+  1:(Response:TBCM2835MailboxTagGetVirtualGPIOResponse);
+ end;
+ 
+ {Set Backlight}
+ TBCM2835MailboxTagSetBacklightRequest = record
+  Brightness:LongWord;
+ end;
+
+ TBCM2835MailboxTagSetBacklightResponse = record
+  Brightness:LongWord; 
+ end;
+ 
+ PBCM2835MailboxTagSetBacklight = ^TBCM2835MailboxTagSetBacklight;
+ TBCM2835MailboxTagSetBacklight = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagSetBacklightRequest);
+  1:(Response:TBCM2835MailboxTagSetBacklightResponse);
  end;
  
  {Set Cursor Info}

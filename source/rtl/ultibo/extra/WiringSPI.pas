@@ -166,7 +166,10 @@ begin
    ClockPolarity:=SPI_CLOCK_POLARITY_HIGH;
    ClockPhase:=SPI_CLOCK_PHASE_HIGH;
   end;  
-  
+ 
+ {Set SPI Clock Rate}
+ if SPIDeviceSetClockRate(SPIDevice,channel,speed) <> ERROR_SUCCESS then Exit;
+ 
  {Start SPI}
  if SPIDeviceStart(SPIDevice,SPI_MODE_4WIRE,speed,ClockPhase,ClockPolarity) <> ERROR_SUCCESS then Exit;
  

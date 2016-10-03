@@ -125,7 +125,7 @@ type
  end;
  
  {GPIO Device}
- PGPIODevice = ^TGPIODevice; {Forward decleard for GPIOPin}
+ PGPIODevice = ^TGPIODevice; {Forward declared for GPIOPin}
  PGPIOPin = ^TGPIOPin;       {Forward declared for GPIOEvent}
  
  {GPIO Event}
@@ -212,6 +212,26 @@ type
   Next:PGPIODevice;                               {Next entry in GPIO table}
  end; 
   
+ {GPIO Info (Pin Information)} {Used by other units to pass complete details of a GPIO pin}
+ PGPIOInfo = ^TGPIOInfo;
+ TGPIOInfo = record
+  GPIO:PGPIODevice;        {Device for this GPIO pin}
+  Pin:LongWord;            {Pin number (eg GPIO_PIN_59)}
+  Func:LongWord;           {Function value (or GPIO_FUNCTION_UNKNOWN)}
+  Pull:LongWord;           {Pull Up/Down value (or GPIO_PULL_UNKNOWN)}
+  Trigger:LongWord;        {Trigger value (or GPIO_TRIGGER_UNKNOWN)}
+ end;
+
+const
+ {GPIO Info Unknown}
+ GPIO_INFO_UNKNOWN:TGPIOInfo = (
+  GPIO:nil;
+  Pin:GPIO_PIN_UNKNOWN;
+  Func:GPIO_FUNCTION_UNKNOWN;
+  Pull:GPIO_PULL_UNKNOWN;
+  Trigger:GPIO_TRIGGER_UNKNOWN
+ );
+ 
 {==============================================================================}
 {var}
  {GPIO specific variables}
@@ -358,6 +378,9 @@ end;
 {==============================================================================}
 {GPIO Functions}
 function GPIODeviceStart(GPIO:PGPIODevice):LongWord; 
+{Start the specified GPIO device and enable access}
+{GPIO: The GPIO device to start}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -409,6 +432,9 @@ end;
 {==============================================================================}
 
 function GPIODeviceStop(GPIO:PGPIODevice):LongWord; 
+{Stop the specified GPIO device and disable access}
+{GPIO: The GPIO device to stop}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -460,6 +486,10 @@ end;
 {==============================================================================}
 
 function GPIODeviceRead(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
+{Perform a direct read from a register of the specified GPIO device}
+{GPIO: The GPIO device to read from}
+{Reg: The memory register to read from}
+{Return: The value of the memory register}
 begin
  {}
  Result:=0;
@@ -490,6 +520,10 @@ end;
 {==============================================================================}
 
 procedure GPIODeviceWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
+{Perform a direct write to a register of the specified GPIO device}
+{GPIO: The GPIO device to write to}
+{Reg: The memory register to write to}
+{Value: The value to write to the register}
 begin
  {}
  {Check GPIO}
@@ -518,6 +552,10 @@ end;
 {==============================================================================}
 
 function GPIODeviceInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Get the current state of an input pin on the specified GPIO device}
+{GPIO: The GPIO device to get from}
+{Pin: The pin to get the state for (eg GPIO_PIN_1)}
+{Return: The current state (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
 begin
  {}
  Result:=GPIO_LEVEL_UNKNOWN;
@@ -552,6 +590,12 @@ end;
 {==============================================================================}
 
 function GPIODeviceInputWait(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
+{Wait for the state of a input pin to change on the specified GPIO device}
+{GPIO: The GPIO device to wait for}
+{Pin: The pin to wait for the state to change (eg GPIO_PIN_1)}
+{Trigger: The trigger event to wait for (eg GPIO_TRIGGER_HIGH)}
+{Timeout: Number of milliseconds to wait for the change (INFINITE to wait forever)}
+{Return: The state after the change (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure or timeout}
 begin
  {}
  Result:=GPIO_LEVEL_UNKNOWN;
@@ -582,6 +626,16 @@ end;
 {==============================================================================}
 
 function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
+{Schedule a function to be called when the state of a input pin changes on the specified GPIO device}
+{GPIO: The GPIO device to schedule the callback for}
+{Pin: The pin to schedule the state change for (eg GPIO_PIN_1)}
+{Trigger: The trigger event which will cause the function to be called (eg GPIO_TRIGGER_HIGH)}
+{Timeout: The number of milliseconds before the scheduled trigger expires (INFINITE to never expire)}
+{Callback: The function to be called when the trigger occurs}
+{Data: A pointer to be pass to the function when the trigger occurs (Optional)}
+{Return: ERROR_SUCCESS if the trigger was scheduled successfully or another error code on failure}
+
+{Note: The pin and trigger that caused the event will be passed to the callback function}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -617,6 +671,10 @@ end;
 {==============================================================================}
 
 function GPIODeviceInputCancel(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Cancel a previously scheduled event callback function for an input pin on the specified GPIO device}
+{GPIO: The GPIO device to cancel the callback for}
+{Pin: The pin to cancel the state change for (eg GPIO_PIN_1)}
+{Return: ERROR_SUCCESS if the callback was cancelled successfully or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -652,6 +710,11 @@ end;
 {==============================================================================}
  
 function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+{Set the state of a output pin on the specified GPIO device}
+{GPIO: The GPIO device to set for}
+{Pin: The pin to set the state for (eg GPIO_PIN_1)}
+{Level: The state to set the pin to (eg GPIO_LEVEL_HIGH)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -691,6 +754,10 @@ end;
 {==============================================================================}
 
 function GPIODevicePullGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Get the current pull state of a pin on the specified GPIO device}
+{GPIO: The GPIO device to get from}
+{Pin: The pin to get the pull state for (eg GPIO_PIN_1)}
+{Return: The current pull state of the pin (eg GPIO_PULL_UP) or GPIO_PULL_UNKNOWN on failure}
 begin
  {}
  Result:=GPIO_PULL_UNKNOWN;
@@ -721,6 +788,11 @@ end;
 {==============================================================================}
  
 function GPIODevicePullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+{Change the pull state of a pin on the specified GPIO device}
+{GPIO: The GPIO device to set for}
+{Pin: The pin to change the pull state for (eg GPIO_PIN_1)}
+{Mode: The pull state to set for the pin (eg GPIO_PULL_UP)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -756,6 +828,10 @@ end;
 {==============================================================================}
 
 function GPIODeviceFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Get the current function of a pin on the specified GPIO device}
+{GPIO: The GPIO device to get from}
+{Pin: The pin to get the function for (eg GPIO_PIN_1)}
+{Return: The current function of the pin (eg GPIO_FUNCTION_IN) or GPIO_FUNCTION_UNKNOWN on failure}
 begin
  {}
  Result:=GPIO_FUNCTION_UNKNOWN;
@@ -786,6 +862,11 @@ end;
 {==============================================================================}
 
 function GPIODeviceFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+{Change the function of a pin on the specified GPIO device}
+{GPIO: The GPIO device to set for}
+{Pin: The pin to change the function for (eg GPIO_PIN_1)}
+{Mode: The function to set for the pin (eg GPIO_FUNCTION_OUT)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -821,6 +902,10 @@ end;
 {==============================================================================}
 
 function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
+{Get the properties for the specified GPIO device}
+{GPIO: The GPIO device to get properties from}
+{Properties: Pointer to a TGPIOProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -931,6 +1016,8 @@ end;
 
 function GPIODeviceDestroy(GPIO:PGPIODevice):LongWord;
 {Destroy an existing GPIO entry}
+{GPIO: The GPIO device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -960,6 +1047,8 @@ end;
 
 function GPIODeviceRegister(GPIO:PGPIODevice):LongWord;
 {Register a new GPIO in the GPIO table}
+{GPIO: The GPIO device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  GPIOId:LongWord;
 begin
@@ -1045,6 +1134,8 @@ end;
 
 function GPIODeviceDeregister(GPIO:PGPIODevice):LongWord;
 {Deregister a GPIO from the GPIO table}
+{GPIO: The GPIO device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PGPIODevice;
  Next:PGPIODevice;
@@ -1119,6 +1210,9 @@ end;
 {==============================================================================}
 
 function GPIODeviceFind(GPIOId:LongWord):PGPIODevice;
+{Find a GPIO device by ID in the GPIO table}
+{GPIOId: The ID number of the GPIO device to find}
+{Return: Pointer to GPIO device entry or nil if not found}
 var
  GPIO:PGPIODevice;
 begin
@@ -1160,6 +1254,9 @@ end;
 {==============================================================================}
     
 function GPIODeviceFindByName(const Name:String):PGPIODevice; inline;
+{Find a GPIO device by name in the GPIO table}
+{Name: The name of the GPIO to find (eg GPIO0)}
+{Return: Pointer to GPIO device entry or nil if not found}
 begin
  {}
  Result:=PGPIODevice(DeviceFindByName(Name));
@@ -1168,6 +1265,9 @@ end;
 {==============================================================================}
 
 function GPIODeviceFindByDescription(const Description:String):PGPIODevice; inline;
+{Find a GPIO device by description in the GPIO table}
+{Description: The description of the GPIO to find (eg BCM2836 GPIO)}
+{Return: Pointer to GPIO device entry or nil if not found}
 begin
  {}
  Result:=PGPIODevice(DeviceFindByDescription(Description));
@@ -1176,6 +1276,10 @@ end;
 {==============================================================================}
 
 function GPIODeviceEnumerate(Callback:TGPIOEnumerate;Data:Pointer):LongWord;
+{Enumerate all GPIO devices in the GPIO table}
+{Callback: The callback function to call for each GPIO in the table}
+{Data: A private data pointer to pass to callback for each GPIO in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  GPIO:PGPIODevice;
 begin
@@ -1219,6 +1323,12 @@ end;
 {==============================================================================}
 
 function GPIODeviceNotification(GPIO:PGPIODevice;Callback:TGPIONotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for GPIO device changes}
+{GPIO: The GPIO device to notify changes for (Optional, pass nil for all GPIO devices)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;

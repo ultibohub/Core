@@ -759,10 +759,26 @@ end;
 {==============================================================================}
 {Initialization Functions}
 procedure ConsoleShellInit;
+var
+ WorkInt:LongWord;
+ WorkBuffer:String;
 begin
  {}
  {Check Initialized}
  if ConsoleShellInitialized then Exit;
+ 
+ {Check Environment Variables}
+ {CONSOLE_SHELL_ENABLED}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_SHELL_ENABLED'),0);
+ if WorkInt <> 0 then CONSOLE_SHELL_ENABLED:=True;
+ 
+ {CONSOLE_SHELL_POSITION}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_SHELL_POSITION'),0);
+ if WorkInt > 0 then CONSOLE_SHELL_POSITION:=WorkInt;
+ 
+ {CONSOLE_SHELL_DEVICE}
+ WorkBuffer:=SysUtils.GetEnvironmentVariable('CONSOLE_SHELL_DEVICE');
+ if Length(WorkBuffer) <> 0 then CONSOLE_SHELL_DEVICE:=WorkBuffer;
  
  {Enumerate Consoles}
  ConsoleDeviceEnumerate(ConsoleShellDeviceEnum,nil);
@@ -819,9 +835,29 @@ begin
  {Check Console Shell}
  if ConsoleShellFindByDevice(Console) = nil then
   begin
-   {Create Console Shell}
+   {Check Enabled}
    if (CONSOLE_SHELL_ENABLED and not(ConsoleDeviceCheckFlag(Console,CONSOLE_FLAG_SINGLE_WINDOW))) or Force then
     begin
+     {Check Device}
+     if not(Force) then
+      begin
+       if Length(CONSOLE_SHELL_DEVICE) <> 0 then
+        begin
+         {Check Name}
+         if ConsoleDeviceFindByName(CONSOLE_SHELL_DEVICE) <> Console then
+          begin
+           {Check Description}
+           if ConsoleDeviceFindByDescription(CONSOLE_SHELL_DEVICE) <> Console then Exit;
+          end; 
+        end
+       else
+        begin
+         {Check Default}
+         if ConsoleDeviceGetDefault <> Console then Exit;
+        end;    
+      end;  
+     
+     {Create Console Shell}
      ConsoleShell:=TConsoleShell.Create(Console);
      ConsoleShell.Name:=CONSOLE_SHELL_NAME + ' (' + DeviceGetName(@Console.Device) + ')';
      

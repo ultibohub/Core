@@ -26,7 +26,8 @@ Credits
   NetBSD - /src/sys/arch/arm/arm/cpufunc_asm_armv7.S - Copyright 2010 Per Odlund
  
   Linux - /arch/arm/mm/proc-v7.S - Copyright 2001 Deep Blue Solutions Ltd
-          /arch/arm/mm/proc-v7-2level.S - opyright 2001 Deep Blue Solutions Ltd
+          /arch/arm/mm/proc-v7-2level.S - Copyright 2001 Deep Blue Solutions Ltd
+          /arch/arm/mm/cache-v7.S - Copyright (C) 2005 ARM Ltd
           
 References
 ==========
@@ -53,6 +54,8 @@ Platform ARMv8
 
  On ARMv8 the Extended Page Table format is always enabled.
 
+ For usage of barriers (DMB/DSB/ISB) after cache maintenance operations see: ARM.Reference_Manual_1.pdf - Appendix G Barrier Litmus Tests
+
  Note: This unit currently only supports ARMv8 in Aarch32 mode, support for Aarch64 mode will be added in future.
 
 }
@@ -70,6 +73,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threa
 //To Do //Look for:
 
 //Critical
+
+//TestingRpi3
 
 {==============================================================================}
 {Global definitions}
@@ -792,7 +797,7 @@ type
  TARMv8DispatchFIQ = function(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; 
  
  {Prototypes for SWI Handlers}
- TARMv8DispatchSWI = function(CPUID:LongWord;Thread:TThreadHandle;Request:PSWIRequest):TThreadHandle; 
+ TARMv8DispatchSWI = function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
  
 {==============================================================================}
 var
@@ -906,7 +911,10 @@ function ARMv8InterlockedAddExchange(var Target:LongInt;Source:LongInt):LongInt;
 function ARMv8InterlockedCompareExchange(var Target:LongInt;Source,Compare:LongInt):LongInt;
 
 function ARMv8PageTableGetEntry(Address:PtrUInt):TPageTableEntry;
-function ARMv8PageTableSetEntry(Address:PtrUInt;const PageTableEntry:TPageTableEntry):LongWord; 
+function ARMv8PageTableSetEntry(const Entry:TPageTableEntry):LongWord; 
+
+function ARMv8VectorTableGetEntry(Number:LongWord):PtrUInt;
+function ARMv8VectorTableSetEntry(Number:LongWord;Address:PtrUInt):LongWord;
 
 function ARMv8FirstBitSet(Value:LongWord):LongWord;
 function ARMv8CountLeadingZeros(Value:LongWord):LongWord;
@@ -952,7 +960,7 @@ function ARMv8DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; in
 
 {==============================================================================}
 {ARMv8 SWI Functions}
-function ARMv8DispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSWIRequest):TThreadHandle; inline;
+function ARMv8DispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; inline;
 
 {==============================================================================}
 {ARMv8 Interrupt Functions}
@@ -1123,6 +1131,10 @@ begin
  {Register Platform PageTable Handlers}
  PageTableGetEntryHandler:=ARMv8PageTableGetEntry;
  PageTableSetEntryHandler:=ARMv8PageTableSetEntry;
+
+ {Register Platform VectorTable Handlers}
+ VectorTableGetEntryHandler:=ARMv8VectorTableGetEntry;
+ VectorTableSetEntryHandler:=ARMv8VectorTableSetEntry;
  
  {Register Platform FirstBitSet Handler}
  FirstBitSetHandler:=ARMv8FirstBitSet;
@@ -1153,9 +1165,9 @@ begin
  SpinExchangeFIQHandler:=ARMv8SpinExchangeFIQ;
   
  {Register Threads MutexLock/Unlock Handlers}
- //--MutexLockHandler:=ARMv8MutexLock;  //Mutex Recursion //TestingRPi3
- //--MutexUnlockHandler:=ARMv8MutexUnlock;  //Mutex Recursion //TestingRPi3
- //--MutexTryLockHandler:=ARMv8MutexTryLock;  //Mutex Recursion //TestingRPi3
+ MutexLockHandler:=ARMv8MutexLock;
+ MutexUnlockHandler:=ARMv8MutexUnlock;
+ MutexTryLockHandler:=ARMv8MutexTryLock;
   
  {Register Threads ThreadGet/SetCurrent Handler}
  ThreadGetCurrentHandler:=ARMv8ThreadGetCurrent;
@@ -2476,7 +2488,27 @@ procedure ARMv8InvalidateInstructionCacheRange(Address,Size:LongWord); assembler
 {Perform an invalidate instruction caches by MVA to PoU operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 asm
- //To Do //Critical
+ mov  r12, #0
+ mcr  p15, #2, r12, c0, c0, #0      //Set CSSELR to L1
+ mrc  p15, #1, r2, c0, c0, #0       //Read CCSIDR
+ and  r2, r2, #7                    //get line size (log2(size)-4, 0=16)
+ mov  r12, #16                      //make a bit mask
+ lsl  r2, r12, r2                   //and shift into position
+ sub  r12, r2, #1                   //make into a mask
+ and  r3, r0, r12                   //get offset into cache line
+ add  r1, r1, r3                    //add to length
+ bic  r0, r0, r12                   //clear offset from start.
+ dsb				                //Data Synchronization Barrier 
+.LLoop:
+ mcr  p15, #0, r0, c7, c5, #1       //Invalidate the I-Cache line
+ //mcr  p15, #0, r0, c7, c14, #1    //Clean and Invalidate the D-Cache line (See above)
+ add  r0, r0, r2
+ subs r1, r1, r2
+ bhi  .LLoop
+
+ dsb				                //Data Synchronization Barrier
+ isb				                //Instructions Synchronization Barrier
+ bx lr
 end;
 
 {==============================================================================}
@@ -3170,12 +3202,15 @@ end;
 {==============================================================================}
 
 function ARMv8PageTableGetEntry(Address:PtrUInt):TPageTableEntry;
-{Get and Decode the entry in the Page Table that corresponds to the supplied address}
+{Get and Decode the entry in the Page Table that corresponds to the supplied virtual address}
 var
  TableEntry:LongWord;
 begin
  {}
  FillChar(Result,SizeOf(TPageTableEntry),0);
+ 
+ {Check Address}
+ {Zero may be valid}
  
  {Get Coarse}
  TableEntry:=ARMv8GetPageTableCoarse(Address);
@@ -3409,13 +3444,411 @@ end;
 
 {==============================================================================}
 
-function ARMv8PageTableSetEntry(Address:PtrUInt;const PageTableEntry:TPageTableEntry):LongWord; 
-{Set an entry in the Page Table that corresponds to the supplied address}
+function ARMv8PageTableSetEntry(const Entry:TPageTableEntry):LongWord;
+{Encode and Set an entry in the Page Table that corresponds to the supplied virtual address}
+var
+ CoarseBase:PtrUInt;
+ 
+ TableBase:PtrUInt;
+ TableFlags:LongWord;
+ TableEntry:LongWord;
+ 
+ ReadMask:LongWord;
+ RemapMask:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- //To Do
+ {Check Entry}
+ if Entry.Flags = PAGE_TABLE_FLAG_NONE then Exit;
+ 
+ {Acquire Lock}
+ if PageTableLock.Lock <> INVALID_HANDLE_VALUE then PageTableLock.AcquireLock(PageTableLock.Lock);
+ try 
+  {Check Size}
+  case Entry.Size of 
+   SIZE_4K:begin
+     {4KB Small Page}
+     {Get Coarse}
+     TableEntry:=ARMv8GetPageTableCoarse(Entry.VirtualAddress);
+     if TableEntry = 0 then
+      begin
+       {Allocate Coarse}
+       if PAGE_TABLES_FREE = 0 then Exit;
+       
+       {Update Free/Used}
+       Dec(PAGE_TABLES_FREE);
+       Inc(PAGE_TABLES_USED);
+       
+       {Get Table Base}
+       TableBase:=(Entry.VirtualAddress and ARMV8_L1D_SECTION_BASE_MASK);
+       
+       {Get Coarse Base}
+       CoarseBase:=(PAGE_TABLES_NEXT and ARMV8_L1D_COARSE_BASE_MASK);
+       
+       {Update Next}
+       Inc(PAGE_TABLES_NEXT,SIZE_1K);
+       
+       {Set Coarse}
+       if not ARMv8SetPageTableCoarse(TableBase,CoarseBase,0) then
+        begin
+         {Reset Free/Used/Next}
+         Inc(PAGE_TABLES_FREE);
+         Dec(PAGE_TABLES_USED);
+         Dec(PAGE_TABLES_NEXT,SIZE_1K);
+         
+         Exit;
+        end;
+       
+       {Clean Data Cache Range (Coarse Page)}
+       ARMv8CleanDataCacheRange(CoarseBase,SIZE_1K);
+       
+       {Clean Data Cache Range (Page Table)}
+       ARMv8CleanDataCacheRange(PAGE_TABLE_BASE,PAGE_TABLE_SIZE);
+       
+       {Invalidate TLB}
+       ARMv8InvalidateTLB;
+      end
+     else
+      begin
+       {Get Coarse Base}
+       CoarseBase:=(TableEntry and ARMV8_L1D_COARSE_BASE_MASK);
+      end;     
+      
+     {Get Small}
+     TableEntry:=ARMv8GetPageTableSmall(Entry.VirtualAddress);
+     if TableEntry = 0 then
+      begin
+       {Not Supported}
+       Exit;
+      end;
+      
+     {Get Masks}
+     ReadMask:=PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE;
+     RemapMask:=PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK or PAGE_TABLE_FLAG_WRITETHROUGH or PAGE_TABLE_FLAG_WRITEALLOCATE;
+     
+     {Get Flags}
+     TableFlags:=0;
+     
+     {Check Normal/Cacheable/WriteBack/WriteThrough/Device/Ordered}     
+     if (Entry.Flags and RemapMask) = PAGE_TABLE_FLAG_NORMAL then
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED;
+      end
+     else if (Entry.Flags and RemapMask) = (PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK) then 
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK;
+      end
+     else if (Entry.Flags and RemapMask) = (PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH) then  
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH;
+      end
+     else if (Entry.Flags and RemapMask) = (PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEALLOCATE) then
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE;
+      end
+     else if (Entry.Flags and RemapMask) = PAGE_TABLE_FLAG_DEVICE then
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_SMALL_CACHE_REMAP_DEVICE;
+      end
+     else if (Entry.Flags and RemapMask) = PAGE_TABLE_FLAG_ORDERED then
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_SMALL_CACHE_REMAP_STRONGLY_ORDERED;
+      end
+     else 
+      begin
+       {Not Supported}
+       Exit;
+      end;      
+     
+     {Check Shared}
+     if (Entry.Flags and PAGE_TABLE_FLAG_SHARED) = PAGE_TABLE_FLAG_SHARED then
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_FLAG_SHARED;
+      end; 
+     
+     {Check NoAccess / ReadOnly / ReadWrite}
+     if (Entry.Flags and ReadMask) = PAGE_TABLE_FLAG_NONE then
+      begin
+       {Nothing}
+      end
+     else if (Entry.Flags and ReadMask) = PAGE_TABLE_FLAG_READONLY then
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_ACCESS_READONLY;
+      end
+     else if (Entry.Flags and ReadMask) = PAGE_TABLE_FLAG_READWRITE then 
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_ACCESS_READWRITE;
+      end
+     else
+      begin
+       {Not Supported}
+       Exit;
+      end;
+     
+     {Check Executable}
+     if (Entry.Flags and PAGE_TABLE_FLAG_EXECUTABLE) <> PAGE_TABLE_FLAG_EXECUTABLE then
+      begin
+       TableFlags:=TableFlags or ARMV8_L2D_FLAG_SMALL_XN;
+      end;
+     
+     {Update Small}
+     if ARMv8SetPageTableSmall(Entry.VirtualAddress,Entry.PhysicalAddress,TableFlags) then
+      begin
+       {Clean Data Cache Range (Coarse Page)}
+       ARMv8CleanDataCacheRange(CoarseBase,SIZE_1K);
+       
+       {Clean Data Cache Range (Page Table)}
+       ARMv8CleanDataCacheRange(PAGE_TABLE_BASE,PAGE_TABLE_SIZE);
+       
+       {Invalidate TLB}
+       ARMv8InvalidateTLB;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end; 
+    end;
+   SIZE_64K:begin
+     {64KB Large Page}
+     {Not Supported}
+     Exit;
+    end;
+   SIZE_1M:begin
+     {1MB Section}
+     {Get Section}
+     TableEntry:=ARMv8GetPageTableSection(Entry.VirtualAddress);
+     if TableEntry = 0 then
+      begin
+       {Not Supported}
+       Exit;
+      end
+     else
+      begin
+       {Check Supersection}
+       if (TableEntry and ARMV8_L1D_FLAG_SUPERSECTION) <> 0 then
+        begin
+         {Not Supported}
+         Exit;
+        end;
+      end;      
+     
+     {Get Masks}     
+     ReadMask:=PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE;
+     RemapMask:=PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK or PAGE_TABLE_FLAG_WRITETHROUGH or PAGE_TABLE_FLAG_WRITEALLOCATE;
+     
+     {Get Flags}
+     TableFlags:=0;
+     
+     {Check Normal/Cacheable/WriteBack/WriteThrough/Device/Ordered}
+     if (Entry.Flags and RemapMask) = PAGE_TABLE_FLAG_NORMAL then
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED;
+      end
+     else if (Entry.Flags and RemapMask) = (PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK) then 
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_BACK;
+      end
+     else if (Entry.Flags and RemapMask) = (PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH) then  
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH;
+      end
+     else if (Entry.Flags and RemapMask) = (PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEALLOCATE) then
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE;
+      end
+     else if (Entry.Flags and RemapMask) = PAGE_TABLE_FLAG_DEVICE then
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_CACHE_REMAP_DEVICE;
+      end
+     else if (Entry.Flags and RemapMask) = PAGE_TABLE_FLAG_ORDERED then
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_CACHE_REMAP_STRONGLY_ORDERED;
+      end
+     else 
+      begin
+       {Not Supported}
+       Exit;
+      end;      
+     
+     {Check Shared}
+     if (Entry.Flags and PAGE_TABLE_FLAG_SHARED) = PAGE_TABLE_FLAG_SHARED then
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_FLAG_SHARED;
+      end; 
+     
+     {Check NoAccess / ReadOnly / ReadWrite}
+     if (Entry.Flags and ReadMask) = PAGE_TABLE_FLAG_NONE then
+      begin
+       {Nothing}
+      end
+     else if (Entry.Flags and ReadMask) = PAGE_TABLE_FLAG_READONLY then
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_ACCESS_READONLY;
+      end
+     else if (Entry.Flags and ReadMask) = PAGE_TABLE_FLAG_READWRITE then 
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_ACCESS_READWRITE;
+      end
+     else
+      begin
+       {Not Supported}
+       Exit;
+      end;
+     
+     {Check Executable}
+     if (Entry.Flags and PAGE_TABLE_FLAG_EXECUTABLE) <> PAGE_TABLE_FLAG_EXECUTABLE then
+      begin
+       TableFlags:=TableFlags or ARMV8_L1D_FLAG_XN;
+      end;
+     
+     {Update Section}
+     if ARMv8SetPageTableSection(Entry.VirtualAddress,Entry.PhysicalAddress,TableFlags) then
+      begin
+       {Clean Data Cache Range (Page Table)}
+       ARMv8CleanDataCacheRange(PAGE_TABLE_BASE,PAGE_TABLE_SIZE);
+       
+       {Invalidate TLB}
+       ARMv8InvalidateTLB;
+    
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end; 
+    end;
+   SIZE_16M:begin
+     {16MB Supersection}
+     {Not Supported}
+     Exit;
+    end;
+  end;  
+ finally
+  {Release Lock}
+  if PageTableLock.Lock <> INVALID_HANDLE_VALUE then PageTableLock.ReleaseLock(PageTableLock.Lock);
+ end;
+end;
+
+{==============================================================================}
+
+function ARMv8VectorTableGetEntry(Number:LongWord):PtrUInt;
+{Return the address of the specified vector table entry number}
+var
+ Offset:PtrUInt;
+ Entry:TPageTableEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Number}
+ if Number >= VECTOR_TABLE_COUNT then Exit;
+ 
+ {Calculate Offset}
+ Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
+ 
+ {Get Page Table Entry}
+ Entry:=ARMv8PageTableGetEntry(Offset);
+ 
+ {Check for Read Only or Read Write}
+ if (Entry.Flags and (PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE)) <> 0 then
+  begin
+   {Get Entry}
+   Result:=PPtrUInt(Offset)^;
+  end; 
+end;
+
+{==============================================================================}
+
+function ARMv8VectorTableSetEntry(Number:LongWord;Address:PtrUInt):LongWord;
+{Set the supplied address as the value of the specified vector table entry number}
+var
+ Offset:PtrUInt;
+ Flags:LongWord;
+ Entry:TPageTableEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Number}
+ if Number >= VECTOR_TABLE_COUNT then Exit;
+
+ {Check Address}
+ {Zero may be valid}
+
+ {Acquire Lock}
+ if VectorTableLock.Lock <> INVALID_HANDLE_VALUE then VectorTableLock.AcquireLock(VectorTableLock.Lock);
+ try 
+  {Calculate Offset}
+  Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
+ 
+  {Get Page Table Entry}
+  Entry:=ARMv8PageTableGetEntry(Offset);
+  
+  {Check for Read Only}
+  if (Entry.Flags and PAGE_TABLE_FLAG_READONLY) <> 0 then
+   begin
+    {Modify Flags (Change to Read Write)}
+    Flags:=Entry.Flags;
+    Entry.Flags:=Entry.Flags and not(PAGE_TABLE_FLAG_READONLY);
+    Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READWRITE;
+    
+    if ARMv8PageTableSetEntry(Entry) = ERROR_SUCCESS then
+     begin
+      {Set Entry}
+      PPtrUInt(Offset)^:=Address;
+      
+      {Clean Data Cache Range}
+      ARMv8CleanDataCacheRange(VECTOR_TABLE_BASE,VECTOR_TABLE_SIZE);
+      
+      {Data Synchronisation Barrier}
+      ARMv8DataSynchronizationBarrier;
+      
+      {Invalidate Instruction Cache}
+      ARMv8InvalidateInstructionCache;
+      
+      {Flush Branch Target Cache}
+      ARMv8FlushBranchTargetCache;
+      
+      {Data Synchronisation Barrier}
+      ARMv8DataSynchronizationBarrier;
+      
+      {Instruction Synchronisation Barrier}
+      ARMv8InstructionMemoryBarrier;
+      
+      {Restore Flags (Back to Read Only)}
+      Entry.Flags:=Flags;
+      
+      {Return Result}
+      Result:=ARMv8PageTableSetEntry(Entry);
+     end; 
+   end
+  else
+   begin 
+    {Set Entry}
+    PPtrUInt(Offset)^:=Address;
+    
+    {Clean Data Cache Range}
+    ARMv8CleanDataCacheRange(VECTOR_TABLE_BASE,VECTOR_TABLE_SIZE);
+    
+    {Data Synchronisation Barrier}
+    ARMv8DataSynchronizationBarrier;
+    
+    {Invalidate Instruction Cache}
+    ARMv8InvalidateInstructionCache;
+    
+    {Flush Branch Target Cache}
+    ARMv8FlushBranchTargetCache;
+    
+    {Data Synchronisation Barrier}
+    ARMv8DataSynchronizationBarrier;
+    
+    {Instruction Synchronisation Barrier}
+    ARMv8InstructionMemoryBarrier;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   end; 
+ finally
+  {Release Lock}
+  if VectorTableLock.Lock <> INVALID_HANDLE_VALUE then VectorTableLock.ReleaseLock(VectorTableLock.Lock);
+ end;
 end;
 
 {==============================================================================}
@@ -3594,6 +4027,20 @@ function ARMv8SpinUnlock(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
 asm
+ //Get the state of the lock (TSpinEntry.State)
+ ldr   r1, [r0, #4]
+ cmp   r1, #SPIN_STATE_LOCKED
+ //If not locked then return an error
+ bne   .LErrorLocked
+ 
+ //Get the owner of the lock (TSpinEntry.Owner)
+ ldr   r1, [r0, #12]
+ //Get the current thread
+ mrc   p15, #0, r2, cr13, cr0, #4
+ cmp   r1, r2
+ //If not the current thread then return an error
+ bne   .LErrorOwner
+ 
  //Load the SPIN_STATE_UNLOCKED value
  mov   r1, #SPIN_STATE_UNLOCKED
  
@@ -3610,11 +4057,21 @@ asm
  
  //Return success
  mov   r0, #ERROR_SUCCESS
- 
  {$IFNDEF ARMV8_SPIN_WAIT_INTERRUPT}
  //Send an event to others that are waiting
  sev 
  {$ENDIF} 
+ bx    lr
+ 
+.LErrorOwner:
+ //Return failure
+ mov   r0, #ERROR_NOT_OWNER
+ bx    lr
+ 
+.LErrorLocked:
+ //Return failure
+ mov   r0, #ERROR_NOT_LOCKED
+ bx    lr
 end;
 
 {==============================================================================}
@@ -3702,6 +4159,8 @@ asm
 .LFailLock:
  //Return failure
  mov   r0, #ERROR_INVALID_PARAMETER
+ //Restore R4 and R5
+ pop   {r4, r5}
  bx    lr
 end;
 
@@ -3712,6 +4171,20 @@ function ARMv8SpinUnlockIRQ(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
 asm
+ //Get the state of the lock (TSpinEntry.State)
+ ldr   r1, [r0, #4]
+ cmp   r1, #SPIN_STATE_LOCKED
+ //If not locked then return an error
+ bne   .LErrorLocked
+ 
+ //Get the owner of the lock (TSpinEntry.Owner)
+ ldr   r1, [r0, #12]
+ //Get the current thread
+ mrc   p15, #0, r2, cr13, cr0, #4
+ cmp   r1, r2
+ //If not the current thread then return an error
+ bne   .LErrorOwner
+ 
  //Load the SPIN_STATE_UNLOCKED value
  mov   r1, #SPIN_STATE_UNLOCKED
  
@@ -3737,11 +4210,21 @@ asm
  
  //Return success
  mov   r0, #ERROR_SUCCESS
- 
  {$IFNDEF ARMV8_SPIN_WAIT_INTERRUPT}
  //Send an event to others that are waiting
  sev 
  {$ENDIF} 
+ bx    lr
+ 
+.LErrorOwner:
+ //Return failure
+ mov   r0, #ERROR_NOT_OWNER
+ bx    lr
+ 
+.LErrorLocked:
+ //Return failure
+ mov   r0, #ERROR_NOT_LOCKED
+ bx    lr
 end;
 
 {==============================================================================}
@@ -3829,6 +4312,8 @@ asm
 .LFailLock:
  //Return failure
  mov   r0, #ERROR_INVALID_PARAMETER
+ //Restore R4 and R5
+ pop   {r4, r5}
  bx    lr
 end;
 
@@ -3839,6 +4324,20 @@ function ARMv8SpinUnlockFIQ(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
 asm
+ //Get the state of the lock (TSpinEntry.State)
+ ldr   r1, [r0, #4]
+ cmp   r1, #SPIN_STATE_LOCKED
+ //If not locked then return an error
+ bne   .LErrorLocked
+ 
+ //Get the owner of the lock (TSpinEntry.Owner)
+ ldr   r1, [r0, #12]
+ //Get the current thread
+ mrc   p15, #0, r2, cr13, cr0, #4
+ cmp   r1, r2
+ //If not the current thread then return an error
+ bne   .LErrorOwner
+ 
  //Load the SPIN_STATE_UNLOCKED value
  mov   r1, #SPIN_STATE_UNLOCKED
  
@@ -3864,11 +4363,21 @@ asm
  
  //Return success
  mov   r0, #ERROR_SUCCESS
- 
  {$IFNDEF ARMV8_SPIN_WAIT_INTERRUPT}
  //Send an event to others that are waiting
  sev 
  {$ENDIF} 
+ bx    lr
+ 
+.LErrorOwner:
+ //Return failure
+ mov   r0, #ERROR_NOT_OWNER
+ bx    lr
+ 
+.LErrorLocked:
+ //Return failure
+ mov   r0, #ERROR_NOT_LOCKED
+ bx    lr
 end;
 
 {==============================================================================}
@@ -3956,6 +4465,8 @@ asm
 .LFailLock:
  //Return failure
  mov   r0, #ERROR_INVALID_PARAMETER
+ //Restore R4 and R5
+ pop   {r4, r5}
  bx    lr
 end;
 
@@ -3966,6 +4477,20 @@ function ARMv8SpinUnlockIRQFIQ(Spin:PSpinEntry):LongWord; assembler; nostackfram
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
 asm
+ //Get the state of the lock (TSpinEntry.State)
+ ldr   r1, [r0, #4]
+ cmp   r1, #SPIN_STATE_LOCKED
+ //If not locked then return an error
+ bne   .LErrorLocked
+ 
+ //Get the owner of the lock (TSpinEntry.Owner)
+ ldr   r1, [r0, #12]
+ //Get the current thread
+ mrc   p15, #0, r2, cr13, cr0, #4
+ cmp   r1, r2
+ //If not the current thread then return an error
+ bne   .LErrorOwner
+ 
  //Load the SPIN_STATE_UNLOCKED value
  mov   r1, #SPIN_STATE_UNLOCKED
  
@@ -3991,11 +4516,21 @@ asm
  
  //Return success
  mov   r0, #ERROR_SUCCESS
- 
  {$IFNDEF ARMV8_SPIN_WAIT_INTERRUPT}
  //Send an event to others that are waiting
  sev 
  {$ENDIF} 
+ bx    lr
+ 
+.LErrorOwner:
+ //Return failure
+ mov   r0, #ERROR_NOT_OWNER
+ bx    lr
+ 
+.LErrorLocked:
+ //Return failure
+ mov   r0, #ERROR_NOT_LOCKED
+ bx    lr
 end;
 
 {==============================================================================}
@@ -4131,6 +4666,32 @@ function ARMv8MutexLock(Mutex:PMutexEntry):LongWord; assembler; nostackframe;
 {Mutex: Pointer to the Mutex entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
 asm
+ //Get the flags of the lock (TMutexEntry.Flags)
+ ldr   r1, [r0, #20]
+ and   r1, r1, #MUTEX_FLAG_RECURSIVE
+ cmp   r1, #0
+ //If not recursive then acquire the lock
+ beq   .LStartLock
+ 
+ //Get the owner of the lock (TMutexEntry.Owner)
+ ldr   r1, [r0, #8]
+ //Get the current thread
+ mrc   p15, #0, r2, cr13, cr0, #4
+ cmp   r1, r2
+ //If not the current thread then acquire the lock
+ bne   .LStartLock
+ 
+ //Get the count of the lock (TMutexEntry.Count)
+ ldr   r1, [r0, #16]
+ //Increment the count (TMutexEntry.Count)
+ add   r1, r1, #1
+ str   r1, [r0, #16]
+ 
+ //Return success
+ mov   r0, #ERROR_SUCCESS
+ bx    lr
+ 
+.LStartLock:
  //Load the MUTEX_STATE_LOCKED value
  mov   r1, #MUTEX_STATE_LOCKED
  
@@ -4154,9 +4715,12 @@ asm
  //ARMv8 "data memory barrier" instruction.
  dmb
  
+ //Set the count (TMutexEntry.Count)
+ mov   r2, #1
+ str   r2, [r0, #16]
+ 
  //Get the current thread
  mrc p15, #0, r2, cr13, cr0, #4
- 
  //Set the owner (TMutexEntry.Owner)
  str   r2, [r0, #8]
  
@@ -4204,10 +4768,56 @@ function ARMv8MutexUnlock(Mutex:PMutexEntry):LongWord; assembler; nostackframe;
 {Mutex: Pointer to the Mutex entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
 asm
+ //Get the state of the lock (TMutexEntry.State)
+ ldr   r1, [r0, #4]
+ cmp   r1, #MUTEX_STATE_LOCKED
+ //If not locked then return an error
+ bne   .LErrorLocked
+ 
+ //Get the owner of the lock (TMutexEntry.Owner)
+ ldr   r1, [r0, #8]
+ //Get the current thread
+ mrc   p15, #0, r2, cr13, cr0, #4
+ cmp   r1, r2
+ //If not the current thread then return an error
+ bne   .LErrorOwner
+
+ //Get the flags of the lock (TMutexEntry.Flags)
+ ldr   r1, [r0, #20]
+ and   r1, r1, #MUTEX_FLAG_RECURSIVE
+ cmp   r1, #0
+ //If not recursive then release the lock
+ beq   .LStartUnlock
+ 
+ //Get the count of the lock (TMutexEntry.Count)
+ ldr   r1, [r0, #16]
+ cmp   r1, #0
+ //If already zero then return an error
+ beq   .LErrorInvalid
+ 
+ //Decrement the count (TMutexEntry.Count)
+ sub   r1, r1, #1
+ //Check the count
+ cmp   r1, #0
+ //If zero then release the lock
+ beq   .LStartUnlock
+
+ //Save the count (TMutexEntry.Count)
+ str   r1, [r0, #16]
+ 
+ //Return success
+ mov   r0, #ERROR_SUCCESS
+ bx    lr
+ 
+.LStartUnlock: 
  //Load the MUTEX_STATE_UNLOCKED value
  mov   r1, #MUTEX_STATE_UNLOCKED
  
- //Release the owner of the lock (TMutexEntry.Owner);
+ //Reset the count of the lock (TMutexEntry.Count)
+ mov   r2, #0
+ str   r2, [r0, #16]
+ 
+ //Reset the owner of the lock (TMutexEntry.Owner);
  ldr   r2, =INVALID_HANDLE_VALUE
  str   r2, [r0, #8]
  
@@ -4220,6 +4830,22 @@ asm
  
  //Return success
  mov   r0, #ERROR_SUCCESS
+ bx    lr
+ 
+.LErrorOwner:
+ //Return failure
+ mov   r0, #ERROR_NOT_OWNER
+ bx    lr
+ 
+.LErrorLocked:
+ //Return failure
+ mov   r0, #ERROR_NOT_LOCKED
+ bx    lr
+ 
+.LErrorInvalid:
+ //Return failure
+ mov   r0, #ERROR_INVALID_FUNCTION
+ bx    lr
 end;
 
 {==============================================================================}
@@ -4229,6 +4855,32 @@ function ARMv8MutexTryLock(Mutex:PMutexEntry):LongWord; assembler; nostackframe;
 {Mutex: Pointer to the Mutex entry to try to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed, ERROR_LOCKED if already locked or another error code on failure (Returned in R0)}
 asm
+ //Get the flags of the lock (TMutexEntry.Flags)
+ ldr   r1, [r0, #20]
+ and   r1, r1, #MUTEX_FLAG_RECURSIVE
+ cmp   r1, #0
+ //If not recursive then acquire the lock
+ beq   .LStartLock
+ 
+ //Get the owner of the lock (TMutexEntry.Owner)
+ ldr   r1, [r0, #8]
+ //Get the current thread
+ mrc   p15, #0, r2, cr13, cr0, #4
+ cmp   r1, r2
+ //If not the current thread then acquire the lock
+ bne   .LStartLock
+ 
+ //Get the count of the lock (TMutexEntry.Count)
+ ldr   r1, [r0, #16]
+ //Increment the count (TMutexEntry.Count)
+ add   r1, r1, #1
+ str   r1, [r0, #16]
+ 
+ //Return success
+ mov   r0, #ERROR_SUCCESS
+ bx    lr
+ 
+.LStartLock:
  //Load the MUTEX_STATE_LOCKED value
  mov   r1, #MUTEX_STATE_LOCKED
 
@@ -4252,9 +4904,12 @@ asm
  //ARMv8 "data memory barrier" instruction.
  dmb
  
+ //Set the count (TMutexEntry.Count)
+ mov   r2, #1
+ str   r2, [r0, #16]
+ 
  //Get the current thread
  mrc p15, #0, r2, cr13, cr0, #4
- 
  //Set the owner (TMutexEntry.Owner)
  str   r2, [r0, #8]
  
@@ -4441,10 +5096,13 @@ end;
 function ARMv8DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; inline;
 begin
  {}
- Result:=Thread;
  if Assigned(ARMv8DispatchIRQHandler) then
   begin
    Result:=ARMv8DispatchIRQHandler(CPUID,Thread);
+  end
+ else
+  begin
+   Result:=Thread;
   end;
 end;
 
@@ -4454,23 +5112,29 @@ end;
 function ARMv8DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; inline;
 begin
  {}
- Result:=Thread;
  if Assigned(ARMv8DispatchFIQHandler) then
   begin
    Result:=ARMv8DispatchFIQHandler(CPUID,Thread);
+  end
+ else
+  begin
+   Result:=Thread;
   end;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {ARMv8 SWI Functions}
-function ARMv8DispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSWIRequest):TThreadHandle; inline;
+function ARMv8DispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; inline;
 begin
  {}
- Result:=Thread;
  if Assigned(ARMv8DispatchSWIHandler) then
   begin
    Result:=ARMv8DispatchSWIHandler(CPUID,Thread,Request);
+  end
+ else
+  begin
+   Result:=Thread;
   end;
 end;
 
@@ -4479,7 +5143,7 @@ end;
 {ARMv8 Interrupt Functions}
 procedure ARMv8ResetHandler; assembler; nostackframe;    
 asm
- //To Do //For more information see: A2.6 Exceptions in the arm_arm.pdf
+ //See: B1.6.10 Reset in the ARM v7 Architecture Reference Manual
  bl ActivityLEDEnable
 .LLoop:
  bl ActivityLEDOff
@@ -4595,12 +5259,10 @@ asm
 
  //Change Program State (CPSID) to SYS mode with IRQ still disabled
  //See: A7.1.24 CPS in the ARM Architecture Reference Manual (arm_arm)
- cps #ARM_MODE_SYS  
+ cpsid i, #ARM_MODE_SYS  
 
  //Save all of the general registers (R0 to R12) and the SYS mode link register (LR) 
  push {r0-r12, lr}
-
- //To Do //Load the SWI_THREAD_HANDLE before switching to SWI mode //See IRQ Handler for info
   
  //Change Program State (CPS) to SWI mode (IRQ will remain disabled)
  //The SWI mode stack will have been set by initialization routines
@@ -4787,7 +5449,7 @@ end;
 
 procedure ARMv8ReservedHandler; assembler; nostackframe;     
 asm
- //To Do //For more information see: A2.6 Exceptions in the arm_arm.pdf
+ //For more information see: A2.6 Exceptions in the arm_arm.pdf
  bl ActivityLEDEnable
 .LLoop:
  bl ActivityLEDOff
@@ -4828,13 +5490,12 @@ procedure ARMv8IRQHandler; assembler; nostackframe;
         because we use it to store the other registers and will return it to the correct value before we return
         from the IRQ handler. The program counter (r15) does not need to be saved as it now points to this code.
         
-        To process the interrupt request
+        To process the interrupt request the handler calls the DispatchIRQ function which will dispatch the
+        interrupt to a registered handler for processing. The handler must clear the interrupt source before it
+        returns or the interrupt will simply occur again immediately once reenabled.
         
-        ??????
-        
-        To return from the interrupt request
-
-        ??????
+        To return from the interrupt request the handler uses the rfeia (Return From Exception Increment After)
+        instruction which will load the pc and cpsr from the SYS mode stack
         
 }
 asm
@@ -4845,6 +5506,21 @@ asm
  //See: A2.6.8 Interrupt request (IRQ) exception in the ARM Architecture Reference Manual (arm_arm)
  sub lr, lr, #4
 
+ //Save r8 so we can us it to examine the spsr of the interrupted task to determine whether we are
+ //interrupting a normal thread or if we are interrupting an IRQ, SWI or other exception
+ push {r8}
+ mrs  r8, spsr
+ and  r8, r8, #ARM_MODE_BITS
+ 
+ //Check for SYS mode
+ cmp  r8, #ARM_MODE_SYS
+ bne  .LOtherIRQ
+ 
+.LThreadIRQ:  
+ //Interrupted a normal thread
+ //Restore r8 from above
+ pop {r8}
+ 
  //Store Return State (SRSDB) on the SYS mode stack which will be the stack of the interrupted thread
  //This will store the IRQ mode link register (LR_irq) and saved program status register (SPSR_irq)
  //Which is somewhat equivalent to doing "push {lr, spsr}" if that was a real instruction
@@ -4858,17 +5534,6 @@ asm
 
  //Save all of the general registers (R0 to R12) and the SYS mode link register (LR) 
  push {r0-r12, lr}
- 
- //To Do //Load the IRQ_THREAD_HANDLE before switching to IRQ mode
-                       //so if we get interrupted by an FIQ then it sees SYS mode and does as normal
-                       //
-                       //Check if the "current" thread is IRQ_THREAD_HANDLE and if so pass INVALID_HANDLE_VALUE to Dispatch ?
-                       //Maybe Scheduler could just check and not context switch if it is ?
-                       
-                       //Can we reenable IRQ after the switch to IRQ mode ?
-                       //Would need to disable again on return before switching to SYS mode ?
-                       //No, that won't work, we will be in IRQ mode and saving the stack to SYS mode !
-                       
                        
  //Change Program State (CPS) to IRQ mode (IRQ will remain disabled)
  //The IRQ mode stack will have been set by initialization routines
@@ -4940,6 +5605,85 @@ asm
  //Note: This instruction is not yet supported by the FPC compiler
  .long 0xf8bd0a00  //rfeia sp!   
  
+.LOtherIRQ: 
+ //Interrupted an IRQ, SWI or other exception 
+ //Restore r8 from above
+ pop {r8}
+ 
+ //Store Return State (SRSDB) on the SVC mode stack which will be the stack we use for the handler
+ //This will store the IRQ mode link register (LR_irq) and saved program status register (SPSR_irq)
+ //Which is somewhat equivalent to doing "push {lr, spsr}" if that was a real instruction
+ //See: A2.6.14 SRS – Store Return State in the ARM Architecture Reference Manual (arm_arm)
+ //Note: This instruction is not yet supported by the FPC compiler
+ .long 0xf96d0513  //srsdb #ARM_MODE_SVC! 
+ 
+ //Change Program State (CPSID) to SVC mode with IRQ still disabled
+ //See: A7.1.24 CPS in the ARM Architecture Reference Manual (arm_arm)
+ cpsid i, #ARM_MODE_SVC  
+ 
+ //Save all of the general registers (R0 to R12) and the SVC mode link register (LR) 
+ push {r0-r12, lr}
+ 
+ //Get the current CPU
+ //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
+ mrc p15, #0, r0, cr0, cr0, #5;
+ //Mask off the CPUID value
+ and r0, #ARMV8_CP15_C0_MPID_CPUID_MASK
+ //Multiply by 4 to get the offset into the array
+ lsl r2, r0, #2
+ 
+ //Get the IRQ thread id
+ ldr r1, .LIRQ_THREAD_HANDLE
+ ldr r1, [r1]
+ ldr r1, [r1, r2]
+ 
+ //Save the current thread id from c13 (Thread and process ID) register of system control coprocessor CP15  
+ mrc p15, #0, r4, cr13, cr0, #4
+ 
+ //Load the IRQ thread id into c13 (Thread and process ID) register of system control coprocessor CP15  
+ mcr p15, #0, r1, cr13, cr0, #4
+ 
+ //Align the SVC mode stack pointer (SP) to an 8 byte boundary for external calls
+ //See: Procedure Call Standard for the ARM Architecture
+ and r3, sp, #4
+ sub sp, sp, r3
+ 
+ //Save value of R3 (Stack Alignment) on the SVC mode stack for return from ARMv8DispatchIRQ
+ //Also save R4 (Current Thread Id) to maintain the 8 byte alignment
+ push {r3, r4}
+  
+ //Execute a data memory barrier 
+ //ARMv8 "data memory barrier" instruction.
+ dmb
+
+ //Call DispatchIRQ passing CPU in R0 and INVALID_HANDLE_VALUE in R1 (No interrupted thread)
+ //DispatchIRQ will return INVALID_HANDLE_VALUE in R0 and no context switch will occur
+ ldr r1, =INVALID_HANDLE_VALUE
+ bl ARMv8DispatchIRQ
+ 
+ //Execute a data memory barrier
+ //ARMv8 "data memory barrier" instruction.
+ dmb
+ 
+ //Restore value of R3 (Stack Alignment) from the SVC mode stack after return from ARMv8DispatchIRQ
+ //Also restore R4 (Current Thread Id) to maintain the 8 byte alignment
+ pop {r3, r4}
+ 
+ //Restore the SVC mode stack pointer alignment 
+ add sp, sp, r3
+ 
+ //Load the current thread id from R4 into c13 (Thread and process ID) register of system control coprocessor CP15
+ mcr p15, #0, r4, cr13, cr0, #4
+ 
+ //Restore all of the general registers (R0 to R12) and the SVC mode link register (LR) 
+ pop {r0-r12, lr}
+ 
+ //Return From Exception (RFEIA) loading PC and CPSR from the SVC mode stack
+ //Which is somewhat equivalent to doing "pop {pc, cpsr}" if that was a real instruction
+ //See: A2.6.14 RFE – Return From Exception in the ARM Architecture Reference Manual (arm_arm)
+ //Note: This instruction is not yet supported by the FPC compiler
+ .long 0xf8bd0a00  //rfeia sp!   
+
 .LIRQ_THREAD_HANDLE:   
   .long IRQ_THREAD_HANDLE
 
@@ -4949,42 +5693,223 @@ end;
 {==============================================================================}
 
 procedure ARMv8FIQHandler; assembler; nostackframe;    
+{Handle a fast interrupt request FIQ from an interrupt source}
+{Notes: This routine is registered as the vector for FIQ requests in the vector table loaded during startup.
+        
+        At the end of each instruction the processor checks the FIQ line and if triggered it will lookup the
+        vector in the vector table and jump to the routine listed.
+        
+        When the processor receives an FIQ it switches to FIQ mode, stores the address of the next instruction
+        in the FIQ mode link register (lr_fiq) and saves the current program status register into the FIQ mode
+        saved program status register (spsr_fiq).
+        
+        The FIQ handler first checks the spsr to determine if the task being interrupted is a normal thread or
+        an exception or interrupt handler. 
+        
+        The FIQ handler then saves the FIQ mode lr and spsr (which represent the location and state to return
+        to) onto eihter the SYS mode or SVC mode stack using the srsdb (Store Return State Decrement Before)
+        instruction depending on the value of spsr.
+        
+        The FIQ handler switches to SYS or SVC mode and saves all the neccessary registers for the return to the
+        interrupted task before switching back to FIQ mode in order to process the interrupt request. Because
+        we arrive here from an interrupt the task that was executing has no opportunity to save registers and
+        will be unaware on return that it was interrupted. For this reason we must save all of the general purpose
+        registers (r0 to r12) as well as the SYS mode link register (lr). We do not save the stack pointer (r13)
+        because we use it to store the other registers and will return it to the correct value before we return
+        from the FIQ handler. The program counter (r15) does not need to be saved as it now points to this code.
+        
+        To process the fast interrupt request the handler calls the DispatchFIQ function which will dispatch the
+        interrupt to a registered handler for processing. The handler must clear the interrupt source before it
+        returns or the fast interrupt will simply occur again immediately once reenabled.
+        
+        To return from the fast interrupt request the handler uses the rfeia (Return From Exception Increment After)
+        instruction which will load the pc and cpsr from the stack of the current mode (SYS or SVC)
+        
+}
 asm
  //On entry, processor will be in FIQ mode, IRQ and FIQ will be disabled and SP will point to the FIQ stack
  //See: A2.6.9 Fast interrupt request (FIQ) exception in the ARM Architecture Reference Manual (arm_arm)
  
+ //Adjust the FIQ mode link register (LR_fiq) for the return
+ //See: A2.6.9 Fast interrupt request (FIQ) exception in the ARM Architecture Reference Manual (arm_arm)
+ sub  lr, lr, #4
  
+ //Because FIQ mode has a banked set of registers that includes r8 to r12 we can use one of these to examine
+ //the spsr of the interrupted task to determine whether we are interrupting a normal thread or if we are
+ //interrupting an IRQ or other exception
+ mrs  r8, spsr
+ and  r8, r8, #ARM_MODE_BITS
+ 
+ //Check for SYS mode
+ cmp  r8, #ARM_MODE_SYS
+ bne  .LOtherFIQ
+ 
+.LThreadFIQ:  
+ //Interrupted a normal thread
+ //Store Return State (SRSDB) on the SYS mode stack which will be the stack of the interrupted thread
+ //This will store the FIQ mode link register (LR_fiq) and saved program status register (SPSR_fiq)
+ //Which is somewhat equivalent to doing "push {lr, spsr}" if that was a real instruction
+ //See: A2.6.14 SRS – Store Return State in the ARM Architecture Reference Manual (arm_arm)
+ //Note: This instruction is not yet supported by the FPC compiler
+ .long 0xf96d051f  //srsdb #ARM_MODE_SYS! 
 
- //To Do //See some notes in ARMv8IRQHandler, the FIQ handler will need to detect if it is interrupting
-                       //the IRQ handler and act accordingly (Not save to the SYS mode stack etc ?)
+ //Change Program State (CPSID) to SYS mode with IRQ and FIQ still disabled
+ //See: A7.1.24 CPS in the ARM Architecture Reference Manual (arm_arm)
+ cpsid if, #ARM_MODE_SYS  
+
+ //Save all of the general registers (R0 to R12) and the SYS mode link register (LR) 
+ push {r0-r12, lr}
+
+ //Change Program State (CPS) to FIQ mode (IRQ and FIQ will remain disabled)
+ //The FIQ mode stack will have been set by initialization routines
+ //We use this stack to process the FIQ not the FIQ thread stack
+ cps #ARM_MODE_FIQ
+
+ //Get the current CPU
+ //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
+ mrc p15, #0, r0, cr0, cr0, #5;
+ //Mask off the CPUID value
+ and r0, #ARMV8_CP15_C0_MPID_CPUID_MASK
+ //Multiply by 4 to get the offset into the array
+ lsl r2, r0, #2
  
- //To Do //See ARMv8IRQHandler
+ //Get the FIQ thread id
+ ldr r1, .LFIQ_THREAD_HANDLE
+ ldr r1, [r1]
+ ldr r1, [r1, r2]
  
- //To Do //For more information see: A2.6 Exceptions in the arm_arm.pdf
- bl ActivityLEDEnable
-.LLoop:
- bl ActivityLEDOff
- bl ARMLongWait
- mov r4,#10
-.LWait:
- bl ActivityLEDOn
- bl ARMWait
- bl ActivityLEDOff
- bl ARMWait
- sub r4,#1
- cmp r4,#0
- bne .LWait
- b .LLoop
+ //Save the current thread id from c13 (Thread and process ID) register of system control coprocessor CP15  
+ mrc p15, #0, r4, cr13, cr0, #4
  
- //To Do //See ARMv8IRQHandler
+ //Load the FIQ thread id into c13 (Thread and process ID) register of system control coprocessor CP15  
+ mcr p15, #0, r1, cr13, cr0, #4
+
+ //Align the FIQ mode stack pointer (SP) to an 8 byte boundary for external calls
+ //See: Procedure Call Standard for the ARM Architecture
+ and r3, sp, #4
+ sub sp, sp, r3
+ 
+ //Save value of R3 (Stack Alignment) on the FIQ mode stack for return from ARMv8DispatchFIQ
+ //Also save R4 (Current Thread Id) to maintain the 8 byte alignment
+ push {r3, r4}
   
-.LIRQ_THREAD_HANDLE:   
-  .long IRQ_THREAD_HANDLE
+ //Execute a data memory barrier 
+ //ARMv8 "data memory barrier" instruction.
+ dmb
 
+ //Call DispatchFIQ passing CPU in R0 and Thread Id in R1 (Thread Id of the interrupted thread)
+ //DispatchFIQ will return Thread Id in R0 which may be different if a context switch occurred
+ mov r1, r4
+ bl ARMv8DispatchFIQ
+ 
+ //Execute a data memory barrier
+ //ARMv8 "data memory barrier" instruction.
+ dmb
+ 
+ //Restore value of R3 (Stack Alignment) from the FIQ mode stack after return from ARMv8DispatchFIQ
+ //Also restore R4 (Current Thread Id) to maintain the 8 byte alignment
+ pop {r3, r4}
+  
+ //Restore the FIQ mode stack pointer alignment 
+ add sp, sp, r3
+ 
+ //Load the current thread id into c13 (Thread and process ID) register of system control coprocessor CP15  
+ //Returned from ARMv8DispatchFIQ in R0 and may be different if a context switch occurred 
+ mcr p15, #0, r0, cr13, cr0, #4
+
+ //Change Program State (CPS) to SYS mode (IRQ and FIQ will remain disabled)
+ //If a context switch occurred then the SYS mode stack will have been swapped
+ cps #ARM_MODE_SYS
+ 
+ //Restore all of the general registers (R0 to R12) and the SYS mode link register (LR) 
+ pop {r0-r12, lr}
+ 
+ //Return From Exception (RFEIA) loading PC and CPSR from the SYS mode stack
+ //Which is somewhat equivalent to doing "pop {pc, cpsr}" if that was a real instruction
+ //See: A2.6.14 RFE – Return From Exception in the ARM Architecture Reference Manual (arm_arm)
+ //Note: This instruction is not yet supported by the FPC compiler
+ .long 0xf8bd0a00  //rfeia sp!   
+
+.LOtherFIQ: 
+ //Interrupted an IRQ or other exception
+ //Store Return State (SRSDB) on the SVC mode stack which will be the stack we use for the handler
+ //This will store the FIQ mode link register (LR_fiq) and saved program status register (SPSR_fiq)
+ //Which is somewhat equivalent to doing "push {lr, spsr}" if that was a real instruction
+ //See: A2.6.14 SRS – Store Return State in the ARM Architecture Reference Manual (arm_arm)
+ //Note: This instruction is not yet supported by the FPC compiler
+ .long 0xf96d0513  //srsdb #ARM_MODE_SVC! 
+ 
+ //Change Program State (CPSID) to SVC mode with IRQ and FIQ still disabled
+ //See: A7.1.24 CPS in the ARM Architecture Reference Manual (arm_arm)
+ cpsid if, #ARM_MODE_SVC  
+
+ //Save all of the general registers (R0 to R12) and the SVC mode link register (LR) 
+ push {r0-r12, lr}
+ 
+ //Get the current CPU
+ //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
+ mrc p15, #0, r0, cr0, cr0, #5;
+ //Mask off the CPUID value
+ and r0, #ARMV8_CP15_C0_MPID_CPUID_MASK
+ //Multiply by 4 to get the offset into the array
+ lsl r2, r0, #2
+ 
+ //Get the FIQ thread id
+ ldr r1, .LFIQ_THREAD_HANDLE
+ ldr r1, [r1]
+ ldr r1, [r1, r2]
+ 
+ //Save the current thread id from c13 (Thread and process ID) register of system control coprocessor CP15
+ mrc p15, #0, r4, cr13, cr0, #4
+ 
+ //Load the FIQ thread id into c13 (Thread and process ID) register of system control coprocessor CP15
+ mcr p15, #0, r1, cr13, cr0, #4
+
+ //Align the SVC mode stack pointer (SP) to an 8 byte boundary for external calls
+ //See: Procedure Call Standard for the ARM Architecture
+ and r3, sp, #4
+ sub sp, sp, r3
+ 
+ //Save value of R3 (Stack Alignment) on the SVC mode stack for return from ARMv8DispatchFIQ
+ //Also save R4 (Current Thread Id) to maintain the 8 byte alignment
+ push {r3, r4}
+  
+ //Execute a data memory barrier 
+ //ARMv8 "data memory barrier" instruction.
+ dmb
+
+ //Call DispatchFIQ passing CPU in R0 and INVALID_HANDLE_VALUE in R1 (No interrupted thread)
+ //DispatchFIQ will return INVALID_HANDLE_VALUE in R0 and no context switch will occur
+ ldr r1, =INVALID_HANDLE_VALUE
+ bl ARMv8DispatchFIQ
+ 
+ //Execute a data memory barrier
+ //ARMv8 "data memory barrier" instruction.
+ dmb
+ 
+ //Restore value of R3 (Stack Alignment) from the SVC mode stack after return from ARMv8DispatchFIQ
+ //Also restore R4 (Current Thread Id) to maintain the 8 byte alignment
+ pop {r3, r4}
+  
+ //Restore the SVC mode stack pointer alignment 
+ add sp, sp, r3
+ 
+ //Load the current thread id from R4 into c13 (Thread and process ID) register of system control coprocessor CP15
+ mcr p15, #0, r4, cr13, cr0, #4
+ 
+ //Restore all of the general registers (R0 to R12) and the SVC mode link register (LR) 
+ pop {r0-r12, lr}
+ 
+ //Return From Exception (RFEIA) loading PC and CPSR from the SVC mode stack
+ //Which is somewhat equivalent to doing "pop {pc, cpsr}" if that was a real instruction
+ //See: A2.6.14 RFE – Return From Exception in the ARM Architecture Reference Manual (arm_arm)
+ //Note: This instruction is not yet supported by the FPC compiler
+ .long 0xf8bd0a00  //rfeia sp!   
+ 
 .LFIQ_THREAD_HANDLE:   
   .long FIQ_THREAD_HANDLE
 
- //Note: Compiler adds "mov	pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
+ //Note: Compiler adds "mov pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
 end;
 
 {==============================================================================}

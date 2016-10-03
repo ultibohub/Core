@@ -2468,7 +2468,7 @@ begin
  {Device}
  Keyboard.Keyboard.Device.DeviceBus:=DEVICE_BUS_USB;
  Keyboard.Keyboard.Device.DeviceType:=KEYBOARD_TYPE_USB;
- Keyboard.Keyboard.Device.DeviceFlags:=KEYBOARD_FLAG_NONE;
+ Keyboard.Keyboard.Device.DeviceFlags:=Keyboard.Keyboard.Device.DeviceFlags; {Don't override defaults (was KEYBOARD_FLAG_NONE)}
  Keyboard.Keyboard.Device.DeviceData:=Device;
  Keyboard.Keyboard.Device.DeviceDescription:=USBKEYBOARD_KEYBOARD_DESCRIPTION;
  {Keyboard}

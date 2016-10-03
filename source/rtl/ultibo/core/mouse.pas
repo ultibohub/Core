@@ -95,12 +95,13 @@ const
  
  {Mouse Device Flags}
  MOUSE_FLAG_NONE         = $00000000;
- MOUSE_FLAG_NON_BLOCK    = $00000001;
- MOUSE_FLAG_DIRECT_READ  = $00000002;
- MOUSE_FLAG_SWAP_BUTTONS = $00000004;
- MOUSE_FLAG_PEEK_BUFFER  = $00000008;
+ MOUSE_FLAG_NON_BLOCK    = $00000001; {If set device reads are non blocking (Also supported in Flags parameter of MouseReadEx)}
+ MOUSE_FLAG_DIRECT_READ  = $00000002; {If set device writes mouse data to its local buffer and which must be read using MouseDeviceRead}
+ MOUSE_FLAG_SWAP_BUTTONS = $00000004; {If set left and right mouse buttons will be swapped in mouse data}
+ MOUSE_FLAG_PEEK_BUFFER  = $00000008; {Peek at the buffer to see if any data is available, don't remove it (Used only in Flags parameter of MouseReadEx)}
  
- MOUSE_FLAG_MASK = MOUSE_FLAG_NON_BLOCK or MOUSE_FLAG_DIRECT_READ or MOUSE_FLAG_SWAP_BUTTONS or MOUSE_FLAG_PEEK_BUFFER;
+ {Flags supported by MOUSE_CONTROL_GET/SET/CLEAR_FLAG}
+ MOUSE_FLAG_MASK = MOUSE_FLAG_NON_BLOCK or MOUSE_FLAG_DIRECT_READ or MOUSE_FLAG_SWAP_BUTTONS;
  
  {Mouse Device Control Codes}
  MOUSE_CONTROL_GET_FLAG         = 1;  {Get Flag}
@@ -112,13 +113,17 @@ const
  {Mouse Buffer Size}
  MOUSE_BUFFER_SIZE = 512; 
  
- {Mouse Data Definitions}
- MOUSE_LEFT_BUTTON    =  $0001;
- MOUSE_RIGHT_BUTTON   =  $0002;
- MOUSE_MIDDLE_BUTTON  =  $0004;
- MOUSE_SIDE_BUTTON    =  $0008;
- MOUSE_EXTRA_BUTTON   =  $0010;
-
+ {Mouse Data Definitions (Values for TMouseData.Buttons)}
+ MOUSE_LEFT_BUTTON    =  $0001; {The Left mouse button is pressed}
+ MOUSE_RIGHT_BUTTON   =  $0002; {The Right mouse button is pressed}
+ MOUSE_MIDDLE_BUTTON  =  $0004; {The Middle mouse button is pressed}
+ MOUSE_SIDE_BUTTON    =  $0008; {The Side mouse button is pressed}
+ MOUSE_EXTRA_BUTTON   =  $0010; {The Extra mouse button is pressed}
+ MOUSE_TOUCH_BUTTON   =  $0020; {The Touch screen is being touched}
+ MOUSE_ABSOLUTE_X     =  $0040; {The OffsetX value is absolute not relative}
+ MOUSE_ABSOLUTE_Y     =  $0080; {The OffsetY value is absolute not relative}
+ MOUSE_ABSOLUTE_WHEEL =  $0100; {The OffsetWheel value is absolute not relative}
+ 
  {Mouse logging}
  MOUSE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Mouse debugging messages}
  MOUSE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Mouse informational messages, such as a device being attached or detached}
@@ -1629,7 +1634,7 @@ begin
  {Device}
  Mouse.Mouse.Device.DeviceBus:=DEVICE_BUS_USB;
  Mouse.Mouse.Device.DeviceType:=MOUSE_TYPE_USB;
- Mouse.Mouse.Device.DeviceFlags:=MOUSE_FLAG_NONE;
+ Mouse.Mouse.Device.DeviceFlags:=Mouse.Mouse.Device.DeviceFlags; {Don't override defaults (was MOUSE_FLAG_NONE)}
  Mouse.Mouse.Device.DeviceData:=Device;
  Mouse.Mouse.Device.DeviceDescription:=USBMOUSE_MOUSE_DESCRIPTION;
  {Mouse}

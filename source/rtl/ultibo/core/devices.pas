@@ -243,8 +243,10 @@ const
  DEVICE_CLASS_PWM             = 50; {A Pulse Width Modulation (PWM) Device}
  DEVICE_CLASS_1WIRE           = 51; {A 1-Wire Device (Implementing a standard W1 device interface)}
  DEVICE_CLASS_CLOCK_MANAGER   = 52; {A Clock Manager Device}
+ DEVICE_CLASS_CODEC           = 53; {A CODEC Device (eg Audio or Video)}
+ DEVICE_CLASS_TOUCH           = 54; {A Touch Device}
 
- DEVICE_CLASS_MAX             = 52;
+ DEVICE_CLASS_MAX             = 54;
  
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
  
@@ -302,7 +304,9 @@ const
   'DEVICE_CLASS_PCM',
   'DEVICE_CLASS_PWM',
   'DEVICE_CLASS_1WIRE',
-  'DEVICE_CLASS_CLOCK_MANAGER');
+  'DEVICE_CLASS_CLOCK_MANAGER',
+  'DEVICE_CLASS_CODEC',
+  'DEVICE_CLASS_TOUCH');
  
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
@@ -443,7 +447,8 @@ const
  
  {Clock Device Flags}
  CLOCK_FLAG_NONE      = $00000000;
-  
+ CLOCK_FLAG_WRITABLE  = $00000001; {Device supports writing the clock value}
+ 
 {==============================================================================}
 const
  {Timer specific constants}
@@ -630,6 +635,7 @@ type
  TClockDeviceStop = function(Clock:PClockDevice):LongWord;
  TClockDeviceRead = function(Clock:PClockDevice):LongWord;
  TClockDeviceRead64 = function(Clock:PClockDevice):Int64;
+ TClockDeviceWrite64 = function(Clock:PClockDevice;const Value:Int64):LongWord;
  TClockDeviceGetRate = function(Clock:PClockDevice):LongWord;
  
  {Clock Device}
@@ -643,6 +649,7 @@ type
   DeviceStop:TClockDeviceStop;                   {A device specific DeviceStop method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceRead:TClockDeviceRead;                   {A device specific DeviceRead method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceRead64:TClockDeviceRead64;               {A device specific DeviceRead64 method implementing a standard clock device interface (Mandatory)}
+  DeviceWrite64:TClockDeviceWrite64;             {A device specific DeviceWrite64 method implementing a standard clock device interface (Or nil if the operation is not supported)}
   DeviceGetRate:TClockDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard clock device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
@@ -658,7 +665,7 @@ type
 {==============================================================================}
 type
  {Timer specific types}
- TTimerCallback = TCounterCallback; {Counter callbck from Platform}
+ TTimerCallback = TCounterCallback; {Counter callback from Platform}
  
  {Timer Properties}
  PTimerProperties = ^TTimerProperties;
@@ -667,12 +674,22 @@ type
   Bits:LongWord;         {Number of valid bits in timer read (eg 32 or 64)}
   MinRate:LongWord;      {Device minimum clock rate (Hz)}
   MaxRate:LongWord;      {Device maximum clock rate (Hz)}
-  MinInterval:LongWord;  {Device minimum interval (Milliseconds)}
-  MaxInterval:LongWord;  {Device maximum interval (Milliseconds)}
+  MinInterval:LongWord;  {Device minimum interval (Ticks)}
+  MaxInterval:LongWord;  {Device maximum interval (Ticks)}
  end;
  
  {Timer Device}
- PTimerDevice = ^TTimerDevice;
+ PTimerDevice = ^TTimerDevice; {Forward declared for TimerWaiter}
+ 
+ {Timer Waiter (TTimerEvent is used already by the Threads unit)}
+ PTimerWaiter = ^TTimerWaiter;
+ TTimerWaiter = record
+  Timer:PTimerDevice;      {Timer device this waiter belongs to}
+  Callback:TTimerCallback; {Callback function to call when event occurs}
+  Data:Pointer;            {Pointer to pass to the callback function when event occurs}
+  Prev:PTimerWaiter;       {Previous event in the list}
+  Next:PTimerWaiter;       {Next event in the list}
+ end;
  
  {Timer Enumeration Callback}
  TTimerEnumerate = function(Timer:PTimerDevice;Data:Pointer):LongWord;
@@ -686,6 +703,7 @@ type
  TTimerDeviceRead64 = function(Timer:PTimerDevice):Int64;
  TTimerDeviceWait = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceEvent = function(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
+ TTimerDeviceCancel = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceGetRate = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceSetRate = function(Timer:PTimerDevice;Rate:LongWord):LongWord;
  TTimerDeviceGetInterval = function(Timer:PTimerDevice):LongWord;
@@ -700,10 +718,11 @@ type
   TimerState:LongWord;                           {Timer device state (eg TIMER_STATE_ENABLED)}
   DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard random device interface (Mandatory)}
   DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard random device interface (Mandatory)}
-  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceRead64:TTimerDeviceRead64;               {A device specific DeviceRead64 method implementing a standard random device interface (Mandatory)}
-  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface (Mandatory)}
-  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface (Mandatory)}
+  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface (One of Read or Read64 is Mandatory)}
+  DeviceRead64:TTimerDeviceRead64;               {A device specific DeviceRead64 method implementing a standard random device interface (One of Read or Read64 is Mandatory}
+  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface (Or nil if the operation is not supported)}
+  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface (Or nil if the operation is not supported)}
+  DeviceCancel:TTimerDeviceCancel;               {A device specific DeviceCancel method implementing a standard random device interface (Or nil if the operation is not supported)}
   DeviceGetRate:TTimerDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSetRate:TTimerDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceGetInterval:TTimerDeviceGetInterval;     {A device specific DeviceGetInterval method implementing a standard random device interface (Or nil if the default method is suitable)}
@@ -717,8 +736,13 @@ type
   Lock:TMutexHandle;                             {Device lock}
   Address:Pointer;                               {Device register base address}
   Rate:LongWord;                                 {Device rate (Hz)}
-  Interval:LongWord;                             {Device interval (Milliseconds)}
+  Interval:LongWord;                             {Device interval (Ticks)}
   Properties:TTimerProperties;                   {Device properties}
+  {Event Properties}
+  Flags:LongWord;                                {Event flags for this timer (eg TIMER_EVENT_FLAG_REPEAT)}
+  Count:Longword;                                {Count of threads and events waiting for this timer}
+  Event:TEventHandle;                            {Event for threads waiting for this timer}
+  Waiters:PTimerWaiter;                          {List of events waiting for this timer}
   {Internal Properties}
   Prev:PTimerDevice;                             {Previous entry in Timer device table}
   Next:PTimerDevice;                             {Next entry in Timer device table}
@@ -941,6 +965,8 @@ function ClockDeviceStop(Clock:PClockDevice):LongWord;
 
 function ClockDeviceRead(Clock:PClockDevice):LongWord;
 function ClockDeviceRead64(Clock:PClockDevice):Int64;
+function ClockDeviceWrite64(Clock:PClockDevice;const Value:Int64):LongWord;
+
 function ClockDeviceGetRate(Clock:PClockDevice):LongWord;
 
 function ClockDeviceCreate:PClockDevice;
@@ -965,6 +991,7 @@ function TimerDeviceRead(Timer:PTimerDevice):LongWord;
 function TimerDeviceRead64(Timer:PTimerDevice):Int64;
 function TimerDeviceWait(Timer:PTimerDevice):LongWord;
 function TimerDeviceEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
+function TimerDeviceCancel(Timer:PTimerDevice):LongWord;
 function TimerDeviceGetRate(Timer:PTimerDevice):LongWord;
 function TimerDeviceSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
 function TimerDeviceGetInterval(Timer:PTimerDevice):LongWord;
@@ -1072,6 +1099,7 @@ function SysTimerRead:LongWord;
 function SysTimerRead64:Int64;
 function SysTimerWait:LongWord;
 function SysTimerEvent(Callback:TTimerCallback;Data:Pointer):LongWord;
+function SysTimerCancel:LongWord;
 
 function SysTimerGetRate:LongWord;
 function SysTimerSetRate(Rate:LongWord):LongWord;
@@ -1147,6 +1175,12 @@ function TimerDeviceGetDefault:PTimerDevice; inline;
 function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord; 
 
 function TimerDeviceCheck(Timer:PTimerDevice):PTimerDevice;
+
+function TimerDeviceCreateWaiter(Timer:PTimerDevice;Callback:TTimerCallback;Data:Pointer):PTimerWaiter;
+function TimerDeviceDestroyWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongWord;
+
+function TimerDeviceRegisterWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongWord;
+function TimerDeviceDeregisterWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongWord;
 
 {==============================================================================}
 {Random Device Helper Functions}
@@ -1350,6 +1384,7 @@ begin
    CounterRead64Handler:=SysTimerRead64;
    CounterWaitHandler:=SysTimerWait;
    CounterEventHandler:=SysTimerEvent;
+   CounterCancelHandler:=SysTimerCancel;
    CounterGetRateHandler:=SysTimerGetRate;
    CounterSetRateHandler:=SysTimerSetRate;
    CounterGetIntervalHandler:=SysTimerGetInterval;
@@ -2728,7 +2763,7 @@ begin
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Start');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Start');
  {$ENDIF}
 
  {Check Disabled}
@@ -2765,7 +2800,7 @@ begin
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Stop');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Stop');
  {$ENDIF}
 
  {Check Enabled}
@@ -2800,6 +2835,10 @@ begin
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Read');
+ {$ENDIF}
+ 
  {Check Enabled}
  if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;
  
@@ -2824,12 +2863,41 @@ begin
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Read64');
+ {$ENDIF}
+ 
  {Check Enabled}
  if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;
  
  if Assigned(Clock.DeviceRead64) then
   begin
    Result:=Clock.DeviceRead64(Clock);
+  end;
+end;
+
+{==============================================================================}
+
+function ClockDeviceWrite64(Clock:PClockDevice;const Value:Int64):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Write64 (Value=' + IntToStr(Value) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;
+ 
+ if Assigned(Clock.DeviceWrite64) then
+  begin
+   Result:=Clock.DeviceWrite64(Clock,Value);
   end;
 end;
 
@@ -2845,7 +2913,7 @@ begin
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Get Rate');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Get Rate');
  {$ENDIF}
 
  {Check Enabled}
@@ -2905,6 +2973,7 @@ begin
  Result.DeviceStop:=nil;
  Result.DeviceRead:=nil;
  Result.DeviceRead64:=nil;
+ Result.DeviceWrite64:=nil;
  Result.DeviceGetRate:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
@@ -3232,6 +3301,9 @@ end;
 {==============================================================================}
 {Timer Device Functions}
 function TimerDeviceStart(Timer:PTimerDevice):LongWord;
+{Start the clock and counter of the specified Timer device}
+{Timer: The Timer device to start}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3248,26 +3320,46 @@ begin
  Result:=ERROR_SUCCESS;
  if Timer.TimerState <> TIMER_STATE_DISABLED then Exit;
 
- {Check Start}
- Result:=ERROR_INVALID_PARAMETER;
- if not(Assigned(Timer.DeviceStart)) then Exit;
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Start}
+    if Assigned(Timer.DeviceStart) then
+     begin
+      {Call Device Start}
+      Result:=Timer.DeviceStart(Timer);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end;
+      
  
- {Call Device Start}
- Result:=Timer.DeviceStart(Timer);
- if Result <> ERROR_SUCCESS then Exit;
- 
- {Enable Device}
- Timer.TimerState:=TIMER_STATE_ENABLED;
-
- {Notify Enable}
- NotifierNotify(@Timer.Device,DEVICE_NOTIFICATION_ENABLE);
- 
- Result:=ERROR_SUCCESS;
+    {Enable Device}
+    Timer.TimerState:=TIMER_STATE_ENABLED;
+    
+    {Notify Enable}
+    NotifierNotify(@Timer.Device,DEVICE_NOTIFICATION_ENABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Timer.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
 
 function TimerDeviceStop(Timer:PTimerDevice):LongWord;
+{Stop the clock and counter of the specified Timer device}
+{Timer: The Timer device to stop}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3284,25 +3376,45 @@ begin
  Result:=ERROR_SUCCESS;
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
  
- {Check Stop}
- if not(Assigned(Timer.DeviceStop)) then Exit;
-
- {Call Device Stop}
- Result:=Timer.DeviceStop(Timer);
- if Result <> ERROR_SUCCESS then Exit;
- 
- {Disable Device}
- Timer.TimerState:=TIMER_STATE_DISABLED;
-
- {Notify Disable}
- NotifierNotify(@Timer.Device,DEVICE_NOTIFICATION_DISABLE);
- 
- Result:=ERROR_SUCCESS;
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Stop}
+    if Assigned(Timer.DeviceStop) then
+     begin
+      {Call Device Stop}
+      Result:=Timer.DeviceStop(Timer);
+      if Result <> ERROR_SUCCESS then Exit;
+     end
+    else
+     begin
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end; 
+    
+    {Disable Device}
+    Timer.TimerState:=TIMER_STATE_DISABLED;
+   
+    {Notify Disable}
+    NotifierNotify(@Timer.Device,DEVICE_NOTIFICATION_DISABLE);
+    
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Timer.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
 
 function TimerDeviceRead(Timer:PTimerDevice):LongWord;
+{Read the current value of the specified Timer device}
+{Timer: The Timer device to read from}
+{Return: The 32 bit current value of the timer or 0 on failure}
 begin
  {}
  Result:=0;
@@ -3318,19 +3430,28 @@ begin
  {Check Enabled}
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
  
- if Assigned(Timer.DeviceRead) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceRead(Timer);
-  end
- else
-  begin
-   Result:=TimerDeviceRead64(Timer);
-  end;
+   if Assigned(Timer.DeviceRead) then
+    begin
+     {Call Device Read}
+     Result:=Timer.DeviceRead(Timer);
+    end
+   else
+    begin
+     Result:=TimerDeviceRead64(Timer);
+    end;
+    
+   MutexUnlock(Timer.Lock);
+  end;    
 end;
 
 {==============================================================================}
 
 function TimerDeviceRead64(Timer:PTimerDevice):Int64;
+{Read the current value of the specified Timer device}
+{Timer: The Timer device to read from}
+{Return: The 64 bit current value of the timer or 0 on failure}
 begin
  {}
  Result:=0;
@@ -3346,19 +3467,28 @@ begin
  {Check Enabled}
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
  
- if Assigned(Timer.DeviceRead64) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceRead64(Timer);
-  end
- else
-  begin
-   Result:=TimerDeviceRead(Timer);
-  end;  
+   if Assigned(Timer.DeviceRead64) then
+    begin
+     {Call Device Read64}
+     Result:=Timer.DeviceRead64(Timer);
+    end
+   else
+    begin
+     Result:=TimerDeviceRead(Timer);
+    end;  
+    
+   MutexUnlock(Timer.Lock);
+  end;    
 end;
 
 {==============================================================================}
 
 function TimerDeviceWait(Timer:PTimerDevice):LongWord;
+{Wait for the current interval to expire on the specified Timer device}
+{Timer: The Timer device to wait for}
+{Return: ERROR_SUCCESS if the interval expired or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3375,15 +3505,30 @@ begin
  Result:=ERROR_NOT_SUPPORTED;
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
  
- if Assigned(Timer.DeviceWait) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceWait(Timer);
-  end;
+   if Assigned(Timer.DeviceWait) then
+    begin
+     {Call Device Wait}
+     Result:=Timer.DeviceWait(Timer);
+    end;
+    
+   MutexUnlock(Timer.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
 
 function TimerDeviceEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
+{Schedule a function to be called when the current interval expires on the specified Timer device}
+{Timer: The Timer device to schedule the callback for}
+{Callback: The function to be called when the interval expires}
+{Data: A pointer to be pass to the function when the interval expires (Optional)}
+{Return: ERROR_SUCCESS if the callback was scheduled successfully or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3403,15 +3548,66 @@ begin
  Result:=ERROR_NOT_SUPPORTED;
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
  
- if Assigned(Timer.DeviceEvent) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceEvent(Timer,Flags,Callback,Data);
-  end;
+   if Assigned(Timer.DeviceEvent) then
+    begin
+     {Call Device Event}
+     Result:=Timer.DeviceEvent(Timer,Flags,Callback,Data);
+    end;
+    
+   MutexUnlock(Timer.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
+function TimerDeviceCancel(Timer:PTimerDevice):LongWord;
+{Cancel a previously scheduled event callback function on the specified Timer device}
+{Timer: The Timer device to cancel the callback for}
+{Return: ERROR_SUCCESS if the callback was cancelled successfully or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Cancel');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
+ 
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(Timer.DeviceCancel) then
+    begin
+     {Call Device Cancel}
+     Result:=Timer.DeviceCancel(Timer);
+    end;
+    
+   MutexUnlock(Timer.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
 
 function TimerDeviceGetRate(Timer:PTimerDevice):LongWord;
+{Get the current clock rate in Hz of the specified Timer device}
+{Timer: The Timer device to get the rate from}
+{Return: The current clock rate in Hz or 0 on failure}
 begin
  {}
  Result:=0;
@@ -3427,23 +3623,30 @@ begin
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
  
- if Assigned(Timer.DeviceGetRate) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceGetRate(Timer);
-  end
- else
-  begin
-   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
-   
-   Result:=Timer.Rate;
-   
+   if Assigned(Timer.DeviceGetRate) then
+    begin
+     {Call Device Get Rate}
+     Result:=Timer.DeviceGetRate(Timer);
+    end
+   else
+    begin
+     {Get Rate}
+     Result:=Timer.Rate;
+    end;  
+    
    MutexUnlock(Timer.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
 function TimerDeviceSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
+{Set the current clock rate in Hz of the specified Timer device}
+{Timer: The Timer device to set the rate for}
+{Rate: The clock rate in Hz to set}
+{Return: ERROR_SUCCESS if the clock rate was set or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3459,25 +3662,37 @@ begin
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
  
- if Assigned(Timer.DeviceSetRate) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceSetRate(Timer,Rate);
+   if Assigned(Timer.DeviceSetRate) then
+    begin
+     {Call Device Set Rate}
+     Result:=Timer.DeviceSetRate(Timer,Rate);
+    end
+   else
+    begin
+     {Set Rate}
+     Timer.Rate:=Rate;
+     
+     Result:=ERROR_SUCCESS;
+    end; 
+    
+   MutexUnlock(Timer.Lock);
   end
  else
   begin
-   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
-   
-   Timer.Rate:=Rate;
-   
-   Result:=ERROR_SUCCESS;
-   
-   MutexUnlock(Timer.Lock);
-  end;  
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}
 
 function TimerDeviceGetInterval(Timer:PTimerDevice):LongWord;
+{Get the current interval in ticks of the specified Timer device}
+{Timer: The Timer device to get the interval from}
+{Return: The current interval in ticks or 0 on failure (or not set)}
+
+{Note: The tick rate is determined by the clock rate}
 begin
  {}
  Result:=0;
@@ -3493,23 +3708,32 @@ begin
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
  
- if Assigned(Timer.DeviceGetInterval) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceGetInterval(Timer);
-  end
- else
-  begin
-   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
-   
-   Result:=Timer.Interval;
-   
+   if Assigned(Timer.DeviceGetInterval) then
+    begin
+     {Call Device Get Interval}
+     Result:=Timer.DeviceGetInterval(Timer);
+    end
+   else
+    begin
+     {Get Interval}
+     Result:=Timer.Interval;
+    end;  
+    
    MutexUnlock(Timer.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
 function TimerDeviceSetInterval(Timer:PTimerDevice;Interval:LongWord):LongWord;
+{Set the current interval in ticks of the specified Timer device}
+{Timer: The Timer device to set the interval for}
+{Interval: The interval in ticks to set}
+{Return: ERROR_SUCCESS if the interval was set or another error code on failure}
+
+{Note: The tick rate is determined by the clock rate}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3525,25 +3749,36 @@ begin
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
  
- if Assigned(Timer.DeviceSetInterval) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceSetInterval(Timer,Interval);
+   if Assigned(Timer.DeviceSetInterval) then
+    begin
+     {Call Device Set Interval}
+     Result:=Timer.DeviceSetInterval(Timer,Interval);
+    end
+   else
+    begin
+     {Set Interval}
+     Timer.Interval:=Interval;
+     
+     Result:=ERROR_SUCCESS;
+    end;  
+    
+   MutexUnlock(Timer.Lock);
   end
  else
   begin
-   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
-   
-   Timer.Interval:=Interval;
-   
-   Result:=ERROR_SUCCESS;
-   
-   MutexUnlock(Timer.Lock);
-  end;  
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}
 
 function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
+{Get the properties for the specified Timer device}
+{Timer: The Timer device to get properties from}
+{Properties: Pointer to a TTimerProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3562,22 +3797,28 @@ begin
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
  
- if Assigned(Timer.DeviceProperties) then
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   Result:=Timer.DeviceProperties(Timer,Properties);
+   if Assigned(Timer.DeviceProperties) then
+    begin
+     {Call Device Properites}
+     Result:=Timer.DeviceProperties(Timer,Properties);
+    end
+   else
+    begin
+     {Get Properties}
+     System.Move(Timer.Properties,Properties^,SizeOf(TTimerProperties));
+  
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+    end;
+    
+   MutexUnlock(Timer.Lock);
   end
  else
   begin
-   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
-   
-   {Get Properties}
-   System.Move(Timer.Properties,Properties^,SizeOf(TTimerProperties));
-
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-   
-   MutexUnlock(Timer.Lock);
-  end;  
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
@@ -3608,7 +3849,7 @@ begin
  if Result = nil then Exit;
  
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=TIMER_TYPE_NONE;
  Result.Device.DeviceFlags:=TIMER_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -3622,6 +3863,7 @@ begin
  Result.DeviceRead64:=nil;
  Result.DeviceWait:=nil;
  Result.DeviceEvent:=nil;
+ Result.DeviceCancel:=nil;
  Result.DeviceGetRate:=nil;
  Result.DeviceSetRate:=nil;
  Result.DeviceGetInterval:=nil;
@@ -3633,10 +3875,10 @@ begin
  Result.Interval:=0;
  
  {Create Lock}
- Result.Lock:=MutexCreate;
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
-   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create lock for Timer device');
+   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create lock for timer device');
    TimerDeviceDestroy(Result);
    Result:=nil;
    Exit;
@@ -3647,6 +3889,8 @@ end;
 
 function TimerDeviceDestroy(Timer:PTimerDevice):LongWord;
 {Destroy an existing Timer entry}
+{Timer: The timer device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3676,6 +3920,8 @@ end;
 
 function TimerDeviceRegister(Timer:PTimerDevice):LongWord;
 {Register a new Timer in the Timer table}
+{Timer: The timer device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  TimerId:LongWord;
 begin
@@ -3760,6 +4006,8 @@ end;
 
 function TimerDeviceDeregister(Timer:PTimerDevice):LongWord;
 {Deregister a Timer from the Timer table}
+{Timer: The timer device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PTimerDevice;
  Next:PTimerDevice;
@@ -3834,6 +4082,9 @@ end;
 {==============================================================================}
 
 function TimerDeviceFind(TimerId:LongWord):PTimerDevice;
+{Find a timer device by ID in the timer table}
+{TimerId: The ID number of the timer to find}
+{Return: Pointer to timer device entry or nil if not found}
 var
  Timer:PTimerDevice;
 begin
@@ -3875,6 +4126,9 @@ end;
 {==============================================================================}
 
 function TimerDeviceFindByName(const Name:String):PTimerDevice; inline;
+{Find a timer device by name in the timer table}
+{Name: The name of the timer to find (eg Timer0)}
+{Return: Pointer to timer device entry or nil if not found}
 begin
  {}
  Result:=PTimerDevice(DeviceFindByName(Name));
@@ -3883,6 +4137,9 @@ end;
 {==============================================================================}
 
 function TimerDeviceFindByDescription(const Description:String):PTimerDevice; inline;
+{Find a timer device by description in the timer table}
+{Description: The description of the timer to find (eg BCM2836 ARM Timer)}
+{Return: Pointer to timer device entry or nil if not found}
 begin
  {}
  Result:=PTimerDevice(DeviceFindByDescription(Description));
@@ -3891,6 +4148,10 @@ end;
 {==============================================================================}
 
 function TimerDeviceEnumerate(Callback:TTimerEnumerate;Data:Pointer):LongWord;
+{Enumerate all timer devices in the timer table}
+{Callback: The callback function to call for each timer in the table}
+{Data: A private data pointer to pass to callback for each timer in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Timer:PTimerDevice;
 begin
@@ -3934,6 +4195,12 @@ end;
 {==============================================================================}
 
 function TimerDeviceNotification(Timer:PTimerDevice;Callback:TTimerNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for timer device changes}
+{Timer: The timer device to notify changes for (Optional, pass nil for all timers)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -5733,7 +6000,7 @@ end;
 
 function SysTimerRead:LongWord;
 {Read the current value of the default counter}
-{Return: The 32 bit current value of the current or 0 on failure}
+{Return: The 32 bit current value of the counter or 0 on failure}
 begin
  {}
  Result:=0;
@@ -5747,7 +6014,7 @@ end;
 
 function SysTimerRead64:Int64;
 {Read the current value of the default counter}
-{Return: The 64 bit current value of the current or 0 on failure}
+{Return: The 64 bit current value of the counter or 0 on failure}
 begin
  {}
  Result:=0;
@@ -5789,6 +6056,20 @@ end;
 
 {==============================================================================}
 
+function SysTimerCancel:LongWord;
+{Cancel a previously scheduled event callback function on the default counter}
+{Return: ERROR_SUCCESS if the callback was cancelled successfully or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ if TimerDeviceDefault = nil then Exit;
+ 
+ Result:=TimerDeviceCancel(TimerDeviceDefault);
+end;
+
+{==============================================================================}
+
 function SysTimerGetRate:LongWord;
 {Get the current clock rate in Hz of the default counter}
 {Return: The current clock rate in Hz or 0 on failure}
@@ -5819,8 +6100,10 @@ end;
 {==============================================================================}
 
 function SysTimerGetInterval:LongWord;
-{Get the current interval in milliseconds of the default counter}
-{Return: The current interval in milliseconds or 0 on failure (or not set)}
+{Get the current interval in ticks of the default counter}
+{Return: The current interval in ticks or 0 on failure (or not set)}
+
+{Note: The tick rate is determined by the clock rate}
 begin
  {}
  Result:=0;
@@ -5833,9 +6116,11 @@ end;
 {==============================================================================}
 
 function SysTimerSetInterval(Interval:LongWord):LongWord;
-{Set the current interval in milliseconds of the default counter}
-{Interval: The interval in milliseconds to set}
+{Set the current interval in ticks of the default counter}
+{Interval: The interval in ticks to set}
 {Return: ERROR_SUCCESS if the interval was set or another error code on failure}
+
+{Note: The tick rate is determined by the clock rate}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -6569,6 +6854,141 @@ begin
     CriticalSectionUnlock(TimerDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function TimerDeviceCreateWaiter(Timer:PTimerDevice;Callback:TTimerCallback;Data:Pointer):PTimerWaiter;
+{Create a new waiter using the supplied parameters}
+
+{Note: Waiter must be registered by calling TimerDeviceRegisterWaiter}
+{Note: Caller must hold the Timer device lock}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Create Waiter}
+ Result:=PTimerWaiter(GetMem(SizeOf(TTimerWaiter)));
+ if Result = nil then Exit;
+ 
+ {Update Waiter}
+ Result.Timer:=Timer;
+ Result.Callback:=Callback;
+ Result.Data:=Data;
+ Result.Prev:=nil;
+ Result.Next:=nil;
+end;
+
+{==============================================================================}
+
+function TimerDeviceDestroyWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongWord;
+{Destroy an existing waiter}
+
+{Note: Waiter must be deregistered first by calling TimerDeviceDeregisterWaiter}
+{Note: Caller must hold the Timer device lock}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Waiter}
+ if Waiter = nil then Exit;
+
+ {Destroy Waiter}
+ FreeMem(Waiter);
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function TimerDeviceRegisterWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongWord;
+{Register a waiter in the waiter list of the supplied Timer}
+
+{Note: Waiter must be created by calling TimerDeviceCreateWaiter}
+{Note: Caller must hold the Timer device lock}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Waiter}
+ if Waiter = nil then Exit;
+ 
+ {Link Waiter}
+ if Timer.Waiters = nil then
+  begin
+   Timer.Waiters:=Waiter;
+  end
+ else
+  begin
+   Waiter.Next:=Timer.Waiters;
+   Timer.Waiters.Prev:=Waiter;
+   Timer.Waiters:=Waiter;
+  end;
+  
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function TimerDeviceDeregisterWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongWord;
+{Deregister a waiter from the waiter list of the supplied Timer}
+
+{Note: Waiter must be destroyed by calling TimerDeviceDestroyWaiter}
+{Note: Caller must hold the Timer device lock}
+var
+ Prev:PTimerWaiter;
+ Next:PTimerWaiter;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Waiter}
+ if Waiter = nil then Exit;
+ 
+ {Unlink Waiter}
+ Prev:=Waiter.Prev;
+ Next:=Waiter.Next;
+ if Prev = nil then
+  begin
+   Timer.Waiters:=Next;
+   if Next <> nil then
+    begin
+     Next.Prev:=nil;
+    end;       
+  end
+ else
+  begin
+   Prev.Next:=Next;
+   if Next <> nil then
+    begin
+     Next.Prev:=Prev;
+    end;       
+  end;     
+ 
+ {Update Waiter}
+ Waiter.Prev:=nil;
+ Waiter.Next:=nil;
+ 
+ Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}

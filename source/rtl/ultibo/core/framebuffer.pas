@@ -68,8 +68,10 @@ const
  FRAMEBUFFER_FLAG_MARK      = $00000002;  {If set the framebuffer requires mark after write operations}
  FRAMEBUFFER_FLAG_COMMIT    = $00000004;  {If set the framebuffer requires commit after write operations}
  FRAMEBUFFER_FLAG_BLANK     = $00000008;  {If set the framebuffer supports blanking the screen}
- FRAMEBUFFER_FLAG_CACHED    = $00000010;  {If set framebuffer is in cached memory and cache cleaning should be used} //To Do //Remove when console changes completed
- FRAMEBUFFER_FLAG_SWAP      = $00000020;  {If set framebuffer uses reversed colors (BGR instead of RGB)}             //To Do //Remove when console changes completed
+ FRAMEBUFFER_FLAG_CACHED    = $00000010;  {If set framebuffer is in cached memory and cache cleaning should be used}
+ FRAMEBUFFER_FLAG_SWAP      = $00000020;  {If set framebuffer requires byte order of colors to be reversed (BGR <-> RGB)} 
+ FRAMEBUFFER_FLAG_BACKLIGHT = $00000040;  {If set the framebuffer supports setting the backlight brightness}  
+ FRAMEBUFFER_FLAG_VIRTUAL   = $00000080;  {If set the framebuffer supports virtual width and height plus offset x and y (Pan/Flip etc)}
  
  {Framebuffer Transfer Flags}
  FRAMEBUFFER_TRANSFER_NONE = $00000000;
@@ -80,7 +82,7 @@ type
  {Framebuffer specific types}
  PFramebufferProperties = ^TFramebufferProperties;
  TFramebufferProperties = record
-  Flags:LongWord;                                {Framebuffer device flags (eg FRAMEBUFFER_FLAG_CACHED) (Ignored for Allocate / SetProperties)}
+  Flags:LongWord;                                {Framebuffer device flags (eg FRAMEBUFFER_FLAG_COMMIT) (Ignored for Allocate / SetProperties)}
   Address:LongWord;                              {Framebuffer address (Ignored for Allocate / SetProperties)}
   Size:LongWord;                                 {Framebuffer size (Bytes) (Ignored for Allocate / SetProperties)}
   Pitch:LongWord;                                {Framebuffer pitch (Bytes per Line) (Ignored for Allocate / SetProperties)}
@@ -125,8 +127,13 @@ type
  TFramebufferDeviceCopyRect = function(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Width,Height,Flags:LongWord):LongWord;
  TFramebufferDeviceFillRect = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;
  
+ TFramebufferDeviceGetLine = function(Framebuffer:PFramebufferDevice;Y:LongWord):Pointer;
+ TFramebufferDeviceGetPoint = function(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;  
+ 
  //TFramebufferDeviceGetPalette //To Do //8 bit color only
  //TFramebufferDeviceSetPalette //To Do //8 bit color only
+ 
+ TFramebufferDeviceSetBacklight = function(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
  
  TFramebufferDeviceGetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
  TFramebufferDeviceSetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
@@ -149,6 +156,9 @@ type
   DevicePutRect:TFramebufferDevicePutRect;       {A device specific DevicePutRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceCopyRect:TFramebufferDeviceCopyRect;     {A device specific DeviceCopyRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceFillRect:TFramebufferDeviceFillRect;     {A device specific DeviceFillRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceGetLine:TFramebufferDeviceGetLine;       {A device specific DeviceGetLine method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceGetPoint:TFramebufferDeviceGetPoint;     {A device specific DeviceGetPoint method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceSetBacklight:TFramebufferDeviceSetBacklight;   {A device specific DeviceSetBacklight method implementing a standard framebuffer device interface (Optional)}
   DeviceGetProperties:TFramebufferDeviceGetProperties; {A device specific DeviceGetProperties method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceSetProperties:TFramebufferDeviceSetProperties; {A device specific DeviceSetProperties method implementing a standard framebuffer device interface (Mandatory)}
   {Statistics Properties}
@@ -220,6 +230,11 @@ function FramebufferDevicePutRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Bu
 function FramebufferDeviceCopyRect(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Width,Height,Flags:LongWord):LongWord;
 function FramebufferDeviceFillRect(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;
 
+function FramebufferDeviceGetLine(Framebuffer:PFramebufferDevice;Y:LongWord):Pointer;
+function FramebufferDeviceGetPoint(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;  
+
+function FramebufferDeviceSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
+
 function FramebufferDeviceGetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 function FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 
@@ -254,6 +269,11 @@ function FramebufferDeviceSetDefault(Framebuffer:PFramebufferDevice):LongWord;
 function FramebufferDeviceCheck(Framebuffer:PFramebufferDevice):PFramebufferDevice;
 
 function FramebufferDeviceSwap(Value:LongWord):LongWord; inline;
+
+function FramebufferDepthToString(Depth:LongWord):String;
+function FramebufferOrderToString(Order:LongWord):String;
+function FramebufferModeToString(Mode:LongWord):String;
+function FramebufferRotationToString(Rotation:LongWord):String;
 
 {==============================================================================}
 {==============================================================================}
@@ -546,7 +566,7 @@ begin
       FillChar(Data,SizeOf(TDMAData),0);
       Data.Source:=Pointer(Address);
       Data.Dest:=Buffer;
-      Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
+      Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_BULK;
       Data.StrideLength:=0;
       Data.SourceStride:=0;
       Data.DestStride:=0;
@@ -645,7 +665,7 @@ begin
       FillChar(Data,SizeOf(TDMAData),0);
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
-      Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
       Data.StrideLength:=0;
       Data.SourceStride:=0;
       Data.DestStride:=0;
@@ -851,7 +871,7 @@ begin
       FillChar(Data,SizeOf(TDMAData),0);
       Data.Source:=Pointer(Address);
       Data.Dest:=Buffer;
-      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
+      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_BULK;
       Data.StrideLength:=Size;
       Data.SourceStride:=Stride;
       Data.DestStride:=Skip;
@@ -970,7 +990,7 @@ begin
       FillChar(Data,SizeOf(TDMAData),0);
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
-      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
       Data.StrideLength:=Size;
       Data.SourceStride:=Skip;
       Data.DestStride:=Stride;
@@ -1437,7 +1457,7 @@ begin
       if DMAAvailable then
        begin
         {Allocate DMA Buffer}
-        Framebuffer.LineBuffer:=DMAAllocateBufferEx(Framebuffer.Pitch);
+        Framebuffer.LineBuffer:=DMAAllocateBuffer(Framebuffer.Pitch);
        end
       else
        begin
@@ -1452,12 +1472,41 @@ begin
     
     {Fill Source}
     Count:=0;
-    while Count < Size do
-     begin
-      PLongWord(Buffer + Count)^:=Color;
-        
-      Inc(Count,(Framebuffer.Depth shr 3));
-     end;
+    case Framebuffer.Depth of
+     FRAMEBUFFER_DEPTH_8:begin
+       while Count < Size do
+        begin
+         PByte(Buffer + Count)^:=Color;
+         
+         Inc(Count,1);
+        end;
+      end;
+     FRAMEBUFFER_DEPTH_16:begin
+       while Count < Size do
+        begin
+         PWord(Buffer + Count)^:=Color;
+         
+         Inc(Count,2);
+        end;
+      end;
+     FRAMEBUFFER_DEPTH_24:begin
+       while Count < Size do
+        begin
+         PWord(Buffer + Count)^:=Color;
+         PByte(Buffer + Count + 2)^:=Color shr 16;
+         
+         Inc(Count,3);
+        end;
+      end;
+     FRAMEBUFFER_DEPTH_32:begin
+       while Count < Size do
+        begin
+         PLongWord(Buffer + Count)^:=Color;
+         
+         Inc(Count,4);
+        end;
+      end;
+    end;  
     
     {Check DMA}
     if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
@@ -1468,17 +1517,17 @@ begin
         {Clean Cache}
         CleanDataCacheRange(LongWord(Buffer),Size);
        end;
-    
+      
       {Create Data}
       FillChar(Data,SizeOf(TDMAData),0);
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
-      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE;
+      Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
       Data.StrideLength:=Size;
-      Data.SourceStride:=0;
+      Data.SourceStride:=-Size; {Negative Stride}
       Data.DestStride:=Stride;
       Data.Size:=Data.StrideLength * Height;
-      
+       
       {Perform Fill}
       DMATransfer(@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE);
      end
@@ -1528,6 +1577,130 @@ begin
     MutexUnlock(Framebuffer.Lock);
    end; 
   end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceGetLine(Framebuffer:PFramebufferDevice;Y:LongWord):Pointer;
+{Get the address of the start of a row in framebuffer memory}
+{Framebuffer: The framebuffer device to get the start address from}
+{Y: The row to get the start address of}
+{Return: Pointer to the start address of the row or nil on failure}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Get Line (Y=' + IntToStr(Y) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceGetLine) then
+  begin
+   Result:=Framebuffer.DeviceGetLine(Framebuffer,Y);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check Y}
+    if Y >= Framebuffer.PhysicalHeight then Exit;
+ 
+    {Get Address}
+    Result:=Pointer(Framebuffer.Address + (Y * Framebuffer.Pitch));
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceGetPoint(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;  
+{Get the address of the specified row and column in framebuffer memory}
+{Framebuffer: The framebuffer device to get the address from}
+{X: The column to get the start address of}
+{Y: The row to get the start address of}
+{Return: Pointer to the address of the row and column or nil on failure}
+begin
+ {}
+ Result:=nil;
+
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Get Point (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceGetPoint) then
+  begin
+   Result:=Framebuffer.DeviceGetPoint(Framebuffer,X,Y);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Check X, Y}
+    if X >= Framebuffer.PhysicalWidth then Exit;
+    if Y >= Framebuffer.PhysicalHeight then Exit;
+ 
+    {Get Address}
+    Result:=Pointer(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
+{Set the brightness of the backlight of a framebuffer device}
+{Framebuffer: The framebuffer device to set the backlight}
+{Brightness: The brightness value to set (Normally 0 to 100)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not all framebuffer devices support set backlight, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+{      Devices that support set backlight should set the flag FRAMEBUFFER_FLAG_BACKLIGHT}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Set Backlight (Brightness=' + IntToStr(Brightness) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceSetBacklight) then
+  begin
+   Result:=Framebuffer.DeviceSetBacklight(Framebuffer,Brightness);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
 end;
 
 {==============================================================================}
@@ -1719,6 +1892,9 @@ begin
  Result.DevicePutRect:=nil;
  Result.DeviceCopyRect:=nil;
  Result.DeviceFillRect:=nil;
+ Result.DeviceGetLine:=nil;
+ Result.DeviceGetPoint:=nil;
+ Result.DeviceSetBacklight:=nil;
  Result.DeviceGetProperties:=nil;
  Result.DeviceSetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
@@ -1728,7 +1904,7 @@ begin
  Result.Depth:=FRAMEBUFFER_DEPTH_32;
  Result.Order:=FRAMEBUFFER_ORDER_RGB;
  Result.Mode:=FRAMEBUFFER_MODE_ENABLED;
- Result.Format:=COLOR_FORMAT_RGBA32;
+ Result.Format:=COLOR_FORMAT_DEFAULT;
  Result.PhysicalWidth:=0;
  Result.PhysicalHeight:=0;
  Result.VirtualWidth:=0;
@@ -2167,9 +2343,67 @@ end;
 {==============================================================================}
 
 function FramebufferDeviceSwap(Value:LongWord):LongWord; inline;
+{No longer required (See ColorDefaultToFormat and ColorFormatToDefault)}
 begin
  {}
  Result:=(Value and $FF00FF00) or ((Value and $00FF0000) shr 16) or ((Value and $000000FF) shl 16);
+end;
+
+{==============================================================================}
+
+function FramebufferDepthToString(Depth:LongWord):String;
+begin
+ {}
+ Result:='FRAMEBUFFER_DEPTH_UNKNOWN';
+ 
+ case Depth of
+  FRAMEBUFFER_DEPTH_8:Result:='FRAMEBUFFER_DEPTH_8';
+  FRAMEBUFFER_DEPTH_16:Result:='FRAMEBUFFER_DEPTH_16';
+  FRAMEBUFFER_DEPTH_24:Result:='FRAMEBUFFER_DEPTH_24';
+  FRAMEBUFFER_DEPTH_32:Result:='FRAMEBUFFER_DEPTH_32';
+ end;
+end;
+
+{==============================================================================}
+
+function FramebufferOrderToString(Order:LongWord):String;
+begin
+ {}
+ Result:='FRAMEBUFFER_ORDER_BGR_UNKNOWN';
+ 
+ case Order of
+  FRAMEBUFFER_ORDER_BGR:Result:='FRAMEBUFFER_ORDER_BGR';
+  FRAMEBUFFER_ORDER_RGB:Result:='FRAMEBUFFER_ORDER_RGB';
+ end;
+end;
+
+{==============================================================================}
+
+function FramebufferModeToString(Mode:LongWord):String;
+begin
+ {}
+ Result:='FRAMEBUFFER_MODE_UNKNOWN';
+ 
+ case Mode of
+  FRAMEBUFFER_MODE_ENABLED:Result:='FRAMEBUFFER_MODE_ENABLED';
+  FRAMEBUFFER_MODE_REVERSED:Result:='FRAMEBUFFER_MODE_REVERSED';
+  FRAMEBUFFER_MODE_IGNORED:Result:='FRAMEBUFFER_MODE_IGNORED';
+ end;
+end;
+
+{==============================================================================}
+
+function FramebufferRotationToString(Rotation:LongWord):String;
+begin
+ {}
+ Result:='FRAMEBUFFER_ROTATION_UNKNOWN';
+ 
+ case Rotation of
+  FRAMEBUFFER_ROTATION_0:Result:='FRAMEBUFFER_ROTATION_0';
+  FRAMEBUFFER_ROTATION_90:Result:='FRAMEBUFFER_ROTATION_90';
+  FRAMEBUFFER_ROTATION_180:Result:='FRAMEBUFFER_ROTATION_180';
+  FRAMEBUFFER_ROTATION_270:Result:='FRAMEBUFFER_ROTATION_270';
+ end;
 end;
 
 {==============================================================================}

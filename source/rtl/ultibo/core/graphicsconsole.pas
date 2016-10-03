@@ -197,10 +197,10 @@ function GraphicsWindowGetImage(Handle:TWindowHandle;X,Y:LongWord;Image:Pointer;
 function GraphicsWindowCopyImage(Handle:TWindowHandle;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; inline;
 function GraphicsWindowMoveImage(Handle:TWindowHandle;const Source,Dest:TConsolePoint;Width,Height,Fillcolor:LongWord):LongWord;
 
-function GraphicsWindowImageSize(Handle:TWindowHandle;Width,Height,Format:LongWord):LongWord;
+function GraphicsWindowImageSize(Handle:TWindowHandle;Width,Height,Format,Stride:LongWord):LongWord;
 
-function GraphicsWindowImageFromStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format:LongWord):LongWord;
-function GraphicsWindowImageToStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format:LongWord):LongWord;
+function GraphicsWindowImageFromStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format,Stride:LongWord;Invert:Boolean):LongWord;
+function GraphicsWindowImageToStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format,Stride:LongWord;Invert:Boolean):LongWord;
 
 {==============================================================================}
 {Graphics Console Helper Functions}
@@ -2493,6 +2493,7 @@ function GraphicsWindowMoveImage(Handle:TWindowHandle;const Source,Dest:TConsole
 
 {Note: For Graphics Console functions, Viewport is based on screen pixels not characters}
 var
+ Filled:Boolean;
  ImageWidth:LongWord;
  ImageHeight:LongWord;
  ImageDest:TConsolePoint;
@@ -2573,7 +2574,72 @@ begin
   {Check Fill}
   if Fillcolor <> COLOR_NONE then
    begin
-    //To Do //Continuing 
+    Filled:=False;
+    
+    {Vertical Fill}
+    if ImageSource.X < ImageDest.X then
+     begin
+      {Moved Right}
+      if ImageSource.X + (ImageWidth - 1) < ImageDest.X then
+       begin
+        {Full Move}
+        Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
+        Filled:=True;
+       end
+      else
+       begin
+        {Partial Move}
+        Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + ((ImageDest.X - ImageSource.X) - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
+       end;       
+     end
+    else if ImageSource.X > ImageDest.X then 
+     begin
+      {Moved Left}
+      if ImageDest.X + (ImageWidth - 1) < ImageSource.X then
+       begin
+        {Full Move}
+        Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
+        Filled:=True;
+       end
+      else
+       begin
+        {Partial Move}
+        Result:=ConsoleDeviceDrawBlock(Window.Console,ImageDest.X + ImageWidth,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
+       end;       
+     end;
+    
+    if not(Filled) then
+     begin
+      {Horizontal Fill}
+      if ImageSource.Y < ImageDest.Y then
+       begin
+        {Moved Down}
+        if ImageSource.Y + (ImageHeight - 1) < ImageDest.Y then
+         begin
+          {Full Move}
+          Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
+         end
+        else
+         begin
+          {Partial Move}
+          Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + ((ImageDest.Y - ImageSource.Y) - 1),Fillcolor);
+         end;
+       end
+      else if ImageSource.Y > ImageDest.Y then 
+       begin
+        {Moved Up}
+        if ImageDest.Y + (ImageHeight - 1) < ImageSource.Y then
+         begin
+          {Full Move}
+          Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
+         end
+        else
+         begin
+          {Partial Move}
+          Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageDest.Y + ImageHeight,ImageSource.X + (ImageWidth - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
+         end;
+       end;
+     end;
    end;
  finally
   {Unlock Window}
@@ -2583,14 +2649,16 @@ end;
 
 {==============================================================================}
 
-function GraphicsWindowImageSize(Handle:TWindowHandle;Width,Height,Format:LongWord):LongWord;
+function GraphicsWindowImageSize(Handle:TWindowHandle;Width,Height,Format,Stride:LongWord):LongWord;
 {Calculate the size in bytes of an image that is Width by Height in the color format specified}
 {Handle: The handle of the window for the image}
 {Width: The width of the image in pixels}
 {Height: The height of the image in pixels}
 {Format: The color format to use for the calculation (eg COLOR_FORMAT_ARGB32) Pass COLOR_FORMAT_UNKNOWN to use the window format}
+{Stride: The distance in bytes between each row of pixels (Optional)}
 {Return: The size in bytes for an image of the specified size and format or 0 on error}
 var
+ Bytes:LongWord;
  Window:PGraphicsWindow;
 begin
  {}
@@ -2608,12 +2676,30 @@ begin
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
  
- //To Do //Continuing
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ try
+  {Check Format}
+  if Format = COLOR_FORMAT_UNKNOWN then
+   begin
+    Format:=Window.Format;
+   end;
+   
+  {Get Bytes} 
+  Bytes:=ColorFormatToBytes(Format);
+  if Bytes = 0 then Exit;
+  
+  {Get Size}
+  Result:=((Width * Height) * Bytes) + (Height * Stride);
+ finally
+  {Unlock Window}
+  MutexUnlock(Window.Lock);
+ end; 
 end;
 
 {==============================================================================}
 
-function GraphicsWindowImageFromStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format:LongWord):LongWord;
+function GraphicsWindowImageFromStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format,Stride:LongWord;Invert:Boolean):LongWord;
 {Draw an image to an existing console window from a supplied stream}
 {Handle: The handle of the window to draw on}
 {X: The left starting point of the image (relative to current viewport)}
@@ -2622,10 +2708,21 @@ function GraphicsWindowImageFromStream(Handle:TWindowHandle;X,Y:LongWord;Stream:
 {Width: The width in pixels of a row in the image data}
 {Height: The height in pixels of all rows in the image data}
 {Format: The color format of the image data (eg COLOR_FORMAT_ARGB32) Pass COLOR_FORMAT_UNKNOWN to use the window format}
+{Stride: The distance in bytes between each row of pixels (Optional)}
+{Invert: If True invert the image to the first row is the bottom and the last row is the top}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: For Graphics Console functions, Viewport is based on screen pixels not characters}
 var
+ Line:Pointer;
+ Size:LongWord;
+ Count:LongWord;
+ ImageX:LongWord;
+ ImageY:LongWord;
+ ImageSkip:LongWord;
+ ImageWidth:LongWord;
+ ImageHeight:LongWord;
+ ImageFormat:LongWord;
  Window:PGraphicsWindow;
 begin
  {}
@@ -2653,12 +2750,98 @@ begin
    Exit;
   end;
  
- //To Do //Continuing
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ try
+  {Check Console}
+  if Window.Console = nil then Exit;
+ 
+  {Check X,Y}
+  if (Window.MinX + X) > Window.MaxX then Exit;
+  if (Window.MinY + Y) > Window.MaxY then Exit;
+ 
+  {Check Width}
+  ImageWidth:=Width;
+  if (Window.MinX + X + (Width - 1)) > Window.MaxX then
+   begin
+    ImageWidth:=(Window.MaxX - (Window.MinX + X)) + 1;
+   end;
+  
+  {Check Height}
+  ImageHeight:=Height;
+  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then 
+   begin
+    ImageHeight:=(Window.MaxY - (Window.MinY + Y)) + 1;
+   end;
+  
+  {Get Skip}
+  ImageSkip:=Width - ImageWidth;
+  
+  {Get Format}
+  ImageFormat:=Format;
+  if ImageFormat = COLOR_FORMAT_UNKNOWN then ImageFormat:=Window.Format;
+  
+  {Calculate X,Y}
+  ImageX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
+  ImageY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
+  
+  {Get Size}
+  Size:=Width * ColorFormatToBytes(ImageFormat);
+  if Size = 0 then Exit;
+  
+  {Allocate Line}
+  Line:=GetMem(Size);
+  if Line = nil then Exit;
+  try
+   {Set Count}
+   if not(Invert) then Count:=0 else Count:=ImageHeight - 1;
+   
+   {Read Lines}
+   while True do
+    begin
+     {Read Line}
+     if Stream.Read(Line^,Size) <> Size then Exit;
+    
+     {Update Position}
+     if Stride > 0 then Stream.Position:=Stream.Position + Stride;
+     
+     {Console Draw Image}
+     Result:=ConsoleDeviceDrawImage(Window.Console,ImageX,ImageY + Count,Line,ImageWidth,1,ImageFormat,ImageSkip);
+     if Result <> ERROR_SUCCESS then Exit;
+    
+     {Check Invert}
+     if not(Invert) then 
+      begin
+       {Check Count}
+       if Count = ImageHeight - 1 then Break;
+       
+       {Update Count}
+       Inc(Count);
+      end
+     else
+      begin
+       {Check Count}
+       if Count = 0 then Break;
+
+       {Update Count}
+       Dec(Count);;
+      end;      
+    end;
+
+   {Get Result}
+   Result:=ERROR_SUCCESS;   
+  finally
+   FreeMem(Line);
+  end;  
+ finally
+  {Unlock Window}
+  MutexUnlock(Window.Lock);
+ end; 
 end;
 
 {==============================================================================}
 
-function GraphicsWindowImageToStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format:LongWord):LongWord;
+function GraphicsWindowImageToStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TStream;Width,Height,Format,Stride:LongWord;Invert:Boolean):LongWord;
 {Get an image from an existing console window to a supplied stream}
 {Handle: The handle of the window to get from}
 {X: The left starting point of the image (relative to current viewport)}
@@ -2667,10 +2850,21 @@ function GraphicsWindowImageToStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TS
 {Width: The width in pixels of a row of the image}
 {Height: The height in pixels of all rows of the image}
 {Format: The color format to store in the image data (eg COLOR_FORMAT_ARGB32) Pass COLOR_FORMAT_UNKNOWN to use the window format}
+{Stride: The distance in bytes between each row of pixels (Optional)}
+{Invert: If True invert the image to the first row is the bottom and the last row is the top}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: For Graphics Console functions, Viewport is based on screen pixels not characters}
 var
+ Line:Pointer;
+ Size:LongWord;
+ Count:LongWord;
+ ImageX:LongWord;
+ ImageY:LongWord;
+ ImageSkip:LongWord;
+ ImageWidth:LongWord;
+ ImageHeight:LongWord;
+ ImageFormat:LongWord;
  Window:PGraphicsWindow;
 begin
  {}
@@ -2698,7 +2892,93 @@ begin
    Exit;
   end;
  
- //To Do //Continuing
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ try
+  {Check Console}
+  if Window.Console = nil then Exit;
+ 
+  {Check X,Y}
+  if (Window.MinX + X) > Window.MaxX then Exit;
+  if (Window.MinY + Y) > Window.MaxY then Exit;
+ 
+  {Check Width}
+  ImageWidth:=Width;
+  if (Window.MinX + X + (Width - 1)) > Window.MaxX then
+   begin
+    ImageWidth:=(Window.MaxX - (Window.MinX + X)) + 1;
+   end;
+ 
+  {Check Height}
+  ImageHeight:=Height;
+  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then 
+   begin
+    ImageHeight:=(Window.MaxY - (Window.MinY + Y)) + 1;
+   end;
+  
+  {Get Skip}
+  ImageSkip:=Width - ImageWidth;
+  
+  {Get Format}
+  ImageFormat:=Format;
+  if ImageFormat = COLOR_FORMAT_UNKNOWN then ImageFormat:=Window.Format;
+  
+  {Calculate X,Y}
+  ImageX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
+  ImageY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
+ 
+  {Get Size}
+  Size:=Width * ColorFormatToBytes(ImageFormat);
+  if Size = 0 then Exit;
+ 
+  {Allocate Line}
+  Line:=GetMem(Size);
+  if Line = nil then Exit;
+  try
+   {Set Count}
+   if not(Invert) then Count:=0 else Count:=ImageHeight - 1;
+
+   {Write Lines} 
+   while True do
+    begin
+     {Console Get Image}
+     Result:=ConsoleDeviceGetImage(Window.Console,ImageX,ImageY + Count,Line,ImageWidth,1,ImageFormat,ImageSkip);
+     if Result <> ERROR_SUCCESS then Exit;
+     
+     {Write Line}
+     if Stream.Write(Line^,Size) <> Size then Exit;
+     
+     {Update Position}
+     if Stride > 0 then Stream.Position:=Stream.Position + Stride;
+   
+     {Check Invert}
+     if not(Invert) then 
+      begin
+       {Check Count}
+       if Count = ImageHeight - 1 then Break;
+       
+       {Update Count}
+       Inc(Count);
+      end
+     else
+      begin
+       {Check Count}
+       if Count = 0 then Break;
+
+       {Update Count}
+       Dec(Count);;
+      end;      
+    end;
+
+   {Get Result}
+   Result:=ERROR_SUCCESS;   
+  finally
+   FreeMem(Line);
+  end;  
+ finally
+  {Unlock Window}
+  MutexUnlock(Window.Lock);
+ end; 
 end;
 
 {==============================================================================}

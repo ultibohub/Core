@@ -147,7 +147,7 @@ Threads
   Queue - //To Do
   
   Message - //To Do
-            Suitable for use by Interrupt handlers (Interrupt handlers must not call receive).
+            Suitable for use by Interrupt handlers for sending (Interrupt handlers must not call receive).
             Suitable for use on multiprocessor systems.
             
   Thread - //To Do
@@ -157,7 +157,7 @@ Threads
  ----------------
   
   Messageslot - //To Do
-                Suitable for use by Interrupt handlers only if with created MESSAGESLOT_FLAG_IRQ or FIQ (Interrupt handlers must not call receive).
+                Suitable for use by Interrupt handlers for sending only if with created MESSAGESLOT_FLAG_IRQ or FIQ (Interrupt handlers must not call receive).
                 Suitable for use on multiprocessor systems.
   
   Mailslot - //To Do
@@ -180,7 +180,44 @@ Threads
           Suitable for use on multiprocessor systems.
 
   Worker - //To Do
-           Not suitable for use by Interrupt handlers.
+           Not suitable for use by Interrupt handlers unless the WorkerSchedulerIRQ or WorkerSchedulerFIQ functions are used.
+           Suitable for use on multiprocessor systems.
+           
+           Usage: 
+           ------
+           
+           IRQ and FIQ Usage:
+           ------------------
+           
+           WorkerScheduleIRQ and WorkerSchedulerFIQ are designed to allow calling from interrupt handlers (IRQ or FIQ) and provide
+           deadlock prevention mechanisms.
+           
+           WorkerScheduleIRQ relies on the fact the scheduler will either be bound to an IRQ or an FIQ, in either case IRQ is disabled
+           while the scheduler is active and in any calls with queue, list and thread locks that check for the scheduler assignment.
+           This means that an IRQ cannot occur when the scheduler is active or while it is blocked by a lock, calls to this function
+           from a IRQ interrupt handler cannot deadlock.
+           
+           WorkerSchedulerFIQ checks for the assignment of the scheduler, if the scheduler is bound to an FIQ then it proceeds as per
+           the IRQ version because the FIQ cannot occur when the scheduler is active or while it is blocked by a lock. If the scheduler
+           if bound to an IRQ then this function reverts to using the Tasker instead to transfer FIQ operations to an IRQ handler.
+           
+           Both functions only support immediate scheduling of a one time task, delayed or repeating tasks cannot be scheduled.
+           
+           It is safe to call either function from non interrupt code in order to allow shared code paths etc, however frequent calls
+           to these functions from normal code can affect interrupt latency.
+  
+  Tasker - The Tasker is a mechanism for transferring work from a fast interrupt (FIQ) handler to an interrupt (IRQ) handler in order
+           to allow access to certain operations which could otherwise deadlock. When the scheduler is bound to an IRQ then all queue,
+           list and thread locks disable IRQ in order to prevent preemption by the scheduler, when IRQ is disabled then FIQ is still
+           enabled and can preempt code that is holding an IRQ lock. If the FIQ handler attempts to access any of these locks then
+           the handler can deadlock waiting for code that it had preempted.
+
+           In normal operation the clock interrupt is used to service the tasker list however it is board specific and could be 
+           assigned to either a different interrupt or a dedicated interrupt if required.           
+           
+           //To Do 
+           
+           Suitable for use by Fast Interrupt handlers and Interrupt handlers (Not required for Interrupt handlers).
            Suitable for use on multiprocessor systems.
   
  Handles: ThreadManager
@@ -190,7 +227,7 @@ Threads
           Semaphores / Critical Sections
           IRQ Thread (Boot process becomes the IRQ or FIQ Thread)
           FIQ Thread
-          Idle Thread (An always ready thread whic measures utilization)
+          Idle Thread (An always ready thread which measures utilization)
           Main Thread (Main thread executes PASCALMAIN)
 
  
@@ -210,39 +247,15 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Locale,Unicode,Sy
 
 //Critical
 
-//To Do //Also look for:
-
-//To Do 
-
-            //Cleanup of other changes
-            //Final additions SpinLock/EnableIRQFIQ
-            //Other changes as per notes
-            //SWI Context Switch etc
             
 //To Do //All of our Platform and Thread etc functions need to use ThreadSetLastError ?
             
 //To Do //****Deadlock issues****:
-
-                      //All aquisitions of SpinLocks (eg Semaphore/CriticalSection/List/Queue/Buffer/Mailslot/Messageslot etc
-                      //need to check that the object (Semaphore etc) is still valid (Signature) after aquisition of the lock - Done
                      
-                      //Assembler handlers for SpinLock / Mutex need to check Signature on each iteration as well so that a lock
-                      //can be destroyed while threads are waiting for it. (Same for default handlers) - Done
-                      
-                      //ThreadDestroy needs to release the thread lock before Freeing the Tls and Message memory so that Heap 
-                      //does not have to be IRQ/FIQ SpinLock (and before Freeing the List as well) - Done
-                      
-                      //Destroy on many (all) types of primitives needs to lock the table first and then the object to prevent
-                      //deadlock (see other notes) - Done
-                      
                       //All use of SemaphoreWait needs to check for WAIT_ABANDONED on return to allow semaphores to be destroyed
-                      //while threads are waiting. Needs to be implemented on ThreadWake/ThreadAbandon
+                      //while threads are waiting. Needs to be implemented on ThreadWake/ThreadAbandon - 
                       //Same applies to Event, CriticalSection, Mailslot etc etc
                       //Event Mutex/Spin etc should check for result on Lock (No need on Unlock, cannot destroy while locked)
-                                            
-                      //ThreadCreate needs to create the List because a call to ListCreate with IRQ/FIQ spin lock in force may deadlock - Done
-                      //Same for SemaphoreCreate if flags include IRQ/FIQ - Done
-                      //And for MessageslotCreate if flags include IRQ/FIQ - Done
                       
 {==============================================================================}
 {Global definitions}
@@ -492,6 +505,11 @@ const
  WORKER_FLAG_TERMINATE  = $00000010;    {Internal flag to tell worker execute to terminate the worker thread}
  WORKER_FLAG_IRQ        = $00000020;    {Internal flag to tell worker execute to free IRQ memory when the request is completed}
  WORKER_FLAG_FIQ        = $00000040;    {Internal flag to tell worker execute to free FIQ memory when the request is completed}
+ 
+ {Tasker task constants}
+ TASKER_TASK_THREADSENDMESSAGE = 1;  {Perform a ThreadSendMessage() function using the tasker list}
+ TASKER_TASK_MESSAGESLOTSEND   = 2;  {Perform a MessageslotSend() function using the tasker list}
+ TASKER_TASK_SEMAPHORESIGNAL   = 3;  {Perform a SemaphoreSignal() function using the tasker list}
  
  {Scheduler migration constants}
  SCHEDULER_MIGRATION_DISABLED = 0;
@@ -950,6 +968,59 @@ type
   Callback:TWorkerCallback;   {Callback when task is completed}
  end;
  
+ {Tasker list}
+ PTaskerTask = ^TTaskerTask;
+ PTaskerList = ^TTaskerList;
+ TTaskerList = record
+  {List Properties}
+  Count:LongWord;             {Count of tasks currently in the Tasker list} 
+  Lock:TSpinHandle;           {Tasker list Lock}
+  First:PTaskerTask;          {First task in Tasker list}
+  Last:PTaskerTask;           {Last task in Tasker list}
+  {Internal Properties}
+  {Statistics Properties}
+ end;
+ 
+ {Tasker task}
+ TTaskerTask = record
+  Task:LongWord;              {The task to be performed}
+  Prev:PTaskerTask;           {Previous task in Tasker list}
+  Next:PTaskerTask;           {Next task in Tasker list}
+ end;
+
+ {Tasker ThreadSendMessage task}
+ PTaskerThreadSendMessage = ^TTaskerThreadSendMessage;
+ TTaskerThreadSendMessage = record
+  Task:LongWord;              {The task to be performed}
+  Prev:PTaskerTask;           {Previous task in Tasker list}
+  Next:PTaskerTask;           {Next task in Tasker list}
+  {Internal Properties}
+  Thread:TThreadHandle;       {Handle of the thread to send a message to}
+  Message:TMessage;           {Message to send to the thread}
+ end;
+ 
+ {Tasker MessageslotSend task}
+ PTaskerMessageslotSend = ^TTaskerMessageslotSend;
+ TTaskerMessageslotSend = record
+  Task:LongWord;                  {The task to be performed}
+  Prev:PTaskerTask;               {Previous task in Tasker list}
+  Next:PTaskerTask;               {Next task in Tasker list}
+  {Internal Properties}
+  Messageslot:TMessageslotHandle; {Handle of the message slot to send to}
+  Message:TMessage;               {Message to be sent}
+ end;
+  
+ {Tasker SemaphoreSignal task}
+ PTaskerSemaphoreSignal = ^TTaskerSemaphoreSignal;
+ TTaskerSemaphoreSignal = record
+  Task:LongWord;              {The task to be performed}
+  Prev:PTaskerTask;           {Previous task in Tasker list}
+  Next:PTaskerTask;           {Next task in Tasker list}
+  {Internal Properties}
+  Semaphore:TSemaphoreHandle; {Handle of the semaphore to signal}
+  Count:LongWord;             {The count to be signalled}
+ end;
+ 
 type
  {RTL Thread Manager Types}
  PThreadInfo = ^TThreadInfo;
@@ -991,7 +1062,7 @@ type
  TSpinExchangeIRQ = function(Spin1,Spin2:PSpinEntry):LongWord;
  TSpinExchangeFIQ = function(Spin1,Spin2:PSpinEntry):LongWord;
 
- TSpinMaskExchange = function(Spin1,Spin2:PSpinEntry):LongWord; //Remove
+ TSpinMaskExchange = function(Spin1,Spin2:PSpinEntry):LongWord; //To Do //Remove
  
 type
  {Prototypes for Mutex Lock/Unlock/TryLock Handlers}
@@ -1057,6 +1128,11 @@ type
  TTimerCheck = function:LongWord;
  TTimerTrigger = function:LongWord;
  
+type
+ {Prototypes for Tasker Check/Trigger Handlers}
+ TTaskerCheck = function:LongWord;
+ TTaskerTrigger = function:LongWord;
+  
 {type}
  {Prototypes for Thread Yield/Wait/WaitEx/Release/Wake Handlers}
  {Defined in Platform}
@@ -1273,7 +1349,7 @@ var
  SpinExchangeIRQHandler:TSpinExchangeIRQ;
  SpinExchangeFIQHandler:TSpinExchangeFIQ;
  
- SpinMaskExchangeHandler:TSpinMaskExchange; //Remove
+ SpinMaskExchangeHandler:TSpinMaskExchange; //To Do //Remove
  
 var
  {MutexLock/Unlock Handlers}
@@ -1344,6 +1420,11 @@ var
  TimerTriggerHandler:TTimerTrigger;
  
 var
+ {Tasker Check/Trigger Handlers}
+ TaskerCheckHandler:TTaskerCheck;
+ TaskerTriggerHandler:TTaskerTrigger;
+ 
+var
  {Thread Get/SetCurrent Handlers}
  ThreadGetCurrentHandler:TThreadGetCurrent;
  ThreadSetCurrentHandler:TThreadSetCurrent;
@@ -1398,23 +1479,23 @@ function IdleCalibrate:LongWord;
 
 {==============================================================================}
 {Spin Functions}
-function SpinCreate:TSpinHandle;
+function SpinCreate:TSpinHandle; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 function SpinCreateEx(InitialOwner:Boolean):TSpinHandle;
 function SpinDestroy(Spin:TSpinHandle):LongWord;
 
 function SpinOwner(Spin:TSpinHandle):TThreadHandle;
 
-function SpinLock(Spin:TSpinHandle):LongWord;
-function SpinUnlock(Spin:TSpinHandle):LongWord;
+function SpinLock(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+function SpinUnlock(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 
-function SpinLockIRQ(Spin:TSpinHandle):LongWord;
-function SpinUnlockIRQ(Spin:TSpinHandle):LongWord;
+function SpinLockIRQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+function SpinUnlockIRQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 
-function SpinLockFIQ(Spin:TSpinHandle):LongWord;
-function SpinUnlockFIQ(Spin:TSpinHandle):LongWord;
+function SpinLockFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+function SpinUnlockFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 
-function SpinLockIRQFIQ(Spin:TSpinHandle):LongWord;
-function SpinUnlockIRQFIQ(Spin:TSpinHandle):LongWord;
+function SpinLockIRQFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+function SpinUnlockIRQFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 
 function SpinCheckIRQ(Spin:TSpinHandle):Boolean;
 function SpinCheckFIQ(Spin:TSpinHandle):Boolean;
@@ -1426,7 +1507,7 @@ function SpinMaskExchange(Spin1,Spin2:TSpinHandle):LongWord; //Remove
 
 {==============================================================================}
 {Mutex Functions}
-function MutexCreate:TMutexHandle;
+function MutexCreate:TMutexHandle; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
 function MutexCreateEx(InitialOwner:Boolean;SpinCount:LongWord;Flags:LongWord):TMutexHandle;
 function MutexDestroy(Mutex:TMutexHandle):LongWord;
 
@@ -1434,9 +1515,9 @@ function MutexFlags(Mutex:TMutexHandle):LongWord;
 function MutexCount(Mutex:TMutexHandle):LongWord;
 function MutexOwner(Mutex:TMutexHandle):TThreadHandle;
 
-function MutexLock(Mutex:TMutexHandle):LongWord;
-function MutexUnlock(Mutex:TMutexHandle):LongWord;
-function MutexTryLock(Mutex:TMutexHandle):LongWord;
+function MutexLock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
+function MutexUnlock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
+function MutexTryLock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
 
 {==============================================================================}
 {Critical Section Functions}
@@ -1491,7 +1572,7 @@ function SynchronizerWriterConvert(Synchronizer:TSynchronizerHandle):LongWord;
 
 {==============================================================================}
 {List Functions}
-function ListCreate:TListHandle;
+function ListCreate:TListHandle; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 function ListCreateEx(ListType:LongWord;Flags:LongWord):TListHandle;
 function ListDestroy(List:TListHandle):LongWord;
 
@@ -1513,12 +1594,12 @@ function ListRemove(List:TListHandle;Element:PListElement):LongWord;
 function ListIsEmpty(List:TListHandle):Boolean;
 function ListNotEmpty(List:TListHandle):Boolean;
 
-function ListLock(List:TListHandle):LongWord;
-function ListUnlock(List:TListHandle):LongWord;
+function ListLock(List:TListHandle):LongWord; {$IFDEF LIST_INLINE}inline;{$ENDIF}
+function ListUnlock(List:TListHandle):LongWord; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 
 {==============================================================================}
 {Queue Functions}
-function QueueCreate:TQueueHandle;
+function QueueCreate:TQueueHandle; {$IFDEF QUEUE_INLINE}inline;{$ENDIF}
 function QueueCreateEx(QueueType:LongWord;Flags:LongWord):TQueueHandle;
 function QueueDestroy(Queue:TQueueHandle):LongWord;
 
@@ -1540,8 +1621,8 @@ function QueueDecrementKey(Queue:TQueueHandle):Integer;
 function QueueIsEmpty(Queue:TQueueHandle):Boolean;
 function QueueNotEmpty(Queue:TQueueHandle):Boolean;
 
-function QueueLock(Queue:TQueueHandle):LongWord;
-function QueueUnlock(Queue:TQueueHandle):LongWord;
+function QueueLock(Queue:TQueueHandle):LongWord; {$IFDEF QUEUE_INLINE}inline;{$ENDIF}
+function QueueUnlock(Queue:TQueueHandle):LongWord; {$IFDEF QUEUE_INLINE}inline;{$ENDIF}
 
 {==============================================================================}
 {Thread Functions}
@@ -1742,6 +1823,18 @@ function WorkerDecrease(Count:LongWord):LongWord;
 procedure WorkerTimer(WorkerRequest:PWorkerRequest);
 
 {==============================================================================}
+{Tasker Functions}
+function TaskerThreadSendMessage(Thread:TThreadHandle;const Message:TMessage):LongWord;
+function TaskerMessageslotSend(Messageslot:TMessageslotHandle;const Message:TMessage):LongWord;
+function TaskerSemaphoreSignal(Semaphore:TSemaphoreHandle;Count:LongWord):LongWord;
+
+function TaskerEnqueue(Task:PTaskerTask):LongWord;
+function TaskerDequeue:PTaskerTask;
+
+function TaskerCheck:LongWord;
+function TaskerTrigger:LongWord;
+
+{==============================================================================}
 {RTL Init/Exit Functions}
 procedure SysInitProc;
 procedure SysExitProc;
@@ -1844,6 +1937,8 @@ function TimerGetCount:LongWord; inline;
 
 function WorkerGetCount:LongWord; inline;
 
+function TaskerGetCount:LongWord; inline;
+
 function ListTypeToString(ListType:LongWord):String;
 function QueueTypeToString(QueueType:LongWord):String;
 function ThreadTypeToString(ThreadType:LongWord):String;
@@ -1888,6 +1983,9 @@ function TimerGetMessageslotFlags:LongWord;
 {==============================================================================}
 {Worker Helper Functions}
 function WorkerGetMessageslotFlags:LongWord;
+
+{==============================================================================}
+{Tasker Helper Functions}
 
 {==============================================================================}
 const
@@ -2013,9 +2111,33 @@ var
  WorkerThreadCount:LongWord;
  WorkerThreadNext:LongWord;
  WorkerMessageslot:TMessageslotHandle;
+
+ TaskerList:PTaskerList;
  
  MainThread:TThreadHandle;
 
+{==============================================================================}
+{==============================================================================}
+{Spin Forward Declarations}
+function SpinLockDefault(SpinEntry:PSpinEntry):LongWord; forward;
+function SpinUnlockDefault(SpinEntry:PSpinEntry):LongWord; forward;
+
+function SpinLockIRQDefault(SpinEntry:PSpinEntry):LongWord; forward;
+function SpinUnlockIRQDefault(SpinEntry:PSpinEntry):LongWord; forward;
+
+function SpinLockFIQDefault(SpinEntry:PSpinEntry):LongWord; forward;
+function SpinUnlockFIQDefault(SpinEntry:PSpinEntry):LongWord; forward;
+
+function SpinLockIRQFIQDefault(SpinEntry:PSpinEntry):LongWord; forward;
+function SpinUnlockIRQFIQDefault(SpinEntry:PSpinEntry):LongWord; forward;
+
+{==============================================================================}
+{==============================================================================}
+{Mutex Forward Declarations}
+function MutexLockDefault(MutexEntry:PMutexEntry):LongWord; forward;
+function MutexUnlockDefault(MutexEntry:PMutexEntry):LongWord; forward;
+function MutexTryLockDefault(MutexEntry:PMutexEntry):LongWord; forward;
+ 
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -2179,6 +2301,24 @@ begin
  {Setup Platform Handlers}
  HaltThreadHandler:=ThreadHalt;
  
+ {Setup Spin Default Handlers}
+ if not Assigned(SpinLockHandler) then SpinLockHandler:=SpinLockDefault;
+ if not Assigned(SpinUnlockHandler) then SpinUnlockHandler:=SpinUnlockDefault;
+
+ if not Assigned(SpinLockIRQHandler) then SpinLockIRQHandler:=SpinLockIRQDefault;
+ if not Assigned(SpinUnlockIRQHandler) then SpinUnlockIRQHandler:=SpinUnlockIRQDefault;
+
+ if not Assigned(SpinLockFIQHandler) then SpinLockFIQHandler:=SpinLockFIQDefault;
+ if not Assigned(SpinUnlockFIQHandler) then SpinUnlockFIQHandler:=SpinUnlockFIQDefault;
+
+ if not Assigned(SpinLockIRQFIQHandler) then SpinLockIRQFIQHandler:=SpinLockIRQFIQDefault;
+ if not Assigned(SpinUnlockIRQFIQHandler) then SpinUnlockIRQFIQHandler:=SpinUnlockIRQFIQDefault;
+ 
+ {Setup Mutex Default Handlers}
+ if not Assigned(MutexLockHandler) then MutexLockHandler:=MutexLockDefault;
+ if not Assigned(MutexUnlockHandler) then MutexUnlockHandler:=MutexUnlockDefault;
+ if not Assigned(MutexTryLockHandler) then MutexTryLockHandler:=MutexTryLockDefault;
+ 
  {Initialize Locale Support}
  LocaleInit;
  
@@ -2330,6 +2470,9 @@ begin
  TimerTableLock:=SpinCreate;
  TimerTableCount:=0;
  
+ {Initialize Tasker List}
+ TaskerList:=nil;
+ 
  {Initialize Heap Lock}
  {$IF DEFINED(HEAP_LOCK_IRQ) or DEFINED(HEAP_LOCK_FIQ) or DEFINED(HEAP_LOCK_IRQFIQ)}
  HeapLock.Lock:=SpinCreate;
@@ -2385,6 +2528,16 @@ begin
  InterruptLock.Lock:=SpinCreate;
  InterruptLock.AcquireLock:=SpinLockIRQFIQ;
  InterruptLock.ReleaseLock:=SpinUnlockIRQFIQ;
+ 
+ {Initialize Page Table Lock}
+ PageTableLock.Lock:=SpinCreate;
+ PageTableLock.AcquireLock:=SpinLockIRQFIQ; 
+ PageTableLock.ReleaseLock:=SpinUnlockIRQFIQ; 
+
+ {Initialize Vector Table Lock}
+ VectorTableLock.Lock:=SpinCreate;
+ VectorTableLock.AcquireLock:=SpinLockIRQFIQ;
+ VectorTableLock.ReleaseLock:=SpinUnlockIRQFIQ; 
  
  {Initialize Shutdown Semaphore}
  ShutdownSemaphore.Semaphore:=SemaphoreCreate(0);
@@ -2601,6 +2754,16 @@ begin
    ThreadSetPriority(Thread,WORKER_THREAD_PRIORITY);
    
    Inc(WorkerThreadNext);
+  end;
+ 
+ {Create Tasker List}
+ TaskerList:=AllocMem(SizeOf(TTaskerList));
+ if TaskerList <> nil then
+  begin
+   TaskerList.Count:=0;
+   TaskerList.Lock:=SpinCreate;
+   TaskerList.First:=nil;
+   TaskerList.Last:=nil;
   end;
  
  {Calibrate Idle Thread}
@@ -2872,8 +3035,8 @@ begin
  {Setup DispatchFastInterruptCounter}
  SetLength(DispatchFastInterruptCounter,SCHEDULER_CPU_COUNT);
  
- {Setup DispatchSoftwareInterruptCounter}
- SetLength(DispatchSoftwareInterruptCounter,SCHEDULER_CPU_COUNT);
+ {Setup DispatchSystemCallCounter}
+ SetLength(DispatchSystemCallCounter,SCHEDULER_CPU_COUNT);
  {$ENDIF}
  
  {Setup UtilizationLast/Current}
@@ -3916,7 +4079,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Spin Functions}
-function SpinCreate:TSpinHandle;
+function SpinCreate:TSpinHandle; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Create and insert a new Spin entry}
 {Return: Handle of new Spin entry or INVALID_HANDLE_VALUE if entry could not be created}
 begin
@@ -4111,7 +4274,7 @@ end;
 
 {==============================================================================}
 
-function SpinLock(Spin:TSpinHandle):LongWord;
+function SpinLock(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Lock an existing Spin entry}
 {Spin: Handle of Spin entry to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -4182,36 +4345,12 @@ begin
    InterlockedIncrement(LongInt(SpinLockCounter));
    InterlockedIncrement(LongInt(SpinLockExit)); 
    {$ENDIF}
-  end
- else
-  begin
-   {Use the Default method}
-   {Acquire the Lock}
-   while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
-    begin
-     while SpinEntry.State <> SPIN_STATE_UNLOCKED do
-      begin
-       {Spin while waiting}
-       
-       {Check Signature}
-       if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
-      end; 
-    end;
-   
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Set Owner}
-   SpinEntry.Owner:=ThreadGetCurrent;
-
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function SpinUnlock(Spin:TSpinHandle):LongWord;
+function SpinUnlock(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Unlock an existing Spin entry}
 {Spin: Handle of Spin entry to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -4233,26 +4372,6 @@ begin
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
  
- {Check the Lock}
- Result:=ERROR_NOT_LOCKED;
- if SpinEntry.State <> SPIN_STATE_LOCKED then
-  begin
-   {$IFDEF SPIN_DEBUG}
-   InterlockedIncrement(LongInt(SpinUnlockNoLock));
-   {$ENDIF}
-   Exit;
-  end;
-  
- {Check the Owner}
- Result:=ERROR_NOT_OWNER;
- if SpinEntry.Owner <> ThreadGetCurrent then
-  begin
-   {$IFDEF SPIN_DEBUG}
-   InterlockedIncrement(LongInt(SpinUnlockNoOwner));
-   {$ENDIF}
-   Exit;
-  end;
- 
  {Check the Handler}
  if Assigned(SpinUnlockHandler) then
   begin
@@ -4267,32 +4386,16 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockExit));
    {$ENDIF}
-  end
- else
-  begin
-   {Use the Default method}
-   {Release Owner}
-   SpinEntry.Owner:=INVALID_HANDLE_VALUE; 
-   
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Release the Lock}
-   SpinEntry.State:=SPIN_STATE_UNLOCKED;
- 
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function SpinLockIRQ(Spin:TSpinHandle):LongWord;
+function SpinLockIRQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Lock an existing Spin entry, disable IRQ and save the previous IRQ state}
 {Spin: Handle of Spin entry to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Mask:TIRQMask;
  SpinEntry:PSpinEntry;
 begin
  {}
@@ -4324,52 +4427,16 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinLockIRQCounter)); 
    {$ENDIF}
-  end
- else
-  begin
-   {Use the Default method}
-   {Save IRQ}
-   Mask:=SaveIRQ;
-   
-   {Acquire the Lock}
-   while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
-    begin
-     {Restore IRQ}
-     RestoreIRQ(Mask);
-     while SpinEntry.State <> SPIN_STATE_UNLOCKED do
-      begin
-       {Spin while waiting}
-      
-       {Check Signature}
-       if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
-      end;
-      
-     {Save IRQ}
-     Mask:=SaveIRQ;
-    end;  
-    
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Save the Mask}
-   SpinEntry.Mask:=Mask;
-   
-   {Set Owner}
-   SpinEntry.Owner:=ThreadGetCurrent;
-
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function SpinUnlockIRQ(Spin:TSpinHandle):LongWord;
+function SpinUnlockIRQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Unlock an existing Spin entry and restore the previous IRQ state}
 {Spin: Handle of Spin entry to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Mask:TIRQMask;
  SpinEntry:PSpinEntry;
 begin
  {}
@@ -4383,14 +4450,6 @@ begin
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
  
- {Check the Lock}
- Result:=ERROR_NOT_LOCKED;
- if SpinEntry.State <> SPIN_STATE_LOCKED then Exit;
-
- {Check the Owner}
- Result:=ERROR_NOT_OWNER;
- if SpinEntry.Owner <> ThreadGetCurrent then Exit;
- 
  {Check the Handler}
  if Assigned(SpinUnlockIRQHandler) then
   begin
@@ -4401,41 +4460,16 @@ begin
    
    {Release the Lock}
    Result:=SpinUnlockIRQHandler(SpinEntry);
-  end
- else
-  begin
-   {Use the Default method}
-   {Release Owner}
-   SpinEntry.Owner:=INVALID_HANDLE_VALUE;
-   
-   {Get the Mask}
-   Mask:=SpinEntry.Mask;
-   
-   {Clear the Mask}
-   SpinEntry.Mask:=0;
-   
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Release the Lock}
-   SpinEntry.State:=SPIN_STATE_UNLOCKED;
-   
-   {Restore IRQ}
-   RestoreIRQ(Mask); 
-   
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function SpinLockFIQ(Spin:TSpinHandle):LongWord;
+function SpinLockFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Lock an existing Spin entry, disable FIQ and save the previous FIQ state}
 {Spin: Handle of Spin entry to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Mask:TFIQMask;
  SpinEntry:PSpinEntry;
 begin
  {}
@@ -4467,51 +4501,16 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinLockFIQCounter));
    {$ENDIF}
-  end
- else
-  begin
-   {Use the Default method}
-   {Save FIQ}
-   Mask:=SaveFIQ;
-   
-   while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
-    begin
-     {Restore FIQ}
-     RestoreFIQ(Mask);
-     while SpinEntry.State <> SPIN_STATE_UNLOCKED do
-      begin
-       {Spin while waiting}
-      
-       {Check Signature}
-       if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
-      end;
-      
-     {Save FIQ}
-     Mask:=SaveFIQ;
-    end;  
-    
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Save the Mask}
-   SpinEntry.Mask:=Mask;
-   
-   {Set Owner}
-   SpinEntry.Owner:=ThreadGetCurrent;
-
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function SpinUnlockFIQ(Spin:TSpinHandle):LongWord;
+function SpinUnlockFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Unlock an existing Spin entry and restore the previous FIQ state}
 {Spin: Handle of Spin entry to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Mask:TFIQMask;
  SpinEntry:PSpinEntry;
 begin
  {}
@@ -4525,14 +4524,6 @@ begin
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
  
- {Check the Lock}
- Result:=ERROR_NOT_LOCKED;
- if SpinEntry.State <> SPIN_STATE_LOCKED then Exit;
-
- {Check the Owner}
- Result:=ERROR_NOT_OWNER;
- if SpinEntry.Owner <> ThreadGetCurrent then Exit;
- 
  {Check the Handler}
  if Assigned(SpinUnlockFIQHandler) then
   begin
@@ -4543,41 +4534,16 @@ begin
    
    {Release the Lock}
    Result:=SpinUnlockFIQHandler(SpinEntry);
-  end
- else
-  begin
-   {Use the Default method}
-   {Release Owner}
-   SpinEntry.Owner:=INVALID_HANDLE_VALUE;
-   
-   {Get the Mask}
-   Mask:=SpinEntry.Mask;
-   
-   {Clear the Mask}
-   SpinEntry.Mask:=0;
-   
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Release the Lock}
-   SpinEntry.State:=SPIN_STATE_UNLOCKED;
-
-   {Restore FIQ}
-   RestoreFIQ(Mask); 
-   
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function SpinLockIRQFIQ(Spin:TSpinHandle):LongWord;
+function SpinLockIRQFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Lock an existing Spin entry, disable IRQ and FIQ and save the previous IRQ and FIQ state}
 {Spin: Handle of Spin entry to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Mask:TIRQFIQMask;
  SpinEntry:PSpinEntry;
 begin
  {}
@@ -4609,52 +4575,16 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinLockIRQFIQCounter));
    {$ENDIF}
-  end
- else
-  begin
-   {Use the Default method}
-   {Save IRQFIQ}
-   Mask:=SaveIRQFIQ;
-   
-   {Acquire the Lock}
-   while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
-    begin
-     {Restore IRQFIQ}
-     RestoreIRQFIQ(Mask);
-     while SpinEntry.State <> SPIN_STATE_UNLOCKED do
-      begin
-       {Spin while waiting}
-      
-       {Check Signature}
-       if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
-      end;
-      
-     {Save IRQFIQ}
-     Mask:=SaveIRQFIQ;
-    end;  
-    
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Save the Mask}
-   SpinEntry.Mask:=Mask;
-   
-   {Set Owner}
-   SpinEntry.Owner:=ThreadGetCurrent;
-
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function SpinUnlockIRQFIQ(Spin:TSpinHandle):LongWord;
+function SpinUnlockIRQFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 {Unlock an existing Spin entry and restore the previous IRQ and FIQ state}
 {Spin: Handle of Spin entry to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Mask:TIRQFIQMask;
  SpinEntry:PSpinEntry;
 begin
  {}
@@ -4668,14 +4598,6 @@ begin
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
  
- {Check the Lock}
- Result:=ERROR_NOT_LOCKED;
- if SpinEntry.State <> SPIN_STATE_LOCKED then Exit;
-
- {Check the Owner}
- Result:=ERROR_NOT_OWNER;
- if SpinEntry.Owner <> ThreadGetCurrent then Exit;
- 
  {Check the Handler}
  if Assigned(SpinUnlockIRQFIQHandler) then
   begin
@@ -4686,31 +4608,7 @@ begin
    
    {Release the Lock}
    Result:=SpinUnlockIRQFIQHandler(SpinEntry);
-  end
- else
-  begin
-   {Use the Default method}
-   {Release Owner}
-   SpinEntry.Owner:=INVALID_HANDLE_VALUE;
-   
-   {Get the Mask}
-   Mask:=SpinEntry.Mask;
-   
-   {Clear the Mask}
-   SpinEntry.Mask:=0;
-   
-   {Memory Barrier}
-   DataMemoryBarrier;
-   
-   {Release the Lock}
-   SpinEntry.State:=SPIN_STATE_UNLOCKED;
-   
-   {Restore IRQFIQ}
-   RestoreIRQFIQ(Mask);
-   
-   {Return Result}
-   Result:=ERROR_SUCCESS;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4953,9 +4851,341 @@ begin
 end;
 //Remove
 {==============================================================================}
+
+function SpinLockDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinLock function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinLock instead}
+begin
+ {}
+ {Acquire the Lock}
+ while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
+  begin
+   while SpinEntry.State <> SPIN_STATE_UNLOCKED do
+    begin
+     {Spin while waiting}
+     
+     {Check Signature}
+     if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
+    end; 
+  end;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Set Owner}
+ SpinEntry.Owner:=ThreadGetCurrent;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function SpinUnlockDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinUnlock function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinUnlock instead}
+begin
+ {}
+ {Check the Lock}
+ if SpinEntry.State <> SPIN_STATE_LOCKED then
+  begin
+   {$IFDEF SPIN_DEBUG}
+   InterlockedIncrement(LongInt(SpinUnlockNoLock));
+   {$ENDIF}
+   
+   Result:=ERROR_NOT_LOCKED;
+   Exit;
+  end;
+  
+ {Check the Owner}
+ if SpinEntry.Owner <> ThreadGetCurrent then
+  begin
+   {$IFDEF SPIN_DEBUG}
+   InterlockedIncrement(LongInt(SpinUnlockNoOwner));
+   {$ENDIF}
+   
+    Result:=ERROR_NOT_OWNER;
+   Exit;
+  end;
+ 
+ {Release Owner}
+ SpinEntry.Owner:=INVALID_HANDLE_VALUE; 
+ 
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Release the Lock}
+ SpinEntry.State:=SPIN_STATE_UNLOCKED;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function SpinLockIRQDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinLockIRQ function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinLockIRQ instead}
+var
+ Mask:TIRQMask;
+begin
+ {}
+ {Save IRQ}
+ Mask:=SaveIRQ;
+ 
+ {Acquire the Lock}
+ while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
+  begin
+   {Restore IRQ}
+   RestoreIRQ(Mask);
+   while SpinEntry.State <> SPIN_STATE_UNLOCKED do
+    begin
+     {Spin while waiting}
+    
+     {Check Signature}
+     if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
+    end;
+    
+   {Save IRQ}
+   Mask:=SaveIRQ;
+  end;  
+  
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Save the Mask}
+ SpinEntry.Mask:=Mask;
+ 
+ {Set Owner}
+ SpinEntry.Owner:=ThreadGetCurrent;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function SpinUnlockIRQDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinUnlockIRQ function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinUnlockIRQ instead}
+var
+ Mask:TIRQMask;
+begin
+ {}
+ {Check the Lock}
+ if SpinEntry.State <> SPIN_STATE_LOCKED then
+  begin
+   Result:=ERROR_NOT_LOCKED;
+   Exit;
+  end;
+ 
+ {Check the Owner}
+ if SpinEntry.Owner <> ThreadGetCurrent then
+  begin
+   Result:=ERROR_NOT_OWNER;
+   Exit;
+  end;
+ 
+ {Release Owner}
+ SpinEntry.Owner:=INVALID_HANDLE_VALUE;
+ 
+ {Get the Mask}
+ Mask:=SpinEntry.Mask;
+ 
+ {Clear the Mask}
+ SpinEntry.Mask:=0;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Release the Lock}
+ SpinEntry.State:=SPIN_STATE_UNLOCKED;
+ 
+ {Restore IRQ}
+ RestoreIRQ(Mask); 
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function SpinLockFIQDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinLockFIQ function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinLockFIQ instead}
+var
+ Mask:TFIQMask;
+begin
+ {}
+ {Save FIQ}
+ Mask:=SaveFIQ;
+ 
+ {Acquire the Lock}
+ while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
+  begin
+   {Restore FIQ}
+   RestoreFIQ(Mask);
+   while SpinEntry.State <> SPIN_STATE_UNLOCKED do
+    begin
+     {Spin while waiting}
+    
+     {Check Signature}
+     if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
+    end;
+    
+   {Save FIQ}
+   Mask:=SaveFIQ;
+  end;  
+  
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Save the Mask}
+ SpinEntry.Mask:=Mask;
+ 
+ {Set Owner}
+ SpinEntry.Owner:=ThreadGetCurrent;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function SpinUnlockFIQDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinUnlockFIQ function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinUnlockFIQ instead}
+var
+ Mask:TFIQMask;
+begin
+ {}
+ {Check the Lock}
+ if SpinEntry.State <> SPIN_STATE_LOCKED then
+  begin
+   Result:=ERROR_NOT_LOCKED;
+   Exit;
+  end; 
+ 
+ {Check the Owner}
+ if SpinEntry.Owner <> ThreadGetCurrent then
+  begin
+   Result:=ERROR_NOT_OWNER;
+   Exit;
+  end; 
+ 
+ {Release Owner}
+ SpinEntry.Owner:=INVALID_HANDLE_VALUE;
+ 
+ {Get the Mask}
+ Mask:=SpinEntry.Mask;
+ 
+ {Clear the Mask}
+ SpinEntry.Mask:=0;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Release the Lock}
+ SpinEntry.State:=SPIN_STATE_UNLOCKED;
+
+ {Restore FIQ}
+ RestoreFIQ(Mask); 
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function SpinLockIRQFIQDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinLockIRQFIQ function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinLockIRQFIQ instead}
+var
+ Mask:TIRQFIQMask;
+begin
+ {}
+ {Save IRQFIQ}
+ Mask:=SaveIRQFIQ;
+ 
+ {Acquire the Lock}
+ while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
+  begin
+   {Restore IRQFIQ}
+   RestoreIRQFIQ(Mask);
+   while SpinEntry.State <> SPIN_STATE_UNLOCKED do
+    begin
+     {Spin while waiting}
+    
+     {Check Signature}
+     if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
+    end;
+    
+   {Save IRQFIQ}
+   Mask:=SaveIRQFIQ;
+  end;  
+  
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Save the Mask}
+ SpinEntry.Mask:=Mask;
+ 
+ {Set Owner}
+ SpinEntry.Owner:=ThreadGetCurrent;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function SpinUnlockIRQFIQDefault(SpinEntry:PSpinEntry):LongWord;
+{Default version of SpinUnlockIRQFIQ function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use SpinUnlockIRQFIQ instead}
+var
+ Mask:TIRQFIQMask;
+begin
+ {}
+ {Check the Lock}
+ if SpinEntry.State <> SPIN_STATE_LOCKED then
+  begin
+   Result:=ERROR_NOT_LOCKED;
+   Exit;
+  end; 
+ 
+ {Check the Owner}
+ if SpinEntry.Owner <> ThreadGetCurrent then
+  begin
+   Result:=ERROR_NOT_OWNER;
+   Exit;
+  end; 
+ 
+ {Release Owner}
+ SpinEntry.Owner:=INVALID_HANDLE_VALUE;
+ 
+ {Get the Mask}
+ Mask:=SpinEntry.Mask;
+ 
+ {Clear the Mask}
+ SpinEntry.Mask:=0;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier;
+ 
+ {Release the Lock}
+ SpinEntry.State:=SPIN_STATE_UNLOCKED;
+ 
+ {Restore IRQFIQ}
+ RestoreIRQFIQ(Mask);
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Mutex Functions}
-function MutexCreate:TMutexHandle;
+function MutexCreate:TMutexHandle; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
 {Create and insert a new Mutex entry}
 {Return: Handle of new Mutex entry or INVALID_HANDLE_VALUE if entry could not be created}
 begin
@@ -5213,12 +5443,11 @@ end;
 
 {==============================================================================}
 
-function MutexLock(Mutex:TMutexHandle):LongWord;
+function MutexLock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
 {Lock an existing Mutex entry}
 {Mutex: Handle of Mutex entry to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Count:LongWord;
  MutexEntry:PMutexEntry;
 begin
  {}
@@ -5277,22 +5506,144 @@ begin
  {Check the Handler}
  if Assigned(MutexLockHandler) then
   begin
-   {Use the Handler method}
+   {Call the Handler}
    Result:=MutexLockHandler(MutexEntry);
-   
+ 
    {$IFDEF MUTEX_DEBUG}
    InterlockedIncrement(LongInt(MutexLockCounter));
    InterlockedIncrement(LongInt(MutexLockExit)); 
    {$ENDIF}
+  end; 
+end;
+
+{==============================================================================}
+
+function MutexUnlock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
+{Unlock an existing Mutex entry}
+{Mutex: Handle of Mutex entry to unlock}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ MutexEntry:PMutexEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IFDEF MUTEX_DEBUG}
+ InterlockedIncrement(LongInt(MutexUnlockEntry));
+ {$ENDIF}
+ 
+ {Check Mutex}
+ if Mutex = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ MutexEntry:=PMutexEntry(Mutex);
+ if MutexEntry = nil then Exit;
+ if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
+ 
+ {Check the Handler}
+ if Assigned(MutexUnlockHandler) then
+  begin
+   {$IFDEF MUTEX_DEBUG}
+   InterlockedIncrement(LongInt(MutexUnlockCounter));
+   {$ENDIF}
+
+   {Call the Handler}
+   Result:=MutexUnlockHandler(MutexEntry);
+ 
+   {$IFDEF MUTEX_DEBUG}
+   InterlockedIncrement(LongInt(MutexUnlockExit));
+   {$ENDIF}
+  end; 
+end;
+
+{==============================================================================}
+
+function MutexTryLock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
+{Try to lock an existing Mutex entry
+ 
+ If the Mutex is not locked then lock it and mark the owner as the current thread
+ 
+ If the Mutex is already locked then return immediately with an error and do not
+ wait for it to be unlocked}
+{Mutex: Mutex to try to lock} 
+{Return: ERROR_SUCCESS if completed, ERROR_LOCKED if already locked or another error code on failure}
+var
+ MutexEntry:PMutexEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Mutex}
+ if Mutex = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ MutexEntry:=PMutexEntry(Mutex);
+ if MutexEntry = nil then Exit;
+ if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
+ 
+ {Check the Handler}
+ if Assigned(MutexTryLockHandler) then
+  begin
+   {Call the Handler}
+   Result:=MutexTryLockHandler(MutexEntry);
+  end; 
+end;
+ 
+{==============================================================================}
+ 
+function MutexLockDefault(MutexEntry:PMutexEntry):LongWord;
+{Default version of MutexLock function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use MutexLock instead}
+var
+ Count:LongWord;
+begin
+ {}
+ Count:=0;
+ 
+ {Check the Flags}
+ if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
+  begin
+   {Acquire the Lock}
+   while InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) <> MUTEX_STATE_UNLOCKED do
+    begin
+     while MutexEntry.State <> MUTEX_STATE_UNLOCKED do
+      begin
+       {Check Count}
+       if Count < MutexEntry.SpinCount then
+        begin
+         {Increment Count}
+         Inc(Count);
+        end
+       else
+        begin         
+         {Yield while waiting}
+         MutexEntry.Yield;
+        end; 
+       
+       {Check Signature}
+       if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
+      end; 
+    end;
+   
+   {Memory Barrier}
+   DataMemoryBarrier;
+   
+   {Set Owner}
+   MutexEntry.Owner:=ThreadGetCurrent;
+ 
+   {Return Result}
+   Result:=ERROR_SUCCESS;
   end
  else
   begin
-   {Use the Default method}
-   Count:=0;
-   
-   {Check the Flags}
-   if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
-    begin
+   {Check Owner}
+   if MutexEntry.Owner = ThreadGetCurrent then
+    begin        
+     {Update Count}
+     Inc(MutexEntry.Count);
+    end
+   else
+    begin        
      {Acquire the Lock}
      while InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) <> MUTEX_STATE_UNLOCKED do
       begin
@@ -5318,124 +5669,76 @@ begin
      {Memory Barrier}
      DataMemoryBarrier;
      
+     {Set Count}
+     MutexEntry.Count:=1;
+     
      {Set Owner}
      MutexEntry.Owner:=ThreadGetCurrent;
-  
-     {Return Result}
-     Result:=ERROR_SUCCESS;
-    end
-   else
-    begin
-     {Check Owner}
-     if MutexEntry.Owner = ThreadGetCurrent then
-      begin        
-       {Update Count}
-       Inc(MutexEntry.Count);
-      end
-     else
-      begin        
-       {Acquire the Lock}
-       while InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) <> MUTEX_STATE_UNLOCKED do
-        begin
-         while MutexEntry.State <> MUTEX_STATE_UNLOCKED do
-          begin
-           {Check Count}
-           if Count < MutexEntry.SpinCount then
-            begin
-             {Increment Count}
-             Inc(Count);
-            end
-           else
-            begin         
-             {Yield while waiting}
-             MutexEntry.Yield;
-            end; 
-           
-           {Check Signature}
-           if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
-          end; 
-        end;
-       
-       {Memory Barrier}
-       DataMemoryBarrier;
-       
-       {Set Count}
-       MutexEntry.Count:=1;
-       
-       {Set Owner}
-       MutexEntry.Owner:=ThreadGetCurrent;
-      end;
-      
-     {Return Result}
-     Result:=ERROR_SUCCESS;
-    end;    
-  end; 
+    end;
+    
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+  end;    
 end;
-
+ 
 {==============================================================================}
 
-function MutexUnlock(Mutex:TMutexHandle):LongWord;
-{Unlock an existing Mutex entry}
-{Mutex: Handle of Mutex entry to unlock}
-{Return: ERROR_SUCCESS if completed or another error code on failure}
-var
- MutexEntry:PMutexEntry;
+function MutexUnlockDefault(MutexEntry:PMutexEntry):LongWord;
+{Default version of MutexUnlock function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use MutexUnlock instead}
 begin
  {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {$IFDEF MUTEX_DEBUG}
- InterlockedIncrement(LongInt(MutexUnlockEntry));
- {$ENDIF}
- 
- {Check Mutex}
- if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
- {Check the Handle}
- MutexEntry:=PMutexEntry(Mutex);
- if MutexEntry = nil then Exit;
- if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
- 
  {Check the Lock}
- Result:=ERROR_NOT_LOCKED;
  if MutexEntry.State <> MUTEX_STATE_LOCKED then
   begin
    {$IFDEF MUTEX_DEBUG}
    InterlockedIncrement(LongInt(MutexUnlockNoLock));
    {$ENDIF}
+   
+   Result:=ERROR_NOT_LOCKED;
    Exit;
   end; 
-
+ 
  {Check the Owner}
- Result:=ERROR_NOT_OWNER;
  if MutexEntry.Owner <> ThreadGetCurrent then
   begin
    {$IFDEF MUTEX_DEBUG}
    InterlockedIncrement(LongInt(MutexUnlockNoOwner));
    {$ENDIF}
+   
+   Result:=ERROR_NOT_OWNER;
    Exit;
   end; 
  
- {Check the Handler}
- if Assigned(MutexUnlockHandler) then
+ {Check the Flags}
+ if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
   begin
-   {Use the Handler method}
-   {$IFDEF MUTEX_DEBUG}
-   InterlockedIncrement(LongInt(MutexUnlockCounter));
-   {$ENDIF}
-
-   {Release the Lock}
-   Result:=MutexUnlockHandler(MutexEntry);
+   {Release Owner}
+   MutexEntry.Owner:=INVALID_HANDLE_VALUE;
    
-   {$IFDEF MUTEX_DEBUG}
-   InterlockedIncrement(LongInt(MutexUnlockExit));
-   {$ENDIF}
+   {Memory Barrier}
+   DataMemoryBarrier;
+   
+   {Release the Lock}
+   MutexEntry.State:=MUTEX_STATE_UNLOCKED;
+ 
+   {Return Result}
+   Result:=ERROR_SUCCESS;
   end
  else
   begin
-   {Use the Default method}
-   {Check the Flags}
-   if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
+   {Check Count}
+   if MutexEntry.Count = 0 then
+    begin
+     Result:=ERROR_INVALID_FUNCTION;
+     Exit;
+    end; 
+  
+   {Update Count}
+   Dec(MutexEntry.Count);
+  
+   {Check Count}
+   if MutexEntry.Count = 0 then
     begin
      {Release Owner}
      MutexEntry.Owner:=INVALID_HANDLE_VALUE;
@@ -5445,130 +5748,74 @@ begin
      
      {Release the Lock}
      MutexEntry.State:=MUTEX_STATE_UNLOCKED;
-   
-     {Return Result}
-     Result:=ERROR_SUCCESS;
-    end
-   else
-    begin
-     {Check Count}
-     Result:=ERROR_INVALID_FUNCTION;
-     if MutexEntry.Count = 0 then Exit;
+    end;
     
-     {Update Count}
-     Dec(MutexEntry.Count);
-    
-     {Check Count}
-     if MutexEntry.Count = 0 then
-      begin
-       {Release Owner}
-       MutexEntry.Owner:=INVALID_HANDLE_VALUE;
-       
-       {Memory Barrier}
-       DataMemoryBarrier;
-       
-       {Release the Lock}
-       MutexEntry.State:=MUTEX_STATE_UNLOCKED;
-      end;
-      
-     {Return Result}
-     Result:=ERROR_SUCCESS;
-    end;    
-  end;  
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+  end;    
 end;
 
 {==============================================================================}
 
-function MutexTryLock(Mutex:TMutexHandle):LongWord;
-{Try to lock an existing Mutex entry
- 
- If the Mutex is not locked then lock it and mark the owner as the current thread
- 
- If the Mutex is already locked then return immediately with an error and do not
- wait for it to be unlocked}
-{Mutex: Mutex to try to lock} 
-{Return: ERROR_SUCCESS if completed, ERROR_LOCKED if already locked or another error code on failure}
-var
- MutexEntry:PMutexEntry;
+function MutexTryLockDefault(MutexEntry:PMutexEntry):LongWord;
+{Default version of MutexTryLock function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use MutexTryLock instead}
 begin
  {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Mutex}
- if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
- {Check the Handle}
- MutexEntry:=PMutexEntry(Mutex);
- if MutexEntry = nil then Exit;
- if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
-
- {Check the Lock}
- Result:=ERROR_LOCKED;
+ {Check the Flags}
  if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
   begin
+   {Check the Lock}
+   Result:=ERROR_LOCKED;
    if MutexEntry.State = MUTEX_STATE_LOCKED then Exit;
-  end
- else
-  begin
-   if (MutexEntry.State = MUTEX_STATE_LOCKED) and (MutexEntry.Owner <> ThreadGetCurrent) then Exit;
-  end;  
- 
- {Check the Handler}
- if Assigned(MutexTryLockHandler) then
-  begin
-   {Use the Handler method}
-   Result:=MutexTryLockHandler(MutexEntry);
-  end
- else
-  begin
-   {Use the Default method}
-   {Check the Flags}
-   if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
+   
+   {Acquire the Lock}
+   if InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) = MUTEX_STATE_UNLOCKED then
     begin
+     {Memory Barrier}
+     DataMemoryBarrier;
+     
+     {Set Owner}
+     MutexEntry.Owner:=ThreadGetCurrent;
+     
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+    end; 
+  end
+ else
+  begin
+   {Check Owner}
+   if MutexEntry.Owner = ThreadGetCurrent then
+    begin        
+     {Update Count}
+     Inc(MutexEntry.Count);
+     
+     {Return Result}
+     Result:=ERROR_SUCCESS; 
+    end
+   else
+    begin
+     {Check the Lock}
+     Result:=ERROR_LOCKED;
+     if MutexEntry.State = MUTEX_STATE_LOCKED then Exit;
+     
      {Acquire the Lock}
      if InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) = MUTEX_STATE_UNLOCKED then
       begin
        {Memory Barrier}
        DataMemoryBarrier;
        
+       {Set Count}
+       MutexEntry.Count:=1;
+
        {Set Owner}
        MutexEntry.Owner:=ThreadGetCurrent;
        
        {Return Result}
        Result:=ERROR_SUCCESS;
       end; 
-    end
-   else
-    begin
-     {Check Owner}
-     if MutexEntry.Owner = ThreadGetCurrent then
-      begin        
-       {Update Count}
-       Inc(MutexEntry.Count);
-       
-       {Return Result}
-       Result:=ERROR_SUCCESS; 
-      end
-     else
-      begin
-       {Acquire the Lock}
-       if InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) = MUTEX_STATE_UNLOCKED then
-        begin
-         {Memory Barrier}
-         DataMemoryBarrier;
-         
-         {Set Count}
-         MutexEntry.Count:=1;
-
-         {Set Owner}
-         MutexEntry.Owner:=ThreadGetCurrent;
-         
-         {Return Result}
-         Result:=ERROR_SUCCESS;
-        end; 
-      end;
-    end;    
-  end;  
+    end;
+  end;    
 end;
  
 {==============================================================================}
@@ -8420,7 +8667,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {List Functions}
-function ListCreate:TListHandle;
+function ListCreate:TListHandle; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 {Create and insert a new List entry}
 {Return: Handle of new List entry or INVALID_HANDLE_VALUE if entry could not be created}
 begin
@@ -9243,7 +9490,7 @@ end;
 
 {==============================================================================}
 
-function ListLock(List:TListHandle):LongWord;
+function ListLock(List:TListHandle):LongWord; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 {Lock the supplied List}
 {List: Handle of List entry to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -9282,7 +9529,7 @@ end;
 
 {==============================================================================}
 
-function ListUnlock(List:TListHandle):LongWord;
+function ListUnlock(List:TListHandle):LongWord; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 {Unlock the supplied List}
 {List: Handle of List entry to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -9322,7 +9569,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Queue Functions}
-function QueueCreate:TQueueHandle;
+function QueueCreate:TQueueHandle; {$IFDEF QUEUE_INLINE}inline;{$ENDIF}
 {Create and insert a new Queue entry}
 {Return: Handle of new Queue entry or INVALID_HANDLE_VALUE if entry could not be created}
 begin
@@ -10393,7 +10640,7 @@ end;
 
 {==============================================================================}
 
-function QueueLock(Queue:TQueueHandle):LongWord;
+function QueueLock(Queue:TQueueHandle):LongWord; {$IFDEF QUEUE_INLINE}inline;{$ENDIF}
 {Lock the supplied Queue}
 {Queue: Handle of Queue entry to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -10432,7 +10679,7 @@ end;
 
 {==============================================================================}
 
-function QueueUnlock(Queue:TQueueHandle):LongWord;
+function QueueUnlock(Queue:TQueueHandle):LongWord; {$IFDEF QUEUE_INLINE}inline;{$ENDIF}
 {Unlock the supplied Queue}
 {Queue: Handle of Queue entry to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -19700,7 +19947,7 @@ begin
  
  {Check Callback}
  {if not Assigned(Callback) then Exit;}  {May be nil}
-
+ 
  {Create Worker Request}
  WorkerRequest:=AllocFIQMem(SizeOf(TWorkerRequest),Affinity);
  if WorkerRequest = nil then Exit;
@@ -19724,12 +19971,24 @@ begin
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=LongWord(WorkerRequest);
- if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+ if SCHEDULER_FIQ_ENABLED then
   begin
-   {Free Worker Request}
-   FreeFIQMem(WorkerRequest);
-   Exit;
-  end; 
+   if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+    begin
+     {Free Worker Request}
+     FreeFIQMem(WorkerRequest);
+     Exit;
+    end; 
+  end
+ else
+  begin
+   if TaskerMessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+    begin
+     {Free Worker Request}
+     FreeFIQMem(WorkerRequest);
+     Exit;
+    end; 
+  end;  
  
  {Return Result}
  Result:=ERROR_SUCCESS;
@@ -19956,6 +20215,308 @@ begin
     end;    
   end;  
 end;
+
+{==============================================================================}
+{==============================================================================}
+{Tasker Functions}
+function TaskerThreadSendMessage(Thread:TThreadHandle;const Message:TMessage):LongWord;
+{Perform a ThreadSendMessage() function call using the tasker list}
+var
+ Task:PTaskerThreadSendMessage;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Thread}
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Create Task}
+ Task:=AllocFIQMem(SizeOf(TTaskerThreadSendMessage),CPU_AFFINITY_NONE);
+ if Task = nil then Exit;
+ 
+ {Update Task}
+ Task.Task:=TASKER_TASK_THREADSENDMESSAGE;
+ Task.Thread:=Thread;
+ Task.Message:=Message;
+ 
+ {Flush Task}
+ if not(HEAP_FIQ_CACHE_COHERENT) then
+  begin
+   CleanDataCacheRange(LongWord(Task),SizeOf(TTaskerThreadSendMessage));
+  end;
+  
+ {Enqueue}
+ Result:=TaskerEnqueue(PTaskerTask(Task));
+ if Result <> ERROR_SUCCESS then
+  begin
+   {Free Task}
+   FreeFIQMem(Task)
+  end;
+ 
+ {Task will be freed by TaskerTrigger}
+end;
+
+{==============================================================================}
+
+function TaskerMessageslotSend(Messageslot:TMessageslotHandle;const Message:TMessage):LongWord;
+{Perform a MessageslotSend() function call using the tasker list}
+var
+ Task:PTaskerMessageslotSend;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Messageslot}
+ if Messageslot = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Create Task}
+ Task:=AllocFIQMem(SizeOf(TTaskerMessageslotSend),CPU_AFFINITY_NONE);
+ if Task = nil then Exit;
+ 
+ {Update Task}
+ Task.Task:=TASKER_TASK_MESSAGESLOTSEND;
+ Task.Messageslot:=Messageslot;
+ Task.Message:=Message;
+ 
+ {Flush Task}
+ if not(HEAP_FIQ_CACHE_COHERENT) then
+  begin
+   CleanDataCacheRange(LongWord(Task),SizeOf(TTaskerMessageslotSend));
+  end;
+  
+ {Enqueue}
+ Result:=TaskerEnqueue(PTaskerTask(Task));
+ if Result <> ERROR_SUCCESS then
+  begin
+   {Free Task}
+   FreeFIQMem(Task)
+  end;
+ 
+ {Task will be freed by TaskerTrigger}
+end;
+
+{==============================================================================}
+
+function TaskerSemaphoreSignal(Semaphore:TSemaphoreHandle;Count:LongWord):LongWord;
+{Perform a SemaphoreSignal() function call using the tasker list}
+var
+ Task:PTaskerSemaphoreSignal;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Semaphore}
+ if Semaphore = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Create Task}
+ Task:=AllocFIQMem(SizeOf(TTaskerSemaphoreSignal),CPU_AFFINITY_NONE);
+ if Task = nil then Exit;
+ 
+ {Update Task}
+ Task.Task:=TASKER_TASK_SEMAPHORESIGNAL;
+ Task.Semaphore:=Semaphore;
+ Task.Count:=Count;
+ 
+ {Flush Task}
+ if not(HEAP_FIQ_CACHE_COHERENT) then
+  begin
+   CleanDataCacheRange(LongWord(Task),SizeOf(TTaskerSemaphoreSignal));
+  end;
+  
+ {Enqueue}
+ Result:=TaskerEnqueue(PTaskerTask(Task));
+ if Result <> ERROR_SUCCESS then
+  begin
+   {Free Task}
+   FreeFIQMem(Task)
+  end;
+ 
+ {Task will be freed by TaskerTrigger}
+end;
+
+{==============================================================================}
+
+function TaskerEnqueue(Task:PTaskerTask):LongWord;
+{Add the supplied task to the end of the Tasker list}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check the Task}
+ if Task = nil then Exit;
+ 
+ {Check the List}
+ if TaskerList = nil then Exit;
+ 
+ {Lock the List}
+ if SpinLockIRQFIQ(TaskerList.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Last}
+    if TaskerList.Last = nil then
+     begin
+      Task.Next:=nil;
+      Task.Prev:=nil;
+      TaskerList.First:=Task;
+      TaskerList.Last:=Task;
+     end
+    else
+     begin
+      Task.Next:=nil;
+      Task.Prev:=TaskerList.Last;
+      TaskerList.Last.Next:=Task;
+      TaskerList.Last:=Task;
+     end;  
+ 
+    {Increment Count}
+    Inc(TaskerList.Count);
+    
+    {Return Result} 
+    Result:=ERROR_SUCCESS;       
+   finally
+    {Unlock the List}
+    SpinUnlockIRQFIQ(TaskerList.Lock);
+   end;   
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
+
+function TaskerDequeue:PTaskerTask;
+{Get and remove the first task from the Tasker list}
+{Return: Dequeued Task or nil on failure (or list empty)}
+var
+ Task:PTaskerTask;
+begin
+ {}
+ Result:=nil;
+
+ {Check the List}
+ if TaskerList = nil then Exit;
+ 
+ {Lock the List}
+ if SpinLockIRQFIQ(TaskerList.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Task (First)}
+    Task:=TaskerList.First;
+    if Task <> nil then
+     begin
+      {Remove First}
+      TaskerList.First:=Task.Next;
+      {Check Next}
+      if Task.Next = nil then
+       begin
+        TaskerList.Last:=nil;
+       end
+      else
+       begin
+        Task.Next.Prev:=nil;
+       end;
+      
+      {Decrement Count}
+      Dec(TaskerList.Count);
+      
+      {Return Result}
+      Result:=Task;
+     end;
+   finally
+    {Unlock the List}
+    SpinUnlockIRQFIQ(TaskerList.Lock);
+   end;   
+  end;  
+end;
+
+{==============================================================================}
+
+function TaskerCheck:LongWord;
+{Check if the tasker list is empty or contains tasks}
+{Return: ERROR_SUCCESS if the list contains tasks, ERROR_NO_MORE_ITEMS if list is empty or another error code on failure}
+{Note: Called by clock interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check the Handler}
+ if Assigned(TaskerCheckHandler) then
+  begin
+   {Use the Handler method} 
+   Result:=TaskerCheckHandler;
+  end
+ else
+  begin 
+   {Use the Default method}
+   {Check the List}
+   if TaskerList = nil then Exit;
+   
+   {Setup Result}
+   Result:=ERROR_NO_MORE_ITEMS;
+ 
+   {Check Tasker List}
+   if TaskerList.First <> nil then
+    begin
+     Result:=ERROR_SUCCESS;
+    end; 
+  end; 
+end;
+ 
+{==============================================================================}
+
+function TaskerTrigger:LongWord;
+{Dequeue all tasks in the tasker list and perform the requested task for each}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+{Note: Called by clock interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread}
+var
+ Task:PTaskerTask;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check the Handler}
+ if Assigned(TaskerTriggerHandler) then
+  begin
+   {Use the Handler method} 
+   Result:=TaskerTriggerHandler;
+  end
+ else
+  begin 
+   {Use the Default method}
+   {Dequeue Task}
+   Task:=TaskerDequeue;
+   while Task <> nil do
+    begin
+     {Check Task}
+     case Task.Task of
+      TASKER_TASK_THREADSENDMESSAGE:begin
+        {Call ThreadSendMessage}
+        ThreadSendMessage(PTaskerThreadSendMessage(Task).Thread,PTaskerThreadSendMessage(Task).Message);
+       end;
+      TASKER_TASK_MESSAGESLOTSEND:begin
+        {Call MessageslotSend}
+        MessageslotSend(PTaskerMessageslotSend(Task).Messageslot,PTaskerMessageslotSend(Task).Message);
+       end;
+      TASKER_TASK_SEMAPHORESIGNAL:begin
+        {Call SemaphoreSignal}
+        SemaphoreSignalEx(PTaskerSemaphoreSignal(Task).Semaphore,PTaskerSemaphoreSignal(Task).Count,nil);
+       end;
+     end;
+     
+     {Free Task}
+     FreeFIQMem(Task);
+     
+     {Dequeue Task}
+     Task:=TaskerDequeue;
+    end;
+ 
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+  end; 
+end; 
 
 {==============================================================================}
 {==============================================================================}
@@ -20799,6 +21360,20 @@ end;
 
 {==============================================================================}
 
+function TaskerGetCount:LongWord; inline;
+{Get the current tasker count}
+begin
+ {}
+ Result:=0;
+ 
+ {Check List}
+ if TaskerList = nil then Exit;
+ 
+ Result:=TaskerList.Count;
+end;
+
+{==============================================================================}
+
 function ListTypeToString(ListType:LongWord):String;
 begin
  {}
@@ -21329,6 +21904,10 @@ begin
   end;
 end;
 
+{==============================================================================}
+{==============================================================================}
+{Tasker Helper Functions}
+ 
 {==============================================================================}
 {==============================================================================}
 

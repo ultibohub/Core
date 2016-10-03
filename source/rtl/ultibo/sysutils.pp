@@ -92,7 +92,7 @@ type
  TSysUtilsSleep = function(Milliseconds:LongWord):LongWord;
  {Tick Functions}
  TSysUtilsGetTickCount = function:LongWord;
- TSysUtilsGetTickCount64 = function:Int64;
+ TSysUtilsGetTickCount64 = function:QWord;
  {Misc Functions}
  TSysUtilsGetLastError = function:LongWord;
  {Locale Functions}

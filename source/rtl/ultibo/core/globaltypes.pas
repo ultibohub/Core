@@ -97,23 +97,138 @@ type
 
 {==============================================================================}
 type
- {Color Format types} 
+ {Color Format types (Generic)}
+ PColorFormat32 = ^TColorFormat32;
+ TColorFormat32 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
+  case Integer of
+   0:(A:Byte;
+      B:Byte;
+      C:Byte;
+      D:Byte);
+   1:(Value:LongWord);
+  {$ELSE FPC_BIG_ENDIAN}
+  case Integer of
+   0:(D:Byte;
+      C:Byte;
+      B:Byte;
+      A:Byte);
+   1:(Value:LongWord);
+  {$ENDIF FPC_BIG_ENDIAN}
+ end;
+ 
+ PColorFormat24 = ^TColorFormat24;
+ TColorFormat24 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
+  A:Byte;
+  B:Byte;
+  C:Byte;
+  {$ELSE FPC_BIG_ENDIAN}
+  C:Byte;
+  B:Byte;
+  A:Byte;
+  {$ENDIF FPC_BIG_ENDIAN}
+ end;
+ 
+ PColorFormat16 = ^TColorFormat16;
+ TColorFormat16 = packed record
+  Value:Word;
+ end;
+
+ PColorFormat8 = ^TColorFormat8;
+ TColorFormat8 = packed record
+  Value:Byte;
+ end;
+ 
+ {Color Format types (RGB)} 
  PColorFormatARGB32 = ^TColorFormatARGB32;
  TColorFormatARGB32 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
   Alpha:Byte;
   Red:Byte;
   Green:Byte;
   Blue:Byte;
+  {$ELSE FPC_BIG_ENDIAN}
+  Blue:Byte;
+  Green:Byte;
+  Red:Byte;
+  Alpha:Byte;
+  {$ENDIF FPC_BIG_ENDIAN}
  end;
- 
- //To Do //Continuing
- 
- PColorFormatRGB24 = ^TColorFormatRGB24;
- TColorFormatRGB24 = packed record
+
+ PColorFormatRGBA32 = ^TColorFormatRGBA32;
+ TColorFormatRGBA32 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
   Red:Byte;
   Green:Byte;
   Blue:Byte;
+  Alpha:Byte;
+  {$ELSE FPC_BIG_ENDIAN}
+  Alpha:Byte;
+  Blue:Byte;
+  Green:Byte;
+  Red:Byte;
+  {$ENDIF FPC_BIG_ENDIAN}
  end;
+ 
+ PColorFormatRGB24 = ^TColorFormatRGB24;
+ TColorFormatRGB24 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
+  Red:Byte;
+  Green:Byte;
+  Blue:Byte;
+  {$ELSE FPC_BIG_ENDIAN}
+  Blue:Byte;
+  Green:Byte;
+  Red:Byte;
+  {$ENDIF FPC_BIG_ENDIAN}
+ end;
+
+ {Color Format types (BGR)} 
+ PColorFormatABGR32 = ^TColorFormatABGR32;
+ TColorFormatABGR32 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
+  Alpha:Byte;
+  Blue:Byte;
+  Green:Byte;
+  Red:Byte;
+  {$ELSE FPC_BIG_ENDIAN}
+  Red:Byte;
+  Green:Byte;
+  Blue:Byte;
+  Alpha:Byte;
+  {$ENDIF FPC_BIG_ENDIAN}
+ end;
+
+ PColorFormatBGRA32 = ^TColorFormatBGRA32;
+ TColorFormatBGRA32 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
+  Blue:Byte;
+  Green:Byte;
+  Red:Byte;
+  Alpha:Byte;
+  {$ELSE FPC_BIG_ENDIAN}
+  Alpha:Byte;
+  Red:Byte;
+  Green:Byte;
+  Blue:Byte;
+  {$ENDIF FPC_BIG_ENDIAN}
+ end;
+ 
+ PColorFormatBGR24 = ^TColorFormatBGR24;
+ TColorFormatBGR24 = packed record
+  {$IFDEF FPC_BIG_ENDIAN}
+  Blue:Byte;
+  Green:Byte;
+  Red:Byte;
+  {$ELSE FPC_BIG_ENDIAN}
+  Red:Byte;
+  Green:Byte;
+  Blue:Byte;
+  {$ENDIF FPC_BIG_ENDIAN}
+ end;
+ 
+ {Note: RGB16/RGB15/RGB8 and BGR equivalents cannot be completely represented as a record type}
  
 {==============================================================================}
 type

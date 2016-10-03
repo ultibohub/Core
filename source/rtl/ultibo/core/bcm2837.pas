@@ -831,10 +831,28 @@ const
  {PL011 UART Integration Test Output register bits (See 13.4)}
 
  {PL011 UART Test Data register bits (See 13.4)}
+
+const
+ {ARM Interrupt Controller register bits (See 7.5)}
+ BCM2837_ARM_INTERRUPT_FIQ_ENABLE = (1 shl 7);   {FIQ enable (Set this bit to 1 to enable FIQ generation. If set to 0 bits 6:0 are don't care)}
+ BCM2837_ARM_INTERRUPT_FIQ_SOURCE = ($7F shl 0); {Select FIQ Source (0..127)}
  
-//const
+const
  {ARM Timer register bits (See 14.2)}
- //To Do  
+ BCM2837_ARM_TIMER_CONTROL_COUNTER_PRESCALE = ($FF shl 16); {Free running counter pre-scaler (Freq is sys_clk/(prescale+1))}
+ BCM2837_ARM_TIMER_CONTROL_COUNTER_ENABLED  = (1 shl 9);    {0 : Free running counter Disabled / 1 : Free running counter Enabled}
+ BCM2837_ARM_TIMER_CONTROL_DEBUG_HALT       = (1 shl 8);    {0 : Timers keeps running if ARM is in debug halted mode / 1 : Timers halted if ARM is in debug halted mode}
+ BCM2837_ARM_TIMER_CONTROL_TIMER_ENABLED    = (1 shl 7);    {0 : Timer disabled / 1 : Timer enabled}
+ BCM2837_ARM_TIMER_CONTROL_INT_ENABLED      = (1 shl 5);    {0 : Timer interrupt disabled / 1 : Timer interrupt enabled}
+ BCM2837_ARM_TIMER_CONTROL_PRESCALE         = (3 shl 2);    {Pre-scale bits: 00 : pre-scale is clock / 1 (No pre-scale) / 01 : pre-scale is clock / 16 / 10 : pre-scale is clock / 256 / 11 : pre-scale is clock / 1}
+ BCM2837_ARM_TIMER_CONTROL_32BIT            = (1 shl 1);    {0 : 16-bit counters / 1 : 32-bit counter}
+ BCM2837_ARM_TIMER_CONTROL_ONESHOT          = (1 shl 0);    {0 = wrapping mode (default) / 1 = one-shot mode (Not supported by BCM2837)}
+ 
+ BCM2837_ARM_TIMER_RAW_IRQ_PENDING = (1 shl 0); {0 : The interrupt pending bits is clear / 1 : The interrupt pending bit is set}
+ 
+ BCM2837_ARM_TIMER_MASKED_IRQ_PENDING = (1 shl 0); {0 : Interrupt line not asserted / 1 :Interrupt line is asserted, (the interrupt pending and the interrupt enable bit are set)}
+
+ BCM2837_ARM_TIMER_PREDIVIDER_MASK = ($3FF shl 0); {Pre-divider value (timer_clock = apb_clock/(pre_divider+1))}
  
 const
  {Power Management, Reset controller and Watchdog}
@@ -1029,7 +1047,7 @@ const
  BCM2837_MAILBOX_STATUS_FULL  = $80000000;
  BCM2837_MAILBOX_STATUS_EMPTY = $40000000;
  
- {BCM2837 mailbox property tags (See https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface)}
+ {BCM2837 mailbox property tags (See https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface)(or \include\soc\bcm2835\raspberrypi-firmware.h)}
  {VideoCore}
  BCM2837_MBOX_TAG_GET_FIRMWARE_REV  = $00000001;
  {Hardware}
@@ -1086,6 +1104,9 @@ const
  
  BCM2837_MBOX_TAG_GET_CUSTOMER_OTP  = $00030021;
  BCM2837_MBOX_TAG_SET_CUSTOMER_OTP  = $00038021;
+ 
+ BCM2837_MBOX_TAG_GET_DOMAIN_STATE  = $00030030;
+ BCM2837_MBOX_TAG_SET_DOMAIN_STATE  = $00038030;
  {Frame Buffer}
  BCM2837_MBOX_TAG_ALLOCATE_BUFFER	= $00040001; {If the requested alignment is unsupported then the current base and size (which may be 0 if not allocated) is returned and no change occurs}
  BCM2837_MBOX_TAG_RELEASE_BUFFER	= $00048001; {Releases and disables the frame buffer}
@@ -1106,7 +1127,7 @@ const
  BCM2837_MBOX_TAG_SET_DEPTH		    = $00048005;
 
  BCM2837_MBOX_TAG_GET_PIXEL_ORDER	= $00040006;
- BCM2837_MBOX_TAG_TEST_PIXEL_ORDER	= $00044005;
+ BCM2837_MBOX_TAG_TEST_PIXEL_ORDER	= $00044006;
  BCM2837_MBOX_TAG_SET_PIXEL_ORDER	= $00048006;
 
  BCM2837_MBOX_TAG_GET_ALPHA_MODE	= $00040007;
@@ -2863,6 +2884,19 @@ type
   1:(Response:TBCM2837MailboxTagPaletteResponse);
  end;
  
+ {Get Touch Buffer}
+ TBCM2837MailboxTagGetTouchResponse = record
+  Address:LongWord; 
+ end;
+ 
+ PBCM2837MailboxTagGetTouch = ^TBCM2837MailboxTagGetTouch;
+ TBCM2837MailboxTagGetTouch = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagNoRequest);
+  1:(Response:TBCM2837MailboxTagGetTouchResponse);
+ end;
+ 
  {Get Virtual GPIO Buffer}
  TBCM2837MailboxTagGetVirtualGPIOResponse = record
   Address:LongWord; 
@@ -2874,6 +2908,23 @@ type
   case Integer of
   0:(Request:TBCM2837MailboxTagNoRequest);
   1:(Response:TBCM2837MailboxTagGetVirtualGPIOResponse);
+ end;
+ 
+ {Set Backlight}
+ TBCM2837MailboxTagSetBacklightRequest = record
+  Brightness:LongWord;
+ end;
+
+ TBCM2837MailboxTagSetBacklightResponse = record
+  Brightness:LongWord; 
+ end;
+ 
+ PBCM2837MailboxTagSetBacklight = ^TBCM2837MailboxTagSetBacklight;
+ TBCM2837MailboxTagSetBacklight = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagSetBacklightRequest);
+  1:(Response:TBCM2837MailboxTagSetBacklightResponse);
  end;
  
  {Set Cursor Info}

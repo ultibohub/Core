@@ -132,7 +132,12 @@ type
  PSPIChipSelect = ^TSPIChipSelect;
  TSPIChipSelect = record
   Pin:LongWord;            {The GPIO pin for this chip select (eg GPIO_PIN_46)(GPIO_PIN_UNKNOWN for internal)}
-  Polarity:LongWord;       {The chip select polarity for this chip select (eg SPI_CS_POLARITY_LOW)}
+  Mode:LongWord;           {The mode for this chip select (eg SPI_MODE_0)}
+  Divider:LongWord;        {The clock divider for this chip select (Used internally by drivers)}
+  ClockRate:LongWord;      {The clock rate for this chip select}
+  ClockPhase:LongWord;     {The clock phase (CPHA) for this chip select (eg SPI_CLOCK_PHASE_LOW)}
+  ClockPolarity:LongWord;  {The clock polarity (CPOL) for this chip select (eg SPI_CLOCK_POLARITY_LOW)}
+  SelectPolarity:LongWord; {The chip select polarity for this chip select (eg SPI_CS_POLARITY_LOW)}
  end;
  
  {SPI Device}
@@ -154,8 +159,8 @@ type
  TSPIDeviceGetMode = function(SPI:PSPIDevice):LongWord;
  TSPIDeviceSetMode = function(SPI:PSPIDevice;Mode:LongWord):LongWord;
  
- TSPIDeviceGetClockRate = function(SPI:PSPIDevice):LongWord;
- TSPIDeviceSetClockRate = function(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+ TSPIDeviceGetClockRate = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;
+ TSPIDeviceSetClockRate = function(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;
 
  TSPIDeviceGetClockPhase = function(SPI:PSPIDevice):LongWord;
  TSPIDeviceSetClockPhase = function(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
@@ -197,6 +202,7 @@ type
   {Driver Properties}
   Lock:TMutexHandle;                                   {Device lock}
   Wait:TSemaphoreHandle;                               {Write/Read wait event}
+  Divider:LongWord;                                    {Clock divider (Used internally by drivers)}
   ClockRate:LongWord;                                  {Clock rate (Hz)}
   ClockPhase:LongWord;                                 {Clock Phase (eg SPI_CLOCK_PHASE_LOW)}
   ClockPolarity:LongWord;                              {Clock Polarity (eg SPI_CLOCK_POLARITY_LOW)}
@@ -228,8 +234,8 @@ function SPIDeviceWriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;S
 function SPIDeviceGetMode(SPI:PSPIDevice):LongWord;
 function SPIDeviceSetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
  
-function SPIDeviceGetClockRate(SPI:PSPIDevice):LongWord;
-function SPIDeviceSetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+function SPIDeviceGetClockRate(SPI:PSPIDevice;ChipSelect:Word):LongWord;
+function SPIDeviceSetClockRate(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;
 
 function SPIDeviceGetClockPhase(SPI:PSPIDevice):LongWord;
 function SPIDeviceSetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
@@ -270,8 +276,8 @@ function SysSPIWriteRead(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var C
 function SysSPIGetMode:LongWord;
 function SysSPISetMode(Mode:LongWord):LongWord;
  
-function SysSPIGetClockRate:LongWord;
-function SysSPISetClockRate(ClockRate:LongWord):LongWord;
+function SysSPIGetClockRate(ChipSelect:Word):LongWord;
+function SysSPISetClockRate(ChipSelect:Word;ClockRate:LongWord):LongWord;
 
 function SysSPIGetClockPhase:LongWord;
 function SysSPISetClockPhase(ClockPhase:LongWord):LongWord;
@@ -747,9 +753,10 @@ end;
 
 {==============================================================================}
  
-function SPIDeviceGetClockRate(SPI:PSPIDevice):LongWord;
+function SPIDeviceGetClockRate(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 {Get the clock rate of the specified SPI device}
 {SPI: The SPI device to get clock rate from}
+{ChipSelect: The chip select number to get clock rate from (SPI_CS_NONE for default)}
 {Return: The clock rate in Hz or 0 on failure}
 begin
  {}
@@ -760,7 +767,7 @@ begin
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SPI_DEBUG}
- if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Rate');
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Rate (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ')');
  {$ENDIF}
  
  {Check Enabled}
@@ -768,26 +775,40 @@ begin
  
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(SPI.DeviceGetClockRate) then
-    begin
-     {Call Device Get Clock Rate}
-     Result:=SPI.DeviceGetClockRate(SPI);
-    end
-   else
-    begin
-     {Get Clock Rate}
-     Result:=SPI.ClockRate;
-    end;  
-    
-   MutexUnlock(SPI.Lock);
+   try
+    if Assigned(SPI.DeviceGetClockRate) then
+     begin
+      {Call Device Get Clock Rate}
+      Result:=SPI.DeviceGetClockRate(SPI,ChipSelect);
+     end
+    else
+     begin
+      {Check Chip Select}
+      if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
+      
+      if ChipSelect = SPI_CS_NONE then
+       begin
+        {Get Default Clock Rate}
+        Result:=SPI.ClockRate;
+       end
+      else
+       begin
+        {Get Chip Select Clock Rate}
+        Result:=SPI.ChipSelects[ChipSelect].ClockRate;
+       end;
+     end;  
+   finally  
+    MutexUnlock(SPI.Lock);
+   end; 
   end;
 end;
 
 {==============================================================================}
 
-function SPIDeviceSetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+function SPIDeviceSetClockRate(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;
 {Set the clock rate for the specified SPI device}
 {SPI: The SPI device to set clock rate for}
+{ChipSelect: The chip select number to set clock rate for (SPI_CS_NONE for default)}
 {ClockRate: The clock rate to set in Hz}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -799,7 +820,7 @@ begin
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SPI_DEBUG}
- if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Rate (ClockRate=' + IntToStr(ClockRate) + ')');
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Rate (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' ClockRate=' + IntToStr(ClockRate) + ')');
  {$ENDIF}
  
  {Check Enabled}
@@ -812,16 +833,27 @@ begin
     if Assigned(SPI.DeviceSetClockRate) then
      begin
       {Call Device Set Clock Rate}
-      Result:=SPI.DeviceSetClockRate(SPI,ClockRate);
+      Result:=SPI.DeviceSetClockRate(SPI,ChipSelect,ClockRate);
      end
     else
      begin
-      {Check Clock Rate}
-      if ClockRate = 0 then Exit;
+      {Check Chip Select}
+      if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
       
-      {Set Clock Rate}
-      SPI.ClockRate:=ClockRate;
-      SPI.Properties.ClockRate:=ClockRate;
+      if ChipSelect = SPI_CS_NONE then
+       begin
+        {Check Clock Rate}
+        if ClockRate = 0 then Exit;
+        
+        {Set Default Clock Rate}
+        SPI.ClockRate:=ClockRate;
+        SPI.Properties.ClockRate:=ClockRate;
+       end 
+      else
+       begin
+        {Set Chip Select Clock Rate}
+        SPI.ChipSelects[ChipSelect].ClockRate:=ClockRate;
+       end;       
       
       Result:=ERROR_SUCCESS;
      end;  
@@ -1058,7 +1090,7 @@ begin
       else
        begin
         {Get Chip Select Polarity}
-        Result:=SPI.ChipSelects[ChipSelect].Polarity;
+        Result:=SPI.ChipSelects[ChipSelect].SelectPolarity;
        end;
      end;  
    finally  
@@ -1116,7 +1148,7 @@ begin
       else
        begin
         {Set Chip Select Polarity}
-        SPI.ChipSelects[ChipSelect].Polarity:=SelectPolarity;
+        SPI.ChipSelects[ChipSelect].SelectPolarity:=SelectPolarity;
        end;       
       
       Result:=ERROR_SUCCESS;
@@ -1219,6 +1251,7 @@ begin
  {Update SPI}
  Result.SPIId:=DEVICE_ID_ANY;
  Result.SPIState:=SPI_STATE_DISABLED;
+ Result.SPIMode:=SPI_MODE_UNKNOWN;
  Result.DeviceStart:=nil;
  Result.DeviceStop:=nil;
  Result.DeviceRead:=nil;
@@ -1237,13 +1270,19 @@ begin
  Result.DeviceProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Wait:=INVALID_HANDLE_VALUE;
+ Result.Divider:=0;
  Result.ClockRate:=0;
  Result.ClockPhase:=SPI_CLOCK_PHASE_UNKNOWN;
  Result.ClockPolarity:=SPI_CLOCK_POLARITY_UNKNOWN;
  Result.SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
  for Count:=0 to SPI_CS_MAX do
   begin
-   Result.ChipSelects[Count].Polarity:=SPI_CS_POLARITY_UNKNOWN;
+   Result.ChipSelects[Count].Mode:=SPI_MODE_UNKNOWN;
+   Result.ChipSelects[Count].Divider:=0;
+   Result.ChipSelects[Count].ClockRate:=0;
+   Result.ChipSelects[Count].ClockPhase:=SPI_CLOCK_PHASE_UNKNOWN;
+   Result.ChipSelects[Count].ClockPolarity:=SPI_CLOCK_POLARITY_UNKNOWN;
+   Result.ChipSelects[Count].SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
   end;
  
  {Create Lock}
@@ -1703,8 +1742,9 @@ end;
 
 {==============================================================================}
  
-function SysSPIGetClockRate:LongWord;
+function SysSPIGetClockRate(ChipSelect:Word):LongWord;
 {Get the clock rate of the default SPI device}
+{ChipSelect: The chip select number to get clock rate from (SPI_CS_NONE for default)}
 {Return: The clock rate in Hz or 0 on failure}
 begin
  {}
@@ -1712,13 +1752,14 @@ begin
  
  if SPIDeviceDefault = nil then Exit;
  
- Result:=SPIDeviceGetClockRate(SPIDeviceDefault);
+ Result:=SPIDeviceGetClockRate(SPIDeviceDefault,ChipSelect);
 end;
 
 {==============================================================================}
 
-function SysSPISetClockRate(ClockRate:LongWord):LongWord;
+function SysSPISetClockRate(ChipSelect:Word;ClockRate:LongWord):LongWord;
 {Set the clock rate for the default SPI device}
+{ChipSelect: The chip select number to set clock rate for (SPI_CS_NONE for default)}
 {ClockRate: The clock rate to set in Hz}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -1727,7 +1768,7 @@ begin
  
  if SPIDeviceDefault = nil then Exit;
  
- Result:=SPIDeviceSetClockRate(SPIDeviceDefault,ClockRate);
+ Result:=SPIDeviceSetClockRate(SPIDeviceDefault,ChipSelect,ClockRate);
 end;
 
 {==============================================================================}

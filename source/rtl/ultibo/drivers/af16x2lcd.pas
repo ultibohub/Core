@@ -34,7 +34,7 @@ References
  Adafruit RGB Negative 16x2 LCD+Keypad Kit for Raspberry Pi
   https://www.adafruit.com/product/1110
  
- Adafruit Blue&White 16x2 LCD+Keypad Kit for Raspberry Pi 
+ Adafruit Blue&White 16x2 LCD+Keypad Kit for Raspberry Pi
   https://www.adafruit.com/products/1115
   
   https://learn.adafruit.com/adafruit-16x2-character-lcd-plus-keypad-for-raspberry-pi
@@ -154,6 +154,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure AF16x2LCDInit;
+{Initialize the AF16x2LCD unit and parameters}
+
+{Note: Called only during system startup}
 var
  WorkInt:LongWord;
  WorkBuffer:String;
@@ -191,6 +194,15 @@ end;
 {==============================================================================}
 
 function AF16x2LCDStart(Model:LongWord;Invert:Boolean;const Device:String;Address:Word):THandle;
+{Start the AF16x2LCD driver and register the GPIO and Console devices associated with the display}
+{Model: The Adafruit 16x2 LCD Plate model (eg AF16X2LCD_MODEL_RGB)}
+{Invert: Invert the signal level for the LCD backlight (If True then GPIO_LEVEL_LOW equals On)}
+{Device: The I2C device that the MCP23017 I/O Expander on the LCD Plate is connected to}
+{Address: The I2C address of the MCP23017 I/O Expander on the LCD Plate}
+{Return: The handle of the AF16x2LCD on success or INVALID_HANDLE_VALUE on failure}
+
+{Note: This function will be called during startup if the parameter AF16X2LCD_AUTOSTART is True
+       Can be called multiple times to support more than one 16x2 LCD display}
 var
  I2C:PI2CDevice;
  GPIO:PGPIODevice;
@@ -278,6 +290,9 @@ end;
 {==============================================================================}
 
 function AF16x2LCDStop(Handle:THandle):Boolean;
+{Stop the AF16x2LCD driver and deregister the GPIO and Console devices associated with the display}
+{Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
+{Return: True if completed or False on failure}
 var
  AF16x2LCDPlate:PAF16x2LCDPlate;
 begin
@@ -335,6 +350,10 @@ end;
 {==============================================================================}
 {AF16x2LCD Functions}
 function AF16x2LCDGetButton(Handle:THandle;Button:LongWord):LongWord;
+{Get the GPIO level of a button on the AF16x2LCD display}
+{Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
+{Button: The button to get the level for (eg AF16X2LCD_BUTTON_LEFT)}
+{Return: The GPIO level of the button (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
 var
  AF16x2LCDPlate:PAF16x2LCDPlate;
 begin
@@ -361,6 +380,9 @@ end;
 {==============================================================================}
 
 function AF16x2LCDBacklightOn(Handle:THandle):Boolean;
+{Turn on the backlight on the AF16x2LCD display}
+{Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
+{Return: True if completed or False on failure}
 var
  Level:LongWord;
  AF16x2LCDPlate:PAF16x2LCDPlate;
@@ -392,6 +414,9 @@ end;
 {==============================================================================}
 
 function AF16x2LCDBacklightOff(Handle:THandle):Boolean;
+{Turn off the backlight on the AF16x2LCD display}
+{Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
+{Return: True if completed or False on failure}
 var
  Level:LongWord;
  AF16x2LCDPlate:PAF16x2LCDPlate;
@@ -423,6 +448,12 @@ end;
 {==============================================================================}
 
 function AF16x2LCDBacklightColor(Handle:THandle;Red,Green,Blue:Byte):Boolean;
+{Set the backlight color on the AF16x2LCD display}
+{Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
+{Red: The Red value (0 for Off / 1 for On)}
+{Green: The Green value (0 for Off / 1 for On)}
+{Blue: The Blue value (0 for Off / 1 for On)} 
+{Return: True if completed or False on failure}
 var
  LevelLow:LongWord;
  LevelHigh:LongWord;

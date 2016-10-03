@@ -145,6 +145,10 @@ var
  PAGE_TABLES_COUNT:LongWord;       {How many second level Page Tables allocated at this address}
  PAGE_TABLES_SHIFT:LongWord;       {The multiplier (left shift) to convert count to size (PAGE_TABLES_COUNT shl PAGE_TABLES_SHIFT = Actual Size)}
  
+ PAGE_TABLES_NEXT:PtrUInt;         {The base (Physical) address of the next available second level Page Table}
+ PAGE_TABLES_USED:LongWord;        {How many second level Page Tables are in use (During boot this will be set to the number required to cover the code and data plus initial stack, heap and overhead)}
+ PAGE_TABLES_FREE:LongWord = 256;  {How many second level Page Tables are available (The initial value here will be added to the number calculated during boot to provide extras for page allocation)}
+ 
 {==============================================================================}
 var
  {Page Table Sizes}
@@ -159,6 +163,7 @@ var
  {Vector Table Base Mapping}
  VECTOR_TABLE_BASE:PtrUInt;          {The base (Physical) address of the Interrupt Vector Table}
  VECTOR_TABLE_SIZE:LongWord;         {The size of the Interrupt Vector Table address space}
+ VECTOR_TABLE_COUNT:LongWord;        {The number of entries in the Interrupt Vector Table}
  
 {==============================================================================}
 {Machine and Board configuration}
@@ -185,6 +190,8 @@ var
  CPU_MEMORY_BASE:PtrUInt;             {The base (Physical) address for CPU memory}
  CPU_MEMORY_SIZE:LongWord;            {The size of the CPU address space}
  
+ CPU_MEMORY_RESTRICTED:LongBool;      {Any areas of CPU address space with no physical memory are marked as no access}
+ 
 {==============================================================================}
 var
  {FPU configuration}
@@ -202,7 +209,7 @@ var
  
 {==============================================================================}
 var
- {IRQ/FIQ configuration}
+ {IRQ/FIQ/SWI configuration}
  IRQ_COUNT:LongWord;                  {The total number of IRQs supported for this board}
  FIQ_COUNT:LongWord;                  {The total number of FIQs supported for this board}
 
@@ -215,6 +222,8 @@ var
  FIQ_LOCAL_COUNT:LongWord;            {The number of local (Per CPU) FIQs supported for this board (Where Applicable)}
  
  IRQ_LOCAL_START:LongWord;            {The starting number for local (Per CPU) IRQs/FIQs (Where Applicable)}
+ 
+ SWI_COUNT:LongWord;                  {The total number of SWIs supported for this board (Where Applicable)}
  
 {==============================================================================}
 {Interrupt and Exception configuration}
@@ -476,6 +485,7 @@ var
  CONSOLE_AUTO_SCROLL:LongBool = True;            {If True then automatically scroll up on reaching the last line of the console (Sets CONSOLE_FLAG_AUTO_SCROLL on device / WINDOW_FLAG_AUTO_SCROLL on windows)}
  
  CONSOLE_DMA_BOX:LongBool = True;                {If True then use DMA (If available) to draw console window boxes (Sets CONSOLE_FLAG_DMA_BOX on device)}
+ CONSOLE_DMA_TEXT:LongBool = False;              {If True then use DMA (If available) to draw console window text (Sets CONSOLE_FLAG_DMA_TEXT on device)}
  CONSOLE_DMA_LINE:LongBool = True;               {If True then use DMA (If available) to draw console window lines (Sets CONSOLE_FLAG_DMA_LINE on device)}
  CONSOLE_DMA_FILL:LongBool = True;               {If True then use DMA (If available) to fill console windows (Sets CONSOLE_FLAG_DMA_FILL on device)}
  CONSOLE_DMA_CLEAR:LongBool = True;              {If True then use DMA (If available) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
@@ -484,6 +494,7 @@ var
  CONSOLE_REGISTER_LOGGING:LongBool = False;      {If True then register any Console device as a Logging device (Only if Console unit included)}
  CONSOLE_LOGGING_DEFAULT:LongBool = False;       {If True then a Console device can be the default Logging device}
  CONSOLE_LOGGING_POSITION:LongWord = CONSOLE_POSITION_RIGHT; {The default Console Window position for the console Logging device}
+ CONSOLE_LOGGING_DEVICE:String;                  {The console device Name (or Desription) to create the Logging window on, if blank create on default device}
  
  CONSOLE_CRT_POSITION:LongWord = CONSOLE_POSITION_FULL; {The default Console Window position for the CRT unit (Only if CRT unit included)}
  
@@ -611,6 +622,9 @@ var
  {Mouse}
  MOUSE_SWAP_BUTTONS_DEFAULT:LongBool = False;   {If True then set Swap Buttons (Left <-> Right) to On by default for all mice}
  
+ {Touch}
+ TOUCH_MOUSE_DATA_DEFAULT:LongBool = True; {If True then set all touch devices to add mouse data events for compatibility (Default: True)}
+ 
  {USB}
  USB_AUTOSTART:LongBool = True;        {If True then auto start the USB subsystem on boot (Only if USB unit included)}
  USB_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
@@ -687,6 +701,8 @@ var
  
  BCM2708SDHCI_FIQ_ENABLED:LongBool;         {The BCM2708 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
+ BCM2708ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2708 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ 
  BCM2708FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2708 Framebuffer device}
  BCM2708FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2708 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
@@ -707,7 +723,7 @@ var
  BCM2708_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2708 PWM Audio device during boot (Only if BCM2708 unit included)}
 
  BCM2708_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2708 Clock device during boot (Only if BCM2708 unit included)}
- BCM2708_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2708 Timer device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_ARM_TIMER:LongBool = True; {If True then register the BCM2708 ARM Timer device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2708 Random device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_MAILBOX:LongBool = True;  {If True then register the BCM2708 Mailbox device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_WATCHDOG:LongBool = True; {If True then register the BCM2708 Watchdog device during boot (Only if BCM2708 unit included)}
@@ -725,6 +741,9 @@ var
  
  BCM2709SDHCI_FIQ_ENABLED:LongBool;         {The BCM2709 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
+ BCM2709ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2709 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2709LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2709 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ 
  BCM2709FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2709 Framebuffer device}
  BCM2709FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2709 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
@@ -745,7 +764,8 @@ var
  BCM2709_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2709 PWM Audio device during boot (Only if BCM2709 unit included)}
  
  BCM2709_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2709 Clock device during boot (Only if BCM2709 unit included)}
- BCM2709_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2709 Timer device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_ARM_TIMER:LongBool = True; {If True then register the BCM2709 ARM Timer device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_LOCAL_TIMER:LongBool = True; {If True then register the BCM2709 Local Timer device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2709 Random device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_MAILBOX:LongBool = True;  {If True then register the BCM2709 Mailbox device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_WATCHDOG:LongBool = True; {If True then register the BCM2709 Watchdog device during boot (Only if BCM2709 unit included)}
@@ -763,6 +783,9 @@ var
  
  BCM2710SDHCI_FIQ_ENABLED:LongBool;         {The BCM2710 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
+ BCM2710ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2710 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2710LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2710 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ 
  BCM2710FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2710 Framebuffer device}
  BCM2710FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2710 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
@@ -783,7 +806,8 @@ var
  BCM2710_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2710 PWM Audio device during boot (Only if BCM2710 unit included)}
 
  BCM2710_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2710 Clock device during boot (Only if BCM2710 unit included)}
- BCM2710_REGISTER_TIMER:LongBool = True;    {If True then register the BCM2710 Timer device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_ARM_TIMER:LongBool = True; {If True then register the BCM2710 ARM Timer device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_LOCAL_TIMER:LongBool = True; {If True then register the BCM2710 Local Timer device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2710 Random device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_MAILBOX:LongBool = True;  {If True then register the BCM2710 Mailbox device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_WATCHDOG:LongBool = True; {If True then register the BCM2710 Watchdog device during boot (Only if BCM2710 unit included)}
@@ -950,6 +974,7 @@ var
 var
  CONSOLE_SHELL_ENABLED:LongBool = True;         {If True then automatically create a console shell window when a new console is registers (Only if ConsoleShell unit included)}
  CONSOLE_SHELL_POSITION:LongWord = CONSOLE_POSITION_RIGHT; {The default Console Window position for the console shell}
+ CONSOLE_SHELL_DEVICE:String;                   {The console device Name (or Desription) to create the shell window on, if blank create on default device unless forced (Only if ConsoleShell unit included)}
  
 {==============================================================================}
 {Specific Service configuration}
@@ -1044,6 +1069,12 @@ var
  
  {AF16x2LCD}
  AF16X2LCD_AUTOSTART:LongBool = True;           {If True then auto start the AF16x2LCD device on boot (Only if AF16x2LCD unit included)}
+
+ {PiTFT28}
+ PiTFT28_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT28 device on boot (Only if PiTFT28 unit included)}
+
+ {PiTFT35}
+ PiTFT35_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT35 device on boot (Only if PiTFT35 unit included)}
  
 {==============================================================================}
 {Global handlers}
@@ -1127,6 +1158,19 @@ function TurboIDToString(TurboID:LongWord):String;
 function VoltageIDToString(VoltageID:LongWord):String;
 
 function TemperatureIDToString(TemperatureID:LongWord):String;
+
+function ColorFormatToBytes(Format:LongWord):LongWord;
+function ColorFormatToString(Format:LongWord):String;
+
+procedure ColorDefaultToFormat(Format,Color:LongWord;Dest:Pointer;Reverse:Boolean); inline;
+procedure ColorFormatToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+procedure ColorDefaultAltToFormat(Format,Color:LongWord;Dest:Pointer;Reverse:Boolean); {Not inline}
+procedure ColorFormatAltToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+
+procedure PixelsDefaultToFormat(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean); 
+procedure PixelsFormatToDefault(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean);
+procedure PixelsDefaultAltToFormat(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean); 
+procedure PixelsFormatAltToDefault(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean);
 
 function LogLevelToLoggingSeverity(LogLevel:LongWord):LongWord;
 
@@ -1632,6 +1676,8 @@ begin
   CPU_ID_29:Result:='CPU_ID_29';
   CPU_ID_30:Result:='CPU_ID_30';
   CPU_ID_31:Result:='CPU_ID_31';
+  
+  CPU_ID_ALL:Result:='CPU_ID_ALL';
  end;
 end;
 
@@ -1866,6 +1912,840 @@ end;
 
 {==============================================================================}
 
+function ColorFormatToBytes(Format:LongWord):LongWord;
+{Convert a color format constant into the number of bytes per pixel}
+{Format: The color format constant to get bytes for (eg COLOR_FORMAT_ARGB32)}
+{Return: The number of bytes required for each pixel}
+begin
+ {}
+ Result:=0;
+ 
+ case Format of
+  {RGB/BGR Formats}
+  COLOR_FORMAT_ARGB32:Result:=4;
+  COLOR_FORMAT_ABGR32:Result:=4;
+  COLOR_FORMAT_RGBA32:Result:=4;
+  COLOR_FORMAT_BGRA32:Result:=4;
+  COLOR_FORMAT_URGB32:Result:=4;
+  COLOR_FORMAT_UBGR32:Result:=4;
+  COLOR_FORMAT_RGBU32:Result:=4;
+  COLOR_FORMAT_BGRU32:Result:=4;
+  COLOR_FORMAT_RGB24:Result:=3;
+  COLOR_FORMAT_BGR24:Result:=3;
+  COLOR_FORMAT_RGB16:Result:=2;
+  COLOR_FORMAT_BGR16:Result:=2;
+  COLOR_FORMAT_RGB15:Result:=2;
+  COLOR_FORMAT_BGR15:Result:=2;
+  COLOR_FORMAT_RGB8:Result:=1;
+  COLOR_FORMAT_BGR8:Result:=1;
+  {Grayscale Formats}
+  COLOR_FORMAT_GRAY16:Result:=2;
+  COLOR_FORMAT_GRAY8:Result:=1;
+  {Index Formats}
+  COLOR_FORMAT_INDEX16:Result:=2;
+  COLOR_FORMAT_INDEX8:Result:=1;
+ end;
+end;
+
+{==============================================================================}
+
+function ColorFormatToString(Format:LongWord):String;
+begin
+ {}
+ Result:='COLOR_FORMAT_UNKNOWN';
+ 
+ case Format of
+  {RGB/BGR Formats}
+  COLOR_FORMAT_ARGB32:Result:='COLOR_FORMAT_ARGB32';
+  COLOR_FORMAT_ABGR32:Result:='COLOR_FORMAT_ABGR32';
+  COLOR_FORMAT_RGBA32:Result:='COLOR_FORMAT_RGBA32';
+  COLOR_FORMAT_BGRA32:Result:='COLOR_FORMAT_BGRA32';
+  COLOR_FORMAT_URGB32:Result:='COLOR_FORMAT_URGB32';
+  COLOR_FORMAT_UBGR32:Result:='COLOR_FORMAT_UBGR32';
+  COLOR_FORMAT_RGBU32:Result:='COLOR_FORMAT_RGBU32';
+  COLOR_FORMAT_BGRU32:Result:='COLOR_FORMAT_BGRU32';
+  COLOR_FORMAT_RGB24:Result:='COLOR_FORMAT_RGB24';
+  COLOR_FORMAT_BGR24:Result:='COLOR_FORMAT_BGR24';
+  COLOR_FORMAT_RGB16:Result:='COLOR_FORMAT_RGB16';
+  COLOR_FORMAT_BGR16:Result:='COLOR_FORMAT_BGR16';
+  COLOR_FORMAT_RGB15:Result:='COLOR_FORMAT_RGB15';
+  COLOR_FORMAT_BGR15:Result:='COLOR_FORMAT_BGR15';
+  COLOR_FORMAT_RGB8:Result:='COLOR_FORMAT_RGB8';
+  COLOR_FORMAT_BGR8:Result:='COLOR_FORMAT_BGR8';
+  {Grayscale Formats}
+  COLOR_FORMAT_GRAY16:Result:='COLOR_FORMAT_GRAY16';
+  COLOR_FORMAT_GRAY8:Result:='COLOR_FORMAT_GRAY8';
+  {Index Formats}
+  COLOR_FORMAT_INDEX16:Result:='COLOR_FORMAT_INDEX16';
+  COLOR_FORMAT_INDEX8:Result:='COLOR_FORMAT_INDEX8'; 
+ end;
+end;
+
+{==============================================================================}
+
+procedure ColorDefaultToFormat(Format,Color:LongWord;Dest:Pointer;Reverse:Boolean); inline;
+{Convert a color value in the default format to the specified format}
+{Format: The color format to convert to (eg COLOR_FORMAT_RGB24)}
+{Color: The color to be converted (Must be in the default format - See: COLOR_FORMAT_DEFAULT)}
+{Dest: Pointer to the destination buffer for the converted color}
+{Reverse: If true then reverse the byte order of the destination after conversion}
+{$IFDEF FPC_BIG_ENDIAN}
+begin
+ {}
+ {Check Dest}
+ if Dest = nil then Exit;
+ 
+ {Check Format}
+ if Format = COLOR_FORMAT_DEFAULT then {COLOR_FORMAT_ARGB32}
+  begin
+   if not(Reverse) then PLongWord(Dest)^:=Color else PLongWord(Dest)^:=SwapEndian(Color);
+  end
+ else
+  begin 
+   {Check Format}
+   //To Do //Continuing 
+  end;
+end; 
+{$ELSE FPC_BIG_ENDIAN}
+begin
+ {}
+ {Check Dest}
+ if Dest = nil then Exit;
+ 
+ {Check Format}
+ if Format = COLOR_FORMAT_DEFAULT then {COLOR_FORMAT_ARGB32}
+  begin
+   if not(Reverse) then PLongWord(Dest)^:=Color else PLongWord(Dest)^:=SwapEndian(Color);
+  end
+ else
+  begin 
+   {Check Format}
+   case Format of
+    {32bit}
+    COLOR_FORMAT_DEFAULT,COLOR_FORMAT_URGB32:begin {COLOR_FORMAT_ARGB32}
+      if not(Reverse) then PLongWord(Dest)^:=Color else PLongWord(Dest)^:=SwapEndian(Color);
+     end;
+    COLOR_FORMAT_ABGR32,COLOR_FORMAT_UBGR32:begin
+      if not(Reverse) then 
+       begin
+        PLongWord(Dest)^:=(Color and $FF00FF00) or ((Color and $00FF0000) shr 16) or ((Color and $000000FF) shl 16);
+       end
+      else
+       begin
+        PLongWord(Dest)^:=SwapEndian((Color and $FF00FF00) or ((Color and $00FF0000) shr 16) or ((Color and $000000FF) shl 16));
+       end;
+     end;
+    COLOR_FORMAT_RGBA32,COLOR_FORMAT_RGBU32:begin
+      if not(Reverse) then 
+       begin
+        PLongWord(Dest)^:=((Color and $00FFFFFF) shl 8) or ((Color and $FF000000) shr 24);
+       end
+      else
+       begin
+        PLongWord(Dest)^:=SwapEndian(((Color and $00FFFFFF) shl 8) or ((Color and $FF000000) shr 24));
+       end;
+     end;
+    COLOR_FORMAT_BGRA32,COLOR_FORMAT_BGRU32:begin
+      if not(Reverse) then 
+       begin
+        PLongWord(Dest)^:=((Color and $000000FF) shl 24) or ((Color and $0000FF00) shl 8) or ((Color and $00FF0000) shr 8) or ((Color and $FF000000) shr 24);
+       end
+      else
+       begin
+        PLongWord(Dest)^:=SwapEndian(((Color and $000000FF) shl 24) or ((Color and $0000FF00) shl 8) or ((Color and $00FF0000) shr 8) or ((Color and $FF000000) shr 24));
+       end;
+     end;
+    {24bit}
+    COLOR_FORMAT_RGB24:begin
+      {Value:=Color and $00FFFFFF;}
+      {System.Move(Value,Dest^,3);}
+      if not(Reverse) then 
+       begin
+        PByte(Dest + 0)^:=(Color and $000000FF);
+        PByte(Dest + 1)^:=(Color and $0000FF00) shr 8;
+        PByte(Dest + 2)^:=(Color and $00FF0000) shr 16;
+       end
+      else
+       begin
+        PByte(Dest + 0)^:=(Color and $00FF0000) shr 16;
+        PByte(Dest + 1)^:=(Color and $0000FF00) shr 8;
+        PByte(Dest + 2)^:=(Color and $000000FF);
+       end;
+     end;
+    COLOR_FORMAT_BGR24:begin
+      {Value:=(Color and $0000FF00) or ((Color and $00FF0000) shr 16) or ((Color and $000000FF) shl 16);}
+      {System.Move(Value,Dest^,3);}
+      if not(Reverse) then 
+       begin
+        PByte(Dest + 0)^:=(Color and $00FF0000) shr 16;
+        PByte(Dest + 1)^:=(Color and $0000FF00) shr 8;
+        PByte(Dest + 2)^:=(Color and $000000FF);
+       end
+      else
+       begin
+        PByte(Dest + 0)^:=(Color and $000000FF);
+        PByte(Dest + 1)^:=(Color and $0000FF00) shr 8;
+        PByte(Dest + 2)^:=(Color and $00FF0000) shr 16;
+       end;
+     end;
+    {16bit}
+    COLOR_FORMAT_RGB16:begin
+      if not(Reverse) then 
+       begin
+        PWord(Dest)^:=((Color and $00F80000) shr 8) or ((Color and $0000FC00) shr 5) or ((Color and $000000F8) shr 3);
+       end
+      else
+       begin
+        PWord(Dest)^:=SwapEndian(Word(((Color and $00F80000) shr 8) or ((Color and $0000FC00) shr 5) or ((Color and $000000F8) shr 3)));
+       end; 
+     end;
+    COLOR_FORMAT_BGR16:begin
+      if not(Reverse) then 
+       begin
+        PWord(Dest)^:=((Color and $000000F8) shl 8) or ((Color and $0000FC00) shr 5) or ((Color and $00F80000) shr 19);
+       end
+      else
+       begin
+        PWord(Dest)^:=SwapEndian(Word(((Color and $000000F8) shl 8) or ((Color and $0000FC00) shr 5) or ((Color and $00F80000) shr 19)));
+       end; 
+     end;
+    COLOR_FORMAT_RGB15:begin
+      if not(Reverse) then 
+       begin
+        PWord(Dest)^:=((Color and $00F80000) shr 9) or ((Color and $0000F800) shr 6) or ((Color and $000000F8) shr 3);
+       end
+      else
+       begin
+        PWord(Dest)^:=SwapEndian(Word(((Color and $00F80000) shr 9) or ((Color and $0000F800) shr 6) or ((Color and $000000F8) shr 3)));
+       end;
+     end;
+    COLOR_FORMAT_BGR15:begin
+      if not(Reverse) then 
+       begin
+        PWord(Dest)^:=((Color and $000000F8) shl 7) or ((Color and $0000F800) shr 6) or ((Color and $00F80000) shr 19);
+       end
+      else
+       begin
+        PWord(Dest)^:=SwapEndian(Word(((Color and $000000F8) shl 7) or ((Color and $0000F800) shr 6) or ((Color and $00F80000) shr 19)));
+       end;
+     end;
+    COLOR_FORMAT_GRAY16,COLOR_FORMAT_INDEX16:begin
+      {Luma approximation (Red * 0.299 + Green * 0.587 + Blue * 0.114)}
+      if not(Reverse) then 
+       begin
+        PWord(Dest)^:=((Integer((Color and $00FF0000) shr 16) * 19588) + (Integer((Color and $0000FF00) shr 8) * 38445) + (Integer(Color and $000000FF) * 7503)) div 256;
+       end
+      else
+       begin
+        PWord(Dest)^:=SwapEndian(Word(((Integer((Color and $00FF0000) shr 16) * 19588) + (Integer((Color and $0000FF00) shr 8) * 38445) + (Integer(Color and $000000FF) * 7503)) div 256));
+       end;
+     end;
+    {8bit}
+    COLOR_FORMAT_RGB8:begin
+      {No Reverse}
+      PByte(Dest)^:=((Color and $00E00000) shr 16) or ((Color and $0000E000) shr 11) or ((Color and $000000C0) shr 6);
+     end;
+    COLOR_FORMAT_BGR8:begin
+      {No Reverse}
+      PByte(Dest)^:=(Color and $000000C0) or ((Color and $0000E000) shr 10) or ((Color and $00E00000) shr 21);
+     end;
+    COLOR_FORMAT_GRAY8,COLOR_FORMAT_INDEX8:begin
+      {No Reverse}
+      {Luma approximation (Red * 0.299 + Green * 0.587 + Blue * 0.114)}
+      PByte(Dest)^:=((Integer((Color and $00FF0000) shr 16) * 77) + (Integer((Color and $0000FF00) shr 8) * 150) + (Integer(Color and $000000FF) * 29)) div 256;
+     end;
+   end;
+  end;
+end;
+{$ENDIF FPC_BIG_ENDIAN}
+{==============================================================================}
+
+procedure ColorFormatToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+{Convert a color value in the specified format to the default format}
+{Format: The color format to convert from (eg COLOR_FORMAT_RGB24)}
+{Source: Pointer to the source buffer for the color to convert}
+{Color: The converted color (Will be returned in the default format - See: COLOR_FORMAT_DEFAULT)}
+{Reverse: If true then reverse the byte order of the color after conversion}
+{$IFDEF FPC_BIG_ENDIAN}
+begin
+ {}
+ {Check Sourc}
+ if Source = nil then
+  begin
+   Color:=COLOR_NONE;
+   Exit;
+  end;
+
+ {Check Format}
+ if Format = COLOR_FORMAT_DEFAULT then {COLOR_FORMAT_ARGB32}
+  begin
+   if not(Reverse) then Color:=PLongWord(Source)^ else Color:=SwapEndian(PLongWord(Source)^);
+  end
+ else
+  begin 
+   {Check Format}
+   //To Do //Continuing 
+  end; 
+end; 
+{$ELSE FPC_BIG_ENDIAN}
+begin
+ {}
+ {Check Sourc}
+ if Source = nil then
+  begin
+   Color:=COLOR_NONE;
+   Exit;
+  end;
+  
+ {Check Format}
+ if Format = COLOR_FORMAT_DEFAULT then {COLOR_FORMAT_ARGB32}
+  begin
+   if not(Reverse) then Color:=PLongWord(Source)^ else Color:=SwapEndian(PLongWord(Source)^);
+  end
+ else
+  begin 
+   {Check Format}
+   case Format of
+    {32bit}
+    COLOR_FORMAT_DEFAULT:begin {COLOR_FORMAT_ARGB32}
+      if not(Reverse) then Color:=PLongWord(Source)^ else Color:=SwapEndian(PLongWord(Source)^);
+     end;
+    COLOR_FORMAT_ABGR32:begin
+      if not(Reverse) then 
+       begin
+        Color:=(PLongWord(Source)^ and $FF00FF00) or ((PLongWord(Source)^ and $00FF0000) shr 16) or ((PLongWord(Source)^ and $000000FF) shl 16);
+       end
+      else
+       begin
+        Color:=SwapEndian((PLongWord(Source)^ and $FF00FF00) or ((PLongWord(Source)^ and $00FF0000) shr 16) or ((PLongWord(Source)^ and $000000FF) shl 16));
+       end;
+     end;
+    COLOR_FORMAT_RGBA32:begin
+      if not(Reverse) then 
+       begin
+        Color:=((PLongWord(Source)^ and $FFFFFF00) shr 8) or ((PLongWord(Source)^ and $000000FF) shl 24);
+       end
+      else
+       begin
+        Color:=SwapEndian(((PLongWord(Source)^ and $FFFFFF00) shr 8) or ((PLongWord(Source)^ and $000000FF) shl 24));
+       end;
+     end;
+    COLOR_FORMAT_BGRA32:begin
+      if not(Reverse) then 
+       begin
+        Color:=((PLongWord(Source)^ and $FF000000) shr 24) or ((PLongWord(Source)^ and $00FF0000) shr 8) or ((PLongWord(Source)^ and $0000FF00) shl 8) or ((PLongWord(Source)^ and $000000FF) shl 24);
+       end
+      else
+       begin
+        Color:=SwapEndian(((PLongWord(Source)^ and $FF000000) shr 24) or ((PLongWord(Source)^ and $00FF0000) shr 8) or ((PLongWord(Source)^ and $0000FF00) shl 8) or ((PLongWord(Source)^ and $000000FF) shl 24));
+       end;
+     end;
+    COLOR_FORMAT_URGB32:begin
+      if not(Reverse) then Color:=($FF000000 or PLongWord(Source)^) else Color:=SwapEndian($FF000000 or PLongWord(Source)^);
+     end;
+    COLOR_FORMAT_UBGR32:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or (PLongWord(Source)^ and $0000FF00) or ((PLongWord(Source)^ and $00FF0000) shr 16) or ((PLongWord(Source)^ and $000000FF) shl 16);
+       end
+      else
+       begin
+        Color:=SwapEndian($FF000000 or (PLongWord(Source)^ and $0000FF00) or ((PLongWord(Source)^ and $00FF0000) shr 16) or ((PLongWord(Source)^ and $000000FF) shl 16));
+       end;
+     end;
+    COLOR_FORMAT_RGBU32:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or ((PLongWord(Source)^ and $FFFFFF00) shr 8);
+       end
+      else
+       begin
+        Color:=SwapEndian($FF000000 or ((PLongWord(Source)^ and $FFFFFF00) shr 8));
+       end;
+     end;
+    COLOR_FORMAT_BGRU32:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or ((PLongWord(Source)^ and $FF000000) shr 24) or ((PLongWord(Source)^ and $00FF0000) shr 8) or ((PLongWord(Source)^ and $0000FF00) shl 8);
+       end
+      else
+       begin
+        Color:=SwapEndian($FF000000 or ((PLongWord(Source)^ and $FF000000) shr 24) or ((PLongWord(Source)^ and $00FF0000) shr 8) or ((PLongWord(Source)^ and $0000FF00) shl 8));
+       end;
+     end;
+    {24bit}
+    COLOR_FORMAT_RGB24:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or (PByte(Source + 0)^) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 2)^ shl 16);
+       end
+      else
+       begin
+        Color:=SwapEndian(LongWord($FF000000 or (PByte(Source + 0)^) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 2)^ shl 16)));
+       end;
+     end;
+    COLOR_FORMAT_BGR24:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or (PByte(Source + 0)^ shl 16) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 2)^);
+       end
+      else
+       begin
+        Color:=SwapEndian(LongWord($FF000000 or (PByte(Source + 0)^ shl 16) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 2)^)));
+       end;
+     end;
+    {16bit}
+    COLOR_FORMAT_RGB16:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or ((PWord(Source)^ and $F800) shl 8) or ((PWord(Source)^ and $07E0) shl 5) or ((PWord(Source)^ and $001F) shl 3);
+       end
+      else
+       begin
+        Color:=SwapEndian(LongWord($FF000000 or ((PWord(Source)^ and $F800) shl 8) or ((PWord(Source)^ and $07E0) shl 5) or ((PWord(Source)^ and $001F) shl 3)));
+       end;
+     end;
+    COLOR_FORMAT_BGR16:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or ((PWord(Source)^ and $001F) shl 19) or ((PWord(Source)^ and $07E0) shl 5) or ((PWord(Source)^ and $F800) shr 8);
+       end
+      else
+       begin
+        Color:=SwapEndian(LongWord($FF000000 or ((PWord(Source)^ and $001F) shl 19) or ((PWord(Source)^ and $07E0) shl 5) or ((PWord(Source)^ and $F800) shr 8)));
+       end;
+     end;
+    COLOR_FORMAT_RGB15:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or ((PWord(Source)^ and $7C00) shl 9) or ((PWord(Source)^ and $03E0) shl 6) or ((PWord(Source)^ and $001F) shl 3);
+       end
+      else
+       begin
+        Color:=SwapEndian(LongWord($FF000000 or ((PWord(Source)^ and $7C00) shl 9) or ((PWord(Source)^ and $03E0) shl 6) or ((PWord(Source)^ and $001F) shl 3)));
+       end;
+     end;
+    COLOR_FORMAT_BGR15:begin
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or ((PWord(Source)^ and $001F) shl 19) or ((PWord(Source)^ and $03E0) shl 6) or ((PWord(Source)^ and $7C00) shr 7);
+       end
+      else
+       begin
+        Color:=SwapEndian(LongWord($FF000000 or ((PWord(Source)^ and $001F) shl 19) or ((PWord(Source)^ and $03E0) shl 6) or ((PWord(Source)^ and $7C00) shr 7)));
+       end;
+     end;
+    COLOR_FORMAT_GRAY16,COLOR_FORMAT_INDEX16:begin
+  {COLOR_FORMAT_ARGB32}    
+      if not(Reverse) then 
+       begin
+        //To Do //Continuing 
+       end
+      else
+       begin
+        //To Do //Continuing 
+       end;
+     end;
+    {8bit}
+    COLOR_FORMAT_RGB8:begin
+  {COLOR_FORMAT_ARGB32}    
+      {No Reverse}
+      //To Do //Continuing 
+     end;
+    COLOR_FORMAT_BGR8:begin
+  {COLOR_FORMAT_ARGB32}    
+      {No Reverse}
+      //To Do //Continuing 
+     end;
+    COLOR_FORMAT_GRAY8,COLOR_FORMAT_INDEX8:begin
+  {COLOR_FORMAT_ARGB32}    
+      {No Reverse}
+      //To Do //Continuing 
+     end;
+   end;
+  end;  
+end;
+{$ENDIF FPC_BIG_ENDIAN}
+{==============================================================================}
+
+procedure ColorDefaultAltToFormat(Format,Color:LongWord;Dest:Pointer;Reverse:Boolean); {Not inline}
+{Convert a color value in the default format to the specified format (Alternate)}
+{Format: The color format to convert to (eg COLOR_FORMAT_RGB24)}
+{Color: The color to be converted (Must be in the default format - See: COLOR_FORMAT_DEFAULT)}
+{Dest: Pointer to the destination buffer for the converted color}
+{Reverse: If true then reverse the byte order of the destination before conversion (Differs from ColorDefaultToFormat)}
+begin
+ {}
+ if not(Reverse) then
+  begin
+   ColorDefaultToFormat(Format,Color,Dest,False);
+  end
+ else
+  begin
+   ColorDefaultToFormat(Format,SwapEndian(Color),Dest,False);
+  end;
+end;
+
+{==============================================================================}
+
+procedure ColorFormatAltToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+{Convert a color value in the specified format to the default format (Alternate)}
+{Format: The color format to convert from (eg COLOR_FORMAT_RGB24)}
+{Source: Pointer to the source buffer for the color to convert}
+{Color: The converted color (Will be returned in the default format - See: COLOR_FORMAT_DEFAULT)}
+{Reverse: If true then reverse the byte order of the source before conversion (Differs from ColorFormatToDefault)}
+var
+ Value:LongWord;
+{$IFDEF FPC_BIG_ENDIAN}
+begin
+ {}
+ {Check Sourc}
+ if Source = nil then
+  begin
+   Color:=COLOR_NONE;
+   Exit;
+  end;
+
+ {Check Format}
+ if Format = COLOR_FORMAT_DEFAULT then {COLOR_FORMAT_ARGB32}
+  begin
+   if not(Reverse) then Color:=PLongWord(Source)^ else Color:=SwapEndian(PLongWord(Source)^);
+  end
+ else
+  begin 
+   {Check Format}
+   //To Do //Continuing 
+  end; 
+end; 
+{$ELSE FPC_BIG_ENDIAN}
+begin
+ {}
+ {Check Sourc}
+ if Source = nil then
+  begin
+   Color:=COLOR_NONE;
+   Exit;
+  end;
+  
+ {Check Format}
+ if Format = COLOR_FORMAT_DEFAULT then {COLOR_FORMAT_ARGB32}
+  begin
+   if not(Reverse) then Color:=PLongWord(Source)^ else Color:=SwapEndian(PLongWord(Source)^);
+  end
+ else
+  begin 
+   {Check Format}
+   case Format of
+    {32bit}
+    COLOR_FORMAT_DEFAULT:begin {COLOR_FORMAT_ARGB32}
+      if not(Reverse) then Color:=PLongWord(Source)^ else Color:=SwapEndian(PLongWord(Source)^);
+     end;
+    COLOR_FORMAT_ABGR32:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PLongWord(Source)^ else Value:=SwapEndian(PLongWord(Source)^);
+      Color:=(Value and $FF00FF00) or ((Value and $00FF0000) shr 16) or ((Value and $000000FF) shl 16);
+     end;
+    COLOR_FORMAT_RGBA32:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PLongWord(Source)^ else Value:=SwapEndian(PLongWord(Source)^);
+      Color:=((Value and $FFFFFF00) shr 8) or ((Value and $000000FF) shl 24);
+     end;
+    COLOR_FORMAT_BGRA32:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PLongWord(Source)^ else Value:=SwapEndian(PLongWord(Source)^);
+      Color:=((Value and $FF000000) shr 24) or ((Value and $00FF0000) shr 8) or ((Value and $0000FF00) shl 8) or ((Value and $000000FF) shl 24);
+     end;
+    COLOR_FORMAT_URGB32:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PLongWord(Source)^ else Value:=SwapEndian(PLongWord(Source)^);
+      Color:=$FF000000 or Value;
+     end;
+    COLOR_FORMAT_UBGR32:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PLongWord(Source)^ else Value:=SwapEndian(PLongWord(Source)^);
+      Color:=$FF000000 or (Value and $0000FF00) or ((Value and $00FF0000) shr 16) or ((Value and $000000FF) shl 16);
+     end;
+    COLOR_FORMAT_RGBU32:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PLongWord(Source)^ else Value:=SwapEndian(PLongWord(Source)^);
+      Color:=$FF000000 or ((Value and $FFFFFF00) shr 8);
+     end;
+    COLOR_FORMAT_BGRU32:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PLongWord(Source)^ else Value:=SwapEndian(PLongWord(Source)^);
+      Color:=$FF000000 or ((Value and $FF000000) shr 24) or ((Value and $00FF0000) shr 8) or ((Value and $0000FF00) shl 8);
+     end;
+    {24bit}
+    COLOR_FORMAT_RGB24:begin
+      {Opposite to normal}
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or (PByte(Source + 0)^) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 2)^ shl 16);
+       end
+      else
+       begin
+        Color:=$FF000000 or (PByte(Source + 2)^) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 0)^ shl 16);
+       end;
+     end;
+    COLOR_FORMAT_BGR24:begin
+      {Opposite to normal}
+      if not(Reverse) then 
+       begin
+        Color:=$FF000000 or (PByte(Source + 0)^ shl 16) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 2)^);
+       end
+      else
+       begin
+        Color:=$FF000000 or (PByte(Source + 2)^ shl 16) or (PByte(Source + 1)^ shl 8) or (PByte(Source + 0)^);
+       end;
+     end;
+    {16bit}
+    COLOR_FORMAT_RGB16:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PWord(Source)^ else Value:=SwapEndian(PWord(Source)^);
+      Color:=$FF000000 or ((Value and $F800) shl 8) or ((Value and $07E0) shl 5) or ((Value and $001F) shl 3);
+     end;
+    COLOR_FORMAT_BGR16:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PWord(Source)^ else Value:=SwapEndian(PWord(Source)^);
+      Color:=$FF000000 or ((Value and $001F) shl 19) or ((Value and $07E0) shl 5) or ((Value and $F800) shr 8);
+     end;
+    COLOR_FORMAT_RGB15:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PWord(Source)^ else Value:=SwapEndian(PWord(Source)^);
+      Color:=$FF000000 or ((Value and $7C00) shl 9) or ((Value and $03E0) shl 6) or ((Value and $001F) shl 3);
+     end;
+    COLOR_FORMAT_BGR15:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PWord(Source)^ else Value:=SwapEndian(PWord(Source)^);
+      Color:=$FF000000 or ((Value and $001F) shl 19) or ((Value and $03E0) shl 6) or ((Value and $7C00) shr 7);
+     end;
+    COLOR_FORMAT_GRAY16,COLOR_FORMAT_INDEX16:begin
+      {Swap before conversion}
+      if not(Reverse) then Value:=PWord(Source)^ else Value:=SwapEndian(PWord(Source)^);
+      //To Do //Continuing  
+     end;
+    {8bit}
+    COLOR_FORMAT_RGB8:begin
+      {No Reverse}
+      //To Do //Continuing  
+     end;
+    COLOR_FORMAT_BGR8:begin
+      {No Reverse}
+      //To Do //Continuing  
+     end;
+    COLOR_FORMAT_GRAY8,COLOR_FORMAT_INDEX8:begin
+      {No Reverse}
+      //To Do //Continuing  
+     end;
+   end;
+  end; 
+end;
+{$ENDIF FPC_BIG_ENDIAN}
+{==============================================================================}
+
+procedure PixelsDefaultToFormat(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean); 
+{Convert one or more pixels in the default color format to the specificed format}
+{Format: The color format to convert to (eg COLOR_FORMAT_RGB24)}
+{Source: Pointer to the source buffer for the pixels to convert}
+{Dest: Pointer to the destination buffer for the converted pixels}
+{Count: The number of pixels to be converted}
+{Reverse: If true then reverse the byte order of the destination after conversion}
+var
+ Bytes:LongWord;
+ Counter:LongWord;
+begin
+ {}
+ {Check Source}
+ if Source = nil then Exit;
+ 
+ {Check Dest}
+ if Dest = nil then Exit;
+ 
+ {Check Count}
+ if Count = 0 then Exit;
+ 
+ {Check Format}
+ if (Format = COLOR_FORMAT_DEFAULT) and not(Reverse) then {COLOR_FORMAT_ARGB32}
+  begin
+   System.Move(Source^,Dest^,Count * 4);
+  end
+ else
+  begin
+   {Get Bytes}
+   Bytes:=ColorFormatToBytes(Format);
+   if Bytes = 0 then Exit;
+   
+   {Convert Pixels}
+   for Counter:=0 to Count - 1 do
+    begin
+     {Convert Pixel}
+     ColorDefaultToFormat(Format,PLongWord(Source)^,Dest,Reverse);
+     
+     {Update Source}
+     Inc(Source,4);
+     
+     {Update Dest}
+     Inc(Dest,Bytes);
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+procedure PixelsFormatToDefault(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean);
+{Convert one or more pixels in the specified color format to the default format}
+{Format: The color format to convert from (eg COLOR_FORMAT_RGB24)}
+{Source: Pointer to the source buffer for the pixels to convert}
+{Dest: Pointer to the destination buffer for the converted pixels}
+{Count: The number of pixels to be converted}
+{Reverse: If true then reverse the byte order of the destination after conversion}
+var
+ Bytes:LongWord;
+ Counter:LongWord;
+begin
+ {}
+ {Check Source}
+ if Source = nil then Exit;
+ 
+ {Check Dest}
+ if Dest = nil then Exit;
+ 
+ {Check Count}
+ if Count = 0 then Exit;
+ 
+ {Check Format}
+ if (Format = COLOR_FORMAT_DEFAULT) and not(Reverse) then {COLOR_FORMAT_ARGB32}
+  begin
+   System.Move(Source^,Dest^,Count * 4);
+  end
+ else
+  begin 
+   {Get Bytes}
+   Bytes:=ColorFormatToBytes(Format);
+   if Bytes = 0 then Exit;
+   
+   {Convert Pixels}
+   for Counter:=0 to Count - 1 do
+    begin
+     {Convert Pixel}
+     ColorFormatToDefault(Format,Source,PLongWord(Dest)^,Reverse);
+     
+     {Update Source}
+     Inc(Source,Bytes);
+     
+     {Update Dest}
+     Inc(Dest,4);
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+procedure PixelsDefaultAltToFormat(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean); 
+{Convert one or more pixels in the default color format to the specificed format (Alternate)}
+{Format: The color format to convert to (eg COLOR_FORMAT_RGB24)}
+{Source: Pointer to the source buffer for the pixels to convert}
+{Dest: Pointer to the destination buffer for the converted pixels}
+{Count: The number of pixels to be converted}
+{Reverse: If true then reverse the byte order of the source before conversion (Differs from PixelsDefaultToFormat)}
+var
+ Bytes:LongWord;
+ Counter:LongWord;
+begin
+ {}
+ {Check Source}
+ if Source = nil then Exit;
+ 
+ {Check Dest}
+ if Dest = nil then Exit;
+ 
+ {Check Count}
+ if Count = 0 then Exit;
+ 
+ {Check Format}
+ if (Format = COLOR_FORMAT_DEFAULT) and not(Reverse) then {COLOR_FORMAT_ARGB32}
+  begin
+   System.Move(Source^,Dest^,Count * 4);
+  end
+ else
+  begin
+   {Get Bytes}
+   Bytes:=ColorFormatToBytes(Format);
+   if Bytes = 0 then Exit;
+   
+   {Convert Pixels}
+   for Counter:=0 to Count - 1 do
+    begin
+     {Convert Pixel} {Note: Does not use ColorDefaultAltToFormat}
+     if not(Reverse) then
+      begin
+       ColorDefaultToFormat(Format,PLongWord(Source)^,Dest,False);
+      end
+     else
+      begin
+       ColorDefaultToFormat(Format,SwapEndian(PLongWord(Source)^),Dest,False);
+      end;      
+     
+     {Update Source}
+     Inc(Source,4);
+     
+     {Update Dest}
+     Inc(Dest,Bytes);
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+procedure PixelsFormatAltToDefault(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean);
+{Convert one or more pixels in the specified color format to the default format (Alternate)}
+{Format: The color format to convert from (eg COLOR_FORMAT_RGB24)}
+{Source: Pointer to the source buffer for the pixels to convert}
+{Dest: Pointer to the destination buffer for the converted pixels}
+{Count: The number of pixels to be converted}
+{Reverse: If true then reverse the byte order of the source before conversion (Differs from PixelsFormatToDefault)}
+var
+ Bytes:LongWord;
+ Counter:LongWord;
+begin
+ {}
+ {Check Source}
+ if Source = nil then Exit;
+ 
+ {Check Dest}
+ if Dest = nil then Exit;
+ 
+ {Check Count}
+ if Count = 0 then Exit;
+ 
+ {Check Format}
+ if (Format = COLOR_FORMAT_DEFAULT) and not(Reverse) then {COLOR_FORMAT_ARGB32}
+  begin
+   System.Move(Source^,Dest^,Count * 4);
+  end
+ else
+  begin 
+   {Get Bytes}
+   Bytes:=ColorFormatToBytes(Format);
+   if Bytes = 0 then Exit;
+   
+   {Convert Pixels}
+   for Counter:=0 to Count - 1 do
+    begin
+     {Convert Pixel}
+     ColorFormatAltToDefault(Format,Source,PLongWord(Dest)^,Reverse);
+     
+     {Update Source}
+     Inc(Source,Bytes);
+     
+     {Update Dest}
+     Inc(Dest,4);
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
 function LogLevelToLoggingSeverity(LogLevel:LongWord):LongWord;
 begin
  {}
@@ -1882,5 +2762,3 @@ end;
 {==============================================================================}
 
 end.
-
-

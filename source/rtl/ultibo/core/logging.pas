@@ -237,6 +237,7 @@ var
 procedure LoggingInit;
 var
  WorkInt:LongWord;
+ WorkBuffer:String;
  Thread:TThreadHandle; 
 begin
  {}
@@ -296,6 +297,10 @@ begin
  {CONSOLE_LOGGING_POSITION}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_LOGGING_POSITION'),0);
  if WorkInt > 0 then CONSOLE_LOGGING_POSITION:=WorkInt;
+ 
+ {CONSOLE_LOGGING_DEVICE}
+ WorkBuffer:=SysUtils.GetEnvironmentVariable('CONSOLE_LOGGING_DEVICE');
+ if Length(WorkBuffer) <> 0 then CONSOLE_LOGGING_DEVICE:=WorkBuffer;
  
  {Enumerate Consoles}
  ConsoleDeviceEnumerate(LoggingConsoleDeviceEnum,nil);
@@ -1385,9 +1390,26 @@ begin
  {Check Logging}
  if LoggingDeviceFindByDevice(@Console.Device) = nil then
   begin
-   {Create Logging}
+   {Check Register}
    if CONSOLE_REGISTER_LOGGING then
     begin
+     {Check Device}
+     if Length(CONSOLE_LOGGING_DEVICE) <> 0 then
+      begin
+       {Check Name}
+       if ConsoleDeviceFindByName(CONSOLE_LOGGING_DEVICE) <> Console then
+        begin
+         {Check Description}
+         if ConsoleDeviceFindByDescription(CONSOLE_LOGGING_DEVICE) <> Console then Exit;
+        end; 
+      end
+     else
+      begin
+       {Check Default}
+       if ConsoleDeviceGetDefault <> Console then Exit;
+      end;    
+    
+     {Create Logging}
      Logging:=PConsoleLogging(LoggingDeviceCreateEx(SizeOf(TConsoleLogging),CONSOLE_LOGGING_DEFAULT));
      if Logging <> nil then
       begin

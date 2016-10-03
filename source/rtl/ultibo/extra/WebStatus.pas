@@ -701,6 +701,46 @@ type
   {Public Methods}
   
  end;
+
+ TWebStatusVectorTables = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  
+ protected
+  {Internal Variables}
+ 
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
+
+ TWebStatusIRQFIQSWI = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  
+ protected
+  {Internal Variables}
+ 
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
  
  TWebStatusConfiguration = class(TWebStatusSub)
  public
@@ -846,6 +886,8 @@ var
  WebStatusFramebuffer:TWebStatusFramebuffer;
  WebStatusEnvironment:TWebStatusEnvironment;
  WebStatusPageTables:TWebStatusPageTables;
+ WebStatusVectorTables:TWebStatusVectorTables;
+ WebStatusIRQFIQSWI:TWebStatusIRQFIQSWI;
  WebStatusConfiguration:TWebStatusConfiguration;
  {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG) or DEFINED(EXCEPTION_DEBUG)}
  WebStatusDebug:TWebStatusDebug;
@@ -1923,6 +1965,7 @@ end;
 function TWebStatusPlatform.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
  Count:LongWord;
+ Address:LongWord;
 begin
  {}
  Result:=False;
@@ -2074,23 +2117,33 @@ begin
  
  {Add Page Table Base}
  AddBlank(AResponse);
- AddItem(AResponse,'Page Table Base:','0x' + IntToHex(PageTableGetBase,8));
+ AddItem(AResponse,'Level 1 Page Table Base:','0x' + IntToHex(PageTableGetBase,8));
 
  {Add Page Table Size}
- AddItem(AResponse,'Page Table Size:',IntToStr(PageTableGetSize));
+ AddItem(AResponse,'Level 1 Page Table Size:',IntToStr(PageTableGetSize));
 
  {Add Page Tables Address}
  AddBlank(AResponse);
- AddItem(AResponse,'Page Tables Address:','0x' + IntToHex(PageTablesGetAddress,8));
+ AddItem(AResponse,'Level 2 Page Tables Address:','0x' + IntToHex(PageTablesGetAddress,8));
  
  {Add Page Tables Length}
- AddItem(AResponse,'Page Tables Length:',IntToStr(PageTablesGetLength));
+ AddItem(AResponse,'Level 2 Page Tables Length:',IntToStr(PageTablesGetLength));
 
  {Add Page Tables Count}
- AddItem(AResponse,'Page Tables Count:',IntToStr(PageTablesGetCount));
+ AddItem(AResponse,'Level 2 Page Tables Count:',IntToStr(PageTablesGetCount));
  
  {Add Page Tables Shift}
- AddItem(AResponse,'Page Tables Shift:',IntToStr(PageTablesGetShift));
+ AddItem(AResponse,'Level 2 Page Tables Shift:',IntToStr(PageTablesGetShift));
+ 
+ {Add Page Tables Next}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Level 2 Page Tables Next:','0x' + IntToHex(PageTablesGetNext,8));
+ 
+ {Add Page Tables Used}
+ AddItem(AResponse,'Level 2 Page Tables Used:',IntToStr(PageTablesGetUsed));
+
+ {Add Page Tables Free}
+ AddItem(AResponse,'Level 2 Page Tables Free:',IntToStr(PageTablesGetFree));
  
  {Add Vector Table Base}
  AddBlank(AResponse);
@@ -2099,6 +2152,27 @@ begin
  {Add Vector Table Size}
  AddItem(AResponse,'Vector Table Size:',IntToStr(VectorTableGetSize));
 
+ {Add Vector Table Count}
+ AddItem(AResponse,'Vector Table Count:',IntToStr(VectorTableGetCount));
+ 
+ {Add Interrupt Count}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Interrupt Count:',IntToStr(GetInterruptCount));
+
+ {Add Interrupt Start}
+ AddItem(AResponse,'Interrupt Start:',IntToStr(GetInterruptStart));
+
+ {Add Local Interrupt Count}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Local Interrupt Count:',IntToStr(GetLocalInterruptCount));
+
+ {Add Local Interrupt Start}
+ AddItem(AResponse,'Local Interrupt Start:',IntToStr(GetLocalInterruptStart));
+
+ {Add System Call Count}
+ AddBlank(AResponse);
+ AddItem(AResponse,'System Call Count:',IntToStr(GetSystemCallCount));
+ 
  {Add Clock Frequency/Ticks/Cycles}
  AddBlank(AResponse);
  AddItem(AResponse,'Clock Frequency:',IntToStr(CLOCK_FREQUENCY));
@@ -2118,6 +2192,11 @@ begin
  AddBlank(AResponse);
  AddItem(AResponse,'Worker Thread Count (Current):',IntToStr(WorkerGetCount));
  AddItem(AResponse,'Worker Thread Count (Default):',IntToStr(WORKER_THREAD_COUNT));
+ 
+ {Add Touch Buffer Address}
+ TouchGetBuffer(Address);
+ AddBlank(AResponse);
+ AddItem(AResponse,'Touch Buffer Address:','0x' + IntToHex(Address,8));
  
  {Add Footer}
  AddFooter(AResponse); 
@@ -3098,6 +3177,9 @@ begin
 
  {Add Timer Count}
  AddItemEx(AResponse,'Timer Count:',IntToStr(TimerGetCount),2);
+
+ {Add Tasker Count}
+ AddItemEx(AResponse,'Tasker Count:',IntToStr(TaskerGetCount),2);
  
  {Add Initial Thread}
  AddBlank(AResponse);
@@ -3713,7 +3795,7 @@ end;
 constructor TWebStatusMMC.Create(AMain:TWebStatusMain);
 begin
  {}
- FCaption:='MMC/SD'; {Must be before create for register}
+ FCaption:='MMC / SD'; {Must be before create for register}
  inherited Create(AMain);
  Name:='/mmc';
  
@@ -4364,6 +4446,7 @@ var
  Height:LongWord;
  Bottom:LongWord;
  FramebufferDevice:PFramebufferDevice;
+ FramebufferProperties:TFramebufferProperties;
 begin
  {}
  Result:=False;
@@ -4402,21 +4485,21 @@ begin
  if FramebufferGetDepth(Depth) = ERROR_SUCCESS then
   begin
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',IntToStr(Depth),2);
+   AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(Depth),2);
   end;
 
  {Add Framebuffer Pixel Order}
  if FramebufferGetPixelOrder(Order) = ERROR_SUCCESS then
   begin
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Pixel Order (BGR/RGB):',IntToStr(Order),2);
+   AddItemEx(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(Order),2);
   end;
 
  {Add Framebuffer Alpha Mode}
  if FramebufferGetAlphaMode(Mode) = ERROR_SUCCESS then
   begin
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Alpha Mode:',IntToStr(Mode),2);
+   AddItemEx(AResponse,'Alpha Mode:',FramebufferModeToString(Mode),2);
   end;
 
  {Add Framebuffer Pitch}
@@ -4449,35 +4532,87 @@ begin
  AddBold(AResponse,'Default Device','');
  
  {Get Default Device}
- FramebufferDevice:=FramebufferDeviceGetDefault;
- if FramebufferDevice <> nil then
+ if FramebufferDeviceGetProperties(FramebufferDeviceGetDefault,@FramebufferProperties) = ERROR_SUCCESS then
   begin
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Address:','0x' + IntToHex(FramebufferDevice.Address,8),2);
-   AddItemEx(AResponse,'Size:',IntToStr(FramebufferDevice.Size),2);
+   AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Pitch (Bytes per Line):',IntToStr(Pitch),2);
+   AddItemEx(AResponse,'Address:','0x' + IntToHex(FramebufferProperties.Address,8),2);
+   AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',IntToStr(Depth),2);
+   AddItemEx(AResponse,'Pitch (Bytes per Line):',IntToStr(FramebufferProperties.Pitch),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Pixel Order (BGR/RGB):',IntToStr(Order),2);
+   AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(FramebufferProperties.Depth),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Alpha Mode:',IntToStr(Mode),2);
+   AddItemEx(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(FramebufferProperties.Order),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Physical Width (Pixels):',IntToStr(Width),2);
-   AddItemEx(AResponse,'Physical Height (Pixels):',IntToStr(Height),2);
+   AddItemEx(AResponse,'Alpha Mode:',FramebufferModeToString(FramebufferProperties.Mode),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(Width),2);
-   AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(Height),2);
+   AddItemEx(AResponse,'Color Format:',ColorFormatToString(FramebufferProperties.Format),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Virtual Offset X:',IntToStr(X),2);
-   AddItemEx(AResponse,'Virtual Offset Y:',IntToStr(Y),2);
+   AddItemEx(AResponse,'Physical Width (Pixels):',IntToStr(FramebufferProperties.PhysicalWidth),2);
+   AddItemEx(AResponse,'Physical Height (Pixels):',IntToStr(FramebufferProperties.PhysicalHeight),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(Top),2);
-   AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(Bottom),2);
-   AddItemEx(AResponse,'Overscan Left (Pixels):',IntToStr(Left),2);
-   AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(Right),2);
+   AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
+   AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'Virtual Offset X:',IntToStr(FramebufferProperties.OffsetX),2);
+   AddItemEx(AResponse,'Virtual Offset Y:',IntToStr(FramebufferProperties.OffsetY),2);
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
+   AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
+   AddItemEx(AResponse,'Overscan Left (Pixels):',IntToStr(FramebufferProperties.OverscanLeft),2);
+   AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
   end;
+ 
+ {Check Device Count}
+ if FramebufferDeviceGetCount > 1 then
+  begin
+   AddBlank(AResponse);
+   AddBold(AResponse,'Secondary Device','');
+   
+   {Get Secondary Device}
+   FramebufferDevice:=FramebufferDeviceFind(1);
+   if FramebufferDevice <> nil then
+    begin
+     if FramebufferDeviceGetProperties(FramebufferDevice,@FramebufferProperties) = ERROR_SUCCESS then
+      begin
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Address:','0x' + IntToHex(FramebufferProperties.Address,8),2);
+       AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Pitch (Bytes per Line):',IntToStr(FramebufferProperties.Pitch),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(FramebufferProperties.Depth),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(FramebufferProperties.Order),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Alpha Mode:',FramebufferModeToString(FramebufferProperties.Mode),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Color Format:',ColorFormatToString(FramebufferProperties.Format),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Physical Width (Pixels):',IntToStr(FramebufferProperties.PhysicalWidth),2);
+       AddItemEx(AResponse,'Physical Height (Pixels):',IntToStr(FramebufferProperties.PhysicalHeight),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
+       AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Virtual Offset X:',IntToStr(FramebufferProperties.OffsetX),2);
+       AddItemEx(AResponse,'Virtual Offset Y:',IntToStr(FramebufferProperties.OffsetY),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
+       AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
+       AddItemEx(AResponse,'Overscan Left (Pixels):',IntToStr(FramebufferProperties.OverscanLeft),2);
+       AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
+      end;
+    end;
+  end; 
  
  {Add Footer}
  AddFooter(AResponse); 
@@ -4795,6 +4930,203 @@ begin
  Result:=True;
 end;
 
+{==============================================================================}
+{==============================================================================}
+{TWebStatusVectorTables}
+constructor TWebStatusVectorTables.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='Vector Tables'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/vectortables';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusVectorTables.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Count:LongWord;
+ Number:LongWord;
+ Address:PtrUInt;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Add Header}
+ AddHeader(AResponse,GetTitle,Self); 
+
+ {Add Vector Tables}
+ AddBold(AResponse,'Number','Address');
+ AddBlank(AResponse);
+ 
+ {Get Count}
+ Count:=VectorTableGetCount;
+ if Count > 0 then
+  begin
+   for Number:=0 to Count - 1 do
+    begin
+     {Get Entry}
+     Address:=VectorTableGetEntry(Number);
+     
+     {Add Entry}
+     AddItem(AResponse,IntToStr(Number),'0x' + IntToHex(Address,8));
+    end; 
+    
+   {Add Blank}
+   AddBlankEx(AResponse,4);
+  end; 
+  
+ {Add Footer}
+ AddFooter(AResponse); 
+ 
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusIRQFIQSWI}
+constructor TWebStatusIRQFIQSWI.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='IRQ / FIQ / SWI'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/irqfiqswi';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusIRQFIQSWI.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Start:LongWord;
+ Count:LongWord;
+ Number:LongWord;
+ CPUCount:LongWord;
+ InterruptEntry:TInterruptEntry;
+ SystemCallEntry:TSystemCallEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Add Header (4 column)}
+ AddHeaderEx(AResponse,GetTitle,Self,4); 
+
+ {Get Count}
+ Count:=GetInterruptCount;
+ if Count > 0 then
+  begin
+   {Add Interrupt Entries}
+   AddBold4Column(AResponse,'Interrupts','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Number','CPUID','Handler','Extended Handler');
+   AddBlankEx(AResponse,4);
+   
+   {Get Start}
+   Start:=GetInterruptStart;
+   
+   {Add Entries}
+   for Number:=Start to (Start + Count) - 1 do
+    begin
+     {Get Entry}
+     InterruptEntry:=GetInterruptEntry(Number);
+     if Assigned(InterruptEntry.Handler) or Assigned(InterruptEntry.HandlerEx) then
+      begin
+       {Add Entry}
+       AddItem4Column(AResponse,IntToStr(InterruptEntry.Number),CPUIDToString(InterruptEntry.CPUID),'0x' + IntToHex(LongWord(@InterruptEntry.Handler),8),'0x' + IntToHex(LongWord(@InterruptEntry.HandlerEx),8));
+      end; 
+    end;
+
+   {Add Blank}
+   AddBlankEx(AResponse,4);
+  end; 
+ 
+ {Get Count}
+ Count:=GetLocalInterruptCount;
+ if Count > 0 then
+  begin
+   {Add Local Interrupt Entries}
+   AddBold4Column(AResponse,'Local Interrupts','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Number','CPUID','Handler','Extended Handler');
+   AddBlankEx(AResponse,4);
+   
+   {Get Start}
+   Start:=GetLocalInterruptStart;
+   
+   {Add Entries}
+   for Number:=Start to (Start + Count) - 1 do
+    begin
+     for CPUCount:=0 to CPUGetCount - 1 do
+      begin
+       {Get Entry}
+       InterruptEntry:=GetLocalInterruptEntry(CPUCount,Number);
+       if Assigned(InterruptEntry.Handler) or Assigned(InterruptEntry.HandlerEx) then
+        begin
+         {Add Entry}
+         AddItem4Column(AResponse,IntToStr(InterruptEntry.Number),CPUIDToString(InterruptEntry.CPUID),'0x' + IntToHex(LongWord(@InterruptEntry.Handler),8),'0x' + IntToHex(LongWord(@InterruptEntry.HandlerEx),8));
+        end; 
+      end;  
+    end; 
+    
+   {Add Blank}
+   AddBlankEx(AResponse,4);
+  end; 
+ 
+ {Get Count}
+ Count:=GetSystemCallCount;
+ if Count > 0 then
+  begin
+   {Add System Call Entries}
+   AddBold4Column(AResponse,'System Calls','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Number','CPUID','Handler','Extended Handler');
+   AddBlankEx(AResponse,4);
+
+   {Add Entries}
+   for Number:=0 to Count - 1 do
+    begin
+     {Get Entry}
+     SystemCallEntry:=GetSystemCallEntry(Number);
+     if Assigned(SystemCallEntry.Handler) or Assigned(SystemCallEntry.HandlerEx) then
+      begin
+       {Add Entry}
+       AddItem4Column(AResponse,IntToStr(SystemCallEntry.Number),CPUIDToString(SystemCallEntry.CPUID),'0x' + IntToHex(LongWord(@SystemCallEntry.Handler),8),'0x' + IntToHex(LongWord(@SystemCallEntry.HandlerEx),8));
+      end; 
+    end; 
+    
+   {Add Blank}
+   AddBlankEx(AResponse,4);
+  end; 
+ 
+ {Add Footer (4 column)}
+ AddFooterEx(AResponse,4); 
+ 
+ {Return Result}
+ Result:=True;
+end;
+ 
 {==============================================================================}
 {==============================================================================}
 {TWebStatusConfiguration}
@@ -5461,11 +5793,11 @@ begin
   begin
    if Count = CPU_ID_0 then
     begin
-     AddItemEx(AResponse,'DispatchSoftwareInterruptCounter:',CPUIDToString(Count) + ': ' + IntToStr(DispatchSoftwareInterruptCounter[Count]),2);
+     AddItemEx(AResponse,'DispatchSystemCallCounter:',CPUIDToString(Count) + ': ' + IntToStr(DispatchSystemCallCounter[Count]),2);
     end
    else
     begin
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + IntToStr(DispatchSoftwareInterruptCounter[Count]),2);
+     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + IntToStr(DispatchSystemCallCounter[Count]),2);
     end;    
   end; 
  AddBlank(AResponse);
@@ -5679,6 +6011,14 @@ begin
  {Register PageTables Page}
  WebStatusPageTables:=TWebStatusPageTables.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusPageTables);
+
+ {Register VectorTables Page}
+ WebStatusVectorTables:=TWebStatusVectorTables.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusVectorTables);
+
+ {Register IRQFIQSWI Page}
+ WebStatusIRQFIQSWI:=TWebStatusIRQFIQSWI.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusIRQFIQSWI);
  
  {Register Configuration Page}
  WebStatusConfiguration:=TWebStatusConfiguration.Create(WebStatusMain);
@@ -5739,6 +6079,14 @@ begin
  {Deregister Configuration Page}
  AListener.DeregisterDocument(AHost,WebStatusConfiguration);
  WebStatusConfiguration.Free;
+  
+ {Deregister IRQFIQSWI Page}
+ AListener.DeregisterDocument(AHost,WebStatusIRQFIQSWI);
+ WebStatusIRQFIQSWI.Free;
+  
+ {Deregister VectorTables Page}
+ AListener.DeregisterDocument(AHost,WebStatusVectorTables);
+ WebStatusVectorTables.Free;
   
  {Deregister PageTables Page}
  AListener.DeregisterDocument(AHost,WebStatusPageTables);

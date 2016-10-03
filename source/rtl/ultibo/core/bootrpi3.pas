@@ -360,6 +360,17 @@ asm
  //Return if not in HYP mode 
  bne .LNoSwitch                                      
  
+ //Save value of CNTVOFF from boot
+ mrrc p15, #4, r1, r2, cr14
+ ldr r3, .LRPi3CNTVOFFLow
+ str r1, [r3]
+ ldr r3, .LRPi3CNTVOFFHigh
+ str r2, [r3]
+ 
+ //Reset CNTVOFF to 0 while in HYP mode
+ mov r1, #0
+ mcrr p15, #4, r1, r1, cr14
+ 
  //Mask the Abort bit
  orr r0, r0, #ARM_A_BIT  
  //Load the SPSR 
@@ -373,6 +384,11 @@ asm
  msr cpsr_c, r0                                      
  //Return to startup 
  bx lr
+ 
+.LRPi3CNTVOFFLow:
+  .long RPi3CNTVOFFLow
+.LRPi3CNTVOFFHigh:
+  .long RPi3CNTVOFFHigh
 end;
 
 {==============================================================================}
@@ -532,10 +548,19 @@ asm
  lsr r2, r3, #20 
  //Add one for any leftover amount and one for safety.
  add r2, r2, #2
+ //Store the second level page table used count
+ ldr r0, .LPAGE_TABLES_USED
+ str r2, [r0]
+  
+ //Get the second level page table free count
+ ldr r0, .LPAGE_TABLES_FREE
+ ldr r0, [r0]
+ //Add the free count to the used count
+ add r2, r2, r0
  //Store the second level page table count
  ldr r0, .LPAGE_TABLES_COUNT
  str r2, [r0]
-  
+ 
  //Put the second level page tables directly after the kernel image.
  //R1 will contain the address of the bss_end from above.
  //Store the start address of the second level page tables.
@@ -616,8 +641,12 @@ asm
 .L_vectors:
   .long Vectors
   
+.LPAGE_TABLES_USED:
+  .long PAGE_TABLES_USED  
+.LPAGE_TABLES_FREE:
+  .long PAGE_TABLES_FREE
 .LPAGE_TABLES_COUNT:
-  .long PAGE_TABLES_COUNT  
+  .long PAGE_TABLES_COUNT
 .LPAGE_TABLES_ADDRESS:
   .long PAGE_TABLES_ADDRESS
 .LPAGE_TABLES_LENGTH:

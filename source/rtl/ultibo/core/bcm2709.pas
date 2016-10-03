@@ -45,6 +45,8 @@ Credits
  
    Linux - \drivers\pwm\pwm-bcm2835.c - Copyright (C) 2014 Bart Tanghe
    
+   Linux - \drivers\clocksource\timer-sp804.c - Copyright (C) 1999 - 2003 ARM Limited
+   
 References
 ==========
 
@@ -90,7 +92,8 @@ BCM2709 Devices
   SDHCI (eMMC)
  
   Clock
-  Timer
+  ARM Timer
+  Local Timer
   Random
   Mailbox
   Watchdog
@@ -244,11 +247,36 @@ BCM2709 SDHCI Device
 BCM2709 Clock Device
 ====================
 
+ The clock device in the BCM2709 is based on the System Timer which is a 64 bit free running counter that runs at 1MHz regardless
+ of core or CPU clock speeds.
+ 
+ The System Timer includes 4 compare registers which can each generate an interrupt when the compare value is matched, however 2
+ of the 4 are consumed by the GPU and on the Raspberry Pi A/B/A+/B+/Zero the other 2 are used for the scheduler and clock interrupts
+ in Ultibo. 
+ 
+ This device simply exposes the free running counter as a clock value and does not provide access to the timer compare functionality
+ or to interrupt based events, for those see the timer devices below.
+  
 
-BCM2709 Timer Device
-====================
+BCM2709 ARM Timer Device
+========================
 
+ The ARM Timer device in the BCM2709 is based on the ARM SP804 timer with some modifications and additions. In the Raspberry Pi 
+ it is connected to the core clock which by default is 250MHz but was increased to 400MHz on the Raspberry Pi 3B.
+ 
+ The divider is 10 bits wide which means that the ARM Timer can be set to clock rates of between 250KHz and 250MHz (or 400KHz 
+ to 400MHz on the Raspberry Pi 3B). Both the counter and the load/reload value are 32 bits wide by default giving a wide range of
+ tick intervals.
+  
+ The ARM Timer features a free running counter which is not enabled or used by this driver and a down counter which operates in
+ wrapping mode so that each time it reaches 0 it triggers an interrupt and reloads the value from a load or reload register to
+ begin counting again.
 
+ 
+BCM2709 Local Timer Device
+==========================
+
+ 
 BCM2709 Random Device
 =====================
 
@@ -457,7 +485,24 @@ const
  
  {BCM2709 Clock constants}
  
- {BCM2709 Timer constants}
+ {BCM2709 ARM Timer constants}
+ BCM2709_ARM_TIMER_DESCRIPTION = 'BCM2836 ARM Timer';
+
+ BCM2709_ARM_TIMER_MIN_RATE = 244140;      {Default minimum (Divider 1023) based on the default settings from the firmware (Recalculated during start)}
+ BCM2709_ARM_TIMER_MAX_RATE = 250000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
+ BCM2709_ARM_TIMER_DEFAULT_RATE = 1000000; {Default rate (Divider 249) based on the default settings from the firmware (Recalculated during start)}
+ 
+ BCM2709_ARM_TIMER_MIN_INTERVAL = 1;
+ BCM2709_ARM_TIMER_MAX_INTERVAL = $FFFFFFFF;
+ 
+ BCM2709_ARM_TIMER_MIN_DIVIDER = 0;
+ BCM2709_ARM_TIMER_MAX_DIVIDER = 1023;
+ BCM2709_ARM_TIMER_DEFAULT_DIVIDER = 249;
+ 
+ BCM2709_ARM_TIMER_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ 
+ {BCM2709 Local Timer constants}
+ BCM2709_LOCAL_TIMER_DESCRIPTION = 'BCM2836 Local Timer';
  
  {BCM2709 Random constants}
  BCM2709_RANDOM_WARMUP_COUNT  = $00040000; {The initial numbers generated are "less random" so will be discarded}
@@ -647,13 +692,26 @@ type
    {Nothing}
  end; 
 
- {BCM2709 Timer types}
- PBCM2709Timer = ^TBCM2709Timer;
- TBCM2709Timer = record
+ {BCM2709 ARM Timer types}
+ PBCM2709ARMTimer = ^TBCM2709ARMTimer;
+ TBCM2709ARMTimer = record
   {Timer Properties}
   Timer:TTimerDevice;
   {BCM2709 Properties}
-   {Nothing}
+  CoreClock:LongWord;              {Core clock rate}
+  {Statistics Properties}          
+  InterruptCount:LongWord;         {Number of interrupt requests received by the device}
+ end; 
+ 
+ {BCM2709 Local Timer types}
+ PBCM2709LocalTimer = ^TBCM2709LocalTimer;
+ TBCM2709LocalTimer = record
+  {Timer Properties}
+  Timer:TTimerDevice;
+  {BCM2709 Properties}
+  CoreClock:LongWord;              {Core clock rate}
+  {Statistics Properties}          
+  InterruptCount:LongWord;         {Number of interrupt requests received by the device}
  end; 
  
  {BCM2709 Random types}
@@ -711,7 +769,7 @@ function BCM2709SPI0Stop(SPI:PSPIDevice):LongWord;
 function BCM2709SPI0WriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
 function BCM2709SPI0SetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
-function BCM2709SPI0SetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+function BCM2709SPI0SetClockRate(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;
 function BCM2709SPI0SetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
 function BCM2709SPI0SetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
 function BCM2709SPI0SetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
@@ -720,6 +778,7 @@ procedure BCM2709SPI0ReadFIFO(SPI:PBCM2709SPI0Device);
 procedure BCM2709SPI0WriteFIFO(SPI:PBCM2709SPI0Device);
 
 procedure BCM2709SPI0InterruptHandler(SPI:PBCM2709SPI0Device);
+procedure BCM2709SPI0DMARequestCompleted(Request:PDMARequest); 
 
 {==============================================================================}
 {BCM2709 BSCI2C (I2C0/1) Functions}
@@ -852,7 +911,22 @@ function BCM2709ClockRead(Clock:PClockDevice):LongWord;
 function BCM2709ClockRead64(Clock:PClockDevice):Int64;
 
 {==============================================================================}
-{BCM2709 Timer Functions}
+{BCM2709 ARM Timer Functions}
+function BCM2709ARMTimerStart(Timer:PTimerDevice):LongWord;
+function BCM2709ARMTimerStop(Timer:PTimerDevice):LongWord;
+function BCM2709ARMTimerRead64(Timer:PTimerDevice):Int64;
+function BCM2709ARMTimerWait(Timer:PTimerDevice):LongWord;
+function BCM2709ARMTimerEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
+function BCM2709ARMTimerCancel(Timer:PTimerDevice):LongWord;
+function BCM2709ARMTimerSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
+function BCM2709ARMTimerSetInterval(Timer:PTimerDevice;Interval:LongWord):LongWord;
+
+procedure BCM2709ARMTimerInterruptHandler(Timer:PTimerDevice);
+
+procedure BCM2709ARMTimerEventTrigger(Timer:PTimerDevice);
+
+{==============================================================================}
+{BCM2709 Local Timer Functions}
 //To Do
 
 {==============================================================================}
@@ -882,6 +956,8 @@ function BCM2709FramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 function BCM2709FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
 function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+
+function BCM2709FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
 
 function BCM2709FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 
@@ -920,7 +996,8 @@ var
  BCM2709UART0:PBCM2709UART0Device;
  
  BCM2709Clock:PBCM2709Clock;
- BCM2709Timer:PBCM2709Timer;
+ BCM2709ARMTimer:PBCM2709ARMTimer;
+ BCM2709LocalTimer:PBCM2709LocalTimer;
  BCM2709Random:PBCM2709Random;
  BCM2709Mailbox:PBCM2709Mailbox;
  BCM2709Watchdog:PBCM2709Watchdog;
@@ -932,6 +1009,10 @@ begin
  
  {Initialize BCM2709SDHCI_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2709SDHCI_FIQ_ENABLED:=False;
+
+ {Initialize BCM2709ARM_TIMER_FIQ_ENABLED/BCM2709LOCAL_TIMER_FIQ_ENABLED}
+ if not(FIQ_ENABLED) then BCM2709ARM_TIMER_FIQ_ENABLED:=False;
+ if not(FIQ_ENABLED) then BCM2709LOCAL_TIMER_FIQ_ENABLED:=False;
  
  {Initialize IRQ Data}
  FillChar(BCM2709BSCI2CIRQData,SizeOf(TBCM2709BSCI2CIRQData),0);
@@ -990,6 +1071,11 @@ begin
  FramebufferSetPaletteHandler:=RPi2FramebufferSetPalette;
  FramebufferTestPaletteHandler:=RPi2FramebufferTestPalette;
 
+ FramebufferSetBacklightHandler:=RPi2FramebufferSetBacklight;
+ 
+ {Register Platform Touch Handlers}
+ TouchGetBufferHandler:=RPi2TouchGetBuffer;
+ 
  {Register Platform Cursor Handlers}
  CursorSetInfoHandler:=RPi2CursorSetInfo;
  CursorSetStateHandler:=RPi2CursorSetState;
@@ -1545,12 +1631,61 @@ begin
     end;
   end;
   
- {Create Timer}
- if BCM2709_REGISTER_TIMER then
+ {Create ARM Timer}
+ if BCM2709_REGISTER_ARM_TIMER then
+  begin
+   BCM2709ARMTimer:=PBCM2709ARMTimer(TimerDeviceCreateEx(SizeOf(TBCM2709ARMTimer)));
+   if BCM2709ARMTimer <> nil then
+    begin
+     {Update Timer}
+     {Device}
+     BCM2709ARMTimer.Timer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     BCM2709ARMTimer.Timer.Device.DeviceType:=TIMER_TYPE_HARDWARE;
+     BCM2709ARMTimer.Timer.Device.DeviceFlags:=TIMER_FLAG_WRAPPING or TIMER_FLAG_COUNTER or TIMER_FLAG_DOWN;
+     BCM2709ARMTimer.Timer.Device.DeviceData:=nil;
+     BCM2709ARMTimer.Timer.Device.DeviceDescription:=BCM2709_ARM_TIMER_DESCRIPTION;
+     {Timer}
+     BCM2709ARMTimer.Timer.TimerState:=TIMER_STATE_DISABLED;
+     BCM2709ARMTimer.Timer.DeviceStart:=BCM2709ARMTimerStart;
+     BCM2709ARMTimer.Timer.DeviceStop:=BCM2709ARMTimerStop;
+     BCM2709ARMTimer.Timer.DeviceRead64:=BCM2709ARMTimerRead64;
+     BCM2709ARMTimer.Timer.DeviceWait:=BCM2709ARMTimerWait;
+     BCM2709ARMTimer.Timer.DeviceEvent:=BCM2709ARMTimerEvent;
+     BCM2709ARMTimer.Timer.DeviceCancel:=BCM2709ARMTimerCancel;
+     BCM2709ARMTimer.Timer.DeviceSetRate:=BCM2709ARMTimerSetRate;
+     BCM2709ARMTimer.Timer.DeviceSetInterval:=BCM2709ARMTimerSetInterval;
+     {Driver}
+     BCM2709ARMTimer.Timer.Address:=Pointer(BCM2836_TIMER_REGS_BASE);
+     BCM2709ARMTimer.Timer.Rate:=BCM2709_ARM_TIMER_DEFAULT_RATE;
+     BCM2709ARMTimer.Timer.Interval:=0;
+     BCM2709ARMTimer.Timer.Properties.Flags:=BCM2709ARMTimer.Timer.Device.DeviceFlags;
+     BCM2709ARMTimer.Timer.Properties.Bits:=32;
+     BCM2709ARMTimer.Timer.Properties.MinRate:=BCM2709_ARM_TIMER_MIN_RATE;
+     BCM2709ARMTimer.Timer.Properties.MaxRate:=BCM2709_ARM_TIMER_MAX_RATE;
+     BCM2709ARMTimer.Timer.Properties.MinInterval:=BCM2709_ARM_TIMER_MIN_INTERVAL;
+     BCM2709ARMTimer.Timer.Properties.MaxInterval:=BCM2709_ARM_TIMER_MAX_INTERVAL;
+     {BCM2709}
+     BCM2709ARMTimer.CoreClock:=BCM2709_ARM_TIMER_CORE_CLOCK;
+     
+     {Register Timer}
+     Status:=TimerDeviceRegister(@BCM2709ARMTimer.Timer);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to register new timer device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to create new timer device');
+    end;
+  end; 
+
+ {Create Local Timer}
+ if BCM2709_REGISTER_LOCAL_TIMER then
   begin
    //To Do
   end; 
- 
+  
  {Create Random}
  if BCM2709_REGISTER_RANDOM then
   begin
@@ -1642,7 +1777,7 @@ begin
      {Device}
      BCM2709Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2709Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-     BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK;
+     BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
      BCM2709Framebuffer.Framebuffer.Device.DeviceData:=nil;
      {Framebuffer}
      BCM2709Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
@@ -1650,13 +1785,14 @@ begin
      BCM2709Framebuffer.Framebuffer.DeviceRelease:=BCM2709FramebufferRelease;
      BCM2709Framebuffer.Framebuffer.DeviceBlank:=BCM2709FramebufferBlank;
      BCM2709Framebuffer.Framebuffer.DeviceCommit:=BCM2709FramebufferCommit;
+     BCM2709Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2709FramebufferSetBacklight;
      BCM2709Framebuffer.Framebuffer.DeviceSetProperties:=BCM2709FramebufferSetProperties;
      {Driver}
      
      {Setup Flags}
      if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
      if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-     if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;
+     {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
      
      {Register Framebuffer}
      Status:=FramebufferDeviceRegister(@BCM2709Framebuffer.Framebuffer);
@@ -1784,6 +1920,7 @@ begin
  
  {Update Properties}
  SPI.SPIMode:=Mode;
+ SPI.Divider:=Divider;
  SPI.ClockRate:=ClockRate;
  SPI.ClockPhase:=ClockPhase;
  SPI.ClockPolarity:=ClockPolarity;
@@ -1794,9 +1931,9 @@ begin
  SPI.Properties.ClockPolarity:=ClockPolarity;
  SPI.Properties.SelectPolarity:=SPI_CS_POLARITY_LOW;
  SPI.ChipSelects[0].Pin:=GPIO_PIN_UNKNOWN;
- SPI.ChipSelects[0].Polarity:=SPI_CS_POLARITY_LOW;
+ SPI.ChipSelects[0].SelectPolarity:=SPI_CS_POLARITY_LOW;
  SPI.ChipSelects[1].Pin:=GPIO_PIN_UNKNOWN;
- SPI.ChipSelects[1].Polarity:=SPI_CS_POLARITY_LOW;
+ SPI.ChipSelects[1].SelectPolarity:=SPI_CS_POLARITY_LOW;
  
  {Return Result}
  Result:=ERROR_SUCCESS;
@@ -1847,6 +1984,9 @@ end;
 
 function BCM2709SPI0WriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 var
+ CSData:TDMAData;
+ TXData:TDMAData;
+ RXData:TDMAData;
  Control:LongWord;
 begin
  {}
@@ -1876,16 +2016,13 @@ begin
  {Write from Source / Read to Dest}
  if Size > 0 then
   begin
-   //To Do //Flags: SPI_TRANSFER_DMA
-   
    {Setup Data}
-   PBCM2709SPI0Device(SPI).Mode:=BCM2709_SPI0_MODE_IRQ;
    PBCM2709SPI0Device(SPI).Source:=Source;
    PBCM2709SPI0Device(SPI).Dest:=Dest;
    PBCM2709SPI0Device(SPI).Count:=0;
    PBCM2709SPI0Device(SPI).SourceRemain:=Size;
    PBCM2709SPI0Device(SPI).DestRemain:=Size;
- 
+   
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
    
@@ -1911,40 +2048,149 @@ begin
     begin
      Control:=Control or (ChipSelect and BCM2836_SPI0_CS_CS_MASK);
     end;
-    
-   {Note: Cannot fill FIFO when TA bit is not set, interrupt handler will fill on first IRQ} 
    
-   {Set Control (Active/Interrupt/Clear)}
-   Control:=Control or (BCM2836_SPI0_CS_INTR or BCM2836_SPI0_CS_INTD or BCM2836_SPI0_CS_TA or BCM2836_SPI0_CS_CLEAR_RX or BCM2836_SPI0_CS_CLEAR_TX);
-   
-   {Set Control and Status}
-   PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CS:=Control;
-   
-   {Memory Barrier}
-   DataMemoryBarrier; {After the Last Read} 
-   
-   {Wait for Completion}
-   if SemaphoreWait(SPI.Wait) = ERROR_SUCCESS then
+   {Check Clock Rate}
+   if (ChipSelect = SPI_CS_NONE) or (SPI.ChipSelects[ChipSelect].ClockRate = 0) then
     begin
-     {Get Count}
-     Count:=PBCM2709SPI0Device(SPI).Count;
-     
-     {Check Count}
-     if Count < Size then
+     {Set Clock Divider}
+     PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CLK:=(SPI.Divider and BCM2836_SPI0_CLK_CDIV);
+    end
+   else 
+    begin
+     {Set Clock Divider}
+     PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CLK:=(SPI.ChipSelects[ChipSelect].Divider and BCM2836_SPI0_CLK_CDIV);
+    end;
+      
+   {Check Flags}   
+   if (Flags and SPI_TRANSFER_DMA) <> 0 then
+    begin
+     {Update Data}
+     PBCM2709SPI0Device(SPI).Mode:=BCM2709_SPI0_MODE_DMA;
+    
+     {Check Cache}
+     if not(DMA_CACHE_COHERENT) and (Dest <> nil) then
       begin
-       if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2709: Write failure or timeout'); 
-       
-       {Update Statistics}
-       Inc(SPI.TransferErrors);
+       {Clean Cache (Dest)}
+       CleanDataCacheRange(LongWord(Dest),Size);
       end;
+     
+     {Setup Control Data (CS/DLEN)}
+     FillChar(CSData,SizeOf(TDMAData),0);
+     CSData.Source:=@Control;
+     CSData.Dest:=@PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).FIFO;
+     CSData.Flags:=DMA_DATA_FLAG_DEST_NOINCREMENT or DMA_DATA_FLAG_DEST_DREQ or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
+     CSData.StrideLength:=0;
+     CSData.SourceStride:=0;
+     CSData.DestStride:=0;
+     CSData.Size:=SizeOf(LongWord);
+     CSData.Next:=@TXData;
+     
+     {Setup TX Data}
+     FillChar(TXData,SizeOf(TDMAData),0);
+     TXData.Source:=Source;
+     TXData.Dest:=@PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).FIFO;
+     TXData.Flags:=DMA_DATA_FLAG_DEST_NOINCREMENT or DMA_DATA_FLAG_DEST_DREQ or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
+     if Source = nil then TXData.Flags:=TXData.Flags or DMA_DATA_FLAG_NOREAD;
+     TXData.StrideLength:=0;
+     TXData.SourceStride:=0;
+     TXData.DestStride:=0;
+     TXData.Size:=Size;
+     
+     {Setup RX Data}
+     FillChar(RXData,SizeOf(TDMAData),0);
+     RXData.Source:=@PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).FIFO;
+     RXData.Dest:=Dest;
+     RXData.Flags:=DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_DREQ or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
+     if Dest = nil then RXData.Flags:=RXData.Flags or DMA_DATA_FLAG_NOWRITE;
+     RXData.StrideLength:=0;
+     RXData.SourceStride:=0;
+     RXData.DestStride:=0;
+     RXData.Size:=Size;
+     
+     {Set Control (Deassert/DMA/Clear)}
+     Control:=Control or (BCM2836_SPI0_CS_ADCS or BCM2836_SPI0_CS_DMAEN or BCM2836_SPI0_CS_CLEAR_RX or BCM2836_SPI0_CS_CLEAR_TX);
+     
+     {Set Control and Status}
+     PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CS:=Control;
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {After the Last Read} 
+     
+     {Update Control (Active/Length)}
+     Control:=(Size shl 16) or (Control and $FF) or BCM2836_SPI0_CS_TA;
+     
+     {Enable RX Transfer}
+     if DMATransferRequestEx(DMAHostGetDefault,@RXData,BCM2709SPI0DMARequestCompleted,SPI,DMA_DIR_DEV_TO_MEM,DMA_DREQ_ID_SPI_RX,DMA_REQUEST_FLAG_NONE) = ERROR_SUCCESS then
+      begin
+       {Perform TX Transfer}
+       if DMATransferRequest(DMAHostGetDefault,@CSData,DMA_DIR_MEM_TO_DEV,DMA_DREQ_ID_SPI_TX,DMA_REQUEST_FLAG_NONE,INFINITE) = ERROR_SUCCESS then
+        begin
+         {Wait for RX Completion}
+         if SemaphoreWait(SPI.Wait) = ERROR_SUCCESS then
+          begin
+           {Update Count}
+           Count:=Size;
+          end
+         else
+          begin
+           if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2709: Wait failure on DMA transfer'); 
+           
+           Result:=ERROR_OPERATION_FAILED;
+          end;
+        end
+       else
+        begin
+         if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2709: Failure starting TX DMA transfer');
+         
+         Result:=ERROR_OPERATION_FAILED;
+        end;
+      end
+     else
+      begin
+       if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2709: Failure starting RX DMA transfer');
+       
+       Result:=ERROR_OPERATION_FAILED;
+      end;      
     end
    else
     begin
-     if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2709: Wait failure on write'); 
+     {Update Data}
+     PBCM2709SPI0Device(SPI).Mode:=BCM2709_SPI0_MODE_IRQ;
+      
+     {Note: Cannot fill FIFO when TA bit is not set, interrupt handler will fill on first IRQ} 
      
-     Result:=ERROR_OPERATION_FAILED;
+     {Set Control (Active/Interrupt/Clear)}
+     Control:=Control or (BCM2836_SPI0_CS_INTR or BCM2836_SPI0_CS_INTD or BCM2836_SPI0_CS_TA or BCM2836_SPI0_CS_CLEAR_RX or BCM2836_SPI0_CS_CLEAR_TX);
+     
+     {Set Control and Status}
+     PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CS:=Control;
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {After the Last Read} 
+     
+     {Wait for Completion}
+     if SemaphoreWait(SPI.Wait) = ERROR_SUCCESS then
+      begin
+       {Get Count}
+       Count:=PBCM2709SPI0Device(SPI).Count;
+       
+       {Check Count}
+       if Count < Size then
+        begin
+         if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2709: Write failure or timeout'); 
+         
+         {Update Statistics}
+         Inc(SPI.TransferErrors);
+        end;
+      end
+     else
+      begin
+       if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2709: Wait failure on write'); 
+       
+       Result:=ERROR_OPERATION_FAILED;
+      end;
     end;
-   
+    
    {Reset Data}
    PBCM2709SPI0Device(SPI).Source:=nil;
    PBCM2709SPI0Device(SPI).Dest:=nil;
@@ -2021,7 +2267,7 @@ end;
 
 {==============================================================================}
 
-function BCM2709SPI0SetClockRate(SPI:PSPIDevice;ClockRate:LongWord):LongWord;
+function BCM2709SPI0SetClockRate(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;
 var
  Divider:LongWord;
 begin
@@ -2032,32 +2278,62 @@ begin
  if SPI = nil then Exit;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(SPI_DEBUG)}
- if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2709: SPI0 Set Clock Rate (ClockRate=' + IntToStr(ClockRate) + ')');
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2709: SPI0 Set Clock Rate (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' ClockRate=' + IntToStr(ClockRate) + ')');
  {$ENDIF}
  
- {Check Clock Rate}
- if (ClockRate < SPI.Properties.MinClock) or (ClockRate > SPI.Properties.MaxClock) then Exit;
+ {Check Chip Select}
+ if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_2) then Exit;
  
- {Get Divider}
- Divider:=PBCM2709SPI0Device(SPI).CoreClock div ClockRate;
- if (Divider and 1) <> 0 then Inc(Divider);
+ {Set Clock Rate}
+ if ChipSelect = SPI_CS_NONE then
+  begin
+   {Check Clock Rate}
+   if (ClockRate < SPI.Properties.MinClock) or (ClockRate > SPI.Properties.MaxClock) then Exit;
+   
+   {Get Divider}
+   Divider:=PBCM2709SPI0Device(SPI).CoreClock div ClockRate;
+   if (Divider and 1) <> 0 then Inc(Divider);
+   
+   {$IF DEFINED(BCM2709_DEBUG) or DEFINED(SPI_DEBUG)}
+   if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2709:  Divider=' + IntToStr(Divider));
+   {$ENDIF}
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Set Clock Divider} 
+   PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CLK:=(Divider and BCM2836_SPI0_CLK_CDIV);
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Update Properties}
+   SPI.Divider:=Divider;
+   SPI.ClockRate:=ClockRate;
+   SPI.Properties.ClockRate:=ClockRate;
+  end
+ else
+  begin
+   {Check Clock Rate}
+   if ClockRate <> 0 then
+    begin
+     {Check Clock Rate}
+     if (ClockRate < SPI.Properties.MinClock) or (ClockRate > SPI.Properties.MaxClock) then Exit;
 
- {$IF DEFINED(BCM2709_DEBUG) or DEFINED(SPI_DEBUG)}
- if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2709:  Divider=' + IntToStr(Divider));
- {$ENDIF}
- 
- {Memory Barrier}
- DataMemoryBarrier; {Before the First Write}
-
- {Set Clock Divider} 
- PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CLK:=(Divider and BCM2836_SPI0_CLK_CDIV);
- 
- {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
- {Update Properties}
- SPI.ClockRate:=ClockRate;
- SPI.Properties.ClockRate:=ClockRate;
+     {Get Divider}
+     Divider:=PBCM2709SPI0Device(SPI).CoreClock div ClockRate;
+     if (Divider and 1) <> 0 then Inc(Divider);
+    end
+   else
+    begin
+     {Reset Divider}
+     Divider:=0;
+    end;
+   
+   {Update Properties}
+   SPI.ChipSelects[ChipSelect].Divider:=Divider;
+   SPI.ChipSelects[ChipSelect].ClockRate:=ClockRate;
+  end;  
  
  {Return Result}
  Result:=ERROR_SUCCESS; 
@@ -2235,7 +2511,7 @@ begin
   end
  else
   begin
-   SPI.ChipSelects[ChipSelect].Polarity:=SelectPolarity;
+   SPI.ChipSelects[ChipSelect].SelectPolarity:=SelectPolarity;
   end;  
  
  {Return Result}
@@ -2338,20 +2614,63 @@ begin
    {Read remaining FIFO}
    BCM2709SPI0ReadFIFO(SPI);
   
-   {Reset Control (Active/Interrupt/DMA/Clear)}
-   Control:=Control and not(BCM2836_SPI0_CS_INTR or BCM2836_SPI0_CS_INTD or BCM2836_SPI0_CS_DMAEN or BCM2836_SPI0_CS_TA);
+   {Reset Control (Active/Interrupt/Deassert/DMA/Clear)}
+   Control:=Control and not(BCM2836_SPI0_CS_INTR or BCM2836_SPI0_CS_INTD or BCM2836_SPI0_CS_ADCS or BCM2836_SPI0_CS_DMAEN or BCM2836_SPI0_CS_TA);
    Control:=Control or (BCM2836_SPI0_CS_CLEAR_RX or BCM2836_SPI0_CS_CLEAR_TX);
    
    {Set Control and Status}
-   PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CS:=Control;
+   PBCM2836SPI0Registers(SPI.Address).CS:=Control;
    
    {Set Data Length}
-   PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).DLEN:=0;
+   PBCM2836SPI0Registers(SPI.Address).DLEN:=0;
   
    {Signal Semaphore}
    SemaphoreSignal(SPI.SPI.Wait);
   end;
  
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+procedure BCM2709SPI0DMARequestCompleted(Request:PDMARequest); 
+{DMA Request completion callback for SPI0}
+var
+ Control:LongWord;
+ SPI:PBCM2709SPI0Device;
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ {Get SPI}
+ SPI:=PBCM2709SPI0Device(Request.DriverData);
+ if SPI = nil then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Control and Status}
+ Control:=PBCM2836SPI0Registers(SPI.Address).CS;
+ 
+ {Check Done}
+ if (Control and BCM2836_SPI0_CS_DONE) <> 0 then
+  begin
+   {Reset Control (Active/Interrupt/Deassert/DMA/Clear)}
+   Control:=Control and not(BCM2836_SPI0_CS_INTR or BCM2836_SPI0_CS_INTD or BCM2836_SPI0_CS_ADCS or BCM2836_SPI0_CS_DMAEN or BCM2836_SPI0_CS_TA);
+   Control:=Control or (BCM2836_SPI0_CS_CLEAR_RX or BCM2836_SPI0_CS_CLEAR_TX);
+   
+   {Set Control and Status}
+   PBCM2836SPI0Registers(SPI.Address).CS:=Control;
+   
+   {Set Data Length}
+   PBCM2836SPI0Registers(SPI.Address).DLEN:=0;
+  
+   {Signal Semaphore}
+   SemaphoreSignal(SPI.SPI.Wait);
+  end;
+  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
 end;
@@ -3625,7 +3944,7 @@ begin
      {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
      if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Allocated channel (Channel=' + IntToStr(Channel) + ')');
      {$ENDIF}
-      
+     
      {Check Free Channel} 
      if Channel <> LongWord(INVALID_HANDLE_VALUE) then 
       begin
@@ -5335,7 +5654,7 @@ begin
  if GPIO = nil then Exit;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
- if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO  Input Wait (Pin=' + GPIOPinToString(Pin) + ' Trigger=' + GPIOTriggerToString(Trigger) + ' Timeout=' + IntToStr(Timeout) + ')');
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Input Wait (Pin=' + GPIOPinToString(Pin) + ' Trigger=' + GPIOTriggerToString(Trigger) + ' Timeout=' + IntToStr(Timeout) + ')');
  {$ENDIF}
  
  {Check Pin}
@@ -7683,7 +8002,673 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{BCM2709 Timer Functions}
+{BCM2709 ARM Timer Functions}
+function BCM2709ARMTimerStart(Timer:PTimerDevice):LongWord;
+{Implementation of TimerDeviceStart API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceStart instead}
+var
+ Control:LongWord;
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Start');
+ {$ENDIF}
+ 
+ {Update Core Clock}
+ PBCM2709ARMTimer(Timer).CoreClock:=ClockGetRate(CLOCK_ID_CORE);
+ if PBCM2709ARMTimer(Timer).CoreClock = 0 then PBCM2709ARMTimer(Timer).CoreClock:=BCM2709_ARM_TIMER_CORE_CLOCK;
+ 
+ {Update Properties}
+ Timer.Properties.MinRate:=PBCM2709ARMTimer(Timer).CoreClock div (BCM2709_ARM_TIMER_MAX_DIVIDER + 1);
+ Timer.Properties.MaxRate:=PBCM2709ARMTimer(Timer).CoreClock div (BCM2709_ARM_TIMER_MIN_DIVIDER + 1);
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709:  CoreClock=' + IntToStr(PBCM2709ARMTimer(Timer).CoreClock) + ' MinRate=' + IntToStr(Timer.Properties.MinRate) + ' MaxRate=' + IntToStr(Timer.Properties.MaxRate));
+ {$ENDIF}
+ 
+ {Check Rate}
+ if (Timer.Rate <> 0) and ((Timer.Rate < Timer.Properties.MinRate) or (Timer.Rate > Timer.Properties.MaxRate)) then Exit;
+ if Timer.Rate = 0 then Timer.Rate:=BCM2709_ARM_TIMER_DEFAULT_RATE;
+ 
+ {Check Interval}
+ if (Timer.Interval <> 0) and ((Timer.Interval < Timer.Properties.MinInterval) or (Timer.Interval > Timer.Properties.MaxInterval)) then Exit;
+ if Timer.Interval = 0 then Timer.Interval:=BCM2709_ARM_TIMER_MAX_INTERVAL;
+
+ {Get Divider}
+ Divider:=(PBCM2709ARMTimer(Timer).CoreClock div Timer.Rate) - 1;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709:  Divider=' + IntToStr(Divider));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Set Predivider}
+ PBCM2836ARMTimerRegisters(Timer.Address).Predivider:=Divider;
+ 
+ {Set Interval}
+ PBCM2836ARMTimerRegisters(Timer.Address).Load:=Timer.Interval;
+ 
+ {Get Control}
+ Control:=PBCM2836ARMTimerRegisters(Timer.Address).Control;
+ 
+ {Update Control (Timer Enable / Interrupt Enable / 32 Bit Counter / Prescale None / Counter Disabled)}
+ Control:=Control and not(BCM2836_ARM_TIMER_CONTROL_PRESCALE);
+ Control:=Control or BCM2836_ARM_TIMER_CONTROL_TIMER_ENABLED or BCM2836_ARM_TIMER_CONTROL_INT_ENABLED or BCM2836_ARM_TIMER_CONTROL_32BIT;
+ 
+ {Set Control}
+ PBCM2836ARMTimerRegisters(Timer.Address).Control:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Create Event (Manual Reset)}
+ Timer.Event:=EventCreate(True,False);
+
+ {Request IRQ/FIQ}
+ if BCM2709ARM_TIMER_FIQ_ENABLED then
+  begin
+   RequestFIQ(FIQ_ROUTING,BCM2836_IRQ_ARM_TIMER,TInterruptHandler(BCM2709ARMTimerInterruptHandler),Timer);
+  end
+ else
+  begin 
+   RequestIRQ(IRQ_ROUTING,BCM2836_IRQ_ARM_TIMER,TInterruptHandler(BCM2709ARMTimerInterruptHandler),Timer);
+  end; 
+ 
+ {Update Properties}
+ {Nothing}
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;  
+end;
+
+{==============================================================================}
+
+function BCM2709ARMTimerStop(Timer:PTimerDevice):LongWord;
+{Implementation of TimerDeviceStop API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceStop instead}
+var
+ Control:LongWord;
+ Waiter:PTimerWaiter;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Stop');
+ {$ENDIF}
+ 
+ {Release IRQ/FIQ}
+ if BCM2709ARM_TIMER_FIQ_ENABLED then
+  begin
+   ReleaseFIQ(FIQ_ROUTING,BCM2836_IRQ_ARM_TIMER,TInterruptHandler(BCM2709ARMTimerInterruptHandler),Timer);
+  end
+ else
+  begin 
+   ReleaseIRQ(IRQ_ROUTING,BCM2836_IRQ_ARM_TIMER,TInterruptHandler(BCM2709ARMTimerInterruptHandler),Timer);
+  end; 
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Control}
+ Control:=PBCM2836ARMTimerRegisters(Timer.Address).Control;
+ 
+ {Update Control}
+ Control:=Control and not(BCM2836_ARM_TIMER_CONTROL_TIMER_ENABLED or BCM2836_ARM_TIMER_CONTROL_INT_ENABLED);
+ 
+ {Set Control}
+ PBCM2836ARMTimerRegisters(Timer.Address).Control:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+
+ {Release Waiters}
+ if Timer.Waiters <> nil then
+  begin
+   Waiter:=Timer.Waiters;
+   while Waiter <> nil do
+    begin
+     {Deregister Waiter}
+     TimerDeviceDeregisterWaiter(Timer,Waiter);
+     
+     {Destroy Waiter}
+     TimerDeviceDestroyWaiter(Timer,Waiter);
+     
+     Waiter:=Timer.Waiters;
+    end;
+  end; 
+ 
+ {Destroy Event}
+ EventDestroy(Timer.Event);
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;  
+end;
+
+{==============================================================================}
+
+function BCM2709ARMTimerRead64(Timer:PTimerDevice):Int64;
+{Implementation of TimerDeviceRead64 API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceRead64 instead}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Read64');
+ {$ENDIF}
+ 
+ {Update Statistics}
+ Inc(Timer.ReadCount);
+ 
+ {Read Value}
+ Result:=PBCM2836ARMTimerRegisters(Timer.Address).Value;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+function BCM2709ARMTimerWait(Timer:PTimerDevice):LongWord;
+{Implementation of TimerDeviceWait API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceWait instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Wait');
+ {$ENDIF}
+ 
+ {Check Existing (Wait not allowed with Repeating or Interrupt Event)}
+ Result:=ERROR_IN_USE;
+ if (Timer.Flags and (TIMER_EVENT_FLAG_REPEAT or TIMER_EVENT_FLAG_INTERRUPT)) <> 0 then Exit;
+ 
+ {Check Lock}
+ Result:=ERROR_OPERATION_FAILED;
+ if (MutexOwner(Timer.Lock) <> ThreadGetCurrent) or (MutexCount(Timer.Lock) > 1) then Exit;
+ 
+ {Check Event}
+ if Timer.Event = INVALID_HANDLE_VALUE then
+  begin
+   {Create Event (Manual Reset)}
+   Timer.Event:=EventCreate(True,False);
+   
+   Result:=ERROR_OPERATION_FAILED;
+   if Timer.Event = INVALID_HANDLE_VALUE then Exit;
+  end;
+  
+ {Update Statistics}
+ Inc(Timer.WaitCount);
+ 
+ {Increment Count}
+ Inc(Timer.Count);
+ 
+ {Release the Lock}
+ MutexUnlock(Timer.Lock);
+ 
+ {Wait for Event}
+ if EventWait(Timer.Event) = ERROR_SUCCESS then
+  begin
+   {Return Result}
+   Result:=ERROR_SUCCESS;  
+  end
+ else
+  begin
+   {Acquire the Lock}
+   if MutexLock(Timer.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Decrement Count}
+   Dec(Timer.Count);
+  
+   {Return Result}
+   Result:=ERROR_OPERATION_FAILED;
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2709ARMTimerEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
+{Implementation of TimerDeviceEvent API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceEvent instead}
+var
+ Waiter:PTimerWaiter;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Event (Flags=' + IntToHex(Flags,8) + ')');
+ {$ENDIF}
+ 
+ {Check Flags (Interrupt not allowed without Repeat}
+ if ((Flags and TIMER_EVENT_FLAG_INTERRUPT) <> 0) and ((Flags and TIMER_EVENT_FLAG_REPEAT) = 0) then Exit;
+ 
+ {Check Existing (Only one Event allowed when Repeating or Interrupt}
+ Result:=ERROR_IN_USE;
+ if (Timer.Flags and (TIMER_EVENT_FLAG_REPEAT or TIMER_EVENT_FLAG_INTERRUPT)) <> 0 then Exit;
+ 
+ {Create Waiter}
+ Waiter:=TimerDeviceCreateWaiter(Timer,Callback,Data);
+ if Waiter = nil then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Register Waiter}
+ if TimerDeviceRegisterWaiter(Timer,Waiter) <> ERROR_SUCCESS then
+  begin
+   TimerDeviceDestroyWaiter(Timer,Waiter);
+   
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+  
+ {Update Statistics}
+ Inc(Timer.EventCount);
+ 
+ {Set the Flags}
+ Timer.Flags:=Flags;
+ 
+ {Increment Count}
+ Inc(Timer.Count);
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2709ARMTimerCancel(Timer:PTimerDevice):LongWord;
+{Implementation of TimerDeviceCancel API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceCancel instead}
+var
+ Waiter:PTimerWaiter;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Cancel');
+ {$ENDIF}
+
+ {Check Flags}
+ if (Timer.Flags and TIMER_EVENT_FLAG_REPEAT) = 0 then
+  begin
+   Result:=ERROR_NOT_FOUND;
+   Exit;
+  end;
+ 
+ {Get Waiter}
+ Waiter:=Timer.Waiters;
+ if Waiter <> nil then
+  begin
+   {Deregister Waiter}
+   TimerDeviceDeregisterWaiter(Timer,Waiter);
+ 
+   {Destroy Waiter}
+   TimerDeviceDestroyWaiter(Timer,Waiter);
+ 
+   {Decrement Count}
+   Dec(Timer.Count);
+   
+   {Check Count}
+   if Timer.Count = 0 then
+    begin
+     {Reset the Flags}
+     Timer.Flags:=TIMER_EVENT_FLAG_NONE;
+    end; 
+  end;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2709ARMTimerSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
+{Implementation of TimerDeviceSetRate API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceSetRate instead}
+var
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Set Rate (Rate=' + IntToStr(Rate) + ')');
+ {$ENDIF}
+ 
+ {Check Rate}
+ if (Rate < Timer.Properties.MinRate) or (Rate > Timer.Properties.MaxRate) then Exit;
+ 
+ {Get Divider}
+ Divider:=(PBCM2709ARMTimer(Timer).CoreClock div Rate) - 1;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709:  Divider=' + IntToStr(Divider));
+ {$ENDIF}
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Set Predivider}
+ PBCM2836ARMTimerRegisters(Timer.Address).Predivider:=Divider;
+ 
+ {Update Properties}
+ Timer.Rate:=Rate;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;  
+end;
+
+{==============================================================================}
+
+function BCM2709ARMTimerSetInterval(Timer:PTimerDevice;Interval:LongWord):LongWord;
+{Implementation of TimerDeviceSetInterval API for ARM Timer}
+{Note: Not intended to be called directly by applications, use TimerDeviceSetInterval instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Timer}
+ if Timer = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Set Interval (Interval=' + IntToStr(Interval) + ')');
+ {$ENDIF}
+ 
+ {Check Interval}
+ if (Interval < Timer.Properties.MinInterval) or (Interval > Timer.Properties.MaxInterval) then Exit;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Check Enabled}
+ if (PBCM2836ARMTimerRegisters(Timer.Address).Control and BCM2836_ARM_TIMER_CONTROL_TIMER_ENABLED) = 0 then
+  begin
+   {Set Interval}
+   PBCM2836ARMTimerRegisters(Timer.Address).Load:=Interval;
+  end
+ else
+  begin 
+   {Set Interval}
+   PBCM2836ARMTimerRegisters(Timer.Address).Reload:=Interval;
+  end; 
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Update Properties}
+ Timer.Interval:=Interval;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;  
+end;
+
+{==============================================================================}
+
+procedure BCM2709ARMTimerInterruptHandler(Timer:PTimerDevice);
+{Interrupt handler for ARM Timer}
+{Note: Not intended to be called directly by applications}
+var
+ Flags:LongWord;
+ Waiter:PTimerWaiter;
+begin
+ {}
+ {Check Timer}
+ if Timer = nil then Exit;
+
+ {Update Statistics}
+ Inc(PBCM2709ARMTimer(Timer).InterruptCount);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Clear Interrupt}
+ PBCM2836ARMTimerRegisters(Timer.Address).IRQClear:=1;
+ 
+ {Get Flags}
+ Flags:=Timer.Flags;
+ 
+ {Check Flags}
+ if ((Flags and TIMER_EVENT_FLAG_INTERRUPT) = 0) or ((Flags and TIMER_EVENT_FLAG_REPEAT) = 0) then
+  begin
+   {Send Event}
+   if BCM2709ARM_TIMER_FIQ_ENABLED then
+    begin
+     WorkerScheduleFIQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2709ARMTimerEventTrigger),Timer,nil);
+    end
+   else
+    begin
+     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2709ARMTimerEventTrigger),Timer,nil);
+    end; 
+  end
+ else
+  begin
+   {Call Waiter (Only for Repeating Interrupt events)}
+   Waiter:=Timer.Waiters;
+   if (Waiter <> nil) and Assigned(Waiter.Callback) then
+    begin
+     Waiter.Callback(Waiter.Data);
+    end;
+  end;    
+end;
+
+{==============================================================================}
+
+procedure BCM2709ARMTimerEventTrigger(Timer:PTimerDevice);
+{Event handler for ARM Timer}
+{Note: Not intended to be called directly by applications}
+var
+ Count:LongWord;
+ Flags:LongWord;
+ Next:PTimerWaiter;
+ Waiter:PTimerWaiter;
+ Waiters:PTimerWaiter;
+ Single:TTimerWaiter;
+ Current:PTimerWaiter;
+begin
+ {}
+ {Check Timer}
+ if Timer = nil then Exit;
+
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Timer.Device,'BCM2709: ARM Timer Event Trigger');
+ {$ENDIF}
+
+ {Setup Count}
+ Count:=0;
+
+ {Setup Flags}
+ Flags:=TIMER_EVENT_FLAG_NONE;
+ 
+ {Setup Waiters}
+ Waiters:=nil;
+
+ {Setup Single}
+ FillChar(Single,SizeOf(TTimerWaiter),0);
+
+ {Acquire the Lock}
+ if MutexLock(Timer.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Flags}
+    Flags:=Timer.Flags;
+ 
+    {Check Flags}
+    if (Flags and TIMER_EVENT_FLAG_REPEAT) = 0 then
+     begin
+      {Signal Event}
+      if Timer.Event <> INVALID_HANDLE_VALUE then
+       begin
+        EventPulse(Timer.Event);
+       end;
+ 
+      {Count Waiters}
+      Waiter:=Timer.Waiters;
+      while Waiter <> nil do
+       begin
+        Inc(Count);
+        {Get Next}
+        Waiter:=Waiter.Next;
+       end;
+ 
+      {Check Count}
+      if Count > 0 then
+       begin
+        if Count = 1 then
+         begin
+          {Get Single}
+          Waiter:=Timer.Waiters;
+          if Waiter <> nil then
+           begin
+            Single.Callback:=Waiter.Callback;
+            Single.Data:=Waiter.Data;
+            
+            {Save Next}
+            Next:=Waiter.Next;
+            
+            {Deregister Waiter}
+            TimerDeviceDeregisterWaiter(Timer,Waiter);
+            
+            {Destroy Waiter}
+            TimerDeviceDestroyWaiter(Timer,Waiter);
+            
+            {Get Next}
+            Waiter:=Next;
+           end;
+         end
+        else
+         begin        
+          {Allocate Waiters}
+          Waiters:=GetMem(Count * SizeOf(TTimerWaiter));
+          Current:=Waiters;
+          
+          {Get Waiters}
+          Waiter:=Timer.Waiters;
+          while Waiter <> nil do
+           begin
+            Current.Callback:=Waiter.Callback;
+            Current.Data:=Waiter.Data;
+            Current.Next:=nil;
+            if Waiter.Next <> nil then
+             begin
+              Current.Next:=PTimerWaiter(PtrUInt(Current) + SizeOf(TTimerWaiter));
+              Current:=Current.Next;
+             end;
+            
+            {Save Next}
+            Next:=Waiter.Next;
+            
+            {Deregister Waiter}
+            TimerDeviceDeregisterWaiter(Timer,Waiter);
+            
+            {Destroy Waiter}
+            TimerDeviceDestroyWaiter(Timer,Waiter);
+             
+            {Get Next}
+            Waiter:=Next;
+           end;
+         end;  
+       end;
+    
+      {Reset Flags}
+      Timer.Flags:=TIMER_EVENT_FLAG_NONE;
+      
+      {Reset Count}
+      Timer.Count:=0;
+     end
+    else
+     begin    
+      {Get Single}
+      Waiter:=Timer.Waiters;
+      if Waiter <> nil then
+       begin
+        Single.Callback:=Waiter.Callback;
+        Single.Data:=Waiter.Data;
+       end; 
+     end; 
+   finally
+    {Release the Lock}
+    MutexUnlock(Timer.Lock);
+   end; 
+  end; 
+  
+ {Check Flags}  
+ if (Flags and TIMER_EVENT_FLAG_REPEAT) = 0 then
+  begin
+   if Count > 0 then
+    begin
+     if Count = 1 then
+      begin
+       {Call Waiter}
+       if Assigned(Single.Callback) then
+        begin
+         Single.Callback(Single.Data);
+        end;
+      end
+     else
+      begin  
+       {Get Waiters}
+       Waiter:=Waiters;
+       while Waiter <> nil do
+        begin
+         {Call Waiter}
+         if Assigned(Waiter.Callback) then
+          begin
+           Waiter.Callback(Waiter.Data);
+          end;
+         {Get Next} 
+         Waiter:=Waiter.Next;
+        end;
+       
+       {Free Waiters}
+       FreeMem(Waiters);
+      end; 
+    end; 
+  end
+ else
+  begin
+   {Call Event}
+   if Assigned(Single.Callback) then
+    begin
+     Single.Callback(Single.Data);
+    end;
+  end;  
+end;
+
+{==============================================================================}
+{==============================================================================}
+{BCM2709 Local Timer Functions}
  
 {==============================================================================}
 {==============================================================================}
@@ -7944,10 +8929,12 @@ end;
 function BCM2709FramebufferAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 var
  Size:LongWord;
+ Count:LongWord;
  Response:LongWord;
  Header:PBCM2836MailboxHeader;
  Footer:PBCM2836MailboxFooter;
  Defaults:TFramebufferProperties;
+ Palette:array[0..255] of LongWord;
  Tag:PBCM2836MailboxTagCreateBuffer;
 begin
  {}
@@ -8111,7 +9098,7 @@ begin
      Framebuffer.Size:=Tag.Allocate.Response.Size;
      Framebuffer.Pitch:=Tag.Pitch.Response.Pitch;
      Framebuffer.Depth:=Tag.Depth.Response.Depth;
-     Framebuffer.Order:=Tag.Order.Response.Order;
+     Framebuffer.Order:=Tag.Order.Response.Order; 
      Framebuffer.Mode:=Tag.Mode.Response.Mode;
      Framebuffer.PhysicalWidth:=Tag.Physical.Response.Width;
      Framebuffer.PhysicalHeight:=Tag.Physical.Response.Height;
@@ -8124,6 +9111,71 @@ begin
      Framebuffer.OverscanLeft:=Tag.Overscan.Response.Left;
      Framebuffer.OverscanRight:=Tag.Overscan.Response.Right;
     
+     {Check Depth}
+     if Framebuffer.Depth = FRAMEBUFFER_DEPTH_8 then
+      begin
+       {Create Palette (Grayscale only)}
+       FillChar(Palette,SizeOf(Palette),0);
+       for Count:=0 to 255 do 
+        begin
+         Palette[Count]:=LongWord($FF000000 or ((Count and $FF) shl 16) or ((Count and $FF) shl 8) or (Count and $FF));
+        end;
+       
+       {Set Palette}
+       FramebufferSetPalette(0,256,@Palette,SizeOf(Palette));
+      end;
+    
+     {Get Order}
+     if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then
+      begin
+       Framebuffer.Order:=FRAMEBUFFER_ORDER_BGR;
+      end
+     else
+      begin
+       Framebuffer.Order:=FRAMEBUFFER_ORDER_RGB;
+      end;      
+      
+     {Get Format}
+     case Framebuffer.Depth of
+      FRAMEBUFFER_DEPTH_8:begin
+        {Order not relevant for indexed}
+        Framebuffer.Format:=COLOR_FORMAT_INDEX8;
+       end;
+      FRAMEBUFFER_DEPTH_16:begin
+        if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then
+         begin
+          Framebuffer.Format:=COLOR_FORMAT_RGB16;
+         end
+        else
+         begin
+          Framebuffer.Format:=COLOR_FORMAT_BGR16;
+         end;
+       end;
+      FRAMEBUFFER_DEPTH_24:begin
+        if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then
+         begin
+          Framebuffer.Format:=COLOR_FORMAT_RGB24;
+         end
+        else
+         begin
+          Framebuffer.Format:=COLOR_FORMAT_BGR24;
+         end;
+       end;
+      FRAMEBUFFER_DEPTH_32:begin
+        if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then
+         begin
+          Framebuffer.Format:=COLOR_FORMAT_ARGB32;
+         end
+        else
+         begin
+          Framebuffer.Format:=COLOR_FORMAT_ABGR32;
+         end;
+       end;
+     end;  
+     
+     {Get Rotation}
+     Framebuffer.Rotation:=FRAMEBUFFER_ROTATION_0;
+     
      {Update Statistics}
      Inc(Framebuffer.AllocateCount);
     
@@ -8257,6 +9309,21 @@ begin
  
  Result:=ERROR_SUCCESS; 
 end;
+ 
+{==============================================================================}
+
+function BCM2709FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {Set Backlight}
+ Result:=FramebufferSetBacklight(Brightness);
+end; 
  
 {==============================================================================}
 

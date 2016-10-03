@@ -30,6 +30,7 @@ References
 ==========
  
   MCP23008 - http://ww1.microchip.com/downloads/en/DeviceDoc/21919e.pdf
+  MCP23016 - http://ww1.microchip.com/downloads/en/DeviceDoc/20090C.pdf
   MCP23017 - http://ww1.microchip.com/downloads/en/DeviceDoc/21952b.pdf
  
 Microchip MCP230XX
@@ -179,6 +180,10 @@ implementation
 {==============================================================================}
 {MCP230XX Functions}
 function MCP23008GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
+{Create, register and start a new MCP23008 GPIO device connected to the specified I2C device}
+{I2C: The I2C device this MCP23008 is connected to}
+{Address: The I2C address for this MCP23008}
+{Return: Pointer to the new GPIO device or nil on failure}
 var
  Status:LongWord;
  
@@ -252,11 +257,20 @@ begin
      else 
       begin
        if GPIO_LOG_ENABLED then GPIOLogError(nil,'MCP230XX: Failed to start new GPIO device: ' + ErrorToString(Status));
+       
+       {Deregister GPIO}
+       GPIODeviceDeregister(@MCP230XXGPIO.GPIO);
+       
+       {Destroy GPIO}
+       GPIODeviceDestroy(@MCP230XXGPIO.GPIO);
       end;
     end
    else
     begin
      if GPIO_LOG_ENABLED then GPIOLogError(nil,'MCP230XX: Failed to register new GPIO device: ' + ErrorToString(Status));
+     
+     {Destroy GPIO}
+     GPIODeviceDestroy(@MCP230XXGPIO.GPIO);
     end;
   end
  else 
@@ -268,6 +282,10 @@ end;
 {==============================================================================}
 
 function MCP23017GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
+{Create, register and start a new MCP23017 GPIO device connected to the specified I2C device}
+{I2C: The I2C device this MCP23017 is connected to}
+{Address: The I2C address for this MCP23017}
+{Return: Pointer to the new GPIO device or nil on failure}
 var
  Status:LongWord;
  
@@ -341,11 +359,20 @@ begin
      else 
       begin
        if GPIO_LOG_ENABLED then GPIOLogError(nil,'MCP230XX: Failed to start new GPIO device: ' + ErrorToString(Status));
+       
+       {Deregister GPIO}
+       GPIODeviceDeregister(@MCP230XXGPIO.GPIO);
+       
+       {Destroy GPIO}
+       GPIODeviceDestroy(@MCP230XXGPIO.GPIO);
       end;
     end
    else
     begin
      if GPIO_LOG_ENABLED then GPIOLogError(nil,'MCP230XX: Failed to register new GPIO device: ' + ErrorToString(Status));
+     
+     {Destroy GPIO}
+     GPIODeviceDestroy(@MCP230XXGPIO.GPIO);
     end;
   end
  else 
@@ -357,6 +384,9 @@ end;
 {==============================================================================}
  
 function MCP230XXGPIODestroy(GPIO:PGPIODevice):LongWord;
+{Stop, deregister and destroy an MCP230XX GPIO device created by this driver}
+{GPIO: The GPIO device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -398,6 +428,8 @@ end;
 {==============================================================================}
 {MCP230XX GPIO Functions}
 function MCP230XXGPIOStart(GPIO:PGPIODevice):LongWord; 
+{Implementation of GPIODeviceStart API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceStart instead}
 var
  Count:LongWord;
 begin
@@ -477,6 +509,8 @@ end;
 {==============================================================================}
 
 function MCP230XXGPIOStop(GPIO:PGPIODevice):LongWord; 
+{Implementation of GPIODeviceStop API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceStop instead}
 var
  Count:LongWord;
  Event:PGPIOEvent;
@@ -525,6 +559,9 @@ end;
 {==============================================================================}
 
 function MCP230XXGPIORead(GPIO:PGPIODevice;Reg:LongWord):LongWord;
+{Implementation of GPIODeviceRead API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceRead instead}
+
 {Note: Will read only a single register byte} 
 var
  Value:Byte;
@@ -562,6 +599,9 @@ end;
 {==============================================================================}
 
 procedure MCP230XXGPIOWrite(GPIO:PGPIODevice;Reg,Value:LongWord);
+{Implementation of GPIODeviceWrite API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceWrite instead}
+
 {Note: Will write only a single register byte} 
 var
  Count:LongWord;
@@ -593,6 +633,8 @@ end;
 {==============================================================================}
  
 function MCP230XXGPIOInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Implementation of GPIODeviceInputGet API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceInputGet instead}
 var
  Reg:Byte;
  Shift:Byte;
@@ -632,6 +674,8 @@ end;
 {==============================================================================}
  
 function MCP230XXGPIOOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+{Implementation of GPIODeviceOutputSet API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceOutputSet instead}
 var
  Reg:Byte;
  Shift:Byte;
@@ -681,6 +725,8 @@ end;
 {==============================================================================}
 
 function MCP230XXGPIOPullGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Implementation of GPIODevicePullGet API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODevicePullGet instead}
 var
  Reg:Byte;
  Shift:Byte;
@@ -709,6 +755,8 @@ end;
 {==============================================================================}
 
 function MCP230XXGPIOPullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+{Implementation of GPIODevicePullSelect API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODevicePullSelect instead}
 var
  Reg:Byte;
  Shift:Byte;
@@ -755,6 +803,8 @@ end;
 {==============================================================================}
 
 function MCP230XXGPIOFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Implementation of GPIODeviceFunctionGet API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceFunctionGet instead}
 var
  Reg:Byte;
  Shift:Byte;
@@ -793,6 +843,8 @@ end;
 {==============================================================================}
 
 function MCP230XXGPIOFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+{Implementation of GPIODeviceFunctionSelect API for MCP230XX}
+{Note: Not intended to be called directly by applications, use GPIODeviceFunctionSelect instead}
 var
  Reg:Byte;
  Shift:Byte;

@@ -390,15 +390,18 @@ ULTIBO_UNITS=globalconfig \
 	     keymap \
 	     keyboard \
 	     mouse \
+	     touch \
 	     ataoe \
 	     atapi \
 	     scsi \
+	     codec \
 	     audio \
 	     video \
 	     mpeg \
 	     dvb \
 	     dab \
 	     dfu \
+	     tftframebuffer \
 	     vc4 \
 	     gc880 \
 	     gc2000 \
@@ -487,7 +490,13 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    ds1307 \
 		    mcp230xx \
 		    hd44780 \
-		    af16x2lcd
+		    af16x2lcd \
+		    ili9340 \
+		    hx8357d \
+		    stmpe \
+		    rpift5406 \
+		    pitft28 \
+		    pitft35
 ULTIBO_KEYMAP_UNITS=keymap_us \
 		    keymap_uk \
 		    keymap_de \

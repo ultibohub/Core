@@ -290,11 +290,20 @@ begin
      else 
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'HD44780: Failed to open new console device: ' + ErrorToString(Status));
+     
+       {Deregister Console}
+       ConsoleDeviceDeregister(@HD44780Console.Console);
+       
+       {Destroy Console}
+       ConsoleDeviceDestroy(@HD44780Console.Console);
       end;
     end
    else 
     begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'HD44780: Failed to register new console device: ' + ErrorToString(Status));
+     
+     {Destroy Console}
+     ConsoleDeviceDestroy(@HD44780Console.Console);
     end;
   end
  else

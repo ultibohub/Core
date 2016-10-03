@@ -601,82 +601,86 @@ var
  CommandLength:LongWord;
 begin
  {}
- {Update argc}
- argc:=TagCommandCount + 1; {Add one for ParamStr(0)}
-   
- {Update argv}
- argv:=AllocMem(SizeOf(PChar) * (TagCommandCount + 1)); {Add one for ParamStr(0)}
- 
- {Get Kernal Name}
- CommandCount:=0;
- argv[CommandCount]:=KERNEL_NAME;
-   
- {Check Command Line}
- if TagCommandAddress <> nil then
+ {Check argv}
+ if argv = nil then
   begin
-   {Check Command Count}
-   if TagCommandCount > 0 then
+   {Update argc}
+   argc:=TagCommandCount + 1; {Add one for ParamStr(0)}
+     
+   {Update argv}
+   argv:=AllocMem(SizeOf(PChar) * (TagCommandCount + 1)); {Add one for ParamStr(0)}
+   
+   {Get Kernal Name}
+   CommandCount:=0;
+   argv[CommandCount]:=KERNEL_NAME;
+     
+   {Check Command Line}
+   if TagCommandAddress <> nil then
     begin
-     {Get First Command}
-     CommandOffset:=TagCommandAddress;
-     CommandStart:=CommandOffset;
-     CommandLength:=0;
-     while CommandOffset^ <> #0 do
+     {Check Command Count}
+     if TagCommandCount > 0 then
       begin
-       if CommandOffset^ = #32 then
+       {Get First Command}
+       CommandOffset:=TagCommandAddress;
+       CommandStart:=CommandOffset;
+       CommandLength:=0;
+       while CommandOffset^ <> #0 do
         begin
-         {Check Length}
-         if CommandLength > 0 then
+         if CommandOffset^ = #32 then
           begin
-           {Allocate Command}
-           Inc(CommandCount);
-           argv[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+           {Check Length}
+           if CommandLength > 0 then
+            begin
+             {Allocate Command}
+             Inc(CommandCount);
+             argv[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+             
+             {Copy Command}
+             System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
+            end;
+            
+           {Update Offset}
+           Inc(CommandOffset,SizeOf(Char));  
            
-           {Copy Command}
-           System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
-          end;
-          
-         {Update Offset}
-         Inc(CommandOffset,SizeOf(Char));  
-         
-         {Get Next Command}
-         CommandStart:=CommandOffset;
-         CommandLength:=0;
-        end
-       else
+           {Get Next Command}
+           CommandStart:=CommandOffset;
+           CommandLength:=0;
+          end
+         else
+          begin
+           {Update Offset}
+           Inc(CommandOffset,SizeOf(Char));  
+           
+           {Update Length}
+           Inc(CommandLength);
+          end;      
+        end;  
+       
+       {Check Last Command}     
+       if CommandLength > 0 then
         begin
-         {Update Offset}
-         Inc(CommandOffset,SizeOf(Char));  
+         {Allocate Command}
+         Inc(CommandCount);
+         argv[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
          
-         {Update Length}
-         Inc(CommandLength);
-        end;      
+         {Copy Command}
+         System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
+        end;
       end;  
      
-     {Check Last Command}     
-     if CommandLength > 0 then
+     {Check Command Size}
+     if TagCommandSize > 0 then
       begin
-       {Allocate Command}
-       Inc(CommandCount);
-       argv[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+       {Update cmdline}
+       cmdline:=AllocMem(TagCommandSize);
        
-       {Copy Command}
-       System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
-      end;
-    end;  
-   
-   {Check Command Size}
-   if TagCommandSize > 0 then
-    begin
-     {Update cmdline}
-     cmdline:=AllocMem(TagCommandSize);
+       {Copy Command Line}
+       System.Move(TagCommandAddress^,cmdline^,TagCommandSize);
+      end; 
      
-     {Copy Command Line}
-     System.Move(TagCommandAddress^,cmdline^,TagCommandSize);
+     {Process Command Line}
+      {No currently supported ARM command line options}
     end; 
-   
-   {Process Command Line}
-    {No currently supported ARM command line options}
   end; 
 end;
 
@@ -691,74 +695,78 @@ var
  CommandLength:LongWord;
 begin
  {}
- {Check String Count}
- if ENVIRONMENT_STRING_COUNT < TagCommandCount then
+ {Check envp}
+ if envp = nil then
   begin
-   ENVIRONMENT_STRING_COUNT:=TagCommandCount;
-  end;
-  
- {Update envp}
- envp:=AllocMem(SizeOf(PChar) * (ENVIRONMENT_STRING_COUNT + 1)); {Add one for terminating null}
-
- {Check Command Line}
- if TagCommandAddress <> nil then
-  begin
-   {Check Command Count}
-   if TagCommandCount > 0 then
+   {Check String Count}
+   if ENVIRONMENT_STRING_COUNT < TagCommandCount then
     begin
-     {Get First Command}
-     CommandOffset:=TagCommandAddress;
-     CommandStart:=CommandOffset;
-     CommandLength:=0;
-     CommandCount:=0;
-     while CommandOffset^ <> #0 do
+     ENVIRONMENT_STRING_COUNT:=TagCommandCount;
+    end;
+    
+   {Update envp}
+   envp:=AllocMem(SizeOf(PChar) * (ENVIRONMENT_STRING_COUNT + 1)); {Add one for terminating null}
+   
+   {Check Command Line}
+   if TagCommandAddress <> nil then
+    begin
+     {Check Command Count}
+     if TagCommandCount > 0 then
       begin
-       if CommandOffset^ = #32 then
+       {Get First Command}
+       CommandOffset:=TagCommandAddress;
+       CommandStart:=CommandOffset;
+       CommandLength:=0;
+       CommandCount:=0;
+       while CommandOffset^ <> #0 do
         begin
-         {Check Length}
-         if CommandLength > 0 then
+         if CommandOffset^ = #32 then
           begin
-           {Allocate Command}
-           envp[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+           {Check Length}
+           if CommandLength > 0 then
+            begin
+             {Allocate Command}
+             envp[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+             
+             {Copy Command}
+             System.Move(CommandStart^,envp[CommandCount]^,CommandLength);
+             
+             {Update Count}
+             Inc(CommandCount);
+            end;
+            
+           {Update Offset}
+           Inc(CommandOffset,SizeOf(Char));  
            
-           {Copy Command}
-           System.Move(CommandStart^,envp[CommandCount]^,CommandLength);
+           {Get Next Command}
+           CommandStart:=CommandOffset;
+           CommandLength:=0;
+          end
+         else
+          begin
+           {Update Offset}
+           Inc(CommandOffset,SizeOf(Char));  
            
-           {Update Count}
-           Inc(CommandCount);
-          end;
-          
-         {Update Offset}
-         Inc(CommandOffset,SizeOf(Char));  
-         
-         {Get Next Command}
-         CommandStart:=CommandOffset;
-         CommandLength:=0;
-        end
-       else
+           {Update Length}
+           Inc(CommandLength);
+          end;      
+        end;  
+       
+       {Check Last Command}     
+       if CommandLength > 0 then
         begin
-         {Update Offset}
-         Inc(CommandOffset,SizeOf(Char));  
+         {Allocate Command}
+         envp[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
          
-         {Update Length}
-         Inc(CommandLength);
-        end;      
+         {Copy Command}
+         System.Move(CommandStart^,envp[CommandCount]^,CommandLength);
+        end;
       end;  
      
-     {Check Last Command}     
-     if CommandLength > 0 then
-      begin
-       {Allocate Command}
-       envp[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
-       
-       {Copy Command}
-       System.Move(CommandStart^,envp[CommandCount]^,CommandLength);
-      end;
-    end;  
-   
-   {Process Environment}
-    {No currently supported ARM environment options}
-  end; 
+     {Process Environment}
+      {No currently supported ARM environment options}
+    end; 
+  end;
 end;
 
 {==============================================================================}
@@ -990,9 +998,10 @@ asm
  and r1, r1, #ARM_I_BIT | ARM_F_BIT
  
 .LCheckIRQ:
- //To Do //Critical //This will not be correct, compare will not work if more than one bit is set ? //Maybe test ? //Or and r0 with ARM_I_BIT into r1/r2
+ //Extract the supplied IRQ bit
+ and r2, r0, #ARM_I_BIT
  //Check if the supplied IRQ bit is set
- cmp r0, #ARM_I_BIT
+ cmp r2, #ARM_I_BIT
  //If not set then enable IRQ
  bne .LEnableIRQ
  //Otherwise disable IRQ
@@ -1005,9 +1014,10 @@ asm
  cpsie i 
  
 .LCheckFIQ:
-//To Do //Critical //This will not be correct, compare will not work if more than one bit is set ? //Maybe test ? //Or and r0 with ARM_F_BIT into r1/r2
+ //Extract the supplied FIQ bit
+ and r2, r0, #ARM_F_BIT
  //Check if the supplied FIQ bit is set
- cmp r0, #ARM_F_BIT
+ cmp r2, #ARM_F_BIT
  //If not set then enable FIQ
  bne .LEnableFIQ
  //Otherwise disable FIQ

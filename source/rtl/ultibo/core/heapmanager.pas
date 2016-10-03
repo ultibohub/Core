@@ -416,7 +416,7 @@ function AddFreeBlock(Block:PHeapBlock):Boolean;
 function RemoveFreeBlock(Block:PHeapBlock):Boolean;
 
 function GetUsedBlock(Address:Pointer):PHeapBlock;
-function CheckUsedBlock(Address:Pointer):Boolean;
+function CheckUsedBlock(Address:Pointer):Boolean; inline;
 function AddUsedBlock(Block:PHeapBlock):Boolean;
 function RemoveUsedBlock(Block:PHeapBlock):Boolean;
 
@@ -2376,7 +2376,7 @@ begin
   
   {Determine Size}
   AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
- 
+  
   {Get Free Block}
   Block:=GetFreeFIQBlock(AllocSize,Affinity);
   if Block = nil then
@@ -5632,7 +5632,7 @@ end;
 
 {==============================================================================}
 
-function CheckUsedBlock(Address:Pointer):Boolean;
+function CheckUsedBlock(Address:Pointer):Boolean; inline;
 {Check a used block by address}
 {Address has already been normalized to include the Heap Block}
 {Caller must hold the heap lock}

@@ -46,7 +46,7 @@ unit Audio;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Codec,SysUtils;
 
 //To Do //Add PCM/I2S, MPEG etc //No, they should include audio if required
 
@@ -62,23 +62,17 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 const
  {Audio specific constants}
- AUDIO_DEVICE_NAME_PREFIX = 'Audio';  {Name prefix for Audio Devices}
+ AUDIO_NAME_PREFIX = 'Audio';  {Name prefix for Audio Devices}
 
  {Audio Device Types}
- AUDIO_DEVICE_TYPE_NONE      = 0;
+ AUDIO_TYPE_NONE      = 0;
  
  {Audio Device States}
- AUDIO_DEVICE_STATE_DISABLED = 0;
- AUDIO_DEVICE_STATE_ENABLED  = 1;
+ AUDIO_STATE_DISABLED = 0;
+ AUDIO_STATE_ENABLED  = 1;
  
  {Audio Device Flags}
- AUDIO_DEVICE_FLAG_NONE      = $00000000;
- 
- {Audio Codec Types}
- AUDIO_CODEC_TYPE_NONE      = 0;
- 
- {Audio Codec Flags}
- AUDIO_CODEC_FLAG_NONE      = $00000000;
+ AUDIO_FLAG_NONE      = $00000000;
  
  {Audio logging}
  AUDIO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Audio debugging messages}
@@ -97,34 +91,34 @@ var
 type
  {Audio specific types}
 
- {Audio Device Properties}
- PAudioDeviceProperties = ^TAudioDeviceProperties;
- TAudioDeviceProperties = record
-  Flags:LongWord;        {Device flags (eg AUDIO_DEVICE_FLAG_MODE)}
+ {Audio Properties}
+ PAudioProperties = ^TAudioProperties;
+ TAudioProperties = record
+  Flags:LongWord;        {Device flags (eg AUDIO_FLAG_????)}
   //To do
  end;
  
  {Audio Device}
  PAudioDevice = ^TAudioDevice;
  
- {Audio Device Enumeration Callback}
- TAudioDeviceEnumerate = function(Audio:PAudioDevice;Data:Pointer):LongWord;
- {Audio Device Notification Callback}
- TAudioDeviceNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ {Audio Enumeration Callback}
+ TAudioEnumerate = function(Audio:PAudioDevice;Data:Pointer):LongWord;
+ {Audio Notification Callback}
+ TAudioNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
  
  {Audio Device Methods}
  //To do
  
- TAudioDeviceGetProperties = function(Audio:PAudioDevice;Properties:PAudioDeviceProperties):LongWord;
+ TAudioDeviceProperties = function(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
  
  TAudioDevice = record
   {Device Properties}
   Device:TDevice;                                 {The Device entry for this Audio device}
   {Audio Properties}
   AudioId:LongWord;                               {Unique Id of this Audio device in the Audio device table}
-  AudioState:LongWord;                            {Audio dveice state (eg AUDIO_DEVICE_STATE_ENABLED)}
+  AudioState:LongWord;                            {Audio dveice state (eg AUDIO_STATE_ENABLED)}
   //To Do
-  DeviceGetProperties:TAudioDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing the standard Audio device interface (Or nil if the default method is suitable)}
+  DeviceProperties:TAudioDeviceProperties;        {A Device specific DeviceProperties method implementing the standard Audio device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   //To Do
   {Driver Properties}
@@ -136,34 +130,6 @@ type
   Next:PAudioDevice;                              {Next entry in Audio device table}
  end; 
   
-  
- {Audio Codec Properties}
- PAudioCodecProperties = ^TAudioCodecProperties;
- TAudioCodecProperties = record
-  Flags:LongWord;        {Device flags (eg AUDIO_CODEC_FLAG_MODE)}
-  //To do
- end;
-  
- {Audio Codec}
- PAudioCodec = ^TAudioCodec;
- 
- {Audio Codec Enumeration Callback}
- TAudioCodecEnumerate = function(Audio:PAudioDevice;Data:Pointer):LongWord;
- {Audio Codec Notification Callback}
- //TAudioCodecNotification = function(Codec:PCodec;Data:Pointer;Notification:LongWord):LongWord; //To Do
- 
- {Audio Codec Methods}
- //To do
- 
- TAudioCodec = record
-  {Codec Properties}
-  //To do
-  Properties:TAudioCodecProperties;              {Codec properties}
-  {Internal Properties}                                                                        
-  Prev:PAudioCodec;                              {Previous entry in Audio codec table}
-  Next:PAudioCodec;                              {Next entry in Audio codec table}
- end; 
-  
 {==============================================================================}
 {var}
  {Audio specific variables}
@@ -173,10 +139,10 @@ type
 procedure AudioInit;
 
 {==============================================================================}
-{Audio Device Functions}
+{Audio Functions}
 //To Do
 
-function AudioDeviceProperties(Audio:PAudioDevice;Properties:PAudioDeviceProperties):LongWord;
+function AudioDeviceProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
   
 function AudioDeviceCreate:PAudioDevice;
 function AudioDeviceCreateEx(Size:LongWord):PAudioDevice;
@@ -188,13 +154,9 @@ function AudioDeviceDeregister(Audio:PAudioDevice):LongWord;
 function AudioDeviceFind(AudioId:LongWord):PAudioDevice;
 function AudioDeviceFindByName(const Name:String):PAudioDevice; inline;
 function AudioDeviceFindByDescription(const Description:String):PAudioDevice; inline;
-function AudioDeviceEnumerate(Callback:TAudioDeviceEnumerate;Data:Pointer):LongWord;
+function AudioDeviceEnumerate(Callback:TAudioEnumerate;Data:Pointer):LongWord;
  
-function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioDeviceNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
-
-{==============================================================================}
-{Audio Codec Functions}
-//To Do
+function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
 {RTL Audio Functions}
@@ -229,12 +191,6 @@ var
  AudioDeviceTableCount:LongWord;
 
  AudioDeviceDefault:PAudioDevice;
-
- AudioCodecTable:PAudioCodec;
- AudioCodecTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
- AudioCodecTableCount:LongWord;
-
- AudioCodecDefault:PAudioCodec;
  
 {==============================================================================}
 {==============================================================================}
@@ -260,16 +216,6 @@ begin
    if AUDIO_LOG_ENABLED then AudioLogError(nil,'Failed to create Audio device table lock');
   end;
  AudioDeviceDefault:=nil;
-
- {Initialize Audio Codec Table}
- AudioCodecTable:=nil;
- AudioCodecTableLock:=CriticalSectionCreate; 
- AudioCodecTableCount:=0;
- if AudioCodecTableLock = INVALID_HANDLE_VALUE then
-  begin
-   if AUDIO_LOG_ENABLED then AudioLogError(nil,'Failed to create Audio codec table lock');
-  end;
- AudioCodecDefault:=nil;
  
  {Register Platform Audio Handlers}
  //To Do
@@ -284,7 +230,11 @@ end;
 
 {==============================================================================}
  
-function AudioDeviceProperties(Audio:PAudioDevice;Properties:PAudioDeviceProperties):LongWord;
+function AudioDeviceProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
+{Get the properties for the specified Audio device}
+{Audio: The Audio device to get properties from}
+{Properties: Pointer to a TAudioProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -292,8 +242,40 @@ begin
  {Check Properties}
  if Properties = nil then Exit;
  
- //To Do
+ {Check Audio}
+ if Audio = nil then Exit;
+ if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
+ {$IFDEF AUDIO_DEBUG}
+ if AUDIO_LOG_ENABLED then AudioLogDebug(Audio,'Audio Device Properties');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {Result:=ERROR_NOT_SUPPORTED;}
+ {if Audio.AudioState <> AUDIO_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if MutexLock(Audio.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(Audio.DeviceProperties) then
+    begin
+     {Call Device Properites}
+     Result:=Audio.DeviceProperties(Audio,Properties);
+    end
+   else
+    begin
+     {Get Properties}
+     System.Move(Audio.Properties,Properties^,SizeOf(TAudioProperties));
+       
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+    end;  
+    
+   MutexUnlock(Audio.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
 end;
 
 {==============================================================================}
@@ -325,15 +307,15 @@ begin
  
  {Update Device}
  Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
- Result.Device.DeviceType:=AUDIO_DEVICE_TYPE_NONE;
- Result.Device.DeviceFlags:=AUDIO_DEVICE_FLAG_NONE;
+ Result.Device.DeviceType:=AUDIO_TYPE_NONE;
+ Result.Device.DeviceFlags:=AUDIO_FLAG_NONE;
  Result.Device.DeviceData:=nil;
 
  {Update Audio}
  Result.AudioId:=DEVICE_ID_ANY;
- Result.AudioState:=AUDIO_DEVICE_STATE_DISABLED;
+ Result.AudioState:=AUDIO_STATE_DISABLED;
  //To Do
- Result.DeviceGetProperties:=nil;
+ Result.DeviceProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}
@@ -391,6 +373,9 @@ begin
  if Audio.AudioId <> DEVICE_ID_ANY then Exit;
  if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
+ {Check Interfaces}
+ //To Do
+ 
  {Check Audio}
  Result:=ERROR_ALREADY_EXISTS;
  if AudioDeviceCheck(Audio) = Audio then Exit;
@@ -411,7 +396,7 @@ begin
     Audio.AudioId:=AudioId;
     
     {Update Device}
-    Audio.Device.DeviceName:=AUDIO_DEVICE_NAME_PREFIX + IntToStr(Audio.AudioId); 
+    Audio.Device.DeviceName:=AUDIO_NAME_PREFIX + IntToStr(Audio.AudioId); 
     Audio.Device.DeviceClass:=DEVICE_CLASS_AUDIO;
     
     {Register Device}
@@ -589,7 +574,7 @@ end;
        
 {==============================================================================}
 
-function AudioDeviceEnumerate(Callback:TAudioDeviceEnumerate;Data:Pointer):LongWord;
+function AudioDeviceEnumerate(Callback:TAudioEnumerate;Data:Pointer):LongWord;
 var
  Audio:PAudioDevice;
 begin
@@ -632,7 +617,7 @@ end;
 
 {==============================================================================}
 
-function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioDeviceNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -650,10 +635,6 @@ begin
    Result:=DeviceNotification(@Audio.Device,DEVICE_CLASS_AUDIO,Callback,Data,Notification,Flags);
   end; 
 end;
-
-{==============================================================================}
-{==============================================================================}
-{Audio Codec Functions}
 
 {==============================================================================}
 {==============================================================================}
@@ -779,7 +760,7 @@ begin
  {Check Audio}
  if Audio <> nil then
   begin
-   WorkBuffer:=WorkBuffer + AUDIO_DEVICE_NAME_PREFIX + IntToStr(Audio.AudioId) + ': ';
+   WorkBuffer:=WorkBuffer + AUDIO_NAME_PREFIX + IntToStr(Audio.AudioId) + ': ';
   end;
 
  {Output Logging}  

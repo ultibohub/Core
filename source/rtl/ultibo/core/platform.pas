@@ -72,18 +72,31 @@ const
  DMA_DATA_FLAG_BULK                = $00000800; {Perform a bulk transfer (If applicable)}
  
  {Page Table Flags}
- PAGE_TABLE_FLAG_NONE          = (1 shl 0);
- PAGE_TABLE_FLAG_NORMAL        = (1 shl 1);
- PAGE_TABLE_FLAG_DEVICE        = (1 shl 2);
- PAGE_TABLE_FLAG_ORDERED       = (1 shl 3);
- PAGE_TABLE_FLAG_SHARED        = (1 shl 4);
- PAGE_TABLE_FLAG_CACHEABLE     = (1 shl 5);
- PAGE_TABLE_FLAG_READONLY      = (1 shl 6);
- PAGE_TABLE_FLAG_READWRITE     = (1 shl 7);
- PAGE_TABLE_FLAG_EXECUTABLE    = (1 shl 8);
- PAGE_TABLE_FLAG_WRITEBACK     = (1 shl 9);
- PAGE_TABLE_FLAG_WRITETHROUGH  = (1 shl 10);
- PAGE_TABLE_FLAG_WRITEALLOCATE = (1 shl 11);
+ PAGE_TABLE_FLAG_NONE          = $00000000;
+ {Reserved 0x00000001 (Previously used incorrectly for PAGE_TABLE_FLAG_NONE)}
+ PAGE_TABLE_FLAG_NORMAL        = $00000002; {Page Table Entry represents Normal memory}
+ PAGE_TABLE_FLAG_DEVICE        = $00000004; {Page Table Entry represents Device memory}
+ PAGE_TABLE_FLAG_ORDERED       = $00000008; {Page Table Entry represents Ordered memory}
+ PAGE_TABLE_FLAG_SHARED        = $00000010; {Page Table Entry represents Shared memory}
+ PAGE_TABLE_FLAG_CACHEABLE     = $00000020; {Page Table Entry represents Cacheable memory}
+ PAGE_TABLE_FLAG_READONLY      = $00000040; {Page Table Entry represents Read Only memory}
+ PAGE_TABLE_FLAG_READWRITE     = $00000080; {Page Table Entry represents Read Write memory}
+ PAGE_TABLE_FLAG_EXECUTABLE    = $00000100; {Page Table Entry represents Executable memory}
+ PAGE_TABLE_FLAG_WRITEBACK     = $00000200; {Page Table Entry is Writeback Cacheable memory}
+ PAGE_TABLE_FLAG_WRITETHROUGH  = $00000400; {Page Table Entry is Writethrough Cacheable memory}
+ PAGE_TABLE_FLAG_WRITEALLOCATE = $00000800; {Page Table Entry is Writeallocate Cacheable memory}
+ 
+ {Vector Table Entries}
+ {ARM}
+ VECTOR_TABLE_ENTRY_ARM_RESET     = 0; {ARM Reset Vector}
+ VECTOR_TABLE_ENTRY_ARM_UNDEFINED = 1; {ARM Undefined Vector}
+ VECTOR_TABLE_ENTRY_ARM_SWI       = 2; {ARM Software Interrupt (SWI) Vector}
+ VECTOR_TABLE_ENTRY_ARM_PREFETCH  = 3; {ARM Prefetch Abort Vector}
+ VECTOR_TABLE_ENTRY_ARM_ABORT     = 4; {ARM Data Abort Vector}
+ VECTOR_TABLE_ENTRY_ARM_RESERVED  = 5; {ARM Reserved Vector}
+ VECTOR_TABLE_ENTRY_ARM_IRQ       = 6; {ARM IRQ Vector}
+ VECTOR_TABLE_ENTRY_ARM_FIQ       = 7; {ARM FIQ Vector}
+ {AARCH64}
  
  {Exception Types}
  EXCEPTION_TYPE_DATA_ABORT            = 1;
@@ -184,9 +197,9 @@ type
  end;
  
 type
- {SWI Request}
- PSWIRequest = ^TSWIRequest;
- TSWIRequest = record
+ {System Call Request (SWI)}
+ PSystemCallRequest = ^TSystemCallRequest;
+ TSystemCallRequest = record
   Number:LongWord;
   Param1:LongWord;
   Param2:LongWord;
@@ -223,7 +236,7 @@ type
  end; 
  
 type 
- {Interrupt Entry (IRQ/FIQ/SWI}
+ {Interrupt Entry (IRQ/FIQ}
  PInterruptEntry = ^TInterruptEntry;
  TInterruptEntry = record
   Number:LongWord;
@@ -231,6 +244,16 @@ type
   Handler:procedure(Parameter:Pointer);
   HandlerEx:function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;
   Parameter:Pointer;
+ end;
+
+type 
+ {System Call Entry (SWI)}
+ PSystemCallEntry = ^TSystemCallEntry;
+ TSystemCallEntry = record
+  Number:LongWord;
+  CPUID:LongWord;
+  Handler:procedure(Request:PSystemCallRequest);
+  HandlerEx:function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle;
  end;
  
 type
@@ -285,9 +308,14 @@ type
  TParseEnvironment = procedure;
 
 type
- {Prototype for Interrupt Handlers}
+ {Prototype for Interrupt (IRQ/FIQ) Handlers}
  TInterruptHandler = procedure(Parameter:Pointer);
  TInterruptExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle; 
+
+type
+ {Prototype for System Call (SWI) Handlers}
+ TSystemCallHandler = procedure(Request:PSystemCallRequest);
+ TSystemCallExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
  
 type
  {Prototypes for Thread Yield/Wait/Release/Abandon Handlers}
@@ -342,6 +370,7 @@ type
  TCounterRead64 = function:Int64;
  TCounterWait = function:LongWord;
  TCounterEvent = function(Callback:TCounterCallback;Data:Pointer):LongWord;
+ TCounterCancel = function:LongWord;
  
  TCounterGetRate = function:LongWord;
  TCounterSetRate = function(Rate:LongWord):LongWord;
@@ -392,13 +421,38 @@ type
  TReleaseExFIQ = function(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
  
 type
+ {Prototypes for System Call (Software Interrupt or SWI) Handlers}
+ TSystemCall = procedure(Number:LongWord;Param1,Param2,Param3:PtrUInt);
+
+ TRegisterSystemCall = function(Number:LongWord;Handler:TSystemCallHandler):LongWord;
+ TDeregisterSystemCall = function(Number:LongWord;Handler:TSystemCallHandler):LongWord;
+ TRegisterSystemCallEx = function(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
+ TDeregisterSystemCallEx = function(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
+ 
+type 
+ {Prototypes for Interrupt Entry Handlers}
+ TGetInterruptCount = function:LongWord;
+ TGetInterruptStart = function:LongWord;
+ TGetInterruptEntry = function(Number:LongWord):TInterruptEntry;
+
+type 
+ {Prototypes for Local Interrupt Entry Handlers}
+ TGetLocalInterruptCount = function:LongWord;
+ TGetLocalInterruptStart = function:LongWord;
+ TGetLocalInterruptEntry = function(CPUID,Number:LongWord):TInterruptEntry;
+
+type 
+ {Prototypes for System Call Entry Handlers}
+ TGetSystemCallCount = function:LongWord;
+ TGetSystemCallEntry = function(Number:LongWord):TSystemCallEntry;
+ 
+type
  {Prototypes for System Handlers}
  TSystemRestart = function(Delay:LongWord):LongWord; 
  TSystemShutdown = function(Delay:LongWord):LongWord;
  TSystemGetUptime = function:Int64;
  TSystemGetCommandLine = function:String;
  TSystemGetEnvironment = function:Pointer;
- TSystemCall = procedure(Number:LongWord;Param1,Param2,Param3:PtrUInt);
  
 type
  {Prototypes for CPU Handlers}
@@ -560,6 +614,12 @@ type
  TFramebufferSetPalette = function(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
  TFramebufferTestPalette = function(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
  
+ TFramebufferSetBacklight = function(Brightness:LongWord):LongWord;
+ 
+type 
+ {Prototypes for Touch Handlers}
+ TTouchGetBuffer = function(var Address:LongWord):LongWord;
+ 
 type
  {Prototypes for Cursor Handlers}
  TCursorSetInfo = function(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
@@ -608,10 +668,6 @@ type
  TVirtualGPIOOutputSet = function(Pin,Level:LongWord):LongWord;
  TVirtualGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
  
- {Note: These are to be removed in the next release}
- TVirtualGPIOOutputSetOld = function(Pin:LongWord):LongWord;
- TVirtualGPIOOutputClearOld = function(Pin:LongWord):LongWord; 
- 
 type
  {Prototypes for SPI Handlers}
  TSPIAvailable = function:Boolean;
@@ -626,8 +682,8 @@ type
  TSPIGetMode = function:LongWord;
  TSPISetMode = function(Mode:LongWord):LongWord;
  
- TSPIGetClockRate = function:LongWord;
- TSPISetClockRate = function(ClockRate:LongWord):LongWord;
+ TSPIGetClockRate = function(ChipSelect:Word):LongWord;
+ TSPISetClockRate = function(ChipSelect:Word;ClockRate:LongWord):LongWord;
 
  TSPIGetClockPhase = function:LongWord;
  TSPISetClockPhase = function(ClockPhase:LongWord):LongWord;
@@ -803,7 +859,7 @@ type
  TPageTableGetBase = function:PtrUInt;
  TPageTableGetSize = function:LongWord;
  TPageTableGetEntry = function(Address:PtrUInt):TPageTableEntry;
- TPageTableSetEntry = function(Address:PtrUInt;const PageTableEntry:TPageTableEntry):LongWord;
+ TPageTableSetEntry = function(const Entry:TPageTableEntry):LongWord;
 
  type
  {Prototypes for PageTables Handlers}
@@ -812,10 +868,15 @@ type
  TPageTablesGetCount = function:LongWord;
  TPageTablesGetShift = function:LongWord;
  
+ TPageTablesGetNext = function:PtrUInt;
+ TPageTablesGetUsed = function:LongWord;
+ TPageTablesGetFree = function:LongWord;
+ 
 type
  {Prototypes for VectorTable Handlers} 
  TVectorTableGetBase = function:PtrUInt;
  TVectorTableGetSize = function:LongWord;
+ TVectorTableGetCount = function:LongWord;
  TVectorTableGetEntry = function(Number:LongWord):PtrUInt;
  TVectorTableSetEntry = function(Number:LongWord;Address:PtrUInt):LongWord;
  
@@ -917,6 +978,8 @@ var
  MailboxLock:TPlatformLock;
  ShutdownLock:TPlatformLock;
  InterruptLock:TPlatformLock;
+ PageTableLock:TPlatformLock;
+ VectorTableLock:TPlatformLock;
  
 var
  {Semaphore Variables}
@@ -941,7 +1004,7 @@ var
  {$IFDEF INTERRUPT_DEBUG}
  DispatchInterruptCounter:array of Int64; 
  DispatchFastInterruptCounter:array of Int64; 
- DispatchSoftwareInterruptCounter:array of Int64; 
+ DispatchSystemCallCounter:array of Int64; 
  {$ENDIF}
  
  {$IFDEF EXCEPTION_DEBUG}
@@ -998,6 +1061,7 @@ var
  CounterRead64Handler:TCounterRead64;
  CounterWaitHandler:TCounterWait;
  CounterEventHandler:TCounterEvent;
+ CounterCancelHandler:TCounterCancel;
  
  CounterGetRateHandler:TCounterGetRate;
  CounterSetRateHandler:TCounterSetRate;
@@ -1048,13 +1112,38 @@ var
  ReleaseExFIQHandler:TReleaseExFIQ;
  
 var
+ {System Call (Software Interrupt or SWI) Handlers}
+ SystemCallHandler:TSystemCall;
+ 
+ RegisterSystemCallHandler:TRegisterSystemCall;
+ DeregisterSystemCallHandler:TDeregisterSystemCall;
+ RegisterSystemCallExHandler:TRegisterSystemCallEx;
+ DeregisterSystemCallExHandler:TDeregisterSystemCallEx;
+ 
+var 
+ {Interrupt Entry Handlers}
+ GetInterruptCountHandler:TGetInterruptCount;
+ GetInterruptStartHandler:TGetInterruptStart;
+ GetInterruptEntryHandler:TGetInterruptEntry;
+
+var 
+ {Local Interrupt Entry Handlers}
+ GetLocalInterruptCountHandler:TGetLocalInterruptCount;
+ GetLocalInterruptStartHandler:TGetLocalInterruptStart;
+ GetLocalInterruptEntryHandler:TGetLocalInterruptEntry;
+
+var 
+ {System Call Entry Handlers}
+ GetSystemCallCountHandler:TGetSystemCallCount;
+ GetSystemCallEntryHandler:TGetSystemCallEntry;
+ 
+var
  {System Handlers} 
  SystemRestartHandler:TSystemRestart;
  SystemShutdownHandler:TSystemShutdown;
  SystemGetUptimeHandler:TSystemGetUptime;
  SystemGetCommandLineHandler:TSystemGetCommandLine;
  SystemGetEnvironmentHandler:TSystemGetEnvironment;
- SystemCallHandler:TSystemCall;
  
 var
  {CPU Handlers}
@@ -1216,10 +1305,16 @@ var
  FramebufferSetPaletteHandler:TFramebufferSetPalette;
  FramebufferTestPaletteHandler:TFramebufferTestPalette;
  
+ FramebufferSetBacklightHandler:TFramebufferSetBacklight;
+ 
 var
  {Cursor Handlers}
  CursorSetInfoHandler:TCursorSetInfo;
  CursorSetStateHandler:TCursorSetState;
+ 
+var 
+ {Touch Handlers}
+ TouchGetBufferHandler:TTouchGetBuffer;
  
 var
  {DMA Handlers}
@@ -1263,10 +1358,6 @@ var
  VirtualGPIOInputGetHandler:TVirtualGPIOInputGet;
  VirtualGPIOOutputSetHandler:TVirtualGPIOOutputSet;
  VirtualGPIOFunctionSelectHandler:TVirtualGPIOFunctionSelect;
-
- {Note: These are to be removed in the next release}
- VirtualGPIOOutputSetOldHandler:TVirtualGPIOOutputSetOld;
- VirtualGPIOOutputClearOldHandler:TVirtualGPIOOutputClearOld;
  
 var
  {SPI Handlers}
@@ -1467,10 +1558,15 @@ var
  PageTablesGetCountHandler:TPageTablesGetCount;
  PageTablesGetShiftHandler:TPageTablesGetShift;
  
+ PageTablesGetNextHandler:TPageTablesGetNext;
+ PageTablesGetUsedHandler:TPageTablesGetUsed;
+ PageTablesGetFreeHandler:TPageTablesGetFree;
+ 
 var
  {VectorTable Handlers} 
  VectorTableGetBaseHandler:TVectorTableGetBase;
  VectorTableGetSizeHandler:TVectorTableGetSize;
+ VectorTableGetCountHandler:TVectorTableGetCount;
  VectorTableGetEntryHandler:TVectorTableGetEntry;
  VectorTableSetEntryHandler:TVectorTableSetEntry;
  
@@ -1557,6 +1653,7 @@ function CounterRead:LongWord; inline;
 function CounterRead64:Int64; inline;
 function CounterWait:LongWord; inline;
 function CounterEvent(Callback:TCounterCallback;Data:Pointer):LongWord; inline;
+function CounterCancel:LongWord; inline;
 
 function CounterGetRate:LongWord; inline;
 function CounterSetRate(Rate:LongWord):LongWord; inline;
@@ -1607,6 +1704,32 @@ function RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:
 function ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
 
 {==============================================================================}
+{System Call (Software Interrupt or SWI) Functions}
+procedure SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); inline;
+
+function RegisterSystemCall(Number:LongWord;Handler:TSystemCallHandler):LongWord; inline;
+function DeregisterSystemCall(Number:LongWord;Handler:TSystemCallHandler):LongWord; inline;
+function RegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord; inline;
+function DeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord; inline;
+
+{==============================================================================}
+{Interrupt Entry Functions}
+function GetInterruptCount:LongWord; inline;
+function GetInterruptStart:LongWord; inline;
+function GetInterruptEntry(Number:LongWord):TInterruptEntry; inline;
+
+{==============================================================================}
+{Local Interrupt Entry Functions}
+function GetLocalInterruptCount:LongWord; inline;
+function GetLocalInterruptStart:LongWord; inline;
+function GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; inline;
+
+{==============================================================================}
+{System Call Entry Functions}
+function GetSystemCallCount:LongWord; inline;
+function GetSystemCallEntry(Number:LongWord):TSystemCallEntry; inline;
+
+{==============================================================================}
 {System Functions}
 function SystemRestart(Delay:LongWord):LongWord; inline;
 function SystemShutdown(Delay:LongWord):LongWord; inline;
@@ -1615,8 +1738,6 @@ function SystemShutdown(Delay:LongWord):LongWord; inline;
 function SystemGetUptime:Int64; inline;
 function SystemGetCommandLine:String; inline;
 function SystemGetEnvironment:Pointer; inline;
-
-procedure SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); inline;
 
 {==============================================================================}
 {CPU Functions}
@@ -1787,6 +1908,12 @@ function FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord; inline;
 function FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord; inline;
 function FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord; inline;
 
+function FramebufferSetBacklight(Brightness:LongWord):LongWord; inline;
+
+{==============================================================================}
+{Touch Functions}
+function TouchGetBuffer(var Address:LongWord):LongWord; inline;
+
 {==============================================================================}
 {Cursor Functions}
 function CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord; inline;
@@ -1848,10 +1975,6 @@ function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
 function VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
 function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 
-{Note: These are to be removed in the next release}
-function VirtualGPIOOutputSetOld(Pin:LongWord):LongWord; inline;
-function VirtualGPIOOutputClearOld(Pin:LongWord):LongWord; inline;
-
 {==============================================================================}
 {SPI Functions}
 function SPIAvailable:Boolean; inline;
@@ -1866,8 +1989,8 @@ function SPIWriteRead(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var Coun
 function SPIGetMode:LongWord; inline;
 function SPISetMode(Mode:LongWord):LongWord; inline;
  
-function SPIGetClockRate:LongWord; inline;
-function SPISetClockRate(ClockRate:LongWord):LongWord; inline;
+function SPIGetClockRate(ChipSelect:Word):LongWord; inline;
+function SPISetClockRate(ChipSelect:Word;ClockRate:LongWord):LongWord; inline;
 
 function SPIGetClockPhase:LongWord; inline;
 function SPISetClockPhase(ClockPhase:LongWord):LongWord; inline;
@@ -2020,15 +2143,20 @@ function InterlockedCompareExchange(var Target:LongInt;Source,Compare:LongInt):L
 function PageTableGetBase:PtrUInt; inline;
 function PageTableGetSize:LongWord; inline;
 function PageTableGetEntry(Address:PtrUInt):TPageTableEntry; inline;
-function PageTableSetEntry(Address:PtrUInt;const PageTableEntry:TPageTableEntry):LongWord; inline;
+function PageTableSetEntry(const Entry:TPageTableEntry):LongWord; inline;
 
 function PageTablesGetAddress:PtrUInt; inline;
 function PageTablesGetLength:LongWord; inline;
 function PageTablesGetCount:LongWord; inline;
 function PageTablesGetShift:LongWord; inline;
 
+function PageTablesGetNext:PtrUInt; inline;
+function PageTablesGetUsed:LongWord; inline;
+function PageTablesGetFree:LongWord; inline;
+
 function VectorTableGetBase:PtrUInt; inline;
 function VectorTableGetSize:LongWord; inline;
+function VectorTableGetCount:LongWord; inline;
 function VectorTableGetEntry(Number:LongWord):PtrUInt; inline;
 function VectorTableSetEntry(Number:LongWord;Address:PtrUInt):LongWord; inline;
 
@@ -2099,8 +2227,8 @@ procedure MillisecondDelayEx(Milliseconds:LongWord;Wait:Boolean);
 {==============================================================================}
 {RTL Functions}
 procedure SysRandomize;
-function SysGetTickCount:DWORD;
-function SysGetTickCount64:ULONGLONG;
+function SysGetTickCount:LongWord;
+function SysGetTickCount64:QWord;
 procedure SysGetLocalTime(var SystemTime:TSystemTime);
 function SysGetLocalTimeOffset:Integer;
 
@@ -2167,6 +2295,16 @@ begin
  InterruptLock.Lock:=INVALID_HANDLE_VALUE;
  InterruptLock.AcquireLock:=nil;
  InterruptLock.ReleaseLock:=nil;
+
+ {Initialize Page Table Lock}
+ PageTableLock.Lock:=INVALID_HANDLE_VALUE;
+ PageTableLock.AcquireLock:=nil;
+ PageTableLock.ReleaseLock:=nil;
+
+ {Initialize Vector Table Lock}
+ VectorTableLock.Lock:=INVALID_HANDLE_VALUE;
+ VectorTableLock.AcquireLock:=nil;
+ VectorTableLock.ReleaseLock:=nil;
  
  {Initialize Shutdown Semaphore}
  ShutdownSemaphore.Semaphore:=INVALID_HANDLE_VALUE;
@@ -2732,7 +2870,7 @@ end;
 
 function CounterRead:LongWord; inline;
 {Read the current value of the default counter}
-{Return: The 32 bit current value of the current or 0 on failure}
+{Return: The 32 bit current value of the counter or 0 on failure}
 begin
  {}
  if Assigned(CounterReadHandler) then
@@ -2749,7 +2887,7 @@ end;
 
 function CounterRead64:Int64; inline;
 {Read the current value of the default counter}
-{Return: The 64 bit current value of the current or 0 on failure}
+{Return: The 64 bit current value of the counter or 0 on failure}
 begin
  {}
  if Assigned(CounterRead64Handler) then
@@ -2800,6 +2938,23 @@ end;
 
 {==============================================================================}
 
+function CounterCancel:LongWord; inline;
+{Cancel a previously scheduled event callback function on the default counter}
+{Return: ERROR_SUCCESS if the callback was cancelled successfully or another error code on failure}
+begin
+ {}
+ if Assigned(CounterCancelHandler) then
+  begin
+   Result:=CounterCancelHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
 function CounterGetRate:LongWord; inline;
 {Get the current clock rate in Hz of the default counter}
 {Return: The current clock rate in Hz or 0 on failure}
@@ -2836,8 +2991,10 @@ end;
 {==============================================================================}
 
 function CounterGetInterval:LongWord; inline;
-{Get the current interval in milliseconds of the default counter}
-{Return: The current interval in milliseconds or 0 on failure (or not set)}
+{Get the current interval in ticks of the default counter}
+{Return: The current interval in ticks or 0 on failure (or not set)}
+
+{Note: The tick rate is determined by the clock rate}
 begin
  {}
  if Assigned(CounterGetIntervalHandler) then
@@ -2853,9 +3010,11 @@ end;
 {==============================================================================}
 
 function CounterSetInterval(Interval:LongWord):LongWord; inline;
-{Set the current interval in milliseconds of the default counter}
-{Interval: The interval in milliseconds to set}
+{Set the current interval in ticks of the default counter}
+{Interval: The interval in ticks to set}
 {Return: ERROR_SUCCESS if the interval was set or another error code on failure}
+
+{Note: The tick rate is determined by the clock rate}
 begin
  {}
  if Assigned(CounterSetIntervalHandler) then
@@ -3111,7 +3270,7 @@ begin
   end
  else
   begin
-   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+   Result:=RequestExIRQ(CPUID,Number,Handler,nil,Parameter);
   end;
 end;
 
@@ -3128,7 +3287,7 @@ begin
   end
  else
   begin
-   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+   Result:=ReleaseExIRQ(CPUID,Number,Handler,nil,Parameter);
   end;
 end;
 
@@ -3170,7 +3329,7 @@ end;
 {==============================================================================}
 {Fast Interrupt Request (FIQ) Functions}
 function RequestFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; inline;
-{Request registration of the supplied handler to the specified FIQ number}
+{Request registration of the supplied handler to the specified FIQ number (Where Applicable)}
 {Note: If the FIQ number is already registered then the request will fail}
 begin
  {}
@@ -3180,14 +3339,14 @@ begin
   end
  else
   begin
-   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+   Result:=RequestExFIQ(CPUID,Number,Handler,nil,Parameter);
   end;
 end;
 
 {==============================================================================}
 
 function ReleaseFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; inline;
-{Request deregistration of the supplied handler from the specified FIQ number}
+{Request deregistration of the supplied handler from the specified FIQ number (Where Applicable)}
 {Note: If the FIQ number is not currently registered then the request will fail}
 begin
  {}
@@ -3197,14 +3356,14 @@ begin
   end
  else
   begin
-   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+   Result:=ReleaseExFIQ(CPUID,Number,Handler,nil,Parameter);
   end;
 end;
 
 {==============================================================================}
 
 function RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
-{Request registration of the supplied extended handler to the specified FIQ number}
+{Request registration of the supplied extended handler to the specified FIQ number (Where Applicable)}
 {Note: If the FIQ number is already registered then the request will fail}
 begin
  {}
@@ -3221,7 +3380,7 @@ end;
 {==============================================================================}
 
 function ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
-{Request deregistration of the supplied extended handler from the specified FIQ number}
+{Request deregistration of the supplied extended handler from the specified FIQ number (Where Applicable)}
 {Note: If the FIQ number is not currently registered then the request will fail}
 begin
  {}
@@ -3232,6 +3391,234 @@ begin
  else
   begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{System Call (Software Interrupt or SWI) Functions}
+procedure SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); inline;
+{Perform a System Call function with the supplied parameters (Where Applicable)}
+{Number: The System Call number to be called}
+{Param1: The first parameter to pass to the function (Optional / Function defined)}
+{Param2: The second parameter to pass to the function (Optional / Function defined)}
+{Param3: The third parameter to pass to the function (Optional / Function defined)}
+begin
+ {}
+ if Assigned(SystemCallHandler) then
+  begin
+   SystemCallHandler(Number,Param1,Param2,Param3);
+  end;
+end;
+
+{==============================================================================}
+
+function RegisterSystemCall(Number:LongWord;Handler:TSystemCallHandler):LongWord; inline;
+{Request registration of the supplied handler to the specified System Call number (Where Applicable)}
+{Number: The System Call number to be registered}
+{Handler: The handler function to be registered}
+{Note: If the System Call number is already registered then the request will fail}
+begin
+ {}
+ if Assigned(RegisterSystemCallHandler) then
+  begin
+   Result:=RegisterSystemCallHandler(Number,Handler);
+  end
+ else
+  begin
+   Result:=RegisterSystemCallEx(CPU_ID_ALL,Number,Handler,nil);
+  end;
+end;
+
+{==============================================================================}
+
+function DeregisterSystemCall(Number:LongWord;Handler:TSystemCallHandler):LongWord; inline;
+{Request deregistration of the supplied handler from the specified System Call number (Where Applicable)}
+{Number: The System Call number to be deregistered}
+{Handler: The handler function to be deregistered}
+{Note: If the System Call number is not currently registered then the request will fail}
+begin
+ {}
+ if Assigned(DeregisterSystemCallHandler) then
+  begin
+   Result:=DeregisterSystemCallHandler(Number,Handler);
+  end
+ else
+  begin
+   Result:=DeregisterSystemCallEx(CPU_ID_ALL,Number,Handler,nil);
+  end;
+end;
+
+{==============================================================================}
+
+function RegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord; inline;
+{Request registration of the supplied extended handler to the specified System Call number (Where Applicable)}
+{CPUID: The CPU ID to register the System Call against (or CPU_ID_ALL)}
+{Number: The System Call number to be registered}
+{Handler: The handler function to be registered (Optional) (Handler or HandlerEx must be specified, not both)}
+{HandlerEx: The extended handler function to be registered (Optional) (Handler or HandlerEx must be specified, not both)}
+{Note: If the System Call number is already registered then the request will fail}
+begin
+ {}
+ if Assigned(RegisterSystemCallExHandler) then
+  begin
+   Result:=RegisterSystemCallExHandler(CPUID,Number,Handler,HandlerEx);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function DeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord; inline;
+{Request deregistration of the supplied extended handler from the specified System Call number (Where Applicable)}
+{CPUID: The CPU ID to deregister the System Call from (or CPU_ID_ALL)}
+{Number: The System Call number to be deregistered}
+{Handler: The handler function to be deregistered (Optional) (Handler or HandlerEx must be specified, not both)}
+{HandlerEx: The extended handler function to be deregistered (Optional) (Handler or HandlerEx must be specified, not both)}
+{Note: If the System Call number is not currently registered then the request will fail}
+begin
+ {}
+ if Assigned(DeregisterSystemCallExHandler) then
+  begin
+   Result:=DeregisterSystemCallExHandler(CPUID,Number,Handler,HandlerEx);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Interrupt Entry Functions}
+function GetInterruptCount:LongWord; inline;
+{Get the number of interrupt entries for the current platform}
+begin
+ {}
+ if Assigned(GetInterruptCountHandler) then
+  begin
+   Result:=GetInterruptCountHandler;
+  end
+ else
+  begin
+   Result:=IRQ_COUNT;
+  end;
+end;
+
+{==============================================================================}
+
+function GetInterruptStart:LongWord; inline;
+{Get the starting number of interrupt entries for the current platform}
+begin
+ {}
+ if Assigned(GetInterruptStartHandler) then
+  begin
+   Result:=GetInterruptStartHandler;
+  end
+ else
+  begin
+   Result:=IRQ_START;
+  end;
+end;
+
+{==============================================================================}
+
+function GetInterruptEntry(Number:LongWord):TInterruptEntry; inline;
+{Get the interrupt entry for the specified interrupt number}
+begin
+ {}
+ if Assigned(GetInterruptEntryHandler) then
+  begin
+   Result:=GetInterruptEntryHandler(Number);
+  end
+ else
+  begin
+   FillChar(Result,SizeOf(TInterruptEntry),0);
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Local Interrupt Entry Functions}
+function GetLocalInterruptCount:LongWord; inline;
+{Get the number of local interrupt entries for the current platform (Where Applicable)}
+begin
+ {}
+ if Assigned(GetLocalInterruptCountHandler) then
+  begin
+   Result:=GetLocalInterruptCountHandler;
+  end
+ else
+  begin
+   Result:=IRQ_LOCAL_COUNT;
+  end;
+end;
+
+{==============================================================================}
+
+function GetLocalInterruptStart:LongWord; inline;
+{Get the starting number of local interrupt entries for the current platform (Where Applicable)}
+begin
+ {}
+ if Assigned(GetLocalInterruptStartHandler) then
+  begin
+   Result:=GetLocalInterruptStartHandler;
+  end
+ else
+  begin
+   Result:=IRQ_LOCAL_START;
+  end;
+end;
+
+{==============================================================================}
+
+function GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; inline;
+{Get the local interrupt entry for the specified interrupt number (Where Applicable)}
+begin
+ {}
+ if Assigned(GetLocalInterruptEntryHandler) then
+  begin
+   Result:=GetLocalInterruptEntryHandler(CPUID,Number);
+  end
+ else
+  begin
+   FillChar(Result,SizeOf(TInterruptEntry),0);
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{System Call Entry Functions}
+function GetSystemCallCount:LongWord; inline;
+{Get the number of system call entries for the current platform (Where Applicable)}
+begin
+ {}
+ if Assigned(GetSystemCallCountHandler) then
+  begin
+   Result:=GetSystemCallCountHandler;
+  end
+ else
+  begin
+   Result:=SWI_COUNT;
+  end;
+end;
+
+{==============================================================================}
+
+function GetSystemCallEntry(Number:LongWord):TSystemCallEntry; inline;
+{Get the system call entry for the specified system call number (Where Applicable)}
+begin
+ {}
+ if Assigned(GetSystemCallEntryHandler) then
+  begin
+   Result:=GetSystemCallEntryHandler(Number);
+  end
+ else
+  begin
+   FillChar(Result,SizeOf(TSystemCallEntry),0);
   end;
 end;
 
@@ -3331,18 +3718,6 @@ begin
  else
   begin
    Result:=envp;
-  end;
-end;
-
-{==============================================================================}
-
-procedure SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); inline;
-{Perform a System Call function with the supplied parameters (Where Applicable)}
-begin
- {}
- if Assigned(SystemCallHandler) then
-  begin
-   SystemCallHandler(Number,Param1,Param2,Param3);
   end;
 end;
 
@@ -5108,7 +5483,39 @@ begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
-       
+    
+{==============================================================================}
+    
+function FramebufferSetBacklight(Brightness:LongWord):LongWord; inline;
+{Set the Framebuffer Backlight brightness (Where Applicable)}    
+begin
+ {}
+ if Assigned(FramebufferSetBacklightHandler) then
+  begin
+   Result:=FramebufferSetBacklightHandler(Brightness);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+{Touch Functions}
+function TouchGetBuffer(var Address:LongWord):LongWord; inline;
+{Get the Touchscreen memory buffer (Where Applicable)}  
+begin
+ {}
+ if Assigned(TouchGetBufferHandler) then
+  begin
+   Result:=TouchGetBufferHandler(Address);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
 {==============================================================================}
 {Cursor Functions}
 function CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord; inline;
@@ -5594,36 +6001,6 @@ begin
 end;
 
 {==============================================================================}
-
-function VirtualGPIOOutputSetOld(Pin:LongWord):LongWord; inline;
-begin
- {}
- if Assigned(VirtualGPIOOutputSetOldHandler) then
-  begin
-   Result:=VirtualGPIOOutputSetOldHandler(Pin);
-  end
- else
-  begin
-   Result:=ERROR_CALL_NOT_IMPLEMENTED;
-  end;
-end;
-
-{==============================================================================}
-
-function VirtualGPIOOutputClearOld(Pin:LongWord):LongWord; inline; 
-begin
- {}
- if Assigned(VirtualGPIOOutputClearOldHandler) then
-  begin
-   Result:=VirtualGPIOOutputClearOldHandler(Pin);
-  end
- else
-  begin
-   Result:=ERROR_CALL_NOT_IMPLEMENTED;
-  end;
-end;
-
-{==============================================================================}
 {==============================================================================}
 {SPI Functions}
 function SPIAvailable:Boolean; inline;
@@ -5782,14 +6159,15 @@ end;
 
 {==============================================================================}
  
-function SPIGetClockRate:LongWord; inline;
+function SPIGetClockRate(ChipSelect:Word):LongWord; inline;
 {Get the clock rate of the default SPI device}
+{ChipSelect: The chip select number to get clock rate from (SPI_CS_NONE for default)}
 {Return: The clock rate in Hz or 0 on failure}
 begin
  {}
  if Assigned(SPIGetClockRateHandler) then
   begin
-   Result:=SPIGetClockRateHandler;
+   Result:=SPIGetClockRateHandler(ChipSelect);
   end
  else
   begin
@@ -5799,15 +6177,16 @@ end;
 
 {==============================================================================}
 
-function SPISetClockRate(ClockRate:LongWord):LongWord; inline;
+function SPISetClockRate(ChipSelect:Word;ClockRate:LongWord):LongWord; inline;
 {Set the clock rate for the default SPI device}
 {ClockRate: The clock rate to set in Hz}
+{ChipSelect: The chip select number to set clock rate for (SPI_CS_NONE for default)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  if Assigned(SPISetClockRateHandler) then
   begin
-   Result:=SPISetClockRateHandler(ClockRate);
+   Result:=SPISetClockRateHandler(ChipSelect,ClockRate);
   end
  else
   begin
@@ -7389,13 +7768,13 @@ end;
 
 {==============================================================================}
 
-function PageTableSetEntry(Address:PtrUInt;const PageTableEntry:TPageTableEntry):LongWord; inline;
+function PageTableSetEntry(const Entry:TPageTableEntry):LongWord; inline;
 {Set the Page Table entry that corresponds to the supplied virtual address}
 begin
  {}
  if Assigned(PageTableSetEntryHandler) then
   begin
-   Result:=PageTableSetEntryHandler(Address,PageTableEntry);
+   Result:=PageTableSetEntryHandler(Entry);
   end
  else
   begin
@@ -7469,6 +7848,54 @@ end;
 
 {==============================================================================}
 
+function PageTablesGetNext:PtrUInt; inline;
+{Get the address of the next available second level page table}
+begin
+ {}
+ if Assigned(PageTablesGetNextHandler) then
+  begin
+   Result:=PageTablesGetNextHandler;
+  end
+ else
+  begin
+   Result:=PAGE_TABLES_NEXT;
+  end;
+end;
+
+{==============================================================================}
+
+function PageTablesGetUsed:LongWord; inline;
+{Get the number of used second level page tables}
+begin
+ {}
+ if Assigned(PageTablesGetUsedHandler) then
+  begin
+   Result:=PageTablesGetUsedHandler;
+  end
+ else
+  begin
+   Result:=PAGE_TABLES_USED;
+  end;
+end;
+
+{==============================================================================}
+
+function PageTablesGetFree:LongWord; inline;
+{Get the number of available second level page tables}
+begin
+ {}
+ if Assigned(PageTablesGetFreeHandler) then
+  begin
+   Result:=PageTablesGetFreeHandler;
+  end
+ else
+  begin
+   Result:=PAGE_TABLES_FREE;
+  end;
+end;
+
+{==============================================================================}
+
 function VectorTableGetBase:PtrUInt; inline;
 {Get the base address of the interrupt vector table}
 begin
@@ -7486,7 +7913,7 @@ end;
 {==============================================================================}
 
 function VectorTableGetSize:LongWord; inline;
-{Get the size of the interrupt vector table}
+{Get the size in bytes of the interrupt vector table}
 begin
  {}
  if Assigned(VectorTableGetSizeHandler) then
@@ -7496,6 +7923,22 @@ begin
  else
   begin
    Result:=VECTOR_TABLE_SIZE;
+  end;
+end;
+
+{==============================================================================}
+
+function VectorTableGetCount:LongWord; inline;
+{Get the number of entries in the interrupt vector table}
+begin
+ {}
+ if Assigned(VectorTableGetCountHandler) then
+  begin
+   Result:=VectorTableGetCountHandler;
+  end
+ else
+  begin
+   Result:=VECTOR_TABLE_COUNT;
   end;
 end;
 
@@ -8256,7 +8699,7 @@ end;
 
 {==============================================================================}
 
-function SysGetTickCount:DWORD;
+function SysGetTickCount:LongWord;
 begin
  {}
  if CLOCK_CYCLES_PER_MILLISECOND > 0 then
@@ -8271,7 +8714,7 @@ end;
 
 {==============================================================================}
 
-function SysGetTickCount64:ULONGLONG;
+function SysGetTickCount64:QWord;
 begin
  {}
  if CLOCK_CYCLES_PER_MILLISECOND > 0 then

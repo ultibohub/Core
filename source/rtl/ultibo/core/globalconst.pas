@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '6/9/2016';
+ ULTIBO_RELEASE_DATE             = '3/10/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.147';
+ ULTIBO_RELEASE_VERSION          = '1.2.185';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 147;
+ ULTIBO_RELEASE_VERSION_REVISION = 185;
  
 {==============================================================================}
 const
@@ -874,16 +874,31 @@ const
  COLOR_WHITE     = $FFFFFFFF;
  
  {Color format constants}
- COLOR_FORMAT_ARGB32 = 0; {32 bits per pixel Alpha/Red/Green/Blue (ARGB8888)}
- COLOR_FORMAT_ABGR32 = 1; {32 bits per pixel Alpha/Blue/Green/Red (ABGR8888)}
- COLOR_FORMAT_RGBA32 = 2; {32 bits per pixel Red/Green/Blue/Alpha (RGBA8888)}
- COLOR_FORMAT_BGRA32 = 3; {32 bits per pixel Blue/Green/Red/Alpha (BGRA8888)}
- COLOR_FORMAT_RGB24  = 4; {24 bits per pixel Red/Green/Blue (RGB888)}
- COLOR_FORMAT_BGR24  = 5; {24 bits per pixel Blue/Green/Red (BGR888)}
- COLOR_FORMAT_RGB18  = 6; {18 bits per pixel Red/Green/Blue (RGB666)}
- COLOR_FORMAT_RGB16  = 7; {16 bits per pixel Red/Green/Blue (RGB565)}
- COLOR_FORMAT_RGB15  = 8; {15 bits per pixel Red/Green/Blue (RGB555)}
- COLOR_FORMAT_RGB8   = 9; {8 bits per pixel Red/Green/Blue (RGB332)} 
+ {See: https://en.wikipedia.org/wiki/Color_depth and https://en.wikipedia.org/wiki/RGBA_color_space}
+ COLOR_FORMAT_ARGB32  = 0;  {32 bits per pixel Alpha/Red/Green/Blue (ARGB8888)}
+ COLOR_FORMAT_ABGR32  = 1;  {32 bits per pixel Alpha/Blue/Green/Red (ABGR8888)}
+ COLOR_FORMAT_RGBA32  = 2;  {32 bits per pixel Red/Green/Blue/Alpha (RGBA8888)}
+ COLOR_FORMAT_BGRA32  = 3;  {32 bits per pixel Blue/Green/Red/Alpha (BGRA8888)}
+ COLOR_FORMAT_URGB32  = 4;  {32 bits per pixel Unused/Red/Green/Blue (URGB8888)}
+ COLOR_FORMAT_UBGR32  = 5;  {32 bits per pixel Unused/Blue/Green/Red (UBGR8888)}
+ COLOR_FORMAT_RGBU32  = 6;  {32 bits per pixel Red/Green/Blue/Unused (RGBU8888)}
+ COLOR_FORMAT_BGRU32  = 7;  {32 bits per pixel Blue/Green/Red/Unused (BGRU8888)}
+ COLOR_FORMAT_RGB24   = 8;  {24 bits per pixel Red/Green/Blue (RGB888)}
+ COLOR_FORMAT_BGR24   = 9;  {24 bits per pixel Blue/Green/Red (BGR888)}
+ COLOR_FORMAT_RGB16   = 10; {16 bits per pixel Red/Green/Blue (RGB565)}
+ COLOR_FORMAT_BGR16   = 11; {16 bits per pixel Blue/Green/Red (BGR565)}
+ COLOR_FORMAT_RGB15   = 12; {15 bits per pixel Red/Green/Blue (RGB555)}
+ COLOR_FORMAT_BGR15   = 13; {15 bits per pixel Blue/Green/Red (BGR555)}
+ COLOR_FORMAT_RGB8    = 14; {8 bits per pixel Red/Green/Blue (RGB332)} 
+ COLOR_FORMAT_BGR8    = 15; {8 bits per pixel Blue/Green/Red (BGR233)} 
+ COLOR_FORMAT_GRAY16  = 16; {16 bits per pixel grayscale}
+ COLOR_FORMAT_GRAY8   = 17; {8 bits per pixel grayscale}
+ COLOR_FORMAT_INDEX16 = 18; {16 bits per pixel palette index}
+ COLOR_FORMAT_INDEX8  = 19; {8 bits per pixel palette index}
+ 
+ COLOR_FORMAT_MAX     = 19;
+ 
+ COLOR_FORMAT_DEFAULT = COLOR_FORMAT_ARGB32; {The default color format (Used for the COLOR_* constants above)}
  
  COLOR_FORMAT_UNKNOWN = LongWord(-1); 
  
@@ -1356,7 +1371,7 @@ const
 {==============================================================================}
 const
  {SPI Protocol constants}
- //To Do //Continuing
+ //SPI_PROTOCOL_ //To Do //Continuing //4WIRE/3WIRE/LOSSI etc //SPI_MODE_* becomes 0/1/2/3 instead
  
  {SPI Mode constants}
  SPI_MODE_4WIRE = 0;
