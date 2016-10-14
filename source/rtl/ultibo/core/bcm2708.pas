@@ -43,6 +43,8 @@ Credits
    
    Linux - \drivers\pwm\pwm-bcm2835.c - Copyright (C) 2014 Bart Tanghe
    
+   Linux - \drivers\clk\bcm\clk-bcm2835.c - Copyright (C) 2010,2015 Broadcom
+   
    Linux - \drivers\clocksource\timer-sp804.c - Copyright (C) 1999 - 2003 ARM Limited
    
 References
@@ -701,7 +703,7 @@ type
  TBCM2708GPIOBank = record
   GPIO:PGPIODevice;
   Bank:LongWord;
-  Address:LongWord;
+  Address:PtrUInt;
   PinStart:LongWord;
  end;
  
@@ -8418,11 +8420,23 @@ begin
  {Set Predivider}
  PBCM2835ARMTimerRegisters(Timer.Address).Predivider:=Divider;
  
- {Update Properties}
- Timer.Rate:=Rate;
- 
- {Return Result}
- Result:=ERROR_SUCCESS;  
+ {Check Rate}
+ if (PBCM2708ARMTimer(Timer).CoreClock mod Rate) <> 0 then
+  begin
+   {Update Properties}
+   Timer.Rate:=PBCM2708ARMTimer(Timer).CoreClock div (Divider + 1);
+  
+   {Return Result}
+   Result:=ERROR_NOT_EXACT;  
+  end
+ else
+  begin
+   {Update Properties}
+   Timer.Rate:=Rate;
+   
+   {Return Result}
+   Result:=ERROR_SUCCESS;  
+  end;  
 end;
 
 {==============================================================================}

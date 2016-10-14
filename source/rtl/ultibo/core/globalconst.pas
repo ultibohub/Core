@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '3/10/2016';
+ ULTIBO_RELEASE_DATE             = '14/10/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.2.185';
+ ULTIBO_RELEASE_VERSION          = '1.2.203';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 2;
- ULTIBO_RELEASE_VERSION_REVISION = 185;
+ ULTIBO_RELEASE_VERSION_REVISION = 203;
  
 {==============================================================================}
 const
@@ -151,6 +151,7 @@ const
  ERROR_NOT_COMPLETED       = 1000012;    {The entry or operation has not completed}
  ERROR_NOT_COMPATIBLE      = 1000013;    {The entry is not compatible for the operation}
  ERROR_CANCELLED           = 1000014;    {The entry or operation has been cancelled}
+ ERROR_NOT_EXACT           = 1000015;    {The result of the operation is not exact}
  
  ERROR_UNKNOWN             = $FFFFFFFF;
  
@@ -989,10 +990,11 @@ const
 {==============================================================================}
 const
  {Machine Type constants} 
- MACHINE_TYPE_UNKNOWN = 0;
- MACHINE_TYPE_BCM2708 = 1;  {Broadcom BCM2708 (Raspberry Pi)}
- MACHINE_TYPE_BCM2709 = 2;  {Broadcom BCM2709 (Raspberry Pi 2)}
- MACHINE_TYPE_BCM2710 = 3;  {Broadcom BCM2710 (Raspberry Pi 3)}
+ MACHINE_TYPE_UNKNOWN     = 0;
+ MACHINE_TYPE_BCM2708     = 1;  {Broadcom BCM2708 (Raspberry Pi)}
+ MACHINE_TYPE_BCM2709     = 2;  {Broadcom BCM2709 (Raspberry Pi 2)}
+ MACHINE_TYPE_BCM2710     = 3;  {Broadcom BCM2710 (Raspberry Pi 3)}
+ MACHINE_TYPE_VERSATILEPB = 4;  {ARM Versatile PB (QEMU)}
  
 {==============================================================================}
 const
@@ -1022,6 +1024,7 @@ const
  BOARD_TYPE_PC_X86       = 22; {PC x86}
  BOARD_TYPE_PC_X86_64    = 23; {PC x86 64bit}
  BOARD_TYPE_RPI3B        = 24; {Raspberry Pi 3 Model B}
+ BOARD_TYPE_QEMUVPB      = 25; {QEMU Versatile PB}
  
 {==============================================================================}
 const 

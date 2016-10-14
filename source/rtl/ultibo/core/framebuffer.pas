@@ -506,7 +506,7 @@ function FramebufferDeviceRead(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffe
 var
  Data:TDMAData;
  Size:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -552,8 +552,14 @@ begin
     {Check Size}
     if (Address + Size) > (Framebuffer.Address + Framebuffer.Size) then Exit;
     
-    {Check DMA}
-    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+    {Check DMA Available}
+    if not(DMAAvailable) or not(SysInitCompleted) then
+     begin
+      Flags:=Flags and not(FRAMEBUFFER_TRANSFER_DMA);
+     end;
+    
+    {Check DMA Transfer}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
      begin
       {Check Cache}
       if not(DMA_CACHE_COHERENT) then
@@ -613,7 +619,7 @@ function FramebufferDeviceWrite(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buff
 var
  Data:TDMAData;
  Size:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -658,8 +664,14 @@ begin
     {Check Size}
     if (Address + Size) > (Framebuffer.Address + Framebuffer.Size) then Exit;
     
-    {Check DMA}
-    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+    {Check DMA Available}
+    if not(DMAAvailable) or not(SysInitCompleted) then
+     begin
+      Flags:=Flags and not(FRAMEBUFFER_TRANSFER_DMA);
+     end;
+    
+    {Check DMA Transfer}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
      begin
       {Create Data}
       FillChar(Data,SizeOf(TDMAData),0);
@@ -807,7 +819,7 @@ var
  Size:LongWord;
  Count:LongWord;
  Stride:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -857,8 +869,14 @@ begin
     {Get Address}
     Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
     
-    {Check DMA}
-    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+    {Check DMA Available}
+    if not(DMAAvailable) or not(SysInitCompleted) then
+     begin
+      Flags:=Flags and not(FRAMEBUFFER_TRANSFER_DMA);
+     end;
+    
+    {Check DMA Transfer}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
      begin
       {Check Cache}
       if not(DMA_CACHE_COHERENT) then
@@ -931,9 +949,9 @@ var
  Data:TDMAData;
  Size:LongWord;
  Count:LongWord;
- Start:LongWord;
+ Start:PtrUInt;
  Stride:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -983,8 +1001,14 @@ begin
     {Get Address}
     Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
 
-    {Check DMA}
-    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+    {Check DMA Available}
+    if not(DMAAvailable) or not(SysInitCompleted) then
+     begin
+      Flags:=Flags and not(FRAMEBUFFER_TRANSFER_DMA);
+     end;
+    
+    {Check DMA Transfer}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
      begin
       {Create Data}
       FillChar(Data,SizeOf(TDMAData),0);
@@ -1067,11 +1091,11 @@ var
  Size:LongWord;
  Lines:LongWord;
  Count:LongWord;
- Start:LongWord;
+ Start:PtrUInt;
  Buffer:Pointer;
  Stride:LongInt; {Allow for negative stride}
- Source:LongWord;
- Address:LongWord;
+ Source:PtrUInt;
+ Address:PtrUInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1115,6 +1139,12 @@ begin
     {Get Size}
     Size:=Width * (Framebuffer.Depth shr 3);
     
+    {Check DMA Available}
+    if not(DMAAvailable) or not(SysInitCompleted) then
+     begin
+      Flags:=Flags and not(FRAMEBUFFER_TRANSFER_DMA);
+     end;
+    
     {Check Direction}
     if (Y1 = Y2) and (X2 > X1) then
      begin
@@ -1148,8 +1178,8 @@ begin
       {Get Address}
       Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
       
-      {Check DMA}
-      if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+      {Check DMA Transfer}
+      if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
        begin
         {Check Cached}
         if not(DMA_CACHE_COHERENT) then
@@ -1258,8 +1288,8 @@ begin
         {Get Address}
         Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
         
-        {Check DMA}
-        if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+        {Check DMA Transfer}
+        if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
          begin
           {Create Data}
           FillChar(Data,SizeOf(TDMAData),0);
@@ -1311,8 +1341,8 @@ begin
         {Get Address}
         Address:=(Framebuffer.Address + ((Y2 + Height - 1) * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
         
-        {Check DMA}
-        if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+        {Check DMA Transfer}
+        if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
          begin
           {Create Data}
           FillChar(Data,SizeOf(TDMAData),0);
@@ -1400,10 +1430,10 @@ var
  Data:TDMAData;
  Size:LongWord;
  Count:LongWord;
- Start:LongWord;
+ Start:PtrUInt;
  Buffer:Pointer;
  Stride:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1508,8 +1538,14 @@ begin
       end;
     end;  
     
-    {Check DMA}
-    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and (DMAAvailable) and SysInitCompleted then
+    {Check DMA Available}
+    if not(DMAAvailable) or not(SysInitCompleted) then
+     begin
+      Flags:=Flags and not(FRAMEBUFFER_TRANSFER_DMA);
+     end;
+    
+    {Check DMA Transfer}
+    if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
      begin
       {Check Cached}
       if not(DMA_CACHE_COHERENT) then
