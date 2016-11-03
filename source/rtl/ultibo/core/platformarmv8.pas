@@ -2,6 +2,7 @@
 Ultibo Platform interface unit for ARMv8.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (c) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -11,6 +12,8 @@ Arch
 Boards
 ======
  
+ ODroid C2
+ Raspberry Pi 2 - Model B+
  Raspberry Pi 3 - Model B
 
 Licence
