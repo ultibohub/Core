@@ -2,7 +2,7 @@
 Ultibo Platform interface unit for ARMv8.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
-Copyright (c) 2016 - Rob Judd <judd@ob-wan.com>
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====

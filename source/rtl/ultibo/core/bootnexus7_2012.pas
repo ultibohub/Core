@@ -23,36 +23,65 @@ Credits
 
  Information for this unit was obtained from:
 
- ????
+ https://wikidevi.com/wiki/Google_Nexus_7_(Gen_1,_Wi-Fi_only,_16_GB)
+ 
  
 References
 ==========
 
- Linux Device Tree files in ...
+ Full Source Tree files in ...
 
- ????
+ https://android.googlesource.com/
 
 
 Nexus 7 (2012)
 ==============
 
- SoC: 
+ Manufacturer: ASUS
  
- CPU:  
+ Model: ME370T
  
- GPU: 
+ Stock OS: Android 4.1.1 (Jelly Bean)
  
- RAM:
+ SoC: NVidia Tegra 3 T30L (Kal-El)
  
- USB:  
+ CPU: Cortex A8 (ARM7) (4 @ 1.2GHz, plus 5th "power monitor" CPU)
  
- LAN: 
+ Cache: L1 32KB instruction plus 32KB data, L2 1MB (Shared by all cores)
+ 
+ FPU: VFPv3 plus NEON SIMD
+ 
+ GPU: NVidia GEForce ULP (12 @ 416MHz)
+ 
+ RAM: 1GB (Hynix H5TC2G83CFR-H9R × 4)
+ 
+ USB: Micro-B OTG
+ 
+ LAN: Nil
   
- SD/MMC: 
+ SD/MMC: 8/16/32GB internal
  
- WiFi: 
+ WiFi: AzureWave AW-NH665 802.11 b/g/n (SDIO I/F)
  
- Bluetooth: 
+ Bluetooth: Broadcom BCM4330 BLE 4.0
+ 
+ Mobile: HSPA+ (optional)
+ 
+ Audio: RealTek ALC5642 (Stereo with inbuilt speakers and 3.5mm jack)
+ 
+ Camera: Lite-On 10P2SF130J 1.2MP (front facing)
+ 
+ NFC: NXP PN65N / 65N04 Secured
+ 
+ GPS: Broadcom BCM 47511
+ 
+ Gyro/Accelerometer: InvenSense MPU-6050
+ 
+ Display: Hydis HV070WX2-1E0 (7" diagonal, 1280x800)
+ 
+ Capacitive Touchscreen: Elan eKTH1036BWS / eKTF3624BWS
+ 
+ Other: Mic, Magnetometer, Maxim Power Management, 3.7V 4325mAh (16WH) Battery
 
 }
 
@@ -72,7 +101,16 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformNexus7_2012,PlatformA
 
 {==============================================================================}
 {Boot Functions}
-//To Do
+//procedure Startup;
+
+//procedure Vectors; 
+//procedure SecureVectors;
+
+//procedure SecureMonitor;
+
+//procedure StartupSwitch;
+//procedure StartupSecure;
+//procedure StartupHandler;
 
 {==============================================================================}
 {==============================================================================}
