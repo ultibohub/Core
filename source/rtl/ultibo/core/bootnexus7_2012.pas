@@ -6,7 +6,7 @@ Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 Arch
 ====
 
- ARMv7-A (Cortex A9)
+ ARMv7 (Cortex A9)
 
 Boards
 ======

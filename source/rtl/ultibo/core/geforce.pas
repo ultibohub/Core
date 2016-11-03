@@ -86,7 +86,7 @@ procedure GEForceInit;
 begin
  {}
  {Check Initialized}
- if Mali400Initialized then Exit;
+ if GEForceInitialized then Exit;
  
  //To Do
  
