@@ -23,12 +23,14 @@ Credits
 
  Information for this unit was obtained from:
 
- ????
+ http://www.hardkernel.com/main/products/prdt_info.php
+ http://dn.odroid.com/S905/DataSheet/S905_Public_Datasheet_V1.1.4.pdf
+ 
  
 References
 ==========
 
- Linux Device Tree files in /arch/arm/boot/dts
+ Linux Device Tree files in
 
  ????
 
@@ -36,23 +38,31 @@ References
 Odroid-C2
 =========
 
- SoC: 
+ SoC: Amlogic S905
  
- CPU:  
+ CPU: ARMv8 Cortex-A53 (4 @ 1.5GHz)
  
- GPU: 
+ Cache: L1 32KB I/D, L2 512KB (Shared)
  
- RAM:
+ GPU: Mali-450 (3 pixel processors + 2 vertex shaders) OpenGL ES2 750MHz + AVE H264/H265/VC1
  
- USB:  
+ FPU: Crypto engine, 
  
- LAN: 
+ RAM: 2GB (Samsung K4B4G1646D x 4)
+ 
+ USB: GeneSys GL852G Hub (4 ports) (with OnSemi NCP380 VBus controller) + Micro-B OTG
+ 
+ LAN: RealTek RTL8211F Gigabit PHY
   
- SD/MMC: 
+ SD/MMC: eMMC5.0 HS400 Flash Storage slot / UHS-1 SDR50 MicroSD Card slot
  
- WiFi: 
+ WiFi: Nil
  
- Bluetooth: 
+ Bluetooth: Nil
+ 
+ Display: HDMI 2.0
+ 
+ Other: GPIO (4), I2S (7), IR sensor, OnSemi NCP372 Power Protection IC.
 
 }
 
@@ -68,11 +78,20 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformOdroidC2,PlatformARM,PlatformARMv8,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
+uses GlobalConfig,GlobalConst,GlobalTypes,amlogics905,Platform,PlatformOdroidC2,PlatformARM,PlatformARMv8,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
 
 {==============================================================================}
 {Boot Functions}
-//To Do
+//procedure Startup;
+
+//procedure Vectors; 
+//procedure SecureVectors;
+
+//procedure SecureMonitor;
+
+//procedure StartupSwitch;
+//procedure StartupSecure;
+//procedure StartupHandler;
 
 {==============================================================================}
 {==============================================================================}
