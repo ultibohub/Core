@@ -2,7 +2,7 @@
 Realtek 8188EU USB Wireless Driver.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
-Copyright (C) 2016 - Rob judd <judd@ob-wan.com>
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
