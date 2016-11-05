@@ -2,6 +2,7 @@
 Realtek 8192CU USB Wireless Driver.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
