@@ -30,13 +30,23 @@ Credits
 References
 ==========
 
- Linux Device Tree files in
-
- ????
+ Odroid FAQ:
+ 
+ Is full source code open and can I build it by myself?
+ Yes. U-boot, Kernel and OS platform source code is available.
+ But there are two exceptions.
+ 1. GPU user-land drivers are library (binary) format. (Limited by ARM's policy)
+ 2. Boot blobs are in binary format (Limited by Amlogic's policy)
 
 
 Odroid-C2
 =========
+
+ Manufacturer: HardKernel, South Korea
+ 
+ Model: Odroid C2
+ 
+ Stock OS: Android 5.1.x (Lollipop) and Ubunbtu 16.04 (Xenial Xerus)
 
  SoC: Amlogic S905
  
@@ -46,7 +56,7 @@ Odroid-C2
  
  GPU: Mali-450 (3 pixel processors + 2 vertex shaders) OpenGL ES2 750MHz + AVE H264/H265/VC1
  
- FPU: Crypto engine, 
+ FPU: Crypto engine
  
  RAM: 2GB (Samsung K4B4G1646D x 4)
  
@@ -62,7 +72,7 @@ Odroid-C2
  
  Display: HDMI 2.0
  
- Other: GPIO (4), I2S (7), IR sensor, OnSemi NCP372 Power Protection IC.
+ Other: GPIO (40), I2S (7), IR sensor, OnSemi NCP372 Power Protection IC.
 
 }
 

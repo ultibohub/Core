@@ -29,7 +29,7 @@ Credits
 References
 ==========
 
- Full Source Tree files in ...
+ Full source tree files in ...
 
  https://android.googlesource.com/
 
@@ -45,9 +45,9 @@ Nexus 7 (2012)
  
  SoC: NVidia Tegra 3 T30L (Kal-El)
  
- CPU: Cortex A8 (ARM7) (4 @ 1.2GHz, plus 5th "power monitor" CPU)
+ CPU: Cortex A9 (ARM7) (4 @ 1.2GHz, plus "power monitor" CPU @ 450MHz)
  
- Cache: L1 32KB instruction plus 32KB data, L2 1MB (Shared by all cores)
+ Cache: L1 32KB I/D (per CPU), L2 1MB (Shared by all cores)
  
  FPU: VFPv3 plus NEON SIMD
  
@@ -73,11 +73,11 @@ Nexus 7 (2012)
  
  NFC: NXP PN65N / 65N04 Secured
  
- GPS: Broadcom BCM 47511
+ GPS: Broadcom BCM47511
  
  Gyro/Accelerometer: InvenSense MPU-6050
  
- Display: Hydis HV070WX2-1E0 (7" diagonal, 1280x800)
+ Display: Hydis HV070WX2-1E0 (7" diagonal, 1280x800) / Replacement part Chungwa CLAA070WP03XG
  
  Capacitive Touchscreen: Elan eKTH1036BWS / eKTF3624BWS
  
@@ -97,7 +97,7 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,NVidiaTegra3,Platform,PlatformNexus7_2012,PlatformARM,PlatformARMv7,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
+uses GlobalConfig,GlobalConst,GlobalTypes,Tegra3,Platform,PlatformNexus7_2012,PlatformARM,PlatformARMv7,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
 
 {==============================================================================}
 {Boot Functions}
