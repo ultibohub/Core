@@ -29,9 +29,8 @@ Credits
 References
 ==========
 
- Full source tree files in ...
-
- https://android.googlesource.com/
+ Android source tree ... https://android.googlesource.com/
+ Multiboot ... http://forum.xda-developers.com/showthread.php?t=2011403
 
 
 Nexus 7 (2012)

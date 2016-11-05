@@ -34,8 +34,8 @@ Credits
 References
 ==========
 
-http://ecee.colorado.edu/ecen5653/ecen5653/doc/JETSON/Tegra_Linux_Driver_Package_Developers_Guide.pdf
-
+ https://android.googlesource.com/kernel/tegra/
+ 
  
 NVidia Tegra 3
 ==============
@@ -54,24 +54,23 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes;
 
-//To Do
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
 
 {==============================================================================}
-{NVidia Tegra 3 specific constants}
-
- const
+const
+{Tegra 3 specific constants}
  TEGRA3_CPU_COUNT = 4; {Ignore power saving CPU}
+
  
 end;
  
 {==============================================================================}
-{NVidia Tegra 3 specific structures}
+{Tegra 3 specific structures}
 
- type 
+type 
+
 
 end;
  
