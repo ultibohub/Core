@@ -2,6 +2,7 @@
 Realtek 8188EU USB Wireless Driver.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -59,6 +60,8 @@ const
  
  RTL8188EU_DEVICE_ID_COUNT = 8; {Number of supported Device IDs}
 
+ USB_VENDORID_REALTEK = $10EC;
+ 
  RTL8188EU_DEVICE_ID:array[0..RTL8188EU_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   {=== Realtek demoboard ===}
   (idVendor:USB_VENDORID_REALTEK;idProduct:$8179),  {8188EUS}

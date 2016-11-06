@@ -2,6 +2,7 @@
 Ultibo Platform interface unit for ARM.
 
 Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -15,7 +16,7 @@ Boards
 
  Raspberry Pi - Model A/B/A+/B+
  Raspberry Pi - Model Zero
- Raspberry Pi 2 - Model B
+ Raspberry Pi 2 - Model B/B+
  Raspberry Pi 3 - Model B
  BeagleBone Black
  Banana Pi
@@ -24,7 +25,9 @@ Boards
  Cubox-i2Ex
  Cubox-i4Pro
  Hummingboard
+ Nexus 7 (2012)
  Odroid C1
+ Odroid C2
  Odroid U3
  Odroid XU3
 
@@ -114,6 +117,9 @@ const
  ARM_MACHINE_BCM2708 = $00000C42;
  ARM_MACHINE_BCM2709 = $00000C42; {BCM2709 uses the same Machine Type as BCM2708}
  ARM_MACHINE_BCM2710 = $00000C42; {BCM2710 uses the same Machine Type as BCM2708}
+ //ARM_MACHINE_GEFORCE  = $00000???; {GEForce not listed at http://www.arm.linux.org.uk/developer/machines/}
+ //ARM_MACHINE_MALI400  = $000000??; {Mali400 not listed at http://www.arm.linux.org.uk/developer/machines/}
+ //ARM_MACHINE_MALI450  = $00000???; {Mali450 not listed at http://www.arm.linux.org.uk/developer/machines/}
  
 {==============================================================================}
 type

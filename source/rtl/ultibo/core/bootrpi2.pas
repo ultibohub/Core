@@ -11,7 +11,7 @@ Arch
 Boards
 ======
 
- Raspberry Pi 2 - Model B
+ Raspberry Pi 2 - Model B/B+
  Raspberry Pi 3 - Model B
  
 Licence
