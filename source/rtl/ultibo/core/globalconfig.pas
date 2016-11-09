@@ -1073,9 +1073,15 @@ var
  {PiTFT28}
  PiTFT28_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT28 device on boot (Only if PiTFT28 unit included)}
 
+ {PiTFT32}
+ PiTFT32_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT32 device on boot (Only if PiTFT32 unit included)}
+
  {PiTFT35}
  PiTFT35_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT35 device on boot (Only if PiTFT35 unit included)}
  
+ {PiTFT40}
+ PiTFT40_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT40 device on boot (Only if PiTFT40 unit included)}
+
 {==============================================================================}
 {Global handlers}
 var

@@ -240,7 +240,9 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     stmpe \
                     rpift5406 \
                     pitft28 \
-                    pitft35
+					pitft32 \
+                    pitft35 \
+					pitft40
 
 ULTIBO_KEYMAP_UNITS=keymap_us \
                     keymap_uk \
