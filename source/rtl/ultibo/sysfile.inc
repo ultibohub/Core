@@ -20,7 +20,7 @@
 ****************************************************************************}
 
 { close a file from the handle value }
-procedure do_close(handle : longint);
+procedure do_close(handle : thandle);
 begin
  if Assigned(SysDoCloseHandler) then
   begin
@@ -44,7 +44,7 @@ begin
   end;
 end;
 
-function do_write(h: longint; addr: pointer; len: longint) : longint;
+function do_write(h: thandle; addr: pointer; len: longint) : longint;
 begin
  if Assigned(SysDoWriteHandler) then
   begin
@@ -56,7 +56,7 @@ begin
   end; 
 end;
 
-function do_read(h: longint; addr: pointer; len: longint) : longint;
+function do_read(h: thandle; addr: pointer; len: longint) : longint;
 begin
  if Assigned(SysDoReadHandler) then
   begin
@@ -68,7 +68,7 @@ begin
   end; 
 end;
 
-function do_filepos(handle: longint) : longint;
+function do_filepos(handle: thandle) : longint;
 begin
  if Assigned(SysDoFilePosHandler) then
   begin
@@ -80,7 +80,7 @@ begin
   end; 
 end;
 
-procedure do_seek(handle, pos: longint);
+procedure do_seek(handle: thandle; pos: longint);
 begin
  if Assigned(SysDoSeekHandler) then
   begin
@@ -88,7 +88,7 @@ begin
   end;
 end;
 
-function do_seekend(handle: longint):longint;
+function do_seekend(handle: thandle):longint;
 begin
  if Assigned(SysDoSeekEndHandler) then
   begin
@@ -100,7 +100,7 @@ begin
   end; 
 end;
 
-function do_filesize(handle : longint) : longint;
+function do_filesize(handle : thandle) : longint;
 begin
  if Assigned(SysDoFileSizeHandler) then
   begin
@@ -113,7 +113,7 @@ begin
 end;
 
 { truncate at a given position }
-procedure do_truncate(handle, pos: longint);
+procedure do_truncate(handle: thandle; pos: longint);
 begin
  if Assigned(SysDoTruncateHandler) then
   begin
@@ -129,7 +129,7 @@ begin
   end;
 end;
 
-function do_isdevice(handle: longint): boolean;
+function do_isdevice(handle: thandle): boolean;
 begin
  Result:=False; {Not required by Ultibo}
 end;

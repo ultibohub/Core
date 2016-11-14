@@ -207,7 +207,9 @@ ULTIBO_FONTS=Latin1_8x8 \
              Latin1_8x10 \
              Latin1_8x12 \
              Latin1_8x14 \
-             Sun_12x22
+             Sun_12x22 \
+             Default8x9 \
+             Default8x16
              
 ULTIBO_EXTRAS=ConsoleShell \
               RemoteShell \
@@ -231,12 +233,14 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     pl2303 \
                     ftdiserial \
                     usbcdcacm \
+                    pl011 \
                     ds1307 \
                     mcp230xx \
                     hd44780 \
                     af16x2lcd \
                     ili9340 \
                     hx8357d \
+                    pl110 \
                     stmpe \
                     rpift5406 \
                     pitft28 \
@@ -289,6 +293,7 @@ override ULTIBO_UNITS+=bcm2836 \
                        allwinnera20 \
                        allwinnerh3 \
                        freescaleimx6 \
+                       versatilepb \
                        platformarmv7 \
                        platformarmv8 \
                        platformrpi2 \
@@ -300,7 +305,8 @@ override ULTIBO_UNITS+=bcm2836 \
                        platformodroidc1 \
                        platformodroidu3 \
                        platformodroidxu3 \
-                       platformpcduino
+                       platformpcduino \
+                       platformqemuvpb
 ULTIBO_CPU_UNITS=bootrpi2 \
                  bootrpi3 \
                  bootbpi \
@@ -310,9 +316,11 @@ ULTIBO_CPU_UNITS=bootrpi2 \
                  bootodroidc1 \
                  bootodroidu3 \
                  bootodroidxu3 \
-                 bootpcduino
+                 bootpcduino \
+                 bootqemuvpb
 ULTIBO_CPU_EXTRAS=RaspberryPi2 \
-                  RaspberryPi3
+                  RaspberryPi3 \
+                  QEMUVersatilePB
 endif
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
@@ -350,6 +358,24 @@ CPU_UNITS_DEFINED=1
 ULTIBO_CPU_UNITS=bootpcx86_64
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
+endif
+endif
+
+ifeq ($(ARCH),aarch64)
+override ULTIBO_UNITS+=platformaarch64
+ifeq ($(SUBARCH),armv8)
+CPU_UNITS=
+CPU_UNITS_DEFINED=1
+override ULTIBO_UNITS+=bcm2837 \
+                       bcm2710 \
+                       versatilepb \
+                       platformarmv8 \
+                       platformrpi3 \
+                       platformqemuvpb
+ULTIBO_CPU_UNITS=bootrpi3 \
+                 bootqemuvpb
+ULTIBO_CPU_EXTRAS=RaspberryPi3 \
+                  QEMUVersatilePB
 endif
 endif
 

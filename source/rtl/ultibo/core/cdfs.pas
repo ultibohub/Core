@@ -11155,7 +11155,7 @@ begin
  Marker:=StrScan(PChar(AName),cdfsSeparator2Name);
  if Marker = nil then Exit;
  
- Result:=Copy(AName,(LongWord(Marker) - LongWord(AName)) + 2,Length(AName));
+ Result:=Copy(AName,(PtrUInt(Marker) - PtrUInt(AName)) + 2,Length(AName));
 end;
 
 {=============================================================================}
@@ -11190,7 +11190,7 @@ begin
  {Check Separator 2}
  Marker:=StrScan(PChar(AName),cdfsSeparator2Name);
  if Marker = nil then Exit;
- Result:=Copy(Result,1,LongWord(Marker) - LongWord(AName));
+ Result:=Copy(Result,1,PtrUInt(Marker) - PtrUInt(AName));
 
  {Check Separator 2} {Modified to handle version greater than 1}
  {if (Result[Length(Result) - 1] = cdfsSeparator2Name) and (Result[Length(Result)] = cdfsVersionName) then
@@ -13208,13 +13208,13 @@ begin
         Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(Buffer),Length,PChar(Result),Count,nil,nil);
         {if Byte(Result[Count]) = 0 then SetLength(Result,Count - 1);} {Some CDs contain illegal null terminators}
         Terminator:=StrScan(PChar(Result),#0);
-        if LongWord(Terminator) < (LongWord(Result) + LongWord(Count)) then
+        if PtrUInt(Terminator) < (PtrUInt(Result) + LongWord(Count)) then
          begin
           {$IFDEF CDFS_DEBUG}
-          if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Length = ' + IntToStr(LongWord(Terminator) - LongWord(Result)));
+          if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Length = ' + IntToStr(PtrUInt(Terminator) - PtrUInt(Result)));
           {$ENDIF}
           
-          SetLength(Result,LongWord(Terminator) - LongWord(Result));
+          SetLength(Result,PtrUInt(Terminator) - PtrUInt(Result));
          end;
        end;
      finally
@@ -13231,13 +13231,13 @@ begin
      Unicode.OemToCharBuff(PChar(@AIdentifier),PChar(Result),ASize);
      {if Byte(Result[ASize]) = 0 then SetLength(Result,ASize - 1);} {Some CDs contain illegal null terminators}
      Terminator:=StrScan(PChar(Result),#0);
-     if LongWord(Terminator) < (LongWord(Result) + LongWord(ASize)) then
+     if PtrUInt(Terminator) < (PtrUInt(Result) + LongWord(ASize)) then
       begin
        {$IFDEF CDFS_DEBUG}
-       if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Length = ' + IntToStr(LongWord(Terminator) - LongWord(Result)));
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Length = ' + IntToStr(PtrUInt(Terminator) - PtrUInt(Result)));
        {$ENDIF}
        
-       SetLength(Result,LongWord(Terminator) - LongWord(Result));
+       SetLength(Result,PtrUInt(Terminator) - PtrUInt(Result));
       end;
     end;
   end;

@@ -697,7 +697,7 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCompressBlock - Length = ' + IntToStr(Length) + ' (Uncompressed Block)');
    {$ENDIF}
    {Copy Block}
-   System.Move(Pointer(LongWord(ASource))^,Pointer(LongWord(ADest) + 2)^,MinEx(ntfsCompressionBlockSize,ATotal));
+   System.Move(Pointer(PtrUInt(ASource))^,Pointer(PtrUInt(ADest) + 2)^,MinEx(ntfsCompressionBlockSize,ATotal));
   end
  else
   begin

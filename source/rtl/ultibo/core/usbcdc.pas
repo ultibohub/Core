@@ -202,7 +202,7 @@ type
 
   bMasterInterface0:Byte;
   bSlaveInterface0:Byte;
-  {Additional Slave interfaces dependant on bFunctionLength}
+  {Additional Slave interfaces dependent on bFunctionLength}
  end;
   
  {Country Selection Functional Descriptor (See: Section 5.2.3.9 of USB Class Definitions for Communications Devices 1.2)}
@@ -214,7 +214,7 @@ type
  
   iCountryCodeRelDate:Byte;
   wCountyCode0:Word; {LE16}
-  {Additional Country codes dependant on bFunctionLength}
+  {Additional Country codes dependent on bFunctionLength}
  end;
 
  {Network Channel Terminal Functional Descriptor (See: Section 5.2.3.11 of USB Class Definitions for Communications Devices 1.2)}

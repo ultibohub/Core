@@ -72,7 +72,7 @@ unit FileSystem;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Logging,Storage,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Logging,Storage,Dos,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
 
 
 //To Do //TFileSystem.RenameFile - Final //RemoveRef changes (plus Recheck all)
@@ -5126,7 +5126,7 @@ function FSRenameFile(const AOldName,ANewName:String):Boolean; inline;
 function FSFileSeek(AHandle,AOffset,AOrigin:Integer):Integer; inline;
 function FSFileFlush(AHandle:Integer):Boolean; inline;
 function FSFileTruncate(AHandle:Integer):Boolean; inline;
-function FSSetEndOfFile(AHandle:Integer):Boolean; inline;
+function FSSetEndOfFile(AHandle:THandle):Boolean; inline;
 
 function FSEndOfFile(AHandle:Integer):Boolean; inline;
 function FSFilePos(AHandle:Integer):Integer; inline;
@@ -5170,15 +5170,15 @@ function FSFileSeekEx(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64
 
 function FSEndOfFileEx(AHandle:Integer):Boolean; inline;
 function FSFilePosEx(AHandle:Integer):Int64; inline;
-function FSFileSizeEx(AHandle:Integer):Int64; inline;
+function FSFileSizeEx(AHandle:THandle):Int64; inline;
 
 function FSFileAgeEx(const AFileName:String):TFileTime; inline;
 
 function FSFileGetDateEx(AHandle:Integer):TFileTime; inline;
 function FSFileSetDateEx(AHandle:Integer;AAge:TFileTime):Integer; inline;
 
-function FSGetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
-function FSSetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline; 
+function FSGetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
+function FSSetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline; 
 
 function FSFindFirstEx(const APath:String;var ASearchRec:TFileSearchRec):Integer; inline;
 function FSFindNextEx(var ASearchRec:TFileSearchRec):Integer; inline;
@@ -5221,7 +5221,7 @@ function FSWriteFile(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var AB
 function FSGetLongPathName(const AShortPath:String):String; inline;
 
 function FSSetFileShortName(const AFileName,AShortName:String):Boolean;
-function FSSetFileShortNameEx(AHandle:Integer;const AShortName:String):Boolean;
+function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean;
 function FSCreateHardLink(const ALinkName,AFileName:String):Boolean;
 function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean;
 
@@ -5234,16 +5234,16 @@ function FSSetCurrentDirectory(const APathName:String):Boolean; inline;
 {==============================================================================}
 {RTL FileSystem Functions}
 {System File Functions}
-procedure SystemDoClose(Handle:LongInt);
+procedure SystemDoClose(Handle:THandle);
 procedure SystemDoErase(Name:PChar;NameChangeable:Boolean);
 procedure SystemDoRename(Name1,Name2:PChar;Name1Changeable,Name2Changeable:Boolean);
-function SystemDoWrite(Handle:LongInt;Address:Pointer;Len:LongInt):LongInt;
-function SystemDoRead(Handle:LongInt;Address:Pointer;Len:LongInt):LongInt;
-function SystemDoFilePos(Handle:LongInt):LongInt;
-procedure SystemDoSeek(Handle,Pos:LongInt);
-function SystemDoSeekEnd(Handle:LongInt):LongInt;
-function SystemDoFileSize(Handle:LongInt):LongInt;
-procedure SystemDoTruncate(Handle,Pos:LongInt);
+function SystemDoWrite(Handle:THandle;Address:Pointer;Len:LongInt):LongInt;
+function SystemDoRead(Handle:THandle;Address:Pointer;Len:LongInt):LongInt;
+function SystemDoFilePos(Handle:THandle):LongInt;
+procedure SystemDoSeek(Handle:THandle;Pos:LongInt);
+function SystemDoSeekEnd(Handle:THandle):LongInt;
+function SystemDoFileSize(Handle:THandle):LongInt;
+procedure SystemDoTruncate(Handle:THandle;Pos:LongInt);
 procedure SystemDoOpen(var F;Name:PFileTextRecChar;Flags:LongInt;NameChangeable:Boolean);
 
 {System Directory Functions}
@@ -5252,24 +5252,41 @@ procedure SystemDoRmDir(const Dir:RawByteString);
 procedure SystemDoChDir(const Dir:RawByteString);
 procedure SystemDoGetDir(Drive:Byte;var Dir:RawByteString);
 
+{Dos Disk Functions}
+function DosDiskFree(Drive:Byte):Int64;
+function DosDiskSize(Drive:Byte):Int64;
+
+{Dos FindFirst/FindNext Functions}
+function DosFindFirst(const Path:PathStr;Attr:Word;var f:SearchRec):Integer;
+function DosFindNext(var f:SearchRec):Integer;
+procedure DosFindClose(var f:SearchRec);
+
+{Dos File Functions}
+function DosGetFTime(var f;var Time:LongInt):Integer;
+function DosSetFTime(var f;Time:LongInt):Integer;
+function DosGetFAttr(var f;var Attr:Word):Integer;
+function DosSetFAttr(var f;Attr:Word):Integer;
+function DosGetShortName(var p:ShortString):Boolean;
+function DosGetLongName(var p:ShortString):Boolean;
+
 {SysUtils File Functions}
-function SysUtilsFileOpen(const FileName:RawByteString;Mode:Integer):LongInt;
-function SysUtilsFileCreate(const FileName:RawByteString):LongInt;
+function SysUtilsFileOpen(const FileName:RawByteString;Mode:Integer):THandle;
+function SysUtilsFileCreate(const FileName:RawByteString):THandle;
 function SysUtilsDeleteFile(const FileName:RawByteString):Boolean;
-procedure SysUtilsFileClose(Handle:LongInt);
+procedure SysUtilsFileClose(Handle:THandle);
 function SysUtilsRenameFile(const OldName,NewName:RawByteString):Boolean;
-function SysUtilsFileSeek(Handle,Offset,Origin:LongInt):LongInt;
+function SysUtilsFileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt;
 function SysUtilsFileTruncate(Handle:THandle;Size:Int64):Boolean;
 function SysUtilsFileAge(const FileName:RawByteString):LongInt;
 function SysUtilsFileExists(const FileName:RawByteString):Boolean;
 function SysUtilsFileGetAttr(const FileName:RawByteString):LongInt;
-function SysUtilsFileGetDate(Handle:LongInt):LongInt;
+function SysUtilsFileGetDate(Handle:THandle):LongInt;
 function SysUtilsFileSetAttr(const FileName:RawByteString;Attr:LongInt):LongInt;
-function SysUtilsFileSetDate(Handle,Age:LongInt):LongInt;
-function SysUtilsFileRead(Handle:LongInt;out Buffer;Count:LongInt):LongInt;
-function SysUtilsFileWrite(Handle:LongInt;const Buffer;Count:LongInt):LongInt;
+function SysUtilsFileSetDate(Handle:THandle;Age:LongInt):LongInt;
+function SysUtilsFileRead(Handle:THandle;out Buffer;Count:LongInt):LongInt;
+function SysUtilsFileWrite(Handle:THandle;const Buffer;Count:LongInt):LongInt;
 
-function SysUtilsFileSeekEx(Handle:LongInt;Offset:Int64;Origin:LongInt):Int64;
+function SysUtilsFileSeekEx(Handle:THandle;Offset:Int64;Origin:LongInt):Int64;
 
 function SysUtilsInternalFindFirst(const Path:RawByteString;Attr:LongInt;out SearchRec:TSearchRec;var Name:RawByteString):LongInt;
 function SysUtilsInternalFindNext(var SearchRec:TSearchRec;var Name:RawByteString):LongInt;
@@ -49842,6 +49859,22 @@ begin
  SysDoChDirHandler:=SystemDoChDir;
  SysDoGetDirHandler:=SystemDoGetDir;
  
+ {Setup Dos Handlers}
+ {Disk Functions}
+ DosDiskFreeHandler:=DosDiskFree;
+ DosDiskSizeHandler:=DosDiskSize;
+ {FindFirst/FindNext Functions}
+ DosFindFirstHandler:=DosFindFirst;
+ DosFindNextHandler:=DosFindNext;
+ DosFindCloseHandler:=DosFindClose;
+ {File Functions}
+ DosGetFTimeHandler:=DosGetFTime;
+ DosSetFTimeHandler:=DosSetFTime;
+ DosGetFAttrHandler:=DosGetFAttr;
+ DosSetFAttrHandler:=DosSetFAttr;
+ DosGetShortNameHandler:=DosGetShortName;
+ DosGetLongNameHandler:=DosGetLongName;
+ 
  {Setup SysUtils Handlers}
  {File Functions}
  SysUtilsFileOpenHandler:=SysUtilsFileOpen;
@@ -50570,7 +50603,7 @@ end;
 
 {==============================================================================}
 
-function FSSetEndOfFile(AHandle:Integer):Boolean; inline;
+function FSSetEndOfFile(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -50999,7 +51032,7 @@ end;
 
 {==============================================================================}
 
-function FSFileSizeEx(AHandle:Integer):Int64; inline;
+function FSFileSizeEx(AHandle:THandle):Int64; inline;
 begin
  {}
  Result:=-1;
@@ -51056,7 +51089,7 @@ end;
 
 {==============================================================================}
 
-function FSGetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
+function FSGetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -51070,7 +51103,7 @@ end;
 
 {==============================================================================}
 
-function FSSetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
+function FSSetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -51560,7 +51593,7 @@ end;
 
 {==============================================================================}
 
-function FSSetFileShortNameEx(AHandle:Integer;const AShortName:String):Boolean;
+function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean;
 begin
  {}
  Result:=False;
@@ -51659,7 +51692,7 @@ end;
 {==============================================================================}
 {RTL FileSystem Functions}
 {System File Functions}
-procedure SystemDoClose(Handle:LongInt);
+procedure SystemDoClose(Handle:THandle);
 begin
  {}
  {Check Driver}
@@ -51713,7 +51746,7 @@ end;
 
 {==============================================================================}
 
-function SystemDoWrite(Handle:LongInt;Address:Pointer;Len:LongInt):LongInt;
+function SystemDoWrite(Handle:THandle;Address:Pointer;Len:LongInt):LongInt;
 begin
  {}
  Result:=-1;
@@ -51735,7 +51768,7 @@ end;
 
 {==============================================================================}
 
-function SystemDoRead(Handle:LongInt;Address:Pointer;Len:LongInt):LongInt;
+function SystemDoRead(Handle:THandle;Address:Pointer;Len:LongInt):LongInt;
 begin
  {}
  Result:=-1;
@@ -51757,7 +51790,7 @@ end;
 
 {==============================================================================}
 
-function SystemDoFilePos(Handle:LongInt):LongInt;
+function SystemDoFilePos(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
@@ -51779,7 +51812,7 @@ end;
 
 {==============================================================================}
 
-procedure SystemDoSeek(Handle,Pos:LongInt);
+procedure SystemDoSeek(Handle:THandle;Pos:LongInt);
 begin
  {}
  {Check Driver}
@@ -51798,7 +51831,7 @@ end;
 
 {==============================================================================}
 
-function SystemDoSeekEnd(Handle:LongInt):LongInt;
+function SystemDoSeekEnd(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
@@ -51820,7 +51853,7 @@ end;
 
 {==============================================================================}
 
-function SystemDoFileSize(Handle:LongInt):LongInt;
+function SystemDoFileSize(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
@@ -51842,7 +51875,7 @@ end;
 
 {==============================================================================}
 
-procedure SystemDoTruncate(Handle,Pos:LongInt);
+procedure SystemDoTruncate(Handle:THandle;Pos:LongInt);
 begin
  {}
  {Check Driver}
@@ -52029,8 +52062,293 @@ begin
 end;
 
 {==============================================================================}
+{Dos Disk Functions}
+function DosDiskFree(Drive:Byte):Int64;
+{No Volume Support}
+begin
+ {}
+ Result:=-1;
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Drive Free Space Ex}
+ Result:=FileSysDriver.GetDriveFreeSpaceEx(Drive);
+end;
+
+{==============================================================================}
+
+function DosDiskSize(Drive:Byte):Int64;
+{No Volume Support}
+begin
+ {}
+ Result:=-1;
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Drive Total Space Ex}
+ Result:=FileSysDriver.GetDriveTotalSpaceEx(Drive);
+end;
+
+{==============================================================================}
+{Dos FindFirst/FindNext Functions}
+function DosFindMatchingFile(var f:SearchRec):Integer;
+{Internal Only}
+var
+ LocalFileTime:TFileTime;
+ FileSearchRec:TFileSearchRec;
+begin
+ {}
+ Result:=18; {Dos Error 18 (Not Found)}
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ while (f.FindData.dwFileAttributes and f.ExcludeAttr) <> 0 do
+  begin
+   {Get Handle}
+   FileSearchRec.FindHandle:=f.FindHandle;
+  
+   {Find Next}
+   if FileSysDriver.FindNextEx(FileSearchRec) = 0 then
+    begin
+     {Save SearchRec}
+     SysUtils.TWin32FindDataA(f.FindData):=FileSearchRec.FindData;
+    end
+   else
+    begin
+     Exit;
+    end;    
+  end;
+ 
+ {Update the SearchRec from the FindData record}
+ Ultibo.FileTimeToLocalFileTime(SysUtils.FILETIME(f.FindData.ftLastWriteTime),LocalFileTime);
+ Ultibo.FileTimeToDosDateTime(LocalFileTime,LongRec(f.Time).Hi,LongRec(f.Time).Lo);
+ f.Size:=f.FindData.nFileSizeLow;
+ f.Attr:=f.FindData.dwFileAttributes;
+ f.Name:=StrPas(@f.FindData.cFileName);
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function DosFindFirst(const Path:PathStr;Attr:Word;var f:SearchRec):Integer;
+{Notes: FindFirst/FindNext/FindClose - To be compatible with the DOS
+FindFirst/FindNext we always allow faReadOnly and faArchive but only
+allow other attributes if requested. This is done by matching all
+files and filtering with FindMatchingFile}
+
+{Apparently there is an oddity with faVolumeId where you shouldn't
+allow any other attributes at all, this needs to be tested and added}
+const
+ faSpecial = faHidden or faSysFile or faVolumeID or faDirectory;
+var
+ FileSearchRec:TFileSearchRec;
+begin
+ {}
+ Result:=18; {Dos Error 18 (Not Found)}
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Find First}
+ if FileSysDriver.FindFirstEx(Path,FileSearchRec) = 0 then
+  begin
+   {Save SearchRec}
+   f.ExcludeAttr:=not(Attr) and faSpecial;
+   f.FindHandle:=FileSearchRec.FindHandle;
+   SysUtils.TWin32FindDataA(f.FindData):=FileSearchRec.FindData;
+   
+   {Find Matching}
+   Result:=DosFindMatchingFile(f);
+   if Result <> 0 then DosFindClose(f);
+  end; 
+end;
+
+{==============================================================================}
+
+function DosFindNext(var f:SearchRec):Integer;
+var
+ FileSearchRec:TFileSearchRec;
+begin
+ {}
+ Result:=18; {Dos Error 18 (Not Found)}
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Get Handle}
+ FileSearchRec.FindHandle:=f.FindHandle;
+ 
+ {Find Next}
+ if FileSysDriver.FindNextEx(FileSearchRec) = 0 then
+  begin
+   {Save SearchRec}
+   SysUtils.TWin32FindDataA(f.FindData):=FileSearchRec.FindData;
+   
+   {Find Matching}
+   Result:=DosFindMatchingFile(f);
+  end;
+end;
+
+{==============================================================================}
+
+procedure DosFindClose(var f:SearchRec);
+var
+ FileSearchRec:TFileSearchRec;
+begin
+ {}
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Get Handle}
+ FileSearchRec.FindHandle:=f.FindHandle;
+ 
+ {Find Close}
+ FileSysDriver.FindCloseEx(FileSearchRec);
+end;
+
+{==============================================================================}
+{Dos File Functions}
+function DosGetFTime(var f;var Time:LongInt):Integer;
+var
+ WriteTime:TFileTime;
+ LocalTime:TFileTime;
+begin
+ {}
+ Time:=0;
+ Result:=18; {Dos Error 18 (Not Found)}
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Get File Time}
+ if not FileSysDriver.GetFileTime(FileRec(f).Handle,nil,nil,@WriteTime) then Exit;
+ 
+ {Convert to Local Time}
+ if not Ultibo.FileTimeToLocalFileTime(WriteTime,LocalTime) then Exit;
+ 
+ {Convert to DOS Date and Time}
+ if not Ultibo.FileTimeToDosDateTime(LocalTime,LongRec(Time).Hi,LongRec(Time).Lo) then Exit;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function DosSetFTime(var f;Time:LongInt):Integer;
+var
+ WriteTime:TFileTime;
+ LocalTime:TFileTime;
+begin
+ {}
+ Result:=18; {Dos Error 18 (Not Found)}
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Convert to File Time}
+ if not Ultibo.DosDateTimeToFileTime(LongRec(Time).Hi,LongRec(Time).Lo,LocalTime) then Exit;
+ 
+ {Convert to System Time}
+ if not Ultibo.LocalFileTimeToFileTime(LocalTime,WriteTime) then Exit;
+ 
+ {Set File Time}
+ if not FileSysDriver.SetFileTime(FileRec(f).Handle,nil,nil,@WriteTime) then Exit;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function DosGetFAttr(var f;var Attr:Word):Integer;
+var
+ Name:String;
+ Attributes:Integer;
+begin
+ {}
+ Result:=18; {Dos Error 18 (Not Found)}
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Get Name}
+ Name:=ToSingleByteFileSystemEncodedFileName(FileRec(f).Name);
+ 
+ {Get File Attributes}
+ Attributes:=FileGetAttr(Name);
+ if Attributes = -1 then Exit;
+ 
+ {Return Attributes}
+ Attr:=Attributes and $FFFF;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function DosSetFAttr(var f;Attr:Word):Integer;
+var
+ Name:String;
+begin
+ {}
+ Result:=18; {Dos Error 18 (Not Found)}
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Get Name}
+ Name:=ToSingleByteFileSystemEncodedFileName(FileRec(f).Name);
+ 
+ {Set File Attributes}
+ if FileSetAttr(Name,Attr) = -1 then Exit;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function DosGetShortName(var p:ShortString):Boolean;
+var
+ Name:String;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Get Short Name}
+ Name:=FileSysDriver.GetShortName(p);
+ p:=Name;
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function DosGetLongName(var p:ShortString):Boolean;
+var
+ Name:String;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+ 
+ {Get Long Name}
+ Name:=FileSysDriver.GetLongName(p);
+ p:=Name;
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
 {SysUtils File Functions}
-function SysUtilsFileOpen(const FileName:RawByteString;Mode:Integer):LongInt;
+function SysUtilsFileOpen(const FileName:RawByteString;Mode:Integer):THandle;
 begin
  {}
  Result:=-1;
@@ -52044,7 +52362,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileCreate(const FileName:RawByteString):LongInt;
+function SysUtilsFileCreate(const FileName:RawByteString):THandle;
 begin
  {}
  Result:=-1;
@@ -52072,7 +52390,7 @@ end;
 
 {==============================================================================}
 
-procedure SysUtilsFileClose(Handle:LongInt);
+procedure SysUtilsFileClose(Handle:THandle);
 begin
  {}
  {Check Driver}
@@ -52098,7 +52416,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileSeek(Handle,Offset,Origin:LongInt):LongInt;
+function SysUtilsFileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt;
 begin
  {}
  Result:=-1;
@@ -52171,7 +52489,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileGetDate(Handle:LongInt):LongInt;
+function SysUtilsFileGetDate(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
@@ -52199,7 +52517,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileSetDate(Handle,Age:LongInt):LongInt;
+function SysUtilsFileSetDate(Handle:THandle;Age:LongInt):LongInt;
 begin
  {}
  Result:=-1;
@@ -52213,7 +52531,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileRead(Handle:LongInt;out Buffer;Count:LongInt):LongInt;
+function SysUtilsFileRead(Handle:THandle;out Buffer;Count:LongInt):LongInt;
 begin
  {}
  Result:=-1;
@@ -52227,7 +52545,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileWrite(Handle:LongInt;const Buffer;Count:LongInt):LongInt;
+function SysUtilsFileWrite(Handle:THandle;const Buffer;Count:LongInt):LongInt;
 begin
  {}
  Result:=-1;
@@ -52241,7 +52559,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileSeekEx(Handle:LongInt;Offset:Int64;Origin:LongInt):Int64;
+function SysUtilsFileSeekEx(Handle:THandle;Offset:Int64;Origin:LongInt):Int64;
 begin
  {}
  Result:=-1;

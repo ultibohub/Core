@@ -162,7 +162,7 @@ Boot RPi2
  
  Future changes to the firmware will hopefully not invalidate this technique, however there is also
  the option to use the config.txt parameter kernel_old=1 which would load Ultibo at 0x00000000 and
- allow us to setup the boot state independant of the firmware. This would require changes to both
+ allow us to setup the boot state independent of the firmware. This would require changes to both
  Ultibo (this boot module) and to the FPC compiler to change the linker start location.
  
  
@@ -577,7 +577,7 @@ asm
 
  //Move the initial stack away from the initial heap but remain 8 byte aligned.
  sub sp, sp, #8
-  
+ 
  //Initialize the RPi2 Platform specific behaviour (Memory, Peripherals, Interrupts etc).
  bl RPi2Init
   

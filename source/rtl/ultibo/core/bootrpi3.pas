@@ -188,7 +188,7 @@ Boot RPi3
  
  Future changes to the firmware will hopefully not invalidate this technique, however there is also
  the option to use the config.txt parameter kernel_old=1 which would load Ultibo at 0x00000000 and
- allow us to setup the boot state independant of the firmware. This would require changes to both
+ allow us to setup the boot state independent of the firmware. This would require changes to both
  Ultibo (this boot module) and to the FPC compiler to change the linker start location.
  
  
@@ -206,7 +206,7 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,PlatformRPi3,PlatformARM,PlatformARMv8,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,PlatformRPi3,{$IFDEF CPUARM}PlatformARM,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF CPUAARCH64}PlatformARMv8,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
 
 {==============================================================================}
 {Boot Functions}
@@ -232,6 +232,7 @@ implementation
 procedure Startup; assembler; nostackframe; [public, alias: '_START'];
 {Entry point of Ultibo on Raspberry Pi 3, this will be the very first byte executed
  and will be loaded by the GPU at address 0x00008000}
+{$IFDEF CPUARM}
 asm
  //Save the pointer to the ARM Tags that the bootloader should have passed
  //to us in R2.
@@ -269,12 +270,19 @@ asm
 .LARMMachineType:
   .long ARMMachineType
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure Vectors; assembler; nostackframe; 
 {ARM exception vector table which is copied to the vector base address by the
  StartupHandler. See A2.6 "Exceptions" of the ARM Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  ldr pc, .Lreset_addr     //Reset Handler 
  ldr pc, .Lundef_addr	  //Undefined Instruction Handler 
@@ -302,12 +310,19 @@ asm
 .Lfiq_addr:       
   .long ARMv8FIQHandler        
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure SecureVectors; assembler; nostackframe; 
 {ARM secure vector table which is copied to the sector vector base address by the
  StartupHandler. See A2.6 "Exceptions" of the ARM Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  ldr pc, .Lreset_addr     //Reset Handler 
  ldr pc, .Lreset_addr	  //Undefined Instruction Handler 
@@ -323,11 +338,18 @@ asm
 .Lsmc_addr:       
   .long SecureMonitor        
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure SecureMonitor; assembler; nostackframe; 
 {Secure monitor mode handler to switch to secure mode}
+{$IFDEF CPUARM}
 asm
  //Read the SCR (Secure Configuration Register)
  mrc p15, #0, r1, cr1, cr1, #0
@@ -341,11 +363,18 @@ asm
  //Return to secure SVC mode
  movs    pc, lr                          
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure StartupSwitch; assembler; nostackframe; 
 {Startup handler routine to switch from hypervisor mode}
+{$IFDEF CPUARM}
 asm
  //Get the CPSR
  mrs r0, cpsr            
@@ -390,11 +419,18 @@ asm
 .LRPi3CNTVOFFHigh:
   .long RPi3CNTVOFFHigh
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure StartupSecure; assembler; nostackframe; 
 {Startup handler routine to switch to secure mode}
+{$IFDEF CPUARM}
 asm
  //Check the secure boot configuration
  mov r0, #RPI3_SECURE_BOOT
@@ -446,11 +482,18 @@ asm
 .LSecureVectors:
   .long SecureVectors
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure StartupHandler; assembler; nostackframe; 
 {Startup handler routine executed to start the Ultibo kernel}
+{$IFDEF CPUARM}
 asm
  //Call the HYP mode switch handler in case the CPU is in HYP mode
  bl StartupSwitch
@@ -675,6 +718,12 @@ asm
 .L_bss_end:
   .long _bss_end
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 {==============================================================================}

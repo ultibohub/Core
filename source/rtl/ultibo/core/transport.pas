@@ -7401,13 +7401,12 @@ begin
  Total:=0;
  
  {Checksum the Buffer}
- Data:=Pointer(LongWord(ABuffer) + AOffset);
+ Data:=Pointer(PtrUInt(ABuffer) + AOffset);
  while ALength > 1 do
   begin
    Total:=Total + Word(Data^);
    Dec(ALength,2);
-   Inc(LongWord(Data),2);
-   {Data:=Pointer(LongWord(Data) + 2);}
+   Inc(PtrUInt(Data),2);
   end;
  if ALength > 0 then
   begin
@@ -7440,7 +7439,7 @@ begin
   begin
    Total:=Total + Word(Data^);
    Dec(APseudoLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if APseudoLength > 0 then
   begin
@@ -7448,12 +7447,12 @@ begin
   end;
   
  {Checksum the Buffer}
- Data:=Pointer(LongWord(ABuffer) + ABufferOffset);
+ Data:=Pointer(PtrUInt(ABuffer) + ABufferOffset);
  while ABufferLength > 1 do
   begin
    Total:=Total + Word(Data^);
    Dec(ABufferLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if ABufferLength > 0 then
   begin
@@ -7486,7 +7485,7 @@ begin
   begin
    Total:=Total + Word(Data^);
    Dec(APseudoLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if APseudoLength > 0 then
   begin
@@ -7499,7 +7498,7 @@ begin
   begin
    Total:=Total + Word(Data^);
    Dec(AHeaderLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if AHeaderLength > 0 then
   begin
@@ -7507,12 +7506,12 @@ begin
   end;
   
  {Checksum the Data}
- Data:=Pointer(LongWord(AData) + ADataOffset);
+ Data:=Pointer(PtrUInt(AData) + ADataOffset);
  while ADataLength > 1 do
   begin
    Total:=Total + Word(Data^);
    Dec(ADataLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if ADataLength > 0 then
   begin
@@ -7545,7 +7544,7 @@ begin
   begin
    Total:=Total + Word(Data^);
    Dec(APseudoLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if APseudoLength > 0 then
   begin
@@ -7558,7 +7557,7 @@ begin
   begin
    Total:=Total + Word(Data^);
    Dec(AHeaderLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if AHeaderLength > 0 then
   begin
@@ -7571,7 +7570,7 @@ begin
   begin
    Total:=Total + Word(Data^);
    Dec(AOptionsLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if AOptionsLength > 0 then
   begin
@@ -7579,12 +7578,12 @@ begin
   end;
   
  {Checksum the Data}
- Data:=Pointer(LongWord(AData) + ADataOffset);
+ Data:=Pointer(PtrUInt(AData) + ADataOffset);
  while ADataLength > 1 do
   begin
    Total:=Total + Word(Data^);
    Dec(ADataLength,2);
-   Inc(LongWord(Data),2);
+   Inc(PtrUInt(Data),2);
   end;
  if ADataLength > 0 then
   begin

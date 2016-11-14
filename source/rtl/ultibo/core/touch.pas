@@ -536,7 +536,7 @@ begin
         end;
       end
      else
-      begin   
+      begin 
        {Wait for Touch Data}
        if SemaphoreWait(Touch.Buffer.Wait) = ERROR_SUCCESS then
         begin
@@ -757,8 +757,8 @@ function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:LongWor
 {Perform a control request on the specified touch device}
 {Touch: The Touch device to control}
 {Request: The request code for the operation (eg TOUCH_CONTROL_GET_FLAG)}
-{Argument1: The first argument for the operation (Dependant on request code)}
-{Argument2: The second argument for the operation (Dependant on request code)}
+{Argument1: The first argument for the operation (Dependent on request code)}
+{Argument2: The second argument for the operation (Dependent on request code)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}

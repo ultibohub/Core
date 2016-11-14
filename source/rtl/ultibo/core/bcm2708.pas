@@ -1002,6 +1002,13 @@ function BCM2708FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):L
 
 function BCM2708FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
 
+function BCM2708FramebufferWaitSync(Framebuffer:PFramebufferDevice):LongWord;
+ 
+function BCM2708FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+
+function BCM2708FramebufferGetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+function BCM2708FramebufferSetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+
 function BCM2708FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
 
 function BCM2708FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
@@ -1114,12 +1121,16 @@ begin
  FramebufferSetPaletteHandler:=RPiFramebufferSetPalette;
  FramebufferTestPaletteHandler:=RPiFramebufferTestPalette;
 
+ FramebufferTestVsyncHandler:=RPiFramebufferTestVsync;
+ FramebufferSetVsyncHandler:=RPiFramebufferSetVsync;
+
  FramebufferSetBacklightHandler:=RPiFramebufferSetBacklight;
  
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPiTouchGetBuffer;
  
  {Register Platform Cursor Handlers}
+ CursorSetDefaultHandler:=RPiCursorSetDefault;
  CursorSetInfoHandler:=RPiCursorSetInfo;
  CursorSetStateHandler:=RPiCursorSetState;
  {$ENDIF}
@@ -1814,7 +1825,7 @@ begin
      {Device}
      BCM2708Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2708Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-     BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
+     BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC;
      BCM2708Framebuffer.Framebuffer.Device.DeviceData:=nil;
      {Framebuffer}
      BCM2708Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
@@ -1822,6 +1833,10 @@ begin
      BCM2708Framebuffer.Framebuffer.DeviceRelease:=BCM2708FramebufferRelease;
      BCM2708Framebuffer.Framebuffer.DeviceBlank:=BCM2708FramebufferBlank;
      BCM2708Framebuffer.Framebuffer.DeviceCommit:=BCM2708FramebufferCommit;
+     BCM2708Framebuffer.Framebuffer.DeviceWaitSync:=BCM2708FramebufferWaitSync;
+     BCM2708Framebuffer.Framebuffer.DeviceSetOffset:=BCM2708FramebufferSetOffset;
+     BCM2708Framebuffer.Framebuffer.DeviceGetPalette:=BCM2708FramebufferGetPalette;
+     BCM2708Framebuffer.Framebuffer.DeviceSetPalette:=BCM2708FramebufferSetPalette;
      BCM2708Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2708FramebufferSetBacklight;
      BCM2708Framebuffer.Framebuffer.DeviceSetProperties:=BCM2708FramebufferSetProperties;
      {Driver}
@@ -2317,6 +2332,22 @@ begin
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708: SPI0 Set Clock Rate (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' ClockRate=' + IntToStr(ClockRate) + ')');
  {$ENDIF}
+ 
+ {Check Enabled}
+ if SPI.SPIState <> SPI_STATE_ENABLED then
+  begin
+   {Update Core Clock}
+   PBCM2708SPI0Device(SPI).CoreClock:=ClockGetRate(CLOCK_ID_CORE);
+   if PBCM2708SPI0Device(SPI).CoreClock = 0 then PBCM2708SPI0Device(SPI).CoreClock:=BCM2708_SPI0_CORE_CLOCK;
+   
+   {Update Properties}
+   SPI.Properties.MinClock:=PBCM2708SPI0Device(SPI).CoreClock div BCM2708_SPI0_MAX_DIVIDER;
+   SPI.Properties.MaxClock:=PBCM2708SPI0Device(SPI).CoreClock div BCM2708_SPI0_MIN_DIVIDER;
+   
+   {$IF DEFINED(BCM2708_DEBUG) or DEFINED(SPI_DEBUG)}
+   if SPI_LOG_ENABLED then SPILogDebug(SPI,'BCM2708:  CoreClock=' + IntToStr(PBCM2708SPI0Device(SPI).CoreClock) + ' MinClock=' + IntToStr(SPI.Properties.MinClock) + ' MaxClock=' + IntToStr(SPI.Properties.MaxClock));
+   {$ENDIF}
+  end;
  
  {Check Chip Select}
  if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_2) then Exit;
@@ -8972,6 +9003,8 @@ end;
 {==============================================================================}
 {BCM2708 Framebuffer Functions}
 function BCM2708FramebufferAllocate(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+{Implementation of FramebufferDeviceAllocate API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceAllocate instead}
 var
  Size:LongWord;
  Count:LongWord;
@@ -9046,6 +9079,30 @@ begin
       {Set Defaults}
       Defaults.VirtualWidth:=Defaults.PhysicalWidth;
       Defaults.VirtualHeight:=Defaults.PhysicalHeight;
+     end;
+    
+    {Check Virtual Width}
+    if Defaults.VirtualWidth < Defaults.PhysicalWidth then
+     begin
+      Defaults.VirtualWidth:=Defaults.PhysicalWidth;
+     end;
+
+    {Check Virtual Height}
+    if Defaults.VirtualHeight < Defaults.PhysicalHeight then
+     begin
+      Defaults.VirtualHeight:=Defaults.PhysicalHeight;
+     end;
+     
+    {Check Offset X} 
+    if (Defaults.OffsetX > 0) and (Defaults.OffsetX > ((Defaults.VirtualWidth - Defaults.PhysicalWidth) - 1)) then
+     begin
+      Defaults.OffsetX:=0;
+     end;
+
+    {Check Offset Y} 
+    if (Defaults.OffsetY > 0) and (Defaults.OffsetY > ((Defaults.VirtualHeight - Defaults.PhysicalHeight) - 1)) then
+     begin
+      Defaults.OffsetY:=0;
      end;
     
     {Calculate Size}
@@ -9243,6 +9300,8 @@ end;
 {==============================================================================}
 
 function BCM2708FramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
+{Implementation of FramebufferDeviceRelease API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceRelease instead}
 var
  Size:LongWord;
  Response:LongWord;
@@ -9291,8 +9350,28 @@ begin
      if Result <> ERROR_SUCCESS then
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2708: FramebufferRelease: MailboxPropertyCall failed: ' + ErrorToString(Result));
-       Exit;
+       {Exit;} {Do not fail}
       end; 
+     
+     {Update Framebuffer}
+     Framebuffer.Address:=0;
+     Framebuffer.Size:=0;
+     Framebuffer.Pitch:=0;
+     Framebuffer.Depth:=FRAMEBUFFER_DEPTH_32;
+     Framebuffer.Order:=FRAMEBUFFER_ORDER_RGB;
+     Framebuffer.Mode:=FRAMEBUFFER_MODE_ENABLED;
+     Framebuffer.Format:=COLOR_FORMAT_DEFAULT;
+     Framebuffer.PhysicalWidth:=0;
+     Framebuffer.PhysicalHeight:=0;
+     Framebuffer.VirtualWidth:=0;
+     Framebuffer.VirtualHeight:=0;
+     Framebuffer.OffsetX:=0;
+     Framebuffer.OffsetY:=0;
+     Framebuffer.OverscanTop:=0;
+     Framebuffer.OverscanBottom:=0;
+     Framebuffer.OverscanLeft:=0;
+     Framebuffer.OverscanRight:=0;
+     Framebuffer.Rotation:=FRAMEBUFFER_ROTATION_0;
      
      {Update Statistics}
      Inc(Framebuffer.ReleaseCount);
@@ -9315,6 +9394,8 @@ end;
 {==============================================================================}
 
 function BCM2708FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+{Implementation of FramebufferDeviceBlank API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceBlank instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -9337,6 +9418,8 @@ end;
 {==============================================================================}
 
 function BCM2708FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+{Implementation of FramebufferDeviceCommit API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceCommit instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -9357,7 +9440,135 @@ end;
 
 {==============================================================================}
 
+function BCM2708FramebufferWaitSync(Framebuffer:PFramebufferDevice):LongWord;
+{Implementation of FramebufferDeviceWaitSync API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceWaitSync instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {Wait Sync}
+ Result:=FramebufferSetVSync;
+end;
+ 
+{==============================================================================}
+
+function BCM2708FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+{Implementation of FramebufferDeviceSetOffset API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceSetOffset instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Offset}
+    if X > (Framebuffer.VirtualWidth - Framebuffer.PhysicalWidth) then Exit;
+    if Y > (Framebuffer.VirtualHeight - Framebuffer.PhysicalHeight) then Exit;
+    
+    {Set Offset}
+    Result:=FramebufferSetOffset(X,Y);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Udpate Offset}
+    if not(Pan) then
+     begin
+      Framebuffer.OffsetX:=X;
+      Framebuffer.OffsetY:=Y;
+     end; 
+   finally
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2708FramebufferGetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+{Implementation of FramebufferDeviceGetPalette API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceGetPalette instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Palette}
+    if Palette = nil then Exit;
+    
+    {Get Palette}
+    Result:=FramebufferGetPalette(@Palette.Entries,SizeOf(Palette.Entries));
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Update Palette}
+    Palette.Start:=0;
+    Palette.Count:=256;
+   finally
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+    
+{==============================================================================}
+
+function BCM2708FramebufferSetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+{Implementation of FramebufferDeviceSetPalette API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceSetPalette instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Palette}
+    if Palette = nil then Exit;
+    if Palette.Start > 255 then Exit;
+    if Palette.Count > 256 then Exit;
+    
+    {Set Palette}
+    Result:=FramebufferSetPalette(Palette.Start,Palette.Count,@Palette.Entries,SizeOf(Palette.Entries));
+   finally
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
 function BCM2708FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
+{Implementation of FramebufferDeviceSetBacklight API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceSetBacklight instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -9373,6 +9584,8 @@ end;
 {==============================================================================}
 
 function BCM2708FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+{Implementation of FramebufferDeviceSetProperties API for BCM2708 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceSetProperties instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;

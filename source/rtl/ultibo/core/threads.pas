@@ -1849,7 +1849,7 @@ function SysGetProcessID:SizeUInt;
 {RTL Thread Manager Functions}
 {See: \source\rtl\inc\thread.inc and \source\rtl\inc\threadh.inc}
 {See: \source\rtl\inc\system.inc and \source\rtl\inc\systemh.inc}
-function ThreadMain(Parameter:Pointer):LongInt;
+function ThreadMain(Parameter:Pointer):PtrInt;
 
 function SysBeginThread(SignalAction:Pointer;StackSize:PtrUInt;ThreadFunction:TThreadFunc;ThreadParameter:Pointer;CreationFlags:DWORD;var ThreadId:TThreadID):TThreadID;
 function SysBeginThreadEx(SignalAction:Pointer;StackSize:PtrUInt;ThreadFunction:TThreadFunc;ThreadParameter:Pointer;CreationFlags:DWORD;Priority,Affinity,CPU:LongWord;Name:PChar;var ThreadId:TThreadID):TThreadID;
@@ -3732,7 +3732,7 @@ begin
   acquire any Locks or other resources
   
   CPU utilization is based on the number of loops this routine can complete in
-  a second and is independant for each CPU in the system
+  a second and is independent for each CPU in the system
   
   The value UtilizationCurrent is set to the value of SCHEDULER_IDLE_PER_SECOND
   by the scheduler interrupt and then decremented on each loop of this routine
@@ -20565,7 +20565,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL Thread Manager Functions}
-function ThreadMain(Parameter:Pointer):LongInt;
+function ThreadMain(Parameter:Pointer):PtrInt;
 {See: ThreadMain in \source\rtl\win\systhrd.inc}
 {See also: ThreadMain in \source\rtl\unix\cthreads.pp}
 {See also: ThreadMain in \source\rtl\netware\systhrd.inc}

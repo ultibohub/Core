@@ -165,6 +165,8 @@ function HD44780ConsoleDrawText(Console:PConsoleDevice;Handle:TFontHandle;const 
 function HD44780ConsoleDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
 function HD44780ConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
 
+function HD44780ConsolePutText(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;
+
 function HD44780ConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
  
 {==============================================================================}
@@ -258,6 +260,7 @@ begin
    HD44780Console.Console.DeviceDrawText:=HD44780ConsoleDrawText;
    HD44780Console.Console.DeviceDrawBlock:=HD44780ConsoleDrawBlock;
    HD44780Console.Console.DeviceDrawWindow:=HD44780ConsoleDrawWindow;
+   HD44780Console.Console.DevicePutText:=HD44780ConsolePutText;
    HD44780Console.Console.DeviceGetPosition:=HD44780ConsoleGetPosition;
    HD44780Console.Console.Width:=Width;
    HD44780Console.Console.Height:=Height;
@@ -356,6 +359,8 @@ end;
 {==============================================================================}
 {HD44780 Console Functions}
 function HD44780ConsoleOpen(Console:PConsoleDevice):LongWord;
+{Implementation of ConsoleDeviceOpen API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceOpen instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -421,6 +426,8 @@ end;
 {==============================================================================}
 
 function HD44780ConsoleClose(Console:PConsoleDevice):LongWord;
+{Implementation of ConsoleDeviceClose API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceClose instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -470,6 +477,8 @@ end;
 {==============================================================================}
 
 function HD44780ConsoleClear(Console:PConsoleDevice;Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceClear API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceClear instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -518,6 +527,8 @@ end;
 {==============================================================================}
 
 function HD44780ConsoleScroll(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord;
+{Implementation of ConsoleDeviceScroll API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceScroll instead}
 var
  Dest:PByte;
  Source:PByte;
@@ -771,6 +782,8 @@ end;
 {==============================================================================}
  
 function HD44780ConsoleDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawChar API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawChar instead}
 var
  CurrentX:LongWord;
  CurrentY:LongWord;
@@ -856,6 +869,8 @@ end;
 {==============================================================================}
 
 function HD44780ConsoleDrawText(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawText API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawText instead}
 var
  Count:LongWord;
  CurrentX:LongWord;
@@ -953,6 +968,8 @@ end;
 {==============================================================================}
 
 function HD44780ConsoleDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
+{Implementation of ConsoleDeviceDrawBlock API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawBlock instead}
 var
  CurrentX:LongWord;
  CurrentY:LongWord;
@@ -1033,6 +1050,9 @@ end;
 {==============================================================================}
 
 function HD44780ConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
+{Implementation of ConsoleDeviceDrawWindow API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceDrawWindow instead}
+
 {Note: Caller must hold the Window lock}
 var
  CurrentX:LongWord;
@@ -1093,10 +1113,109 @@ begin
    Result:=ERROR_SUCCESS;
   end; 
 end;
+
+{==============================================================================}
+
+function HD44780ConsolePutText(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;
+{Implementation of ConsoleDevicePutText API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDevicePutText instead}
+var
+ Line:LongWord;
+ Count:LongWord;
+ Offset:LongWord;
+ CurrentX:LongWord;
+ CurrentY:LongWord;
+ TextBuffer:PConsoleChar;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check Buffer}
+ if Buffer = nil then Exit;
+ 
+ {Check Width and Height}
+ if (Width = 0) or (Height = 0) then Exit;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IF DEFINED(HD44780_DEBUG) or DEFINED(CONSOLE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'HD44780: Console Put Text (Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ {$ENDIF}
+ 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Source}
+    if Source.X < 1 then Exit;
+    if Source.Y < 1 then Exit;
+
+    {Check Dest}
+    if Dest.X >= Console.Width then Exit;
+    if Dest.Y >= Console.Height then Exit;
+    if (Dest.X + Width) > Console.Width then Exit;
+    if (Dest.Y + Height) > Console.Height then Exit;
+    
+    {Get Text Buffer}
+    Offset:=((Width + Skip) * (Source.Y - 1)) + (Source.X - 1);
+    TextBuffer:=PConsoleChar(PtrUInt(Buffer) + (Offset  * SizeOf(TConsoleChar))); 
+    
+    {Get Lines}
+    CurrentY:=Dest.Y;
+    for Line:=1 to Height do
+     begin
+      {Cursor Position}
+      HD44780CursorPosition(PHD44780Console(Console),CurrentY,Dest.X);
+      
+      {Get Text}
+      CurrentX:=Dest.X;
+      for Count:=1 to Width do
+       begin
+        {Update Buffer}
+        PByte(PHD44780Console(Console).Buffer + (CurrentX + (CurrentY * Console.Width)))^:=Byte(Byte(TextBuffer.Ch));
+      
+        {Write Char}
+        HD44780WriteChar(PHD44780Console(Console),TextBuffer.Ch);
+        
+        Inc(CurrentX);
+        
+        {Update Text Buffer}
+        Inc(TextBuffer);
+        
+        {Update Cursor}
+        PHD44780Console(Console).CursorX:=CurrentX;
+       end;
+         
+      Inc(CurrentY);
+      
+      {Update Text Buffer}
+      Inc(TextBuffer,Skip);
+     end; 
+    
+    {Update Statistics}
+    Inc(Console.PutCount);
+    
+    {Get Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Console.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
    
 {==============================================================================}
 
 function HD44780ConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
+{Implementation of ConsoleDeviceGetPosition API for HD44780}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceGetPosition instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;

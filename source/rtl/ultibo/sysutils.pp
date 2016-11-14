@@ -55,7 +55,7 @@ type
    nFileSizeLow:DWORD;
    dwReserved0:DWORD;
    dwReserved1:DWORD;
-   cFileName:array[0..({System.}MaxPathLen)-1] of AnsiCHAR;
+   cFileName:array[0..({System.}MaxPathLen) - 1] of AnsiCHAR;
    cAlternateFileName:array[0..13] of AnsiCHAR;
   end;
 
@@ -64,22 +64,22 @@ type
 
 type
  {File Functions}
- TSysUtilsFileOpen = function(const FileName:RawByteString;Mode:Integer):LongInt;
- TSysUtilsFileCreate = function(const FileName:RawByteString):LongInt;
+ TSysUtilsFileOpen = function(const FileName:RawByteString;Mode:Integer):THandle;
+ TSysUtilsFileCreate = function(const FileName:RawByteString):THandle;
  TSysUtilsDeleteFile = function(const FileName:RawByteString):Boolean;
- TSysUtilsFileClose = procedure(Handle:LongInt);
+ TSysUtilsFileClose = procedure(Handle:THandle);
  TSysUtilsRenameFile = function(const OldName,NewName:RawByteString):Boolean;
- TSysUtilsFileSeek = function(Handle,FOffset,Origin:LongInt):LongInt;
+ TSysUtilsFileSeek = function(Handle:THandle;FOffset,Origin:LongInt):LongInt;
  TSysUtilsFileTruncate = function(Handle:THandle;Size:Int64):Boolean;
  TSysUtilsFileAge = function(const FileName:RawByteString):LongInt;
  TSysUtilsFileExists = function(const FileName:RawByteString):Boolean;
  TSysUtilsFileGetAttr = function(const FileName:RawByteString):LongInt;
- TSysUtilsFileGetDate = function(Handle:LongInt):LongInt;
+ TSysUtilsFileGetDate = function(Handle:THandle):LongInt;
  TSysUtilsFileSetAttr = function(const FileName:RawByteString;Attr:LongInt):LongInt;
- TSysUtilsFileSetDate = function(Handle,Age:LongInt):LongInt;
- TSysUtilsFileRead = function(Handle:LongInt;out Buffer;Count:LongInt):LongInt;
- TSysUtilsFileWrite = function(Handle:LongInt;const Buffer;Count:LongInt):LongInt;
- TSysUtilsFileSeekEx = function(Handle:LongInt;FOffset:Int64;Origin:LongInt):Int64;
+ TSysUtilsFileSetDate = function(Handle:THandle;Age:LongInt):LongInt;
+ TSysUtilsFileRead = function(Handle:THandle;out Buffer;Count:LongInt):LongInt;
+ TSysUtilsFileWrite = function(Handle:THandle;const Buffer;Count:LongInt):LongInt;
+ TSysUtilsFileSeekEx = function(Handle:THandle;FOffset:Int64;Origin:LongInt):Int64;
  
  TSysUtilsInternalFindFirst = function(const Path:RawByteString;Attr:LongInt;out SearchRec:TSearchRec;var Name:RawByteString):LongInt;
  TSysUtilsInternalFindNext = function(var SearchRec:TSearchRec;var Name:RawByteString):LongInt;
@@ -155,7 +155,7 @@ var
                               File Functions
 ****************************************************************************}
 
-function FileOpen(const FileName: RawByteString; Mode: Integer): LongInt;
+function FileOpen(const FileName: RawByteString; Mode: Integer): THandle;
 begin
  if Assigned(SysUtilsFileOpenHandler) then
   begin
@@ -167,7 +167,7 @@ begin
   end; 
 end;
 
-function FileGetDate(Handle: LongInt) : LongInt;
+function FileGetDate(Handle: THandle) : LongInt;
 begin
  if Assigned(SysUtilsFileGetDateHandler) then
   begin
@@ -179,7 +179,7 @@ begin
   end;
 end;
 
-function FileSetDate(Handle, Age: LongInt) : LongInt;
+function FileSetDate(Handle : THandle;Age : Longint) : Longint;
 begin
  if Assigned(SysUtilsFileSetDateHandler) then
   begin
@@ -191,7 +191,7 @@ begin
   end;
 end;
 
-function FileCreate(const FileName: RawByteString) : LongInt;
+function FileCreate(const FileName: RawByteString) : THandle;
 begin
  if Assigned(SysUtilsFileCreateHandler) then
   begin
@@ -203,17 +203,17 @@ begin
   end;
 end;
 
-function FileCreate(const FileName: RawByteString; Rights: integer): LongInt;
+function FileCreate(const FileName: RawByteString; Rights: integer): THandle;
 begin
  Result:=FileCreate(FileName); {Rights is ignored by Ultibo}
 end;
 
-function FileCreate(const FileName: RawByteString; ShareMode: integer; rights : integer): LongInt;
+function FileCreate(const FileName: RawByteString; ShareMode: integer; rights : integer): THandle;
 begin
  Result:=FileCreate(FileName); {ShareMode and Rights are ignored by Ultibo}
 end;
 
-function FileRead(Handle: LongInt; Out Buffer; Count: LongInt): LongInt;
+function FileRead(Handle: THandle; Out Buffer; Count: LongInt): LongInt;
 begin
  if Assigned(SysUtilsFileReadHandler) then
   begin
@@ -225,7 +225,7 @@ begin
   end;
 end;
 
-function FileWrite(Handle: LongInt; const Buffer; Count: LongInt): LongInt;
+function FileWrite(Handle: THandle; const Buffer; Count: LongInt): LongInt;
 begin
  if Assigned(SysUtilsFileWriteHandler) then
   begin
@@ -237,7 +237,7 @@ begin
   end;
 end;
 
-function FileSeek(Handle, FOffset, Origin: LongInt) : LongInt;
+function FileSeek(Handle : THandle; FOffset, Origin: Longint) : Longint;
 begin
  if Assigned(SysUtilsFileSeekHandler) then
   begin
@@ -249,7 +249,7 @@ begin
   end;
 end;
 
-function FileSeek(Handle: LongInt; FOffset: Int64; Origin: Longint): Int64;
+function FileSeek(Handle : THandle; FOffset: Int64; Origin: Longint) : Int64;
 begin
  if Assigned(SysUtilsFileSeekExHandler) then
   begin
@@ -261,7 +261,7 @@ begin
   end;
 end;
 
-procedure FileClose(Handle: LongInt);
+procedure FileClose(Handle: THandle);
 begin
  if Assigned(SysUtilsFileCloseHandler) then
   begin

@@ -180,7 +180,7 @@ function RTL8192CUDeviceOpen(Network:PNetworkDevice):LongWord;
 function RTL8192CUDeviceClose(Network:PNetworkDevice):LongWord;
 function RTL8192CUDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function RTL8192CUDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
-function RTL8192CUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function RTL8192CUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 {==============================================================================}
 {RTL8192CU USB Functions}
@@ -343,7 +343,7 @@ end;
  
 {==============================================================================}
 
-function RTL8192CUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function RTL8192CUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of NetworkDeviceControl for the RTL8192CU device}
 var
  Device:PUSBDevice;

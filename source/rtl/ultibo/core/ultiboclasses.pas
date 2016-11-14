@@ -6879,7 +6879,7 @@ begin
     Inc(FCapacity,Result.Capacity);
     
     {Copy Data}
-    System.Move(Pointer(LongWord(Block.Data) + Offset)^,Pointer(LongWord(Result.Data))^,Length shl 2);
+    System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl 2);
     
     {Set Recent}
     FRecent:=Result;
@@ -8454,7 +8454,7 @@ begin
     Inc(FCapacity,Result.Capacity);
     
     {Copy Data}
-    System.Move(Pointer(LongWord(Block.Data) + Offset)^,Pointer(LongWord(Result.Data))^,Length shl 2);
+    System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl 2);
     
     {Set Recent}
     FRecent:=Result;

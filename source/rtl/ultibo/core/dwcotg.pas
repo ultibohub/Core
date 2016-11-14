@@ -4768,7 +4768,7 @@ begin
    {Account for packets and bytes transferred}   
    Request.AttemptedPacketsRemaining:=(Request.AttemptedPacketsRemaining - PacketsTransferred);
    Request.AttemptedBytesRemaining:=(Request.AttemptedBytesRemaining - BytesTransferred);
-   LongWord(Request.CurrentData):=(LongWord(Request.CurrentData) + BytesTransferred);
+   PtrUInt(Request.CurrentData):=(PtrUInt(Request.CurrentData) + BytesTransferred);
    
    {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Attempted packets remaining is ' + IntToStr(Request.AttemptedPacketsRemaining));

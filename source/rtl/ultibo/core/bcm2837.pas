@@ -905,14 +905,14 @@ const
  BCM2837_CM_CTL_KILL           = (1 shl 5); {Kill the clock generator (0 = no action / 1 = stop and reset the clock generator) (This is intended for test/debug only)}
  BCM2837_CM_CTL_ENAB           = (1 shl 4); {Enable the clock generator}
  
- BCM2837_CM_CTL_SRC_GND        = (0 shl 0); {Clock source - GND}
- BCM2837_CM_CTL_SRC_OSC        = (1 shl 0); {Clock source - Oscillator}
- BCM2837_CM_CTL_SRC_TESTDEBUG0 = (2 shl 0); {Clock source - Testdebug0}
- BCM2837_CM_CTL_SRC_TESTDEBUG1 = (3 shl 0); {Clock source - Testdebug1}
- BCM2837_CM_CTL_SRC_PLLAPER    = (4 shl 0); {Clock source - PLLA per}
- BCM2837_CM_CTL_SRC_PLLCPER    = (5 shl 0); {Clock source - PLLC per}
- BCM2837_CM_CTL_SRC_PLLDPER    = (6 shl 0); {Clock source - PLLD per}
- BCM2837_CM_CTL_SRC_HDMIAUX    = (7 shl 0); {Clock source - HDMI auxiliary}
+ BCM2837_CM_CTL_SRC_GND        = (0 shl 0); {Clock source - 0 Hz GND}
+ BCM2837_CM_CTL_SRC_OSC        = (1 shl 0); {Clock source - 19.2 MHz Oscillator}
+ BCM2837_CM_CTL_SRC_TESTDEBUG0 = (2 shl 0); {Clock source - 0 Hz Testdebug0}
+ BCM2837_CM_CTL_SRC_TESTDEBUG1 = (3 shl 0); {Clock source - 0 Hz Testdebug1}
+ BCM2837_CM_CTL_SRC_PLLA       = (4 shl 0); {Clock source - 0 Hz PLLA}
+ BCM2837_CM_CTL_SRC_PLLC       = (5 shl 0); {Clock source - 1000 MHz PLLC (changes with overclock settings)}
+ BCM2837_CM_CTL_SRC_PLLD       = (6 shl 0); {Clock source - 500 MHz PLLD}
+ BCM2837_CM_CTL_SRC_HDMI       = (7 shl 0); {Clock source - 216 MHz HDMI auxiliary}
  
  {Clock Manager CM_*DIV register bits (See 6.3)}
  BCM2837_CM_DIV_INT_MASK  = $00FFF000; {Integer part of divisor (This value has a minimum limit determined by the MASH setting) (To avoid lock-ups and glitches do not change this control while BUSY=1)}
@@ -1140,7 +1140,7 @@ const
  BCM2837_MBOX_TAG_TST_PITCH         = $00044008;
  BCM2837_MBOX_TAG_SET_PITCH         = $00048008;
  
- BCM2837_MBOX_TAG_GET_VIRTUAL_OFFSET	= $00040009;  {Offset of display window within buffer}
+ BCM2837_MBOX_TAG_GET_VIRTUAL_OFFSET	= $00040009; {Offset of physical display window within virtual buffer}
  BCM2837_MBOX_TAG_TEST_VIRTUAL_OFFSET	= $00044009;
  BCM2837_MBOX_TAG_SET_VIRTUAL_OFFSET	= $00048009;
 
@@ -2911,7 +2911,25 @@ type
   0:(Request:TBCM2837MailboxTagNoRequest);
   1:(Response:TBCM2837MailboxTagGetVirtualGPIOResponse);
  end;
+
+ {Test Vsync}
+ PBCM2837MailboxTagTestVsync = ^TBCM2837MailboxTagTestVsync;
+ TBCM2837MailboxTagTestVsync = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagNoRequest);
+  1:(Response:TBCM2837MailboxTagNoResponse);
+ end;
  
+ {Set Vsync}
+ PBCM2837MailboxTagSetVsync = ^TBCM2837MailboxTagSetVsync;
+ TBCM2837MailboxTagSetVsync = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagNoRequest);
+  1:(Response:TBCM2837MailboxTagNoResponse);
+ end;
+
  {Set Backlight}
  TBCM2837MailboxTagSetBacklightRequest = record
   Brightness:LongWord;

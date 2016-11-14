@@ -491,7 +491,7 @@ function SMSC95XXDeviceOpen(Network:PNetworkDevice):LongWord;
 function SMSC95XXDeviceClose(Network:PNetworkDevice):LongWord;
 function SMSC95XXDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function SMSC95XXDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
-function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function SMSC95XXBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 function SMSC95XXBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
@@ -1067,7 +1067,7 @@ end;
 
 {==============================================================================}
 
-function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of NetworkDeviceControl for the SMSC95XX device}
 var
  Status:LongWord;

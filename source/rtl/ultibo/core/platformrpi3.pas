@@ -80,7 +80,7 @@ interface
 {$INCLUDE GlobalDefines.inc}
 {--$DEFINE RPI3_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,PlatformARM,PlatformARMv8,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF CPUAARCH64}PlatformARMv8,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
 
 {==============================================================================}
 const
@@ -138,7 +138,12 @@ const
  
 const
  {Kernel Image Name}
+ {$IFDEF CPUARM}
  RPI3_KERNEL_NAME = 'kernel7.img';
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
+ RPI3_KERNEL_NAME = 'kernel8.img';
+ {$ENDIF CPUAARCH64}
  RPI3_KERNEL_CONFIG = 'config.txt';
  RPI3_KERNEL_COMMAND = 'cmdline.txt';
  
@@ -348,12 +353,16 @@ function RPi3FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord;
 function RPi3FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 function RPi3FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 
+function RPi3FramebufferTestVsync:LongWord;
+function RPi3FramebufferSetVsync:LongWord;
+
 function RPi3FramebufferSetBacklight(Brightness:LongWord):LongWord;
 
 function RPi3TouchGetBuffer(var Address:LongWord):LongWord;
 
 function RPi3VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
 
+function RPi3CursorSetDefault:LongWord;
 function RPi3CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
 function RPi3CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
 
@@ -758,12 +767,16 @@ begin
  FramebufferSetPaletteHandler:=RPi3FramebufferSetPalette;
  FramebufferTestPaletteHandler:=RPi3FramebufferTestPalette;
 
+ FramebufferTestVsyncHandler:=RPi3FramebufferTestVsync;
+ FramebufferSetVsyncHandler:=RPi3FramebufferSetVsync;
+ 
  FramebufferSetBacklightHandler:=RPi3FramebufferSetBacklight;
  
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPi3TouchGetBuffer;
  
  {Register Platform Cursor Handlers}
+ CursorSetDefaultHandler:=RPi3CursorSetDefault;
  CursorSetInfoHandler:=RPi3CursorSetInfo;
  CursorSetStateHandler:=RPi3CursorSetState;
  {$ENDIF}
@@ -791,12 +804,22 @@ begin
  {Register PlatformARMv8 SWI Handlers}
  ARMv8DispatchSWIHandler:=RPi3DispatchSWI;
  
+ {$IFDEF CPUARM}
  {Register PlatformARM Helper Handlers}
  ARMWaitHandler:=RPi3Wait;
  ARMLongWaitHandler:=RPi3LongWait;
  ARMShortWaitHandler:=RPi3ShortWait;
  ARMSlowBlinkHandler:=RPi3SlowBlink;
  ARMFastBlinkHandler:=RPi3FastBlink;
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
+ {Register PlatformAARCH64 Helper Handlers}
+ AARCH64WaitHandler:=RPi3Wait;
+ AARCH64LongWaitHandler:=RPi3LongWait;
+ AARCH64ShortWaitHandler:=RPi3ShortWait;
+ AARCH64SlowBlinkHandler:=RPi3SlowBlink;
+ AARCH64FastBlinkHandler:=RPi3FastBlink;
+ {$ENDIF CPUAARCH64}
  
  RPi3Initialized:=True;
 end;
@@ -805,6 +828,7 @@ end;
 
 procedure RPi3SecondarySwitch; assembler; nostackframe; 
 {Secondary CPU switch from HYP mode handler}
+{$IFDEF CPUARM}
 asm
  //Get the CPSR
  mrs r0, cpsr  
@@ -837,11 +861,18 @@ asm
  //Return to startup 
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure RPi3SecondarySecure; assembler; nostackframe; 
 {Secondary CPU switch to secure mode handler}
+{$IFDEF CPUARM}
 asm
  //Check the secure boot configuration
  mov r0, #RPI3_SECURE_BOOT
@@ -880,11 +911,18 @@ asm
  //Return to startup
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure RPi3SecondaryHandler; assembler; nostackframe; 
 {Secondary CPU startup handler routine}
+{$IFDEF CPUARM}
 asm
  //Call the HYP mode switch handler in case the CPU is in HYP mode
  bl RPi3SecondarySwitch
@@ -1058,6 +1096,12 @@ asm
 .LUNDEFINED_STACK_BASE:
   .long UNDEFINED_STACK_BASE  
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 {==============================================================================}
@@ -1540,13 +1584,13 @@ begin
  if not(MemoryInitialized) then RPi3MemoryInit;
  
  {Parse Boot Tags (Register all memory with Heap manager)}
- if not(ParseBootTagsCompleted) then ARMParseBootTags;
+ if not(ParseBootTagsCompleted) then {$IFDEF CPUARM}ARMParseBootTags{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseBootTags{$ENDIF CPUAARCH64};
  
  {Parse Command Line (Copy command line from zero page)}
- if not(ParseCommandLineCompleted) then ARMParseCommandLine; 
+ if not(ParseCommandLineCompleted) then {$IFDEF CPUARM}ARMParseCommandLine{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseCommandLine{$ENDIF CPUAARCH64};
 
  {Parse Environment (Copy environment from zero page)}
- if not(ParseEnvironmentCompleted) then ARMParseEnvironment;
+ if not(ParseEnvironmentCompleted) then {$IFDEF CPUARM}ARMParseEnvironment{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseEnvironment{$ENDIF CPUAARCH64};
  
  {Create the first level page table}
  {Setup 1MB sections covering the entire 4GB address space with a default layout}
@@ -6932,6 +6976,112 @@ end;
 
 {==============================================================================}
 
+function RPi3FramebufferTestVsync:LongWord;
+{Test Framebuffer Vertical Sync from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestVsync;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestVsync) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagTestVsync(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TST_VSYNC;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestVsync) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestVsync)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestVsync - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3FramebufferSetVsync:LongWord;
+{Set Framebuffer Vertical Sync from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetVsync;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetVsync) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagSetVsync(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_VSYNC;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetVsync) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetVsync)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetVsync - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
 function RPi3FramebufferSetBacklight(Brightness:LongWord):LongWord;
 {Set Framebuffer Backlight Brightness from the Mailbox property tags channel}
 var
@@ -6948,7 +7098,7 @@ begin
  Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetBacklight) + SizeOf(TBCM2837MailboxFooter);
  
  {Allocate Mailbox Buffer}
- Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
  if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
  if Header = nil then Exit;
  try
@@ -7097,6 +7247,48 @@ begin
  finally
   FreeMem(Header);
  end;
+end;
+
+{==============================================================================}
+
+function RPi3CursorSetDefault:LongWord;
+{Set Cursor Default (Pixels) from the Mailbox property tags channel}
+var
+ Row:LongWord;
+ Col:LongWord;
+ Offset:LongWord;
+ Size:LongWord;
+ Cursor:PLongWord;
+ Address:LongWord;
+begin
+ {Determine Cursor Size}
+ Size:=CURSOR_ARROW_DEFAULT_WIDTH * CURSOR_ARROW_DEFAULT_HEIGHT * SizeOf(LongWord);
+ 
+ {Allocate the Cursor (No Cache)}
+ Cursor:=AllocNoCacheMem(Size);
+ if Cursor <> nil then
+  begin
+    Offset:=0;
+    for Row:=0 to CURSOR_ARROW_DEFAULT_HEIGHT - 1 do
+     begin
+      for Col:=0 to CURSOR_ARROW_DEFAULT_WIDTH - 1 do
+       begin
+        Cursor[Col + Offset]:=CURSOR_ARROW_DEFAULT[Row,Col];
+       end;
+
+      {Update Offset}
+      Inc(Offset,CURSOR_ARROW_DEFAULT_WIDTH);
+     end;
+ 
+   {Convert to Physical Address}
+   Address:=PhysicalToBusAddress(Cursor);
+ 
+   {Set the Cursor}
+   RPi3CursorSetInfo(CURSOR_ARROW_DEFAULT_WIDTH,CURSOR_ARROW_DEFAULT_HEIGHT,0,0,Pointer(Address),Size);
+ 
+   {Free the Cursor}
+   FreeMem(Cursor);
+  end;
 end;
 
 {==============================================================================}
@@ -8527,7 +8719,7 @@ begin
   begin
    try
     {Release Framebuffer}
-    Result:=Rpi2FramebufferRelease;
+    Result:=RPi3FramebufferRelease;
     if Result <> ERROR_SUCCESS then Exit;
      
     {Update Statistics}
@@ -8636,6 +8828,7 @@ end;
 {==============================================================================}
 {RPi3 Helper Functions}
 procedure RPi3Wait; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Wait for a period of time in a loop
  mov r0,#0x9F00000
@@ -8644,10 +8837,17 @@ asm
  cmp r0,#0
  bne .LWait
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure RPi3LongWait; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Wait for a long period of time in a loop
  ldr r0,=0x3FF00000
@@ -8656,10 +8856,17 @@ asm
  cmp r0,#0
  bne .LWait
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure RPi3ShortWait; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Wait for a short period of time in a loop
  mov r0,#0x1F0000
@@ -8668,10 +8875,17 @@ asm
  cmp r0,#0
  bne .LWait
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure RPi3SlowBlink; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Slow blink the Activity LED in a loop
  bl RPi3ActivityLEDEnable
@@ -8682,10 +8896,17 @@ asm
  bl RPi3Wait
  b .LLoop
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure RPi3FastBlink; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Fast blink the Activity LED in a loop
  bl RPi3ActivityLEDEnable
@@ -8696,11 +8917,18 @@ asm
  bl RPi3ShortWait
  b .LLoop
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure RPi3BootBlink; assembler; nostackframe;
 {Blink the Activity LED without dependancy on any other RTL setup}
+{$IFDEF CPUARM}
 asm
  //Blink the Activity LED in a loop
  //Enable the Activity LED
@@ -8724,6 +8952,12 @@ asm
  //--bl RPi3LongWait
  b .LLoop
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
