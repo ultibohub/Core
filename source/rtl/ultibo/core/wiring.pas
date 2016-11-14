@@ -55,7 +55,7 @@ Wiring
  
  Pin numbering is maintained as per the original WiringPi library so that example code will
  port without changes. The pin numbering is different to the GPIO device unit which uses 
- a linear numbering scheme to make it hardware independant.
+ a linear numbering scheme to make it hardware independent.
   
  Function names and parameters are also maintained almost exactly as per the original library.
  

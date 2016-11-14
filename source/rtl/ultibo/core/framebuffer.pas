@@ -71,7 +71,10 @@ const
  FRAMEBUFFER_FLAG_CACHED    = $00000010;  {If set framebuffer is in cached memory and cache cleaning should be used}
  FRAMEBUFFER_FLAG_SWAP      = $00000020;  {If set framebuffer requires byte order of colors to be reversed (BGR <-> RGB)} 
  FRAMEBUFFER_FLAG_BACKLIGHT = $00000040;  {If set the framebuffer supports setting the backlight brightness}  
- FRAMEBUFFER_FLAG_VIRTUAL   = $00000080;  {If set the framebuffer supports virtual width and height plus offset x and y (Pan/Flip etc)}
+ FRAMEBUFFER_FLAG_VIRTUAL   = $00000080;  {If set the framebuffer supports virtual width and height}
+ FRAMEBUFFER_FLAG_OFFSETX   = $00000100;  {If set the framebuffer supports virtual offset X (Horizontal Pan/Flip etc)}
+ FRAMEBUFFER_FLAG_OFFSETY   = $00000200;  {If set the framebuffer supports virtual offset Y (Vertical Pan/Flip etc)}
+ FRAMEBUFFER_FLAG_SYNC      = $00000400;  {If set the framebuffer supports waiting for vertical sync}
  
  {Framebuffer Transfer Flags}
  FRAMEBUFFER_TRANSFER_NONE = $00000000;
@@ -80,6 +83,13 @@ const
 {==============================================================================}
 type
  {Framebuffer specific types}
+ PFramebufferPalette = ^TFramebufferPalette;
+ TFramebufferPalette = record
+  Start:LongWord;                    {The number of the first valid entry in the palette}
+  Count:LongWord;                    {The total number of entries in the palette}
+  Entries:array[0..255] of LongWord; {The palette entries in COLOR_FORMAT_DEFAULT format}
+ end;
+ 
  PFramebufferProperties = ^TFramebufferProperties;
  TFramebufferProperties = record
   Flags:LongWord;                                {Framebuffer device flags (eg FRAMEBUFFER_FLAG_COMMIT) (Ignored for Allocate / SetProperties)}
@@ -128,10 +138,15 @@ type
  TFramebufferDeviceFillRect = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;
  
  TFramebufferDeviceGetLine = function(Framebuffer:PFramebufferDevice;Y:LongWord):Pointer;
- TFramebufferDeviceGetPoint = function(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;  
+ TFramebufferDeviceGetPoint = function(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;
  
- //TFramebufferDeviceGetPalette //To Do //8 bit color only
- //TFramebufferDeviceSetPalette //To Do //8 bit color only
+ TFramebufferDeviceWaitSync = function(Framebuffer:PFramebufferDevice):LongWord;
+ 
+ TFramebufferDeviceGetOffset = function(Framebuffer:PFramebufferDevice;var X,Y:LongWord):LongWord;
+ TFramebufferDeviceSetOffset = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+ 
+ TFramebufferDeviceGetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+ TFramebufferDeviceSetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
  
  TFramebufferDeviceSetBacklight = function(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
  
@@ -158,6 +173,11 @@ type
   DeviceFillRect:TFramebufferDeviceFillRect;     {A device specific DeviceFillRect method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceGetLine:TFramebufferDeviceGetLine;       {A device specific DeviceGetLine method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceGetPoint:TFramebufferDeviceGetPoint;     {A device specific DeviceGetPoint method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
+  DeviceWaitSync:TFramebufferDeviceWaitSync;     {A device specific DeviceWaitSync method implementing a standard framebuffer device interface (Optional)}
+  DeviceGetOffset:TFramebufferDeviceGetOffset;   {A device specific DeviceGetOffset method implementing a standard framebuffer device interface (Optional)}
+  DeviceSetOffset:TFramebufferDeviceSetOffset;   {A device specific DeviceSetOffset method implementing a standard framebuffer device interface (Optional)}
+  DeviceGetPalette:TFramebufferDeviceGetPalette; {A device specific DeviceGetPalette method implementing a standard framebuffer device interface (Optional)}
+  DeviceSetPalette:TFramebufferDeviceSetPalette; {A device specific DeviceSetPalette method implementing a standard framebuffer device interface (Optional)}
   DeviceSetBacklight:TFramebufferDeviceSetBacklight;   {A device specific DeviceSetBacklight method implementing a standard framebuffer device interface (Optional)}
   DeviceGetProperties:TFramebufferDeviceGetProperties; {A device specific DeviceGetProperties method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceSetProperties:TFramebufferDeviceSetProperties; {A device specific DeviceSetProperties method implementing a standard framebuffer device interface (Mandatory)}
@@ -232,6 +252,14 @@ function FramebufferDeviceFillRect(Framebuffer:PFramebufferDevice;X,Y,Width,Heig
 
 function FramebufferDeviceGetLine(Framebuffer:PFramebufferDevice;Y:LongWord):Pointer;
 function FramebufferDeviceGetPoint(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;  
+
+function FramebufferDeviceWaitSync(Framebuffer:PFramebufferDevice):LongWord;
+ 
+function FramebufferDeviceGetOffset(Framebuffer:PFramebufferDevice;var X,Y:LongWord):LongWord;
+function FramebufferDeviceSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+
+function FramebufferDeviceGetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+function FramebufferDeviceSetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
 
 function FramebufferDeviceSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
 
@@ -502,6 +530,7 @@ function FramebufferDeviceRead(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffe
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Pixel data will be returned in the color format of the framebuffer}
+{Note: X and Y are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 {Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache cleaning before a DMA read}
 var
  Data:TDMAData;
@@ -520,7 +549,6 @@ begin
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- if Framebuffer.Address = 0 then Exit;
  
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Read (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Len=' + IntToStr(Len) + ')');
@@ -539,6 +567,9 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+    
     {Check X, Y}
     if X >= Framebuffer.PhysicalWidth then Exit;
     if Y >= Framebuffer.PhysicalHeight then Exit;
@@ -547,8 +578,8 @@ begin
     Size:=Len * (Framebuffer.Depth shr 3);
 
     {Get Address}
-    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
-
+    Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X) * (Framebuffer.Depth shr 3)));
+    
     {Check Size}
     if (Address + Size) > (Framebuffer.Address + Framebuffer.Size) then Exit;
     
@@ -615,6 +646,7 @@ function FramebufferDeviceWrite(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buff
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Caller must ensure pixel data is in the correct color format for the framebuffer}
+{Note: X and Y are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 {Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
 var
  Data:TDMAData;
@@ -651,6 +683,9 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+   
     {Check X, Y}
     if X >= Framebuffer.PhysicalWidth then Exit;
     if Y >= Framebuffer.PhysicalHeight then Exit;
@@ -659,7 +694,7 @@ begin
     Size:=Len * (Framebuffer.Depth shr 3);
 
     {Get Address}
-    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+    Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X) * (Framebuffer.Depth shr 3)));
 
     {Check Size}
     if (Address + Size) > (Framebuffer.Address + Framebuffer.Size) then Exit;
@@ -705,7 +740,7 @@ begin
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
      begin
       {Assume full lines}
-      Framebuffer.DeviceMark(Framebuffer,0,Y,Framebuffer.PhysicalWidth,(Size div Framebuffer.Pitch) + 1,Flags);
+      Framebuffer.DeviceMark(Framebuffer,0,Y,Framebuffer.VirtualWidth,(Size div Framebuffer.Pitch) + 1,Flags);
      end;
    
     {Update Statistics}
@@ -732,6 +767,7 @@ function FramebufferDeviceMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,F
 {Flags: The flags used for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
+{Note: X and Y are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 {Note: Not all framebuffer devices support mark, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
 {      Devices that support and require mark should set the flag FRAMEBUFFER_FLAG_MARK}
 begin
@@ -813,6 +849,7 @@ function FramebufferDeviceGetRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Bu
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Pixel data will be returned in the color format of the framebuffer}
+{Note: X and Y are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 {Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache cleaning before a DMA read}
 var
  Data:TDMAData;
@@ -851,6 +888,9 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+
     {Check X, Y}
     if X >= Framebuffer.PhysicalWidth then Exit;
     if Y >= Framebuffer.PhysicalHeight then Exit;
@@ -867,7 +907,7 @@ begin
     Stride:=Framebuffer.Pitch - Size;
     
     {Get Address}
-    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+    Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X) * (Framebuffer.Depth shr 3)));
     
     {Check DMA Available}
     if not(DMAAvailable) or not(SysInitCompleted) then
@@ -944,6 +984,7 @@ function FramebufferDevicePutRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Bu
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Caller must ensure pixel data is in the correct color format for the framebuffer}
+{Note: X and Y are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 {Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
 var
  Data:TDMAData;
@@ -983,6 +1024,9 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+
     {Check X, Y}
     if X >= Framebuffer.PhysicalWidth then Exit;
     if Y >= Framebuffer.PhysicalHeight then Exit;
@@ -999,7 +1043,7 @@ begin
     Stride:=Framebuffer.Pitch - Size;
     
     {Get Address}
-    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+    Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X) * (Framebuffer.Depth shr 3)));
 
     {Check DMA Available}
     if not(DMAAvailable) or not(SysInitCompleted) then
@@ -1083,6 +1127,7 @@ function FramebufferDeviceCopyRect(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Wi
 {Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)} 
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
+{Note: X1, Y1, X2 and Y2 are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 {Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache clean/invalidate before or after a DMA read/write}
 var
  Data:TDMAData;
@@ -1124,6 +1169,9 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+
     {Check X1, Y1}
     if X1 >= Framebuffer.PhysicalWidth then Exit;
     if Y1 >= Framebuffer.PhysicalHeight then Exit;
@@ -1173,10 +1221,10 @@ begin
       if Buffer = nil then Exit;
       
       {Get Source}
-      Source:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+      Source:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y1) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X1) * (Framebuffer.Depth shr 3)));
       
       {Get Address}
-      Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+      Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y2) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
       
       {Check DMA Transfer}
       if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
@@ -1204,7 +1252,7 @@ begin
           
           {Create Data (To Buffer)}
           FillChar(Next^,SizeOf(TDMAData),0);
-          Next.Source:=Pointer(Framebuffer.Address + (Count * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+          Next.Source:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Count) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X1) * (Framebuffer.Depth shr 3)));
           Next.Dest:=Buffer;
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
           Next.StrideLength:=Size;
@@ -1219,7 +1267,7 @@ begin
           {Create Data (From Buffer)}
           FillChar(Next^,SizeOf(TDMAData),0);
           Next.Source:=Buffer;
-          Next.Dest:=Pointer(Framebuffer.Address + (Count * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+          Next.Dest:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Count) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
           Next.StrideLength:=Size;
           Next.SourceStride:=Stride;
@@ -1283,10 +1331,10 @@ begin
         Stride:=Framebuffer.Pitch - Size;
         
         {Get Source}
-        Source:=(Framebuffer.Address + (Y1 * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+        Source:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y1) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X1) * (Framebuffer.Depth shr 3)));
         
         {Get Address}
-        Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+        Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y2) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
         
         {Check DMA Transfer}
         if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
@@ -1336,10 +1384,10 @@ begin
         Stride:=-(Framebuffer.Pitch + Size); {Negative Stride}
         
         {Get Source}
-        Source:=(Framebuffer.Address + ((Y1 + Height - 1) * Framebuffer.Pitch) + (X1 * (Framebuffer.Depth shr 3)));
+        Source:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y1 + Height - 1) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X1) * (Framebuffer.Depth shr 3)));
         
         {Get Address}
-        Address:=(Framebuffer.Address + ((Y2 + Height - 1) * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+        Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y2 + Height - 1) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
         
         {Check DMA Transfer}
         if ((Flags and FRAMEBUFFER_TRANSFER_DMA) <> 0) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) then
@@ -1383,7 +1431,7 @@ begin
         Stride:=Framebuffer.Pitch - Size;
          
         {Get Address (Start - Required for commit)}
-        Address:=(Framebuffer.Address + (Y2 * Framebuffer.Pitch) + (X2 * (Framebuffer.Depth shr 3)));
+        Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y2) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
        end;       
      end;     
    
@@ -1425,6 +1473,7 @@ function FramebufferDeviceFillRect(Framebuffer:PFramebufferDevice;X,Y,Width,Heig
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Color must be specified in the correct format for the framebuffer}
+{Note: X and Y are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 {Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
 var
  Data:TDMAData;
@@ -1465,6 +1514,9 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+
     {Check X, Y}
     if X >= Framebuffer.PhysicalWidth then Exit;
     if Y >= Framebuffer.PhysicalHeight then Exit;
@@ -1478,7 +1530,7 @@ begin
     Stride:=Framebuffer.Pitch - Size;
     
     {Get Address}
-    Address:=(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+    Address:=(Framebuffer.Address + ((Framebuffer.OffsetY + Y) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X) * (Framebuffer.Depth shr 3)));
 
     {Check Buffer}
     if Framebuffer.LineBuffer = nil then
@@ -1622,6 +1674,8 @@ function FramebufferDeviceGetLine(Framebuffer:PFramebufferDevice;Y:LongWord):Poi
 {Framebuffer: The framebuffer device to get the start address from}
 {Y: The row to get the start address of}
 {Return: Pointer to the start address of the row or nil on failure}
+
+{Note: Y is relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 begin
  {}
  Result:=nil;
@@ -1646,11 +1700,14 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+
     {Check Y}
     if Y >= Framebuffer.PhysicalHeight then Exit;
  
     {Get Address}
-    Result:=Pointer(Framebuffer.Address + (Y * Framebuffer.Pitch));
+    Result:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Y) * Framebuffer.Pitch));
    finally
     {Unlock Framebuffer}
     MutexUnlock(Framebuffer.Lock);
@@ -1666,6 +1723,8 @@ function FramebufferDeviceGetPoint(Framebuffer:PFramebufferDevice;X,Y:LongWord):
 {X: The column to get the start address of}
 {Y: The row to get the start address of}
 {Return: Pointer to the address of the row and column or nil on failure}
+
+{Note: X and Y are relative to the physical screen and will be translated to the virtual buffer (Where applicable)}
 begin
  {}
  Result:=nil;
@@ -1690,17 +1749,213 @@ begin
    {Lock Framebuffer}
    if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
    try
+    {Check Address}
+    if Framebuffer.Address = 0 then Exit;
+
     {Check X, Y}
     if X >= Framebuffer.PhysicalWidth then Exit;
     if Y >= Framebuffer.PhysicalHeight then Exit;
  
     {Get Address}
-    Result:=Pointer(Framebuffer.Address + (Y * Framebuffer.Pitch) + (X * (Framebuffer.Depth shr 3)));
+    Result:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Y) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X) * (Framebuffer.Depth shr 3)));
    finally
     {Unlock Framebuffer}
     MutexUnlock(Framebuffer.Lock);
    end; 
   end;  
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceWaitSync(Framebuffer:PFramebufferDevice):LongWord;
+{Wait for the next vertical sync signal from the display hardware}
+{Framebuffer: The framebuffer device to wait for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not all framebuffer devices support wait sync, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+{      Devices that support wait sync should set the flag FRAMEBUFFER_FLAG_SYNC}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Wait Sync');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceWaitSync) then
+  begin
+   Result:=Framebuffer.DeviceWaitSync(Framebuffer);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceGetOffset(Framebuffer:PFramebufferDevice;var X,Y:LongWord):LongWord;
+{Get the virtual offset X and Y from a framebuffer device}
+{Framebuffer: The framebuffer device to get the offset from}
+{X: The X (Column) offset value in pixels returned from the device if successful}
+{X: The Y (Row) offset value in pixels returned from the device if successful}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: X and Y are relative to the virtual buffer and NOT the physical screen (Where applicable)}
+{Note: Not all framebuffer devices support X and/or Y offset}
+{      Devices that support offset X should set the flag FRAMEBUFFER_FLAG_OFFSETX}
+{      Devices that support offset Y should set the flag FRAMEBUFFER_FLAG_OFFSETY}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Get Offset (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceGetOffset) then
+  begin
+   Result:=Framebuffer.DeviceGetOffset(Framebuffer,X,Y);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Get X and Y}
+   X:=Framebuffer.OffsetX;
+   Y:=Framebuffer.OffsetY;
+   
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+   
+   {Unlock Framebuffer}
+   MutexUnlock(Framebuffer.Lock);
+  end; 
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+{Set the virtual offset X and Y of a framebuffer device}
+{Framebuffer: The framebuffer device to set the offset for}
+{X: The X (Column) offset value in pixels to set}
+{X: The Y (Row) offset value in pixels to set}
+{Pan: If True then pan the display without updating the Offset X and/or Y}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: X and Y are relative to the virtual buffer and NOT the physical screen (Where applicable)}
+{Note: Not all framebuffer devices support X and/or Y offset, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+{      Devices that support offset X should set the flag FRAMEBUFFER_FLAG_OFFSETX}
+{      Devices that support offset Y should set the flag FRAMEBUFFER_FLAG_OFFSETY}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Set Offset (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ')');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceSetOffset) then
+  begin
+   Result:=Framebuffer.DeviceSetOffset(Framebuffer,X,Y,Pan);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceGetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+{Get the 8 bit color palette from a framebuffer device}
+{Framebuffer: The framebuffer device to get the palette from}
+{Palette: Pointer to a TFramebufferPalette structure for the palette data}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+{Note: Not all framebuffer devices support 8 bit palette, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Get Palette');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceGetPalette) then
+  begin
+   Result:=Framebuffer.DeviceGetPalette(Framebuffer,Palette);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceSetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+{Set the 8 bit color palette of a framebuffer device}
+{Framebuffer: The framebuffer device to set the palette for}
+{Palette: Pointer to a TFramebufferPalette structure for the palette data}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+{Note: Not all framebuffer devices support 8 bit palette, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Set Palette');
+ {$ENDIF}
+
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+ 
+ if Assigned(Framebuffer.DeviceSetPalette) then
+  begin
+   Result:=Framebuffer.DeviceSetPalette(Framebuffer,Palette);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end; 
 end;
 
 {==============================================================================}
@@ -1930,6 +2185,11 @@ begin
  Result.DeviceFillRect:=nil;
  Result.DeviceGetLine:=nil;
  Result.DeviceGetPoint:=nil;
+ Result.DeviceWaitSync:=nil;
+ Result.DeviceGetOffset:=nil;
+ Result.DeviceSetOffset:=nil;
+ Result.DeviceGetPalette:=nil;
+ Result.DeviceSetPalette:=nil;
  Result.DeviceSetBacklight:=nil;
  Result.DeviceGetProperties:=nil;
  Result.DeviceSetProperties:=nil;

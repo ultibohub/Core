@@ -42,7 +42,7 @@ unit Platform;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalStrings,HeapManager,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,GlobalStrings,HeapManager,Dos,SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -349,8 +349,9 @@ type
  TGPIOCallback = procedure(Data:Pointer;Pin,Trigger:LongWord);
  
 type
- {Prototypes for Blink Handlers}
+ {Prototypes for Blink/Output Handlers}
  TBootBlink = procedure;
+ TBootOutput = procedure(Value:LongWord);
  
 type
  {Prototypes for LED Handlers}
@@ -614,6 +615,9 @@ type
  TFramebufferSetPalette = function(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
  TFramebufferTestPalette = function(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
  
+ TFramebufferTestVsync = function:LongWord;
+ TFramebufferSetVsync = function:LongWord;
+ 
  TFramebufferSetBacklight = function(Brightness:LongWord):LongWord;
  
 type 
@@ -622,6 +626,7 @@ type
  
 type
  {Prototypes for Cursor Handlers}
+ TCursorSetDefault = function:LongWord;
  TCursorSetInfo = function(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
  TCursorSetState = function(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
  
@@ -1040,8 +1045,9 @@ var
  ParseEnvironmentHandler:TParseEnvironment;
 
 var
- {Blink Handlers}
+ {Blink/Output Handlers}
  BootBlinkHandler:TBootBlink;
+ BootOutputHandler:TBootOutput;
  
 var
  {LED Handlers}
@@ -1305,10 +1311,14 @@ var
  FramebufferSetPaletteHandler:TFramebufferSetPalette;
  FramebufferTestPaletteHandler:TFramebufferTestPalette;
  
+ FramebufferTestVsyncHandler:TFramebufferTestVsync;
+ FramebufferSetVsyncHandler:TFramebufferSetVsync;
+ 
  FramebufferSetBacklightHandler:TFramebufferSetBacklight;
  
 var
  {Cursor Handlers}
+ CursorSetDefaultHandler:TCursorSetDefault;
  CursorSetInfoHandler:TCursorSetInfo;
  CursorSetStateHandler:TCursorSetState;
  
@@ -1634,6 +1644,7 @@ procedure ParseEnvironment;
 {==============================================================================}
 {Boot Functions}
 procedure BootBlink; inline;
+procedure BootOutput(Value:LongWord); inline;
 
 {==============================================================================}
 {LED Functions}
@@ -1908,6 +1919,9 @@ function FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord; inline;
 function FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord; inline;
 function FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord; inline;
 
+function FramebufferTestVsync:LongWord; inline;
+function FramebufferSetVsync:LongWord; inline;
+
 function FramebufferSetBacklight(Brightness:LongWord):LongWord; inline;
 
 {==============================================================================}
@@ -1916,6 +1930,7 @@ function TouchGetBuffer(var Address:LongWord):LongWord; inline;
 
 {==============================================================================}
 {Cursor Functions}
+function CursorSetDefault:LongWord; inline;
 function CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord; inline;
 function CursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord; inline;
 
@@ -2226,11 +2241,32 @@ procedure MillisecondDelayEx(Milliseconds:LongWord;Wait:Boolean);
 
 {==============================================================================}
 {RTL Functions}
-procedure SysRandomize;
-function SysGetTickCount:LongWord;
-function SysGetTickCount64:QWord;
-procedure SysGetLocalTime(var SystemTime:TSystemTime);
-function SysGetLocalTimeOffset:Integer;
+{System Random Functions}
+procedure SystemRandomize;
+
+{Dos Conversion Functions}
+function DosGetMsCount:Int64;
+
+{Dos Info/Date/Time Functions}
+function DosDosVersion:Word;
+procedure DosGetDate(var Year,Month,MDay,WDay:Word);
+procedure DosSetDate(Year,Month,Day:Word);
+procedure DosGetTime(var Hour,Minute,Second,Sec100:Word);
+procedure DosSetTime(Hour,Minute,Second,Sec100:Word);
+
+{Dos Environment Functions}
+function DosEnvCount:Longint;
+function DosEnvStr(Index:LongInt):ShortString;
+function DosGetEnv(EnvVar:ShortString):ShortString; 
+
+{SysUtils Tick Functions}
+function SysUtilsGetTickCount:LongWord;
+function SysUtilsGetTickCount64:QWord;
+
+{SysUtils Locale Functions}
+procedure SysUtilsGetLocalTime(var SystemTime:TSystemTime);
+procedure SysUtilsSetLocalTime(const SystemTime:TSystemTime);
+function SysUtilsGetLocalTimeOffset:Integer;
 
 {==============================================================================}
 {Platform Helper Functions}
@@ -2313,15 +2349,29 @@ begin
  
  {Setup System Handlers}
  {Random Functions}
- SysRandomizeHandler:=SysRandomize;
+ SysRandomizeHandler:=SystemRandomize;
+ 
+ {Setup Dos Handlers}
+ {Conversion Functions}
+ DosGetMsCountHandler:=DosGetMsCount;
+ {Info/Date/Time Functions}
+ DosDosVersionHandler:=DosDosVersion;
+ DosGetDateHandler:=DosGetDate;
+ DosSetDateHandler:=DosSetDate;
+ DosGetTimeHandler:=DosGetTime;
+ DosSetTimeHandler:=DosSetTime;
+ {Environment Functions}
+ DosEnvCountHandler:=DosEnvCount;
+ DosEnvStrHandler:=DosEnvStr;
+ DosGetEnvHandler:=DosGetEnv;
  
  {Setup SysUtils Handlers}
  {Locale Functions}
- SysUtilsGetLocalTimeHandler:=SysGetLocalTime;
- SysUtilsGetLocalTimeOffsetHandler:=SysGetLocalTimeOffset;
+ SysUtilsGetLocalTimeHandler:=SysUtilsGetLocalTime;
+ SysUtilsGetLocalTimeOffsetHandler:=SysUtilsGetLocalTimeOffset;
  {Tick Functions}
- SysUtilsGetTickCountHandler:=SysGetTickCount;
- SysUtilsGetTickCount64Handler:=SysGetTickCount64;
+ SysUtilsGetTickCountHandler:=SysUtilsGetTickCount;
+ SysUtilsGetTickCount64Handler:=SysUtilsGetTickCount64;
  
  {Initialize CPU}
  CPUInit;
@@ -2342,7 +2392,7 @@ begin
  
  {Initialize MMU}
  MMUInit;
-
+ 
  {Initialize SMP}
  SMPInit;
  
@@ -2773,6 +2823,19 @@ begin
  if Assigned(BootBlinkHandler) then
   begin
    BootBlinkHandler;
+  end;
+end;
+
+{==============================================================================}
+
+procedure BootOutput(Value:LongWord); inline;
+{Output boot time information (Where Applicable)}
+{Note: Intended for startup diagnostics when bootstrapping a new board}
+begin
+ {}
+ if Assigned(BootOutputHandler) then
+  begin
+   BootOutputHandler(Value);
   end;
 end;
 
@@ -4607,7 +4670,7 @@ function ClockGetCount:LongWord; inline;
 {Gets the current system clock count (32 least significant bits of total)}
 {Note: This will normally come from the free running system timer in the board
  and is useful as a form of tick count but not for time keeping because
- the actual rate at which this increments is dependant on the system timer clock
+ the actual rate at which this increments is dependent on the system timer clock
  frequency of the specific board and may not be a measure of time in its raw form}
 begin
  {} 
@@ -4627,7 +4690,7 @@ function ClockGetTotal:Int64; inline;
 {Gets the total system clock count}
 {Note: This will normally come from the free running system timer in the board
  and is useful as a form of tick count but not for time keeping because
- the actual rate at which this increments is dependant on the system timer clock
+ the actual rate at which this increments is dependent on the system timer clock
  frequency of the specific board and may not be a measure of time in its raw form}
 begin
  {} 
@@ -5486,6 +5549,38 @@ end;
     
 {==============================================================================}
     
+function FramebufferTestVsync:LongWord; inline;
+{Test the Framebuffer Vertical Sync (Where Applicable)}    
+begin
+ {}
+ if Assigned(FramebufferTestVsyncHandler) then
+  begin
+   Result:=FramebufferTestVsyncHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferSetVsync:LongWord; inline;
+{Set (Wait For) the Framebuffer Vertical Sync (Where Applicable)}    
+begin
+ {}
+ if Assigned(FramebufferSetVsyncHandler) then
+  begin
+   Result:=FramebufferSetVsyncHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+    
 function FramebufferSetBacklight(Brightness:LongWord):LongWord; inline;
 {Set the Framebuffer Backlight brightness (Where Applicable)}    
 begin
@@ -5518,6 +5613,22 @@ end;
 
 {==============================================================================}
 {Cursor Functions}
+function CursorSetDefault:LongWord; inline;
+{Set the default Cursor Info (Where Applicable)}
+begin
+ {}
+ if Assigned(CursorSetDefaultHandler) then
+  begin
+   Result:=CursorSetDefaultHandler;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
 function CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord; inline;
 {Set the Cursor Info (Width and Height, Hotspot and Pixel image)}
 begin
@@ -8691,15 +8802,120 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL Functions}
-procedure SysRandomize;
+{System Random Functions}
+procedure SystemRandomize;
 begin
  {}
- RandSeed:=ClockGetTime;
+ RandSeed:=ClockGetTime + ClockGetCount;
+end;
+
+{==============================================================================}
+{Dos Conversion Functions}
+function DosGetMsCount:Int64;
+begin
+ {}
+ if CLOCK_CYCLES_PER_MILLISECOND > 0 then
+  begin
+   Result:=ClockGetTotal div CLOCK_CYCLES_PER_MILLISECOND;
+  end
+ else
+  begin
+   Result:=ClockGetTotal;
+  end;  
+end;
+
+{==============================================================================}
+{Dos Info/Date/Time Functions}
+function DosDosVersion:Word;
+begin
+ {}
+ Result:=((ULTIBO_RELEASE_VERSION_MAJOR and $0F) shl 12) or ((ULTIBO_RELEASE_VERSION_MINOR and $0F) shl 8) or (ULTIBO_RELEASE_VERSION_REVISION and $FF);
 end;
 
 {==============================================================================}
 
-function SysGetTickCount:LongWord;
+procedure DosGetDate(var Year,Month,MDay,WDay:Word);
+var
+ SystemTime:TSystemTime;
+begin
+ {}
+ SysUtilsGetLocalTime(SystemTime);     
+ Year:=SystemTime.Year;
+ Month:=SystemTime.Month;
+ MDay:=SystemTime.Day;
+ WDay:=SystemTime.DayOfWeek;
+end;
+
+{==============================================================================}
+
+procedure DosSetDate(Year,Month,Day:Word);
+var
+ SystemTime:TSystemTime;
+begin
+ {}
+ SysUtilsGetLocalTime(SystemTime);  
+ SystemTime.Year:=Year;
+ SystemTime.Month:=Month;
+ SystemTime.Day:=Day;
+ SysUtilsSetLocalTime(SystemTime);     
+end;
+
+{==============================================================================}
+
+procedure DosGetTime(var Hour,Minute,Second,Sec100:Word);
+var
+ SystemTime:TSystemTime;
+begin
+ {}
+ SysUtilsGetLocalTime(SystemTime);     
+ Hour:=SystemTime.Hour;                         
+ Minute:=SystemTime.Minute;                     
+ Second:=SystemTime.Second;                    
+ Sec100:=SystemTime.MilliSecond div 10;          
+end;
+
+{==============================================================================}
+
+procedure DosSetTime(Hour,Minute,Second,Sec100:Word);
+var
+ SystemTime:TSystemTime;
+begin
+ {}
+ SysUtilsGetLocalTime(SystemTime);  
+ SystemTime.Hour:=Hour;
+ SystemTime.Minute:=Minute;
+ SystemTime.Second:=Second;
+ SystemTime.MilliSecond:=Sec100 * 10;
+ SysUtilsSetLocalTime(SystemTime);     
+end;
+
+{==============================================================================}
+{Dos Environment Functions}
+function DosEnvCount:Longint;
+begin
+ {}
+ Result:=SysUtils.GetEnvironmentVariableCount;
+end;
+
+{==============================================================================}
+
+function DosEnvStr(Index:LongInt):ShortString;
+begin
+ {}
+ Result:=SysUtils.GetEnvironmentString(Index);
+end;
+
+{==============================================================================}
+
+function DosGetEnv(EnvVar:ShortString):ShortString; 
+begin
+ {}
+ Result:=SysUtils.GetEnvironmentVariable(EnvVar);
+end;
+
+{==============================================================================}
+{SysUtils Tick Functions}
+function SysUtilsGetTickCount:LongWord;
 begin
  {}
  if CLOCK_CYCLES_PER_MILLISECOND > 0 then
@@ -8714,7 +8930,7 @@ end;
 
 {==============================================================================}
 
-function SysGetTickCount64:QWord;
+function SysUtilsGetTickCount64:QWord;
 begin
  {}
  if CLOCK_CYCLES_PER_MILLISECOND > 0 then
@@ -8728,8 +8944,8 @@ begin
 end;
 
 {==============================================================================}
-
-procedure SysGetLocalTime(var SystemTime:TSystemTime);
+{SysUtils Locale Functions}
+procedure SysUtilsGetLocalTime(var SystemTime:TSystemTime);
 {Get the current local time as a SystemTime value}
 {Note: Includes timezone offset if configured}
 var
@@ -8777,7 +8993,40 @@ end;
 
 {==============================================================================}
 
-function SysGetLocalTimeOffset:Integer;
+procedure SysUtilsSetLocalTime(const SystemTime:TSystemTime);
+{Set the current local time from a SystemTime value}
+{Note: Includes timezone offset if configured}
+var
+ Offset:Int64;
+ LocalTime:Int64;
+ ClockTime:Int64;
+ DateTime:TDateTime;
+begin
+ {}
+ try
+  {Convert to DateTime}
+  DateTime:=ComposeDateTime(EncodeDate(SystemTime.Year,SystemTime.Month,SystemTime.Day),EncodeTime(SystemTime.Hour,SystemTime.Minute,SystemTime.Second,SystemTime.MilliSecond));
+
+  {Convert to Local Time}
+  LocalTime:=((Trunc(DateTime) * TIME_TICKS_PER_DAY) + TIME_TICKS_TO_1899) + ((Round(Frac(DateTime) * PASCAL_TIME_MILLISECONDS_PER_DAY) * TIME_TICKS_PER_MILLISECOND));
+
+  {Get Timezone Offset}
+  Offset:=TIMEZONE_TIME_OFFSET; {Avoid 32 bit overflow}
+  Offset:=Offset * TIME_TICKS_PER_MINUTE;
+  
+  {Convert to Clock Time}
+  ClockTime:=LocalTime + (Offset);
+  
+  {Set Clock Time}
+  ClockSetTime(ClockTime,True);
+ except
+  {EncodeDate and EncodeTime can raise Exceptions}
+ end; 
+end;
+
+{==============================================================================}
+
+function SysUtilsGetLocalTimeOffset:Integer;
 {Get the current local time offset value}
 begin
  {}

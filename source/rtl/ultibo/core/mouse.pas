@@ -810,8 +810,8 @@ function MouseDeviceControl(Mouse:PMouseDevice;Request:Integer;Argument1:LongWor
 {Perform a control request on the specified mouse device}
 {Mouse: The mouse device to control}
 {Request: The request code for the operation (eg MOUSE_CONTROL_GET_FLAG)}
-{Argument1: The first argument for the operation (Dependant on request code)}
-{Argument2: The second argument for the operation (Dependant on request code)}
+{Argument1: The first argument for the operation (Dependent on request code)}
+{Argument2: The second argument for the operation (Dependent on request code)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}

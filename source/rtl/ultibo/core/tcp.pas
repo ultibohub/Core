@@ -8189,7 +8189,7 @@ begin
               
               {Shrink Segment}
               Segment.Control:=Segment.Control and not(TCP_FLAG_SYN);
-              Inc(LongWord(Segment.Data),BufferSize);
+              Inc(PtrUInt(Segment.Data),BufferSize);
               Dec(Segment.Size,BufferSize);
               
               {Dont mark as Read as there is more data}

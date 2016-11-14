@@ -27,6 +27,11 @@ uses
  charset,
  cpall,
  sysconst,
+ character,
+ fpwidestring,
+ 
+ {Ultibo Boot/Platform Units (ARM)}
+ platformarm,
  
  {Ultibo Boot/Platform Units (ARMv6)}
  bootrpi,
@@ -45,11 +50,13 @@ uses
  bootodroidu3,
  bootodroidxu3,
  bootpcduino,
+ bootqemuvpb,
  bcm2836,
  bcm2709,
  allwinnera20,
  allwinnerh3,
  freescaleimx6,
+ versatilepb,
  platformarmv7,
  platformrpi2,
  platformbpi,
@@ -60,6 +67,17 @@ uses
  platformodroidu3,
  platformodroidxu3,
  platformpcduino,
+ platformqemuvpb,
+ 
+ {Ultibo Boot/Platform Units (AARCH64)}
+ platformaarch64,
+ 
+ {Ultibo Boot/Platform Units (ARMv8)}
+ bootrpi3,
+ bcm2837,
+ bcm2710,
+ platformarmv8,
+ platformrpi3,
  
  {Ultibo Boot/Platform Units (MIPS)}
  bootci20,
@@ -94,12 +112,15 @@ uses
  console,
  logging,
  serial,
+ uart,
  i2c,
  spi,
  i2s,
  pwm,
+ w1,
  rtc,
  usb,
+ usbcdc,
  mmc,
  mmcspi,
  bluetooth,
@@ -115,12 +136,14 @@ uses
  ataoe,
  atapi,
  scsi,
+ codec,
  audio,
  video,
  mpeg,
  dvb,
  dab,
  dfu,
+ tftframebuffer,
  vc4,
  gc880,
  gc2000,
@@ -180,16 +203,81 @@ uses
  cifs,
  services,
  shell,
+ graphicsconsole,
 
- {Ultibo Extra Units} 
- consoleshell,
- remoteshell,
- shellfilesystem,
- shellupdate,
- webstatus,
+ {Ultibo CodePage Units} 
+ cp720oem,
+ cp737oem,
+ cp775oem,
+ cp850oem,
+ cp852oem,
+ cp857oem,
+ cp862oem,
+ cp866oem,
+ cp874ansi,
+ cp1250ansi,
+ cp1251ansi,
+ cp1253ansi,
+ cp1254ansi,
+ cp1255ansi,
+ cp1256ansi,
+ cp1257ansi,
+ cp1258ansi,
  
- raspberrypi,
- raspberrypi2;
+ {Ultibo Driver Units} 
+ af16x2lcd,
+ ds1307,
+ ftdiserial,
+ hd44780,
+ hx8357d,
+ ili9340,
+ mcp230xx,
+ pitft28,
+ pitft35,
+ pl011,
+ pl110,
+ pl2303,
+ rpift5406,
+ rt2x00lib,
+ rt2x00usb,
+ rt2800lib,
+ rt2800usb,
+ rtl8188eu,
+ rtl8192cu,
+ rtlwifi,
+ stmpe,
+ usbcdcacm,
+ 
+ {Ultibo Font Units} 
+ Latin1_8x8,
+ Latin1_8x10,
+ Latin1_8x12,
+ Latin1_8x14,
+ Sun_12x22,
+ 
+ {Ultibo Keymap Units} 
+ keymap_de,
+ keymap_es,
+ keymap_fr,
+ keymap_uk,
+ keymap_us,
+ keymap_us_intl,
+ 
+ {Ultibo Extra Units} 
+ ConsoleShell,
+ RemoteShell,
+ ShellFilesystem,
+ ShellUpdate,
+ WebStatus,
+ 
+ WiringI2C,
+ WiringSerial,
+ WiringSPI,
+ 
+ RaspberryPi,
+ RaspberryPi2,
+ RaspberryPi3,
+ QEMUVersatilePB;
 
 implementation
 

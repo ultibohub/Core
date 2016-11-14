@@ -23,7 +23,8 @@ Boards
  Odroid C1
  Odroid U3
  Odroid XU3
-
+ QEMU VersatilePB
+ 
 Licence
 =======
 
@@ -856,7 +857,7 @@ procedure ARMv7TimerInit(Frequency:LongWord);
 
 procedure ARMv7PageTableInit;
 
-procedure ARMv7SystemCall(Number:LongWord;Param1,Param2,Param3:LongWord);
+procedure ARMv7SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt);
 
 function ARMv7CPUGetMode:LongWord;
 function ARMv7CPUGetState:LongWord;
@@ -1378,7 +1379,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv7SystemCall(Number:LongWord;Param1,Param2,Param3:LongWord); assembler; nostackframe;
+procedure ARMv7SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); assembler; nostackframe;
 asm
  //Perform a Supervisor Call
  //Number will be passed in R0
@@ -6438,7 +6439,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMV7SetTimerCompare(Timer,High,Low:LongWord);
+procedure ARMV7SetTimerCompare(Timer,High,Low:LongWord); assembler; nostackframe; 
 asm
  //Set the Physical, Virtual or Hypervisor Timer CompareValue register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer

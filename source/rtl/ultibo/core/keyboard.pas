@@ -1281,8 +1281,8 @@ function KeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument
 {Perform a control request on the specified keyboard device}
 {Keyboard: The keyboard device to control}
 {Request: The request code for the operation (eg KEYBOARD_CONTROL_GET_FLAG)}
-{Argument1: The first argument for the operation (Dependant on request code)}
-{Argument2: The second argument for the operation (Dependant on request code)}
+{Argument1: The first argument for the operation (Dependent on request code)}
+{Argument2: The second argument for the operation (Dependent on request code)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}

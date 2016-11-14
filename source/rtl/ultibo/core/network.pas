@@ -323,7 +323,7 @@ type
   Buffer:Pointer;  {Pointer to buffer (Set by driver that owns this packet)}
   Data:Pointer;    {Start of data within buffer (Set by driver that owns this packet)}
   Length:LongInt;  {Length of packet data (Set by driver on Receive / Set by caller on Transmit, contains maximum length on Allocate)}
-  Flags:LongWord;  {Packet specific flags (eg Error, Broadcast etc) (Dependant on network type)}
+  Flags:LongWord;  {Packet specific flags (eg Error, Broadcast etc) (Dependent on network type)}
  end;
  
  {Network Buffer}
@@ -370,7 +370,7 @@ type
  TNetworkDeviceClose = function(Network:PNetworkDevice):LongWord;
  TNetworkDeviceRead = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
  TNetworkDeviceWrite = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
- TNetworkDeviceControl = function(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+ TNetworkDeviceControl = function(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
  
  TNetworkBufferAllocate = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
  TNetworkBufferRelease = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
@@ -1064,7 +1064,7 @@ function NetworkDeviceOpen(Network:PNetworkDevice):LongWord;
 function NetworkDeviceClose(Network:PNetworkDevice):LongWord;
 function NetworkDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
 function NetworkDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
-function NetworkDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function NetworkDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function NetworkBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 function NetworkBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
@@ -3291,7 +3291,7 @@ end;
 
 function TWiredAdapter.GetMTU(AHandle:THandle):Word;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  ReaderLock;
@@ -3471,7 +3471,7 @@ end;
 
 function TWiredAdapter.GetHardwareAddress(AHandle:THandle):THardwareAddress;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  ReaderLock;
@@ -3490,7 +3490,7 @@ begin
   if FDevice = nil then Exit;
   
   {Get Hardware Address}
-  FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_HARDWARE,LongWord(@Result),Value);
+  FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_HARDWARE,PtrUInt(@Result),Value);
  finally 
   ReaderUnlock;
  end; 
@@ -3500,7 +3500,7 @@ end;
 
 function TWiredAdapter.SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  WriterLock;
@@ -3520,7 +3520,7 @@ begin
   if FDevice = nil then Exit;
   
   {Set Hardware Address}
-  if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_SET_MAC,LongWord(@AAddress),Value) = ERROR_SUCCESS then
+  if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_SET_MAC,PtrUInt(@AAddress),Value) = ERROR_SUCCESS then
    begin
     FHardwareAddress:=AAddress;
    
@@ -3536,7 +3536,7 @@ end;
 
 function TWiredAdapter.GetBroadcastAddress(AHandle:THandle):THardwareAddress;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  ReaderLock;
@@ -3555,7 +3555,7 @@ begin
   if FDevice = nil then Exit;
   
   {Get Hardware Address}
-  FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_BROADCAST,LongWord(@Result),Value);
+  FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_BROADCAST,PtrUInt(@Result),Value);
  finally 
   ReaderUnlock;
  end; 
@@ -5316,7 +5316,7 @@ end;
 
 {==============================================================================}
 
-function NetworkDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function NetworkDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;

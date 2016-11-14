@@ -17,14 +17,14 @@
 
 {Platform specific information}
 type
-  { fd are int in C also for 64bit targets (x86_64) }
-  THandle = Longint;
-  { pthread_t is defined as an "unsigned long" }
+  { A handle in Ultibo is normally a pointer }
   {$ifdef CPU64}
-  TThreadID = QWord;
-  {$else}
+  THandle = Int64;
+  {$else CPU64}
+  THandle = Longint;
+  {$endif CPU64}
+  { A thread id is the same as a thread handle }
   TThreadID = THandle;
-  {$endif}
 
   { pthread_mutex_t }
   PRTLCriticalSection = ^TRTLCriticalSection;

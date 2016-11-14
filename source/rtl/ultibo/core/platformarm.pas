@@ -27,7 +27,8 @@ Boards
  Odroid C1
  Odroid U3
  Odroid XU3
-
+ QEMU VersatilePB
+ 
 Licence
 =======
 
@@ -56,7 +57,7 @@ unit PlatformARM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,{Devices,}SysUtils; //TestingRPi
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -111,9 +112,10 @@ const
 {==============================================================================}
 const
  {Definitions of ARM Machine Types}
- ARM_MACHINE_BCM2708 = $00000C42;
- ARM_MACHINE_BCM2709 = $00000C42; {BCM2709 uses the same Machine Type as BCM2708}
- ARM_MACHINE_BCM2710 = $00000C42; {BCM2710 uses the same Machine Type as BCM2708}
+ ARM_MACHINE_VERSATILE_PB = $00000183;
+ ARM_MACHINE_BCM2708      = $00000C42;
+ ARM_MACHINE_BCM2709      = $00000C42; {BCM2709 uses the same Machine Type as BCM2708}
+ ARM_MACHINE_BCM2710      = $00000C42; {BCM2710 uses the same Machine Type as BCM2708}
  
 {==============================================================================}
 type

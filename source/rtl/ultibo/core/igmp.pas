@@ -3496,7 +3496,7 @@ begin
       System.Move(ReadNext^,ABuffer,ReadSize);
      end;
      
-    Inc(LongWord(ReadNext),ReadSize);
+    Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end
   else
@@ -3544,7 +3544,7 @@ begin
        end;
      end;
     
-    Inc(LongWord(ReadNext),ReadSize);
+    Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end;
   
@@ -3617,7 +3617,7 @@ begin
     {Write the Packet Data}
     System.Move(ABuffer,WriteNext^,WriteSize);
     
-    Inc(LongWord(WriteNext),WriteSize);
+    Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end
   else
@@ -3638,7 +3638,7 @@ begin
     {Write the Second Block of the Packet Data}
     System.Move(Pointer(LongWord(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
     
-    Inc(LongWord(WriteNext),WriteSize);
+    Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end;
    

@@ -2939,7 +2939,7 @@ end;
 
 function TWiFiAdapter.GetMTU(AHandle:THandle):Word;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  ReaderLock;
@@ -3045,7 +3045,7 @@ end;
 
 function TWiFiAdapter.GetHardwareAddress(AHandle:THandle):THardwareAddress;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  ReaderLock;
@@ -3064,7 +3064,7 @@ begin
   if FDevice = nil then Exit;
   
   {Get Hardware Address}
-  NetworkDeviceControl(FDevice,NETWORK_CONTROL_GET_HARDWARE,LongWord(@Result),Value);
+  NetworkDeviceControl(FDevice,NETWORK_CONTROL_GET_HARDWARE,PtrUInt(@Result),Value);
  finally 
   ReaderUnlock;
  end; 
@@ -3074,7 +3074,7 @@ end;
 
 function TWiFiAdapter.SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  WriterLock;
@@ -3094,7 +3094,7 @@ begin
   if FDevice = nil then Exit;
   
   {Set Hardware Address}
-  if NetworkDeviceControl(FDevice,NETWORK_CONTROL_SET_MAC,LongWord(@AAddress),Value) = ERROR_SUCCESS then
+  if NetworkDeviceControl(FDevice,NETWORK_CONTROL_SET_MAC,PtrUInt(@AAddress),Value) = ERROR_SUCCESS then
    begin
     FHardwareAddress:=AAddress;
    
@@ -3110,7 +3110,7 @@ end;
 
 function TWiFiAdapter.GetBroadcastAddress(AHandle:THandle):THardwareAddress;
 var
- Value:LongWord;
+ Value:PtrUInt;
 begin
  {}
  ReaderLock;
@@ -3129,7 +3129,7 @@ begin
   if FDevice = nil then Exit;
   
   {Get Hardware Address}
-  NetworkDeviceControl(FDevice,NETWORK_CONTROL_GET_BROADCAST,LongWord(@Result),Value);
+  NetworkDeviceControl(FDevice,NETWORK_CONTROL_GET_BROADCAST,PtrUInt(@Result),Value);
  finally 
   ReaderUnlock;
  end; 

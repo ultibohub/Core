@@ -179,6 +179,7 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {Device debug definitions}
+{USB/PCI/SoC}
 {--$DEFINE AHCI_DEBUG}            {Enable debug output/counters for AHCI driver (Default: Off)}
 {--$DEFINE EHCI_DEBUG}            {Enable debug output/counters for EHCI driver (Default: Off)}
 {--$DEFINE XHCI_DEBUG}            {Enable debug output/counters for XHCI driver (Default: Off)}
@@ -188,23 +189,30 @@ Global Defines
 {--$DEFINE BCM2709_DEBUG}         {Enable debug output/counters for BCM2709 drivers (Default: Off)}
 {--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
 
+{WiFi}
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
 {$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
 {--$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
-                                
+     
+{Serial/UART}     
 {--$DEFINE PL2303_DEBUG}          {Enable debug output/counters for PL2303 driver (Default: Off)}
 {--$DEFINE DS1307_DEBUG}          {Enable debug output/counters for DS1307 driver (Default: Off)}
 {--$DEFINE CDCACM_DEBUG}          {Enable debug output/counters for USB CDC ACM driver (Default: Off)}
 {--$DEFINE FTDISERIAL_DEBUG}      {Enable debug output/counters for FTDI Serial driver (Default: Off)}
+{--$DEFINE PL011_DEBUG}         {Enable debug output/counters for PL011 driver (Default: Off)}
 
+{GPIO}
 {--$DEFINE MCP230XX_DEBUG}        {Enable debug output/counters for MCP230XX driver (Default: Off)}
 {--$DEFINE STMPE_DEBUG}           {Enable debug output/counters for STMPE driver (Default: Off)}
-{$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
+{--$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
 
+{Framebuffer/Console}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
 {--$DEFINE ILI9340_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
-{--$DEFINE HX8357D_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
+{--$DEFINE HX8357D_DEBUG}         {Enable debug output/counters for HX8357D driver (Default: Off)}
+{--$DEFINE PL110_DEBUG}           {Enable debug output/counters for PL110 driver (Default: Off)}
 
+{Framebuffer/Console}
 {--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
 {--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
 {--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}

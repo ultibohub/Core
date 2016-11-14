@@ -339,10 +339,14 @@ function RPiFramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord;
 function RPiFramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 function RPiFramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 
+function RPiFramebufferTestVsync:LongWord;
+function RPiFramebufferSetVsync:LongWord;
+
 function RPiFramebufferSetBacklight(Brightness:LongWord):LongWord;
 
 function RPiTouchGetBuffer(var Address:LongWord):LongWord;
 
+function RPiCursorSetDefault:LongWord;
 function RPiCursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
 function RPiCursorSetState(Enabled:Boolean;X,Y:LongWord;Relative:Boolean):LongWord;
 
@@ -732,12 +736,16 @@ begin
  FramebufferSetPaletteHandler:=RPiFramebufferSetPalette;
  FramebufferTestPaletteHandler:=RPiFramebufferTestPalette;
 
+ FramebufferTestVsyncHandler:=RPiFramebufferTestVsync;
+ FramebufferSetVsyncHandler:=RPiFramebufferSetVsync;
+ 
  FramebufferSetBacklightHandler:=RPiFramebufferSetBacklight;
  
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPiTouchGetBuffer;
  
  {Register Platform Cursor Handlers}
+ CursorSetDefaultHandler:=RPiCursorSetDefault;
  CursorSetInfoHandler:=RPiCursorSetInfo;
  CursorSetStateHandler:=RPiCursorSetState;
  {$ENDIF}
@@ -2411,7 +2419,6 @@ begin
   if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
  end;
 end;
-
 
 {==============================================================================}
 
@@ -6119,6 +6126,112 @@ end;
 
 {==============================================================================}
 
+function RPiFramebufferTestVsync:LongWord;
+{Test Framebuffer Vertical Sync from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2835MailboxHeader;
+ Footer:PBCM2835MailboxFooter;
+ Tag:PBCM2835MailboxTagTestVsync;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2835MailboxHeader) + SizeOf(TBCM2835MailboxTagTestVsync) + SizeOf(TBCM2835MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2835_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2835MailboxTagTestVsync(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2835MailboxHeader)));
+  Tag.Header.Tag:=BCM2835_MBOX_TAG_TST_VSYNC;
+  Tag.Header.Size:=SizeOf(TBCM2835MailboxTagTestVsync) - SizeOf(TBCM2835MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  
+  {Setup Footer}
+  Footer:=PBCM2835MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2835MailboxTagTestVsync)));
+  Footer.Tag:=BCM2835_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2835_MAILBOX_0,BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestVsync - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPiFramebufferSetVsync:LongWord;
+{Set Framebuffer Vertical Sync from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2835MailboxHeader;
+ Footer:PBCM2835MailboxFooter;
+ Tag:PBCM2835MailboxTagSetVsync;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2835MailboxHeader) + SizeOf(TBCM2835MailboxTagSetVsync) + SizeOf(TBCM2835MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2835_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2835MailboxTagSetVsync(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2835MailboxHeader)));
+  Tag.Header.Tag:=BCM2835_MBOX_TAG_SET_VSYNC;
+  Tag.Header.Size:=SizeOf(TBCM2835MailboxTagSetVsync) - SizeOf(TBCM2835MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  
+  {Setup Footer}
+  Footer:=PBCM2835MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2835MailboxTagSetVsync)));
+  Footer.Tag:=BCM2835_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2835_MAILBOX_0,BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetVsync - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+ 
+{==============================================================================}
+
 function RPiFramebufferSetBacklight(Brightness:LongWord):LongWord;
 {Set Framebuffer Backlight Brightness from the Mailbox property tags channel}
 var
@@ -6228,6 +6341,48 @@ begin
  finally
   FreeMem(Header);
  end;
+end;
+
+{==============================================================================}
+
+function RPiCursorSetDefault:LongWord;
+{Set Cursor Default (Pixels) from the Mailbox property tags channel}
+var
+ Row:LongWord;
+ Col:LongWord;
+ Offset:LongWord;
+ Size:LongWord;
+ Cursor:PLongWord;
+ Address:LongWord;
+begin
+ {Determine Cursor Size}
+ Size:=CURSOR_ARROW_DEFAULT_WIDTH * CURSOR_ARROW_DEFAULT_HEIGHT * SizeOf(LongWord);
+ 
+ {Allocate the Cursor (Shared)}
+ Cursor:=AllocSharedMem(Size);
+ if Cursor <> nil then
+  begin
+    Offset:=0;
+    for Row:=0 to CURSOR_ARROW_DEFAULT_HEIGHT - 1 do
+     begin
+      for Col:=0 to CURSOR_ARROW_DEFAULT_WIDTH - 1 do
+       begin
+        Cursor[Col + Offset]:=CURSOR_ARROW_DEFAULT[Row,Col];
+       end;
+
+      {Update Offset}
+      Inc(Offset,CURSOR_ARROW_DEFAULT_WIDTH);
+     end;
+ 
+   {Convert to Physical Address}
+   Address:=PhysicalToBusAddress(Cursor);
+ 
+   {Set the Cursor}
+   RPiCursorSetInfo(CURSOR_ARROW_DEFAULT_WIDTH,CURSOR_ARROW_DEFAULT_HEIGHT,0,0,Pointer(Address),Size);
+ 
+   {Free the Cursor}
+   FreeMem(Cursor);
+  end;
 end;
 
 {==============================================================================}
@@ -7252,7 +7407,7 @@ begin
   begin
    try
     {Release Framebuffer}
-    Result:=RpiFramebufferRelease;
+    Result:=RPiFramebufferRelease;
     if Result <> ERROR_SUCCESS then Exit;
      
     {Update Statistics}

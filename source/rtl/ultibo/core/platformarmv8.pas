@@ -12,7 +12,8 @@ Boards
 ======
  
  Raspberry Pi 3 - Model B
-
+ QEMU - VersatilePB 
+ 
 Licence
 =======
 
@@ -28,6 +29,9 @@ Credits
   Linux - /arch/arm/mm/proc-v7.S - Copyright 2001 Deep Blue Solutions Ltd
           /arch/arm/mm/proc-v7-2level.S - Copyright 2001 Deep Blue Solutions Ltd
           /arch/arm/mm/cache-v7.S - Copyright (C) 2005 ARM Ltd
+        
+          /arch/arm64/mm/proc.S - Copyright (C) 2012 ARM Ltd
+          /arch/arm64/mm/cache.S - Copyright (C) 2012 ARM Ltd
           
 References
 ==========
@@ -68,7 +72,7 @@ unit PlatformARMv8;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF CPUAARCH64}HeapManager,Threads,SysUtils;
               
 //To Do //Look for:
 
@@ -836,7 +840,7 @@ procedure ARMv8TimerInit(Frequency:LongWord);
 
 procedure ARMv8PageTableInit;
 
-procedure ARMv8SystemCall(Number:LongWord;Param1,Param2,Param3:LongWord);
+procedure ARMv8SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt);
 
 function ARMv8CPUGetMode:LongWord;
 function ARMv8CPUGetState:LongWord;
@@ -1183,6 +1187,7 @@ end;
 {==============================================================================}
 {ARMv8 Platform Functions}
 procedure ARMv8CPUInit; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Load the c13 (Thread and process ID) register in system control coprocessor CP15 with INVALID_HANDLE_VALUE.
  //See page ???
@@ -1209,10 +1214,17 @@ asm
  //ARMv8 "instruction synchronization barrier" instruction.
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8FPUInit; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Enable access to Coprocessor 10 and 11 in the C1 coprocessor access control register.
  //See page ???
@@ -1249,6 +1261,12 @@ asm
  orr  r12, r12, #0x00000700
  fmxr fpscr, r12
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -1269,6 +1287,7 @@ end;
 {==============================================================================}
 
 procedure ARMv8CacheInit; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Enable L1 Data Caching by setting the C bit in the C1 control register.
  //See page ???
@@ -1281,15 +1300,28 @@ asm
  //ARMv8 "instruction synchronization barrier" instruction.
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8TimerInit(Frequency:LongWord); assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Set the Counter Frequency register of the Generic Timer in the C14 control register.
  //See page B4-1532 of the ARM Architecture Reference Manual
  mcr p15, #0, r0, cr14, cr0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -1358,7 +1390,8 @@ end;
 
 {==============================================================================}
 
-procedure ARMv8SystemCall(Number:LongWord;Param1,Param2,Param3:LongWord); assembler; nostackframe;
+procedure ARMv8SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Perform a Supervisor Call
  //Number will be passed in R0
@@ -1367,10 +1400,17 @@ asm
  //Param3 will be passed in R3
  svc #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8CPUGetMode:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Get Current program status register
  mrs r0, cpsr
@@ -1378,18 +1418,32 @@ asm
  //Mask off everything except the MODE bits
  and r0, r0, #ARM_MODE_BITS
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8CPUGetState:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //To Do 
  
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8CPUGetCurrent:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5
@@ -1397,22 +1451,42 @@ asm
  //Mask off the CPUID value
  and r0, r0, #ARMV8_CP15_C0_MPID_CPUID_MASK
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8CPUGetMainID:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Read the MainID register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8CPUGetMultiprocessorID:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -1497,14 +1571,21 @@ end;
 {==============================================================================}
 
 function ARMv8FPUGetState:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //To Do 
- 
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L1CacheGetType:LongWord; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Read the CacheLevel ID register from the system control coprocessor
  mrc p15, #1, r1, cr0, cr0, #1
@@ -1535,10 +1616,17 @@ asm
  //Return None
  mov r0, #CACHE_TYPE_NONE
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L1DataCacheGetSize:LongWord; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Preserve LR
  mov r12, lr
@@ -1596,10 +1684,17 @@ asm
  //Invalid size
  mov r0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L1DataCacheGetLineSize:LongWord; assembler; nostackframe;  
+{$IFDEF CPUARM}
 asm
  //Preserve LR
  mov r12, lr
@@ -1642,10 +1737,17 @@ asm
  //Invalid size
  mov r0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L1InstructionCacheGetSize:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Preserve LR
  mov r12, lr
@@ -1709,10 +1811,17 @@ asm
  //Invalid size
  mov r0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L1InstructionCacheGetLineSize:LongWord; assembler; nostackframe;  
+{$IFDEF CPUARM}
 asm
  //Preserve LR
  mov r12, lr
@@ -1761,10 +1870,17 @@ asm
  //Invalid size
  mov r0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L2CacheGetType:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Read the CacheLevel ID register from the system control coprocessor
  mrc p15, #1, r1, cr0, cr0, #1
@@ -1795,10 +1911,17 @@ asm
  //Return None
  mov r0, #CACHE_TYPE_NONE
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L2CacheGetSize:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Preserve LR
  mov r12, lr
@@ -1858,10 +1981,17 @@ asm
  //Invalid size
  mov r0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8L2CacheGetLineSize:LongWord; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Preserve LR
  mov r12, lr
@@ -1906,12 +2036,19 @@ asm
  //Invalid size
  mov r0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8Halt; assembler; nostackframe; public name'_haltproc';
 {The purpose of the Wait For Interrupt operation is to put the processor in to a low power state,
  see Standby mode on page A8-810 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Perform a "data synchronization barrier'
  dsb
@@ -1924,12 +2061,19 @@ asm
  wfi
  b .LLoop
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8Pause; assembler; nostackframe;
 {The purpose of the Wait For Interrupt operation is to put the processor in to a low power state,
  see Standby mode on page A8-810 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Perform a "data synchronization barrier'
  dsb
@@ -1937,11 +2081,18 @@ asm
  //ARMv8 "wait for interrupt" instruction.
  wfi
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8SendEvent; assembler; nostackframe;
 {See Page A8-316 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Perform a "data synchronization barrier'
  dsb
@@ -1949,11 +2100,18 @@ asm
  //ARMv8 "send event" instruction.
  sev
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8WaitForEvent; assembler; nostackframe;
 {See Page A8-808 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Perform a "data synchronization barrier'
  dsb
@@ -1961,12 +2119,19 @@ asm
  //ARMv8 "wait for event" instruction.
  wfe
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8WaitForInterrupt; assembler; nostackframe;
 {The purpose of the Wait For Interrupt operation is to put the processor in to a low power state,
  see Standby mode on page A8-810 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Perform a "data synchronization barrier'
  dsb
@@ -1974,6 +2139,12 @@ asm
  //ARMv8 "wait for interrupt" instruction.
  wfi
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -1987,36 +2158,58 @@ procedure ARMv8DataMemoryBarrier; assembler; nostackframe;
  
  Implementation is exactly the same for either.
 } 
+{$IFDEF CPUARM}
 asm
  //ARMv8 "data memory barrier" instruction.
  dmb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8DataSynchronizationBarrier; assembler; nostackframe;
 {Perform a data synchronization barrier operation
  See page A8-92 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //ARMv8 "data synchronization barrier" instruction.
  dsb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InstructionMemoryBarrier; assembler; nostackframe;
 {Perform a instruction synchronization barrier operation
  See page A8-102 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //ARMv8 "instruction synchronization barrier" instruction.
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateTLB; assembler; nostackframe;
 {Perform an invalidate entire TLB operation using the c8 (TLB Operations) register of system control coprocessor CP15
  See page B3-138 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Get the MPID register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5
@@ -2049,12 +2242,19 @@ asm
  //Perform a data synchronization barrier
  dsb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateDataTLB; assembler; nostackframe;
 {Perform an invalidate data TLB (Unlocked/Data) operation using the c8 (TLB Operations) register of system control coprocessor CP15
  See page B3-138 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Invalidate data TLB (Unlocked/Data)
  mov r12, #0
@@ -2063,12 +2263,19 @@ asm
  //Perform a data synchronization barrier
  dsb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateInstructionTLB; assembler; nostackframe;
 {Perform an invalidate instruction TLB (Unlocked/Instruction) operation using the c8 (TLB Operations) register of system control coprocessor CP15
  See page B3-138 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Invalidate instruction TLB (Unlocked/Instruction)
  mov r12, #0
@@ -2077,12 +2284,19 @@ asm
  //Perform a data synchronization barrier
  dsb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateCache; assembler; nostackframe;
 {Perform an invalidate both caches operation using the c7 (Cache Operations) register of system control coprocessor CP15
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Get the MPID register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5
@@ -2118,12 +2332,19 @@ asm
  //Branch to ARMv8InvalidateDataCache (Will return to caller via LR)
  b ARMv8InvalidateDataCache
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8CleanDataCache; assembler; nostackframe;
 {Perform a clean entire data cache operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mrc	p15, #1, r0, cr0, cr0, #1        //read CLIDR
  tst	r0, #0x07000000
@@ -2183,12 +2404,19 @@ asm
  dsb
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateDataCache; assembler; nostackframe;
 {Perform an invalidate entire data cache operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mrc	p15, #1, r0, cr0, cr0, #1        //read CLIDR
  tst	r0, #0x07000000
@@ -2248,12 +2476,19 @@ asm
  dsb
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateL1DataCache; assembler; nostackframe;
 {Perform an invalidate entire L1 data cache operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mrc	p15, #1, r0, cr0, cr0, #1	     //read CLIDR
  and	r0, r0, #0x7		             //check L1
@@ -2300,12 +2535,19 @@ asm
  dsb
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8CleanAndInvalidateDataCache; assembler; nostackframe;
 {Perform a clean and invalidate entire data cache operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mrc	p15, #1, r0, cr0, cr0, #1	     //read CLIDR
  tst	r0, #0x07000000
@@ -2365,12 +2607,19 @@ asm
  dsb
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateInstructionCache; assembler; nostackframe;
 {Perform an invalidate entire instruction cache operation using the c7 (Cache Operations) register of system control coprocessor CP15
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Get the MPID register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5
@@ -2403,12 +2652,19 @@ asm
  //Perform a data synchronization barrier
  dsb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8CleanDataCacheRange(Address,Size:LongWord); assembler; nostackframe;
 {Perform a clean data cache by MVA to PoC operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mov r12, #0
  mcr p15, #2, r12, cr0, cr0, #0	    //Set CSSELR to L1
@@ -2429,12 +2685,19 @@ asm
  dsb				                //Data Synchronization Barrier
  bx	lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateDataCacheRange(Address,Size:LongWord); assembler; nostackframe;
 {Perform an invalidate data cache by MVA to PoC operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mov r12, #0
  mcr p15, #2, r12, cr0, cr0, #0	    //Set CSSELR to L1
@@ -2455,12 +2718,19 @@ asm
  dsb				                //Data Synchronization Barrier
  bx	lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8CleanAndInvalidateDataCacheRange(Address,Size:LongWord); assembler; nostackframe;
 {Perform a clean and invalidate data cache by MVA to PoC operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mov r12, #0
  mcr p15, #2, r12, cr0, cr0, #0	    //Set CSSELR to L1
@@ -2481,12 +2751,19 @@ asm
  dsb				                //Data Synchronization Barrier
  bx	lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8InvalidateInstructionCacheRange(Address,Size:LongWord); assembler; nostackframe; 
 {Perform an invalidate instruction caches by MVA to PoU operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  mov  r12, #0
  mcr  p15, #2, r12, c0, c0, #0      //Set CSSELR to L1
@@ -2510,6 +2787,12 @@ asm
  isb				                //Instructions Synchronization Barrier
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -2517,9 +2800,16 @@ procedure ARMv8CleanDataCacheSetWay(SetWay:LongWord); assembler; nostackframe;
 {Perform a clean data cache line by set/way operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 {Set/Way/Level will be passed in r0}
+{$IFDEF CPUARM}
 asm
  mcr p15, #0, r0, cr7, cr10, #2
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -2527,9 +2817,16 @@ procedure ARMv8InvalidateDataCacheSetWay(SetWay:LongWord); assembler; nostackfra
 {Perform an invalidate data cache line by set/way operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 {Set/Way/Level will be passed in r0}
+{$IFDEF CPUARM}
 asm
  mcr p15, #0, r0, cr7, cr6, #2  
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -2537,23 +2834,38 @@ procedure ARMv8CleanAndInvalidateDataCacheSetWay(SetWay:LongWord); assembler; no
 {Perform a clean and invalidate data cache line by set/way operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 {Set/Way/Level will be passed in r0} 
+{$IFDEF CPUARM}
 asm
  mcr p15, #0, r0, cr7, cr14, #2 
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8FlushPrefetchBuffer; assembler; nostackframe;
 {Perform an Instruction Synchronization Barrier operation. See page A8-102 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //ARMv8 "instruction synchronization barrier" instruction.
  isb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8FlushBranchTargetCache; assembler; nostackframe; 
 {Perform a Flush Entire Branch Target Cache operation. See page B3-127 of the ARMv7 Architecture Reference Manual}
+{$IFDEF CPUARM}
 asm
  //Get the MPID register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5
@@ -2586,6 +2898,12 @@ asm
  //Perform a data synchronization barrier
  dsb
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -2670,6 +2988,7 @@ procedure ARMv8ContextSwitch(OldStack,NewStack:Pointer;NewThread:TThreadHandle);
         FIQ or SWI. The use of RFE here allows for exactly the same behaviour no matter which way the context record is saved and restored
          
 }
+{$IFDEF CPUARM}
 asm
  //To Do //Critical //Account for differences from ARMV8 (eg VFP3)
 
@@ -2734,6 +3053,12 @@ asm
  
  //Note: Compiler adds "mov pc, lr" or "bx lr" to the end of this. Should not be an issue due to pop pc above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -2799,6 +3124,7 @@ procedure ARMv8ContextSwitchIRQ(OldStack,NewStack:Pointer;NewThread:TThreadHandl
         
         The context switch will be performed by switching to SYS mode, exchanging the stack pointers and then returning to IRQ mode
 }
+{$IFDEF CPUARM}
 asm
  //To Do //Critical //Account for differences from ARMV8 (eg VFP3) 
  
@@ -2846,6 +3172,12 @@ asm
 
  //Note: Compiler adds "mov pc, lr" or "bx lr" to the end of this. Should not be an issue due to bx lr above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -2911,6 +3243,7 @@ procedure ARMv8ContextSwitchFIQ(OldStack,NewStack:Pointer;NewThread:TThreadHandl
         
         The context switch will be performed by switching to SYS mode, exchanging the stack pointers and then returning to FIQ mode
 }
+{$IFDEF CPUARM}
 asm
  //To Do //Critical //Account for differences from ARMV8 (eg VFP3)
  
@@ -2958,6 +3291,12 @@ asm
  
  //Note: Compiler adds "mov pc, lr" or "bx lr" to the end of this. Should not be an issue due to bx lr above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -3023,6 +3362,7 @@ procedure ARMv8ContextSwitchSWI(OldStack,NewStack:Pointer;NewThread:TThreadHandl
         
         The context switch will be performed by switching to SYS mode, exchanging the stack pointers and then returning to SWI (SVC) mode
 }
+{$IFDEF CPUARM}
 asm
  //To Do //Critical //Account for differences from ARMV8 (eg VFP3)
  
@@ -3070,11 +3410,18 @@ asm
  
  //Note: Compiler adds "mov pc, lr" or "bx lr" to the end of this. Should not be an issue due to bx lr above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedOr(var Target:LongInt;Value:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic OR operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex r2, [r0]
@@ -3086,11 +3433,18 @@ asm
  dmb 
  mov  r0, r2
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedXor(var Target:LongInt;Value:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic XOR operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex r2, [r0]
@@ -3102,11 +3456,18 @@ asm
  dmb 
  mov  r0, r2
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedAnd(var Target:LongInt;Value:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic AND operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex r2, [r0]
@@ -3118,11 +3479,18 @@ asm
  dmb 
  mov  r0, r2
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedDecrement(var Target:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic decrement operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex r1, [r0]
@@ -3134,11 +3502,18 @@ asm
  dmb
  movs r0, r1
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedIncrement(var Target:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic increment operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex r1, [r0]
@@ -3150,11 +3525,18 @@ asm
  dmb
  mov r0, r1
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedExchange(var Target:LongInt;Source:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic exchange operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex r2, [r0]
@@ -3165,11 +3547,18 @@ asm
  dmb
  mov r0, r2
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedAddExchange(var Target:LongInt;Source:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic add and exchange operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex r2, [r0]
@@ -3181,11 +3570,18 @@ asm
  dmb
  mov  r0, r2
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8InterlockedCompareExchange(var Target:LongInt;Source,Compare:LongInt):LongInt; assembler; nostackframe;
 {Perform an atomic compare and exchange operation using LDREX/STREX. See page ???}
+{$IFDEF CPUARM}
 asm
 .LLoop:
  ldrex    r3, [r0]
@@ -3198,6 +3594,12 @@ asm
  dmb
  mov      r0, r3
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -3855,6 +4257,7 @@ end;
 
 function ARMv8FirstBitSet(Value:LongWord):LongWord; assembler; nostackframe; 
 {Note: ARM arm states that CLZ is supported for ARMv5 and above}
+{$IFDEF CPUARM}
 asm
  //Count leading zeros
  mov r1, r0
@@ -3864,22 +4267,36 @@ asm
  mov r1, #31
  sub r0, r1, r0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8CountLeadingZeros(Value:LongWord):LongWord; assembler; nostackframe; 
 {Equivalent of the GCC Builtin function __builtin_clz}
 {Note: ARM arm states that CLZ is supported for ARMv5 and above}
+{$IFDEF CPUARM}
 asm
  //Count leading zeros
  mov r1, r0
  clz r0, r1
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 {==============================================================================}
 {ARMv8 Thread Functions}
 procedure ARMv8PrimaryInit; assembler; nostackframe;
+{$IFDEF CPUARM}
 asm
  //Get the current CPU
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
@@ -3949,6 +4366,12 @@ asm
 .LUNDEFINED_STACK_BASE:
   .long UNDEFINED_STACK_BASE  
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -3956,6 +4379,7 @@ function ARMv8SpinLock(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Lock an existing Spin entry}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Load the SPIN_STATE_LOCKED value
  mov   r1, #SPIN_STATE_LOCKED
@@ -4019,6 +4443,12 @@ asm
  mov   r0, #ERROR_INVALID_PARAMETER
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4026,6 +4456,7 @@ function ARMv8SpinUnlock(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Unlock an existing Spin entry}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Get the state of the lock (TSpinEntry.State)
  ldr   r1, [r0, #4]
@@ -4073,6 +4504,12 @@ asm
  mov   r0, #ERROR_NOT_LOCKED
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4080,6 +4517,7 @@ function ARMv8SpinLockIRQ(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Lock an existing Spin entry, disable IRQ and save the previous IRQ state}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Preserve R4 and R5
  push  {r4, r5}
@@ -4163,6 +4601,12 @@ asm
  pop   {r4, r5}
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4170,6 +4614,7 @@ function ARMv8SpinUnlockIRQ(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Unlock an existing Spin entry and restore the previous IRQ state}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Get the state of the lock (TSpinEntry.State)
  ldr   r1, [r0, #4]
@@ -4226,6 +4671,12 @@ asm
  mov   r0, #ERROR_NOT_LOCKED
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4233,6 +4684,7 @@ function ARMv8SpinLockFIQ(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Lock an existing Spin entry, disable FIQ and save the previous FIQ state}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Preserve R4 and R5
  push  {r4, r5}
@@ -4316,6 +4768,12 @@ asm
  pop   {r4, r5}
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4323,6 +4781,7 @@ function ARMv8SpinUnlockFIQ(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Unlock an existing Spin entry and restore the previous FIQ state}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Get the state of the lock (TSpinEntry.State)
  ldr   r1, [r0, #4]
@@ -4379,6 +4838,12 @@ asm
  mov   r0, #ERROR_NOT_LOCKED
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4386,6 +4851,7 @@ function ARMv8SpinLockIRQFIQ(Spin:PSpinEntry):LongWord; assembler; nostackframe;
 {Lock an existing Spin entry, disable IRQ and FIQ and save the previous IRQ/FIQ state}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Preserve R4 and R5
  push  {r4, r5}
@@ -4469,6 +4935,12 @@ asm
  pop   {r4, r5}
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4476,6 +4948,7 @@ function ARMv8SpinUnlockIRQFIQ(Spin:PSpinEntry):LongWord; assembler; nostackfram
 {Unlock an existing Spin entry and restore the previous IRQ/FIQ state}
 {Spin: Pointer to the Spin entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Get the state of the lock (TSpinEntry.State)
  ldr   r1, [r0, #4]
@@ -4532,11 +5005,18 @@ asm
  mov   r0, #ERROR_NOT_LOCKED
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8SpinCheckIRQ(Spin:PSpinEntry):Boolean;
 {Return: True if the mask would enable IRQ on restore, False if it would not}
+{$IFDEF CPUARM}
 begin
  {}
  Result:=True;
@@ -4550,11 +5030,24 @@ begin
    Result:=False;
   end;
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+begin
+ {}
+ Result:=True;
+ 
+ {Check Spin}
+ if Spin = nil then Exit;
+ 
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8SpinCheckFIQ(Spin:PSpinEntry):Boolean;
 {Return: True if the mask would enable FIQ on restore, False if it would not}
+{$IFDEF CPUARM}
 begin
  {}
  Result:=True;
@@ -4568,10 +5061,23 @@ begin
    Result:=False;
   end;
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+begin
+ {}
+ Result:=True;
+ 
+ {Check Spin}
+ if Spin = nil then Exit;
+ 
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
  
 function ARMv8SpinExchangeIRQ(Spin1,Spin2:PSpinEntry):LongWord;
+{$IFDEF CPUARM} 
 var
  Mask:LongWord;
 begin
@@ -4613,10 +5119,26 @@ begin
  
  Result:=ERROR_SUCCESS;
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Spin1}
+ if Spin1 = nil then Exit;
+ 
+ {Check Spin2}
+ if Spin2 = nil then Exit;
+ 
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8SpinExchangeFIQ(Spin1,Spin2:PSpinEntry):LongWord;
+{$IFDEF CPUARM}
 var
  Mask:LongWord;
 begin
@@ -4658,6 +5180,21 @@ begin
  
  Result:=ERROR_SUCCESS;
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Spin1}
+ if Spin1 = nil then Exit;
+ 
+ {Check Spin2}
+ if Spin2 = nil then Exit;
+ 
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4665,6 +5202,7 @@ function ARMv8MutexLock(Mutex:PMutexEntry):LongWord; assembler; nostackframe;
 {Lock an existing Mutex entry}
 {Mutex: Pointer to the Mutex entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Get the flags of the lock (TMutexEntry.Flags)
  ldr   r1, [r0, #20]
@@ -4760,6 +5298,12 @@ asm
  mov   r0, #ERROR_INVALID_PARAMETER
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4767,6 +5311,7 @@ function ARMv8MutexUnlock(Mutex:PMutexEntry):LongWord; assembler; nostackframe;
 {Unlock an existing Mutex entry}
 {Mutex: Pointer to the Mutex entry to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Get the state of the lock (TMutexEntry.State)
  ldr   r1, [r0, #4]
@@ -4847,6 +5392,12 @@ asm
  mov   r0, #ERROR_INVALID_FUNCTION
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -4854,6 +5405,7 @@ function ARMv8MutexTryLock(Mutex:PMutexEntry):LongWord; assembler; nostackframe;
 {Try to lock an existing Mutex entry}
 {Mutex: Pointer to the Mutex entry to try to lock (Passed in R0)}
 {Return: ERROR_SUCCESS if completed, ERROR_LOCKED if already locked or another error code on failure (Returned in R0)}
+{$IFDEF CPUARM}
 asm
  //Get the flags of the lock (TMutexEntry.Flags)
  ldr   r1, [r0, #20]
@@ -4922,22 +5474,36 @@ asm
  mov   r0, #ERROR_LOCKED
  bx    lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8ThreadGetCurrent:TThreadHandle; assembler; nostackframe;
 {Get the current thread id from the c13 (Thread and process ID) register of system control coprocessor CP15
  See page ???}
+ {$IFDEF CPUARM}
 asm
  //Get the contents of c13 (Thread and process ID) register in system control coprocessor CP15
  mrc p15, #0, r0, cr13, cr0, #4
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8ThreadSetCurrent(Thread:TThreadHandle):LongWord; assembler; nostackframe;
 {Set the current thread id in the c13 (Thread and process ID) register of system control coprocessor CP15
  See page ???}
+{$IFDEF CPUARM}
 asm
  //Set the contents of c13 (Thread and process ID) register in system control coprocessor CP15
  mcr p15, #0, r0, cr13, cr0, #4
@@ -4945,6 +5511,12 @@ asm
  //Return success
  mov r0, #ERROR_SUCCESS
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -5028,6 +5600,7 @@ function ARMv8ThreadSetupStack(StackBase:Pointer;StartProc:TThreadStart;ReturnPr
         An IRQ or FIQ context switch uses the SRS (Store Return State) and RFE (Return From Exception) instructions to save and restore the
         cpsr value from the spsr value of either IRQ or FIQ mode
 }
+{$IFDEF CPUARM}
 var
  Count:LongWord;
  StackPointer:LongWord;
@@ -5089,6 +5662,18 @@ begin
  {Return top "Lowest Address" of stack}
  Result:=Pointer(StackPointer);
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Stack Base}
+ if StackBase = nil then Exit;
+ 
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 {==============================================================================}
@@ -5142,6 +5727,7 @@ end;
 {==============================================================================}
 {ARMv8 Interrupt Functions}
 procedure ARMv8ResetHandler; assembler; nostackframe;    
+{$IFDEF CPUARM}
 asm
  //See: B1.6.10 Reset in the ARM v7 Architecture Reference Manual
  bl ActivityLEDEnable
@@ -5159,12 +5745,19 @@ asm
  bne .LWait
  b .LLoop
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8UndefinedInstructionHandler; assembler; nostackframe;    
 {Handle an undefined instruction exception}
 {Notes: This routine is registered as the vector for undefined instruction exception in the vector table loaded during startup.}
+{$IFDEF CPUARM}
 asm
  //On entry, processor will be in Undefined mode, IRQ will be disabled and SP will point to the Undefined stack
  //See: B1.6.11 Undefined Instruction exception in the ARM v7 Architecture Reference Manual
@@ -5204,6 +5797,12 @@ asm
  
  //Note: Compiler adds "mov	pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -5242,6 +5841,7 @@ procedure ARMv8SoftwareInterruptHandler; assembler; nostackframe;
         ??????
         
 }
+{$IFDEF CPUARM}
 asm
  //On entry, processor will be in SWI mode, IRQ will be disabled and SP will point to the SWI stack
  //See: B1.6.12 Supervisor Call (SVC) exception in the ARM v7 Architecture Reference Manual
@@ -5354,12 +5954,19 @@ asm
 
  //Note: Compiler adds "mov	pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8PrefetchAbortHandler; assembler; nostackframe;     
 {Handle a prefetch abort exception}
 {Notes: This routine is registered as the vector for prefetch abort exception in the vector table loaded during startup.}
+{$IFDEF CPUARM}
 asm
  //On entry, processor will be in Abort mode, IRQ will be disabled and SP will point to the Abort stack
  //See: B1.9.7 Prefetch Abort exception in the ARM v7 Architecture Reference Manual
@@ -5399,12 +6006,19 @@ asm
  
  //Note: Compiler adds "mov	pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8DataAbortHandler; assembler; nostackframe;
 {Handle a data abort exception}
 {Notes: This routine is registered as the vector for data abort exception in the vector table loaded during startup.}
+{$IFDEF CPUARM}
 asm
  //On entry, processor will be in Abort mode, IRQ will be disabled and SP will point to the Abort stack
  //See: B1.6.15 Data Abort exception in the ARM v7 Architecture Reference Manual
@@ -5444,10 +6058,17 @@ asm
  
  //Note: Compiler adds "mov	pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8ReservedHandler; assembler; nostackframe;     
+{$IFDEF CPUARM}
 asm
  //For more information see: A2.6 Exceptions in the arm_arm.pdf
  bl ActivityLEDEnable
@@ -5465,6 +6086,12 @@ asm
  bne .LWait
  b .LLoop
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -5498,6 +6125,7 @@ procedure ARMv8IRQHandler; assembler; nostackframe;
         instruction which will load the pc and cpsr from the SYS mode stack
         
 }
+{$IFDEF CPUARM}
 asm
  //On entry, processor will be in IRQ mode, IRQ will be disabled and SP will point to the IRQ stack
  //See: A2.6.8 Interrupt request (IRQ) exception in the ARM Architecture Reference Manual (arm_arm)
@@ -5689,6 +6317,12 @@ asm
 
  //Note: Compiler adds "mov	pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
@@ -5726,6 +6360,7 @@ procedure ARMv8FIQHandler; assembler; nostackframe;
         instruction which will load the pc and cpsr from the stack of the current mode (SYS or SVC)
         
 }
+{$IFDEF CPUARM}
 asm
  //On entry, processor will be in FIQ mode, IRQ and FIQ will be disabled and SP will point to the FIQ stack
  //See: A2.6.9 Fast interrupt request (FIQ) exception in the ARM Architecture Reference Manual (arm_arm)
@@ -5911,27 +6546,48 @@ asm
 
  //Note: Compiler adds "mov pc, lr" or "bx lr" to the end of this. Should not be an issue because of rfe above
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 {==============================================================================}
 {ARMv8 Helper Functions}
 function ARMv8GetFPEXC:LongWord; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Get the FPEXC register from the VFP unit
  fmrx r0, fpexc
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8GetFPSCR:LongWord; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Get the FPSCR register from the VFP unit
  fmrx r0, fpscr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8StartMMU; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Preseve LR for return (None of the following uses R4)
  mov r4, lr
@@ -6037,10 +6693,17 @@ asm
 .LPAGE_TABLE_BASE:
  .long PAGE_TABLE_BASE
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8GetTimerState(Timer:LongWord):LongWord; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Get the Physical, Virtual or Hypervisor Timer Control register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer
@@ -6089,10 +6752,17 @@ asm
  //Return to caller
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMv8SetTimerState(Timer,State:LongWord); assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Set the Physical, Virtual or Hypervisor Timer Control register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer
@@ -6139,10 +6809,17 @@ asm
  //Return to caller
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8GetTimerCount(Timer:LongWord):Int64; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Get the Physical, Virtual or Hypervisor Count register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer
@@ -6192,10 +6869,17 @@ asm
  //Return to caller
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8GetTimerValue(Timer:LongWord):LongWord; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Get the Physical, Virtual or Hypervisor Timer Value register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer
@@ -6244,10 +6928,17 @@ asm
  //Return to caller
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure ARMV8SetTimerValue(Timer,Value:LongWord); assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Set the Physical, Virtual or Hypervisor Timer Value register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer
@@ -6294,10 +6985,17 @@ asm
  //Return to caller
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8GetTimerCompare(Timer:LongWord):Int64; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Get the Physical, Virtual or Hypervisor Timer CompareValue register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer
@@ -6347,10 +7045,17 @@ asm
  //Return to caller
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
-procedure ARMV8SetTimerCompare(Timer,High,Low:LongWord);
+procedure ARMV8SetTimerCompare(Timer,High,Low:LongWord); assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Set the Physical, Virtual or Hypervisor Timer CompareValue register of the Generic Timer in the C14 control register.
  //Check for the Physical Timer
@@ -6397,15 +7102,28 @@ asm
  //Return to caller
  bx lr
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 function ARMv8GetTimerFrequency:LongWord; assembler; nostackframe; 
+{$IFDEF CPUARM}
 asm
  //Get the Counter Frequency register of the Generic Timer in the C14 control register.
  //See page B4-1532 of the ARM Architecture Reference Manual
  mrc p15, #0, r0, cr14, cr0, #0
 end;
+{$ENDIF CPUARM}
+{$IFDEF CPUAARCH64}
+asm
+ //To Do
+end;
+{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 

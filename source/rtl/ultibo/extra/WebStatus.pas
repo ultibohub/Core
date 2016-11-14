@@ -2680,7 +2680,7 @@ begin
 
  {Add CPU Memory}
  CPUGetMemory(Address,Length);
- AddItem(AResponse,'CPU Memory :','Address: ' + '0x' + IntToHex(Address,8));
+ AddItem(AResponse,'CPU Memory:','Address: ' + '0x' + IntToHex(Address,8));
  AddItem(AResponse,'','Size: ' + IntToStr(Length));
  
  {Add CPU Utilization}
@@ -2688,8 +2688,8 @@ begin
   begin
    if Count = CPU_ID_0 then
     begin
-     {AddItem(AResponse,'CPU Utilization :',CPUIDToString(Count) + ': ' + IntToStr(CPUGetUtilization(Count)));}
-     AddItem(AResponse,'CPU Utilization :',CPUIDToString(Count) + ': ' + FloatToStr(CPUGetPercentage(Count)) + '%');
+     {AddItem(AResponse,'CPU Utilization:',CPUIDToString(Count) + ': ' + IntToStr(CPUGetUtilization(Count)));}
+     AddItem(AResponse,'CPU Utilization:',CPUIDToString(Count) + ': ' + FloatToStr(CPUGetPercentage(Count)) + '%');
     end
    else
     begin

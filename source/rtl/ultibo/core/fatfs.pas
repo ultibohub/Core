@@ -2023,10 +2023,10 @@ begin
        {Set Default Entries} {2 Reserved Clusters}
        case AFATType of
         ftFAT12:begin
-          LongWord(Pointer(LongWord(Buffer) + 0)^):=($00FFFF00 or ABootSector.BPB.MediaId);
+          LongWord(Pointer(PtrUInt(Buffer) + 0)^):=($00FFFF00 or ABootSector.BPB.MediaId);
          end;
         ftFAT16:begin
-          LongWord(Pointer(LongWord(Buffer) + 0)^):=($FFFFFF00 or ABootSector.BPB.MediaId);
+          LongWord(Pointer(PtrUInt(Buffer) + 0)^):=($FFFFFF00 or ABootSector.BPB.MediaId);
          end;
        end;
        
@@ -2059,9 +2059,9 @@ begin
        if not ReadSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),1,Buffer^) then Exit;
        
        {Set Default Entries} {2 Reserved Clusters and 1 Root Cluster}
-       LongWord(Pointer(LongWord(Buffer) + 0)^):=($0FFFFF00 or PExtBootSector(ABootSector).BPB.MediaId);
-       LongWord(Pointer(LongWord(Buffer) + 4)^):=($0FFFFFFF);
-       LongWord(Pointer(LongWord(Buffer) + 8)^):=(fat32EndOfCluster);
+       LongWord(Pointer(PtrUInt(Buffer) + 0)^):=($0FFFFF00 or PExtBootSector(ABootSector).BPB.MediaId);
+       LongWord(Pointer(PtrUInt(Buffer) + 4)^):=($0FFFFFFF);
+       LongWord(Pointer(PtrUInt(Buffer) + 8)^):=(fat32EndOfCluster);
        
        {Write First Sector}
        if not WriteSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),1,Buffer^) then Exit;

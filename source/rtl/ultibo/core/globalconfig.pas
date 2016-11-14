@@ -498,6 +498,11 @@ var
  
  CONSOLE_CRT_POSITION:LongWord = CONSOLE_POSITION_FULL; {The default Console Window position for the CRT unit (Only if CRT unit included)}
  
+ CONSOLE_VIDEO_POSITION:LongWord = CONSOLE_POSITION_FULL; {The default Console Window position for the ConsoleVideo unit (Only if ConsoleVideo unit included)}
+ CONSOLE_VIDEO_DEVICE:String;                    {The console device Name (or Description) to create the ConsoleVideo window on, if blank create on default device}
+ CONSOLE_VIDEO_WINDOW:THandle = INVALID_HANDLE_VALUE; {The console window used or created by the ConsoleVideo unit}
+ CONSOLE_VIDEO_FONT:String;                      {The font name to use for the ConsoleVideo window, if blank use the default font (Default8x16)}
+ 
 var
  {Window}
  WINDOW_DEFAULT_FORECOLOR:LongWord;              {The default foreground color for console windows}

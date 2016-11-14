@@ -2840,7 +2840,7 @@ begin
          Inc(Offset,Adapter.MTU - Length);
        
          {Update Data Fragment}
-         Inc(LongWord(Buffer.Data),Adapter.MTU - Length);
+         Inc(PtrUInt(Buffer.Data),Adapter.MTU - Length);
         end;
      
        {Send the Last Fragment (either full size or partial)}
@@ -6462,7 +6462,7 @@ var
 begin
  {}
  {Get Header}
- IP:=PIPHeader(LongWord(ABuffer) + AOffset);
+ IP:=PIPHeader(PtrUInt(ABuffer) + AOffset);
  
  {Save Checksum}
  Original:=IP.Checksum;

@@ -1,0 +1,42 @@
+{$ifndef ALLPACKAGES}
+{$mode objfpc}{$H+}
+program fpmake;
+
+uses fpmkunit;
+
+Var
+  P : TPackage;
+  T : TTarget;
+begin
+  With Installer do
+    begin
+{$endif ALLPACKAGES}
+
+    P:=AddPackage('ultibounits');
+{$ifdef ALLPACKAGES}
+    P.Directory:=ADirectory;
+{$endif ALLPACKAGES}
+    P.Version:='3.1.1';
+    P.Dependencies.Add('fcl-image'); //Add fcl-image for BMPcomn unit
+    
+    P.Author := 'Garry Wood';
+    P.License := 'LGPL with modification';
+    P.HomepageURL := 'www.freepascal.org';
+    P.Email := '';
+    P.Description := 'Additional units for Ultibo core';
+    P.NeedLibC:= false;
+
+    //P.CPUs:=[arm,aarch64,i386];
+    P.OSes:=[ultibo];
+
+    P.SourcePath.Add('src');
+    P.IncludePath.Add('src');
+
+    T:=P.Targets.AddUnit('ubitmap.pas');
+    T:=P.Targets.AddUnit('uscreenshot.pas');
+
+{$ifndef ALLPACKAGES}
+    Run;
+    end;
+end.
+{$endif ALLPACKAGES}
