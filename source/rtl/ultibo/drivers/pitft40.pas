@@ -252,9 +252,6 @@ begin
  GPIO:=GPIODeviceGetDefault;
  if GPIO = nil then Exit;
  
- //***SPI BUGFIX***
- SPIDeviceStart(SPI,SPI_MODE_4WIRE,ILI9486_SPI_RATE,SPI_CLOCK_PHASE_LOW,SPI_CLOCK_POLARITY_LOW); 
- 
 {Setup Touch IRQ (Interrupt)}
  IRQ.GPIO:=GPIO;
  IRQ.Pin:=PiTFT40_TOUCH_IRQ;
