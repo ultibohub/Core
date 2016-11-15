@@ -13,6 +13,7 @@ Boards
 ======
  
  ODroid C2
+ Orange Pi Zero
  Raspberry Pi 2 - Model B+
  Raspberry Pi 3 - Model B
  QEMU - VersatilePB 

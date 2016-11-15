@@ -26,6 +26,7 @@ Boards
  Odroid C2
  Odroid U3
  Odroid XU3
+ Orange Pi Zero
  QEMU VersatilePB
  
 Licence
