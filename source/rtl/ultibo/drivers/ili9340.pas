@@ -183,6 +183,7 @@ function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:Stri
 {ChipSelect: The SPI chip select to use when communicating with this device}
 {Name: The text description of this device which will should in the device list (Optional)}
 {Rotation: The rotation value for the framebuffer device (eg FRAMEBUFFER_ROTATION_180)}
+{Direction: The direction of the display (eg FRAMEBUFFER_DIRECTION_REVERSE)}
 {Width: The width of the framebuffer in pixels}
 {Height: The height of the framebuffer in pixels}
 {RST: GPIO pin information for the Reset pin (Optional)}
