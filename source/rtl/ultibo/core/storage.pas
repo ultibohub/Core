@@ -3155,7 +3155,7 @@ begin
  
  //To Do //This may not be needed, possibly include in Transport ?
  
- //Perhaps we could modify the purpose of this to be a quick way to check status (Ready/Not Ready) on any device. Subclass independant like GetInfo above.
+ //Perhaps we could modify the purpose of this to be a quick way to check status (Ready/Not Ready) on any device. Subclass independent like GetInfo above.
 end; 
 
 {==============================================================================}

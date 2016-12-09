@@ -98,7 +98,7 @@ Keymaps
  during system startup.
  
  The environment variable KEYMAP_DEFAULT can be set by adding KEYMAP_DEFAULT=XX (where XX is the 
- name of the keymap, eg DE for Keymap_DE) to the command line of the application (dependant on the
+ name of the keymap, eg DE for Keymap_DE) to the command line of the application (dependent on the
  system, for a Raspberry Pi use the cmdline.txt file on the SD card).
  
  The global configuration variable KEYMAP_DEFAULT can be set in code by including the GlobalConfig

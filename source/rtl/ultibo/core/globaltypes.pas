@@ -282,7 +282,7 @@ type
  LPCWSTR = ^WCHAR;
  
  {Handle types}
- HANDLE = LongWord;
+ HANDLE = PtrUInt;  {LongWord;}
  PHANDLE = ^HANDLE;
  LPHANDLE = ^HANDLE;
  {THandle = HANDLE;} {Declared in system unit}

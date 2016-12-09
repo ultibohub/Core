@@ -10447,9 +10447,9 @@ begin
         Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(Buffer),Length,PChar(Result),Count,nil,nil);
         {if Byte(Result[Count]) = 0 then SetLength(Result,Count - 1);} {Some CDs contain illegal null terminators}
         Terminator:=StrScan(PChar(Result),#0);
-        if LongWord(Terminator) < (LongWord(Result) + LongWord(Count)) then
+        if PtrUInt(Terminator) < (PtrUInt(Result) + LongWord(Count)) then
          begin
-          SetLength(Result,LongWord(Terminator) - LongWord(Result));
+          SetLength(Result,PtrUInt(Terminator) - PtrUInt(Result));
          end;
        end;
      finally
@@ -10466,9 +10466,9 @@ begin
      Unicode.OemToCharBuff(PChar(@AData),PChar(Result),ASize);
      {if Byte(Result[ASize]) = 0 then SetLength(Result,ASize - 1);} {Some CDs contain illegal null terminators}
      Terminator:=StrScan(PChar(Result),#0);
-     if LongWord(Terminator) < (LongWord(Result) + LongWord(ASize)) then
+     if PtrUInt(Terminator) < (PtrUInt(Result) + LongWord(ASize)) then
       begin
-       SetLength(Result,LongWord(Terminator) - LongWord(Result));
+       SetLength(Result,PtrUInt(Terminator) - PtrUInt(Result));
       end;
     end;
   end;

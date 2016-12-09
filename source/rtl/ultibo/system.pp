@@ -97,16 +97,16 @@ type
  TSysRandomize = procedure;
  
  {File Functions}
- TSysDoClose = procedure(handle:longint);
+ TSysDoClose = procedure(handle:thandle);
  TSysDoErase = procedure(p:pchar;pchangeable:boolean);
  TSysDoRename = procedure(p1,p2:pchar;p1changeable,p2changeable:boolean);
- TSysDoWrite = function(h:longint;addr:pointer;len:longint):longint;
- TSysDoRead = function(h:longint;addr:pointer;len:longint):longint;
- TSysDoFilePos = function(handle:longint):longint;
- TSysDoSeek = procedure(handle,pos:longint);
- TSysDoSeekEnd = function(handle:longint):longint;
- TSysDoFileSize = function(handle:longint):longint;
- TSysDoTruncate = procedure(handle,pos:longint);
+ TSysDoWrite = function(h:thandle;addr:pointer;len:longint):longint;
+ TSysDoRead = function(h:thandle;addr:pointer;len:longint):longint;
+ TSysDoFilePos = function(handle:thandle):longint;
+ TSysDoSeek = procedure(handle:thandle;pos:longint);
+ TSysDoSeekEnd = function(handle:thandle):longint;
+ TSysDoFileSize = function(handle:thandle):longint;
+ TSysDoTruncate = procedure(handle:thandle;pos:longint);
  TSysDoOpen = procedure(var f;p:PFileTextRecChar;flags:longint;pchangeable:boolean);
  
  {Directory Functions}
@@ -155,7 +155,6 @@ const calculated_cmdline:Pchar=nil;
 {$define fpc_softfpu_implementation}
 {$i softfpu.pp}
 {$undef fpc_softfpu_implementation}
-{$endif FPUNONE}
 
 { we get these functions and types from the softfpu code }
 {$define FPC_SYSTEM_HAS_float64}
@@ -171,6 +170,7 @@ const calculated_cmdline:Pchar=nil;
 {$define FPC_SYSTEM_HAS_extractFloat32Sign}
 
 {$endif FPC_HAS_FEATURE_SOFTFPU}
+{$endif FPUNONE}
 
 {$I system.inc}
 

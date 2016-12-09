@@ -3541,7 +3541,7 @@ end;
 {MD5 Functions}
 function MD5DigestData(Data:PMD5Block;Digest:PMD5Digest):Boolean;
 {Generate a 128 bit MD5 digest (Hash) from the supplied data}
-{Data is a linked list which can contain multiple independant blocks to be
+{Data is a linked list which can contain multiple independent blocks to be
  included in the hash. The data block itself does not form part of the hash}
 var
  Block:PMD5Block;
@@ -4334,7 +4334,7 @@ end;
 {SHA1 Functions}
 function SHA1DigestData(Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
 {Generate a 160 bit SHA1 digest (Hash) from the supplied data}
-{Data is a linked list which can contain multiple independant blocks to be
+{Data is a linked list which can contain multiple independent blocks to be
  included in the hash. The data block itself does not form part of the hash}
 var
  Block:PSHA1Block;
@@ -4595,7 +4595,7 @@ end;
 {SHA256 Functions}
 function SHA256DigestData(Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
 {Generate a 256 bit SHA256 digest (Hash) from the supplied data}
-{Data is a linked list which can contain multiple independant blocks to be
+{Data is a linked list which can contain multiple independent blocks to be
  included in the hash. The data block itself does not form part of the hash}
 var
  Block:PSHA256Block;

@@ -1434,14 +1434,14 @@ begin
  Sid.Revision:=SID_REVISION;
  Sid.SubAuthorityCount:=nSubAuthorityCount;
  Sid.IdentifierAuthority:=pIdentifierAuthority;
- if nSubAuthorityCount > 0 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(0 * SizeOf(DWORD)))^):=nSubAuthority0;
- if nSubAuthorityCount > 1 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(1 * SizeOf(DWORD)))^):=nSubAuthority1;
- if nSubAuthorityCount > 2 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(2 * SizeOf(DWORD)))^):=nSubAuthority2;
- if nSubAuthorityCount > 3 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(3 * SizeOf(DWORD)))^):=nSubAuthority3;
- if nSubAuthorityCount > 4 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(4 * SizeOf(DWORD)))^):=nSubAuthority4;
- if nSubAuthorityCount > 5 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(5 * SizeOf(DWORD)))^):=nSubAuthority5;
- if nSubAuthorityCount > 6 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(6 * SizeOf(DWORD)))^):=nSubAuthority6;
- if nSubAuthorityCount > 7 then LongWord(Pointer(LongWord(@Sid.SubAuthority[0]) + LongWord(7 * SizeOf(DWORD)))^):=nSubAuthority7;
+ if nSubAuthorityCount > 0 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(0 * SizeOf(DWORD)))^:=nSubAuthority0;
+ if nSubAuthorityCount > 1 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(1 * SizeOf(DWORD)))^:=nSubAuthority1;
+ if nSubAuthorityCount > 2 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(2 * SizeOf(DWORD)))^:=nSubAuthority2;
+ if nSubAuthorityCount > 3 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(3 * SizeOf(DWORD)))^:=nSubAuthority3;
+ if nSubAuthorityCount > 4 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(4 * SizeOf(DWORD)))^:=nSubAuthority4;
+ if nSubAuthorityCount > 5 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(5 * SizeOf(DWORD)))^:=nSubAuthority5;
+ if nSubAuthorityCount > 6 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(6 * SizeOf(DWORD)))^:=nSubAuthority6;
+ if nSubAuthorityCount > 7 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(7 * SizeOf(DWORD)))^:=nSubAuthority7;
  
  SetLastError(ERROR_SUCCESS);
  Result:=True;

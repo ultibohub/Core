@@ -1,8 +1,18 @@
 #
 # Raspberry Pi 3B specific config file
 #
+#IFDEF CPUARM
 -CfVFPV3
 -CIARM
 -OoFASTMATH
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/packages
+-Fl%INSTALLDIRECTORY%/units/armv7-ultibo/lib
+#ENDIF
+#IFDEF CPUAARCH64
+-CfVFP
+-OoFASTMATH
+-Fu%INSTALLDIRECTORY%/units/armv8-ultibo/rtl
+-Fu%INSTALLDIRECTORY%/units/armv8-ultibo/packages
+-Fl%INSTALLDIRECTORY%/units/armv8-ultibo/lib
+#ENDIF

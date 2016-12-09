@@ -494,7 +494,7 @@ procedure RT2800USBInit;
 {RT2800USB Network Functions}
 function RT2800USBDeviceOpen(Network:PNetworkDevice):LongWord;
 function RT2800USBDeviceClose(Network:PNetworkDevice):LongWord;
-function RT2800USBDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function RT2800USBDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function RT2800USBBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 function RT2800USBBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
@@ -2023,7 +2023,7 @@ end;
  
 {==============================================================================}
 
-function RT2800USBDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function RT2800USBDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of NetworkDeviceControl for the RT2800USB device}
 var
  Device:PUSBDevice;

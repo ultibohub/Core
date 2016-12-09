@@ -103,7 +103,7 @@ const
  UART_READ_NONE      = SERIAL_READ_NONE;
  UART_READ_NON_BLOCK = SERIAL_READ_NON_BLOCK; {Do not block when receiving, if the FIFO is empty return immediately}
  
- {Serial Write Flags}
+ {UART Write Flags}
  UART_WRITE_NONE      = SERIAL_WRITE_NONE;
  UART_WRITE_NON_BLOCK = SERIAL_WRITE_NON_BLOCK; {Do not block when transmitting, if the FIFO is full return immediately}
  

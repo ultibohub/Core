@@ -19,47 +19,126 @@ interface
 
 {$MODE objfpc}
 
+{const}
+  {Max Path (Exactly equivalent to Win32}
+  {MAX_PATH = 260;} {Defined in sysutilh.inc}
+  
 type
-  SearchRec = Packed Record
-	AnchorPtr : Pointer;    { Pointer to the Anchorpath structure }
-	Fill: Array[1..15] of Byte; {future use}
-    {End of replacement for fill}
-    Attr : BYTE;        {attribute of found file}
-    Time : LongInt;     {last modify date of found file}
-    Size : LongInt;     {file size of found file}
-    Name : String[255]; {name of found file}
-  End;
+  {File Time (Exactly equivalent to Win32}
+  FILETIME = record
+   dwLowDateTime:DWORD;
+   dwHighDateTime:DWORD;
+  end;
+  
+type
+  {Find Data (Exactly equivalent to Win32}
+  TWin32FindDataA = record
+   dwFileAttributes:DWORD;
+   ftCreationTime:FILETIME;
+   ftLastAccessTime:FILETIME;
+   ftLastWriteTime:FILETIME;
+   nFileSizeHigh:DWORD;
+   nFileSizeLow:DWORD;
+   dwReserved0:DWORD;
+   dwReserved1:DWORD;
+   cFileName:array[0..({System.}MaxPathLen) - 1] of AnsiCHAR;
+   cAlternateFileName:array[0..13] of AnsiCHAR;
+  end;
+
+  SearchRec = record
+   FindHandle  : THandle;
+   FindData : TWin32FindDataA;
+   ExcludeAttr : Longint;
+   Time : Longint;
+   Size : Longint;
+   Attr : Longint;
+   Name : String;
+  end;
 
 {$I dosh.inc}
 
+type
+ {Conversion Functions}
+ TDosGetMsCount = function:Int64;
+ {Info/Date/Time Functions}
+ TDosDosVersion = function:Word;
+ TDosGetDate = procedure(var Year, Month, MDay, WDay: Word);
+ TDosSetDate = procedure(Year, Month, Day: Word);
+ TDosGetTime = procedure(var Hour, Minute, Second, Sec100: Word);
+ TDosSetTime = procedure(Hour, Minute, Second, Sec100: Word);
+ {Disk Functions}
+ TDosDiskFree = function(Drive:Byte):Int64;
+ TDosDiskSize = function(Drive:Byte):Int64;
+ {FindFirst/FindNext Functions}
+ TDosFindFirst = function(const Path: PathStr; Attr: Word; var f: SearchRec):Integer;
+ TDosFindNext = function(var f: SearchRec):Integer;
+ TDosFindClose = procedure(var f: SearchRec);
+ {File Functions}
+ TDosGetFTime = function(var f; var time : longint):Integer;
+ TDosSetFTime = function(var f; time : longint):Integer;
+ TDosGetFAttr = function(var f; var attr : word):Integer;
+ TDosSetFAttr = function(var f; attr : word):Integer;
+ TDosGetShortName = function(var p : String) : boolean;
+ TDosGetLongName = function(var p : String) : boolean;
+ {Environment Functions}
+ TDosEnvCount = function:Longint;
+ TDosEnvStr = function(Index:LongInt):String;
+ TDosGetEnv = function(envvar:String):String; 
+
+var
+ {Conversion Functions}
+ DosGetMsCountHandler:TDosGetMsCount;
+ {Info/Date/Time Functions}
+ DosDosVersionHandler:TDosDosVersion;
+ DosGetDateHandler:TDosGetDate;
+ DosSetDateHandler:TDosSetDate;
+ DosGetTimeHandler:TDosGetTime;
+ DosSetTimeHandler:TDosSetTime;
+ {Disk Functions}
+ DosDiskFreeHandler:TDosDiskFree;
+ DosDiskSizeHandler:TDosDiskSize;
+ {FindFirst/FindNext Functions}
+ DosFindFirstHandler:TDosFindFirst;
+ DosFindNextHandler:TDosFindNext;
+ DosFindCloseHandler:TDosFindClose;
+ {File Functions}
+ DosGetFTimeHandler:TDosGetFTime;
+ DosSetFTimeHandler:TDosSetFTime;
+ DosGetFAttrHandler:TDosGetFAttr;
+ DosSetFAttrHandler:TDosSetFAttr;
+ DosGetShortNameHandler:TDosGetShortName;
+ DosGetLongNameHandler:TDosGetLongName;
+ {Environment Functions}
+ DosEnvCountHandler:TDosEnvCount;
+ DosEnvStrHandler:TDosEnvStr;
+ DosGetEnvHandler:TDosGetEnv;
+ 
 implementation
+
+{$DEFINE HAS_GETMSCOUNT}
+{$DEFINE HAS_GETSHORTNAME}
+{$DEFINE HAS_GETLONGNAME}
+
+{--$DEFINE FPC_FEXPAND_UNC} (* UNC paths are supported *)
+{$DEFINE FPC_FEXPAND_DRIVES} (* Full paths begin with drive specification *)
 
 {$I dos.inc}
 
 {******************************************************************************
-                           --- Internal routines ---
+                           --- Conversion ---
 ******************************************************************************}
 
-function dosLock(const name: String; accessmode: Longint) : LongInt;
+function GetMsCount: Int64;
 begin
-  result := -1;
+ if Assigned(DosGetMsCountHandler) then
+  begin
+   Result:=DosGetMsCountHandler();
+  end
+ else
+  begin
+   Result:=0;
+  end; 
 end;
-
-function IsLeapYear(Source : Word) : Boolean;
-begin
-  result := false;
-end;
-
-function dosSetProtection(const name: string; mask:longint): Boolean;
-begin
-  result := false;
-end;
-
-function dosSetFileDate(name: string): Boolean;
-begin
-  result := false;
-end;
-
 
 {******************************************************************************
                         --- Info / Date / Time ---
@@ -67,189 +146,301 @@ end;
 
 function DosVersion: Word;
 begin
-  result := 0;
+ if Assigned(DosDosVersionHandler) then
+  begin
+   Result:=DosDosVersionHandler();
+  end
+ else
+  begin
+   Result:=0;
+  end; 
 end;
 
-procedure NewList ();
+procedure GetDate(var Year, Month, MDay, WDay: Word);
 begin
-end;
-
-function CreateExtIO (size: Longint): integer;
-begin
-  result := -1;
-end;
-
-procedure DeleteExtIO ();
-begin
-end;
-
-function Createport(name : PChar; pri : longint): integer;
-begin
-  result := -1;
-end;
-
-procedure DeletePort ();
-begin
-end;
-
-
-function Create_Timer(theUnit : longint) : integer;
-begin
-  result := -1;
-end;
-
-Procedure Delete_Timer();
-begin
-end;
-
-function set_new_time(secs, micro : longint): longint;
-begin
-  result := -1;
-end;
-
-function get_sys_time(): longint;
-begin
-  result := -1;
-end;
-
-procedure GetDate(Var Year, Month, MDay, WDay: Word);
-begin
+ if Assigned(DosGetDateHandler) then
+  begin
+   DosGetDateHandler(Year, Month, MDay, WDay);
+  end;
 end;
 
 procedure SetDate(Year, Month, Day: Word);
 begin
+ if Assigned(DosSetDateHandler) then
+  begin
+   DosSetDateHandler(Year, Month, Day);
+  end;
 end;
 
-procedure GetTime(Var Hour, Minute, Second, Sec100: Word);
+procedure GetTime(var Hour, Minute, Second, Sec100: Word);
 begin
+ if Assigned(DosGetTimeHandler) then
+  begin
+   DosGetTimeHandler(Hour, Minute, Second, Sec100);
+  end;
 end;
 
-
-Procedure SetTime(Hour, Minute, Second, Sec100: Word);
+procedure SetTime(Hour, Minute, Second, Sec100: Word);
 begin
+ if Assigned(DosSetTimeHandler) then
+  begin
+   DosSetTimeHandler(Hour, Minute, Second, Sec100);
+  end;
 end;
-
-
 
 {******************************************************************************
                                --- Exec ---
 ******************************************************************************}
+
 procedure Exec(const Path: PathStr; const ComLine: ComStr);
 begin
+ {Not supported by Ultibo}
 end;
-
 
 {******************************************************************************
                                --- Disk ---
 ******************************************************************************}
 
-Function DiskFree(Drive: Byte): int64;
-Begin
-  result := -1;
-end;
-
-
-
-Function DiskSize(Drive: Byte): int64;
-Begin
-  result := -1;
-end;
-
-
-procedure FindFirst(const Path: PathStr; Attr: Word; Var f: SearchRec);
+function DiskFree(Drive: Byte): Int64;
 begin
+ if Assigned(DosDiskFreeHandler) then
+  begin
+   Result:=DosDiskFreeHandler(Drive);
+  end
+ else
+  begin
+   Result:=-1;
+  end; 
 end;
 
-
-procedure FindNext(Var f: SearchRec);
+function DiskSize(Drive: Byte): Int64;
 begin
+ if Assigned(DosDiskSizeHandler) then
+  begin
+   Result:=DosDiskSizeHandler(Drive);
+  end
+ else
+  begin
+   Result:=-1;
+  end; 
 end;
 
-procedure FindClose(Var f: SearchRec);
+{******************************************************************************
+                         --- FindFirst / FindNext ---
+******************************************************************************}
+
+procedure FindFirst(const Path: PathStr; Attr: Word; var f: SearchRec);
 begin
+ FillChar(f,SizeOf(SearchRec),0);
+ 
+ if Assigned(DosFindFirstHandler) then
+  begin
+   DosError:=DosFindFirstHandler(Path,Attr,f);
+  end
+ else
+  begin
+   DosError:=18;
+  end; 
 end;
 
+procedure FindNext(var f: SearchRec);
+begin
+ if Assigned(DosFindNextHandler) then
+  begin
+   DosError:=DosFindNextHandler(f);
+  end
+ else
+  begin
+   DosError:=18;
+  end; 
+end;
+
+procedure FindClose(var f: SearchRec);
+begin
+ if Assigned(DosFindCloseHandler) then
+  begin
+   DosFindCloseHandler(f);
+  end;
+end;
 
 {******************************************************************************
                                --- File ---
 ******************************************************************************}
 
-
 function FSearch(path: PathStr; dirlist: String) : PathStr;
+var
+ P1     : Longint;
+ S      : SearchRec;
+ NewDir : PathStr;
 begin
-  result := '';
+ {Check if the file specified exists}
+ FindFirst(path,anyfile and not(directory),S);
+ if DosError = 0 then
+  begin
+   FindClose(S);
+   Result:=path;
+   Exit;
+  end;
+  
+ {No wildcards allowed in these things}
+ if (Pos('?',path) <> 0) or (Pos('*',path) <> 0) then
+  begin
+   Result:=''
+  end 
+ else
+  begin
+   {Allow slash as backslash}
+   DoDirSeparators(dirlist);
+   repeat
+    P1:=Pos(';',dirlist);
+    if p1 <> 0 then
+     begin
+      NewDir:=Copy(dirlist,1,P1 - 1);
+      Delete(dirlist,1,P1);
+     end
+    else
+     begin
+      NewDir:=dirlist;
+      dirlist:='';
+     end;
+    
+    if (NewDir <> '') and (not(NewDir[Length(NewDir)] in ['\',':'])) then
+     NewDir:=NewDir + '\';
+    
+    FindFirst(NewDir + path,anyfile and not(directory),S);
+    if DosError = 0 then
+     NewDir:=NewDir + path
+    else
+     NewDir:='';
+      
+   until (dirlist = '') or (NewDir <> '');
+   
+   Result:=NewDir;
+  end;
+   
+ FindClose(S);
 end;
 
-
-Procedure getftime (var f; var time : longint);
+procedure GetFTime (var f; var time : longint);
 begin
+ if Assigned(DosGetFTimeHandler) then
+  begin
+   DosError:=DosGetFTimeHandler(f,time);
+  end
+ else
+  begin
+   DosError:=18;
+  end; 
 end;
 
-
-Procedure setftime(var f; time : longint);
-Begin
-End;
-
-procedure getfattr(var f; var attr : word);
+procedure SetFTime(var f; time : longint);
 begin
-End;
-
-
-procedure setfattr(var f; attr : word);
-begin
+ if Assigned(DosSetFTimeHandler) then
+  begin
+   DosError:=DosSetFTimeHandler(f,time);
+  end
+ else
+  begin
+   DosError:=18;
+  end; 
 end;
 
+procedure GetFAttr(var f; var attr : word);
+begin
+ if Assigned(DosGetFAttrHandler) then
+  begin
+   DosError:=DosGetFAttrHandler(f,attr);
+  end
+ else
+  begin
+   DosError:=18;
+  end; 
+end;
+
+procedure SetFAttr(var f; attr : word);
+begin
+ {Fail for setting VolumeId}
+ if (attr and VolumeID) <> 0 then
+  begin
+   DosError:=5
+  end 
+ else
+  begin
+   if Assigned(DosSetFAttrHandler) then
+    begin
+     DosError:=DosSetFAttrHandler(f,attr);
+    end
+   else
+    begin
+     DosError:=18;
+    end; 
+  end; 
+end;
+
+function GetShortName(var p : String) : boolean;
+begin
+ if Assigned(DosGetShortNameHandler) then
+  begin
+   Result:=DosGetShortNameHandler(p);
+  end
+ else
+  begin
+   Result:=False;
+  end; 
+end;
+
+function GetLongName(var p : String) : boolean;
+begin
+ if Assigned(DosGetLongNameHandler) then
+  begin
+   Result:=DosGetLongNameHandler(p);
+  end
+ else
+  begin
+   Result:=False;
+  end; 
+end;
 
 {******************************************************************************
                              --- Environment ---
 ******************************************************************************}
 
-function getpathstring: string;
-begin
-  result := '';
-end;
-
-
 function EnvCount: Longint;
 begin
-  result := -1;
+ if Assigned(DosEnvCountHandler) then
+  begin
+   Result:=DosEnvCountHandler();
+  end
+ else
+  begin
+   Result:=-1;
+  end; 
 end;
-
 
 function EnvStr(Index: LongInt): String;
 begin
-  result := '';
+ if Assigned(DosEnvStrHandler) then
+  begin
+   Result:=DosEnvStrHandler(Index);
+  end
+ else
+  begin
+   Result:='';
+  end; 
 end;
-
-
 
 function GetEnv(envvar : String): String;
 begin
-  result := '';
-end;
-
-
-procedure AddDevice(str : String);
-begin
-end;
-
-function MakeDeviceName(str : pchar): string;
-begin
-  result := '';
-end;
-
-function IsInDeviceList(str : string): boolean;
-begin
-  result := false;
-end;
-
-procedure ReadInDevices;
-begin
+ if Assigned(DosGetEnvHandler) then
+  begin
+   Result:=DosGetEnvHandler(envvar);
+  end
+ else
+  begin
+   Result:='';
+  end; 
 end;
 
 begin
-//  DosError:=0;
-//  numberofdevices := 0;
-//  StrOfPaths := '';
-//  ReadInDevices;
+ DosError:=0;
 end.

@@ -7271,7 +7271,8 @@ end;
 function InterlockedExchangePointer(var Target:PVOID;Value:PVOID):PVOID; inline;
 begin
  {}
- Result:=PVOID(Platform.InterLockedExchange(PtrInt(Target),PtrInt(Value)));
+ //Result:=PVOID(Platform.InterLockedExchange(PtrInt(Target),PtrInt(Value))); //TestingAARCH64
+ Result:=System.InterLockedExchange(Target,Value); {Pointer version to allow for 32/64bit}
 end;
 
 {==============================================================================}
@@ -7295,7 +7296,8 @@ end;
 function InterlockedCompareExchangePointer(var Destination:PVOID;Exchange,Comperand:PVOID):PVOID; inline;
 begin
  {}
- Result:=PVOID(Platform.InterlockedCompareExchange(PtrInt(Destination),PtrInt(Exchange),PtrInt(Comperand)));
+ //Result:=PVOID(Platform.InterlockedCompareExchange(PtrInt(Destination),PtrInt(Exchange),PtrInt(Comperand))); //TestingAARCH64
+ Result:=System.InterlockedCompareExchange(Destination,Exchange,Comperand); {Pointer version to allow for 32/64bit}
 end;
 
 {==============================================================================}

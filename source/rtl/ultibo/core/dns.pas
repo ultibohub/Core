@@ -1363,14 +1363,14 @@ begin
       begin
        Data^:='.';
        
-       Inc(LongWord(Data));
+       Inc(PtrUInt(Data));
        Inc(ALength);
       end;
      
      {Copy the Data}
      System.Move(Name[Offset + 1],Data^,Length);
      
-     Inc(LongWord(Data),Length);
+     Inc(PtrUInt(Data),Length);
      Inc(ALength,Length);
     end;
    

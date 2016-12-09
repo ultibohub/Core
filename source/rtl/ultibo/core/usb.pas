@@ -3591,7 +3591,7 @@ end;
 {==============================================================================}
 
 function USBDeviceBind(Device:PUSBDevice):LongWord;
-{Attempt to bind a device to one of the registers drivers}
+{Attempt to bind a device to one of the registered drivers}
 {Device: The device to attempt to bind a driver to}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var

@@ -93,7 +93,7 @@ function RTL8188EUDeviceOpen(Network:PNetworkDevice):LongWord;
 function RTL8188EUDeviceClose(Network:PNetworkDevice):LongWord;
 function RTL8188EUDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function RTL8188EUDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
-function RTL8188EUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function RTL8188EUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 {==============================================================================}
 {RTL8188EU USB Functions}
@@ -256,7 +256,7 @@ end;
  
 {==============================================================================}
 
-function RTL8188EUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function RTL8188EUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of NetworkDeviceControl for the RTL8188EU device}
 var
  Device:PUSBDevice;
