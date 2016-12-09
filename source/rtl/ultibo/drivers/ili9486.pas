@@ -131,7 +131,7 @@ type
  
 {==============================================================================}
 {ILI9486 Functions}
-function ILI9486FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ILI9486FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Direction,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
   
 function ILI9486FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
 
@@ -177,7 +177,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {ILI9486 Functions}
-function ILI9486FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ILI9486FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Direction,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
 {Create, register and allocate a new ILI9486 Framebuffer device which can be accessed using the framebuffer API}
 {SPI: The SPI device that this ILI9486 is connected to}
 {ChipSelect: The SPI chip select to use when communicating with this device}
@@ -203,6 +203,9 @@ begin
  
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
+ 
+ {Check Direction}
+ if Direction > FRAMEBUFFER_DIRECTION_REVERSE then Exit;
  
  {Check Width and Height}
  if Width < 1 then Exit;
@@ -288,6 +291,7 @@ begin
      ILI9486Framebuffer.TFT.Width:=Height;
      ILI9486Framebuffer.TFT.Height:=Width;
     end;
+   ILI9486Framebuffer.TFT.Direction:=Direction;
    ILI9486Framebuffer.TFT.DirtyY1:=Height - 1;
    ILI9486Framebuffer.TFT.DirtyY2:=0;
    ILI9486Framebuffer.TFT.Ready:=True;
@@ -577,6 +581,12 @@ begin
   begin
    Value:=Value or ILI9486_CMD_MADCTL_MV or ILI9486_CMD_MADCTL_MX;
   end;
+
+ if Defaults.Direction = FRAMEBUFFER_DIRECTION_REVERSE then
+ begin
+  Value:=Value xor ILI9486_CMD_MADCTL_MX;
+ end;   
+ 
  ILI9486WriteData(Framebuffer,Value); 
  
  {Frame Rate Control (Division ratio = fosc, Frame Rate = 79Hz)}
@@ -669,6 +679,7 @@ begin
  Defaults.OverscanLeft:=0;                        
  Defaults.OverscanRight:=0;                       
  Defaults.Rotation:=Framebuffer.Rotation;
+ Defaults.Direction:=Framebuffer.Direction;
  
  {Check Properties}
  if Properties <> nil then
@@ -679,6 +690,8 @@ begin
    if Properties.Order <= FRAMEBUFFER_ORDER_RGB then Defaults.Order:=Properties.Order;
    {Adjust Rotation}
    if Properties.Rotation <= FRAMEBUFFER_ROTATION_270 then Defaults.Rotation:=Properties.Rotation;
+   {Adjust Direction}
+   if Properties.Direction <= FRAMEBUFFER_DIRECTION_REVERSE then Defaults.Direction:=Properties.Direction;
    {Check Rotation}
    if Properties.Rotation <> Framebuffer.Rotation then
     begin

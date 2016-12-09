@@ -1556,6 +1556,12 @@ const
  FRAMEBUFFER_ROTATION_180 = 2;   {180 degree rotation}
  FRAMEBUFFER_ROTATION_270 = 3;   {270 degree rotation}
  
+const
+ {Framebuffer Direction constants}
+ FRAMEBUFFER_DIRECTION_NORMAL = 0; {No reversal}
+ FRAMEBUFFER_DIRECTION_REVERSE = 1; {Reversed text}
+  
+ 
 {==============================================================================}
 const
  {Log Level constants}

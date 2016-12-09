@@ -2,6 +2,7 @@
 Himax HX8357D TFT LCD Driver.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -142,7 +143,7 @@ type
  
 {==============================================================================}
 {HX8357D Functions}
-function HX8357DFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function HX8357DFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Direction,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
   
 function HX8357DFramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
 
@@ -188,12 +189,13 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {HX8357D Functions}
-function HX8357DFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function HX8357DFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Direction,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
 {Create, register and allocate a new HX8357D Framebuffer device which can be accessed using the framebuffer API}
 {SPI: The SPI device that this HX8357D is connected to}
 {ChipSelect: The SPI chip select to use when communicating with this device}
 {Name: The text description of this device which will should in the device list (Optional)}
 {Rotation: The rotation value for the framebuffer device (eg FRAMEBUFFER_ROTATION_180)}
+{Direction: The direction of the display (eg FRAMEBUFFER_DIRECTION_REVERSE)}
 {Width: The width of the framebuffer in pixels}
 {Height: The height of the framebuffer in pixels}
 {RST: GPIO pin information for the Reset pin (Optional)}
@@ -214,6 +216,9 @@ begin
 
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
+ 
+ {Check Direction}
+ if Direction > FRAMEBUFFER_DIRECTION_REVERSE then Exit;
  
  {Check Width and Height}
  if Width < 1 then Exit;
@@ -299,6 +304,7 @@ begin
      HX8357DFramebuffer.TFT.Width:=Height;
      HX8357DFramebuffer.TFT.Height:=Width;
     end;
+   HX8357DFramebuffer.TFT.Direction:=Direction;
    HX8357DFramebuffer.TFT.DirtyY1:=Height - 1;
    HX8357DFramebuffer.TFT.DirtyY2:=0;
    HX8357DFramebuffer.TFT.Ready:=True;
@@ -607,6 +613,13 @@ begin
   begin
    Value:=Value or HX8357D_CMD_MADCTL_MV or HX8357D_CMD_MADCTL_MX;
   end;
+
+ if Defaults.Direction = FRAMEBUFFER_DIRECTION_REVERSE then
+ begin
+  Value:=Value xor HX8357D_CMD_MADCTL_MX;
+ end;   
+ 
+
  HX8357DWriteData(Framebuffer,Value); 
 
  {Tearing effect line on (Off)}
@@ -684,6 +697,7 @@ begin
  Defaults.OverscanLeft:=0;                        
  Defaults.OverscanRight:=0;                       
  Defaults.Rotation:=Framebuffer.Rotation;
+ Defaults.Direction:=Framebuffer.Direction;
  
  {Check Properties}
  if Properties <> nil then
@@ -694,6 +708,8 @@ begin
    if Properties.Order <= FRAMEBUFFER_ORDER_RGB then Defaults.Order:=Properties.Order;
    {Adjust Rotation}
    if Properties.Rotation <= FRAMEBUFFER_ROTATION_270 then Defaults.Rotation:=Properties.Rotation;
+   {Adjust Direction}
+   if Properties.Direction <= FRAMEBUFFER_DIRECTION_REVERSE then Defaults.Direction:=Properties.Direction;
    {Check Rotation}
    if Properties.Rotation <> Framebuffer.Rotation then
     begin

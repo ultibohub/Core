@@ -86,7 +86,8 @@ unit PiTFT32;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,Framebuffer,Touch,ILI9340{,LDMTI},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,
+Framebuffer,Touch,ILI9340,{LDMTI,}SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -116,6 +117,7 @@ type
  TPiTFT32LCD = record
   Signature:LongWord;             {Signature for entry validation}
   Rotation:LongWord;              {Framebuffer rotation (eg FRAMEBUFFER_ROTATION_180)}
+  Direction:LongWord;             {Framebuffer direction (eg FRAMEBUFFER_DIRECTION_REVERSE)}
   SPI:PSPIDevice;                 {SPI device for this display}
   GPIO:PGPIODevice;               {GPIO device for this display}
   Touch:PTouchDevice;             {Touch (LDMTI) device for this display}
@@ -134,7 +136,7 @@ var
 {Initialization Functions}
 procedure PiTFT32Init;
 
-function PiTFT32Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT32Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 function PiTFT32Stop(Handle:THandle):Boolean;
 
 {==============================================================================}
@@ -169,8 +171,8 @@ var
 begin
  {}
  {Check Initialized}
- if PiTFT32Initialized then Exit;
- 
+// if PiTFT32Initialized then Exit;
+
  {Check Environment Variables}
  {PiTFT32_AUTOSTART}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PiTFT32_AUTOSTART'),1);
@@ -191,7 +193,8 @@ begin
  {Start PiTFT32} 
  if PiTFT32_AUTOSTART then
   begin
-   PiTFT32Default:=PiTFT32Start(FRAMEBUFFER_ROTATION_0,PiTFT32_SPI_DEVICE,PiTFT32_LCD_CHIPSELECT,PiTFT32_TOUCH_CHIPSELECT);
+   PiTFT32Default:=PiTFT32Start(FRAMEBUFFER_ROTATION_270,FRAMEBUFFER_DIRECTION_REVERSE,
+     PiTFT32_SPI_DEVICE,PiTFT32_LCD_CHIPSELECT,PiTFT32_TOUCH_CHIPSELECT);
   end;
  
  PiTFT32Initialized:=True;
@@ -199,9 +202,10 @@ end;
 
 {==============================================================================}
 
-function PiTFT32Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT32Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 {Start the PiTFT32 driver and register the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
+{Direction: The direction of the display (eg FRAMEBUFFER_DIRECTION_REVERSE)}
 {Device: The SPI device that the ILI9340 and XPT2046 devices are connected to}
 {DisplaySelect: The SPI chip select of the ILI9340 LCD controller}
 {TouchSelect: The SPI chip select of the XPT2046 touch controller}
@@ -228,6 +232,9 @@ begin
  
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
+ 
+ {Check Direction}
+ if Direction > FRAMEBUFFER_DIRECTION_REVERSE then Exit;
  
  {Check Device}
  if Length(Device) = 0 then Exit;
@@ -287,7 +294,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PiTFT32_FRAMEBUFFER_DESCRIPTION,Rotation,PiTFT32_SCREEN_WIDTH,PiTFT32_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PiTFT32_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PiTFT32_SCREEN_WIDTH,PiTFT32_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Create PiTFT32}
@@ -297,6 +304,7 @@ begin
     {Update PiTFT32}
     PiTFT32LCD.Signature:=PiTFT32_SIGNATURE;
     PiTFT32LCD.Rotation:=Rotation;
+    PiTFT32LCD.Direction:=Direction;
     PiTFT32LCD.SPI:=SPI;
     PiTFT32LCD.GPIO:=GPIO;
     PiTFT32LCD.Touch:=Touch;

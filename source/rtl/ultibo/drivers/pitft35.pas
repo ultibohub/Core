@@ -119,6 +119,7 @@ type
  TPiTFT35LCD = record
   Signature:LongWord;             {Signature for entry validation}
   Rotation:LongWord;              {Framebuffer rotation (eg FRAMEBUFFER_ROTATION_180)}
+  Direction:LongWord;             {Framebuffer direction (eg FRAMEBUFFER_DIRECTION_REVERSE)}
   SPI:PSPIDevice;                 {SPI device for this display}
   GPIO:PGPIODevice;               {GPIO device for this display}
   Touch:PTouchDevice;             {Touch (STMPE) device for this display}
@@ -138,7 +139,7 @@ var
 {Initialization Functions}
 procedure PiTFT35Init;
 
-function PiTFT35Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT35Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 function PiTFT35Stop(Handle:THandle):Boolean;
 
 {==============================================================================}
@@ -199,7 +200,7 @@ begin
  {Start PiTFT35} 
  if PITFT35_AUTOSTART then
   begin
-   PiTFT35Default:=PiTFT35Start(FRAMEBUFFER_ROTATION_0,PITFT35_SPI_DEVICE,PITFT35_LCD_CHIPSELECT,PITFT35_TOUCH_CHIPSELECT);
+   PiTFT35Default:=PiTFT35Start(FRAMEBUFFER_ROTATION_0,FRAMEBUFFER_DIRECTION_NORMAL,PITFT35_SPI_DEVICE,PITFT35_LCD_CHIPSELECT,PITFT35_TOUCH_CHIPSELECT);
   end;
  
  PiTFT35Initialized:=True;
@@ -207,9 +208,10 @@ end;
 
 {==============================================================================}
 
-function PiTFT35Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT35Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 {Start the PiTFT35 driver and register the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
+{Direction: The direction of the display (eg FRAMEBUFFER_DIRECTION_REVERSE)}
 {Device: The SPI device that the HX8357D and STMPE610 devices are connected to}
 {DisplaySelect: The SPI chip select of the HX8357D LCD controller}
 {TouchSelect: The SPI chip select of the STMPE610 touch controller}
@@ -237,7 +239,10 @@ begin
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
  
- {Check Device}
+ {Check Direction}
+ if Direction > FRAMEBUFFER_DIRECTION_REVERSE then Exit;
+ 
+{Check Device}
  if Length(Device) = 0 then Exit;
 
  {Check Display Chip Select}
@@ -291,7 +296,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=HX8357DFramebufferCreate(SPI,DisplaySelect,PITFT35_FRAMEBUFFER_DESCRIPTION,Rotation,PITFT35_SCREEN_WIDTH,PITFT35_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=HX8357DFramebufferCreate(SPI,DisplaySelect,PITFT35_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PITFT35_SCREEN_WIDTH,PITFT35_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Update Framebuffer}
@@ -304,6 +309,7 @@ begin
     {Update PiTFT35}
     PiTFT35LCD.Signature:=PITFT35_SIGNATURE;
     PiTFT35LCD.Rotation:=Rotation;
+    PiTFT35LCD.Direction:=Direction;
     PiTFT35LCD.SPI:=SPI;
     PiTFT35LCD.GPIO:=GPIO;
     PiTFT35LCD.Touch:=Touch;

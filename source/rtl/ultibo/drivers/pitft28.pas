@@ -127,6 +127,7 @@ type
  TPiTFT28LCD = record
   Signature:LongWord;             {Signature for entry validation}
   Rotation:LongWord;              {Framebuffer rotation (eg FRAMEBUFFER_ROTATION_180)}
+  Direction:LongWord;             {Framebuffer direction (eg FRAMEBUFFER_DIRECTION_REVERSE)}
   SPI:PSPIDevice;                 {SPI device for this display}
   GPIO:PGPIODevice;               {GPIO device for this display}
   Touch:PTouchDevice;             {Touch (STMPE) device for this display}
@@ -145,7 +146,7 @@ var
 {Initialization Functions}
 procedure PiTFT28Init;
 
-function PiTFT28Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT28Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 function PiTFT28Stop(Handle:THandle):Boolean;
 
 {==============================================================================}
@@ -202,7 +203,7 @@ begin
  {Start PiTFT28} 
  if PITFT28_AUTOSTART then
   begin
-   PiTFT28Default:=PiTFT28Start(FRAMEBUFFER_ROTATION_0,PITFT28_SPI_DEVICE,PITFT28_LCD_CHIPSELECT,PITFT28_TOUCH_CHIPSELECT);
+   PiTFT28Default:=PiTFT28Start(FRAMEBUFFER_ROTATION_0,FRAMEBUFFER_DIRECTION_NORMAL,PITFT28_SPI_DEVICE,PITFT28_LCD_CHIPSELECT,PITFT28_TOUCH_CHIPSELECT);
   end;
  
  PiTFT28Initialized:=True;
@@ -210,9 +211,10 @@ end;
 
 {==============================================================================}
 
-function PiTFT28Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT28Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 {Start the PiTFT28 driver and register the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
+{Direction: The direction of the display (eg FRAMEBUFFER_DIRECTION_REVERSE)}
 {Device: The SPI device that the ILI9340 and STMPE610 devices are connected to}
 {DisplaySelect: The SPI chip select of the ILI9340 LCD controller}
 {TouchSelect: The SPI chip select of the STMPE610 touch controller}
@@ -240,7 +242,10 @@ begin
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
  
- {Check Device}
+ {Check Direction}
+ if Direction > FRAMEBUFFER_DIRECTION_REVERSE then Exit;
+ 
+{Check Device}
  if Length(Device) = 0 then Exit;
 
  {Check Display Chip Select}
@@ -294,7 +299,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PITFT28_FRAMEBUFFER_DESCRIPTION,Rotation,PITFT28_SCREEN_WIDTH,PITFT28_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PITFT28_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PITFT28_SCREEN_WIDTH,PITFT28_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Create PiTFT28}
@@ -304,6 +309,7 @@ begin
     {Update PiTFT28}
     PiTFT28LCD.Signature:=PITFT28_SIGNATURE;
     PiTFT28LCD.Rotation:=Rotation;
+    PiTFT28LCD.Direction:=Direction;
     PiTFT28LCD.SPI:=SPI;
     PiTFT28LCD.GPIO:=GPIO;
     PiTFT28LCD.Touch:=Touch;

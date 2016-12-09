@@ -239,14 +239,15 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     hd44780 \
                     af16x2lcd \
                     ili9340 \
+                    ili9486 \
                     hx8357d \
                     pl110 \
                     stmpe \
                     rpift5406 \
                     pitft28 \
-					pitft32 \
+				    pitft32 \
                     pitft35 \
-					pitft40
+				    pitft40
 
 ULTIBO_KEYMAP_UNITS=keymap_us \
                     keymap_uk \

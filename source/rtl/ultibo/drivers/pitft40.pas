@@ -41,8 +41,7 @@ References
 WaveShare SpotPear 3.5" and 4.0" LCD
 ====================================
 
- The WaveShare SpotPear 3.5" and 4.0" LCDs are 320 x 480 pixel TFT with resistive touchscreen using an ILITEK ILI9486
- LCD driver and an LDM XPT2046 / TI ADS7843 resistive touchscreen controller.
+ The WaveShare SpotPear 3.5" and 4.0" LCDs are 320 x 480 pixel TFT with resistive touchscreen using an ILITEK ILI9486 LCD driver and an LDM XPT2046 / TI ADS7843 resistive touchscreen controller.
  
  This unit ties together the various components needed to make one of these boards work with Ultibo by finding
  the correct SPI device, creating the XPT2046 Touch device, creating the ILI9486 Framebuffer device and registering
@@ -88,7 +87,8 @@ unit PiTFT40;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,Framebuffer,Touch,ILI9486{,LDMTI},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,
+Framebuffer,Touch,ILI9486,{LDMTI,}SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -118,6 +118,7 @@ type
  TPiTFT40LCD = record
   Signature:LongWord;             {Signature for entry validation}
   Rotation:LongWord;              {Framebuffer rotation (eg FRAMEBUFFER_ROTATION_180)}
+  Direction:LongWord;             {Framebuffer direction (eg FRAMEBUFFER_DIRECTION_REVERSE)}
   SPI:PSPIDevice;                 {SPI device for this display}
   GPIO:PGPIODevice;               {GPIO device for this display}
   Touch:PTouchDevice;             {Touch (LDMTI) device for this display}
@@ -136,7 +137,7 @@ var
 {Initialization Functions}
 procedure PiTFT40Init;
 
-function PiTFT40Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT40Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 function PiTFT40Stop(Handle:THandle):Boolean;
 
 {==============================================================================}
@@ -171,7 +172,7 @@ var
 begin
  {}
  {Check Initialized}
- if PiTFT40Initialized then Exit;
+// if PiTFT40Initialized then Exit;
  
  {Check Environment Variables}
  {PiTFT40_AUTOSTART}
@@ -193,7 +194,8 @@ begin
  {Start PiTFT40} 
  if PiTFT40_AUTOSTART then
   begin
-   PiTFT40Default:=PiTFT40Start(FRAMEBUFFER_ROTATION_0,PiTFT40_SPI_DEVICE,PiTFT40_LCD_CHIPSELECT,PiTFT40_TOUCH_CHIPSELECT);
+   PiTFT40Default:=PiTFT40Start(FRAMEBUFFER_ROTATION_270,FRAMEBUFFER_DIRECTION_REVERSE,
+     PiTFT40_SPI_DEVICE,PiTFT40_LCD_CHIPSELECT,PiTFT40_TOUCH_CHIPSELECT);
   end;
  
  PiTFT40Initialized:=True;
@@ -201,9 +203,10 @@ end;
 
 {==============================================================================}
 
-function PiTFT40Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT40Start(Rotation,Direction:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
 {Start the PiTFT40 driver and register the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
+{Direction: The direction of the display (eg FRAMEBUFFER_DIRECTION_REVERSE)}
 {Device: The SPI device that the ILI9486 and XPT2046 devices are connected to}
 {DisplaySelect: The SPI chip select of the ILI9486 LCD controller}
 {TouchSelect: The SPI chip select of the XPT2046 touch controller}
@@ -231,6 +234,9 @@ begin
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
  
+ {Check Direction}
+ if Direction > FRAMEBUFFER_DIRECTION_REVERSE then Exit;
+ 
  {Check Device}
  if Length(Device) = 0 then Exit;
 
@@ -252,7 +258,7 @@ begin
  GPIO:=GPIODeviceGetDefault;
  if GPIO = nil then Exit;
  
-{Setup Touch IRQ (Interrupt)}
+ {Setup Touch IRQ (Interrupt)}
  IRQ.GPIO:=GPIO;
  IRQ.Pin:=PiTFT40_TOUCH_IRQ;
  IRQ.Func:=GPIO_FUNCTION_IN;
@@ -260,7 +266,7 @@ begin
  IRQ.Trigger:=GPIO_TRIGGER_FALLING;
  
  {Create Backlight (GPIO) Device}
- {Backlight:=LDMGPIOCreate(nil,SPI,I2C_ADDRESS_INVALID,TouchSelect,nil); IRQ not available for GPIO}
+ {Backlight:=LDMGPIOCreate(nil,SPI,I2C_ADDRESS_INVALID,TouchSelect,nil);} {IRQ not available for GPIO}
  {if Backlight = nil then Exit;
  try}
   {Create Touch Device} {***FIXME***}
@@ -289,7 +295,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=ILI9486FramebufferCreate(SPI,DisplaySelect,PiTFT40_FRAMEBUFFER_DESCRIPTION,Rotation,PiTFT40_SCREEN_WIDTH,PiTFT40_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=ILI9486FramebufferCreate(SPI,DisplaySelect,PiTFT40_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PiTFT40_SCREEN_WIDTH,PiTFT40_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Create PiTFT40}
@@ -299,6 +305,7 @@ begin
     {Update PiTFT40}
     PiTFT40LCD.Signature:=PiTFT40_SIGNATURE;
     PiTFT40LCD.Rotation:=Rotation;
+    PiTFT40LCD.Direction:=Direction;
     PiTFT40LCD.SPI:=SPI;
     PiTFT40LCD.GPIO:=GPIO;
     PiTFT40LCD.Touch:=Touch;
