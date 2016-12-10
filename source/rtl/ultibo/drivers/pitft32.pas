@@ -32,15 +32,16 @@ References
  
   http://www.waveshare.com/w/upload/a/ad/3.2inch-RPi-LCD-B-Schematic.pdf
    
+
 WaveShare SpotPear 3.2" LCD
 ===========================
 
  The WaveShare SpotPear 3.2" LCD is a 320 x 240 pixel TFT with resistive touchscreen using an ILITEK ILI9340
  LCD driver and an LDM XPT2046 / TI ADS7843 resistive touchscreen controller.
  
- This unit ties together the various components needed to make one of these boards work with Ultibo by finding
- the correct SPI device, creating the XPT2046 Touch device, creating the ILI9340 Framebuffer device and registering
- all of it with the correct parameters for the WaveShare board.
+ This unit ties together the various components needed to make one of these boards work with Ultibo by
+ finding the correct SPI device, creating the XPT2046 Touch device, creating the ILI9340 Framebuffer
+ device and registering all of it with the correct parameters for the WaveShare board.
 
  Details:
  

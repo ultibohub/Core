@@ -75,9 +75,9 @@ const
  ILI9486_CMD_NOP      = $00; {8.2.1. NOP: No Operation}
  ILI9486_CMD_SWRESET  = $01; {8.2.2. SWRESET: Software Reset}
  
- ILI9486_CMD_SLPOUT   = $11; {8.2.12. SLPOUT: Sleep Out (This command turns off sleep mode)}
+ ILI9486_CMD_SLPOUT   = $11; {8.2.13. SLPOUT: Sleep Out (This command turns off sleep mode)}
  
- ILI9486_CMD_GAMSET   = $26; {8.2.17. GAMSET: Gamma Set (This command is used to select the desired Gamma curve for the current display)}
+// ILI9486_CMD_GAMSET   = $26; {8.2.17. GAMSET: Gamma Set (This command is used to select the desired Gamma curve for the current display)}
  
  ILI9486_CMD_DISPOFF  = $28; {8.2.18. DISPOFF: Display OFF (This command is used to enter into DISPLAY OFF mode. In this mode, the output from Frame Memory is disabled and blank page inserted)}
  ILI9486_CMD_DISPON   = $29; {8.2.19. DISPON: Display ON (This command is used to recover from DISPLAY OFF mode. Output from the Frame Memory is enabled)}
@@ -86,24 +86,28 @@ const
  ILI9486_CMD_PASET    = $2B; {8.2.21. PASET: Page Address Set (This command is used to define area of frame memory where MCU can access)}
  ILI9486_CMD_RAMWR    = $2C; {8.2.22. Memory Write (This command is used to transfer data from MCU to frame memory)}
  
- ILI9486_CMD_MADCTL   = $36; {8.2.29. MADCTL: Memory Access Control (This command defines read/write scanning direction of frame memory)}
+ ILI9486_CMD_MADCTL   = $36; {8.2.28. MADCTL: Memory Access Control (This command defines read/write scanning direction of frame memory)}
  
- ILI9486_CMD_COLMOD   = $3A; {8.2.33. COLMOD: Pixel Format Set (This command sets the pixel format for the RGB image data used by the interface)}
+ ILI9486_CMD_COLMOD   = $3A; {8.2.32. COLMOD: Pixel Format Set (This command sets the pixel format for the RGB image data used by the interface)}
  
- ILI9486_CMD_FRMCTR1  = $B1; {8.3.2. FRMCTR1: Frame Rate Control (In Normal Mode/Full Colors)}
+ ILI9486_CMD_IFMODE   = $B0; {8.2.50. IFMODE: Interface Mode Control}
  
- ILI9486_CMD_DISCTRL  = $B6; {8.3.7. DISCTRL: Display Function Control}
+ ILI9486_CMD_FRMCTR1  = $B1; {8.2.51. FRMCTR1: Frame Rate Control (In Normal Mode/Full Colors)}
  
- ILI9486_CMD_PWCTRL1  = $C0; {8.3.16. PWCTRL1: Power Control 1}
- ILI9486_CMD_PWCTRL2  = $C1; {8.3.17. PWCTRL2: Power Control 2}
+ ILI9486_CMD_DISCTRL  = $B6; {8.2.56. DISCTRL: Display Function Control}
  
- ILI9486_CMD_VMCTRL1  = $C5; {8.3.21. VMCTRL1: VCOM Control 1}
- ILI9486_CMD_VMCTRL2  = $C7; {8.3.22. VMCTRL2: VCOM Control 2}
+ ILI9486_CMD_PWCTRL1  = $C0; {8.2.58. PWCTRL1: Power Control 1}
+ ILI9486_CMD_PWCTRL2  = $C1; {8.2.59. PWCTRL2: Power Control 2}
+ ILI9486_CMD_PWCTRL3  = $C2; {8.2.60. PWCTRL3: Power Control 3}
  
- ILI9486_CMD_PGAMCTRL = $E0; {8.3.27. PGAMCTRL: Positive Gamma Correction (Set the gray scale voltage to adjust the gamma characteristics of the TFT panel)}
- ILI9486_CMD_NGAMCTRL = $E1; {8.3.28. NGAMCTRL: Negative Gamma Correction (Set the gray scale voltage to adjust the gamma characteristics of the TFT panel)}
+ ILI9486_CMD_VMCTRL1  = $C5; {8.2.63. VMCTRL1: VCOM Control 1}
+ //ILI9486_CMD_VMCTRL2  = $C7; {8.3.22. VMCTRL2: VCOM Control 2}
  
- {ILI9486 Memory access control constants (See ILI9486 datasheet 8.2.29. Memory Access Control)}
+ ILI9486_CMD_PGAMCTRL = $E0; {8.2.77. PGAMCTRL: Positive Gamma Correction (Set the gray scale voltage to adjust the gamma characteristics of the TFT panel)}
+ ILI9486_CMD_NGAMCTRL = $E1; {8.2.78. NGAMCTRL: Negative Gamma Correction (Set the gray scale voltage to adjust the gamma characteristics of the TFT panel)}
+ ILI9486_CMD_DGAMCTRL = $E2; {8.2.79. DGAMCTRL: Digital Gamma Control)}
+ 
+ {ILI9486 Memory access control constants (See ILI9486 datasheet 8.2.28. Memory Access Control)}
  ILI9486_CMD_MADCTL_MY  = $80; {Row Address Order}
  ILI9486_CMD_MADCTL_MX  = $40; {Column Address Order}
  ILI9486_CMD_MADCTL_MV  = $20; {Row / Column Exchange}
@@ -504,54 +508,27 @@ begin
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_SWRESET);
  Sleep(5);
  
- {Undocumented}
- ILI9486WriteCommand(Framebuffer,$EF);
- ILI9486WriteDataEx(Framebuffer,[$03, $80, $02]);
+ {Interface Mode Control}
+ ILI9486WriteCommand(Framebuffer,ILI9486_CMD_IFMODE);
+ ILI9486WriteData(Framebuffer,$00);
  
- {Undocumented}
- ILI9486WriteCommand(Framebuffer,$CF);
- ILI9486WriteDataEx(Framebuffer,[$00, $C1, $30]);
- 
- {Undocumented}
- ILI9486WriteCommand(Framebuffer,$ED);
- ILI9486WriteDataEx(Framebuffer,[$64, $03, $12, $81]);
- 
- {Undocumented}
- ILI9486WriteCommand(Framebuffer,$E8);
- ILI9486WriteDataEx(Framebuffer,[$85, $00, $78]);
- 
- {Undocumented}
- ILI9486WriteCommand(Framebuffer,$CB);
- ILI9486WriteDataEx(Framebuffer,[$39, $2C, $00, $34, $02]);
- 
- {Undocumented}
- ILI9486WriteCommand(Framebuffer,$F7);
- ILI9486WriteData(Framebuffer,$20);
- 
- {Undocumented}
- ILI9486WriteCommand(Framebuffer,$EA);
- ILI9486WriteDataEx(Framebuffer,[$00, $00]);
- 
- {Power Control 1}
- ILI9486WriteCommand(Framebuffer,ILI9486_CMD_PWCTRL1);
- ILI9486WriteData(Framebuffer,$23);
- 
- {Power Control 2}
- ILI9486WriteCommand(Framebuffer,ILI9486_CMD_PWCTRL2);
- ILI9486WriteData(Framebuffer,$10);
- 
- {VCOM Control 1}
- ILI9486WriteCommand(Framebuffer,ILI9486_CMD_VMCTRL1);
- ILI9486WriteDataEx(Framebuffer,[$3E, $28]);
- 
- {VCOM Control 2}
- ILI9486WriteCommand(Framebuffer,ILI9486_CMD_VMCTRL2);
- ILI9486WriteData(Framebuffer,$86);
+ {Sleep Out}
+ ILI9486WriteCommand(Framebuffer,ILI9486_CMD_SLPOUT);
+ Sleep(5);
+ //ILI9486WriteData(Framebuffer,$FA);
  
  {COLMOD: Pixel Format Set}
  {0x55 = 16 bits/pixel / 0x66 = 18 bits/pixel}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_COLMOD);
  ILI9486WriteData(Framebuffer,$55);
+ 
+ {Power Control 3}
+ ILI9486WriteCommand(Framebuffer,ILI9486_CMD_PWCTRL3);
+ ILI9486WriteData(Framebuffer,$44);
+ 
+ {VCOM Control 1}
+ ILI9486WriteCommand(Framebuffer,ILI9486_CMD_VMCTRL1);
+ ILI9486WriteDataEx(Framebuffer,[$00, $00, $00, $00]);
  
  {Memory access control}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_MADCTL);
@@ -590,10 +567,11 @@ begin
  
  ILI9486WriteData(Framebuffer,Value); 
  
- {Frame Rate Control (Division ratio = fosc, Frame Rate = 79Hz)}
+ {Frame Rate Control (Division ratio = fosc, Frame Rate = 81Hz)}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_FRMCTR1);
- ILI9486WriteDataEx(Framebuffer,[$00, $18]);
+ ILI9486WriteDataEx(Framebuffer,[$C0, $10]);
  
+ (*
  {Display Function Control}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_DISCTRL);
  ILI9486WriteDataEx(Framebuffer,[$08, $82, $27]);
@@ -601,26 +579,33 @@ begin
  {Gamma Function Disable}
  ILI9486WriteCommand(Framebuffer,$F2);
  ILI9486WriteData(Framebuffer,$00);
- 
+ *)
  {Gamma curve selected}
- ILI9486WriteCommand(Framebuffer,ILI9486_CMD_GAMSET);
- ILI9486WriteData(Framebuffer,$01);
+// ILI9486WriteCommand(Framebuffer,ILI9486_CMD_GAMSET);
+// ILI9486WriteData(Framebuffer,$01);
  
- {Positive Gamma Correction}
+ {PGAM Control}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_PGAMCTRL);
- ILI9486WriteDataEx(Framebuffer,[$0F, $31, $2B, $0C, $0E, $08, $4E, $F1, $37, $07, $10, $03, $0E, $09, $00]);
+ ILI9486WriteDataEx(Framebuffer,[$0F, $1F, $1C, $0C, $0F, $08, $48, $98,
+                                 $37, $0A, $13, $04, $11, $0D, $00]);
  
- {Negative Gamma Correction}
+ {NGAM Control}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_NGAMCTRL);
- ILI9486WriteDataEx(Framebuffer,[$00, $0E, $14, $03, $11, $07, $31, $C1, $48, $08, $0F, $0C, $31, $36, $0F]);
- 
- {Sleep OUT}
+ ILI9486WriteDataEx(Framebuffer,[$0F, $32, $2E, $0B, $0D, $05, $47, $75,
+                                 $37, $06, $10, $03, $24, $20, $00]);
+
+ {DGAM Control}
+ ILI9486WriteCommand(Framebuffer,ILI9486_CMD_DGAMCTRL);
+ ILI9486WriteDataEx(Framebuffer,[$0F, $32, $2E, $0B, $0D, $05, $47, $75,
+                                 $37, $06, $10, $03, $24, $20, $00]);
+
+ {Sleep Out}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_SLPOUT);
- Sleep(5); {Linux driver sleeps for 120ms}
- 
+ Sleep(5);
+
  {Display On}
  ILI9486WriteCommand(Framebuffer,ILI9486_CMD_DISPON);
- 
+
  Result:=ERROR_SUCCESS;
 end;
   

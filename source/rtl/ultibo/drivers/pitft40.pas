@@ -25,7 +25,6 @@ Credits
 
   Ultibo PiTFT28.pas - Copyright (C) 2015 - SoftOz Pty Ltd.
 
-  
 References
 ==========
 
@@ -43,9 +42,9 @@ WaveShare SpotPear 3.5" and 4.0" LCD
 
  The WaveShare SpotPear 3.5" and 4.0" LCDs are 320 x 480 pixel TFT with resistive touchscreen using an ILITEK ILI9486 LCD driver and an LDM XPT2046 / TI ADS7843 resistive touchscreen controller.
  
- This unit ties together the various components needed to make one of these boards work with Ultibo by finding
- the correct SPI device, creating the XPT2046 Touch device, creating the ILI9486 Framebuffer device and registering
- all of it with the correct parameters for the WaveShare board.
+ This unit ties together the various components needed to make one of these boards work with Ultibo by
+ finding the correct SPI device, creating the XPT2046 Touch device, creating the ILI9486 Framebuffer
+ device and registering all of it with the correct parameters for the WaveShare board.
 
  Details:
  
@@ -194,7 +193,7 @@ begin
  {Start PiTFT40} 
  if PiTFT40_AUTOSTART then
   begin
-   PiTFT40Default:=PiTFT40Start(FRAMEBUFFER_ROTATION_270,FRAMEBUFFER_DIRECTION_REVERSE,
+   PiTFT40Default:=PiTFT40Start(FRAMEBUFFER_ROTATION_90,FRAMEBUFFER_DIRECTION_REVERSE,
      PiTFT40_SPI_DEVICE,PiTFT40_LCD_CHIPSELECT,PiTFT40_TOUCH_CHIPSELECT);
   end;
  
