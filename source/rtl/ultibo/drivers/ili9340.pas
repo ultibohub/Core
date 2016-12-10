@@ -559,28 +559,28 @@ begin
  {RGB/BGR}
  if Defaults.Order = FRAMEBUFFER_ORDER_RGB then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_RGB; 
+   Value:=Value or ILI9340_CMD_MADCTL_BGR;
   end
  else if Defaults.Order = FRAMEBUFFER_ORDER_BGR then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_BGR;
+   Value:=Value or ILI9340_CMD_MADCTL_RGB;
   end;
  {Horizontal/Vertical memory direction (Rotation)}
  if Defaults.Rotation = FRAMEBUFFER_ROTATION_0 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MX or ILI9340_CMD_MADCTL_MY;
+   Value:=Value or ILI9340_CMD_MADCTL_MX;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_90 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MY;
+   Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MY or ILI9340_CMD_MADCTL_MX;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_180 then 
   begin
-   {Nothing}
+   Value:=Value or ILI9340_CMD_MADCTL_MY;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_270 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MX;
+   Value:=Value or ILI9340_CMD_MADCTL_MV;
   end;
  
  if Defaults.Direction = FRAMEBUFFER_DIRECTION_REVERSE then
