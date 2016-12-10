@@ -2,12 +2,11 @@
 Ultibo Definitions specific to the ARM Versatile Platform Baseboard.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
-Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
 
- ARMv5TE (ARM926ES-J)
+ ARMv7 (Cortex-A8)
 
 Boards
 ======
