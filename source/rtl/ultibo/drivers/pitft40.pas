@@ -96,7 +96,7 @@ Framebuffer,Touch,ILI9486,{LDMTI,}SysUtils;
 {==============================================================================}
 const
  {PiTFT40 specific constants}
- PiTFT40_FRAMEBUFFER_DESCRIPTION = 'WaveShare SpotPear 4.0" LCD';
+ PiTFT40_FRAMEBUFFER_NAME = 'WaveShare SpotPear 4.0" LCD';
 
  PiTFT40_SIGNATURE = $AF000040;
  
@@ -294,7 +294,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=ILI9486FramebufferCreate(SPI,DisplaySelect,PiTFT40_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PiTFT40_SCREEN_WIDTH,PiTFT40_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=ILI9486FramebufferCreate(SPI,DisplaySelect,PiTFT40_FRAMEBUFFER_NAME,Rotation,Direction,PiTFT40_SCREEN_WIDTH,PiTFT40_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Create PiTFT40}
