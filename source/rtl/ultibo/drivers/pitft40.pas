@@ -131,6 +131,8 @@ var
  PiTFT40_SPI_DEVICE:String = 'SPI0';
  PiTFT40_LCD_CHIPSELECT:Word = SPI_CS_0;
  PiTFT40_TOUCH_CHIPSELECT:Word = SPI_CS_1;
+ PiTFT40_FRAMEBUFFER_ROTATION:LongWord = FRAMEBUFFER_ROTATION_90;
+ PiTFT40_FRAMEBUFFER_DIRECTION:LongWord = FRAMEBUFFER_DIRECTION_NORMAL;
  
 {==============================================================================}
 {Initialization Functions}
@@ -171,7 +173,7 @@ var
 begin
  {}
  {Check Initialized}
- if PiTFT40Initialized then Exit;
+// if PiTFT40Initialized then Exit;
  
  {Check Environment Variables}
  {PiTFT40_AUTOSTART}
@@ -190,10 +192,18 @@ begin
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PiTFT40_TOUCH_CHIPSELECT'),0);
  if WorkInt > 0 then PiTFT40_TOUCH_CHIPSELECT:=WorkInt;
  
- {Start PiTFT40} 
+ {PiTFT40_FRAMEBUFFER_ROTATION}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PiTFT40_FRAMEBUFFER_ROTATION'),0);
+ If WorkInt > 0 then PiTFT40_FRAMEBUFFER_ROTATION:=WorkInt;
+ 
+ {PiTFT40_FRAMEBUFFER_DIRECTION}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PiTFT40_FRAMEBUFFER_DIRECTION'),0);
+ if WorkInt > 0 then PiTFT40_FRAMEBUFFER_DIRECTION:=WorkInt;
+ 
+ {Start PiTFT32} 
  if PiTFT40_AUTOSTART then
   begin
-   PiTFT40Default:=PiTFT40Start(FRAMEBUFFER_ROTATION_270,FRAMEBUFFER_DIRECTION_REVERSE,
+   PiTFT40Default:=PiTFT40Start(PiTFT40_FRAMEBUFFER_ROTATION,PiTFT40_FRAMEBUFFER_DIRECTION,
      PiTFT40_SPI_DEVICE,PiTFT40_LCD_CHIPSELECT,PiTFT40_TOUCH_CHIPSELECT);
   end;
  

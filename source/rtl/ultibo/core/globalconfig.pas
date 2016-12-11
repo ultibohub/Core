@@ -533,7 +533,8 @@ var
  FRAMEBUFFER_DEFAULT_OVERSCAN_BOTTOM:LongWord;                 {The default (Detected / Configured) Framebuffer Bottom overscan in pixels}
  FRAMEBUFFER_DEFAULT_OVERSCAN_LEFT:LongWord;                   {The default (Detected / Configured) Framebuffer Left overscan in pixels}
  FRAMEBUFFER_DEFAULT_OVERSCAN_RIGHT:LongWord;                  {The default (Detected / Configured) Framebuffer Right overscan in pixels}
- FRAMEBUFFER_DEFAULT_ROTATION:LongWord = FRAMEBUFFER_ROTATION_0; {The default (Detected / Configured) Framebuffer rotation on degress (Where Applicable)}
+ FRAMEBUFFER_DEFAULT_ROTATION:LongWord = FRAMEBUFFER_ROTATION_0; {The default (Detected / Configured) Framebuffer rotation in degrees (Where Applicable)}
+ FRAMEBUFFER_DEFAULT_DIRECTION:LongWord = FRAMEBUFFER_DIRECTION_NORMAL; {The default (Detected / Configured) Framebuffer text direction (NORMAL = Left-to-Right)}
  
 {==============================================================================}
 {Command Line and Environment configuration}
