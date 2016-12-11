@@ -171,7 +171,7 @@ var
 begin
  {}
  {Check Initialized}
-// if PiTFT40Initialized then Exit;
+ if PiTFT40Initialized then Exit;
  
  {Check Environment Variables}
  {PiTFT40_AUTOSTART}
