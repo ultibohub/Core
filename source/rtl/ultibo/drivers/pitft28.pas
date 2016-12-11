@@ -107,7 +107,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,Fram
 {==============================================================================}
 const
  {PiTFT28 specific constants}
- PITFT28_FRAMEBUFFER_NAME = 'Adafruit PiTFT 2.8" LCD';  {Description of PiTFT28 device}
+ PITFT28_FRAMEBUFFER_DESCRIPTION = 'Adafruit PiTFT 2.8" LCD';  {Description of PiTFT28 device}
 
  PITFT28_SIGNATURE = $AF000028;
  
@@ -299,7 +299,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PITFT28_FRAMEBUFFER_NAME,Rotation,Direction,PITFT28_SCREEN_WIDTH,PITFT28_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PITFT28_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PITFT28_SCREEN_WIDTH,PITFT28_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Create PiTFT28}

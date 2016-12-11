@@ -98,7 +98,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,PWM,SPI,
 {==============================================================================}
 const
  {PiTFT35 specific constants}
- PITFT35_FRAMEBUFFER_NAME = 'Adafruit PiTFT 3.5" LCD';  {Description of PiTFT35 device}
+ PITFT35_FRAMEBUFFER_DESCRIPTION = 'Adafruit PiTFT 3.5" LCD';  {Description of PiTFT35 device}
 
  PITFT35_SIGNATURE = $AF000035;
  
@@ -296,7 +296,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=HX8357DFramebufferCreate(SPI,DisplaySelect,PITFT35_FRAMEBUFFER_NAME,Rotation,Direction,PITFT35_SCREEN_WIDTH,PITFT35_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=HX8357DFramebufferCreate(SPI,DisplaySelect,PITFT35_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PITFT35_SCREEN_WIDTH,PITFT35_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Update Framebuffer}

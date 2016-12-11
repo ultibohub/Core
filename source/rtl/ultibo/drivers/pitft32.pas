@@ -97,7 +97,7 @@ Framebuffer,Touch,ILI9340,{LDMTI,}SysUtils;
 {==============================================================================}
 const
  {PiTFT32 specific constants}
- PiTFT32_FRAMEBUFFER_NAME = 'WaveShare SpotPear 3.2" LCD';
+ PiTFT32_FRAMEBUFFER_DESCRIPTION = 'WaveShare SpotPear 3.2" LCD';
 
  PiTFT32_SIGNATURE = $AF000032;
  
@@ -172,7 +172,7 @@ var
 begin
  {}
  {Check Initialized}
-// if PiTFT32Initialized then Exit;
+ if PiTFT32Initialized then Exit;
 
  {Check Environment Variables}
  {PiTFT32_AUTOSTART}
@@ -295,7 +295,7 @@ begin
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
    
    {Create Framebuffer Device}
-   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PiTFT32_FRAMEBUFFER_NAME,Rotation,Direction,PiTFT32_SCREEN_WIDTH,PiTFT32_SCREEN_HEIGHT,@RST,@DC,@BL);
+   Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PiTFT32_FRAMEBUFFER_DESCRIPTION,Rotation,Direction,PiTFT32_SCREEN_WIDTH,PiTFT32_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Create PiTFT32}
