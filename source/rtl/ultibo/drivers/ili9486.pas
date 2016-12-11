@@ -545,19 +545,19 @@ begin
  {Horizontal/Vertical memory direction (Rotation)}
  if Defaults.Rotation = FRAMEBUFFER_ROTATION_0 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MX;
+   Value:=Value or ILI9486_CMD_MADCTL_MX;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_90 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MV;
+   Value:=Value or ILI9486_CMD_MADCTL_MV;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_180 then 
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MY;
+   Value:=Value or ILI9486_CMD_MADCTL_MY;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_270 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MY or ILI9340_CMD_MADCTL_MX;
+   Value:=Value or ILI9486_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MY or ILI9340_CMD_MADCTL_MX;
   end;
 
  if Defaults.Direction = FRAMEBUFFER_DIRECTION_REVERSE then
