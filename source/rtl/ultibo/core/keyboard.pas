@@ -187,6 +187,7 @@ const
  USBKEYBOARD_KEYBOARD_DESCRIPTION = 'USB HID Keyboard'; {Description of USB keyboard device}
  
  {HID Interface Subclass types (See USB HID v1.11 specification)}
+ USB_HID_NO_SUBCLASS             = 0;     {Section 4.2}
  USB_HID_SUBCLASS_BOOT           = 1;     {Section 4.2}
  
  {HID Interface Protocol types (See USB HID v1.11 specification)}
@@ -212,7 +213,16 @@ const
  
  {HID Report IDs}
  USB_HID_REPORTID_NONE           = 0;     {Section 7.2.1}
-  
+
+ {Values for bDescriptorType in GetDescriptor request}
+ {HID Class Descriptor Types (See Section 7.1 of the USB HID v1.11 specification)}
+ USB_HID_DESCRIPTOR_TYPE_HID                  = $21;
+ USB_HID_DESCRIPTOR_TYPE_REPORT               = $22;
+ USB_HID_DESCRIPTOR_TYPE_PHYSICAL_DESCRIPTOR  = $23;
+
+ {HID Boot Interface Keyboard Descriptor - Appendix B.1 of HID 1.11 Specification}
+ HID_BOOT_KEYBOARD_DESCRIPTOR:array[1..62] of Byte = (5, 1, 9, 6, 161, 1, 5, 7, 25, 224, 41, 231, 21, 0, 37, 1, 117, 1, 149, 8, 129, 2, 149, 1, 117, 8, 129, 1, 149, 3, 117, 1, 5, 8, 25, 1, 41, 3, 145, 2, 149, 5, 117, 1, 145, 1, 149, 6, 117, 8, 38, 255, 0, 5, 7, 25, 0, 41, 145, 129, 0, 192);
+
  {HID Boot Protocol Modifier bits}
  USB_HID_BOOT_LEFT_CTRL   = (1 shl 0);
  USB_HID_BOOT_LEFT_SHIFT  = (1 shl 1);
@@ -681,6 +691,7 @@ function USBKeyboardCheckReleased(Keyboard:PUSBKeyboardDevice;Report:PUSBKeyboar
 function USBKeyboardDeviceSetLEDs(Keyboard:PUSBKeyboardDevice;LEDs:Byte):LongWord;
 function USBKeyboardDeviceSetIdle(Keyboard:PUSBKeyboardDevice;Duration,ReportId:Byte):LongWord;
 function USBKeyboardDeviceSetProtocol(Keyboard:PUSBKeyboardDevice;Protocol:Byte):LongWord;
+function USBKeyboardDeviceGetReportDescriptor(Keyboard:PUSBKeyboardDevice;Data:Pointer;Length:Word):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -2409,6 +2420,9 @@ var
  Interval:LongWord;
  Keyboard:PUSBKeyboardDevice;
  ReportEndpoint:PUSBEndpointDescriptor;
+ ReportDescriptor:array[1..Length(HID_BOOT_KEYBOARD_DESCRIPTOR)] of byte;
+ I:Integer;
+ Match:Boolean;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -2436,8 +2450,9 @@ begin
    Exit;   
   end;
 
- {Check Interface (Must be HID boot protocol keyboard)}
- if (Interrface.Descriptor.bInterfaceClass <> USB_CLASS_CODE_HID) or (Interrface.Descriptor.bInterfaceSubClass <> USB_HID_SUBCLASS_BOOT) or (Interrface.Descriptor.bInterfaceProtocol <> USB_HID_BOOT_PROTOCOL_KEYBOARD) then
+ {Check Interface (Must be HID boot protocol keyboard or HID interface without subclass)}
+ if ((Interrface.Descriptor.bInterfaceClass <> USB_CLASS_CODE_HID) or (Interrface.Descriptor.bInterfaceSubClass <> USB_HID_SUBCLASS_BOOT) or (Interrface.Descriptor.bInterfaceProtocol <> USB_HID_BOOT_PROTOCOL_KEYBOARD))
+    and ((Interrface.Descriptor.bInterfaceClass <> USB_CLASS_CODE_HID) or (Interrface.Descriptor.bInterfaceSubClass <> USB_HID_NO_SUBCLASS)) then
   begin
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2510,30 +2525,85 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
- {$IFDEF USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Enabling HID boot protocol');
- {$ENDIF}
- 
- {Set Boot Protocol}
- Status:=USBKeyboardDeviceSetProtocol(Keyboard,USB_HID_PROTOCOL_BOOT);
- if Status <> USB_STATUS_SUCCESS then
-  begin
-   if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Failed to enable HID boot protocol: ' + USBStatusToString(Status));
-   
-   {Release Report Request}
-   USBRequestRelease(Keyboard.ReportRequest);
-   
-   {Deregister Keyboard}
-   KeyboardDeviceDeregister(@Keyboard.Keyboard);
-   
-   {Destroy Keyboard}
-   KeyboardDeviceDestroy(@Keyboard.Keyboard);
-   
-   {Return Result}
-   Result:=USB_STATUS_DEVICE_UNSUPPORTED;
-   Exit;
-  end;
+
+ if ((Interrface.Descriptor.bInterfaceClass = USB_CLASS_CODE_HID) and (Interrface.Descriptor.bInterfaceSubClass = USB_HID_NO_SUBCLASS)) then
+ begin
+  {HID interface without subclass -> read Report Descriptor and check if it is boot keyboard descriptor}
+
+  {$IFDEF USB_DEBUG}
+  if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Reading Report Descriptor');
+  {$ENDIF}
+
+  {Read Report Descriotor}
+  Status:=USBKeyboardDeviceGetReportDescriptor(Keyboard,@ReportDescriptor,Length(HID_BOOT_KEYBOARD_DESCRIPTOR));
+  if Status = USB_STATUS_SUCCESS then
+   begin
+    {Compare report descriotor with HID Boot Keyboard report descriptor}
+    Match := True;
+    for I := 1 to Length(HID_BOOT_KEYBOARD_DESCRIPTOR) do
+     begin
+      if ReportDescriptor[I] <> HID_BOOT_KEYBOARD_DESCRIPTOR[I] then
+       begin
+        Match := False;
+        break;
+       end;
+     end;
+   end;
+  if (Status <> USB_STATUS_SUCCESS) or (not Match) then
+   begin
+    if USB_LOG_ENABLED then
+     begin
+      if not Match then
+       begin
+        {$IFDEF USB_DEBUG}
+        if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Not a HID boot keyboard report descriptor');
+        {$ENDIF}
+       end else begin
+        USBLogError(Device,'Keyboard: Failed to read report descriptor: ' + USBStatusToString(Status));
+       end;
+     end;
+
+    {Release Report Request}
+    USBRequestRelease(Keyboard.ReportRequest);
+
+    {Deregister Keyboard}
+    KeyboardDeviceDeregister(@Keyboard.Keyboard);
+
+    {Destroy Keyboard}
+    KeyboardDeviceDestroy(@Keyboard.Keyboard);
+
+    {Return Result}
+    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
+    Exit;
+   end;
+
+ end else begin
+  {HID interface with boot keyboard protocol}
+
+  {$IFDEF USB_DEBUG}
+  if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Enabling HID boot protocol');
+  {$ENDIF}
+
+  {Set Boot Protocol}
+  Status:=USBKeyboardDeviceSetProtocol(Keyboard,USB_HID_PROTOCOL_BOOT);
+  if Status <> USB_STATUS_SUCCESS then
+   begin
+    if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Failed to enable HID boot protocol: ' + USBStatusToString(Status));
+
+    {Release Report Request}
+    USBRequestRelease(Keyboard.ReportRequest);
+
+    {Deregister Keyboard}
+    KeyboardDeviceDeregister(@Keyboard.Keyboard);
+
+    {Destroy Keyboard}
+    KeyboardDeviceDestroy(@Keyboard.Keyboard);
+
+    {Return Result}
+    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
+    Exit;
+   end;
+ end;
 
  {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Setting idle rate');
@@ -4714,6 +4784,39 @@ begin
  
  {Set Protocol}
  Result:=USBControlRequest(Device,nil,USB_HID_REQUEST_SET_PROTOCOL,USB_BMREQUESTTYPE_TYPE_CLASS or USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,Protocol,Keyboard.HIDInterface.Descriptor.bInterfaceNumber,nil,0);
+end;
+
+{==============================================================================}
+
+function USBKeyboardDeviceGetReportDescriptor(Keyboard:PUSBKeyboardDevice;Data:Pointer;Length:Word):LongWord;
+{Read all or part of the report descriptor from the specified keyboard device using USBControlRequest}
+{Keyboard: The USB keyboard device to get the report descriptor for}
+{Data: See USBControlRequest}
+{Length: See USBControlRequest}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+var
+ Device:PUSBDevice;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+
+ {Check Keyboard}
+ if Keyboard = nil then Exit;
+
+ {Check Interface}
+ if Keyboard.HIDInterface = nil then Exit;
+
+ {Get Device}
+ Device:=PUSBDevice(Keyboard.Keyboard.Device.DeviceData);
+ if Device = nil then Exit;
+
+ {Check Data}
+ if Data = nil then Exit;
+
+ {Get Descriptor}
+ Result:=USBControlRequest(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,
+   USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,
+   (USB_HID_DESCRIPTOR_TYPE_REPORT shl 8),Keyboard.HIDInterface.Descriptor.bInterfaceNumber,Data,Length);
 end;
 
 {==============================================================================}
