@@ -622,7 +622,7 @@ begin
  if Framebuffer = nil then Exit;
  
  {$IF DEFINED(ILI9486_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9486: Framebuffer Initialize');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9486: Framebuffer Deinitialize');
  {$ENDIF}
 
  {Display Off}
