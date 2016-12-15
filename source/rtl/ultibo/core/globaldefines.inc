@@ -146,7 +146,7 @@ Global Defines
 {--$DEFINE MOUSE_DEBUG}           {Enable debug output/counters for Mouse devices (Default: Off)}
 {--$DEFINE TOUCH_DEBUG}           {Enable debug output/counters for Touch devices (Default: Off)}
 
-{$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
+{--$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
 {--$DEFINE VPN_DEBUG}             {Enable debug output/counters for VPN devices (Default: Off)}
 
 {--$DEFINE SERIAL_DEBUG}          {Enable debug output/counters for Serial devices (Default: Off) (Do not enable when serial logging is active)}
@@ -190,8 +190,8 @@ Global Defines
 {--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
 
 {WiFi}
-{$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
-{$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
+{--$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
+{--$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
 {--$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
      
 {Serial/UART}     
@@ -209,13 +209,16 @@ Global Defines
 {Framebuffer/Console}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
 {--$DEFINE ILI9340_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
+{--$DEFINE ILI9480_DEBUG}         {Enable debug output/counters for ILI9480 driver (Default: Off)}
 {--$DEFINE HX8357D_DEBUG}         {Enable debug output/counters for HX8357D driver (Default: Off)}
 {--$DEFINE PL110_DEBUG}           {Enable debug output/counters for PL110 driver (Default: Off)}
 
 {Framebuffer/Console}
 {--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
 {--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
+{--$DEFINE PITFT32_DEBUG}         {Enable debug output/counters for PITFT32 driver (Default: Off)}
 {--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
+{--$DEFINE PITFT40_DEBUG}         {Enable debug output/counters for PITFT40 driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}
