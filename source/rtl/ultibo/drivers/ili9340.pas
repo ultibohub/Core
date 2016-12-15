@@ -287,7 +287,7 @@ begin
    ILI9340Framebuffer.TFT.Width:=Width;
    ILI9340Framebuffer.TFT.Height:=Height;
    ILI9340Framebuffer.TFT.Rotation:=Rotation;
-   if (Rotation = FRAMEBUFFER_ROTATION_90) or (Rotation = FRAMEBUFFER_ROTATION_270) then
+   if (Rotation = FRAMEBUFFER_ROTATION_0) or (Rotation = FRAMEBUFFER_ROTATION_180) then
     begin
      ILI9340Framebuffer.TFT.Width:=Height;
      ILI9340Framebuffer.TFT.Height:=Width;
@@ -711,7 +711,7 @@ begin
          Defaults.PhysicalWidth:=Framebuffer.Height;
          Defaults.PhysicalHeight:=Framebuffer.Width;
         end;
-      end;      
+      end;
       
      Defaults.VirtualWidth:=Defaults.PhysicalWidth; 
      Defaults.VirtualHeight:=Defaults.PhysicalHeight;

@@ -56,8 +56,8 @@ Adafruit PiTFT 2.8" LCD
  
   ILI9340 
   
-   Width:   240
-   Height:  320
+   Width:   320
+   Height:  240
    
    SPI Mode: 0
    SPI Frequency: 32000000
@@ -111,8 +111,8 @@ const
 
  PITFT28_SIGNATURE = $AF000028;
  
- PITFT28_SCREEN_WIDTH  = 240;
- PITFT28_SCREEN_HEIGHT = 320;
+ PITFT28_SCREEN_WIDTH  = 320;
+ PITFT28_SCREEN_HEIGHT = 240;
  
  {PiTFT28 GPIO constants}
  PITFT28_LCD_DC    = GPIO_PIN_25;

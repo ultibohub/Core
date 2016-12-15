@@ -40,7 +40,8 @@ References
 WaveShare SpotPear 3.5" and 4.0" LCD
 ====================================
 
- The WaveShare SpotPear 3.5" and 4.0" LCDs are 320 x 480 pixel TFT with resistive touchscreen using an ILITEK ILI9486 LCD driver and an LDM XPT2046 / TI ADS7843 resistive touchscreen controller.
+ The WaveShare SpotPear 3.5" and 4.0" LCDs are HVGA (320 x 480 pixel) TFT with resistive touchscreen using
+ an ILITEK ILI9486 LCD driver and an LDM XPT2046 / TI ADS7843 resistive touchscreen controller.
  
  This unit ties together the various components needed to make one of these boards work with Ultibo by
  finding the correct SPI device, creating the XPT2046 Touch device, creating the ILI9486 Framebuffer
@@ -100,8 +101,8 @@ const
 
  PiTFT40_SIGNATURE = $AF000040;
  
- PiTFT40_SCREEN_WIDTH  = 480;
- PiTFT40_SCREEN_HEIGHT = 320;
+ PiTFT40_SCREEN_WIDTH  = 320;
+ PiTFT40_SCREEN_HEIGHT = 480;
  
  {PiTFT40 GPIO constants}
  PiTFT40_LCD_DC    = GPIO_PIN_24;

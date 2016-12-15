@@ -291,7 +291,7 @@ begin
    ILI9486Framebuffer.TFT.Width:=Width;
    ILI9486Framebuffer.TFT.Height:=Height;
    ILI9486Framebuffer.TFT.Rotation:=Rotation;
-   if (Rotation = FRAMEBUFFER_ROTATION_90) or (Rotation = FRAMEBUFFER_ROTATION_270) then
+   if (Rotation = FRAMEBUFFER_ROTATION_0) or (Rotation = FRAMEBUFFER_ROTATION_180) then
     begin
      ILI9486Framebuffer.TFT.Width:=Height;
      ILI9486Framebuffer.TFT.Height:=Width;
