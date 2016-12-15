@@ -2,6 +2,7 @@
 Ultibo Framebuffer interface unit.
 
 Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -111,6 +112,8 @@ type
   OverscanLeft:LongWord;                         {Framebuffer Overscan Left (Pixels)}                                
   OverscanRight:LongWord;                        {Framebuffer Overscan Right (Pixels)}                                 
   Rotation:LongWord;                             {Framebuffer Rotation (eg FRAMEBUFFER_ROTATION_180)}
+
+  Direction:LongWord;                            {Framebuffer Direction (eg FRAMEBUFFER_DIRECTION_REVERSE)}
  end;
  
  PFramebufferDevice = ^TFramebufferDevice;
@@ -210,6 +213,9 @@ type
   OverscanLeft:LongWord;                         {Framebuffer Overscan Left (Pixels)}                                
   OverscanRight:LongWord;                        {Framebuffer Overscan Right (Pixels)}                                 
   Rotation:LongWord;                             {Framebuffer Rotation (eg FRAMEBUFFER_ROTATION_180)}
+  
+  Direction:LongWord;                            {Framebuffer Direction (eg FRAMEBUFFER_DIRECTION_REVERSE)}
+  
   {Buffer Properties}
   LineBuffer:Pointer;                            {Buffer for line fills}
   CopyBuffer:Pointer;                            {Buffer for overlapped copy}
@@ -302,6 +308,7 @@ function FramebufferDepthToString(Depth:LongWord):String;
 function FramebufferOrderToString(Order:LongWord):String;
 function FramebufferModeToString(Mode:LongWord):String;
 function FramebufferRotationToString(Rotation:LongWord):String;
+function FramebufferDirectionToString(Direction:LongWord):String;
 
 {==============================================================================}
 {==============================================================================}
@@ -2049,6 +2056,7 @@ begin
    Properties.OverscanLeft:=Framebuffer.OverscanLeft;
    Properties.OverscanRight:=Framebuffer.OverscanRight;
    Properties.Rotation:=Framebuffer.Rotation;
+   Properties.Direction:=Framebuffer.Direction;
    
    {Return Result}
    Result:=ERROR_SUCCESS;
@@ -2212,6 +2220,7 @@ begin
  Result.OverscanLeft:=0;  
  Result.OverscanRight:=0;  
  Result.Rotation:=FRAMEBUFFER_ROTATION_0;
+ Result.Direction:=FRAMEBUFFER_DIRECTION_NORMAL;
  
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
@@ -2701,6 +2710,20 @@ begin
   FRAMEBUFFER_ROTATION_270:Result:='FRAMEBUFFER_ROTATION_270';
  end;
 end;
+
+{==============================================================================}
+
+function FramebufferDirectionToString(Direction:LongWord):String;
+begin
+ {}
+ Result:='FRAMEBUFFER_DIRECTION_UNKNOWN';
+ 
+ case Direction of
+  FRAMEBUFFER_DIRECTION_NORMAL:Result:='FRAMEBUFFER_DIRECTION_NORMAL';
+  FRAMEBUFFER_DIRECTION_REVERSE:Result:='FRAMEBUFFER_DIRECTION_REVERSE';
+ end;
+end;
+
 
 {==============================================================================}
 {==============================================================================}

@@ -2,6 +2,7 @@
 Ultibo Platform interface unit for ARM.
 
 Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -15,7 +16,7 @@ Boards
 
  Raspberry Pi - Model A/B/A+/B+
  Raspberry Pi - Model Zero
- Raspberry Pi 2 - Model B
+ Raspberry Pi 2 - Model B/B+
  Raspberry Pi 3 - Model B
  BeagleBone Black
  Banana Pi
@@ -24,7 +25,9 @@ Boards
  Cubox-i2Ex
  Cubox-i4Pro
  Hummingboard
+ Nexus 7 (2012)
  Odroid C1
+ Odroid C2
  Odroid U3
  Odroid XU3
  QEMU VersatilePB

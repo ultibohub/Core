@@ -533,7 +533,8 @@ var
  FRAMEBUFFER_DEFAULT_OVERSCAN_BOTTOM:LongWord;                 {The default (Detected / Configured) Framebuffer Bottom overscan in pixels}
  FRAMEBUFFER_DEFAULT_OVERSCAN_LEFT:LongWord;                   {The default (Detected / Configured) Framebuffer Left overscan in pixels}
  FRAMEBUFFER_DEFAULT_OVERSCAN_RIGHT:LongWord;                  {The default (Detected / Configured) Framebuffer Right overscan in pixels}
- FRAMEBUFFER_DEFAULT_ROTATION:LongWord = FRAMEBUFFER_ROTATION_0; {The default (Detected / Configured) Framebuffer rotation on degress (Where Applicable)}
+ FRAMEBUFFER_DEFAULT_ROTATION:LongWord = FRAMEBUFFER_ROTATION_0; {The default (Detected / Configured) Framebuffer rotation in degrees (Where Applicable)}
+ FRAMEBUFFER_DEFAULT_DIRECTION:LongWord = FRAMEBUFFER_DIRECTION_NORMAL; {The default (Detected / Configured) Framebuffer text direction (NORMAL = Left-to-Right)}
  
 {==============================================================================}
 {Command Line and Environment configuration}
@@ -1078,9 +1079,15 @@ var
  {PiTFT28}
  PiTFT28_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT28 device on boot (Only if PiTFT28 unit included)}
 
+ {PiTFT32}
+ PiTFT32_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT32 device on boot (Only if PiTFT32 unit included)}
+
  {PiTFT35}
  PiTFT35_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT35 device on boot (Only if PiTFT35 unit included)}
  
+ {PiTFT40}
+ PiTFT40_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT40 device on boot (Only if PiTFT40 unit included)}
+
 {==============================================================================}
 {Global handlers}
 var

@@ -2,6 +2,7 @@
 Ultibo Definitions specific to the Broadcom 2837 System on chip.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -11,6 +12,7 @@ Arch
 Boards
 ======
 
+ Raspberry Pi 2 - Model B+
  Raspberry Pi 3 - Model B
  
 Licence

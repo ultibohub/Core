@@ -2,6 +2,7 @@
 ILITEK ILI9340 TFT LCD Driver.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -130,7 +131,7 @@ type
  
 {==============================================================================}
 {ILI9340 Functions}
-function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Direction,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
   
 function ILI9340FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
 
@@ -176,12 +177,13 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {ILI9340 Functions}
-function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Direction,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
 {Create, register and allocate a new ILI9340 Framebuffer device which can be accessed using the framebuffer API}
 {SPI: The SPI device that this ILI9340 is connected to}
 {ChipSelect: The SPI chip select to use when communicating with this device}
 {Name: The text description of this device which will should in the device list (Optional)}
 {Rotation: The rotation value for the framebuffer device (eg FRAMEBUFFER_ROTATION_180)}
+{Direction: The direction of the display (eg FRAMEBUFFER_DIRECTION_REVERSE)}
 {Width: The width of the framebuffer in pixels}
 {Height: The height of the framebuffer in pixels}
 {RST: GPIO pin information for the Reset pin (Optional)}
@@ -202,6 +204,9 @@ begin
  
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
+ 
+ {Check Direction}
+ if Direction > FRAMEBUFFER_DIRECTION_REVERSE then Exit;
  
  {Check Width and Height}
  if Width < 1 then Exit;
@@ -282,11 +287,12 @@ begin
    ILI9340Framebuffer.TFT.Width:=Width;
    ILI9340Framebuffer.TFT.Height:=Height;
    ILI9340Framebuffer.TFT.Rotation:=Rotation;
-   if (Rotation = FRAMEBUFFER_ROTATION_90) or (Rotation = FRAMEBUFFER_ROTATION_270) then
+   if (Rotation = FRAMEBUFFER_ROTATION_0) or (Rotation = FRAMEBUFFER_ROTATION_180) then
     begin
      ILI9340Framebuffer.TFT.Width:=Height;
      ILI9340Framebuffer.TFT.Height:=Width;
     end;
+   ILI9340Framebuffer.TFT.Direction:=Direction;
    ILI9340Framebuffer.TFT.DirtyY1:=Height - 1;
    ILI9340Framebuffer.TFT.DirtyY2:=0;
    ILI9340Framebuffer.TFT.Ready:=True;
@@ -553,29 +559,35 @@ begin
  {RGB/BGR}
  if Defaults.Order = FRAMEBUFFER_ORDER_RGB then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_RGB; 
+   Value:=Value or ILI9340_CMD_MADCTL_BGR;
   end
  else if Defaults.Order = FRAMEBUFFER_ORDER_BGR then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_BGR;
+   Value:=Value or ILI9340_CMD_MADCTL_RGB;
   end;
  {Horizontal/Vertical memory direction (Rotation)}
  if Defaults.Rotation = FRAMEBUFFER_ROTATION_0 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MX or ILI9340_CMD_MADCTL_MY
+   Value:=Value or ILI9340_CMD_MADCTL_MX;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_90 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MY;
+   Value:=Value or ILI9340_CMD_MADCTL_MV;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_180 then 
   begin
-   {Nothing}
+   Value:=Value or ILI9340_CMD_MADCTL_MY;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_270 then
   begin
-   Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MX;
+   Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MY or ILI9340_CMD_MADCTL_MX;
   end;
+ 
+ if Defaults.Direction = FRAMEBUFFER_DIRECTION_REVERSE then
+ begin
+  Value:=Value xor ILI9340_CMD_MADCTL_MX;
+ end;   
+ 
  ILI9340WriteData(Framebuffer,Value); 
  
  {Frame Rate Control (Division ratio = fosc, Frame Rate = 79Hz)}
@@ -625,7 +637,7 @@ begin
  if Framebuffer = nil then Exit;
  
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Initialize');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Deinitialize');
  {$ENDIF}
 
  {Display Off}
@@ -668,6 +680,7 @@ begin
  Defaults.OverscanLeft:=0;                        
  Defaults.OverscanRight:=0;                       
  Defaults.Rotation:=Framebuffer.Rotation;
+ Defaults.Direction:=Framebuffer.Direction;
  
  {Check Properties}
  if Properties <> nil then
@@ -678,6 +691,8 @@ begin
    if Properties.Order <= FRAMEBUFFER_ORDER_RGB then Defaults.Order:=Properties.Order;
    {Adjust Rotation}
    if Properties.Rotation <= FRAMEBUFFER_ROTATION_270 then Defaults.Rotation:=Properties.Rotation;
+   {Adjust Direction}
+   if Properties.Direction <= FRAMEBUFFER_DIRECTION_REVERSE then Defaults.Direction:=Properties.Direction;
    {Check Rotation}
    if Properties.Rotation <> Framebuffer.Rotation then
     begin
@@ -696,7 +711,7 @@ begin
          Defaults.PhysicalWidth:=Framebuffer.Height;
          Defaults.PhysicalHeight:=Framebuffer.Width;
         end;
-      end;      
+      end;
       
      Defaults.VirtualWidth:=Defaults.PhysicalWidth; 
      Defaults.VirtualHeight:=Defaults.PhysicalHeight;

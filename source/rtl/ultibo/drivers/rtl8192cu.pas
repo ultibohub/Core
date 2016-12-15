@@ -2,6 +2,7 @@
 Realtek 8192CU USB Wireless Driver.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -67,6 +68,8 @@ const
  
  RTL8192CU_DEVICE_ID_COUNT = 80; {Number of supported Device IDs}
 
+ USB_VENDORID_REALTEK = $10EC;
+ 
  RTL8192CU_DEVICE_ID:array[0..RTL8192CU_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:USB_VENDORID_REALTEK;idProduct:$8191),  {Default ID}
   {****** 8188CUS ********}

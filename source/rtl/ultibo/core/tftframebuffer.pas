@@ -2,6 +2,7 @@
 Ultibo TFT Framebuffer driver library unit.
 
 Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2016 - Rob Judd <judd@ob-wan.com>
 
 Arch
 ====
@@ -100,6 +101,7 @@ type
   Width:LongWord;                                 {Framebuffer Width in Pixels}
   Height:LongWord;                                {Framebuffer Height in Pixels}
   Rotation:LongWord;                              {Framebuffer Rotation (eg FRAMEBUFFER_ROTATION_180)}
+  Direction:LongWord;                             {Framebuffer Direction (eg FRAMEBUFFER_DIRECTION_REVERSE)}
   DirtyY1:LongWord;                               {First line of dirty region (or Height - 1 if none dirty)}
   DirtyY2:LongWord;                               {Last line of dirty region (or 0 if none dirty)}
   Ready:LongBool;                                 {If True timer should be enabled during Mark operation}
@@ -251,6 +253,7 @@ begin
     Framebuffer.OverscanLeft:=Defaults.OverscanLeft;
     Framebuffer.OverscanRight:=Defaults.OverscanRight;
     Framebuffer.Rotation:=Defaults.Rotation;
+    Framebuffer.Direction:=Defaults.Direction;
     
     {Update Dirty Region}
     PTFTFramebuffer(Framebuffer).DirtyY1:=Framebuffer.PhysicalHeight - 1;
@@ -350,6 +353,7 @@ begin
     Framebuffer.OverscanLeft:=0;
     Framebuffer.OverscanRight:=0;
     Framebuffer.Rotation:=FRAMEBUFFER_ROTATION_0;
+    Framebuffer.Direction:=FRAMEBUFFER_DIRECTION_NORMAL;
     
     {Update Dirty Region}
     MutexDestroy(PTFTFramebuffer(Framebuffer).Lock);
