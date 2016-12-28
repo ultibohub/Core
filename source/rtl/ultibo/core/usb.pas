@@ -5752,6 +5752,16 @@ begin
    if Result <> USB_STATUS_SUCCESS then Exit; 
   end; 
    
+ {Deinitialize Request}
+ Request.Device:=nil;
+ Request.Endpoint:=nil;
+ Request.Size:=0;
+ Request.Callback:=nil;
+ Request.DriverData:=nil;
+ Request.Status:=USB_STATUS_NOT_VALID;
+ Request.ResubmitThread:=INVALID_HANDLE_VALUE; 
+ Request.ResubmitSemaphore:=INVALID_HANDLE_VALUE;
+   
  {Release Request}
  FreeMem(Request);
    
@@ -5829,6 +5839,7 @@ var
  Direction:Byte;
  TransferType:Byte;
  {$ENDIF}
+ Device:PUSBDevice;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -5840,11 +5851,14 @@ begin
    Exit;
   end;
 
+ {Get Device}
+ Device:=Request.Device;
+  
  {Check State}
- if Request.Device.USBState = USB_STATE_DETACHING then
+ if Device.USBState = USB_STATE_DETACHING then
   begin
    {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detaching, refusing request submit');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'Device detaching, refusing request submit');
    {$ENDIF}
    
    Result:=USB_STATUS_DEVICE_DETACHED;
@@ -5865,10 +5879,10 @@ begin
      TransferType:=USB_TRANSFER_TYPE_CONTROL;
      Direction:=Request.SetupData.bmRequestType shr 7;
     end;
-   USBLogDebug(Request.Device,'Submitting request (' + IntToStr(Request.Size) + ' bytes, type=' + USBTransferTypeToString(TransferType) + ', dir=' + USBDirectionToString(Direction) + ')');
+   USBLogDebug(Device,'Submitting request (' + IntToStr(Request.Size) + ' bytes, type=' + USBTransferTypeToString(TransferType) + ', dir=' + USBDirectionToString(Direction) + ')');
    if TransferType = USB_TRANSFER_TYPE_CONTROL then
     begin
-     USBLogDebug(Request.Device,'Control message: bmRequestType=' + IntToHex(Request.SetupData.bmRequestType,2) + ', bRequest=' + IntToHex(Request.SetupData.bRequest,2) + ', wValue=' + IntToHex(Request.SetupData.wValue,4) + ', wIndex=' + IntToHex(Request.SetupData.wIndex,4) + ', wLength=' + IntToHex(Request.SetupData.wLength,4));
+     USBLogDebug(Device,'Control message: bmRequestType=' + IntToHex(Request.SetupData.bmRequestType,2) + ', bRequest=' + IntToHex(Request.SetupData.bRequest,2) + ', wValue=' + IntToHex(Request.SetupData.wValue,4) + ', wIndex=' + IntToHex(Request.SetupData.wIndex,4) + ', wLength=' + IntToHex(Request.SetupData.wLength,4));
     end;
   end;  
  {$ENDIF}
@@ -5880,28 +5894,28 @@ begin
  Request.ControlPhase:=USB_CONTROL_PHASE_SETUP;
  
  {Acquire the Lock}
- if MutexLock(Request.Device.Lock) = ERROR_SUCCESS then
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
   begin
    try
     {Update Statistics}
-    Inc(Request.Device.RequestCount); 
+    Inc(Device.RequestCount); 
     
     {Update Pending}
-    Inc(Request.Device.PendingCount);
+    Inc(Device.PendingCount);
     
     {Submit Request}
-    Status:=Request.Device.Host.HostSubmit(Request.Device.Host,Request);
+    Status:=Device.Host.HostSubmit(Device.Host,Request);
     if Status <> USB_STATUS_SUCCESS then
      begin
       {Update Pending}
-      Dec(Request.Device.PendingCount);
+      Dec(Device.PendingCount);
      end;
 
     {Return Result}
     Result:=Status;
    finally
     {Release the Lock}
-    MutexUnlock(Request.Device.Lock);
+    MutexUnlock(Device.Lock);
    end;   
   end; 
 end;
@@ -5912,6 +5926,8 @@ function USBRequestCancel(Request:PUSBRequest):LongWord;
 {Cancel a USB request previously submitted to a host controller}
 {Request: The request to be cancelled}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+var
+ Device:PUSBDevice;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -5923,11 +5939,14 @@ begin
    Exit;
   end;
  
+ {Get Device}
+ Device:=Request.Device;
+ 
  {Check State}
- if Request.Device.USBState = USB_STATE_DETACHING then
+ if Device.USBState = USB_STATE_DETACHING then
   begin
    {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detaching, refusing request cancel');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'Device detaching, refusing request cancel');
    {$ENDIF}
    
    Result:=USB_STATUS_DEVICE_DETACHED;
@@ -5948,23 +5967,23 @@ begin
      TransferType:=USB_TRANSFER_TYPE_CONTROL;
      Direction:=Request.SetupData.bmRequestType shr 7;
     end;
-   USBLogDebug(Request.Device,'Cancelling request (' + IntToStr(Request.Size) + ' bytes, type=' + USBTransferTypeToString(TransferType) + ', dir=' + USBDirectionToString(Direction) + ')');
+   USBLogDebug(Device,'Cancelling request (' + IntToStr(Request.Size) + ' bytes, type=' + USBTransferTypeToString(TransferType) + ', dir=' + USBDirectionToString(Direction) + ')');
    if TransferType = USB_TRANSFER_TYPE_CONTROL then
     begin
-     USBLogDebug(Request.Device,'Control message: bmRequestType=' + IntToHex(Request.SetupData.bmRequestType,2) + ', bRequest=' + IntToHex(Request.SetupData.bRequest,2) + ', wValue=' + IntToHex(Request.SetupData.wValue,4) + ', wIndex=' + IntToHex(Request.SetupData.wIndex,4) + ', wLength=' + IntToHex(Request.SetupData.wLength,4));
+     USBLogDebug(Device,'Control message: bmRequestType=' + IntToHex(Request.SetupData.bmRequestType,2) + ', bRequest=' + IntToHex(Request.SetupData.bRequest,2) + ', wValue=' + IntToHex(Request.SetupData.wValue,4) + ', wIndex=' + IntToHex(Request.SetupData.wIndex,4) + ', wLength=' + IntToHex(Request.SetupData.wLength,4));
     end;
   end;  
  {$ENDIF}
  
  {Acquire the Lock}
- if MutexLock(Request.Device.Lock) = ERROR_SUCCESS then
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
   begin
    try
     {Cancel Request}
-    Result:=Request.Device.Host.HostCancel(Request.Device.Host,Request);
+    Result:=Device.Host.HostCancel(Device.Host,Request);
    finally
     {Release the Lock}
-    MutexUnlock(Request.Device.Lock);
+    MutexUnlock(Device.Lock);
    end;   
   end; 
 end;
@@ -5979,6 +5998,7 @@ var
  Direction:Byte;
  TransferType:Byte;
  {$ENDIF}
+ Device:PUSBDevice;
  Message:TMessage;
 begin
  {}
@@ -5986,15 +6006,18 @@ begin
  if Request = nil then Exit;
  if Request.Device = nil then Exit;
 
+ {Get Device}
+ Device:=Request.Device;
+ 
  {Acquire the Lock}
- if MutexLock(Request.Device.Lock) = ERROR_SUCCESS then
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check State}
-    if Request.Device.USBState = USB_STATE_DETACHING then
+    if Device.USBState = USB_STATE_DETACHING then
      begin
       {$IFDEF USB_DEBUG}
-      if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detachment pending, setting request status to USB_STATUS_DEVICE_DETACHED');
+      if USB_LOG_ENABLED then USBLogDebug(Device,'Device detachment pending, setting request status to USB_STATUS_DEVICE_DETACHED');
       {$ENDIF}
       
       {Update Request}
@@ -6015,7 +6038,7 @@ begin
         TransferType:=USB_TRANSFER_TYPE_CONTROL;
         Direction:=Request.SetupData.bmRequestType shr 7;
        end;
-      USBLogDebug(Request.Device,'Calling completion callback (Actual transfer size ' + IntToStr(Request.ActualSize) + ' of ' + IntToStr(Request.Size) + ' bytes, Type=' + USBTransferTypeToString(TransferType) + ', Dir=' + USBDirectionToString(Direction) + ', Status=' + IntToStr(Request.Status) + ')');
+      USBLogDebug(Device,'Calling completion callback (Actual transfer size ' + IntToStr(Request.ActualSize) + ' of ' + IntToStr(Request.Size) + ' bytes, Type=' + USBTransferTypeToString(TransferType) + ', Dir=' + USBDirectionToString(Direction) + ', Status=' + IntToStr(Request.Status) + ')');
      end;
     {$ENDIF}
     
@@ -6023,43 +6046,43 @@ begin
     if Request.Status <> USB_STATUS_SUCCESS then
      begin
       {Update Statistics}
-      Inc(Request.Device.RequestErrors); 
+      Inc(Device.RequestErrors); 
       
       {Update Status}
-      Request.Device.LastError:=Request.Status;
+      Device.LastError:=Request.Status;
      end;
  
     {Release the Lock}
-    MutexUnlock(Request.Device.Lock);
+    MutexUnlock(Device.Lock);
  
     {Completion Callback} 
     Request.Callback(Request);
  
     {Acquire the Lock}
-    if MutexLock(Request.Device.Lock) <> ERROR_SUCCESS then Exit;
+    if MutexLock(Device.Lock) <> ERROR_SUCCESS then Exit;
 
     {Update Pending}
-    Dec(Request.Device.PendingCount); 
+    Dec(Device.PendingCount); 
     
     {Check State and Pending Requests}
-    if (Request.Device.USBState = USB_STATE_DETACHING) and (Request.Device.PendingCount = 0) then
+    if (Device.USBState = USB_STATE_DETACHING) and (Device.PendingCount = 0) then
      begin
       {Check Waiter}
-      if Request.Device.WaiterThread <> INVALID_HANDLE_VALUE then
+      if Device.WaiterThread <> INVALID_HANDLE_VALUE then
        begin
         {$IFDEF USB_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'Device detachment pending, sending message to waiter thread (Thread=' + IntToHex(Request.Device.WaiterThread,8) + ')');
+        if USB_LOG_ENABLED then USBLogDebug(Device,'Device detachment pending, sending message to waiter thread (Thread=' + IntToHex(Device.WaiterThread,8) + ')');
         {$ENDIF}
         
         {Send Message}
         FillChar(Message,SizeOf(TMessage),0);
-        ThreadSendMessage(Request.Device.WaiterThread,Message);
-        Request.Device.WaiterThread:=INVALID_HANDLE_VALUE;
+        ThreadSendMessage(Device.WaiterThread,Message);
+        Device.WaiterThread:=INVALID_HANDLE_VALUE;
        end; 
      end;
    finally
     {Release the Lock}
-    MutexUnlock(Request.Device.Lock);
+    MutexUnlock(Device.Lock);
    end;   
   end; 
 end;

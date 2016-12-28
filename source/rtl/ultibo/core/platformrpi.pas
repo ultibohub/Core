@@ -1772,7 +1772,7 @@ end;
 {==============================================================================}
 
 function RPiMailboxReceive(Mailbox,Channel:LongWord):LongWord;
-{Receive from specifed mailbox on specified channel}
+{Receive from specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 var
  Timeout:LongWord;
@@ -1829,7 +1829,7 @@ end;
 {==============================================================================}
 
 procedure RPiMailboxSend(Mailbox,Channel,Data:LongWord);
-{Send to specifed mailbox on specified channel}
+{Send to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 var
  Timeout:LongWord;
@@ -1878,7 +1878,7 @@ end;
 {==============================================================================}
 
 function RPiMailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWord;
-{Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 begin
@@ -1889,7 +1889,7 @@ end;
 {==============================================================================}
 
 function RPiMailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord;
-{Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 var
@@ -2009,7 +2009,7 @@ end;
 {==============================================================================}
 
 function RPiMailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
-{Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a property tag transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 begin
@@ -2020,7 +2020,7 @@ end;
 {==============================================================================}
 
 function RPiMailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord;
-{Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a property tag transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 var
@@ -7580,7 +7580,7 @@ end;
 {==============================================================================}
 
 procedure RPiBootBlink; assembler; nostackframe;
-{Blink the Activity LED without dependancy on any other RTL setup}
+{Blink the Activity LED without dependency on any other RTL setup}
 {Note: This currently only works for RPiA+/B+}
 asm
  //Blink the Activity LED in a loop

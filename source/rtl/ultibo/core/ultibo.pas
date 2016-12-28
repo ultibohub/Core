@@ -287,19 +287,6 @@ const
  DDD_EXACT_MATCH_ON_REMOVE = $00000004;
  DDD_NO_BROADCAST_SYSTEM   = $00000008;
  DDD_LUID_BROADCAST_DRIVE  = $00000010;
-
-const
- {File Access Constants} 
- GENERIC_READ    = DWORD($80000000);
- GENERIC_WRITE   = ($40000000);
- GENERIC_EXECUTE = ($20000000);
- GENERIC_ALL     = ($10000000);
- 
-const
- {File Share Constants} 
- FILE_SHARE_READ                    = $00000001;
- FILE_SHARE_WRITE                   = $00000002;
- FILE_SHARE_DELETE                  = $00000004;
  
 {==============================================================================}
 {Compatibility types}
@@ -1165,7 +1152,7 @@ procedure UltiboInit;
 {General Functions (Compatibility)}
 function GetVersion:DWORD;
 
-function GetVersionEx(lpVersionInformation:LPOSVERSIONINFOA):BOOL;
+function GetVersionEx(lpVersionInformation:LPOSVERSIONINFOA):BOOL; inline;
 function GetVersionExA(lpVersionInformation:LPOSVERSIONINFOA):BOOL;
 function GetVersionExW(lpVersionInformation:LPOSVERSIONINFOW):BOOL;
 
@@ -1173,19 +1160,19 @@ procedure GetSystemInfo(var lpSystemInfo:SYSTEM_INFO);
 procedure GetNativeSystemInfo(lpSystemInfo:LPSYSTEM_INFO);
 function GetLargePageMinimum:SIZE_T;
 
-function GetComputerName(lpBuffer:LPSTR;var nSize:DWORD):BOOL;
+function GetComputerName(lpBuffer:LPSTR;var nSize:DWORD):BOOL; inline;
 function GetComputerNameA(lpBuffer:LPSTR;var nSize:DWORD):BOOL;
 function GetComputerNameW(lpBuffer:LPWSTR;var nSize:DWORD):BOOL;
 
-function SetComputerName(lpComputerName:LPCSTR):BOOL;
+function SetComputerName(lpComputerName:LPCSTR):BOOL; inline;
 function SetComputerNameA(lpComputerName:LPCSTR):BOOL;
 function SetComputerNameW(lpComputerName:LPCWSTR):BOOL;
 
-function GetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPSTR;var nSize:DWORD):BOOL;
+function GetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPSTR;var nSize:DWORD):BOOL; inline;
 function GetComputerNameExA(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPSTR;var nSize:DWORD):BOOL;
 function GetComputerNameExW(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPWSTR;var nSize:DWORD):BOOL;
 
-function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL;
+function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL; inline;
 function SetComputerNameExA(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL;
 function SetComputerNameExW(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCWSTR):BOOL;
 
@@ -1279,37 +1266,37 @@ function ConvertDateTime(ADateTime:TDateTime;AOffset:Integer;ALocal:Boolean):TDa
 
 {==============================================================================}
 {Drive Functions (Compatibility)}
-function GetDiskType(lpRootPathName:LPCSTR):UINT; {GetDriveType - Already defined below}
+function GetDiskType(lpRootPathName:LPCSTR):UINT; inline; {GetDriveType - Already defined below}
 function GetDriveTypeA(lpRootPathName:LPCSTR):UINT; 
 function GetDriveTypeW(lpRootPathName:LPCWSTR):UINT;
 
 function GetLogicalDrives:DWORD;
 
-function GetLogicalDriveStrings(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
+function GetLogicalDriveStrings(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD; inline;
 function GetLogicalDriveStringsA(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
 function GetLogicalDriveStringsW(nBufferLength:DWORD;lpBuffer:LPWSTR):DWORD;
 
-function DefineDosDevice(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
+function DefineDosDevice(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL;  inline;
 function DefineDosDeviceA(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
 function DefineDosDeviceW(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCWSTR):BOOL; 
 
-function QueryDosDevice(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
+function QueryDosDevice(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD; inline;
 function QueryDosDeviceA(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
 function QueryDosDeviceW(lpDeviceName,lpTargetPath:LPWSTR;ucchMax:DWORD):DWORD;
 
-function SetVolumeLabel(lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
+function SetVolumeLabel(lpRootPathName,lpVolumeName:LPCSTR):BOOL;  inline;
 function SetVolumeLabelA(lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
 function SetVolumeLabelW(lpRootPathName,lpVolumeName:LPCWSTR):BOOL;
 
-function GetVolumeInformation(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
+function GetVolumeInformation(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; inline;
 function GetVolumeInformationA(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
 function GetVolumeInformationW(lpRootPathName:LPCWSTR;lpVolumeNameBuffer:LPWSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPWSTR;nFileSystemNameSize:DWORD):BOOL;
 
-function GetDiskFreeSpace(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
+function GetDiskFreeSpace(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL; inline;
 function GetDiskFreeSpaceA(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
 function GetDiskFreeSpaceW(lpRootPathName:LPCWSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
 
-function GetDiskFreeSpaceEx(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
+function GetDiskFreeSpaceEx(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL; inline;
 function GetDiskFreeSpaceExA(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 function GetDiskFreeSpaceExW(lpDirectoryName:LPCWSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 
@@ -1340,31 +1327,31 @@ function AreFileApisANSI:BOOL;
 procedure SetFileApisToOEM;
 procedure SetFileApisToANSI;
 
-function CreateFile(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
+function CreateFile(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE; inline;
 function CreateFileA(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
 function CreateFileW(lpFileName:LPCWSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
 
-function SetFileAttributes(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL;
+function SetFileAttributes(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL; inline;
 function SetFileAttributesA(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL;
 function SetFileAttributesW(lpFileName:LPCWSTR;dwFileAttributes:DWORD):BOOL;
 
-function GetFileAttributes(lpFileName:LPCSTR):DWORD;
+function GetFileAttributes(lpFileName:LPCSTR):DWORD; inline;
 function GetFileAttributesA(lpFileName:LPCSTR):DWORD;
 function GetFileAttributesW(lpFileName:LPCWSTR):DWORD;
 
-function DeleteFile(lpFileName:LPCSTR):BOOL;
+function DeleteFile(lpFileName:LPCSTR):BOOL; inline;
 function DeleteFileA(lpFileName:LPCSTR):BOOL;
 function DeleteFileW(lpFileName:LPCWSTR):BOOL;
 
-function MoveFile(lpExistingFileName,lpNewFileName:LPCSTR):BOOL;
+function MoveFile(lpExistingFileName,lpNewFileName:LPCSTR):BOOL; inline;
 function MoveFileA(lpExistingFileName,lpNewFileName:LPCSTR):BOOL;
 function MoveFileW(lpExistingFileName,lpNewFileName:LPCWSTR):BOOL;
 
-function FindFirstFile(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE;
+function FindFirstFile(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE; inline;
 function FindFirstFileA(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE;
 function FindFirstFileW(lpFileName:LPCWSTR;var lpFindFileData:WIN32_FIND_DATAW):HANDLE;
 
-function FindNextFile(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL;
+function FindNextFile(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL; inline;
 function FindNextFileA(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL;
 function FindNextFileW(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAW):BOOL;
 
@@ -1386,19 +1373,19 @@ function SetFilePointerEx(hFile:HANDLE;liDistanceToMove:LARGE_INTEGER;lpNewFileP
 
 function FlushFileBuffers(hFile:HANDLE):BOOL;
 
-function CopyFile(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL;
+function CopyFile(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL; inline;
 function CopyFileA(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL;
 function CopyFileW(lpExistingFileName,lpNewFileName:LPCWSTR;bFailIfExists:BOOL):BOOL;
 
-function SetFileShortName(hFile:HANDLE;lpShortName:LPCSTR):BOOL;
+function SetFileShortName(hFile:HANDLE;lpShortName:LPCSTR):BOOL; inline;
 function SetFileShortNameA(hFile:HANDLE;lpShortName:LPCSTR):BOOL;
 function SetFileShortNameW(hFile:HANDLE;lpShortName:LPCWSTR):BOOL;
 
-function CreateHardLink(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateHardLink(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
 function CreateHardLinkA(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 function CreateHardLinkW(lpFileName,lpExistingFileName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 
-function CreateSymbolicLink(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
+function CreateSymbolicLink(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL; inline;
 function CreateSymbolicLinkA(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
 function CreateSymbolicLinkW(lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:DWORD):BOOL;
 
@@ -1407,31 +1394,31 @@ function CreateSymbolicLinkW(lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:
 
 {==============================================================================}
 {Directory Functions (Compatibility)}
-function CreateDirectory(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateDirectory(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
 function CreateDirectoryA(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 function CreateDirectoryW(lpPathName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 
-function RemoveDirectory(lpPathName:LPCSTR):BOOL;
+function RemoveDirectory(lpPathName:LPCSTR):BOOL; inline;
 function RemoveDirectoryA(lpPathName:LPCSTR):BOOL;
 function RemoveDirectoryW(lpPathName:LPCWSTR):BOOL;
 
-function SetCurrentDirectory(lpPathName:LPCSTR):BOOL;
+function SetCurrentDirectory(lpPathName:LPCSTR):BOOL; inline;
 function SetCurrentDirectoryA(lpPathName:LPCSTR):BOOL;
 function SetCurrentDirectoryW(lpPathName:LPCWSTR):BOOL; 
 
-function GetCurrentDirectory(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
+function GetCurrentDirectory(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD; inline;
 function GetCurrentDirectoryA(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
 function GetCurrentDirectoryW(nBufferLength:DWORD;lpBuffer:LPWSTR):DWORD;
 
-function GetLongPathName(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD;
+function GetLongPathName(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
 function GetLongPathNameA(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD;
 function GetLongPathNameW(lpszShortPath:LPCWSTR;lpszLongPath:LPWSTR;cchBuffer:DWORD):DWORD;
 
-function GetShortPathName(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
+function GetShortPathName(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD;  inline;
 function GetShortPathNameA(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
 function GetShortPathNameW(lpszLongPath:LPCWSTR;lpszShortPath:LPWSTR;cchBuffer:DWORD):DWORD;
 
-function GetFullPathName(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD;
+function GetFullPathName(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD; inline;
 function GetFullPathNameA(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD;
 function GetFullPathNameW(lpFileName:LPCWSTR;nBufferLength:DWORD;lpBuffer:LPWSTR;var lpFilePart:LPWSTR):DWORD;
 
@@ -1445,7 +1432,7 @@ function SysParamStr(Index:LongInt):String;
 
 {==============================================================================}
 {Command Line Functions (Compatibility)}
-function GetCommandLine:LPSTR;
+function GetCommandLine:LPSTR; inline;
 function GetCommandLineA:LPSTR;
 function GetCommandLineW:LPWSTR;
 
@@ -1457,23 +1444,23 @@ function GetParamValue(const AParam:String):String;
 
 {==============================================================================}
 {Environment Functions (Compatibility)}
-function GetEnvironmentStrings:LPSTR;
+function GetEnvironmentStrings:LPSTR; inline;
 function GetEnvironmentStringsA:LPSTR;
 function GetEnvironmentStringsW:LPWSTR;
 
-function FreeEnvironmentStrings(pstr:LPSTR):BOOL;
+function FreeEnvironmentStrings(pstr:LPSTR):BOOL; inline;
 function FreeEnvironmentStringsA(pstr:LPSTR):BOOL;
 function FreeEnvironmentStringsW(pstr:LPWSTR):BOOL;
 
-function GetEnvironmentVariable(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD;
+function GetEnvironmentVariable(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD; inline;
 function GetEnvironmentVariableA(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD;
 function GetEnvironmentVariableW(lpName:LPCWSTR;lpBuffer:LPWSTR;nSize:DWORD):DWORD;
 
-function SetEnvironmentVariable(lpName,lpValue:LPCSTR):BOOL;
+function SetEnvironmentVariable(lpName,lpValue:LPCSTR):BOOL; inline;
 function SetEnvironmentVariableA(lpName,lpValue:LPCSTR):BOOL;
 function SetEnvironmentVariableW(lpName,lpValue:LPCWSTR):BOOL;
 
-function ExpandEnvironmentStrings(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
+function ExpandEnvironmentStrings(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD; inline;
 function ExpandEnvironmentStringsA(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
 function ExpandEnvironmentStringsW(lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD):DWORD;
 
@@ -1773,11 +1760,11 @@ function InterlockedCompareExchangePointer(var Destination: PVOID; Exchange, Com
 
 {==============================================================================}
 {Mutex Functions (Compatibility)}
-function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE;
+function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE; inline;
 function CreateMutexA(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE;
 function CreateMutexW(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCWSTR):HANDLE;
 
-function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
 function OpenMutexA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
 function OpenMutexW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
 
@@ -1785,11 +1772,11 @@ function ReleaseMutex(hMutex:HANDLE):BOOL;
 
 {==============================================================================}
 {Semaphore Functions (Compatibility)}
-function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE;
+function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE; inline;
 function CreateSemaphoreA(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE;
 function CreateSemaphoreW(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCWSTR):HANDLE;
 
-function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
 function OpenSemaphoreA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
 function OpenSemaphoreW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
 
@@ -1809,11 +1796,11 @@ procedure DeleteCriticalSection(var lpCriticalSection:CRITICAL_SECTION);
 
 {==============================================================================}
 {Event Functions (Compatibility)}
-function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE;
+function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE; inline;
 function CreateEventA(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE;
 function CreateEventW(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCWSTR):HANDLE;
 
-function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
 function OpenEventA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
 function OpenEventW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
 
@@ -1839,33 +1826,33 @@ function TerminateProcess(hProcess:HANDLE;uExitCode:UINT):BOOL;
 
 {==============================================================================}
 {Debug Functions (Compatibility)} 
-procedure OutputDebugString(lpOutputString:LPCSTR);
+procedure OutputDebugString(lpOutputString:LPCSTR); inline;
 procedure OutputDebugStringA(lpOutputString:LPCSTR);
 procedure OutputDebugStringW(lpOutputString:LPCWSTR);
 
 {==============================================================================}
 {Library Functions (Compatibility)} 
-function lstrcmp(lpString1,lpString2:LPCSTR):Integer;
+function lstrcmp(lpString1,lpString2:LPCSTR):Integer; inline;
 function lstrcmpA(lpString1,lpString2:LPCSTR):Integer;
 function lstrcmpW(lpString1,lpString2:LPCWSTR):Integer;
 
-function lstrcmpi(lpString1,lpString2:LPCSTR):Integer;
+function lstrcmpi(lpString1,lpString2:LPCSTR):Integer; inline;
 function lstrcmpiA(lpString1,lpString2:LPCSTR):Integer;
 function lstrcmpiW(lpString1,lpString2:LPCWSTR):Integer;
 
-function lstrcpy(lpString1:LPSTR;lpString2:LPCSTR):LPSTR; 
+function lstrcpy(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;  inline;
 function lstrcpyA(lpString1:LPSTR;lpString2:LPCSTR):LPSTR; 
 function lstrcpyW(lpString1:LPWSTR;lpString2:LPCWSTR):LPWSTR;
 
-function lstrcpyn(lpString1:LPSTR;lpString2:LPCSTR;iMaxLength:Integer):LPSTR;
+function lstrcpyn(lpString1:LPSTR;lpString2:LPCSTR;iMaxLength:Integer):LPSTR; inline;
 function lstrcpynA(lpString1:LPSTR;lpString2:LPCSTR;iMaxLength:Integer):LPSTR;
 function lstrcpynW(lpString1:LPWSTR;lpString2:LPCWSTR;iMaxLength:Integer):LPWSTR;
 
-function lstrcat(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;
+function lstrcat(lpString1:LPSTR;lpString2:LPCSTR):LPSTR; inline;
 function lstrcatA(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;
 function lstrcatW(lpString1:LPWSTR;lpString2:LPCWSTR):LPWSTR;
 
-function lstrlen(lpString:LPCSTR):Integer;
+function lstrlen(lpString:LPCSTR):Integer; inline;
 function lstrlenA(lpString:LPCSTR):Integer;
 function lstrlenW(lpString:LPCWSTR):Integer;
 
@@ -1908,7 +1895,7 @@ end;
 
 {==============================================================================}
 
-function GetVersionEx(lpVersionInformation:LPOSVERSIONINFOA):BOOL;
+function GetVersionEx(lpVersionInformation:LPOSVERSIONINFOA):BOOL; inline;
 begin
  {}
  Result:=GetVersionExA(lpVersionInformation);
@@ -2014,7 +2001,7 @@ end;
 
 {==============================================================================}
 
-function GetComputerName(lpBuffer:LPSTR;var nSize:DWORD):BOOL;
+function GetComputerName(lpBuffer:LPSTR;var nSize:DWORD):BOOL; inline;
 begin
  {}
  Result:=GetComputerNameA(lpBuffer,nSize);
@@ -2086,7 +2073,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerName(lpComputerName:LPCSTR):BOOL;
+function SetComputerName(lpComputerName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetComputerNameA(lpComputerName);
@@ -2124,7 +2111,7 @@ end;
 
 {==============================================================================}
 
-function GetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPSTR;var nSize:DWORD):BOOL;
+function GetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPSTR;var nSize:DWORD):BOOL; inline;
 begin
  {}
  Result:=GetComputerNameExA(NameType,lpBuffer,nSize);
@@ -2277,7 +2264,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL;
+function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetComputerNameExA(NameType,lpBuffer);
@@ -3324,7 +3311,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Drive Functions (Compatibility)}
-function GetDiskType(lpRootPathName:LPCSTR):UINT; 
+function GetDiskType(lpRootPathName:LPCSTR):UINT; inline;
 begin
  {}
  Result:=GetDriveTypeA(lpRootPathName);
@@ -3381,7 +3368,7 @@ end;
 
 {==============================================================================}
 
-function GetLogicalDriveStrings(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
+function GetLogicalDriveStrings(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD; inline;
 begin
  {}
  Result:=GetLogicalDriveStringsA(nBufferLength,lpBuffer)
@@ -3437,7 +3424,7 @@ end;
 
 {==============================================================================}
 
-function DefineDosDevice(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
+function DefineDosDevice(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=DefineDosDeviceA(dwFlags,lpDeviceName,lpTargetPath);
@@ -3481,7 +3468,7 @@ end;
 
 {==============================================================================}
 
-function QueryDosDevice(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
+function QueryDosDevice(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD; inline;
 begin
  {}
  Result:=QueryDosDeviceA(lpDeviceName,lpTargetPath,ucchMax);
@@ -3539,7 +3526,7 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabel(lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
+function SetVolumeLabel(lpRootPathName,lpVolumeName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetVolumeLabelA(lpRootPathName,lpVolumeName);
@@ -3583,7 +3570,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformation(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
+function GetVolumeInformation(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; inline;
 begin
  {}
  Result:=GetVolumeInformationA(lpRootPathName,lpVolumeNameBuffer,nVolumeNameSize,lpVolumeSerialNumber,lpMaximumComponentLength,lpFileSystemFlags,lpFileSystemNameBuffer,nFileSystemNameSize);
@@ -3653,7 +3640,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpace(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
+function GetDiskFreeSpace(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL; inline;
 begin
  {}
  Result:=GetDiskFreeSpaceA(lpRootPathName,lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters);
@@ -3695,7 +3682,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceEx(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
+function GetDiskFreeSpaceEx(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL; inline;
 begin
  {}
  Result:=GetDiskFreeSpaceExA(lpDirectoryName,lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes,lpTotalNumberOfFreeBytes);
@@ -3704,11 +3691,17 @@ end;
 {==============================================================================}
 
 function GetDiskFreeSpaceExA(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
+var
+ TotalNumberOfFreeBytes:Int64;
 begin
  {}
  if Assigned(UltiboGetDiskFreeSpaceExAHandler) then
   begin
-   Result:=UltiboGetDiskFreeSpaceExAHandler(lpDirectoryName,Int64(lpFreeBytesAvailableToCaller),Int64(lpTotalNumberOfBytes),PInt64(lpTotalNumberOfFreeBytes)^);
+   Result:=UltiboGetDiskFreeSpaceExAHandler(lpDirectoryName,Int64(lpFreeBytesAvailableToCaller),Int64(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
+   if Result and (lpTotalNumberOfFreeBytes <> nil) then
+    begin
+     PInt64(lpTotalNumberOfFreeBytes)^:=TotalNumberOfFreeBytes;
+    end;
   end
  else
   begin
@@ -3721,13 +3714,18 @@ end;
 function GetDiskFreeSpaceExW(lpDirectoryName:LPCWSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 var
  DirectoryName:String;
+ TotalNumberOfFreeBytes:Int64;
 begin
  {}
  if Assigned(UltiboGetDiskFreeSpaceExAHandler) then
   begin
    DirectoryName:=WideCharToString(lpDirectoryName);
    
-   Result:=UltiboGetDiskFreeSpaceExAHandler(DirectoryName,Int64(lpFreeBytesAvailableToCaller),Int64(lpTotalNumberOfBytes),PInt64(lpTotalNumberOfFreeBytes)^);
+   Result:=UltiboGetDiskFreeSpaceExAHandler(DirectoryName,Int64(lpFreeBytesAvailableToCaller),Int64(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
+   if Result and (lpTotalNumberOfFreeBytes <> nil) then
+    begin
+     PInt64(lpTotalNumberOfFreeBytes)^:=TotalNumberOfFreeBytes;
+    end;
   end
  else
   begin
@@ -4047,7 +4045,7 @@ end;
 
 {==============================================================================}
 
-function CreateFile(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
+function CreateFile(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE; inline;
 begin
  {}
  Result:=CreateFileA(lpFileName,dwDesiredAccess,dwShareMode,lpSecurityAttributes,dwCreationDisposition,dwFlagsAndAttributes,hTemplateFile);
@@ -4091,7 +4089,7 @@ end;
 
 {==============================================================================}
 
-function SetFileAttributes(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL;
+function SetFileAttributes(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL; inline;
 begin
  {}
  Result:=SetFileAttributesA(lpFileName,dwFileAttributes);
@@ -4133,7 +4131,7 @@ end;
 
 {==============================================================================}
 
-function GetFileAttributes(lpFileName:LPCSTR):DWORD;
+function GetFileAttributes(lpFileName:LPCSTR):DWORD; inline;
 begin
  {}
  Result:=GetFileAttributesA(lpFileName);
@@ -4175,7 +4173,7 @@ end;
 
 {==============================================================================}
 
-function DeleteFile(lpFileName:LPCSTR):BOOL;
+function DeleteFile(lpFileName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=DeleteFileA(lpFileName);
@@ -4217,7 +4215,7 @@ end;
 
 {==============================================================================}
 
-function MoveFile(lpExistingFileName,lpNewFileName:LPCSTR):BOOL;
+function MoveFile(lpExistingFileName,lpNewFileName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=MoveFileA(lpExistingFileName,lpNewFileName);
@@ -4261,7 +4259,7 @@ end;
 
 {==============================================================================}
 
-function FindFirstFile(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE;
+function FindFirstFile(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE; inline;
 begin
  {}
  Result:=FindFirstFileA(lpFileName,lpFindFileData);
@@ -4308,7 +4306,7 @@ end;
 
 {==============================================================================}
 
-function FindNextFile(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL;
+function FindNextFile(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL; inline;
 begin
  {}
  Result:=FindNextFileA(hFindFile,lpFindFileData);
@@ -4516,7 +4514,7 @@ end;
 
 {==============================================================================}
 
-function CopyFile(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL;
+function CopyFile(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL; inline;
 begin
  {}
  Result:=CopyFileA(lpExistingFileName,lpNewFileName,bFailIfExists);
@@ -4560,7 +4558,7 @@ end;
 
 {==============================================================================}
 
-function SetFileShortName(hFile:HANDLE;lpShortName:LPCSTR):BOOL;
+function SetFileShortName(hFile:HANDLE;lpShortName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetFileShortNameA(hFile,lpShortName);
@@ -4602,7 +4600,7 @@ end;
 
 {==============================================================================}
 
-function CreateHardLink(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateHardLink(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
 begin
  {}
  Result:=CreateHardLinkA(lpFileName,lpExistingFileName,lpSecurityAttributes);
@@ -4648,7 +4646,7 @@ end;
 
 {==============================================================================}
 
-function CreateSymbolicLink(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
+function CreateSymbolicLink(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL; inline;
 begin
  {}
  Result:=CreateSymbolicLinkA(lpSymlinkFileName,lpTargetFileName,dwFlags);
@@ -4696,7 +4694,7 @@ end;
 
 {==============================================================================}
 {Directory Functions (Compatibility)}
-function CreateDirectory(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateDirectory(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
 begin
  {}
  Result:=CreateDirectoryA(lpPathName,lpSecurityAttributes);
@@ -4740,7 +4738,7 @@ end;
 
 {==============================================================================}
 
-function RemoveDirectory(lpPathName:LPCSTR):BOOL;
+function RemoveDirectory(lpPathName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=RemoveDirectoryA(lpPathName);
@@ -4782,7 +4780,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDirectory(lpPathName:LPCSTR):BOOL;
+function SetCurrentDirectory(lpPathName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetCurrentDirectoryA(lpPathName);
@@ -4824,7 +4822,7 @@ end;
 
 {==============================================================================}
 
-function GetCurrentDirectory(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
+function GetCurrentDirectory(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD; inline;
 begin
  {}
  Result:=GetCurrentDirectoryA(nBufferLength,lpBuffer);
@@ -4879,7 +4877,7 @@ end;
 
 {==============================================================================}
 
-function GetLongPathName(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD;
+function GetLongPathName(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
 begin
  {}
  Result:=GetLongPathNameA(lpszShortPath,lpszLongPath,cchBuffer);
@@ -4937,7 +4935,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathName(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
+function GetShortPathName(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
 begin
  {}
  Result:=GetShortPathNameA(lpszLongPath,lpszShortPath,cchBuffer);
@@ -4995,7 +4993,7 @@ end;
 
 {==============================================================================}
 
-function GetFullPathName(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD;
+function GetFullPathName(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD; inline;
 begin
  {}
  Result:=GetFullPathNameA(lpFileName,nBufferLength,lpBuffer,lpFilePart);
@@ -5214,7 +5212,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Environment Functions (Compatibility)}
-function GetEnvironmentStrings:LPSTR;
+function GetEnvironmentStrings:LPSTR; inline;
 begin
  {}
  Result:=GetEnvironmentStringsA;
@@ -5242,7 +5240,7 @@ end;
 
 {==============================================================================}
 
-function FreeEnvironmentStrings(pstr:LPSTR):BOOL;
+function FreeEnvironmentStrings(pstr:LPSTR):BOOL; inline;
 begin
  {}
  Result:=FreeEnvironmentStringsA(pstr);
@@ -5278,7 +5276,7 @@ end;
 
 {==============================================================================}
 
-function GetEnvironmentVariable(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD;
+function GetEnvironmentVariable(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD; inline;
 begin
  {}
  Result:=GetEnvironmentVariableA(lpName,lpBuffer,nSize);
@@ -5368,7 +5366,7 @@ end;
 
 {==============================================================================}
 
-function SetEnvironmentVariable(lpName,lpValue:LPCSTR):BOOL;
+function SetEnvironmentVariable(lpName,lpValue:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetEnvironmentVariableA(lpName,lpValue);
@@ -5399,7 +5397,7 @@ end;
 
 {==============================================================================}
 
-function ExpandEnvironmentStrings(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
+function ExpandEnvironmentStrings(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD; inline;
 begin
  {}
  Result:=ExpandEnvironmentStringsA(lpSrc,lpDst,nSize);
@@ -6865,7 +6863,7 @@ end;
 function GetNumaHighestNodeNumber(var HighestNodeNumber:ULONG):BOOL;
 begin
  {Not implemented, compatibility only}
- HighestNodeNumber:=1;
+ HighestNodeNumber:=0; {Previously 1, changed to comply with example code at https://msdn.microsoft.com/en-us/library/windows/desktop/aa965223(v=vs.85).aspx}
  Result:=True;
 end;
 
@@ -7303,7 +7301,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Mutex Functions (Compatibility)}
-function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE;
+function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=CreateMutexA(lpMutexAttributes,bInitialOwner,lpName);
@@ -7331,7 +7329,7 @@ end;
 
 {==============================================================================}
 
-function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=OpenMutexA(dwDesiredAccess,bInheritHandle,lpName);
@@ -7368,7 +7366,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Semaphore Functions (Compatibility)}
-function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE;
+function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=CreateSemaphoreA(lpSemaphoreAttributes,lInitialCount,lMaximumCount,lpName);
@@ -7396,7 +7394,7 @@ end;
 
 {==============================================================================}
 
-function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=OpenSemaphoreA(dwDesiredAccess,bInheritHandle,lpName);
@@ -7493,7 +7491,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Event Functions (Compatibility)}
-function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE;
+function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=CreateEventA(lpEventAttributes,bManualReset,bInitialState,lpName);
@@ -7521,7 +7519,7 @@ end;
 
 {==============================================================================}
 
-function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=OpenEventA(dwDesiredAccess,bInheritHandle,lpName);
@@ -7674,7 +7672,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Debug Functions (Compatibility)} 
-procedure OutputDebugString(lpOutputString:LPCSTR);
+procedure OutputDebugString(lpOutputString:LPCSTR); inline;
 begin
  {}
  OutputDebugStringA(lpOutputString);
@@ -7703,7 +7701,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Library Functions (Compatibility)} 
-function lstrcmp(lpString1,lpString2:LPCSTR):Integer;
+function lstrcmp(lpString1,lpString2:LPCSTR):Integer; inline;
 begin
  {}
  Result:=lstrcmpA(lpString1,lpString2);
@@ -7727,7 +7725,7 @@ end;
 
 {==============================================================================}
 
-function lstrcmpi(lpString1,lpString2:LPCSTR):Integer;
+function lstrcmpi(lpString1,lpString2:LPCSTR):Integer; inline;
 begin
  {}
  Result:=lstrcmpiA(lpString1,lpString2);
@@ -7751,7 +7749,7 @@ end;
 
 {==============================================================================}
 
-function lstrcpy(lpString1:LPSTR;lpString2:LPCSTR):LPSTR; 
+function lstrcpy(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;  inline;
 begin
  {}
  Result:=lstrcpyA(lpString1,lpString2);
@@ -7775,7 +7773,7 @@ end;
 
 {==============================================================================}
 
-function lstrcpyn(lpString1:LPSTR;lpString2:LPCSTR;iMaxLength:Integer):LPSTR;
+function lstrcpyn(lpString1:LPSTR;lpString2:LPCSTR;iMaxLength:Integer):LPSTR; inline;
 begin
  {}
  Result:=lstrcpynA(lpString1,lpString2,iMaxLength);
@@ -7799,7 +7797,7 @@ end;
 
 {==============================================================================}
 
-function lstrcat(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;
+function lstrcat(lpString1:LPSTR;lpString2:LPCSTR):LPSTR; inline;
 begin
  {}
  Result:=lstrcatA(lpString1,lpString2);
@@ -7823,7 +7821,7 @@ end;
 
 {==============================================================================}
 
-function lstrlen(lpString:LPCSTR):Integer;
+function lstrlen(lpString:LPCSTR):Integer; inline;
 begin
  {}
  Result:=lstrlenA(lpString);

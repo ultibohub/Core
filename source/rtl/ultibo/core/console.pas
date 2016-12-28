@@ -6589,7 +6589,7 @@ begin
             Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
             Next.StrideLength:=Size;
             Next.SourceStride:=Framebuffer.Pitch - Size;
-            Next.DestStride:=Framebuffer.Pitch - Size;
+            Next.DestStride:=0; //Framebuffer.Pitch - Size; //No stride on buffer
             Next.Size:=Size * Lines;
             Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
             
@@ -6602,7 +6602,7 @@ begin
             Next.Dest:=Pointer(Framebuffer.Address + (CurrentY * Framebuffer.Pitch) + ((X1 + Count) * (Framebuffer.Depth shr 3)));
             Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
             Next.StrideLength:=Size;
-            Next.SourceStride:=Framebuffer.Pitch - Size;
+            Next.SourceStride:=0; //Framebuffer.Pitch - Size; //No stride on buffer
             Next.DestStride:=Framebuffer.Pitch - Size;
             Next.Size:=Size * Lines;
             Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));

@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '14/11/2016';
+ ULTIBO_RELEASE_DATE             = '28/12/2016';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.3.015';
+ ULTIBO_RELEASE_VERSION          = '1.3.077';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 3;
- ULTIBO_RELEASE_VERSION_REVISION = 015;
+ ULTIBO_RELEASE_VERSION_REVISION = 077;
  
 {==============================================================================}
 const
@@ -219,6 +219,17 @@ const
  FS_SUPPORTS_ENCRYPTION             = $00020000;
  FS_NAMED_STREAMS                   = $00040000;
  FS_READ_ONLY_VOLUME                = $00080000;
+ 
+ {File Access Constants} 
+ GENERIC_READ    = DWORD($80000000);
+ GENERIC_WRITE   = ($40000000);
+ GENERIC_EXECUTE = ($20000000);
+ GENERIC_ALL     = ($10000000);
+ 
+ {File Share Constants} 
+ FILE_SHARE_READ                    = $00000001;
+ FILE_SHARE_WRITE                   = $00000002;
+ FILE_SHARE_DELETE                  = $00000004;
  
  {Timeout constants}
  INFINITE = LongWord(-1);

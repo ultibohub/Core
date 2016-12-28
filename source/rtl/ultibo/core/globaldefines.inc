@@ -84,6 +84,7 @@ Global Defines
 {--$DEFINE HEAP_DEBUG}            {Enable debug output/counters for heap manager (Default: Off)}
 {--$DEFINE THREAD_DEBUG}          {Enable debug output/counters for thread internals (Default: Off)}
 {--$DEFINE PLATFORM_DEBUG}        {Enable debug output/counters for platform internals (Default: Off)}
+{--$DEFINE SYSCALLS_DEBUG}        {Enable debug output/counters for C library syscalls (Default: Off)}
 {$DEFINE LOADER_DEBUG}          {Enable debug output/counters for loader internals (Default: Off)}
 {--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off) (Do not enable when console logging is active)}
 {--$DEFINE LOGGING_DEBUG}         {Enable debug output/counters for logging devices (Default: Off)}
@@ -271,6 +272,11 @@ Global Defines
  {$DEFINE LOGGING_LOCK_IRQFIQ} 
 {$ENDIF}
 
+{==============================================================================}
+{==============================================================================}
+{Syscalls definitions}
+{--$DEFINE SYSCALLS_LARGE64_FILES}    {Enable support for 64bit file access in Syscalls unit (Default: Off)} 
+                                      {Note: Not currently supported by Newlib, need to modify \newlib\configure.host to enable stdio64 support for arm-none-eabi or aarch64-none-elf}
 {==============================================================================}
 {==============================================================================}
 {Loader definitions}

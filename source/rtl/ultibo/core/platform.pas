@@ -3094,7 +3094,7 @@ end;
 {==============================================================================}
 {Mailbox Functions}
 function MailboxReceive(Mailbox,Channel:LongWord):LongWord; inline;
-{Receive from specifed mailbox on specified channel}
+{Receive from specified mailbox on specified channel}
 begin
  {}
  if Assigned(MailboxReceiveHandler) then
@@ -3110,7 +3110,7 @@ end;
 {==============================================================================}
 
 procedure MailboxSend(Mailbox,Channel,Data:LongWord); inline;
-{Send to specifed mailbox on specified channel}
+{Send to specified mailbox on specified channel}
 begin
  {}
  if Assigned(MailboxSendHandler) then
@@ -3122,7 +3122,7 @@ end;
 {==============================================================================}
 
 function MailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWord; inline;
-{Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a transaction (Send/Receive) to specified mailbox on specified channel}
 begin
  {}
  if Assigned(MailboxCallHandler) then
@@ -3138,7 +3138,7 @@ end;
 {==============================================================================}
 
 function MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord; inline;
-{Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a transaction (Send/Receive) to specified mailbox on specified channel}
 begin
  {}
  if Assigned(MailboxCallExHandler) then
@@ -3154,7 +3154,7 @@ end;
 {==============================================================================}
 
 function MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord; inline;
-{Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a property tag transaction (Send/Receive) to specified mailbox on specified channel}
 begin
  {}
  if Assigned(MailboxPropertyCallHandler) then
@@ -3170,7 +3170,7 @@ end;
 {==============================================================================}
 
 function MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord; inline;
-{Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a property tag transaction (Send/Receive) to specified mailbox on specified channel}
 begin
  {}
  if Assigned(MailboxPropertyCallExHandler) then
@@ -8261,12 +8261,20 @@ begin
   begin
    if ARead(Ch,AUserData) then
     begin
-     if Ch = #10 then EndChar:=True;
+     if Ch = #13 then EndChar:=True;
      
      ABuffer^:=Ch;
      
      Inc(ABuffer);
      Inc(Result);
+     
+     if EndChar and (Result < ACount) then 
+      begin
+       ABuffer^:=#10;
+       
+       Inc(ABuffer);
+       Inc(Result);
+      end;
     end;
   end;
 end;

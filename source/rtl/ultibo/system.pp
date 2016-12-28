@@ -34,7 +34,7 @@ Unit System;
 
 const
 {$ifdef FPC_HAS_FEATURE_TEXTIO}
-  LineEnding = #10;
+  LineEnding = #13#10;
 {$endif FPC_HAS_FEATURE_TEXTIO}
 {$ifdef FPC_HAS_FEATURE_FILEIO}
   LFNSupport = true;

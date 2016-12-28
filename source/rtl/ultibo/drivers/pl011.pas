@@ -317,7 +317,7 @@ implementation
 function PL011UARTCreate(Address:LongWord;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;
 {Create and register a new PL011 UART device which can be accessed using the UART API}
 {Address: The address of the PL011 registers}
-{Name: The text description of this device which will should in the device list (Optional)}
+{Name: The text description of this device which will show in the device list (Optional)}
 {IRQ: The interrupt number for the PL011}
 {ClockRate: The clock source frequency for the PL011}
 {Return: Pointer to the new UART device or nil if the UART device could not be created}

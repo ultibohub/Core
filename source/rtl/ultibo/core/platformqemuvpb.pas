@@ -397,6 +397,10 @@ begin
  MEMORY_BASE:=$00000000;
  MEMORY_SIZE:=SIZE_256M;
  
+ {Setup MEMORY_PAGE_SIZE}
+ MEMORY_PAGE_SIZE:=SIZE_4K;
+ MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+ 
  {Setup MEMORY_IRQ/FIQ/LOCAL/SHARED/DEVICE/NOCACHE/NONSHARED_SIZE}
  MEMORY_IRQ_SIZE:=SIZE_2M;
  MEMORY_FIQ_SIZE:=SIZE_2M;
@@ -2495,7 +2499,7 @@ end;
 {==============================================================================}
 {QEMUVPB Helper Functions}
 procedure QEMUVPBBootBlink; assembler; nostackframe;
-{Output characters to UART0 without dependancy on any other RTL setup}
+{Output characters to UART0 without dependency on any other RTL setup}
 {$IFDEF CPUARM}
 asm
  ldr r1, =VERSATILEPB_UART0_REGS_BASE
@@ -2516,7 +2520,7 @@ end;
 {==============================================================================}
 
 procedure QEMUVPBBootOutput(Value:LongWord);
-{Output characters to UART0 without dependancy on any other RTL setup}
+{Output characters to UART0 without dependency on any other RTL setup}
 {Based on hexstrings() function by dwelch67 (https://github.com/dwelch67)}
 var
  Bits:LongWord;

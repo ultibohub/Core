@@ -448,6 +448,7 @@ const
  {Clock Device Flags}
  CLOCK_FLAG_NONE      = $00000000;
  CLOCK_FLAG_WRITABLE  = $00000001; {Device supports writing the clock value}
+ CLOCK_FLAG_VARIABLE  = $00000002; {Device supports setting the clock rate}
  
 {==============================================================================}
 const
@@ -623,6 +624,16 @@ type
 {==============================================================================}
 type
  {Clock specific types}
+ {Clock Properties}
+ PClockProperties = ^TClockProperties;
+ TClockProperties = record
+  Flags:LongWord;        {Device flags (eg CLOCK_FLAG_WRITABLE)}
+  Rate:LongWord;         {Device current clock rate (Hz)}
+  MinRate:LongWord;      {Device minimum clock rate (Hz)}
+  MaxRate:LongWord;      {Device maximum clock rate (Hz)}
+ end;
+ 
+ {Clock Device}
  PClockDevice = ^TClockDevice;
  
  {Clock Enumeration Callback}
@@ -637,6 +648,8 @@ type
  TClockDeviceRead64 = function(Clock:PClockDevice):Int64;
  TClockDeviceWrite64 = function(Clock:PClockDevice;const Value:Int64):LongWord;
  TClockDeviceGetRate = function(Clock:PClockDevice):LongWord;
+ TClockDeviceSetRate = function(Clock:PClockDevice;Rate:LongWord):LongWord;
+ TClockDeviceProperties = function(Clock:PClockDevice;Properties:PClockProperties):LongWord;
  
  {Clock Device}
  TClockDevice = record
@@ -649,14 +662,18 @@ type
   DeviceStop:TClockDeviceStop;                   {A device specific DeviceStop method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceRead:TClockDeviceRead;                   {A device specific DeviceRead method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceRead64:TClockDeviceRead64;               {A device specific DeviceRead64 method implementing a standard clock device interface (Mandatory)}
-  DeviceWrite64:TClockDeviceWrite64;             {A device specific DeviceWrite64 method implementing a standard clock device interface (Or nil if the operation is not supported)}
+  DeviceWrite64:TClockDeviceWrite64;             {A device specific DeviceWrite64 method implementing a standard clock device interface (Optional)}
   DeviceGetRate:TClockDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard clock device interface (Or nil if the default method is suitable)}
+  DeviceSetRate:TClockDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard clock device interface (Optional)}
+  DeviceProperties:TClockDeviceProperties;       {A device specific DeviceProperties method implementing a standard clock device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
   Address:Pointer;                               {Device register base address}
   Rate:LongWord;                                 {Device rate (Hz)}
+  MinRate:LongWord;                              {Device minimum rate (Hz)}
+  MaxRate:LongWord;                              {Device maximum rate (Hz)}
   {Internal Properties}
   Prev:PClockDevice;                             {Previous entry in Clock device table}
   Next:PClockDevice;                             {Next entry in Clock device table}
@@ -716,18 +733,18 @@ type
   {Timer Properties}
   TimerId:LongWord;                              {Unique Id of this Timer device in the Timer device table}
   TimerState:LongWord;                           {Timer device state (eg TIMER_STATE_ENABLED)}
-  DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard random device interface (Mandatory)}
-  DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard random device interface (Mandatory)}
-  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard random device interface (One of Read or Read64 is Mandatory)}
-  DeviceRead64:TTimerDeviceRead64;               {A device specific DeviceRead64 method implementing a standard random device interface (One of Read or Read64 is Mandatory}
-  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard random device interface (Or nil if the operation is not supported)}
-  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard random device interface (Or nil if the operation is not supported)}
-  DeviceCancel:TTimerDeviceCancel;               {A device specific DeviceCancel method implementing a standard random device interface (Or nil if the operation is not supported)}
-  DeviceGetRate:TTimerDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceSetRate:TTimerDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceGetInterval:TTimerDeviceGetInterval;     {A device specific DeviceGetInterval method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceSetInterval:TTimerDeviceSetInterval;     {A device specific DeviceSetInterval method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceProperties:TTimerDeviceProperties;       {A device specific DeviceProperties method implementing a standard random device interface (Or nil if the default method is suitable)}
+  DeviceStart:TTimerDeviceStart;                 {A device specific DeviceStart method implementing a standard timer device interface (Mandatory)}
+  DeviceStop:TTimerDeviceStop;                   {A device specific DeviceStop method implementing a standard timer device interface (Mandatory)}
+  DeviceRead:TTimerDeviceRead;                   {A device specific DeviceRead method implementing a standard timer device interface (One of Read or Read64 is Mandatory)}
+  DeviceRead64:TTimerDeviceRead64;               {A device specific DeviceRead64 method implementing a standard timer device interface (One of Read or Read64 is Mandatory}
+  DeviceWait:TTimerDeviceWait;                   {A device specific DeviceWait method implementing a standard timer device interface (Or nil if the operation is not supported)}
+  DeviceEvent:TTimerDeviceEvent;                 {A device specific DeviceEvent method implementing a standard timer device interface (Or nil if the operation is not supported)}
+  DeviceCancel:TTimerDeviceCancel;               {A device specific DeviceCancel method implementing a standard timer device interface (Or nil if the operation is not supported)}
+  DeviceGetRate:TTimerDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard timer device interface (Or nil if the default method is suitable)}
+  DeviceSetRate:TTimerDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard timer device interface (Or nil if the default method is suitable)}
+  DeviceGetInterval:TTimerDeviceGetInterval;     {A device specific DeviceGetInterval method implementing a standard timer device interface (Or nil if the default method is suitable)}
+  DeviceSetInterval:TTimerDeviceSetInterval;     {A device specific DeviceSetInterval method implementing a standard timer device interface (Or nil if the default method is suitable)}
+  DeviceProperties:TTimerDeviceProperties;       {A device specific DeviceProperties method implementing a standard timer device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
   WaitCount:LongWord;
@@ -968,6 +985,9 @@ function ClockDeviceRead64(Clock:PClockDevice):Int64;
 function ClockDeviceWrite64(Clock:PClockDevice;const Value:Int64):LongWord;
 
 function ClockDeviceGetRate(Clock:PClockDevice):LongWord;
+function ClockDeviceSetRate(Clock:PClockDevice;Rate:LongWord):LongWord;
+
+function ClockDeviceProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord;
 
 function ClockDeviceCreate:PClockDevice;
 function ClockDeviceCreateEx(Size:LongWord):PClockDevice;
@@ -1476,6 +1496,8 @@ end;
 
 function DeviceDestroy(Device:PDevice):LongWord;
 {Destroy an existing Device entry}
+{Device: The device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1515,6 +1537,8 @@ end;
 
 function DeviceGetName(Device:PDevice):String;
 {Get the name of the supplied Device}
+{Device: The device to get the name from}
+{Return: The name of the device or a blank string on error}
 begin
  {}
  Result:='';
@@ -1543,6 +1567,9 @@ end;
 
 function DeviceSetName(Device:PDevice;const Name:String):LongWord;
 {Set the name of the supplied Device}
+{Device: The device to set the name for}
+{Name: The device name to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1575,6 +1602,8 @@ end;
 
 function DeviceGetDescription(Device:PDevice):String;
 {Get the description of the supplied Device}
+{Device: The device to get the description from}
+{Return: The description of the device or a blank string on error}
 begin
  {}
  Result:='';
@@ -1603,6 +1632,9 @@ end;
 
 function DeviceSetDescription(Device:PDevice;const Description:String):LongWord;
 {Set the description of the supplied Device}
+{Device: The device to set the description for}
+{Description: The device description to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1635,6 +1667,8 @@ end;
 
 function DeviceRegister(Device:PDevice):LongWord;
 {Register a new Device in the Device table}
+{Device: The device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  DeviceId:LongWord;
 begin
@@ -1706,6 +1740,8 @@ end;
 
 function DeviceDeregister(Device:PDevice):LongWord;
 {Deregister a Device from the Device table}
+{Device: The device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PDevice;
  Next:PDevice;
@@ -1779,6 +1815,10 @@ end;
 {==============================================================================}
 
 function DeviceFind(DeviceClass,DeviceId:LongWord):PDevice;
+{Find a device by ID in the device table}
+{DeviceClass: The class of the device to find (DEVICE_CLASS_ANY for all classes)}
+{DeviceId: The ID number of the device to find}
+{Return: Pointer to device entry or nil if not found}
 var
  Device:PDevice;
 begin
@@ -1834,6 +1874,9 @@ end;
 {==============================================================================}
 
 function DeviceFindByName(const Name:String):PDevice;
+{Find a device by name in the device table}
+{Name: The name of the device to find (eg Timer0)}
+{Return: Pointer to device entry or nil if not found}
 var
  Device:PDevice;
 begin
@@ -1872,6 +1915,9 @@ end;
 {==============================================================================}
 
 function DeviceFindByDescription(const Description:String):PDevice;
+{Find a device by description in the device table}
+{Description: The description of the device to find (eg BCM2836 ARM Timer)}
+{Return: Pointer to device entry or nil if not found}
 var
  Device:PDevice;
 begin
@@ -1910,6 +1956,11 @@ end;
 {==============================================================================}
 
 function DeviceEnumerate(DeviceClass:LongWord;Callback:TDeviceEnumerate;Data:Pointer):LongWord;
+{Enumerate all devices in the device table}
+{DeviceClass: The class of device to enumerate (DEVICE_CLASS_ANY for all classes)}
+{Callback: The callback function to call for each device in the table}
+{Data: A private data pointer to pass to callback for each device in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Device:PDevice;
 begin
@@ -1957,6 +2008,13 @@ end;
 {==============================================================================}
 
 function DeviceNotification(Device:PDevice;DeviceClass:LongWord;Callback:TDeviceNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for device changes}
+{Device: The device to notify changes for (Optional, pass nil for all devices)}
+{DeviceClass: The class of device to notify changes for (DEVICE_CLASS_ANY for all classes)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 var
  Notifier:PNotifier;
 begin
@@ -2381,6 +2439,8 @@ end;
 
 function DriverDestroy(Driver:PDriver):LongWord;
 {Destroy an existing Driver entry}
+{Driver: The driver to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2417,6 +2477,8 @@ end;
 
 function DriverGetName(Driver:PDriver):String;
 {Get the name of the supplied Driver}
+{Driver: The driver to get the name from}
+{Return: The name of the driver or a blank string on error}
 begin
  {}
  Result:='';
@@ -2445,6 +2507,9 @@ end;
 
 function DriverSetName(Driver:PDriver;const Name:String):LongWord;
 {Set the name of the supplied Driver}
+{Driver: The driver to set the name for}
+{Name: The driver name to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2477,6 +2542,8 @@ end;
 
 function DriverRegister(Driver:PDriver):LongWord;
 {Register a new Driver in the Driver table}
+{Driver: The driver to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  DriverId:LongWord;
 begin
@@ -2544,6 +2611,8 @@ end;
 
 function DriverDeregister(Driver:PDriver):LongWord;
 {Deregister a Driver from the Driver table}
+{Driver: The driver to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PDriver;
  Next:PDriver;
@@ -2613,6 +2682,10 @@ end;
 {==============================================================================}
 
 function DriverFind(DriverClass,DriverId:LongWord):PDriver;
+{Find a driver by ID in the driver table}
+{DriverClass: The class of the driver to find (DRIVER_CLASS_ANY for all classes)}
+{DriverId: The ID number of the driver to find}
+{Return: Pointer to driver entry or nil if not found}
 var
  Driver:PDriver;
 begin
@@ -2668,6 +2741,9 @@ end;
 {==============================================================================}
 
 function DriverFindByName(const Name:String):PDriver;
+{Find a driver by name in the driver table}
+{Name: The name of the driver to find (eg USB Hub Driver)}
+{Return: Pointer to driver entry or nil if not found}
 var
  Driver:PDriver;
 begin
@@ -2706,6 +2782,11 @@ end;
 {==============================================================================}
 
 function DriverEnumerate(DriverClass:LongWord;Callback:TDriverEnumerate;Data:Pointer):LongWord;
+{Enumerate all drivers in the driver table}
+{DriverClass: The class of driver to enumerate (DRIVER_CLASS_ANY for all classes)}
+{Callback: The callback function to call for each driver in the table}
+{Data: A private data pointer to pass to callback for each driver in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Driver:PDriver;
 begin
@@ -2754,6 +2835,9 @@ end;
 {==============================================================================}
 {Clock Device Functions}
 function ClockDeviceStart(Clock:PClockDevice):LongWord;
+{Start the counter of the specified Clock device}
+{Clock: The Clock device to start}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2791,6 +2875,9 @@ end;
 {==============================================================================}
 
 function ClockDeviceStop(Clock:PClockDevice):LongWord;
+{Stop the counter of the specified Clock device}
+{Clock: The Clock device to stop}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2827,6 +2914,9 @@ end;
 {==============================================================================}
 
 function ClockDeviceRead(Clock:PClockDevice):LongWord;
+{Read the counter value of the specified Clock device}
+{Clock: The Clock device to read from}
+{Return: The 32 bit counter value of the clock or 0 on failure}
 begin
  {}
  Result:=0;
@@ -2855,6 +2945,9 @@ end;
 {==============================================================================}
 
 function ClockDeviceRead64(Clock:PClockDevice):Int64;
+{Read the counter value of the specified Clock device}
+{Clock: The Clock device to read from}
+{Return: The 64 bit counter value of the clock or 0 on failure}
 begin
  {}
  Result:=0;
@@ -2879,6 +2972,12 @@ end;
 {==============================================================================}
 
 function ClockDeviceWrite64(Clock:PClockDevice;const Value:Int64):LongWord;
+{Write the counter value of the specified Clock device}
+{Clock: The Clock device to write to}
+{Value: The counter value to write}
+{Return: ERROR_SUCCESS if the counter was set or another error code on failure}
+
+{Note: Not all clock devices support setting the counter value, will return an error if unsupported}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2904,6 +3003,9 @@ end;
 {==============================================================================}
 
 function ClockDeviceGetRate(Clock:PClockDevice):LongWord;
+{Get the current clock rate in Hz of the specified Clock device}
+{Clock: The Clock device to get the rate from}
+{Return: The current clock rate in Hz or 0 on failure}
 begin
  {}
  Result:=0;
@@ -2933,6 +3035,95 @@ begin
   end;  
 end;
 
+{==============================================================================}
+
+function ClockDeviceSetRate(Clock:PClockDevice;Rate:LongWord):LongWord;
+{Set the current clock rate in Hz of the specified Clock device}
+{Clock: The Clock device to set the rate for}
+{Rate: The clock rate in Hz to set}
+{Return: ERROR_SUCCESS if the clock rate was set or another error code on failure}
+
+{Note: Not all clock devices support setting the clock rate, will return an error if unsupported}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Set Rate (Rate=' + IntToStr(Rate) + ')');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;} {Allow when disabled}
+ 
+ if Assigned(Clock.DeviceSetRate) then
+  begin
+   {Call Device Set Rate}
+   Result:=Clock.DeviceSetRate(Clock,Rate);
+  end
+ else
+  begin
+   if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Set Rate}
+   Clock.Rate:=Rate;
+   
+   Result:=ERROR_SUCCESS;
+   
+   MutexUnlock(Clock.Lock);
+  end; 
+end;
+
+{==============================================================================}
+
+function ClockDeviceProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord;
+{Get the properties for the specified Clock device}
+{Clock: The Clock device to get properties from}
+{Properties: Pointer to a TClockProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Properties}
+ if Properties = nil then Exit;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF DEVICE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Properties');
+ {$ENDIF}
+ 
+ {Check Enabled}
+ {if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;} {Allow when disabled}
+
+ if Assigned(Clock.DeviceProperties) then
+  begin
+   {Call Device Properites}
+   Result:=Clock.DeviceProperties(Clock,Properties);
+  end
+ else
+  begin
+   if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+   
+   {Get Properties}
+   Properties.Flags:=Clock.Device.DeviceFlags;
+   Properties.Rate:=Clock.Rate;
+   Properties.MinRate:=Clock.MinRate;
+   Properties.MaxRate:=Clock.MaxRate;
+ 
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+   
+   MutexUnlock(Clock.Lock);
+  end;
+end;
+ 
 {==============================================================================}
 
 function ClockDeviceCreate:PClockDevice;
@@ -2975,9 +3166,12 @@ begin
  Result.DeviceRead64:=nil;
  Result.DeviceWrite64:=nil;
  Result.DeviceGetRate:=nil;
+ Result.DeviceSetRate:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
  Result.Rate:=0;
+ Result.MinRate:=0;
+ Result.MaxRate:=0;
  
  {Create Lock}
  Result.Lock:=MutexCreate;
@@ -2994,6 +3188,8 @@ end;
 
 function ClockDeviceDestroy(Clock:PClockDevice):LongWord;
 {Destroy an existing Clock entry}
+{Clock: The clock device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3023,6 +3219,8 @@ end;
 
 function ClockDeviceRegister(Clock:PClockDevice):LongWord;
 {Register a new Clock in the Clock table}
+{Clock: The clock device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  ClockId:LongWord;
 begin
@@ -3105,6 +3303,8 @@ end;
 
 function ClockDeviceDeregister(Clock:PClockDevice):LongWord;
 {Deregister a Clock from the Clock table}
+{Clock: The clock device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PClockDevice;
  Next:PClockDevice;
@@ -3179,6 +3379,9 @@ end;
 {==============================================================================}
 
 function ClockDeviceFind(ClockId:LongWord):PClockDevice;
+{Find a clock device by ID in the clock table}
+{TimerId: The ID number of the clock to find}
+{Return: Pointer to clock device entry or nil if not found}
 var
  Clock:PClockDevice;
 begin
@@ -3220,6 +3423,9 @@ end;
 {==============================================================================}
 
 function ClockDeviceFindByName(const Name:String):PClockDevice; inline;
+{Find a clock device by name in the clock table}
+{Name: The name of the clock to find (eg Clock0)}
+{Return: Pointer to clock device entry or nil if not found}
 begin
  {}
  Result:=PClockDevice(DeviceFindByName(Name));
@@ -3228,6 +3434,9 @@ end;
 {==============================================================================}
 
 function ClockDeviceFindByDescription(const Description:String):PClockDevice; inline;
+{Find a clock device by description in the clock table}
+{Description: The description of the clock to find (eg BCM2836 ARM Timer Clock)}
+{Return: Pointer to clock device entry or nil if not found}
 begin
  {}
  Result:=PClockDevice(DeviceFindByDescription(Description));
@@ -3236,6 +3445,10 @@ end;
 {==============================================================================}
 
 function ClockDeviceEnumerate(Callback:TClockEnumerate;Data:Pointer):LongWord;
+{Enumerate all clock devices in the clock table}
+{Callback: The callback function to call for each clock in the table}
+{Data: A private data pointer to pass to callback for each clock in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Clock:PClockDevice;
 begin
@@ -3279,6 +3492,12 @@ end;
 {==============================================================================}
 
 function ClockDeviceNotification(Clock:PClockDevice;Callback:TClockNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for clock device changes}
+{Clock: The clock device to notify changes for (Optional, pass nil for all clocks)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3656,7 +3875,7 @@ begin
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Set Rate');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Set Rate (Rate=' + IntToStr(Rate) + ')');
  {$ENDIF}
  
  {Check Enabled}
@@ -3743,7 +3962,7 @@ begin
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Set Interval');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Set Interval (Interval=' + IntToStr(Interval) + ')');
  {$ENDIF}
  
  {Check Enabled}

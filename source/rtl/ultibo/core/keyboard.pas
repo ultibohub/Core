@@ -812,17 +812,17 @@ var
 begin
  {}
  Result:=KeyboardReadEx(@Data,SizeOf(TKeyboardData),KEYBOARD_FLAG_NONE,Count);
- while Result = ERROR_SUCCESS do
+ if Result = ERROR_SUCCESS then
   begin
-   {Exclude Key Up and Dead Key events}
+   {Check for Key Up and Dead Key events}
    if (Data.Modifiers and (KEYBOARD_KEYUP or KEYBOARD_DEADKEY)) = 0 then
     begin
      KeyCode:=Data.KeyCode;
-     Break;
-    end; 
-   
-   {Get Next Key}
-   Result:=KeyboardReadEx(@Data,SizeOf(TKeyboardData),KEYBOARD_FLAG_NONE,Count);
+    end
+   else
+    begin
+     KeyCode:=KEY_CODE_NONE;
+    end;  
   end;
 end;
 
@@ -2088,6 +2088,11 @@ begin
  if Status <> ERROR_SUCCESS then 
   begin
    ACh:=#0;
+  end
+ else
+  begin
+   {Echo to Console}
+   ConsoleWriteChar(ACh,AUserData);
   end;  
 end;
 
@@ -2134,6 +2139,11 @@ begin
  if Status <> ERROR_SUCCESS then 
   begin
    ACh:=#0;
+  end
+ else
+  begin
+   {Echo to Console}
+   ConsoleWriteChar(ACh,AUserData);
   end;  
 end;
 

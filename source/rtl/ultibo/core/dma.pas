@@ -1121,6 +1121,16 @@ begin
  {Check Request}
  if Request = nil then Exit;
  
+ {Deinitialize Request}
+ Request.Host:=nil;
+ Request.Data:=nil;
+ Request.Flags:=DMA_REQUEST_FLAG_NONE;
+ Request.Direction:=DMA_DIR_NONE;
+ Request.Peripheral:=DMA_DREQ_ID_NONE;
+ Request.Callback:=nil;
+ Request.DriverData:=nil;
+ Request.Status:=ERROR_NOT_VALID;
+ 
  {Release Request}
  FreeMem(Request);
    
@@ -1137,6 +1147,7 @@ function DMARequestSubmit(Request:PDMARequest):LongWord;
 {Note: The request will be completed asynchronously by the DMA host and the
  completion callback will be called when the request has either succeeded or failed}
 var
+ Host:PDMAHost;
  Status:LongWord;
 begin
  {}
@@ -1149,40 +1160,43 @@ begin
    Exit;
   end;
   
+ {Get Host}
+ Host:=Request.Host;
+  
  {Setup Request} 
  Request.Status:=ERROR_NOT_PROCESSED;
  
  {Acquire the Lock}
- if MutexLock(Request.Host.Lock) = ERROR_SUCCESS then
+ if MutexLock(Host.Lock) = ERROR_SUCCESS then
   begin
    try
     {Update Statistics}
-    Inc(Request.Host.RequestCount); 
+    Inc(Host.RequestCount); 
    
     {Update Pending}
-    Inc(Request.Host.PendingCount);
+    Inc(Host.PendingCount);
     
     {Release the Lock}
-    MutexUnlock(Request.Host.Lock);
+    MutexUnlock(Host.Lock);
     
     {Submit Request}
-    Status:=Request.Host.HostSubmit(Request.Host,Request);
+    Status:=Host.HostSubmit(Host,Request);
     
     {Acquire the Lock}
-    if MutexLock(Request.Host.Lock) <> ERROR_SUCCESS then Exit;
+    if MutexLock(Host.Lock) <> ERROR_SUCCESS then Exit;
     
     {Check Status}
     if Status <> ERROR_SUCCESS then
      begin
       {Update Pending}
-      Dec(Request.Host.PendingCount);
+      Dec(Host.PendingCount);
      end;
 
     {Return Result}
     Result:=Status;
    finally
     {Release the Lock}
-    MutexUnlock(Request.Host.Lock);
+    MutexUnlock(Host.Lock);
    end;   
   end; 
 end;
@@ -1193,6 +1207,8 @@ function DMARequestCancel(Request:PDMARequest):LongWord;
 {Cancel a DMA request previously submitted to a DMA host}
 {Request: The request to be cancelled}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Host:PDMAHost;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1204,15 +1220,18 @@ begin
    Exit;
   end;
  
+ {Get Host}
+ Host:=Request.Host;
+ 
  {Acquire the Lock}
- if MutexLock(Request.Host.Lock) = ERROR_SUCCESS then
+ if MutexLock(Host.Lock) = ERROR_SUCCESS then
   begin
    try
     {Cancel Request}
-    Result:=Request.Host.HostCancel(Request.Host,Request);
+    Result:=Host.HostCancel(Host,Request);
    finally
     {Release the Lock}
-    MutexUnlock(Request.Host.Lock);
+    MutexUnlock(Host.Lock);
    end;   
   end; 
 end;
@@ -1226,6 +1245,7 @@ procedure DMARequestComplete(Request:PDMARequest);
 {Note: DMA host drivers may call this on a worker thread}
 var
  Host:PDMAHost;
+ Flags:LongWord;
  Message:TMessage;
 begin
  {}
@@ -1239,6 +1259,9 @@ begin
  
  {Get Host}
  Host:=Request.Host;
+
+ {Get Flags}
+ Flags:=Request.Flags;
  
  {Acquire the Lock}
  if MutexLock(Host.Lock) = ERROR_SUCCESS then
@@ -1270,7 +1293,7 @@ begin
     if (Host.PendingCount = 0) and (Host.WaiterThread <> INVALID_HANDLE_VALUE) then
      begin
       {$IFDEF DMA_DEBUG}
-      if DMA_LOG_ENABLED then DMALogDebug(Request.Host,'Sending message to waiter thread (Thread=' + IntToHex(Host.WaiterThread,8) + ')');
+      if DMA_LOG_ENABLED then DMALogDebug(Host,'Sending message to waiter thread (Thread=' + IntToHex(Host.WaiterThread,8) + ')');
       {$ENDIF}
         
       {Send Message}
@@ -1280,7 +1303,7 @@ begin
      end;
      
     {Check for Release}
-    if (Request.Flags and DMA_REQUEST_FLAG_RELEASE) <> 0 then
+    if (Flags and DMA_REQUEST_FLAG_RELEASE) <> 0 then
      begin
       {Release Request}
       DMARequestRelease(Request);
@@ -1334,7 +1357,10 @@ begin
   begin
    Timeout:=INFINITE;
   end;
-  
+ 
+ {Check Flags (Do not allow release flag)} 
+ Flags:=Flags and not(DMA_REQUEST_FLAG_RELEASE);
+ 
  {Create Semaphore}
  Semaphore:=SemaphoreCreate(0);
  if Semaphore = INVALID_HANDLE_VALUE then
@@ -1395,12 +1421,12 @@ begin
     end;    
   end;  
  
- {Check for Release}
- if (Flags and DMA_REQUEST_FLAG_RELEASE) = 0 then
-  begin
+ {Check for Release (Release flag not allowed)}
+ {if (Flags and DMA_REQUEST_FLAG_RELEASE) = 0 then
+  begin}
    {Release Request}
    DMARequestRelease(Request);
-  end; 
+  {end;} 
  
  {Destroy Semaphore}
  SemaphoreDestroy(Semaphore); 
@@ -1458,7 +1484,7 @@ begin
    Exit;
   end;
      
- {Update Request}
+ {Update Request (Always add release flag)}
  Request.Flags:=Request.Flags or DMA_REQUEST_FLAG_RELEASE;
 
  {Submit Request} 

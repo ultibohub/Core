@@ -3,6 +3,7 @@
 #
 -CfVFPV2
 -CIARM
+-CaEABIHF
 -OoFASTMATH
 -Fu%INSTALLDIRECTORY%/units/armv6-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv6-ultibo/packages

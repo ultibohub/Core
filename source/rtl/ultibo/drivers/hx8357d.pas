@@ -593,7 +593,7 @@ begin
  {Horizontal/Vertical memory direction (Rotation)}
  if Defaults.Rotation = FRAMEBUFFER_ROTATION_0 then
   begin
-   Value:=Value or HX8357D_CMD_MADCTL_MX or HX8357D_CMD_MADCTL_MY
+   Value:=Value or HX8357D_CMD_MADCTL_MX or HX8357D_CMD_MADCTL_MY;
   end
  else if Defaults.Rotation = FRAMEBUFFER_ROTATION_90 then
   begin

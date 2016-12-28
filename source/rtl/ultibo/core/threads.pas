@@ -85,7 +85,7 @@ Threads
          
 
   Mutex - A mutually exlusive lock for controlling access to data. Threads yield while waiting to acquire the lock.
-          Non recursive (can only be acquired once by the same thread)
+          Non recursive (can only be acquired once by the same thread) (Recursive if MUTEX_FLAG_RECURSIVE specified)
           Not suitable for use by Interrupt handlers.
           Suitable for use on multiprocessor systems if the lock is allocated from shared memory (Determined during initialization).
           Recommended for long held operations or holding during I/O operations.

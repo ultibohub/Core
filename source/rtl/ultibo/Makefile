@@ -461,7 +461,8 @@ ULTIBO_UNITS=globalconfig \
 	     cifs \
 	     services \
 	     shell \
-	     graphicsconsole
+	     graphicsconsole \
+	     syscalls
 ULTIBO_FONTS=Latin1_8x8 \
 	     Latin1_8x10 \
 	     Latin1_8x12 \

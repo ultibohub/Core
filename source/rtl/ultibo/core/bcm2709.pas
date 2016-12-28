@@ -93,7 +93,9 @@ BCM2709 Devices
   UART1
   SDHCI (eMMC)
  
-  Clock
+  Clock (System Timer)
+  Clock (ARM Timer)
+  Clock (Local Timer)
   ARM Timer
   Local Timer
   Random
@@ -246,11 +248,11 @@ BCM2709 SDHCI Device
  The Write Protect pin is not connected.
 
 
-BCM2709 Clock Device
-====================
+BCM2709 Clock (System Timer) Device
+===================================
 
  The clock device in the BCM2709 is based on the System Timer which is a 64 bit free running counter that runs at 1MHz regardless
- of core or CPU clock speeds.
+ of core or CPU clock speeds. The System Timer cannot be stopped and the counter cannot be set or reset.
  
  The System Timer includes 4 compare registers which can each generate an interrupt when the compare value is matched, however 2
  of the 4 are consumed by the GPU and on the Raspberry Pi A/B/A+/B+/Zero the other 2 are used for the scheduler and clock interrupts
@@ -258,6 +260,20 @@ BCM2709 Clock Device
  
  This device simply exposes the free running counter as a clock value and does not provide access to the timer compare functionality
  or to interrupt based events, for those see the timer devices below.
+  
+  
+BCM2709 Clock (ARM Timer) Device
+================================
+  
+ This device represents that free running counter from the ARM Timer device (below) as a clock device. The free running counter does
+ not appear in the original SP804 timer. The counter is 32 bits wide and has its own divider that is 8 bits wide meaning that it can
+ be set to clock rates of between 975KHz and 250MHz (or 1.5MHz to 400MHz on the Raspberry Pi 3B).
+ 
+ The counter does not generate an interrupt and cannot be set or reset but it can be stopped and started.
+  
+  
+BCM2709 Clock (Local Timer) Device
+==================================
   
 
 BCM2709 ARM Timer Device
@@ -273,7 +289,7 @@ BCM2709 ARM Timer Device
  The ARM Timer features a free running counter which is not enabled or used by this driver and a down counter which operates in
  wrapping mode so that each time it reaches 0 it triggers an interrupt and reloads the value from a load or reload register to
  begin counting again.
-
+ 
  
 BCM2709 Local Timer Device
 ==========================
@@ -485,7 +501,24 @@ const
  BCM2709_EMMC_MIN_FREQ = 400000;    {Default minimum of 400KHz}
  BCM2709_EMMC_MAX_FREQ = 250000000; //To Do //Get the current frequency from the command line or mailbox instead ? //Peripheral init could get from Mailbox like SMSC95XX ?
  
- {BCM2709 Clock constants}
+ {BCM2709 Clock (System Timer) constants}
+ BCM2709_SYS_CLOCK_DESCRIPTION = 'BCM2836 System Timer Clock';
+
+ {BCM2709 Clock (ARM Timer) constants}
+ BCM2709_ARM_CLOCK_DESCRIPTION = 'BCM2836 ARM Timer Clock';
+
+ BCM2709_ARM_CLOCK_MIN_RATE = 976562;      {Default minimum (Divider 255) based on the default settings from the firmware (Recalculated during start)}
+ BCM2709_ARM_CLOCK_MAX_RATE = 250000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
+ BCM2709_ARM_CLOCK_DEFAULT_RATE = 3968253; {Default rate (Divider 62) based on the default settings from the firmware (Recalculated during start)}
+  
+ BCM2709_ARM_CLOCK_MIN_DIVIDER = 0;
+ BCM2709_ARM_CLOCK_MAX_DIVIDER = 255;
+ BCM2709_ARM_CLOCK_DEFAULT_DIVIDER = 62;
+ 
+ BCM2709_ARM_CLOCK_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ 
+ {BCM2709 Clock (Local Timer) constants}
+ BCM2709_LOCAL_CLOCK_DESCRIPTION = 'BCM2836 Local Timer Clock';
  
  {BCM2709 ARM Timer constants}
  BCM2709_ARM_TIMER_DESCRIPTION = 'BCM2836 ARM Timer';
@@ -685,15 +718,24 @@ type
   ShadowRegister:LongWord;
  end;
  
- {BCM2709 Clock types}
- PBCM2709Clock = ^TBCM2709Clock;
- TBCM2709Clock = record
+ {BCM2709 System Clock types}
+ PBCM2709SystemClock = ^TBCM2709SystemClock;
+ TBCM2709SystemClock = record
   {Clock Properties}
   Clock:TClockDevice;
   {BCM2709 Properties}
    {Nothing}
  end; 
 
+ {BCM2709 ARM Clock types}
+ PBCM2709ARMClock = ^TBCM2709ARMClock;
+ TBCM2709ARMClock = record
+  {Clock Properties}
+  Clock:TClockDevice;
+  {BCM2709 Properties}
+  CoreClock:LongWord;              {Core clock rate}
+ end; 
+ 
  {BCM2709 ARM Timer types}
  PBCM2709ARMTimer = ^TBCM2709ARMTimer;
  TBCM2709ARMTimer = record
@@ -908,9 +950,19 @@ function BCM2709SDHCISetupInterrupts(SDHCI:PSDHCIHost):LongWord;
 function BCM2709MMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
  
 {==============================================================================}
-{BCM2709 Clock Functions}
-function BCM2709ClockRead(Clock:PClockDevice):LongWord;
-function BCM2709ClockRead64(Clock:PClockDevice):Int64;
+{BCM2709 System Clock Functions}
+function BCM2709SystemClockRead(Clock:PClockDevice):LongWord;
+function BCM2709SystemClockRead64(Clock:PClockDevice):Int64;
+
+{==============================================================================}
+{BCM2709 ARM Clock Functions}
+function BCM2709ARMClockStart(Clock:PClockDevice):LongWord;
+function BCM2709ARMClockStop(Clock:PClockDevice):LongWord;
+
+function BCM2709ARMClockRead(Clock:PClockDevice):LongWord;
+function BCM2709ARMClockRead64(Clock:PClockDevice):Int64;
+
+function BCM2709ARMClockSetRate(Clock:PClockDevice;Rate:LongWord):LongWord;
 
 {==============================================================================}
 {BCM2709 ARM Timer Functions}
@@ -1004,7 +1056,8 @@ var
  BCM2709PWM1:PBCM2709PWMDevice;
  BCM2709UART0:PBCM2709UART0Device;
  
- BCM2709Clock:PBCM2709Clock;
+ BCM2709SystemClock:PBCM2709SystemClock;
+ BCM2709ARMClock:PBCM2709ARMClock;
  BCM2709ARMTimer:PBCM2709ARMTimer;
  BCM2709LocalTimer:PBCM2709LocalTimer;
  BCM2709Random:PBCM2709Random;
@@ -1602,32 +1655,35 @@ begin
     end;
   end;
 
- {Create Clock}
- if BCM2709_REGISTER_CLOCK then
+ {Create System Clock}
+ if BCM2709_REGISTER_SYS_CLOCK then
   begin
-   BCM2709Clock:=PBCM2709Clock(ClockDeviceCreateEx(SizeOf(TBCM2709Clock)));
-   if BCM2709Clock <> nil then
+   BCM2709SystemClock:=PBCM2709SystemClock(ClockDeviceCreateEx(SizeOf(TBCM2709SystemClock)));
+   if BCM2709SystemClock <> nil then
     begin
-     {Update Clock}
+     {Update System Clock}
      {Device}
-     BCM2709Clock.Clock.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-     BCM2709Clock.Clock.Device.DeviceType:=CLOCK_TYPE_HARDWARE;
-     BCM2709Clock.Clock.Device.DeviceFlags:=CLOCK_FLAG_NONE;
-     BCM2709Clock.Clock.Device.DeviceData:=nil;
+     BCM2709SystemClock.Clock.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     BCM2709SystemClock.Clock.Device.DeviceType:=CLOCK_TYPE_HARDWARE;
+     BCM2709SystemClock.Clock.Device.DeviceFlags:=CLOCK_FLAG_NONE;
+     BCM2709SystemClock.Clock.Device.DeviceData:=nil;
+     BCM2709SystemClock.Clock.Device.DeviceDescription:=BCM2709_SYS_CLOCK_DESCRIPTION;
      {Clock}
-     BCM2709Clock.Clock.ClockState:=CLOCK_STATE_DISABLED;
-     BCM2709Clock.Clock.DeviceRead:=BCM2709ClockRead;
-     BCM2709Clock.Clock.DeviceRead64:=BCM2709ClockRead64;
+     BCM2709SystemClock.Clock.ClockState:=CLOCK_STATE_DISABLED;
+     BCM2709SystemClock.Clock.DeviceRead:=BCM2709SystemClockRead;
+     BCM2709SystemClock.Clock.DeviceRead64:=BCM2709SystemClockRead64;
      {Driver}
-     BCM2709Clock.Clock.Address:=Pointer(BCM2836_SYSTEM_TIMER_REGS_BASE);
-     BCM2709Clock.Clock.Rate:=BCM2836_SYSTEM_TIMER_FREQUENCY;
+     BCM2709SystemClock.Clock.Address:=Pointer(BCM2836_SYSTEM_TIMER_REGS_BASE);
+     BCM2709SystemClock.Clock.Rate:=BCM2836_SYSTEM_TIMER_FREQUENCY;
+     BCM2709SystemClock.Clock.MinRate:=BCM2836_SYSTEM_TIMER_FREQUENCY;
+     BCM2709SystemClock.Clock.MaxRate:=BCM2836_SYSTEM_TIMER_FREQUENCY;
     
      {Register Clock}
-     Status:=ClockDeviceRegister(@BCM2709Clock.Clock);
+     Status:=ClockDeviceRegister(@BCM2709SystemClock.Clock);
      if Status = ERROR_SUCCESS then
       begin
        {Start Clock}
-       Status:=ClockDeviceStart(@BCM2709Clock.Clock);
+       Status:=ClockDeviceStart(@BCM2709SystemClock.Clock);
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to start new clock device: ' + ErrorToString(Status));
@@ -1644,6 +1700,47 @@ begin
     end;
   end;
   
+ {Create ARM Clock}
+ if BCM2709_REGISTER_ARM_CLOCK then
+  begin
+   BCM2709ARMClock:=PBCM2709ARMClock(ClockDeviceCreateEx(SizeOf(TBCM2709ARMClock)));
+   if BCM2709ARMClock <> nil then
+    begin
+     {Update ARM Clock}
+     {Device}
+     BCM2709ARMClock.Clock.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     BCM2709ARMClock.Clock.Device.DeviceType:=CLOCK_TYPE_HARDWARE;
+     BCM2709ARMClock.Clock.Device.DeviceFlags:=CLOCK_FLAG_VARIABLE;
+     BCM2709ARMClock.Clock.Device.DeviceData:=nil;
+     BCM2709ARMClock.Clock.Device.DeviceDescription:=BCM2709_ARM_CLOCK_DESCRIPTION;
+     {Clock}
+     BCM2709ARMClock.Clock.ClockState:=CLOCK_STATE_DISABLED;
+     BCM2709ARMClock.Clock.DeviceStart:=BCM2709ARMClockStart;
+     BCM2709ARMClock.Clock.DeviceStop:=BCM2709ARMClockStop;
+     BCM2709ARMClock.Clock.DeviceRead:=BCM2709ARMClockRead;
+     BCM2709ARMClock.Clock.DeviceRead64:=BCM2709ARMClockRead64;
+     BCM2709ARMClock.Clock.DeviceSetRate:=BCM2709ARMClockSetRate;
+     {Driver}
+     BCM2709ARMClock.Clock.Address:=Pointer(BCM2836_TIMER_REGS_BASE);
+     BCM2709ARMClock.Clock.Rate:=BCM2709_ARM_CLOCK_DEFAULT_RATE;
+     BCM2709ARMClock.Clock.MinRate:=BCM2709_ARM_CLOCK_MIN_RATE;
+     BCM2709ARMClock.Clock.MaxRate:=BCM2709_ARM_CLOCK_MAX_RATE;
+     {BCM2709}
+     BCM2709ARMClock.CoreClock:=BCM2709_ARM_CLOCK_CORE_CLOCK;
+     
+     {Register Clock}
+     Status:=ClockDeviceRegister(@BCM2709ARMClock.Clock);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to register new clock device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to create new clock device');
+    end;
+  end;
+ 
  {Create ARM Timer}
  if BCM2709_REGISTER_ARM_TIMER then
   begin
@@ -2107,7 +2204,7 @@ begin
      TXData.Source:=Source;
      TXData.Dest:=@PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).FIFO;
      TXData.Flags:=DMA_DATA_FLAG_DEST_NOINCREMENT or DMA_DATA_FLAG_DEST_DREQ or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
-     if Source = nil then TXData.Flags:=TXData.Flags or DMA_DATA_FLAG_NOREAD;
+     if Source = nil then TXData.Flags:=TXData.Flags or DMA_DATA_FLAG_NOREAD or DMA_DATA_FLAG_NOCLEAN;
      TXData.StrideLength:=0;
      TXData.SourceStride:=0;
      TXData.DestStride:=0;
@@ -2118,7 +2215,7 @@ begin
      RXData.Source:=@PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).FIFO;
      RXData.Dest:=Dest;
      RXData.Flags:=DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_DREQ or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
-     if Dest = nil then RXData.Flags:=RXData.Flags or DMA_DATA_FLAG_NOWRITE;
+     if Dest = nil then RXData.Flags:=RXData.Flags or DMA_DATA_FLAG_NOWRITE or DMA_DATA_FLAG_NOINVALIDATE;
      RXData.StrideLength:=0;
      RXData.SourceStride:=0;
      RXData.DestStride:=0;
@@ -7970,8 +8067,10 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{BCM2709 Clock Functions}
-function BCM2709ClockRead(Clock:PClockDevice):LongWord;
+{BCM2709 System Clock Functions}
+function BCM2709SystemClockRead(Clock:PClockDevice):LongWord;
+{Implementation of ClockDeviceRead API for System Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceRead instead}
 begin
  {}
  Result:=0;
@@ -7996,7 +8095,9 @@ end;
  
 {==============================================================================}
 
-function BCM2709ClockRead64(Clock:PClockDevice):Int64;
+function BCM2709SystemClockRead64(Clock:PClockDevice):Int64;
+{Implementation of ClockDeviceRead64 API for System Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceRead64 instead}
 var
  Check:LongWord;
 begin
@@ -8031,6 +8132,260 @@ begin
  Inc(Clock.ReadCount);
  
  MutexUnlock(Clock.Lock);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{BCM2709 ARM Clock Functions}
+function BCM2709ARMClockStart(Clock:PClockDevice):LongWord;
+{Implementation of ClockDeviceStart API for ARM Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceStart instead}
+var
+ Control:LongWord;
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709: ARM Clock Start');
+ {$ENDIF}
+ 
+ if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+ try
+  {Update Core Clock}
+  PBCM2709ARMClock(Clock).CoreClock:=ClockGetRate(CLOCK_ID_CORE);
+  if PBCM2709ARMClock(Clock).CoreClock = 0 then PBCM2709ARMClock(Clock).CoreClock:=BCM2709_ARM_CLOCK_CORE_CLOCK;
+  
+  {Update Min/Max}
+  Clock.MinRate:=PBCM2709ARMClock(Clock).CoreClock div (BCM2709_ARM_CLOCK_MAX_DIVIDER + 1);
+  Clock.MaxRate:=PBCM2709ARMClock(Clock).CoreClock div (BCM2709_ARM_CLOCK_MIN_DIVIDER + 1);
+  
+  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709:  CoreClock=' + IntToStr(PBCM2709ARMClock(Clock).CoreClock) + ' MinRate=' + IntToStr(Clock.MinRate) + ' MaxRate=' + IntToStr(Clock.MaxRate));
+  {$ENDIF}
+  
+  {Check Rate}
+  if (Clock.Rate <> 0) and ((Clock.Rate < Clock.MinRate) or (Clock.Rate > Clock.MaxRate)) then Exit;
+  if Clock.Rate = 0 then Clock.Rate:=BCM2709_ARM_CLOCK_DEFAULT_RATE;
+  
+  {Get Divider}
+  Divider:=(PBCM2709ARMClock(Clock).CoreClock div Clock.Rate) - 1;
+  
+  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709:  Divider=' + IntToStr(Divider));
+  {$ENDIF}
+  
+  {Memory Barrier}
+  DataMemoryBarrier; {Before the First Write}
+  
+  {Get Control}
+  Control:=PBCM2836ARMTimerRegisters(Clock.Address).Control;
+  
+  {Update Control (Counter Enable / Counter Prescale)}
+  Control:=Control and not(BCM2836_ARM_TIMER_CONTROL_COUNTER_PRESCALE);
+  Control:=Control or (Divider shl 16) or BCM2836_ARM_TIMER_CONTROL_COUNTER_ENABLED;
+  
+  {Set Control}
+  PBCM2836ARMTimerRegisters(Clock.Address).Control:=Control;
+  
+  {Memory Barrier}
+  DataMemoryBarrier; {After the Last Read} 
+  
+  {Return Result}
+  Result:=ERROR_SUCCESS;  
+ finally
+  MutexUnlock(Clock.Lock);
+ end;
+end;
+ 
+{==============================================================================}
+
+function BCM2709ARMClockStop(Clock:PClockDevice):LongWord;
+{Implementation of ClockDeviceStop API for ARM Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceStop instead}
+var
+ Control:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709: ARM Clock Stop');
+ {$ENDIF}
+
+ if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Control}
+ Control:=PBCM2836ARMTimerRegisters(Clock.Address).Control;
+ 
+ {Update Control}
+ Control:=Control and not(BCM2836_ARM_TIMER_CONTROL_COUNTER_ENABLED);
+ 
+ {Set Control}
+ PBCM2836ARMTimerRegisters(Clock.Address).Control:=Control;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ MutexUnlock(Clock.Lock);
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;  
+end;
+ 
+{==============================================================================}
+
+function BCM2709ARMClockRead(Clock:PClockDevice):LongWord;
+{Implementation of ClockDeviceRead API for ARM Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceRead instead}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709: ARM Clock Read');
+ {$ENDIF}
+ 
+ if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Update Statistics}
+ Inc(Clock.ReadCount);
+ 
+ {Read Counter}
+ Result:=PBCM2836ARMTimerRegisters(Clock.Address).Counter;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ MutexUnlock(Clock.Lock);
+end;
+
+{==============================================================================}
+
+function BCM2709ARMClockRead64(Clock:PClockDevice):Int64;
+{Implementation of ClockDeviceRead64 API for ARM Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceRead64 instead}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709: ARM Clock Read64');
+ {$ENDIF}
+ 
+ if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Update Statistics}
+ Inc(Clock.ReadCount);
+ 
+ {Read Counter}
+ Result:=PBCM2836ARMTimerRegisters(Clock.Address).Counter;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ MutexUnlock(Clock.Lock);
+end;
+
+{==============================================================================}
+
+function BCM2709ARMClockSetRate(Clock:PClockDevice;Rate:LongWord):LongWord;
+{Implementation of ClockDeviceSetRate API for ARM Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceSetRate instead}
+var
+ Control:LongWord;
+ Divider:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709: ARM Clock Set Rate (Rate=' + IntToStr(Rate) + ')');
+ {$ENDIF}
+ 
+ if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+ try
+  {Check Enabled}
+  if Clock.ClockState <> CLOCK_STATE_ENABLED then
+   begin
+    {Update Core Clock}
+    PBCM2709ARMClock(Clock).CoreClock:=ClockGetRate(CLOCK_ID_CORE);
+    if PBCM2709ARMClock(Clock).CoreClock = 0 then PBCM2709ARMClock(Clock).CoreClock:=BCM2709_ARM_CLOCK_CORE_CLOCK;
+    
+    {Update Min/Max}
+    Clock.MinRate:=PBCM2709ARMClock(Clock).CoreClock div (BCM2709_ARM_CLOCK_MAX_DIVIDER + 1);
+    Clock.MaxRate:=PBCM2709ARMClock(Clock).CoreClock div (BCM2709_ARM_CLOCK_MIN_DIVIDER + 1);
+    
+    {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+    if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709:  CoreClock=' + IntToStr(PBCM2709ARMClock(Clock).CoreClock) + ' MinRate=' + IntToStr(Clock.MinRate) + ' MaxRate=' + IntToStr(Clock.MaxRate));
+    {$ENDIF}
+   end;
+   
+  {Check Rate}
+  if (Rate < Clock.MinRate) or (Rate > Clock.MaxRate) then Exit;
+  
+  {Get Divider}
+  Divider:=(PBCM2709ARMClock(Clock).CoreClock div Rate) - 1;
+  
+  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DEVICE_DEBUG)}
+  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'BCM2709:  Divider=' + IntToStr(Divider));
+  {$ENDIF}
+  
+  {Memory Barrier}
+  DataMemoryBarrier; {Before the First Write}
+  
+  {Get Control}
+  Control:=PBCM2836ARMTimerRegisters(Clock.Address).Control;
+  
+  {Update Control}
+  Control:=Control and not(BCM2836_ARM_TIMER_CONTROL_COUNTER_PRESCALE);
+  Control:=Control or (Divider shl 16);
+  
+  {Set Control}
+  PBCM2836ARMTimerRegisters(Clock.Address).Control:=Control;
+  
+  {Memory Barrier}
+  DataMemoryBarrier; {After the Last Read} 
+  
+  {Check Rate}
+  if (PBCM2709ARMClock(Clock).CoreClock mod Rate) <> 0 then
+   begin
+    {Update Properties}
+    Clock.Rate:=PBCM2709ARMClock(Clock).CoreClock div (Divider + 1);
+   
+    {Return Result}
+    Result:=ERROR_NOT_EXACT;  
+   end
+  else
+   begin
+    {Update Properties}
+    Clock.Rate:=Rate;
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;  
+   end;  
+ finally
+  MutexUnlock(Clock.Lock);
+ end;
 end;
 
 {==============================================================================}

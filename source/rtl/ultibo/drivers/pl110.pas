@@ -38,7 +38,7 @@ References
 ARM PrimeCell PL110 Color LCD
 =============================
 
- The ARM PrimeCell Pl110 Color LCD Controller is a AMBA compliant module that provide LCD
+ The ARM PrimeCell PL110 Color LCD Controller is an AMBA compliant module that provides LCD
  display support for both TFT and STN displays in a variety of configurations.
  
  While the controller supports TFT displays it differs from other TFT display controllers
@@ -255,7 +255,7 @@ implementation
 function PL110FramebufferCreateVGA(Address:LongWord;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
 {Create, register and allocate a new PL110 Framebuffer device which can be accessed using the framebuffer API}
 {Address: The address of the PL110 registers}
-{Name: The text description of this device which will should in the device list (Optional)}
+{Name: The text description of this device which will show in the device list (Optional)}
 {Rotation: The rotation value for the framebuffer device (eg FRAMEBUFFER_ROTATION_180)}
 {Width: The width of the framebuffer in pixels}
 {Height: The height of the framebuffer in pixels}
@@ -358,7 +358,7 @@ end;
 function PL110FramebufferCreateSVGA(Address:LongWord;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
 {Create, register and allocate a new PL110 Framebuffer device which can be accessed using the framebuffer API}
 {Address: The address of the PL110 registers}
-{Name: The text description of this device which will should in the device list (Optional)}
+{Name: The text description of this device which will show in the device list (Optional)}
 {Rotation: The rotation value for the framebuffer device (eg FRAMEBUFFER_ROTATION_180)}
 {Width: The width of the framebuffer in pixels}
 {Height: The height of the framebuffer in pixels}

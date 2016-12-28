@@ -204,7 +204,8 @@ uses
  services,
  shell,
  graphicsconsole,
-
+ syscalls,
+ 
  {Ultibo CodePage Units} 
  cp720oem,
  cp737oem,

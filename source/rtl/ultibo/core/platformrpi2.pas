@@ -1672,7 +1672,7 @@ begin
     end 
    else
     begin
-      ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
     end; 
    Inc(Address,SIZE_1M);
   end;
@@ -1729,10 +1729,13 @@ begin
  ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_NONE); 
  
  {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+ {Changed to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK (Shared)(Executable)(Read Only) due to no write through support for data caching on ARMv7}
+ {See 5.2.1 Memory types and attributes in the Cortex A7 Technical Reference Manual (http://infocenter.arm.com/help/topic/com.arm.doc.ddi0464f/CIHJCAAG.html)}
  Address:=(VECTOR_TABLE_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (VECTOR_TABLE_BASE + VECTOR_TABLE_SIZE) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);
+   {ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);}
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_ACCESS_READONLY);
    Inc(Address,SIZE_4K);
   end; 
  
@@ -1745,10 +1748,13 @@ begin
   end;
  
  {Set the 4KB pages containing the TEXT (Code) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+ {Changed to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK (Shared)(Executable)(Read Only) due to no write through support for data caching on ARMv7}
+ {See 5.2.1 Memory types and attributes in the Cortex A7 Technical Reference Manual (http://infocenter.arm.com/help/topic/com.arm.doc.ddi0464f/CIHJCAAG.html)}
  Address:=(LongWord(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (LongWord(@_data)) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);
+   {ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);}
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_ACCESS_READONLY);
    Inc(Address,SIZE_4K);
   end;
 
@@ -1756,7 +1762,7 @@ begin
  Address:=(LongWord(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (LongWord(@_bss_start)) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE); 
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
 
@@ -2106,7 +2112,7 @@ end;
 {==============================================================================}
 
 function RPi2MailboxReceive(Mailbox,Channel:LongWord):LongWord;
-{Receive from specifed mailbox on specified channel}
+{Receive from specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 var
  Timeout:LongWord;
@@ -2163,7 +2169,7 @@ end;
 {==============================================================================}
 
 procedure RPi2MailboxSend(Mailbox,Channel,Data:LongWord);
-{Send to specifed mailbox on specified channel}
+{Send to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 var
  Timeout:LongWord;
@@ -2212,7 +2218,7 @@ end;
 {==============================================================================}
 
 function RPi2MailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWord;
-{Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 begin
@@ -2223,7 +2229,7 @@ end;
 {==============================================================================}
 
 function RPi2MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord; 
-{Perform a transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 var
@@ -2343,7 +2349,7 @@ end;
 {==============================================================================}
 
 function RPi2MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
-{Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a property tag transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 begin
@@ -2354,7 +2360,7 @@ end;
 {==============================================================================}
 
 function RPi2MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord; 
-{Perform a property tag transaction (Send/Receive) to specifed mailbox on specified channel}
+{Perform a property tag transaction (Send/Receive) to specified mailbox on specified channel}
 {Note: Data = first 28 bits, Channel = last 4 bits}
 {Note: Data pointer must be 16 byte aligned to allow for the 4 bit channel number}
 var
@@ -9019,7 +9025,7 @@ end;
 {==============================================================================}
 
 procedure RPi2BootBlink; assembler; nostackframe;
-{Blink the Activity LED without dependancy on any other RTL setup}
+{Blink the Activity LED without dependency on any other RTL setup}
 asm
  //Blink the Activity LED in a loop
  //Enable the Activity LED

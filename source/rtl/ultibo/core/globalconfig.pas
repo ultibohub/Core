@@ -608,6 +608,14 @@ var
  LOGGING_MESSAGESLOT_MAXIMUM:LongWord = SIZE_8K; {Maximum number of messages for the logging messageslot}
 
 {==============================================================================}
+{Syscalls configuration}
+var
+ SYSCALLS_HEAP_BASE:PtrUInt = $C0000000;         {The starting address for the dynamic C library heap space (Only if Syscalls unit included)(0 equals use static heap space only)}
+ SYSCALLS_HEAP_MIN:LongWord = SIZE_2M;           {The minimum size of the dynamic C library heap space (Only if Syscalls unit included)(Or the total size if using static heap space)}
+ SYSCALLS_HEAP_MAX:LongWord = SIZE_1G;           {The maximum size of the dynamic C library heap space (Only if Syscalls unit included)(Ignored if using static heap space only)}
+ SYSCALLS_HEAP_BLOCKSIZE:LongWord = SIZE_1M;     {The block size to request from the heap manager on each expansion of the dynamic C library heap space (Only if Syscalls unit included)}
+ 
+{==============================================================================}
 {Generic Peripheral configuration (Set by PeripheralInit)}
 var
  {GPIO}
@@ -727,7 +735,8 @@ var
  BCM2708_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2708 I2C slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2708 PWM Audio device during boot (Only if BCM2708 unit included)}
 
- BCM2708_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2708 Clock device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SYS_CLOCK:LongBool = True; {If True then register the BCM2708 System Timer Clock device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_ARM_CLOCK:LongBool = True; {If True then register the BCM2708 ARM Timer Clock device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_ARM_TIMER:LongBool = True; {If True then register the BCM2708 ARM Timer device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2708 Random device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_MAILBOX:LongBool = True;  {If True then register the BCM2708 Mailbox device during boot (Only if BCM2708 unit included)}
@@ -768,7 +777,9 @@ var
  BCM2709_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2709 I2C slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2709 PWM Audio device during boot (Only if BCM2709 unit included)}
  
- BCM2709_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2709 Clock device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SYS_CLOCK:LongBool = True; {If True then register the BCM2709 System Timer Clock device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_ARM_CLOCK:LongBool = True; {If True then register the BCM2709 ARM Timer Clock device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_LOCAL_CLOCK:LongBool = True; {If True then register the BCM2709 Local Timer Clock device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_ARM_TIMER:LongBool = True; {If True then register the BCM2709 ARM Timer device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_LOCAL_TIMER:LongBool = True; {If True then register the BCM2709 Local Timer device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2709 Random device during boot (Only if BCM2709 unit included)}
@@ -810,7 +821,9 @@ var
  BCM2710_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2710 I2C slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2710 PWM Audio device during boot (Only if BCM2710 unit included)}
 
- BCM2710_REGISTER_CLOCK:LongBool = True;    {If True then register the BCM2710 Clock device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SYS_CLOCK:LongBool = True; {If True then register the BCM2710 System Timer Clock device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_ARM_CLOCK:LongBool = True; {If True then register the BCM2710 ARM Timer Clock device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_LOCAL_CLOCK:LongBool = True; {If True then register the BCM2710 Local Timer Clock device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_ARM_TIMER:LongBool = True; {If True then register the BCM2710 ARM Timer device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_LOCAL_TIMER:LongBool = True; {If True then register the BCM2710 Local Timer device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_RANDOM:LongBool = True;   {If True then register the BCM2710 Random device during boot (Only if BCM2710 unit included)}
@@ -2552,7 +2565,7 @@ end;
 {==============================================================================}
 
 procedure PixelsDefaultToFormat(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean); 
-{Convert one or more pixels in the default color format to the specificed format}
+{Convert one or more pixels in the default color format to the specified format}
 {Format: The color format to convert to (eg COLOR_FORMAT_RGB24)}
 {Source: Pointer to the source buffer for the pixels to convert}
 {Dest: Pointer to the destination buffer for the converted pixels}
@@ -2650,7 +2663,7 @@ end;
 {==============================================================================}
 
 procedure PixelsDefaultAltToFormat(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean); 
-{Convert one or more pixels in the default color format to the specificed format (Alternate)}
+{Convert one or more pixels in the default color format to the specified format (Alternate)}
 {Format: The color format to convert to (eg COLOR_FORMAT_RGB24)}
 {Source: Pointer to the source buffer for the pixels to convert}
 {Dest: Pointer to the destination buffer for the converted pixels}

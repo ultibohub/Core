@@ -39,7 +39,7 @@ QEMU VersatilePB
  
  Additional units can be included anywhere within a program and they will be linked during the
  compile process. This unit simply provides a convenient way to ensure all relevant units have
- been included an the standard drivers registered.
+ been included and the standard drivers registered.
  
 }
 
@@ -135,6 +135,8 @@ begin
   end;
   
  //To Do //Continuing //More devices //MMC, SMSC91C11, Mouse, Keyboard 
+ 
+ //To Do //Clock and Timer devices
  
  {$IFNDEF CONSOLE_EARLY_INIT}
  {Check Framebuffer}

@@ -1237,7 +1237,7 @@ begin
          end;
          
         {Get Lines}
-        Lines:=(SIZE_64K - SIZE_16K) div Size;
+        Lines:=(SIZE_64K - SIZE_16K) div Size; 
         
         {Get First}
         First:=PDMAData(Buffer + (Size * Lines));
@@ -1257,7 +1257,7 @@ begin
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
           Next.StrideLength:=Size;
           Next.SourceStride:=Stride;
-          Next.DestStride:=Stride;
+          Next.DestStride:=0; {No stride on Buffer}
           Next.Size:=Size * Lines;
           Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
          
@@ -1270,7 +1270,7 @@ begin
           Next.Dest:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Count) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
           Next.StrideLength:=Size;
-          Next.SourceStride:=Stride;
+          Next.SourceStride:=0; {No stride on Buffer}
           Next.DestStride:=Stride;
           Next.Size:=Size * Lines;
           Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
@@ -1806,7 +1806,7 @@ function FramebufferDeviceGetOffset(Framebuffer:PFramebufferDevice;var X,Y:LongW
 {Get the virtual offset X and Y from a framebuffer device}
 {Framebuffer: The framebuffer device to get the offset from}
 {X: The X (Column) offset value in pixels returned from the device if successful}
-{X: The Y (Row) offset value in pixels returned from the device if successful}
+{Y: The Y (Row) offset value in pixels returned from the device if successful}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: X and Y are relative to the virtual buffer and NOT the physical screen (Where applicable)}
@@ -1856,7 +1856,7 @@ function FramebufferDeviceSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;
 {Set the virtual offset X and Y of a framebuffer device}
 {Framebuffer: The framebuffer device to set the offset for}
 {X: The X (Column) offset value in pixels to set}
-{X: The Y (Row) offset value in pixels to set}
+{Y: The Y (Row) offset value in pixels to set}
 {Pan: If True then pan the display without updating the Offset X and/or Y}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 

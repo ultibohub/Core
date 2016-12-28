@@ -1769,6 +1769,8 @@ type
 
    function FileAgeEx(const AFileName:String):TFileTime;
 
+   function FileGetAttrEx(AHandle:Integer):Integer;
+   
    function FileGetDateEx(AHandle:Integer):TFileTime;
    function FileSetDateEx(AHandle:Integer;AAge:TFileTime):Integer;
 
@@ -3782,6 +3784,8 @@ type
    function FileCreateEx(const FileName,ShortName:String):Integer; virtual;
    function CreateDirEx(const DirName,ShortName:String):Boolean; virtual;
 
+   function FileGetAttrEx(Handle:Integer):Integer; virtual;
+   
    function FileGetDateEx(Handle:Integer):TFileTime; virtual;
    function FileSetDateEx(Handle:Integer;Age:TFileTime):Integer; virtual;
    function GetFileTime(Handle:Integer;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean; virtual;
@@ -5173,6 +5177,8 @@ function FSFilePosEx(AHandle:Integer):Int64; inline;
 function FSFileSizeEx(AHandle:THandle):Int64; inline;
 
 function FSFileAgeEx(const AFileName:String):TFileTime; inline;
+
+function FSFileGetAttrEx(AHandle:Integer):Integer; inline;
 
 function FSFileGetDateEx(AHandle:Integer):TFileTime; inline;
 function FSFileSetDateEx(AHandle:Integer;AAge:TFileTime):Integer; inline;
@@ -18537,6 +18543,54 @@ end;
 
 {==============================================================================}
 
+function TFileSysDriver.FileGetAttrEx(AHandle:Integer):Integer;
+var
+ Drive:TDiskDrive;
+ Volume:TDiskVolume;
+begin
+ {}
+ Result:=-1;
+ 
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetAttrEx Handle = ' + IntToHex(AHandle,8));
+  {$ENDIF}
+ 
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+  if Drive <> nil then
+   begin
+    try
+     if Drive.FileSystem = nil then Exit;
+   
+     Result:=Drive.FileSystem.FileGetAttrEx(AHandle);
+    finally
+     {Unlock Drive}
+     Drive.ReaderUnlock;
+    end; 
+   end
+  else
+   begin
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    if Volume <> nil then
+     begin
+      try
+       if Volume.FileSystem = nil then Exit;
+     
+       Result:=Volume.FileSystem.FileGetAttrEx(AHandle);
+      finally
+       {Unlock Volume}
+       Volume.ReaderUnlock;
+      end; 
+     end;
+   end;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TFileSysDriver.FileGetDateEx(AHandle:Integer):TFileTime;
 var
  Drive:TDiskDrive;
@@ -19288,33 +19342,71 @@ begin
   {$ENDIF}
   
   {Get Open Mode}
-  OpenMode:=fmOpenRead;
   if (AAccessMode and GENERIC_ALL) = GENERIC_ALL then
    begin
     OpenMode:=fmOpenReadWrite;
+    
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenReadWrite');
+    {$ENDIF}
    end
   else if (AAccessMode and (GENERIC_READ or GENERIC_WRITE)) = (GENERIC_READ or GENERIC_WRITE) then
    begin
     OpenMode:=fmOpenReadWrite;
+    
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenReadWrite');
+    {$ENDIF}
    end
   else if (AAccessMode and GENERIC_WRITE) = GENERIC_WRITE then 
    begin
     OpenMode:=fmOpenWrite;
-   end;
+    
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenWrite');
+    {$ENDIF}
+   end
+  else
+   begin
+    OpenMode:=fmOpenRead;
+    
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenRead');
+    {$ENDIF}
+   end;   
   
-  {Get Share Mode}
-  ShareMode:=fmShareDenyNone;
-  if (AShareMode and FILE_SHARE_READ) = 0 then
+  {Get Share Mode (FILE_SHARE_DELETE not supported)}
+  if (AShareMode and (FILE_SHARE_READ or FILE_SHARE_WRITE)) = (FILE_SHARE_READ or FILE_SHARE_WRITE) then
+   begin
+    ShareMode:=fmShareDenyNone;
+
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                ShareMode = fmShareDenyNone');
+    {$ENDIF}
+   end
+  else if (AShareMode and FILE_SHARE_WRITE) = FILE_SHARE_WRITE then 
    begin
     ShareMode:=fmShareDenyRead;
-   end;
-  if (AShareMode and FILE_SHARE_WRITE) = 0 then
+
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                ShareMode = fmShareDenyRead');
+    {$ENDIF}
+   end
+  else if (AShareMode and FILE_SHARE_READ) = FILE_SHARE_READ then 
    begin
     ShareMode:=fmShareDenyWrite;
-   end;
-  if (AShareMode and FILE_SHARE_DELETE) = 0 then
+
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                ShareMode = fmShareDenyWrite');
+    {$ENDIF}
+   end
+  else
    begin
     ShareMode:=fmShareExclusive;
+    
+    {$IFDEF FILESYS_DEBUG}
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('                ShareMode = fmShareExclusive');
+    {$ENDIF}
    end;
   
   {Check Flags}
@@ -37071,6 +37163,41 @@ end;
 
 {==============================================================================}
 
+function TFileSystem.FileGetAttrEx(Handle:Integer):Integer; 
+{Get the Attributes of an existing entry with an open Handle}
+var
+ FileHandle:TFileHandle;
+begin
+ {Base Implementation}
+ Result:=-1;
+
+ if not ReaderLock then Exit;
+ try
+  if FDriver = nil then Exit;
+ 
+  {Get the Handle}
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  if FileHandle = nil then Exit;
+  try
+   {Check the Mode}
+   if FileHandle.OpenMode = fmOpenWrite then Exit;
+ 
+   {Check the Handle}
+   if FileHandle.HandleEntry = nil then Exit;
+ 
+   {Get Attributes} {Hide internal Attributes}
+   Result:=(FileHandle.HandleEntry.Attributes and FMaskAttributes); {faFindMask}
+  finally
+   {Unlock Handle}
+   FileHandle.WriterUnlock;
+  end; 
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+ 
+{==============================================================================}
+
 function TFileSystem.FileGetDateEx(Handle:Integer):TFileTime;
 {Get the Date/Time of an existing entry with an open Handle}
 {Note: Returned time is UTC}
@@ -51060,6 +51187,20 @@ end;
 
 {==============================================================================}
 
+function FSFileGetAttrEx(AHandle:Integer):Integer; inline;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {File Get Attr Ex}
+ Result:=FileSysDriver.FileGetAttrEx(AHandle);
+end;
+
+{==============================================================================}
+
 function FSFileGetDateEx(AHandle:Integer):TFileTime; inline;
 begin
  {}
@@ -52675,37 +52816,38 @@ begin
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
-    {Check Target}
-    if Length(Logging.Target) = 0 then Exit;
-    
-    {Check Handle}
-    if Logging.Handle = INVALID_HANDLE_VALUE then
+    {Check Target (Do not fail device start)}
+    if Length(Logging.Target) <> 0 then 
      begin
-      Result:=ERROR_OPERATION_FAILED;
-      
-      {Check File}
-      if FSFileExists(Logging.Target) then
+      {Check Handle}
+      if Logging.Handle = INVALID_HANDLE_VALUE then
        begin
-        {Open File}
-        Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
-        {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
-       end
-      else
-       begin
-        {Create File}
-        Logging.Handle:=FSFileCreate(Logging.Target);
-        {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
-        if Logging.Handle <> INVALID_HANDLE_VALUE then
+        Result:=ERROR_OPERATION_FAILED;
+        
+        {Check File}
+        if FSFileExists(Logging.Target) then
          begin
-          {Close File}
-          FSFileClose(Logging.Handle);
-          
           {Open File}
           Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
           {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
-         end; 
-       end;     
-     end;  
+         end
+        else
+         begin
+          {Create File}
+          Logging.Handle:=FSFileCreate(Logging.Target);
+          {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
+          if Logging.Handle <> INVALID_HANDLE_VALUE then
+           begin
+            {Close File}
+            FSFileClose(Logging.Handle);
+            
+            {Open File}
+            Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
+            {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
+           end; 
+         end;     
+       end;  
+     end;
     
     {Return Result}
     Result:=ERROR_SUCCESS;
