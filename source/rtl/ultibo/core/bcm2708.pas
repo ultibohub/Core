@@ -748,6 +748,7 @@ type
   {UART Properties}
   UART:TUARTDevice;
   {BCM2708 Properties}
+  Lock:TSpinHandle;                                                       {Device lock (Differs from lock in UART device) (Spin lock due to use by interrupt handler)}
   Address:Pointer;                                                        {Device register base address}
   ClockRate:LongWord;                                                     {Device clock rate}
   {Statistics Properties}                                        
@@ -967,6 +968,9 @@ procedure BCM2708UART0InterruptHandler(UART:PUARTDevice);
 
 procedure BCM2708UART0Receive(UART:PUARTDevice);
 procedure BCM2708UART0Transmit(UART:PUARTDevice);
+
+procedure BCM2708UART0EnableInterrupt(UART:PBCM2708UART0Device;Interrupt:LongWord); 
+procedure BCM2708UART0DisableInterrupt(UART:PBCM2708UART0Device;Interrupt:LongWord); 
 
 {==============================================================================}
 {BCM2708 UART1 Functions}
@@ -1597,7 +1601,7 @@ begin
      {Device}
      BCM2708UART0.UART.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2708UART0.UART.Device.DeviceType:=UART_TYPE_16650;
-     BCM2708UART0.UART.Device.DeviceFlags:=UART_FLAG_DATA_8BIT or UART_FLAG_DATA_7BIT or UART_FLAG_DATA_6BIT or UART_FLAG_DATA_5BIT or UART_FLAG_STOP_1BIT or UART_FLAG_STOP_2BIT or UART_FLAG_PARITY_ODD or UART_FLAG_PARITY_EVEN or UART_FLAG_FLOW_RTS_CTS;
+     BCM2708UART0.UART.Device.DeviceFlags:=UART_FLAG_DATA_8BIT or UART_FLAG_DATA_7BIT or UART_FLAG_DATA_6BIT or UART_FLAG_DATA_5BIT or UART_FLAG_STOP_1BIT or UART_FLAG_STOP_2BIT or UART_FLAG_PARITY_ODD or UART_FLAG_PARITY_EVEN or UART_FLAG_FLOW_RTS_CTS or UART_FLAG_PUSH_RX;
      BCM2708UART0.UART.Device.DeviceData:=nil;
      BCM2708UART0.UART.Device.DeviceDescription:=BCM2708_UART0_DESCRIPTION;
      {UART}
@@ -1619,6 +1623,7 @@ begin
      BCM2708UART0.UART.Properties.Parity:=SERIAL_PARITY_NONE;
      BCM2708UART0.UART.Properties.FlowControl:=SERIAL_FLOW_NONE;
      {BCM2708}
+     BCM2708UART0.Lock:=INVALID_HANDLE_VALUE;
      BCM2708UART0.Address:=Pointer(BCM2835_PL011_REGS_BASE);
      BCM2708UART0.ClockRate:=BCM2708_UART0_CLOCK_RATE;
      
@@ -4940,7 +4945,7 @@ begin
      GPIO_PIN_41:begin
        {Check Board Type}
        case BoardType of
-        BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI2B,BOARD_TYPE_RPI_ZERO:begin
+        BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI2B,BOARD_TYPE_RPI_ZERO,BOARD_TYPE_RPI_ZERO_W:begin
           {Do Not Set}
           Exit;
          end;
@@ -5056,7 +5061,7 @@ begin
      GPIO_PIN_41:begin
        {Check Board Type}
        case BoardType of
-        BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI2B,BOARD_TYPE_RPI_ZERO:begin
+        BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI2B,BOARD_TYPE_RPI_ZERO,BOARD_TYPE_RPI_ZERO_W:begin
           {Do Not Reset}
          end;
         else
@@ -6991,7 +6996,7 @@ begin
  {$ENDIF}
  
  {Set Interrupt FIFO Level}
- PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).IFLS:=BCM2835_PL011_IFLS_RXIFLSEL1_8 or BCM2835_PL011_IFLS_TXIFLSEL1_2; {BCM2835_PL011_IFLS_RXIFLSEL1_2}
+ PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).IFLS:=BCM2835_PL011_IFLS_RXIFLSEL1_8 or BCM2835_PL011_IFLS_TXIFLSEL1_8; {BCM2835_PL011_IFLS_RXIFLSEL1_2 / BCM2835_PL011_IFLS_TXIFLSEL1_2}
 
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2708:  Interrupt FIFO Level=' + IntToHex(PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).IFLS,8));
@@ -7020,6 +7025,18 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
+ 
+ {Allocate Lock}
+ PBCM2708UART0Device(UART).Lock:=SpinCreate;
+ if PBCM2708UART0Device(UART).Lock = INVALID_HANDLE_VALUE then
+  begin
+   if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Failed to create device lock');
+
+   EventDestroy(UART.TransmitWait);
+   EventDestroy(UART.ReceiveWait);
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end; 
  
  {Set Control (Enable UART)}
  PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).CR:=Control;
@@ -7081,11 +7098,17 @@ begin
  {Reset Control (Disable UART)}
  PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).CR:=0;
  
+ {Destroy Lock}
+ SpinDestroy(PBCM2708UART0Device(UART).Lock);
+ PBCM2708UART0Device(UART).Lock:=INVALID_HANDLE_VALUE;
+ 
  {Destroy Transmit Event}
  EventDestroy(UART.TransmitWait);
+ UART.TransmitWait:=INVALID_HANDLE_VALUE;
  
  {Destroy Receive Event}
  EventDestroy(UART.ReceiveWait);
+ UART.ReceiveWait:=INVALID_HANDLE_VALUE;
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
@@ -7130,6 +7153,13 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Check State}
+   if (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) and ((PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).FR and BCM2835_PL011_FR_RXFE) = 0) then
+    begin
+     {Set Event}
+     EventSet(UART.ReceiveWait);
+    end;
+  
    {Check Non Blocking}
    if ((Flags and UART_READ_NON_BLOCK) <> 0) and (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) then
     begin
@@ -7141,7 +7171,8 @@ begin
    MutexUnlock(UART.Lock);
    
    {Wait for Data}
-   if EventWait(UART.ReceiveWait) = ERROR_SUCCESS then
+   Status:=EventWaitEx(UART.ReceiveWait,UART_PUSH_TIMEOUT);
+   if Status = ERROR_SUCCESS then
     begin
      {Acquire the Lock}
      if MutexLock(UART.Lock) = ERROR_SUCCESS then
@@ -7214,6 +7245,20 @@ begin
        Exit;
       end;      
     end
+   else if Status = ERROR_WAIT_TIMEOUT then
+    begin
+     {Acquire the Lock}
+     if MutexLock(UART.Lock) = ERROR_SUCCESS then
+      begin
+       {Push Receive (Set Event)}
+       EventSet(UART.ReceiveWait);
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;      
+    end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
@@ -7257,6 +7302,13 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Check State}
+   if (EventState(UART.TransmitWait) <> EVENT_STATE_SIGNALED) and ((PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).FR and BCM2835_PL011_FR_TXFF) = 0) then
+    begin
+     {Set Event}
+     EventSet(UART.TransmitWait);
+    end;
+  
    {Check Non Blocking}
    if ((Flags and UART_WRITE_NON_BLOCK) <> 0) and (EventState(UART.TransmitWait) <> EVENT_STATE_SIGNALED) then
     begin
@@ -7300,6 +7352,9 @@ begin
        {Check Status}
        if (Status and BCM2835_PL011_FR_TXFF) <> 0 then
         begin
+         {Enable Transmit}
+         BCM2708UART0EnableInterrupt(PBCM2708UART0Device(UART),BCM2835_PL011_IMSC_TXIM);
+         
          {Reset Event}
          EventReset(UART.TransmitWait);
         end;        
@@ -7406,12 +7461,17 @@ end;
 {==============================================================================}
 
 procedure BCM2708UART0InterruptHandler(UART:PUARTDevice);
+{Interrupt handler for the BCM2708 UART0 device}
+{Note: Not intended to be called directly by applications}
 var
  Status:LongWord;
 begin
  {}
  {Check UART}
  if UART = nil then Exit;
+
+ {Acquire Lock}
+ if SpinLockIRQ(PBCM2708UART0Device(UART).Lock) <> ERROR_SUCCESS then Exit;
  
  {Update Statistics}
  Inc(PBCM2708UART0Device(UART).InterruptCount);
@@ -7433,7 +7493,11 @@ begin
      PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).ICR:=BCM2835_PL011_ICR_TXIC;
      
      {Send Transmit}
-     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2708UART0Transmit),UART,nil);
+     if WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2708UART0Transmit),UART,nil) = ERROR_SUCCESS then
+      begin
+       {Mask Transmit}
+       PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).IMSC:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).IMSC and not(BCM2835_PL011_IMSC_TXIM);
+      end; 
     end;
     
    {Check Receive}
@@ -7449,11 +7513,16 @@ begin
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
+ 
+ {Release Lock}
+ SpinUnlockIRQ(PBCM2708UART0Device(UART).Lock);
 end;
 
 {==============================================================================}
 
 procedure BCM2708UART0Receive(UART:PUARTDevice);
+{Receive handler for the BCM2708 UART0 device}
+{Note: Not intended to be called directly by applications}
 begin
  {}
  {Check UART}
@@ -7484,6 +7553,8 @@ end;
 {==============================================================================}
 
 procedure BCM2708UART0Transmit(UART:PUARTDevice);
+{Transmit handler for the BCM2708 UART0 device}
+{Note: Not intended to be called directly by applications}
 begin
  {}
  {Check UART}
@@ -7509,6 +7580,58 @@ begin
    {Release the Lock}
    MutexUnlock(UART.Lock);
   end;
+end;
+
+{==============================================================================}
+
+procedure BCM2708UART0EnableInterrupt(UART:PBCM2708UART0Device;Interrupt:LongWord); 
+{Enable the specified interrupt in the interrupt mask register of a BCM2708 UART0 device}
+{UART: The BCM2708 UART0 device to enable the interrupt for}
+{Interrupt: The interrupt to enable}
+
+{Note: Caller must hold the UART lock}
+begin
+ {}
+ {Acquire Lock}
+ if SpinLockIRQ(UART.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+
+ {Update Interrupt Mask} 
+ PBCM2835PL011Registers(UART.Address).IMSC:=PBCM2835PL011Registers(UART.Address).IMSC or Interrupt;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+
+ {Release Lock}
+ SpinUnlockIRQ(UART.Lock);
+end;
+
+{==============================================================================}
+
+procedure BCM2708UART0DisableInterrupt(UART:PBCM2708UART0Device;Interrupt:LongWord); 
+{Disable the specified interrupt in the interrupt mask register of a BCM2708 UART0 device}
+{Network: The BCM2708 UART0 device to disable the interrupt for}
+{Interrupt: The interrupt to disable}
+
+{Note: Caller must hold the UART lock}
+begin
+ {}
+ {Acquire Lock}
+ if SpinLockIRQ(UART.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Update Interrupt Mask} 
+ PBCM2835PL011Registers(UART.Address).IMSC:=PBCM2835PL011Registers(UART.Address).IMSC and not(Interrupt);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Release Lock}
+ SpinUnlockIRQ(UART.Lock);
 end;
 
 {==============================================================================}

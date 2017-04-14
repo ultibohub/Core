@@ -84,7 +84,7 @@ Syscalls
    
    Raspberry Pi3 (64-bit)
    
-    -mabi=lp64 (Note: Supported only by later versionsof GCC)
+    -mabi=lp64 (Note: Supported only by later versions of GCC)
     -march=armv8-a
     
   Build:

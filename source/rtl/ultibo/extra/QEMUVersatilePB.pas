@@ -57,19 +57,27 @@ uses GlobalConfig,
      VersatilePB,
      Platform,
      Threads,
+     PlatformQEMUVPB,
      DMA,
-     //PL080,        {ARM PrimeCell PL080 DMA driver} //To Do //Continuing
+     //PL08X,        {ARM PrimeCell PL080/PL081 DMA driver} //To Do //Continuing
+     Serial,
+     UART,
      PL011,        {ARM PrimeCell PL011 UART driver}
+     RTC,
+     PL031,        {ARM PrimeCell PL031 Real Time Clock driver}
      MMC,
      //PL180,        {ARM PrimeCell PL180 SDHCI driver}  //To Do //Continuing
      USB,
      //OHCI,         {USB OHCI Controller driver}  //To Do //Continuing
-     //SMSC91C11,    {SMC LAN91C11 Network driver} //To Do //Continuing
+     Network,
+     SMC91X,       {SMC LAN91C11 Network driver}
      Framebuffer,
      PL110,        {ARM PrimeCell PL110 Color LCD driver}
      Console,
      Keyboard,
      Mouse,
+     PS2,
+     PL050,        {ARM PrimeCell PL050 PS2 Keyboard/Mouse driver}
      Filesystem,
      EXTFS,
      FATFS,
@@ -81,6 +89,7 @@ uses GlobalConfig,
      Winsock2,
      Services,
      SysUtils;
+     
 
 {==============================================================================}
 {Global definitions}
@@ -89,10 +98,15 @@ uses GlobalConfig,
 {==============================================================================}
 var
  {QEMUVersatilePB specific variables}
- //To Do //Continuing 
+ QEMUVPB_REGISTER_DMA:LongBool = True;         {If True then register the QEMU VersatilePB DMA device during boot}
  QEMUVPB_REGISTER_UART0:LongBool = True;       {If True then register the QEMU VersatilePB UART0 device during boot}
- //To Do //Continuing 
+ QEMUVPB_REGISTER_RTC:LongBool = True;         {If True then register the QEMU VersatilePB RTC device during boot}
+ QEMUVPB_REGISTER_MMC0:LongBool = True;        {If True then register the QEMU VersatilePB MMC0 device during boot}
+ QEMUVPB_REGISTER_MMC1:LongBool = True;        {If True then register the QEMU VersatilePB MMC1 device during boot}
+ QEMUVPB_REGISTER_NETWORK:LongBool = True;     {If True then register the QEMU VersatilePB Network device during boot}
  QEMUVPB_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the QEMU VersatilePB Framebuffer device during boot}
+ QEMUVPB_REGISTER_MOUSE:LongBool = True;       {If True then register the QEMU VersatilePB Mouse device during boot}
+ QEMUVPB_REGISTER_KEYBOARD:LongBool = True;    {If True then register the QEMU VersatilePB Keyboard device during boot}
  
 {==============================================================================}
 {Initialization Functions}
@@ -121,11 +135,23 @@ begin
  {Check Initialized}
  if QEMUVersatilePBInitialized then Exit;
  
+ {Initialize Peripherals (Using information from QEMUVPBPeripheralInit)}
+ //PL08XDMA_ALIGNMENT:=DMA_ALIGNMENT;   //To Do //Continuing    
+ //PL08XDMA_MULTIPLIER:=DMA_MULTIPLIER;     
+ //PL08XDMA_SHARED_MEMORY:=DMA_SHARED_MEMORY;  
+ //PL08XDMA_NOCACHE_MEMORY:=DMA_NOCACHE_MEMORY; 
+ //PL08XDMA_BUS_ADDRESSES:=DMA_BUS_ADDRESSES;  
+ //PL08XDMA_CACHE_COHERENT:=DMA_CACHE_COHERENT;
+ 
  {Check Environment Variables}
  //To Do //Continuing 
 
  {Check DMA}
- //To Do //Continuing
+ if QEMUVPB_REGISTER_DMA then
+  begin
+   {Create DMA}
+   //PL080DMACreate(VERSATILEPB_DMAC_REGS_BASE,'',VERSATILEPB_IRQ_DMA); //To Do //Continuing
+  end;
  
  {Check UART0}
  if QEMUVPB_REGISTER_UART0 then
@@ -134,9 +160,47 @@ begin
    PL011UARTCreate(VERSATILEPB_UART0_REGS_BASE,'',VERSATILEPB_IRQ_UART0,PL011_UART_CLOCK_RATE);
   end;
   
- //To Do //Continuing //More devices //MMC, SMSC91C11, Mouse, Keyboard 
+ {Check RTC}
+ if QEMUVPB_REGISTER_RTC then
+  begin
+   {Create RTC}
+   PL031RTCCreate(VERSATILEPB_RTC_REGS_BASE,'',VERSATILEPB_IRQ_RTC);
+  end; 
+
+ //To Do //Continuing  //Clock and Timer devices
  
- //To Do //Clock and Timer devices
+ {Check MMC0}
+ if QEMUVPB_REGISTER_MMC0 then
+  begin
+   //To Do //Continuing
+  end;
+  
+ {Check MMC1}
+ if QEMUVPB_REGISTER_MMC1 then
+  begin
+   //To Do //Continuing
+  end;
+ 
+ {Check Network}
+ if QEMUVPB_REGISTER_NETWORK then
+  begin
+   {Create Network}
+   SMC91XNetworkCreate(VERSATILEPB_ETH_REGS_BASE,'',VERSATILEPB_IRQ_ETH);
+  end;
+ 
+ {Check Keyboard}
+ if QEMUVPB_REGISTER_KEYBOARD then
+  begin
+   {Create Keyboard}
+   PL050KeyboardCreate(VERSATILEPB_KMI0_REGS_BASE,'',VERSATILEPB_IRQ_SIC_KMI0,PL050_KEYBOARD_CLOCK_RATE);
+  end; 
+ 
+ {Check Mouse}
+ if QEMUVPB_REGISTER_MOUSE then
+  begin
+   {Create Mouse}
+   PL050MouseCreate(VERSATILEPB_KMI1_REGS_BASE,'',VERSATILEPB_IRQ_SIC_KMI1,PL050_MOUSE_CLOCK_RATE);
+  end; 
  
  {$IFNDEF CONSOLE_EARLY_INIT}
  {Check Framebuffer}
@@ -171,6 +235,9 @@ begin
    PL110FramebufferCreateSVGA(VERSATILEPB_CLCD_REGS_BASE,'',FRAMEBUFFER_DEFAULT_ROTATION,FRAMEBUFFER_DEFAULT_WIDTH,FRAMEBUFFER_DEFAULT_HEIGHT,FRAMEBUFFER_DEFAULT_DEPTH);
   end;
  {$ENDIF}
+ 
+ {Create Timer for ClockGetTotal (Every 60 seconds)}
+ ClockGetTimer:=TimerCreateEx(60000,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE,TTimerEvent(QEMUVPBClockGetTimer),nil); {Rescheduled Automatically}
  
  QEMUVersatilePBInitialized:=True;
 end;

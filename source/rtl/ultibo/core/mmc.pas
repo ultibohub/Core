@@ -809,7 +809,7 @@ const
  SD_CSD_STRUCT_VER_1_0  = 0;    {Standard Capacity}   
  SD_CSD_STRUCT_VER_2_0  = 1;    {High Capacity and Extended Capacity}    
  
- {SD SD Status Register (SSR) values} {See: Section 4.10.2 of SD Physical Layer Simplified Specification Version 4.10} 
+ {SD Status Register (SSR) values} {See: Section 4.10.2 of SD Physical Layer Simplified Specification Version 4.10} 
  {SD SSR Fields}
  SD_SSR_DAT_BUS_WIDTH          = 1;
  SD_SSR_SECURED_MODE           = 2;
@@ -923,7 +923,7 @@ const
  SD_SWITCH_STRUCT_VER_0       = 0;  {Bits 511:376 are defined (SD_SWITCH_MAXIMUM_CURRENT to SD_SWITCH_GROUP1_SELECTION)}
  SD_SWITCH_STRUCT_VER_1       = 1;  {Bits 511:272 are defined (SD_SWITCH_MAXIMUM_CURRENT to SD_SWITCH_GROUP1_BUSY_STATUS}
  
- {SD SD Configuration Register (SCR) values} {See: Section 5.6 of SD Physical Layer Simplified Specification Version 4.10}
+ {SD Configuration Register (SCR) values} {See: Section 5.6 of SD Physical Layer Simplified Specification Version 4.10}
  {SD SCR Fields}
  SD_SCR_STRUCTURE             = 1;
  SD_SCR_SD_SPEC               = 2;

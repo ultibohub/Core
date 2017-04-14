@@ -501,9 +501,7 @@ type
    function ReadCluster(ACluster:LongWord;var ABuffer):Boolean;
    function WriteCluster(ACluster:LongWord;const ABuffer):Boolean;
 
-   //function GetNextFreeClusterOld:LongWord; //To Do //Remove
    function GetNextFreeCluster:LongWord;
-   //function GetFreeClusterCountOld:LongWord; //To Do //Remove
    function GetFreeClusterCount:LongWord;
 
    function SetNextFreeCluster(ACluster:LongWord):Boolean;
@@ -1033,6 +1031,10 @@ begin
  try
   if FDriver = nil then Exit;
 
+  {$IFDEF FAT_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizePartitionId (PartitionId = ' + IntToStr(APartitionId) + ')');
+  {$ENDIF}
+  
   case APartitionId of
    pidExtended:begin
      {DOS Extended Partition}
@@ -1444,6 +1446,8 @@ end;
 
 function TFATPartitioner.AcceptPartition(ADevice:TDiskDevice;APartition,AParent:TDiskPartition;APartitionId:Byte):Boolean;
 {Note: Caller must hold the device, partition and parent lock}
+var
+ Volume:TDiskVolume;
 begin
  {}
  Result:=False;
@@ -1462,7 +1466,19 @@ begin
     if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
     
     {Check Partition and Volume}
-    if (FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil) and (FDriver.GetVolumeByDevice(ADevice,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
+    if FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
+     begin
+      Volume:=FDriver.GetVolumeByDevice(ADevice,True,FILESYS_LOCK_READ);
+      if Volume <> nil then
+       begin
+        try
+         {Check File System Type}
+         if Volume.FileSysType <> fsUNKNOWN then Exit;
+        finally  
+         Volume.ReaderUnlock;
+        end; 
+       end;
+     end; 
     
     {Check Parent}
     if AParent <> nil then
@@ -2275,6 +2291,10 @@ begin
   if AVolume = nil then Exit;
   if AVolume.Device = nil then Exit;
 
+  {$IFDEF FAT_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFormatter.FormatVolume (Name= ' + AVolume.Name + ')');
+  {$ENDIF}
+  
   {Check Accepted}
   if not AcceptVolume(AVolume,AFloppyType,AFileSysType) then Exit;
 
@@ -2725,83 +2745,6 @@ begin
 end;
 
 {==============================================================================}
-//To Do //Remove
-(*function TFATFileSystem.GetNextFreeClusterOld:LongWord;
-{Note: For speed uses the LastFreeCluster after first lookup}
-var
- Start:LongWord;
- Cluster:LongWord;
- //BlockNo:LongWord;
-begin
- {}
- Result:=fatUnknownCluster;
- 
- if not FBlocks.WriterLock then Exit;
- try
-  if FDriver = nil then Exit;
-  if FTotalClusterCount = 0 then Exit;
- 
-  {Check ReadOnly}
-  if FReadOnly then Exit;
- 
-  {Check Last Allocated}
-  if FLastFreeCluster = fatUnknownCluster then
-   begin
-    {Check Info Sector}
-    if FFATType = ftFAT32 then
-     begin
-      if not SectorLock then Exit;
-      try
-       if FSectorBuffer = nil then Exit;
-      
-       {Get Info Sector}
-       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-       if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).LastFreeCluster <> fatUnknownCluster then
-        begin
-         {Get Last Free Cluster}
-         FLastFreeCluster:=PFATInfoSector(FSectorBuffer).LastFreeCluster;
-        end;
-      finally
-       SectorUnlock;
-      end; 
-     end;
-   end;
-  
-  {Get Start}
-  Cluster:=0;
-  if FLastFreeCluster <> fatUnknownCluster then Cluster:=FLastFreeCluster;
-  Start:=Cluster;
-  
-  {Check each Cluster}
-  while Cluster < FTotalClusterCount do
-   begin
-    if Cluster >= FStartCluster then
-     begin
-      {Check Cluster}
-      if GetCluster(Cluster) = FFreeCluster then
-       begin
-        FLastFreeCluster:=Cluster;
-        Result:=FLastFreeCluster;
-        Exit;
-       end;
-     end;
-    
-    {Move next Cluster}
-    Inc(Cluster);
-    
-    {Check for Wrap}
-    if (Start > 0) and (Cluster = Start) then Exit;
-    if (Start > 0) and (Cluster >= FTotalClusterCount) then Cluster:=0;
-   end;
- finally
-  FBlocks.WriterUnlock;
- end; 
-end;*)
-
-{==============================================================================}
 
 function TFATFileSystem.GetNextFreeCluster:LongWord;
 {Note: For speed does direct FAT lookup instead of GetCluster}
@@ -2951,79 +2894,6 @@ begin
 end;
 
 {==============================================================================}
-//To Do //Remove
-(*function TFATFileSystem.GetFreeClusterCountOld:LongWord; 
-{Note: For speed uses the FreeClusterCount after first lookup}
-var
- //BlockNo:LongWord;
- Cluster:LongWord;
-begin
- {}
- Result:=0;
- 
- if FDriver = nil then Exit;
- if FTotalClusterCount = 0 then Exit;
-
- {Check ReadOnly}
- if FReadOnly then Exit;
- 
- {Check Free Count}
- if FFreeClusterCount = fatUnknownCluster then
-  begin
-   if not FBlocks.WriterLock then Exit;
-   try
-    {Check Info Sector}
-    if FFATType = ftFAT32 then
-     begin
-      if not SectorLock then Exit;
-      try
-       if FSectorBuffer = nil then Exit;
-      
-       {Get Info Sector}
-       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-       if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).FreeClusterCount <> fatUnknownCluster then
-        begin
-         {Get Free Cluster Count}
-         FFreeClusterCount:=PFATInfoSector(FSectorBuffer).FreeClusterCount;
-         Result:=FFreeClusterCount;
-         Exit;
-        end;
-      finally
-       SectorUnlock;
-      end; 
-     end;
-    
-    {Get Start}
-    Cluster:=0;
-    FFreeClusterCount:=0;
-    
-    {Check each Cluster}
-    while Cluster < FTotalClusterCount do
-     begin
-      if Cluster >= FStartCluster then
-       begin
-        {Check Cluster}
-        if GetCluster(Cluster) = FFreeCluster then
-         begin
-          Inc(FFreeClusterCount);
-         end;
-       end;
-      
-      {Move next Cluster}
-      Inc(Cluster);
-     end;
-   finally
-    FBlocks.WriterUnlock;
-   end; 
-  end;
-  
- Result:=FFreeClusterCount;
-end;*)
-
-{==============================================================================}
 
 function TFATFileSystem.GetFreeClusterCount:LongWord;
 {Note: For speed does direct FAT lookup instead of GetCluster}
@@ -3141,6 +3011,9 @@ begin
 
           {Move next Cluster}
           Inc(Cluster);
+          
+          {Check Cluster}
+          if Cluster >= FTotalClusterCount then Break;
          end;
        end
       else
@@ -3153,7 +3026,7 @@ begin
     FBlocks.WriterUnlock;
    end; 
   end;
-  
+ 
  Result:=FFreeClusterCount;
 end;
 

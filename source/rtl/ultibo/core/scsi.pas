@@ -361,7 +361,7 @@ type
   CommandLength:Byte;               {Command Length}
   DataLength:LongWord;              {Total Data Length}
   Data:Pointer;                     {Pointer to Data}
-  MessageOut:array[0..11] of Byte;  {Messge out buffer}
+  MessageOut:array[0..11] of Byte;  {Message out buffer}
   MessageIn:array[0..11] of Byte;   {Message in buffer}
   SenseCommandLength:Byte;          {Sense Command Length}
   SenseDataLength:LongWord;         {Sense Data Length}

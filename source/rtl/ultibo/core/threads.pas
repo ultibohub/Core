@@ -84,7 +84,7 @@ Threads
          IRQ or FIQ renabling.
          
 
-  Mutex - A mutually exlusive lock for controlling access to data. Threads yield while waiting to acquire the lock.
+  Mutex - A mutually exclusive lock for controlling access to data. Threads yield while waiting to acquire the lock.
           Non recursive (can only be acquired once by the same thread) (Recursive if MUTEX_FLAG_RECURSIVE specified)
           Not suitable for use by Interrupt handlers.
           Suitable for use on multiprocessor systems if the lock is allocated from shared memory (Determined during initialization).
@@ -189,7 +189,7 @@ Threads
            IRQ and FIQ Usage:
            ------------------
            
-           WorkerScheduleIRQ and WorkerSchedulerFIQ are designed to allow calling from interrupt handlers (IRQ or FIQ) and provide
+           WorkerScheduleIRQ and WorkerScheduleFIQ are designed to allow calling from interrupt handlers (IRQ or FIQ) and provide
            deadlock prevention mechanisms.
            
            WorkerScheduleIRQ relies on the fact the scheduler will either be bound to an IRQ or an FIQ, in either case IRQ is disabled
@@ -197,7 +197,7 @@ Threads
            This means that an IRQ cannot occur when the scheduler is active or while it is blocked by a lock, calls to this function
            from a IRQ interrupt handler cannot deadlock.
            
-           WorkerSchedulerFIQ checks for the assignment of the scheduler, if the scheduler is bound to an FIQ then it proceeds as per
+           WorkerScheduleFIQ checks for the assignment of the scheduler, if the scheduler is bound to an FIQ then it proceeds as per
            the IRQ version because the FIQ cannot occur when the scheduler is active or while it is blocked by a lock. If the scheduler
            if bound to an IRQ then this function reverts to using the Tasker instead to transfer FIQ operations to an IRQ handler.
            
@@ -260,6 +260,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Locale,Unicode,Sy
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
+{--$DEFINE SCHEDULER_YIELD_ALTERNATE} {Use alternate scheduler yield algorithm}
             
 {==============================================================================}
 const
@@ -413,18 +414,22 @@ const
  {Thread name constants}
  THREAD_NAME_LENGTH = 256;       {Length of thread name}
  
- IRQ_THREAD_NAME    = 'IRQ';
- FIQ_THREAD_NAME    = 'FIQ';
- SWI_THREAD_NAME    = 'SWI';
- IDLE_THREAD_NAME   = 'Idle';
- MAIN_THREAD_NAME   = 'Main';
- TIMER_THREAD_NAME  = 'Timer';
- WORKER_THREAD_NAME = 'Worker';
- RTL_THREAD_NAME    = 'RTL Thread';
+ IRQ_THREAD_NAME             = 'IRQ';
+ FIQ_THREAD_NAME             = 'FIQ';
+ SWI_THREAD_NAME             = 'SWI';
+ IDLE_THREAD_NAME            = 'Idle';
+ MAIN_THREAD_NAME            = 'Main';
+ TIMER_THREAD_NAME           = 'Timer';
+ WORKER_THREAD_NAME          = 'Worker';
+ TIMER_PRIORITY_THREAD_NAME  = 'Priority Timer';
+ WORKER_PRIORITY_THREAD_NAME = 'Priority Worker';
+ RTL_THREAD_NAME             = 'RTL Thread';
  
  {Thread priority constants}
- TIMER_THREAD_PRIORITY  = THREAD_PRIORITY_NORMAL;
- WORKER_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL;
+ TIMER_THREAD_PRIORITY           = THREAD_PRIORITY_NORMAL;
+ WORKER_THREAD_PRIORITY          = THREAD_PRIORITY_NORMAL;
+ TIMER_PRIORITY_THREAD_PRIORITY  = THREAD_PRIORITY_HIGHEST;
+ WORKER_PRIORITY_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER;
  
  {Thread create constants}
  THREAD_CREATE_NONE      = $00000000;
@@ -487,6 +492,7 @@ const
  TIMER_FLAG_RESCHEDULE = $00000001;     {Timer should be rescheduled each time the event completes}
  TIMER_FLAG_IMMEDIATE  = $00000002;     {Timer event should be executed immediately and then each interval milliseconds}
  TIMER_FLAG_WORKER     = $00000004;     {Timer event should be executed by a worker thread instead of a timer thread}
+ TIMER_FLAG_PRIORITY   = $00000008;     {Timer event should be executed by a priority timer thread}
  
  {Timer key constants}
  TIMER_KEY_NONE = Integer($7FFFFFFF);   {Null key value returned from an empty Timer list}
@@ -505,6 +511,12 @@ const
  WORKER_FLAG_TERMINATE  = $00000010;    {Internal flag to tell worker execute to terminate the worker thread}
  WORKER_FLAG_IRQ        = $00000020;    {Internal flag to tell worker execute to free IRQ memory when the request is completed}
  WORKER_FLAG_FIQ        = $00000040;    {Internal flag to tell worker execute to free FIQ memory when the request is completed}
+ WORKER_FLAG_PRIORITY   = $00000080;    {Worker task should be executed by a priority worker thread}
+ 
+ WORKER_FLAG_INTERNAL = WORKER_FLAG_CANCEL or WORKER_FLAG_NOFREE or WORKER_FLAG_TERMINATE or WORKER_FLAG_IRQ or WORKER_FLAG_FIQ; {Internal only flags}
+ 
+ WORKER_FLAG_EXCLUDED_IRQ = WORKER_FLAG_RESCHEDULE or WORKER_FLAG_IMMEDIATE; {Excluded flags}
+ WORKER_FLAG_EXCLUDED_FIQ = WORKER_FLAG_RESCHEDULE or WORKER_FLAG_IMMEDIATE; {Excluded flags}
  
  {Tasker task constants}
  TASKER_TASK_THREADSENDMESSAGE = 1;  {Perform a ThreadSendMessage() function using the tasker list}
@@ -841,7 +853,7 @@ type
   Messages:TMessageList;         {Messageslot message queue}
   Wait:TThreadWait;              {Wait function to call to wait on the Messageslot if there are no messages}
   WaitEx:TThreadWaitEx;          {Wait function to call to wait with timeout on the Messageslot if there are no messages}
-  Release:TThreadRelease;        {Release function to call if any threads are waiting when a message if sent}
+  Release:TThreadRelease;        {Release function to call if any threads are waiting when a message is sent}
   Abandon:TThreadAbandon;        {Abandon function to call if any threads are waiting when Messageslot is destroyed}
   {Internal Properties}
   Prev:PMessageslotEntry;        {Previous entry in Messageslot table}
@@ -1188,7 +1200,9 @@ var
  
  SchedulerPriorityMask:array of LongWord;         {Mask of ready threads at each priority level (One per CPU, allocated by scheduler initialization) (Protected by InterlockedOr/And)}
 
+ {$IFNDEF SCHEDULER_YIELD_ALTERNATE}
  SchedulerYieldCurrent:array of LongBool;         {Scheduler yield to current priority level status (One per CPU, allocated by scheduler initialization)}
+ {$ENDIF}
  SchedulerStarvationNext:array of LongWord;       {Scheduler starvation priority round robin (One per CPU, allocated by scheduler initialization)}
  SchedulerStarvationQuantum:array of LongWord;    {Quantum for thread starvation checks per CPU (One per CPU, allocated by scheduler initialization)}
  
@@ -1450,7 +1464,7 @@ var
 var
  {Thread SetupStack Handlers}
  ThreadSetupStackHandler:TThreadSetupStack;
-
+ 
 {==============================================================================}
 {External Declarations}
 procedure Pascalmain; external name 'PASCALMAIN'; 
@@ -1474,6 +1488,8 @@ function IdleExecute(Parameter:Pointer):PtrInt;
 function MainExecute(Parameter:Pointer):PtrInt;
 function TimerExecute(Parameter:Pointer):PtrInt;
 function WorkerExecute(Parameter:Pointer):PtrInt;
+function TimerPriorityExecute(Parameter:Pointer):PtrInt;
+function WorkerPriorityExecute(Parameter:Pointer):PtrInt;
 
 function IdleCalibrate:LongWord;
 
@@ -1647,6 +1663,7 @@ function ThreadSetLocale(Thread:TThreadHandle;Locale:LCID):LongWord;
 function ThreadGetTimes(Thread:TThreadHandle;var CreateTime,ExitTime,KernelTime:Int64):LongWord;
 function ThreadGetSwitchCount(Thread:TThreadHandle;var SwitchCount:Int64):LongWord;
 
+function ThreadGetStackFree:LongWord;
 function ThreadGetStackSize(Thread:TThreadHandle):LongWord;
 function ThreadGetStackBase(Thread:TThreadHandle):PtrUInt;
 function ThreadSetStackBase(Thread:TThreadHandle;StackBase:PtrUInt):LongWord;
@@ -1815,10 +1832,15 @@ function WorkerScheduleEx(Interval,Flags:LongWord;Task:TWorkerTask;Data:Pointer;
 function WorkerCancel(Worker:TWorkerHandle):LongWord;
 
 function WorkerScheduleIRQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
-function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerScheduleIRQEx(Affinity,Flags:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
 
-function WorkerIncrease(Count:LongWord):LongWord;
-function WorkerDecrease(Count:LongWord):LongWord;
+function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerScheduleFIQEx(Affinity,Flags:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+
+function WorkerIncrease(Count:LongWord):LongWord; inline;
+function WorkerIncreaseEx(Count:LongWord;Priority:Boolean):LongWord;
+function WorkerDecrease(Count:LongWord):LongWord; inline;
+function WorkerDecreaseEx(Count:LongWord;Priority:Boolean):LongWord;
 
 procedure WorkerTimer(WorkerRequest:PWorkerRequest);
 
@@ -1936,6 +1958,7 @@ function EventGetCount:LongWord; inline;
 function TimerGetCount:LongWord; inline;
 
 function WorkerGetCount:LongWord; inline;
+function WorkerGetPriorityCount:LongWord; inline;
 
 function TaskerGetCount:LongWord; inline;
 
@@ -2106,11 +2129,17 @@ var
  TimerTableLock:TSpinHandle;
  TimerTableCount:LongWord;
  TimerMessageslot:TMessageslotHandle;
+ TimerPriorityMessageslot:TMessageslotHandle;
  
  WorkerThreadLock:TSpinHandle;
  WorkerThreadCount:LongWord;
  WorkerThreadNext:LongWord;
  WorkerMessageslot:TMessageslotHandle;
+ 
+ WorkerPriorityThreadLock:TSpinHandle;
+ WorkerPriorityThreadCount:LongWord;
+ WorkerPriorityThreadNext:LongWord;
+ WorkerPriorityMessageslot:TMessageslotHandle;
 
  TaskerList:PTaskerList;
  
@@ -2271,11 +2300,13 @@ begin
  {Setup THREAD_NAME_DEFAULT}
  THREAD_NAME_DEFAULT:=RTL_THREAD_NAME;
  
- {Setup TIMER_THREAD_COUNT}
+ {Setup TIMER_THREAD_COUNT/TIMER_PRIORITY_THREAD_COUNT}
  if TIMER_THREAD_COUNT < 1 then TIMER_THREAD_COUNT:=1;
+ if TIMER_PRIORITY_THREAD_COUNT < 1 then TIMER_PRIORITY_THREAD_COUNT:=1;
  
- {Setup WORKER_THREAD_COUNT}
+ {Setup WORKER_THREAD_COUNT/WORKER_PRIORITY_THREAD_COUNT}
  if WORKER_THREAD_COUNT < 1 then WORKER_THREAD_COUNT:=1;
+ if WORKER_PRIORITY_THREAD_COUNT < 1 then WORKER_PRIORITY_THREAD_COUNT:=1;
  
  {Setup System CPUCount}
  SystemCPUCount:=SCHEDULER_CPU_COUNT;
@@ -2726,6 +2757,29 @@ begin
    ThreadSetPriority(Thread,TIMER_THREAD_PRIORITY);
   end; 
 
+ {Create Timer Priority Messageslot}
+ TimerPriorityMessageslot:=MessageslotCreateEx(TIMER_MESSAGESLOT_MAXIMUM,TimerGetMessageslotFlags);
+  
+ {Create Timer Priority Threads}
+ for Count:=0 to TIMER_PRIORITY_THREAD_COUNT - 1 do
+  begin
+   {Create Timer Priority Thread}
+   Thread:=BeginThread(TimerPriorityExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
+   if Thread = INVALID_HANDLE_VALUE then 
+    begin
+     {$IFDEF THREAD_DEBUG}
+     if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create timer priority thread, System Halted');
+     {$ENDIF}
+     
+     Halt;
+    end;
+   {Setup Timer Priority Thread}
+   {Name}
+   ThreadSetName(Thread,TIMER_PRIORITY_THREAD_NAME + IntToStr(Count));
+   {Priority}
+   ThreadSetPriority(Thread,TIMER_PRIORITY_THREAD_PRIORITY);
+  end; 
+  
  {Create Worker Lock}
  WorkerThreadLock:=SpinCreate;
  WorkerThreadCount:=0;
@@ -2754,6 +2808,36 @@ begin
    ThreadSetPriority(Thread,WORKER_THREAD_PRIORITY);
    
    Inc(WorkerThreadNext);
+  end;
+ 
+ {Create Worker Priority Lock}
+ WorkerPriorityThreadLock:=SpinCreate;
+ WorkerPriorityThreadCount:=0;
+ WorkerPriorityThreadNext:=0;
+ 
+ {Create Worker Priority Messageslot}
+ WorkerPriorityMessageslot:=MessageslotCreateEx(WORKER_MESSAGESLOT_MAXIMUM,WorkerGetMessageslotFlags);
+ 
+ {Create Worker Priority Threads} 
+ for Count:=0 to WORKER_PRIORITY_THREAD_COUNT - 1 do
+  begin
+   {Create Worker Priority Thread}
+   Thread:=BeginThread(WorkerPriorityExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
+   if Thread = INVALID_HANDLE_VALUE then 
+    begin
+     {$IFDEF THREAD_DEBUG}
+     if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create worker priority thread, System Halted');
+     {$ENDIF}
+     
+     Halt;
+    end;
+   {Setup Worker Priority Thread}
+   {Name}
+   ThreadSetName(Thread,WORKER_PRIORITY_THREAD_NAME + IntToStr(WorkerPriorityThreadNext));
+   {Priority}
+   ThreadSetPriority(Thread,WORKER_PRIORITY_THREAD_PRIORITY);
+   
+   Inc(WorkerPriorityThreadNext);
   end;
  
  {Create Tasker List}
@@ -2885,9 +2969,11 @@ begin
  {Setup SchedulerPriorityMask}
  SetLength(SchedulerPriorityMask,SCHEDULER_CPU_COUNT);
 
+ {$IFNDEF SCHEDULER_YIELD_ALTERNATE}
  {Setup SchedulerYieldCurrent}
  SetLength(SchedulerYieldCurrent,SCHEDULER_CPU_COUNT);
-
+ {$ENDIF}
+ 
  {Setup SchedulerStarvationNext}
  SetLength(SchedulerStarvationNext,SCHEDULER_CPU_COUNT);
  
@@ -3104,8 +3190,10 @@ begin
    {Initialize SchedulerPriorityMask}
    SchedulerPriorityMask[Count]:=0;
 
+   {$IFNDEF SCHEDULER_YIELD_ALTERNATE}
    {Initialize SchedulerYieldCurrent}
    SchedulerYieldCurrent[Count]:=False;
+   {$ENDIF}
    
    {Initialize SchedulerStarvationNext}
    SchedulerStarvationNext[Count]:=THREAD_PRIORITY_NORMAL;
@@ -3889,9 +3977,18 @@ begin
                 {Submit Worker Request}
                 FillChar(Message,SizeOf(TMessage),0);
                 Message.Msg:=LongWord(WorkerRequest);
-                MessageslotSend(WorkerMessageslot,Message);
                 
-                {Worker Request will NOT be freed by WorkerExecute}
+                {Check the Flags}
+                if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
+                 begin
+                  MessageslotSend(WorkerMessageslot,Message);
+                 end
+                else
+                 begin
+                  MessageslotSend(WorkerPriorityMessageslot,Message);
+                 end;
+                
+                {Worker Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
                end; 
              end;            
            end; 
@@ -4024,6 +4121,231 @@ begin
 end;
 
 {==============================================================================}
+
+function TimerPriorityExecute(Parameter:Pointer):PtrInt;
+var
+ Ticks:Integer;
+ Flags:LongWord;
+ Data:Pointer;
+ Event:TTimerEvent;
+ 
+ Message:TMessage;
+ Timer:TTimerHandle;
+ TimerEntry:PTimerEntry;
+ WorkerRequest:PWorkerRequest;
+begin
+ {}
+ Result:=0;
+ try
+  {High priority implementation of the timer threads, see TimerExecute() for more information}
+  
+  {Update Priority}
+  ThreadSleep({$IFDEF SCHEDULER_YIELD_ALTERNATE}1{$ELSE}0{$ENDIF});
+  
+  while True do
+   begin
+    {Wait to Receive Message}
+    FillChar(Message,SizeOf(TMessage),0);
+    if MessageslotReceive(TimerPriorityMessageslot,Message) = ERROR_SUCCESS then
+     begin
+      {Process Message}
+      Timer:=TTimerHandle(Message.Msg);
+      
+      {Check Timer}
+      if Timer <> INVALID_HANDLE_VALUE then
+       begin
+        {Check the Handle}
+        TimerEntry:=PTimerEntry(Timer);
+        if (TimerEntry <> nil) and (TimerEntry.Signature = TIMER_SIGNATURE) then
+         begin
+          {Acquire the Lock}
+          if SpinLock(TimerEntry.Lock) = ERROR_SUCCESS then 
+           begin
+            try
+             {Get the Event and Data}
+             Event:=TimerEntry.Event;
+             Data:=TimerEntry.Data;
+             
+             {Get the Flags}
+             Flags:=TimerEntry.Flags;
+             
+             {Check the State}
+             if TimerEntry.State = TIMER_STATE_ENABLED then
+              begin
+               {Check the Flags}
+               if (TimerEntry.Flags and TIMER_FLAG_RESCHEDULE) <> 0 then
+                begin
+                 {Calculate Ticks}
+                 Ticks:=CLOCK_TICKS_PER_MILLISECOND * TimerEntry.Interval;
+            
+                 {Insert in List}
+                 TimerInsertKey(Timer,Ticks);
+                end
+               else
+                begin
+                 {Set State}
+                 TimerEntry.State:=TIMER_STATE_DISABLED;
+                end;
+              end;
+            finally
+             {Release the Lock}
+             SpinUnlock(TimerEntry.Lock);
+            end;           
+            
+            {Check the Flags}
+            if (Flags and TIMER_FLAG_WORKER) = 0 then
+             begin
+              {Check the Event}
+              if Assigned(Event) then
+               begin
+                {Call the Event}
+                Event(Data);
+               end;
+             end
+            else 
+             begin
+              {Get Worker Request}
+              WorkerRequest:=PWorkerRequest(PtrUInt(TimerEntry) + PtrUInt(SizeOf(TTimerEntry)));
+              if (WorkerRequest <> nil) and (WorkerRequest.Signature = WORKER_SIGNATURE) then
+               begin
+                {Submit Worker Request}
+                FillChar(Message,SizeOf(TMessage),0);
+                Message.Msg:=LongWord(WorkerRequest);
+                
+                {Check the Flags}
+                if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
+                 begin
+                  MessageslotSend(WorkerMessageslot,Message);
+                 end
+                else
+                 begin
+                  MessageslotSend(WorkerPriorityMessageslot,Message);
+                 end;
+                
+                {Worker Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
+               end; 
+             end;            
+           end; 
+         end; 
+       end; 
+     end;
+   end; 
+ except
+  on E: Exception do
+   begin
+    if THREAD_LOG_ENABLED then ThreadLogError('TimerPriorityThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+   end;
+ end; 
+end;
+  
+{==============================================================================}
+
+function WorkerPriorityExecute(Parameter:Pointer):PtrInt;
+var
+ Data:Pointer;
+ Task:TWorkerTask;
+ Callback:TWorkerCallback; 
+
+ Flags:LongWord; 
+ Message:TMessage;
+ WorkerRequest:PWorkerRequest;
+begin
+ {}
+ Result:=0;
+ try
+  {High priority implementation of the worker threads, see WorkerExecute() for more information}
+
+  {Update Priority Worker Count}
+  if SpinLock(WorkerPriorityThreadLock) = ERROR_SUCCESS then
+   begin
+    Inc(WorkerPriorityThreadCount);
+    
+    SpinUnlock(WorkerPriorityThreadLock);
+   end;
+ 
+  {Update Priority}
+  ThreadSleep({$IFDEF SCHEDULER_YIELD_ALTERNATE}1{$ELSE}0{$ENDIF});
+  
+  while True do
+   begin
+    {Wait to Receive Message}
+    FillChar(Message,SizeOf(TMessage),0);
+    if MessageslotReceive(WorkerPriorityMessageslot,Message) = ERROR_SUCCESS then
+     begin
+      {Process Message}
+      WorkerRequest:=PWorkerRequest(Message.Msg);
+      
+      {Check Worker Request}
+      if (WorkerRequest <> nil) and (WorkerRequest.Signature = WORKER_SIGNATURE)  then
+       begin
+        {Get the Task, Data and Callback}
+        Task:=WorkerRequest.Task;
+        Data:=WorkerRequest.Data;
+        Callback:=WorkerRequest.Callback;
+      
+        {Get the Flags}
+        Flags:=WorkerRequest.Flags;
+        
+        {Check Flags}
+        if (Flags and WORKER_FLAG_NOFREE) = 0 then
+         begin
+          if (Flags and WORKER_FLAG_IRQ) <> 0 then
+           begin
+            {Free Worker Request}
+            FreeIRQMem(WorkerRequest);
+           end
+          else if (Flags and WORKER_FLAG_FIQ) <> 0 then
+           begin
+            {Free Worker Request}
+            FreeFIQMem(WorkerRequest);
+           end
+          else
+           begin         
+            {Free Worker Request}
+            FreeMem(WorkerRequest);
+           end; 
+         end; 
+ 
+        {Check the Task}
+        if Assigned(Task) then
+         begin
+          {Call the Task}
+          Task(Data);
+          
+          {Check the Callback}
+          if Assigned(Callback) then
+           begin
+            {Call the Callback}
+            Callback(Data);
+           end;
+         end;
+         
+        {Check Flags}
+        if (Flags and WORKER_FLAG_TERMINATE) <> 0 then
+         begin
+          {Terminate Thread}
+          Break;
+         end;
+       end;
+     end;
+   end; 
+  
+  {Update Priority Worker Count}
+  if SpinLock(WorkerPriorityThreadLock) = ERROR_SUCCESS then
+   begin
+    Dec(WorkerPriorityThreadCount);
+    
+    SpinUnlock(WorkerPriorityThreadLock);
+   end;
+ except
+  on E: Exception do
+   begin
+    if THREAD_LOG_ENABLED then ThreadLogError('WorkerPriorityThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+   end;
+ end; 
+end;
+  
+{==============================================================================}
     
 function IdleCalibrate:LongWord;
 {Calibrate the idle thread loop by counting the number of loops in 100ms}
@@ -4058,7 +4380,7 @@ begin
    while ClockGetTotal < Target do
     begin
      {Delay}
-     MicrosecondDelayEx(SCHEDULER_IDLE_OFFSET * 1000,SCHEDULER_IDLE_WAIT); {Offset * 1ms}
+     MicrosecondDelayEx(SCHEDULER_IDLE_OFFSET * 1000,False); {Offset * 1ms} {Not SCHEDULER_IDLE_WAIT interrupts are not enabled}
    
      {Increment Count}
      Inc(UtilizationCurrent[CurrentCPU],SCHEDULER_IDLE_OFFSET);
@@ -6217,6 +6539,7 @@ function CriticalSectionLockEx(CriticalSection:TCriticalSectionHandle;Timeout:Lo
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
+ Count:LongWord;
  Unlock:Boolean;
  WaitResult:LongWord;
  CriticalSectionEntry:PCriticalSectionEntry;
@@ -6258,122 +6581,173 @@ begin
  else
   begin
    {Use the Default method}
-   {Lock the CriticalSection}
-   if SpinLock(CriticalSectionEntry.Lock) = ERROR_SUCCESS then
+   {Check State and Owner}
+   if (CriticalSectionEntry.State = CRITICAL_SECTION_STATE_LOCKED) and (CriticalSectionEntry.Owner = ThreadGetCurrent) then
     begin
-     Unlock:=True;
-     try
-      {Check Signature}
-      if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-
-      {Check Timeout}
-      if Timeout = 0 then
-       begin
-        {Check State}
-        Result:=ERROR_WAIT_TIMEOUT;
-        if (CriticalSectionEntry.State <> CRITICAL_SECTION_STATE_UNLOCKED) and (CriticalSectionEntry.Owner <> ThreadGetCurrent) then Exit;
-       end; 
+     {Update Count}
+     Inc(CriticalSectionEntry.Count); 
      
-      {Check State}
-      if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
-       begin
-        {Set State}
-        CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
-        
-        {Set Count}
-        CriticalSectionEntry.Count:=1;
-        
-        {Set Owner}
-        CriticalSectionEntry.Owner:=ThreadGetCurrent;
-       end
-      else
-       begin
-        {Check Owner}
-        if CriticalSectionEntry.Owner = ThreadGetCurrent then
-         begin        
-          {Update Count}
-          Inc(CriticalSectionEntry.Count);
-         end
-        else
-         begin        
-          {Check List}
-          if CriticalSectionEntry.List = INVALID_HANDLE_VALUE then
-           begin
-            {Create List}
-            CriticalSectionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_SECTION,SchedulerGetListFlags(LIST_TYPE_WAIT_SECTION));
-           end; 
-
-          {Check Timeout}
-          if Timeout = INFINITE then
-           begin
-            {Wait on CriticalSection}
-            CriticalSectionEntry.Wait(CriticalSectionEntry.List,CriticalSectionEntry.Lock,LOCK_FLAG_NONE);
-            Unlock:=False;
-            
-            {Check Result}
-            WaitResult:=ThreadGetWaitResult;
-            if WaitResult = WAIT_TIMEOUT then
-             begin
-              Result:=ERROR_WAIT_TIMEOUT;
-              Exit;
-             end
-            else if WaitResult = WAIT_ABANDONED then 
-             begin
-              Result:=ERROR_WAIT_ABANDONED;
-              Exit;
-             end
-            else if WaitResult <> ERROR_SUCCESS then
-             begin
-              Result:=WaitResult;
-              Exit;
-             end;         
-            
-            {Lock CriticalSection (Infinite Wait)}
-            Result:=CriticalSectionLockEx(CriticalSection,INFINITE);
-            Exit;
-           end
-          else
-           begin
-            {Wait on CriticalSection with Timeout} 
-            CriticalSectionEntry.WaitEx(CriticalSectionEntry.List,CriticalSectionEntry.Lock,LOCK_FLAG_NONE,Timeout);
-            Unlock:=False;
-            
-            {Check Result}
-            WaitResult:=ThreadGetWaitResult;
-            if WaitResult = WAIT_TIMEOUT then
-             begin
-              Result:=ERROR_WAIT_TIMEOUT;
-              Exit;
-             end
-            else if WaitResult = WAIT_ABANDONED then 
-             begin
-              Result:=ERROR_WAIT_ABANDONED;
-              Exit;
-             end
-            else if WaitResult <> ERROR_SUCCESS then
-             begin
-              Result:=WaitResult;
-              Exit;
-             end;         
-             
-            {Lock CriticalSection (No Wait)}
-            Result:=CriticalSectionLockEx(CriticalSection,0);
-            Exit;
-           end; 
-         end; 
-       end;       
-      
-      {Return Result}
-      Result:=ERROR_SUCCESS; 
-     finally
-      {Unlock the CriticalSection}
-      if Unlock then SpinUnlock(CriticalSectionEntry.Lock);
-     end;
+     {Return Result}
+     Result:=ERROR_SUCCESS; 
     end
    else
     begin
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
+     {Lock the CriticalSection}
+     if SpinLock(CriticalSectionEntry.Lock) = ERROR_SUCCESS then
+      begin
+       Unlock:=True;
+       try
+        {Check Signature}
+        if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
+  
+        {Check Timeout}
+        if Timeout = 0 then
+         begin
+          {Check State}
+          Result:=ERROR_WAIT_TIMEOUT;
+          if (CriticalSectionEntry.State <> CRITICAL_SECTION_STATE_UNLOCKED) and (CriticalSectionEntry.Owner <> ThreadGetCurrent) then Exit;
+         end; 
+        
+        {Check State}
+        if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
+         begin
+          {Set State}
+          CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
+          
+          {Set Count}
+          CriticalSectionEntry.Count:=1;
+          
+          {Set Owner}
+          CriticalSectionEntry.Owner:=ThreadGetCurrent;
+         end
+        else
+         begin
+          {Check Owner}
+          if CriticalSectionEntry.Owner = ThreadGetCurrent then
+           begin        
+            {Update Count}
+            Inc(CriticalSectionEntry.Count);
+           end
+          else
+           begin 
+            {Check Spin Count}
+            if CriticalSectionEntry.SpinCount > 0 then
+             begin
+              Count:=0;
+              
+              {Check Count and State}
+              while (Count < CriticalSectionEntry.SpinCount) and (CriticalSectionEntry.State <> CRITICAL_SECTION_STATE_UNLOCKED) do
+               begin
+                {Unlock the CriticalSection}
+                SpinUnlock(CriticalSectionEntry.Lock);
+               
+                {Increment Count}
+                Inc(Count);
+                
+                {Lock the CriticalSection}
+                if SpinLock(CriticalSectionEntry.Lock) <> ERROR_SUCCESS then Exit;
+                
+                {Check Signature}
+                if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
+               end;
+               
+              {Check State} 
+              if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
+               begin
+                {Set State}
+                CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
+                
+                {Set Count}
+                CriticalSectionEntry.Count:=1;
+                
+                {Set Owner}
+                CriticalSectionEntry.Owner:=ThreadGetCurrent;
+               
+                {Return Result}
+                Result:=ERROR_SUCCESS; 
+                Exit;
+               end;
+             end;
+            
+            {Check List}
+            if CriticalSectionEntry.List = INVALID_HANDLE_VALUE then
+             begin
+              {Create List}
+              CriticalSectionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_SECTION,SchedulerGetListFlags(LIST_TYPE_WAIT_SECTION));
+             end; 
+  
+            {Check Timeout}
+            if Timeout = INFINITE then
+             begin
+              {Wait on CriticalSection}
+              CriticalSectionEntry.Wait(CriticalSectionEntry.List,CriticalSectionEntry.Lock,LOCK_FLAG_NONE);
+              Unlock:=False;
+              
+              {Check Result}
+              WaitResult:=ThreadGetWaitResult;
+              if WaitResult = WAIT_TIMEOUT then
+               begin
+                Result:=ERROR_WAIT_TIMEOUT;
+                Exit;
+               end
+              else if WaitResult = WAIT_ABANDONED then 
+               begin
+                Result:=ERROR_WAIT_ABANDONED;
+                Exit;
+               end
+              else if WaitResult <> ERROR_SUCCESS then
+               begin
+                Result:=WaitResult;
+                Exit;
+               end;         
+              
+              {Lock CriticalSection (Infinite Wait)}
+              Result:=CriticalSectionLockEx(CriticalSection,INFINITE);
+              Exit;
+             end
+            else
+             begin
+              {Wait on CriticalSection with Timeout} 
+              CriticalSectionEntry.WaitEx(CriticalSectionEntry.List,CriticalSectionEntry.Lock,LOCK_FLAG_NONE,Timeout);
+              Unlock:=False;
+              
+              {Check Result}
+              WaitResult:=ThreadGetWaitResult;
+              if WaitResult = WAIT_TIMEOUT then
+               begin
+                Result:=ERROR_WAIT_TIMEOUT;
+                Exit;
+               end
+              else if WaitResult = WAIT_ABANDONED then 
+               begin
+                Result:=ERROR_WAIT_ABANDONED;
+                Exit;
+               end
+              else if WaitResult <> ERROR_SUCCESS then
+               begin
+                Result:=WaitResult;
+                Exit;
+               end;         
+               
+              {Lock CriticalSection (No Wait)}
+              Result:=CriticalSectionLockEx(CriticalSection,0);
+              Exit;
+             end; 
+           end; 
+         end;       
+        
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       finally
+        {Unlock the CriticalSection}
+        if Unlock then SpinUnlock(CriticalSectionEntry.Lock);
+       end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+      end;    
+    end;
   end; 
 end;
 
@@ -6425,49 +6799,61 @@ begin
  else
   begin
    {Use the Default method}
-   {Lock the CriticalSection}
-   if SpinLock(CriticalSectionEntry.Lock) = ERROR_SUCCESS then
+   {Check Count}
+   if CriticalSectionEntry.Count > 1 then
     begin
-     try
-      {Check Signature}
-      Result:=ERROR_INVALID_PARAMETER;
-      if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-
-      {Check Count}
-      Result:=ERROR_INVALID_FUNCTION;
-      if CriticalSectionEntry.Count = 0 then Exit;
-      
-      {Update Count}
-      Dec(CriticalSectionEntry.Count);
-      
-      {Check Count}
-      if CriticalSectionEntry.Count = 0 then
-       begin
-        {Set State}
-        CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_UNLOCKED;
-        
-        {Set Owner}
-        CriticalSectionEntry.Owner:=INVALID_HANDLE_VALUE;
-        
-        {Check List}
-        if ListNotEmpty(CriticalSectionEntry.List) then
-         begin
-          {Release thread waiting on CriticalSection}
-          CriticalSectionEntry.Release(CriticalSectionEntry.List);
-         end;
-       end;
-      
-      {Return Result}
-      Result:=ERROR_SUCCESS; 
-     finally
-      {Unlock the CriticalSection}
-      SpinUnlock(CriticalSectionEntry.Lock);
-     end;
+     {Update Count}
+     Dec(CriticalSectionEntry.Count);
+     
+     {Return Result}
+     Result:=ERROR_SUCCESS; 
     end
    else
     begin
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
+     {Lock the CriticalSection}
+     if SpinLock(CriticalSectionEntry.Lock) = ERROR_SUCCESS then
+      begin
+       try
+        {Check Signature}
+        Result:=ERROR_INVALID_PARAMETER;
+        if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
+  
+        {Check Count}
+        Result:=ERROR_INVALID_FUNCTION;
+        if CriticalSectionEntry.Count = 0 then Exit;
+        
+        {Update Count}
+        Dec(CriticalSectionEntry.Count);
+        
+        {Check Count}
+        if CriticalSectionEntry.Count = 0 then
+         begin
+          {Set State}
+          CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_UNLOCKED;
+          
+          {Set Owner}
+          CriticalSectionEntry.Owner:=INVALID_HANDLE_VALUE;
+          
+          {Check List}
+          if ListNotEmpty(CriticalSectionEntry.List) then
+           begin
+            {Release thread waiting on CriticalSection}
+            CriticalSectionEntry.Release(CriticalSectionEntry.List);
+           end;
+         end;
+        
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       finally
+        {Unlock the CriticalSection}
+        SpinUnlock(CriticalSectionEntry.Lock);
+       end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+      end;    
+    end;
   end; 
 end;
 
@@ -6509,51 +6895,63 @@ begin
  else
   begin
    {Use the Default method}
-   {Lock the CriticalSection}
-   if SpinLock(CriticalSectionEntry.Lock) = ERROR_SUCCESS then
+   {Check State and Owner}
+   if (CriticalSectionEntry.State = CRITICAL_SECTION_STATE_LOCKED) and (CriticalSectionEntry.Owner = ThreadGetCurrent) then
     begin
-     try
-      {Check Signature}
-      if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-
-      {Check State}
-      if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
-       begin
-        {Set State}
-        CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
-        
-        {Set Count}
-        CriticalSectionEntry.Count:=1;
-        
-        {Set Owner}
-        CriticalSectionEntry.Owner:=ThreadGetCurrent;
-       end
-      else
-       begin
-        {Check Owner}
-        if CriticalSectionEntry.Owner = ThreadGetCurrent then
-         begin        
-          {Update Count}
-          Inc(CriticalSectionEntry.Count);
-         end
-        else
-         begin
-          Result:=ERROR_LOCKED;
-          Exit;
-         end;         
-       end;  
-
-      {Return Result}
-      Result:=ERROR_SUCCESS; 
-     finally
-      {Unlock the CriticalSection}
-      SpinUnlock(CriticalSectionEntry.Lock);
-     end;
+     {Update Count}
+     Inc(CriticalSectionEntry.Count); 
+     
+     {Return Result}
+     Result:=ERROR_SUCCESS; 
     end
    else
     begin
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
+     {Lock the CriticalSection}
+     if SpinLock(CriticalSectionEntry.Lock) = ERROR_SUCCESS then
+      begin
+       try
+        {Check Signature}
+        if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
+        
+        {Check State}
+        if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
+         begin
+          {Set State}
+          CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
+          
+          {Set Count}
+          CriticalSectionEntry.Count:=1;
+          
+          {Set Owner}
+          CriticalSectionEntry.Owner:=ThreadGetCurrent;
+         end
+        else
+         begin
+          {Check Owner}
+          if CriticalSectionEntry.Owner = ThreadGetCurrent then
+           begin        
+            {Update Count}
+            Inc(CriticalSectionEntry.Count);
+           end
+          else
+           begin
+            Result:=ERROR_LOCKED;
+            Exit;
+           end;         
+         end;  
+  
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       finally
+        {Unlock the CriticalSection}
+        SpinUnlock(CriticalSectionEntry.Lock);
+       end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+      end;    
+    end;  
   end; 
 end;
 
@@ -11662,6 +12060,42 @@ begin
 end;
     
 {==============================================================================}
+
+function ThreadGetStackFree:LongWord;
+{Get the free stack size of the current thread}
+{Return: Free stack size of the current thread or 0 on error}
+{Note: No lock required as only ever called by the thread itself}
+var
+ StackBase:PtrUInt;
+ StackSize:LongWord;
+ StackPointer:PtrUInt;
+ Thread:TThreadHandle;
+ ThreadEntry:PThreadEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Get Thread}
+ Thread:=ThreadGetCurrent;
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ThreadEntry:=PThreadEntry(Thread);
+ if ThreadEntry = nil then Exit;
+ if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+ 
+ {Get Size and Base}
+ StackBase:=PtrUInt(ThreadEntry.StackBase);
+ StackSize:=ThreadEntry.StackSize;
+ 
+ {Get Stack Pointer}
+ StackPointer:=GetSP;
+ 
+ {Return Stack Free}
+ Result:=StackPointer - (StackBase - StackSize);
+end;
+    
+{==============================================================================}
  
 function ThreadGetStackSize(Thread:TThreadHandle):LongWord;
 {Get the current stack size of a thread}
@@ -15287,10 +15721,19 @@ begin
        Result:=Thread;
        Exit;
       end;
-      
+     
      {Check Yield, Thread Quantum and Higher Priority Threads}
-     //if not(Yield) and (SchedulerThreadQuantum[CPUID] > 0) and ((SchedulerThreadQuantum[CPUID] >= SCHEDULER_THREAD_QUANTUM) or (ThreadEntry.Priority >= FirstBitSet(SchedulerPriorityMask[CPUID]))) then
-     if not(Yield) and (SchedulerThreadQuantum[CPUID] > 0) and (ThreadEntry.Priority >= FirstBitSet(SchedulerPriorityMask[CPUID])) then //TestingRpi
+     {$IFNDEF SCHEDULER_YIELD_ALTERNATE}
+     if not(Yield) and (SchedulerThreadQuantum[CPUID] > 0) and (ThreadEntry.Priority >= FirstBitSet(SchedulerPriorityMask[CPUID])) then
+     {$ELSE}
+     if Yield and (ThreadEntry.Priority > FirstBitSet(SchedulerPriorityMask[CPUID])) then
+      begin
+       {Return Thread}
+       Result:=Thread;
+       Exit;
+      end
+     else if (SchedulerThreadQuantum[CPUID] > 0) and (ThreadEntry.Priority >= FirstBitSet(SchedulerPriorityMask[CPUID])) then
+     {$ENDIF}
       begin
        {Decrement Thread Quantum}
        Dec(SchedulerThreadQuantum[CPUID]);  
@@ -15471,6 +15914,7 @@ begin
      {Set Next Priority}
      SchedulerStarvationNext[CPUID]:=Priority;
     end
+   {$IFNDEF SCHEDULER_YIELD_ALTERNATE}
    {Check Yield}
    else if Yield then
     begin
@@ -15504,6 +15948,7 @@ begin
        if Priority < THREAD_PRIORITY_MINIMUM then Break;
       end; 
     end
+   {$ENDIF} 
    else
     begin
      {Check Priority Mask}
@@ -18582,6 +19027,12 @@ begin
    WorkerRequest.Task:=TWorkerTask(Event);
    WorkerRequest.Data:=Data;
    WorkerRequest.Callback:=nil;
+   
+   {Check Priority}
+   if (Flags and TIMER_FLAG_PRIORITY) <> 0 then
+    begin
+     WorkerRequest.Flags:=WorkerRequest.Flags or WORKER_FLAG_PRIORITY;
+    end;
   end;
  
  {Insert Timer entry}
@@ -19606,6 +20057,8 @@ function TimerTrigger:LongWord;
 {Note: Called by clock interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread}
 var
  Message:TMessage;
+ Timer:TTimerHandle;
+ TimerEntry:PTimerEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -19623,8 +20076,27 @@ begin
    FillChar(Message,SizeOf(TMessage),0);
    while TimerFirstKey <= 0 do 
     begin
-     Message.Msg:=LongWord(TimerDequeue);
-     MessageslotSend(TimerMessageslot,Message);
+     {Dequeue Timer}
+     Timer:=TimerDequeue;
+     if Timer <> INVALID_HANDLE_VALUE then
+      begin
+       {Check the Timer}
+       TimerEntry:=PTimerEntry(Timer);
+       if (TimerEntry <> nil) and (TimerEntry.Signature = TIMER_SIGNATURE) then
+        begin
+         Message.Msg:=LongWord(TimerEntry);
+      
+         {Check the Flags}
+         if (TimerEntry.Flags and TIMER_FLAG_PRIORITY) = 0 then
+          begin
+           MessageslotSend(TimerMessageslot,Message);
+          end
+         else
+          begin
+           MessageslotSend(TimerPriorityMessageslot,Message);
+          end;          
+        end; 
+      end; 
     end;
  
    {Return Result}
@@ -19669,7 +20141,7 @@ function WorkerScheduleEx(Interval,Flags:LongWord;Task:TWorkerTask;Data:Pointer;
 {Data: A pointer to user defined data which will be passed to the task function (Optional)}
 {Callback: The function to be called by the worker when the task has completed (Optional)}
 {Return: Handle of new Worker task or INVALID_HANDLE_VALUE if task could not be created}
-{Note: If the flags do no contain WORKER_FLAG_RESCHEDULE then return will be ERROR_SUCCESS}
+{Note: If the flags do not contain WORKER_FLAG_RESCHEDULE then return will be ERROR_SUCCESS}
 var
  Size:LongWord;
  Message:TMessage;
@@ -19689,11 +20161,7 @@ begin
  {if not Assigned(Callback) then Exit;}  {May be nil}
  
  {Check Flags}
- if (Flags and WORKER_FLAG_CANCEL) <> 0 then Exit;
- if (Flags and WORKER_FLAG_NOFREE) <> 0 then Exit;
- if (Flags and WORKER_FLAG_TERMINATE) <> 0 then Exit;
- if (Flags and WORKER_FLAG_IRQ) <> 0 then Exit;
- if (Flags and WORKER_FLAG_FIQ) <> 0 then Exit;
+ if (Flags and WORKER_FLAG_INTERNAL) <> 0 then Exit;
  
  {Get Size}
  Size:=SizeOf(TWorkerRequest);
@@ -19736,17 +20204,30 @@ begin
    {Submit Worker Request}
    FillChar(Message,SizeOf(TMessage),0);
    Message.Msg:=LongWord(WorkerRequest);
-   if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+   {Check Flags}
+   if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
     begin
-     {Free Worker Request}
-     FreeMem(WorkerRequest);
-     Exit;
-    end; 
+     if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+      begin
+       {Free Worker Request}
+       FreeMem(WorkerRequest);
+       Exit;
+      end; 
+    end
+   else
+    begin   
+     if MessageslotSend(WorkerPriorityMessageslot,Message) <> ERROR_SUCCESS then
+      begin
+       {Free Worker Request}
+       FreeMem(WorkerRequest);
+       Exit;
+      end; 
+    end;  
    
    {Return Result}
    Result:=TWorkerHandle(ERROR_SUCCESS);
    
-   {Worker Request will be freed by WorkerExecute}
+   {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
   end
  else
   begin
@@ -19766,7 +20247,7 @@ begin
      Result:=TWorkerHandle(ERROR_SUCCESS);
      
      {Timer will be destroyed by WorkerTimer}
-     {Worker Request will be freed by WorkerExecute}
+     {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
     end
    else
     begin
@@ -19780,9 +20261,17 @@ begin
          {Submit Initial Request}
          FillChar(Message,SizeOf(TMessage),0);
          Message.Msg:=LongWord(InitialRequest);
-         MessageslotSend(WorkerMessageslot,Message);
+         {Check Flags}
+         if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
+          begin
+           MessageslotSend(WorkerMessageslot,Message);
+          end
+         else
+          begin
+           MessageslotSend(WorkerPriorityMessageslot,Message);
+          end;
        
-         {Initial Request will NOT be freed by WorkerExecute}
+         {Initial Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
         end;
       end;
       
@@ -19866,6 +20355,23 @@ end;
 
 function WorkerScheduleIRQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
 {Schedule a task to be performed by a worker thread when the caller is an IRQ handler}
+{Affinity: CPU Affinity for memory allocation (eg CPU_AFFINITY_0 or CPU_AFFINITY_NONE)}
+{Task: The function to be called by the worker}
+{Data: A pointer to user defined data which will be passed to the task function (Optional)}
+{Callback: The function to be called by the worker when the task has completed (Optional)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+{Note: The task will be performed immediately, for delayed tasks etc see WorkerSchedule(Ex)}
+begin
+ {}
+ Result:=WorkerScheduleIRQEx(Affinity,WORKER_FLAG_NONE,Task,Data,Callback);
+end;
+
+{==============================================================================}
+
+function WorkerScheduleIRQEx(Affinity,Flags:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+{Schedule a task to be performed by a worker thread when the caller is an IRQ handler}
+{Affinity: CPU Affinity for memory allocation (eg CPU_AFFINITY_0 or CPU_AFFINITY_NONE)}
+{Flags: The flags for the task (eg WORKER_FLAG_PRIORITY)}
 {Task: The function to be called by the worker}
 {Data: A pointer to user defined data which will be passed to the task function (Optional)}
 {Callback: The function to be called by the worker when the task has completed (Optional)}
@@ -19887,14 +20393,24 @@ begin
  {Check Callback}
  {if not Assigned(Callback) then Exit;}  {May be nil}
 
+ {Check Flags (Excluded)}
+ if (Flags and WORKER_FLAG_EXCLUDED_IRQ) <> 0 then Exit;
+ 
+ {Check Flags (Internal)}
+ if (Flags and WORKER_FLAG_INTERNAL) <> 0 then Exit;
+ 
  {Create Worker Request}
  WorkerRequest:=AllocIRQMem(SizeOf(TWorkerRequest),Affinity);
- if WorkerRequest = nil then Exit;
+ if WorkerRequest = nil then
+  begin
+   Result:=ERROR_NOT_ENOUGH_MEMORY;
+   Exit;
+  end;
  
  {Setup Worker Request}
  WorkerRequest.Signature:=WORKER_SIGNATURE;
  WorkerRequest.Interval:=0;
- WorkerRequest.Flags:=WORKER_FLAG_IRQ;
+ WorkerRequest.Flags:=Flags or WORKER_FLAG_IRQ;
  WorkerRequest.Lock:=INVALID_HANDLE_VALUE;
  WorkerRequest.Timer:=INVALID_HANDLE_VALUE;
  WorkerRequest.Task:=Task;
@@ -19910,23 +20426,57 @@ begin
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=LongWord(WorkerRequest);
- if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+ {Check Flags}
+ if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
   begin
-   {Free Worker Request}
-   FreeIRQMem(WorkerRequest);
-   Exit;
-  end; 
+   if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+    begin
+     {Free Worker Request}
+     FreeIRQMem(WorkerRequest);
+     
+     Result:=ERROR_OPERATION_FAILED; 
+     Exit;
+    end; 
+  end
+ else
+  begin
+   if MessageslotSend(WorkerPriorityMessageslot,Message) <> ERROR_SUCCESS then
+    begin
+     {Free Worker Request}
+     FreeIRQMem(WorkerRequest);
+     
+     Result:=ERROR_OPERATION_FAILED; 
+     Exit;
+    end; 
+  end;  
  
  {Return Result}
  Result:=ERROR_SUCCESS;
  
- {Worker Request will be freed by WorkerExecute}
+ {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
 end;
  
 {==============================================================================}
 
 function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
 {Schedule a task to be performed by a worker thread when the caller is an FIQ handler}
+{Affinity: CPU Affinity for memory allocation (eg CPU_AFFINITY_0 or CPU_AFFINITY_NONE)}
+{Task: The function to be called by the worker}
+{Data: A pointer to user defined data which will be passed to the task function (Optional)}
+{Callback: The function to be called by the worker when the task has completed (Optional)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+{Note: The task will be performed immediately, for delayed tasks etc see WorkerSchedule(Ex)}
+begin
+ {}
+ Result:=WorkerScheduleFIQEx(Affinity,WORKER_FLAG_NONE,Task,Data,Callback);
+end;
+
+{==============================================================================}
+
+function WorkerScheduleFIQEx(Affinity,Flags:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+{Schedule a task to be performed by a worker thread when the caller is an FIQ handler}
+{Affinity: CPU Affinity for memory allocation (eg CPU_AFFINITY_0 or CPU_AFFINITY_NONE)}
+{Flags: The flags for the task (eg WORKER_FLAG_PRIORITY)}
 {Task: The function to be called by the worker}
 {Data: A pointer to user defined data which will be passed to the task function (Optional)}
 {Callback: The function to be called by the worker when the task has completed (Optional)}
@@ -19935,6 +20485,7 @@ function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callb
 var
  Message:TMessage;
  WorkerRequest:PWorkerRequest;
+ MessageslotHandle:TMessageslotHandle;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -19948,14 +20499,24 @@ begin
  {Check Callback}
  {if not Assigned(Callback) then Exit;}  {May be nil}
  
+ {Check Flags (Excluded)}
+ if (Flags and WORKER_FLAG_EXCLUDED_IRQ) <> 0 then Exit;
+ 
+ {Check Flags (Internal)}
+ if (Flags and WORKER_FLAG_INTERNAL) <> 0 then Exit;
+ 
  {Create Worker Request}
  WorkerRequest:=AllocFIQMem(SizeOf(TWorkerRequest),Affinity);
- if WorkerRequest = nil then Exit;
+ if WorkerRequest = nil then
+  begin
+   Result:=ERROR_NOT_ENOUGH_MEMORY;
+   Exit;
+  end;
  
  {Setup Worker Request}
  WorkerRequest.Signature:=WORKER_SIGNATURE;
  WorkerRequest.Interval:=0;
- WorkerRequest.Flags:=WORKER_FLAG_FIQ;
+ WorkerRequest.Flags:=Flags or WORKER_FLAG_FIQ;
  WorkerRequest.Lock:=INVALID_HANDLE_VALUE;
  WorkerRequest.Timer:=INVALID_HANDLE_VALUE;
  WorkerRequest.Task:=Task;
@@ -19971,21 +20532,35 @@ begin
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=LongWord(WorkerRequest);
+ {Check Flags}
+ if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
+  begin
+   MessageslotHandle:=WorkerMessageslot;
+  end
+ else
+  begin
+   MessageslotHandle:=WorkerPriorityMessageslot;
+  end;
+  
  if SCHEDULER_FIQ_ENABLED then
   begin
-   if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+   if MessageslotSend(MessageslotHandle,Message) <> ERROR_SUCCESS then
     begin
      {Free Worker Request}
      FreeFIQMem(WorkerRequest);
+       
+     Result:=ERROR_OPERATION_FAILED; 
      Exit;
     end; 
   end
  else
   begin
-   if TaskerMessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+   if TaskerMessageslotSend(MessageslotHandle,Message) <> ERROR_SUCCESS then
     begin
      {Free Worker Request}
      FreeFIQMem(WorkerRequest);
+     
+     Result:=ERROR_OPERATION_FAILED; 
      Exit;
     end; 
   end;  
@@ -19993,14 +20568,26 @@ begin
  {Return Result}
  Result:=ERROR_SUCCESS;
  
- {Worker Request will be freed by WorkerExecute}
+ {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
 end;
  
 {==============================================================================}
 
-function WorkerIncrease(Count:LongWord):LongWord;
+function WorkerIncrease(Count:LongWord):LongWord; inline;
 {Increase the number of worker threads available}
 {Count: Number of worker threads to increase by}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=WorkerIncreaseEx(Count,False);
+end;
+
+{==============================================================================}
+
+function WorkerIncreaseEx(Count:LongWord;Priority:Boolean):LongWord;
+{Increase the number of worker threads available}
+{Count: Number of worker threads to increase by}
+{Priority: If true increase worker priority threads}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Counter:LongWord;
@@ -20012,47 +20599,106 @@ begin
  {Check Count}
  if Count < 1 then Exit;
  
- {Acquire Lock}
- if SpinLock(WorkerThreadLock) = ERROR_SUCCESS then
+ {Check Priority}
+ if not Priority then
   begin
-   try
-    {Create Worker Threads} 
-    for Counter:=0 to Count - 1 do
-     begin
-      {Create Worker Thread}
-      Thread:=BeginThread(WorkerExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
-      if Thread = INVALID_HANDLE_VALUE then 
+   {Acquire Lock}
+   if SpinLock(WorkerThreadLock) = ERROR_SUCCESS then
+    begin
+     try
+      {Create Worker Threads} 
+      for Counter:=0 to Count - 1 do
        begin
-        {$IFDEF THREAD_DEBUG}
-        if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to increase worker threads');
-        {$ENDIF}
-        
-        Result:=ERROR_OPERATION_FAILED;
-        Exit;
+        {Create Worker Thread}
+        Thread:=BeginThread(WorkerExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
+        if Thread = INVALID_HANDLE_VALUE then 
+         begin
+          {$IFDEF THREAD_DEBUG}
+          if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to increase worker threads');
+          {$ENDIF}
+          
+          Result:=ERROR_OPERATION_FAILED;
+          Exit;
+         end;
+        {Setup Worker Thread}
+        {Name}
+        ThreadSetName(Thread,WORKER_THREAD_NAME + IntToStr(WorkerThreadNext));
+        {Priority}
+        ThreadSetPriority(Thread,WORKER_THREAD_PRIORITY);
+        Inc(WorkerThreadNext);
        end;
-      {Setup Worker Thread}
-      ThreadSetName(Thread,WORKER_THREAD_NAME + IntToStr(WorkerThreadNext));
-      Inc(WorkerThreadNext);
-     end;
- 
-    {Return Result} 
-    Result:=ERROR_SUCCESS;
-   finally
-    {Release Lock}
-    SpinUnlock(WorkerThreadLock);
-   end;   
+   
+      {Return Result} 
+      Result:=ERROR_SUCCESS;
+     finally
+      {Release Lock}
+      SpinUnlock(WorkerThreadLock);
+     end;   
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;
   end
- else
+ else 
   begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
+   {Acquire Lock}
+   if SpinLock(WorkerPriorityThreadLock) = ERROR_SUCCESS then
+    begin
+     try
+      {Create Worker Priority Threads} 
+      for Counter:=0 to Count - 1 do
+       begin
+        {Create Worker Priority Thread}
+        Thread:=BeginThread(WorkerPriorityExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
+        if Thread = INVALID_HANDLE_VALUE then 
+         begin
+          {$IFDEF THREAD_DEBUG}
+          if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to increase worker priority threads');
+          {$ENDIF}
+          
+          Result:=ERROR_OPERATION_FAILED;
+          Exit;
+         end;
+        {Setup Worker Priority Thread}
+        {Name}
+        ThreadSetName(Thread,WORKER_PRIORITY_THREAD_NAME + IntToStr(WorkerPriorityThreadNext));
+        {Priority}
+        ThreadSetPriority(Thread,WORKER_PRIORITY_THREAD_PRIORITY);
+        Inc(WorkerPriorityThreadNext);
+       end;
+   
+      {Return Result} 
+      Result:=ERROR_SUCCESS;
+     finally
+      {Release Lock}
+      SpinUnlock(WorkerPriorityThreadLock);
+     end;   
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;
   end;
 end;
 
 {==============================================================================}
 
-function WorkerDecrease(Count:LongWord):LongWord;
+function WorkerDecrease(Count:LongWord):LongWord; inline;
 {Decrease the number of worker threads available}
 {Count: Number of worker threads to decrease by}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=WorkerDecreaseEx(Count,False);
+end;
+
+{==============================================================================}
+
+function WorkerDecreaseEx(Count:LongWord;Priority:Boolean):LongWord;
+{Decrease the number of worker threads available}
+{Count: Number of worker threads to decrease by}
+{Priority: If true decrease worker priority threads}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Counter:LongWord;
@@ -20065,57 +20711,115 @@ begin
  {Check Count}
  if Count < 1 then Exit;
  
- {Acquire Lock}
- if SpinLock(WorkerThreadLock) = ERROR_SUCCESS then
+ {Check Priority}
+ if not Priority then
   begin
-   try
-    {Check Count}
-    if WORKER_THREAD_COUNT > WorkerThreadCount then Exit;
-    if Count > (WorkerThreadCount - WORKER_THREAD_COUNT) then Exit;
-    
-    {Terminate Worker Threads} 
-    for Counter:=0 to Count - 1 do
-     begin
-      {Create Worker Request}
-      WorkerRequest:=AllocMem(SizeOf(TWorkerRequest));
-      if WorkerRequest = nil then Exit;
- 
-      {Setup Worker Request}
-      WorkerRequest.Signature:=WORKER_SIGNATURE;
-      WorkerRequest.Interval:=0;
-      WorkerRequest.Flags:=WORKER_FLAG_TERMINATE;
-      WorkerRequest.Lock:=INVALID_HANDLE_VALUE;
-      WorkerRequest.Timer:=INVALID_HANDLE_VALUE;
-      WorkerRequest.Task:=nil;
-      WorkerRequest.Data:=nil;
-      WorkerRequest.Callback:=nil;
-   
-      {Submit Worker Request}
-      FillChar(Message,SizeOf(TMessage),0);
-      Message.Msg:=LongWord(WorkerRequest);
-      if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+   {Acquire Lock}
+   if SpinLock(WorkerThreadLock) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Count}
+      if WORKER_THREAD_COUNT > WorkerThreadCount then Exit;
+      if Count > (WorkerThreadCount - WORKER_THREAD_COUNT) then Exit;
+      
+      {Terminate Worker Threads} 
+      for Counter:=0 to Count - 1 do
        begin
-        {Free Worker Request}
-        FreeMem(WorkerRequest);
-        
-        Result:=ERROR_OPERATION_FAILED;
-        Exit;
-       end; 
-       
-      {Worker Request will be freed by WorkerExecute} 
-     end;
- 
-    {Return Result} 
-    Result:=ERROR_SUCCESS;
-   finally
-    {Release Lock}
-    SpinUnlock(WorkerThreadLock);
-   end;   
+        {Create Worker Request}
+        WorkerRequest:=AllocMem(SizeOf(TWorkerRequest));
+        if WorkerRequest = nil then Exit;
+   
+        {Setup Worker Request}
+        WorkerRequest.Signature:=WORKER_SIGNATURE;
+        WorkerRequest.Interval:=0;
+        WorkerRequest.Flags:=WORKER_FLAG_TERMINATE;
+        WorkerRequest.Lock:=INVALID_HANDLE_VALUE;
+        WorkerRequest.Timer:=INVALID_HANDLE_VALUE;
+        WorkerRequest.Task:=nil;
+        WorkerRequest.Data:=nil;
+        WorkerRequest.Callback:=nil;
+     
+        {Submit Worker Request}
+        FillChar(Message,SizeOf(TMessage),0);
+        Message.Msg:=LongWord(WorkerRequest);
+        if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+         begin
+          {Free Worker Request}
+          FreeMem(WorkerRequest);
+          
+          Result:=ERROR_OPERATION_FAILED;
+          Exit;
+         end; 
+         
+        {Worker Request will be freed by WorkerExecute} 
+       end;
+   
+      {Return Result} 
+      Result:=ERROR_SUCCESS;
+     finally
+      {Release Lock}
+      SpinUnlock(WorkerThreadLock);
+     end;   
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;
   end
  else
   begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
+   {Acquire Lock}
+   if SpinLock(WorkerPriorityThreadLock) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Count}
+      if WORKER_PRIORITY_THREAD_COUNT > WorkerPriorityThreadCount then Exit;
+      if Count > (WorkerPriorityThreadCount - WORKER_PRIORITY_THREAD_COUNT) then Exit;
+      
+      {Terminate Worker Priority Threads} 
+      for Counter:=0 to Count - 1 do
+       begin
+        {Create Worker Request}
+        WorkerRequest:=AllocMem(SizeOf(TWorkerRequest));
+        if WorkerRequest = nil then Exit;
+   
+        {Setup Worker Request}
+        WorkerRequest.Signature:=WORKER_SIGNATURE;
+        WorkerRequest.Interval:=0;
+        WorkerRequest.Flags:=WORKER_FLAG_TERMINATE;
+        WorkerRequest.Lock:=INVALID_HANDLE_VALUE;
+        WorkerRequest.Timer:=INVALID_HANDLE_VALUE;
+        WorkerRequest.Task:=nil;
+        WorkerRequest.Data:=nil;
+        WorkerRequest.Callback:=nil;
+     
+        {Submit Worker Request}
+        FillChar(Message,SizeOf(TMessage),0);
+        Message.Msg:=LongWord(WorkerRequest);
+        if MessageslotSend(WorkerPriorityMessageslot,Message) <> ERROR_SUCCESS then
+         begin
+          {Free Worker Request}
+          FreeMem(WorkerRequest);
+          
+          Result:=ERROR_OPERATION_FAILED;
+          Exit;
+         end; 
+         
+        {Worker Request will be freed by WorkerPriorityExecute} 
+       end;
+   
+      {Return Result} 
+      Result:=ERROR_SUCCESS;
+     finally
+      {Release Lock}
+      SpinUnlock(WorkerPriorityThreadLock);
+     end;   
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;
+  end;  
 end;
 
 {==============================================================================}
@@ -20143,13 +20847,25 @@ begin
    {Submit Worker Request}
    FillChar(Message,SizeOf(TMessage),0);
    Message.Msg:=LongWord(WorkerRequest);
-   if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+   {Check Flags}
+   if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
     begin
-     {Free Worker Request}
-     FreeMem(WorkerRequest);
-    end;
+     if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
+      begin
+       {Free Worker Request}
+       FreeMem(WorkerRequest);
+      end;
+    end
+   else
+    begin
+     if MessageslotSend(WorkerPriorityMessageslot,Message) <> ERROR_SUCCESS then
+      begin
+       {Free Worker Request}
+       FreeMem(WorkerRequest);
+      end;
+    end;    
    
-   {Worker Request will be freed by WorkerExecute}
+   {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
   end
  else
   begin
@@ -20203,9 +20919,17 @@ begin
           {Submit Repeat Request}
           FillChar(Message,SizeOf(TMessage),0);
           Message.Msg:=LongWord(RepeatRequest);
-          MessageslotSend(WorkerMessageslot,Message);
+          {Check Flags}
+          if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
+           begin
+            MessageslotSend(WorkerMessageslot,Message);
+           end
+          else
+           begin
+            MessageslotSend(WorkerPriorityMessageslot,Message);
+           end;           
        
-          {Repeat Request will NOT be freed by WorkerExecute}
+          {Repeat Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
          end;
        finally
         {Release the Lock}
@@ -21167,6 +21891,7 @@ function ThreadAllocateStack(StackSize:LongWord):Pointer;
          This address is the base of the stack which grows down in memory}
 var
  StackMemory:Pointer;
+ PageTableEntry:TPageTableEntry;
 begin
  {}
  Result:=nil;
@@ -21174,12 +21899,61 @@ begin
  {Check Stack Size}
  if StackSize = 0 then Exit;
  
- {Allocate Memory}
- StackMemory:=AllocAlignedMem(StackSize,STACK_MIN_ALIGNMENT); 
- if StackMemory = nil then Exit;
- 
- {Return Top Address}
- Result:=Pointer(PtrUInt(StackMemory) + StackSize);
+ {Check Stack Guard}
+ if THREAD_STACK_GUARD_ENABLED then
+  begin
+   {Check Page Size}
+   if MEMORY_PAGE_SIZE = 0 then Exit;
+   
+   {Allocate Memory}
+   StackMemory:=AllocAlignedMem(StackSize + MEMORY_PAGE_SIZE,STACK_MIN_ALIGNMENT); 
+   if StackMemory = nil then Exit;
+
+   {Get Page}
+   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory));
+   if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
+    begin
+     {Map Page}
+     PageTableEntry.Size:=MEMORY_PAGE_SIZE;
+     PageTableSetEntry(PageTableEntry);
+    end;
+    
+   {Get Next Page}
+   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE));
+   if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
+    begin
+     {Map Page}
+     PageTableEntry.Size:=MEMORY_PAGE_SIZE;
+     PageTableSetEntry(PageTableEntry);
+    end; 
+
+   {Check Page}
+   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory));
+   if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
+    begin
+     FreeMem(StackMemory);
+     Exit;     
+    end; 
+   
+   {Clean Guard Page}
+   CleanDataCacheRange(PtrUInt(StackMemory),MEMORY_PAGE_SIZE);
+   
+   {Map Guard Page (No Access)}
+   PageTableEntry.Flags:=PageTableEntry.Flags and not(PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK or PAGE_TABLE_FLAG_WRITETHROUGH or PAGE_TABLE_FLAG_WRITEALLOCATE);
+   PageTableSetEntry(PageTableEntry);
+   
+   {Return Top Address}
+   Result:=StackMemory + (StackSize + MEMORY_PAGE_SIZE);
+  end
+ else
+  begin 
+   {Allocate Memory}
+   StackMemory:=AllocAlignedMem(StackSize,STACK_MIN_ALIGNMENT); 
+   if StackMemory = nil then Exit;
+   
+   {Return Top Address}
+   Result:=StackMemory + StackSize;
+  end; 
 end;
 
 {==============================================================================}
@@ -21190,7 +21964,9 @@ procedure ThreadReleaseStack(StackBase:Pointer;StackSize:LongWord);
             (as returned by ThreadAllocateStack}
 {StackSize: Size of the thread stack, in bytes (Same value passed to ThreadAllocateStack)}
 var
- StackMemory:LongWord; //To Do //Should be PtrUInt
+ StackMemory:Pointer;
+ PageTableEntry:TPageTableEntry;
+ GuardPageEntry:TPageTableEntry;
 begin
  {}
  {Check Stack Address}
@@ -21199,11 +21975,33 @@ begin
  {Check Stack Size}
  if StackSize = 0 then Exit;
 
- {Get Base Address}
- StackMemory:=PtrUInt(StackBase) - StackSize;
+ {Check Stack Guard}
+ if THREAD_STACK_GUARD_ENABLED then
+  begin
+   {Get Base Address}
+   StackMemory:=StackBase - (StackSize + MEMORY_PAGE_SIZE);
+   
+   {Get Next Page}
+   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE));
+   
+   {Get Guard Page}
+   GuardPageEntry:=PageTableGetEntry(PtrUInt(StackMemory));
+   
+   {Unmap Guard Page (Normal Access)} 
+   GuardPageEntry.Flags:=PageTableEntry.Flags;
+   PageTableSetEntry(GuardPageEntry);
+   
+   {Free Memory}
+   FreeMem(StackMemory,StackSize + MEMORY_PAGE_SIZE);
+  end
+ else
+  begin 
+   {Get Base Address}
+   StackMemory:=StackBase - StackSize;
  
- {Free Memory}
- FreeMem(Pointer(StackMemory),StackSize);
+   {Free Memory}
+   FreeMem(StackMemory,StackSize);
+  end; 
 end;
 
 {==============================================================================}
@@ -21356,6 +22154,15 @@ function WorkerGetCount:LongWord; inline;
 begin
  {}
  Result:=WorkerThreadCount;
+end;
+
+{==============================================================================}
+
+function WorkerGetPriorityCount:LongWord; inline;
+{Get the current worker priority thread count}
+begin
+ {}
+ Result:=WorkerPriorityThreadCount;
 end;
 
 {==============================================================================}

@@ -116,13 +116,13 @@ const
  VERSATILEPB_I2C_REGS_BASE      = $10002000; {I2C control}
  VERSATILEPB_SIC_REGS_BASE      = $10003000; {Secondary interrupt controller}
  VERSATILEPB_AACI_REGS_BASE     = $10004000; {PL041 Audio}
- VERSATILEPB_MMCI0_REGS_BASE    = $10005000; {Pl180 MMC interface}
+ VERSATILEPB_MMCI0_REGS_BASE    = $10005000; {PL180 MMC interface}
  VERSATILEPB_KMI0_REGS_BASE     = $10006000; {PL050 KMI interface}
  VERSATILEPB_KMI1_REGS_BASE     = $10007000; {PL050 KMI 2nd interface}
  VERSATILEPB_CHAR_LCD_REGS_BASE = $10008000; {Character LCD}
  VERSATILEPB_UART3_REGS_BASE    = $10009000; {PL011 UART 3}
  VERSATILEPB_SCI1_REGS_BASE     = $1000A000;
- VERSATILEPB_MMCI1_REGS_BASE    = $1000B000; {Pl180 MMC Interface}
+ VERSATILEPB_MMCI1_REGS_BASE    = $1000B000; {PL180 MMC Interface}
  {0x1000C000 - 0x1000CFFF = reserved}
  VERSATILEPB_ETH_REGS_BASE      = $10010000; {LAN91C111 Ethernet}
  VERSATILEPB_USB_REGS_BASE      = $10020000; {OHCI USB}
@@ -188,28 +188,41 @@ const
  VERSATILEPB_IRQ_VICSOURCE29             = 29; {PCI 2}
  VERSATILEPB_IRQ_VICSOURCE30             = 30; {PCI 3}
  VERSATILEPB_IRQ_VICSOURCE31             = 31; {SIC source}
+ {Passthrough interrupt signals from secondary controller}
+ VERSATILEPB_IRQ_DOC                     = VERSATILEPB_IRQ_VICSOURCE21;
+ VERSATILEPB_IRQ_MMCI0A                  = VERSATILEPB_IRQ_VICSOURCE22;
+ VERSATILEPB_IRQ_MMCI1A                  = VERSATILEPB_IRQ_VICSOURCE23;
+ VERSATILEPB_IRQ_AACI                    = VERSATILEPB_IRQ_VICSOURCE24;
+ VERSATILEPB_IRQ_ETH                     = VERSATILEPB_IRQ_VICSOURCE25;
+ VERSATILEPB_IRQ_USB                     = VERSATILEPB_IRQ_VICSOURCE26;
+ VERSATILEPB_IRQ_PCI0                    = VERSATILEPB_IRQ_VICSOURCE27;
+ VERSATILEPB_IRQ_PCI1                    = VERSATILEPB_IRQ_VICSOURCE28;
+ VERSATILEPB_IRQ_PCI2                    = VERSATILEPB_IRQ_VICSOURCE29;
+ VERSATILEPB_IRQ_PCI3                    = VERSATILEPB_IRQ_VICSOURCE30;
+ VERSATILEPB_IRQ_SICSOURCE               = VERSATILEPB_IRQ_VICSOURCE31;
  
  {Interrupt Assignments (Secondary)(See: \arch\arm\mach-versatile\include\mach\platform.h)}
- VERSATILEPB_IRQ_SIC_MMCI0B              = 1;  {Multimedia Card 0B}
- VERSATILEPB_IRQ_SIC_MMCI1B              = 2;  {Multimedia Card 1B}
- VERSATILEPB_IRQ_SIC_KMI0                = 3;  {Keyboard/Mouse port 0}
- VERSATILEPB_IRQ_SIC_KMI1                = 4;  {Keyboard/Mouse port 1}
- VERSATILEPB_IRQ_SIC_SCI3                = 5;  {Smart Card interface}
- VERSATILEPB_IRQ_SIC_UART3               = 6;  {UART 3 empty or data available}
- VERSATILEPB_IRQ_SIC_CHAR_LCD            = 7;  {Character LCD}
- VERSATILEPB_IRQ_SIC_TOUCH               = 8;  {Touchscreen}
- VERSATILEPB_IRQ_SIC_KEYPAD              = 9;  {Key pressed on display keypad}
- {10:20 - reserved}
- VERSATILEPB_IRQ_SIC_DoC                 = 21; {Disk on Chip memory controller}
- VERSATILEPB_IRQ_SIC_MMCI0A              = 22; {MMC 0A}
- VERSATILEPB_IRQ_SIC_MMCI1A              = 23; {MMC 1A}
- VERSATILEPB_IRQ_SIC_AACI                = 24; {Audio Codec}
- VERSATILEPB_IRQ_SIC_ETH                 = 25; {Ethernet controller}
- VERSATILEPB_IRQ_SIC_USB                 = 26; {USB controller}
- VERSATILEPB_IRQ_SIC_PCI0                = 27;
- VERSATILEPB_IRQ_SIC_PCI1                = 28;
- VERSATILEPB_IRQ_SIC_PCI2                = 29;
- VERSATILEPB_IRQ_SIC_PCI3                = 30;
+ VERSATILEPB_IRQ_SIC_SOFTINT             = 32; {SIC IRQ 0}  {Soft Interrupt}
+ VERSATILEPB_IRQ_SIC_MMCI0B              = 33; {SIC IRQ 1}  {Multimedia Card 0B}
+ VERSATILEPB_IRQ_SIC_MMCI1B              = 34; {SIC IRQ 2}  {Multimedia Card 1B}
+ VERSATILEPB_IRQ_SIC_KMI0                = 35; {SIC IRQ 3}  {Keyboard/Mouse port 0}
+ VERSATILEPB_IRQ_SIC_KMI1                = 36; {SIC IRQ 4}  {Keyboard/Mouse port 1}
+ VERSATILEPB_IRQ_SIC_SCI3                = 37; {SIC IRQ 5}  {Smart Card interface}
+ VERSATILEPB_IRQ_SIC_UART3               = 38; {SIC IRQ 6}  {UART 3 empty or data available}
+ VERSATILEPB_IRQ_SIC_CHAR_LCD            = 39; {SIC IRQ 7}  {Character LCD}
+ VERSATILEPB_IRQ_SIC_TOUCH               = 40; {SIC IRQ 8}  {Touchscreen}
+ VERSATILEPB_IRQ_SIC_KEYPAD              = 41; {SIC IRQ 9}  {Key pressed on display keypad}
+ {42 to 52 (SIC IRQ 10 to 20) - Reserved}
+ VERSATILEPB_IRQ_SIC_DOC                 = 53; {SIC IRQ 21} {Disk on Chip memory controller}
+ VERSATILEPB_IRQ_SIC_MMCI0A              = 54; {SIC IRQ 22} {MMC 0A}
+ VERSATILEPB_IRQ_SIC_MMCI1A              = 55; {SIC IRQ 23} {MMC 1A}
+ VERSATILEPB_IRQ_SIC_AACI                = 56; {SIC IRQ 24} {Audio Codec}
+ VERSATILEPB_IRQ_SIC_ETH                 = 57; {SIC IRQ 25} {Ethernet controller}
+ VERSATILEPB_IRQ_SIC_USB                 = 58; {SIC IRQ 26} {USB controller}
+ VERSATILEPB_IRQ_SIC_PCI0                = 59; {SIC IRQ 27}
+ VERSATILEPB_IRQ_SIC_PCI1                = 60; {SIC IRQ 28}
+ VERSATILEPB_IRQ_SIC_PCI2                = 61; {SIC IRQ 29}
+ VERSATILEPB_IRQ_SIC_PCI3                = 62; {SIC IRQ 30}
  
  {Number of IRQs on the Vectored (Primary) Interrupt Controller (VIC)}
  VERSATILEPB_VIC_IRQ_COUNT = 32;

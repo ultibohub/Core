@@ -248,10 +248,11 @@ var
  
 var
  {Clock Variables}
- ClockGetLock:LongWord;     {Atomic lock variable for updating the clock rollover}
- ClockGetLast:LongWord;     {Value of 24MHz Counter on last ClockGetCount or ClockGetTotal call}
- ClockGetRollover:LongWord; {Number of times the 24MHz counter has rolled over (Only accurate if ClockGetCount/ClockGetTotal is called at least once per 178 seconds)}
- 
+ ClockGetLast:LongWord;                        {Value of 24MHz Counter on last ClockGetCount or ClockGetTotal call}
+ ClockGetBase:Int64;                           {Base value for 64-bit clock, incremented each time the 24MHz Counter rolls over (Only accurate if ClockGetCount/ClockGetTotal is called at least once per 178 seconds)}
+ ClockGetLock:THandle = INVALID_HANDLE_VALUE;  {Lock handle for creating 64-bit clock from a 32-bit register}
+ ClockGetTimer:THandle = INVALID_HANDLE_VALUE; {Timer handle for ensuring clock is read periodically to maintain accurracy}
+  
 var
  {Timer Variables}
  Timer0Registers:PSP804TimerRegisters; {Use Timer0 for Clock}
@@ -307,6 +308,7 @@ function QEMUVPBSystemShutdown(Delay:LongWord):LongWord;
 
 function QEMUVPBClockGetCount:LongWord;
 function QEMUVPBClockGetTotal:Int64; 
+procedure QEMUVPBClockGetTimer(Data:Pointer);
 
 {==============================================================================}
 {QEMUVPB Thread Functions}
@@ -493,8 +495,8 @@ begin
  
  {Setup CLOCK_FREQUENCY/TICKS/CYCLES}
  CLOCK_FREQUENCY:=VERSATILEPB_TIMER_FREQUENCY;
- CLOCK_TICKS_PER_SECOND:=1000;
- CLOCK_TICKS_PER_MILLISECOND:=1;
+ CLOCK_TICKS_PER_SECOND:=1000;   {Note: QEMU uses the timeGetDevCaps() function on Windows which returns wPeriodMin as 1 millisecond}
+ CLOCK_TICKS_PER_MILLISECOND:=1; {      That means that any timer interval less then 1ms will not be honoured, the result will be 1ms}
  CLOCK_CYCLES_PER_TICK:=CLOCK_FREQUENCY div CLOCK_TICKS_PER_SECOND;
  CLOCK_CYCLES_PER_MILLISECOND:=CLOCK_FREQUENCY div MILLISECONDS_PER_SECOND;
  CLOCK_CYCLES_PER_MICROSECOND:=CLOCK_FREQUENCY div MICROSECONDS_PER_SECOND;
@@ -508,8 +510,8 @@ begin
  HEAP_FIQ_CACHE_COHERENT:=True;
  
  {Setup SCHEDULER_INTERRUPTS/CLOCKS}
- SCHEDULER_INTERRUPTS_PER_SECOND:=2000;
- SCHEDULER_INTERRUPTS_PER_MILLISECOND:=2; 
+ SCHEDULER_INTERRUPTS_PER_SECOND:=1000;   {Note: QEMU uses the timeGetDevCaps() function on Windows which returns wPeriodMin as 1 millisecond}
+ SCHEDULER_INTERRUPTS_PER_MILLISECOND:=1; {      That means that any timer interval less then 1ms will not be honoured, the result will be 1ms}
  SCHEDULER_CLOCKS_PER_INTERRUPT:=CLOCK_FREQUENCY div SCHEDULER_INTERRUPTS_PER_SECOND;
  SCHEDULER_CLOCKS_TOLERANCE:=SCHEDULER_CLOCKS_PER_INTERRUPT div 10;
  TIME_TICKS_PER_SCHEDULER_INTERRUPT:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * TIME_TICKS_PER_MILLISECOND;
@@ -728,6 +730,9 @@ begin
  {Setup Enabled FIQ}
  FIQEnabled:=LongWord(-1);
  
+ {Setup Primary Interrupt Sic Source (Secondary)}
+ PrimaryInterruptRegisters.INTENABLE:=(1 shl VERSATILEPB_IRQ_SICSOURCE);
+ 
  {Setup Secondary Interrupt Pass Through}
  SecondaryInterruptRegisters.SIC_PICENSET:=VERSATILEPB_SIC_PIC_MASK;
 end;
@@ -763,7 +768,7 @@ begin
  DMA_MULTIPLIER:=SizeOf(LongWord);
  DMA_SHARED_MEMORY:=True;    //To Do //Continuing //To be determined
  DMA_NOCACHE_MEMORY:=False;  //To Do //Continuing //To be determined
- DMA_BUS_ADDRESSES:=True;    //To Do //Continuing //To be determined
+ DMA_BUS_ADDRESSES:=False;   //To Do //Continuing //To be determined
  DMA_CACHE_COHERENT:=True;   //To Do //Continuing //To be determined
  if CacheLineSize > DMA_ALIGNMENT then DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > DMA_MULTIPLIER then DMA_MULTIPLIER:=CacheLineSize;
@@ -775,7 +780,7 @@ begin
  //To Do //Continuing
  
  {Setup VersatilePB}
- //To Do //Continuing
+ //To Do //Continuing //Done by QEMUVersatilePBInit
 end;
 
 {==============================================================================}
@@ -1629,6 +1634,19 @@ function QEMUVPBClockGetCount:LongWord;
  overflow every 178 seconds}
 begin
  {}
+ {Acquire Lock}
+ if ClockGetLock <> INVALID_HANDLE_VALUE then
+  begin
+   if SCHEDULER_FIQ_ENABLED then
+    begin
+     SpinLockIRQFIQ(ClockGetLock);
+    end
+   else
+    begin
+     SpinLockIRQ(ClockGetLock);
+    end;    
+  end; 
+ 
  {Get 24MHz Counter}
  Result:=PLongWord(VERSATILEPB_SYS_24MHZ)^ div 24;
  
@@ -1638,18 +1656,25 @@ begin
  {Check for Rollover}
  if Result < ClockGetLast then
   begin
-   //To Do //Continuing //Should this be some form of atomic ?
-                        //Or a lock inside the check with a recheck after acquire ?
-                        //There is a ClockLock already but interrupt handlers and other things call GetTickCount, could be bad
-                        
-                        //Add ClockGetLock variable and do a InterlockedExchange
-                        //If not locked then go ahead, otherwise assume someone else got it and skip (How to handle the rollover value, add one ? No ?)
-   
-   Inc(ClockGetRollover);
+   {Increment Base}
+   Inc(ClockGetBase,178956970); {0xFFFFFFFF div 24}
   end;
  
  {Save Last Value} 
  ClockGetLast:=Result;
+ 
+ {Release Lock}
+ if ClockGetLock <> INVALID_HANDLE_VALUE then
+  begin
+   if SCHEDULER_FIQ_ENABLED then
+    begin
+     SpinUnlockIRQFIQ(ClockGetLock);
+    end
+   else
+    begin
+     SpinUnlockIRQ(ClockGetLock);
+    end;    
+  end; 
 end;
 
 {==============================================================================}
@@ -1664,6 +1689,19 @@ var
  Value:LongWord;
 begin
  {}
+ {Acquire Lock}
+ if ClockGetLock <> INVALID_HANDLE_VALUE then
+  begin
+   if SCHEDULER_FIQ_ENABLED then
+    begin
+     SpinLockIRQFIQ(ClockGetLock);
+    end
+   else
+    begin
+     SpinLockIRQ(ClockGetLock);
+    end;    
+  end; 
+
  {Get 24MHz Counter}
  Value:=PLongWord(VERSATILEPB_SYS_24MHZ)^ div 24;
  
@@ -1673,22 +1711,40 @@ begin
  {Check for Rollover}
  if Value < ClockGetLast then
   begin
-   //To Do //Continuing //Should this be some form of atomic ?
-                        //Or a lock inside the check with a recheck after acquire ?
-                        //There is a ClockLock already but interrupt handlers and other things call GetTickCount, could be bad
-   
-                        //Add ClockGetLock variable and do a InterlockedExchange
-                        //If not locked then go ahead, otherwise assume someone else got it and skip (How to handle the rollover value, add one ? No ?)
-   
-   Inc(ClockGetRollover);
+   {Increment Base}
+   Inc(ClockGetBase,178956970); {0xFFFFFFFF div 24}
   end;
  
  {Save Last Value} 
  ClockGetLast:=Value;
  
  {Get Result}
- Int64Rec(Result).Lo:=Value;
- Int64Rec(Result).Hi:=ClockGetRollover;
+ Result:=ClockGetBase + Value; 
+ 
+ {Release Lock}
+ if ClockGetLock <> INVALID_HANDLE_VALUE then
+  begin
+   if SCHEDULER_FIQ_ENABLED then
+    begin
+     SpinUnlockIRQFIQ(ClockGetLock);
+    end
+   else
+    begin
+     SpinUnlockIRQ(ClockGetLock);
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+procedure QEMUVPBClockGetTimer(Data:Pointer);
+{Timer procedure to ensure ClockGetTotal is called at least once per rollover interval}
+{Note: Not intended to be called directly by applications}
+var
+ Value:Int64;
+begin
+ {}
+ Value:=QEMUVPBClockGetTotal;
 end;
 
 {==============================================================================}
@@ -1723,6 +1779,9 @@ begin
  
  {Setup the first Clock Interrupt}
  QEMUVPBSchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[SCHEDULER_CPU_BOOT]);
+ 
+ {Create the Clock Lock (Here instead of ClockInit to ensure that locking is initialized)}
+ ClockGetLock:=SpinCreate;
 end;
 
 {==============================================================================}

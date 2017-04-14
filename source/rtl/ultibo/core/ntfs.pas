@@ -981,6 +981,10 @@ begin
  try
   if FDriver = nil then Exit;
 
+  {$IFDEF NTFS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSRecognizer.RecognizePartitionId (PartitionId = ' + IntToStr(APartitionId) + ')');
+  {$ENDIF}
+  
   case APartitionId of
    pidExtended:begin
      {DOS Extended Partition}
@@ -1311,6 +1315,8 @@ end;
 
 function TNTFSPartitioner.AcceptPartition(ADevice:TDiskDevice;APartition,AParent:TDiskPartition;APartitionId:Byte):Boolean;
 {Note: Caller must hold the device, partition and parent lock}
+var
+ Volume:TDiskVolume;
 begin
  {}
  Result:=False;
@@ -1329,7 +1335,19 @@ begin
     if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
     
     {Check Partition and Volume}
-    if (FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil) and (FDriver.GetVolumeByDevice(ADevice,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
+    if FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
+     begin
+      Volume:=FDriver.GetVolumeByDevice(ADevice,True,FILESYS_LOCK_READ);
+      if Volume <> nil then
+       begin
+        try
+         {Check File System Type}
+         if Volume.FileSysType <> fsUNKNOWN then Exit;
+        finally  
+         Volume.ReaderUnlock;
+        end; 
+       end;
+     end; 
     
     {Check Parent}
     if AParent <> nil then
@@ -1567,7 +1585,7 @@ begin
   
   {Check Accepted}
   if not AcceptVolume(AVolume,AFloppyType,AFileSysType) then Exit;
-
+  
   {Get Drive}
   Drive:=FDriver.GetDriveByVolume(AVolume,True,FILESYS_LOCK_WRITE);
   try
@@ -1616,11 +1634,11 @@ begin
        FileSystem.FileSystemInit;
       end;
     end;
-
+   
    {Get Sectors Per Cluster}
    SectorsPerCluster:=GetSectorsPerCluster(AVolume,nil,AFloppyType,AFileSysType);
    if SectorsPerCluster = 0 then Exit;
-
+   
    {Initialize FileSystem}
    if not FileSystem.InitializeFileSystem(SectorsPerCluster,AFileSysType) then
     begin
@@ -3496,7 +3514,7 @@ begin
     
     {Read Bitmap}
     Instance:=ntfsInstanceFirst;
-    if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
+    if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
    end;
   if TNTFSBitmapAttribute(Attribute).BitmapSize = 0 then Exit;
   
@@ -3542,7 +3560,7 @@ begin
       Current.UpdateSequenceNumber:=0;
       Current.LogFileSequenceNumber:=0;
       Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-      Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+      Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
       Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
       Current.RecordSize:=Current.CalculatedSize(FVolumeVersion);
       
@@ -3637,7 +3655,7 @@ begin
       Current.UpdateSequenceNumber:=0;
       Current.LogFileSequenceNumber:=0;
       Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-      Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+      Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
       Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
       Current.RecordSize:=Current.CalculatedSize(FVolumeVersion);
       
@@ -3748,7 +3766,7 @@ begin
     
     {Read Bitmap}
     Instance:=ntfsInstanceFirst;
-    if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
+    if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
    end;
   if TNTFSBitmapAttribute(Attribute).BitmapSize = 0 then Exit;
   
@@ -3904,7 +3922,7 @@ begin
     
     {Read Bitmap}
     Instance:=ntfsInstanceFirst;
-    if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
+    if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
    end;
   if TNTFSBitmapAttribute(Attribute).BitmapSize = 0 then Exit;
   
@@ -4025,7 +4043,7 @@ begin
       
       {Read Bitmap}
       Instance:=ntfsInstanceFirst;
-      if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
+      if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
      end;
     if TNTFSBitmapAttribute(Attribute).BitmapSize = 0 then Exit;
     
@@ -4119,7 +4137,7 @@ begin
       
       {Read Bitmap}
       Instance:=ntfsInstanceFirst;
-      if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
+      if ReadAttribute(Origin,Attribute,TNTFSBitmapAttribute(Attribute).Bitmap^,0,TNTFSBitmapAttribute(Attribute).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(Attribute).BitmapSize) then Exit;
      end;
     if TNTFSBitmapAttribute(Attribute).BitmapSize = 0 then Exit;
     
@@ -4210,7 +4228,7 @@ begin
     
     {Read Bitmap}
     Instance:=ntfsInstanceFirst;
-    if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
+    if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
    end;
   if TNTFSBitmapAttribute(ABitmap).BitmapSize = 0 then Exit;
   
@@ -4354,7 +4372,7 @@ begin
     
     {Read Bitmap}
     Instance:=ntfsInstanceFirst;
-    if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
+    if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
    end;
   if TNTFSBitmapAttribute(ABitmap).BitmapSize = 0 then Exit;
   
@@ -4498,7 +4516,7 @@ begin
     
     {Read Bitmap}
     Instance:=ntfsInstanceFirst;
-    if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
+    if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
    end;
   if TNTFSBitmapAttribute(ABitmap).BitmapSize = 0 then Exit;
   
@@ -4592,7 +4610,7 @@ begin
       
       {Read Bitmap}
       Instance:=ntfsInstanceFirst;
-      if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,False) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
+      if ReadAttribute(ARecord,ABitmap,TNTFSBitmapAttribute(ABitmap).Bitmap^,0,TNTFSBitmapAttribute(ABitmap).BitmapSize,Instance,True) <> Integer(TNTFSBitmapAttribute(ABitmap).BitmapSize) then Exit;
      end;
     if TNTFSBitmapAttribute(ABitmap).BitmapSize = 0 then Exit;
     
@@ -5127,12 +5145,12 @@ begin
  {$ENDIF}
  
  {Read Fixup}
- Offset:=AOffset + ntfsUpdateSequenceSize - 2; {SizeOf(Word);} {Previously FSectorSize however always 512} //To Do //Testing
+ Offset:=AOffset + ntfsUpdateSequenceSize - 2; {SizeOf(Word);} {Previously FSectorSize however always 512}
  for Count:=1 to ASequenceLength - 1 do
   begin
    if Word(Pointer(LongWord(ABuffer) + Offset)^) <> Update.UpdateSequenceNumber then Exit;
    Word(Pointer(LongWord(ABuffer) + Offset)^):=Update.UpdateSequenceArray[Count - 1];
-   Inc(Offset,ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Inc(Offset,ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
   end;
   
  Result:=True;
@@ -5168,12 +5186,12 @@ begin
  Update.UpdateSequenceNumber:=ASequenceNumber;
  
  {Write Fixup}
- Offset:=AOffset + ntfsUpdateSequenceSize - 2; {SizeOf(Word);} {Previously FSectorSize however always 512} //To Do //Testing
+ Offset:=AOffset + ntfsUpdateSequenceSize - 2; {SizeOf(Word);} {Previously FSectorSize however always 512}
  for Count:=1 to ASequenceLength - 1 do
   begin
    Update.UpdateSequenceArray[Count - 1]:=Word(Pointer(LongWord(ABuffer) + Offset)^);
    Word(Pointer(LongWord(ABuffer) + Offset)^):=Update.UpdateSequenceNumber;
-   Inc(Offset,ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Inc(Offset,ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
   end;
   
  Result:=True;
@@ -7671,8 +7689,11 @@ end;
 function TNTFSFileSystem.CreateLogFiles:Boolean;
 {Create the default $LogFile headers}
 var
+ Remain:Int64;
+ Offset:PtrUInt;
+ Count:LongWord;
  Buffer:Pointer;
-
+ 
  Instance:LongWord;
 
  Current:TNTFSDiskRecord;
@@ -7704,18 +7725,30 @@ begin
   if Attribute.StreamSize <> CalculateLogFileSize then Exit;
   
   {Create LogFile File}
-  Buffer:=AllocMem(Attribute.StreamSize);
+  Remain:=Attribute.StreamSize;
+  Offset:=0;
+  Count:=SIZE_256K;
+  Buffer:=AllocMem(Count);
+  Instance:=ntfsInstanceFirst;
   try
+   while Remain > 0 do
+    begin
+     {Check Remain}
+     if Remain < Count then Count:=Remain;
  
+     {Write Attribute}
+     if WriteAttribute(Current,Attribute,Buffer^,Offset,Count,Instance,False) <> Count then Exit;
+     
+     {Update Remain}
+     Inc(Offset,Count);
+     Dec(Remain,Count);
+    end;
+   
    //To Do //Create 2 empty Restart Records  (see Struct)
-                 //       2 Restart Areas
-                 //       2 Log Clients
-                 //       Fill LogRecord pages with ?
-                 //Do Fixup on Restart Records and Log Record
- 
-   {Write Attribute}
-   Instance:=ntfsInstanceFirst;
-   if WriteAttribute(Current,Attribute,Buffer^,0,Attribute.StreamSize,Instance,False) <> Attribute.StreamSize then Exit;
+           //       2 Restart Areas
+           //       2 Log Clients
+           //       Fill LogRecord pages with ?
+           //Do Fixup on Restart Records and Log Record
    
    Result:=True;
   finally
@@ -12053,7 +12086,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeMft + 1; {Plus one for MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
   
    {Add StandardInformation}
@@ -12178,7 +12211,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeMftMirr; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -12288,7 +12321,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeLogFile; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -12397,7 +12430,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeVolume; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -12554,7 +12587,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeAttrDef; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -12682,7 +12715,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeRoot; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -12851,7 +12884,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeBitmap; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -12963,7 +12996,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeBoot; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -13085,7 +13118,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeBadClus; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -13202,7 +13235,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeSecure; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -13361,7 +13394,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeUpCase; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -13470,7 +13503,7 @@ begin
    Current.SequenceNumber:=ntfsFileTypeExtend; {Same as record no for all but MFT}
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -13586,7 +13619,7 @@ begin
    Current.SequenceNumber:=1;
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -13708,7 +13741,7 @@ begin
    if FNTFSType = ntNTFS12 then Current.SequenceNumber:=ntfs12FileTypeQuota else Current.SequenceNumber:=1;
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -13856,7 +13889,7 @@ begin
    Current.SequenceNumber:=1;
    Current.RecordAllocated:=FFileRecordSize;
    Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+   Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
    Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
    
    {Add StandardInformation}
@@ -14008,7 +14041,7 @@ begin
      Current.SequenceNumber:=Counter; {Same as record no for all but MFT}
      Current.RecordAllocated:=FFileRecordSize;
      Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-     Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+     Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
      Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
      
      {Add StandardInformation}
@@ -14113,7 +14146,7 @@ begin
      Current.SequenceNumber:=0;
      Current.RecordAllocated:=FFileRecordSize;
      Current.UpdateSequenceOffset:=Current.CalculatedSequenceOffset(FVolumeVersion);
-     Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+     Current.UpdateSequenceLength:=Current.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
      Current.AttributeOffset:=Current.CalculatedOffset(FVolumeVersion);
      
      {Update Record}
@@ -15510,7 +15543,7 @@ begin
     if AFree then
      begin
       ARecord.RecordAllocated:=FFileRecordSize;
-      ARecord.UpdateSequenceLength:=ARecord.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
+      ARecord.UpdateSequenceLength:=ARecord.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
       
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.LoadRecord (Free) - UpdateSequenceNumber = ' + IntToStr(ARecord.UpdateSequenceNumber) + ' UpdateSequenceLength = ' + IntToStr(ARecord.UpdateSequenceLength));
@@ -25321,9 +25354,16 @@ begin
  {Check Driver}
  if FileSysDriver = nil then Exit;
  
- {Create NTFS Recognizer}
+ {Check NTFS Enabled} 
  if FILESYS_NTFS_ENABLED then
   begin
+   {Check Default Stack Size}
+   if THREAD_STACK_DEFAULT_SIZE < SIZE_1M then
+    begin
+     THREAD_STACK_DEFAULT_SIZE:=SIZE_1M;
+    end;
+ 
+   {Create NTFS Recognizer} 
    Recognizer:=TNTFSRecognizer.Create(FileSysDriver);
    Recognizer.AllowDrive:=FILESYS_DRIVES_ENABLED;
    Recognizer.AllowDefault:=NTFS_DEFAULT;

@@ -72,8 +72,8 @@ const
 
 {==============================================================================}
 {String Functions} 
-function GetFirstWord(var AValue:String;ADelimiter:String):String;
-function GetLastWord(var AValue:String;ADelimiter:String):String;
+function GetFirstWord(var AValue:String;const ADelimiter:String):String;
+function GetLastWord(var AValue:String;const ADelimiter:String):String;
 
 function PadString(const AValue:String;AChar:Char;ALength:Integer):String;
 function StrOfChar(const AValue:String;ALength:Integer):String;
@@ -246,7 +246,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {String Functions} 
-function GetFirstWord(var AValue:String;ADelimiter:String):String;
+function GetFirstWord(var AValue:String;const ADelimiter:String):String;
 var
  PosIdx:Integer;
 begin
@@ -266,7 +266,7 @@ end;
 
 {==============================================================================}
 
-function GetLastWord(var AValue:String;ADelimiter:String):String;
+function GetLastWord(var AValue:String;const ADelimiter:String):String;
 begin
  {}
  Result:=''; //To Do //RPos ? //See: \source\packages\rtl-objpas\src\inc\strutils.pp

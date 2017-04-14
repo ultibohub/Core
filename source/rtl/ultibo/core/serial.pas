@@ -71,6 +71,8 @@ const
  SERIAL_RECEIVE_DEPTH_DEFAULT  =  SIZE_2K; {Default receive buffer size in bytes}
  SERIAL_TRANSMIT_DEPTH_DEFAULT =  SIZE_2K; {Default transmit buffer size in bytes}
  
+ SERIAL_PUSH_TIMEOUT = 50; {Timeout (Milliseconds) for Push RX/TX (Implementation specific)}
+ 
  {Serial Device Types}
  SERIAL_TYPE_NONE      = 0;
  SERIAL_TYPE_UART      = 1;
@@ -97,6 +99,8 @@ const
  SERIAL_FLAG_PARITY_SPACE = $00000400; {Device supports space parity}
  SERIAL_FLAG_FLOW_RTS_CTS = $00000800; {Device supports RTS/CTS flow control}
  SERIAL_FLAG_FLOW_DSR_DTR = $00001000; {Device supports DSR/DTR flow control}
+ SERIAL_FLAG_PUSH_RX      = $00002000; {Device requires pushed receive (Implementation specific)}
+ SERIAL_FLAG_PUSH_TX      = $00004000; {Device requires pushed transmit (Implementation specific)}
  
  {Serial Read Flags}
  SERIAL_READ_NONE        = $00000000;
@@ -170,7 +174,7 @@ type
   Start:LongWord;            {Index of first byte in buffer}
   Count:LongWord;            {Number of bytes in buffer}
   Size:LongWord;             {Size of buffer}
-  Data:Pointer;              {Bufferred data}
+  Data:Pointer;              {Buffered data}
  end;
  
  {Serial Device}

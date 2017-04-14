@@ -760,17 +760,17 @@ const
  BCM2836_PL011_IFLS_RXIFPSEL    = (7 shl 9); {Unsupported, write zero, read as don't care}
  BCM2836_PL011_IFLS_TXIFPSEL    = (7 shl 6); {Unsupported, write zero, read as don't care} 
  BCM2836_PL011_IFLS_RXIFLSEL    = (7 shl 3); {Receive interrupt FIFO level select} 
- BCM2836_PL011_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes 1/8 full}
- BCM2836_PL011_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes 1/4 full} 
- BCM2836_PL011_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes 1/2 full} 
- BCM2836_PL011_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes 3/4 full} 
- BCM2836_PL011_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes 7/8 full} 
+ BCM2836_PL011_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes >= 1/8 full}
+ BCM2836_PL011_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes >= 1/4 full} 
+ BCM2836_PL011_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes >= 1/2 full} 
+ BCM2836_PL011_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes >= 3/4 full} 
+ BCM2836_PL011_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes >= 7/8 full} 
  BCM2836_PL011_IFLS_TXIFLSEL    = (7 shl 0); {Transmit interrupt FIFO level select} 
- BCM2836_PL011_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes 1/8 full} 
- BCM2836_PL011_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes 1/4 full} 
- BCM2836_PL011_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes 1/2 full} 
- BCM2836_PL011_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes 3/4 full}  
- BCM2836_PL011_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes 7/8 full}  
+ BCM2836_PL011_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes <= 1/8 full} 
+ BCM2836_PL011_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes <= 1/4 full} 
+ BCM2836_PL011_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes <= 1/2 full} 
+ BCM2836_PL011_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes <= 3/4 full}  
+ BCM2836_PL011_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes <= 7/8 full}  
  
  {PL011 UART Interrupt Mask Set/Clear register bits (See 13.4)}
  BCM2836_PL011_IMSC_OEIM   = (1 shl 10); {Overrun error interrupt mask}
@@ -1154,7 +1154,10 @@ const
  BCM2836_MBOX_TAG_SET_PALETTE		= $0004800b;
 
  BCM2836_MBOX_TAG_GET_TOUCHBUF      = $0004000f;
+ BCM2836_MBOX_TAG_SET_TOUCHBUF      = $0004801f;
+ 
  BCM2836_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
+ BCM2836_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
  
  BCM2836_MBOX_TAG_GET_LAYER         = $0004000c;
  BCM2836_MBOX_TAG_TST_LAYER         = $0004400c;
@@ -1183,7 +1186,14 @@ const
  {BCM2836 mailbox tag Get Board Revision values (See: http://elinux.org/RPi_HardwareHistory)}
  BCM2836_BOARD_REV_2B_1	    = $00A01041;
  BCM2836_BOARD_REV_2B_2	    = $00A21041;
+ BCM2836_BOARD_REV_2B_3     = $00A22042;
+ 
  BCM2836_BOARD_REV_3B_1     = $00A02082;
+ BCM2836_BOARD_REV_3B_2     = $00A22082;
+ BCM2836_BOARD_REV_3B_3     = $00A32082;
+ 
+ BCM2836_BOARD_REV_CM3_1    = $00A020A0;
+ BCM2836_BOARD_REV_CM3_2    = $00A220A0;
  
  BCM2836_BOARD_REV_MASK     = $00FFFFFF; {Mask off the warranty bit}
  
@@ -1201,25 +1211,28 @@ const
  BCM2836_BOARD_REVISION_MODEL_UNKNOWN        = (7 shl 4);   {Unknown}
  BCM2836_BOARD_REVISION_MODEL_3B             = (8 shl 4);   {Model 3B}
  BCM2836_BOARD_REVISION_MODEL_ZERO           = (9 shl 4);   {Model Zero (Cannot occur on BCM2836)}
-                                             
+ BCM2836_BOARD_REVISION_MODEL_COMPUTE3       = (10 shl 4);  {Compute Module 3}
+ BCM2836_BOARD_REVISION_MODEL_UNKNOWN_2      = (11 shl 4);  {Unknown}
+ BCM2836_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W (Cannot occur on BCM2836)}
+ 
  BCM2836_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2836_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835 (Cannot occur on BCM2836)}
  BCM2836_BOARD_REVISION_PROCESSOR_BCM2836    = (1 shl 12);  {BCM2836}
  BCM2836_BOARD_REVISION_PROCESSOR_BCM2837    = (2 shl 12);  {BCM2837}
  
- BCM2836_BOARD_REVISION_MANUFACTURER_MASK    = ($F shl 16); {Manufacturer}
- BCM2836_BOARD_REVISION_MANUFACTURER_SONY    = (0 shl 16);  {Sony}
- BCM2836_BOARD_REVISION_MANUFACTURER_EGOMAN  = (1 shl 16);  {Egoman}
- BCM2836_BOARD_REVISION_MANUFACTURER_EMBEST  = (2 shl 16);  {Embest}
- BCM2836_BOARD_REVISION_MANUFACTURER_UNKNOWN = (3 shl 16);  {Unknown}
- BCM2836_BOARD_REVISION_MANUFACTURER_EMBEST2 = (4 shl 16);  {Embest}
+ BCM2836_BOARD_REVISION_MANUFACTURER_MASK       = ($F shl 16); {Manufacturer}
+ BCM2836_BOARD_REVISION_MANUFACTURER_SONY       = (0 shl 16);  {Sony}
+ BCM2836_BOARD_REVISION_MANUFACTURER_EGOMAN     = (1 shl 16);  {Egoman}
+ BCM2836_BOARD_REVISION_MANUFACTURER_EMBEST     = (2 shl 16);  {Embest}
+ BCM2836_BOARD_REVISION_MANUFACTURER_SONY_JAPAN = (3 shl 16);  {Sony (Japan)} 
+ BCM2836_BOARD_REVISION_MANUFACTURER_EMBEST2    = (4 shl 16);  {Embest}
  
  BCM2836_BOARD_REVISION_MEMORY_MASK          = ($7 shl 20); {Memory Size}
  BCM2836_BOARD_REVISION_MEMORY_256M          = (0 shl 20);  {256M}
  BCM2836_BOARD_REVISION_MEMORY_512M          = (1 shl 20);  {512M}
  BCM2836_BOARD_REVISION_MEMORY_1024M         = (2 shl 20);  {1024M}
                                              
- BCM2836_BOARD_REVISION_ENCODED_FLAG         = (1 shl 23);  {Endcoded Flag, if set then revision uses this encoding}
+ BCM2836_BOARD_REVISION_ENCODED_FLAG         = (1 shl 23);  {Encoded Flag, if set then revision uses this encoding}
                                              
  BCM2836_BOARD_REVISION_MASK                 = $00FFFFFF;   {Mask off the warranty bits}
  
@@ -1653,6 +1666,7 @@ const
  BCM2836_ARM_LOCAL_FIQ_PENDING_PERIPHERAL15  = (1 shl 26); {Local Peripheral 15 Fast Interrupt (Not Used)}
  
 {==============================================================================}
+{$PACKRECORDS 4}
 type 
  {BCM2836 specific structures}
  
@@ -3089,7 +3103,7 @@ type
   Address:LongWord;
   EnableDisable:array[0..BCM2837_VIRTUAL_GPIO_PIN_COUNT - 1] of LongWord; {Two packed 16-bit counts of enabled and disabled / Allows host to detect a brief enable that was missed}
  end;
- 
+{$PACKRECORDS DEFAULT} 
 {==============================================================================}
 {==============================================================================}
 

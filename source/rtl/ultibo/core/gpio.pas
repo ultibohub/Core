@@ -196,7 +196,7 @@ type
   DevicePullSelect:TGPIODevicePullSelect;         {A Device specific DevicePullSelect method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DeviceFunctionGet:TGPIODeviceFunctionGet;       {A Device specific DeviceFunctionGet method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DeviceFunctionSelect:TGPIODeviceFunctionSelect; {A Device specific DeviceFunctionSelect method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
-  DeviceProperties:TGPIODeviceProperties;         {A Device specific DeviceProperties method implementing the standard GPIO device interfac (Or nil if the default method is suitable)e}
+  DeviceProperties:TGPIODeviceProperties;         {A Device specific DeviceProperties method implementing the standard GPIO device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   Address:Pointer;                                {Device register base address}

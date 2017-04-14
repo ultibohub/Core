@@ -260,14 +260,16 @@ var
 {==============================================================================}
 var
  {Timer configuration}
- TIMER_THREAD_COUNT:LongWord = 5;              {How many timer threads to create}
- TIMER_MESSAGESLOT_MAXIMUM:LongWord = SIZE_2K; {Maximum number of messages for the timer messageslot}            
+ TIMER_THREAD_COUNT:LongWord = 4;              {How many timer threads to create}
+ TIMER_PRIORITY_THREAD_COUNT:LongWord = 1;     {How many priority timer threads to create}
+ TIMER_MESSAGESLOT_MAXIMUM:LongWord = SIZE_2K; {Maximum number of messages for the timer messageslot}
  
 {==============================================================================}
 var
  {Worker configuration}
- WORKER_THREAD_COUNT:LongWord = 10;             {How many worker threads to create}
- WORKER_MESSAGESLOT_MAXIMUM:LongWord = SIZE_2K; {Maximum number of messages for the worker messageslot}            
+ WORKER_THREAD_COUNT:LongWord = 8;              {How many worker threads to create}
+ WORKER_PRIORITY_THREAD_COUNT:LongWord = 2;     {How many priority worker threads to create}
+ WORKER_MESSAGESLOT_MAXIMUM:LongWord = SIZE_2K; {Maximum number of messages for the worker messageslot}
  
 {==============================================================================}
 {Spin, Mutex, Semaphore, Critical Section, Event and Buffer configuration}
@@ -277,7 +279,7 @@ var
  
  {Mutex defaults}
  MUTEX_SHARED_MEMORY:LongBool;            {Mutexs are allocated from Shared memory regions if True}
- MUTEX_DEFAULT_SPINCOUNT:LongWord = 0; //100;  {Default number of times a mutex will spin before yielding (Overidden to 0 if CPU count equals 1)}
+ MUTEX_DEFAULT_SPINCOUNT:LongWord = 0;    {Default number of times a mutex will spin before yielding (Overidden to 0 if CPU count equals 1)}
  
  {Semaphore defaults}
  SEMAPHORE_SHARED_MEMORY:LongBool;                   {Semaphores are allocated from Shared memory regions if True}
@@ -288,7 +290,7 @@ var
  
  {Critical Section defaults}
  CRITICAL_SECTION_SHARED_MEMORY:LongBool;            {Critical Sections are allocated from Shared memory regions if True}
- CRITICAL_SECTION_DEFAULT_SPINCOUNT:LongWord = 100;  {Default number of times a critical section will spin before waiting (Overidden to 0 if CPU count equals 1)}
+ CRITICAL_SECTION_DEFAULT_SPINCOUNT:LongWord = 0;    {Default number of times a critical section will spin before waiting (Overidden to 0 if CPU count equals 1)}
  
  {Messageslot defaults}
  MESSAGESLOT_SHARED_MEMORY:LongBool;             {Messageslots are allocated from Shared memory regions if True}
@@ -382,8 +384,9 @@ var
  THREAD_SHARED_MEMORY:LongBool;                   {Threads are allocated from Shared memory regions if True}
  
  THREAD_STACK_DEFAULT_SIZE:LongWord = SIZE_256K;  {Default stack size for all threads (Unless specified during creation)}
- THREAD_STACK_MINIMUM_SIZE:LongWord = SIZE_1K;    {Minimum thread stack size}
- THREAD_STACK_MAXIMUM_SIZE:LongWord = SIZE_1M;    {Maximum thread stack size}
+ THREAD_STACK_MINIMUM_SIZE:LongWord = SIZE_4K;    {Minimum thread stack size}
+ THREAD_STACK_MAXIMUM_SIZE:LongWord = SIZE_4M;    {Maximum thread stack size}
+ THREAD_STACK_GUARD_ENABLED:LongBool = True;      {If True then each thread stack includes a guard page to detect stack overflows}
  
  THREAD_NAME_DEFAULT:String;                      {The default name for new threads} 
  THREAD_MESSAGES_MAXIMUM:LongWord = SIZE_256;     {Maximum number of messages that can be stored in a thread message list}
@@ -604,6 +607,9 @@ var
 var
  {Logging defaults}
  LOGGING_DIRECT_ENABLE:LongBool;                 {If True then logging output is written directly and not scheduled via the logging thread}
+ LOGGING_INCLUDE_COUNTER:LongBool = True;        {If True then logging output includes an incrementing counter to detect missed entries}
+ LOGGING_INCLUDE_DATETIME:LongBool;              {If True then logging output includes the current date and time for each entry}
+ LOGGING_INCLUDE_TICKCOUNT:LongBool;             {If True then logging output includes the 64-bit tick count value for each entry}
  
  LOGGING_MESSAGESLOT_MAXIMUM:LongWord = SIZE_8K; {Maximum number of messages for the logging messageslot}
 
@@ -861,8 +867,8 @@ var
  
  {Cache configuration} 
  FILESYS_CACHE_SIZE:LongWord = SIZE_16M;                     {The default filesystem cache size}
- FILESYS_CACHE_PAGE:LongWord = SIZE_8K;                      {The size of a filesystem cache page}
- FILESYS_CACHE_KEYS:LongWord = SIZE_8;                       {The number of hash keys for the filesystem cache}
+ FILESYS_CACHE_PAGE:LongWord = SIZE_32K;                     {The size of a filesystem cache page}
+ FILESYS_CACHE_KEYS:LongWord = 12;                           {The number of hash keys for the filesystem cache}
  FILESYS_CACHE_MODE:LongWord = FILESYS_CACHE_MODE_READWRITE; {The default filesystem cache mode}
  
  {Filesystem configuration}
@@ -1779,6 +1785,8 @@ begin
   BOARD_TYPE_PC_X86_64:Result:='BOARD_TYPE_PC_X86_64'; 
   BOARD_TYPE_RPI3B:Result:='BOARD_TYPE_RPI3B';
   BOARD_TYPE_QEMUVPB:Result:='BOARD_TYPE_QEMUVPB';
+  BOARD_TYPE_RPI_COMPUTE3:Result:='BOARD_TYPE_RPI_COMPUTE3';
+  BOARD_TYPE_RPI_ZERO_W:Result:='BOARD_TYPE_RPI_ZERO_W';
  end;
 end;
 

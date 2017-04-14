@@ -190,6 +190,12 @@ Global Defines
 {--$DEFINE BCM2709_DEBUG}         {Enable debug output/counters for BCM2709 drivers (Default: Off)}
 {--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
 
+{DMA}
+{--$DEFINE PL08X_DEBUG}           {Enable debug output/counters for PL08X driver (Default: Off)}
+
+{Network}
+{--$DEFINE SMC91X_DEBUG}          {Enable debug output/counters for SMC91X driver (Default: Off)}
+
 {WiFi}
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
 {$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
@@ -197,10 +203,13 @@ Global Defines
      
 {Serial/UART}     
 {--$DEFINE PL2303_DEBUG}          {Enable debug output/counters for PL2303 driver (Default: Off)}
-{--$DEFINE DS1307_DEBUG}          {Enable debug output/counters for DS1307 driver (Default: Off)}
 {--$DEFINE CDCACM_DEBUG}          {Enable debug output/counters for USB CDC ACM driver (Default: Off)}
 {--$DEFINE FTDISERIAL_DEBUG}      {Enable debug output/counters for FTDI Serial driver (Default: Off)}
-{--$DEFINE PL011_DEBUG}         {Enable debug output/counters for PL011 driver (Default: Off)}
+{--$DEFINE PL011_DEBUG}           {Enable debug output/counters for PL011 driver (Default: Off)}
+
+{RTC}
+{--$DEFINE DS1307_DEBUG}          {Enable debug output/counters for DS1307 driver (Default: Off)}
+{--$DEFINE PL031_DEBUG}           {Enable debug output/counters for PL031 driver (Default: Off)}
 
 {GPIO}
 {--$DEFINE MCP230XX_DEBUG}        {Enable debug output/counters for MCP230XX driver (Default: Off)}
@@ -217,6 +226,12 @@ Global Defines
 {--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
 {--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
 {--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
+
+{Keyboard/Mouse}
+{--$DEFINE PL050_DEBUG}           {Enable debug output/counters for PL050 driver (Default: Off)}
+
+{MMC/SDHCI}
+{--$DEFINE PL18X_DEBUG}           {Enable debug output/counters for PL18X driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

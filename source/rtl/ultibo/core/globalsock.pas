@@ -1076,7 +1076,7 @@ type
  end;
  TWSABinding = WSABinding;
 
- PWSAProvider = ^TWSAProvider;    {A network Provider (Tranport)} //To Do //Remove ?
+ PWSAProvider = ^TWSAProvider;    {A network Provider (Transport)} //To Do //Remove ?
  WSAProvider = record
   Version: Word;
   TransportFamily: Word; //To Do //AddressFamily
@@ -1141,7 +1141,7 @@ type
  end;
  TWSAExtendedBinding = WSAExtendedBinding;
 
- PWSAExtendedProvider = ^TWSAExtendedProvider;    {A network Provider (Tranport)} //To Do //Remove ?
+ PWSAExtendedProvider = ^TWSAExtendedProvider;    {A network Provider (Transport)} //To Do //Remove ?
  WSAExtendedProvider = record
   Size: LongWord;
   Version: Word;

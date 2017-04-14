@@ -135,17 +135,17 @@ const
  PL011_UART_IFLS_RXIFPSEL    = (7 shl 9); {Unsupported, write zero, read as don't care}
  PL011_UART_IFLS_TXIFPSEL    = (7 shl 6); {Unsupported, write zero, read as don't care} 
  PL011_UART_IFLS_RXIFLSEL    = (7 shl 3); {Receive interrupt FIFO level select} 
- PL011_UART_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes 1/8 full}
- PL011_UART_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes 1/4 full} 
- PL011_UART_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes 1/2 full} 
- PL011_UART_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes 3/4 full} 
- PL011_UART_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes 7/8 full} 
+ PL011_UART_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes >= 1/8 full}
+ PL011_UART_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes >= 1/4 full} 
+ PL011_UART_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes >= 1/2 full} 
+ PL011_UART_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes >= 3/4 full} 
+ PL011_UART_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes >= 7/8 full} 
  PL011_UART_IFLS_TXIFLSEL    = (7 shl 0); {Transmit interrupt FIFO level select} 
- PL011_UART_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes 1/8 full} 
- PL011_UART_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes 1/4 full} 
- PL011_UART_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes 1/2 full} 
- PL011_UART_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes 3/4 full}  
- PL011_UART_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes 7/8 full}  
+ PL011_UART_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes <= 1/8 full} 
+ PL011_UART_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes <= 1/4 full} 
+ PL011_UART_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes <= 1/2 full} 
+ PL011_UART_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes <= 3/4 full}  
+ PL011_UART_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes <= 7/8 full}  
  
  {PL011 UART Interrupt Mask Set/Clear register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_IMSC_OEIM   = (1 shl 10); {Overrun error interrupt mask}
@@ -213,7 +213,7 @@ const
 {==============================================================================}
 type
  {PL011 specific types}
- {Layout of the PL011 registers (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html )}
+ {Layout of the PL011 registers (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/I18702.html)}
  PPL011UARTRegisters = ^TPL011UARTRegisters;
  TPL011UARTRegisters = record
   DR:LongWord;         {Data Register}
@@ -229,11 +229,11 @@ type
   FBRD:LongWord;       {Fractional Baud rate divisor}
   LCRH:LongWord;       {Line Control register}
   CR:LongWord;         {Control register}
-  IFLS:LongWord;       {Interupt FIFO Level Select Register}
-  IMSC:LongWord;       {Interupt Mask Set Clear Register}
-  RIS:LongWord;        {Raw Interupt Status Register}
-  MIS:LongWord;        {Masked Interupt Status Register}
-  ICR:LongWord;        {Interupt Clear Register}
+  IFLS:LongWord;       {Interrupt FIFO Level Select Register}
+  IMSC:LongWord;       {Interrupt Mask Set Clear Register}
+  RIS:LongWord;        {Raw Interrupt Status Register}
+  MIS:LongWord;        {Masked Interrupt Status Register}
+  ICR:LongWord;        {Interrupt Clear Register}
   DMACR:LongWord;      {DMA Control Register}
   Reserved11:LongWord;
   Reserved12:LongWord;
@@ -260,6 +260,7 @@ type
   UART:TUARTDevice;
   {PL011 Properties}
   IRQ:LongWord;
+  Lock:TSpinHandle;                                                       {Device lock (Differs from lock in UART device) (Spin lock due to use by interrupt handler)}
   ClockRate:LongWord;                                                     {Device clock rate}
   Registers:PPL011UARTRegisters;                                          {Device registers}
   {Statistics Properties}                                        
@@ -267,8 +268,9 @@ type
  end;
  
 {==============================================================================}
-{var}
+var
  {PL011 specific variables}
+ PL011_RX_IRQ_MASK:Boolean = False; {If True then mask RX interrupts while RX FIFO is not empty (Allows for implementation variations)}
  
 {==============================================================================}
 {Initialization Functions}
@@ -293,6 +295,9 @@ procedure PL011UARTInterruptHandler(UART:PUARTDevice);
 
 procedure PL011UARTReceive(UART:PUARTDevice);
 procedure PL011UARTTransmit(UART:PUARTDevice);
+
+procedure PL011UARTEnableInterrupt(UART:PPL011UART;Interrupt:LongWord); 
+procedure PL011UARTDisableInterrupt(UART:PPL011UART;Interrupt:LongWord); 
 
 {==============================================================================}
 {PL011 Helper Functions}
@@ -372,6 +377,7 @@ begin
    PL011UART.UART.Properties.FlowControl:=SERIAL_FLOW_NONE;
    {PL011}
    PL011UART.IRQ:=IRQ;
+   PL011UART.Lock:=INVALID_HANDLE_VALUE;
    PL011UART.ClockRate:=ClockRate;
    PL011UART.Registers:=PPL011UARTRegisters(Address);
    
@@ -432,7 +438,7 @@ begin
   end
  else
   begin
-   if UART_LOG_ENABLED then UARTLogError(nil,'PL011: Failed to release UART device: ' + ErrorToString(Result));
+   if UART_LOG_ENABLED then UARTLogError(nil,'PL011: Failed to close UART device: ' + ErrorToString(Result));
   end;  
 end;
 
@@ -554,7 +560,7 @@ begin
  {$ENDIF}
  
  {Set Interrupt FIFO Level}
- PPL011UART(UART).Registers.IFLS:=PL011_UART_IFLS_RXIFLSEL1_8 or PL011_UART_IFLS_TXIFLSEL1_2; {PL011_UART_IFLS_RXIFLSEL1_2}
+ PPL011UART(UART).Registers.IFLS:=PL011_UART_IFLS_RXIFLSEL1_8 or PL011_UART_IFLS_TXIFLSEL1_8; {PL011_UART_IFLS_RXIFLSEL1_2 / PL011_UART_IFLS_TXIFLSEL1_2}
 
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Interrupt FIFO Level=' + IntToHex(PPL011UART(UART).Registers.IFLS,8));
@@ -583,6 +589,18 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
+ 
+ {Allocate Lock}
+ PPL011UART(UART).Lock:=SpinCreate;
+ if PPL011UART(UART).Lock = INVALID_HANDLE_VALUE then
+  begin
+   if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Failed to create device lock');
+
+   EventDestroy(UART.TransmitWait);
+   EventDestroy(UART.ReceiveWait);
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end; 
  
  {Set Control (Enable UART)}
  PPL011UART(UART).Registers.CR:=Control;
@@ -646,11 +664,17 @@ begin
  {Reset Control (Disable UART)}
  PPL011UART(UART).Registers.CR:=0;
  
+ {Destroy Lock}
+ SpinDestroy(PPL011UART(UART).Lock);
+ PPL011UART(UART).Lock:=INVALID_HANDLE_VALUE;
+ 
  {Destroy Transmit Event}
  EventDestroy(UART.TransmitWait);
+ UART.TransmitWait:=INVALID_HANDLE_VALUE;
  
  {Destroy Receive Event}
  EventDestroy(UART.ReceiveWait);
+ UART.ReceiveWait:=INVALID_HANDLE_VALUE;
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
@@ -697,6 +721,13 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Check State}
+   if (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) and ((PPL011UART(UART).Registers.FR and PL011_UART_FR_RXFE) = 0) then
+    begin
+     {Set Event}
+     EventSet(UART.ReceiveWait);
+    end;
+    
    {Check Non Blocking}
    if ((Flags and UART_READ_NON_BLOCK) <> 0) and (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) then
     begin
@@ -768,6 +799,13 @@ begin
        {Check Status}
        if (Status and PL011_UART_FR_RXFE) <> 0 then
         begin
+         {Check Mask}
+         if PL011_RX_IRQ_MASK then
+          begin
+           {Enable Receive}
+           PL011UARTEnableInterrupt(PPL011UART(UART),PL011_UART_IMSC_RXIM);
+          end; 
+         
          {Reset Event}
          EventReset(UART.ReceiveWait);
         end;        
@@ -826,6 +864,13 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Check State}
+   if (EventState(UART.TransmitWait) <> EVENT_STATE_SIGNALED) and ((PPL011UART(UART).Registers.FR and PL011_UART_FR_TXFF) = 0) then
+    begin
+     {Set Event}
+     EventSet(UART.TransmitWait);
+    end;
+   
    {Check Non Blocking}
    if ((Flags and UART_WRITE_NON_BLOCK) <> 0) and (EventState(UART.TransmitWait) <> EVENT_STATE_SIGNALED) then
     begin
@@ -869,6 +914,9 @@ begin
        {Check Status}
        if (Status and PL011_UART_FR_TXFF) <> 0 then
         begin
+         {Enable Transmit}
+         PL011UARTEnableInterrupt(PPL011UART(UART),PL011_UART_IMSC_TXIM);
+         
          {Reset Event}
          EventReset(UART.TransmitWait);
         end;        
@@ -977,12 +1025,17 @@ end;
 {==============================================================================}
 
 procedure PL011UARTInterruptHandler(UART:PUARTDevice);
+{Interrupt handler for the PL011 UART device}
+{Note: Not intended to be called directly by applications}
 var
  Status:LongWord;
 begin
  {}
  {Check UART}
  if UART = nil then Exit;
+ 
+ {Acquire Lock}
+ if SpinLockIRQ(PPL011UART(UART).Lock) <> ERROR_SUCCESS then Exit;
  
  {Update Statistics}
  Inc(PPL011UART(UART).InterruptCount);
@@ -1004,7 +1057,11 @@ begin
      PPL011UART(UART).Registers.ICR:=PL011_UART_ICR_TXIC;
      
      {Send Transmit}
-     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTTransmit),UART,nil);
+     if WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTTransmit),UART,nil) = ERROR_SUCCESS then
+      begin
+       {Mask Transmit}
+       PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC and not(PL011_UART_IMSC_TXIM);
+      end; 
     end;
     
    {Check Receive}
@@ -1013,18 +1070,27 @@ begin
      {Acknowledge Receive}
      PPL011UART(UART).Registers.ICR:=PL011_UART_ICR_RXIC;
 
-     {Send Receive}
-     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTReceive),UART,nil);
+     {Send Receive and Check Mask}
+     if (WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTReceive),UART,nil) = ERROR_SUCCESS) and (PL011_RX_IRQ_MASK) then
+      begin
+       {Mask Receive}
+       PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC and not(PL011_UART_IMSC_RXIM);
+      end; 
     end;
   end; 
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
+ 
+ {Release Lock}
+ SpinUnlockIRQ(PPL011UART(UART).Lock);
 end;
 
 {==============================================================================}
 
 procedure PL011UARTReceive(UART:PUARTDevice);
+{Receive handler for the PL011 UART device}
+{Note: Not intended to be called directly by applications}
 begin
  {}
  {Check UART}
@@ -1055,6 +1121,8 @@ end;
 {==============================================================================}
 
 procedure PL011UARTTransmit(UART:PUARTDevice);
+{Transmit handler for the PL011 UART device}
+{Note: Not intended to be called directly by applications}
 begin
  {}
  {Check UART}
@@ -1080,6 +1148,58 @@ begin
    {Release the Lock}
    MutexUnlock(UART.Lock);
   end;
+end;
+
+{==============================================================================}
+
+procedure PL011UARTEnableInterrupt(UART:PPL011UART;Interrupt:LongWord);
+{Enable the specified interrupt in the interrupt mask register of a PL011 UART device}
+{UART: The PL011 UART device to enable the interrupt for}
+{Interrupt: The interrupt to enable}
+
+{Note: Caller must hold the UART lock}
+begin
+ {}
+ {Acquire Lock}
+ if SpinLockIRQ(UART.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+
+ {Update Interrupt Mask} 
+ UART.Registers.IMSC:=UART.Registers.IMSC or Interrupt;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+
+ {Release Lock}
+ SpinUnlockIRQ(UART.Lock);
+end;
+
+{==============================================================================}
+
+procedure PL011UARTDisableInterrupt(UART:PPL011UART;Interrupt:LongWord);
+{Disable the specified interrupt in the interrupt mask register of a PL011 UART device}
+{Network: The PL011 UART device to disable the interrupt for}
+{Interrupt: The interrupt to disable}
+
+{Note: Caller must hold the UART lock}
+begin
+ {}
+ {Acquire Lock}
+ if SpinLockIRQ(UART.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Update Interrupt Mask} 
+ UART.Registers.IMSC:=UART.Registers.IMSC and not(Interrupt);
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+ 
+ {Release Lock}
+ SpinUnlockIRQ(UART.Lock);
 end;
 
 {==============================================================================}

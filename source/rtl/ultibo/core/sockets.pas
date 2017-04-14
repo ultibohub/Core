@@ -696,6 +696,9 @@ begin
       Result:=ERROR_OPERATION_FAILED;
       SocketsStartupError:=ERROR_OPERATION_FAILED;
  
+      {Register Notification}
+      NetworkDeviceNotification(nil,SocketsNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_CLOSING,NOTIFIER_FLAG_NONE);
+
       {Enumerate Adapters}
       NetworkDeviceEnumerate(SocketsNetworkDeviceEnum,nil);
       
@@ -752,10 +755,7 @@ begin
 
       {Create Adapter Timer}
       SocketsAdapterTimer:=TimerCreateEx(SOCKETS_ADAPTER_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(SocketsProcessAdapter),nil); {Rescheduled by Timer Event}
-      
-      {Register Notification}
-      NetworkDeviceNotification(nil,SocketsNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_CLOSING,NOTIFIER_FLAG_NONE);
-      
+     
       {Register Shutdown}
       //To Do
       
@@ -816,11 +816,11 @@ begin
     {Shutdown and Cleanup}
     Result:=ERROR_OPERATION_FAILED;
     
-    {Deregister Shutdown}
-    //To Do
-    
     {Deregister Notification}
     NetworkDeviceNotification(nil,SocketsNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_NONE,NOTIFIER_FLAG_NONE);
+
+    {Deregister Shutdown}
+    //To Do
 
     {Destroy Adapter Timer}
     TimerDestroy(SocketsAdapterTimer);
@@ -2654,8 +2654,8 @@ begin
  if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
   begin
    try
-    {Check Started}
-    if SocketsStartupCount > 0 then
+    {Check Started and Ready}
+    if (SocketsStartupCount > 0) and (SocketsStartupError = ERROR_SUCCESS) then
      begin
       {Check Type}
       case Event.Device.Device.DeviceType of
@@ -2728,8 +2728,8 @@ begin
  if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
   begin
    try
-    {Check Started}
-    if SocketsStartupCount > 0 then
+    {Check Started and Ready}
+    if (SocketsStartupCount > 0) and (SocketsStartupError = ERROR_SUCCESS) then
      begin
       {Check Type}
       case Network.Device.DeviceType of

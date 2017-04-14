@@ -304,6 +304,8 @@ end;
 {==============================================================================}
 {DS1307 RTC Functions}
 function DS1307RTCStart(RTC:PRTCDevice):LongWord;
+{Implementation of RTCDeviceStart API for DS1307 RTC}
+{Note: Not intended to be called directly by applications, use RTCDeviceStart instead}
 var
  Control:Byte;
  Data:TDS1307RTCTime;
@@ -542,6 +544,8 @@ end;
 {==============================================================================}
 
 function DS1307RTCStop(RTC:PRTCDevice):LongWord;
+{Implementation of RTCDeviceStop API for DS1307 RTC}
+{Note: Not intended to be called directly by applications, use RTCDeviceStop instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -561,6 +565,8 @@ end;
 {==============================================================================}
 
 function DS1307RTCGetTime(RTC:PRTCDevice):Int64;
+{Implementation of RTCDeviceGetTime API for DS1307 RTC}
+{Note: Not intended to be called directly by applications, use RTCDeviceGetTime instead}
 var
  FileTime:Int64;
  Data:TDS1307RTCTime;
@@ -600,6 +606,8 @@ end;
 {==============================================================================}
 
 function DS1307RTCSetTime(RTC:PRTCDevice;const Time:Int64):Int64;
+{Implementation of RTCDeviceSetTime API for DS1307 RTC}
+{Note: Not intended to be called directly by applications, use RTCDeviceSetTime instead}
 var
  Data:TDS1307RTCTime;
 begin

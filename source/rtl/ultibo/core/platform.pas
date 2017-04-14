@@ -2437,6 +2437,22 @@ begin
  {Initialize Unhandled Exceptions}
  ExceptProc:=@UnhandledException;
  
+ {Initialize Stack Alignment / Minimum}
+ if THREAD_STACK_GUARD_ENABLED then
+  begin
+   {Check Stack Alignment}
+   if (MEMORY_PAGE_SIZE > STACK_MIN_ALIGNMENT) then
+    begin
+     STACK_MIN_ALIGNMENT:=MEMORY_PAGE_SIZE;
+    end; 
+    
+   {Check Stack Minimum}
+   if (MEMORY_PAGE_SIZE > THREAD_STACK_MINIMUM_SIZE) then
+    begin
+     THREAD_STACK_MINIMUM_SIZE:=MEMORY_PAGE_SIZE;
+    end;
+  end;
+  
  PlatformInitialized:=True; 
 end;
 
@@ -2793,12 +2809,16 @@ begin
  {TIMER_THREAD_COUNT}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('TIMER_THREAD_COUNT'),0);
  if WorkInt > 0 then TIMER_THREAD_COUNT:=WorkInt;
+ {TIMER_PRIORITY_THREAD_COUNT}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('TIMER_PRIORITY_THREAD_COUNT'),0);
+ if WorkInt > 0 then TIMER_PRIORITY_THREAD_COUNT:=WorkInt;
   
  {WORKER_THREAD_COUNT}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WORKER_THREAD_COUNT'),0);
  if WorkInt > 0 then WORKER_THREAD_COUNT:=WorkInt;
- 
- //To Do
+ {WORKER_PRIORITY_THREAD_COUNT}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WORKER_PRIORITY_THREAD_COUNT'),0);
+ if WorkInt > 0 then WORKER_PRIORITY_THREAD_COUNT:=WorkInt;
  
  ParseEnvironmentCompleted:=True; 
 end;
@@ -8707,7 +8727,7 @@ end;
 procedure NanosecondDelayEx(Nanoseconds:LongWord;Wait:Boolean);
 {Non sleep wait for a number of nanoseconds}
 {Nanoseconds: Number of nanoseconds to wait}
-{Wait: Use WaitForInterrupt on each loop to reduce power consumption}
+{Wait: Use WaitForEvent on each loop to reduce power consumption}
 {Note: Not suitable for use by interrupt handlers if wait is true}
 var
  Start:Int64;
@@ -8731,7 +8751,7 @@ begin
     begin
      if Wait then
       begin
-       WaitForInterrupt;
+       WaitForEvent;
       end;
     end;
   end;
@@ -8742,7 +8762,7 @@ end;
 procedure MicrosecondDelayEx(Microseconds:LongWord;Wait:Boolean);
 {Non sleep wait for a number of microseconds}
 {Microseconds: Number of microseconds to wait}
-{Wait: Use WaitForInterrupt on each loop to reduce power consumption}
+{Wait: Use WaitForEvent on each loop to reduce power consumption}
 {Note: Not suitable for use by interrupt handlers if wait is true}
 var
  Start:Int64;
@@ -8766,7 +8786,7 @@ begin
     begin
      if Wait then
       begin
-       WaitForInterrupt;
+       WaitForEvent;
       end;
     end;
   end;
@@ -8777,7 +8797,7 @@ end;
 procedure MillisecondDelayEx(Milliseconds:LongWord;Wait:Boolean);
 {Non sleep wait for a number of milliseconds}
 {Milliseconds: Number of milliseconds to wait}
-{Wait: Use WaitForInterrupt on each loop to reduce power consumption}
+{Wait: Use WaitForEvent on each loop to reduce power consumption}
 {Note: Not suitable for use by interrupt handlers if wait is true}
 var
  Start:Int64;
@@ -8801,7 +8821,7 @@ begin
     begin
      if Wait then
       begin
-       WaitForInterrupt;
+       WaitForEvent;
       end;
     end;
   end;

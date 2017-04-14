@@ -4324,11 +4324,11 @@ begin
   begin
    Result:=ERROR_INVALID_PARAMETER;
    
-   {Enumerate Adapters}
-   NetworkDeviceEnumerate(WiFiNetworkDeviceEnum,nil);
-   
    {Register Notification}
    NetworkDeviceNotification(nil,WiFiNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_CLOSING,NOTIFIER_FLAG_NONE);
+   
+   {Enumerate Adapters}
+   NetworkDeviceEnumerate(WiFiNetworkDeviceEnum,nil);
    
    {Set Started} 
    WiFiStarted:=True;

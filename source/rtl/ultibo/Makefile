@@ -391,6 +391,7 @@ ULTIBO_UNITS=globalconfig \
 	     keyboard \
 	     mouse \
 	     touch \
+	     ps2 \
 	     ataoe \
 	     atapi \
 	     scsi \
@@ -492,7 +493,9 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    usbcdcacm \
 		    pl011 \
 		    ds1307 \
+		    pl031 \
 		    mcp230xx \
+		    pl050 \
 		    hd44780 \
 		    af16x2lcd \
 		    ili9340 \
@@ -501,7 +504,8 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    stmpe \
 		    rpift5406 \
 		    pitft28 \
-		    pitft35
+		    pitft35 \
+		    smc91x
 ULTIBO_KEYMAP_UNITS=keymap_us \
 		    keymap_uk \
 		    keymap_de \

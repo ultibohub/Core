@@ -66,9 +66,15 @@ const
  PROTOCOL_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER; {Thread priority for Network protocol threads}
  
  {Protocol Timer}
+ {Key Values}
  SOCKET_TIMER_KEY_NONE = TIMER_KEY_NONE;
  SOCKET_TIMER_KEY_MAX = TIMER_KEY_MAX;
  SOCKET_TIMER_KEY_MIN = TIMER_KEY_MIN;
+ 
+ {Flag Values}
+ SOCKET_TIMER_FLAG_NONE    = $00000000; 
+ SOCKET_TIMER_FLAG_ACTIVE  = $00000001; {The socket timer item is active in a timer}
+ SOCKET_TIMER_FLAG_DYNAMIC = $00000002; {The socket timer item was allocated dynamically}
  
  {UDP Protocol}
 
@@ -151,6 +157,7 @@ type
  PSocketTimerItem = ^TSocketTimerItem;
  TSocketTimerItem = record
   Key:Integer;                {Ordering key for timer list}
+  Flags:LongWord;             {Flags for this timer item}
   Socket:TObject;             {The socket referenced by this timer list item}
   Prev:PSocketTimerItem;      {Previous item in timer list}
   Next:PSocketTimerItem;      {Next item in timer list}
@@ -404,8 +411,12 @@ type
    function ProcessTimer:Boolean; virtual;
    
    function SendSocket(ASocket:TProtocolSocket):Boolean; virtual;
+   
    function ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocket(ASocket:TProtocolSocket):Boolean; virtual;
+   
+   function ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem;ATimeout:LongWord):Boolean; virtual;
+   function UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean; virtual;
  end;
 
  TSocketTimer = class(TObject)
@@ -421,6 +432,7 @@ type
    FProcessSemaphore:TSemaphoreHandle;
    
    FCount:LongWord;
+   FMaxCount:LongWord;
    
    FFirst:PSocketTimerItem;
    FLast:PSocketTimerItem;
@@ -432,22 +444,26 @@ type
    function Dequeue(AMax:Integer):TProtocolSocket;
    
    function FirstKey:Integer;
-   function InsertKey(ASocket:TProtocolSocket;AKey:Integer):Boolean;
-   function DeleteKey(ASocket:TProtocolSocket):Boolean;
+   function InsertKey(ASocket:TProtocolSocket;AItem:PSocketTimerItem;AKey:Integer):Boolean;
+   function DeleteKey(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean;
    function DecrementKey:Integer;
   public   
    {Public Properties}
    property Count:LongWord read FCount;
+   property MaxCount:LongWord read FMaxCount;
    
    {Public Methods}
-   function StartTimer(AInterval:LongWord):Boolean;
-   function StopTimer:Boolean;
+   function StartTimer(AInterval:LongWord):Boolean; virtual;
+   function StopTimer:Boolean; virtual;
    
-   function CheckTimer:Boolean;
-   function ProcessTimer:Boolean;
+   function CheckTimer:Boolean; virtual;
+   function ProcessTimer:Boolean; virtual;
    
-   function ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean;
-   function UnscheduleSocket(ASocket:TProtocolSocket):Boolean; 
+   function ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean; virtual;
+   function UnscheduleSocket(ASocket:TProtocolSocket):Boolean;  virtual;
+   
+   function ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem;ATimeout:LongWord):Boolean; virtual;
+   function UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean; virtual;
  end;
  
  TSocketThread = class(TThread)
@@ -492,6 +508,8 @@ type
    {Internal Variables}
    FProtocol:TNetworkProtocol;
 
+   FScheduled:Boolean;
+   
    {Protocol Layer Variables}
    FProtocolState:TProtocolState;
    FProtocolOptions:TProtocolOptions;
@@ -505,15 +523,21 @@ type
 
    {Public Properties}
    property Protocol:TNetworkProtocol read FProtocol;
+
+   property Scheduled:Boolean read FScheduled write FScheduled;
    
    {Public Methods}
    function WaitChange:Boolean;
    function WaitChangeEx(ATimeout:LongWord):Boolean;
    function SignalChange:Boolean;
    
-   function SendSocket:Boolean;
-   function ScheduleSocket(ATimeout:LongWord):Boolean;
-   function UnscheduleSocket:Boolean; 
+   function SendSocket:Boolean; virtual;
+   
+   function ScheduleSocket(ATimeout:LongWord):Boolean; virtual;
+   function UnscheduleSocket:Boolean;  virtual;
+   
+   function ScheduleSocketItem(AItem:PSocketTimerItem;ATimeout:LongWord):Boolean; virtual;
+   function UnscheduleSocketItem(AItem:PSocketTimerItem):Boolean; virtual;
  end;
 
  TProtocolState = class(TObject)
@@ -2955,6 +2979,46 @@ begin
 end;
 
 {==============================================================================}
+
+function TNetworkProtocol.ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem;ATimeout:LongWord):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Timer}
+ if FTimer = nil then Exit;
+ 
+ {Check Socket}
+ {if ASocket = nil then Exit;} {Do not check}
+
+ {Check Item}
+ {if AItem = nil then Exit;} {Do not check}
+ 
+ {Schedule Socket Item}
+ Result:=FTimer.ScheduleSocketItem(ASocket,AItem,ATimeout);
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Timer}
+ if FTimer = nil then Exit;
+ 
+ {Check Socket}
+ {if ASocket = nil then Exit;} {Do not check}
+ 
+ {Check Item}
+ {if AItem = nil then Exit;} {Do not check}
+ 
+ {Unschedule Socket Item}
+ Result:=FTimer.UnscheduleSocketItem(ASocket,AItem);
+end;
+
+{==============================================================================}
 {==============================================================================}
 {TSocketTimer}
 constructor TSocketTimer.Create(AProtocol:TNetworkProtocol);
@@ -2969,6 +3033,7 @@ begin
  FProcessSemaphore:=INVALID_HANDLE_VALUE;
  
  FCount:=0;
+ FMaxCount:=0;
  
  FFirst:=nil;
  FLast:=nil;
@@ -3058,8 +3123,23 @@ begin
       {Return Result}
       Result:=TProtocolSocket(Item.Socket);
       
-      {Release Item}
-      FreeMem(Item);
+      {Check Scheduled}
+      if (Result <> nil) and (Result.Scheduled) then
+       begin
+        Result.Scheduled:=False;
+       end;
+      
+      {Check Item}
+      if (Item.Flags and SOCKET_TIMER_FLAG_DYNAMIC) <> 0 then
+       begin
+        {Release Item}
+        FreeMem(Item);
+       end
+      else
+       begin
+        {Update Item}
+        Item.Flags:=Item.Flags and not(SOCKET_TIMER_FLAG_ACTIVE);
+       end;       
      end;
    end;
  finally
@@ -3094,9 +3174,10 @@ end;
 
 {==============================================================================}
 
-function TSocketTimer.InsertKey(ASocket:TProtocolSocket;AKey:Integer):Boolean;
+function TSocketTimer.InsertKey(ASocket:TProtocolSocket;AItem:PSocketTimerItem;AKey:Integer):Boolean;
 {Insert the supplied socket in the timer list in delta ascending order based on Key}
 {Socket: The socket to be inserted}
+{Item: Pointer to the socket timer item to insert (Pass nil to allocate dynamically)}
 {Key: The key to order the insertion on}
 {Return: True if completed or False on failure}
 var
@@ -3113,10 +3194,36 @@ begin
 
  if not AcquireLock then Exit;
  try
-  {Get Item}
-  Item:=GetMem(SizeOf(TSocketTimerItem));
-  if Item = nil then Exit;
-  
+  {Check Key}
+  if (AKey = 0) and (ASocket <> nil) then
+   begin
+    if ASocket.Scheduled then Exit;
+    
+    ASocket.Scheduled:=True;
+   end;
+ 
+  {Check Item}
+  if AItem <> nil then
+   begin
+    {Check Flags}
+    if (AItem.Flags and SOCKET_TIMER_FLAG_ACTIVE) <> 0 then Exit;
+    
+    {Get Item}
+    Item:=AItem;
+    
+    {Set Flags}
+    Item.Flags:=Item.Flags or SOCKET_TIMER_FLAG_ACTIVE;
+   end
+  else
+   begin  
+    {Get Item}
+    Item:=GetMem(SizeOf(TSocketTimerItem));
+    if Item = nil then Exit;
+    
+    {Set Flags}
+    Item.Flags:=SOCKET_TIMER_FLAG_ACTIVE or SOCKET_TIMER_FLAG_DYNAMIC;
+   end; 
+   
   {Find Position}
   Offset:=0;
   Prev:=nil;
@@ -3172,6 +3279,7 @@ begin
   
   {Increment Count}
   Inc(FCount);
+  if FCount > FMaxCount then FMaxCount:=FCount;
   
   {Return Result} 
   Result:=True;       
@@ -3182,9 +3290,10 @@ end;
 
 {==============================================================================}
 
-function TSocketTimer.DeleteKey(ASocket:TProtocolSocket):Boolean;
+function TSocketTimer.DeleteKey(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean;
 {Delete the supplied socket from the timer list}
 {Socket: The socket to be deleted}
+{Item: Pointer to the socket timer item to be deleted (Pass nil if item was dynamically allocated)}
 {Return: True if completed or False on failure}
 var
  Item:PSocketTimerItem;
@@ -3196,16 +3305,28 @@ begin
 
  if not AcquireLock then Exit;
  try
-  {Find Item}
-  Item:=FFirst;
-  while Item <> nil do
+  {Check Item}
+  if AItem <> nil then
    begin
-    if Item.Socket = ASocket then
+    {Check Flags}
+    if (AItem.Flags and SOCKET_TIMER_FLAG_ACTIVE) = 0 then Exit;
+   
+    {Get Item}
+    Item:=AItem;
+   end
+  else
+   begin  
+    {Find Item}
+    Item:=FFirst;
+    while Item <> nil do
      begin
-      Break;
+      if Item.Socket = ASocket then
+       begin
+        Break;
+       end;
+       
+      Item:=Item.Next;
      end;
-     
-    Item:=Item.Next;
    end;
    
   {Check Item}
@@ -3254,9 +3375,24 @@ begin
      
     {Decrement Count}
     Dec(FCount);
+    
+    {Check Scheduled}
+    if (Item.Socket <> nil) and (TProtocolSocket(Item.Socket).Scheduled) then
+     begin
+      TProtocolSocket(Item.Socket).Scheduled:=False;
+     end;
      
-    {Release Item}
-    FreeMem(Item);
+    {Check Item}
+    if (Item.Flags and SOCKET_TIMER_FLAG_DYNAMIC) <> 0 then
+     begin
+      {Release Item}
+      FreeMem(Item);
+     end
+    else
+     begin
+      {Update Item}
+      Item.Flags:=Item.Flags and not(SOCKET_TIMER_FLAG_ACTIVE);
+     end;       
     
     {Return Result} 
     Result:=True;       
@@ -3324,7 +3460,7 @@ begin
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
   
   {Create Check Timer}
-  FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(ProtocolCheckTimer),FProtocol); {Rescheduled Automatically}
+  FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_PRIORITY,TTimerEvent(ProtocolCheckTimer),FProtocol); {Rescheduled Automatically}
   if FCheckTimer = INVALID_HANDLE_VALUE then
    begin
     {Destroy Process Semaphore}
@@ -3398,7 +3534,7 @@ begin
 
  {Check Protocol}
  if FProtocol = nil then Exit;
-   
+ 
  {Wait Semaphore}
  if SemaphoreWait(FProcessSemaphore) = ERROR_SUCCESS then
   begin
@@ -3410,6 +3546,9 @@ begin
      Result:=FProtocol.ProcessSocket(Socket);
      if not Result then Exit;
       
+     {Yield}
+     Sleep(0);
+     
      {Dequeue Socket}
      Socket:=Dequeue(0);
     end;
@@ -3430,12 +3569,12 @@ begin
  if ATimeout < 1 then
   begin
    {Insert Key (Immediate)}
-   Result:=InsertKey(ASocket,0);
+   Result:=InsertKey(ASocket,nil,0);
   end
  else
   begin
    {Insert Key (Scheduled)}
-   Result:=InsertKey(ASocket,ATimeout + FInterval); {Allow one extra interval to account for first decrement}
+   Result:=InsertKey(ASocket,nil,ATimeout + FInterval); {Allow one extra interval to account for first decrement}
   end;  
 end;
 
@@ -3450,7 +3589,50 @@ begin
  {if ASocket = nil then Exit;} {Do not check}
 
  {Delete Key}
- Result:=DeleteKey(ASocket);
+ Result:=DeleteKey(ASocket,nil);
+end; 
+ 
+{==============================================================================}
+
+function TSocketTimer.ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem;ATimeout:LongWord):Boolean;
+begin
+ {}
+ Result:=False;
+
+ {Check Socket}
+ {if ASocket = nil then Exit;} {Do not check}
+
+ {Check Item}
+ {if AItem = nil then Exit;} {Do not check}
+ 
+ {Check Timeout} 
+ if ATimeout < 1 then
+  begin
+   {Insert Key (Immediate)}
+   Result:=InsertKey(ASocket,AItem,0);
+  end
+ else
+  begin
+   {Insert Key (Scheduled)}
+   Result:=InsertKey(ASocket,AItem,ATimeout + FInterval); {Allow one extra interval to account for first decrement}
+  end;  
+end;
+
+{==============================================================================}
+
+function TSocketTimer.UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Socket}
+ {if ASocket = nil then Exit;} {Do not check}
+
+ {Check Item}
+ {if AItem = nil then Exit;} {Do not check}
+ 
+ {Delete Key}
+ Result:=DeleteKey(ASocket,AItem);
 end; 
  
 {==============================================================================}
@@ -3694,6 +3876,34 @@ begin
  
  {Unschedule Socket}
  Result:=FProtocol.UnscheduleSocket(Self);
+end;
+
+{==============================================================================}
+
+function TProtocolSocket.ScheduleSocketItem(AItem:PSocketTimerItem;ATimeout:LongWord):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Protocol}
+ if FProtocol = nil then Exit;
+ 
+ {Schedule Socket Item}
+ Result:=FProtocol.ScheduleSocketItem(Self,AItem,ATimeout);
+end;
+
+{==============================================================================}
+
+function TProtocolSocket.UnscheduleSocketItem(AItem:PSocketTimerItem):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Protocol}
+ if FProtocol = nil then Exit;
+ 
+ {Unschedule Socket Item}
+ Result:=FProtocol.UnscheduleSocketItem(Self,AItem);
 end;
 
 {==============================================================================}

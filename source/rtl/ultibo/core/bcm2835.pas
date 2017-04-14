@@ -757,17 +757,17 @@ const
  BCM2835_PL011_IFLS_RXIFPSEL    = (7 shl 9); {Unsupported, write zero, read as don't care}
  BCM2835_PL011_IFLS_TXIFPSEL    = (7 shl 6); {Unsupported, write zero, read as don't care} 
  BCM2835_PL011_IFLS_RXIFLSEL    = (7 shl 3); {Receive interrupt FIFO level select} 
- BCM2835_PL011_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes 1/8 full}
- BCM2835_PL011_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes 1/4 full} 
- BCM2835_PL011_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes 1/2 full} 
- BCM2835_PL011_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes 3/4 full} 
- BCM2835_PL011_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes 7/8 full} 
+ BCM2835_PL011_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes >= 1/8 full}
+ BCM2835_PL011_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes >= 1/4 full} 
+ BCM2835_PL011_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes >= 1/2 full} 
+ BCM2835_PL011_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes >= 3/4 full} 
+ BCM2835_PL011_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes >= 7/8 full} 
  BCM2835_PL011_IFLS_TXIFLSEL    = (7 shl 0); {Transmit interrupt FIFO level select} 
- BCM2835_PL011_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes 1/8 full} 
- BCM2835_PL011_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes 1/4 full} 
- BCM2835_PL011_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes 1/2 full} 
- BCM2835_PL011_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes 3/4 full}  
- BCM2835_PL011_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes 7/8 full}  
+ BCM2835_PL011_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes <= 1/8 full} 
+ BCM2835_PL011_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes <= 1/4 full} 
+ BCM2835_PL011_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes <= 1/2 full} 
+ BCM2835_PL011_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes <= 3/4 full}  
+ BCM2835_PL011_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes <= 7/8 full}
  
  {PL011 UART Interrupt Mask Set/Clear register bits (See 13.4)}
  BCM2835_PL011_IMSC_OEIM   = (1 shl 10); {Overrun error interrupt mask}
@@ -1151,7 +1151,10 @@ const
  BCM2835_MBOX_TAG_SET_PALETTE		= $0004800b;
 
  BCM2835_MBOX_TAG_GET_TOUCHBUF      = $0004000f;
+ BCM2835_MBOX_TAG_SET_TOUCHBUF      = $0004801f;
+
  BCM2835_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
+ BCM2835_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
  
  BCM2835_MBOX_TAG_GET_LAYER         = $0004000c;
  BCM2835_MBOX_TAG_TST_LAYER         = $0004400c;
@@ -1194,8 +1197,13 @@ const
  BCM2835_BOARD_REV_A_PLUS	= $00000012;
  BCM2835_BOARD_REV_B_PLUS_2 = $00000013;
  BCM2835_BOARD_REV_CM_2		= $00000014;
- BCM2835_BOARD_REV_A_PLUS_2	= $00000015;
- BCM2835_BOARD_REV_ZERO     = $00900092;
+ BCM2835_BOARD_REV_A_PLUS_2	= $00000015; {512MB version of the A+}
+ 
+ BCM2835_BOARD_REV_APLUS_1  = $00900021;
+ BCM2835_BOARD_REV_ZERO_1   = $00900092;
+ BCM2835_BOARD_REV_ZERO_2   = $00900093;
+ BCM2835_BOARD_REV_ZERO_3   = $00920093;
+ BCM2835_BOARD_REV_ZERO_W_1 = $009000C1;
  
  BCM2835_BOARD_REV_MASK     = $00FFFFFF; {Mask off the warranty bit}
  
@@ -1213,25 +1221,28 @@ const
  BCM2835_BOARD_REVISION_MODEL_UNKNOWN        = (7 shl 4);   {Unknown}
  BCM2835_BOARD_REVISION_MODEL_3B             = (8 shl 4);   {Model 3B (Cannot occur on BCM2835)}
  BCM2835_BOARD_REVISION_MODEL_ZERO           = (9 shl 4);   {Model Zero}
-                                             
+ BCM2835_BOARD_REVISION_MODEL_COMPUTE3       = (10 shl 4);  {Compute Module 3 (Cannot occur on BCM2835)}
+ BCM2835_BOARD_REVISION_MODEL_UNKNOWN_2      = (11 shl 4);  {Unknown}
+ BCM2835_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W}
+ 
  BCM2835_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2836    = (1 shl 12);  {BCM2836 (Cannot occur on BCM2835)}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2837    = (2 shl 12);  {BCM2837 (Cannot occur on BCM2835)}
  
- BCM2835_BOARD_REVISION_MANUFACTURER_MASK    = ($F shl 16); {Manufacturer}
- BCM2835_BOARD_REVISION_MANUFACTURER_SONY    = (0 shl 16);  {Sony}
- BCM2835_BOARD_REVISION_MANUFACTURER_EGOMAN  = (1 shl 16);  {Egoman}
- BCM2835_BOARD_REVISION_MANUFACTURER_EMBEST  = (2 shl 16);  {Embest}
- BCM2835_BOARD_REVISION_MANUFACTURER_UNKNOWN = (3 shl 16);  {Unknown}
- BCM2835_BOARD_REVISION_MANUFACTURER_EMBEST2 = (4 shl 16);  {Embest}
+ BCM2835_BOARD_REVISION_MANUFACTURER_MASK       = ($F shl 16); {Manufacturer}
+ BCM2835_BOARD_REVISION_MANUFACTURER_SONY       = (0 shl 16);  {Sony}
+ BCM2835_BOARD_REVISION_MANUFACTURER_EGOMAN     = (1 shl 16);  {Egoman}
+ BCM2835_BOARD_REVISION_MANUFACTURER_EMBEST     = (2 shl 16);  {Embest}
+ BCM2835_BOARD_REVISION_MANUFACTURER_SONY_JAPAN = (3 shl 16);  {Sony (Japan)} 
+ BCM2835_BOARD_REVISION_MANUFACTURER_EMBEST2    = (4 shl 16);  {Embest}
  
  BCM2835_BOARD_REVISION_MEMORY_MASK          = ($7 shl 20); {Memory Size}
  BCM2835_BOARD_REVISION_MEMORY_256M          = (0 shl 20);  {256M}
  BCM2835_BOARD_REVISION_MEMORY_512M          = (1 shl 20);  {512M}
  BCM2835_BOARD_REVISION_MEMORY_1024M         = (2 shl 20);  {1024M}
                                              
- BCM2835_BOARD_REVISION_ENCODED_FLAG         = (1 shl 23);  {Endcoded Flag, if set then revision uses this encoding}
+ BCM2835_BOARD_REVISION_ENCODED_FLAG         = (1 shl 23);  {Encoded Flag, if set then revision uses this encoding}
                                              
  BCM2835_BOARD_REVISION_MASK                 = $00FFFFFF;   {Mask off the warranty bits}
  
@@ -1459,6 +1470,7 @@ const
  BCM2835_GPPUDCLK_MASK = 1;
  
 {==============================================================================}
+{$PACKRECORDS 4}
 type 
  {BCM2835 specific structures}
 
@@ -2844,7 +2856,7 @@ type
   Overscan:TBCM2835MailboxTagGetOverscan;
   Pitch:TBCM2835MailboxTagGetPitch;
  end;
- 
+{$PACKRECORDS DEFAULT} 
 {==============================================================================}
 {==============================================================================}
 

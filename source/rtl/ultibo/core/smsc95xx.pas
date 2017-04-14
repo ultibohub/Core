@@ -1487,7 +1487,7 @@ begin
  {Device}
  Network.Network.Device.DeviceBus:=DEVICE_BUS_USB;
  Network.Network.Device.DeviceType:=NETWORK_TYPE_ETHERNET;
- Network.Network.Device.DeviceFlags:=NETWORK_FLAG_NONE; //To Do //NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER
+ Network.Network.Device.DeviceFlags:=NETWORK_FLAG_NONE; //To Do //NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER or NETWORK_FLAG_RX_MULTIPACKET;
  Network.Network.Device.DeviceData:=Device;
  {Network}
  Network.Network.NetworkState:=NETWORK_STATE_CLOSED;
@@ -1778,7 +1778,7 @@ begin
  {Check Request}
  if Request = nil then Exit;
  
- WorkerSchedule(0,TWorkerTask(SMSC95XXReceiveWorker),Request,nil)
+ WorkerScheduleEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(SMSC95XXReceiveWorker),Request,nil);
 end;
 
 {==============================================================================}
@@ -1884,7 +1884,7 @@ begin
  {Check Request}
  if Request = nil then Exit;
  
- WorkerSchedule(0,TWorkerTask(SMSC95XXTransmitWorker),Request,nil)
+ WorkerScheduleEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(SMSC95XXTransmitWorker),Request,nil);
 end;
 
 {==============================================================================}
@@ -1940,7 +1940,7 @@ begin
  {Check Request}
  if Request = nil then Exit;
  
- WorkerSchedule(0,TWorkerTask(SMSC95XXInterruptWorker),Request,nil)
+ WorkerScheduleEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(SMSC95XXInterruptWorker),Request,nil);
 end;
 
 {==============================================================================}

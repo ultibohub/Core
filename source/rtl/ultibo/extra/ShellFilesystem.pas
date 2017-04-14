@@ -44,10 +44,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Shell;
 
-//To Do //Look for:
-
-//--
-
 //To Do //Change some of the direct calls to use FileSysDriver instead (eg Device.ActivatePartition etc)
 
 {==============================================================================}
@@ -1098,6 +1094,8 @@ begin
          AShell.DoOutput(ASession,'  Product:      ' + Device.Product);
          AShell.DoOutput(ASession,'  SerialNumber: ' + Device.SerialNumber);
          AShell.DoOutput(ASession,'');
+         AShell.DoOutput(ASession,'  Signature:   ' + IntToHex(Device.DiskSignature,8));
+         AShell.DoOutput(ASession,'');
          AShell.DoOutput(ASession,'  Media Type:  ' + MediaTypeToString(Device.MediaType));
          AShell.DoOutput(ASession,'  Floppy Type: ' + FloppyTypeToString(Device.FloppyType));
          AShell.DoOutput(ASession,'');
@@ -1674,29 +1672,40 @@ begin
          if (SectorCount > 0) or (AShell.ParameterExists('MAX',AParameters)) then
           begin
            {Get Device}
-           Device:=FileSysDriver.GetDeviceByName(Name,True,FILESYS_LOCK_READ);
+           Device:=FileSysDriver.GetDeviceByName(Name,True,FILESYS_LOCK_WRITE);
            if Device <> nil then
             begin
              if SectorCount = 0 then SectorCount:=Device.AvailableSectors;
+             
              if not Device.CreatePartition(nil,PartitionId,SectorCount,AShell.ParameterExists('ACTIVE',AParameters)) then
               begin
                AShell.DoOutput(ASession,'Partition could not be created');
               end;
             
-             Device.ReaderUnlock;
+             Device.WriterUnlock;
             end
            else
             begin
              {Get Partition}
-             Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_READ);
+             Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_WRITE);
              if Partition <> nil then
               begin
                if SectorCount = 0 then SectorCount:=Partition.AvailableSectors;
-               AShell.DoOutput(ASession,'Logical drives in extended partitions not implemented');
                
-               //To Do
-               
-               Partition.ReaderUnlock;
+               {Get Device}
+               if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_WRITE) then
+                begin
+                 Device:=Partition.Device;
+                 
+                 if not Device.CreatePartition(Partition,PartitionId,SectorCount,AShell.ParameterExists('ACTIVE',AParameters)) then
+                  begin
+                   AShell.DoOutput(ASession,'Partition could not be created');
+                  end;
+                 
+                 Device.WriterUnlock;
+                end; 
+                
+               Partition.WriterUnlock;
               end
              else
               begin
@@ -1733,23 +1742,31 @@ begin
      if Length(Name) > 0 then
       begin
        {Get Partition}
-       Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_READ);
+       Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_WRITE);
        if Partition <> nil then
         begin
-         Device:=Partition.Device;
-         if Device <> nil then
+         {Get Device}
+         if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
           begin
+           Device:=Partition.Device;
+
            if not Device.DeletePartition(Partition) then
             begin
              AShell.DoOutput(ASession,'Partition ' + Name + ' could not be deleted');
             end;
+          
+           Device.ReaderUnlock;
           end
          else
           begin
            AShell.DoOutput(ASession,'Invalid device for partition ' + Name);
           end;
         
-         Partition.ReaderUnlock;
+         {Check Partition}
+         if FileSysDriver.CheckPartition(Partition,False,FILESYS_LOCK_NONE) then
+          begin
+           Partition.WriterUnlock;
+          end; 
         end
        else
         begin
@@ -1775,23 +1792,27 @@ begin
      if Length(Name) > 0 then
       begin
        {Get Partition}
-       Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_READ);
+       Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_WRITE);
        if Partition <> nil then
         begin
-         Device:=Partition.Device;
-         if Device <> nil then
+         {Get Device}
+         if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
           begin
+           Device:=Partition.Device;
+
            if not Device.ActivatePartition(Partition,True) then
             begin
              AShell.DoOutput(ASession,'Partition ' + Name + ' could not be activated');
             end;
+            
+           Device.ReaderUnlock;
           end
          else
           begin
            AShell.DoOutput(ASession,'Invalid device for partition ' + Name);
           end;
         
-         Partition.ReaderUnlock;
+         Partition.WriterUnlock;
         end
        else
         begin
@@ -1817,23 +1838,27 @@ begin
      if Length(Name) > 0 then
       begin
        {Get Partition}
-       Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_READ);
+       Partition:=FileSysDriver.GetPartitionByPath(Name,True,FILESYS_LOCK_WRITE);
        if Partition <> nil then
         begin
-         Device:=Partition.Device;
-         if Device <> nil then
+         {Get Device}
+         if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
           begin
+           Device:=Partition.Device;
+           
            if not Device.ActivatePartition(Partition,False) then
             begin
              AShell.DoOutput(ASession,'Partition ' + Name + ' could not be deactivated');
             end;
+            
+           Device.ReaderUnlock;
           end
          else
           begin
            AShell.DoOutput(ASession,'Invalid device for partition ' + Name);
           end;
         
-         Partition.ReaderUnlock;
+         Partition.WriterUnlock;
         end
        else
         begin
@@ -2133,15 +2158,19 @@ begin
          FileSysType:=StringToFileSysType(AShell.ParameterValue('TYPE',AParameters));
          if FileSysType <> fsUNKNOWN then
           begin
-           Device:=Volume.Device;
-           if Device <> nil then
+           {Get Device}
+           if FileSysDriver.CheckDevice(Volume.Device,True,FILESYS_LOCK_READ) then
             begin
+             Device:=Volume.Device;
+             
              {Get FloppyType}
              FloppyType:=Device.FloppyType;
              if not Volume.FormatVolume(FloppyType,FileSysType) then
               begin
                AShell.DoOutput(ASession,'Volume could not be formatted');
               end;
+              
+             Device.ReaderUnlock; 
             end
            else
             begin
@@ -2444,7 +2473,7 @@ begin
  AShell.DoOutput(ASession,'   Examples:');
  AShell.DoOutput(ASession,'    ' + Name + ' SHOW C:');
  AShell.DoOutput(ASession,'    ' + Name + ' LABEL C: TEST');
- AShell.DoOutput(ASession,'    ' + Name + ' FORMAT D:');
+ AShell.DoOutput(ASession,'    ' + Name + ' FORMAT D: /TYPE=FAT32');
  AShell.DoOutput(ASession,'    ' + Name + ' MOUNT C: \Harddisk0');
  AShell.DoOutput(ASession,'    ' + Name + ' DISMOUNT D:');
  AShell.DoOutput(ASession,'');
@@ -2675,29 +2704,39 @@ begin
        Drive:=FileSysDriver.GetDriveByName(Name,True,FILESYS_LOCK_READ);
        if Drive <> nil then
         begin
+         Volume:=Drive.Volume;
+         
+         Drive.ReaderUnlock; 
+        end
+       else
+        begin
+         Volume:=nil;
+         
+         AShell.DoOutput(ASession,'Drive ' + Name + ' not found');
+        end;
+       
+       {Get Volume}
+       if FileSysDriver.CheckVolume(Volume,True,FILESYS_LOCK_WRITE) then
+        begin
          {Get FileSysType}
          FileSysType:=StringToFileSysType(AShell.ParameterValue('TYPE',AParameters));
          if FileSysType <> fsUNKNOWN then
           begin
-           if Drive.Volume <> nil then
+           {Get Device}
+           if FileSysDriver.CheckDevice(Volume.Device,True,FILESYS_LOCK_READ) then
             begin
-             if Drive.Volume.Device <> nil then
+             {Get FloppyType}
+             FloppyType:=Volume.Device.FloppyType;
+             if not Volume.FormatVolume(FloppyType,FileSysType) then
               begin
-               {Get FloppyType}
-               FloppyType:=Drive.Volume.Device.FloppyType;
-               if not Drive.Volume.FormatVolume(FloppyType,FileSysType) then
-                begin
-                 AShell.DoOutput(ASession,'Drive could not be formatted');
-                end;
-              end
-             else
-              begin
-               AShell.DoOutput(ASession,'Invalid disk for drive ' + Name);
+               AShell.DoOutput(ASession,'Drive could not be formatted');
               end;
+              
+             Volume.Device.ReaderUnlock; 
             end
            else
             begin
-             AShell.DoOutput(ASession,'Invalid volume for drive ' + Name);
+             AShell.DoOutput(ASession,'Invalid disk for drive ' + Name);
             end;
           end
          else
@@ -2705,12 +2744,12 @@ begin
            AShell.DoOutput(ASession,'Invalid file system type or type not supplied');
           end;
           
-         Drive.ReaderUnlock; 
+         Volume.WriterUnlock; 
         end
        else
         begin
-         AShell.DoOutput(ASession,'Drive ' + Name + ' not found');
-        end;
+         AShell.DoOutput(ASession,'Invalid volume for drive ' + Name);
+        end;        
       end
      else
       begin
@@ -2809,11 +2848,11 @@ begin
      if Length(Name) > 0 then
       begin
        {Get Device}
-       Device:=StripTrailingSlash(AShell.ParameterIndex(2,AParameters));
+       Device:=AddLeadingSlash(StripTrailingSlash(AShell.ParameterIndex(2,AParameters)));
        if Trim(Device) <> '' then
         begin
          {Get Volume}
-         Volume:=FileSysDriver.GetVolumeByParent(Device,True,FILESYS_LOCK_READ);
+         Volume:=FileSysDriver.GetVolumeByParent(Device,True,FILESYS_LOCK_WRITE);
          if Volume <> nil then
           begin
            if not FileSysDriver.CreateDrive(Name,Device) then
@@ -2821,7 +2860,7 @@ begin
              AShell.DoOutput(ASession,'Drive ' + Name + ' could not be mounted on disk ' + Device);
             end;
            
-           Volume.ReaderUnlock; 
+           Volume.WriterUnlock; 
           end
          else
           begin

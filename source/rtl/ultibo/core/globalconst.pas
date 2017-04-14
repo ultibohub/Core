@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '28/12/2016';
+ ULTIBO_RELEASE_DATE             = '14 April 2017';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.3.077';
+ ULTIBO_RELEASE_VERSION          = '1.3.245';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 3;
- ULTIBO_RELEASE_VERSION_REVISION = 077;
+ ULTIBO_RELEASE_VERSION_REVISION = 245;
  
 {==============================================================================}
 const
@@ -1036,6 +1036,8 @@ const
  BOARD_TYPE_PC_X86_64    = 23; {PC x86 64bit}
  BOARD_TYPE_RPI3B        = 24; {Raspberry Pi 3 Model B}
  BOARD_TYPE_QEMUVPB      = 25; {QEMU Versatile PB}
+ BOARD_TYPE_RPI_COMPUTE3 = 26; {Raspberry Pi Compute Module 3}
+ BOARD_TYPE_RPI_ZERO_W   = 27; {Raspberry Pi Model Zero W}
  
 {==============================================================================}
 const 

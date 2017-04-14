@@ -143,7 +143,7 @@ const
  KEYBOARD_BUFFER_SIZE = 512; 
 
  {Keyboard Sampling Rate}
- KEYBOARD_REPEAT_RATE   = (40 div 4); {40msec -> 25cps}
+ KEYBOARD_REPEAT_RATE   = 40;         {40msec -> 25cps}
  KEYBOARD_REPEAT_DELAY  = 10;         {10 x KEYBOARD_REPEAT_RATE = 400msec initial delay before repeat}
  
  {Keyboard Data Definitions (Values for TKeyboardData.Modifiers)}
@@ -500,9 +500,9 @@ const
     {255} (#0, #0)        {Reserved (256 to 65535 Reserved)}
   );*)
  
- USB_HID_BOOT_USAGE_NUMLOCK    = 83;
- USB_HID_BOOT_USAGE_CAPSLOCK   = 57;
- USB_HID_BOOT_USAGE_SCROLLLOCK = 71;
+ USB_HID_BOOT_USAGE_NUMLOCK    = SCAN_CODE_NUMLOCK;    {83}
+ USB_HID_BOOT_USAGE_CAPSLOCK   = SCAN_CODE_CAPSLOCK;   {57}
+ USB_HID_BOOT_USAGE_SCROLLLOCK = SCAN_CODE_SCROLLLOCK; {71}
  
 {==============================================================================}
 type
@@ -513,8 +513,8 @@ type
   Modifiers:LongWord;   {Keyboard modifier flags for Shift, Alt, Control etc (eg KEYBOARD_LEFT_CTRL)}
   ScanCode:Word;        {Untranslated scan code value from keyboard (See SCAN_CODE_* constants)}
   KeyCode:Word;         {Translated key code value from keyboard (See KEY_CODE_* constants)}
-  CharCode:Char;        {ANSI character representing the translatered key code}
-  CharUnicode:WideChar; {Unicode character representing the translatered key code}
+  CharCode:Char;        {ANSI character representing the translated key code}
+  CharUnicode:WideChar; {Unicode character representing the translated key code}
  end;
 
  {Keyboard Buffer}
@@ -546,8 +546,8 @@ type
   KeyboardId:LongWord;                 {Unique Id of this Keyboard in the Keyboard table}
   KeyboardState:LongWord;              {Keyboard state (eg KEYBOARD_STATE_ATTACHED)}
   KeyboardLEDs:LongWord;               {Keyboard LEDs (eg KEYBOARD_LED_NUMLOCK)}
-  KeyboardRate:LongWord;               {Keyboard repeat rate}
-  KeyboardDelay:LongWord;              {Keyboard repeat delay}
+  KeyboardRate:LongWord;               {Keyboard repeat rate (Milliseconds)}
+  KeyboardDelay:LongWord;              {Keyboard repeat delay (Number of KeyboardRate intervals before first repeat)}
   DeviceGet:TKeyboardDeviceGet;        {A Device specific DeviceGet method implementing a standard Keyboard device interface (Or nil if the default method is suitable)} 
   DeviceRead:TKeyboardDeviceRead;      {A Device specific DeviceRead method implementing a standard Keyboard device interface (Or nil if the default method is suitable)} 
   DeviceControl:TKeyboardDeviceControl;{A Device specific DeviceControl method implementing a standard Keyboard device interface (Or nil if the default method is suitable)}
@@ -664,6 +664,8 @@ function KeyboardDeviceStateToNotification(State:LongWord):LongWord;
 function KeyboardRemapCtrlCode(KeyCode,CharCode:Word):Word;
 function KeyboardRemapKeyCode(ScanCode,KeyCode:Word;var CharCode:Byte;Modifiers:LongWord):Boolean;
 function KeyboardRemapScanCode(ScanCode,KeyCode:Word;var CharCode:Byte;Modifiers:LongWord):Boolean;
+
+function KeyboardInsertData(Keyboard:PKeyboardDevice;Data:PKeyboardData;Signal:Boolean):LongWord;
 
 procedure KeyboardLog(Level:LongWord;Keyboard:PKeyboardDevice;const AText:String);
 procedure KeyboardLogInfo(Keyboard:PKeyboardDevice;const AText:String);
@@ -2152,6 +2154,7 @@ end;
 {USB Keyboard Functions}
 function USBKeyboardDeviceRead(Keyboard:PKeyboardDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Implementation of KeyboardDeviceRead API for USB Keyboard}
+{Note: Not intended to be called directly by applications, use KeyboardDeviceRead instead}
 var
  Offset:PtrUInt;
 begin
@@ -2239,6 +2242,7 @@ end;
 
 function USBKeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 {Implementation of KeyboardDeviceControl API for USB Keyboard}
+{Note: Not intended to be called directly by applications, use KeyboardDeviceControl instead}
 var
  Status:LongWord;
 begin
@@ -4394,6 +4398,106 @@ end;
 
 {==============================================================================}
 
+function KeyboardInsertData(Keyboard:PKeyboardDevice;Data:PKeyboardData;Signal:Boolean):LongWord;
+{Insert a TKeyboardData entry into the keyboard buffer (Direct or Global)}
+{Keyboard: The keyboard device to insert data for}
+{Data: The TKeyboardData entry to insert}
+{Signal: If True then signal that new data is availale in the buffer}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must hold the keyboard lock}
+var
+ Next:PKeyboardData;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Keyboard}
+ if Keyboard = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Check Flags}
+ if (Keyboard.Device.DeviceFlags and KEYBOARD_FLAG_DIRECT_READ) = 0 then
+  begin
+   {Global Buffer}
+   {Acquire the Lock}
+   if MutexLock(KeyboardBufferLock) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Buffer}
+      if (KeyboardBuffer.Count < KEYBOARD_BUFFER_SIZE) then
+       begin
+        {Get Next}
+        Next:=@KeyboardBuffer.Buffer[(KeyboardBuffer.Start + KeyboardBuffer.Count) mod KEYBOARD_BUFFER_SIZE];
+        if Next <> nil then
+         begin
+          {Copy Data}
+          Next^:=Data^;
+      
+          {Update Count}
+          Inc(KeyboardBuffer.Count);
+          
+          {Signal Data Received}
+          if Signal then SemaphoreSignal(KeyboardBuffer.Wait);
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS;
+         end;
+       end
+      else
+       begin
+        if KEYBOARD_LOG_ENABLED then KeyboardLogError(Keyboard,'Buffer overflow, key discarded');
+        
+        {Update Statistics}
+        Inc(Keyboard.BufferOverruns); 
+       end;            
+     finally
+      {Release the Lock}
+      MutexUnlock(KeyboardBufferLock);
+     end;
+    end
+   else
+    begin
+     if KEYBOARD_LOG_ENABLED then KeyboardLogError(Keyboard,'Failed to acquire lock on buffer');
+    end;
+  end
+ else
+  begin              
+   {Direct Buffer}
+   {Check Buffer}
+   if (Keyboard.Buffer.Count < KEYBOARD_BUFFER_SIZE) then
+    begin
+     {Get Next}
+     Next:=@Keyboard.Buffer.Buffer[(Keyboard.Buffer.Start + Keyboard.Buffer.Count) mod KEYBOARD_BUFFER_SIZE];
+     if Next <> nil then
+      begin
+       {Copy Data}
+       Next^:=Data^;
+       
+       {Update Count}
+       Inc(Keyboard.Buffer.Count);
+       
+       {Signal Data Received}
+       if Signal then SemaphoreSignal(Keyboard.Buffer.Wait);
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;
+    end
+   else
+    begin
+     if KEYBOARD_LOG_ENABLED then KeyboardLogError(Keyboard,'Buffer overflow, key discarded');
+     
+     {Update Statistics}
+     Inc(Keyboard.BufferOverruns); 
+    end;            
+  end;
+end;
+
+{==============================================================================}
+
 procedure KeyboardLog(Level:LongWord;Keyboard:PKeyboardDevice;const AText:String);
 var
  WorkBuffer:String;
@@ -4694,6 +4798,9 @@ begin
  {Get Device}
  Device:=PUSBDevice(Keyboard.Keyboard.Device.DeviceData);
  if Device = nil then Exit;
+ 
+ {Get Duration}
+ Duration:=(Duration div 4);
  
  {Set Idle}
  Result:=USBControlRequest(Device,nil,USB_HID_REQUEST_SET_IDLE,USB_BMREQUESTTYPE_TYPE_CLASS or USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,(Duration shl 8) or ReportId,Keyboard.HIDInterface.Descriptor.bInterfaceNumber,nil,0);

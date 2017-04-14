@@ -108,10 +108,15 @@ const
  MOUSE_CONTROL_SET_FLAG         = 2;  {Set Flag}
  MOUSE_CONTROL_CLEAR_FLAG       = 3;  {Clear Flag}
  MOUSE_CONTROL_FLUSH_BUFFER     = 4;  {Flush Buffer}
+ MOUSE_CONTROL_GET_SAMPLE_RATE  = 5;  {Get Sample Rate}
+ MOUSE_CONTROL_SET_SAMPLE_RATE  = 6;  {Set Sample Rate}
  //To Do //Acceleration etc
 
  {Mouse Buffer Size}
  MOUSE_BUFFER_SIZE = 512; 
+ 
+ {Mouse Sampling Rate}
+ MOUSE_SAMPLE_RATE   = 100;  {100 samples/sec}
  
  {Mouse Data Definitions (Values for TMouseData.Buttons)}
  MOUSE_LEFT_BUTTON    =  $0001; {The Left mouse button is pressed}
@@ -221,6 +226,7 @@ type
   {Mouse Properties}
   MouseId:LongWord;                    {Unique Id of this Mouse in the Mouse table}
   MouseState:LongWord;                 {Mouse state (eg MOUSE_STATE_ATTACHED)}
+  MouseRate:LongWord;                  {Mouse sample rate (Samples per second)}
   DeviceRead:TMouseDeviceRead;         {A Device specific DeviceRead method implementing a standard Mouse device interface (Or nil if the default method is suitable)}
   DeviceControl:TMouseDeviceControl;   {A Device specific DeviceControl method implementing a standard Mouse device interface (Or nil if the default method is suitable)}
   {Driver Properties}
@@ -318,6 +324,8 @@ function MouseDeviceTypeToString(MouseType:LongWord):String;
 function MouseDeviceStateToString(MouseState:LongWord):String;
 
 function MouseDeviceStateToNotification(State:LongWord):LongWord;
+
+function MouseInsertData(Mouse:PMouseDevice;Data:PMouseData;Signal:Boolean):LongWord;
 
 procedure MouseLog(Level:LongWord;Mouse:PMouseDevice;const AText:String);
 procedure MouseLogInfo(Mouse:PMouseDevice;const AText:String);
@@ -892,6 +900,20 @@ begin
          {Return Result} 
          Result:=ERROR_SUCCESS;
         end;       
+       MOUSE_CONTROL_GET_SAMPLE_RATE:begin
+         {Get Sample Rate}
+         Argument2:=Mouse.MouseRate;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       MOUSE_CONTROL_SET_SAMPLE_RATE:begin
+         {Set Sample Rate}
+         Mouse.MouseRate:=Argument1;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;       
       end;
      finally
       {Release the Lock}
@@ -992,6 +1014,7 @@ begin
  {Update Mouse}
  Result.MouseId:=DEVICE_ID_ANY;
  Result.MouseState:=MOUSE_STATE_DETACHED;
+ Result.MouseRate:=MOUSE_SAMPLE_RATE;
  Result.DeviceRead:=nil;
  Result.DeviceControl:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
@@ -1393,6 +1416,7 @@ end;
 {USB Mouse Functions}
 function USBMouseDeviceRead(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
 {Implementation of MouseDeviceRead API for USB Mouse}
+{Note: Not intended to be called directly by applications, use MouseDeviceRead instead}
 var
  Offset:PtrUInt;
 begin
@@ -1480,6 +1504,7 @@ end;
 
 function USBMouseDeviceControl(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 {Implementation of MouseDeviceControl API for USB Mouse}
+{Note: Not intended to be called directly by applications, use MouseDeviceControl instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1548,6 +1573,20 @@ begin
         end;
         
        {Return Result} 
+       Result:=ERROR_SUCCESS;
+      end;       
+     MOUSE_CONTROL_GET_SAMPLE_RATE:begin
+       {Get Sample Rate}
+       Argument2:=Mouse.MouseRate;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;
+     MOUSE_CONTROL_SET_SAMPLE_RATE:begin
+       {Set Sample Rate}
+       Mouse.MouseRate:=Argument1;
+       
+       {Return Result}
        Result:=ERROR_SUCCESS;
       end;       
     end;
@@ -2204,6 +2243,31 @@ begin
   MOUSE_STATE_ATTACHING:Result:=DEVICE_NOTIFICATION_ATTACHING;
   MOUSE_STATE_ATTACHED:Result:=DEVICE_NOTIFICATION_ATTACH;
  end;
+end;
+
+{==============================================================================}
+
+function MouseInsertData(Mouse:PMouseDevice;Data:PMouseData;Signal:Boolean):LongWord;
+{Insert a TMouseData entry into the mouse buffer (Direct or Global)}
+{Mouse: The mouse device to insert data for}
+{Data: The TMouseData entry to insert}
+{Signal: If True then signal that new data is availale in the buffer}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must hold the mouse lock}
+var
+ Next:PMouseData;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Mouse}
+ if Mouse = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ //To Do //Continuing
 end;
 
 {==============================================================================}

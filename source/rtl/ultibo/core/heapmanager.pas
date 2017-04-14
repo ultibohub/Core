@@ -81,6 +81,8 @@ const
  HEAP_FLAG_FIQ        = $00000100; {An FIQ allocatable memory block}
  HEAP_FLAG_RECLAIM    = $00000200; {A reclaimable memory block (eg Disk Cache)(with a registered callback to reclaim as required for normal memory)}
  
+ HEAP_FLAG_CUSTOM     = $08000000; {A custom flag reserved for non standard uses}
+ 
  HEAP_FLAG_ALL        = $FFFFFFFF; {Only for use by GetHeapBlockCount/GetHeapBlockMin/GetHeapBlockMax}
  HEAP_FLAG_INVALID    = $FFFFFFFF; {Return value from MemFlags/IRQ/FIQ on invalid}
  

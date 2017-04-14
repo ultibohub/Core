@@ -117,6 +117,7 @@ type
   function DoSetCoordinates(ASession:TShellSession;ARow,ACol:LongWord):Boolean; override;
   
   function ConsoleChar(ASession:TShellSession;AChar:Char):Boolean;
+  function ConsoleExtended(ASession:TShellSession;AChar:Char):Boolean;
  end;
  
  TConsoleSession = class(TShellSession)
@@ -649,6 +650,24 @@ begin
 end;
 
 {==============================================================================}
+
+function TConsoleShell.ConsoleExtended(ASession:TShellSession;AChar:Char):Boolean;
+var
+ Session:TConsoleSession;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get Session}
+ Session:=TConsoleSession(ASession);
+
+ //To Do
+end;
+
+{==============================================================================}
 {==============================================================================}
 {TConsoleSession}
 constructor TConsoleSession.Create(AShell:TShell;AIdentifier:LongWord);
@@ -685,12 +704,24 @@ begin
    {Check Shell}
    if FShell <> nil then
     begin
-     {Read Console}
-     if ConsoleReadChar(Character,nil) then
+     {Get Key}
+     if ConsoleGetKey(Character,nil) then
       begin
-       {Write Console Shell}
-       FShell.ConsoleChar(FShell.DefaultSession,Character);
-      end; 
+       if Character = #0 then
+        begin
+         {Extended Key}
+         if ConsoleGetKey(Character,nil) then
+          begin
+           {Write Console Shell}
+           FShell.ConsoleExtended(FShell.DefaultSession,Character); 
+          end; 
+        end
+       else
+        begin
+         {Write Console Shell}
+         FShell.ConsoleChar(FShell.DefaultSession,Character); 
+        end;
+      end;  
     end;
   end;  
  except

@@ -168,7 +168,7 @@ const
 {==============================================================================}
 type
  {PL110 specific types}
- {Layout of the PL110 registers (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
+ {Layout of the PL110 registers (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I904421.html)}
  PPL110CLCDRegisters = ^TPL110CLCDRegisters;
  TPL110CLCDRegisters = record
   TIMING0:LongWord; {Horizontal Axis Panel Control Register}

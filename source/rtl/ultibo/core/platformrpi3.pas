@@ -580,7 +580,7 @@ begin
  TIME_TICKS_PER_SCHEDULER_INTERRUPT:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * TIME_TICKS_PER_MILLISECOND;
  
  {Setup SCHEDULER_IDLE}
- SCHEDULER_IDLE_WAIT:=False;
+ SCHEDULER_IDLE_WAIT:=True;
  SCHEDULER_IDLE_OFFSET:=1;
  SCHEDULER_IDLE_PER_SECOND:=SCHEDULER_INTERRUPTS_PER_SECOND;
  
@@ -1172,15 +1172,21 @@ begin
    case (Revision and BCM2837_BOARD_REVISION_MODEL_MASK) of
     BCM2837_BOARD_REVISION_MODEL_3B:begin
       BOARD_TYPE:=BOARD_TYPE_RPI3B;
-     end; 
+     end;
+    BCM2837_BOARD_REVISION_MODEL_COMPUTE3:begin
+      BOARD_TYPE:=BOARD_TYPE_RPI_COMPUTE3;
+     end;
    end;
   end
  else
   begin 
    {Old Style Revision}
    case (Revision and BCM2837_BOARD_REV_MASK) of
-    BCM2837_BOARD_REV_3B_1:begin
+    BCM2837_BOARD_REV_3B_1,BCM2837_BOARD_REV_3B_2,BCM2837_BOARD_REV_3B_3:begin
       BOARD_TYPE:=BOARD_TYPE_RPI3B;
+     end; 
+    BCM2837_BOARD_REV_CM3_1,BCM2837_BOARD_REV_CM3_2:begin
+      BOARD_TYPE:=BOARD_TYPE_RPI_COMPUTE3;
      end; 
    end;
   end; 
@@ -1220,7 +1226,8 @@ begin
   begin
    {New Style Revision}
    case (Revision and BCM2837_BOARD_REVISION_MODEL_MASK) of
-    BCM2837_BOARD_REVISION_MODEL_3B:begin
+    BCM2837_BOARD_REVISION_MODEL_3B,
+    BCM2837_BOARD_REVISION_MODEL_COMPUTE3:begin
       {Get Memory Base/Size}
       MEMORY_BASE:=$00000000;
       MEMORY_SIZE:=SIZE_1G;
@@ -1242,7 +1249,8 @@ begin
   begin 
    {Old Style Revision}
    case (Revision and BCM2837_BOARD_REV_MASK) of
-    BCM2837_BOARD_REV_3B_1:begin 
+    BCM2837_BOARD_REV_3B_1,BCM2837_BOARD_REV_3B_2,BCM2837_BOARD_REV_3B_3,
+    BCM2837_BOARD_REV_CM3_1,BCM2837_BOARD_REV_CM3_2:begin 
       {Get Memory Base/Size}
       MEMORY_BASE:=$00000000;
       MEMORY_SIZE:=SIZE_1G;
@@ -1266,6 +1274,25 @@ begin
   begin
    CPU_MEMORY_BASE:=Address;
    CPU_MEMORY_SIZE:=Length;
+   
+   {Handle 256MB or less Memory (Missing fixup.dat)}
+   if CPU_MEMORY_SIZE < SIZE_256M then
+    begin
+     {Get Memory Base/Size (Assume 256MB default)}
+     MEMORY_BASE:=$00000000;
+     MEMORY_SIZE:=SIZE_256M;
+     {Get Memory Page Size}
+     MEMORY_PAGE_SIZE:=SIZE_4K;
+     MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+     {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
+     MEMORY_IRQ_SIZE:=SIZE_2M;
+     MEMORY_FIQ_SIZE:=SIZE_2M;
+     MEMORY_LOCAL_SIZE:=SIZE_2M;
+     MEMORY_SHARED_SIZE:=SIZE_8M;
+     MEMORY_DEVICE_SIZE:=SIZE_0;
+     MEMORY_NOCACHE_SIZE:=SIZE_4M;
+     MEMORY_NONSHARED_SIZE:=SIZE_2M;
+    end;
   end;
   
  {Get GPU Memory}
@@ -1433,7 +1460,7 @@ begin
  
  {Setup LEDs}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
     {Activity LED}
     ACTIVITY_LED_PIN:=VIRTUAL_GPIO_PIN_0;
     ACTIVITY_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
@@ -1502,7 +1529,7 @@ begin
  
  {Setup SMSC95XX}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
     SMSC95XX_MAC_ADDRESS:=BoardGetMACAddress;
    end;
  else
@@ -1916,7 +1943,7 @@ procedure RPi3PowerLEDEnable;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
     {Not Supported}
    end;  
  end;
@@ -1928,7 +1955,7 @@ procedure RPi3PowerLEDOn;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
     {Not Supported}
    end;  
  end;
@@ -1940,7 +1967,7 @@ procedure RPi3PowerLEDOff;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin 
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {Not Supported}
    end;
  end;
@@ -1954,7 +1981,7 @@ var
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin 
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {Virtual GPIO}
     VirtualGPIOFunctionSelect(VIRTUAL_GPIO_PIN_0,VIRTUAL_GPIO_FUNCTION_OUT);
    end;
@@ -1967,7 +1994,7 @@ procedure RPi3ActivityLEDOn;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin 
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {LED On}
     VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_HIGH);
    end;
@@ -1980,7 +2007,7 @@ procedure RPi3ActivityLEDOff;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B:begin 
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {LED Off}
     VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_LOW);
    end;

@@ -68,6 +68,8 @@ const
  {UART specific constants}
  UART_NAME_PREFIX = 'UART';  {Name prefix for UART Devices}
 
+ UART_PUSH_TIMEOUT = SERIAL_PUSH_TIMEOUT; {Timeout (Milliseconds) for Push RX/TX (Implementation specific)}
+ 
  {UART Device Types}
  UART_TYPE_NONE      = 0;
  UART_TYPE_8250      = 1; {8250 UART and similar variants (Differences are handled by driver)}
@@ -98,6 +100,8 @@ const
  UART_FLAG_PARITY_SPACE = SERIAL_FLAG_PARITY_SPACE; {Device supports space parity}
  UART_FLAG_FLOW_RTS_CTS = SERIAL_FLAG_FLOW_RTS_CTS; {Device supports RTS/CTS flow control}
  UART_FLAG_FLOW_DSR_DTR = SERIAL_FLAG_FLOW_DSR_DTR; {Device supports DSR/DTR flow control}
+ UART_FLAG_PUSH_RX      = SERIAL_FLAG_PUSH_RX;      {Device requires pushed receive (Implementation specific)}
+ UART_FLAG_PUSH_TX      = SERIAL_FLAG_PUSH_TX;      {Device requires pushed transmit (Implementation specific)}
  
  {UART Read Flags}
  UART_READ_NONE      = SERIAL_READ_NONE;
@@ -1284,6 +1288,8 @@ var
  Total:LongWord;
  Offset:PtrUint;
  UART:PUARTDevice;
+ Status:LongWord;
+ Timeout:LongWord;
  Removed:LongWord;
  Available:LongWord;
 begin
@@ -1335,12 +1341,17 @@ begin
      Result:=ERROR_SUCCESS;
      Break;
     end;
- 
+   
+   {Get Timeout}
+   Timeout:=INFINITE;
+   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_RX) <> 0 then Timeout:=UART_PUSH_TIMEOUT;
+   
    {Release the Lock}
    MutexUnlock(Serial.Lock);
  
    {Wait for Data}
-   if EventWait(Serial.Receive.Wait) = ERROR_SUCCESS then
+   Status:=EventWaitEx(Serial.Receive.Wait,Timeout);
+   if Status = ERROR_SUCCESS then
     begin
      {Acquire the Lock}
      if MutexLock(Serial.Lock) = ERROR_SUCCESS then
@@ -1385,6 +1396,20 @@ begin
        Exit;
       end;      
     end
+   else if Status = ERROR_WAIT_TIMEOUT then
+    begin
+     {Acquire the Lock}
+     if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+      begin
+       {Push Receive}
+       UARTSerialDeviceReceive(UART);
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;      
+    end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
@@ -1410,6 +1435,8 @@ var
  Offset:PtrUint;
  UART:PUARTDevice;
  Added:LongWord;
+ Status:LongWord;
+ Timeout:LongWord;
  Available:LongWord;
 begin
  {}
@@ -1461,11 +1488,16 @@ begin
      Break;
     end;
    
+   {Get Timeout}
+   Timeout:=INFINITE;
+   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_TX) <> 0 then Timeout:=UART_PUSH_TIMEOUT;
+   
    {Release the Lock}
    MutexUnlock(Serial.Lock);
    
    {Wait for Space}
-   if EventWait(Serial.Transmit.Wait) = ERROR_SUCCESS then
+   Status:=EventWaitEx(Serial.Transmit.Wait,Timeout);
+   if Status = ERROR_SUCCESS then
     begin
      {Acquire the Lock}
      if MutexLock(Serial.Lock) = ERROR_SUCCESS then
@@ -1513,6 +1545,20 @@ begin
          {Send Serial Transmit}
          WorkerSchedule(0,TWorkerTask(UARTSerialDeviceTransmit),UART,nil);
         end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;      
+    end
+   else if Status = ERROR_WAIT_TIMEOUT then
+    begin
+     {Acquire the Lock}
+     if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+      begin
+       {Push Transmit}
+       UARTSerialDeviceTransmit(UART);
       end
      else
       begin

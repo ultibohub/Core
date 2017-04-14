@@ -2188,11 +2188,20 @@ begin
  AddBlank(AResponse);
  AddItem(AResponse,'Timer Thread Count:',IntToStr(TIMER_THREAD_COUNT));
 
+ {Add Timer Priority Thread Count}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Timer Priority Thread Count:',IntToStr(TIMER_PRIORITY_THREAD_COUNT));
+ 
  {Add Worker Thread Count}
  AddBlank(AResponse);
  AddItem(AResponse,'Worker Thread Count (Current):',IntToStr(WorkerGetCount));
  AddItem(AResponse,'Worker Thread Count (Default):',IntToStr(WORKER_THREAD_COUNT));
- 
+
+ {Add Priority Worker Thread Count}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Worker Priority Thread Count (Current):',IntToStr(WorkerGetPriorityCount));
+ AddItem(AResponse,'Worker Priority Thread Count (Default):',IntToStr(WORKER_PRIORITY_THREAD_COUNT));
+
  {Add Touch Buffer Address}
  TouchGetBuffer(Address);
  AddBlank(AResponse);

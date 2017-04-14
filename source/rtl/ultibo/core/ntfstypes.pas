@@ -576,9 +576,9 @@ type
  PNTFSReparseSymLinkData = ^TNTFSReparseSymLinkData;  {12 bytes (Not including Names)}    {Data of attribute $REPARSE_POINT}
  TNTFSReparseSymLinkData = packed record
   SubstituteNameOffset:Word;           {Substitute Name Offset}
-  SubstituteNameLength:Word;           {Substitute Name Length} {Length is in bytes not charaters}
+  SubstituteNameLength:Word;           {Substitute Name Length} {Length is in bytes not characters}
   PrintNameOffset:Word;                {Print Name Offset}
-  PrintNameLength:Word;                {Print Name Length}      {Length is in bytes not charaters}
+  PrintNameLength:Word;                {Print Name Length}      {Length is in bytes not characters}
   Reserved1:LongWord;                  {Always Zero}
   {PrintName:array[0..0] of Byte}      {Path Buffer}            {Not Null terminated}
   {SubstituteName:array[0..0] of Byte} {Path Buffer}            {Not Null terminated}
@@ -587,9 +587,9 @@ type
  PNTFSReparseMountPointData = ^TNTFSReparseMountPointData;  {12 bytes (Minimum 8 bytes plus 2 unicode nulls) (Not including Names)} {Data of attribute $REPARSE_POINT}
  TNTFSReparseMountPointData = packed record
   SubstituteNameOffset:Word;           {Substitute Name Offset} {Offset includes the null terminator}
-  SubstituteNameLength:Word;           {Substitute Name Length} {Length is in bytes not charaters and does not include the null terminator}
+  SubstituteNameLength:Word;           {Substitute Name Length} {Length is in bytes not characters and does not include the null terminator}
   PrintNameOffset:Word;                {Print Name Offset}      {Offset includes the null terminator}
-  PrintNameLength:Word;                {Print Name Length}      {Length is in bytes not charaters and does not include the null terminator}
+  PrintNameLength:Word;                {Print Name Length}      {Length is in bytes not characters and does not include the null terminator}
   {SubstituteName:array[0..0] of Byte} {Path Buffer}            {Null terminated}
   {PrintName:array[0..0] of Byte}      {Path Buffer}            {Null terminated}
  end;

@@ -2768,7 +2768,7 @@ begin
     {Check the Size}
     SetLastError(WSAEMSGSIZE);
     if Size > MAX_IP_PACKET then Exit;
-  
+    
     {Send the Packet}
     if Size <= Adapter.MTU then
      begin

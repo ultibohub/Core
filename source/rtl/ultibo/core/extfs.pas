@@ -45,11 +45,6 @@ interface
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
 
 //To Do //See: http://wiki.osdev.org/Ext2
-//To Do //See: 
-
-//To Do //Look for:
-
-//Critical
 
 {==============================================================================}
 {Global definitions}
@@ -195,6 +190,10 @@ begin
  try
   if FDriver = nil then Exit;
 
+  {$IFDEF EXTFS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TEXTFSRecognizer.RecognizePartitionId (PartitionId = ' + IntToStr(APartitionId) + ')');
+  {$ENDIF}
+  
   case APartitionId of
    pidLinuxExtended,pidExtended,pidExtLBA:begin
      {Linux or DOS Extended Partition}
@@ -446,6 +445,8 @@ end;
 
 function TEXTFSPartitioner.AcceptPartition(ADevice:TDiskDevice;APartition,AParent:TDiskPartition;APartitionId:Byte):Boolean;
 {Note: Caller must hold the device, partition and parent lock}
+var
+ Volume:TDiskVolume;
 begin
  {}
  Result:=False;
@@ -464,7 +465,19 @@ begin
     if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
     
     {Check Partition and Volume}
-    if (FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil) and (FDriver.GetVolumeByDevice(ADevice,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
+    if FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
+     begin
+      Volume:=FDriver.GetVolumeByDevice(ADevice,True,FILESYS_LOCK_READ);
+      if Volume <> nil then
+       begin
+        try
+         {Check File System Type}
+         if Volume.FileSysType <> fsUNKNOWN then Exit;
+        finally  
+         Volume.ReaderUnlock;
+        end; 
+       end;
+     end; 
     
     {Check Parent}
     if AParent <> nil then

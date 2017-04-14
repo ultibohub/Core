@@ -94,9 +94,11 @@ const
   'NETWORK_STATUS_UP');
  
  {Network Device Flags}
- NETWORK_FLAG_NONE       = $00000000;
- NETWORK_FLAG_RX_BUFFER  = $00000001; {Device supports Receive Buffer (NetworkBufferReceive/NetworkBufferRelease)}
- NETWORK_FLAG_TX_BUFFER  = $00000002; {Device supports Transmit Buffer (NetworkBufferAllocate/NetworkBufferTransmit)}
+ NETWORK_FLAG_NONE           = $00000000;
+ NETWORK_FLAG_RX_BUFFER      = $00000001; {Device supports Receive Buffer (NetworkBufferReceive/NetworkBufferRelease)}
+ NETWORK_FLAG_TX_BUFFER      = $00000002; {Device supports Transmit Buffer (NetworkBufferAllocate/NetworkBufferTransmit)}
+ NETWORK_FLAG_RX_MULTIPACKET = $00000004; {Device supports multiple packets in the same Receive entry}
+ NETWORK_FLAG_TX_MULTIPACKET = $00000008; {Device supports multiple packets in the same Transmit entry}
  
  {Network Device Control Codes}
  NETWORK_CONTROL_CLEAR_STATS   = 1;  {Clear Statistics}
@@ -270,6 +272,143 @@ const
  TOKENRING_HEADER_SIZE = 14; {SizeOf(TTokenRingHeader);} //To Do //
  
 //To Do ////////////////////////////////////////////////////////////////
+ 
+ {Generic MII registers (Management Interface)}
+ MII_BMCR        = $00; {Basic mode control register}
+ MII_BMSR        = $01; {Basic mode status register }
+ MII_PHYSID1     = $02; {PHYS ID 1}
+ MII_PHYSID2     = $03; {PHYS ID 2}
+ MII_ADVERTISE   = $04; {Advertisement control reg}
+ MII_LPA         = $05; {Link partner ability reg}
+ MII_EXPANSION   = $06; {Expansion register}
+ MII_CTRL1000    = $09; {1000BASE-T control}
+ MII_STAT1000    = $0a; {1000BASE-T status}
+ MII_MMD_CTRL    = $0d; {MMD Access Control Register}
+ MII_MMD_DATA    = $0e; {MMD Access Data Register}
+ MII_ESTATUS     = $0f; {Extended Status}
+ MII_DCOUNTER    = $12; {Disconnect counter}
+ MII_FCSCOUNTER  = $13; {False carrier counter}
+ MII_NWAYTEST    = $14; {N-way auto-neg test reg}
+ MII_RERRCOUNTER = $15; {Receive error counter}
+ MII_SREVISION   = $16; {Silicon revision}
+ MII_RESV1       = $17; {Reserved...}
+ MII_LBRERROR    = $18; {Lpback, rx, bypass error}
+ MII_PHYADDR     = $19; {PHY address}
+ MII_RESV2       = $1a; {Reserved...}
+ MII_TPISTATUS   = $1b; {TPI status for 10mbps}
+ MII_NCONFIG     = $1c; {Network interface config}
+ 
+ {Basic mode control register}
+ BMCR_RESV      = $003f; {Unused...}
+ BMCR_SPEED1000 = $0040; {MSB of Speed (1000)}
+ BMCR_CTST      = $0080; {Collision test}
+ BMCR_FULLDPLX  = $0100; {Full duplex}
+ BMCR_ANRESTART = $0200; {Auto negotiation restart}
+ BMCR_ISOLATE   = $0400; {Isolate data paths from MII}
+ BMCR_PDOWN     = $0800; {Enable low power state}
+ BMCR_ANENABLE  = $1000; {Enable auto negotiation}
+ BMCR_SPEED100  = $2000; {Select 100Mbps}
+ BMCR_LOOPBACK  = $4000; {TXD loopback bits}
+ BMCR_RESET     = $8000; {Reset to default state}
+ 
+ {Basic mode status register}
+ BMSR_ERCAP        = $0001; {Ext-reg capability}
+ BMSR_JCD          = $0002; {Jabber detected}
+ BMSR_LSTATUS      = $0004; {Link status}
+ BMSR_ANEGCAPABLE  = $0008; {Able to do auto-negotiation}
+ BMSR_RFAULT       = $0010; {Remote fault detected}
+ BMSR_ANEGCOMPLETE = $0020; {Auto-negotiation complete}
+ BMSR_RESV         = $00c0; {Unused...}
+ BMSR_ESTATEN      = $0100; {Extended Status in R15}
+ BMSR_100HALF2     = $0200; {Can do 100BASE-T2 HDX}
+ BMSR_100FULL2     = $0400; {Can do 100BASE-T2 FDX}
+ BMSR_10HALF       = $0800; {Can do 10mbps, half-duplex}
+ BMSR_10FULL       = $1000; {Can do 10mbps, full-duplex}
+ BMSR_100HALF      = $2000; {Can do 100mbps, half-duplex}
+ BMSR_100FULL      = $4000; {Can do 100mbps, full-duplex}
+ BMSR_100BASE4     = $8000; {Can do 100mbps, 4k packets}
+ 
+ {Advertisement control register}
+ ADVERTISE_SLCT          = $001f; {Selector bits}
+ ADVERTISE_CSMA          = $0001; {Only selector supported}
+ ADVERTISE_10HALF        = $0020; {Try for 10mbps half-duplex}
+ ADVERTISE_1000XFULL     = $0020; {Try for 1000BASE-X full-duplex}
+ ADVERTISE_10FULL        = $0040; {Try for 10mbps full-duplex}
+ ADVERTISE_1000XHALF     = $0040; {Try for 1000BASE-X half-duplex}
+ ADVERTISE_100HALF       = $0080; {Try for 100mbps half-duplex}
+ ADVERTISE_1000XPAUSE    = $0080; {Try for 1000BASE-X pause}
+ ADVERTISE_100FULL       = $0100; {Try for 100mbps full-duplex}
+ ADVERTISE_1000XPSE_ASYM = $0100; {Try for 1000BASE-X asym pause}
+ ADVERTISE_100BASE4      = $0200; {Try for 100mbps 4k packets}
+ ADVERTISE_PAUSE_CAP     = $0400; {Try for pause}
+ ADVERTISE_PAUSE_ASYM    = $0800; {Try for asymetric pause}
+ ADVERTISE_RESV          = $1000; {Unused...}
+ ADVERTISE_RFAULT        = $2000; {Say we can detect faults}
+ ADVERTISE_LPACK         = $4000; {Ack link partners response}
+ ADVERTISE_NPAGE         = $8000; {Next page bit}
+
+ ADVERTISE_FULL = ADVERTISE_100FULL or ADVERTISE_10FULL or ADVERTISE_CSMA;
+ ADVERTISE_ALL = ADVERTISE_10HALF or ADVERTISE_10FULL or ADVERTISE_100HALF or ADVERTISE_100FULL;
+ 
+ {Link partner ability register}
+ LPA_SLCT            = $001f; {Same as advertise selector}
+ LPA_10HALF          = $0020; {Can do 10mbps half-duplex}
+ LPA_1000XFULL       = $0020; {Can do 1000BASE-X full-duplex}
+ LPA_10FULL          = $0040; {Can do 10mbps full-duplex}
+ LPA_1000XHALF       = $0040; {Can do 1000BASE-X half-duplex}
+ LPA_100HALF         = $0080; {Can do 100mbps half-duplex}
+ LPA_1000XPAUSE      = $0080; {Can do 1000BASE-X pause}
+ LPA_100FULL         = $0100; {Can do 100mbps full-duplex}
+ LPA_1000XPAUSE_ASYM = $0100; {Can do 1000BASE-X pause asym}
+ LPA_100BASE4        = $0200; {Can do 100mbps 4k packets}
+ LPA_PAUSE_CAP       = $0400; {Can pause}
+ LPA_PAUSE_ASYM      = $0800; {Can pause asymetrically}
+ LPA_RESV            = $1000; {Unused...}
+ LPA_RFAULT          = $2000; {Link partner faulted}
+ LPA_LPACK           = $4000; {Link partner acked us}
+ LPA_NPAGE           = $8000; {Next page bit}
+
+ LPA_DUPLEX = LPA_10FULL or LPA_100FULL;
+ LPA_100 = LPA_100FULL or LPA_100HALF or LPA_100BASE4;
+
+ {Expansion register for auto-negotiation}
+ EXPANSION_NWAY        = $0001; {Can do N-way auto-nego}
+ EXPANSION_LCWP        = $0002; {Got new RX page code word}
+ EXPANSION_ENABLENPAGE = $0004; {This enables npage words}
+ EXPANSION_NPCAPABLE   = $0008; {Link partner supports npage}
+ EXPANSION_MFAULTS     = $0010; {Multiple faults detected}
+ EXPANSION_RESV        = $ffe0; {Unused...}
+
+ ESTATUS_1000_TFULL = $2000; {Can do 1000BT Full}
+ ESTATUS_1000_THALF = $1000; {Can do 1000BT Half}
+ 
+ {N-way test register}
+ NWAYTEST_RESV1    = $00ff; {Unused...}
+ NWAYTEST_LOOPBACK = $0100; {Enable loopback for N-way}
+ NWAYTEST_RESV2    = $fe00; {Unused...}
+ 
+ {1000BASE-T Control register}
+ ADVERTISE_1000FULL    = $0200; {Advertise 1000BASE-T full duplex}
+ ADVERTISE_1000HALF    = $0100; {Advertise 1000BASE-T half duplex}
+ CTL1000_AS_MASTER     = $0800;
+ CTL1000_ENABLE_MASTER = $1000;
+
+ {1000BASE-T Status register}
+ LPA_1000LOCALRXOK = $2000; {Link partner local receiver status}
+ LPA_1000REMRXOK   = $1000; {Link partner remote receiver status}
+ LPA_1000FULL      = $0800; {Link partner 1000BASE-T full duplex}
+ LPA_1000HALF      = $0400; {Link partner 1000BASE-T half duplex}
+
+ {Flow control flags}
+ FLOW_CTRL_TX  = $01;
+ FLOW_CTRL_RX  = $02;
+ 
+ {MMD Access Control register fields}
+ MII_MMD_CTRL_DEVAD_MASK = $1f;   {Mask MMD DEVAD}
+ MII_MMD_CTRL_ADDR       = $0000; {Address}
+ MII_MMD_CTRL_NOINCR     = $4000; {no post increment}
+ MII_MMD_CTRL_INCR_RDWT  = $8000; {post increment on reads & writes}
+ MII_MMD_CTRL_INCR_ON_WT = $C000; {post increment on writes only}
  
  {Service Sets}
  SERVICE_SET_UNKNOWN = 0;
@@ -3311,7 +3450,7 @@ begin
 
   {Get Device MTU}
   if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_MTU,0,Value) <> ERROR_SUCCESS then Exit;
- 
+  
   {Return Result}
   Result:=Value;
  finally 
@@ -3340,7 +3479,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(ASize));
  {$ENDIF}
-  
+ 
  {Check Dest}
  if ADest = nil then Exit;
   
@@ -3428,7 +3567,7 @@ begin
    end;
   
   {Send the Packet}
-  if FDevice.DeviceWrite(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
+  if NetworkDeviceWrite(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
    begin
     Result:=True;
    end;
@@ -3810,13 +3949,13 @@ begin
     Exit; //To Do
    end;
  end; 
-                      //Need to check device flags/capabilities for support of buffer allocate etc
+                      //Need to check device flags/capabilities for support of buffer allocate etc //See TWiFiAdapter.ProcessAdapter
  {Get Buffer} //To Do //Call Device to Allocate for non copy //Device should return an Offset to allow for it's own header (if any, eg USB)
  Buffer:=GetMem(Size);
  if Buffer = nil then Exit;
  try
   {Receive a Packet}
-  if FDevice.DeviceRead(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
+  if NetworkDeviceRead(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
    begin
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: ProcessAdapter (' + Name + ')');
@@ -3834,7 +3973,7 @@ begin
        {Determine Frame Type}
        FrameType:=FRAME_TYPE_UNKNOWN;
         
-       //To Do //Check for 802.1Q tag here, TypeLength = 0x8100 if tagged, real TypeLength is after the 4 byte 802.1Q tag
+       //To Do //Check for 802.1Q tag here, TypeLength = = $8100 if tagged, real TypeLength is after the 4 byte 802.1Q tag
        
        {Check Type Length}
        if WordBEtoN(Ethernet.TypeLength) > PACKET_MIN_TYPE then

@@ -98,6 +98,7 @@ const
  SHELL_ALIAS_HELP    = '?';
  SHELL_ALIAS_VERSION = 'VERSION';
  SHELL_ALIAS_CLEAR   = 'CLEAR';
+ SHELL_ALIAS_REBOOT  = 'REBOOT';
  
  {Shell logging}
  SHELL_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Shell debugging messages}
@@ -524,6 +525,7 @@ type
  public
   {}
   constructor Create;
+  destructor Destroy; override;
  private
   {Internal Variables}
  
@@ -3258,14 +3260,50 @@ end;
 {==============================================================================}
 {TShellCommandRestart}
 constructor TShellCommandRestart.Create;
+var
+ Alias:TShellAlias;
 begin
  {}
  inherited Create;
 
  Name:=SHELL_COMMAND_RESTART;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
+ 
+ {Create Alias}
+ Alias:=TShellAlias.Create;
+ Alias.Name:=SHELL_ALIAS_REBOOT;
+ 
+ {Register Alias}
+ if not RegisterAlias(Alias) then
+  begin
+   {Destroy Alias}
+   Alias.Free;
+  end;
 end;
  
+{==============================================================================}
+
+destructor TShellCommandRestart.Destroy; 
+var
+ Alias:TShellAlias;
+begin
+ {}
+ {Get Alias}
+ Alias:=FindAlias(SHELL_ALIAS_REBOOT);
+ 
+ {Check Alias}
+ if Alias <> nil then
+  begin
+   {Degister Alias}
+   DeregisterAlias(Alias);
+   
+   {Destroy Alias}
+   Alias.Free;
+  end;
+  
+ inherited Destroy;
+end;
+
 {==============================================================================}
 
 function TShellCommandRestart.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
@@ -3577,6 +3615,9 @@ end;
 {==============================================================================}
 
 function TShellCommandMemory.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+var
+ Status:THeapStatus;
+ FPCStatus:TFPCHeapStatus;
 begin
  {}
  Result:=False;
@@ -3585,8 +3626,39 @@ begin
  if AShell = nil then Exit;
  
  {Do Command}
- //To Do
- Result:= AShell.DoOutput(ASession,'Sorry, not implemented yet');
+ {Heap Status}
+ Status:=GetHeapStatus;
+ AShell.DoOutput(ASession,'Heap Status');
+ AShell.DoOutput(ASession,'-----------');
+ AShell.DoOutput(ASession,'');
+ AShell.DoOutput(ASession,'Total Address Space: ' + IntToStr(Status.TotalAddrSpace));
+ AShell.DoOutput(ASession,'Total Uncommitted:   ' + IntToStr(Status.TotalUncommitted));
+ AShell.DoOutput(ASession,'Total Committed:     ' + IntToStr(Status.TotalCommitted));
+ AShell.DoOutput(ASession,'Total Allocated:     ' + IntToStr(Status.TotalAllocated));
+ AShell.DoOutput(ASession,'Total Free:          ' + IntToStr(Status.TotalFree));
+ AShell.DoOutput(ASession,'Free Small:          ' + IntToStr(Status.FreeSmall));
+ AShell.DoOutput(ASession,'Free Big:            ' + IntToStr(Status.FreeBig));
+ AShell.DoOutput(ASession,'Unused:              ' + IntToStr(Status.Unused));
+ AShell.DoOutput(ASession,'Overhead:            ' + IntToStr(Status.Overhead));
+ AShell.DoOutput(ASession,'Heap Error Code:     ' + IntToStr(Status.HeapErrorCode));
+ AShell.DoOutput(ASession,'');
+ 
+ {FPC Heap Status}
+ FPCStatus:=GetFPCHeapStatus;
+ AShell.DoOutput(ASession,'FPC Heap Status');
+ AShell.DoOutput(ASession,'---------------');
+ AShell.DoOutput(ASession,'');
+ AShell.DoOutput(ASession,'Max Heap Size:     ' + IntToStr(FPCStatus.MaxHeapSize));
+ AShell.DoOutput(ASession,'Max Heap Used:     ' + IntToStr(FPCStatus.MaxHeapUsed));
+ AShell.DoOutput(ASession,'Current Heap Size: ' + IntToStr(FPCStatus.CurrHeapSize));
+ AShell.DoOutput(ASession,'Current Heap Used: ' + IntToStr(FPCStatus.CurrHeapUsed));
+ AShell.DoOutput(ASession,'Current Heap Free: ' + IntToStr(FPCStatus.CurrHeapFree));
+ AShell.DoOutput(ASession,'');
+ 
+ //To Do //Add additional options for more or less detail
+ 
+ {Return Result}
+ Result:=True;
 end;
  
 {==============================================================================}

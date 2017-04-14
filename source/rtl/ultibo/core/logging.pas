@@ -339,7 +339,14 @@ begin
       if (LoggingEntry.Reserved2 = LongInt(LOGGING_SEVERITY_INVALID)) or (LoggingEntry.Reserved3 = LOGGING_FACILITY_INVALID) then
        begin
         {Setup Logging}
-        WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + LoggingEntry.Data;
+        if LOGGING_INCLUDE_COUNTER then
+         begin
+          WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + LoggingEntry.Data;
+         end
+        else
+         begin
+          WorkBuffer:=LoggingEntry.Data;
+         end;
     
         {Output Logging}
         LoggingDeviceOutput(LoggingDeviceDefault,WorkBuffer);
@@ -355,7 +362,14 @@ begin
         LoggingEntryEx:=PLoggingEntryEx(@Message); {Do not free}
         
         {Setup Logging}
-        WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + LoggingEntryEx.Content;
+        if LOGGING_INCLUDE_COUNTER then
+         begin
+          WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + LoggingEntryEx.Content;
+         end
+        else
+         begin
+          WorkBuffer:=LoggingEntryEx.Content;
+         end;
         
         {Output Logging}
         LoggingDeviceOutputEx(LoggingDeviceDefault,LoggingEntryEx.Facility,LoggingEntryEx.Severity,LoggingEntryEx.Tag,WorkBuffer);
@@ -1150,12 +1164,26 @@ begin
    {Setup Logging}
    if CPUGetCount > 1 then
     begin
-     WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + IntToHex(ThreadGetCurrent,8) + ':' + IntToHex(CPUGetCurrent,1) + ' - ' + AText;
+     WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ':' + IntToHex(CPUGetCurrent,1) + ' - ' + AText;
     end
    else
     begin
-     WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + IntToHex(ThreadGetCurrent,8) + ' - ' + AText;
+     WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AText;
     end;
+   
+   {Check Options}
+   if LOGGING_INCLUDE_TICKCOUNT then
+    begin
+     WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
+    end; 
+   if LOGGING_INCLUDE_DATETIME then
+    begin
+     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
+    end; 
+   if LOGGING_INCLUDE_COUNTER then
+    begin
+     WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + WorkBuffer;
+    end; 
    
    {Output Logging}
    LoggingDeviceOutput(LoggingDeviceDefault,WorkBuffer);
@@ -1179,7 +1207,17 @@ begin
    else
     begin
      WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AText;
-    end;
+     end;
+     
+   {Check Options}
+   if LOGGING_INCLUDE_TICKCOUNT then
+    begin
+     WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
+    end; 
+   if LOGGING_INCLUDE_DATETIME then
+    begin
+     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
+    end; 
    
    {Create Logging Entry}
    LoggingEntry:=PLoggingEntry(@Message); {Do not free}
@@ -1214,12 +1252,26 @@ begin
    {Setup Logging}
    if CPUGetCount > 1 then
     begin
-     WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + IntToHex(ThreadGetCurrent,8) + ':' + IntToHex(CPUGetCurrent,1) + ' - ' + AContent;
+     WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ':' + IntToHex(CPUGetCurrent,1) + ' - ' + AContent;
     end
    else
     begin
-     WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + IntToHex(ThreadGetCurrent,8) + ' - ' + AContent;
+     WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AContent;
     end;
+   
+   {Check Options}
+   if LOGGING_INCLUDE_TICKCOUNT then
+    begin
+     WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
+    end; 
+   if LOGGING_INCLUDE_DATETIME then
+    begin
+     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
+    end; 
+   if LOGGING_INCLUDE_COUNTER then
+    begin
+     WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + WorkBuffer;
+    end; 
    
    {Output Logging}
    LoggingDeviceOutputEx(LoggingDeviceDefault,AFacility,ASeverity,ATag,WorkBuffer);
@@ -1244,6 +1296,16 @@ begin
     begin
      WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AContent;
     end;
+    
+   {Check Options}
+   if LOGGING_INCLUDE_TICKCOUNT then
+    begin
+     WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
+    end; 
+   if LOGGING_INCLUDE_DATETIME then
+    begin
+     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
+    end; 
    
    {Create Logging Entry}
    LoggingEntryEx:=PLoggingEntryEx(@Message); {Do not free}

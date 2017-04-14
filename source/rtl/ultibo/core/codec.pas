@@ -108,7 +108,7 @@ type
   Device:TDevice;                                 {The Device entry for this Codec device}
   {Codec Properties}
   CodecId:LongWord;                               {Unique Id of this Codec device in the Codec device table}
-  CodecState:LongWord;                            {Codec dveice state (eg CODEC_STATE_ENABLED)}
+  CodecState:LongWord;                            {Codec device state (eg CODEC_STATE_ENABLED)}
   //To Do
   DeviceProperties:TCodecDeviceProperties;     {A Device specific DeviceProperties method implementing the standard Codec device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
