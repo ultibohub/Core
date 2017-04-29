@@ -38,7 +38,7 @@ SMSC 91C9x/91C1xx Ethernet
  
  The SMSC 91C9x/91C1xx are a family of Non-PCI 10/100 Ethernet Single Chip MAC + PHY devices.
  
- This driver is primary intended to support the LAN91C111 Ethernet device included in the QEMU
+ This driver is primarily intended to support the LAN91C111 Ethernet device included in the QEMU
  Verstile PB emulation however the driver is based on the equivalent Linux driver and as such
  includes (untested) support for a number of chip variants (see SMC91X_CHIP_* constants below).
  
@@ -223,7 +223,7 @@ const
  
  {SMC91X Receive status constants}
  SMC91X_RCV_ALGNERR   = $8000; {Frame has alignment error}
- SMC91X_RCV_BRODCAST  = $4000; {Receive frame was Broadcast (The Multicast bit may also be set, software must ignore the Multicast bit for a Bradcast packet)}
+ SMC91X_RCV_BRODCAST  = $4000; {Receive frame was Broadcast (The Multicast bit may also be set, software must ignore the Multicast bit for a Broadcast packet)}
  SMC91X_RCV_BADCRC    = $2000; {Frame has CRC error or RX_ER was asserted during reception}
  SMC91X_RCV_ODDFRAME  = $1000; {This bit when set indicates that the received frame has an odd number of bytes}
  SMC91X_RCV_TOOLONG   = $0800; {Frame length was longer than 802.3 maximum size (1518 bytes on the cable)}
@@ -412,16 +412,16 @@ type
   IRQ:LongWord;
   Lock:TSpinHandle;                                                 {Device lock (Differs from lock in Network device) (Spin lock due to use by interrupt handler)}
   Thread:TThreadHandle;                                             {Thread for handling packet receive and transmit completion}
-  Start:LongWord;                                                   {First receive entry available for incomming packet}
-  Count:LongWord;                                                   {Number of receive entries available for incomming packets}
-  Entries:array[0..(SMC91X_MAX_RX_ENTRIES - 1)] of PNetworkEntry;   {Queue of receive entries for handling incomming packets}
+  Start:LongWord;                                                   {First receive entry available for incoming packet}
+  Count:LongWord;                                                   {Number of receive entries available for incoming packets}
+  Entries:array[0..(SMC91X_MAX_RX_ENTRIES - 1)] of PNetworkEntry;   {Queue of receive entries for handling incoming packets}
   Registers:PSMC91XRegisters;                                       {Device registers}
   Revision:Word;                                                    {Device revision}
   PHYId:LongWord;                                                   {Physical Interface (PHY) Address}
   PHYType:LongWord;                                                 {Physical Interface (PHY) Type}
-  TCRFlags:LongWord;                                                {Current Transmit Control Register (TCR) flags)}
-  RCRFlags:LongWord;                                                {Current Receive Control Register (RCR) flags)}
-  RPCFlags:LongWord;                                                {Current Receive/PHY Control Register (RPC) flags)}
+  TCRFlags:LongWord;                                                {Current Transmit Control Register (TCR) flags}
+  RCRFlags:LongWord;                                                {Current Receive Control Register (RCR) flags}
+  RPCFlags:LongWord;                                                {Current Receive/PHY Control Register (RPC) flags}
   {Statistics Properties}                                           
   InterruptCount:LongWord;                                          {Number of interrupt requests received by the device}
   CollisionCount:LongWord;                                          {Number of transmit collisions detected by the device}
@@ -1824,6 +1824,7 @@ begin
          
          {Copy Packet}
          Len:=Len - 4;
+         if (Len and not(3)) < Size then Inc(Len,2);
          Data:=Packet.Data;
          while Len >= 4 do
           begin
@@ -1832,7 +1833,7 @@ begin
            Dec(Len,4);
            Inc(Data,4);
           end;
-        
+
          {Send Message}
          Message.Msg:=LongWord(Entry);
          Message.wParam:=SMC91X_COMPLETION_RECEIVE;

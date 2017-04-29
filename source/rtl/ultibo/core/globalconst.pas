@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '14 April 2017';
+ ULTIBO_RELEASE_DATE             = '29 April 2017';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.3.245';
+ ULTIBO_RELEASE_VERSION          = '1.3.271';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 3;
- ULTIBO_RELEASE_VERSION_REVISION = 245;
+ ULTIBO_RELEASE_VERSION_REVISION = 271;
  
 {==============================================================================}
 const
@@ -1620,6 +1620,7 @@ const
  LOGGING_FACILITY_TOUCH      = 33; {Touch log messages}
  LOGGING_FACILITY_VIDEO      = 34; {Video log messages}
  LOGGING_FACILITY_CODEC      = 35; {Codec log messages}
+ LOGGING_FACILITY_NFS        = 36; {NFS log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 
