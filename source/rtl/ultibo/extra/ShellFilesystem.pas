@@ -1746,7 +1746,7 @@ begin
        if Partition <> nil then
         begin
          {Get Device}
-         if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
+         if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_WRITE) then
           begin
            Device:=Partition.Device;
 
@@ -1755,7 +1755,7 @@ begin
              AShell.DoOutput(ASession,'Partition ' + Name + ' could not be deleted');
             end;
           
-           Device.ReaderUnlock;
+           Device.WriterUnlock;
           end
          else
           begin

@@ -37,6 +37,10 @@ QEMU VersatilePB
  This includes standard interfaces such as network, filesystem and storage as well as drivers
  that are specific to the VersatilePB and may or may not be included by anything else.
  
+ The unit also provides a very simple clock device driver for the 24MHz clock included in the
+ Verstile PB System Control registers. This clock is 32bit only, runs at a fixed rate of 24MHz
+ and cannot be stopped or reset.
+ 
  Additional units can be included anywhere within a program and they will be linked during the
  compile process. This unit simply provides a convenient way to ensure all relevant units have
  been included and the standard drivers registered.
@@ -58,6 +62,7 @@ uses GlobalConfig,
      Platform,
      Threads,
      PlatformQEMUVPB,
+     Devices,
      DMA,
      //PL08X,        {ARM PrimeCell PL080/PL081 DMA driver} //To Do //Continuing
      Serial,
@@ -66,7 +71,7 @@ uses GlobalConfig,
      RTC,
      PL031,        {ARM PrimeCell PL031 Real Time Clock driver}
      MMC,
-     //PL180,        {ARM PrimeCell PL180 SDHCI driver}  //To Do //Continuing
+     PL18X,        {ARM PrimeCell PL181 SDHCI driver}
      USB,
      //OHCI,         {USB OHCI Controller driver}  //To Do //Continuing
      Network,
@@ -96,11 +101,20 @@ uses GlobalConfig,
 {$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
+const
+ {QEMUVersatilePB specific constants}
+ VERSATILEPB_CLOCK_DESCRIPTION = 'VersatilePB 24MHz Clock';  {Description of 24MHz clock device}
+ 
+{==============================================================================}
 var
  {QEMUVersatilePB specific variables}
  QEMUVPB_REGISTER_DMA:LongBool = True;         {If True then register the QEMU VersatilePB DMA device during boot}
  QEMUVPB_REGISTER_UART0:LongBool = True;       {If True then register the QEMU VersatilePB UART0 device during boot}
+ QEMUVPB_REGISTER_UART1:LongBool = True;       {If True then register the QEMU VersatilePB UART1 device during boot}
+ QEMUVPB_REGISTER_UART2:LongBool = True;       {If True then register the QEMU VersatilePB UART2 device during boot}
+ QEMUVPB_REGISTER_UART3:LongBool = True;       {If True then register the QEMU VersatilePB UART3 device during boot}
  QEMUVPB_REGISTER_RTC:LongBool = True;         {If True then register the QEMU VersatilePB RTC device during boot}
+ QEMUVPB_REGISTER_CLOCK:LongBool = True;       {If True then register the QEMU VersatilePB 24MHz Clock device during boot}
  QEMUVPB_REGISTER_MMC0:LongBool = True;        {If True then register the QEMU VersatilePB MMC0 device during boot}
  QEMUVPB_REGISTER_MMC1:LongBool = True;        {If True then register the QEMU VersatilePB MMC1 device during boot}
  QEMUVPB_REGISTER_NETWORK:LongBool = True;     {If True then register the QEMU VersatilePB Network device during boot}
@@ -111,6 +125,14 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure QEMUVersatilePBInit;
+
+{==============================================================================}
+{QEMUVersatilePB Functions}
+
+{==============================================================================}
+{QEMUVersatilePB Clock Functions}
+function VersatilePBClockRead(Clock:PClockDevice):LongWord;
+function VersatilePBClockRead64(Clock:PClockDevice):Int64;
 
 {==============================================================================}
 {==============================================================================}
@@ -125,11 +147,20 @@ var
  
 {==============================================================================}
 {==============================================================================}
+{QEMUVersatilePB forward declarations}
+function MMCIGetCardDetect(MMC:PMMCDevice):LongWord; forward;
+function MMCIGetWriteProtect(MMC:PMMCDevice):LongWord; forward;
+ 
+{==============================================================================}
+{==============================================================================}
 {Initialization Functions}
 procedure QEMUVersatilePBInit;
 {Initialize the QEMUVersatilePB unit and parameters}
 
 {Note: Called only during system startup}
+var
+ Status:LongWord;
+ VersatilePBClock:PClockDevice;
 begin
  {}
  {Check Initialized}
@@ -142,6 +173,10 @@ begin
  //PL08XDMA_NOCACHE_MEMORY:=DMA_NOCACHE_MEMORY; 
  //PL08XDMA_BUS_ADDRESSES:=DMA_BUS_ADDRESSES;  
  //PL08XDMA_CACHE_COHERENT:=DMA_CACHE_COHERENT;
+ 
+ {Initialize Peripherals}
+ PL18X_MMCI_FIQ_ENABLED:=False;
+ PL18X_MMCI_MAX_FREQ:=VERSATILEPB_SYS_24MHZ_FREQUENCY; {Connected to the 24MHz reference clock}
  
  {Check Environment Variables}
  //To Do //Continuing 
@@ -157,7 +192,28 @@ begin
  if QEMUVPB_REGISTER_UART0 then
   begin
    {Create UART0}
-   PL011UARTCreate(VERSATILEPB_UART0_REGS_BASE,'',VERSATILEPB_IRQ_UART0,PL011_UART_CLOCK_RATE);
+   PL011UARTCreate(VERSATILEPB_UART0_REGS_BASE,PL011_UART_DESCRIPTION + ' (UART0)',VERSATILEPB_IRQ_UART0,PL011_UART_CLOCK_RATE);
+  end;
+
+ {Check UART1}
+ if QEMUVPB_REGISTER_UART1 then
+  begin
+   {Create UART1}
+   PL011UARTCreate(VERSATILEPB_UART1_REGS_BASE,PL011_UART_DESCRIPTION + ' (UART1)',VERSATILEPB_IRQ_UART1,PL011_UART_CLOCK_RATE);
+  end;
+
+ {Check UART2}
+ if QEMUVPB_REGISTER_UART2 then
+  begin
+   {Create UART2}
+   PL011UARTCreate(VERSATILEPB_UART2_REGS_BASE,PL011_UART_DESCRIPTION + ' (UART2)',VERSATILEPB_IRQ_UART2,PL011_UART_CLOCK_RATE);
+  end;
+
+ {Check UART3}
+ if QEMUVPB_REGISTER_UART3 then
+  begin
+   {Create UART3}
+   PL011UARTCreate(VERSATILEPB_UART3_REGS_BASE,PL011_UART_DESCRIPTION + ' (UART3)',VERSATILEPB_IRQ_SIC_UART3,PL011_UART_CLOCK_RATE);
   end;
   
  {Check RTC}
@@ -167,18 +223,64 @@ begin
    PL031RTCCreate(VERSATILEPB_RTC_REGS_BASE,'',VERSATILEPB_IRQ_RTC);
   end; 
 
- //To Do //Continuing  //Clock and Timer devices
+ {Check Clock}
+ if QEMUVPB_REGISTER_CLOCK then
+  begin
+   {Create Clock}
+   VersatilePBClock:=PClockDevice(ClockDeviceCreateEx(SizeOf(TClockDevice)));
+   if VersatilePBClock <> nil then
+    begin
+     {Update Clock}
+     {Device}
+     VersatilePBClock.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     VersatilePBClock.Device.DeviceType:=CLOCK_TYPE_HARDWARE;
+     VersatilePBClock.Device.DeviceFlags:=CLOCK_FLAG_NONE;
+     VersatilePBClock.Device.DeviceData:=nil;
+     VersatilePBClock.Device.DeviceDescription:=VERSATILEPB_CLOCK_DESCRIPTION;
+     {Clock}
+     VersatilePBClock.ClockState:=CLOCK_STATE_DISABLED;
+     VersatilePBClock.DeviceRead:=VersatilePBClockRead;
+     VersatilePBClock.DeviceRead64:=VersatilePBClockRead64;
+     {Driver}
+     VersatilePBClock.Address:=Pointer(VERSATILEPB_SYS_24MHZ);
+     VersatilePBClock.Rate:=VERSATILEPB_SYS_24MHZ_FREQUENCY;
+     VersatilePBClock.MinRate:=VERSATILEPB_SYS_24MHZ_FREQUENCY;
+     VersatilePBClock.MaxRate:=VERSATILEPB_SYS_24MHZ_FREQUENCY;
+     
+     {Register Clock}
+     Status:=ClockDeviceRegister(VersatilePBClock);
+     if Status = ERROR_SUCCESS then
+      begin
+       {Start Clock}
+       Status:=ClockDeviceStart(VersatilePBClock);
+       if Status <> ERROR_SUCCESS then
+        begin
+         if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to start new clock device: ' + ErrorToString(Status));
+        end;
+      end
+     else 
+      begin
+       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to register new clock device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to create new clock device');
+    end;
+  end;
+  
+ //To Do //Continuing  //Timer devices
  
  {Check MMC0}
  if QEMUVPB_REGISTER_MMC0 then
   begin
-   //To Do //Continuing
+   PL181SDHCICreate(VERSATILEPB_MMCI0_REGS_BASE,PL181_MMCI_DESCRIPTION + ' (MMC0)',VERSATILEPB_IRQ_MMCI0A,VERSATILEPB_IRQ_SIC_MMCI0B,PL18X_MMCI_MIN_FREQ,PL18X_MMCI_MAX_FREQ);
   end;
   
  {Check MMC1}
  if QEMUVPB_REGISTER_MMC1 then
   begin
-   //To Do //Continuing
+   PL181SDHCICreate(VERSATILEPB_MMCI1_REGS_BASE,PL181_MMCI_DESCRIPTION + ' (MMC1)',VERSATILEPB_IRQ_MMCI1A,VERSATILEPB_IRQ_SIC_MMCI1B,PL18X_MMCI_MIN_FREQ,PL18X_MMCI_MAX_FREQ);
   end;
  
  {Check Network}
@@ -240,6 +342,225 @@ begin
  ClockGetTimer:=TimerCreateEx(60000,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE,TTimerEvent(QEMUVPBClockGetTimer),nil); {Rescheduled Automatically}
  
  QEMUVersatilePBInitialized:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{QEMUVersatilePB Functions}
+
+{==============================================================================}
+{==============================================================================}
+{QEMUVersatilePB MMCI Functions}
+function MMCIGetCardDetect(MMC:PMMCDevice):LongWord; 
+{Implementation of MMCDeviceGetCardDetect API for QEMUVPB MMCI}
+{Note: Not intended to be called directly by applications, use MMCDeviceGetCardDetect instead}
+
+{Note: Not currently used as the VERSATILEPB_SYS_MCI register is not connected in QEMUVBP}
+var
+ Mask:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: MMC Device Get Card Detect');
+ {$ENDIF}
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {Check MMC State}
+ if MMC.MMCState = MMC_STATE_INSERTED then
+  begin
+   {Get Card Status}
+   if MMCDeviceSendCardStatus(MMC) <> MMC_STATUS_SUCCESS then
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_CARD_PRESENT);
+
+     {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: Get Card Detect (Flags=not MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end;
+  end
+ else
+  begin
+   {Check Address}
+   if PtrUInt(SDHCI.Address) = VERSATILEPB_MMCI0_REGS_BASE then
+    begin
+     Mask:=VERSATILEPB_SYS_MCI_CD0;
+    end
+   else if PtrUInt(SDHCI.Address) = VERSATILEPB_MMCI1_REGS_BASE then 
+    begin
+     Mask:=VERSATILEPB_SYS_MCI_CD1;
+    end
+   else
+    begin
+     Mask:=0;
+    end;  
+   
+   {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: VERSATILEPB_SYS_MCI=' + IntToHex(PLongWord(VERSATILEPB_SYS_MCI)^,8));
+   {$ENDIF}
+   
+   {Read Status}
+   if (PLongWord(VERSATILEPB_SYS_MCI)^ and Mask) <> 0 then
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
+     
+     {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: Get Card Detect (Flags=MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end
+   else
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_CARD_PRESENT);
+     
+     {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: Get Card Detect (Flags=not MMC_FLAG_CARD_PRESENT)');
+     {$ENDIF}
+    end;    
+    
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+  end; 
+ 
+ Result:=MMC_STATUS_SUCCESS; 
+end;
+
+{==============================================================================}
+
+function MMCIGetWriteProtect(MMC:PMMCDevice):LongWord; 
+{Implementation of MMCDeviceGetWriteProtect API for QEMUVPB MMCI}
+{Note: Not intended to be called directly by applications, use MMCDeviceGetWriteProtect instead}
+
+{Note: Not currently used as the VERSATILEPB_SYS_MCI register is not connected in QEMUVBP}
+var
+ Mask:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: MMC Device Get Write Protect');
+ {$ENDIF}
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {Check MMC State}
+ if MMC.MMCState = MMC_STATE_INSERTED then
+  begin
+   {Check Address}
+   if PtrUInt(SDHCI.Address) = VERSATILEPB_MMCI0_REGS_BASE then
+    begin
+     Mask:=VERSATILEPB_SYS_MCI_WP0;
+    end
+   else if PtrUInt(SDHCI.Address) = VERSATILEPB_MMCI1_REGS_BASE then 
+    begin
+     Mask:=VERSATILEPB_SYS_MCI_WP1;
+    end
+   else
+    begin
+     Mask:=0;
+    end;  
+   
+   {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: VERSATILEPB_SYS_MCI=' + IntToHex(PLongWord(VERSATILEPB_SYS_MCI)^,8));
+   {$ENDIF}
+   
+   {Read Status}
+   if (PLongWord(VERSATILEPB_SYS_MCI)^ and Mask) <> 0 then
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_WRITE_PROTECT);
+     
+     {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: Get Card Detect (Flags=MMC_FLAG_WRITE_PROTECT)');
+     {$ENDIF}
+    end
+   else
+    begin
+     {Update Flags}
+     MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_WRITE_PROTECT);
+     
+     {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+     if MMC_LOG_ENABLED then MMCLogDebug(nil,'QEMUVPB: Get Card Detect (Flags=not MMC_FLAG_WRITE_PROTECT)');
+     {$ENDIF}
+    end;    
+    
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+  end; 
+ 
+ Result:=MMC_STATUS_SUCCESS; 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{QEMUVersatilePB Clock Functions}
+function VersatilePBClockRead(Clock:PClockDevice):LongWord;
+{Implementation of ClockDeviceRead API for the 24MHz Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceRead instead}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ if Clock.Address = nil then Exit;
+
+ if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Read Clock}
+ Result:=PLongWord(Clock.Address)^;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read}
+ 
+ {Update Statistics}
+ Inc(Clock.ReadCount);
+ 
+ MutexUnlock(Clock.Lock);
+end;
+
+{==============================================================================}
+
+function VersatilePBClockRead64(Clock:PClockDevice):Int64;
+{Implementation of ClockDeviceRead64 API for the 24MHz Clock}
+{Note: Not intended to be called directly by applications, use ClockDeviceRead64 instead}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Clock}
+ if Clock = nil then Exit;
+ if Clock.Address = nil then Exit;
+
+ if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
+ 
+ {Read Clock}
+ Result:=PLongWord(Clock.Address)^;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read}
+ 
+ {Update Statistics}
+ Inc(Clock.ReadCount);
+ 
+ MutexUnlock(Clock.Lock);
 end;
 
 {==============================================================================}

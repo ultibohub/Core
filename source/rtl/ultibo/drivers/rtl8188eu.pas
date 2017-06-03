@@ -288,7 +288,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF RTL8188EU_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8188EU: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8188EU: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to device only)}
@@ -351,7 +351,7 @@ begin
  if Device.Driver <> RTL8188EUDriver then Exit;
  
  {$IFDEF RTL8188EU_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8188EU: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8188EU: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
 
  //To Do

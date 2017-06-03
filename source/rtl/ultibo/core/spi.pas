@@ -171,7 +171,7 @@ type
  TSPIDeviceGetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;
  TSPIDeviceSetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
  
- TSPIDeviceProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
+ TSPIDeviceGetProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
  
  TSPIDevice = record
   {Device Properties}
@@ -195,7 +195,7 @@ type
   DeviceSetClockPolarity:TSPIDeviceSetClockPolarity;   {A Device specific DeviceSetClockPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   DeviceGetSelectPolarity:TSPIDeviceGetSelectPolarity; {A Device specific DeviceGetSelectPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   DeviceSetSelectPolarity:TSPIDeviceSetSelectPolarity; {A Device specific DeviceSetSelectPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
-  DeviceProperties:TSPIDeviceProperties;               {A Device specific DeviceProperties method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TSPIDeviceGetProperties;         {A Device specific DeviceGetProperties method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   TransferCount:LongWord;
   TransferErrors:LongWord;
@@ -246,7 +246,8 @@ function SPIDeviceSetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWo
 function SPIDeviceGetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 function SPIDeviceSetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
  
-function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
+function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord; inline;
+function SPIDeviceGetProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
   
 function SPIDeviceCreate:PSPIDevice;
 function SPIDeviceCreateEx(Size:LongWord):PSPIDevice;
@@ -1165,7 +1166,21 @@ end;
 
 {==============================================================================}
  
-function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
+function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord; inline;
+{Get the properties for the specified SPI device}
+{SPI: The SPI device to get properties from}
+{Properties: Pointer to a TSPIProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by SPIDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=SPIDeviceGetProperties(SPI,Properties);
+end;
+
+{==============================================================================}
+
+function SPIDeviceGetProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
 {Get the properties for the specified SPI device}
 {SPI: The SPI device to get properties from}
 {Properties: Pointer to a TSPIProperties structure to fill in}
@@ -1182,7 +1197,7 @@ begin
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SPI_DEBUG}
- if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Properties');
+ if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -1191,10 +1206,10 @@ begin
  
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(SPI.DeviceProperties) then
+   if Assigned(SPI.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=SPI.DeviceProperties(SPI,Properties);
+     {Call Device Get Properites}
+     Result:=SPI.DeviceGetProperties(SPI,Properties);
     end
    else
     begin
@@ -1267,7 +1282,7 @@ begin
  Result.DeviceSetClockPolarity:=nil;
  Result.DeviceGetSelectPolarity:=nil;
  Result.DeviceSetSelectPolarity:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Wait:=INVALID_HANDLE_VALUE;
  Result.Divider:=0;

@@ -115,9 +115,9 @@ function EncodeString(const AValue,AKey:String):String;
 function DecodeString(const AValue,AKey:String):String;
 
 procedure DelimitStrings(AStrings:TStrings;var AString:String;const ADelimiter:String);
-procedure UndelimitString(AString:String;AStrings:TStrings;const ADelimiter:String);
+procedure UndelimitString(const AString:String;AStrings:TStrings;const ADelimiter:String);
 
-procedure UndelimitQuotedString(AString:String;AStrings:TStrings;const ADelimiter:String);
+procedure UndelimitQuotedString(const AString:String;AStrings:TStrings;const ADelimiter:String);
 
 function AddSlashes(const AFilePath:String):String;
 function AddTrailingSlash(const AFilePath:String):String;
@@ -1031,26 +1031,31 @@ end;
 
 {==============================================================================}
 
-procedure UndelimitString(AString:String;AStrings:TStrings;const ADelimiter:String);
+procedure UndelimitString(const AString:String;AStrings:TStrings;const ADelimiter:String);
 var
  PosIdx:Integer;
+ WorkBuffer:String;
 begin
  {}
  if ADelimiter = '' then Exit; {Trim(ADelimiter)} {Dont Trim Space is Allowed}
  
- while Pos(ADelimiter,AString) > 0 do
+ WorkBuffer := AString;
+ 
+ PosIdx:=Pos(ADelimiter,WorkBuffer);
+ while PosIdx > 0 do
   begin
-   PosIdx:=Pos(ADelimiter,AString);
-   AStrings.Add(Copy(AString,1,PosIdx - 1));
-   Delete(AString,1,PosIdx);
+   AStrings.Add(Copy(WorkBuffer,1,PosIdx - 1));
+   Delete(WorkBuffer,1,PosIdx);
+   
+   PosIdx:=Pos(ADelimiter,WorkBuffer);
   end;
   
- AStrings.Add(AString);
+ AStrings.Add(WorkBuffer);
 end;
 
 {==============================================================================}
 
-procedure UndelimitQuotedString(AString:String;AStrings:TStrings;const ADelimiter:String);
+procedure UndelimitQuotedString(const AString:String;AStrings:TStrings;const ADelimiter:String);
 var
  Count:Integer;
  WorkBuffer:String;

@@ -11,8 +11,8 @@ Arch
 Boards
 ======
 
- Raspberry Pi - Model A/B/A+/B+
- Raspberry Pi - Model Zero
+ Raspberry Pi - Model A/B/A+/B+/CM1
+ Raspberry Pi - Model Zero/ZeroW
 
 Licence
 =======

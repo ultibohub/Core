@@ -103,7 +103,7 @@ type
  TRTCDeviceStop = function(RTC:PRTCDevice):LongWord;
  TRTCDeviceGetTime = function(RTC:PRTCDevice):Int64;
  TRTCDeviceSetTime = function(RTC:PRTCDevice;const Time:Int64):Int64;
- TRTCDeviceProperties = function(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
+ TRTCDeviceGetProperties = function(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
  
  TRTCDevice = record
   {Device Properties}
@@ -115,7 +115,7 @@ type
   DeviceStop:TRTCDeviceStop;                      {A Device specific DeviceStop method implementing the standard RTC device interface}
   DeviceGetTime:TRTCDeviceGetTime;                {A Device specific DeviceGetTime method implementing the standard RTC device interface}
   DeviceSetTime:TRTCDeviceSetTime;                {A Device specific DeviceSetTime method implementing the standard RTC device interface}
-  DeviceProperties:TRTCDeviceProperties;          {A Device specific DeviceProperties method implementing the standard RTC device interface}
+  DeviceGetProperties:TRTCDeviceGetProperties;    {A Device specific DeviceGetProperties method implementing the standard RTC device interface}
   {Statistics Properties}
   GetCount:LongWord;
   SetCount:LongWord;
@@ -143,7 +143,8 @@ function RTCDeviceStop(RTC:PRTCDevice):LongWord;
 function RTCDeviceGetTime(RTC:PRTCDevice):Int64;
 function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):Int64;
  
-function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
+function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord; inline;
+function RTCDeviceGetProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
   
 function RTCDeviceCreate:PRTCDevice;
 function RTCDeviceCreateEx(Size:LongWord):PRTCDevice;
@@ -384,7 +385,25 @@ end;
  
 {==============================================================================}
  
-function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
+function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord; inline;
+{Get the properties for the specified RTC device}
+{RTC: The RTC device to get properties from}
+{Properties: Pointer to a PRTCProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by RTCDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=RTCDeviceGetProperties(RTC,Properties);
+end;
+
+{==============================================================================}
+
+function RTCDeviceGetProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
+{Get the properties for the specified RTC device}
+{RTC: The RTC device to get properties from}
+{Properties: Pointer to a PRTCProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -397,16 +416,16 @@ begin
  if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {$IFDEF RTC_DEBUG}
- if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Properties');
+ if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if RTC.RTCState <> RTC_STATE_ENABLED then Exit;} {Allow when disabled}
  
- if Assigned(RTC.DeviceProperties) then
+ if Assigned(RTC.DeviceGetProperties) then
   begin
-   Result:=RTC.DeviceProperties(RTC,Properties);
+   Result:=RTC.DeviceGetProperties(RTC,Properties);
   end
  else
   begin
@@ -462,7 +481,7 @@ begin
  Result.DeviceStop:=nil;
  Result.DeviceGetTime:=nil;
  Result.DeviceSetTime:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}

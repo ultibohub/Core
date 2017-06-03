@@ -59,7 +59,7 @@ ARM PrimeCell PL050 PS2 Keyboard/Mouse
   
   On Windows, QEMU does not differentiate between the cursor keys (Up, Down, Left, Right,
   Home, End, PgUp, PgDown) and the numeric keypad keys so each of these will always return
-  their numeric keypap equivalent. This means that to use the cursor keys you need to turn
+  their numeric keypad equivalent. This means that to use the cursor keys you need to turn
   off Number Lock otherwise they are interpreted as number keys instead.
  
 }
@@ -1986,7 +1986,7 @@ end;
 {==============================================================================}
 
 function PL050KMIKeyboardSetTypematic(Keyboard:PPL050Keyboard;Rate,Delay:LongWord):LongWord;
-{Set the typematic rate and delaty for a PL050 keyboard device}
+{Set the typematic rate and delay for a PL050 keyboard device}
 {Keyboard: The keyboard device to set the scancode set for}
 {Rate: Type typematic repeat rate to set (Milliseconds)}
 {Delay: The typematic repeat delay to set (Repeat rate intervals before first repeat)}

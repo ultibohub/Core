@@ -38,7 +38,7 @@ GPIO Devices
  features such as alternate function selects to avoid exposing chip specific values via the
  API.
  
- Not all GPIO devices support the same feature set so the GPIODeviceProperties function returns
+ Not all GPIO devices support the same feature set so the GPIODeviceGetProperties function returns
  a structure which describes the number of pins as well as minimum and maximum pin numbers along
  with a set of flags that indicate what functionality is supported by the device.
  
@@ -175,7 +175,7 @@ type
  TGPIODeviceFunctionGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
  TGPIODeviceFunctionSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
  
- TGPIODeviceProperties = function(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
+ TGPIODeviceGetProperties = function(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
  
  TGPIODevice = record
   {Device Properties}
@@ -196,7 +196,7 @@ type
   DevicePullSelect:TGPIODevicePullSelect;         {A Device specific DevicePullSelect method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DeviceFunctionGet:TGPIODeviceFunctionGet;       {A Device specific DeviceFunctionGet method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
   DeviceFunctionSelect:TGPIODeviceFunctionSelect; {A Device specific DeviceFunctionSelect method implementing the standard GPIO device interface (Or nil if the operation is not supported)}
-  DeviceProperties:TGPIODeviceProperties;         {A Device specific DeviceProperties method implementing the standard GPIO device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TGPIODeviceGetProperties;   {A Device specific DeviceGetProperties method implementing the standard GPIO device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   Address:Pointer;                                {Device register base address}
@@ -261,7 +261,8 @@ function GPIODevicePullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 function GPIODeviceFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODeviceFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 
-function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
+function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord; inline;
+function GPIODeviceGetProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
  
 function GPIODeviceCreate:PGPIODevice;
 function GPIODeviceCreateEx(Size:LongWord):PGPIODevice;
@@ -901,7 +902,21 @@ end;
 
 {==============================================================================}
 
-function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
+function GPIODeviceProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord; inline;
+{Get the properties for the specified GPIO device}
+{GPIO: The GPIO device to get properties from}
+{Properties: Pointer to a TGPIOProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by GPIODeviceGetProperties for consistency}
+begin
+ {}
+ Result:=GPIODeviceGetProperties(GPIO,Properties);
+end;
+
+{==============================================================================}
+
+function GPIODeviceGetProperties(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
 {Get the properties for the specified GPIO device}
 {GPIO: The GPIO device to get properties from}
 {Properties: Pointer to a TGPIOProperties structure to fill in}
@@ -918,7 +933,7 @@ begin
  if GPIO.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF GPIO_DEBUG}
- if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Properties');
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'GPIO Device Get Properties');
  {$ENDIF}
  
  {Check Open}
@@ -927,10 +942,10 @@ begin
  
  if MutexLock(GPIO.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(GPIO.DeviceProperties) then
+   if Assigned(GPIO.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=GPIO.DeviceProperties(GPIO,Properties);
+     {Call Device Get Properites}
+     Result:=GPIO.DeviceGetProperties(GPIO,Properties);
     end
    else
     begin
@@ -998,7 +1013,7 @@ begin
  Result.DevicePullSelect:=nil;
  Result.DeviceFunctionGet:=nil;
  Result.DeviceFunctionSelect:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}

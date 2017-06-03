@@ -61,7 +61,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,W
 {==============================================================================}
 const
  {RT2800USB specific constants}
- RT2800USB_DRIVER_NAME = 'Ralink RT2800 USB Wireless Driver'; {Name of RT2800USB driver}
+ RT2800USB_NETWORK_DESCRIPTION = 'Ralink RT2800 USB Wireless'; {Description of RT2800USB device}
+ 
+ RT2800USB_DRIVER_NAME = 'Ralink RT2800 USB Wireless Driver';  {Name of RT2800USB driver}
  
  RT2800USB_DEVICE_ID_COUNT = 330; {Number of supported Device IDs}
 
@@ -2446,7 +2448,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to device only)}
@@ -2565,6 +2567,7 @@ begin
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceType:=NETWORK_TYPE_80211;
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceFlags:=NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER or NETWORK_FLAG_RX_MULTIPACKET;     
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceData:=Device;
+ RT2800USB.RT2X00.WiFi.Network.Device.DeviceDescription:=RT2800USB_NETWORK_DESCRIPTION;
  {Network}
  RT2800USB.RT2X00.WiFi.Network.NetworkState:=NETWORK_STATE_CLOSED;
  RT2800USB.RT2X00.WiFi.Network.NetworkStatus:=NETWORK_STATUS_DOWN;
@@ -2800,7 +2803,7 @@ begin
  if Device.Driver <> RT2800USBDriver then Exit;
  
  {$IFDEF RT2800USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
 
  {Get WiFi}

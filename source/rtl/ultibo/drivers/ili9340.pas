@@ -294,7 +294,7 @@ begin
    ILI9340Framebuffer.TFT.Timer:=INVALID_HANDLE_VALUE;
    ILI9340Framebuffer.TFT.FrameRate:=TFT_FRAMEBUFFER_FRAME_RATE_DEFAULT;
    ILI9340Framebuffer.TFT.TransferSize:=LongWord(-1);
-   if SPIDeviceProperties(SPI,@SPIProperties) = ERROR_SUCCESS then
+   if SPIDeviceGetProperties(SPI,@SPIProperties) = ERROR_SUCCESS then
     begin
      if SPIProperties.MaxSize <> 0 then ILI9340Framebuffer.TFT.TransferSize:=SPIProperties.MaxSize; 
     end; 

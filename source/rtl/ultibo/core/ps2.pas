@@ -41,9 +41,9 @@ PS2 Keyboard/Mouse Controller
 =============================
  
  This unit provides supporting functions and defintions for PS/2 keyboard and mouse 
- conroller drivers. 
+ controller drivers. 
  
- The constants defined here are not a complete set but represent that most commonly
+ The constants defined here are not a complete set but represent the most commonly
  used PS/2 functions and operations. Of most importance is the mouse packet and the
  keyboard scancode structures which provide support for receiving the actual data
  from a keyboard or a mouse.
@@ -79,7 +79,7 @@ const
  PS2_KEYBOARD_COMMAND_SET_LEDS               = $ED; {Set LEDS (Data: See below)}
  PS2_KEYBOARD_COMMAND_ECHO                   = $EE; {Echo (Data: None)}
  PS2_KEYBOARD_COMMAND_SCANCODE               = $F0; {Get/set current scan code (Data: See below)}
- PS2_KEYBOARD_COMMAND_IDENTIFY               = $F2; {Identify (Data: None) (Data: None) (See: http://wiki.osdev.org/%228042%22_PS/2_Controller#Detecting_PS.2F2_Device_Types)}
+ PS2_KEYBOARD_COMMAND_IDENTIFY               = $F2; {Identify (Data: None) (See: http://wiki.osdev.org/%228042%22_PS/2_Controller#Detecting_PS.2F2_Device_Types)}
  PS2_KEYBOARD_COMMAND_SET_RATE_DELAY         = $F3; {Set typematic rate and delay (Data: See below)}
  PS2_KEYBOARD_COMMAND_ENABLE_SCAN            = $F4; {Enable scanning (keyboard will send scan codes) (Data: None)}
  PS2_KEYBOARD_COMMAND_DISABLE_SCAN           = $F5; {Disable scanning (keyboard won't send scan codes) (Data: None) Note: May also restore default parameters}
@@ -1496,7 +1496,7 @@ end;
 {==============================================================================}
 
 function PS2MousePacketToMouseData(MousePacket:PPS2MousePacket;MouseData:PMouseData;Flags:LongWord):LongWord;
-{Translate a PS/2 Moude Packet into a Mouse Data structure}
+{Translate a PS/2 Mouse Packet into a Mouse Data structure}
 {MousePacket: Pointer to the PS/2 Mouse Packet received from the mouse}
 {MouseData: Pointer to the Mouse Data structure to return}
 {Flags: The Mouse device flags (eg MOUSE_FLAG_SWAP_BUTTONS)}
@@ -1551,7 +1551,7 @@ begin
  MouseData.OffsetX:=MousePacket.MouseX - ((State shl 4) and $100);
 
  {Get Offset Y} 
- MouseData.OffsetY:=MousePacket.MouseY - ((State shl 3) and $100); 
+ MouseData.OffsetY:=-(MousePacket.MouseY - ((State shl 3) and $100)); 
  
  {Get Offset Wheel}
  MouseData.OffsetWheel:=0;

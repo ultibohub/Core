@@ -417,7 +417,22 @@ const
 
  {Language Group ID Values}
  //To Do
-              
+
+ {Primary language ID Values}
+ LANG_NEUTRAL    = $00;
+ //To Do
+ LANG_ENGLISH    = $09;
+ //To Do
+ 
+ {Sublanguage ID Values}
+ SUBLANG_NEUTRAL     = $00; // language neutral
+ SUBLANG_DEFAULT     = $01; // user default
+ SUBLANG_SYS_DEFAULT = $02; // system default
+ 
+ //To Do
+ SUBLANG_ENGLISH_US                 = $01; // English (USA)
+ //To Do
+ 
 {==============================================================================}
 type
  {Locale specific types}
@@ -586,6 +601,9 @@ function GetSystemDefaultLCID:LCID;
 function GetUserDefaultLCID:LCID; 
 
 function SetSystemDefaultLCID(Locale:LCID):BOOL;
+
+function GetSystemDefaultLangID: LANGID; 
+function GetUserDefaultLangID: LANGID;
 
 //GetLocaleInfo //To Do 
 //SetLocaleInfo //To Do 
@@ -818,6 +836,9 @@ begin
  
  {Setup Default Locale}
  //LOCALE_DEFAULT:= //To Do
+
+ {Setup Default Language}
+ LANGUAGE_DEFAULT:=MAKELANGID(LANG_ENGLISH,SUBLANG_ENGLISH_US);
  
  {Load Default Code Pages}
  LoadPage(CP_OEM_437,@CPOEM437,nil,nil);
@@ -1166,6 +1187,26 @@ begin
  LOCALE_DEFAULT:=Locale; //To Do 
 
  Result:=True;
+end;
+
+{==============================================================================}
+
+function GetSystemDefaultLangID: LANGID; 
+{Get the System Default Language Identifier (Combined Primary and Sub language Identifiers)}
+{Note: System and User values are the same for Ultibo}
+begin
+ {}
+ Result:=LANGUAGE_DEFAULT;
+end;
+
+{==============================================================================}
+
+function GetUserDefaultLangID: LANGID;
+{Get the System Default Language Identifier (Combined Primary and Sub language Identifiers)}
+{Note: System and User values are the same for Ultibo}
+begin
+ {}
+ Result:=LANGUAGE_DEFAULT;
 end;
 
 {==============================================================================}

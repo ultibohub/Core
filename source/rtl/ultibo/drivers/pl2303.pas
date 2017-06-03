@@ -1116,7 +1116,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF PL2303_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'PL2303: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'PL2303: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to device only)}
@@ -1341,7 +1341,7 @@ begin
  if Device.Driver <> PL2303Driver then Exit;
  
  {$IFDEF PL2303_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'PL2303: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'PL2303: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
 
  {Get Serial}

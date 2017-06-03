@@ -137,6 +137,8 @@ const
  SELECT_READ = 0;
  SELECT_WRITE = 1;
  SELECT_ERROR = 2;
+ 
+ SELECT_UNKNOWN = -1;
 
  {Socket Options}
  {See Sockets}

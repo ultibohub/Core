@@ -11,8 +11,8 @@ Arch
 Boards
 ======
 
- Raspberry Pi - Model A/B/A+/B+
- Raspberry Pi - Model Zero
+ Raspberry Pi - Model A/B/A+/B+/CM1
+ Raspberry Pi - Model Zero/ZeroW
 
 Licence
 =======
@@ -590,13 +590,18 @@ const
  BCM2708_ARM_TIMER_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
  
  {BCM2708 Random constants}
+ BCM2708_RANDOM_DESCRIPTION = 'BCM2835 Random Number Generator';
+ 
  BCM2708_RANDOM_WARMUP_COUNT  = $00040000; {The initial numbers generated are "less random" so will be discarded}
 
  {BCM2708 Mailbox constants}
+ BCM2708_MAILBOX_DESCRIPTION = 'BCM2835 Mailbox';
  
  {BCM2708 Watchdog constants}
+ BCM2708_WATCHDOG_DESCRIPTION = 'BCM2835 Watchdog Timer';
  
  {BCM2708 Framebuffer constants}
+ BCM2708_FRAMEBUFFER_DESCRIPTION = 'BCM2835 Framebuffer';
  
 {==============================================================================}
 type
@@ -1655,8 +1660,8 @@ begin
      {Update SDHCI}
      {Device}
      BCM2708SDHCIHost.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-     BCM2708SDHCIHost.SDHCI.Device.DeviceType:=SDHCI_TYPE_NONE;
-     BCM2708SDHCIHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NONE;
+     BCM2708SDHCIHost.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
+     BCM2708SDHCIHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23;
      BCM2708SDHCIHost.SDHCI.Device.DeviceData:=nil;
      BCM2708SDHCIHost.SDHCI.Device.DeviceDescription:=BCM2708_EMMC_DESCRIPTION;
      {SDHCI}
@@ -1840,6 +1845,7 @@ begin
      BCM2708Random.Random.Device.DeviceType:=RANDOM_TYPE_HARDWARE;
      BCM2708Random.Random.Device.DeviceFlags:=RANDOM_FLAG_NONE;
      BCM2708Random.Random.Device.DeviceData:=nil;
+     BCM2708Random.Random.Device.DeviceDescription:=BCM2708_RANDOM_DESCRIPTION;
      {Random}
      BCM2708Random.Random.RandomState:=RANDOM_STATE_DISABLED;
      BCM2708Random.Random.DeviceStart:=BCM2708RandomStart;
@@ -1887,6 +1893,7 @@ begin
      BCM2708Watchdog.Watchdog.Device.DeviceType:=WATCHDOG_TYPE_HARDWARE;
      BCM2708Watchdog.Watchdog.Device.DeviceFlags:=WATCHDOG_FLAG_NONE;
      BCM2708Watchdog.Watchdog.Device.DeviceData:=nil;
+     BCM2708Watchdog.Watchdog.Device.DeviceDescription:=BCM2708_WATCHDOG_DESCRIPTION;
      {Watchdog}
      BCM2708Watchdog.Watchdog.WatchdogState:=WATCHDOG_STATE_DISABLED;
      BCM2708Watchdog.Watchdog.DeviceStart:=BCM2708WatchdogStart;
@@ -1921,6 +1928,7 @@ begin
      BCM2708Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
      BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC;
      BCM2708Framebuffer.Framebuffer.Device.DeviceData:=nil;
+     BCM2708Framebuffer.Framebuffer.Device.DeviceDescription:=BCM2708_FRAMEBUFFER_DESCRIPTION;
      {Framebuffer}
      BCM2708Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
      BCM2708Framebuffer.Framebuffer.DeviceAllocate:=BCM2708FramebufferAllocate;
@@ -4585,7 +4593,7 @@ begin
   begin
    {Linear Mode}
    Block.TransferLength:=Data.Size;
-   Block.ModeStide:=0;
+   Block.ModeStride:=0;
   end
  else
   begin
@@ -4599,7 +4607,7 @@ begin
    Block.TransferLength:=((Count and BCM2708_DMA_MAX_Y_COUNT) shl 16) or (Data.StrideLength and BCM2708_DMA_MAX_X_LENGTH);
    
    {Set Source and Dest Stride}
-   Block.ModeStide:=((Data.DestStride and BCM2708_DMA_MAX_STRIDE) shl 16) or (Data.SourceStride and BCM2708_DMA_MAX_STRIDE);
+   Block.ModeStride:=((Data.DestStride and BCM2708_DMA_MAX_STRIDE) shl 16) or (Data.SourceStride and BCM2708_DMA_MAX_STRIDE);
   end;  
  
  {Setup Transfer Information}
@@ -7612,7 +7620,7 @@ end;
 
 procedure BCM2708UART0DisableInterrupt(UART:PBCM2708UART0Device;Interrupt:LongWord); 
 {Disable the specified interrupt in the interrupt mask register of a BCM2708 UART0 device}
-{Network: The BCM2708 UART0 device to disable the interrupt for}
+{UART: The BCM2708 UART0 device to disable the interrupt for}
 {Interrupt: The interrupt to disable}
 
 {Note: Caller must hold the UART lock}

@@ -1961,7 +1961,7 @@ end;
 {==============================================================================}
 
 procedure gpioClockSet(pin,freq:LongInt);
-{Set the freuency on a GPIO clock pin}
+{Set the frequency on a GPIO clock pin}
 
 {Note: Raspberry Pi specific}
 var

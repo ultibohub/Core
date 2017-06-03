@@ -147,6 +147,8 @@ function GraphicsWindowGetState(Handle:TWindowHandle):LongWord; inline;
 function GraphicsWindowGetPosition(Handle:TWindowHandle):LongWord; inline;
 function GraphicsWindowSetPosition(Handle:TWindowHandle;Position:LongWord):LongWord;
 
+function GraphicsWindowGetProperties(Handle:TWindowHandle;Properties:PWindowProperties):LongWord; inline;
+
 function GraphicsWindowGetMinX(Handle:TWindowHandle):LongWord;
 function GraphicsWindowGetMinY(Handle:TWindowHandle):LongWord;
 function GraphicsWindowGetMaxX(Handle:TWindowHandle):LongWord;
@@ -606,8 +608,8 @@ begin
     if Window.FontHeight = 0 then Window.FontHeight:=1;
     
     {Get Width / Height}
-    Window.Width:=((Window.X2 - Window.X1) + 1) - Window.Borderwidth;
-    Window.Height:=((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth;
+    Window.Width:=((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth);
+    Window.Height:=((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth);
     if (Window.Width < 2) or (Window.Height < 2) then
      begin
       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to get window width and height for graphics window');
@@ -846,8 +848,8 @@ begin
    Window.Y2:=Y2;
   
    {Get Width / Height}
-   Window.Width:=((Window.X2 - Window.X1) + 1) - Window.Borderwidth;
-   Window.Height:=((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth;
+   Window.Width:=((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth);
+   Window.Height:=((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth);
    
    {Get MinX,Y / MaxX,Y}
    if Window.MinX >= Window.Width then Window.MinX:=0;
@@ -872,6 +874,18 @@ begin
   {Unlock Window}
   MutexUnlock(Window.Lock);
  end; 
+end;
+
+{==============================================================================}
+
+function GraphicsWindowGetProperties(Handle:TWindowHandle;Properties:PWindowProperties):LongWord; inline;
+{Get the properties for the specified console window}
+{Handle: The handle of the window to get the properties from}
+{Properties: Pointer to a TWindowProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ConsoleWindowGetProperties(Handle,Properties);
 end;
 
 {==============================================================================}

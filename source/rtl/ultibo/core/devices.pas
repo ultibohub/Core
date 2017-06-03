@@ -220,6 +220,8 @@ const
  DEVICE_CLASS_SD              = 29; {An SD Device (Implementing a standard SD device interface)}
  DEVICE_CLASS_SDHCI           = 30; {An SD/MMC Host Controller (Implementing a standard SDHCI device interface)}
  DEVICE_CLASS_SDHOST          = DEVICE_CLASS_SDHCI;
+ DEVICE_CLASS_MMCHOST         = DEVICE_CLASS_SDHCI;
+ DEVICE_CLASS_MMCIHOST        = DEVICE_CLASS_SDHCI;
  DEVICE_CLASS_DFU             = 31; {A Device Firmware Update Device (Implementing a standard DFU device interface)}
  DEVICE_CLASS_GPIO            = 32; {A GPIO Device (Implementing a standard GPIO device interface)}
  DEVICE_CLASS_MAILBOX         = 33; {A Mailbox Device}
@@ -245,8 +247,9 @@ const
  DEVICE_CLASS_CLOCK_MANAGER   = 52; {A Clock Manager Device}
  DEVICE_CLASS_CODEC           = 53; {A CODEC Device (eg Audio or Video)}
  DEVICE_CLASS_TOUCH           = 54; {A Touch Device}
-
- DEVICE_CLASS_MAX             = 54;
+ DEVICE_CLASS_MEMORY          = 55; {A Memory Device (eg OTP, NVRAM or Flash)}
+ 
+ DEVICE_CLASS_MAX             = 55;
  
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
  
@@ -306,7 +309,8 @@ const
   'DEVICE_CLASS_1WIRE',
   'DEVICE_CLASS_CLOCK_MANAGER',
   'DEVICE_CLASS_CODEC',
-  'DEVICE_CLASS_TOUCH');
+  'DEVICE_CLASS_TOUCH',
+  'DEVICE_CLASS_MEMORY');
  
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
@@ -343,6 +347,7 @@ const
  {Notifier Flags}
  NOTIFIER_FLAG_NONE        = $00000000;
  NOTIFIER_FLAG_WORKER      = $00000001;  {If set, notification callback event will be scheduled on a worker thread}
+ NOTIFIER_FLAG_UNLOCK      = $00000002;  {If set, the notifier table lock will be released before calling the notification callback event}
  
  {Device logging}
  DEVICE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Device debugging messages}
@@ -577,6 +582,7 @@ type
   Callback:TDeviceNotification;
   Data:Pointer; 
   Notification:LongWord;
+  Next:PNotifierTask;
  end;
  
 {==============================================================================}
@@ -649,7 +655,7 @@ type
  TClockDeviceWrite64 = function(Clock:PClockDevice;const Value:Int64):LongWord;
  TClockDeviceGetRate = function(Clock:PClockDevice):LongWord;
  TClockDeviceSetRate = function(Clock:PClockDevice;Rate:LongWord):LongWord;
- TClockDeviceProperties = function(Clock:PClockDevice;Properties:PClockProperties):LongWord;
+ TClockDeviceGetProperties = function(Clock:PClockDevice;Properties:PClockProperties):LongWord;
  
  {Clock Device}
  TClockDevice = record
@@ -665,7 +671,7 @@ type
   DeviceWrite64:TClockDeviceWrite64;             {A device specific DeviceWrite64 method implementing a standard clock device interface (Optional)}
   DeviceGetRate:TClockDeviceGetRate;             {A device specific DeviceGetRate method implementing a standard clock device interface (Or nil if the default method is suitable)}
   DeviceSetRate:TClockDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard clock device interface (Optional)}
-  DeviceProperties:TClockDeviceProperties;       {A device specific DeviceProperties method implementing a standard clock device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TClockDeviceGetProperties; {A device specific DeviceGetProperties method implementing a standard clock device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
   {Driver Properties}
@@ -725,7 +731,7 @@ type
  TTimerDeviceSetRate = function(Timer:PTimerDevice;Rate:LongWord):LongWord;
  TTimerDeviceGetInterval = function(Timer:PTimerDevice):LongWord;
  TTimerDeviceSetInterval = function(Timer:PTimerDevice;Interval:LongWord):LongWord;
- TTimerDeviceProperties = function(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
+ TTimerDeviceGetProperties = function(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
  
  TTimerDevice = record
   {Device Properties}
@@ -744,7 +750,7 @@ type
   DeviceSetRate:TTimerDeviceSetRate;             {A device specific DeviceSetRate method implementing a standard timer device interface (Or nil if the default method is suitable)}
   DeviceGetInterval:TTimerDeviceGetInterval;     {A device specific DeviceGetInterval method implementing a standard timer device interface (Or nil if the default method is suitable)}
   DeviceSetInterval:TTimerDeviceSetInterval;     {A device specific DeviceSetInterval method implementing a standard timer device interface (Or nil if the default method is suitable)}
-  DeviceProperties:TTimerDeviceProperties;       {A device specific DeviceProperties method implementing a standard timer device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TTimerDeviceGetProperties; {A device specific DeviceGetProperties method implementing a standard timer device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
   WaitCount:LongWord;
@@ -945,6 +951,7 @@ function DeviceRegister(Device:PDevice):LongWord;
 function DeviceDeregister(Device:PDevice):LongWord;
 
 function DeviceFind(DeviceClass,DeviceId:LongWord):PDevice;
+function DeviceFindByDeviceData(DeviceData:Pointer):PDevice;
 function DeviceFindByName(const Name:String):PDevice;
 function DeviceFindByDescription(const Description:String):PDevice;
 function DeviceEnumerate(DeviceClass:LongWord;Callback:TDeviceEnumerate;Data:Pointer):LongWord;
@@ -987,7 +994,8 @@ function ClockDeviceWrite64(Clock:PClockDevice;const Value:Int64):LongWord;
 function ClockDeviceGetRate(Clock:PClockDevice):LongWord;
 function ClockDeviceSetRate(Clock:PClockDevice;Rate:LongWord):LongWord;
 
-function ClockDeviceProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord;
+function ClockDeviceProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord; inline;
+function ClockDeviceGetProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord;
 
 function ClockDeviceCreate:PClockDevice;
 function ClockDeviceCreateEx(Size:LongWord):PClockDevice;
@@ -1016,7 +1024,9 @@ function TimerDeviceGetRate(Timer:PTimerDevice):LongWord;
 function TimerDeviceSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
 function TimerDeviceGetInterval(Timer:PTimerDevice):LongWord;
 function TimerDeviceSetInterval(Timer:PTimerDevice;Interval:LongWord):LongWord;
-function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
+
+function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord; inline;
+function TimerDeviceGetProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
 
 function TimerDeviceCreate:PTimerDevice;
 function TimerDeviceCreateEx(Size:LongWord):PTimerDevice;
@@ -1873,6 +1883,50 @@ end;
 
 {==============================================================================}
 
+function DeviceFindByDeviceData(DeviceData:Pointer):PDevice;
+{Find a device with matching DeviceData property in the device table}
+{DeviceData: The value to match against the DeviceData property}
+{Return: Pointer to device entry or nil if not found}
+var
+ Device:PDevice;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Device Data}
+ if DeviceData = nil then Exit;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Device}
+    Device:=DeviceTable;
+    while Device <> nil do
+     begin
+      {Check State}
+      if Device.DeviceState = DEVICE_STATE_REGISTERED then
+       begin
+        {Check Device Data}
+        if Device.DeviceData = DeviceData then
+         begin
+          Result:=Device;
+          Exit;
+         end;
+       end;
+       
+      {Get Next}
+      Device:=Device.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(DeviceTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
 function DeviceFindByName(const Name:String):PDevice;
 {Find a device by name in the device table}
 {Name: The name of the device to find (eg Timer0)}
@@ -2259,6 +2313,8 @@ var
  Status:LongWord;
  Notifier:PNotifier;
  Task:PNotifierTask;
+ List:PNotifierTask;
+ Next:PNotifierTask;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2267,6 +2323,9 @@ begin
  if Device = nil then Exit;
 
  if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Sending device notification (Name=' + DeviceGetName(Device) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Notification=' + NotificationToString(Notification) + ')');
+ 
+ {Setup Defaults}
+ List:=nil;
  
  {Acquire the Lock}
  if CriticalSectionLock(NotifierTableLock) = ERROR_SUCCESS then
@@ -2292,8 +2351,28 @@ begin
              begin
               if (Notifier.NotifierFlags and NOTIFIER_FLAG_WORKER) = 0 then
                begin
-                Status:=Notifier.Callback(Device,Notifier.Data,Notification);
-                if Status <> ERROR_SUCCESS then Result:=Status;
+                if (Notifier.NotifierFlags and NOTIFIER_FLAG_UNLOCK) = 0 then
+                 begin
+                  Status:=Notifier.Callback(Device,Notifier.Data,Notification);
+                  if Status <> ERROR_SUCCESS then Result:=Status;
+                 end
+                else
+                 begin
+                  {Create Task}
+                  Task:=AllocMem(SizeOf(TNotifierTask));
+                  if Task <> nil then
+                   begin
+                    {Setup Task}
+                    Task.Device:=Device;
+                    Task.Callback:=Notifier.Callback;
+                    Task.Data:=Notifier.Data;
+                    Task.Notification:=Notification;
+                    
+                    {Link to List}
+                    Task.Next:=List;
+                    List:=Task;
+                   end;
+                 end;
                end
               else
                begin
@@ -2323,8 +2402,28 @@ begin
              begin
               if (Notifier.NotifierFlags and NOTIFIER_FLAG_WORKER) = 0 then
                begin
-                Status:=Notifier.Callback(Device,Notifier.Data,Notification);
-                if Status <> ERROR_SUCCESS then Result:=Status;
+                if (Notifier.NotifierFlags and NOTIFIER_FLAG_UNLOCK) = 0 then
+                 begin
+                  Status:=Notifier.Callback(Device,Notifier.Data,Notification);
+                  if Status <> ERROR_SUCCESS then Result:=Status;
+                 end
+                else
+                 begin
+                  {Create Task}
+                  Task:=AllocMem(SizeOf(TNotifierTask));
+                  if Task <> nil then
+                   begin
+                    {Setup Task}
+                    Task.Device:=Device;
+                    Task.Callback:=Notifier.Callback;
+                    Task.Data:=Notifier.Data;
+                    Task.Notification:=Notification;
+                    
+                    {Link to List}
+                    Task.Next:=List;
+                    List:=Task;
+                   end;
+                 end;
                end
               else
                begin
@@ -2357,6 +2456,26 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(NotifierTableLock);
    end;
+   
+   {Check List}
+   while List <> nil do
+    begin
+     {Get Next}
+     Next:=List.Next;
+     
+     {Check Callback}
+     if Assigned(List.Callback) then
+      begin
+       {Call the Callback}
+       List.Callback(List.Device,List.Data,List.Notification);
+      end;
+     
+     {Destroy Task}
+     FreeMem(List); 
+     
+     {Get List}
+     List:=Next;
+    end;
   end
  else
   begin
@@ -3079,7 +3198,21 @@ end;
 
 {==============================================================================}
 
-function ClockDeviceProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord;
+function ClockDeviceProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord; inline;
+{Get the properties for the specified Clock device}
+{Clock: The Clock device to get properties from}
+{Properties: Pointer to a TClockProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by ClockDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=ClockDeviceGetProperties(Clock,Properties);
+end;
+
+{==============================================================================}
+
+function ClockDeviceGetProperties(Clock:PClockDevice;Properties:PClockProperties):LongWord;
 {Get the properties for the specified Clock device}
 {Clock: The Clock device to get properties from}
 {Properties: Pointer to a TClockProperties structure to fill in}
@@ -3096,16 +3229,16 @@ begin
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Properties');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
  {if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;} {Allow when disabled}
 
- if Assigned(Clock.DeviceProperties) then
+ if Assigned(Clock.DeviceGetProperties) then
   begin
-   {Call Device Properites}
-   Result:=Clock.DeviceProperties(Clock,Properties);
+   {Call Device Get Properites}
+   Result:=Clock.DeviceGetProperties(Clock,Properties);
   end
  else
   begin
@@ -3167,6 +3300,7 @@ begin
  Result.DeviceWrite64:=nil;
  Result.DeviceGetRate:=nil;
  Result.DeviceSetRate:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
  Result.Rate:=0;
@@ -3380,7 +3514,7 @@ end;
 
 function ClockDeviceFind(ClockId:LongWord):PClockDevice;
 {Find a clock device by ID in the clock table}
-{TimerId: The ID number of the clock to find}
+{ClockId: The ID number of the clock to find}
 {Return: Pointer to clock device entry or nil if not found}
 var
  Clock:PClockDevice;
@@ -3993,7 +4127,21 @@ end;
 
 {==============================================================================}
 
-function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
+function TimerDeviceProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord; inline;
+{Get the properties for the specified Timer device}
+{Timer: The Timer device to get properties from}
+{Properties: Pointer to a TTimerProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by TimerDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=TimerDeviceGetProperties(Timer,Properties);
+end;
+
+{==============================================================================}
+
+function TimerDeviceGetProperties(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
 {Get the properties for the specified Timer device}
 {Timer: The Timer device to get properties from}
 {Properties: Pointer to a TTimerProperties structure to fill in}
@@ -4010,7 +4158,7 @@ begin
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Properties');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -4018,10 +4166,10 @@ begin
  
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(Timer.DeviceProperties) then
+   if Assigned(Timer.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=Timer.DeviceProperties(Timer,Properties);
+     {Call Device Get Properites}
+     Result:=Timer.DeviceGetProperties(Timer,Properties);
     end
    else
     begin
@@ -4087,7 +4235,7 @@ begin
  Result.DeviceSetRate:=nil;
  Result.DeviceGetInterval:=nil;
  Result.DeviceSetInterval:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
  Result.Rate:=0;

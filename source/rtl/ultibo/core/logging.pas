@@ -70,6 +70,11 @@ const
  LOGGING_FLAG_NONE      = $00000000;
 
 {==============================================================================}
+const
+ {Console Logging specific constants}
+ CONSOLE_LOGGING_DESCRIPTION = 'Console Logging';
+ 
+{==============================================================================}
 type
  {Logging specific types}
  PLoggingEntry = ^TLoggingEntry;
@@ -306,7 +311,7 @@ begin
  ConsoleDeviceEnumerate(LoggingConsoleDeviceEnum,nil);
  
  {Register Notification}
- ConsoleDeviceNotification(nil,LoggingConsoleDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_OPEN or DEVICE_NOTIFICATION_CLOSE,NOTIFIER_FLAG_NONE);
+ ConsoleDeviceNotification(nil,LoggingConsoleDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_OPEN or DEVICE_NOTIFICATION_CLOSE,NOTIFIER_FLAG_WORKER);
   
  {Register Platform Logging Handlers}
  LoggingOutputHandler:=SysLoggingOutput;
@@ -1481,6 +1486,7 @@ begin
        Logging.Logging.Device.DeviceType:=LOGGING_TYPE_CONSOLE;
        Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
        Logging.Logging.Device.DeviceData:=@Console.Device;
+       Logging.Logging.Device.DeviceDescription:=CONSOLE_LOGGING_DESCRIPTION;
        {Logging}
        Logging.Logging.LoggingState:=LOGGING_STATE_DISABLED;
        Logging.Logging.DeviceStart:=ConsoleLoggingStart;

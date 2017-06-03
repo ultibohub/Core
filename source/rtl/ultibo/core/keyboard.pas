@@ -2431,7 +2431,7 @@ begin
  if Device = nil then Exit;
       
  {$IFDEF USB_DEBUG}      
- if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to interface only)}
@@ -2676,7 +2676,7 @@ begin
  if Interrface.Driver <> USBKeyboardDriver then Exit;
  
  {$IFDEF USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Get Keyboard}

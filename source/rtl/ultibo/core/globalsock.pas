@@ -336,7 +336,7 @@ const
  SOL_SOCKET      = $ffff;          {options for socket level }
 
 { Maximum queue length specifiable by listen. }
- SOMAXCONN       = 5;
+ SOMAXCONN       = $7fffffff;
 
  MSG_OOB         = $1;             {process out-of-band data }
  MSG_PEEK        = $2;             {peek at incoming message }

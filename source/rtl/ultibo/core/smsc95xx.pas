@@ -75,6 +75,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,S
 {==============================================================================}
 const
  {SMSC95XX specific constants}
+ SMSC95XX_NETWORK_DESCRIPTION = 'SMSC LAN95XX USB Ethernet Adapter';  {Description of SMSC95XX device}
+ 
  SMSC95XX_DRIVER_NAME = 'SMSC LAN95XX USB Ethernet Adapter Driver'; {Name of SMSC95XX driver}
 
  SMSC95XX_DEVICE_ID_COUNT = 5; {Number of supported Device IDs}
@@ -1295,7 +1297,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF SMSC95XX_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to device only)}
@@ -1489,6 +1491,7 @@ begin
  Network.Network.Device.DeviceType:=NETWORK_TYPE_ETHERNET;
  Network.Network.Device.DeviceFlags:=NETWORK_FLAG_NONE; //To Do //NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER or NETWORK_FLAG_RX_MULTIPACKET;
  Network.Network.Device.DeviceData:=Device;
+ Network.Network.Device.DeviceDescription:=SMSC95XX_NETWORK_DESCRIPTION;
  {Network}
  Network.Network.NetworkState:=NETWORK_STATE_CLOSED;
  Network.Network.NetworkStatus:=NETWORK_STATUS_DOWN;
@@ -1551,7 +1554,7 @@ begin
  if Device.Driver <> SMSC95XXDriver then Exit;
  
  {$IFDEF SMSC95XX_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Get Network}

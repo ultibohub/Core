@@ -106,7 +106,7 @@ type
  {Video Device Methods}
  //To do
  
- TVideoDeviceProperties = function(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
+ TVideoDeviceGetProperties = function(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
  
  TVideoDevice = record
   {Device Properties}
@@ -115,7 +115,7 @@ type
   VideoId:LongWord;                               {Unique Id of this Video device in the Video device table}
   VideoState:LongWord;                            {Video dveice state (eg VIDEO_STATE_ENABLED)}
   //To Do
-  DeviceProperties:TVideoDeviceProperties;        {A Device specific DeviceProperties method implementing the standard Video device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TVideoDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing the standard Video device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   //To Do
   {Driver Properties}
@@ -139,7 +139,7 @@ procedure VideoInit;
 {Video Functions}
 //To Do
 
-function VideoDeviceProperties(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
+function VideoDeviceGetProperties(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
   
 function VideoDeviceCreate:PVideoDevice;
 function VideoDeviceCreateEx(Size:LongWord):PVideoDevice;
@@ -227,7 +227,7 @@ end;
 
 {==============================================================================}
  
-function VideoDeviceProperties(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
+function VideoDeviceGetProperties(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
 {Get the properties for the specified Video device}
 {Video: The Video device to get properties from}
 {Properties: Pointer to a TVideoProperties structure to fill in}
@@ -244,7 +244,7 @@ begin
  if Video.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF VIDEO_DEBUG}
- if VIDEO_LOG_ENABLED then VideoLogDebug(Video,'Video Device Properties');
+ if VIDEO_LOG_ENABLED then VideoLogDebug(Video,'Video Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -253,10 +253,10 @@ begin
  
  if MutexLock(Video.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(Video.DeviceProperties) then
+   if Assigned(Video.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=Video.DeviceProperties(Video,Properties);
+     {Call Device Get Properites}
+     Result:=Video.DeviceGetProperties(Video,Properties);
     end
    else
     begin
@@ -312,7 +312,7 @@ begin
  Result.VideoId:=DEVICE_ID_ANY;
  Result.VideoState:=VIDEO_STATE_DISABLED;
  //To Do
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}

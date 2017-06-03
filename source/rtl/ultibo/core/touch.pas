@@ -169,7 +169,7 @@ type
  TTouchDeviceFlush = function(Touch:PTouchDevice):LongWord; 
  TTouchDeviceControl = function(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
  
- TTouchDeviceProperties = function(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
+ TTouchDeviceGetProperties = function(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
  
  TTouchDevice = record
   {Device Properties}
@@ -184,7 +184,7 @@ type
   DeviceWrite:TTouchDeviceWrite;                  {A Device specific DeviceWrite method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   DeviceFlush:TTouchDeviceFlush;                  {A Device specific DeviceFlush method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   DeviceControl:TTouchDeviceControl;              {A Device specific DeviceControl method implementing a standard Touch device interface (Or nil if the default method is suitable)}
-  DeviceProperties:TTouchDeviceProperties;        {A Device specific DeviceProperties method implementing a standard Touch device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TTouchDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   Buffer:TTouchBuffer;                            {Touch input buffer}
@@ -220,7 +220,8 @@ function TouchDeviceFlush(Touch:PTouchDevice):LongWord;
 
 function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 
-function TouchDeviceProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
+function TouchDeviceProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord; inline;
+function TouchDeviceGetProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
   
 function TouchDeviceCreate:PTouchDevice;
 function TouchDeviceCreateEx(Size:LongWord):PTouchDevice;
@@ -855,7 +856,21 @@ end;
 
 {==============================================================================}
  
-function TouchDeviceProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
+function TouchDeviceProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord; inline;
+{Get the properties for the specified Touch device}
+{Touch: The Touch device to get properties from}
+{Properties: Pointer to a TTouchProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by TouchDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=TouchDeviceGetProperties(Touch,Properties);
+end;
+
+{==============================================================================}
+
+function TouchDeviceGetProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
 {Get the properties for the specified Touch device}
 {Touch: The Touch device to get properties from}
 {Properties: Pointer to a TTouchProperties structure to fill in}
@@ -872,7 +887,7 @@ begin
  if Touch.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF TOUCH_DEBUG}
- if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'Touch Device Properties');
+ if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'Touch Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -881,10 +896,10 @@ begin
  
  if MutexLock(Touch.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(Touch.DeviceProperties) then
+   if Assigned(Touch.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=Touch.DeviceProperties(Touch,Properties);
+     {Call Device Get Properites}
+     Result:=Touch.DeviceGetProperties(Touch,Properties);
     end
    else
     begin
@@ -946,7 +961,7 @@ begin
  Result.DeviceWrite:=nil;
  Result.DeviceFlush:=nil;
  Result.DeviceControl:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Buffer.Wait:=INVALID_HANDLE_VALUE;
  

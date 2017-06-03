@@ -483,6 +483,7 @@ var
  CONSOLE_DEFAULT_BORDERCOLOR:LongWord;           {The default border color for the console}
  
  CONSOLE_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE; {The default Font for the console}
+ CONSOLE_DEFAULT_FONT_NAME:String;               {The default Font name for the console}
 
  CONSOLE_LINE_WRAP:LongBool = True;              {If True then wrap long lines to the next line when writing to the console (Sets CONSOLE_FLAG_LINE_WRAP on device / WINDOW_FLAG_LINE_WRAP on windows)}
  CONSOLE_AUTO_SCROLL:LongBool = True;            {If True then automatically scroll up on reaching the last line of the console (Sets CONSOLE_FLAG_AUTO_SCROLL on device / WINDOW_FLAG_AUTO_SCROLL on windows)}
@@ -515,6 +516,7 @@ var
  WINDOW_DEFAULT_BORDERCOLOR:LongWord;            {The default border color for console windows}
  
  WINDOW_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE; {The default Font for console windows}
+ WINDOW_DEFAULT_FONT_NAME:String;                {The default Font name for console windows}
  
 var
  {Framebuffer Console}
@@ -849,6 +851,7 @@ var
  CODEPAGE_CONSOLE_OUTPUT:LongWord = 1252;  {The current console output code page}
  
  LOCALE_DEFAULT:LongWord; {LCID}           {The current default locale}
+ LANGUAGE_DEFAULT:Word;   {LANGID}         {The current default language identifier}
  
  KEYMAP_DEFAULT:String = 'US';             {The name of the default keymap}
  
@@ -970,6 +973,8 @@ var
  ICMP6_PROTOCOL_ENABLED:LongBool = False;       {ICMPv6 protocol is enabled if True}
  IGMP_PROTOCOL_ENABLED:LongBool = True;         {IGMP protocol is enabled if True}
 
+ TCP_MIN_BACKLOG:LongWord = 5;                  {Minimum accept queue length for listening sockets (per socket)}
+ TCP_MAX_BACKLOG:LongWord = 200;                {Maximum accept queue length for listening sockets (per socket)}
  TCP_RECEIVE_BACKLOG:LongWord = SIZE_1K;        {Queue length for SYN received connections (per listening socket)}
  
  ARP_CONFIG_ENABLED:LongBool = True;            {ARP configuration is enabled if True}
@@ -1116,6 +1121,7 @@ function Clamp(Value,Low,High:LongInt):LongInt;
 function RoundUp(Value,Multiple:LongWord):LongWord; 
 function RoundDown(Value,Multiple:LongWord):LongWord;
 
+function DivRoundUp(Value,Divisor:LongInt):LongWord;
 function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 
 function HIWORD(L:LongInt):Word; inline;
@@ -1126,6 +1132,8 @@ function LOBYTE(W:LongInt):Byte; inline;
 
 function MAKELONG(A,B:LongInt):LongInt; inline;
 function MAKEWORD(A,B:LongInt):Word; inline;
+
+function MAKELANGID(PrimaryLang,SubLang:USHORT):WORD; inline;
 
 function WordNtoBE(Value:Word):Word; inline;
 function WordBEtoN(Value:Word):Word; inline;
@@ -1274,6 +1282,18 @@ end;
 
 {==============================================================================}
 
+function DivRoundUp(Value,Divisor:LongInt):LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if Divisor = 0 then Exit;
+ 
+ Result:=((Value + Divisor) - 1) div Divisor;
+end;
+
+{==============================================================================}
+
 function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 begin
  {}
@@ -1333,6 +1353,15 @@ function MAKEWORD(A,B:LongInt):Word; inline;
 begin
  {}
  Result:=Word((Byte(A)) or ((Word(Byte(B))) shl 8));
+end;
+
+{==============================================================================}
+
+function MAKELANGID(PrimaryLang,SubLang:USHORT):WORD; inline;
+{Construct a language identifier from a primary language and a sub language}
+begin
+ {}
+ Result:=(SubLang shl 10) or PrimaryLang;
 end;
 
 {==============================================================================}

@@ -11,8 +11,8 @@ Arch
 Boards
 ======
 
- Raspberry Pi - Model A/B/A+/B+
- Raspberry Pi - Model Zero
+ Raspberry Pi - Model A/B/A+/B+/CM1
+ Raspberry Pi - Model Zero/ZeroW
  
 Licence
 =======
@@ -162,6 +162,10 @@ const
  {Mailbox constants}
  RPI_MAILBOX_TIMEOUT = 100;                         {Default timeout to wait for mailbox calls to complete (Milliseconds)}
  RPI_MAILBOX_TIMEOUT_EX = 1000;                     {Extended timeout to wait for mailbox calls to complete (Milliseconds)}
+ 
+const
+ {Framebuffer constants}
+ RPI_FRAMEBUFFER_DESCRIPTION = 'BCM2835 Framebuffer';
  
 {==============================================================================}
 {type}
@@ -1059,8 +1063,10 @@ begin
  {Setup Clock Variables}
  ClockBase:=TIME_TICKS_TO_1899;
  ClockLast:=0; 
+ {$IFDEF CLOCK_TICK_MANUAL}
  ClockTicks:=0;
  ClockSeconds:=0;
+ {$ENDIF}
  
  {Request the Clock IRQ/FIQ}
  if CLOCK_FIQ_ENABLED then
@@ -1275,6 +1281,7 @@ begin
    RPiFramebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
    RPiFramebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
    RPiFramebuffer.Device.DeviceData:=nil;
+   RPiFramebuffer.Device.DeviceDescription:=RPI_FRAMEBUFFER_DESCRIPTION;
    {Framebuffer}
    RPiFramebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
    RPiFramebuffer.DeviceAllocate:=RPiFramebufferDeviceAllocate;
@@ -2154,9 +2161,11 @@ begin
     begin
      if (Tag.Length and BCM2835_MBOX_TAG_RESPONSE_CODE) = 0 then
       begin
-       Result:=ERROR_FUNCTION_FAILED;
-       if PLATFORM_LOG_ENABLED then PlatformLogError('MailboxPropertyCallEx - Tag Response Code Failed');
-       Exit;
+       {$IFDEF PLATFORM_DEBUG}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('MailboxPropertyCallEx - Tag Response Code Incorrect (Length=' + IntToHex(Tag.Length,8) + ')');
+       {$ENDIF}
+       {Result:=ERROR_FUNCTION_FAILED;} {Note: Recent firmware functions so not always set the response bit in the tag}
+       {Exit;}                          {      The Linux firmware driver does not check this bit in the response}
       end;
      {Clear the Response bit so callers can read the length field without extra processing}
      Tag.Length:=Tag.Length and not(BCM2835_MBOX_TAG_RESPONSE_CODE);
@@ -6864,6 +6873,7 @@ begin
  Inc(ClockInterruptCounter);
  {$ENDIF}
  
+ {$IFDEF CLOCK_TICK_MANUAL}
  {Add another Clock Tick}
  Inc(ClockTicks);
  
@@ -6873,7 +6883,8 @@ begin
    Inc(ClockSeconds);
    ClockTicks:=0;
   end;
-
+ {$ENDIF}
+ 
  {Schedule the next Clock Interrupt}
  RPiClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
   

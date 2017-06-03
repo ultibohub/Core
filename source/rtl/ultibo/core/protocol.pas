@@ -187,6 +187,7 @@ type
  TNetworkConfig = class;
  TConfigCallback = function(AConfig:TNetworkConfig):Boolean of object;
  
+ TProtocolSocket = class;
  TProtocolManager = class(TObject)
    constructor Create(ASettings:TNetworkSettings;ATransports:TTransportManager);
    destructor Destroy; override;
@@ -220,6 +221,7 @@ type
    
    function GetProtocolByType(AProtocol,ASocketType:Word;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolByProtocol(AProtocol:TNetworkProtocol;ALock:Boolean;AState:LongWord):TNetworkProtocol;
+   function GetProtocolBySocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolByNext(APrevious:TNetworkProtocol;ALock,AUnlock:Boolean;AState:LongWord):TNetworkProtocol;
    
    function AddFilter(AFilter:TNetworkFilter):Boolean;
@@ -313,7 +315,6 @@ type
  TSocketTimer = class;
  TSocketThread = class;
  TProtocolPort = class;
- TProtocolSocket = class;
  TNetworkProtocol = class(TListObject)
    constructor Create(AManager:TProtocolManager;const AName:String);
    destructor Destroy; override;
@@ -358,8 +359,11 @@ type
    function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; virtual;
    procedure FlushSockets(All:Boolean); virtual;
 
+   function SelectGet(AReadfds,AWritefds,AExceptfds:PFDSet;var ACode:Integer):TProtocolSocket; virtual;
+   
    function SelectStart(ASource,ADest:PFDSet):Boolean; virtual;
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; virtual;
+   function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; virtual;
 
    function SendPacket(ASocket:TProtocolSocket;ASource,ADest:Pointer;ASourcePort,ADestPort:Word;APacket:PPacketFragment;ASize,AFlags:Integer):Integer; virtual;
   public
@@ -971,6 +975,48 @@ begin
  finally 
   FProtocols.ReaderUnlock;
  end; 
+end;
+
+{==============================================================================}
+
+function TProtocolManager.GetProtocolBySocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):TNetworkProtocol;
+var
+ Protocol:TNetworkProtocol;
+begin
+ Result:=nil;
+ 
+ {Check Socket}
+ if not CheckSocket(TSocket(ASocket),True,NETWORK_LOCK_READ) then Exit;
+ try
+  FProtocols.ReaderLock;
+  try
+   Result:=nil;
+   
+   {Get Protocol}
+   Protocol:=TNetworkProtocol(FProtocols.First);
+   while Protocol <> nil do
+    begin
+     {Check Protocol}
+     if Protocol = ASocket.Protocol then
+      begin
+       {Lock Protocol} 
+       if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
+       
+       {Return Result}
+       Result:=Protocol;
+       Exit;
+      end;
+      
+     {Get Next} 
+     Protocol:=TNetworkProtocol(Protocol.Next);
+    end;
+  finally 
+   FProtocols.ReaderUnlock;
+  end; 
+ finally
+  {Unlock Socket}
+  ASocket.ReaderUnlock;
+ end;
 end;
 
 {==============================================================================}
@@ -2077,10 +2123,52 @@ end;
 {==============================================================================}
 
 function TProtocolManager.Select(ANfds:Integer;AReadfds,AWritefds,AExceptfds:PFDSet;ATimeout:PTimeVal):LongInt;
+var
+ Socket:TProtocolSocket;
+ Protocol:TNetworkProtocol;
 begin
  {}
  Result:=SOCKET_ERROR;
- //To Do //Allow select to handle sockets from multiple protocols
+ SetLastError(WSAENOTSOCK);
+ 
+ if not ReaderLock then Exit;
+ try
+  {Setup Defaults}
+  Socket:=nil;
+  Protocol:=nil;
+  
+  {Check Sets}
+  if (AReadfds <> nil) and (AReadfds.fd_count > 0) then
+   begin
+    {Get Socket}
+    Socket:=TProtocolSocket(AReadfds.fd_array[0]);
+   end
+  else if (AWritefds <> nil) and (AWritefds.fd_count > 0) then
+   begin
+    {Get Socket}
+    Socket:=TProtocolSocket(AWritefds.fd_array[0]);
+   end
+  else if (AExceptfds <> nil) and (AExceptfds.fd_count > 0) then
+   begin
+    {Get Socket}
+    Socket:=TProtocolSocket(AExceptfds.fd_array[0]);
+   end;
+    
+  {Check Socket}  
+  if Socket = nil then Exit;
+
+  {Get Protocol}
+  Protocol:=GetProtocolBySocket(Socket,True,NETWORK_LOCK_READ);
+  if Protocol = nil then Exit;
+
+  {Select Socket}
+  Result:=Protocol.Select(ANfds,AReadfds,AWritefds,AExceptfds,ATimeout);
+      
+  {Unlock Protocol}
+  Protocol.ReaderUnlock;
+ finally 
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -2090,11 +2178,11 @@ var
  Protocol:TNetworkProtocol;
 begin
  {}
- ReaderLock;
+ Result:=INVALID_SOCKET;
+ SetLastError(WSAEPROTONOSUPPORT);
+ 
+ if not ReaderLock then Exit;
  try
-  Result:=INVALID_SOCKET;
-  SetLastError(WSAEPROTONOSUPPORT);
-
   {Get Protocol}  
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
@@ -2511,6 +2599,66 @@ end;
 
 {==============================================================================}
 
+function TNetworkProtocol.SelectGet(AReadfds,AWritefds,AExceptfds:PFDSet;var ACode:Integer):TProtocolSocket;
+{Determine if select was called with a single socket to be checked}
+{Readfds, Writefds and Exceptfds are the working sets to check}
+begin
+ {}
+ Result:=nil;
+ 
+ {Setup Defaults}
+ ACode:=SELECT_UNKNOWN;
+ 
+ {Check Sets}
+ if (AReadfds <> nil) and (AReadfds.fd_count = 1) then
+  begin
+   {Check Write}
+   if (AWritefds <> nil) and (AWritefds.fd_count > 0) then Exit;
+   
+   {Check Except}
+   if (AExceptfds <> nil) and (AExceptfds.fd_count > 0) then Exit;
+   
+   {Get Socket}
+   Result:=TProtocolSocket(AReadfds.fd_array[0]);
+   if Result = nil then Exit;
+   
+   {Return Code}
+   ACode:=SELECT_READ;
+  end
+ else if (AWritefds <> nil) and (AWritefds.fd_count = 1) then
+  begin
+   {Check Read}
+   if (AReadfds <> nil) and (AReadfds.fd_count > 0) then Exit;
+   
+   {Check Except}
+   if (AExceptfds <> nil) and (AExceptfds.fd_count > 0) then Exit;
+   
+   {Get Socket}
+   Result:=TProtocolSocket(AWritefds.fd_array[0]);
+   if Result = nil then Exit;
+   
+   {Return Code}
+   ACode:=SELECT_WRITE;
+  end
+ else if (AExceptfds <> nil) and (AExceptfds.fd_count = 1) then
+  begin
+   {Check Read}
+   if (AReadfds <> nil) and (AReadfds.fd_count > 0) then Exit;
+   
+   {Check Write}
+   if (AWritefds <> nil) and (AWritefds.fd_count > 0) then Exit;
+   
+   {Get Socket}
+   Result:=TProtocolSocket(AExceptfds.fd_array[0]);
+   if Result = nil then Exit;
+   
+   {Return Code}
+   ACode:=SELECT_ERROR;
+  end;
+end;
+
+{==============================================================================}
+
 function TNetworkProtocol.SelectStart(ASource,ADest:PFDSet):Boolean;
 {Source is the set passed to Select, Dest is the working set to check}
 var
@@ -2547,6 +2695,15 @@ end;
 
 function TNetworkProtocol.SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer;
 {Source is the working set to check, Dest is the set passed to Select}
+begin
+ {Virtual Base Method}
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+{Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
 begin
  {Virtual Base Method}
  Result:=0;
@@ -2651,116 +2808,155 @@ end;
 {==============================================================================}
 
 function TNetworkProtocol.Select(ANfds:Integer;AReadfds,AWritefds,AExceptfds:PFDSet;ATimeout:PTimeVal):LongInt;
-//To Do //Improve this with some form of WaitFor (Event etc) ?
 var
+ Code:Integer;
  Count:Integer;
  StartTime:Int64;
+ Timeout:LongWord;
  Readfds:TFDSet;
  Writefds:TFDSet;
  Exceptfds:TFDSet;
+ Socket:TProtocolSocket;
 begin
  {}
  Result:=SOCKET_ERROR;
  
- {$IFDEF PROTOCOL_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Protocol: Select');
- {$ENDIF}
- 
- {Check the Parameters}
- SetLastError(WSAEINVAL);
- if not Assigned(AReadfds) and not Assigned(AWritefds) and not Assigned(AExceptfds) then Exit;
- 
- {Setup the sets}
- if not SelectStart(AReadfds,@Readfds) then Exit;
- if not SelectStart(AWritefds,@Writefds) then Exit;
- if not SelectStart(AExceptfds,@Exceptfds) then Exit;
- 
- {Poll the sets until one matches}
- SetLastError(WSAENOTSOCK);
- StartTime:=GetTickCount64;
- while True do
-  begin
-   {Check Read Sockets}
-   Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
-   if Result = SOCKET_ERROR then Exit;
-   if Result > 0 then
-    begin
-     Count:=Result;
-     
-     {Check Write Sockets}
-     Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
-     if Result = SOCKET_ERROR then Exit;
-     Inc(Count,Result);
-     
-     {Check Error Sockets}
-     Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
-     if Result = SOCKET_ERROR then Exit;
-     Inc(Count,Result);
-     
-     {Return Result}
-     Result:=Count;
-     Exit;
-    end;
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF PROTOCOL_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Protocol: Select');
+  {$ENDIF}
+  
+  {Check the Parameters}
+  SetLastError(WSAEINVAL);
+  if not Assigned(AReadfds) and not Assigned(AWritefds) and not Assigned(AExceptfds) then Exit;
+  
+  {Setup the Sets}
+  if not SelectStart(AReadfds,@Readfds) then Exit;
+  if not SelectStart(AWritefds,@Writefds) then Exit;
+  if not SelectStart(AExceptfds,@Exceptfds) then Exit;
+  
+  {Get the Timeout}
+  Timeout:=INFINITE;
+  if ATimeout <> nil then
+   begin
+    Timeout:=(ATimeout.tv_sec * 1000) + (ATimeout.tv_usec div 1000);
+   end;
    
-   {Check Write Sockets}
-   Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
-   if Result = SOCKET_ERROR then Exit;
-   if Result > 0 then
-    begin
-     Count:=Result;
-     
-     {Check Read Sockets}
-     Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
-     if Result = SOCKET_ERROR then Exit;
-     Inc(Count,Result);
-     
-     {Check Error Sockets}
-     Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
-     if Result = SOCKET_ERROR then Exit;
-     Inc(Count,Result);
-     
-     {Return Result}
-     Result:=Count;
-     Exit;
-    end;
-    
-   {Check Error Sockets}
-   Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
-   if Result = SOCKET_ERROR then Exit;
-   if Result > 0 then
-    begin
-     Count:=Result;
-     
-     {Check Read Sockets}
-     Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
-     if Result = SOCKET_ERROR then Exit;
-     Inc(Count,Result);
-     
-     {Check Write Sockets}
-     Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
-     if Result = SOCKET_ERROR then Exit;
-     Inc(Count,Result);
-     
-     {Return Result}
-     Result:=Count;
-     Exit;
-    end;
-   
-   {Check for Timeout}
-   if ATimeout <> nil then
-    begin
-     if (ATimeout.tv_sec = 0) and (ATimeout.tv_usec = 0) then
-      begin
-       Result:=0;
-       Exit;
-      end;
-     if GetTickCount64 > (StartTime + (ATimeout.tv_sec * 1000) + ATimeout.tv_usec) then //To Do //tv_usec is Microseconds not Milliseconds, need to div 1000 / or need to mod 1000
-      begin                                     //To Do //Milliseconds per second //Microseconds per millisecond
-       Result:=0;
-       Exit;
-      end;
-    end;
-  end;
+  {Get the Socket and Code if the select is for a single socket and set}
+  Socket:=SelectGet(@Readfds,@Writefds,@Exceptfds,Code);
+  if Socket <> nil then
+   begin
+    {Single Socket in a Single Set}
+    {Wait for the Socket or the Timeout}
+    Result:=SelectWait(Socket,Code,Timeout);
+    if Result = SOCKET_ERROR then Exit;
+    if Result > 0 then
+     begin
+      {Check Code}
+      case Code of
+       SELECT_READ:FD_SET(TSocket(Socket),AReadfds^);
+       SELECT_WRITE:FD_SET(TSocket(Socket),AWritefds^);
+       SELECT_ERROR:FD_SET(TSocket(Socket),AExceptfds^);
+      end;  
+     end; 
+   end
+  else
+   begin 
+    {Multiple Sockets or Multiple Sets}
+    {Poll the sets until one matches}
+    SetLastError(WSAENOTSOCK);
+    StartTime:=GetTickCount64;
+    while True do
+     begin
+      {Check Read Sockets}
+      Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
+      if Result = SOCKET_ERROR then Exit;
+      if Result > 0 then
+       begin
+        Count:=Result;
+        
+        {Check Write Sockets}
+        Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
+        if Result = SOCKET_ERROR then Exit;
+        Inc(Count,Result);
+        
+        {Check Error Sockets}
+        Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
+        if Result = SOCKET_ERROR then Exit;
+        Inc(Count,Result);
+        
+        {Return Result}
+        Result:=Count;
+        Exit;
+       end;
+      
+      {Check Write Sockets}
+      Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
+      if Result = SOCKET_ERROR then Exit;
+      if Result > 0 then
+       begin
+        Count:=Result;
+        
+        {Check Read Sockets}
+        Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
+        if Result = SOCKET_ERROR then Exit;
+        Inc(Count,Result);
+        
+        {Check Error Sockets}
+        Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
+        if Result = SOCKET_ERROR then Exit;
+        Inc(Count,Result);
+        
+        {Return Result}
+        Result:=Count;
+        Exit;
+       end;
+       
+      {Check Error Sockets}
+      Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
+      if Result = SOCKET_ERROR then Exit;
+      if Result > 0 then
+       begin
+        Count:=Result;
+        
+        {Check Read Sockets}
+        Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
+        if Result = SOCKET_ERROR then Exit;
+        Inc(Count,Result);
+        
+        {Check Write Sockets}
+        Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
+        if Result = SOCKET_ERROR then Exit;
+        Inc(Count,Result);
+        
+        {Return Result}
+        Result:=Count;
+        Exit;
+       end;
+      
+      {Check Timeout}
+      if Timeout <> INFINITE then
+       begin
+        if Timeout = 0 then
+         begin
+          Result:=0;
+          Exit;
+         end;
+        if GetTickCount64 > (StartTime + Timeout) then
+         begin                                     
+          Result:=0;
+          Exit;
+         end;
+       end;
+      
+      {Yield}   
+      Sleep(0); 
+     end;
+   end;  
+ finally 
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}

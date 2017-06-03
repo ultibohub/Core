@@ -141,7 +141,7 @@ type
  TI2CDeviceGetAddress = function(I2C:PI2CDevice):Word;
  TI2CDeviceSetAddress = function(I2C:PI2CDevice;Address:Word):LongWord;
  
- TI2CDeviceProperties = function(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
+ TI2CDeviceGetProperties = function(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
  
  TI2CDevice = record
   {Device Properties}
@@ -159,7 +159,7 @@ type
   DeviceSetRate:TI2CDeviceSetRate;                {A Device specific DeviceSetRate method implementing the standard I2C device interface (Or nil if the default method is suitable)}
   DeviceGetAddress:TI2CDeviceGetAddress;          {A Device specific DeviceGetAddress method implementing the standard I2C device interface (Or nil if the default method is suitable)}
   DeviceSetAddress:TI2CDeviceSetAddress;          {A Device specific DeviceSetAddress method implementing the standard I2C device interface (Or nil if the default method is suitable)}
-  DeviceProperties:TI2CDeviceProperties;          {A Device specific DeviceProperties method implementing the standard I2C device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TI2CDeviceGetProperties;    {A Device specific DeviceGetProperties method implementing the standard I2C device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   ReadCount:LongWord;
   WriteCount:LongWord;
@@ -200,7 +200,8 @@ function I2CDeviceSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function I2CDeviceGetAddress(I2C:PI2CDevice):Word;
 function I2CDeviceSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
 
-function I2CDeviceProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
+function I2CDeviceProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord; inline;
+function I2CDeviceGetProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
   
 function I2CDeviceCreate:PI2CDevice;
 function I2CDeviceCreateEx(Size:LongWord):PI2CDevice;
@@ -827,7 +828,21 @@ end;
 
 {==============================================================================}
 
-function I2CDeviceProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
+function I2CDeviceProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord; inline;
+{Get the properties for the specified I2C device}
+{I2C: The I2C device to get properties from}
+{Properties: Pointer to a TI2CProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by I2CDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=I2CDeviceGetProperties(I2C,Properties);
+end;
+
+{==============================================================================}
+
+function I2CDeviceGetProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
 {Get the properties for the specified I2C device}
 {I2C: The I2C device to get properties from}
 {Properties: Pointer to a TI2CProperties structure to fill in}
@@ -844,7 +859,7 @@ begin
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF I2C_DEBUG}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Properties');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -853,10 +868,10 @@ begin
  
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(I2C.DeviceProperties) then
+   if Assigned(I2C.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=I2C.DeviceProperties(I2C,Properties);
+     {Call Device Get Properites}
+     Result:=I2C.DeviceGetProperties(I2C,Properties);
     end
    else
     begin
@@ -919,7 +934,7 @@ begin
  Result.DeviceSetRate:=nil;
  Result.DeviceGetAddress:=nil;
  Result.DeviceSetAddress:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Wait:=INVALID_HANDLE_VALUE;
  Result.ClockRate:=0;

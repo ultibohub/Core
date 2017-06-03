@@ -110,6 +110,7 @@ type
    procedure FlushSockets(All:Boolean); override;
 
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; override;
+   function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; override;
 
    function SendPacket(ASocket:TProtocolSocket;ASource,ADest:Pointer;ASourcePort,ADestPort:Word;APacket:PPacketFragment;ASize,AFlags:Integer):Integer; override;
   public
@@ -782,6 +783,90 @@ begin
     Result:=0;
    end;
  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+{Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
+var
+ StartTime:Int64;
+ Socket:TRAWSocket;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SelectWait');
+ {$ENDIF}
+
+ {Get Socket}
+ Socket:=TRAWSocket(ASocket);
+ 
+ {Check Socket}
+ if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
+ try
+  {Check Code}
+  case ACode of
+   SELECT_READ:begin
+     {Wait for Data}
+     StartTime:=GetTickCount64;
+     while Socket.RecvData.GetCount = 0 do
+      begin
+       {Check Timeout}
+       if ATimeout = 0 then
+        begin
+         {Return Zero}
+         Result:=0;
+         Exit;
+        end
+       else if ATimeout = INFINITE then
+        begin
+         {Wait for Event}
+         if not Socket.WaitChange then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end
+       else 
+        begin
+         {Wait for Event}
+         if not Socket.WaitChangeEx(ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+
+         {Check for Timeout}
+         if GetTickCount64 > (StartTime + ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end;           
+      end;
+      
+     {Return One}
+     Result:=1; 
+    end;
+   SELECT_WRITE:begin
+     {Return One}
+     Result:=1; 
+    end;
+   SELECT_ERROR:begin
+     {Return Zero}
+     Result:=0;
+    end;
+  end;
+ 
+ finally
+  {Unlock Socket} 
+  Socket.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}

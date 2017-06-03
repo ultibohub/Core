@@ -659,8 +659,10 @@ begin
  {Setup Clock Variables}
  ClockBase:=TIME_TICKS_TO_1899;
  ClockLast:=0; 
+ {$IFDEF CLOCK_TICK_MANUAL}
  ClockTicks:=0;
  ClockSeconds:=0;
+ {$ENDIF}
  
  {Request the Clock IRQ/FIQ}
  if CLOCK_FIQ_ENABLED then
@@ -1607,12 +1609,42 @@ end;
 {==============================================================================}
 
 function QEMUVPBSystemRestart(Delay:LongWord):LongWord; 
+var
+ Value:LongWord;
+ Mask:TIRQFIQMask;
 begin
  {}
- Result:=ERROR_INVALID_PARAMETER;
+ Result:=ERROR_SUCCESS;
  
- //To Do //Continuing
- //See: \arch\arm\mach-versatile\core.c
+ {Delay}
+ Sleep(Delay);
+
+ {Disable IRQ/FIQ}
+ Mask:=SaveIRQFIQ;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+ 
+ {Get Register}
+ Value:=PLongWord(VERSATILEPB_SYS_RESETCTL)^ or VERSATILEPB_SYS_RESETCTL_RESET or VERSATILEPB_SYS_RESETCTL_PORRESET;
+ 
+ {Unlock}
+ PLongWord(VERSATILEPB_SYS_LOCK)^:=VERSATILEPB_SYS_LOCK_LOCKVAL;
+ 
+ {Reset}
+ PLongWord(VERSATILEPB_SYS_RESETCTL)^:=Value;
+ 
+ {Lock}
+ PLongWord(VERSATILEPB_SYS_LOCK)^:=0;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read}
+ 
+ {Delay (Non Sleep)}
+ MillisecondDelay(1000);
+ 
+ {Restore IRQ/FIQ}
+ RestoreIRQFIQ(Mask);
 end;
 
 {==============================================================================}
@@ -1620,10 +1652,7 @@ end;
 function QEMUVPBSystemShutdown(Delay:LongWord):LongWord;
 begin
  {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- //To Do //Continuing
- //See: \arch\arm\mach-versatile\core.c
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
@@ -1631,50 +1660,12 @@ end;
 function QEMUVPBClockGetCount:LongWord;
 {Gets the current system clock count (32 least significant bits of total)}
 {Note: On the VersatilePB this comes from the 24MHz counter which will 
- overflow every 178 seconds}
+ overflow every 178 seconds and increment the rollover value. Because we
+ return the lower 32 bits then the value returned by this function will
+ rollover to zero every 4295 seconds or about every 71 minutes}
 begin
  {}
- {Acquire Lock}
- if ClockGetLock <> INVALID_HANDLE_VALUE then
-  begin
-   if SCHEDULER_FIQ_ENABLED then
-    begin
-     SpinLockIRQFIQ(ClockGetLock);
-    end
-   else
-    begin
-     SpinLockIRQ(ClockGetLock);
-    end;    
-  end; 
- 
- {Get 24MHz Counter}
- Result:=PLongWord(VERSATILEPB_SYS_24MHZ)^ div 24;
- 
- {Memory Barrier}
- DataMemoryBarrier; {After the Last Read}
- 
- {Check for Rollover}
- if Result < ClockGetLast then
-  begin
-   {Increment Base}
-   Inc(ClockGetBase,178956970); {0xFFFFFFFF div 24}
-  end;
- 
- {Save Last Value} 
- ClockGetLast:=Result;
- 
- {Release Lock}
- if ClockGetLock <> INVALID_HANDLE_VALUE then
-  begin
-   if SCHEDULER_FIQ_ENABLED then
-    begin
-     SpinUnlockIRQFIQ(ClockGetLock);
-    end
-   else
-    begin
-     SpinUnlockIRQ(ClockGetLock);
-    end;    
-  end; 
+ Result:=QEMUVPBClockGetTotal;
 end;
 
 {==============================================================================}
@@ -1684,7 +1675,7 @@ function QEMUVPBClockGetTotal:Int64;
 {Note: On the VersatilePB this comes from the 24MHz counter which will 
  overflow every 178 seconds and increment the rollover value. This is 
  only accurate if either ClockGetCount or ClockGetTotal is called at
- least once per 178 seconds on order to increment the rollover}
+ least once per 178 seconds in order to increment the rollover}
 var
  Value:LongWord;
 begin
@@ -1974,6 +1965,7 @@ begin
  Inc(ClockInterruptCounter);
  {$ENDIF}
 
+ {$IFDEF CLOCK_TICK_MANUAL}
  {Add another Clock Tick}
  Inc(ClockTicks);
  
@@ -1983,6 +1975,7 @@ begin
    Inc(ClockSeconds);
    ClockTicks:=0;
   end;
+ {$ENDIF}
 
  {Schedule the next Clock Interrupt}
  QEMUVPBClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);

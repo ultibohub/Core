@@ -329,7 +329,7 @@ const
  SOL_SOCKET      = GlobalSock.SOL_SOCKET;
 
 { Maximum queue length specifiable by listen. }
- SOMAXCONN = $7fffffff;   {SOMAXCONN       = GlobalSock.SOMAXCONN;} {Redefined for Winsock2}
+ SOMAXCONN       = GlobalSock.SOMAXCONN;
 
  MSG_OOB         = GlobalSock.MSG_OOB;
  MSG_PEEK        = GlobalSock.MSG_PEEK;
@@ -9406,7 +9406,7 @@ end;
 {==============================================================================}
 
 function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint; 
-{Note: All sockets contained the the FSSet must by of the same type}
+{Note: All sockets contained by the FDSet must by of the same type}
 var
  Socket:TProtocolSocket;
 begin
@@ -9417,54 +9417,12 @@ begin
   SetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
-  {Set Error}
-  SetLastError(WSAENOTSOCK);
-  //To Do //Modify to use ProtocolManager.Select like Socket
-  if (readfds <> nil) and (readfds.fd_count > 0) then
-   begin
-    {Check Socket}
-    Socket:=TProtocolSocket(readfds.fd_array[0]);
-    if Socket = nil then Exit;
-
-    {Check Manager}
-    if ProtocolManager = nil then Exit;
-
-    {Check Socket}
-    if not ProtocolManager.CheckSocket(readfds.fd_array[0],False,NETWORK_LOCK_NONE) then Exit; //To Do
-
-    {Select Socket}
-    Result:=Socket.Protocol.Select(nfds,readfds,writefds,exceptfds,timeout);
-   end
-  else if (writefds <> nil) and (writefds.fd_count > 0) then
-   begin
-    {Check Socket}
-    Socket:=TProtocolSocket(writefds.fd_array[0]);
-    if Socket = nil then Exit;
-
-    {Check Manager}
-    if ProtocolManager = nil then Exit;
-
-    {Check Socket}
-    if not ProtocolManager.CheckSocket(writefds.fd_array[0],False,NETWORK_LOCK_NONE) then Exit; //To Do
-
-    {Select Socket}
-    Result:=Socket.Protocol.Select(nfds,readfds,writefds,exceptfds,timeout);
-   end
-  else if (exceptfds <> nil) and (exceptfds.fd_count > 0) then
-   begin
-    {Check Socket}
-    Socket:=TProtocolSocket(exceptfds.fd_array[0]);
-    if Socket = nil then Exit;
-
-    {Check Manager}
-    if ProtocolManager = nil then Exit;
-
-    {Check Socket}
-    if not ProtocolManager.CheckSocket(exceptfds.fd_array[0],False,NETWORK_LOCK_NONE) then Exit; //To Do
-
-    {Select Socket}
-    Result:=Socket.Protocol.Select(nfds,readfds,writefds,exceptfds,timeout);
-   end;
+  {Check Manager}
+  SetLastError(WSASYSNOTREADY);
+  if ProtocolManager = nil then Exit;
+  
+  {Select Socket}
+  Result:=ProtocolManager.Select(nfds,readfds,writefds,exceptfds,timeout);
  except
   on E: Exception do
    begin

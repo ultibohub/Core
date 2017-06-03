@@ -608,6 +608,7 @@ type
   property ContentSent:Boolean read GetContentSent;
  
   {Public Methods}
+  function Close:Boolean;
   function Clear:Boolean;
   
   function SetParam(const AName,AValue:String):Boolean;
@@ -842,7 +843,7 @@ type
   function PostStream(const AURL:String;AContent:TStream):Boolean;
   
   function SendRequest:Boolean;
-  function CloseRequest:Boolean;
+  function CloseRequest(Close:Boolean):Boolean;
   function ClearRequest:Boolean;
   function CancelRequest:Boolean;
   
@@ -2194,6 +2195,29 @@ end;
 
 {==============================================================================}
 
+function THTTPClientRequest.Close:Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ FFlags:=HTTP_REQUEST_FLAG_NONE;
+
+ Protocol:='';
+ Host:='';
+ Port:='';
+ Path:='';
+ Query:='';
+  
+ ContentStream:=nil;
+ ContentString:='';
+ 
+ RedirectCount:=0;
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
 function THTTPClientRequest.Clear:Boolean;
 begin
  {}
@@ -2221,7 +2245,7 @@ begin
  
  Result:=True;
 end;
-
+ 
 {==============================================================================}
 
 function THTTPClientRequest.SetParam(const AName,AValue:String):Boolean;
@@ -4068,7 +4092,7 @@ begin
   Result:=SendRequest;
   
   {Close Request}
-  CloseRequest;
+  CloseRequest(True);
  finally
   ReleaseLock;
  end; 
@@ -4103,7 +4127,7 @@ begin
    end;
    
   {Close Request}
-  CloseRequest;
+  CloseRequest(True);
  finally
   ReleaseLock;
  end; 
@@ -4138,7 +4162,7 @@ begin
    end;
    
   {Close Request}
-  CloseRequest;
+  CloseRequest(True);
  finally
   ReleaseLock;
  end; 
@@ -4176,7 +4200,7 @@ begin
    end;
    
   {Close Request}
-  CloseRequest;
+  CloseRequest(True);
  finally
   ReleaseLock;
  end; 
@@ -4214,7 +4238,7 @@ begin
    end;
    
   {Close Request}
-  CloseRequest;
+  CloseRequest(True);
  finally
   ReleaseLock;
  end; 
@@ -4334,7 +4358,7 @@ begin
    //To Do //Redirects
    
    {Connect}    
-   if Connect then
+   if Connected or Connect then
     begin
      {Setup Receive Size}
      ReceiveSize:=SIZE_2M; //To Do //This should be set by the caller (Modify TWinsockTCPClient to allow setting before connect)
@@ -4451,7 +4475,7 @@ end;
 
 {==============================================================================}
 
-function THTTPClient.CloseRequest:Boolean;
+function THTTPClient.CloseRequest(Close:Boolean):Boolean;
 begin
  {}
  Result:=False;
@@ -4465,18 +4489,18 @@ begin
   if HTTP_LOG_ENABLED then HTTPLogDebug('Client: CloseRequest');
   {$ENDIF}
 
-  {Reset Request}
-  FRequest.Protocol:='';
-  FRequest.Host:='';
-  FRequest.Port:='';
-  FRequest.Path:='';
-  FRequest.Query:='';
-  FRequest.ContentString:='';
-  FRequest.ContentStream:=nil;
-  FRequest.RedirectCount:=0;
+  {Close Request}
+  FRequest.Close;
   
-  {Shutdown}
-  Shutdown;
+  {Check Close}
+  if Close then {if (FState = HTTP_CLIENT_STATE_FAILURE) or (FResponse.ConnectionClose) then} {Allow caller to specify Close}
+   begin
+    {Shutdown}
+    Shutdown;
+    
+    {Disconnect}
+    Disconnect;
+   end; 
   
   Result:=True;
  finally
@@ -4518,6 +4542,9 @@ begin
   FRangeStart:=0;
   FRangeEnd:=0;
   FEncoding:=HTTP_ENCODING_IDENTITY;
+  
+  {Disconnect}
+  Disconnect;
   
   Result:=True;
  finally

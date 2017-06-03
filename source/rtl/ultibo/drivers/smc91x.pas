@@ -65,7 +65,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Network,SysUt
 {==============================================================================}
 const
  {SMC91X specific constants}
- SMC91X_NETWORK_DESCRIPTION = 'SMSC 91C9x/91C1xx Ethernet';  {Description of SMC91X device}
+ SMC91X_NETWORK_DESCRIPTION = 'SMSC 91C9x/91C1xx Ethernet';       {Description of SMC91X device}
 
  SMC91X_COMPLETION_THREAD_STACK_SIZE = SIZE_128K;                 {Stack size of receive and transmit completion thread}
  SMC91X_COMPLETION_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER;      {Priority of receive and transmit completion thread} 

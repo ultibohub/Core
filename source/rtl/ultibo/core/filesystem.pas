@@ -121,6 +121,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 
 //) = Uppercase(  //Use WorkBuffer
 
+//API
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -128,6 +130,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 {==============================================================================}
 const
  {FileSystem specific constants}
+ FILESYS_LOGGING_DESCRIPTION = 'Filesystem Logging';
+ 
  FILESYS_STORAGE_TIMER_INTERVAL = 500;
 
  {FileSystem Lock States}
@@ -239,7 +243,7 @@ const
  faMatchMask    = (faFile or faStream or faVolumeID or faDirectory);
 
  {Additional File Attribute Flags for NTFS/EXTFS/NSS}
- faDevice       = $00000040;
+ faDevice       = $00000040;   {Note: Conflicts with faSymLink in FPC SysUtils (filutilh.inc)}
  faNormal       = $00000080;
  faTemporary    = $00000100;
  faSparse       = $00000200;
@@ -1648,6 +1652,8 @@ type
    function GetDriveTotalSpace(ADrive:Byte):LongWord;
    function GetDriveTotalSpaceEx(ADrive:Byte):Int64;
 
+   function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
+   
    function GetCurrentDrive:Byte;
    function SetCurrentDrive(const ADrive:String):Boolean;
 
@@ -1808,7 +1814,7 @@ type
    function FlushFileBuffers(AHandle:THandle):Boolean;
    //function GetBinaryType //To Do
    function GetFileAttributes(const AFileName:String):LongWord;
-   //function GetFileInformationByHandle //To Do
+   function GetFileInformationByHandle(AHandle:THandle;var AFileInformation:TByHandleFileInformation):Boolean;
    function GetFileSize(AHandle:THandle;var AFileSizeHigh:LongWord):LongWord;
    {function GetFileSizeEx} {Same as FileSizeEx}
    {function GetFileTime}   {Already Defined}
@@ -2880,8 +2886,10 @@ type
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
+   function ReaderConvert:Boolean; 
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   function WriterConvert:Boolean;
    function WriterOwner:Boolean;
    
    function ImageInit:Boolean; virtual;
@@ -3702,6 +3710,8 @@ type
    function GetDriveTotalSpace:LongWord; virtual;
    function GetDriveTotalSpaceEx:Int64; virtual;
 
+   function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; virtual;
+   
     {File Functions}
    function FileOpen(const FileName:String;Mode:Integer):Integer; virtual;
    function FileCreate(const FileName:String):Integer; virtual;
@@ -5165,6 +5175,8 @@ function FSGetDriveFreeSpaceEx(ADrive:Byte):Int64; inline;
 function FSGetDriveTotalSpace(ADrive:Byte):LongWord; inline;
 function FSGetDriveTotalSpaceEx(ADrive:Byte):Int64; inline;
 
+function FSGetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; inline;
+
 function FSGetCurrentDrive:Byte; inline;
 function FSSetCurrentDrive(const ADrive:String):Boolean; inline;
 
@@ -5260,6 +5272,7 @@ function FSFindFirstFile(const AFileName:String;var AFindData:TWin32FindData):TH
 function FSFindNextFile(AHandle:THandle;var AFindData:TWin32FindData):Boolean; inline;
 function FSFlushFileBuffers(AHandle:THandle):Boolean; inline;
 function FSGetFileAttributes(const AFileName:String):LongWord; inline;
+function FSGetFileInformationByHandle(AHandle:THandle;var AFileInformation:TByHandleFileInformation):Boolean; inline;
 function FSGetFileSize(AHandle:THandle;var AFileSizeHigh:LongWord):LongWord; inline;
 function FSGetFullPathName(const AFileName:String):String; inline;
 function FSGetShortPathName(const ALongPath:String):String; inline;
@@ -5273,10 +5286,10 @@ function FSSetFilePointerEx(AHandle:THandle;const ADistanceToMove:Int64;var ANew
 function FSWriteFile(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var ABytesWritten:LongWord):Boolean; inline;
 function FSGetLongPathName(const AShortPath:String):String; inline;
 
-function FSSetFileShortName(const AFileName,AShortName:String):Boolean;
-function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean;
-function FSCreateHardLink(const ALinkName,AFileName:String):Boolean;
-function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean;
+function FSSetFileShortName(const AFileName,AShortName:String):Boolean; inline;
+function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean; inline;
+function FSCreateHardLink(const ALinkName,AFileName:String):Boolean; inline;
+function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean; inline;
 
 {Directory Functions}
 function FSCreateDirectory(const APathName:String):Boolean; inline;
@@ -9179,12 +9192,12 @@ begin
   {$ENDIF}
 
   {Scan each Controller for Devices}
-  Controller:=GetControllerByNext(nil,True,False,FILESYS_LOCK_WRITE); 
+  Controller:=GetControllerByNext(nil,True,False,FILESYS_LOCK_READ); 
   while Controller <> nil do
    begin
     Controller.LocateDevices;
     
-    Controller:=GetControllerByNext(Controller,True,True,FILESYS_LOCK_WRITE); 
+    Controller:=GetControllerByNext(Controller,True,True,FILESYS_LOCK_READ); 
    end;
    
   Result:=True;
@@ -11448,7 +11461,7 @@ begin
   if Partition = nil then Exit;
   try
    {Get the Device}
-   if CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
+   if CheckDevice(Partition.Device,True,FILESYS_LOCK_WRITE) then
     begin
      Device:=Partition.Device;
   
@@ -11456,7 +11469,7 @@ begin
      Result:=Device.DeletePartition(Partition);
      
      {Unlock Device}
-     Device.ReaderUnlock;
+     Device.WriterUnlock;
     end; 
   finally
    {Unlock Partition}
@@ -14653,6 +14666,53 @@ begin
    {Unlock Drive}
    Drive.ReaderUnlock;
   end;  
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
+var
+ Drive:TDiskDrive;
+ Volume:TDiskVolume;
+begin
+ {}
+ Result:=False;
+ 
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetDriveInformation');
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Path = ' + APath);
+  {$ENDIF}
+
+  Volume:=GetVolumeFromPath(APath,True,FILESYS_LOCK_READ);  
+  if Volume <> nil then
+   begin
+    try
+     if Volume.FileSystem = nil then Exit;
+     
+     Result:=Volume.FileSystem.GetDriveInformation(AClusterSize,ATotalClusterCount,AFreeClusterCount);
+    finally
+     {Unlock Volume}
+     Volume.ReaderUnlock;
+    end; 
+   end
+  else
+   begin
+    Drive:=GetDriveFromPath(APath,True,FILESYS_LOCK_READ);
+    if Drive = nil then Exit;
+    try
+     if Drive.FileSystem = nil then Exit;
+    
+     Result:=Drive.FileSystem.GetDriveInformation(AClusterSize,ATotalClusterCount,AFreeClusterCount);
+    finally
+     {Unlock Drive}
+     Drive.ReaderUnlock;
+    end; 
+   end;
  finally  
   ReaderUnlock;
  end; 
@@ -19139,6 +19199,10 @@ function TFileSysDriver.GetDiskFreeSpace(const ARootPath:String;var ASectorsPerC
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
+ 
+ ClusterSize:LongWord;
+ FreeClusterCount:Int64;
+ TotalClusterCount:Int64;
 begin
  {}
  Result:=False;
@@ -19156,13 +19220,19 @@ begin
     try
      if Volume.FileSystem = nil then Exit;
      
-     {Get Values}
-     ASectorsPerCluster:=0;  //To Do //API
-     ABytesPerSector:=Volume.FileSystem.SectorSize;
-     ANumberOfFreeClusters:=0;  //To Do //API
-     ATotalNumberOfClusters:=0;  //To Do //API
+     {Get Drive Information}
+     if Volume.FileSystem.GetDriveInformation(ClusterSize,TotalClusterCount,FreeClusterCount) then
+      begin
+       if Volume.FileSystem.SectorSize = 0 then Exit;
+       
+       {Get Values}
+       ASectorsPerCluster:=ClusterSize div Volume.FileSystem.SectorSize;
+       ABytesPerSector:=Volume.FileSystem.SectorSize;
+       ANumberOfFreeClusters:=FreeClusterCount;
+       ATotalNumberOfClusters:=TotalClusterCount; 
    
-     Result:=True;
+       Result:=True;
+      end; 
     finally   
      {Unlock Volume}
      Volume.ReaderUnlock;
@@ -19175,13 +19245,19 @@ begin
     try
      if Drive.FileSystem = nil then Exit;
      
-     {Get Values}
-     ASectorsPerCluster:=0;  //To Do //API
-     ABytesPerSector:=Volume.FileSystem.SectorSize;
-     ANumberOfFreeClusters:=0;  //To Do //API
-     ATotalNumberOfClusters:=0;  //To Do //API
-     
-     Result:=True;
+     {Get Drive Information}
+     if Drive.FileSystem.GetDriveInformation(ClusterSize,TotalClusterCount,FreeClusterCount) then
+      begin
+       if Drive.FileSystem.SectorSize = 0 then Exit;
+       
+       {Get Values}
+       ASectorsPerCluster:=ClusterSize div Drive.FileSystem.SectorSize;
+       ABytesPerSector:=Drive.FileSystem.SectorSize;
+       ANumberOfFreeClusters:=FreeClusterCount;
+       ATotalNumberOfClusters:=TotalClusterCount; 
+   
+       Result:=True;
+      end; 
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
@@ -19810,6 +19886,69 @@ function TFileSysDriver.GetFileAttributes(const AFileName:String):LongWord;
 begin
  {}
  Result:=FileGetAttr(AFileName);
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.GetFileInformationByHandle(AHandle:THandle;var AFileInformation:TByHandleFileInformation):Boolean;
+{Get the defaukts of an existing entry with an open Handle}
+{Note: Returned times are UTC}
+var
+ FileHandle:TFileHandle;
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileInformationByHandle Handle = ' + IntToHex(AHandle,8));
+  {$ENDIF}
+ 
+  {Get the Handle}
+  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_WRITE); //To Do //Reader
+  if FileHandle = nil then Exit;
+  try
+   {Check the Mode}
+   if FileHandle.OpenMode = fmOpenWrite then Exit;
+   
+   {Check the Handle}
+   if FileHandle.HandleEntry = nil then Exit;
+   
+   {Get Information}
+   AFileInformation.ftCreationTime:=FileHandle.HandleEntry.CreateTime;
+   AFileInformation.ftLastAccessTime:=FileHandle.HandleEntry.AccessTime;
+   AFileInformation.ftLastWriteTime:=FileHandle.HandleEntry.WriteTime;
+   AFileInformation.nFileSizeHigh:=TULargeInteger(FileHandle.HandleEntry.Size).HighPart;
+   AFileInformation.nFileSizeLow:=TULargeInteger(FileHandle.HandleEntry.Size).LowPart;
+   AFileInformation.nNumberOfLinks:=1; //To Do //API
+   AFileInformation.nFileIndexHigh:=0; //To Do //API
+   AFileInformation.nFileIndexLow:=PtrUInt(FileHandle.HandleEntry);
+  
+   {Check Drive}
+   if FileHandle.Drive <> nil then
+    begin
+     if FileHandle.Drive.FileSystem = nil then Exit;
+     
+     AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileHandle.Drive.FileSystem.MaskAttributes);
+     AFileInformation.dwVolumeSerialNumber:=FileHandle.Drive.VolumeSerial;
+    end
+   else if FileHandle.Volume <> nil then  
+    begin
+     if FileHandle.Volume.FileSystem = nil then Exit;
+     
+     AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileHandle.Volume.FileSystem.MaskAttributes);
+     AFileInformation.dwVolumeSerialNumber:=FileHandle.Volume.VolumeSerial;
+    end;
+  
+   Result:=True;
+  finally
+   {Unlock Handle}
+   FileHandle.WriterUnlock;
+  end; 
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -23498,6 +23637,10 @@ begin
   FVendorId:=FController.VendorId(Self);
   FDeviceId:=FController.DeviceId(Self);
  
+  FManufacturer:=FController.Manufacturer(Self);
+  FProduct:=FController.Product(Self);
+  FSerialNumber:=FController.SerialNumber(Self);
+  
   FHostBus:=FController.HostBus(Self);
   FBusNumber:=FController.BusNumber(Self);
   FDeviceNumber:=FController.DeviceNumber(Self);
@@ -23864,7 +24007,7 @@ begin
  {}
  Result:=False;
 
- if not ReaderLock then Exit;
+ if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.DeletePartition (Name=' + Name + ')');
@@ -23894,7 +24037,7 @@ begin
     end;   
    end;
  finally  
-  ReaderUnlock;
+  WriterUnlock;
  end; 
 end;
 
@@ -27013,6 +27156,15 @@ end;
 
 {==============================================================================}
 
+function TDiskImage.ReaderConvert:Boolean; 
+{Convert a Reader lock to a Writer lock}
+begin
+ {}
+ Result:=(SynchronizerReaderConvert(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TDiskImage.WriterLock:Boolean;
 begin
  {}
@@ -27025,6 +27177,15 @@ function TDiskImage.WriterUnlock:Boolean;
 begin
  {}
  Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TDiskImage.WriterConvert:Boolean;
+{Convert a Writer lock to a Reader lock}
+begin
+ {}
+ Result:=(SynchronizerWriterConvert(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -27202,18 +27363,23 @@ begin
   if FImageNo = 0 then Exit;
  
   {Check for already Mounted}
-  if FDevice <> nil then Exit;
- 
-  {Get the Recognizer}
-  Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
-  if Recognizer <> nil then
+  if FDevice = nil then
    begin
-    {Mount Image}
-    Result:=Recognizer.MountImage(Self);
-    
-    {Unlock Recognizer}
-    Recognizer.ReaderUnlock;
-   end;
+    {Get the Recognizer}
+    Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
+    if Recognizer <> nil then
+     begin
+      {Mount Image}
+      Result:=Recognizer.MountImage(Self);
+      
+      {Unlock Recognizer}
+      Recognizer.ReaderUnlock;
+     end;
+   end
+  else
+   begin
+    Result:=True;
+   end; 
  finally  
   WriterUnlock;
  end; 
@@ -28880,7 +29046,7 @@ end;
 function TDiskPartitioner.CreatePartition(ADevice:TDiskDevice;AParent:TDiskPartition;APartitionId:Byte;ACount:LongWord;AActive:Boolean):Boolean;
 {Create a new Partition on the specified Device with the specified Parent (Optional)}
 {Note: When creating Logical partitions the passed Parent must be the Root Extended}
-{Note: Caller must hold the device lock and parent writer lock}
+{Note: Caller must hold the device and parent writer locks}
 var
  Start:LongWord;
  Count:LongWord;
@@ -28890,6 +29056,7 @@ var
  LargeCount:Int64;
  PartitionId:Byte;
  SiblingNo:Integer;
+ Volume:TDiskVolume;
  Parent:TDiskPartition;
  Sibling:TDiskPartition;
  SiblingEntry:TPartitionEntry;
@@ -28925,6 +29092,30 @@ begin
    if AParent = nil then
     begin
      {First Level}
+     {Check Partitions}
+     if FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
+      begin
+       {Check Volume}
+       Volume:=FDriver.GetVolumeByDevice(ADevice,True,FILESYS_LOCK_WRITE);
+       if Volume <> nil then
+        begin
+         {Check File System Type}
+         if Volume.FileSysType = fsUNKNOWN then
+          begin
+           {Remove Volume}
+           Volume.Free;
+          end
+         else
+          begin
+           {Unlock Volume}
+           Volume.WriterUnlock;
+           
+           {Error, should have failed AcceptPartition}
+           Exit;
+          end;          
+        end;    
+      end;
+
      {Read Partition Record}
      if not ReadSectors(ADevice,nil,0,1,PartitionRecord^) then Exit;
      
@@ -29166,8 +29357,9 @@ end;
 
 function TDiskPartitioner.DeletePartition(APartition:TDiskPartition):Boolean;
 {Delete the specified Partition from the specified Device}
-{Note: Caller must hold the partition writer lock}
+{Note: Caller must hold the device and partition writer locks}
 var
+ Device:TDiskDevice;
  Volume:TDiskVolume;
  Root:TDiskPartition;
  Child:TDiskPartition;
@@ -29227,8 +29419,19 @@ begin
      {Write Partition Record}
      if not WriteSectors(APartition.Device,nil,0,1,PartitionRecord^) then Exit;
      
+     {Get Device}
+     Device:=APartition.Device;
+     
      {Delete Partition}
      APartition.Free;
+     
+     {Check Partitions}
+     if FDriver.GetPartitionByDevice(Device,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
+      begin
+       {Locate Volumes and Drives}
+       FDriver.LocateVolumes;
+       FDriver.LocateDrives;
+      end;
     end
    else
     begin
@@ -33406,6 +33609,14 @@ begin
  finally  
   ReaderUnlock;
  end; 
+end;
+
+{==============================================================================}
+
+function TFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; 
+begin
+ {Virtual Base Method - No Function}
+ Result:=False;
 end;
 
 {==============================================================================}
@@ -48892,7 +49103,7 @@ begin
  {}
  Result:=False;
 
- if not WriterLock then Exit;
+ if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TATADiskController.LocateDevices');
@@ -48904,7 +49115,7 @@ begin
   {Nothing (ATA devices are added and removed by notification}
   Result:=True;
  finally  
-  WriterUnlock;
+  ReaderUnlock;
  end; 
 end; 
 
@@ -48948,7 +49159,7 @@ begin
  {}
  Result:=False;
 
- if not WriterLock then Exit;
+ if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TATAPIDiskController.LocateDevices');
@@ -48960,7 +49171,7 @@ begin
   {Nothing (ATAPI devices are added and removed by notification}
   Result:=True;
  finally  
-  WriterUnlock;
+  ReaderUnlock;
  end; 
 end; 
 
@@ -49004,7 +49215,7 @@ begin
  {}
  Result:=False;
 
- if not WriterLock then Exit;
+ if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TSCSIDiskController.LocateDevices');
@@ -49016,7 +49227,7 @@ begin
   {Nothing (SCSI devices are added and removed by notification}
   Result:=True;
  finally  
-  WriterUnlock;
+  ReaderUnlock;
  end; 
 end; 
 
@@ -49060,7 +49271,7 @@ begin
  {}
  Result:=False;
 
- if not WriterLock then Exit;
+ if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TUSBDiskController.LocateDevices');
@@ -49072,7 +49283,7 @@ begin
   {Nothing (USB devices are added and removed by notification}
   Result:=True;
  finally  
-  WriterUnlock;
+  ReaderUnlock;
  end; 
 end; 
 
@@ -50114,7 +50325,7 @@ begin
  {}
  Result:=False;
 
- if not WriterLock then Exit;
+ if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TMMCDiskController.LocateDevices');
@@ -50126,7 +50337,7 @@ begin
   {Nothing (MMC devices are added and removed by notification}
   Result:=True;
  finally  
-  WriterUnlock;
+  ReaderUnlock;
  end; 
 end; 
 
@@ -51506,6 +51717,7 @@ begin
  UltiboGetDriveFreeSpaceExHandler:=FSGetDriveFreeSpaceEx;
  UltiboGetDriveTotalSpaceHandler:=FSGetDriveTotalSpace;
  UltiboGetDriveTotalSpaceExHandler:=FSGetDriveTotalSpaceEx;
+ UltiboGetDriveInformationHandler:=FSGetDriveInformation;
  UltiboGetCurrentDriveHandler:=FSGetCurrentDrive;
  UltiboSetCurrentDriveHandler:=FSSetCurrentDrive;
  {File Functions (Compatibility)}
@@ -51535,6 +51747,7 @@ begin
  UltiboSetFileShortNameAHandler:=FSSetFileShortNameEx; {Not FSSetFileShortName}
  UltiboCreateHardLinkAHandler:=FSCreateHardLink;
  UltiboCreateSymbolicLinkAHandler:=FSCreateSymbolicLink;
+ UltiboGetFileInformationByHandleHandler:=FSGetFileInformationByHandle;
  {Directory Functions (Compatibility)}
  UltiboCreateDirectoryAHandler:=FSCreateDirectory;
  UltiboRemoveDirectoryAHandler:=FSRemoveDirectory;
@@ -51596,6 +51809,7 @@ begin
      Logging.Logging.Device.DeviceType:=LOGGING_TYPE_FILE;
      Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
      Logging.Logging.Device.DeviceData:=nil;
+     Logging.Logging.Device.DeviceDescription:=FILESYS_LOGGING_DESCRIPTION;
      {Logging}
      Logging.Logging.LoggingState:=LOGGING_STATE_DISABLED;
      Logging.Logging.DeviceStart:=FileSysLoggingStart;
@@ -52050,6 +52264,20 @@ begin
 
  {Get Drive Total Space Ex}
  Result:=FileSysDriver.GetDriveTotalSpaceEx(ADrive);
+end;
+
+{==============================================================================}
+
+function FSGetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; inline;   
+begin
+ {}
+ Result:=False;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Drive Information}
+ Result:=FileSysDriver.GetDriveInformation(APath,AClusterSize,ATotalClusterCount,AFreeClusterCount);
 end;
 
 {==============================================================================}
@@ -53016,6 +53244,20 @@ end;
 
 {==============================================================================}
 
+function FSGetFileInformationByHandle(AHandle:THandle;var AFileInformation:TByHandleFileInformation):Boolean; inline;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get File Information By Handle}
+ Result:=FileSysDriver.GetFileInformationByHandle(AHandle,AFileInformation);
+end;
+
+{==============================================================================}
+
 function FSGetFileSize(AHandle:THandle;var AFileSizeHigh:LongWord):LongWord; inline;
 begin
  {}
@@ -53184,7 +53426,7 @@ end;
 
 {==============================================================================}
 
-function FSSetFileShortName(const AFileName,AShortName:String):Boolean;
+function FSSetFileShortName(const AFileName,AShortName:String):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -53198,7 +53440,7 @@ end;
 
 {==============================================================================}
 
-function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean;
+function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -53212,7 +53454,7 @@ end;
 
 {==============================================================================}
 
-function FSCreateHardLink(const ALinkName,AFileName:String):Boolean;
+function FSCreateHardLink(const ALinkName,AFileName:String):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -53226,7 +53468,7 @@ end;
 
 {==============================================================================}
 
-function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean;
+function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -53237,7 +53479,7 @@ begin
  {Create Symbolic Link}
  Result:=FileSysDriver.CreateSymbolicLink(ALinkName,ATargetName,ADirectory);
 end;
-
+ 
 {==============================================================================}
 {Directory Functions}
 function FSCreateDirectory(const APathName:String):Boolean; inline;

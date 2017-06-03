@@ -175,7 +175,7 @@ type
  TUARTDeviceWrite = function(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
  TUARTDeviceStatus = function(UART:PUARTDevice):LongWord;
- TUARTDeviceProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+ TUARTDeviceGetProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
  
  TUARTDevice = record
   {Device Properties}
@@ -190,7 +190,7 @@ type
   DeviceRead:TUARTDeviceRead;                     {A Device specific DeviceRead method implementing the standard UART device interface (Mandatory)}
   DeviceWrite:TUARTDeviceWrite;                   {A Device specific DeviceWrite method implementing the standard UART device interface (Mandatory)}
   DeviceStatus:TUARTDeviceStatus;                 {A Device specific DeviceStatus method implementing the standard UART device interface (Or nil if the default method is suitable)}
-  DeviceProperties:TUARTDeviceProperties;         {A Device specific DeviceProperties method implementing the standard UART device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TUARTDeviceGetProperties;   {A Device specific DeviceGetProperties method implementing the standard UART device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   ReceiveWait:TEventHandle;                       {Read wait event}
@@ -225,7 +225,9 @@ function UARTDeviceRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var 
 function UARTDeviceWrite(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
 function UARTDeviceStatus(UART:PUARTDevice):LongWord;
-function UARTDeviceProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+
+function UARTDeviceProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord; inline;
+function UARTDeviceGetProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
   
 function UARTDeviceCreate:PUARTDevice;
 function UARTDeviceCreateEx(Size:LongWord):PUARTDevice;
@@ -250,7 +252,8 @@ function UARTSerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:Lon
 function UARTSerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
 function UARTSerialDeviceStatus(Serial:PSerialDevice):LongWord;
-function UARTSerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+
+function UARTSerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
  
 {==============================================================================}
 {UART Helper Functions}
@@ -319,6 +322,14 @@ end;
 {==============================================================================}
 {UART Functions}
 function UARTDeviceOpen(UART:PUARTDevice;BaudRate,DataBits,StopBits,Parity,FlowControl:LongWord):LongWord;
+{Open a UART device ready for sending and receiving}
+{UART: The UART device to open}
+{BaudRate: Baud rate for the connection (eg 9600, 57600, 115200 etc}
+{DataBits: Size of the data (eg SERIAL_DATA_8BIT)}
+{StopBits: Number of stop bits (eg SERIAL_STOP_1BIT)}
+{Parity: Parity type for the data (eg SERIAL_PARITY_NONE)}
+{FlowControl: Flow control for the connection (eg SERIAL_FLOW_NONE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -382,6 +393,9 @@ end;
 {==============================================================================}
 
 function UARTDeviceClose(UART:PUARTDevice):LongWord;
+{Close a UART device and terminate sending and receiving}
+{UART: The UART device to close}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -440,6 +454,13 @@ end;
 {==============================================================================}
  
 function UARTDeviceRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Read data from a UART device}
+{UART: The UART device to read from}
+{Buffer: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Flags: The flags to control reading (eg UART_READ_NON_BLOCK)}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  {Setup Result}
@@ -488,6 +509,13 @@ end;
 {==============================================================================}
 
 function UARTDeviceWrite(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Write data to a UART device}
+{UART: The UART device to write to}
+{Buffer: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Flags: The flags to control writing (eg UART_WRITE_NON_BLOCK)}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  {Setup Result}
@@ -536,6 +564,9 @@ end;
 {==============================================================================}
 
 function UARTDeviceStatus(UART:PUARTDevice):LongWord;
+{Get the current line status of a UART device}
+{UART: The UART device to get the status from}
+{Return: A set of flags containing the device status (eg UART_STATUS_RTS)}
 begin
  {}
  Result:=UART_STATUS_NONE;
@@ -575,7 +606,25 @@ end;
 
 {==============================================================================}
 
-function UARTDeviceProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+function UARTDeviceProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord; inline;
+{Get the properties for the specified UART device}
+{UART: The UART device to get properties from}
+{Properties: Pointer to a PUARTProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by UARTDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=UARTDeviceGetProperties(UART,Properties);
+end;
+
+{==============================================================================}
+
+function UARTDeviceGetProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+{Get the properties for the specified UART device}
+{UART: The UART device to get properties from}
+{Properties: Pointer to a PUARTProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -588,7 +637,7 @@ begin
  if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF UART_DEBUG}
- if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Properties');
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Get Properties');
  {$ENDIF}
  
  {Check Mode}
@@ -601,10 +650,10 @@ begin
  
  if MutexLock(UART.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(UART.DeviceProperties) then
+   if Assigned(UART.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=UART.DeviceProperties(UART,Properties);
+     {Call Device Get Properites}
+     Result:=UART.DeviceGetProperties(UART,Properties);
     end
    else
     begin
@@ -666,7 +715,7 @@ begin
  Result.DeviceRead:=nil;
  Result.DeviceWrite:=nil;
  Result.DeviceStatus:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.ReceiveWait:=INVALID_HANDLE_VALUE;
  Result.TransmitWait:=INVALID_HANDLE_VALUE;
@@ -701,7 +750,7 @@ begin
  Result.Serial.DeviceRead:=UARTSerialDeviceRead;
  Result.Serial.DeviceWrite:=UARTSerialDeviceWrite;
  Result.Serial.DeviceStatus:=UARTSerialDeviceStatus;
- Result.Serial.DeviceProperties:=UARTSerialDeviceProperties;
+ Result.Serial.DeviceGetProperties:=UARTSerialDeviceGetProperties;
  {Driver}
  Result.Serial.Properties.ReceiveDepth:=SERIAL_RECEIVE_DEPTH_DEFAULT;
  Result.Serial.Properties.TransmitDepth:=SERIAL_TRANSMIT_DEPTH_DEFAULT;
@@ -712,6 +761,8 @@ end;
 
 function UARTDeviceDestroy(UART:PUARTDevice):LongWord;
 {Destroy an existing UART entry}
+{UART: The UART device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -748,6 +799,8 @@ end;
 
 function UARTDeviceRegister(UART:PUARTDevice):LongWord;
 {Register a new UART in the UART table}
+{UART: The UART device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  UARTId:LongWord;
 begin
@@ -863,6 +916,8 @@ end;
 
 function UARTDeviceDeregister(UART:PUARTDevice):LongWord;
 {Deregister a UART from the UART table}
+{UART: The UART device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PUARTDevice;
  Next:PUARTDevice;
@@ -944,6 +999,9 @@ end;
 {==============================================================================}
 
 function UARTDeviceFind(UARTId:LongWord):PUARTDevice;
+{Find a UART device by ID in the UART table}
+{UARTId: The ID number of the UART to find}
+{Return: Pointer to UART device entry or nil if not found}
 var
  UART:PUARTDevice;
 begin
@@ -985,6 +1043,9 @@ end;
 {==============================================================================}
 
 function UARTDeviceFindByName(const Name:String):PUARTDevice; inline;
+{Find a UART device by name in the UART table}
+{Name: The name of the UART to find (eg UART0)}
+{Return: Pointer to UART device entry or nil if not found}
 begin
  {}
  Result:=PUARTDevice(DeviceFindByName(Name));
@@ -993,6 +1054,9 @@ end;
 {==============================================================================}
 
 function UARTDeviceFindByDescription(const Description:String):PUARTDevice; inline;
+{Find a UART device by description in the UART table}
+{Description: The description of the UART to find (eg BCM2836 PL011 UART)}
+{Return: Pointer to UART device entry or nil if not found}
 begin
  {}
  Result:=PUARTDevice(DeviceFindByDescription(Description));
@@ -1001,6 +1065,10 @@ end;
 {==============================================================================}
 
 function UARTDeviceEnumerate(Callback:TUARTEnumerate;Data:Pointer):LongWord;
+{Enumerate all UART devices in the UART table}
+{Callback: The callback function to call for each UART in the table}
+{Data: A private data pointer to pass to callback for each UART in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  UART:PUARTDevice;
 begin
@@ -1044,6 +1112,12 @@ end;
 {==============================================================================}
 
 function UARTDeviceNotification(UART:PUARTDevice;Callback:TUARTNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for UART device changes}
+{UART: The UART device to notify changes for (Optional, pass nil for all UART devices)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1066,6 +1140,8 @@ end;
 {==============================================================================}
 {UART Serial Functions}
 function UARTSerialDeviceOpen(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
+{Implementation of SerialDeviceOpen API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceOpen instead}
 var 
  UART:PUARTDevice;
 begin
@@ -1194,6 +1270,8 @@ end;
 {==============================================================================}
 
 function UARTSerialDeviceClose(Serial:PSerialDevice):LongWord;
+{Implementation of SerialDeviceClose API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceClose instead}
 var 
  UART:PUARTDevice;
 begin
@@ -1283,6 +1361,8 @@ end;
 {==============================================================================}
 
 function UARTSerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceRead API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceRead instead}
 var 
  Data:Pointer;
  Total:LongWord;
@@ -1428,6 +1508,8 @@ end;
 {==============================================================================}
 
 function UARTSerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceWrite API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceWrite instead}
 var 
  Data:Pointer;
  Empty:Boolean;
@@ -1584,6 +1666,8 @@ end;
 {==============================================================================}
 
 function UARTSerialDeviceStatus(Serial:PSerialDevice):LongWord;
+{Implementation of SerialDeviceStatus API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceStatus instead}
 var 
  UART:PUARTDevice;
 begin
@@ -1630,7 +1714,9 @@ end;
 
 {==============================================================================}
 
-function UARTSerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+function UARTSerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+{Implementation of SerialDeviceGetProperties API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceGetProperties instead}
 var 
  UART:PUARTDevice;
  UARTProperties:TUARTProperties;
@@ -1646,7 +1732,7 @@ begin
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {$IFDEF SERIAL_DEBUG}
- if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Properties');
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Get Properties');
  {$ENDIF}
 
  {Get UART}
@@ -1664,10 +1750,10 @@ begin
  
  if MutexLock(UART.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(UART.DeviceProperties) then
+   if Assigned(UART.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=UART.DeviceProperties(UART,@UARTProperties);
+     {Call Device Get Properites}
+     Result:=UART.DeviceGetProperties(UART,@UARTProperties);
      if Result = ERROR_SUCCESS then
       begin
        {Get Properties}
@@ -1868,6 +1954,8 @@ end;
 {==============================================================================}
 {UART Serial Helper Functions}
 function UARTSerialDeviceReceive(UART:PUARTDevice):LongWord;
+{Read data from a UART device into the receive buffer of the associated Serial device}
+{Note: Not intended to be called directly by applications}
 var
  Lock:Boolean;
  Data:Pointer;
@@ -1964,6 +2052,8 @@ end;
 {==============================================================================}
 
 function UARTSerialDeviceTransmit(UART:PUARTDevice):LongWord;
+{Write data to a UART device from the transmit buffer of the associated Serial device}
+{Note: Not intended to be called directly by applications}
 var
  Lock:Boolean;
  Data:Pointer;

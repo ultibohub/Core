@@ -68,6 +68,8 @@ const
  {Serial specific constants}
  SERIAL_NAME_PREFIX = 'Serial';  {Name prefix for Serial Devices}
 
+ SERIAL_LOGGING_DESCRIPTION = 'Serial Logging';
+ 
  SERIAL_RECEIVE_DEPTH_DEFAULT  =  SIZE_2K; {Default receive buffer size in bytes}
  SERIAL_TRANSMIT_DEPTH_DEFAULT =  SIZE_2K; {Default transmit buffer size in bytes}
  
@@ -111,6 +113,11 @@ const
  SERIAL_WRITE_NONE        = $00000000;
  SERIAL_WRITE_NON_BLOCK   = $00000001; {Do not block when writing, if the buffer is full return immediately}
  SERIAL_WRITE_PEEK_BUFFER = $00000002; {Return the number of bytes free in the transmit buffer without writing anything}
+ 
+ {Serial Flush Flags}
+ SERIAL_FLUSH_NONE     = $00000000;
+ SERIAL_FLUSH_RECEIVE  = $00000001; {Flush the receive buffer}
+ SERIAL_FLUSH_TRANSMIT = $00000002; {Flush the transmit buffer}
  
  {Serial Status Flags}
  SERIAL_STATUS_NONE          = $00000000;
@@ -192,8 +199,9 @@ type
  TSerialDeviceRead = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  TSerialDeviceWrite = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
+ TSerialDeviceFlush = function(Serial:PSerialDevice;Flags:LongWord):LongWord;
  TSerialDeviceStatus = function(Serial:PSerialDevice):LongWord;
- TSerialDeviceProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+ TSerialDeviceGetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
  
  TSerialDevice = record
   {Device Properties}
@@ -206,8 +214,9 @@ type
   DeviceClose:TSerialDeviceClose;                 {A Device specific DeviceClose method implementing the standard Serial device interface (Mandatory)}
   DeviceRead:TSerialDeviceRead;                   {A Device specific DeviceRead method implementing the standard Serial device interface (Mandatory)}
   DeviceWrite:TSerialDeviceWrite;                 {A Device specific DeviceWrite method implementing the standard Serial device interface (Mandatory)}
+  DeviceFlush:TSerialDeviceFlush;                 {A Device specific DeviceFlush method implementing the standard Serial device interface (Or nil if the default method is suitable)}   
   DeviceStatus:TSerialDeviceStatus;               {A Device specific DeviceStatus method implementing the standard Serial device interface (Or nil if the default method is suitable)}
-  DeviceProperties:TSerialDeviceProperties;       {A Device specific DeviceProperties method implementing the standard Serial device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TSerialDeviceGetProperties; {A Device specific DeviceGetProperties method implementing the standard Serial device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   Receive:TSerialBuffer;                          {Serial receive buffer}
@@ -259,8 +268,11 @@ function SerialDeviceClose(Serial:PSerialDevice):LongWord;
 function SerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function SerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
+function SerialDeviceFlush(Serial:PSerialDevice;Flags:LongWord):LongWord;
 function SerialDeviceStatus(Serial:PSerialDevice):LongWord;
-function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+
+function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord; inline;
+function SerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
   
 function SerialDeviceCreate:PSerialDevice;
 function SerialDeviceCreateEx(Size:LongWord):PSerialDevice;
@@ -386,7 +398,7 @@ begin
  SerialDeviceEnumerate(SerialLoggingDeviceEnum,nil);
  
  {Register Notification}
- SerialDeviceNotification(nil,SerialLoggingDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER,NOTIFIER_FLAG_NONE);
+ SerialDeviceNotification(nil,SerialLoggingDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER,NOTIFIER_FLAG_WORKER);
  
  {Register Platform Serial Handlers}
  SerialAvailableHandler:=SysSerialAvailable;
@@ -402,6 +414,16 @@ end;
 {==============================================================================}
 {Serial Functions}
 function SerialDeviceOpen(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
+{Open a Serial device ready for sending and receiving}
+{Serial: The Serial device to open}
+{BaudRate: Baud rate for the connection (eg 9600, 57600, 115200 etc}
+{DataBits: Size of the data (eg SERIAL_DATA_8BIT)}
+{StopBits: Number of stop bits (eg SERIAL_STOP_1BIT)}
+{Parity: Parity type for the data (eg SERIAL_PARITY_NONE)}
+{FlowControl: Flow control for the connection (eg SERIAL_FLOW_NONE)}
+{ReceiveDepth: Size of the receive buffer (0 = Default size)}
+{TransmitDepth: Size of the transmit buffer (0 = Default size)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -464,6 +486,9 @@ end;
 {==============================================================================}
 
 function SerialDeviceClose(Serial:PSerialDevice):LongWord;
+{Close a Serial device and terminate sending and receiving}
+{Serial: The Serial device to close}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -526,6 +551,13 @@ end;
 {==============================================================================}
 
 function SerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Read data from a Serial device}
+{Serial: The Serial device to read from}
+{Buffer: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Flags: The flags to control reading (eg SERIAL_READ_NON_BLOCK)}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  {Setup Result}
@@ -570,6 +602,13 @@ end;
 {==============================================================================}
 
 function SerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Write data to a Serial device}
+{Serial: The Serial device to write to}
+{Buffer: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Flags: The flags to control writing (eg SERIAL_WRITE_NON_BLOCK)}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  {Setup Result}
@@ -613,7 +652,70 @@ end;
 
 {==============================================================================}
 
+function SerialDeviceFlush(Serial:PSerialDevice;Flags:LongWord):LongWord;
+{Discard the contents of the receive and/or transmit buffers of a Serial device}
+{Serial: The Serial device to flush}
+{Flags: The flags to indicate what to flush (eg SERIAL_FLUSH_RECEIVE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Serial}
+ if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF SERIAL_DEBUG}
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Flush (Flags=' + IntToHex(Flags,8) + ')');
+ {$ENDIF}
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
+ 
+ if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    if Assigned(Serial.DeviceFlush) then
+     begin
+      {Call Device Flush}
+      Result:=Serial.DeviceFlush(Serial,Flags);
+     end
+    else
+     begin 
+      {Check Receive}
+      if (Flags and SERIAL_FLUSH_RECEIVE) <> 0 then
+       begin
+        {Flush Receive}
+        EventReset(Serial.Receive.Wait);
+        Serial.Receive.Start:=0;
+        Serial.Receive.Count:=0;
+       end;
+      
+      {Check Transmit}
+      if (Flags and SERIAL_FLUSH_TRANSMIT) <> 0 then  
+       begin
+        {Flush Transmit}
+        EventSet(Serial.Transmit.Wait);
+        Serial.Transmit.Start:=0;
+        Serial.Transmit.Count:=0;
+       end;
+      
+      {Return Result}
+      Result:=ERROR_SUCCESS;
+     end;
+   finally
+    MutexUnlock(Serial.Lock);
+   end; 
+  end
+end;
+
+{==============================================================================}
+
 function SerialDeviceStatus(Serial:PSerialDevice):LongWord;
+{Get the current line status of a Serial device}
+{Serial: The Serial device to get the status from}
+{Return: A set of flags containing the device status (eg SERIAL_STATUS_RTS)}
 begin
  {}
  Result:=SERIAL_STATUS_NONE;
@@ -649,7 +751,25 @@ end;
 
 {==============================================================================}
  
-function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord; inline;
+{Get the properties for the specified Serial device}
+{Serial: The Serial device to get properties from}
+{Properties: Pointer to a PSerialProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by SerialDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=SerialDeviceGetProperties(Serial,Properties);
+end;
+
+{==============================================================================}
+
+function SerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+{Get the properties for the specified Serial device}
+{Serial: The Serial device to get properties from}
+{Properties: Pointer to a PSerialProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -662,7 +782,7 @@ begin
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SERIAL_DEBUG}
- if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Properties');
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Get Properties');
  {$ENDIF}
  
  {Check Open}
@@ -671,10 +791,10 @@ begin
  
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(Serial.DeviceProperties) then
+   if Assigned(Serial.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=Serial.DeviceProperties(Serial,Properties);
+     {Call Device Get Properites}
+     Result:=Serial.DeviceGetProperties(Serial,Properties);
     end
    else
     begin
@@ -734,8 +854,9 @@ begin
  Result.DeviceClose:=nil;
  Result.DeviceRead:=nil;
  Result.DeviceWrite:=nil;
+ Result.DeviceFlush:=nil;
  Result.DeviceStatus:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Receive.Wait:=INVALID_HANDLE_VALUE;
  Result.Transmit.Wait:=INVALID_HANDLE_VALUE;
@@ -775,6 +896,8 @@ end;
 
 function SerialDeviceDestroy(Serial:PSerialDevice):LongWord;
 {Destroy an existing Serial entry}
+{Serial: The serial device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -816,6 +939,8 @@ end;
 
 function SerialDeviceRegister(Serial:PSerialDevice):LongWord;
 {Register a new Serial in the Serial table}
+{Serial: The serial device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SerialId:LongWord;
 begin
@@ -901,6 +1026,8 @@ end;
 
 function SerialDeviceDeregister(Serial:PSerialDevice):LongWord;
 {Deregister a Serial from the Serial table}
+{Serial: The serial device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PSerialDevice;
  Next:PSerialDevice;
@@ -975,6 +1102,9 @@ end;
 {==============================================================================}
 
 function SerialDeviceFind(SerialId:LongWord):PSerialDevice;
+{Find a serial device by ID in the serial table}
+{SerialId: The ID number of the serial to find}
+{Return: Pointer to serial device entry or nil if not found}
 var
  Serial:PSerialDevice;
 begin
@@ -1016,6 +1146,9 @@ end;
 {==============================================================================}
 
 function SerialDeviceFindByName(const Name:String):PSerialDevice; inline;
+{Find a serial device by name in the serial table}
+{Name: The name of the serial to find (eg Serial0)}
+{Return: Pointer to serial device entry or nil if not found}
 begin
  {}
  Result:=PSerialDevice(DeviceFindByName(Name));
@@ -1024,6 +1157,9 @@ end;
 {==============================================================================}
 
 function SerialDeviceFindByDescription(const Description:String):PSerialDevice; inline;
+{Find a serial device by description in the serial table}
+{Description: The description of the serial to find (eg BCM2836 PL011 UART)}
+{Return: Pointer to serial device entry or nil if not found}
 begin
  {}
  Result:=PSerialDevice(DeviceFindByDescription(Description));
@@ -1032,6 +1168,10 @@ end;
 {==============================================================================}
 
 function SerialDeviceEnumerate(Callback:TSerialEnumerate;Data:Pointer):LongWord;
+{Enumerate all serial devices in the serial table}
+{Callback: The callback function to call for each serial in the table}
+{Data: A private data pointer to pass to callback for each serial in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Serial:PSerialDevice;
 begin
@@ -1075,6 +1215,12 @@ end;
 {==============================================================================}
 
 function SerialDeviceNotification(Serial:PSerialDevice;Callback:TSerialNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for serial device changes}
+{Serial: The serial device to notify changes for (Optional, pass nil for all serial devices)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1097,6 +1243,8 @@ end;
 {==============================================================================}
 {Serial Logging Functions}
 function SerialLoggingStart(Logging:PLoggingDevice):LongWord;
+{Implementation of LoggingDeviceStart API for Serial Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceStart instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1129,6 +1277,8 @@ end;
 {==============================================================================}
 
 function SerialLoggingStop(Logging:PLoggingDevice):LongWord;
+{Implementation of LoggingDeviceStop API for Serial Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceStop instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1161,6 +1311,8 @@ end;
 {==============================================================================}
 
 function SerialLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
+{Implementation of LoggingDeviceOutput API for Serial Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceOutput instead}
 var
  Count:LongWord;
 begin
@@ -1585,6 +1737,7 @@ end;
 {==============================================================================}
 {Serial Logging Helper Functions}
 function SerialLoggingDeviceAdd(Serial:PSerialDevice):LongWord;
+{Add a new serial logging device on receipt of a device register notification}
 var
  Status:LongWord;
  Logging:PSerialLogging;
@@ -1607,6 +1760,7 @@ begin
        Logging.Logging.Device.DeviceType:=LOGGING_TYPE_SERIAL;
        Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
        Logging.Logging.Device.DeviceData:=@Serial.Device;
+       Logging.Logging.Device.DeviceDescription:=SERIAL_LOGGING_DESCRIPTION;
        {Logging}
        Logging.Logging.LoggingState:=LOGGING_STATE_DISABLED;
        Logging.Logging.DeviceStart:=SerialLoggingStart;
@@ -1644,6 +1798,7 @@ end;
 {==============================================================================}
 
 function SerialLoggingDeviceRemove(Serial:PSerialDevice):LongWord;
+{Remove a serial logging device on receipt of a device deregister notification}
 var
  Status:LongWord;
  Logging:PSerialLogging;
@@ -1772,6 +1927,8 @@ end;
 {==============================================================================}
 
 function SerialLoggingDeviceEnum(Serial:PSerialDevice;Data:Pointer):LongWord;
+{Enumeration callback for serial logging initialization}
+{Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=ERROR_SUCCESS;
@@ -1791,6 +1948,8 @@ end;
 {==============================================================================}
 
 function SerialLoggingDeviceNotify(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+{Notification callback for serial logging device creation or remove}
+{Note: Not intended to be called directly by applications}
 var
  Serial:PSerialDevice;
 begin

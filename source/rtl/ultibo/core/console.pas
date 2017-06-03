@@ -125,6 +125,7 @@ const
 const
  {Framebuffer Console specific constants}
  FRAMEBUFFER_CONSOLE_TITLE = 'Ultibo Core (Release: ' + ULTIBO_RELEASE_NAME + ' Version: ' + ULTIBO_RELEASE_VERSION + ' Date: ' + ULTIBO_RELEASE_DATE + ')';
+ FRAMEBUFFER_CONSOLE_DESCRIPTION = 'Framebuffer Console';  {Description of the Framebuffer Console device}
  
 {==============================================================================}
 type
@@ -651,7 +652,7 @@ begin
  FramebufferDeviceEnumerate(ConsoleFramebufferDeviceEnum,nil);
  
  {Register Notification}
- FramebufferDeviceNotification(nil,ConsoleFramebufferDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_ENABLE or DEVICE_NOTIFICATION_DISABLE,NOTIFIER_FLAG_NONE);
+ FramebufferDeviceNotification(nil,ConsoleFramebufferDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_ENABLE or DEVICE_NOTIFICATION_DISABLE,NOTIFIER_FLAG_UNLOCK);
  
  {Setup Platform Console Handlers}
  ConsoleWriteCharHandler:=SysConsoleWriteChar;
@@ -2064,8 +2065,8 @@ begin
     if Window.FontHeight = 0 then Window.FontHeight:=1;
     
     {Get Width / Height}
-    Window.Width:=(((Window.X2 - Window.X1) + 1) - Window.Borderwidth) div Window.FontWidth;
-    Window.Height:=(((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth) div Window.FontHeight;
+    Window.Width:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) div Window.FontWidth;
+    Window.Height:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) div Window.FontHeight;
     if (Window.Width < 2) or (Window.Height < 2) then
      begin
       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to get window width and height for console window');
@@ -2078,8 +2079,8 @@ begin
     if Console.FontRatio > 0 then
      begin
       {Get RemainX,Y}
-      RemainX:=(((Window.X2 - Window.X1) + 1) - Window.Borderwidth) mod Window.FontWidth;
-      RemainY:=(((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth) mod Window.FontHeight;
+      RemainX:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) mod Window.FontWidth;
+      RemainY:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) mod Window.FontHeight;
       
       {Check Remain X}
       if RemainX < 4 then
@@ -2659,15 +2660,15 @@ begin
    Window.Y2:=Y2;
   
    {Get Width / Height}
-   Window.Width:=(((Window.X2 - Window.X1) + 1) - Window.Borderwidth) div Window.FontWidth;
-   Window.Height:=(((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth) div Window.FontHeight;
+   Window.Width:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) div Window.FontWidth;
+   Window.Height:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) div Window.FontHeight;
    
    {Check Font Ratio}
    if Window.Console.FontRatio > 0 then
     begin
      {Get RemainX,Y}
-     RemainX:=(((Window.X2 - Window.X1) + 1) - Window.Borderwidth) mod Window.FontWidth;
-     RemainY:=(((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth) mod Window.FontHeight;
+     RemainX:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) mod Window.FontWidth;
+     RemainY:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) mod Window.FontHeight;
      
      {Check Remain X}
      if RemainX < 4 then
@@ -2744,7 +2745,7 @@ begin
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
+ {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
  
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
@@ -3736,15 +3737,15 @@ begin
     if Window.FontHeight = 0 then Window.FontHeight:=1;
    
     {Get Width / Height}
-    Window.Width:=(((Window.X2 - Window.X1) + 1) - Window.Borderwidth) div Window.FontWidth;
-    Window.Height:=(((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth) div Window.FontHeight;
+    Window.Width:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) div Window.FontWidth;
+    Window.Height:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) div Window.FontHeight;
     
     {Check Font Ratio}
     if Window.Console.FontRatio > 0 then
      begin
       {Get RemainX,Y}
-      RemainX:=(((Window.X2 - Window.X1) + 1) - Window.Borderwidth) mod Window.FontWidth;
-      RemainY:=(((Window.Y2 - Window.Y1) + 1) - Window.Borderwidth) mod Window.FontHeight;
+      RemainX:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) mod Window.FontWidth;
+      RemainY:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) mod Window.FontHeight;
       
       {Check Remain X}
       if RemainX < 4 then
@@ -7957,6 +7958,7 @@ begin
      Console.Console.Device.DeviceType:=CONSOLE_TYPE_FRAMEBUFFER;
      Console.Console.Device.DeviceFlags:=CONSOLE_FLAG_BLINK_CURSOR or CONSOLE_FLAG_COLOR or CONSOLE_FLAG_FONT or CONSOLE_FLAG_FULLSCREEN;
      Console.Console.Device.DeviceData:=@Framebuffer.Device;
+     Console.Console.Device.DeviceDescription:=FRAMEBUFFER_CONSOLE_DESCRIPTION + ' (' + DeviceGetName(@Framebuffer.Device) + ')';
      {Console}
      Console.Console.ConsoleState:=CONSOLE_STATE_CLOSED;
      Console.Console.ConsoleMode:=CONSOLE_MODE_PIXEL;

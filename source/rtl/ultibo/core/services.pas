@@ -207,6 +207,7 @@ const
  {UPnP constants}
  
  {SysLog constants}
+ SYSLOG_LOGGING_DESCRIPTION = 'SysLog Logging';
  
  {SysLog Facility codes}
  SYSLOG_FACILITY_KERNEL   = 0;  {kernel messages}
@@ -2926,6 +2927,7 @@ begin
          Logging.Logging.Device.DeviceType:=LOGGING_TYPE_SYSLOG;
          Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
          Logging.Logging.Device.DeviceData:=nil;
+         Logging.Logging.Device.DeviceDescription:=SYSLOG_LOGGING_DESCRIPTION;
          {Logging}
          Logging.Logging.LoggingState:=LOGGING_STATE_DISABLED;
          Logging.Logging.DeviceStart:=SysLogLoggingStart;
@@ -3541,6 +3543,8 @@ begin
   LOGGING_FACILITY_TOUCH:Result:=SYSLOG_FACILITY_SYSTEM;
   LOGGING_FACILITY_VIDEO:Result:=SYSLOG_FACILITY_SYSTEM;
   LOGGING_FACILITY_CODEC:Result:=SYSLOG_FACILITY_SYSTEM;
+  LOGGING_FACILITY_NFS:Result:=SYSLOG_FACILITY_SYSTEM;
+  LOGGING_FACILITY_RPC:Result:=SYSLOG_FACILITY_SYSTEM;
   
   LOGGING_FACILITY_USER:Result:=SYSLOG_FACILITY_USER; 
  end;

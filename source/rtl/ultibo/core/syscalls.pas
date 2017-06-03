@@ -74,7 +74,7 @@ Syscalls
     -mfpu=vfp
     -mfloat-abi=hard
    
-   Raspberry Pi2/3 (32-bit)
+   Raspberry Pi2/3 and QEMU VersatilePB (32-bit)
 
     -mabi=aapcs
     -marm
@@ -82,7 +82,7 @@ Syscalls
     -mfpu=vfpv3-d16
     -mfloat-abi=hard
    
-   Raspberry Pi3 (64-bit)
+   Raspberry Pi3 and QEMU VersatilePB (64-bit)
    
     -mabi=lp64 (Note: Supported only by later versions of GCC)
     -march=armv8-a
@@ -196,6 +196,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,F
 
 //To Do //Sockets support
         //Pthreads support
+        //Libstdc++ support
         
 {==============================================================================}
 {Global definitions}
@@ -944,6 +945,7 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure SyscallsInit;
+procedure SyscallsQuit;
 
 {==============================================================================}
 {Syscalls Functions (Standard)}
@@ -1013,6 +1015,10 @@ function _write_r(ptr: P_reent; fd: int; buf: Pointer; cnt: size_t): _ssize_t; c
 function mkdir(path: PChar; mode: int): int; cdecl; public name 'mkdir';
 function sysconf(name: int):int; cdecl; public name 'sysconf';
        
+{==============================================================================}
+{Syscalls Functions (Pthread)}
+//TestingPThreads
+     
 {==============================================================================}
 {Syscalls Helper Functions}
 procedure __malloc_lock(ptr: P_reent); cdecl; public name '__malloc_lock';
@@ -1090,6 +1096,14 @@ var
  SyscallsHeapEnd:Pointer;
  SyscallsHeapSize:LongWord;
  SyscallsHeapLock:TMutexHandle = INVALID_HANDLE_VALUE;
+ 
+ //__exidx_end //__exidx_start //TestingLIBSTDC++ //Possibly not required, used internally by Libgcc etc?
+ 
+ //__preinit_array_start //__preinit_array_end //TestingLIBSTDC++
+ 
+ //__init_array_start //__init_array_end //TestingLIBSTDC++
+ 
+ //__fini_array_start //__fini_array_end //TestingLIBSTDC++
  
 {==============================================================================}
 {==============================================================================}
@@ -1173,9 +1187,26 @@ begin
    environ[Count]:=StrNew(envp[Count]);
   end;
 
+ {Constructors of Static Objects (cin / cout / cerr / clog etc)}
+ //TestingLIBSTDC++
+ 
  SyscallsInitialized:=True;
 end; 
  
+{==============================================================================}
+
+procedure SyscallsQuit;
+begin
+ {}
+ {Check Initialized}
+ if not SyscallsInitialized then Exit;
+ 
+ {Destructors of Static Objects (cin / cout / cerr / clog etc)}
+ //TestingLIBSTDC++
+ 
+ SyscallsInitialized:=False;
+end;
+
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Standard)}
@@ -2342,6 +2373,11 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{Syscalls Functions (Pthread)}
+//TestingPThreads
+
+{==============================================================================}
+{==============================================================================}
 {Syscalls Helper Functions}
 procedure __malloc_lock(ptr: P_reent); cdecl;
 begin
@@ -3109,7 +3145,7 @@ initialization
 {==============================================================================}
  
 finalization
- {Nothing}
+ SyscallsQuit;
 
 {==============================================================================}
 {==============================================================================}

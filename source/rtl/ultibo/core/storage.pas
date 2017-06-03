@@ -183,6 +183,8 @@ var
 {==============================================================================}
 const
  {USB Storage specific constants}
+ USBSTORAGE_STORAGE_DESCRIPTION = 'USB Storage Device';
+ 
  USBSTORAGE_DRIVER_NAME = 'USB Mass Storage Driver'; {Name of USB storage driver}
 
  {CB/CBI (Control/Bulk/Interrupt) Requests}
@@ -397,6 +399,7 @@ function StorageDeviceRegister(Storage:PStorageDevice):LongWord;
 function StorageDeviceDeregister(Storage:PStorageDevice):LongWord;
 
 function StorageDeviceFind(StorageId:LongWord):PStorageDevice;
+function StorageDeviceFindByDevice(Device:PDevice):PStorageDevice;
 function StorageDeviceFindByName(const Name:String):PStorageDevice; inline;
 function StorageDeviceFindByDescription(const Description:String):PStorageDevice; inline;
 function StorageDeviceEnumerate(Callback:TStorageEnumerate;Data:Pointer):LongWord;
@@ -1047,6 +1050,50 @@ end;
 
 {==============================================================================}
 
+function StorageDeviceFindByDevice(Device:PDevice):PStorageDevice;
+{Find a Storage device by the matching DeviceData property}
+{Device: The device entry to match with the DeviceData value}
+{Return: The Storage device matched or nil if none found}
+var
+ Storage:PStorageDevice;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(StorageTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Storage}
+    Storage:=StorageTable;
+    while Storage <> nil do
+     begin
+      {Check State}
+      if Storage.Device.DeviceState = DEVICE_STATE_REGISTERED then
+       begin
+        {Check Device}
+        if Storage.Device.DeviceData = Device then
+         begin
+          Result:=Storage;
+          Exit;
+         end;
+       end;
+       
+      {Get Next}
+      Storage:=Storage.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(StorageTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
 function StorageDeviceFindByName(const Name:String):PStorageDevice; inline;
 begin
  {}
@@ -1630,7 +1677,7 @@ begin
  if Device = nil then Exit;
                       
  {$IFDEF USB_DEBUG}                    
- if USB_LOG_ENABLED then USBLogDebug(Device,'Storage: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Storage: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to interface only)}
@@ -1677,6 +1724,7 @@ begin
  Storage.Storage.Device.DeviceType:=STORAGE_TYPE_HDD;
  Storage.Storage.Device.DeviceFlags:=STORAGE_FLAG_NONE;
  Storage.Storage.Device.DeviceData:=Device;
+ Storage.Storage.Device.DeviceDescription:=USBSTORAGE_STORAGE_DESCRIPTION;
  {Storage}
  Storage.Storage.StorageState:=STORAGE_STATE_EJECTED;
  Storage.Storage.DeviceRead:=USBStorageDeviceRead;
@@ -1987,6 +2035,7 @@ begin
      Storage.Storage.Device.DeviceType:=STORAGE_TYPE_HDD;
      Storage.Storage.Device.DeviceFlags:=STORAGE_FLAG_NONE;
      Storage.Storage.Device.DeviceData:=Device;
+     Storage.Storage.Device.DeviceDescription:=USBSTORAGE_STORAGE_DESCRIPTION;
      {Storage}
      Storage.Storage.StorageState:=STORAGE_STATE_EJECTED;
      Storage.Storage.DeviceRead:=USBStorageDeviceRead;
@@ -2191,7 +2240,7 @@ begin
  if Interrface.Driver <> USBStorageDriver then Exit;
  
  {$IFDEF USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'Storage: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Storage: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Get Storage}

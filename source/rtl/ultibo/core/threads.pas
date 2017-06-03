@@ -260,7 +260,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Locale,Unicode,Sy
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-{--$DEFINE SCHEDULER_YIELD_ALTERNATE} {Use alternate scheduler yield algorithm}
             
 {==============================================================================}
 const
@@ -1537,7 +1536,7 @@ function MutexTryLock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;
 
 {==============================================================================}
 {Critical Section Functions}
-function CriticalSectionCreate:TCriticalSectionHandle;
+function CriticalSectionCreate:TCriticalSectionHandle; {$IFDEF CRITICALSECTION_INLINE}inline;{$ENDIF}
 function CriticalSectionCreateEx(InitialOwner:Boolean;SpinCount:LongWord):TCriticalSectionHandle;
 function CriticalSectionDestroy(CriticalSection:TCriticalSectionHandle):LongWord;
 
@@ -1552,7 +1551,7 @@ function CriticalSectionTryLock(CriticalSection:TCriticalSectionHandle):LongWord
 
 {==============================================================================}
 {Semaphore Functions}
-function SemaphoreCreate(Count:LongWord):TSemaphoreHandle;
+function SemaphoreCreate(Count:LongWord):TSemaphoreHandle; {$IFDEF SEMAPHORE_INLINE}inline;{$ENDIF}
 function SemaphoreCreateEx(Count,Maximum:LongWord;Flags:LongWord):TSemaphoreHandle;
 function SemaphoreDestroy(Semaphore:TSemaphoreHandle):LongWord;
 
@@ -1565,7 +1564,7 @@ function SemaphoreSignalEx(Semaphore:TSemaphoreHandle;Count:LongWord;Previous:PL
 
 {==============================================================================}
 {Synchronizer Functions}
-function SynchronizerCreate:TSynchronizerHandle;
+function SynchronizerCreate:TSynchronizerHandle; {$IFDEF SYNCHRONIZER_INLINE}inline;{$ENDIF}
 function SynchronizerCreateEx(InitialReader,InitialWriter:Boolean):TSynchronizerHandle;
 function SynchronizerDestroy(Synchronizer:TSynchronizerHandle):LongWord;
 
@@ -1642,12 +1641,12 @@ function QueueUnlock(Queue:TQueueHandle):LongWord; {$IFDEF QUEUE_INLINE}inline;{
 
 {==============================================================================}
 {Thread Functions}
-function ThreadCreate(StartProc:TThreadStart;StackSize,Priority:LongWord;Name:PChar;Parameter:Pointer):TThreadHandle;
+function ThreadCreate(StartProc:TThreadStart;StackSize,Priority:LongWord;Name:PChar;Parameter:Pointer):TThreadHandle; {$IFDEF THREAD_INLINE}inline;{$ENDIF}
 function ThreadCreateEx(StartProc:TThreadStart;StackSize,Priority,Affinity,CPU:LongWord;Name:PChar;Parameter:Pointer):TThreadHandle;
 function ThreadDestroy(Thread:TThreadHandle):LongWord;
 
-function ThreadGetCurrent:TThreadHandle; inline;
-function ThreadSetCurrent(Thread:TThreadHandle):LongWord; inline;
+function ThreadGetCurrent:TThreadHandle; {$IFDEF THREAD_INLINE}inline;{$ENDIF}
+function ThreadSetCurrent(Thread:TThreadHandle):LongWord; {$IFDEF THREAD_INLINE}inline;{$ENDIF}
 
 function ThreadGetName(Thread:TThreadHandle):String;
 function ThreadSetName(Thread:TThreadHandle;const Name:String):LongWord;
@@ -1750,7 +1749,7 @@ function SchedulerAllocationDisable(CPUID:LongWord):LongWord;
 
 {==============================================================================}
 {Messageslot Functions}
-function MessageslotCreate:TMessageslotHandle;
+function MessageslotCreate:TMessageslotHandle; {$IFDEF MESSAGESLOT_INLINE}inline;{$ENDIF}
 function MessageslotCreateEx(Maximum:LongWord;Flags:LongWord):TMessageslotHandle;
 function MessageslotDestroy(Messageslot:TMessageslotHandle):LongWord;
 
@@ -1774,7 +1773,7 @@ function MailslotReceiveEx(Mailslot:TMailslotHandle;Timeout:LongWord):Integer;  
 
 {==============================================================================}
 {Buffer Functions}
-function BufferCreate(Size,Count:LongWord):TBufferHandle;
+function BufferCreate(Size,Count:LongWord):TBufferHandle; {$IFDEF BUFFER_INLINE}inline;{$ENDIF} 
 function BufferCreateEx(Size,Count,Flags:LongWord):TBufferHandle;
 function BufferDestroy(Buffer:TBufferHandle):LongWord;
 
@@ -1789,7 +1788,7 @@ function BufferIterate(Buffer:TBufferHandle;Previous:Pointer):Pointer;
 
 {==============================================================================}
 {Event Functions}
-function EventCreate(ManualReset,InitialState:Boolean):TEventHandle;
+function EventCreate(ManualReset,InitialState:Boolean):TEventHandle; {$IFDEF EVENT_INLINE}inline;{$ENDIF}
 function EventCreateEx(Flags:LongWord):TEventHandle;
 function EventDestroy(Event:TEventHandle):LongWord;
 
@@ -1804,7 +1803,7 @@ function EventPulse(Event:TEventHandle):LongWord;
 
 {==============================================================================}
 {Timer Functions}
-function TimerCreate(Interval:LongWord;Enabled,Reschedule:Boolean;Event:TTimerEvent;Data:Pointer):TTimerHandle;
+function TimerCreate(Interval:LongWord;Enabled,Reschedule:Boolean;Event:TTimerEvent;Data:Pointer):TTimerHandle; {$IFDEF TIMER_INLINE}inline;{$ENDIF}
 function TimerCreateEx(Interval,State,Flags:LongWord;Event:TTimerEvent;Data:Pointer):TTimerHandle;
 function TimerDestroy(Timer:TTimerHandle):LongWord;
 
@@ -1827,19 +1826,19 @@ function TimerTrigger:LongWord;
 
 {==============================================================================}
 {Worker Functions}
-function WorkerSchedule(Interval:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerSchedule(Interval:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 function WorkerScheduleEx(Interval,Flags:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):TWorkerHandle;
 function WorkerCancel(Worker:TWorkerHandle):LongWord;
 
-function WorkerScheduleIRQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerScheduleIRQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 function WorkerScheduleIRQEx(Affinity,Flags:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
 
-function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 function WorkerScheduleFIQEx(Affinity,Flags:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
 
-function WorkerIncrease(Count:LongWord):LongWord; inline;
+function WorkerIncrease(Count:LongWord):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 function WorkerIncreaseEx(Count:LongWord;Priority:Boolean):LongWord;
-function WorkerDecrease(Count:LongWord):LongWord; inline;
+function WorkerDecrease(Count:LongWord):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 function WorkerDecreaseEx(Count:LongWord;Priority:Boolean):LongWord;
 
 procedure WorkerTimer(WorkerRequest:PWorkerRequest);
@@ -6143,7 +6142,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Critical Section Functions}
-function CriticalSectionCreate:TCriticalSectionHandle;
+function CriticalSectionCreate:TCriticalSectionHandle; {$IFDEF CRITICALSECTION_INLINE}inline;{$ENDIF}
 {Create and insert a new CriticalSection entry}
 {Return: Handle of new CriticalSection entry or INVALID_HANDLE_VALUE if entry could not be created}
 begin
@@ -6958,7 +6957,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Semaphore Functions}
-function SemaphoreCreate(Count:LongWord):TSemaphoreHandle;
+function SemaphoreCreate(Count:LongWord):TSemaphoreHandle; {$IFDEF SEMAPHORE_INLINE}inline;{$ENDIF}
 {Create and insert a new Semaphore entry}
 {Count: The initial count of the Semaphore (Must be greater than or equal to zero)}
 {Return: Handle of new Semaphore entry or INVALID_HANDLE_VALUE if entry could not be created}
@@ -7679,7 +7678,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Synchronizer Functions}
-function SynchronizerCreate:TSynchronizerHandle;
+function SynchronizerCreate:TSynchronizerHandle; {$IFDEF SYNCHRONIZER_INLINE}inline;{$ENDIF}
 {Create and insert a new Synchronizer entry}
 {Return: Handle of new Synchronizer entry or INVALID_HANDLE_VALUE if entry could not be created}
 begin
@@ -8100,6 +8099,7 @@ begin
  else
   begin
    {Use the Default method}
+   {Note: Cannot shortcut ReaderLock on Synchronizer}
    {Lock the Synchronizer}
    if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
     begin
@@ -8267,6 +8267,7 @@ begin
  else
   begin
    {Use the Default method}
+   {Note: Cannot shortcut ReaderUnlock on Synchronizer}
    {Lock the Synchronizer}
    if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
     begin
@@ -8730,122 +8731,134 @@ begin
  else
   begin
    {Use the Default method}
-   {Lock the Synchronizer}
-   if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
+   {Check State and Writer}
+   if (SynchronizerEntry.State = SYNCHRONIZER_STATE_WRITER_LOCKED) and (SynchronizerEntry.WriterOwner = ThreadGetCurrent) then
     begin
-     Unlock:=True;
-     try
-      {Check Signature}
-      if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-
-      {Check Timeout}
-      if Timeout = 0 then
-       begin
-        {Check Reader State}
-        Result:=ERROR_WAIT_TIMEOUT;
-        if SynchronizerEntry.ReaderCount <> 0 then Exit;
-       end; 
-       
-      {Check State}
-      if SynchronizerEntry.State = SYNCHRONIZER_STATE_UNLOCKED then
-       begin
-        {Set State}
-        SynchronizerEntry.State:=SYNCHRONIZER_STATE_WRITER_LOCKED;
-        
-        {Set Writer Count}
-        SynchronizerEntry.WriterCount:=1;
-        
-        {Set Writer Owner}
-        SynchronizerEntry.WriterOwner:=ThreadGetCurrent;
-       end
-      else
-       begin
-        {Check Writer Owner}
-        if SynchronizerEntry.WriterOwner = ThreadGetCurrent then
-         begin        
-          {Update Writer Count}
-          Inc(SynchronizerEntry.WriterCount);
-         end
-        else
-         begin        
-          {Check Writer List}
-          if SynchronizerEntry.WriterList = INVALID_HANDLE_VALUE then
-           begin
-            {Create Writer List}
-            SynchronizerEntry.WriterList:=ListCreateEx(LIST_TYPE_WAIT_SYNCHRONIZER,SchedulerGetListFlags(LIST_TYPE_WAIT_SYNCHRONIZER));
-           end; 
-
-          {Check Timeout}
-          if Timeout = INFINITE then
-           begin
-            {Wait on Synchronizer}
-            SynchronizerEntry.Wait(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE);
-            Unlock:=False;
-            
-            {Check Result}
-            WaitResult:=ThreadGetWaitResult;
-            if WaitResult = WAIT_TIMEOUT then
-             begin
-              Result:=ERROR_WAIT_TIMEOUT;
-              Exit;
-             end
-            else if WaitResult = WAIT_ABANDONED then 
-             begin
-              Result:=ERROR_WAIT_ABANDONED;
-              Exit;
-             end
-            else if WaitResult <> ERROR_SUCCESS then
-             begin
-              Result:=WaitResult;
-              Exit;
-             end;         
-            
-            {Lock Synchronizer (Infinite Wait)}
-            Result:=SynchronizerWriterLockEx(Synchronizer,INFINITE);
-            Exit;
-           end
-          else
-           begin
-            {Wait on Synchronizer with Timeout} 
-            SynchronizerEntry.WaitEx(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE,Timeout);
-            Unlock:=False;
-            
-            {Check Result}
-            WaitResult:=ThreadGetWaitResult;
-            if WaitResult = WAIT_TIMEOUT then
-             begin
-              Result:=ERROR_WAIT_TIMEOUT;
-              Exit;
-             end
-            else if WaitResult = WAIT_ABANDONED then 
-             begin
-              Result:=ERROR_WAIT_ABANDONED;
-              Exit;
-             end
-            else if WaitResult <> ERROR_SUCCESS then
-             begin
-              Result:=WaitResult;
-              Exit;
-             end;         
-             
-            {Lock Synchronizer (No Wait)}
-            Result:=SynchronizerWriterLockEx(Synchronizer,0);
-            Exit;
-           end; 
-         end; 
-       end;       
-      
-      {Return Result}
-      Result:=ERROR_SUCCESS; 
-     finally
-      {Unlock the Synchronizer}
-      if Unlock then SpinUnlock(SynchronizerEntry.Lock);
-     end;
+     {Update Writer Count}
+     Inc(SynchronizerEntry.WriterCount);
+     
+     {Return Result}
+     Result:=ERROR_SUCCESS;
     end
    else
-    begin
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
+    begin   
+     {Lock the Synchronizer}
+     if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
+      begin
+       Unlock:=True;
+       try
+        {Check Signature}
+        if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
+  
+        {Check Timeout}
+        if Timeout = 0 then
+         begin
+          {Check Reader State}
+          Result:=ERROR_WAIT_TIMEOUT;
+          if SynchronizerEntry.ReaderCount <> 0 then Exit;
+         end; 
+         
+        {Check State}
+        if SynchronizerEntry.State = SYNCHRONIZER_STATE_UNLOCKED then
+         begin
+          {Set State}
+          SynchronizerEntry.State:=SYNCHRONIZER_STATE_WRITER_LOCKED;
+          
+          {Set Writer Count}
+          SynchronizerEntry.WriterCount:=1;
+          
+          {Set Writer Owner}
+          SynchronizerEntry.WriterOwner:=ThreadGetCurrent;
+         end
+        else
+         begin
+          {Check Writer Owner}
+          if SynchronizerEntry.WriterOwner = ThreadGetCurrent then
+           begin        
+            {Update Writer Count}
+            Inc(SynchronizerEntry.WriterCount);
+           end
+          else
+           begin        
+            {Check Writer List}
+            if SynchronizerEntry.WriterList = INVALID_HANDLE_VALUE then
+             begin
+              {Create Writer List}
+              SynchronizerEntry.WriterList:=ListCreateEx(LIST_TYPE_WAIT_SYNCHRONIZER,SchedulerGetListFlags(LIST_TYPE_WAIT_SYNCHRONIZER));
+             end; 
+  
+            {Check Timeout}
+            if Timeout = INFINITE then
+             begin
+              {Wait on Synchronizer}
+              SynchronizerEntry.Wait(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE);
+              Unlock:=False;
+              
+              {Check Result}
+              WaitResult:=ThreadGetWaitResult;
+              if WaitResult = WAIT_TIMEOUT then
+               begin
+                Result:=ERROR_WAIT_TIMEOUT;
+                Exit;
+               end
+              else if WaitResult = WAIT_ABANDONED then 
+               begin
+                Result:=ERROR_WAIT_ABANDONED;
+                Exit;
+               end
+              else if WaitResult <> ERROR_SUCCESS then
+               begin
+                Result:=WaitResult;
+                Exit;
+               end;         
+              
+              {Lock Synchronizer (Infinite Wait)}
+              Result:=SynchronizerWriterLockEx(Synchronizer,INFINITE);
+              Exit;
+             end
+            else
+             begin
+              {Wait on Synchronizer with Timeout} 
+              SynchronizerEntry.WaitEx(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE,Timeout);
+              Unlock:=False;
+              
+              {Check Result}
+              WaitResult:=ThreadGetWaitResult;
+              if WaitResult = WAIT_TIMEOUT then
+               begin
+                Result:=ERROR_WAIT_TIMEOUT;
+                Exit;
+               end
+              else if WaitResult = WAIT_ABANDONED then 
+               begin
+                Result:=ERROR_WAIT_ABANDONED;
+                Exit;
+               end
+              else if WaitResult <> ERROR_SUCCESS then
+               begin
+                Result:=WaitResult;
+                Exit;
+               end;         
+               
+              {Lock Synchronizer (No Wait)}
+              Result:=SynchronizerWriterLockEx(Synchronizer,0);
+              Exit;
+             end; 
+           end; 
+         end;       
+        
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       finally
+        {Unlock the Synchronizer}
+        if Unlock then SpinUnlock(SynchronizerEntry.Lock);
+       end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+      end;    
+    end;
   end; 
 end;
 
@@ -8899,62 +8912,74 @@ begin
  else
   begin
    {Use the Default method}
-   {Lock the Synchronizer}
-   if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
+   {Check Writer Count}
+   if SynchronizerEntry.WriterCount > 1 then
     begin
-     try
-      {Check Signature}
-      Result:=ERROR_INVALID_PARAMETER;
-      if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-
-      {Check Writer Count}
-      Result:=ERROR_INVALID_FUNCTION;
-      if SynchronizerEntry.WriterCount = 0 then Exit;
-      
-      {Update Writer Count}
-      Dec(SynchronizerEntry.WriterCount);
-      
-      {Check Writer Count}
-      if SynchronizerEntry.WriterCount = 0 then
-       begin
-        {Set State}
-        SynchronizerEntry.State:=SYNCHRONIZER_STATE_UNLOCKED;
-        
-        {Set Writer Owner}
-        SynchronizerEntry.WriterOwner:=INVALID_HANDLE_VALUE;
-        
-        {Check Reader List}
-        if ListNotEmpty(SynchronizerEntry.ReaderList) then
-         begin
-          {Release all reader threads waiting on Synchronizer}
-          while ListNotEmpty(SynchronizerEntry.ReaderList) do
-           begin
-            {Release reader thread waiting on Synchronizer}
-            SynchronizerEntry.Release(SynchronizerEntry.ReaderList);
-           end;
-         end
-        else
-         begin
-          {Check Writer List}
-          if ListNotEmpty(SynchronizerEntry.WriterList) then
-           begin
-            {Release one writer thread waiting on Synchronizer}
-            SynchronizerEntry.Release(SynchronizerEntry.WriterList);
-           end;
-         end;         
-       end;
-      
-      {Return Result}
-      Result:=ERROR_SUCCESS; 
-     finally
-      {Unlock the Synchronizer}
-      SpinUnlock(SynchronizerEntry.Lock);
-     end;
+     {Update Writer Count}
+     Dec(SynchronizerEntry.WriterCount);
+     
+     {Return Result}
+     Result:=ERROR_SUCCESS; 
     end
    else
     begin
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
+     {Lock the Synchronizer}
+     if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
+      begin
+       try
+        {Check Signature}
+        Result:=ERROR_INVALID_PARAMETER;
+        if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
+  
+        {Check Writer Count}
+        Result:=ERROR_INVALID_FUNCTION;
+        if SynchronizerEntry.WriterCount = 0 then Exit;
+        
+        {Update Writer Count}
+        Dec(SynchronizerEntry.WriterCount);
+        
+        {Check Writer Count}
+        if SynchronizerEntry.WriterCount = 0 then
+         begin
+          {Set State}
+          SynchronizerEntry.State:=SYNCHRONIZER_STATE_UNLOCKED;
+          
+          {Set Writer Owner}
+          SynchronizerEntry.WriterOwner:=INVALID_HANDLE_VALUE;
+          
+          {Check Reader List}
+          if ListNotEmpty(SynchronizerEntry.ReaderList) then
+           begin
+            {Release all reader threads waiting on Synchronizer}
+            while ListNotEmpty(SynchronizerEntry.ReaderList) do
+             begin
+              {Release reader thread waiting on Synchronizer}
+              SynchronizerEntry.Release(SynchronizerEntry.ReaderList);
+             end;
+           end
+          else
+           begin
+            {Check Writer List}
+            if ListNotEmpty(SynchronizerEntry.WriterList) then
+             begin
+              {Release one writer thread waiting on Synchronizer}
+              SynchronizerEntry.Release(SynchronizerEntry.WriterList);
+             end;
+           end;         
+         end;
+        
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       finally
+        {Unlock the Synchronizer}
+        SpinUnlock(SynchronizerEntry.Lock);
+       end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+      end;    
+    end;
   end; 
 end;
 
@@ -11117,7 +11142,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Thread Functions}
-function ThreadCreate(StartProc:TThreadStart;StackSize,Priority:LongWord;Name:PChar;Parameter:Pointer):TThreadHandle;
+function ThreadCreate(StartProc:TThreadStart;StackSize,Priority:LongWord;Name:PChar;Parameter:Pointer):TThreadHandle; {$IFDEF THREAD_INLINE}inline;{$ENDIF}
 {Create and insert a new Thread entry
 
  The new thread will be created suspended so it will not start running until it is
@@ -11170,7 +11195,9 @@ function ThreadCreateEx(StartProc:TThreadStart;StackSize,Priority,Affinity,CPU:L
           TThread class or its descendants. Only use ThreadCreate and ThreadCreateEx if you need to modify
           the thread creation behaviour and understand that you also need to handle the additional RTL setup}         
 var
+ Count:LongWord;
  StackBase:Pointer;
+ FirstEntry:PThreadEntry;
  ThreadEntry:PThreadEntry;
 begin
  {}
@@ -11292,6 +11319,17 @@ begin
  if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
   begin                                                    
    try
+    {Set TLS Thread Var Flags}
+    FirstEntry:=ThreadTable;
+    if FirstEntry <> nil then
+     begin
+      for Count:=0 to THREAD_TLS_MAXIMUM - 1 do
+       begin
+        {ThreadEntry.TlsTable[Count]:=nil;} {Cleared by AllocMem}
+        ThreadEntry.TlsFlags[Count]:=FirstEntry.TlsFlags[Count];
+       end;
+     end; 
+    
     {Link Thread entry}
     if ThreadTable = nil then
      begin
@@ -11482,8 +11520,8 @@ begin
         FreeMem(ThreadEntry.TlsTable[Count]);
        end;
        
-      ThreadEntry.TlsTable[Count]:=nil;
-      ThreadEntry.TlsFlags[Count]:=THREAD_TLS_FLAG_NONE;
+      {ThreadEntry.TlsTable[Count]:=nil;} {Cleared by FreeMem}
+      {ThreadEntry.TlsFlags[Count]:=THREAD_TLS_FLAG_NONE;} {Cleared by FreeMem}
      end;
     
     {Free Thread Lock}
@@ -11507,7 +11545,7 @@ end;
 
 {==============================================================================}
 
-function ThreadGetCurrent:TThreadHandle; inline;
+function ThreadGetCurrent:TThreadHandle; {$IFDEF THREAD_INLINE}inline;{$ENDIF}
 {Get the Handle of currently executing thread}
 {Return: Thread handle of the currently running thread}
 begin
@@ -11524,7 +11562,7 @@ end;
 
 {==============================================================================}
 
-function ThreadSetCurrent(Thread:TThreadHandle):LongWord; inline;
+function ThreadSetCurrent(Thread:TThreadHandle):LongWord; {$IFDEF THREAD_INLINE}inline;{$ENDIF}
 {Set the Handle of currently executing thread}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: Must not be called except during initialization}
@@ -13371,6 +13409,7 @@ function ThreadHalt(ExitCode:LongWord):LongWord;
 {ExitCode: The return code of the thread}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
+ ExitTime:Int64;
  Reschedule:Boolean;
  ResultCode:LongWord;
  Thread:TThreadHandle;
@@ -13391,6 +13430,9 @@ begin
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+ 
+ {Get Exit Time}
+ ExitTime:=ClockGetTime;
  
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
@@ -13415,7 +13457,7 @@ begin
      end;
      
     {Set ExitTime}
-    ThreadEntry.ExitTime:=ClockGetTime;
+    ThreadEntry.ExitTime:=ExitTime;
     
     {Set ExitCode}
     ThreadEntry.ExitCode:=ExitCode;
@@ -13468,6 +13510,7 @@ function ThreadTerminate(Thread:TThreadHandle;ExitCode:LongWord):LongWord;
 {ExitCode: The return code of the thread}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
+ ExitTime:Int64;
  Reschedule:Boolean;
  ResultCode:LongWord;
  ThreadEntry:PThreadEntry;
@@ -13487,6 +13530,9 @@ begin
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
+ {Get Exit Time}
+ ExitTime:=ClockGetTime;
+ 
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -13510,7 +13556,7 @@ begin
      end;
      
     {Set ExitTime}
-    ThreadEntry.ExitTime:=ClockGetTime;
+    ThreadEntry.ExitTime:=ExitTime;
      
     {Set ExitCode}
     ThreadEntry.ExitCode:=ExitCode;
@@ -16390,7 +16436,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Messageslot Functions}
-function MessageslotCreate:TMessageslotHandle;
+function MessageslotCreate:TMessageslotHandle; {$IFDEF MESSAGESLOT_INLINE}inline;{$ENDIF}
 {Create and insert a new Messageslot entry}
 {Return: Handle of new Messageslot entry or INVALID_HANDLE_VALUE if entry could not be created}
 begin
@@ -17582,7 +17628,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Buffer Functions}
-function BufferCreate(Size,Count:LongWord):TBufferHandle;
+function BufferCreate(Size,Count:LongWord):TBufferHandle; {$IFDEF BUFFER_INLINE}inline;{$ENDIF} 
 {Create and insert a new Buffer entry}
 {Size: Size of each buffer in bytes}
 {Count: Total number of buffers}
@@ -18190,7 +18236,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Event Functions}
-function EventCreate(ManualReset,InitialState:Boolean):TEventHandle;
+function EventCreate(ManualReset,InitialState:Boolean):TEventHandle; {$IFDEF EVENT_INLINE}inline;{$ENDIF}
 {Create and insert a new Event entry}
 {ManualReset: Create a manual reset event if true or an auto reset event if false
               An manual reset event must be reset by calling EventReset
@@ -18940,7 +18986,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Timer Functions}
-function TimerCreate(Interval:LongWord;Enabled,Reschedule:Boolean;Event:TTimerEvent;Data:Pointer):TTimerHandle;
+function TimerCreate(Interval:LongWord;Enabled,Reschedule:Boolean;Event:TTimerEvent;Data:Pointer):TTimerHandle; {$IFDEF TIMER_INLINE}inline;{$ENDIF}
 {Create and insert a new Timer entry}
 {Interval: Number of milliseconds between timer events}
 {Enabled: If true then timer generates events}
@@ -20107,7 +20153,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Worker Functions}
-function WorkerSchedule(Interval:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerSchedule(Interval:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 {Schedule a task to be performed by a worker thread now or in the future}
 {Interval: The number of milliseconds before the task is to be performed (0 for immediate)}
 {Task: The function to be called by the worker when the interval has elapsed}
@@ -20353,7 +20399,7 @@ end;
 
 {==============================================================================}
 
-function WorkerScheduleIRQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerScheduleIRQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 {Schedule a task to be performed by a worker thread when the caller is an IRQ handler}
 {Affinity: CPU Affinity for memory allocation (eg CPU_AFFINITY_0 or CPU_AFFINITY_NONE)}
 {Task: The function to be called by the worker}
@@ -20458,7 +20504,7 @@ end;
  
 {==============================================================================}
 
-function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;
+function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 {Schedule a task to be performed by a worker thread when the caller is an FIQ handler}
 {Affinity: CPU Affinity for memory allocation (eg CPU_AFFINITY_0 or CPU_AFFINITY_NONE)}
 {Task: The function to be called by the worker}
@@ -20573,7 +20619,7 @@ end;
  
 {==============================================================================}
 
-function WorkerIncrease(Count:LongWord):LongWord; inline;
+function WorkerIncrease(Count:LongWord):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 {Increase the number of worker threads available}
 {Count: Number of worker threads to increase by}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -20684,7 +20730,7 @@ end;
 
 {==============================================================================}
 
-function WorkerDecrease(Count:LongWord):LongWord; inline;
+function WorkerDecrease(Count:LongWord):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
 {Decrease the number of worker threads available}
 {Count: Number of worker threads to decrease by}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

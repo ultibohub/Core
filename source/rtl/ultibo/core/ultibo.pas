@@ -88,10 +88,6 @@ unit Ultibo;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Locale,Timezone,Unicode,Security,SysUtils;
-
- //To do //Look for:
-  
- //API
  
 {==============================================================================}
 {Global definitions}
@@ -917,6 +913,26 @@ type
  LPBITMAPFILEHEADER = ^BITMAPFILEHEADER;
  TBitmapFileHeader = BITMAPFILEHEADER;
  
+type
+ {File Information Types}
+ PBY_HANDLE_FILE_INFORMATION = ^BY_HANDLE_FILE_INFORMATION;
+ _BY_HANDLE_FILE_INFORMATION = record
+   dwFileAttributes: DWORD;
+   ftCreationTime: FILETIME;
+   ftLastAccessTime: FILETIME;
+   ftLastWriteTime: FILETIME;
+   dwVolumeSerialNumber: DWORD;
+   nFileSizeHigh: DWORD;
+   nFileSizeLow: DWORD;
+   nNumberOfLinks: DWORD;
+   nFileIndexHigh: DWORD;
+   nFileIndexLow: DWORD;
+ end;
+ BY_HANDLE_FILE_INFORMATION = _BY_HANDLE_FILE_INFORMATION;
+ LPBY_HANDLE_FILE_INFORMATION = ^BY_HANDLE_FILE_INFORMATION;
+ TByHandleFileInformation = BY_HANDLE_FILE_INFORMATION;
+ PByHandleFileInformation = PBY_HANDLE_FILE_INFORMATION;
+ 
 {==============================================================================}
 {Compatibility variables}
 {var}
@@ -1034,6 +1050,8 @@ type
  TUltiboGetDriveTotalSpace = function(ADrive:Byte):LongWord;
  TUltiboGetDriveTotalSpaceEx = function(ADrive:Byte):Int64;
  
+ TUltiboGetDriveInformation = function(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;    
+ 
  TUltiboGetCurrentDrive = function:Byte;
  TUltiboSetCurrentDrive = function(const ADrive:String):Boolean;
  
@@ -1064,6 +1082,7 @@ type
  TUltiboSetFileShortNameA = function(AHandle:THandle;const AShortName:String):Boolean;
  TUltiboCreateHardLinkA = function(const ALinkName,AFileName:String):Boolean;
  TUltiboCreateSymbolicLinkA = function(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean;
+ TUltiboGetFileInformationByHandle = function(AHandle:THandle;var AFileInformation:TByHandleFileInformation):Boolean;
 
  {Directory Functions (Compatibility)}
  TUltiboCreateDirectoryA = function(const APathName:String):Boolean;
@@ -1104,6 +1123,8 @@ var
  UltiboGetDriveTotalSpaceHandler:TUltiboGetDriveTotalSpace;
  UltiboGetDriveTotalSpaceExHandler:TUltiboGetDriveTotalSpaceEx;
  
+ UltiboGetDriveInformationHandler:TUltiboGetDriveInformation;
+ 
  UltiboGetCurrentDriveHandler:TUltiboGetCurrentDrive;
  UltiboSetCurrentDriveHandler:TUltiboSetCurrentDrive;
  
@@ -1134,6 +1155,7 @@ var
  UltiboSetFileShortNameAHandler:TUltiboSetFileShortNameA;
  UltiboCreateHardLinkAHandler:TUltiboCreateHardLinkA;
  UltiboCreateSymbolicLinkAHandler:TUltiboCreateSymbolicLinkA;
+ UltiboGetFileInformationByHandleHandler:TUltiboGetFileInformationByHandle;
 
  {Directory Functions (Compatibility)}
  UltiboCreateDirectoryAHandler:TUltiboCreateDirectoryA;
@@ -1318,6 +1340,8 @@ function GetDriveFreeSpaceEx(ADrive:Byte):Int64;
 function GetDriveTotalSpace(ADrive:Byte):LongWord;
 function GetDriveTotalSpaceEx(ADrive:Byte):Int64;
 
+function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;    
+
 function GetCurrentDrive:Byte;
 function SetCurrentDrive(const ADrive:String):Boolean;
 
@@ -1388,6 +1412,8 @@ function CreateHardLinkW(lpFileName,lpExistingFileName:LPCWSTR;lpSecurityAttribu
 function CreateSymbolicLink(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL; inline;
 function CreateSymbolicLinkA(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
 function CreateSymbolicLinkW(lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:DWORD):BOOL;
+
+function GetFileInformationByHandle(hFile:HANDLE;var lpFileInformation:BY_HANDLE_FILE_INFORMATION):BOOL;
 
 {==============================================================================}
 {File Functions (Ultibo)}
@@ -3977,6 +4003,21 @@ end;
 
 {==============================================================================}
 
+function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;    
+begin
+ {}
+ if Assigned(UltiboGetDriveInformationHandler) then
+  begin
+   Result:=UltiboGetDriveInformationHandler(APath,AClusterSize,ATotalClusterCount,AFreeClusterCount);
+  end
+ else
+  begin
+   Result:=False;
+  end; 
+end; 
+
+{==============================================================================}
+
 function GetCurrentDrive:Byte;
 begin
  {}
@@ -4295,7 +4336,16 @@ begin
    Result:=UltiboFindFirstFileAHandler(FileName,FindFileData);
    if Result <> HANDLE(INVALID_HANDLE_VALUE) then
     begin
-     //To Do //API
+     lpFindFileData.dwFileAttributes:=FindFileData.dwFileAttributes;
+     lpFindFileData.ftCreationTime:=FindFileData.ftCreationTime;
+     lpFindFileData.ftLastAccessTime:=FindFileData.ftLastAccessTime;
+     lpFindFileData.ftLastWriteTime:=FindFileData.ftLastWriteTime;
+     lpFindFileData.nFileSizeHigh:=FindFileData.nFileSizeHigh;
+     lpFindFileData.nFileSizeLow:=FindFileData.nFileSizeLow;
+     lpFindFileData.dwReserved0:=FindFileData.dwReserved0;
+     lpFindFileData.dwReserved1:=FindFileData.dwReserved1;
+     Unicode.MultiByteToWideChar(CP_ACP,0,PChar(@FindFileData.cFileName),MAX_PATH,PWideChar(@lpFindFileData.cFileName),MAX_PATH);
+     Unicode.MultiByteToWideChar(CP_ACP,0,PChar(@FindFileData.cAlternateFileName),14,PWideChar(@lpFindFileData.cAlternateFileName),14);
     end;
   end
  else
@@ -4330,12 +4380,26 @@ end;
 {==============================================================================}
 
 function FindNextFileW(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAW):BOOL;
+var
+ FindFileData:TWin32FindDataA;
 begin
  {}
  if Assigned(UltiboFindNextFileAHandler) then
   begin
-  
-   Result:=False; //To Do //API
+   Result:=UltiboFindNextFileAHandler(hFindFile,FindFileData);
+   if Result then
+    begin
+     lpFindFileData.dwFileAttributes:=FindFileData.dwFileAttributes;
+     lpFindFileData.ftCreationTime:=FindFileData.ftCreationTime;
+     lpFindFileData.ftLastAccessTime:=FindFileData.ftLastAccessTime;
+     lpFindFileData.ftLastWriteTime:=FindFileData.ftLastWriteTime;
+     lpFindFileData.nFileSizeHigh:=FindFileData.nFileSizeHigh;
+     lpFindFileData.nFileSizeLow:=FindFileData.nFileSizeLow;
+     lpFindFileData.dwReserved0:=FindFileData.dwReserved0;
+     lpFindFileData.dwReserved1:=FindFileData.dwReserved1;
+     Unicode.MultiByteToWideChar(CP_ACP,0,PChar(@FindFileData.cFileName),MAX_PATH,PWideChar(@lpFindFileData.cFileName),MAX_PATH);
+     Unicode.MultiByteToWideChar(CP_ACP,0,PChar(@FindFileData.cAlternateFileName),14,PWideChar(@lpFindFileData.cAlternateFileName),14);
+    end;
   end
  else
   begin
@@ -4688,6 +4752,21 @@ begin
   end; 
 end;
 
+{==============================================================================}
+
+function GetFileInformationByHandle(hFile:HANDLE;var lpFileInformation:BY_HANDLE_FILE_INFORMATION):BOOL;
+begin
+ {}
+ if Assigned(UltiboGetFileInformationByHandleHandler) then
+  begin
+   Result:=UltiboGetFileInformationByHandleHandler(hFile,lpFileInformation);
+  end
+ else
+  begin
+   Result:=False;
+  end; 
+end;
+  
 {==============================================================================}
 {==============================================================================}
 {File Functions (Ultibo)}

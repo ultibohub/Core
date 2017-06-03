@@ -1572,7 +1572,7 @@ begin
  {}
  Result:=False;
 
- if not WriterLock then Exit;
+ if not ReaderLock then Exit;
  try
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskController.LocateDevices');
@@ -1582,7 +1582,7 @@ begin
   if FDriver = nil then Exit;
 
   {Locate Image Devices}
-  Image:=FDriver.GetImageByNext(nil,True,False,FILESYS_LOCK_READ);
+  Image:=FDriver.GetImageByNext(nil,True,False,FILESYS_LOCK_WRITE);
   while Image <> nil do
    begin
     if Image.Controller = Self then
@@ -1595,12 +1595,12 @@ begin
        end;
      end;
     
-    Image:=FDriver.GetImageByNext(Image,True,True,FILESYS_LOCK_READ);
+    Image:=FDriver.GetImageByNext(Image,True,True,FILESYS_LOCK_WRITE);
    end;
    
   Result:=True;
  finally  
-  WriterUnlock;
+  ReaderUnlock;
  end; 
 end;
 
@@ -2620,7 +2620,7 @@ begin
  {}
  Result:=False;
  
- if not ReaderLock then Exit;
+ if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FController = nil then Exit;
@@ -2633,7 +2633,7 @@ begin
     Result:=inherited DeletePartition(APartition);
    end;
  finally  
-  ReaderUnlock;
+  WriterUnlock;
  end; 
 end;
 
@@ -9196,6 +9196,7 @@ begin
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualRecognizer.RecognizeImage - Image = ' + AImage.Name);
   {$ENDIF}
+  
   {Check Image Type}
   case AImage.ImageType of
    itMEMORY,itFILE,itDEVICE,itISO,itBOCHS,itVMWARE,itVPC,itVBOX:begin
@@ -9230,6 +9231,7 @@ begin
   {$IFDEF VIRTUAL_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualRecognizer.MountImage - Image = ' + AImage.Name);
   {$ENDIF}
+  
   {Check Ready}
   if not AImage.Ready then Exit;
 
@@ -9237,15 +9239,22 @@ begin
   if not RecognizeImage(AImage) then Exit;
 
   {Check Device}
-  if AImage.Device <> nil then Exit;
-
-  {Create Device}
-  Device:=TVirtualDiskDevice.Create(FDriver,FController,AImage,nil,FDriver.GetNextDeviceNo(AImage.MediaType),AImage.Name);
-  Device.DeviceInit;
-  Device.LocatePartitions;
-  FDriver.LocateVolumes;
-  FDriver.LocateDrives;
-  
+  if AImage.Device = nil then
+   begin
+    {Create Device}
+    Device:=TVirtualDiskDevice.Create(FDriver,FController,AImage,nil,FDriver.GetNextDeviceNo(AImage.MediaType),AImage.Name);
+    
+    {Init Device}
+    Device.DeviceInit;
+    
+    {Locate Partitions}
+    Device.LocatePartitions;
+    
+    {Locate Volumes and Drives}
+    FDriver.LocateVolumes;
+    FDriver.LocateDrives;
+   end;
+     
   Result:=True;
  finally  
   ReaderUnlock;

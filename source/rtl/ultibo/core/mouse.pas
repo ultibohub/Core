@@ -1622,7 +1622,7 @@ begin
  if Device = nil then Exit;
                         
  {$IFDEF USB_DEBUG}                       
- if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to interface only)}
@@ -1823,7 +1823,7 @@ begin
  if Interrface.Driver <> USBMouseDriver then Exit;
  
  {$IFDEF USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Get Mouse}
@@ -2251,7 +2251,7 @@ function MouseInsertData(Mouse:PMouseDevice;Data:PMouseData;Signal:Boolean):Long
 {Insert a TMouseData entry into the mouse buffer (Direct or Global)}
 {Mouse: The mouse device to insert data for}
 {Data: The TMouseData entry to insert}
-{Signal: If True then signal that new data is availale in the buffer}
+{Signal: If True then signal that new data is available in the buffer}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Caller must hold the mouse lock}

@@ -33,6 +33,8 @@ Credits
                    
   Linux DWCOTG driver - \drivers\usb\host\dwc_otg\*
   
+  FreeBSD DWCOTG driver - \sys\dev\usb\controller\dwc_otg.c - Copyright (c) 2015 Daisuke Aoyama and others
+  
   USPI (rsta2) - https://github.com/rsta2/uspi
   
   Circle (rsta2) - https://github.com/rsta2/circle/tree/master/lib/usb
@@ -138,14 +140,13 @@ const
  DWC_RESUBMIT_THREAD_PRIORITY = THREAD_PRIORITY_CRITICAL;   {Priority of USB request resubmit threads (should be very high since these threads are used for the necessary software polling of interrupt endpoints, which are supposed to have guaranteed bandwidth)}
                                           
  DWC_RESUBMIT_THREAD_NAME = 'DWC Transfer Resubmit';        {Name of USB request resubmit threads}
- 
- DWC_START_SPLIT_INTR_TRANSFERS_ON_SOF = True;              {Start Split Interrupt Transfers on Start of Frame (SOF)} 
 
  {DWC USB packet ID constants recognized by the DWC hardware}
  DWC_USB_PID_DATA0 = 0;
  DWC_USB_PID_DATA1 = 2;
  DWC_USB_PID_DATA2 = 1;
  DWC_USB_PID_SETUP = 3;
+ DWC_USB_PID_MDATA = 3;
  
  {DWC FIFO values}
  DWC_RECEIVE_WORDS = 1024;           {Size of Rx FIFO in 4-byte words}
@@ -165,6 +166,7 @@ const
  DWC_STATUS_CANCELLED           = 9;
  
  {DWC Complete Split}
+ DWC_SPLIT_ERROR_RETRIES = 3;
  DWC_COMPLETE_SPLIT_RETRIES = 10;
  
  {DWC Register values}
@@ -220,7 +222,7 @@ const
  {TDWCRegisters: 0x0014 : Core Interrupt Register}
  {This register contains the state of pending top-level DWC interrupts.  1 means interrupt pending while 0 means no interrupt pending}
  {Note that at least for port_intr and host_channel_intr, software must clear the interrupt somewhere else rather than by writing to this register}
- {Start of Frame. TODO}
+ {Start of Frame.}
  DWC_CORE_INTERRUPTS_SOF_INTR          = (1 shl 3);  {Bit 3}
  {Host port status changed.  Software must examine the Host Port Control and Status Register to determine the current status of
   the host port and clear any flags in it that indicate a status change}
@@ -280,6 +282,9 @@ const
  DWC_HFIR_FRAME_INTERVAL_MASK    = ($FFFF shl 0);
  DWC_HFIR_FRAME_INT_RELOAD_CTL   = (1 shl 16);
  DWC_HFIR_RESERVED1              = ($FFFE  shl 17);
+ 
+ {TDWCRegisters: 0x0408 : Host Frame Register}
+ DWC_HFNUM_FRAME_NUMBER_MASK = $FFFF;
  
  {TDWCRegisters: 0x0440 : Host Port Control and Status Register}
  {This register provides the information needed to respond to status queries about the "host port", which is the port that is logically attached to the root hub}
@@ -456,7 +461,7 @@ const
   needs to be re-programmed if the transfer is moved to a different channel or the channel is re-used before the transfer is complete.  When doing so, software must save this
   field so that it can be re-programmed correctly}
  DWC_HOST_CHANNEL_TRANSFER_PACKET_ID    = ($03 shl 29);     {Bits 29-30}
- {TODO}
+ {Do PING protocol when 1 (See Seatcion 8.5.1 of Universal Serial Bus Specification 2.0)}
  DWC_HOST_CHANNEL_TRANSFER_DO_PING      = (1 shl 31);       {Bit  31}
             
 {==============================================================================}
@@ -705,6 +710,15 @@ type
   EndpointDescriptor:TUSBEndpointDescriptor;
  end;
  
+ {DWC USB Transfer}
+ PDWCUSBTransfer = ^TDWCUSBTransfer;
+ TDWCUSBTransfer = record
+  {Transfer Properties}
+  //To Do //Add properties specific to DWCOTG
+  {Split Transaction Properties}
+  //To Do //Add Hub and Port properties for Split
+ end;
+ 
  {DWC USB Host}
  PDWCUSBHost = ^TDWCUSBHost;
  TDWCUSBHost = record
@@ -724,6 +738,7 @@ type
   ChannelFreeWait:TSemaphoreHandle;                              {Number of free channels in ChannelFreeMask}
   StartOfFrameMask:LongWord;                                     {Bitmap of channels waiting for Start of Frame}
   StartOfFrameLock:TSpinHandle;                                  {Lock for access to StartOfFrameMask (Spin lock due to use by interrupt handler)}
+  LastFrameNumber:LongWord;                                      {Frame Number at the last Start Of Frame interrupt}
   {Root Hub Properties}
   HubStatus:PUSBHubStatus;                                       {Hub status for the root hub}
   PortStatus:PUSBPortStatus;                                     {Host port status for the root hub (Obtained from port interrupt due to status change)}
@@ -742,13 +757,14 @@ type
   ChannelInterruptCount:LongWord;                                {Number of channel interrupts received by the host controller}
   StartOfFrameInterruptCount:LongWord;                           {Number of start of frame interrupts received by the host controller} 
   ResubmitCount:LongWord;                                        {Number of requests resubmitted for later retry}
-  StartOfFrameCount:LongWord;                                    {Number of requests resubmitted to wait for start of frame}
+  StartOfFrameCount:LongWord;                                    {Number of requests queued to wait for start of frame}
   DMABufferReadCount:LongWord;                                   {Number of IN requests that required a DMA buffer copy}
   DMABufferWriteCount:LongWord;                                  {Number of OUT requests that required a DMA buffer copy}
   
   NAKReponseCount:LongWord;                                      {Number of NAK responses received by the host controller}
   NYETResponseCount:LongWord;                                    {Number of NYET responses received by the host controller}
   StallResponseCount:LongWord;                                   {Number of Stall responses received by the host controller}
+  RequestCancelCount:LongWord;                                   {Number of requests Cancelled by the host controller}
   
   AHBErrorCount:LongWord;                                        {Number of AHB errors received by the host controller}
   TransactionErrorCount:LongWord;                                {Number of transaction errors received by the host controller}
@@ -757,6 +773,14 @@ type
   FrameListRolloverCount:LongWord;                               {Number of frame list rollover errors received by the host controller}
   DataToggleErrorCount:LongWord;                                 {Number of data toggle errors received by the host controller}
   FrameOverrunCount:LongWord;                                    {Number of frame overrun errors received by the host controller}
+  
+  ShortAttemptCount:LongWord;                                    {Number of short attempts where transfer size was less than the request size}
+  StartSplitCount:LongWord;                                      {Number of start split transactions}
+  CompleteSplitCount:LongWord;                                   {Number of complete split transactions}
+  CompleteSplitRestartCount:LongWord;                            {Number of times a complete split transaction has been restarted at start split due to errors}
+  
+  NoChannelCompletedCount:LongWord;                              {Number of times the channel completed interrupt bit was not set when a request completed}
+  NoPacketsTransferredCount:LongWord;                            {Number of times no packets were transferred but no error occured when a channel halted}
  end;
  
 {==============================================================================}
@@ -880,6 +904,7 @@ begin
    DWCHost.Host.HostCancel:=DWCHostCancel;
    DWCHost.Host.Alignment:=DWCOTG_DMA_ALIGNMENT;
    DWCHost.Host.Multiplier:=DWCOTG_DMA_MULTIPLIER;
+   DWCHost.Host.MaxTransfer:=DWC_HOST_CHANNEL_TRANSFER_SIZE and not(3);
    {DWCOTG}
    DWCHost.Lock:=INVALID_HANDLE_VALUE;
    DWCHost.Registers:=nil;
@@ -2202,10 +2227,7 @@ begin
     Host.Registers.CoreInterrupts:=$FFFFFFFF;
  
     {Enable core host channel and host port interrupts}
-    CoreInterruptMask:=0;
-    CoreInterruptMask:=(CoreInterruptMask or DWC_CORE_INTERRUPTS_HOST_CHANNEL_INTR);
-    CoreInterruptMask:=(CoreInterruptMask or DWC_CORE_INTERRUPTS_PORT_INTR);
-    Host.Registers.CoreInterruptMask:=CoreInterruptMask;
+    Host.Registers.CoreInterruptMask:=DWC_CORE_INTERRUPTS_HOST_CHANNEL_INTR or DWC_CORE_INTERRUPTS_PORT_INTR;
  
     {Request the IRQ/FIQ}
     if DWCOTG_FIQ_ENABLED then
@@ -2433,6 +2455,7 @@ begin
  SplitControl:=0;
  Transfer:=0;
  Request.ShortAttempt:=False;
+ Request.StartOfFrame:=False;
  
  {Determine Endpoint Number, Endpoint Type, Maximum Packet Size and Packets Per Frame}
  if Request.Endpoint <> nil then
@@ -2596,13 +2619,19 @@ begin
        Transfer:=(Transfer and not(DWC_HOST_CHANNEL_TRANSFER_SIZE)); {Reset Transfer Size}
        Transfer:=(Transfer or ((((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_PACKETS_PER_FRAME) shr 20) * ((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) shr 0)) shl 0));
        
+       {Set Short Attempt}
        Request.ShortAttempt:=True;
+       
+       {Update Statistics}
+       Inc(Host.ShortAttemptCount); 
       end;
       
-     {Check for Root Hub and Speed}
-     if USBIsRootHub(Request.Device.Parent) and (Request.Device.Speed <> USB_SPEED_HIGH) then
+     {Check for Speed}
+     if Request.Device.Speed <> USB_SPEED_HIGH then
       begin
-       {Due to bugs in the controller, change the Endpoint type from Interrupt to Control}
+       {Note: Both Linux and FreeBSD place all split interrupt requests into the control queue in order to ease the timing pressure}
+       
+       {Change the Endpoint type from Interrupt to Control}
        Characteristics:=(Characteristics and not(USB_TRANSFER_TYPE_INTERRUPT shl 18));
       end; 
     end;
@@ -2638,6 +2667,15 @@ begin
      {Setup Split Enable}
      SplitControl:=(SplitControl or DWC_HOST_CHANNEL_SPLIT_CONTROL_SPLIT_ENABLE);
      
+     {Set Is Split}
+     Request.IsSplit:=True;
+     
+     {Set Start of Frame}
+     Request.StartOfFrame:=True;
+     
+     {Update Statistics}
+     Inc(Host.StartOfFrameCount);
+     
      {Check Transfer Size}
      if ((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0) > ((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) shr 0) then
       begin
@@ -2645,7 +2683,11 @@ begin
        Transfer:=(Transfer and not(DWC_HOST_CHANNEL_TRANSFER_SIZE)); {Reset Transfer Size}
        Transfer:=(Transfer or (((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) shr 0) shl 0));
        
+       {Set Short Attempt}
        Request.ShortAttempt:=True;
+       
+       {Update Statistics}
+       Inc(Host.ShortAttemptCount); 
       end; 
     end;
     
@@ -2720,6 +2762,9 @@ begin
      
      {Set Short Attempt}
      Request.ShortAttempt:=True;
+     
+     {Update Statistics}
+     Inc(Host.ShortAttemptCount); 
     end;
   
    {For OUT endpoints, copy and flush the data to send into the DMA buffer}
@@ -2764,7 +2809,8 @@ begin
  Request.AttemptedSize:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0);
  Request.AttemptedBytesRemaining:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0);
  Request.AttemptedPacketsRemaining:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19);
-
+ if not(Request.CompleteSplit) then Request.BytesAttempted:=Request.BytesAttempted + Request.AttemptedSize;
+ 
  {Save the request for the interrupt handler}
  Host.ChannelRequests[Channel]:=Request;
 
@@ -2804,6 +2850,7 @@ function DWCChannelStartTransaction(Host:PDWCUSBHost;Channel:LongWord;Request:PU
 {Note: Can be called by the interrupt handler}          
 var
  NextFrame:LongWord;
+ ResultCode:LongWord;
  SplitControl:LongWord;
  InterruptMask:LongWord;
  Characteristics:LongWord;
@@ -2827,46 +2874,109 @@ begin
  
  {Get Host Channel}
  HostChannel:=@Host.Registers.HostChannels[Channel];
- 
+   
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+   
  {Clear pending interrupts}
  HostChannel.InterruptMask:=0;
- HostChannel.Interrupts:=$ffffffff;
+ HostChannel.Interrupts:=$FFFFFFFF;
  
- {Set whether this transaction is the completion part of a split transaction or not}
- SplitControl:=HostChannel.SplitControl;
- if Request.CompleteSplit then SplitControl:=(SplitControl or DWC_HOST_CHANNEL_SPLIT_CONTROL_COMPLETE_SPLIT) else SplitControl:=(SplitControl and not(DWC_HOST_CHANNEL_SPLIT_CONTROL_COMPLETE_SPLIT));
- HostChannel.SplitControl:=SplitControl;
- 
- {Set odd_frame and enable the channel}
- NextFrame:=(Host.Registers.HostFrameNumber and $ffff) + 1;
- if (SplitControl and DWC_HOST_CHANNEL_SPLIT_CONTROL_COMPLETE_SPLIT) = 0 then
+ {Check Start of Frame}
+ if Request.StartOfFrame then
   begin
-   Request.CompleteSplitRetries:=0;
-  end;
- Characteristics:=HostChannel.Characteristics;
- if (NextFrame and 1) <> 0 then Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_ODD_FRAME) else Characteristics:=(Characteristics and not(DWC_HOST_CHANNEL_CHARACTERISTICS_ODD_FRAME));
- {Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE);} {Moved to last}
- HostChannel.Characteristics:=Characteristics;
- 
- {Set the channel's interrupt mask to any interrupts we need to ensure that DWCInterruptHandler gets called when the software must take action on
-  the transfer.  Furthermore, make sure interrupts from this channel are enabled in the Host All Channels Interrupt Mask Register.  Note: if you
-  enable more channel interrupts here, DWCInterruptHandler needs to be changed to account for interrupts other than channel halted}
- InterruptMask:=0;
- InterruptMask:=(InterruptMask or DWC_HOST_CHANNEL_INTERRUPTS_CHANNEL_HALTED);
- HostChannel.InterruptMask:=InterruptMask;
- Host.Registers.HostChannelsInterruptMask:=(Host.Registers.HostChannelsInterruptMask or (1 shl Channel));
- 
- {Enable the channel}
- HostChannel.Characteristics:=HostChannel.Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE;
- 
- {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
- {Return Result}
- Result:=USB_STATUS_SUCCESS;
+   {Acquire the Lock}
+   if DWCOTG_FIQ_ENABLED then
+    begin
+     ResultCode:=SpinLockIRQFIQ(Host.StartOfFrameLock);
+    end
+   else
+    begin
+     ResultCode:=SpinLockIRQ(Host.StartOfFrameLock);
+    end;  
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     try
+      {Update SOF Wait bitmap}
+      Host.StartOfFrameMask:=Host.StartOfFrameMask or (1 shl Channel);
+     finally
+      {Release the Lock}
+      if DWCOTG_FIQ_ENABLED then
+       begin
+        SpinUnlockIRQFIQ(Host.StartOfFrameLock);
+       end
+      else
+       begin
+        SpinUnlockIRQ(Host.StartOfFrameLock);
+       end;     
+     end;   
+    end;
+   
+   {Enable Start of Frame Interrupt}
+   Host.Registers.CoreInterruptMask:=Host.Registers.CoreInterruptMask or DWC_CORE_INTERRUPTS_SOF_INTR;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+  end
+ else
+  begin 
+   {Set whether this transaction is the completion part of a split transaction or not}
+   SplitControl:=HostChannel.SplitControl;
+   if Request.CompleteSplit then SplitControl:=(SplitControl or DWC_HOST_CHANNEL_SPLIT_CONTROL_COMPLETE_SPLIT) else SplitControl:=(SplitControl and not(DWC_HOST_CHANNEL_SPLIT_CONTROL_COMPLETE_SPLIT));
+   HostChannel.SplitControl:=SplitControl;
+   
+   if (SplitControl and DWC_HOST_CHANNEL_SPLIT_CONTROL_COMPLETE_SPLIT) = 0 then
+    begin
+     Request.CompleteSplitRetries:=0;
+    end;  
+   if (SplitControl and DWC_HOST_CHANNEL_SPLIT_CONTROL_SPLIT_ENABLE) <> 0 then
+    begin
+     if not(Request.CompleteSplit) then 
+      begin
+       {$IFDEF USB_DEBUG}
+       Inc(Request.StartSplitAttempts);
+       {$ENDIF}
+       
+       {Update Statistics}
+       Inc(Host.StartSplitCount)
+      end
+     else
+      begin
+       {$IFDEF USB_DEBUG}
+       Inc(Request.CompleteSplitAttempts);
+       {$ENDIF}
+       
+       {Update Statistics}
+       Inc(Host.CompleteSplitCount);
+      end; 
+    end;  
+   
+   {Check for interrupt or isochronous endpoint}
+   Characteristics:=HostChannel.Characteristics;
+   if (((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_TYPE) shr 18) = USB_TRANSFER_TYPE_INTERRUPT) or (((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_TYPE) shr 18) = USB_TRANSFER_TYPE_ISOCHRONOUS) then
+    begin
+     {Check if the next frame is odd or even}
+     NextFrame:=(Host.Registers.HostFrameNumber and DWC_HFNUM_FRAME_NUMBER_MASK) + 1;
+     if (NextFrame and 1) <> 0 then Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_ODD_FRAME) else Characteristics:=(Characteristics and not(DWC_HOST_CHANNEL_CHARACTERISTICS_ODD_FRAME));
+     {Characteristics:=(Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE);} {Moved to last}
+     HostChannel.Characteristics:=Characteristics;
+    end; 
+   
+   {Set the channel's interrupt mask to any interrupts we need to ensure that DWCInterruptHandler gets called when the software must take action on
+    the transfer.  Furthermore, make sure interrupts from this channel are enabled in the Host All Channels Interrupt Mask Register.  Note: if you
+    enable more channel interrupts here, DWCInterruptHandler needs to be changed to account for interrupts other than channel halted}
+   HostChannel.InterruptMask:=DWC_HOST_CHANNEL_INTERRUPTS_CHANNEL_HALTED;
+   Host.Registers.HostChannelsInterruptMask:=(Host.Registers.HostChannelsInterruptMask or (1 shl Channel));
+   
+   {Enable the channel}
+   HostChannel.Characteristics:=HostChannel.Characteristics or DWC_HOST_CHANNEL_CHARACTERISTICS_CHANNEL_ENABLE;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read} 
+   
+   {Return Result}
+   Result:=USB_STATUS_SUCCESS;
+  end;  
 end;
 
 {==============================================================================}
@@ -3729,50 +3839,63 @@ begin
         {Schedule the request on a channel}
         {Get Channel}
         Channel:=DWCAllocateChannel(Host);
-        //To Do //Cancel //Fail request (Return to completion) if no channel
-        
-        {Acquire the Lock}
-        if DWCOTG_FIQ_ENABLED then
+        if Channel <> LongWord(INVALID_HANDLE_VALUE) then
          begin
-          ResultCode:=SpinLockIRQFIQ(Host.Lock);
+          {Acquire the Lock}
+          if DWCOTG_FIQ_ENABLED then
+           begin
+            ResultCode:=SpinLockIRQFIQ(Host.Lock);
+           end
+          else
+           begin
+            ResultCode:=SpinLockIRQ(Host.Lock);
+           end;  
+          if ResultCode = ERROR_SUCCESS then
+           begin
+            try
+             {Check Request}
+             if Request.Status = USB_STATUS_NOT_PROCESSED then
+              begin
+               {Update Request}
+               Request.Status:=USB_STATUS_NOT_COMPLETED;
+             
+               {Start Transfer}
+               DWCChannelStartTransfer(Host,Channel,Request);
+              end
+             else
+              begin
+               {Send to the Completion thread}
+               FillChar(Message,SizeOf(TMessage),0);
+               Message.Msg:=LongWord(Request);
+               Message.wParam:=Channel;
+               Message.lParam:=DWC_STATUS_INVALID;
+               ThreadSendMessage(Host.CompletionThread,Message);
+              end;
+            finally
+             {Release the Lock}
+             if DWCOTG_FIQ_ENABLED then
+              begin
+               SpinUnlockIRQFIQ(Host.Lock);
+              end
+             else
+              begin
+               SpinUnlockIRQ(Host.Lock);
+              end;     
+            end;   
+           end;
          end
         else
          begin
-          ResultCode:=SpinLockIRQ(Host.Lock);
-         end;  
-        if ResultCode = ERROR_SUCCESS then
-         begin
-          try
-           {Check Request}
-           if Request.Status = USB_STATUS_NOT_PROCESSED then
-            begin
-             {Update Request}
-             Request.Status:=USB_STATUS_NOT_COMPLETED;
-           
-             {Start Transfer}
-             DWCChannelStartTransfer(Host,Channel,Request);
-            end
-           else
-            begin
-             {Send to the Completion thread}
-             FillChar(Message,SizeOf(TMessage),0);
-             Message.Msg:=LongWord(Request);
-             Message.wParam:=Channel;
-             Message.lParam:=DWC_STATUS_INVALID;
-             ThreadSendMessage(Host.CompletionThread,Message);
-            end;
-          finally
-           {Release the Lock}
-           if DWCOTG_FIQ_ENABLED then
-            begin
-             SpinUnlockIRQFIQ(Host.Lock);
-            end
-           else
-            begin
-             SpinUnlockIRQ(Host.Lock);
-            end;     
-          end;   
-         end;
+          {Update Request}
+          Request.Status:=USB_STATUS_OPERATION_FAILED;
+
+          {Send to the Completion thread}
+          FillChar(Message,SizeOf(TMessage),0);
+          Message.Msg:=LongWord(Request);
+          Message.wParam:=Channel;
+          Message.lParam:=DWC_STATUS_INVALID;
+          ThreadSendMessage(Host.CompletionThread,Message);
+         end;         
        end;    
      end
     else 
@@ -3916,9 +4039,7 @@ function DWCResubmitExecute(Request:PUSBRequest):PtrInt;
 
  An instance of this thread is created for each request that needs to be resubmitted,
  this thread then either waits for a predetermined number of milliseconds before
- scheduling the request on the next available channel or waits for a signal from
- the interrupt handler to indicate a start of frame before scheduling the request
- on the allocated channel.
+ scheduling the request on the next available channel.
  
  Once the request has been resubmitted the thread waits for the semaphore to be
  signaled again. If the request is a periodic polling of an endpoint then it will
@@ -3963,7 +4084,11 @@ begin
      begin
       Interval:=Request.Endpoint.bInterval div USB_FRAMES_PER_MS;
      end;
-   end;  
+   end
+  else
+   begin
+    Interval:=10;
+   end;   
   {Check Interval}
   if Interval < 1 then
    begin
@@ -3983,120 +4108,18 @@ begin
    begin
     {Wait for the Resubmit Semaphore}
     if SemaphoreWait(Request.ResubmitSemaphore) <> ERROR_SUCCESS then Break; {Break to terminate thread}
+     
+    {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
+    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Resubmit waiting ' + IntToStr(Interval) + 'ms to start request again');
+    {$ENDIF}
     
-    {Check Start of Frame}
-    if DWC_START_SPLIT_INTR_TRANSFERS_ON_SOF and Request.StartOfFrame then
+    {Wait Milliseconds}
+    ThreadSleep(Interval);
+    
+    {Get Channel}
+    Channel:=DWCAllocateChannel(Host);
+    if Channel <> LongWord(INVALID_HANDLE_VALUE) then
      begin
-      {Update Statistics}
-      Inc(Host.StartOfFrameCount);
-      
-      {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
-      if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Resubmit waiting for Start of Frame');
-      {$ENDIF}
-      
-      {Get Channel}
-      Channel:=DWCAllocateChannel(Host);
-      //To Do //Cancel //Fail request (Return to completion) if no channel
-      
-      {Update Pending Transfers}
-      if Channel <> LongWord(INVALID_HANDLE_VALUE) then
-       begin
-        Host.ChannelRequests[Channel]:=Request;
-       end; 
-      
-      {Acquire the Lock}
-      if DWCOTG_FIQ_ENABLED then
-       begin
-        ResultCode:=SpinLockIRQFIQ(Host.StartOfFrameLock);
-       end
-      else
-       begin
-        ResultCode:=SpinLockIRQ(Host.StartOfFrameLock);
-       end;  
-      if ResultCode = ERROR_SUCCESS then
-       begin
-        try
-         {Update SOF Wait bitmap}
-         if Channel <> LongWord(INVALID_HANDLE_VALUE) then
-          begin
-           Host.StartOfFrameMask:=Host.StartOfFrameMask or (1 shl Channel);
-          end; 
-        finally
-         {Release the Lock}
-         if DWCOTG_FIQ_ENABLED then
-          begin
-           SpinUnlockIRQFIQ(Host.StartOfFrameLock);
-          end
-         else
-          begin
-           SpinUnlockIRQ(Host.StartOfFrameLock);
-          end;     
-        end;   
-       end;
-      
-      {Enable Start of Frame Interrupt}
-      DWCHostStartFrameInterrupt(Host,True);
-      
-      {Wait for Message}
-      FillChar(Message,SizeOf(TMessage),0);
-      ThreadReceiveMessage(Message);
- 
-      {Clear Start of Frame}
-      Request.StartOfFrame:=False;
-      
-      {Acquire the Lock}
-      if DWCOTG_FIQ_ENABLED then
-       begin
-        ResultCode:=SpinLockIRQFIQ(Host.Lock);
-       end
-      else
-       begin
-        ResultCode:=SpinLockIRQ(Host.Lock);
-       end;  
-      if ResultCode = ERROR_SUCCESS then
-       begin
-        try
-         {Check Request}
-         if Request.Status = USB_STATUS_NOT_COMPLETED then
-          begin
-           {Start Transfer}
-           DWCChannelStartTransfer(Host,Channel,Request);
-          end
-         else
-          begin
-           {Send to the Completion thread}
-           FillChar(Message,SizeOf(TMessage),0);
-           Message.Msg:=LongWord(Request);
-           Message.wParam:=Channel;
-           Message.lParam:=DWC_STATUS_INVALID;
-           ThreadSendMessage(Host.CompletionThread,Message);
-          end;
-        finally
-         {Release the Lock}
-         if DWCOTG_FIQ_ENABLED then
-          begin
-           SpinUnlockIRQFIQ(Host.Lock);
-          end
-         else
-          begin
-           SpinUnlockIRQ(Host.Lock);
-          end;     
-         end;   
-       end;
-     end
-    else
-     begin
-      {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
-      if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Resubmit waiting ' + IntToStr(Interval) + 'ms to start request again');
-      {$ENDIF}
-      
-      {Wait Milliseconds}
-      ThreadSleep(Interval);
-      
-      {Get Channel}
-      Channel:=DWCAllocateChannel(Host);
-      //To Do //Cancel //Fail request (Return to completion) if no channel
-      
       {Acquire the Lock}
       if DWCOTG_FIQ_ENABLED then
        begin
@@ -4136,7 +4159,19 @@ begin
           end;     
          end;   
        end;
-     end;
+     end
+    else
+     begin
+      {Update Request}
+      Request.Status:=USB_STATUS_OPERATION_FAILED;
+
+      {Send to the Completion thread}
+      FillChar(Message,SizeOf(TMessage),0);
+      Message.Msg:=LongWord(Request);
+      Message.wParam:=Channel;
+      Message.lParam:=DWC_STATUS_INVALID;
+      ThreadSendMessage(Host.CompletionThread,Message);
+     end;         
    end;  
    
   {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
@@ -4158,8 +4193,9 @@ procedure DWCInterruptHandler(Host:PDWCUSBHost);
 var
  Channel:LongWord;
  Message:TMessage;
+ Request:PUSBRequest;
  ResultCode:LongWord;
- TempInterrupts:LongWord;
+ FrameNumber:LongWord;
  CoreInterrupts:LongWord;
  ChannelInterrupt:LongWord;
  HostFrameInterval:LongWord;
@@ -4191,86 +4227,96 @@ begin
     CoreInterrupts:=Host.Registers.CoreInterrupts;
 
     {Check Start of Frame (SOF) Interrupt}
-    if DWC_START_SPLIT_INTR_TRANSFERS_ON_SOF and ((CoreInterrupts and DWC_CORE_INTERRUPTS_SOF_INTR) <> 0) then
+    if (CoreInterrupts and DWC_CORE_INTERRUPTS_SOF_INTR) <> 0 then
      begin
       {Update Statistics}
       Inc(Host.StartOfFrameInterruptCount);
    
-      //To Do //This seems to be occurring even though it is not requested ? //See change below to allow disable //Still doesn't work ?
       {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
       if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Received Start of Frame interrupt (HostFrameNumber=' + IntToHex(Host.Registers.HostFrameNumber,8) + ')');
       {$ENDIF}
       
       {Start of Frame (SOF) interrupt occurred}
-      if (Host.Registers.HostFrameNumber and $07) <> 6 then
+      
+      {Compare Last Frame Number}
+      FrameNumber:=(Host.Registers.HostFrameNumber and DWC_HFNUM_FRAME_NUMBER_MASK);
+      if FrameNumber <> Host.LastFrameNumber then
        begin
-        if Host.StartOfFrameMask <> 0 then
+        {Save Frame Number}
+        Host.LastFrameNumber:=FrameNumber;
+        
+        {Check Microframe Number}
+        if (FrameNumber and $07) < 5 then
          begin
-          {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
-          if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG:  Waking up channel waiting for start of frame');
-          {$ENDIF}
-          
-          {Acquire the Lock}
-          if DWCOTG_FIQ_ENABLED then
+          if Host.StartOfFrameMask <> 0 then
            begin
-            ResultCode:=SpinLockIRQFIQ(Host.StartOfFrameLock);
-           end
-          else
-           begin
-            ResultCode:=SpinLockIRQ(Host.StartOfFrameLock);
-           end;  
-          if ResultCode = ERROR_SUCCESS then
-           begin
-            try
-             {Get first channel waiting for SOF}
-             Channel:=FirstBitSet(Host.StartOfFrameMask);
-       
-             {Check Channel}
-             if Host.ChannelRequests[Channel] <> nil then
-              begin
-               {Send a message to the resubmit thread}
-               FillChar(Message,SizeOf(TMessage),0);
-               ThreadSendMessage(Host.ChannelRequests[Channel].ResubmitThread,Message);
-              end; 
-       
-             {Remove the channel from the waiting mask}
-             Host.StartOfFrameMask:=Host.StartOfFrameMask and not(1 shl Channel);
-            finally
-             {Release the Lock}
-             if DWCOTG_FIQ_ENABLED then
-              begin
-               SpinUnlockIRQFIQ(Host.StartOfFrameLock);
-              end
-             else
-              begin
-               SpinUnlockIRQ(Host.StartOfFrameLock);
-              end;     
-            end;   
+            {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
+            if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG:  Waking up channel waiting for start of frame');
+            {$ENDIF}
+            
+            {Acquire the Lock}
+            if DWCOTG_FIQ_ENABLED then
+             begin
+              ResultCode:=SpinLockIRQFIQ(Host.StartOfFrameLock);
+             end
+            else
+             begin
+              ResultCode:=SpinLockIRQ(Host.StartOfFrameLock);
+             end;  
+            if ResultCode = ERROR_SUCCESS then
+             begin
+              try
+               repeat
+                {Get first channel waiting for SOF}
+                Channel:=FirstBitSet(Host.StartOfFrameMask);
+           
+                {Get Request}
+                Request:=Host.ChannelRequests[Channel];
+                if Request <> nil then 
+                 begin
+                  {Clear Start of Frame}
+                  Request.StartOfFrame:=False;
+                   
+                  {Restart Transaction}
+                  DWCChannelStartTransaction(Host,Channel,Request);
+                 end;
+           
+                {Remove the channel from the waiting mask}
+                Host.StartOfFrameMask:=Host.StartOfFrameMask and not(1 shl Channel);
+               until Host.StartOfFrameMask = 0; 
+              finally
+               {Release the Lock}
+               if DWCOTG_FIQ_ENABLED then
+                begin
+                 SpinUnlockIRQFIQ(Host.StartOfFrameLock);
+                end
+               else
+                begin
+                 SpinUnlockIRQ(Host.StartOfFrameLock);
+                end;     
+              end;   
+             end;
            end;
          end;
-       end;
-    
-      {Check Start of Frame Mask}
-      if Host.StartOfFrameMask = 0 then
-       begin
-        {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
-        if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Disabling start of frame interrupt');
-        {$ENDIF}
-        
-        {Disable Start of Frame Interrupt}
-        TempInterrupts:=Host.Registers.CoreInterruptMask;
-        TempInterrupts:=TempInterrupts and not(DWC_CORE_INTERRUPTS_SOF_INTR);
-        Host.Registers.CoreInterruptMask:=TempInterrupts;
-       end;
+      
+        {Check Start of Frame Mask}
+        if Host.StartOfFrameMask = 0 then
+         begin
+          {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Disabling start of frame interrupt');
+          {$ENDIF}
+          
+          {Disable Start of Frame Interrupt}
+          Host.Registers.CoreInterruptMask:=Host.Registers.CoreInterruptMask and not(DWC_CORE_INTERRUPTS_SOF_INTR);
+         end;
+       end;  
      
       {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
       if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Clearing start of frame interrupt');
       {$ENDIF}
 
       {Clear Start of Frame Interrupt} 
-      TempInterrupts:=0;
-      TempInterrupts:=(TempInterrupts or DWC_CORE_INTERRUPTS_SOF_INTR);
-      Host.Registers.CoreInterrupts:=TempInterrupts;
+      Host.Registers.CoreInterrupts:=DWC_CORE_INTERRUPTS_SOF_INTR;
      end;
  
     {Check Host Channel Interrupt}
@@ -4381,7 +4427,7 @@ function DWCChannelInterrupt(Host:PDWCUSBHost;Channel:LongWord):LongWord;
 {Note: Only called by DWCInterruptHandler}          
 {Note: Caller must hold the host lock}          
 var
- InterruptStatus:LongWord; //To Do //Critical //Change to Status
+ Status:LongWord;
  Message:TMessage;
  Request:PUSBRequest;
  Interrupts:LongWord;
@@ -4419,7 +4465,10 @@ begin
    {$ENDIF}
   
    {Request status invalid, transfer cancelled}
-   InterruptStatus:=DWC_STATUS_CANCELLED;
+   Status:=DWC_STATUS_CANCELLED;
+   
+   {Update Statistics}
+   Inc(Host.RequestCancelCount); 
   end
  {Check the Interrupts for errors}
  else if (Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_STALL_RESPONSE_RECEIVED) <> 0 then
@@ -4429,7 +4478,7 @@ begin
    {$ENDIF}
 
    {Hardware stall, transfer failed}
-   InterruptStatus:=DWC_STATUS_STALLED;
+   Status:=DWC_STATUS_STALLED;
    
    {Update Statistics}
    Inc(Host.StallResponseCount); 
@@ -4441,7 +4490,7 @@ begin
    {$ENDIF}
 
    {AHB error, transfer failed}
-   InterruptStatus:=DWC_STATUS_FAILED;
+   Status:=DWC_STATUS_FAILED;
    
    {Update Statistics}
    Inc(Host.AHBErrorCount); 
@@ -4452,8 +4501,28 @@ begin
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Transaction error on channel ' + IntToStr(Channel) + ' (Interrupts=' + IntToHex(Interrupts,8) + ', TRANSFER_PACKET_COUNT=' + IntToStr((HostChannel.Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19) + ')');
    {$ENDIF}
 
-   {Transaction error, transfer failed}
-   InterruptStatus:=DWC_STATUS_FAILED;
+   if Request.IsSplit then
+    begin
+     {On a split transaction retry three times before failing}
+     Inc(Request.SplitErrorCount);
+     if Request.SplitErrorCount < DWC_SPLIT_ERROR_RETRIES then
+      begin
+       Request.CompleteSplit:=False;
+       
+       {Transaction error, resubmit the transfer}
+       Status:=DWC_STATUS_TRANSFER_RESUBMIT;
+      end
+     else
+      begin
+       {Transaction error, transfer failed}
+       Status:=DWC_STATUS_FAILED;
+      end;
+    end
+   else
+    begin   
+     {Transaction error, transfer failed}
+     Status:=DWC_STATUS_FAILED;
+    end; 
    
    {Update Statistics}
    Inc(Host.TransactionErrorCount); 
@@ -4465,7 +4534,7 @@ begin
    {$ENDIF}
 
    {Babble error, transfer failed}
-   InterruptStatus:=DWC_STATUS_FAILED;
+   Status:=DWC_STATUS_FAILED;
    
    {Update Statistics}
    Inc(Host.BabbleErrorCount); 
@@ -4477,7 +4546,7 @@ begin
    {$ENDIF}
 
    {Excess transaction error, transfer failed}
-   InterruptStatus:=DWC_STATUS_FAILED;
+   Status:=DWC_STATUS_FAILED;
    
    {Update Statistics}
    Inc(Host.ExcessTransactionCount); 
@@ -4489,7 +4558,7 @@ begin
    {$ENDIF}
 
    {Frame list rollover error, transfer failed}
-   InterruptStatus:=DWC_STATUS_FAILED;
+   Status:=DWC_STATUS_FAILED;
    
    {Update Statistics}
    Inc(Host.FrameListRolloverCount); 
@@ -4501,7 +4570,7 @@ begin
    {$ENDIF}
 
    {NYET response when not complete split, transfer failed}
-   InterruptStatus:=DWC_STATUS_FAILED;
+   Status:=DWC_STATUS_FAILED;
    
    {Update Statistics}
    Inc(Host.NYETResponseCount); 
@@ -4513,7 +4582,7 @@ begin
    {$ENDIF}
 
    {Data toggle error on an OUT request, transfer failed}
-   InterruptStatus:=DWC_STATUS_FAILED;
+   Status:=DWC_STATUS_FAILED;
    
    {Update Statistics}
    Inc(Host.DataToggleErrorCount); 
@@ -4525,7 +4594,7 @@ begin
    {$ENDIF}
 
    {Frame overrun error, restart transaction}
-   InterruptStatus:=DWC_STATUS_TRANSACTION_RESTART;
+   Status:=DWC_STATUS_TRANSACTION_RESTART;
    
    {Update Statistics}
    Inc(Host.FrameOverrunCount); 
@@ -4535,7 +4604,11 @@ begin
    {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: NYET response on channel ' + IntToStr(Channel));
    {$ENDIF}
-
+   
+   {$IFDEF USB_DEBUG}
+   Inc(Request.CompleteSplitNYETs);
+   {$ENDIF}
+   
    {Device sent NYET packet when completing a split transaction. Try the CompleteSplit again later.  As a special case, if too many NYETs are received, restart the entire split transaction.
     (Apparently, because of frame overruns or some other reason it's possible for NYETs to be issued indefinitely until the transaction is retried.)}
    Inc(Request.CompleteSplitRetries);
@@ -4546,10 +4619,22 @@ begin
      {$ENDIF}
      
      Request.CompleteSplit:=False;
+     
+     {$IFDEF USB_DEBUG}
+     Inc(Request.CompleteSplitRestarts);
+     {$ENDIF}
+     
+     {Update Statistics}
+     Inc(Host.CompleteSplitRestartCount);
+     
+     {NYET response on a complete split, resubmit the transfer}
+     Status:=DWC_STATUS_TRANSFER_RESUBMIT; 
+    end
+   else
+    begin
+     {NYET response on a complete split, restart transaction} 
+     Status:=DWC_STATUS_TRANSACTION_RESTART; 
     end;    
-    
-   {NYET response on a complete split, restart transaction} 
-   InterruptStatus:=DWC_STATUS_TRANSACTION_RESTART;
    
    {Update Statistics}
    Inc(Host.NYETResponseCount); 
@@ -4559,13 +4644,20 @@ begin
    {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: NAK response on channel ' + IntToStr(Channel));
    {$ENDIF}
-
+   
+   {$IFDEF USB_DEBUG}
+   if Request.IsSplit then
+    begin
+     if not(Request.CompleteSplit) then Inc(Request.StartSplitNAKs) else Inc(Request.CompleteSplitNAKs);
+    end;
+   {$ENDIF}
+   
    {Device sent NAK packet. This happens when the device had no data to send at this time. Try again later. Special case: if the NAK was sent during a Complete Split transaction,
     restart with the Start Split, not the Complete Split}
    Request.CompleteSplit:=False;
    
    {NAK response, resubmit the transfer}
-   InterruptStatus:=DWC_STATUS_TRANSFER_RESUBMIT;
+   Status:=DWC_STATUS_TRANSFER_RESUBMIT;
    
    {Update Statistics}
    Inc(Host.NAKReponseCount); 
@@ -4573,28 +4665,11 @@ begin
  else 
   begin
    {No error occurred}
-   InterruptStatus:=DWCChannelCompleted(Host,Request,Channel,Interrupts);
+   Status:=DWCChannelCompleted(Host,Request,Channel,Interrupts);
   end;
-        
- if DWC_START_SPLIT_INTR_TRANSFERS_ON_SOF then
-  begin
-   if ((InterruptStatus = DWC_STATUS_TRANSFER_RESTART) or (InterruptStatus = DWC_STATUS_TRANSACTION_RESTART)) and (USBIsInterruptRequest(Request)) and (Request.Device.Speed <> USB_SPEED_HIGH) and not(Request.CompleteSplit) then
-    begin
-     {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
-     if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Setting StartOfFrame and resubmitting transfer on channel ' + IntToStr(Channel));
-     if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:  (Interrupt status=' + IntToHex(InterruptStatus,8) + ')');
-     {$ENDIF}
-
-     {Set Start of Frame}
-     Request.StartOfFrame:=True; 
-     
-     {Resubmit on Start of Frame}
-     InterruptStatus:=DWC_STATUS_TRANSFER_RESUBMIT;
-    end;
-  end;  
-
+  
  {Check Status}
- case InterruptStatus of
+ case Status of
   DWC_STATUS_SUCCESS:begin
     Request.Status:=USB_STATUS_SUCCESS;
    end;
@@ -4608,16 +4683,34 @@ begin
     {Nothing}
    end;
   DWC_STATUS_TRANSFER_RESTART:begin
+    if Request.IsSplit then
+     begin
+      {Set Start of Frame}
+      Request.StartOfFrame:=True; 
+     
+      {Update Statistics}
+      Inc(Host.StartOfFrameCount);
+     end;
+     
     DWCChannelStartTransfer(Host,Channel,Request);
     Exit;
    end;
   DWC_STATUS_TRANSACTION_RESTART:begin
+    if Request.IsSplit then 
+     begin
+      {Set Start of Frame}
+      Request.StartOfFrame:=True; 
+     
+      {Update Statistics}
+      Inc(Host.StartOfFrameCount);
+     end;
+  
     DWCChannelStartTransaction(Host,Channel,Request);
     Exit;
    end;
   DWC_STATUS_CANCELLED:begin
     Request.Status:=USB_STATUS_CANCELLED;
-   end;  
+   end;
  end;
  
  {Transfer complete, transfer encountered an error, or transfer needs to be retried later}
@@ -4635,7 +4728,7 @@ begin
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=LongWord(Request);
  Message.wParam:=Channel;
- Message.lParam:=InterruptStatus;
+ Message.lParam:=Status;
  ThreadSendMessage(Host.CompletionThread,Message);
  
  {Return Result}
@@ -4697,10 +4790,12 @@ begin
    Direction:=((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_DIRECTION) shr 15);
    TransferType:=((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_TYPE) shr 18);
    
-   {Check for Root Hub and Speed}
-   if USBIsRootHub(Request.Device.Parent) and (Request.Device.Speed <> USB_SPEED_HIGH) then
+   {Check for Speed}
+   if Request.Device.Speed <> USB_SPEED_HIGH then
     begin
-     {Fixup Transfer Type set by start transfer due to controller bugs}
+     {Note: Both Linux and FreeBSD place all split interrupt requests into the control queue in order to ease the timing pressure}
+     
+     {Fixup Transfer Type set by start transfer}
      if USBIsInterruptRequest(Request) then TransferType:=USB_TRANSFER_TYPE_INTERRUPT;
     end; 
    
@@ -4768,6 +4863,7 @@ begin
    {Account for packets and bytes transferred}   
    Request.AttemptedPacketsRemaining:=(Request.AttemptedPacketsRemaining - PacketsTransferred);
    Request.AttemptedBytesRemaining:=(Request.AttemptedBytesRemaining - BytesTransferred);
+   Request.BytesTransferred:=(Request.BytesTransferred + BytesTransferred);
    PtrUInt(Request.CurrentData):=(PtrUInt(Request.CurrentData) + BytesTransferred);
    
    {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
@@ -4787,6 +4883,10 @@ begin
        {$ENDIF}
        
        Result:=DWC_STATUS_FAILED;
+       
+       {Update Statistics}
+       Inc(Host.NoChannelCompletedCount);
+       
        Exit;
       end;
       
@@ -4884,6 +4984,7 @@ begin
      {$ENDIF}
      
      Result:=DWC_STATUS_TRANSACTION_RESTART;
+     
      Exit;
     end
    else
@@ -4893,6 +4994,10 @@ begin
      {$ENDIF}
      
      Result:=DWC_STATUS_FAILED;
+     
+     {Update Statistics}
+     Inc(Host.NoPacketsTransferredCount); 
+     
      Exit;
     end;    
   end;  

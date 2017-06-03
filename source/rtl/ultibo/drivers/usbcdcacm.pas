@@ -979,7 +979,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF CDCACM_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Setup Defaults}
@@ -1326,7 +1326,7 @@ begin
   end;  
  
  {$IFDEF CDCACM_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
 
  {Check Interface}

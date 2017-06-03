@@ -13,6 +13,7 @@ Boards
 
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B
+ Raspberry Pi CM3
  
 Licence
 =======
@@ -73,7 +74,7 @@ const
  
  {Physical memory addresses of BCM2836 peripherals  (See: BCM2835-ARM-Peripherals.pdf)}
  BCM2836_PERIPHERALS_BASE = $3F000000;  {Mapped to VC address 7E000000}
- BCM2836_PERIPHERALS_SIZE = $00FFFFFF;
+ BCM2836_PERIPHERALS_SIZE = SIZE_16M;
  
  {Interrupt Controller 0}
  BCM2836_IC0_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $2000;
@@ -1092,15 +1093,15 @@ const
 
  BCM2836_MBOX_TAG_GET_TEMP          = $00030006; {Return the temperature of the SoC in thousandths of a degree C. id should be zero}
  BCM2836_MBOX_TAG_GET_MAX_TEMP      = $0003000a; {Return the maximum safe temperature of the SoC in thousandths of a degree C. id should be zero. Overclock may be disabled above this temperature}
- 
+ {GPU}
  BCM2836_MBOX_TAG_ALLOCATE_MEMORY   = $0003000c; {Allocates contiguous memory on the GPU. size and alignment are in bytes}
  BCM2836_MBOX_TAG_LOCK_MEMORY       = $0003000d; {Lock buffer in place, and return a bus address. Must be done before memory can be accessed}
  BCM2836_MBOX_TAG_UNLOCK_MEMORY     = $0003000e; {Unlock buffer. It retains contents, but may move. Needs to be locked before next use. status=0 is success}
  BCM2836_MBOX_TAG_RELEASE_MEMORY    = $0003000f; {Free the memory buffer. status=0 is success}
  
  BCM2836_MBOX_TAG_EXECUTE_CODE      = $00030010; {Calls the function at given (bus) address and with arguments given. E.g. r0 = fn(r0, r1, r2, r3, r4, r5); It blocks until call completes}
- BCM2836_MBOX_TAG_EXECUTE_QPU       = $00030011; {}
- BCM2836_MBOX_TAG_ENABLE_QPU        = $00030012; {}
+ BCM2836_MBOX_TAG_EXECUTE_QPU       = $00030011; {Execute an assembled block of code using one or more Quad Processing Units (QPUs)}
+ BCM2836_MBOX_TAG_ENABLE_QPU        = $00030012; {Enable the Quad Processing Units (QPUs)}
  
  BCM2836_MBOX_TAG_GET_DISPMANX_HANDLE = $00030014; {Gets the mem_handle associated with a created dispmanx resource. This can be locked and the memory directly written from the arm to avoid having to copy the image data to GPU}
  BCM2836_MBOX_TAG_GET_EDID_BLOCK    = $00030020; {This reads the specified EDID block from attached HDMI/DVI device. There will always be at least one block of 128 bytes, but there may be additional blocks. You should keep requesting blocks (starting from 0) until the status returned is non-zero}
@@ -1110,6 +1111,14 @@ const
  
  BCM2836_MBOX_TAG_GET_DOMAIN_STATE  = $00030030;
  BCM2836_MBOX_TAG_SET_DOMAIN_STATE  = $00038030;
+ 
+ BCM2836_MBOX_TAG_GET_GPIO_STATE    = $00030041; {Get the current state of a GPIO expander pin (Not applicable on BCM2836)}
+ BCM2836_MBOX_TAG_SET_GPIO_STATE    = $00038041; {Set the current state of a GPIO expander pin (Not applicable on BCM2836)}
+   
+ BCM2836_MBOX_TAG_SET_SDHOST_CLOCK  = $00038042;
+    
+ BCM2836_MBOX_TAG_GET_GPIO_CONFIG   = $00030043; {Get the current configuration of a GPIO expander pin (Not applicable on BCM2836)}
+ BCM2836_MBOX_TAG_SET_GPIO_CONFIG   = $00038043; {Set the current configuration of a GPIO expander pin (Not applicable on BCM2836)}
  {Frame Buffer}
  BCM2836_MBOX_TAG_ALLOCATE_BUFFER	= $00040001; {If the requested alignment is unsupported then the current base and size (which may be 0 if not allocated) is returned and no change occurs}
  BCM2836_MBOX_TAG_RELEASE_BUFFER	= $00048001; {Releases and disables the frame buffer}
@@ -1466,7 +1475,7 @@ const
 const
  {BCM2836 ARM local constants (See: QA7 Rev3.4.pdf)}
  BCM2836_ARM_LOCAL_BASE  =  $40000000;
- BCM2836_ARM_LOCAL_SIZE  =  $0003FFFF;
+ BCM2836_ARM_LOCAL_SIZE  =  SIZE_256K;
  
  {Physical memory addresses of BCM2836 ARM local peripherals  (See: QA7 Rev3.4.pdf)}
  BCM2836_ARM_LOCAL_REGS_BASE     =  (BCM2836_ARM_LOCAL_BASE + $0000);
@@ -1721,7 +1730,7 @@ type
   SourceAddress:LongWord;
   DestinationAddress:LongWord;
   TransferLength:LongWord;
-  ModeStide:LongWord;
+  ModeStride:LongWord;
   NextControlBlockAddress:LongWord;
   Reserved1:LongWord;
   Reserved2:LongWord;
@@ -2509,6 +2518,43 @@ type
   1:(Response:TBCM2836MailboxTagExecuteCodeResponse);
  end;
  
+ {Execute QPU}
+ TBCM2836MailboxTagExecuteQPURequest = record
+  NumQPUs:LongWord;
+  Control:LongWord;
+  NoFlush:LongWord;
+  Timeout:LongWord; {Milliseconds}
+ end;
+ 
+ TBCM2836MailboxTagExecuteQPUResponse = record
+  Status:LongWord; {0 is Success / 0x80000000 is Timeout}
+ end;
+ 
+ PBCM2836MailboxTagExecuteQPU = ^TBCM2836MailboxTagExecuteQPU;
+ TBCM2836MailboxTagExecuteQPU = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagExecuteQPURequest);
+  1:(Response:TBCM2836MailboxTagExecuteQPUResponse);
+ end;
+ 
+ {Enable QPU}
+ TBCM2836MailboxTagEnableQPURequest = record
+  Enable:LongWord; 
+ end;
+
+ TBCM2836MailboxTagEnableQPUResponse = record
+  Status:LongWord;  {0 is Success}
+ end;
+ 
+ PBCM2836MailboxTagEnableQPU = ^TBCM2836MailboxTagEnableQPU;
+ TBCM2836MailboxTagEnableQPU = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagEnableQPURequest);
+  1:(Response:TBCM2836MailboxTagEnableQPUResponse);
+ end;
+ 
  {Get Dispmanx Handle}
  TBCM2836MailboxTagGetDispmanxHandleRequest = record
   Resource:THandle;
@@ -2546,6 +2592,86 @@ type
   1:(Response:TBCM2836MailboxTagGetEDIDBlockResponse);
  end;
  
+ {Get GPIO State}
+ TBCM2836MailboxTagGPIOStateRequest = record
+  GPIO:LongWord;
+  State:LongWord;
+ end;
+ 
+ TBCM2836MailboxTagGPIOStateResponse = record
+  GPIO:LongWord;
+  State:LongWord;
+ end;
+ 
+ PBCM2836MailboxTagGetGPIOState = ^TBCM2836MailboxTagGetGPIOState;
+ TBCM2836MailboxTagGetGPIOState = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagGPIOStateRequest);
+  1:(Response:TBCM2836MailboxTagGPIOStateResponse);
+ end;
+ 
+ {Set GPIO State}
+ PBCM2836MailboxTagSetGPIOState = ^TBCM2836MailboxTagSetGPIOState;
+ TBCM2836MailboxTagSetGPIOState = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagGPIOStateRequest);
+  1:(Response:TBCM2836MailboxTagGPIOStateResponse);
+ end;
+
+ {Get GPIO Config}
+ TBCM2836MailboxTagGetGPIOConfigRequest = record
+  GPIO:LongWord;
+  Direction:LongWord;
+  Polarity:LongWord;
+  Terminator:LongWord;
+  PullUp:LongWord;
+ end;
+ 
+ TBCM2836MailboxTagGetGPIOConfigResponse = record
+  GPIO:LongWord;
+  Direction:LongWord;
+  Polarity:LongWord;
+  Terminator:LongWord;
+  PullUp:LongWord;
+ end;
+ 
+ PBCM2836MailboxTagGetGPIOConfig = ^TBCM2836MailboxTagGetGPIOConfig;
+ TBCM2836MailboxTagGetGPIOConfig = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagGetGPIOConfigRequest);
+  1:(Response:TBCM2836MailboxTagGetGPIOConfigResponse);
+ end;
+ 
+ {Set GPIO Config}
+ TBCM2836MailboxTagSetGPIOConfigRequest = record
+  GPIO:LongWord;
+  Direction:LongWord;
+  Polarity:LongWord;
+  Terminator:LongWord;
+  PullUp:LongWord;
+  State:LongWord;
+ end;
+ 
+ TBCM2836MailboxTagSetGPIOConfigResponse = record
+  GPIO:LongWord;
+  Direction:LongWord;
+  Polarity:LongWord;
+  Terminator:LongWord;
+  PullUp:LongWord;
+  State:LongWord;
+ end;
+
+ PBCM2836MailboxTagSetGPIOConfig = ^TBCM2836MailboxTagSetGPIOConfig;
+ TBCM2836MailboxTagSetGPIOConfig = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagSetGPIOConfigRequest);
+  1:(Response:TBCM2836MailboxTagSetGPIOConfigResponse);
+ end;
+  
  {Allocate Buffer}
  TBCM2836MailboxTagAllocateBufferRequest = record
   Alignment:LongWord; {Bytes}

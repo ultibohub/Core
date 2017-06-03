@@ -3094,6 +3094,10 @@ begin
  {Add Default Locale}
  AddItem(AResponse,'Default Locale:',IntToStr(GetSystemDefaultLCID));
  AddBlank(AResponse);
+
+ {Add Default Language}
+ AddItem(AResponse,'Default Language:',IntToHex(GetSystemDefaultLangID,4));
+ AddBlank(AResponse);
  
  {Add Default Keymap}
  AddItem(AResponse,'Default Keymap:',KeymapGetName(KeymapGetDefault));

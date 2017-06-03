@@ -2958,7 +2958,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF FTDISERIAL_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to either device or interface depending on match)}
@@ -3310,7 +3310,7 @@ begin
   end;  
  
  {$IFDEF FTDISERIAL_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
 
  {Check Interface}

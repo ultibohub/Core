@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '29 April 2017';
+ ULTIBO_RELEASE_DATE             = '3 June 2017';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.3.271';
+ ULTIBO_RELEASE_VERSION          = '1.3.327';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 3;
- ULTIBO_RELEASE_VERSION_REVISION = 271;
+ ULTIBO_RELEASE_VERSION_REVISION = 327;
  
 {==============================================================================}
 const
@@ -1342,6 +1342,12 @@ const
  {Virtual GPIO Pin constants}
  VIRTUAL_GPIO_PIN_0  =  0;
  VIRTUAL_GPIO_PIN_1  =  1;
+ VIRTUAL_GPIO_PIN_2  =  2;
+ VIRTUAL_GPIO_PIN_3  =  3;
+ VIRTUAL_GPIO_PIN_4  =  4;
+ VIRTUAL_GPIO_PIN_5  =  5;
+ VIRTUAL_GPIO_PIN_6  =  6;
+ VIRTUAL_GPIO_PIN_7  =  7;
  
 const
  {Virtual GPIO Function constants}
@@ -1621,6 +1627,7 @@ const
  LOGGING_FACILITY_VIDEO      = 34; {Video log messages}
  LOGGING_FACILITY_CODEC      = 35; {Codec log messages}
  LOGGING_FACILITY_NFS        = 36; {NFS log messages}
+ LOGGING_FACILITY_RPC        = 37; {RPC log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 

@@ -807,6 +807,8 @@ type
 
    function GetDriveFreeSpaceEx:Int64; override;
    function GetDriveTotalSpaceEx:Int64; override;
+   
+   function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; override;
  end;
  
 {==============================================================================}
@@ -25340,6 +25342,41 @@ begin
  end; 
 end;
 
+{==============================================================================}
+
+function TNTFSFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; 
+{Get Drive Information from internal NTFS data}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if not FRecords.ReaderLock then Exit; {Required for LoadBlock via GetFreeClusterCount}
+  try
+   {$IFDEF NTFS_DEBUG}
+   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.GetDriveInformation');
+   {$ENDIF}
+  
+   if FDriver = nil then Exit;
+
+   {Check Free Cluster Count}
+   if GetFreeClusterCount = ntfsUnknownCluster then Exit;
+  
+   {Return Drive Information}
+   AClusterSize:=FClusterSize;
+   ATotalClusterCount:=FTotalClusterCount;
+   AFreeClusterCount:=FFreeClusterCount;
+  
+   Result:=True;
+  finally
+   FRecords.ReaderUnlock;
+  end;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}

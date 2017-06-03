@@ -148,7 +148,7 @@ type
   
  TPWMDeviceConfigure = function(PWM:PPWMDevice;DutyNS,PeriodNS:LongWord):LongWord;
  
- TPWMDeviceProperties = function(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
+ TPWMDeviceGetProperties = function(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
  
  TPWMDevice = record
   {Device Properties}
@@ -170,7 +170,7 @@ type
   DeviceGetPolarity:TPWMDeviceGetPolarity;        {A Device specific DeviceGetPolarity method implementing the standard PWM device interface (Or nil if the operation is not supported)}
   DeviceSetPolarity:TPWMDeviceSetPolarity;        {A Device specific DeviceSetPolarity method implementing the standard PWM device interface (Or nil if the operation is not supported)}
   DeviceConfigure:TPWMDeviceConfigure;            {A Device specific DeviceConfigure method implementing the standard PWM device interface (Mandatory)}
-  DeviceProperties:TPWMDeviceProperties;          {A Device specific DeviceProperties method implementing the standard PWM device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TPWMDeviceGetProperties;    {A Device specific DeviceGetProperties method implementing the standard PWM device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   GetCount:LongWord;
   SetCount:LongWord;
@@ -219,7 +219,8 @@ function PWMDeviceSetPolarity(PWM:PPWMDevice;Polarity:LongWord):LongWord;
 
 function PWMDeviceConfigure(PWM:PPWMDevice;DutyNS,PeriodNS:LongWord):LongWord;
  
-function PWMDeviceProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
+function PWMDeviceProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord; inline;
+function PWMDeviceGetProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
   
 function PWMDeviceCreate:PPWMDevice;
 function PWMDeviceCreateEx(Size:LongWord):PPWMDevice;
@@ -917,7 +918,21 @@ end;
 
 {==============================================================================}
  
-function PWMDeviceProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
+function PWMDeviceProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord; inline;
+{Get the properties for the specified PWM device}
+{PWM: The PWM device to get properties from}
+{Properties: Pointer to a TPWMProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Replaced by PWMDeviceGetProperties for consistency}
+begin
+ {}
+ Result:=PWMDeviceGetProperties(PWM,Properties);
+end;
+
+{==============================================================================}
+
+function PWMDeviceGetProperties(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
 {Get the properties for the specified PWM device}
 {PWM: The PWM device to get properties from}
 {Properties: Pointer to a TPWMProperties structure to fill in}
@@ -934,7 +949,7 @@ begin
  if PWM.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF PWM_DEBUG}
- if PWM_LOG_ENABLED then PWMLogDebug(PWM,'PWM Device Properties');
+ if PWM_LOG_ENABLED then PWMLogDebug(PWM,'PWM Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -943,10 +958,10 @@ begin
  
  if MutexLock(PWM.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(PWM.DeviceProperties) then
+   if Assigned(PWM.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=PWM.DeviceProperties(PWM,Properties);
+     {Call Device Get Properites}
+     Result:=PWM.DeviceGetProperties(PWM,Properties);
     end
    else
     begin
@@ -1015,7 +1030,7 @@ begin
  Result.DeviceGetPolarity:=nil;
  Result.DeviceSetPolarity:=nil;
  Result.DeviceConfigure:=nil;
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.GPIO:=GPIO_PIN_UNKNOWN;
  Result.Mode:=PWM_MODE_MARKSPACE;
  Result.Range:=0;

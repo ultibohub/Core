@@ -109,7 +109,7 @@ type
  {Audio Device Methods}
  //To do
  
- TAudioDeviceProperties = function(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
+ TAudioDeviceGetProperties = function(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
  
  TAudioDevice = record
   {Device Properties}
@@ -118,13 +118,13 @@ type
   AudioId:LongWord;                               {Unique Id of this Audio device in the Audio device table}
   AudioState:LongWord;                            {Audio dveice state (eg AUDIO_STATE_ENABLED)}
   //To Do
-  DeviceProperties:TAudioDeviceProperties;        {A Device specific DeviceProperties method implementing the standard Audio device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TAudioDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing the standard Audio device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   //To Do
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   //To Do
-  Properties:TAudioDeviceProperties;              {Device properties}
+  Properties:TAudioProperties;                    {Device properties}
   {Internal Properties}                                                                        
   Prev:PAudioDevice;                              {Previous entry in Audio device table}
   Next:PAudioDevice;                              {Next entry in Audio device table}
@@ -142,7 +142,7 @@ procedure AudioInit;
 {Audio Functions}
 //To Do
 
-function AudioDeviceProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
+function AudioDeviceGetProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
   
 function AudioDeviceCreate:PAudioDevice;
 function AudioDeviceCreateEx(Size:LongWord):PAudioDevice;
@@ -230,7 +230,7 @@ end;
 
 {==============================================================================}
  
-function AudioDeviceProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
+function AudioDeviceGetProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
 {Get the properties for the specified Audio device}
 {Audio: The Audio device to get properties from}
 {Properties: Pointer to a TAudioProperties structure to fill in}
@@ -247,7 +247,7 @@ begin
  if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF AUDIO_DEBUG}
- if AUDIO_LOG_ENABLED then AudioLogDebug(Audio,'Audio Device Properties');
+ if AUDIO_LOG_ENABLED then AudioLogDebug(Audio,'Audio Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -256,10 +256,10 @@ begin
  
  if MutexLock(Audio.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(Audio.DeviceProperties) then
+   if Assigned(Audio.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=Audio.DeviceProperties(Audio,Properties);
+     {Call Device Get Properites}
+     Result:=Audio.DeviceGetProperties(Audio,Properties);
     end
    else
     begin
@@ -315,7 +315,7 @@ begin
  Result.AudioId:=DEVICE_ID_ANY;
  Result.AudioState:=AUDIO_STATE_DISABLED;
  //To Do
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}

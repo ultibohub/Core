@@ -375,7 +375,7 @@ begin
  if Device = nil then Exit;
 
  {$IFDEF RTL8192CU_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8192CU: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8192CU: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to device only)}
@@ -438,7 +438,7 @@ begin
  if Device.Driver <> RTL8192CUDriver then Exit;
  
  {$IFDEF RTL8192CU_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8192CU: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8192CU: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
 
  //To Do

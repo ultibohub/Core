@@ -671,6 +671,7 @@ type
  {Prototypes for Virtual GPIO Handlers}
  TVirtualGPIOInputGet = function(Pin:LongWord):LongWord;
  TVirtualGPIOOutputSet = function(Pin,Level:LongWord):LongWord;
+ TVirtualGPIOFunctionGet = function(Pin:LongWord):LongWord;
  TVirtualGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
  
 type
@@ -994,8 +995,10 @@ var
  {Clock Variables}
  ClockBase:Int64 = TIME_TICKS_TO_1899;  {The system time as of the last setting of the clock}
  ClockLast:LongWord;                    {The timer value of the last clock tick}
+ {$IFDEF CLOCK_TICK_MANUAL}
  ClockTicks:LongWord;                   {Current number of clock ticks (When this reaches CLOCK_TICKS_PER_SECOND then ClockSeconds is incremented and this is reset to zero)}
  ClockSeconds:LongWord;                 {Current number of clock seconds (This forms the system clock)}
+ {$ENDIF}
  ClockRTCInvalid:LongBool;              {True if available time from RTC is invalid}
  
  {$IFDEF CLOCK_DEBUG}
@@ -1367,6 +1370,7 @@ var
  {Virtual GPIO Handlers} 
  VirtualGPIOInputGetHandler:TVirtualGPIOInputGet;
  VirtualGPIOOutputSetHandler:TVirtualGPIOOutputSet;
+ VirtualGPIOFunctionGetHandler:TVirtualGPIOFunctionGet;
  VirtualGPIOFunctionSelectHandler:TVirtualGPIOFunctionSelect;
  
 var
@@ -1826,6 +1830,10 @@ function PowerSetState(PowerId,State:LongWord;Wait:Boolean):LongWord; inline;
 
 {==============================================================================}
 {Clock Functions}
+{$IFNDEF CLOCK_TICK_MANUAL}
+function ClockTicks:LongWord;
+function ClockSeconds:LongWord;
+{$ENDIF}
 function ClockGetTime:Int64;
 function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
 
@@ -1988,6 +1996,7 @@ function GPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 {Virtual GPIO Functions}
 function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
 function VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
+function VirtualGPIOFunctionGet(Pin:LongWord):LongWord; inline;
 function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 
 {==============================================================================}
@@ -2368,6 +2377,7 @@ begin
  {Setup SysUtils Handlers}
  {Locale Functions}
  SysUtilsGetLocalTimeHandler:=SysUtilsGetLocalTime;
+ SysUtilsSetLocalTimeHandler:=SysUtilsSetLocalTime;
  SysUtilsGetLocalTimeOffsetHandler:=SysUtilsGetLocalTimeOffset;
  {Tick Functions}
  SysUtilsGetTickCountHandler:=SysUtilsGetTickCount;
@@ -3718,7 +3728,7 @@ begin
    
    //To Do //Implement Delay (by Worker)
    
-   //To Do //Call Shutdown handlers (Worker with Callback using Semaphore)
+   //To Do //Call Shutdown handlers (Worker with Callback using Semaphore with Timeout)
    
    Result:=SystemRestartHandler(Delay); //To Do //Pass default delay
   end
@@ -3740,7 +3750,7 @@ begin
    
    //To Do //Implement Delay (by Worker)
   
-   //To Do //Call Shutdown handlers (Worker with Callback using Semaphore)
+   //To Do //Call Shutdown handlers (Worker with Callback using Semaphore with Timeout)
    
    Result:=SystemShutdownHandler(Delay); //To Do //Pass default delay
   end
@@ -4595,6 +4605,36 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Clock Functions}
+{$IFNDEF CLOCK_TICK_MANUAL}
+function ClockTicks:LongWord;
+{Get the current number of clock ticks (When this reaches CLOCK_TICKS_PER_SECOND then ClockSeconds is incremented and this is reset to zero)}
+{Return: The current number of clock ticks}
+begin
+ {}
+ Result:=0;
+ 
+ if CLOCK_CYCLES_PER_TICK = 0 then Exit;
+ if CLOCK_TICKS_PER_SECOND = 0 then Exit;
+ 
+ Result:=(ClockGetTotal div CLOCK_CYCLES_PER_TICK) mod CLOCK_TICKS_PER_SECOND;
+end;
+
+{==============================================================================}
+
+function ClockSeconds:LongWord;
+{Get the number of clock seconds since the system was started (This forms the system clock)}
+{Return: The current number of clock seconds}
+begin
+ {}
+ Result:=0;
+ 
+ if CLOCK_FREQUENCY = 0 then Exit;
+ 
+ Result:=ClockGetTotal div CLOCK_FREQUENCY;
+end;
+{$ENDIF}
+{==============================================================================}
+
 function ClockGetTime:Int64;
 {Get the current system time in 100 nanosecond ticks since 1/1/1601}
 {Return: The current system time}
@@ -4700,7 +4740,7 @@ begin
   end
  else
   begin
-   Result:=0;
+   Result:=ClockGetTotal;
   end;
 end;
  
@@ -6104,6 +6144,10 @@ end;
 {==============================================================================}
 
 function VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
+{Set the state of a virtual GPIO output pin}
+{Pin: The pin to set the state for (eg GPIO_PIN_1)}
+{Level: The state to set the pin to (eg GPIO_LEVEL_HIGH)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
  if Assigned(VirtualGPIOOutputSetHandler) then
@@ -6118,7 +6162,29 @@ end;
 
 {==============================================================================}
 
+function VirtualGPIOFunctionGet(Pin:LongWord):LongWord; inline;
+{Get the current function of a virtual GPIO pin}
+{Pin: The pin to get the function for (eg GPIO_PIN_1)}
+{Return: The current function of the pin (eg GPIO_FUNCTION_IN) or GPIO_FUNCTION_UNKNOWN on failure}
+begin
+ {}
+ if Assigned(VirtualGPIOFunctionGetHandler) then
+  begin
+   Result:=VirtualGPIOFunctionGetHandler(Pin);
+  end
+ else
+  begin
+   Result:=GPIO_FUNCTION_UNKNOWN; 
+  end;
+end;
+
+{==============================================================================}
+
 function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline; 
+{Change the function of a virtual GPIO pin}
+{Pin: The pin to change the function for (eg GPIO_PIN_1)}
+{Mode: The function to set for the pin (eg GPIO_FUNCTION_OUT)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
 begin
  {}
  if Assigned(VirtualGPIOFunctionSelectHandler) then

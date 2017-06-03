@@ -642,6 +642,8 @@ type
 
    function GetDriveFreeSpaceEx:Int64; override;
    function GetDriveTotalSpaceEx:Int64; override;
+   
+   function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; override;
  end;
  
  TFATDiskTable = class(TDiskTable)  {Represents a FAT table}
@@ -8003,6 +8005,36 @@ begin
  end; 
 end;
 
+{==============================================================================}
+
+function TFATFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; 
+{Get Drive Information from internal FAT data}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FAT_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetDriveInformation');
+  {$ENDIF}
+
+  if FDriver = nil then Exit;
+
+  {Check Free Cluster Count}
+  if GetFreeClusterCount = fatUnknownCluster then Exit;
+  
+  {Return Drive Information}
+  AClusterSize:=FClusterSize;
+  ATotalClusterCount:=FDataClusterCount;
+  AFreeClusterCount:=FFreeClusterCount;
+  
+  Result:=True;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
 {==============================================================================}
 {==============================================================================}
 {TFATDiskBlock}

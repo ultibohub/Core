@@ -95,7 +95,7 @@ type
  
  {I2S Device Methods}
  //To Do
- TI2SDeviceProperties = function(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
+ TI2SDeviceGetProperties = function(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
  
  TI2SDevice = record
   {Device Properties}
@@ -104,7 +104,7 @@ type
   I2SId:LongWord;                                 {Unique Id of this I2S in the I2S table}
   I2SState:LongWord;                              {I2S state (eg I2S_STATE_ENABLED)}
   //To Do
-  DeviceProperties:TI2SDeviceProperties;          {A Device specific DeviceProperties method implementing the standard I2S device interface}
+  DeviceGetProperties:TI2SDeviceGetProperties;    {A Device specific DeviceGetProperties method implementing the standard I2S device interface}
   {Statistics Properties}
   //To Do
   {Driver Properties}
@@ -128,7 +128,7 @@ procedure I2SInit;
 {I2S Functions}
 //To Do
 
-function I2SDeviceProperties(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
+function I2SDeviceGetProperties(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
   
 function I2SDeviceCreate:PI2SDevice;
 function I2SDeviceCreateEx(Size:LongWord):PI2SDevice;
@@ -213,7 +213,7 @@ end;
 
 {==============================================================================}
  
-function I2SDeviceProperties(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
+function I2SDeviceGetProperties(I2S:PI2SDevice;Properties:PI2SProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -262,7 +262,7 @@ begin
  Result.I2SId:=DEVICE_ID_ANY;
  Result.I2SState:=I2S_STATE_DISABLED;
  //To Do
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}

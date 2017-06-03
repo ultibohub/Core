@@ -101,7 +101,7 @@ type
  {Codec Device Methods}
  //To do
  
- TCodecDeviceProperties = function(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
+ TCodecDeviceGetProperties = function(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
  
  TCodecDevice = record
   {Device Properties}
@@ -110,7 +110,7 @@ type
   CodecId:LongWord;                               {Unique Id of this Codec device in the Codec device table}
   CodecState:LongWord;                            {Codec device state (eg CODEC_STATE_ENABLED)}
   //To Do
-  DeviceProperties:TCodecDeviceProperties;     {A Device specific DeviceProperties method implementing the standard Codec device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TCodecDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing the standard Codec device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   //To Do
   {Driver Properties}
@@ -134,7 +134,7 @@ procedure CodecInit;
 {Codec Functions}
 //To Do
 
-function CodecDeviceProperties(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
+function CodecDeviceGetProperties(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
   
 function CodecDeviceCreate:PCodecDevice;
 function CodecDeviceCreateEx(Size:LongWord):PCodecDevice;
@@ -222,7 +222,7 @@ end;
 
 {==============================================================================}
  
-function CodecDeviceProperties(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
+function CodecDeviceGetProperties(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
 {Get the properties for the specified Codec device}
 {Codec: The Codec device to get properties from}
 {Properties: Pointer to a TCodecProperties structure to fill in}
@@ -239,7 +239,7 @@ begin
  if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF CODEC_DEBUG}
- if CODEC_LOG_ENABLED then CodecLogDebug(Codec,'Codec Device Properties');
+ if CODEC_LOG_ENABLED then CodecLogDebug(Codec,'Codec Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -248,10 +248,10 @@ begin
  
  if MutexLock(Codec.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(Codec.DeviceProperties) then
+   if Assigned(Codec.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=Codec.DeviceProperties(Codec,Properties);
+     {Call Device Get Properites}
+     Result:=Codec.DeviceGetProperties(Codec,Properties);
     end
    else
     begin
@@ -307,7 +307,7 @@ begin
  Result.CodecId:=DEVICE_ID_ANY;
  Result.CodecState:=CODEC_STATE_DISABLED;
  //To Do
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  
  {Create Lock}

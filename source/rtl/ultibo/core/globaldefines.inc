@@ -37,10 +37,12 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {System init definitions}
+{--$DEFINE UART_EARLY_INIT}       {Enable early initialization of UART output, useful for debugging (Default: Off)}
 {--$DEFINE CONSOLE_EARLY_INIT}    {Enable early initialization of console output, useful for debugging (Default: Off)}
 {--$DEFINE LOGGING_EARLY_INIT}    {Enable early initialization of logging output, useful for debugging (Default: Off)}
 
 {$IFDEF LOGGING_EARLY_INIT}
+ {--$DEFINE UART_EARLY_INIT}
  {$DEFINE CONSOLE_EARLY_INIT}
 {$ENDIF}
 
@@ -53,9 +55,25 @@ Global Defines
 {Subsystem inlining definitions}
 {$DEFINE SPIN_INLINE}             {Inline parts of Spin lock handling for performance (Default: On)}
 {$DEFINE MUTEX_INLINE}            {Inline parts of Mutex handling for performance (Default: On)}
-
+{$DEFINE CRITICALSECTION_INLINE}  {Inline parts of Critical Section handling for performance (Default: On)}
+{$DEFINE SEMAPHORE_INLINE}        {Inline parts of Semaphore handling for performance (Default: On)}
+{$DEFINE SYNCHRONIZER_INLINE}     {Inline parts of Synchronizer handling for performance (Default: On)}
 {$DEFINE LIST_INLINE}             {Inline parts of List handling for performance (Default: On)}
 {$DEFINE QUEUE_INLINE}            {Inline parts of Queue handling for performance (Default: On)}
+{$DEFINE THREAD_INLINE}           {Inline parts of Thread handling for performance (Default: On)}
+{$DEFINE MESSAGESLOT_INLINE}      {Inline parts of Messageslot handling for performance (Default: On)}
+{$DEFINE MAILSLOT_INLINE}         {Inline parts of Mailslot handling for performance (Default: On)}
+{$DEFINE BUFFER_INLINE}           {Inline parts of Buffer handling for performance (Default: On)}
+{$DEFINE EVENT_INLINE}            {Inline parts of Event handling for performance (Default: On)}
+{$DEFINE TIMER_INLINE}            {Inline parts of Timer handling for performance (Default: On)}
+{$DEFINE WORKER_INLINE}           {Inline parts of Worker handling for performance (Default: On)}
+{$DEFINE TASKER_INLINE}           {Inline parts of Tasker handling for performance (Default: On)}
+
+{==============================================================================}
+{==============================================================================}
+{System function definitions}
+{--$DEFINE CLOCK_TICK_MANUAL}         {Enable use of the manual clock tick algorithm (Default: Off)}
+{--$DEFINE SCHEDULER_YIELD_ALTERNATE} {Enable use of the alternate scheduler yield algorithm (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}
@@ -214,24 +232,31 @@ Global Defines
 {GPIO}
 {--$DEFINE MCP230XX_DEBUG}        {Enable debug output/counters for MCP230XX driver (Default: Off)}
 {--$DEFINE STMPE_DEBUG}           {Enable debug output/counters for STMPE driver (Default: Off)}
-{--$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
+{--$DEFINE RPIGPIOEXP_DEBUG}      {Enable debug output/counters for RPiGPIO Expander driver (Default: Off)}
 
 {Framebuffer/Console}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
 {--$DEFINE ILI9340_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
 {--$DEFINE HX8357D_DEBUG}         {Enable debug output/counters for HX8357D driver (Default: Off)}
 {--$DEFINE PL110_DEBUG}           {Enable debug output/counters for PL110 driver (Default: Off)}
+{--$DEFINE MEMORYFB_DEBUG}        {Enable debug output/counters for Memory Framebuffer driver (Default: Off)}
+{--$DEFINE MIRRORFB_DEBUG}        {Enable debug output/counters for Mirror Framebuffer driver (Default: Off)}
+{--$DEFINE REMOTEFB_DEBUG}        {Enable debug output/counters for Remote Framebuffer driver (Default: Off)}
 
 {Framebuffer/Console}
 {--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
 {--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
 {--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
 
-{Keyboard/Mouse}
+{Keyboard/Mouse/Touch}
 {--$DEFINE PL050_DEBUG}           {Enable debug output/counters for PL050 driver (Default: Off)}
+{--$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
 
 {MMC/SDHCI}
 {--$DEFINE PL18X_DEBUG}           {Enable debug output/counters for PL18X driver (Default: Off)}
+
+{Other}
+{--$DEFINE RPIUSBBOOT_DEBUG}      {Enable debug output/counters for RPIUSBBOOT driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}
@@ -245,6 +270,7 @@ Global Defines
 
 {--$DEFINE CIFS_DEBUG}            {Enable debug output/counters for CIFS provider (Default: Off)}
 {--$DEFINE NFS_DEBUG}             {Enable debug output/counters for NFS provider (Default: Off)}
+{--$DEFINE RPC_DEBUG}             {Enable debug output/counters for RPC provider (Default: Off)}
 
 {--$DEFINE HTTP_DEBUG}            {Enable debug output/counters for HTTP client and server (Default: Off)}
 {--$DEFINE SMTP_DEBUG}            {Enable debug output/counters for SMTP client and server (Default: Off)}
@@ -316,6 +342,11 @@ Global Defines
 {--$DEFINE LOADER_EXPORT_PCM}       {Enable the library loader to export symbols for PCM unit (Default: Off)} 
 {--$DEFINE LOADER_EXPORT_GPIO}      {Enable the library loader to export symbols for GPIO unit (Default: Off)} 
 {--$DEFINE LOADER_EXPORT_UART}      {Enable the library loader to export symbols for UART unit (Default: Off)} 
+
+{==============================================================================}
+{==============================================================================}
+{Device definitions}
+{--$DEFINE USB_LEGACY_DEVICE_INIT}  {Enable old style USB device initialization (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

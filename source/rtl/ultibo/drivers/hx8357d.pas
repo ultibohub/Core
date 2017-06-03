@@ -306,7 +306,7 @@ begin
    HX8357DFramebuffer.TFT.Timer:=INVALID_HANDLE_VALUE;
    HX8357DFramebuffer.TFT.FrameRate:=TFT_FRAMEBUFFER_FRAME_RATE_DEFAULT;
    HX8357DFramebuffer.TFT.TransferSize:=LongWord(-1);
-   if SPIDeviceProperties(SPI,@SPIProperties) = ERROR_SUCCESS then
+   if SPIDeviceGetProperties(SPI,@SPIProperties) = ERROR_SUCCESS then
     begin
      if SPIProperties.MaxSize <> 0 then HX8357DFramebuffer.TFT.TransferSize:=SPIProperties.MaxSize; 
     end; 

@@ -12,6 +12,7 @@ Boards
 ======
 
  Raspberry Pi 3 - Model B
+ Raspberry Pi CM3
  
 Licence
 =======
@@ -155,6 +156,10 @@ const
 const
  {Mailbox constants}
  RPI3_LOCAL_MAILBOX_TIMEOUT = 100;                   {Default timeout to wait for local mailbox calls to complete (Milliseconds)}
+ 
+const
+ {Framebuffer constants}
+ RPI3_FRAMEBUFFER_DESCRIPTION = 'BCM2837 Framebuffer';
  
 {==============================================================================}
 {type}
@@ -1318,8 +1323,10 @@ begin
  {Setup Clock Variables}
  ClockBase:=TIME_TICKS_TO_1899;
  ClockLast:=0; 
+ {$IFDEF CLOCK_TICK_MANUAL}
  ClockTicks:=0;
  ClockSeconds:=0;
+ {$ENDIF}
  
  {Request the Clock IRQ/FIQ}
  if CLOCK_FIQ_ENABLED then
@@ -1557,6 +1564,7 @@ begin
    RPi3Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
    RPi3Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
    RPi3Framebuffer.Device.DeviceData:=nil;
+   RPi3Framebuffer.Device.DeviceDescription:=RPI3_FRAMEBUFFER_DESCRIPTION;
    {Framebuffer}
    RPi3Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
    RPi3Framebuffer.DeviceAllocate:=RPi3FramebufferDeviceAllocate;
@@ -1944,7 +1952,8 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
-    {Not Supported}
+    {Virtual GPIO}
+    VirtualGPIOFunctionSelect(POWER_LED_PIN,POWER_LED_FUNCTION);
    end;  
  end;
 end;
@@ -1956,7 +1965,8 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
-    {Not Supported}
+    {LED On}
+    VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_HIGH);
    end;  
  end;
 end;
@@ -1968,7 +1978,8 @@ begin
  {}
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
-    {Not Supported}
+    {LED Off}
+    VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_LOW);
    end;
  end;
 end;
@@ -1983,7 +1994,7 @@ begin
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {Virtual GPIO}
-    VirtualGPIOFunctionSelect(VIRTUAL_GPIO_PIN_0,VIRTUAL_GPIO_FUNCTION_OUT);
+    VirtualGPIOFunctionSelect(ACTIVITY_LED_PIN,ACTIVITY_LED_FUNCTION);
    end;
  end;
 end;
@@ -1996,7 +2007,7 @@ begin
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {LED On}
-    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_HIGH);
+    VirtualGPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_HIGH);
    end;
  end;
 end;
@@ -2009,7 +2020,7 @@ begin
  case BOARD_TYPE of
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {LED Off}
-    VirtualGPIOOutputSet(VIRTUAL_GPIO_PIN_0,GPIO_LEVEL_LOW);
+    VirtualGPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_LOW);
    end;
  end;
 end;
@@ -2314,9 +2325,11 @@ begin
     begin
      if (Tag.Length and BCM2837_MBOX_TAG_RESPONSE_CODE) = 0 then
       begin
-       Result:=ERROR_FUNCTION_FAILED;
-       if PLATFORM_LOG_ENABLED then PlatformLogError('MailboxPropertyCallEx - Tag Response Code Failed');
-       Exit;
+       {$IFDEF PLATFORM_DEBUG}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('MailboxPropertyCallEx - Tag Response Code Incorrect (Length=' + IntToHex(Tag.Length,8) + ')');
+       {$ENDIF}
+       {Result:=ERROR_FUNCTION_FAILED;} {Note: Recent firmware functions so not always set the response bit in the tag}
+       {Exit;}                          {      The Linux firmware driver does not check this bit in the response}
       end;
      {Clear the Response bit so callers can read the length field without extra processing}
      Tag.Length:=Tag.Length and not(BCM2837_MBOX_TAG_RESPONSE_CODE);
@@ -8116,6 +8129,7 @@ begin
  Inc(ClockInterruptCounter);
  {$ENDIF}
 
+ {$IFDEF CLOCK_TICK_MANUAL}
  {Add another Clock Tick}
  Inc(ClockTicks);
  
@@ -8125,7 +8139,8 @@ begin
    Inc(ClockSeconds);
    ClockTicks:=0;
   end;
-
+ {$ENDIF}
+  
  {Schedule the next Clock Interrupt}
  RPi3ClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
   

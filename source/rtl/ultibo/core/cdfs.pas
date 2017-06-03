@@ -938,6 +938,8 @@ type
 
    function GetDriveFreeSpaceEx:Int64; override;
    function GetDriveTotalSpaceEx:Int64; override;
+   
+   function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; override;
  end;
  
  TCDFSDiskTable = class(TDiskTable)       {Represents a CDFS path table}
@@ -11707,6 +11709,36 @@ begin
  end; 
 end;
 
+{==============================================================================}
+
+function TCDFSFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
+{Get Drive Information from internal CDFS data}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF CDFS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetDriveInformation');
+  {$ENDIF}
+
+  if FDriver = nil then Exit;
+
+  {Check Free Cluster Count}
+  if GetFreeClusterCount = cdfsUnknownCluster then Exit;
+  
+  {Return Drive Information}
+  AClusterSize:=FClusterSize;
+  ATotalClusterCount:=FTotalClusterCount;
+  AFreeClusterCount:=FFreeClusterCount;
+  
+  Result:=True;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
 {==============================================================================}
 {==============================================================================}
 {TCDFSDiskTable}

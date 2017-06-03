@@ -527,7 +527,7 @@ const
  USB_CLASS_CODE_APPLICATION_SPECIFIC           = $fe; {Application Specific}
  USB_CLASS_CODE_VENDOR_SPECIFIC                = $ff; {Vendor Specific}
  
- {USB SubClass Codes (bInterfaceSubClass) (See: http://www.usb.org/developers/defined_class/)}
+ {USB SubClass Codes (bDeviceSubClass/bInterfaceSubClass) (See: http://www.usb.org/developers/defined_class/)}
  {Communications Devices}
  USB_SUBCLASS_CDC_DLCM                         = $01; {Direct Line Control Model (USBPSTN1.2)}
  USB_SUBCLASS_CDC_ACM                          = $02; {Abstract Control Model (USBPSTN1.2)}
@@ -581,7 +581,7 @@ const
  {Vendor Specific}
  USB_SUBCLASS_VENDOR_SPECIFIC                  = $ff; {Vendor Specific}
  
- {USB Protocol Codes (bInterfaceProtocol) (See: http://www.usb.org/developers/defined_class/)}
+ {USB Protocol Codes (bDeviceProtocol/bInterfaceProtocol) (See: http://www.usb.org/developers/defined_class/)}
  {Communications Devices}
  USB_PROTOCOL_CDC_ACM_NONE                     = 0;   {Abstract Control Model - No class specific protocol required}
  USB_PROTOCOL_CDC_ACM_AT_V25TER                = 1;   {Abstract Control Model - AT Commands: V.250 etc}
@@ -875,11 +875,17 @@ const
  USBHUB_STATE_ATTACHED  = 3;
  
  {USB Hub Flags}
- USBHUB_FLAG_NONE      = $00000000;
+ USBHUB_FLAG_NONE              = $00000000;
+ USBHUB_FLAG_COMPOUND          = $00000001; {The Hub is part of a compound device}
+ USBHUB_FLAG_PORT_POWER        = $00000002; {The Hub supports per port power switching}
+ USBHUB_FLAG_PORT_PROTECTION   = $00000004; {The Hub supports per port over current protection}
+ USBHUB_FLAG_MULTI_TRANSLATOR  = $00000008; {The Hub includes multiple transaction translators (1 per port)}
  
  USBHUB_THREAD_STACK_SIZE = SIZE_32K;                {Stack size of USB hub thread} 
  USBHUB_THREAD_PRIORITY  = THREAD_PRIORITY_HIGHEST;  {Priority of USB hub thread}
  USBHUB_THREAD_NAME = 'USB Hub';                     {Name of USB hub thread}
+
+ USBHUB_DEVICE_DESCRIPTION  = 'USB Hub';             {Description of USB hub device}
 
  USBHUB_DRIVER_NAME = 'USB Hub Driver';              {Name of USB hub driver}
  
@@ -889,9 +895,22 @@ const
  USB_PORT_RESET_DELAY    = 10;  {Milliseconds between each status check on the port while waiting for it to finish being reset (Linux uses several values, but 10 is the default case)}
  USB_PORT_RESET_RECOVERY = 30;  {Milliseconds to wait after port reset to allow the device attached to the port to recover before any data transfers. USB 2.0 spec says 10ms}
  
- {Values for wHubCharacteristics in type TUSBHubDescriptor}
- USB_HUB_CHARACTERISTIC_IS_COMPOUND_DEVICE = (1 shl 2);
-
+ {Values for wHubCharacteristics in type TUSBHubDescriptor (See Table 11-13 in Section 11.23.2.1 of the USB 2.0 specification)}
+ USB_HUB_CHARACTERISTIC_LPSM               = (3 shl 0); {Logical Power Switching Mode}
+ USB_HUB_CHARACTERISTIC_LPSM_GANGED        = (0 shl 0); {Ganged power switching (all ports power at once)}       
+ USB_HUB_CHARACTERISTIC_LPSM_PORT          = (1 shl 0); {Individual port power switching}
+ USB_HUB_CHARACTERISTIC_IS_COMPOUND_DEVICE = (1 shl 2); {Identifies a Compound Device (0 = Hub is not part of a compound device / 1 = Hub is part of a compound device)}
+ USB_HUB_CHARACTERISTIC_OCPM               = (3 shl 3); {Over-current Protection Mode}
+ USB_HUB_CHARACTERISTIC_OCPM_GLOBAL        = (0 shl 3); {Global Over-current Protection}
+ USB_HUB_CHARACTERISTIC_OCPM_PORT          = (1 shl 3); {Individual Port Over-current Protection}
+ USB_HUB_CHARACTERISTIC_OCPM_NONE          = (2 shl 3); {No Over-current Protection}
+ USB_HUB_CHARACTERISTIC_TTTT               = (3 shl 5); {TT Think Time}
+ USB_HUB_CHARACTERISTIC_TTTT_8             = (0 shl 5); {TT requires at most 8 FS bit times of inter transaction gap}
+ USB_HUB_CHARACTERISTIC_TTTT_16            = (1 shl 5); {TT requires at most 16 FS bit times of inter transaction gap}
+ USB_HUB_CHARACTERISTIC_TTTT_24            = (2 shl 5); {TT requires at most 24 FS bit times of inter transaction gap}
+ USB_HUB_CHARACTERISTIC_TTTT_32            = (3 shl 5); {TT requires at most 32 FS bit times of inter transaction gap}
+ USB_HUB_CHARACTERISTIC_PORT_INDICATOR     = (1 shl 7); {Port Indicators Supported (0 = Port Indicators are not supported / 1 =  Port Indicators are supported)}
+ 
  {USB Hub Features (See Table 11-17 in Section 11.24.2 of the USB 2.0 specification)}
  USB_C_HUB_LOCAL_POWER   = 0;
  USB_C_HUB_OVER_CURRENT  = 1;
@@ -1065,7 +1084,10 @@ type
  end; 
  
  PUSBStringDescriptorString = ^TUSBStringDescriptorString;
- TUSBStringDescriptorString = array[0..255] of Word; {Array type to allow typecasting of bString element in TUSBStringDescriptor}
+ TUSBStringDescriptorString = array[0..125] of Word; {Array type to allow typecasting of bString element in TUSBStringDescriptor (Maximum size of descriptor is 255) (126 x 2 + 2 = 254)} 
+
+ PUSBStringDescriptorLANGIDs = ^TUSBStringDescriptorLANGIDs;
+ TUSBStringDescriptorLANGIDs = array[0..125] of Word; {Array type to allow typecasting of bString element in TUSBStringDescriptor (Maximum size of descriptor is 255) (126 x 2 + 2 = 254)}
  
  {Device status information returned by a USB_DEVICE_REQUEST_GET_STATUS control message (See Section 9.4.6 of the USB 2.0 specification)}
  PUSBDeviceStatus = ^TUSBDeviceStatus;
@@ -1218,6 +1240,7 @@ type
   RootHub:PUSBDevice;          {The Root hub for this Host (or nil if the Host has not yet been started)}
   Alignment:LongWord;          {Host data buffer alignment (for DMA requests etc)}
   Multiplier:LongWord;         {Host data buffer multiplier (for DMA requests etc)}
+  MaxTransfer:LongWord;        {Host maximum transfer size}
   {Statistics Properties}
   RequestCount:LongWord;       {Number of USB requests that have been submitted to this host} 
   RequestErrors:LongWord;      {Number of USB requests that have failed on this host}
@@ -1248,18 +1271,33 @@ type
   Status:LongWord;                           {Status of the transfer (USB_STATUS_SUCCESS if successful, or another error code if the transfer failed)}
   ActualSize:LongWord;                       {Actual size of the data transferred (Should be checked after a successful IN request)}
   {Driver Properties}                        {Private variables for use by Host drivers (Do not use from device drivers)}
-  CurrentData:Pointer;                       
-  CompleteSplit:LongBool;
-  ShortAttempt:LongBool; 
-  StartOfFrame:LongBool;
-  ControlPhase:LongWord; 
-  NextDataPID:LongWord; 
+  TransferData:Pointer;                      {Host driver private data for transfer handling}
+  CurrentData:Pointer;                       {Host driver data pointer during transaction processing}
+  IsPing:LongBool;                           {Ping request in progress as part of request processing}
+  IsSplit:LongBool;                          {Request is a split transaction due to full or low speed device}
+  CompleteSplit:LongBool;                    {On a split transaction indicates if the request is on the start split or complete split phase}
+  ShortAttempt:LongBool;                     {The current transaction for this request is a short read or write}
+  StartOfFrame:LongBool;                     {The request needs to wait for the next start of frame to be started}
+  ControlPhase:LongWord;                     {The currently processing phase of a control request}
+  NextDataPID:LongWord;                      {The next Data PID for the data toggle during IN or OUT (Data0/Data1 etc)}
   AttemptedSize:LongWord;
   AttemptedPacketsRemaining:LongWord;
   AttemptedBytesRemaining:LongWord;
+  BytesAttempted:LongWord;
+  BytesTransferred:LongWord;
+  SplitErrorCount:LongWord;
   CompleteSplitRetries:LongWord;
-  ResubmitThread:TThreadHandle;
-  ResubmitSemaphore:TSemaphoreHandle;
+  ResubmitThread:TThreadHandle;              {The handle of the thread performing resubmit for this request (or INVALID_HANDLE_VALUE)}
+  ResubmitSemaphore:TSemaphoreHandle;        {The handle of the semaphore used to signal the resubmit thread (or INVALID_HANDLE_VALUE)}
+  {$IFDEF USB_DEBUG}
+  {Debug Statistics}
+  StartSplitAttempts:LongWord;
+  CompleteSplitAttempts:LongWord;
+  CompleteSplitRestarts:LongWord;
+  StartSplitNAKs:LongWord;
+  CompleteSplitNYETs:LongWord;
+  CompleteSplitNAKs:LongWord;
+  {$ENDIF}
  end;
   
 {==============================================================================}
@@ -1382,16 +1420,24 @@ function USBDeviceReadConfigurations(Device:PUSBDevice):LongWord;
 function USBDeviceCreateConfiguration(Device:PUSBDevice;Index:Byte;Size:Word):LongWord;
 function USBDeviceReadConfiguration(Device:PUSBDevice;Index:Byte):LongWord;
 
-function USBDeviceGetStringDescriptor(Device:PUSBDevice;Index:Byte;Data:Pointer;Length:Word):LongWord;
+function USBDeviceGetStringDescriptor(Device:PUSBDevice;Index:Byte;Data:Pointer;Length:Word):LongWord; inline;
+function USBDeviceGetStringDescriptorEx(Device:PUSBDevice;Index:Byte;LanguageId:Word;Data:Pointer;Length:Word):LongWord;
 
-function USBDeviceReadStringDescriptor(Device:PUSBDevice;Index:Byte):String;
-function USBDeviceReadStringDescriptorW(Device:PUSBDevice;Index:Byte):UnicodeString;
+function USBDeviceReadStringLanguageIds(Device:PUSBDevice):TUSBStringDescriptorLANGIDs; 
+
+function USBDeviceReadStringDescriptor(Device:PUSBDevice;Index:Byte):String; inline;
+function USBDeviceReadStringDescriptorEx(Device:PUSBDevice;Index:Byte;LanguageId:Word):String;
+function USBDeviceReadStringDescriptorW(Device:PUSBDevice;Index:Byte):UnicodeString; inline;
+function USBDeviceReadStringDescriptorExW(Device:PUSBDevice;Index:Byte;LanguageId:Word):UnicodeString;
 
 function USBDeviceGetConfigurationDescriptor(Device:PUSBDevice;Index:Byte;Data:Pointer;Length:Word):LongWord;
 
 function USBDeviceGetConfiguration(Device:PUSBDevice;var ConfigurationValue:Byte):LongWord;
 function USBDeviceSetConfiguration(Device:PUSBDevice;ConfigurationValue:Byte):LongWord;
 function USBDeviceFindConfigurationByValue(Device:PUSBDevice;ConfigurationValue:Byte):PUSBConfiguration;
+
+function USBDeviceGetHub(Device:PUSBDevice):PUSBHub;
+function USBDeviceGetPort(Device:PUSBDevice):PUSBPort;
 
 function USBDeviceGetInterface(Device:PUSBDevice;Index:Byte;var AlternateSetting:Byte):LongWord;
 function USBDeviceSetInterface(Device:PUSBDevice;Index,AlternateSetting:Byte):LongWord;
@@ -1481,6 +1527,11 @@ function USBControlRequest(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRe
 function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;Timeout:LongWord;AllowShort:Boolean):LongWord;
 procedure USBControlRequestComplete(Request:PUSBRequest);
 
+//Synchronous Transfer Methods
+function USBControlTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;var Count:LongWord;Timeout:LongWord):LongWord;
+function USBBulkTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Data:Pointer;Size:LongWord;var Count:LongWord;Timeout:LongWord):LongWord; 
+function USBInterruptTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Data:Pointer;Size:LongWord;var Count:LongWord;Timeout:LongWord):LongWord; 
+
 {==============================================================================}
 {USB Hub Functions}
 //Hub Methods
@@ -1511,6 +1562,11 @@ procedure USBHubEnumerateDevices(Device:PUSBDevice;Callback:TUSBDeviceEnumerate;
 
 //Hub Port Methods
 function USBHubPortReset(Port:PUSBPort):LongWord;
+
+function USBHubPortDisable(Port:PUSBPort):LongWord;
+
+function USBHubPortPowerOn(Port:PUSBPort):LongWord;
+function USBHubPortPowerOff(Port:PUSBPort):LongWord;
 
 function USBHubPortGetStatus(Port:PUSBPort):LongWord;
 
@@ -1611,6 +1667,15 @@ function USBHubGetCount:LongWord; inline;
 
 function USBHubCheck(Hub:PUSBHub):PUSBHub;
 
+function USBHubIsMultiTT(Hub:PUSBHub):Boolean;
+function USBHubIsCompound(Hub:PUSBHub):Boolean;
+
+function USBHubHasPortIndicator(Hub:PUSBHub):Boolean;
+function USBHubHasPortPowerSwitching(Hub:PUSBHub):Boolean;
+function USBHubHasPortCurrentProtection(Hub:PUSBHub):Boolean;
+
+function USBHubGetTTThinkTime(Hub:PUSBHub):Byte;
+
 function USBHubStateToNotification(State:LongWord):LongWord;
 
 {==============================================================================}
@@ -1649,6 +1714,11 @@ var
  USBHubMessageslot:TMessageslotHandle = INVALID_HANDLE_VALUE;
  
  USBHubDriver:PUSBDriver;  {USB Hub Driver interface (Set by USBStart)} 
+
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+procedure USBTransferComplete(Request:PUSBRequest); forward;
 
 {==============================================================================}
 {==============================================================================}
@@ -2683,6 +2753,7 @@ begin
     if (InterfaceIndex + 1) <> Device.Configurations[Index].Descriptor.bNumInterfaces then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (Number of interfaces incorrect)');
+      if USB_LOG_ENABLED then USBLogError(Device,' (Index=' + IntToStr(Index) + ' InterfaceIndex=' + IntToStr(InterfaceIndex) + ' bNumInterfaces=' + IntToStr(Device.Configurations[Index].Descriptor.bNumInterfaces) + ')');
    
       Result:=USB_STATUS_INVALID_DATA;
       Exit;
@@ -2703,10 +2774,25 @@ end;
 
 {==============================================================================}
 
-function USBDeviceGetStringDescriptor(Device:PUSBDevice;Index:Byte;Data:Pointer;Length:Word):LongWord;
+function USBDeviceGetStringDescriptor(Device:PUSBDevice;Index:Byte;Data:Pointer;Length:Word):LongWord; inline;
 {Read all or part of the specified string descriptor from the specified device using USBControlRequest}
 {Device: The USB device to read the string descriptor from}
 {Index: The index of the string descriptor to read}
+{Data: See USBControlRequest}
+{Length: See USBControlRequest}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=USBDeviceGetStringDescriptorEx(Device,Index,USB_LANGID_US_ENGLISH,Data,Length);
+end;
+
+{==============================================================================}
+
+function USBDeviceGetStringDescriptorEx(Device:PUSBDevice;Index:Byte;LanguageId:Word;Data:Pointer;Length:Word):LongWord;
+{Read all or part of the specified string descriptor from the specified device using USBControlRequest}
+{Device: The USB device to read the string descriptor from}
+{Index: The index of the string descriptor to read}
+{LanguageId: The language identifier of the string descriptor to read (eg USB_LANGID_US_ENGLISH)}
 {Data: See USBControlRequest}
 {Length: See USBControlRequest}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
@@ -2722,29 +2808,139 @@ begin
  if Data = nil then Exit;
  
  {Get Descriptor}
- Result:=USBControlRequest(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_RECIPIENT_DEVICE,(USB_DESCRIPTOR_TYPE_STRING shl 8) or Index,0,Data,Length);
+ Result:=USBControlRequestEx(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_RECIPIENT_DEVICE,(USB_DESCRIPTOR_TYPE_STRING shl 8) or Index,LanguageId,Data,Length,INFINITE,True);
 end;
  
 {==============================================================================}
 
-function USBDeviceReadStringDescriptor(Device:PUSBDevice;Index:Byte):String;
+function USBDeviceReadStringLanguageIds(Device:PUSBDevice):TUSBStringDescriptorLANGIDs; 
+{Get the list of supported string language identifiers from the the specified device}
+{Device: The USB device to read the language identifiers from}
+{Return: An array of supported language idenfitiers (Unused values are returned as zero)}
+var
+ Len:LongWord;
+ Size:LongWord;
+ Descriptor:PUSBStringDescriptor;
 begin
  {}
- Result:='';
+ FillChar(Result,SizeOf(TUSBStringDescriptorLANGIDs),0);
  
- //Critical
- 
+ {Allocate Descriptor}
+ Size:=SizeOf(TUSBStringDescriptor) - SizeOf(Word) + SizeOf(TUSBStringDescriptorLANGIDs); {Minus 2 for bString array}
+ Descriptor:=USBBufferAllocate(Device,Size); 
+ if Descriptor = nil then Exit;
+ try
+  FillChar(Descriptor^,Size,0);
+  
+  {Get Descriptor (Index 0 / LanguageId 0)}
+  if USBDeviceGetStringDescriptorEx(Device,0,0,Descriptor,Size) <> USB_STATUS_SUCCESS then Exit;
+  
+  {Check Descriptor}
+  if Descriptor.bDescriptorType <> USB_DESCRIPTOR_TYPE_STRING then Exit;
+  
+  {Get Length}
+  Size:=Descriptor.bLength;
+  if Size < 2 then Exit;
+  Size:=(Size - 2) and not(1); {Account for descriptor fields and round to a multiple of 2}
+  Len:=Size div SizeOf(Word);
+  if Len < 1 then Exit;
+  
+  {Copy Result}
+  System.Move(Descriptor.bString[0],Result[0],Len * SizeOf(Word));
+ finally
+  {Release Descriptor}
+  USBBufferRelease(Descriptor);
+ end; 
+end;
+
+
+{==============================================================================}
+
+function USBDeviceReadStringDescriptor(Device:PUSBDevice;Index:Byte):String; inline;
+{Get the content of the specified string descriptor from the specified device}
+{Device: The USB device to read the string descriptor from}
+{Index: The index of the string descriptor to read}
+{Return: The ANSI string content of the string descriptor or an empty string on failure}
+begin
+ {}
+ Result:=USBDeviceReadStringDescriptorEx(Device,Index,USB_LANGID_US_ENGLISH);
 end;
 
 {==============================================================================}
 
-function USBDeviceReadStringDescriptorW(Device:PUSBDevice;Index:Byte):UnicodeString;
+function USBDeviceReadStringDescriptorEx(Device:PUSBDevice;Index:Byte;LanguageId:Word):String;
+{Get the content of the specified string descriptor from the specified device}
+{Device: The USB device to read the string descriptor from}
+{Index: The index of the string descriptor to read}
+{LanguageId: The language identifier of the string descriptor to read (eg USB_LANGID_US_ENGLISH)}
+{Return: The ANSI string content of the string descriptor or an empty string on failure}
+begin
+ {}
+ Result:=String(USBDeviceReadStringDescriptorExW(Device,Index,LanguageId));
+end;
+
+{==============================================================================}
+
+function USBDeviceReadStringDescriptorW(Device:PUSBDevice;Index:Byte):UnicodeString; inline;
+{Get the content of the specified string descriptor from the specified device}
+{Device: The USB device to read the string descriptor from}
+{Index: The index of the string descriptor to read}
+{Return: The Unicode string content of the string descriptor or an empty string on failure}
+begin
+ {}
+ Result:=USBDeviceReadStringDescriptorExW(Device,Index,USB_LANGID_US_ENGLISH);
+end;
+
+{==============================================================================}
+
+function USBDeviceReadStringDescriptorExW(Device:PUSBDevice;Index:Byte;LanguageId:Word):UnicodeString;
+{Get the content of the specified string descriptor from the specified device}
+{Device: The USB device to read the string descriptor from}
+{Index: The index of the string descriptor to read}
+{LanguageId: The language identifier of the string descriptor to read (eg USB_LANGID_US_ENGLISH)}
+{Return: The Unicode string content of the string descriptor or an empty string on failure}
+var
+ Len:LongWord;
+ Size:LongWord;
+ Descriptor:PUSBStringDescriptor;
 begin
  {}
  Result:='';
  
- //Critical
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
+ {Check Index}
+ if Index = 0 then Exit;
+ 
+ {Allocate Descriptor}
+ Size:=SizeOf(TUSBStringDescriptor) - SizeOf(Word) + SizeOf(TUSBStringDescriptorLANGIDs); {Minus 2 for bString array}
+ Descriptor:=USBBufferAllocate(Device,Size); 
+ if Descriptor = nil then Exit;
+ try
+  FillChar(Descriptor^,Size,0);
+  
+  {Get Descriptor}
+  if USBDeviceGetStringDescriptorEx(Device,Index,LanguageId,Descriptor,Size) <> USB_STATUS_SUCCESS then Exit;
+ 
+  {Check Descriptor}
+  if Descriptor.bDescriptorType <> USB_DESCRIPTOR_TYPE_STRING then Exit;
+  
+  {Get Length}
+  Size:=Descriptor.bLength;
+  if Size < 2 then Exit;
+  Size:=(Size - 2) and not(1); {Account for descriptor fields and round to a multiple of 2}
+  Len:=Size div SizeOf(Word);
+  if Len < 1 then Exit;
+ 
+  {Copy Result}
+  SetLength(Result,Len);
+  System.Move(Descriptor.bString[0],Result[1],Len * SizeOf(Word));
+ finally
+  {Release Descriptor}
+  USBBufferRelease(Descriptor);
+ end; 
 end;
  
 {==============================================================================}
@@ -2906,6 +3102,53 @@ begin
     MutexUnlock(Device.Lock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function USBDeviceGetHub(Device:PUSBDevice):PUSBHub;
+{Get the USB Hub that the specified device is connected to}
+{Device: The USB device to get the hub for}
+{Return: USB Hub if successful or nil on failure}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Parent = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Get Hub}
+ Result:=PUSBHub(Device.Parent.DriverData);
+end;
+
+{==============================================================================}
+
+function USBDeviceGetPort(Device:PUSBDevice):PUSBPort;
+{Get the USB Port that the specified device is connected to}
+{Device: The USB device to get the port for}
+{Return: USB Port if successful or nil on failure}
+var
+ Hub:PUSBHub;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Parent = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Get Hub}
+ Hub:=PUSBHub(Device.Parent.DriverData);
+ if Hub = nil then Exit;
+ 
+ {Check Port}
+ if Device.PortNumber > Length(Hub.Ports) then Exit;
+ 
+ {Get Port}
+ Result:=@Hub.Ports[Device.PortNumber - 1];
 end;
 
 {==============================================================================}
@@ -3896,9 +4139,13 @@ function USBDeviceAttach(Device:PUSBDevice):LongWord;
 {Device: New USB device to configure and initialize}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
+ Hub:PUSBHub;
  Address:Byte;
  Count:LongWord;
- Status:LongWord;       
+ Status:LongWord;
+ Buffer:String;
+ LanguageId:Word;
+ LanguageIds:TUSBStringDescriptorLANGIDs;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -3928,10 +4175,6 @@ begin
    Exit;
   end;  
  
- //To Do //Critical //See notes about this in usb_new_device in \u-boot-HEAD-5745f8c\common\usb.c
-               //Apparently Windows and Linux both send a 64 byte initial GetDescriptor request to avoid some issues
-               //Apparently also this will fail in XHCI (USB 3.0) until the Address has been set and other initialization completed
- 
  {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Getting maximum packet size');
  {$ENDIF}
@@ -3940,9 +4183,16 @@ begin
  Count:=3;
  while Count > 0 do
   begin
-   {Read Device Descriptor (Starting with 8 byte maximum)}
-   Device.Descriptor.bMaxPacketSize0:=USB_DEFAULT_MAX_PACKET_SIZE; 
+   {Note: Both Linux and Windows always use a 64 byte bMaxPacketSize0 for the initial get descriptor request due to bugs in various implementations}
+   {$IFDEF USB_LEGACY_DEVICE_INIT}
+   {Read Device Descriptor (Start with 8 byte maximum)}
+   Device.Descriptor.bMaxPacketSize0:=USB_DEFAULT_MAX_PACKET_SIZE;
    Status:=USBDeviceReadDeviceDescriptor(Device,Device.Descriptor.bMaxPacketSize0);
+   {$ELSE}
+   {Read Device Descriptor (Start with 64 byte maximum)}
+   Device.Descriptor.bMaxPacketSize0:=USB_ALTERNATE_MAX_PACKET_SIZE;
+   Status:=USBDeviceReadDeviceDescriptorEx(Device,Device.Descriptor.bMaxPacketSize0,True);
+   {$ENDIF}
    if Status <> USB_STATUS_SUCCESS then
     begin
      {$IFDEF USB_DEBUG}
@@ -3984,6 +4234,29 @@ begin
  if USB_LOG_ENABLED then USBLogDebug(Device,'Using bMaxPacketSize0=' + IntToStr(Device.Descriptor.bMaxPacketSize0));
  {$ENDIF}
  
+ {Reset Port}
+ if Device.Parent <> nil then
+  begin
+   {Get Hub}
+   Hub:=PUSBHub(Device.Parent.DriverData);
+   if Hub <> nil then
+    begin
+     {$IFDEF USB_DEBUG}
+     if USB_LOG_ENABLED then USBLogDebug(Device,'Resetting port ' + IntToStr(Device.PortNumber));
+     {$ENDIF}
+     
+     Status:=USBHubPortReset(@Hub.Ports[Device.PortNumber - 1]);
+     if Status <> USB_STATUS_SUCCESS then
+      begin
+       if USB_LOG_ENABLED then USBLogError(Device,'Failed to reset port:  ' + USBStatusToString(Status));
+       
+       {Return Result}
+       Result:=Status;
+       {Exit;} {Do not fail}
+      end;
+    end;
+  end;
+ 
  {Get Device Address}
  Address:=USBDeviceGetAddress(Device);
  if Address = 0 then
@@ -4008,8 +4281,9 @@ begin
    Exit;
   end;
   
- //To Do //Critical //May need to allow 10msec to settle before proceeding //See: usb_new_device in \u-boot-HEAD-5745f8c\common\usb.c
- 
+ {Allow Settling Time}
+ ThreadSleep(10);
+  
  {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Reading device descriptor');
  {$ENDIF}
@@ -4024,36 +4298,6 @@ begin
    Result:=Status;
    Exit;
   end;
- 
- {Get Product}
- if Device.Descriptor.iProduct <> 0 then
-  begin
-   {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Device,'Reading product string');
-   {$ENDIF}
-   
-   //To Do //Critical  //usb_get_ascii_string etc
-  end;
- 
- {Get Manufacturer}
- if Device.Descriptor.iManufacturer <> 0 then
-  begin
-   {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Device,'Reading manufacturer string');
-   {$ENDIF}
-   
-   //To Do //Critical  //usb_get_ascii_string etc
-  end;  
- 
- {Get SerialNumber}
- if Device.Descriptor.iSerialNumber <> 0 then
-  begin
-   {$IFDEF USB_DEBUG}
-   if USB_LOG_ENABLED then USBLogDebug(Device,'Reading serial number string');
-   {$ENDIF}
-  
-   //To Do //Critical //iSerialNumber as well ? //See Descriptor
-  end; 
 
  {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Creating configurations');
@@ -4085,6 +4329,54 @@ begin
    Exit;
   end;
 
+ {Get Language Id}
+ LanguageId:=0;
+ LanguageIds:=USBDeviceReadStringLanguageIds(Device);
+ for Count:=0 to High(LanguageIds) do
+  begin
+   if LanguageIds[Count] = LANGUAGE_DEFAULT then
+    begin
+     LanguageId:=LanguageIds[Count];
+    end;
+    
+   if LanguageIds[Count] = 0 then Break;
+  end;
+ if LanguageId = 0 then LanguageId:=LanguageIds[0];
+ if LanguageId = 0 then LanguageId:=USB_LANGID_US_ENGLISH;
+ 
+ {Get Product}
+ if Device.Descriptor.iProduct <> 0 then
+  begin
+   {$IFDEF USB_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'Reading product string');
+   {$ENDIF}
+   
+   Buffer:=USBDeviceReadStringDescriptorEx(Device,Device.Descriptor.iProduct,LanguageId);
+   StrLCopy(Device.Product,PChar(Buffer),High(Device.Product));
+  end;
+ 
+ {Get Manufacturer}
+ if Device.Descriptor.iManufacturer <> 0 then
+  begin
+   {$IFDEF USB_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'Reading manufacturer string');
+   {$ENDIF}
+   
+   Buffer:=USBDeviceReadStringDescriptorEx(Device,Device.Descriptor.iManufacturer,LanguageId);
+   StrLCopy(Device.Manufacturer,PChar(Buffer),High(Device.Manufacturer));
+  end;  
+ 
+ {Get SerialNumber}
+ if Device.Descriptor.iSerialNumber <> 0 then
+  begin
+   {$IFDEF USB_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'Reading serial number string');
+   {$ENDIF}
+  
+   Buffer:=USBDeviceReadStringDescriptorEx(Device,Device.Descriptor.iSerialNumber,LanguageId);
+   StrLCopy(Device.SerialNumber,PChar(Buffer),High(Device.SerialNumber));
+  end; 
+  
  {Check Configuration Count}
  if Device.Descriptor.bNumConfigurations = 1 then
   begin
@@ -4355,47 +4647,56 @@ begin
      begin
       for Index:=0 to Length(Device.Configurations) - 1 do
        begin
-        {Free Interfaces}
-        if Length(Device.Configurations[Index].Interfaces) > 0 then
+        if Device.Configurations[Index] <> nil then
          begin
-          for Count:=0 to Length(Device.Configurations[Index].Interfaces) - 1 do
+          {Free Interfaces}
+          if Length(Device.Configurations[Index].Interfaces) > 0 then
            begin
-            {Free Alternates}
-            if Length(Device.Configurations[Index].Interfaces[Count].Alternates) > 0 then
+            for Count:=0 to Length(Device.Configurations[Index].Interfaces) - 1 do
              begin
-              for Alternate:=0 to Length(Device.Configurations[Index].Interfaces[Count].Alternates) - 1 do
+              if Device.Configurations[Index].Interfaces[Count] <> nil then
                begin
-                {Free Endpoints}
-                if Length(Device.Configurations[Index].Interfaces[Count].Alternates[Alternate].Endpoints) > 0 then
+                {Free Alternates}
+                if Length(Device.Configurations[Index].Interfaces[Count].Alternates) > 0 then
                  begin
-                  SetLength(Device.Configurations[Index].Interfaces[Count].Alternates[Alternate].Endpoints,0);
+                  for Alternate:=0 to Length(Device.Configurations[Index].Interfaces[Count].Alternates) - 1 do
+                   begin
+                    if Device.Configurations[Index].Interfaces[Count].Alternates[Alternate] <> nil then
+                     begin
+                      {Free Endpoints}
+                      if Length(Device.Configurations[Index].Interfaces[Count].Alternates[Alternate].Endpoints) > 0 then
+                       begin
+                        SetLength(Device.Configurations[Index].Interfaces[Count].Alternates[Alternate].Endpoints,0);
+                       end;
+                     
+                      {Free Alternate}
+                      FreeMem(Device.Configurations[Index].Interfaces[Count].Alternates[Alternate]);
+                     end;
+                   end;
+                   
+                  SetLength(Device.Configurations[Index].Interfaces[Count].Alternates,0);
+                 end; 
+    
+                {Free Endpoints}
+                if Length(Device.Configurations[Index].Interfaces[Count].Endpoints) > 0 then
+                 begin
+                  SetLength(Device.Configurations[Index].Interfaces[Count].Endpoints,0);
                  end;
-               
-                {Free Alternate}
-                FreeMem(Device.Configurations[Index].Interfaces[Count].Alternates[Alternate]);
-               end;
-               
-              SetLength(Device.Configurations[Index].Interfaces[Count].Alternates,0);
+                
+                {Free Interface}
+                FreeMem(Device.Configurations[Index].Interfaces[Count]);
+               end
              end; 
-
-            {Free Endpoints}
-            if Length(Device.Configurations[Index].Interfaces[Count].Endpoints) > 0 then
-             begin
-              SetLength(Device.Configurations[Index].Interfaces[Count].Endpoints,0);
-             end;
             
-            {Free Interface}
-            FreeMem(Device.Configurations[Index].Interfaces[Count]);
-           end; 
+            SetLength(Device.Configurations[Index].Interfaces,0);
+           end;
           
-          SetLength(Device.Configurations[Index].Interfaces,0);
+          {Free Configuration Descriptor}
+          USBBufferRelease(Device.Configurations[Index].Descriptor);
+          
+          {Free Configuration}
+          FreeMem(Device.Configurations[Index]);
          end;
-        
-        {Free Configuration Descriptor}
-        USBBufferRelease(Device.Configurations[Index].Descriptor);
-        
-        {Free Configuration}
-        FreeMem(Device.Configurations[Index]);
        end;
        
       SetLength(Device.Configurations,0);
@@ -5890,8 +6191,24 @@ begin
  {Setup Request} 
  Request.Status:=USB_STATUS_NOT_PROCESSED;
  Request.ActualSize:=0;
+ Request.IsPing:=False;
+ Request.IsSplit:=False;
  Request.CompleteSplit:=False;
+ Request.ShortAttempt:=False;
+ Request.StartOfFrame:=False;
  Request.ControlPhase:=USB_CONTROL_PHASE_SETUP;
+ Request.BytesAttempted:=0;
+ Request.BytesTransferred:=0;
+ Request.SplitErrorCount:=0;
+ Request.CompleteSplitRetries:=0;
+ {$IFDEF USB_DEBUG}
+ Request.StartSplitAttempts:=0;
+ Request.CompleteSplitAttempts:=0;
+ Request.CompleteSplitRestarts:=0;
+ Request.StartSplitNAKs:=0;
+ Request.CompleteSplitNYETs:=0;
+ Request.CompleteSplitNAKs:=0;
+ {$ENDIF}
  
  {Acquire the Lock}
  if MutexLock(Device.Lock) = ERROR_SUCCESS then
@@ -5993,6 +6310,8 @@ end;
 procedure USBRequestComplete(Request:PUSBRequest);
 {Called by a host controller when a USB request completes}
 {Request: The USB request which has completed}
+
+{Note: Not intended to be called directly by applications}
 var
  {$IFDEF USB_DEBUG}
  Direction:Byte;
@@ -6181,6 +6500,17 @@ begin
  Request.SetupData.wIndex:=wIndex;
  Request.SetupData.wLength:=wLength;
 
+ {$IFDEF USB_DEBUG}
+ if USB_LOG_ENABLED then
+  begin
+   USBLogDebug(Device,'USBControlRequestEx: bmRequestType = ' + IntToHex(bmRequestType,2));
+   USBLogDebug(Device,'USBControlRequestEx: bRequest = ' + IntToHex(bRequest,2));
+   USBLogDebug(Device,'USBControlRequestEx: wValue = ' + IntToHex(wValue,4));
+   USBLogDebug(Device,'USBControlRequestEx: wIndex = ' + IntToHex(wIndex,4));
+   USBLogDebug(Device,'USBControlRequestEx: wLength = ' + IntToStr(wLength));
+  end; 
+ {$ENDIF}
+ 
  {Submit Request} 
  Status:=USBRequestSubmit(Request);
  if Status = USB_STATUS_SUCCESS then
@@ -6191,6 +6521,10 @@ begin
     begin
      {Get Status}
      Status:=Request.Status;
+     
+     {$IFDEF USB_DEBUG}
+     if USB_LOG_ENABLED then USBLogDebug(Device,'USBControlRequestEx: Size=' + IntToStr(Request.Size) + ' ActualSize=' + IntToStr(Request.ActualSize));
+     {$ENDIF}
      
      {Force error if actual size was not the same as requested size}
      if (Status = USB_STATUS_SUCCESS) and (Request.ActualSize <> Request.Size) and not(AllowShort) then
@@ -6232,6 +6566,35 @@ begin
     end;    
   end;  
  
+ {$IFDEF USB_DEBUG}
+ if USB_LOG_ENABLED then
+  begin
+   USBLogDebug(Device,'USBControlRequestEx: Size = ' + IntToStr(Request.Size));
+   USBLogDebug(Device,'USBControlRequestEx: Status = ' + USBStatusToString(Request.Status));
+   USBLogDebug(Device,'USBControlRequestEx: ActualSize = ' + IntToStr(Request.ActualSize));
+   USBLogDebug(Device,'USBControlRequestEx: IsPing = ' + BoolToStr(Request.IsPing));
+   USBLogDebug(Device,'USBControlRequestEx: IsSplit = ' + BoolToStr(Request.IsSplit));
+   USBLogDebug(Device,'USBControlRequestEx: CompleteSplit = ' + BoolToStr(Request.CompleteSplit));
+   USBLogDebug(Device,'USBControlRequestEx: ShortAttempt = ' + BoolToStr(Request.ShortAttempt));
+   USBLogDebug(Device,'USBControlRequestEx: StartOfFrame = ' + BoolToStr(Request.StartOfFrame));
+   USBLogDebug(Device,'USBControlRequestEx: ControlPhase = ' + IntToStr(Request.ControlPhase));
+   USBLogDebug(Device,'USBControlRequestEx: NextDataPID = ' + IntToStr(Request.NextDataPID));
+   USBLogDebug(Device,'USBControlRequestEx: AttemptedSize = ' + IntToStr(Request.AttemptedSize));
+   USBLogDebug(Device,'USBControlRequestEx: AttemptedPacketsRemaining = ' + IntToStr(Request.AttemptedPacketsRemaining));
+   USBLogDebug(Device,'USBControlRequestEx: AttemptedBytesRemaining = ' + IntToStr(Request.AttemptedBytesRemaining));
+   USBLogDebug(Device,'USBControlRequestEx: BytesAttempted = ' + IntToStr(Request.BytesAttempted));
+   USBLogDebug(Device,'USBControlRequestEx: BytesTransferred = ' + IntToStr(Request.BytesTransferred));
+   USBLogDebug(Device,'USBControlRequestEx: SplitErrorCount = ' + IntToStr(Request.SplitErrorCount));
+   USBLogDebug(Device,'USBControlRequestEx: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries));
+   USBLogDebug(Device,'USBControlRequestEx: StartSplitAttempts = ' + IntToStr(Request.StartSplitAttempts));
+   USBLogDebug(Device,'USBControlRequestEx: CompleteSplitAttempts = ' + IntToStr(Request.CompleteSplitAttempts));
+   USBLogDebug(Device,'USBControlRequestEx: CompleteSplitRestarts = ' + IntToStr(Request.CompleteSplitRestarts));
+   USBLogDebug(Device,'USBControlRequestEx: StartSplitNAKs = ' + IntToStr(Request.StartSplitNAKs));
+   USBLogDebug(Device,'USBControlRequestEx: CompleteSplitNYETs = ' + IntToStr(Request.CompleteSplitNYETs));
+   USBLogDebug(Device,'USBControlRequestEx: CompleteSplitNAKs = ' + IntToStr(Request.CompleteSplitNAKs));
+  end; 
+ {$ENDIF}
+ 
  {Release Setup Data}
  USBBufferRelease(Request.SetupData);
  
@@ -6250,6 +6613,8 @@ end;
 procedure USBControlRequestComplete(Request:PUSBRequest);
 {Called when a USB request from a USB control endpoint completes}
 {Request: The USB request which has completed}
+
+{Note: Not intended to be called directly by applications}
 begin
  {}
  {Check Request}
@@ -6260,6 +6625,373 @@ begin
  
  {Signal Semaphore}
  SemaphoreSignal(TSemaphoreHandle(Request.DriverData));
+end;
+
+{==============================================================================}
+
+function USBTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Data:Pointer;Size:LongWord;var Count:LongWord;Timeout:LongWord):LongWord;
+{Perform a synchronous bulk or interrupt transfer to a USB device and endpoint}
+{Device: The USB device to send the request to}
+{Endpoint: The Endpoint to use for the request}
+{Data: Buffer for the data to be sent or received from the request (Ignored if Size is 0)}
+{Size: Size of the Data buffer in bytes}
+{Count: The actual number of bytes transferred on completion (May apply even on failure or timeout)}
+{Timeout: Milliseconds to wait for request to complete (INFINITE to wait forever)}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+var
+ Status:LongWord;
+ Request:PUSBRequest;
+ ResultCode:LongWord;
+ Semaphore:TSemaphoreHandle;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Setup Defaults}
+ Count:=0;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+
+ {Check Endpoint}
+ if Endpoint = nil then Exit;
+ 
+ {Check Timeout}
+ if Timeout = 0 then
+  begin
+   Timeout:=INFINITE;
+  end;
+  
+ {Create Semaphore}
+ Semaphore:=SemaphoreCreate(0);
+ if Semaphore = INVALID_HANDLE_VALUE then
+  begin
+   {Return Result}
+   Result:=USB_STATUS_OPERATION_FAILED;
+   Exit; 
+  end;
+ 
+ {Create Request} 
+ Request:=USBRequestAllocateEx(Device,Endpoint,USBTransferComplete,Data,Size,Pointer(Semaphore));
+ if Request = nil then
+  begin
+   {Destroy Semaphore}
+   SemaphoreDestroy(Semaphore);
+   
+   {Return Result}
+   Result:=USB_STATUS_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Submit Request} 
+ Status:=USBRequestSubmit(Request);
+ if Status = USB_STATUS_SUCCESS then
+  begin
+   {Wait for Completion}
+   ResultCode:=SemaphoreWaitEx(Semaphore,Timeout);
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     {Get Status}
+     Status:=Request.Status;
+     
+     {Get Size}
+     Count:=Request.ActualSize;
+    end
+   else if ResultCode = ERROR_WAIT_TIMEOUT then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Transfer timeout (Timeout=' + IntToStr(Timeout) + ')');
+     
+     {Get Status}
+     Status:=USB_STATUS_TIMEOUT;
+     
+     {Cancel Request}
+     USBRequestCancel(Request);
+     
+     {Wait for Cancel}
+     SemaphoreWait(Semaphore);
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Transfer failure (Error=' + ErrorToString(ResultCode) + ')');
+     
+     {Get Status}
+     Status:=USB_STATUS_OPERATION_FAILED;
+     
+     {Cancel Request}
+     USBRequestCancel(Request);
+     
+     {Wait for Cancel}
+     SemaphoreWait(Semaphore); 
+    end;    
+  end;  
+ 
+ {$IFDEF USB_DEBUG}
+ if USB_LOG_ENABLED then
+  begin
+   USBLogDebug(Device,'USBTransfer: Size = ' + IntToStr(Request.Size));
+   USBLogDebug(Device,'USBTransfer: Status = ' + USBStatusToString(Request.Status));
+   USBLogDebug(Device,'USBTransfer: ActualSize = ' + IntToStr(Request.ActualSize));
+   USBLogDebug(Device,'USBTransfer: IsPing = ' + BoolToStr(Request.IsPing));
+   USBLogDebug(Device,'USBTransfer: IsSplit = ' + BoolToStr(Request.IsSplit));
+   USBLogDebug(Device,'USBTransfer: CompleteSplit = ' + BoolToStr(Request.CompleteSplit));
+   USBLogDebug(Device,'USBTransfer: ShortAttempt = ' + BoolToStr(Request.ShortAttempt));
+   USBLogDebug(Device,'USBTransfer: StartOfFrame = ' + BoolToStr(Request.StartOfFrame));
+   USBLogDebug(Device,'USBTransfer: NextDataPID = ' + IntToStr(Request.NextDataPID));
+   USBLogDebug(Device,'USBTransfer: AttemptedSize = ' + IntToStr(Request.AttemptedSize));
+   USBLogDebug(Device,'USBTransfer: AttemptedPacketsRemaining = ' + IntToStr(Request.AttemptedPacketsRemaining));
+   USBLogDebug(Device,'USBTransfer: AttemptedBytesRemaining = ' + IntToStr(Request.AttemptedBytesRemaining));
+   USBLogDebug(Device,'USBTransfer: BytesAttempted = ' + IntToStr(Request.BytesAttempted));
+   USBLogDebug(Device,'USBTransfer: BytesTransferred = ' + IntToStr(Request.BytesTransferred));
+   USBLogDebug(Device,'USBTransfer: SplitErrorCount = ' + IntToStr(Request.SplitErrorCount));
+   USBLogDebug(Device,'USBTransfer: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries))
+   USBLogDebug(Device,'USBTransfer: StartSplitAttempts = ' + IntToStr(Request.StartSplitAttempts));
+   USBLogDebug(Device,'USBTransfer: CompleteSplitAttempts = ' + IntToStr(Request.CompleteSplitAttempts));
+   USBLogDebug(Device,'USBTransfer: CompleteSplitRestarts = ' + IntToStr(Request.CompleteSplitRestarts)); 
+   USBLogDebug(Device,'USBTransfer: StartSplitNAKs = ' + IntToStr(Request.StartSplitNAKs));
+   USBLogDebug(Device,'USBTransfer: CompleteSplitNYETs = ' + IntToStr(Request.CompleteSplitNYETs));
+   USBLogDebug(Device,'USBTransfer: CompleteSplitNAKs = ' + IntToStr(Request.CompleteSplitNAKs)); 
+  end; 
+ {$ENDIF}
+ 
+ {Release Request}
+ USBRequestRelease(Request);
+ 
+ {Destroy Semaphore}
+ SemaphoreDestroy(Semaphore); 
+ 
+ {Return Result}
+ Result:=Status;
+end;
+
+{==============================================================================}
+
+procedure USBTransferComplete(Request:PUSBRequest);
+{Called when a USB control, bulk or interrupt transfer (scheduled by USBTransfer or USBControlTransfer) completes}
+{Request: The USB request which has completed}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ {Check Semaphore}
+ if Request.DriverData = nil then Exit;
+ 
+ {Signal Semaphore}
+ SemaphoreSignal(TSemaphoreHandle(Request.DriverData));
+end;
+
+{==============================================================================}
+
+function USBControlTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;var Count:LongWord;Timeout:LongWord):LongWord;
+{Perform a synchronous control transfer to a USB device and endpoint}
+{Device: The USB device to send the control request to}
+{Endpoint: The Endpoint to use for the control request (or nil for the default control endpoint)}
+{bRequest: The request to send (See Section 9.4 of the USB 2.0 specification for Standard requests)}
+{bmRequestType: Type of request to send (See Section 9.3.1 of the USB 2.0 specification for Standard request types)}
+{wValue: Request specific data}
+{wIndex: Request specific data}
+{Data: Buffer for the data to be sent or received from the request (Ignored if wLength is 0)}
+{wLength: Length of the Data buffer in bytes}
+{Count: The actual number of bytes transferred on completion (May apply even on failure or timeout)}
+{Timeout: Milliseconds to wait for request to complete (INFINITE to wait forever)}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+
+{Note: This function is very similar to USBControlRequest(Ex) but also returns the actual number of bytes tranferred}
+var
+ Status:LongWord;
+ Request:PUSBRequest;
+ ResultCode:LongWord;
+ Semaphore:TSemaphoreHandle;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Setup Defaults}
+ Count:=0;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Timeout}
+ if Timeout = 0 then
+  begin
+   Timeout:=INFINITE;
+  end;
+  
+ {Create Semaphore}
+ Semaphore:=SemaphoreCreate(0);
+ if Semaphore = INVALID_HANDLE_VALUE then
+  begin
+   {Return Result}
+   Result:=USB_STATUS_OPERATION_FAILED;
+   Exit; 
+  end;
+ 
+ {Create Request} 
+ Request:=USBRequestAllocateEx(Device,Endpoint,USBTransferComplete,Data,wLength,Pointer(Semaphore));
+ if Request = nil then
+  begin
+   {Destroy Semaphore}
+   SemaphoreDestroy(Semaphore);
+   
+   {Return Result}
+   Result:=USB_STATUS_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Create Setup Data}
+ Request.SetupData:=USBBufferAllocate(Device,SizeOf(TUSBControlSetupData));
+ if Request.SetupData = nil then
+  begin
+   {Release Request}
+   USBRequestRelease(Request);
+   
+   {Destroy Semaphore}
+   SemaphoreDestroy(Semaphore);
+   
+   {Return Result}
+   Result:=USB_STATUS_OPERATION_FAILED;
+   Exit;
+  end;
+ 
+ {Initialize Setup Data}
+ Request.SetupData.bmRequestType:=bmRequestType;
+ Request.SetupData.bRequest:=bRequest;
+ Request.SetupData.wValue:=wValue;
+ Request.SetupData.wIndex:=wIndex;
+ Request.SetupData.wLength:=wLength;
+ 
+ {$IFDEF USB_DEBUG}
+ if USB_LOG_ENABLED then
+  begin
+   USBLogDebug(Device,'USBControlTransfer: bmRequestType = ' + IntToHex(bmRequestType,2));
+   USBLogDebug(Device,'USBControlTransfer: bRequest = ' + IntToHex(bRequest,2));
+   USBLogDebug(Device,'USBControlTransfer: wValue = ' + IntToHex(wValue,4));
+   USBLogDebug(Device,'USBControlTransfer: wIndex = ' + IntToHex(wIndex,4));
+   USBLogDebug(Device,'USBControlTransfer: wLength = ' + IntToStr(wLength));
+  end; 
+ {$ENDIF}
+ 
+ {Submit Request} 
+ Status:=USBRequestSubmit(Request);
+ if Status = USB_STATUS_SUCCESS then
+  begin
+   {Wait for Completion}
+   ResultCode:=SemaphoreWaitEx(Semaphore,Timeout);
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     {Get Status}
+     Status:=Request.Status;
+     
+     {Get Size}
+     Count:=Request.ActualSize;
+    end
+   else if ResultCode = ERROR_WAIT_TIMEOUT then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Control transfer timeout (Timeout=' + IntToStr(Timeout) + ')');
+     
+     {Get Status}
+     Status:=USB_STATUS_TIMEOUT;
+     
+     {Cancel Request}
+     USBRequestCancel(Request);
+     
+     {Wait for Cancel}
+     SemaphoreWait(Semaphore);
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Control transfer failure (Error=' + ErrorToString(ResultCode) + ')');
+     
+     {Get Status}
+     Status:=USB_STATUS_OPERATION_FAILED;
+     
+     {Cancel Request}
+     USBRequestCancel(Request);
+     
+     {Wait for Cancel}
+     SemaphoreWait(Semaphore); 
+    end;    
+  end;  
+ 
+ {$IFDEF USB_DEBUG}
+ if USB_LOG_ENABLED then
+  begin
+   USBLogDebug(Device,'USBControlTransfer: Size = ' + IntToStr(Request.Size));
+   USBLogDebug(Device,'USBControlTransfer: Status = ' + USBStatusToString(Request.Status));
+   USBLogDebug(Device,'USBControlTransfer: ActualSize = ' + IntToStr(Request.ActualSize));
+   USBLogDebug(Device,'USBControlTransfer: IsPing = ' + BoolToStr(Request.IsPing));
+   USBLogDebug(Device,'USBControlTransfer: IsSplit = ' + BoolToStr(Request.IsSplit));
+   USBLogDebug(Device,'USBControlTransfer: CompleteSplit = ' + BoolToStr(Request.CompleteSplit));
+   USBLogDebug(Device,'USBControlTransfer: ShortAttempt = ' + BoolToStr(Request.ShortAttempt));
+   USBLogDebug(Device,'USBControlTransfer: StartOfFrame = ' + BoolToStr(Request.StartOfFrame));
+   USBLogDebug(Device,'USBControlTransfer: ControlPhase = ' + IntToStr(Request.ControlPhase));
+   USBLogDebug(Device,'USBControlTransfer: NextDataPID = ' + IntToStr(Request.NextDataPID));
+   USBLogDebug(Device,'USBControlTransfer: AttemptedSize = ' + IntToStr(Request.AttemptedSize));
+   USBLogDebug(Device,'USBControlTransfer: AttemptedPacketsRemaining = ' + IntToStr(Request.AttemptedPacketsRemaining));
+   USBLogDebug(Device,'USBControlTransfer: AttemptedBytesRemaining = ' + IntToStr(Request.AttemptedBytesRemaining));
+   USBLogDebug(Device,'USBControlTransfer: BytesAttempted = ' + IntToStr(Request.BytesAttempted));
+   USBLogDebug(Device,'USBControlTransfer: BytesTransferred = ' + IntToStr(Request.BytesTransferred));
+   USBLogDebug(Device,'USBControlTransfer: SplitErrorCount = ' + IntToStr(Request.SplitErrorCount));
+   USBLogDebug(Device,'USBControlTransfer: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries));
+   USBLogDebug(Device,'USBControlTransfer: StartSplitAttempts = ' + IntToStr(Request.StartSplitAttempts));
+   USBLogDebug(Device,'USBControlTransfer: CompleteSplitAttempts = ' + IntToStr(Request.CompleteSplitAttempts));
+   USBLogDebug(Device,'USBControlTransfer: CompleteSplitRestarts = ' + IntToStr(Request.CompleteSplitRestarts));
+   USBLogDebug(Device,'USBControlTransfer: StartSplitNAKs = ' + IntToStr(Request.StartSplitNAKs));
+   USBLogDebug(Device,'USBControlTransfer: CompleteSplitNYETs = ' + IntToStr(Request.CompleteSplitNYETs));
+   USBLogDebug(Device,'USBControlTransfer: CompleteSplitNAKs = ' + IntToStr(Request.CompleteSplitNAKs));
+  end; 
+ {$ENDIF}
+ 
+ {Release Setup Data}
+ USBBufferRelease(Request.SetupData);
+ 
+ {Release Request}
+ USBRequestRelease(Request);
+ 
+ {Destroy Semaphore}
+ SemaphoreDestroy(Semaphore); 
+ 
+ {Return Result}
+ Result:=Status;
+end;
+
+{==============================================================================}
+
+function USBBulkTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Data:Pointer;Size:LongWord;var Count:LongWord;Timeout:LongWord):LongWord;
+{Perform a synchronous bulk transfer to a USB device and endpoint}
+{Device: The USB device to send the bulk request to}
+{Endpoint: The Endpoint to use for the bulk request}
+{Data: Buffer for the data to be sent or received from the request (Ignored if Size is 0)}
+{Size: Size of the Data buffer in bytes}
+{Count: The actual number of bytes transferred on completion (May apply even on failure or timeout)}
+{Timeout: Milliseconds to wait for request to complete (INFINITE to wait forever)}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+
+{Note: The type and direction of the transfer is determined from the type and direction of the endpoint}
+begin
+ {}
+ Result:=USBTransfer(Device,Endpoint,Data,Size,Count,Timeout);
+end;
+
+{==============================================================================}
+
+function USBInterruptTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;Data:Pointer;Size:LongWord;var Count:LongWord;Timeout:LongWord):LongWord;
+{Perform a synchronous interrupt transfer to a USB device and endpoint}
+{Device: The USB device to send the interrupt request to}
+{Endpoint: The Endpoint to use for the interrupt request}
+{Data: Buffer for the data to be sent or received from the request (Ignored if Size is 0)}
+{Size: Size of the Data buffer in bytes}
+{Count: The actual number of bytes transferred on completion (May apply even on failure or timeout)}
+{Timeout: Milliseconds to wait for request to complete (INFINITE to wait forever)}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+
+{Note: The type and direction of the transfer is determined from the type and direction of the endpoint}
+begin
+ {}
+ Result:=USBTransfer(Device,Endpoint,Data,Size,Count,Timeout);
 end;
 
 {==============================================================================}
@@ -6598,6 +7330,7 @@ begin
  Hub.Device.DeviceType:=USBHUB_TYPE_NONE;
  Hub.Device.DeviceFlags:=USBHUB_FLAG_NONE;
  Hub.Device.DeviceData:=Device;
+ Hub.Device.DeviceDescription:=USBHUB_DEVICE_DESCRIPTION;
  {Hub}
  Hub.HubId:=DEVICE_ID_ANY;
  Hub.HubState:=USBHUB_STATE_DETACHED;
@@ -7023,7 +7756,7 @@ end;
 {==============================================================================}
 
 function USBHubPortReset(Port:PUSBPort):LongWord;
-{Reset a the specified USB port}
+{Reset the specified USB port}
 {Port: USB port to reset}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 
@@ -7090,6 +7823,75 @@ begin
  
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
+end;
+
+{==============================================================================}
+
+function USBHubPortDisable(Port:PUSBPort):LongWord;
+{Disable the specified USB port}
+{Port: USB port to disable}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must hold the hub lock}
+{Note: A port cannot be enabled in software, only disabled}
+begin
+ {}
+ {Disable Port}
+ Result:=USBHubPortClearFeature(Port,USB_PORT_ENABLE);
+end;
+
+{==============================================================================}
+
+function USBHubPortPowerOn(Port:PUSBPort):LongWord;
+{Power on the specified USB port}
+{Port: USB port to power on}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must hold the hub lock}
+{Note: Not all hubs support powering on and off individual ports, you must check
+       if the hub includes the USB_HUB_CHARACTERISTIC_LPSM_PORT in its descriptor}
+var       
+ Status:LongWord;       
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Port}
+ if Port = nil then Exit;
+ if Port.Hub = nil then Exit;
+ if Port.Hub.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Power On Port}
+ Status:=USBHubPortSetFeature(Port,USB_PORT_POWER);
+ if Status <> USB_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end;
+ 
+ {Wait for Power Good}
+ {According to the section 11.11 of the USB 2.0 specification, bPwrOn2PwrGood of the hub descriptor is the
+  time (in 2 ms intervals) from the time the power-on sequence begins on a port until power is good on that port}
+ ThreadSleep(2 * Port.Hub.Descriptor.bPwrOn2PwrGood);
+ 
+ {Return Result}
+ Result:=USB_STATUS_SUCCESS;
+end;
+
+{==============================================================================}
+
+function USBHubPortPowerOff(Port:PUSBPort):LongWord;
+{Power off the specified USB port}
+{Port: USB port to power off}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must hold the hub lock}
+{Note: Not all hubs support powering on and off individual ports, you must check
+       if the hub includes the USB_HUB_CHARACTERISTIC_LPSM_PORT in its descriptor}
+begin
+ {}
+ {Power Off Port}
+ Result:=USBHubPortClearFeature(Port,USB_PORT_POWER);
 end;
 
 {==============================================================================}
@@ -7746,7 +8548,7 @@ begin
  if Device = nil then Exit;
  
  {$IFDEF USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Attempting to bind USB device (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Check Interface (Bind to device only)}
@@ -7866,6 +8668,24 @@ begin
  {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Attaching ' + USBHubCharacteristicsToString(Hub.Descriptor.wHubCharacteristics) + ' USB hub with ' + IntToStr(Hub.Descriptor.bNbrPorts) + ' ports');
  {$ENDIF}
+ 
+ {Update Hub Properties}
+ if (Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_IS_COMPOUND_DEVICE) = USB_HUB_CHARACTERISTIC_IS_COMPOUND_DEVICE then
+  begin
+   Hub.Device.DeviceFlags:=Hub.Device.DeviceFlags or USBHUB_FLAG_COMPOUND;
+  end;
+ if (Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_LPSM) = USB_HUB_CHARACTERISTIC_LPSM_PORT then
+  begin
+   Hub.Device.DeviceFlags:=Hub.Device.DeviceFlags or USBHUB_FLAG_PORT_POWER;
+  end;
+ if (Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_OCPM) = USB_HUB_CHARACTERISTIC_OCPM_PORT then
+  begin
+   Hub.Device.DeviceFlags:=Hub.Device.DeviceFlags or USBHUB_FLAG_PORT_PROTECTION;
+  end;
+ if Device.Descriptor.bDeviceProtocol = USB_PROTOCOL_HUB_HIGHSPEED_MULTI_TT then
+  begin
+   Hub.Device.DeviceFlags:=Hub.Device.DeviceFlags or USBHUB_FLAG_MULTI_TRANSLATOR;
+  end;
  
  {Create Hub Ports}
  Status:=USBHubCreatePorts(Hub);
@@ -7992,7 +8812,7 @@ begin
  if Device.Driver <> USBHubDriver then Exit;
  
  {$IFDEF USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Unbinding (' + ': Address ' + IntToStr(Device.Address) + ')'); //To Do //Device.Manufacturer //Device.Product
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
  
  {Get Hub}
@@ -9123,6 +9943,108 @@ begin
     CriticalSectionUnlock(USBHubTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function USBHubIsMultiTT(Hub:PUSBHub):Boolean;
+{Returns True if Hub has multiple Transaction Translators or False if not}
+var
+ Device:PUSBDevice;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Hub}
+ if Hub = nil then Exit;
+
+ {Get Device}
+ Device:=PUSBDevice(Hub.Device.DeviceData);
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {Check Device Protocol}
+ Result:=(Device.Descriptor.bDeviceProtocol = USB_PROTOCOL_HUB_HIGHSPEED_MULTI_TT);
+end;
+
+{==============================================================================}
+
+function USBHubIsCompound(Hub:PUSBHub):Boolean;
+{Returns True if Hub is part of a Compound Device or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Hub}
+ if Hub = nil then Exit;
+
+ {Get Compound Device}
+ Result:=(Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_IS_COMPOUND_DEVICE) = USB_HUB_CHARACTERISTIC_IS_COMPOUND_DEVICE;
+end;
+
+{==============================================================================}
+
+function USBHubHasPortIndicator(Hub:PUSBHub):Boolean;
+{Returns True if Hub supports Port Indicators or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Hub}
+ if Hub = nil then Exit;
+
+ {Get Port Indicators}
+ Result:=(Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_PORT_INDICATOR) = USB_HUB_CHARACTERISTIC_PORT_INDICATOR;
+end;
+
+{==============================================================================}
+
+function USBHubHasPortPowerSwitching(Hub:PUSBHub):Boolean;
+{Returns True if Hub supports per port Power Switching or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Hub}
+ if Hub = nil then Exit;
+
+ {Get Port Power Switching}
+ Result:=(Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_LPSM) = USB_HUB_CHARACTERISTIC_LPSM_PORT;
+end;
+
+{==============================================================================}
+
+function USBHubHasPortCurrentProtection(Hub:PUSBHub):Boolean;
+{Returns True if Hub supports per port Over Current Power Protection or False if not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Hub}
+ if Hub = nil then Exit;
+
+ {Get Port Current Protection}
+ Result:=(Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_OCPM) = USB_HUB_CHARACTERISTIC_OCPM_PORT;
+end;
+
+{==============================================================================}
+
+function USBHubGetTTThinkTime(Hub:PUSBHub):Byte;
+{Get the TT Think Time from a Hub}
+begin
+ {}
+ Result:=0;
+ 
+ {Check Hub}
+ if Hub = nil then Exit;
+ 
+ {Get TT Think Time}
+ case (Hub.Descriptor.wHubCharacteristics and USB_HUB_CHARACTERISTIC_TTTT) of
+  USB_HUB_CHARACTERISTIC_TTTT_8:Result:=8;
+  USB_HUB_CHARACTERISTIC_TTTT_16:Result:=16;
+  USB_HUB_CHARACTERISTIC_TTTT_24:Result:=24;
+  USB_HUB_CHARACTERISTIC_TTTT_32:Result:=32;
+ end;
 end;
 
 {==============================================================================}

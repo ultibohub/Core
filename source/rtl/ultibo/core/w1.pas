@@ -106,7 +106,7 @@ type
  {W1 Device Methods}
  //To Do 
  
- TW1DeviceProperties = function(W1:PW1Device;Properties:PW1Properties):LongWord;
+ TW1DeviceGetProperties = function(W1:PW1Device;Properties:PW1Properties):LongWord;
  
  TW1Device = record
   {Device Properties}
@@ -115,7 +115,7 @@ type
   W1Id:LongWord;                                  {Unique Id of this W1 in the W1 table}
   W1State:LongWord;                               {W1 state (eg W1_STATE_ENABLED)}
   //To Do 
-  DeviceProperties:TW1DeviceProperties;           {A Device specific DeviceProperties method implementing the standard W1 device interface (Or nil if the default method is suitable)}
+  DeviceGetProperties:TW1DeviceGetProperties;     {A Device specific DeviceGetProperties method implementing the standard W1 device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   //To Do 
   {Driver Properties}
@@ -139,7 +139,7 @@ procedure W1Init;
 {W1 Functions}
 //To Do
   
-function W1DeviceProperties(W1:PW1Device;Properties:PW1Properties):LongWord;
+function W1DeviceGetProperties(W1:PW1Device;Properties:PW1Properties):LongWord;
   
 function W1DeviceCreate:PW1Device;
 function W1DeviceCreateEx(Size:LongWord):PW1Device;
@@ -226,7 +226,7 @@ end;
 
 {==============================================================================}
  
-function W1DeviceProperties(W1:PW1Device;Properties:PW1Properties):LongWord;
+function W1DeviceGetProperties(W1:PW1Device;Properties:PW1Properties):LongWord;
 {Get the properties for the specified W1 device}
 {W1: The W1 device to get properties from}
 {Properties: Pointer to a TW1Properties structure to fill in}
@@ -243,7 +243,7 @@ begin
  if W1.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF W1_DEBUG}
- if W1_LOG_ENABLED then W1LogDebug(W1,'W1 Device Properties');
+ if W1_LOG_ENABLED then W1LogDebug(W1,'W1 Device Get Properties');
  {$ENDIF}
  
  {Check Enabled}
@@ -252,10 +252,10 @@ begin
  
  if MutexLock(W1.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(W1.DeviceProperties) then
+   if Assigned(W1.DeviceGetProperties) then
     begin
-     {Call Device Properites}
-     Result:=W1.DeviceProperties(W1,Properties);
+     {Call Device Get Properites}
+     Result:=W1.DeviceGetProperties(W1,Properties);
     end
    else
     begin
@@ -311,7 +311,7 @@ begin
  Result.W1Id:=DEVICE_ID_ANY;
  Result.W1State:=W1_STATE_DISABLED;
  //To Do
- Result.DeviceProperties:=nil;
+ Result.DeviceGetProperties:=nil;
  //To Do
  Result.Lock:=INVALID_HANDLE_VALUE;
  

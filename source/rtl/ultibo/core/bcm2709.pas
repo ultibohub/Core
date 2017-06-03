@@ -13,6 +13,7 @@ Boards
 
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B
+ Raspberry Pi CM3
  
 Licence
 =======
@@ -540,13 +541,18 @@ const
  BCM2709_LOCAL_TIMER_DESCRIPTION = 'BCM2836 Local Timer';
  
  {BCM2709 Random constants}
+ BCM2709_RANDOM_DESCRIPTION = 'BCM2836 Random Number Generator';
+ 
  BCM2709_RANDOM_WARMUP_COUNT  = $00040000; {The initial numbers generated are "less random" so will be discarded}
 
  {BCM2709 Mailbox constants}
+ BCM2709_MAILBOX_DESCRIPTION = 'BCM2836 Mailbox';
  
  {BCM2709 Watchdog constants}
+ BCM2709_WATCHDOG_DESCRIPTION = 'BCM2836 Watchdog Timer';
  
  {BCM2709 Framebuffer constants}
+ BCM2709_FRAMEBUFFER_DESCRIPTION = 'BCM2836 Framebuffer';
  
 {==============================================================================}
 type
@@ -1622,8 +1628,8 @@ begin
      {Update SDHCI}
      {Device}
      BCM2709SDHCIHost.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-     BCM2709SDHCIHost.SDHCI.Device.DeviceType:=SDHCI_TYPE_NONE;
-     BCM2709SDHCIHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NONE;
+     BCM2709SDHCIHost.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
+     BCM2709SDHCIHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23;
      BCM2709SDHCIHost.SDHCI.Device.DeviceData:=nil;
      BCM2709SDHCIHost.SDHCI.Device.DeviceDescription:=BCM2709_EMMC_DESCRIPTION;
      {SDHCI}
@@ -1813,6 +1819,7 @@ begin
      BCM2709Random.Random.Device.DeviceType:=RANDOM_TYPE_HARDWARE;
      BCM2709Random.Random.Device.DeviceFlags:=RANDOM_FLAG_NONE;
      BCM2709Random.Random.Device.DeviceData:=nil;
+     BCM2709Random.Random.Device.DeviceDescription:=BCM2709_RANDOM_DESCRIPTION;
      {Random}
      BCM2709Random.Random.RandomState:=RANDOM_STATE_DISABLED;
      BCM2709Random.Random.DeviceStart:=BCM2709RandomStart;
@@ -1860,6 +1867,7 @@ begin
      BCM2709Watchdog.Watchdog.Device.DeviceType:=WATCHDOG_TYPE_HARDWARE;
      BCM2709Watchdog.Watchdog.Device.DeviceFlags:=WATCHDOG_FLAG_NONE;
      BCM2709Watchdog.Watchdog.Device.DeviceData:=nil;
+     BCM2709Watchdog.Watchdog.Device.DeviceDescription:=BCM2709_WATCHDOG_DESCRIPTION;
      {Watchdog}
      BCM2709Watchdog.Watchdog.WatchdogState:=WATCHDOG_STATE_DISABLED;
      BCM2709Watchdog.Watchdog.DeviceStart:=BCM2709WatchdogStart;
@@ -1894,6 +1902,7 @@ begin
      BCM2709Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
      BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC;
      BCM2709Framebuffer.Framebuffer.Device.DeviceData:=nil;
+     BCM2709Framebuffer.Framebuffer.Device.DeviceDescription:=BCM2709_FRAMEBUFFER_DESCRIPTION;
      {Framebuffer}
      BCM2709Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
      BCM2709Framebuffer.Framebuffer.DeviceAllocate:=BCM2709FramebufferAllocate;
@@ -4558,7 +4567,7 @@ begin
   begin
    {Linear Mode}
    Block.TransferLength:=Data.Size;
-   Block.ModeStide:=0;
+   Block.ModeStride:=0;
   end
  else
   begin
@@ -4572,7 +4581,7 @@ begin
    Block.TransferLength:=((Count and BCM2709_DMA_MAX_Y_COUNT) shl 16) or (Data.StrideLength and BCM2709_DMA_MAX_X_LENGTH);
    
    {Set Source and Dest Stride}
-   Block.ModeStide:=((Data.DestStride and BCM2709_DMA_MAX_STRIDE) shl 16) or (Data.SourceStride and BCM2709_DMA_MAX_STRIDE);
+   Block.ModeStride:=((Data.DestStride and BCM2709_DMA_MAX_STRIDE) shl 16) or (Data.SourceStride and BCM2709_DMA_MAX_STRIDE);
   end;  
  
  {Setup Transfer Information}
@@ -7585,7 +7594,7 @@ end;
 
 procedure BCM2709UART0DisableInterrupt(UART:PBCM2709UART0Device;Interrupt:LongWord); 
 {Disable the specified interrupt in the interrupt mask register of a BCM2709 UART0 device}
-{Network: The BCM2709 UART0 device to disable the interrupt for}
+{UART: The BCM2709 UART0 device to disable the interrupt for}
 {Interrupt: The interrupt to disable}
 
 {Note: Caller must hold the UART lock}

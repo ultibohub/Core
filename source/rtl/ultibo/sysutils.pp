@@ -97,6 +97,7 @@ type
  TSysUtilsGetLastError = function:LongWord;
  {Locale Functions}
  TSysUtilsGetLocalTime = procedure(var SystemTime:TSystemTime);
+ TSysUtilsSetLocalTime = procedure(const SystemTime:TSystemTime);
  TSysUtilsGetLocalTimeOffset = function:Integer;
  TSysUtilsSysErrorMessage = function(ErrorCode:Integer):String;
  
@@ -135,6 +136,7 @@ var
  SysUtilsGetLastErrorHandler:TSysUtilsGetLastError;
  {Locale Functions}
  SysUtilsGetLocalTimeHandler:TSysUtilsGetLocalTime;
+ SysUtilsSetLocalTimeHandler:TSysUtilsSetLocalTime;
  SysUtilsGetLocalTimeOffsetHandler:TSysUtilsGetLocalTimeOffset;
  SysUtilsSysErrorMessageHandler:TSysUtilsSysErrorMessage;
  
@@ -519,6 +521,14 @@ begin
  if Assigned(SysUtilsGetLocalTimeHandler) then
   begin
    SysUtilsGetLocalTimeHandler(SystemTime);
+  end;
+end;
+
+Procedure SetLocalTime(const SystemTime: TSystemTime);
+begin
+ if Assigned(SysUtilsSetLocalTimeHandler) then
+  begin
+   SysUtilsSetLocalTimeHandler(SystemTime);
   end;
 end;
 

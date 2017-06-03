@@ -815,7 +815,7 @@ begin
  ConsoleDeviceEnumerate(ConsoleShellDeviceEnum,nil);
  
  {Register Notification}
- ConsoleDeviceNotification(nil,ConsoleShellDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_OPEN or DEVICE_NOTIFICATION_CLOSE,NOTIFIER_FLAG_NONE);
+ ConsoleDeviceNotification(nil,ConsoleShellDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_OPEN or DEVICE_NOTIFICATION_CLOSE,NOTIFIER_FLAG_WORKER);
  
  ConsoleShellInitialized:=True;
 end;

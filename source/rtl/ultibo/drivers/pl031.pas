@@ -74,17 +74,17 @@ const
  {PL031 RTC Control register bits}
  PL031_RTC_CR_EN = (1 shl 0); {If set to 1, the RTC is enabled. Once it is enabled, any writes to this bit have no effect on the RTC until a system reset. A read returns the status of the RTC}
  
- {Pl031 RTC Interrupt mask set and clear register bits}
+ {PL031 RTC Interrupt mask set and clear register bits}
  PL031_RTC_IMSC_INTR_SET   = (1 shl 0);
  PL031_RTC_IMSC_INTR_CLEAR = (0 shl 0);
  
- {Pl031 RTC Raw interrupt status register bits}
+ {PL031 RTC Raw interrupt status register bits}
  PL031_RTC_RIS_INTR   = (1 shl 0);
  
- {Pl031 RTC Masked interrupt status register bits}
+ {PL031 RTC Masked interrupt status register bits}
  PL031_RTC_MIS_INTR   = (1 shl 0);
  
- {Pl031 RTC Interrupt clear register bits}
+ {PL031 RTC Interrupt clear register bits}
  PL031_RTC_ICR_INTR   = (1 shl 0);
  
 {==============================================================================}

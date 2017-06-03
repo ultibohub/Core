@@ -251,6 +251,8 @@ type
   private
    {Internal Variables}
    FNextPort:Word;
+   FMinBacklog:Integer;
+   FMaxBacklog:Integer;
    FReceiveBacklog:Integer;
    
    {Status Variables}
@@ -287,6 +289,7 @@ type
    procedure FlushSockets(All:Boolean); override;
 
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; override;
+   function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; override;
   public
    {Public Properties}
 
@@ -2969,8 +2972,8 @@ begin
            end;
          end;
         
-        {Check for Unconnected or Error}
-        if (Socket.SocketState.Unconnected) or (Socket.SocketError <> ERROR_SUCCESS) then
+        {Check for Closed, Unconnected, Disconnecting or Error}
+        if (Socket.SocketState.Closed) or (Socket.SocketState.Unconnected) or (Socket.SocketState.Disconnecting) or (Socket.SocketError <> ERROR_SUCCESS) then 
          begin
           {Check Set}
           if not FD_ISSET(TSocket(Socket),ADest^) then
@@ -3001,9 +3004,8 @@ begin
       
       {All Sockets}
       {Check for Connected}
-      if Socket.SocketState.Connected then
+      if (Socket.SocketState.Connected) and (Socket.SendData.GetFree > 0) then
        begin
-        //To Do //Check for Free Buffer space ??
         {Check Set}
         if not FD_ISSET(TSocket(Socket),ADest^) then
          begin
@@ -3062,6 +3064,248 @@ begin
     Result:=ADest.fd_count;
    end;
  end;
+end;
+
+{==============================================================================}
+
+function TTCPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+{Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
+var
+ StartTime:Int64;
+ Socket:TTCPSocket;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF TCP_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SelectWait');
+ {$ENDIF}
+
+ {Get Socket}
+ Socket:=TTCPSocket(ASocket);
+ 
+ {Check Socket}
+ if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
+ try
+  {Check Code}
+  case ACode of
+   SELECT_READ:begin
+     {Check Socket State}
+     if Socket.SocketState.Listening then
+      begin
+       {Listening Sockets}
+       {Wait for Queue}
+       StartTime:=GetTickCount64;
+       while Socket.Accept(True,False,NETWORK_LOCK_NONE) = nil do
+        begin
+         {Check Timeout}
+         if ATimeout = 0 then
+          begin
+           {Return Zero}
+           Result:=0;
+           Exit;
+          end
+         else if ATimeout = INFINITE then
+          begin
+           {Wait for Event}
+           if not Socket.WaitChange then
+            begin
+             {Return Error}
+             Result:=SOCKET_ERROR;
+             Exit;
+            end;
+          end
+         else 
+          begin
+           {Wait for Event}
+           if not Socket.WaitChangeEx(ATimeout) then
+            begin
+             {Return Error}
+             Result:=SOCKET_ERROR;
+             Exit;
+            end;
+
+           {Check for Timeout}
+           if GetTickCount64 > (StartTime + ATimeout) then
+            begin
+             {Return Error}
+             Result:=SOCKET_ERROR;
+             Exit;
+            end;
+          end;           
+        end;
+      end
+     else
+      begin
+       {Normal Sockets}
+       {Wait for Data}
+       StartTime:=GetTickCount64;
+       while Socket.RecvData.GetAvailable = 0 do
+        begin
+         {Check Urgent if SO_OOBINLINE}
+         if (Socket.SocketOptions.UrgentInline) and (Socket.RecvData.GetUrgent > 0) then
+          begin
+           Break;
+          end;
+         
+         {Check for Closed, Unconnected, Disconnecting or Error}
+         if (Socket.SocketState.Closed) or (Socket.SocketState.Unconnected) or (Socket.SocketState.Disconnecting) or (Socket.SocketError <> ERROR_SUCCESS) then
+          begin
+           Break;
+          end;
+         
+         {Check Timeout}
+         if ATimeout = 0 then
+          begin
+           {Return Zero}
+           Result:=0;
+           Exit;
+          end
+         else if ATimeout = INFINITE then
+          begin
+           {Wait for Event}
+           if not Socket.WaitChange then
+            begin
+             {Return Error}
+             Result:=SOCKET_ERROR;
+             Exit;
+            end;
+          end
+         else 
+          begin
+           {Wait for Event}
+           if not Socket.WaitChangeEx(ATimeout) then
+            begin
+             {Return Error}
+             Result:=SOCKET_ERROR;
+             Exit;
+            end;
+
+           {Check for Timeout}
+           if GetTickCount64 > (StartTime + ATimeout) then
+            begin
+             {Return Error}
+             Result:=SOCKET_ERROR;
+             Exit;
+            end;
+          end;           
+        end;
+      end;
+      
+     {Return One}
+     Result:=1; 
+    end;
+   SELECT_WRITE:begin
+     {All Sockets}
+     {Wait for Space}
+     StartTime:=GetTickCount64;
+     while Socket.SendData.GetFree = 0 do
+      begin
+       if not Socket.SocketState.Connected then
+        begin
+         {Return Zero}
+         Result:=0;
+         Exit;
+        end;         
+
+       {Check Timeout}
+       if ATimeout = 0 then
+        begin
+         {Return Zero}
+         Result:=0;
+         Exit;
+        end
+       else if ATimeout = INFINITE then
+        begin
+         {Wait for Event}
+         if not Socket.WaitChange then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end
+       else 
+        begin
+         {Wait for Event}
+         if not Socket.WaitChangeEx(ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+
+         {Check for Timeout}
+         if GetTickCount64 > (StartTime + ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end;           
+      end; 
+     
+     {Return One}
+     Result:=1; 
+    end;
+   SELECT_ERROR:begin
+     {All Sockets}
+     {Wait for Error}
+     StartTime:=GetTickCount64;
+     while Socket.SocketError = ERROR_SUCCESS do
+      begin
+       {Check Urgent if not SO_OOBINLINE}
+       if not(Socket.SocketOptions.UrgentInline) and (Socket.RecvData.GetUrgent > 0) then
+        begin
+         Break;
+        end;
+      
+       {Check Timeout}
+       if ATimeout = 0 then
+        begin
+         {Return Zero}
+         Result:=0;
+         Exit;
+        end
+       else if ATimeout = INFINITE then
+        begin
+         {Wait for Event}
+         if not Socket.WaitChange then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end
+       else 
+        begin
+         {Wait for Event}
+         if not Socket.WaitChangeEx(ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+
+         {Check for Timeout}
+         if GetTickCount64 > (StartTime + ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end;           
+      end;
+     
+     {Return One}
+     Result:=1; 
+    end;
+  end;
+   
+ finally
+  {Unlock Socket} 
+  Socket.ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -4003,6 +4247,23 @@ begin
    {Set Backlog}
    TTCPSocket(ASocket).Backlog:=ABacklog;
    
+   {Check Backlog}
+   if TTCPSocket(ASocket).Backlog = SOMAXCONN then
+    begin
+     {Update Backlog}
+     TTCPSocket(ASocket).Backlog:=TCP_MAX_BACKLOG;
+    end
+   else if TTCPSocket(ASocket).Backlog < TCP_MIN_BACKLOG then
+    begin
+     {Update Backlog}
+     TTCPSocket(ASocket).Backlog:=TCP_MIN_BACKLOG;
+    end
+   else if TTCPSocket(ASocket).Backlog > TCP_MAX_BACKLOG then
+    begin
+     {Update Backlog}
+     TTCPSocket(ASocket).Backlog:=TCP_MAX_BACKLOG;
+    end;
+   
    {Return Result}
    SetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
@@ -4058,32 +4319,36 @@ begin
    StartTime:=GetTickCount64;
    while TTCPSocket(ASocket).RecvData.GetAvailable = 0 do
     begin
-     {Check for Timeout}
-     if ASocket.SocketOptions.RecvTimeout > 0 then
+     {Check for Disconnecting}
+     if not ASocket.SocketState.Disconnecting then
       begin
-       {Wait for Event}
-       if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end; 
-
        {Check for Timeout}
-       if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
+       if ASocket.SocketOptions.RecvTimeout > 0 then
         begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
+         {Wait for Event}
+         if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
+          begin
+           SetLastError(WSAECONNABORTED);
+           Exit;
+          end; 
+  
+         {Check for Timeout}
+         if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
+          begin
+           SetLastError(WSAECONNABORTED);
+           Exit;
+          end;
+        end
+       else
+        begin
+         {Wait for Event}
+         if not ASocket.WaitChange then
+          begin
+           SetLastError(WSAECONNABORTED);
+           Exit;
+          end; 
         end;
-      end
-     else
-      begin
-       {Wait for Event}
-       if not ASocket.WaitChange then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end; 
-      end;      
+      end;
      
      {Check for Closed}
      if ASocket.SocketState.Closed then
@@ -4602,6 +4867,12 @@ begin
     Transport.ReaderUnlock;
    end; 
  
+  {Get Min Backlog}
+  FMinBacklog:=Manager.Settings.GetIntegerDefault('TCP_MIN_BACKLOG',TCP_MIN_BACKLOG);
+
+  {Get Max Backlog}
+  FMaxBacklog:=Manager.Settings.GetIntegerDefault('TCP_MAX_BACKLOG',TCP_MAX_BACKLOG);
+  
   {Get Receive Backlog}
   FReceiveBacklog:=Manager.Settings.GetIntegerDefault('TCP_RECEIVE_BACKLOG',TCP_RECEIVE_BACKLOG);
   

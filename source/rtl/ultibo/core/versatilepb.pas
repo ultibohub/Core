@@ -108,7 +108,7 @@ const
  {Physical memory addresses of VersatilePB peripherals (See: \hw\arm\versatilepb.c and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Bbajihec.html)}
  {See also: \arch\arm\mach-versatile\include\mach\platform.h}
  VERSATILEPB_PERIPHERALS_BASE = $10000000;
- VERSATILEPB_PERIPHERALS_SIZE = $001FFFFF;
+ VERSATILEPB_PERIPHERALS_SIZE = SIZE_2M;
 
  {Peripherals}
  VERSATILEPB_SYS_REGS_BASE      = $10000000; {System Registers}
@@ -131,7 +131,7 @@ const
  VERSATILEPB_MPMC_REGS_BASE     = $10110000; {MPMC}
  VERSATILEPB_CLCD_REGS_BASE     = $10120000; {PL110 CLCD}
  VERSATILEPB_DMAC_REGS_BASE     = $10130000; {PL080 DMA controller}
- VERSATILEPB_VIC_REGS_BASE      = $10140000; {PL190Vectored interrupt controller}
+ VERSATILEPB_VIC_REGS_BASE      = $10140000; {PL190 Vectored interrupt controller}
  
  VERSATILEPB_AHBM_REGS_BASE     = $101D0000; {AHB monitor}
  VERSATILEPB_SYSCTRL_REGS_BASE  = $101E0000; {System controller}
@@ -241,7 +241,7 @@ const
  VERSATILEPB_TIMER_FREQUENCY = 1000000; {Default frequency of the VersatilePB Timer when reference is set to TIMCLK (1MHz)}
  
 const
- {System register offsets (See: \arm\mach-versatile\include\mach\platform.h and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/I1006122.html)}
+ {System register offsets (See: \arch\arm\mach-versatile\include\mach\platform.h and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/I1006122.html)}
  VERSATILEPB_SYS_ID               = VERSATILEPB_SYS_REGS_BASE + $00;
  VERSATILEPB_SYS_SW               = VERSATILEPB_SYS_REGS_BASE + $04;
  VERSATILEPB_SYS_LED              = VERSATILEPB_SYS_REGS_BASE + $08;
@@ -276,13 +276,33 @@ const
  VERSATILEPB_SYS_TEST_OSC3        = VERSATILEPB_SYS_REGS_BASE + $8C;
  VERSATILEPB_SYS_TEST_OSC4        = VERSATILEPB_SYS_REGS_BASE + $90;
  
- {System register bits (See: \arm\mach-versatile\include\mach\platform.h and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/I1006122.html)}
+ {System register bits (See: \arch\arm\mach-versatile\include\mach\platform.h and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/I1006122.html)}
+ VERSATILEPB_SYS_100HZ_FREQUENCY = 100;
+ 
+ VERSATILEPB_SYS_LOCK_LOCKED = (1 shl 16); {This bit indicates if the control registers are locks or unlocked}
+ VERSATILEPB_SYS_LOCK_LOCKVAL = $A05F;     {Write this value to unlock the control registers, write any other to lock the registers}
+ 
+ VERSATILEPB_SYS_RESETCTL_RESET      = (1 shl 8);
+ VERSATILEPB_SYS_RESETCTL_CONFIGCLR  = $01;
+ VERSATILEPB_SYS_RESETCTL_CONFIGINIT = $02;
+ VERSATILEPB_SYS_RESETCTL_DLLRESET   = $03;
+ VERSATILEPB_SYS_RESETCTL_PLLRESET   = $04;
+ VERSATILEPB_SYS_RESETCTL_PORRESET   = $05;
+ VERSATILEPB_SYS_RESETCTL_DOCRESET   = $06;
+ 
+ VERSATILEPB_SYS_MCI_CD0         = (1 shl 0); {Card detect 0}
+ VERSATILEPB_SYS_MCI_CD1         = (1 shl 1); {Card detect 1}
+ VERSATILEPB_SYS_MCI_WP0         = (1 shl 2); {Write protect 0}
+ VERSATILEPB_SYS_MCI_WP1         = (1 shl 3); {Write protect 1}
+ 
  VERSATILEPB_SYS_CLCD_MODE888    = 0; {LCD Mode [1:0], controls mapping of video memory to RGB signals 00 = 8:8:8}
  VERSATILEPB_SYS_CLCD_MODE5551   = 1; {                                                                01 = 5:5:5:1}
  VERSATILEPB_SYS_CLCD_MODE565BGR = 2; {                                                                10 = 5:6:5, red LSB}
  VERSATILEPB_SYS_CLCD_MODE565RGB = 3; {                                                                11 = 5:6:5, blue LSB}
  
  VERSATILEPB_SYS_CLCD_MODEMASK   = 3;
+
+ VERSATILEPB_SYS_24MHZ_FREQUENCY = 24000000;
  
 const
  {System Control register bits (See: http://infocenter.arm.com/help/topic/com.arm.doc.dui0440b/CACIHEAD.html}
@@ -334,7 +354,7 @@ const
  PL190_VIC_VECTCNTL_INTSOURCE = ($1F shl 0); {Selects interrupt source 0 to 31}
  
 const
- {VersatilePB Secondary Interrupt Consoller register offsets (See: http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Cacdggia.html)}
+ {VersatilePB Secondary Interrupt Controller register offsets (See: http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Cacdggia.html)}
  VERSATILEPB_SIC_STATUS     = $00; {Status of interrupt (after mask) (Read)}
  VERSATILEPB_SIC_RAWSTAT    = $04; {Status of interrupt (before mask) (Read)}
  VERSATILEPB_SIC_ENABLE     = $08; {Interrupt mask / Set bits HIGH to enable the corresponding interrupt signals (Read/Write)}
