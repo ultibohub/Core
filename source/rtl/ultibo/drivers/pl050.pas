@@ -339,13 +339,13 @@ begin
        Exit;
       end; 
      
-     {Get Scancode Set}
-     Status:=PL050KMIKeyboardGetScancodeSet(PL050Keyboard,PL050Keyboard.ScancodeSet);
+     {Get Scancode Set} {Do not read the current scancode set, may fail on some versions of QEMU}
+     {Status:=PL050KMIKeyboardGetScancodeSet(PL050Keyboard,PL050Keyboard.ScancodeSet);
      if Status <> ERROR_SUCCESS then
       begin
        if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'PL050: Failed to get scancode set from KMI Keyboard device: ' + ErrorToString(Status));
        Exit;
-      end; 
+      end;}
      
      {Check Scancode Set}
      if PL050Keyboard.ScancodeSet <> PS2_KEYBOARD_SCANCODE_SET2 then
@@ -1891,6 +1891,8 @@ function PL050KMIKeyboardReset(Keyboard:PPL050Keyboard):LongWord;
 {Reset a PL050 keyboard device}
 {Keyboard: The keyboard device to reset}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Value:Byte;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1903,7 +1905,11 @@ begin
  {$ENDIF}
  
  {Send Reset Command}
- Result:=PL050KMICommand(Keyboard.Registers,PS2_KEYBOARD_COMMAND_RESET,nil,0,nil,0);
+ Result:=PL050KMICommand(Keyboard.Registers,PS2_KEYBOARD_COMMAND_RESET,nil,0,@Value,SizeOf(Byte));
+ if (Result = ERROR_SUCCESS) and (Value <> PS2_RESPONSE_SELF_TEST_PASS) then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+  end;
 end;
  
 {==============================================================================}
@@ -2029,10 +2035,14 @@ function PL050KMIKeyboardGetScancodeSet(Keyboard:PPL050Keyboard;var ScancodeSet:
 
 {Note: Caller must hold the keyboard lock}
 var
- Value:Byte;
+ Data:Byte;
+ Value:array[0..1] of Byte;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Setup Defaults}
+ ScancodeSet:=0;
  
  {Check Keyboard}
  if Keyboard = nil then Exit;
@@ -2041,11 +2051,18 @@ begin
  if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(@Keyboard.Keyboard,'PL050: KMI Keyboard Get Scancode Set');
  {$ENDIF}
 
- {Set Value}
- Value:=0; 
+ {Set Data}
+ Data:=PS2_KEYBOARD_SCANCODE_GET; 
 
  {Send Scancode Command}
- Result:=PL050KMICommand(Keyboard.Registers,PS2_KEYBOARD_COMMAND_SCANCODE,@Value,SizeOf(Byte),@ScancodeSet,SizeOf(Byte));
+ Result:=PL050KMICommand(Keyboard.Registers,PS2_KEYBOARD_COMMAND_SCANCODE,@Data,SizeOf(Byte),@Value,SizeOf(Value));
+ if (Result = ERROR_SUCCESS) and (Value[0] <> PS2_RESPONSE_ACK) then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+  end;
+ 
+ {Get Scancode Set}
+ if Result = ERROR_SUCCESS then ScancodeSet:=Value[1];
 end;
 
 {==============================================================================}
@@ -2076,6 +2093,9 @@ begin
   begin
    Result:=ERROR_OPERATION_FAILED;
   end;
+  
+ {Update Scancode Set}
+ if Result = ERROR_SUCCESS then Keyboard.ScancodeSet:=ScancodeSet;
 end;
 
 {==============================================================================}
