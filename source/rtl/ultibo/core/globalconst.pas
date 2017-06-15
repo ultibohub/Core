@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '6 June 2017';
+ ULTIBO_RELEASE_DATE             = '15 June 2017';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.3.331';
+ ULTIBO_RELEASE_VERSION          = '1.3.343';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 3;
- ULTIBO_RELEASE_VERSION_REVISION = 331;
+ ULTIBO_RELEASE_VERSION_REVISION = 343;
  
 {==============================================================================}
 const
@@ -1092,6 +1092,43 @@ const
  CPU_STATE_BRANCH_PREDICTION_ENABLED = (1 shl 3);
  
 const
+ {CPU Group constants}
+ CPU_GROUP_0   = 0;
+ CPU_GROUP_1   = 1;
+ CPU_GROUP_2   = 2;
+ CPU_GROUP_3   = 3;
+ CPU_GROUP_4   = 4;
+ CPU_GROUP_5   = 5;
+ CPU_GROUP_6   = 6;
+ CPU_GROUP_7   = 7;
+ CPU_GROUP_8   = 8;
+ CPU_GROUP_9   = 9;
+ CPU_GROUP_10  = 10;
+ CPU_GROUP_11  = 11;
+ CPU_GROUP_12  = 12;
+ CPU_GROUP_13  = 13;
+ CPU_GROUP_14  = 14;
+ CPU_GROUP_15  = 15;
+ CPU_GROUP_16  = 16;
+ CPU_GROUP_17  = 17;
+ CPU_GROUP_18  = 18;
+ CPU_GROUP_19  = 19;
+ CPU_GROUP_20  = 20;
+ CPU_GROUP_21  = 21;
+ CPU_GROUP_22  = 22;
+ CPU_GROUP_23  = 23;
+ CPU_GROUP_24  = 24;
+ CPU_GROUP_25  = 25;
+ CPU_GROUP_26  = 26;
+ CPU_GROUP_27  = 27;
+ CPU_GROUP_28  = 28;
+ CPU_GROUP_29  = 29;
+ CPU_GROUP_30  = 30;
+ CPU_GROUP_31  = 31;
+ 
+ CPU_GROUP_ALL =  $FFFFFFFF;
+ 
+const
  {CPU ID constants}
  CPU_ID_0   = 0;
  CPU_ID_1   = 1;
@@ -1663,6 +1700,8 @@ const
  HANDLE_TYPE_FONT         = 16;
  HANDLE_TYPE_KEYMAP       = 17;
 
+ HANDLE_TYPE_USER_BASE    = 1000; {Base value for user or application defined handle types}
+ 
 {==============================================================================}
 const
  {Filesystem Cache Mode constants}

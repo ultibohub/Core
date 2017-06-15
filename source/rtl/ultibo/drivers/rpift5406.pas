@@ -348,6 +348,9 @@ begin
    {Write 99 to the NumPoints registers so we know if the GPU modified them}
    Touch.Registers.NumPoints:=99;
    
+   {Clean Cache}
+   CleanDataCacheRange(LongWord(Touch.Registers),SizeOf(TRPiFT5406Registers));
+   
    {Check if anything changed}
    if (Registers.NumPoints <> 99) and ((Registers.NumPoints <> 0) or (LastPoints <> 0)) then
     begin
