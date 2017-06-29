@@ -377,6 +377,13 @@ const
  THREAD_TYPE_FIQ    = 3;   {An FIQ thread (Used by the FIQ handler during interrupt time)}
  THREAD_TYPE_SWI    = 4;   {A Software Interrupt (SWI) thread (Used by the SWI handler during a system call)}
  
+ {Thread flag constants}
+ THREAD_FLAG_NONE      = $00000000;
+ THREAD_FLAG_PERSIST   = $00000001; {If set thread handle will persist until explicitly destroyed (Otherwise destroyed after termination quantum has elapsed)}
+ THREAD_FLAG_CANCELLED = $00000002; {Indicates that thread has been cancelled, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
+ 
+ THREAD_FLAG_INTERNAL = THREAD_FLAG_NONE;
+ 
  {Thread state constants} 
  THREAD_STATE_RUNNING         = 1;          {Thread is currently running}     
  THREAD_STATE_READY           = 2;          {Thread is on ready queue}
@@ -778,6 +785,7 @@ type
   {Thread Properties}
   Signature:LongWord;                        {Signature for entry validation}
   State:LongWord;                            {State of the Thread (eg THREAD_STATE_RUNNING)}
+  Flags:LongWord;                            {Flags of the Thread (eg THREAD_FLAG_PERSIST)}
   Priority:LongWord;                         {Priority of the Thread (eg THREAD_PRIORITY_NORMAL)}      
   Affinity:LongWord;                         {CPU Affinity mask of the Thread}
   StackBase:Pointer;                         {Base (Top) of the thread stack} 
@@ -820,6 +828,7 @@ type
   {Snapshot Properties}
   Handle:TThreadHandle;                      {Handle of the thread}
   State:LongWord;                            {State of the Thread (eg THREAD_STATE_RUNNING)}
+  Flags:LongWord;                            {Flags of the Thread (eg THREAD_FLAG_PERSIST)}
   CPU:LongWord;                              {CPU from last ContextSwitch}
   Priority:LongWord;                         {Priority of the Thread (eg THREAD_PRIORITY_NORMAL)}      
   Affinity:LongWord;                         {CPU Affinity mask of the Thread}
@@ -2106,6 +2115,7 @@ var
  ThreadTableCount:LongWord;
  ThreadTlsTable:array[0..THREAD_TLS_MAXIMUM - 1] of LongWord; {Thread Local Storage Indexes (for ThreadAllocTlsIndex/ThreadReleaseTlsIndex)}
  ThreadTlsTableCount:LongWord;
+ ThreadTerminationTimer:TTimerHandle;
  
  MessageslotTable:PMessageslotEntry;
  MessageslotTableLock:TSpinHandle;
@@ -2166,6 +2176,11 @@ function MutexLockDefault(MutexEntry:PMutexEntry):LongWord; forward;
 function MutexUnlockDefault(MutexEntry:PMutexEntry):LongWord; forward;
 function MutexTryLockDefault(MutexEntry:PMutexEntry):LongWord; forward;
  
+{==============================================================================}
+{==============================================================================}
+{Thread Forward Declarations}
+procedure ThreadTimer(Data:Pointer); forward;
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -2378,6 +2393,7 @@ begin
      {Thread Properties}
      ThreadTable.Signature:=THREAD_SIGNATURE;
      ThreadTable.State:=THREAD_STATE_RUNNING;
+     ThreadTable.Flags:=THREAD_FLAG_NONE;
      ThreadTable.Priority:=THREAD_PRIORITY_NORMAL;       {Thread switches itself to THREAD_PRIORITY_NONE after initialization}
      ThreadTable.Affinity:=(1 shl SCHEDULER_CPU_BOOT);   {Must always run on the Boot CPU}
      ThreadTable.StackBase:=Pointer(INITIAL_STACK_BASE); {Assign the Initial Stack to the Initial Thread (This is the stack we are currently running on)}
@@ -2428,6 +2444,7 @@ begin
      {Thread Properties}
      ThreadTable.Signature:=THREAD_SIGNATURE;
      ThreadTable.State:=THREAD_STATE_RUNNING;
+     ThreadTable.Flags:=THREAD_FLAG_NONE;
      ThreadTable.Priority:=THREAD_PRIORITY_NORMAL;       {Thread switches itself to THREAD_PRIORITY_NONE after initialization}
      ThreadTable.Affinity:=(1 shl SCHEDULER_CPU_BOOT);   {Must always run on the Boot CPU}
      ThreadTable.StackBase:=Pointer(INITIAL_STACK_BASE); {Assign the Initial Stack to the Initial Thread (This is the stack we are currently running on)}
@@ -2848,6 +2865,9 @@ begin
    TaskerList.First:=nil;
    TaskerList.Last:=nil;
   end;
+ 
+ {Create Termination Timer}
+ ThreadTerminationTimer:=TimerCreateEx(SCHEDULER_TERMINATION_INITIAL,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(ThreadTimer),nil); {Rescheduled Automatically}
  
  {Calibrate Idle Thread}
  SCHEDULER_IDLE_PER_SECOND:=IdleCalibrate;
@@ -3353,6 +3373,7 @@ begin
            {Thread Properties}
            ThreadEntry.Signature:=THREAD_SIGNATURE;
            ThreadEntry.State:=THREAD_STATE_RUNNING;
+           ThreadEntry.Flags:=THREAD_FLAG_NONE;
            ThreadEntry.Priority:=THREAD_PRIORITY_NORMAL;           {Thread switches itself to THREAD_PRIORITY_NONE after initialization}
            ThreadEntry.Affinity:=(1 shl Count);                    {Must always run on the same Secondary CPU}
            ThreadEntry.StackBase:=Pointer(BOOT_STACK_BASE[Count]); {Assign the Boot Stack to the Boot Thread}
@@ -3426,6 +3447,7 @@ begin
            {Thread Properties}
            ThreadEntry.Signature:=THREAD_SIGNATURE;
            ThreadEntry.State:=THREAD_STATE_RUNNING;
+           ThreadEntry.Flags:=THREAD_FLAG_NONE;
            ThreadEntry.Priority:=THREAD_PRIORITY_NORMAL;           {Thread switches itself to THREAD_PRIORITY_NONE after initialization}
            ThreadEntry.Affinity:=(1 shl Count);                    {Must always run on the same Secondary CPU}
            ThreadEntry.StackBase:=Pointer(BOOT_STACK_BASE[Count]); {Assign the Boot Stack to the Boot Thread}
@@ -10363,6 +10385,7 @@ begin
      begin
       {Remove First}
       QueueEntry.First:=QueueElement.Next;
+      
       {Check Next}
       if QueueElement.Next = nil then
        begin
@@ -10373,6 +10396,20 @@ begin
         QueueElement.Next.Prev:=nil;
        end;
      
+      {Check Flags}
+      if (QueueEntry.Flags and QUEUE_FLAG_DELTA) <> 0 then
+       begin
+        if (QueueEntry.Flags and QUEUE_FLAG_DESCENDING) = 0 then
+         begin
+          {Check First}
+          if QueueEntry.First <> nil then
+           begin
+            {Update Key}
+            Inc(QueueEntry.First.Key,QueueElement.Key);
+           end;
+         end;
+       end;  
+      
       {Decrement Count}
       Dec(QueueEntry.Count);
       
@@ -11235,6 +11272,8 @@ begin
  StackBase:=ThreadAllocateStack(StackSize);
  if StackBase = nil then
   begin
+   if THREAD_LOG_ENABLED then ThreadLogError('ThreadCreateEx: Failed to allocate stack (StackSize=' + IntToStr(StackSize) + ')');
+   
    Exit;
   end; 
 
@@ -11258,6 +11297,7 @@ begin
  {Thread Properties} 
  ThreadEntry.Signature:=THREAD_SIGNATURE;
  ThreadEntry.State:=THREAD_STATE_SUSPENDED;
+ ThreadEntry.Flags:=THREAD_FLAG_NONE;
  ThreadEntry.Priority:=Priority;
  ThreadEntry.Affinity:=Affinity;
  ThreadEntry.StackBase:=StackBase;
@@ -11388,6 +11428,8 @@ function ThreadDestroy(Thread:TThreadHandle):LongWord;
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Count:LongWord;
+ Unlock:Boolean;
+ ResultCode:LongWord;
  ThreadEntry:PThreadEntry;
  PrevEntry:PThreadEntry;
  NextEntry:PThreadEntry;
@@ -11423,115 +11465,154 @@ begin
     {Acquire the Lock}
     if SCHEDULER_FIQ_ENABLED then
      begin
-      Result:=SpinLockIRQFIQ(ThreadEntry.Lock);
+      ResultCode:=SpinLockIRQFIQ(ThreadEntry.Lock);
      end
     else
      begin
-      Result:=SpinLockIRQ(ThreadEntry.Lock);
+      ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
      end;  
-    if Result <> ERROR_SUCCESS then Exit;
+    if ResultCode = ERROR_SUCCESS then
+     begin
+      Unlock:=True;
+      try
+       {Check Signature}
+       if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
     
-    {Check Signature}
-    if ThreadEntry.Signature <> THREAD_SIGNATURE then
-     begin
-      {Release the Lock}
-      if SCHEDULER_FIQ_ENABLED then
-       begin
-        Result:=SpinUnlockIRQFIQ(ThreadEntry.Lock);
-       end
-      else
-       begin
-        Result:=SpinUnlockIRQ(ThreadEntry.Lock);
-       end;     
-      if Result <> ERROR_SUCCESS then Exit;
-     
-      {Return Result}
-      Result:=ERROR_INVALID_PARAMETER;
-      Exit;
-     end; 
-    
-    {Invalidate Thread entry}
-    ThreadEntry.Signature:=0;
-   
-    {Unlink Thread entry}
-    PrevEntry:=ThreadEntry.Prev;
-    NextEntry:=ThreadEntry.Next;
-    if PrevEntry = nil then
-     begin
-      ThreadTable:=NextEntry;
-      if NextEntry <> nil then
-       begin
-        NextEntry.Prev:=nil;
-       end;       
-     end
-    else
-     begin
-      PrevEntry.Next:=NextEntry;
-      if NextEntry <> nil then
-       begin
-        NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
- 
-    {Decrement Thread Count}
-    Dec(ThreadTableCount);
- 
-    {Check Thread Count}
-    if ThreadTableCount < 1 then
-     begin
-      {$IFDEF THREAD_DEBUG}
-      if THREAD_LOG_ENABLED then ThreadLogDebug('Final thread exiting, System Halted');
-      {$ENDIF}
-      
-      Halt;
-     end;
-    
-    {Release the Lock}
-    if SCHEDULER_FIQ_ENABLED then
-     begin
-      Result:=SpinUnlockIRQFIQ(ThreadEntry.Lock);
-     end
-    else
-     begin
-      Result:=SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
-    if Result <> ERROR_SUCCESS then Exit;
-    
-    {Free Thread List} 
-    if ThreadEntry.List <> INVALID_HANDLE_VALUE then
-     begin
-      ListDestroy(ThreadEntry.List);
-     end;
-    
-    {Release Thread Stack} 
-    ThreadReleaseStack(ThreadEntry.StackBase,ThreadEntry.StackSize);
-    
-    {Free Message List} 
-    FreeMem(ThreadEntry.Messages.List);
-
-    {Free RTL Thread Vars} 
-    FreeMem(ThreadEntry.TlsPointer);
-   
-    {Free TLS Thread Vars}
-    for Count:=0 to THREAD_TLS_MAXIMUM - 1 do
-     begin
-      if ((ThreadEntry.TlsFlags[Count] and THREAD_TLS_FLAG_FREE) <> 0) and (ThreadEntry.TlsTable[Count] <> nil) then
-       begin
-        FreeMem(ThreadEntry.TlsTable[Count]);
-       end;
+       {Check Stack Base}
+       if ThreadEntry.StackBase <> nil then
+        begin
+         {Insert in Queue}
+         Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TERMINATION),Thread,SCHEDULER_TERMINATION_QUANTUM);
+         if Result <> ERROR_SUCCESS then Exit;
+         
+         {Release the Lock}
+         if SCHEDULER_FIQ_ENABLED then
+          begin
+           Result:=SpinUnlockIRQFIQ(ThreadEntry.Lock);
+          end
+         else
+          begin
+           Result:=SpinUnlockIRQ(ThreadEntry.Lock);
+          end;     
+         if Result <> ERROR_SUCCESS then Exit;
+         Unlock:=False;
+         
+         {Release Thread Stack} 
+         ThreadReleaseStack(ThreadEntry.StackBase,ThreadEntry.StackSize);
+         
+         {Clear Stack Base}
+         ThreadEntry.StackBase:=nil;
+        end
+       else 
+        begin
+         {Check Flags}
+         if (ThreadEntry.Flags and THREAD_FLAG_PERSIST) = 0 then
+          begin
+           {Invalidate Thread entry}
+           ThreadEntry.Signature:=0;
+           
+           {Unlink Thread entry}
+           PrevEntry:=ThreadEntry.Prev;
+           NextEntry:=ThreadEntry.Next;
+           if PrevEntry = nil then
+            begin
+             ThreadTable:=NextEntry;
+             if NextEntry <> nil then
+              begin
+               NextEntry.Prev:=nil;
+              end;       
+            end
+           else
+            begin
+             PrevEntry.Next:=NextEntry;
+             if NextEntry <> nil then
+              begin
+               NextEntry.Prev:=PrevEntry;
+              end;       
+            end;     
+        
+           {Decrement Thread Count}
+           Dec(ThreadTableCount);
+        
+           {Check Thread Count}
+           if ThreadTableCount < 1 then
+            begin
+             {$IFDEF THREAD_DEBUG}
+             if THREAD_LOG_ENABLED then ThreadLogDebug('Final thread exiting, System Halted');
+             {$ENDIF}
+             
+             Halt;
+            end;
+           
+           {Release the Lock}
+           if SCHEDULER_FIQ_ENABLED then
+            begin
+             Result:=SpinUnlockIRQFIQ(ThreadEntry.Lock);
+            end
+           else
+            begin
+             Result:=SpinUnlockIRQ(ThreadEntry.Lock);
+            end;     
+           if Result <> ERROR_SUCCESS then Exit;
+           Unlock:=False;
+           
+           {Free Thread List} 
+           if ThreadEntry.List <> INVALID_HANDLE_VALUE then
+            begin
+             ListDestroy(ThreadEntry.List);
+            end;
+           
+           {Release Thread Stack} 
+           {ThreadReleaseStack(ThreadEntry.StackBase,ThreadEntry.StackSize);} {Released during first call}
+           
+           {Free Message List} 
+           FreeMem(ThreadEntry.Messages.List);
        
-      {ThreadEntry.TlsTable[Count]:=nil;} {Cleared by FreeMem}
-      {ThreadEntry.TlsFlags[Count]:=THREAD_TLS_FLAG_NONE;} {Cleared by FreeMem}
-     end;
+           {Free RTL Thread Vars} 
+           FreeMem(ThreadEntry.TlsPointer);
+          
+           {Free TLS Thread Vars}
+           for Count:=0 to THREAD_TLS_MAXIMUM - 1 do
+            begin
+             if ((ThreadEntry.TlsFlags[Count] and THREAD_TLS_FLAG_FREE) <> 0) and (ThreadEntry.TlsTable[Count] <> nil) then
+              begin
+               FreeMem(ThreadEntry.TlsTable[Count]);
+              end;
+              
+             {ThreadEntry.TlsTable[Count]:=nil;} {Cleared by FreeMem}
+             {ThreadEntry.TlsFlags[Count]:=THREAD_TLS_FLAG_NONE;} {Cleared by FreeMem}
+            end;
+           
+           {Free Thread Lock}
+           SpinDestroy(ThreadEntry.Lock);
+           
+           {Free Thread Entry}
+           FreeMem(ThreadEntry);
+          end;
+        end;
     
-    {Free Thread Lock}
-    SpinDestroy(ThreadEntry.Lock);
-    
-    {Free Thread Entry}
-    FreeMem(ThreadEntry);
-    
-    {Return Result}
-    Result:=ERROR_SUCCESS;
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      finally
+       {Release the Lock}
+       if Unlock then
+        begin
+         if SCHEDULER_FIQ_ENABLED then
+          begin
+           SpinUnlockIRQFIQ(ThreadEntry.Lock);
+          end
+         else
+          begin
+           SpinUnlockIRQ(ThreadEntry.Lock);
+          end;     
+        end;  
+      end;
+     end
+    else
+     begin
+      {Return Result}
+      Result:=ERROR_CAN_NOT_COMPLETE;
+     end;     
    finally
     SpinUnlock(ThreadTableLock);
    end;                                    
@@ -13638,7 +13719,7 @@ begin
     {$ENDIF}
     
     {Insert in Queue}
-    Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TERMINATION),Thread,SCHEDULER_TERMINATION_QUANTUM);
+    Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TERMINATION),Thread,SCHEDULER_TERMINATION_INITIAL);
     if Result <> ERROR_SUCCESS then Exit;
     
     {Return Result}
@@ -15375,6 +15456,31 @@ begin
 end;
  
 {==============================================================================}
+ 
+procedure ThreadTimer(Data:Pointer);
+{Procedure called internally to process terminated threads}
+
+{Note: Not intended to be called directly by applications}
+var
+ CurrentCPU:LongWord;
+begin
+ {}
+ {Get Current CPU}
+ CurrentCPU:=CPUGetCurrent;
+ 
+ {Check Terminated}
+ while QueueFirstKey(SchedulerTerminationQueue[CurrentCPU]) <= 0 do
+  begin
+   {$IFDEF SCHEDULER_DEBUG}
+   Inc(SchedulerTerminationCounter[CurrentCPU]);
+   {$ENDIF}
+   
+   {Destroy Thread}
+   ThreadDestroy(QueueDequeue(SchedulerTerminationQueue[CurrentCPU]));
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Scheduler Functions}
 function SchedulerCheck(CPUID:LongWord):LongWord;
@@ -16166,17 +16272,6 @@ begin
    {Use the Default method}
    {Get Current CPU}
    CurrentCPU:=CPUGetCurrent;
-
-   {Check Terminated}
-   while QueueFirstKey(SchedulerTerminationQueue[CurrentCPU]) <= 0 do
-    begin
-     {$IFDEF SCHEDULER_DEBUG}
-     Inc(SchedulerTerminationCounter[CurrentCPU]);
-     {$ENDIF}
-     
-     {Destroy Thread}
-     ThreadDestroy(QueueDequeue(SchedulerTerminationQueue[CurrentCPU]));
-    end;
    
    {Get Current Thread}
    Thread:=ThreadGetCurrent;
@@ -22096,6 +22191,7 @@ begin
       {Add Thread}
       Current.Handle:=TThreadHandle(ThreadEntry);
       Current.State:=ThreadEntry.State;
+      Current.Flags:=ThreadEntry.Flags;
       Current.CPU:=ThreadEntry.CurrentCPU; 
       Current.Priority:=ThreadEntry.Priority;
       Current.Affinity:=ThreadEntry.Affinity;

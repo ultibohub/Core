@@ -147,7 +147,7 @@ var
  
  PAGE_TABLES_NEXT:PtrUInt;         {The base (Physical) address of the next available second level Page Table}
  PAGE_TABLES_USED:LongWord;        {How many second level Page Tables are in use (During boot this will be set to the number required to cover the code and data plus initial stack, heap and overhead)}
- PAGE_TABLES_FREE:LongWord = 256;  {How many second level Page Tables are available (The initial value here will be added to the number calculated during boot to provide extras for page allocation)}
+ PAGE_TABLES_FREE:LongWord = 1024; {How many second level Page Tables are available (The initial value here will be added to the number calculated during boot to provide extras for page allocation)}
  
 {==============================================================================}
 var
@@ -418,6 +418,7 @@ var
  SCHEDULER_PRIORITY_QUANTUM:array of LongWord;      {How many scheduler interrupts to adjust the base thread quantum for each priority level (One per priority level, allocated by threads initialization)}
  SCHEDULER_MIGRATION_QUANTUM:LongWord = 100;        {How many scheduler thread switches between thread migration checks}
  SCHEDULER_STARVATION_QUANTUM:LongWord = 5;         {How many scheduler thread switches between thread starvation checks}
+ SCHEDULER_TERMINATION_INITIAL:LongWord = 100;      {How many scheduler interrupts to wait between thread termination and stack release}
  SCHEDULER_TERMINATION_QUANTUM:LongWord = 30000;    {How many scheduler interrupts to wait between thread termination and thread destruction}
 
  SCHEDULER_MIGRATION_OFFSET:LongWord = 5;           {The minimum offset between CPU thread counts for a migration to occur}
