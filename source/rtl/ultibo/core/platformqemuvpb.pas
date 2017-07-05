@@ -732,8 +732,14 @@ begin
  {Setup Enabled FIQ}
  FIQEnabled:=LongWord(-1);
  
+ {Clear Primary Interrupt Enable}
+ PrimaryInterruptRegisters.INTENCLEAR:=$FFFFFFFF;
+ 
  {Setup Primary Interrupt Sic Source (Secondary)}
  PrimaryInterruptRegisters.INTENABLE:=(1 shl VERSATILEPB_IRQ_SICSOURCE);
+ 
+ {Clear Secondary Interrupt Enable}
+ SecondaryInterruptRegisters.SIC_ENCLR:=$FFFFFFFF;
  
  {Setup Secondary Interrupt Pass Through}
  SecondaryInterruptRegisters.SIC_PICENSET:=VERSATILEPB_SIC_PIC_MASK;
