@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '5 July 2017';
+ ULTIBO_RELEASE_DATE             = '23 July 2017';
  ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.3.373';
+ ULTIBO_RELEASE_VERSION          = '1.3.397';
  ULTIBO_RELEASE_VERSION_MAJOR    = 1;
  ULTIBO_RELEASE_VERSION_MINOR    = 3;
- ULTIBO_RELEASE_VERSION_REVISION = 373;
+ ULTIBO_RELEASE_VERSION_REVISION = 397;
  
 {==============================================================================}
 const
@@ -152,6 +152,7 @@ const
  ERROR_NOT_COMPATIBLE      = 1000013;    {The entry is not compatible for the operation}
  ERROR_CANCELLED           = 1000014;    {The entry or operation has been cancelled}
  ERROR_NOT_EXACT           = 1000015;    {The result of the operation is not exact}
+ ERROR_ALREADY_OWNER       = 1000016;    {The current thread is already the owner}
  
  ERROR_UNKNOWN             = $FFFFFFFF;
  
@@ -1686,20 +1687,26 @@ const
  HANDLE_TYPE_SECTION      = 3;
  HANDLE_TYPE_SEMAPHORE    = 4;
  HANDLE_TYPE_SYNCHRONIZER = 5;
- HANDLE_TYPE_LIST         = 6;
- HANDLE_TYPE_QUEUE        = 7;
- HANDLE_TYPE_THREAD       = 8;
- HANDLE_TYPE_MESSAGESLOT  = 9;
- HANDLE_TYPE_MAILSLOT     = 10;
- HANDLE_TYPE_BUFFER       = 11;
- HANDLE_TYPE_EVENT        = 12;
+ HANDLE_TYPE_CONDITION    = 6;
+ HANDLE_TYPE_LIST         = 7;
+ HANDLE_TYPE_QUEUE        = 8;
+ HANDLE_TYPE_THREAD       = 9;
+ HANDLE_TYPE_MESSAGESLOT  = 10;
+ HANDLE_TYPE_MAILSLOT     = 11;
+ HANDLE_TYPE_BUFFER       = 12;
+ HANDLE_TYPE_EVENT        = 13;
 
- HANDLE_TYPE_TIMER        = 13;
- HANDLE_TYPE_WORKER       = 14;
- HANDLE_TYPE_WINDOW       = 15;
- HANDLE_TYPE_FONT         = 16;
- HANDLE_TYPE_KEYMAP       = 17;
+ HANDLE_TYPE_TIMER        = 14;
+ HANDLE_TYPE_WORKER       = 15;
+ HANDLE_TYPE_WINDOW       = 16;
+ HANDLE_TYPE_FONT         = 17;
+ HANDLE_TYPE_KEYMAP       = 18;
 
+ HANDLE_TYPE_FILE         = 100;
+ HANDLE_TYPE_PIPE         = 101;
+ HANDLE_TYPE_SOCKET       = 102;
+ HANDLE_TYPE_DEVICE       = 103;
+ 
  HANDLE_TYPE_USER_BASE    = 1000; {Base value for user or application defined handle types}
  
 {==============================================================================}

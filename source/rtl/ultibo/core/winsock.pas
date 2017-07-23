@@ -796,8 +796,8 @@ function getprotobyname(name: PChar): PProtoEnt;
 
 function WSAStartup(wVersionRequired:word;var WSAData:TWSADATA):tOS_INT;
 function WSACleanup:tOS_INT;
-procedure WSASetLastError(iError:tOS_INT);
-function WSAGetLastError:tOS_INT;
+procedure WSASetLastError(iError:tOS_INT); inline;
+function WSAGetLastError:tOS_INT; inline;
 function WSAIsBlocking: BOOL; 
 function WSAUnhookBlockingHook:tOS_INT;
 function WSASetBlockingHook(lpBlockFunc: TFarProc): TFarProc; 
@@ -844,7 +844,16 @@ function getnetbyname(name: PChar): PNetEnt;
 function WsControlEx(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
 
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+
+{==============================================================================}
 {Winsock Helper Functions}
+function WinsockRedirectInput(s:TSocket):Boolean;
+function WinsockRedirectOutput(s:TSocket):Boolean; 
+
 function WinsockErrorToString(AError:LongInt):String;
 
 {==============================================================================}
@@ -867,6 +876,9 @@ var
  
  WSMaxSockets:Word;
  WSMaxDatagram:Word;
+
+ WSTextIOInputSocket:TSocket = INVALID_SOCKET;
+ WSTextIOOutputSocket:TSocket = INVALID_SOCKET;
  
 {==============================================================================}
 {==============================================================================}
@@ -903,6 +915,11 @@ begin
  
  {Set WSMaxDatagram}
  WSMaxDatagram:=WINSOCK_MAX_UDP;
+ 
+ {Setup Platform Text IO Handlers}
+ {TextIOReadCharHandler:=SysTextIOReadChar;}       {Only registered when calling WinsockRedirectInput}
+ {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling WinsockRedirectOutput}
+ {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling WinsockRedirectOutput}
  
  WSInitialized:=True;
 end;
@@ -964,11 +981,11 @@ begin
  Result:=INVALID_SOCKET;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
   
@@ -987,7 +1004,7 @@ begin
   on E: Exception do
    begin
     Result:=INVALID_SOCKET;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: accept ' + E.Message);
     {$ENDIF}
@@ -1021,11 +1038,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1044,7 +1061,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: bind ' + E.Message);
     {$ENDIF}
@@ -1062,11 +1079,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1085,7 +1102,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: closesocket ' + E.Message);
     {$ENDIF}
@@ -1111,11 +1128,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1134,7 +1151,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: connect ' + E.Message);
     {$ENDIF}
@@ -1152,11 +1169,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1175,7 +1192,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: ioctlsocket ' + E.Message);
     {$ENDIF}
@@ -1209,11 +1226,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1232,7 +1249,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getpeername ' + E.Message);
     {$ENDIF}
@@ -1250,11 +1267,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1273,7 +1290,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getsockname ' + E.Message);
     {$ENDIF}
@@ -1291,11 +1308,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1314,7 +1331,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getsockopt ' + E.Message);
     {$ENDIF}
@@ -1407,11 +1424,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1430,7 +1447,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: listen ' + E.Message);
     {$ENDIF}
@@ -1480,11 +1497,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1503,7 +1520,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: recv ' + E.Message);
     {$ENDIF}
@@ -1537,11 +1554,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1560,7 +1577,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: recvfrom ' + E.Message);
     {$ENDIF}
@@ -1571,7 +1588,7 @@ end;
 {==============================================================================}
 
 function select(nfds:tOS_INT; readfds,writefds,exceptfds : PFDSet;timeout: PTimeVal):tOS_INT;
-{Note: All sockets contained by the FDSet must by of the same type}
+{Note: All sockets contained by the FDSet must be of the same type}
 var
  Socket:TProtocolSocket;
 begin
@@ -1579,11 +1596,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Manager}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if ProtocolManager = nil then Exit;
   
   {Select Socket}
@@ -1592,7 +1609,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: select ' + E.Message);
     {$ENDIF}
@@ -1610,11 +1627,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1633,7 +1650,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: send ' + E.Message);
     {$ENDIF}
@@ -1683,11 +1700,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1706,7 +1723,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: sendto ' + E.Message);
     {$ENDIF}
@@ -1724,11 +1741,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1747,7 +1764,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: setsockopt ' + E.Message);
     {$ENDIF}
@@ -1781,11 +1798,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1804,7 +1821,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: shutdown ' + E.Message);
     {$ENDIF}
@@ -1820,11 +1837,11 @@ begin
  Result:=INVALID_SOCKET;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Manager}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if ProtocolManager = nil then Exit;
   
   {Create Socket}
@@ -1833,7 +1850,7 @@ begin
   on E: Exception do
    begin
     Result:=INVALID_SOCKET;
-    SetLastError(WSAEPROTONOSUPPORT);
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: socket ' + E.Message);
     {$ENDIF}
@@ -1849,11 +1866,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
   
   {Get Host By Address}
@@ -1862,7 +1879,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: gethostbyaddr ' + E.Message);
     {$ENDIF}
@@ -1878,11 +1895,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Host By Name}
@@ -1891,7 +1908,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: gethostbyname ' + E.Message);
     {$ENDIF}
@@ -1907,11 +1924,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Host Name}
@@ -1920,7 +1937,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: gethostname ' + E.Message);
     {$ENDIF}
@@ -1936,11 +1953,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Service By Port}
@@ -1949,7 +1966,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getservbyport ' + E.Message);
     {$ENDIF}
@@ -1965,11 +1982,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Service By Name}
@@ -1978,7 +1995,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getservbyname ' + E.Message);
     {$ENDIF}
@@ -1994,11 +2011,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Protocol By Number}
@@ -2007,7 +2024,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getprotobynumber ' + E.Message);
     {$ENDIF}
@@ -2023,11 +2040,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Protocol By Name}
@@ -2036,7 +2053,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getprotobyname ' + E.Message);
     {$ENDIF}
@@ -2053,7 +2070,7 @@ begin
  try
   {Set Result}
   Result:=WSASYSNOTREADY; {SOCKET_ERROR; See Spec}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   
   {Acquire the Lock}
   if CriticalSectionLock(WSStartupLock) = ERROR_SUCCESS then
@@ -2068,7 +2085,7 @@ begin
        
        {Check Version}
        Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
-       SetLastError(WSAVERNOTSUPPORTED);
+       NetworkSetLastError(WSAVERNOTSUPPORTED);
        if wVersionRequired < WINSOCK_LOW_VERSION then Exit;
        if wVersionRequired > WINSOCK_HIGH_VERSION then Exit;
    
@@ -2093,13 +2110,13 @@ begin
         begin
          {Return Result}
          Result:=WSStartupError; {SOCKET_ERROR; See Spec}
-         SetLastError(WSStartupError);
+         NetworkSetLastError(WSStartupError);
         end
        else
         begin
          {Return Result}
          Result:=ERROR_SUCCESS; {NO_ERROR; See Spec}
-         SetLastError(ERROR_SUCCESS);
+         NetworkSetLastError(ERROR_SUCCESS);
         end;
       end
      else
@@ -2110,7 +2127,7 @@ begin
       
        {Check Version}
        Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
-       SetLastError(WSAVERNOTSUPPORTED);
+       NetworkSetLastError(WSAVERNOTSUPPORTED);
        WSStartupError:=WSAVERNOTSUPPORTED;
        if wVersionRequired < WINSOCK_LOW_VERSION then Exit;
        if wVersionRequired > WINSOCK_HIGH_VERSION then Exit;
@@ -2132,7 +2149,7 @@ begin
     
        {Initialize Components}
        Result:=WSASYSNOTREADY; {SOCKET_ERROR; See Spec}
-       SetLastError(WSASYSNOTREADY);
+       NetworkSetLastError(WSASYSNOTREADY);
        WSStartupError:=WSASYSNOTREADY;
        
        {Start Sockets}
@@ -2147,7 +2164,7 @@ begin
        
        {Return Result}
        Result:=ERROR_SUCCESS;  {NO_ERROR; See Spec}
-       SetLastError(ERROR_SUCCESS);
+       NetworkSetLastError(ERROR_SUCCESS);
        WSStartupError:=ERROR_SUCCESS;
       end; 
     finally
@@ -2159,7 +2176,7 @@ begin
   on E: Exception do
    begin
     Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
-    SetLastError(WSAVERNOTSUPPORTED);
+    NetworkSetLastError(WSAVERNOTSUPPORTED);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: WSAStartup ' + E.Message);
     {$ENDIF}
@@ -2175,20 +2192,20 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Set Error}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   
   {Acquire the Lock}
   if CriticalSectionLock(WSStartupLock) = ERROR_SUCCESS then
    begin
     try
      {Check Started}
-     SetLastError(WSANOTINITIALISED);
+     NetworkSetLastError(WSANOTINITIALISED);
      if WSStartupCount = 0 then Exit;
   
      {Decrement Count}
      Dec(WSStartupCount);
      Result:=NO_ERROR;
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      if WSStartupCount > 0 then Exit;
   
      {$IFDEF WINSOCK_DEBUG}
@@ -2197,7 +2214,7 @@ begin
   
      {Shutdown and Cleanup}
      Result:=SOCKET_ERROR;
-     SetLastError(WSAENETDOWN);
+     NetworkSetLastError(WSAENETDOWN);
   
      {Stop Sockets}
      if SocketsStop <> ERROR_SUCCESS then Exit;
@@ -2211,7 +2228,7 @@ begin
  
      {Return Result}
      Result:=NO_ERROR;
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      WSStartupError:=WSANOTINITIALISED;
     finally
      {Release the Lock}
@@ -2222,7 +2239,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSANOTINITIALISED);
+    NetworkSetLastError(WSANOTINITIALISED);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: WSACleanup ' + E.Message);
     {$ENDIF}
@@ -2232,18 +2249,18 @@ end;
 
 {==============================================================================}
 
-procedure WSASetLastError(iError:tOS_INT);
+procedure WSASetLastError(iError:tOS_INT); inline;
 begin
  {}
- SetLastError(iError);
+ NetworkSetLastError(iError);
 end;
 
 {==============================================================================}
 
-function WSAGetLastError:tOS_INT;
+function WSAGetLastError:tOS_INT; inline;
 begin
  {}
- Result:=GetLastError;
+ Result:=NetworkGetLastError;
 end;
 
 {==============================================================================}
@@ -2263,7 +2280,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
  {Compatible with Winsock 2}
 end;
 
@@ -2274,7 +2291,7 @@ begin
  {}
  {Not Implemented}
  Result:=nil;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
  {Return Success to be compatible with Winsock 2}
  {Result:=lpBlockFunc;}
 end;
@@ -2286,7 +2303,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
  {Compatible with Winsock 2}
 end;
 
@@ -2297,7 +2314,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2307,7 +2324,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2317,7 +2334,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2327,7 +2344,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2337,7 +2354,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2347,7 +2364,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2357,7 +2374,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2367,7 +2384,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2377,7 +2394,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2408,7 +2425,7 @@ begin
  {}
  {Not Implemented}
  Result:=False;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2418,7 +2435,7 @@ begin
  {}
  {Not Implemented}
  Result:=False;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2427,7 +2444,7 @@ procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwL
 begin
  {}
  {Not Implemented}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2556,16 +2573,17 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
-  SetLastError(WSAEPROTONOSUPPORT);
+  NetworkSetLastError(WSAEPROTONOSUPPORT);
+  
   //To Do //For those that are documented call WsControlEx with adjusted params
  except
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAEPROTONOSUPPORT);
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: WsControl ' + E.Message);
     {$ENDIF}
@@ -2581,11 +2599,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Network By Address}
@@ -2594,7 +2612,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getnetbyaddr ' + E.Message);
     {$ENDIF}
@@ -2610,11 +2628,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Network By Name}
@@ -2623,7 +2641,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: getnetbyname ' + E.Message);
     {$ENDIF}
@@ -2659,17 +2677,17 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WSStartupError <> ERROR_SUCCESS then Exit;
 
   {Set Error}
-  SetLastError(WSAEPROTONOSUPPORT);
+  NetworkSetLastError(WSAEPROTONOSUPPORT);
   
   {Check Proto}
   case Proto of
    IPPROTO_IP:begin
      {Set Error}
-     SetLastError(WSAEOPNOTSUPP);
+     NetworkSetLastError(WSAEOPNOTSUPP);
      
      {Check Action}
      case Action of
@@ -2679,7 +2697,7 @@ begin
         if Transport = nil then Exit;
         
         {Get IfTable}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAIfTable) then Exit;
         WSAIfTable:=PWSAIfTable(pRequestInfo);
         if WSAIfTable = nil then Exit;
@@ -2710,7 +2728,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_GETIPADDRTABLE:begin
         {Get Transport}
@@ -2718,7 +2736,7 @@ begin
         if Transport = nil then Exit;
         
         {Get IpAddrTable}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAIpAddrTable) then Exit;
         WSAIpAddrTable:=PWSAIpAddrTable(pRequestInfo);
         if WSAIpAddrTable = nil then Exit;
@@ -2747,7 +2765,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_SETIPSTATISTICS:begin
         {Get Transport}
@@ -2755,7 +2773,7 @@ begin
         if Transport = nil then Exit;
         
         {Get IpStats}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAIpStats) then Exit;
         WSAIpStats:=PWSAIpStats(pRequestInfo);
         if WSAIpStats = nil then Exit;
@@ -2778,7 +2796,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_SETIPTTL:begin
         {Get Transport}
@@ -2786,7 +2804,7 @@ begin
         if Transport = nil then Exit;
 
         {Get Value}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(LongWord) then Exit;
         WSATTL:=LongWord(pRequestInfo);
         if WSATTL = 0 then Exit;
@@ -2797,7 +2815,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_GETINTERFACEINFO:begin
         {Get Transport}
@@ -2805,7 +2823,7 @@ begin
         if Transport = nil then Exit;
         
         {Get IpInterfaceInfo}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAIpInterfaceInfo) then Exit;
         WSAIpInterfaceInfo:=PWSAIpInterfaceInfo(pRequestInfo);
         if WSAIpInterfaceInfo = nil then Exit;
@@ -2831,7 +2849,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_GETNETWORKPARAMS:begin
         {Get Transport}
@@ -2839,7 +2857,7 @@ begin
         if Transport = nil then Exit;
         
         {Get FixedInfo}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAFixedInfo) then Exit;
         WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
         if WSAFixedInfo = nil then Exit;
@@ -2850,7 +2868,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_GETADAPTERSINFO:begin
         {Get Transport}
@@ -2858,7 +2876,7 @@ begin
         if Transport = nil then Exit;
         
         {Get IpAdapterInfo}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAIpAdapterInfo) then Exit;
         WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
         if WSAIpAdapterInfo = nil then Exit;
@@ -2904,7 +2922,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_IPRELEASEADDRESS:begin
         {Get Transport}
@@ -2912,7 +2930,7 @@ begin
         if Transport = nil then Exit;
 
         {Get IpAdapterIndexMap}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAIpAdapterIndexMap) then Exit;
         WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
         if WSAIpAdapterIndexMap = nil then Exit;
@@ -2922,7 +2940,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
       WSA_IPRENEWADDRESS:begin
         {Get Transport}
@@ -2930,7 +2948,7 @@ begin
         if Transport = nil then Exit;
 
         {Get IpAdapterIndexMap}
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if pcbRequestInfoLen < SizeOf(TWSAIpAdapterIndexMap) then Exit;
         WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
         if WSAIpAdapterIndexMap = nil then Exit;
@@ -2939,7 +2957,7 @@ begin
          
         {Return Result} 
         Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
        end;
      end;
     end;
@@ -2951,7 +2969,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAEPROTONOSUPPORT);
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF WINSOCK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: WsControlEx ' + E.Message);
     {$ENDIF}
@@ -2961,7 +2979,159 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOReadChar function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Count:Integer;
+begin
+ {}
+ Result:=False;
+ 
+ Count:=Winsock.recv(WSTextIOInputSocket,ACh,SizeOf(Char),0);
+ if Count = SOCKET_ERROR then
+  begin
+   Winsock.closesocket(WSTextIOInputSocket);
+   WSTextIOInputSocket:=INVALID_SOCKET;
+   Exit;
+  end
+ else
+  begin
+   if Count = 0 then
+    begin
+     Winsock.closesocket(WSTextIOInputSocket);
+     WSTextIOInputSocket:=INVALID_SOCKET;
+     Exit;
+    end;
+  end;
+
+ Result:=True;  
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOWriteChar function}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=(SysTextIOWriteBuffer(@ACh,SizeOf(Char),AUserData) = SizeOf(Char));
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+{Handler for platform TextIOWriteBuffer function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Count:Integer;
+ Total:Integer;
+ Offset:Integer;
+begin
+ {}
+ Total:=0;
+ Result:=0;
+ 
+ if ABuffer = nil then Exit;
+ 
+ if ACount > 0 then
+  begin
+   Offset:=0;
+   repeat
+    Count:=Winsock.send(WSTextIOOutputSocket,Pointer(PtrUInt(ABuffer) + PtrUInt(Offset))^,ACount - Offset,0);
+    if Count = SOCKET_ERROR then
+     begin
+      Winsock.closesocket(WSTextIOOutputSocket);
+      WSTextIOOutputSocket:=INVALID_SOCKET;
+      Exit;
+     end
+    else
+     begin
+      if Count = 0 then
+       begin
+        Winsock.closesocket(WSTextIOOutputSocket);
+        WSTextIOOutputSocket:=INVALID_SOCKET;
+        Exit;
+       end
+      else
+       begin
+        Inc(Total,Count);
+        Inc(Offset,Count);
+       end;
+     end;
+   until Offset >= ACount;   
+  end;
+  
+ Result:=Total; 
+end;
+
+{==============================================================================}
+{==============================================================================}
 {Winsock Helper Functions}
+function WinsockRedirectInput(s:TSocket):Boolean;
+{Redirect standard input to the socket specified by s}
+{s: The socket to redirect input to (or INVALID_SOCKET to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the input of the text file Input which also
+       redirects the input of Read, ReadLn and the standard C library}
+begin
+ {}
+ Result:=True;
+ 
+ if s = INVALID_SOCKET then
+  begin
+   {Stop Redirection}
+   TextIOReadCharHandler:=nil;
+   
+   WSTextIOInputSocket:=INVALID_SOCKET;
+  end
+ else
+  begin
+   {Start Redirection}
+   TextIOReadCharHandler:=SysTextIOReadChar;
+  
+   WSTextIOInputSocket:=s;
+  end;  
+end;
+
+{==============================================================================}
+
+function WinsockRedirectOutput(s:TSocket):Boolean; 
+{Redirect standard output to the socket specified by s}
+{s: The socket to redirect output to (or INVALID_SOCKET to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the output of the text files Output, ErrOutput, StdOut and StdErr
+       which also redirects the output of Write, WriteLn and the standard C library}
+begin
+ {}
+ Result:=True;
+ 
+ if s = INVALID_SOCKET then
+  begin
+   {Stop Redirection}
+   TextIOWriteCharHandler:=nil;
+   TextIOWriteBufferHandler:=nil;
+   
+   WSTextIOOutputSocket:=INVALID_SOCKET;
+  end
+ else
+  begin
+   {Start Redirection}
+   TextIOWriteCharHandler:=SysTextIOWriteChar;
+   TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
+  
+   WSTextIOOutputSocket:=s;
+  end;  
+end;
+
+{==============================================================================}
+
 function WinsockErrorToString(AError:LongInt):String;
 begin
  {}

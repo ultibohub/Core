@@ -2,7 +2,7 @@
 Ultibo Newlib C Library Syscalls interface unit.
 
 Copyright (C) 2016 - Paul Jervois.
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2017 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -195,14 +195,27 @@ interface
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,FileSystem,Sockets,SysUtils;
 
 //To Do //Sockets support
-        //Pthreads support
         //Libstdc++ support
+        
+//To Do //Which Pthreads functions are cancellation points? (Find a list)
         
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
 
 {$packrecords C} 
+
+{==============================================================================}
+{Local definitions}
+{--$DEFINE SYSCALLS_LARGE64_FILES}          {Enable 64-bit file support for Libc calls (Default: Off)}
+
+{--$DEFINE _POSIX_THREAD_CPUTIME}           {Enable Pthread CPU Time Clock Allowed attribute (Default: Off) (Not used by Ultibo}
+
+{--$DEFINE _POSIX_THREAD_SPORADIC_SERVER}   {Enable Pthread Scheduling for Sporadic server (Default: Off) (Not used by Ultibo}
+
+{--$DEFINE _POSIX_THREAD_PROCESS_SHARED}    {Enable Pthread Mutex Process Shared attribute (Default: Off) (Not used by Ultibo}
+{--$DEFINE _POSIX_THREAD_PRIO_PROTECT}      {Enable Pthread Mutex Priority Ceiling Shared attribute (Default: Off) (Not used by Ultibo}
+{$DEFINE _UNIX98_THREAD_MUTEX_ATTRIBUTES}   {Enable Pthread Mutex Type attribute (Default: On)}
 
 {==============================================================================}
 const
@@ -576,7 +589,7 @@ const
  _SC_XOPEN_UUCP                    = 124;
  
 const
- {Reentrant constants from /sys/reent.h}
+ {Reentrant constants from sys/reent.h}
  {rand48 family support}
  _RAND48_SEED_0 = $330e;
  _RAND48_SEED_1 = $abcd;
@@ -595,6 +608,93 @@ const
  
  _ATEXIT_SIZE = 32;  {Must be at least 32 to guarantee ANSI conformance}
  
+const
+ {Scheduler constants from sched.h}
+ {Scheduling Policies}
+  SCHED_OTHER    = 0;
+  SCHED_FIFO     = 1;
+  SCHED_RR       = 2;
+  {$IFDEF _POSIX_THREAD_SPORADIC_SERVER}
+  SCHED_SPORADIC = 4;
+  {$ENDIF}
+ 
+const
+ {Pthread constants from sys/types.h}
+ {Values for contention scope}
+ PTHREAD_SCOPE_PROCESS = 0;
+ PTHREAD_SCOPE_SYSTEM  = 1;
+ 
+ {Values for inherit schedule}
+ PTHREAD_INHERIT_SCHED  = 1; {Scheduling policy and associated attributes are inherited from the calling thread}
+ PTHREAD_EXPLICIT_SCHED = 2; {Set from provided attribute object}
+
+ {Values for detach state}
+ PTHREAD_CREATE_DETACHED = 0;
+ PTHREAD_CREATE_JOINABLE = 1; {Default}
+ 
+ {Values for process shared}
+ PTHREAD_PROCESS_PRIVATE = 0; {Visible within only the creating process}
+ PTHREAD_PROCESS_SHARED  = 1; {Visible too all processes with access to the memory where the resource is located}
+ 
+ {Values for blocking protocol}
+ PTHREAD_PRIO_NONE    = 0;
+ PTHREAD_PRIO_INHERIT = 1;
+ PTHREAD_PRIO_PROTECT = 2;
+ 
+ {Values for mutex type}
+ PTHREAD_MUTEX_NORMAL     = 0; {This type of mutex does not detect deadlock. A thread attempting to relock this mutex without first unlocking it shall deadlock}
+ PTHREAD_MUTEX_RECURSIVE  = 1; {A thread attempting to relock this mutex without first unlocking it shall succeed in locking the mutex}
+ PTHREAD_MUTEX_ERRORCHECK = 2; {This type of mutex provides error checking. A thread attempting to relock this mutex without first unlocking it shall return with an error}
+ PTHREAD_MUTEX_DEFAULT    = 3; {Attempting to recursively lock a mutex of this type results in undefined behavior}
+ 
+ {Pthread constants from pthread.h} 
+ PTHREAD_CANCEL_ENABLE  = 0; {Default}
+ PTHREAD_CANCEL_DISABLE = 1;
+
+ PTHREAD_CANCEL_DEFERRED = 0; {Default}
+ PTHREAD_CANCEL_ASYNCHRONOUS = 1;
+
+ PTHREAD_CANCELED = Pointer(-1);
+ 
+const
+ {Clock constants from time.h}
+ CLOCK_REALTIME           = 1;
+ CLOCK_PROCESS_CPUTIME_ID = 2; {The CPU_time clock associated with the PROCESS making the function call}
+ CLOCK_THREAD_CPUTIME_ID  = 3; {The CPU_time clock associated with the THREAD making the function call}
+ CLOCK_MONOTONIC          = 4; {A clock whose value cannot be set via clock_settime() and which cannot have backward clock jumps}
+ 
+const
+ {Semaphore constants from /linux/semahore.h}
+ SEM_FAILED = nil; {Value returned if `sem_open' failed.}
+ SEM_VALUE_MAX = $7FFFFFFF; {Maximum value the semaphore can have}
+ 
+const
+ {Ioctl constants from /linux/ioctl.h}
+ _IOC_NRBITS = 8;
+ _IOC_TYPEBITS = 8;
+
+ _IOC_SIZEBITS = 14;
+ _IOC_DIRBITS = 2;
+ 
+ _IOC_NRMASK = ((1 shl _IOC_NRBITS) - 1);
+ _IOC_TYPEMASK = ((1 shl _IOC_TYPEBITS) - 1);
+ _IOC_SIZEMASK = ((1 shl _IOC_SIZEBITS) - 1);
+ _IOC_DIRMASK = ((1 shl _IOC_DIRBITS) - 1);
+
+ _IOC_NRSHIFT = 0;
+ _IOC_TYPESHIFT = (_IOC_NRSHIFT + _IOC_NRBITS);
+ _IOC_SIZESHIFT = (_IOC_TYPESHIFT + _IOC_TYPEBITS);
+ _IOC_DIRSHIFT = (_IOC_SIZESHIFT + _IOC_SIZEBITS);
+
+ {Direction bits}
+ _IOC_NONE = 0;
+ _IOC_WRITE = 1;
+ _IOC_READ = 2;
+ 
+const
+ {Library names}
+ libc = 'c';
+ 
 {==============================================================================}
 type
  {Syscalls specific types}
@@ -604,11 +704,14 @@ type
  Pint = ^int;
  long = PtrInt; {LONG_MAX}
  short = Smallint;
+ uint = Cardinal; {unsigned int}
+ Puint = ^uint;
  
 type
  {From stddef.h}
  ptrdiff_t = PtrInt; {LONG_MAX}
  size_t = PtrUInt;
+ Psize_t = ^size_t;
  ssize_t = PtrInt;
  wint_t = Cardinal; {unsigned int}          
  
@@ -624,6 +727,8 @@ type
  off_t = PtrInt;    {long}
  off64_t = Int64;   {long long} 
  clock_t = PtrUInt; {_CLOCK_T_ in machine/types.h}{unsigned long}
+ clockid_t = PtrUInt; {_CLOCK_T_ in machine/types.h}{unsigned long}
+ useconds_t = PtrUInt; {unsigned long}
  
 type 
  {From sys/_types.h}
@@ -631,7 +736,7 @@ type
  _fpos_t = PtrInt;  {long}
  _off_t  = PtrInt;  {long}
  _flock_t = int;    {_LOCK_RECURSIVE_T in lock.h}
- _fpos64_t = Int64;  {long long}
+ _fpos64_t = Int64; {long long}
  _off64_t = Int64;  {long long}
  
  {Conversion state information}
@@ -933,14 +1038,149 @@ type
  
  Ptimeval = ^Ttimeval;
  Ttimeval = record
-  tv_sec:time_t;       {seconds}
-  tv_usec:suseconds_t; {and microseconds}
+  tv_sec: time_t;       {seconds}
+  tv_usec: suseconds_t; {and microseconds}
  end;
+ 
+type
+ {From sys/_timespec.h} 
+ Ptimespec = ^Ttimespec;
+ Ttimespec = record
+  tv_sec: time_t; {seconds}
+  tv_nsec: long;  {and nanoseconds}
+ end;
+ 
+type
+ {From sched.h}
+ Psched_param = ^Tsched_param;
+ Tsched_param = record
+  sched_priority: int;             {Process execution scheduling priority}
+  {$IFDEF _POSIX_THREAD_SPORADIC_SERVER}
+  sched_ss_low_priority: int;      {Low scheduling priority for sporadic server}
+  sched_ss_repl_period: Ttimespec; {Replenishment period for sporadic server}
+  sched_ss_init_budget: Ttimespec; {Initial budget for sporadic server}
+  sched_ss_max_repl: int;          {Maximum pending replenishments for sporadic server}
+  {$ENDIF}
+ end;
+ 
+type
+ {From sys/types.h}
+ {Pthread types}
+ pthread_t = Cardinal; {uint32_t}
+ Ppthread_t = ^pthread_t;
+ 
+ Ppthread_attr_t = ^Tpthread_attr_t;
+ Tpthread_attr_t = record
+  is_initialized: int;
+  stackaddr: Pointer;
+  stacksize: int;
+  contentionscope: int;
+  inheritsched: int;
+  schedpolicy: int;
+  schedparam: Tsched_param;
+  guardsize: size_t;
+  {$IFDEF _POSIX_THREAD_CPUTIME}
+  cputime_clock_allowed: int;  {See time.h}
+  {$ENDIF}
+  detachstate: int;
+ end;
+ 
+ {Pthread Mutex types}
+ pthread_mutex_t = Cardinal; {uint32_t}
+ Ppthread_mutex_t = ^pthread_mutex_t;
+ 
+ Ppthread_mutexattr_t = ^Tpthread_mutexattr_t;
+ Tpthread_mutexattr_t = record
+  is_initialized: int;
+  {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+  process_shared: int;  {Allow mutex to be shared amongst processes (Not applicable to Ultibo)}
+  {$ENDIF}
+  {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+  prio_ceiling: int;
+  protocol: int;
+  {$ENDIF}
+  {$IFDEF _UNIX98_THREAD_MUTEX_ATTRIBUTES}
+  _type: int;
+  {$ENDIF}
+  recursive: int;
+ end;  
+ 
+ {Pthread Condition Variable types}
+ pthread_cond_t = Cardinal; {uint32_t}
+ Ppthread_cond_t = ^pthread_cond_t;
+ 
+ Ppthread_condattr_t = ^Tpthread_condattr_t;
+ Tpthread_condattr_t = record
+  is_initialized: int;
+  clock: clock_t;       {Specifiy clock for timeouts}
+  {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+  process_shared: int;  {Allow this to be shared amongst processes (Not applicable to Ultibo)}
+  {$ENDIF}
+ end;
+ 
+ {Pthread Key types}
+ pthread_key_t = Cardinal; {uint32_t}
+ Ppthread_key_t = ^pthread_key_t;
+ 
+ Ppthread_once_t = ^Tpthread_once_t;
+ Tpthread_once_t = record
+  is_initialized: int;  {Is this structure initialized}
+  init_executed: int;   {Has the initialization routine been run}
+ end;
+ 
+ {Pthread Barrier types}
+ pthread_barrier_t = Cardinal; {uint32_t}
+ Ppthread_barrier_t = ^pthread_barrier_t;
+ 
+ Ppthread_barrierattr_t = ^Tpthread_barrierattr_t;
+ Tpthread_barrierattr_t = record
+  is_initialized: int;  {Is this structure initialized}
+  {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+  process_shared: int;  {Allow this to be shared amongst processes (Not applicable to Ultibo)}
+  {$ENDIF}
+ end; 
+ 
+ {Pthread Spin Lock types}
+ pthread_spinlock_t = Cardinal; {uint32_t}
+ Ppthread_spinlock_t = ^pthread_spinlock_t;
+ 
+ {Pthread Reader/Writer Lock types}
+ pthread_rwlock_t = Cardinal; {uint32_t}
+ Ppthread_rwlock_t = ^pthread_rwlock_t;
+ 
+ Ppthread_rwlockattr_t = ^Tpthread_rwlockattr_t;
+ Tpthread_rwlockattr_t = record
+  is_initialized: int;  {Is this structure initialized}
+  {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+  process_shared: int;  {Allow this to be shared amongst processes (Not applicable to Ultibo)}
+  {$ENDIF}
+ end; 
+ 
+ {Pthread Function types}
+ Tpthread_cleanup_routine = procedure(arg: Pointer); cdecl;
+ Tpthread_destructor_routine = procedure(value: Pointer); cdecl; 
+ Tpthread_start_routine = function(arg: Pointer): Pointer; cdecl;
+ Tpthread_init_routine = procedure; cdecl;
+ 
+type
+ {From semahore.h} 
+ sem_t = Cardinal; {uint32_t} {sem_t should be opaque to the user}
+ Psem_t = ^sem_t;
  
 {==============================================================================}
 var
  {Syscalls specific variables}
  environ:PPChar; external;  {Pointer to the global environment block in the C library}
+ 
+var
+ {Static initialization variables}
+ PTHREAD_MUTEX_INITIALIZER:pthread_mutex_t = $FFFFFFFF; {This is used to statically initialize a pthread_mutex_t}
+ PTHREAD_COND_INITIALIZER:pthread_cond_t = $FFFFFFFF; {This is used to statically initialize a pthread_cond_t}
+ PTHREAD_RWLOCK_INITIALIZER:pthread_rwlock_t = $FFFFFFFF; {This is used to statically initialize a pthread_rwlock_t}
+ 
+ PTHREAD_ONCE_INIT:Tpthread_once_t = (  {This is used to statically initialize a Tpthread_once_t (Is initialized and not run)}
+  is_initialized:1;
+  init_executed:0);
  
 {==============================================================================}
 {Initialization Functions}
@@ -1011,14 +1251,164 @@ function _unlink_r(ptr: P_reent; name: PChar): int; cdecl; public name '_unlink_
 function _write_r(ptr: P_reent; fd: int; buf: Pointer; cnt: size_t): _ssize_t; cdecl; public name '_write_r';
        
 {==============================================================================}
-{Syscalls Functions (Extra)}
+{Syscalls Functions (Stat)}
 function mkdir(path: PChar; mode: int): int; cdecl; public name 'mkdir';
-function sysconf(name: int):int; cdecl; public name 'sysconf';
-       
-{==============================================================================}
-{Syscalls Functions (Pthread)}
-//TestingPThreads
      
+{==============================================================================}
+{Syscalls Functions (Stdlib)}
+function memalign(alignment, size: size_t): Pointer; cdecl; external libc name 'memalign';
+
+function posix_memalign(memptr: PPointer; alignment, size: size_t): int; cdecl; public name 'posix_memalign';
+
+{==============================================================================}
+{Syscalls Functions (Unistd)}
+function dup(oldfd: int): int; cdecl; public name 'dup';
+function dup2(oldfd, newfd: int): int; cdecl; public name 'dup2';
+function dup3(oldfd, newfd, flags: int): int; cdecl; public name 'dup3';
+ 
+function sysconf(name: int): int; cdecl; public name 'sysconf';
+
+function getpagesize: int; cdecl; public name 'getpagesize';
+
+function ssleep(seconds: uint): uint; cdecl; public name 'sleep'; 
+function usleep(useconds: useconds_t): int; cdecl; public name 'usleep';
+    
+{==============================================================================}
+{Syscalls Functions (Mman)}
+function mmap(addr: Pointer; length: size_t; prot, flags, fd: int; offset: off_t): Pointer; cdecl; public name 'mmap';
+function munmap(addr: Pointer; length: size_t): int; cdecl; public name 'munmap';
+    
+{==============================================================================}
+{Syscalls Functions (Time)}
+function settimeofday(tv: Ptimeval; tz: Pointer): int; cdecl; public name 'settimeofday';
+
+function clock_getres(clk_id: clockid_t; res: Ptimespec): int; cdecl; public name 'clock_getres';
+function clock_gettime(clk_id: clockid_t; tp: Ptimespec): int; cdecl; public name 'clock_gettime';
+function clock_settime(clk_id: clockid_t; tp: Ptimespec): int; cdecl; public name 'clock_settime';
+
+function nanosleep(req, rem: Ptimespec): int; cdecl; public name 'nanosleep';
+    
+{==============================================================================}
+{Syscalls Functions (Sched)}
+//To Do //http://man7.org/linux/man-pages/man2/sched_setaffinity.2.html
+//int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask);
+//int sched_setaffinity(pid_t pid, size_t cpusetsize, const cpu_set_t *mask);
+
+function sched_get_priority_max(policy: int): int; cdecl; public name 'sched_get_priority_max'; 
+function sched_get_priority_min(policy: int): int; cdecl; public name 'sched_get_priority_min';  
+
+{==============================================================================}
+{Syscalls Functions (Pthread) (http://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread.h.html)}
+function pthread_attr_init(attr: Ppthread_attr_t): int; cdecl; public name 'pthread_attr_init';
+function pthread_attr_destroy(attr: Ppthread_attr_t): int; cdecl; public name 'pthread_attr_destroy';
+function pthread_attr_getdetachstate(attr: Ppthread_attr_t; detachstate: Pint): int; cdecl; public name 'pthread_attr_getdetachstate';
+function pthread_attr_setdetachstate(attr: Ppthread_attr_t; detachstate: int): int; cdecl; public name 'pthread_attr_setdetachstate';
+function pthread_attr_getguardsize(attr: Ppthread_attr_t; guardsize: Psize_t): int; cdecl; public name 'pthread_attr_getguardsize';
+function pthread_attr_setguardsize(attr: Ppthread_attr_t; guardsize: size_t): int; cdecl; public name 'pthread_attr_setguardsize';
+function pthread_attr_getinheritsched(attr: Ppthread_attr_t; inheritsched: Pint): int; cdecl; public name 'pthread_attr_getinheritsched';
+function pthread_attr_setinheritsched(attr: Ppthread_attr_t; inheritsched: int): int; cdecl; public name 'pthread_attr_setinheritsched';
+function pthread_attr_getschedparam(attr: Ppthread_attr_t; param: Psched_param): int; cdecl; public name 'pthread_attr_getschedparam';
+function pthread_attr_setschedparam(attr: Ppthread_attr_t; param: Psched_param): int; cdecl; public name 'pthread_attr_setschedparam';
+function pthread_attr_getschedpolicy(attr: Ppthread_attr_t; policy: Pint): int; cdecl; public name 'pthread_attr_getschedpolicy';
+function pthread_attr_setschedpolicy(attr: Ppthread_attr_t; policy: int): int; cdecl; public name 'pthread_attr_setschedpolicy';
+function pthread_attr_getscope(attr: Ppthread_attr_t; contentionscope: Pint): int; cdecl; public name 'pthread_attr_getscope';
+function pthread_attr_setscope(attr: Ppthread_attr_t; contentionscope: int): int; cdecl; public name 'pthread_attr_setscope';
+function pthread_attr_getstackaddr(attr: Ppthread_attr_t; stackaddr: PPointer): int; cdecl; public name 'pthread_attr_getstackaddr';
+function pthread_attr_setstackaddr(attr: Ppthread_attr_t; stackaddr: Pointer): int; cdecl; public name 'pthread_attr_setstackaddr';
+function pthread_attr_getstacksize(attr: Ppthread_attr_t; stacksize: Psize_t): int; cdecl; public name 'pthread_attr_getstacksize';
+function pthread_attr_setstacksize(attr: Ppthread_attr_t; stacksize: size_t): int; cdecl; public name 'pthread_attr_setstacksize';
+
+procedure pthread_cleanup_push(routine: Tpthread_cleanup_routine; arg: Pointer); cdecl; public name 'pthread_cleanup_push';
+procedure pthread_cleanup_pop(execute: int); cdecl; public name 'pthread_cleanup_pop';
+
+function pthread_cond_init(cond: Ppthread_cond_t; attr: Ppthread_condattr_t): int; cdecl; public name 'pthread_cond_init';
+function pthread_cond_destroy(cond: Ppthread_cond_t): int; cdecl; public name 'pthread_cond_destroy';
+function pthread_cond_broadcast(cond: Ppthread_cond_t): int; cdecl; public name 'pthread_cond_broadcast';
+function pthread_cond_signal(cond: Ppthread_cond_t): int; cdecl; public name 'pthread_cond_signal';
+function pthread_cond_wait(cond: Ppthread_cond_t; mutex: Ppthread_mutex_t): int; cdecl; public name 'pthread_cond_wait';
+function pthread_cond_timedwait(cond: Ppthread_cond_t; mutex: Ppthread_mutex_t; abstime: Ptimespec): int; cdecl; public name 'pthread_cond_timedwait';
+
+function pthread_condattr_init(attr: Ppthread_condattr_t): int; cdecl; public name 'pthread_condattr_init';
+function pthread_condattr_destroy(attr: Ppthread_condattr_t): int; cdecl; public name 'pthread_condattr_destroy';
+function pthread_condattr_getpshared(attr: Ppthread_condattr_t; pshared: Pint): int; cdecl; public name 'pthread_condattr_getpshared';
+function pthread_condattr_setpshared(attr: Ppthread_condattr_t; pshared: int): int; cdecl; public name 'pthread_condattr_setpshared';
+
+function pthread_create(thread: Ppthread_t; attr: Ppthread_attr_t; start_routine: Tpthread_start_routine; arg: Pointer): int; cdecl; public name 'pthread_create';
+function pthread_cancel(thread: pthread_t): int; cdecl; public name 'pthread_cancel';
+function pthread_detach(thread: pthread_t): int; cdecl; public name 'pthread_detach';
+procedure pthread_exit(value_ptr: Pointer); cdecl; public name 'pthread_exit';
+function pthread_equal(t1: pthread_t; t2: pthread_t): int; cdecl; public name 'pthread_equal';
+function pthread_join(thread: pthread_t; value_ptr: PPointer): int; cdecl; public name 'pthread_join';
+function pthread_self: pthread_t; cdecl; public name 'pthread_self';
+function pthread_getconcurrency: int; cdecl; public name 'pthread_getconcurrency';
+function pthread_setconcurrency(new_level: int): int; cdecl; public name 'pthread_setconcurrency';
+function pthread_getschedparam(thread: pthread_t; policy: Pint; param: Psched_param): int; cdecl; public name 'pthread_getschedparam';
+function pthread_setschedparam(thread: pthread_t; policy: int; param: Psched_param): int; cdecl; public name 'pthread_setschedparam';
+
+function pthread_key_create(key: Ppthread_key_t; destructor_routine: Tpthread_destructor_routine): int; cdecl; public name 'pthread_key_create';
+function pthread_key_delete(key: pthread_key_t): int; cdecl; public name 'pthread_key_delete';
+function pthread_getspecific(key: pthread_key_t): Pointer; cdecl; public name 'pthread_getspecific';
+function pthread_setspecific(key: pthread_key_t; value: Pointer): int; cdecl; public name 'pthread_setspecific';
+
+function pthread_mutex_init(mutex: Ppthread_mutex_t; attr: Ppthread_mutexattr_t): int; cdecl; public name 'pthread_mutex_init';
+function pthread_mutex_destroy(mutex: Ppthread_mutex_t): int; cdecl; public name 'pthread_mutex_destroy';    
+function pthread_mutex_lock(mutex: Ppthread_mutex_t): int; cdecl; public name 'pthread_mutex_lock';    
+function pthread_mutex_trylock(mutex: Ppthread_mutex_t): int; cdecl; public name 'pthread_mutex_trylock';    
+function pthread_mutex_unlock(mutex: Ppthread_mutex_t): int; cdecl; public name 'pthread_mutex_unlock';    
+function pthread_mutex_getprioceiling(mutex: Ppthread_mutex_t; prioceiling: Pint): int; cdecl; public name 'pthread_mutex_getprioceiling';    
+function pthread_mutex_setprioceiling(mutex: Ppthread_mutex_t; prioceiling: int; old_ceiling: Pint): int; cdecl; public name 'pthread_mutex_setprioceiling';    
+
+function pthread_mutexattr_init(attr: Ppthread_mutexattr_t): int; cdecl; public name 'pthread_mutexattr_init';
+function pthread_mutexattr_destroy(attr: Ppthread_mutexattr_t): int; cdecl; public name 'pthread_mutexattr_destroy';
+function pthread_mutexattr_getprioceiling(attr: Ppthread_mutexattr_t; prioceiling: Pint): int; cdecl; public name 'pthread_mutexattr_getprioceiling';
+function pthread_mutexattr_setprioceiling(attr: Ppthread_mutexattr_t; prioceiling: int): int; cdecl; public name 'pthread_mutexattr_setprioceiling';
+function pthread_mutexattr_getprotocol(attr: Ppthread_mutexattr_t; protocol: Pint): int; cdecl; public name 'pthread_mutexattr_getprotocol';
+function pthread_mutexattr_setprotocol(attr: Ppthread_mutexattr_t; protocol: int): int; cdecl; public name 'pthread_mutexattr_setprotocol';
+function pthread_mutexattr_getpshared(attr: Ppthread_mutexattr_t; pshared: Pint): int; cdecl; public name 'pthread_mutexattr_getpshared';
+function pthread_mutexattr_setpshared(attr: Ppthread_mutexattr_t; pshared: int): int; cdecl; public name 'pthread_mutexattr_setpshared';
+function pthread_mutexattr_gettype(attr: Ppthread_mutexattr_t; _type: Pint): int; cdecl; public name 'pthread_mutexattr_gettype';
+function pthread_mutexattr_settype(attr: Ppthread_mutexattr_t; _type: int): int; cdecl; public name 'pthread_mutexattr_settype';
+
+function pthread_once(once_control: Ppthread_once_t; init_routine: Tpthread_init_routine): int; cdecl; public name 'pthread_once';
+
+function pthread_rwlock_init(rwlock: Ppthread_rwlock_t ; attr: Ppthread_rwlockattr_t): int; cdecl; public name 'pthread_rwlock_init';
+function pthread_rwlock_destroy(rwlock: Ppthread_rwlock_t): int; cdecl; public name 'pthread_rwlock_destroy';
+function pthread_rwlock_rdlock(rwlock: Ppthread_rwlock_t): int; cdecl; public name 'pthread_rwlock_rdlock';
+function pthread_rwlock_wrlock(rwlock: Ppthread_rwlock_t): int; cdecl; public name 'pthread_rwlock_wrlock';
+function pthread_rwlock_tryrdlock(rwlock: Ppthread_rwlock_t): int; cdecl; public name 'pthread_rwlock_tryrdlock';
+function pthread_rwlock_trywrlock(rwlock: Ppthread_rwlock_t): int; cdecl; public name 'pthread_rwlock_trywrlock';
+function pthread_rwlock_unlock(rwlock: Ppthread_rwlock_t): int; cdecl; public name 'pthread_rwlock_unlock';
+
+function pthread_rwlockattr_init(attr: Ppthread_rwlockattr_t): int; cdecl; public name 'pthread_rwlockattr_init';
+function pthread_rwlockattr_destroy(attr: Ppthread_rwlockattr_t): int; cdecl; public name 'pthread_rwlockattr_destroy';
+function pthread_rwlockattr_getpshared(attr: Ppthread_rwlockattr_t; pshared: Pint): int; cdecl; public name 'pthread_rwlockattr_getpshared';
+function pthread_rwlockattr_setpshared(attr: Ppthread_rwlockattr_t; pshared: int): int; cdecl; public name 'pthread_rwlockattr_setpshared';
+
+function pthread_setcancelstate(state: int; oldstate: Pint): int; cdecl; public name 'pthread_setcancelstate';
+function pthread_setcanceltype(_type: int; oldtype: Pint): int; cdecl; public name 'pthread_setcanceltype';
+procedure pthread_testcancel; cdecl; public name 'pthread_testcancel';    
+
+{==============================================================================}
+{Syscalls Functions (Semaphore)}
+function sem_close(sem: Psem_t): int; cdecl; public name 'sem_close';    
+function sem_destroy(sem: Psem_t): int; cdecl; public name 'sem_destroy';    
+
+function sem_getvalue(sem: Psem_t; sval: Pint): int; cdecl; public name 'sem_getvalue';
+function sem_init(sem: Psem_t; pshared: int; value: uint): int; cdecl; public name 'sem_init';
+
+function sem_open(name: PChar; oflag: int): Psem_t; cdecl; public name 'sem_open';
+function sem_open_ext(name: PChar; oflag: int; mode: mode_t; value: uint): Psem_t; cdecl; public name 'sem_open_ext';
+
+function sem_post(sem: Psem_t): int; cdecl; public name 'sem_post';
+function sem_timedwait(sem: Psem_t; abs_timeout: Ptimespec): int; cdecl; public name 'sem_timedwait';
+function sem_trywait(sem: Psem_t): int; cdecl; public name 'sem_trywait';
+function sem_unlink(name: PChar): int; cdecl; public name 'sem_unlink';
+function sem_wait(sem: Psem_t): int; cdecl; public name 'sem_wait';
+     
+{==============================================================================}
+{Syscalls Functions (Sockets)}
+//To Do     
+
 {==============================================================================}
 {Syscalls Helper Functions}
 procedure __malloc_lock(ptr: P_reent); cdecl; public name '__malloc_lock';
@@ -1026,7 +1416,21 @@ procedure __malloc_unlock(ptr: P_reent); cdecl; public name '__malloc_unlock';
 
 procedure __env_lock(ptr: P_reent); cdecl; public name '__env_lock';
 procedure __env_unlock(ptr: P_reent); cdecl; public name '__env_unlock';
- 
+  
+{==============================================================================}
+{Syscalls Macro Functions (Ioctl)}
+{Creating Ioctl numbers}
+function _IO(_type,nr: LongWord): LongWord;
+function _IOR(_type,nr,size: LongWord): LongWord; 
+function _IOW(_type,nr,size: LongWord): LongWord;
+function _IOWR(_type,nr,size: LongWord): LongWord;
+
+{Decoding Ioctl numbers}
+function _IOC_DIR(nr: LongWord): LongWord;
+function _IOC_TYPE(nr: LongWord): LongWord;
+function _IOC_NR(nr: LongWord): LongWord;
+function _IOC_SIZE(nr: LongWord): LongWord;
+  
 {==============================================================================}
 {==============================================================================}
 {Syscalls Libraries}
@@ -1042,6 +1446,8 @@ implementation
 {==============================================================================}
 const
  {Syscalls specific constants}
+ SYSCALLS_THREAD_NAME = 'POSIX Thread'; {Name of a Posix Thread}
+ 
  SYSCALLS_TABLE_MIN = 3;     {Skip Stdin, Stdout, Stderr}
  SYSCALLS_TABLE_MAX = 65535; {Only support 16-bit handles}
  SYSCALLS_TABLE_MASK = $F;   {16 buckets for handle lookups}
@@ -1076,14 +1482,34 @@ type
   Next:PSyscallsHeapBlock;
  end;
  
+ PSyscallsPthreadCleanup = ^TSyscallsPthreadCleanup;
+ 
+ PSyscallsPthread = ^TSyscallsPthread;
+ TSyscallsPthread = record
+  {Cleanup Handlers}
+  Cleanup:PSyscallsPthreadCleanup;
+ end;
+ 
+ TSyscallsPthreadCleanup = record
+  Routine:Tpthread_cleanup_routine;
+  Arg:Pointer;
+  Next:PSyscallsPthreadCleanup; 
+ end;
+
+ PSyscallsPthreadData = ^TSyscallsPthreadData;
+ TSyscallsPthreadData = record
+  Routine:Tpthread_start_routine;
+  Arg:Pointer;
+ end;
+ 
 {==============================================================================}
 {==============================================================================}
 var
  {Syscalls specific variables}
  SyscallsInitialized:Boolean;
 
- SyscallsTlsSize:LongWord;
- SyscallsTlsIndex:LongWord;
+ SyscallsReentSize:LongWord;
+ SyscallsReentIndex:LongWord;     {Newlib reent structure TLS index} 
  
  SyscallsMallocLock:TMutexHandle = INVALID_HANDLE_VALUE;
  SyscallsEnvLock:TMutexHandle = INVALID_HANDLE_VALUE;
@@ -1096,6 +1522,13 @@ var
  SyscallsHeapEnd:Pointer;
  SyscallsHeapSize:LongWord;
  SyscallsHeapLock:TMutexHandle = INVALID_HANDLE_VALUE;
+ 
+ SyscallsPthreadSize:LongWord;
+ SyscallsPthreadIndex:LongWord;                           {Pthread TLS index (For Cleanup handler and Cancellation states)}
+ SyscallsPthreadLock:TMutexHandle = INVALID_HANDLE_VALUE;
+ SyscallsPthreadConcurrency:Integer;                      {Pthread concurrency level (Not used by Ultibo)}
+ 
+ SyscallsKeyDestructor:array[0..THREAD_TLS_MAXIMUM - 1] of Tpthread_destructor_routine;
  
  //__exidx_end //__exidx_start //TestingLIBSTDC++ //Possibly not required, used internally by Libgcc etc?
  
@@ -1119,10 +1552,18 @@ function SyscallsInitializeHeap:Boolean; forward;
 function SyscallsIncreaseHeap(Size:LongWord):Pointer; forward;
 function SyscallsDecreaseHeap(Size:LongWord):Pointer; forward;
  
+function SyscallsGetPthread:PSyscallsPthread; forward;
+
+function SyscallsPthreadStart(Data:PSyscallsPthreadData):PtrInt; forward;
+procedure SyscallsPthreadEnd(Value:Pointer); forward;
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
 procedure SyscallsInit;
+{Initialize the Syscalls unit and Syscalls handle table}
+
+{Note: Called only during system startup}
 var
  Count:LongWord;
 begin
@@ -1130,14 +1571,24 @@ begin
  {Check Initialized}
  if SyscallsInitialized then Exit;
 
- {Set TLS Size}
- SyscallsTlsSize:=SizeOf(T_reent);
+ {Set Reent TLS Size}
+ SyscallsReentSize:=SizeOf(T_reent);
  
- {Allocate TLS Index}
- SyscallsTlsIndex:=ThreadAllocTlsIndexEx(THREAD_TLS_FLAG_FREE);
- if SyscallsTlsIndex = TLS_OUT_OF_INDEXES then
+ {Allocate Reent TLS Index}
+ SyscallsReentIndex:=ThreadAllocTlsIndexEx(THREAD_TLS_FLAG_FREE);
+ if SyscallsReentIndex = TLS_OUT_OF_INDEXES then
   begin
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to allocate Syscalls TLS index');
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to allocate Syscalls Reent TLS index');
+  end;
+ 
+ {Set Pthread TLS Size}
+ SyscallsPthreadSize:=SizeOf(TSyscallsPthread);
+ 
+ {Allocate Pthread TLS Index}
+ SyscallsPthreadIndex:=ThreadAllocTlsIndexEx(THREAD_TLS_FLAG_NONE);
+ if SyscallsPthreadIndex = TLS_OUT_OF_INDEXES then
+  begin
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to allocate Syscalls Pthread TLS index');
   end;
  
  {Initialize Malloc Lock}
@@ -1154,6 +1605,13 @@ begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to create Syscalls Env lock');
   end;
   
+ {Initialize Pthread Lock}
+ SyscallsPthreadLock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
+ if SyscallsPthreadLock = INVALID_HANDLE_VALUE then
+  begin
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to create Syscalls Pthread lock');
+  end;
+ 
  {Initialize Handles}
  SyscallsTable.Next:=SYSCALLS_TABLE_MIN;
  SyscallsTable.Count:=0;
@@ -1196,6 +1654,9 @@ end;
 {==============================================================================}
 
 procedure SyscallsQuit;
+{Terminate the Syscalls unit and Syscalls handle table}
+
+{Note: Called only during system shutdown}
 begin
  {}
  {Check Initialized}
@@ -1212,6 +1673,8 @@ end;
 {Syscalls Functions (Standard)}
 procedure _exit; cdecl;
 {Exit the program without cleaning up files}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
@@ -1219,7 +1682,7 @@ begin
  {$ENDIF}
 
  {Halt the thread} 
- HaltThread (0);
+ HaltThread(0);
 end;
  
 {==============================================================================}
@@ -1228,6 +1691,8 @@ end;
 function _close_r(ptr: P_reent; fd: int): int; cdecl;
 {Close a file}
 {See: \newlib\libc\reent\closer.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Entry:PSyscallsEntry;
 begin
@@ -1261,7 +1726,12 @@ begin
      
      {Return Result}
      Result:=0;
-    end; 
+    end
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EBADF;
+    end;
   end;
   
  {$IFDEF SYSCALLS_DEBUG}
@@ -1274,6 +1744,8 @@ end;
 function _execve_r(ptr: P_reent; name: PChar; argv: PPChar; env: PPChar): int; cdecl;
 {Transfer control to a new process}
 {See: \newlib\libc\reent\execr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -1298,6 +1770,8 @@ end;
 function _fork_r(ptr: P_reent): int; cdecl;
 {Create a new process}
 {See: \newlib\libc\reent\execr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -1322,6 +1796,8 @@ end;
 function _wait_r(ptr: P_reent; status: Pint): int; cdecl;
 {Wait for a child process}
 {See: \newlib\libc\reent\execr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -1346,6 +1822,8 @@ end;
 function _fcntl_r(ptr: P_reent; fd: int; cmd:int; arg:int): int; cdecl;
 {Control an open file}
 {See: \newlib\libc\reent\fcntlr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Entry:PSyscallsEntry;
 begin
@@ -1363,12 +1841,16 @@ begin
  Entry:=SyscallsGetEntry(fd);
  if Entry <> nil then
   begin
+  
    //To Do //Implement any that are required
+   
+   {Return Error}
+   ptr^._errno:=EINVAL;
   end
  else 
   begin
    {Return Error}
-   ptr^._errno:=EINVAL;
+   ptr^._errno:=EBADF;
   end;  
  
  {$IFDEF SYSCALLS_DEBUG}
@@ -1381,6 +1863,8 @@ end;
 function _fstat64_r(ptr: P_reent; fd: int; stat: Pstat64): int; cdecl;
 {Status of an open file}
 {See: \newlib\libc\reent\fstat64r.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Entry:PSyscallsEntry;
 begin
@@ -1420,7 +1904,7 @@ begin
    else
     begin
      {Return Error}
-     ptr^._errno:=EINVAL;
+     ptr^._errno:=EBADF;
     end;    
   end;
  
@@ -1434,6 +1918,8 @@ end;
 function _fstat_r(ptr: P_reent; fd: int; stat: Pstat): int; cdecl;
 {Status of an open file}
 {See: \newlib\libc\reent\fstatr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Entry:PSyscallsEntry;
 begin
@@ -1473,7 +1959,7 @@ begin
    else
     begin
      {Return Error}
-     ptr^._errno:=EINVAL;
+     ptr^._errno:=EBADF;
     end;    
   end;
   
@@ -1487,6 +1973,8 @@ end;
 function __getreent: P_reent; cdecl;
 {Return the _reent structure for the calling thread or allocate a new one if not found}
 {See: \newlib\libc\reent\getreent.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  reent:P_reent;
 begin
@@ -1498,31 +1986,35 @@ begin
  {$ENDIF}
  
  {Get TLS Value}
- reent:=ThreadGetTlsValue(SyscallsTlsIndex);
+ reent:=ThreadGetTlsValue(SyscallsReentIndex);
  if reent = nil then
   begin
    {Allocate TLS Value}
-   reent:=AllocMem(SyscallsTlsSize);
+   reent:=AllocMem(SyscallsReentSize);
    if reent = nil then Exit;
+
+   {$IFDEF SYSCALLS_DEBUG}
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __getreent (Allocated reent=' + IntToHex(PtrUInt(reent),8) + ')');
+   {$ENDIF}
    
    {Set TLS Value}
-   if ThreadSetTlsValue(SyscallsTlsIndex,reent) <> ERROR_SUCCESS then Exit;
-  end;
+   if ThreadSetTlsValue(SyscallsReentIndex,reent) <> ERROR_SUCCESS then Exit;
 
- {Initialize reent structure} 
- {See: _REENT_INIT_PTR_ZEROED in \newlib\libc\include\sys\reent.h}
- reent^._stdin:=@reent^.__sf[0];
- reent^._stdout:=@reent^.__sf[1];
- reent^._stderr:=@reent^.__sf[2];
- reent^._current_locale:='C';
- reent^._new._rand_next:=1;
- reent^._new._r48._seed[0]:=_RAND48_SEED_0;
- reent^._new._r48._seed[1]:=_RAND48_SEED_1; 
- reent^._new._r48._seed[2]:=_RAND48_SEED_2; 
- reent^._new._r48._mult[0]:=_RAND48_MULT_0; 
- reent^._new._r48._mult[1]:=_RAND48_MULT_1; 
- reent^._new._r48._mult[2]:=_RAND48_MULT_2; 
- reent^._new._r48._add:=_RAND48_ADD; 
+   {Initialize reent structure} 
+   {See: _REENT_INIT_PTR_ZEROED in \newlib\libc\include\sys\reent.h}
+   reent^._stdin:=@reent^.__sf[0];
+   reent^._stdout:=@reent^.__sf[1];
+   reent^._stderr:=@reent^.__sf[2];
+   reent^._current_locale:='C';
+   reent^._new._rand_next:=1;
+   reent^._new._r48._seed[0]:=_RAND48_SEED_0;
+   reent^._new._r48._seed[1]:=_RAND48_SEED_1; 
+   reent^._new._r48._seed[2]:=_RAND48_SEED_2; 
+   reent^._new._r48._mult[0]:=_RAND48_MULT_0; 
+   reent^._new._r48._mult[1]:=_RAND48_MULT_1; 
+   reent^._new._r48._mult[2]:=_RAND48_MULT_2; 
+   reent^._new._r48._add:=_RAND48_ADD; 
+  end;
  
  {Return Result}
  Result:=reent;
@@ -1537,6 +2029,8 @@ end;
 function _gettimeofday_r(ptr: P_reent; timeval: Ptimeval; timezone: Pointer): int; cdecl;
 {Get the date and time}
 {See: \newlib\libc\reent\gettimeofdayr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ClockTime:Int64;
 begin
@@ -1551,22 +2045,28 @@ begin
  {$ENDIF}
  
  {Check timeval}
- if timeval = nil then Exit;
-  
- {Get Time}
- ClockTime:=ClockGetTime;
- 
- {Convert to timeval}
- if Int64(ClockTime) < TIME_TICKS_TO_1970 then Exit;
- timeval^.tv_sec:=(Int64(ClockTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
- timeval^.tv_usec:=((Int64(ClockTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) div TIME_TICKS_PER_MICROSECOND;
- 
- {Return Result}
- Result:=0;
- 
- {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _gettimeofday_r (Result=' + IntToStr(Result) + ')');
- {$ENDIF}
+ if timeval = nil then
+  begin
+   {Return Error}
+   ptr^._errno:=EFAULT;
+  end
+ else
+  begin
+   {Get Time}
+   ClockTime:=ClockGetTime;
+   
+   {Convert to timeval}
+   if Int64(ClockTime) < TIME_TICKS_TO_1970 then Exit;
+   timeval^.tv_sec:=(Int64(ClockTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   timeval^.tv_usec:=((Int64(ClockTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) div TIME_TICKS_PER_MICROSECOND;
+   
+   {Return Result}
+   Result:=0;
+   
+   {$IFDEF SYSCALLS_DEBUG}
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _gettimeofday_r (Result=' + IntToStr(Result) + ')');
+   {$ENDIF}
+  end; 
 end;
 
 {==============================================================================}
@@ -1574,6 +2074,8 @@ end;
 function _isatty_r(ptr: P_reent; fd: int): int; cdecl;
 {Query whether output stream is a terminal}
 {See: \newlib\libc\reent\isattyr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -1602,6 +2104,8 @@ end;
 function _link_r(ptr: P_reent; old: PChar; new: PChar): int; cdecl;
 {Establish a new name for an existing file}
 {See: \newlib\libc\reent\linkr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -1634,6 +2138,8 @@ end;
 function _lseek64_r(ptr: P_reent;  fd: int; pos: off64_t; whence: int): off64_t; cdecl;
 {Set position in a file}
 {See: \newlib\libc\reent\lseek64r.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Entry:PSyscallsEntry;
 begin
@@ -1657,7 +2163,7 @@ begin
  else
   begin
    {Return Error}
-   ptr^._errno:=EINVAL;
+   ptr^._errno:=EBADF;
   end;    
  
  {$IFDEF SYSCALLS_DEBUG}
@@ -1670,6 +2176,8 @@ end;
 function _lseek_r(ptr: P_reent; fd: int; pos: off_t; whence: int): off_t; cdecl;
 {Set position in a file}
 {See: \newlib\libc\reent\lseekr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Entry:PSyscallsEntry;
 begin
@@ -1693,7 +2201,7 @@ begin
  else
   begin
    {Return Error}
-   ptr^._errno:=EINVAL;
+   ptr^._errno:=EBADF;
   end;    
  
  {$IFDEF SYSCALLS_DEBUG}
@@ -1706,6 +2214,8 @@ end;
 function _mkdir_r(ptr: P_reent; path: PChar; mode: int): int; cdecl;
 {Make a directory}
 {See: \newlib\libc\reent\mkdirr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -1718,7 +2228,7 @@ begin
  {$ENDIF}
  
  {Create Directory}
- if CreateDir(path) then
+ if FSCreateDir(path) then
   begin
    {Return Result}
    Result:=0;
@@ -1739,6 +2249,8 @@ end;
 function _open64_r(ptr: P_reent; name: PChar; flags: int; mode: int): int; cdecl;
 {Open a file}
 {See: \newlib\libc\reent\open64r.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Handle:THandle;
  Entry:PSyscallsEntry;
@@ -1766,6 +2278,8 @@ end;
 function _open_r(ptr: P_reent; name: PChar; flags: int; mode: int): int; cdecl;
 {Open a file}
 {See: \newlib\libc\reent\openr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Handle:THandle;
  AccessMode:LongWord;
@@ -1861,6 +2375,8 @@ end;
 function _read_r(ptr: P_reent; fd: int; buf: Pointer; cnt: size_t): _ssize_t; cdecl;
 {Read from a file}
 {See: \newlib\libc\reent\readr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Ch:Char;
  Next:PChar;
@@ -1887,7 +2403,7 @@ begin
    Next:=PChar(buf);
    while (Count < cnt) and not(EndChar) do
     begin
-     if ConsoleReadChar(Ch,nil) then
+     if TextIOReadChar(Ch,nil) then
       begin
        if Ch = #13 then EndChar:=True;
        
@@ -1920,7 +2436,7 @@ begin
    else
     begin
      {Return Error}
-     ptr^._errno:=EINVAL;
+     ptr^._errno:=EBADF;
     end;    
   end;
   
@@ -1934,6 +2450,8 @@ end;
 function _rename_r(ptr: P_reent; old: PChar; new: PChar): int; cdecl;
 {Rename a file}
 {See: \newlib\libc\reent\renamer.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -1967,6 +2485,8 @@ end;
 function _sbrk_r(ptr: P_reent; incr: ptrdiff_t): Pointer; cdecl;
 {Increase program data space}
 {See: \newlib\libc\reent\sbrkr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Value:Pointer;
 begin
@@ -2014,6 +2534,8 @@ end;
 function _kill_r(ptr: P_reent; pid: int; sig: int): int; cdecl;
 {Send a signal}
 {See: \newlib\libc\reent\signalr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -2038,6 +2560,8 @@ end;
 function _getpid_r(ptr: P_reent): int; cdecl;
 {Process-ID; this is sometimes used to generate strings unlikely to conflict with other processes}
 {See: \newlib\libc\reent\signalr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -2062,6 +2586,8 @@ end;
 function _stat64_r(ptr: P_reent; name: PChar; stat: Pstat64): int; cdecl;
 {Status of a file (by name)}
 {See: \newlib\libc\reent\stat64r.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Handle:THandle;
 begin
@@ -2112,6 +2638,8 @@ end;
 function _stat_r(ptr: P_reent; name: PChar; stat: Pstat): int; cdecl;
 {Status of a file (by name)}
 {See: \newlib\libc\reent\statr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Handle:THandle;
 begin
@@ -2162,6 +2690,8 @@ end;
 function _times_r(ptr: P_reent; tms: Ptms): clock_t; cdecl;
 {Timing information for current process}
 {See: \newlib\libc\reent\timesr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  SysTime:Int64;
  CreateTime:Int64;
@@ -2224,6 +2754,8 @@ end;
 function _unlink_r(ptr: P_reent; name: PChar): int; cdecl;
 {Remove a file’s directory entry}
 {See: \newlib\libc\reent\unlinkr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
@@ -2257,9 +2789,9 @@ end;
 function _write_r(ptr: P_reent; fd: int; buf: Pointer; cnt: size_t): _ssize_t; cdecl;
 {Write to a file}
 {See: \newlib\libc\reent\writer.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
- Next:PChar;
- Count:LongInt;
  Entry:PSyscallsEntry;
 begin
  {}
@@ -2276,32 +2808,12 @@ begin
  if fd = STDOUT_FILENO then
   begin
    {Stdout}
-   Count:=0;
-   Next:=PChar(buf);
-   while Count < cnt do
-    begin
-     if not ConsoleWriteChar(Next^,nil) then Exit;
-   
-     Inc(Next);
-     Inc(Count);
-    end;
-   
-   Result:=cnt;
+   Result:=TextIOWriteBuffer(PChar(buf),cnt,nil);
   end
  else if fd = STDERR_FILENO then
   begin
    {Stderr}
-   Count:=0;
-   Next:=PChar(buf);
-   while Count < cnt do
-    begin
-     if not ConsoleWriteChar(Next^,nil) then Exit;
-   
-     Inc(Next);
-     Inc(Count);
-    end;
-   
-   Result:=cnt;
+   Result:=TextIOWriteBuffer(PChar(buf),cnt,nil);
   end
  else
   begin
@@ -2315,7 +2827,7 @@ begin
    else
     begin
      {Return Error}
-     ptr^._errno:=EINVAL;
+     ptr^._errno:=EBADF;
     end;    
   end;  
   
@@ -2326,9 +2838,11 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{Syscalls Functions (Extra)}
+{Syscalls Functions (Stat)}
 function mkdir(path: PChar; mode: int): int; cdecl;
 {Create a directory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
@@ -2339,9 +2853,107 @@ begin
 end;
 
 {==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Stdlib)}
+function posix_memalign(memptr: PPointer; alignment, size: size_t): int; cdecl;
+{Aligned memory allocation}
+var
+ mem:Pointer;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check memptr}
+ if memptr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls posix_memalign (alignment=' + IntToStr(alignment) + ' size=' + IntToStr(size) + ')');
+ {$ENDIF}
+ 
+ {Test whether the ALIGNMENT argument is valid}
+ if ((alignment mod SizeOf(Pointer)) <> 0) or (alignment and (alignment - 1) <> 0) then Exit;
+ 
+ Result:=ENOMEM;
+ 
+ mem:=memalign(alignment,size);
+ if mem = nil then Exit;
+ 
+ memptr^:=mem;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Unistd)}
+function dup(oldfd: int): int; cdecl;
+{Duplicate a file descriptor}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin 
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup (oldfd=' + IntToStr(oldfd) + ')');
+ {$ENDIF}
+ 
+ //To Do //Continuing //Add DuplicateHandle to FileSystem
+         //http://man7.org/linux/man-pages/man2/dup.2.html
+         
+         //Also fcntl() F_DUPFD
+end;
+
+{==============================================================================}
+
+function dup2(oldfd, newfd: int): int; cdecl;
+{Duplicate a file descriptor}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin 
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup2 (oldfd=' + IntToStr(oldfd) + ' newfd=' + IntToStr(newfd) + ')');
+ {$ENDIF}
+ 
+ //To Do //Continuing //Add DuplicateHandle to FileSystem
+         //http://man7.org/linux/man-pages/man2/dup.2.html
+         
+         //Also fcntl() F_DUPFD
+end;
+
+{==============================================================================}
+
+function dup3(oldfd, newfd, flags: int): int; cdecl;
+{Duplicate a file descriptor}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin 
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup3 (oldfd=' + IntToStr(oldfd) + ' newfd=' + IntToStr(newfd) + ' flags=' + IntToHex(flags,8) + ')');
+ {$ENDIF}
+ 
+ //To Do //Continuing //Add DuplicateHandle to FileSystem
+         //http://man7.org/linux/man-pages/man2/dup.2.html
+end;
+
+{==============================================================================}
 
 function sysconf(name: int):int; cdecl;
 {Get configurable system variables}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
 begin
@@ -2360,7 +2972,9 @@ begin
     {Size of a page in bytes}
     Result:=MEMORY_PAGE_SIZE;
    end;
+   
   //To Do //Implement any others that are required
+  
  else
   begin
    {Return Error}
@@ -2372,14 +2986,3649 @@ begin
 end;
 
 {==============================================================================}
+
+function getpagesize: int; cdecl;
+{Return the number of bytes in a memory page}
+begin
+ {}
+ Result:=sysconf(_SC_PAGESIZE); 
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getpagesize (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function ssleep(seconds: uint): uint; cdecl;
+{Sleep for a specified number of seconds}
+
+{Note: Does not support interruption by signal}
+{Note: Declared as ssleep to avoid conflict with Pascal Sleep() function}
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sleep (seconds=' + IntToStr(seconds) + ')');
+ {$ENDIF}
+ 
+ ThreadSleep(seconds * 1000);
+end;
+
+{==============================================================================}
+
+function usleep(useconds: useconds_t): int; cdecl;
+{Suspend execution for microsecond intervals}
+
+{Note: Does not support interruption by signal}
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls usleep (useconds=' + IntToStr(useconds) + ')');
+ {$ENDIF}
+ 
+ ThreadSleep(useconds div 1000);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Mman)}
+function mmap(addr: Pointer; length: size_t; prot, flags, fd: int; offset: off_t): Pointer; cdecl;
+{Map files or devices into memory}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls mmap (addr=' + IntToHex(PtrUInt(addr),8) + ' length=' + IntToStr(length) + ')');
+ {$ENDIF}
+ 
+ {Return Error}
+ Result:=Pointer(-1); {MAP_FAILED}
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=EINVAL;
+end;
+
+{==============================================================================}
+
+function munmap(addr: Pointer; length: size_t): int; cdecl;
+{Unmap files or devices into memory}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls munmap (addr=' + IntToHex(PtrUInt(addr),8) + ' length=' + IntToStr(length) + ')');
+ {$ENDIF}
+ 
+ {Return Error}
+ Result:=-1;
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=EINVAL;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Time)}
+function settimeofday(tv: Ptimeval; tz: Pointer): int; cdecl;
+{Set the date and time}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ ClockTime:Int64;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls settimeofday (tv=' + IntToHex(PtrUInt(tv),8) + ' tz=' + IntToHex(PtrUInt(tz),8) + ')');
+ {$ENDIF}
+
+ {Check tv}
+ if tv = nil then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+  end
+ else
+  begin
+   {Convert timeval}
+   ClockTime:=TIME_TICKS_TO_1970 + (tv^.tv_sec * TIME_TICKS_PER_SECOND) + (tv^.tv_usec * TIME_TICKS_PER_MICROSECOND);
+   
+   {Set time}
+   ClockSetTime(ClockTime,True);
+   
+   {Return Result}
+   Result:=0;
+  end;  
+end;
+
+{==============================================================================}
+
+function clock_getres(clk_id: clockid_t; res: Ptimespec): int; cdecl;
+{Return the resolution of the requested clock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {Check res}
+ {if res = nil then Exit;} {May be nil}
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls clock_getres (clk_id=' + IntToStr(clk_id) + ')');
+ {$ENDIF}
+ 
+ {Check Clock}
+ case clk_id of
+  CLOCK_REALTIME:begin
+    if res <> nil then
+     begin
+      res^.tv_sec:=0;
+      res^.tv_nsec:=100; {Ultibo time is in 100ns intervals}
+     end;
+     
+    Result:=0;
+   end;
+  CLOCK_MONOTONIC,CLOCK_PROCESS_CPUTIME_ID,CLOCK_THREAD_CPUTIME_ID:begin
+    if res <> nil then
+     begin
+      res^.tv_sec:=0;
+      if CLOCK_CYCLES_PER_NANOSECOND > 0 then
+       begin
+        res^.tv_nsec:=CLOCK_CYCLES_PER_NANOSECOND; 
+       end
+      else if CLOCK_CYCLES_PER_MICROSECOND > 0 then
+       begin
+        res^.tv_nsec:=CLOCK_CYCLES_PER_MICROSECOND * 1000; 
+       end
+      else if CLOCK_CYCLES_PER_MILLISECOND > 0 then       
+       begin
+        res^.tv_nsec:=CLOCK_CYCLES_PER_MILLISECOND * 1000000; 
+       end;
+     end;
+  
+    Result:=0;
+   end; 
+  else
+   begin
+    {Return Error}
+    Result:=-1;
+    ptr:=__getreent;
+    if ptr <> nil then ptr^._errno:=EINVAL;
+   end;   
+ end;
+end;
+
+{==============================================================================}
+
+function clock_gettime(clk_id: clockid_t; tp: Ptimespec): int; cdecl;
+{Get the time from the requested clock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Value:Int64;
+begin
+ {}
+ {Check tp}
+ if tp = nil then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   
+   Exit;
+  end; 
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls clock_gettime (clk_id=' + IntToStr(clk_id) + ')');
+ {$ENDIF}
+ 
+ {Check Clock}
+ case clk_id of
+  CLOCK_REALTIME:begin
+    {Get Time}
+    Value:=ClockGetTime;
+    if Value <  TIME_TICKS_TO_1970 then
+     begin
+      tp^.tv_sec:=0;
+      tp^.tv_nsec:=0;
+     end
+    else
+     begin
+      {Convert to timespec}
+      Value:=Value - TIME_TICKS_TO_1970;
+      
+      tp^.tv_sec:=Value div TIME_TICKS_PER_SECOND;
+      tp^.tv_nsec:=(Value mod TIME_TICKS_PER_SECOND) * 100;
+     end; 
+    
+    {$IFDEF SYSCALLS_DEBUG}
+    if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls clock_gettime (tv_sec=' + IntToStr(tp^.tv_sec) + ' tv_nsec=' + IntToStr(tp^.tv_nsec) + ')');
+    {$ENDIF}
+    
+    Result:=0;
+   end;
+  CLOCK_MONOTONIC,CLOCK_PROCESS_CPUTIME_ID,CLOCK_THREAD_CPUTIME_ID:begin
+    if CLOCK_FREQUENCY = 0 then
+     begin
+      tp^.tv_sec:=0;
+      tp^.tv_nsec:=0;
+     end
+    else
+     begin    
+      Value:=ClockGetTotal;
+      
+      tp^.tv_sec:=Value div CLOCK_FREQUENCY;
+      if CLOCK_CYCLES_PER_NANOSECOND > 0 then
+       begin
+        tp^.tv_nsec:=Value mod CLOCK_FREQUENCY;
+       end
+      else if CLOCK_CYCLES_PER_MICROSECOND > 0 then
+       begin
+        tp^.tv_nsec:=(Value mod CLOCK_FREQUENCY) * 1000;
+       end
+      else if CLOCK_CYCLES_PER_MILLISECOND > 0 then       
+       begin
+        tp^.tv_nsec:=(Value mod CLOCK_FREQUENCY) * 1000000;
+       end;
+     end;
+     
+    {$IFDEF SYSCALLS_DEBUG}
+    if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls clock_gettime (tv_sec=' + IntToStr(tp^.tv_sec) + ' tv_nsec=' + IntToStr(tp^.tv_nsec) + ')');
+    {$ENDIF}
+     
+    Result:=0;
+   end;
+  else
+   begin
+    {Return Error}
+    Result:=-1;
+    ptr:=__getreent;
+    if ptr <> nil then ptr^._errno:=EINVAL;
+   end;   
+ end;
+end;
+
+{==============================================================================}
+
+function clock_settime(clk_id: clockid_t; tp: Ptimespec): int; cdecl;
+{Set the time of the requested clock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Value:Int64;
+begin
+ {}
+ {Check tp}
+ if tp = nil then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   
+   Exit;
+  end; 
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls clock_settime (clk_id=' + IntToStr(clk_id) + ' tv_sec=' + IntToStr(tp^.tv_sec) + ' tv_nsec=' + IntToStr(tp^.tv_nsec) + ')');
+ {$ENDIF}
+ 
+ {Check Clock}
+ case clk_id of
+  CLOCK_REALTIME:begin
+    {Convert timespec}
+    Value:=TIME_TICKS_TO_1970 + (tp^.tv_sec * TIME_TICKS_PER_SECOND) + (tp^.tv_nsec div 100);
+    
+    {Set Time}
+    ClockSetTime(Value,True);
+    
+    Result:=0;
+   end;
+  else
+   begin
+    {Return Error}
+    Result:=-1;
+    ptr:=__getreent;
+    if ptr <> nil then ptr^._errno:=EINVAL;
+   end;   
+ end;
+end;
+
+{==============================================================================}
+
+function nanosleep(req, rem: Ptimespec): int; cdecl;
+{High-resolution sleep}
+
+{Note: Does not support interruption by signal}
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=0;
+ 
+ {Check req}
+ if req = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls nanosleep (tv_sec=' + IntToStr(req^.tv_sec) + ' tv_nsec=' + IntToStr(req^.tv_nsec) + ')');
+ {$ENDIF}
+ 
+ ThreadSleep((req^.tv_sec * 1000) + (req^.tv_nsec div 1000000));
+
+ {Check rem} 
+ if rem <> nil then 
+  begin
+   rem^.tv_sec:=0;
+   rem^.tv_nsec:=0;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Sched)}
+function sched_get_priority_max(policy: int): int; cdecl;
+{Get scheduler priority range maximum}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sched_get_priority_max (policy=' + IntToHex(policy,8) + ')');
+ {$ENDIF}
+ 
+ {Check policy}
+ if (policy < SCHED_OTHER) or (policy > SCHED_RR) then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+ 
+ Result:=THREAD_PRIORITY_CRITICAL;
+end;
+
+{==============================================================================}
+
+function sched_get_priority_min(policy: int): int; cdecl;
+{Get scheduler priority range minimum}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sched_get_priority_min (policy=' + IntToHex(policy,8) + ')');
+ {$ENDIF}
+ 
+ {Check policy}
+ if (policy < SCHED_OTHER) or (policy > SCHED_RR) then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+ 
+ Result:=THREAD_PRIORITY_IDLE;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Pthread)}
-//TestingPThreads
+function pthread_attr_init(attr: Ppthread_attr_t): int; cdecl;
+{Initialize a thread attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Init attr}
+ attr^.is_initialized:=1;
+ attr^.stackaddr:=nil;
+ attr^.stacksize:=THREAD_STACK_DEFAULT_SIZE;
+ attr^.contentionscope:=PTHREAD_SCOPE_SYSTEM;
+ attr^.inheritsched:=PTHREAD_EXPLICIT_SCHED;
+ attr^.schedpolicy:=SCHED_OTHER;
+ attr^.schedparam.sched_priority:=THREAD_PRIORITY_DEFAULT;
+ attr^.guardsize:=MEMORY_PAGE_SIZE;
+ {$IFDEF _POSIX_THREAD_CPUTIME}
+ attr^.cputime_clock_allowed:=0;
+ {$ENDIF}
+ attr^.detachstate:=PTHREAD_CREATE_JOINABLE;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_destroy(attr: Ppthread_attr_t): int; cdecl;
+{Destroy a thread attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Destroy attr}
+ attr^.is_initialized:=0;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getdetachstate(attr: Ppthread_attr_t; detachstate: Pint): int; cdecl;
+{Get the detachstate attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getdetachstate (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check detachstate}
+ if detachstate = nil then Exit;
+ 
+ {Get detachstate}
+ detachstate^:=attr^.detachstate;
+ 
+ Result:=0;
+end;
+ 
+{==============================================================================}
+
+function pthread_attr_setdetachstate(attr: Ppthread_attr_t; detachstate: int): int; cdecl;
+{Set the detachstate attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setdetachstate (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check detachstate}
+ if (detachstate < PTHREAD_CREATE_JOINABLE) or (detachstate > PTHREAD_CREATE_DETACHED) then Exit;
+
+ {Set detachstate}
+ attr^.detachstate:=detachstate;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getguardsize(attr: Ppthread_attr_t; guardsize: Psize_t): int; cdecl;
+{Get the guardsize attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getguardsize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check guardsize}
+ if guardsize = nil then Exit;
+ 
+ {Get guardsize}
+ guardsize^:=attr^.guardsize;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_setguardsize(attr: Ppthread_attr_t; guardsize: size_t): int; cdecl; 
+{Set the guardsize attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setguardsize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check guardsize}
+ if (guardsize > attr^.stacksize) then Exit;
+
+ {Set guardsize}
+ attr^.guardsize:=guardsize;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getinheritsched(attr: Ppthread_attr_t; inheritsched: Pint): int; cdecl;
+{Get the inheritsched attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getinheritsched (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+
+ {Check inheritsched}
+ if inheritsched = nil then Exit;
+ 
+ {Get inheritsched}
+ inheritsched^:=attr^.inheritsched;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_setinheritsched(attr: Ppthread_attr_t; inheritsched: int): int; cdecl;
+{Set the inheritsched attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setinheritsched (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check inheritsched}
+ if (inheritsched <> PTHREAD_INHERIT_SCHED) and (inheritsched <> PTHREAD_EXPLICIT_SCHED) then Exit;
+
+ {Set inheritsched}
+ attr^.inheritsched:=inheritsched;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getschedparam(attr: Ppthread_attr_t; param: Psched_param): int; cdecl; 
+{Get the scheduler param attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getschedparam (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check param}
+ if param = nil then Exit;
+ 
+ {Get param}
+ System.Move(attr^.schedparam,param^,SizeOf(Tsched_param));
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_setschedparam(attr: Ppthread_attr_t; param: Psched_param): int; cdecl; 
+{Set the scheduler param attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ MaxPriority:int;
+ MinPriority:int;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setschedparam (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check param}
+ if param = nil then Exit;
+ 
+ {Get Min/Max}
+ MaxPriority:=sched_get_priority_max(attr^.schedpolicy);
+ MinPriority:=sched_get_priority_min(attr^.schedpolicy);
+ 
+ {Check Priority}
+ if (param^.sched_priority < MinPriority) or (param^.sched_priority > MaxPriority) then Exit;
+ 
+ {Set param}
+ System.Move(param^,attr^.schedparam,SizeOf(Tsched_param));
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getschedpolicy(attr: Ppthread_attr_t; policy: Pint): int; cdecl;
+{Get the scheduler policy attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getschedpolicy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check policy}
+ if policy = nil then Exit;
+ 
+ {Get policy}
+ policy^:=attr^.schedpolicy;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_setschedpolicy(attr: Ppthread_attr_t; policy: int): int; cdecl;
+{Set the scheduler policy attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setschedpolicy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check policy}
+ if (policy < SCHED_OTHER) or (policy > SCHED_RR) then Exit;
+
+ {Set policy}
+ attr^.schedpolicy:=policy;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getscope(attr: Ppthread_attr_t; contentionscope: Pint): int; cdecl;
+{Get the contentionscope attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getscope (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check contentionscope}
+ if contentionscope = nil then Exit;
+ 
+ {Get contentionscope}
+ contentionscope^:=attr^.contentionscope;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_setscope(attr: Ppthread_attr_t; contentionscope: int): int; cdecl;
+{Set the contentionscope attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setscope (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+
+ {Check contentionscope}
+ case contentionscope of  
+  PTHREAD_SCOPE_SYSTEM:begin
+    {Set contentionscope}
+    attr^.contentionscope:=contentionscope;
+  
+    Result:=0;
+   end;
+  PTHREAD_SCOPE_PROCESS:begin
+    Result:=ENOTSUP;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getstackaddr(attr: Ppthread_attr_t; stackaddr: PPointer): int; cdecl;
+{Get the stackaddr attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getstackaddr (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check stackaddr}
+ if stackaddr = nil then Exit;
+ 
+ {Get stackaddr}
+ stackaddr^:=attr^.stackaddr;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_setstackaddr(attr: Ppthread_attr_t; stackaddr: Pointer): int; cdecl; 
+{Set the stackaddr attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setstackaddr (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+
+ {Set stackaddr}
+ attr^.stackaddr:=stackaddr;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_getstacksize(attr: Ppthread_attr_t; stacksize: Psize_t): int; cdecl;
+{Get the stacksize attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getstacksize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check stacksize}
+ if stacksize = nil then Exit;
+ 
+ {Get stacksize}
+ stacksize^:=attr^.stacksize;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_attr_setstacksize(attr: Ppthread_attr_t; stacksize: size_t): int; cdecl;
+{Set the stacksize attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setstacksize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check stacksize}
+ if stacksize < THREAD_STACK_MINIMUM_SIZE then Exit; {Note this should be PTHREAD_STACK_MIN but that is too small}
+ if stacksize > THREAD_STACK_MAXIMUM_SIZE then Exit;
+ 
+ {Set stacksize}
+ attr^.stacksize:=stacksize;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+procedure pthread_cleanup_push(routine: Tpthread_cleanup_routine; arg: Pointer); cdecl;
+{Push thread cancellation clean-up handlers}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Pthread:PSyscallsPthread;
+ Cleanup:PSyscallsPthreadCleanup;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cleanup_push (routine=' + IntToHex(PtrUInt(routine),8) + ' arg=' + IntToHex(PtrUInt(arg),8) + ')');
+ {$ENDIF}
+ 
+ {Get Pthread}
+ Pthread:=SyscallsGetPthread;
+ if Pthread = nil then Exit;
+ 
+ {Allocate Cleanup}
+ Cleanup:=GetMem(SizeOf(TSyscallsPthreadCleanup));
+ if Cleanup = nil then Exit;
+ 
+ {Install Cleanup}
+ Cleanup^.Routine:=routine;
+ Cleanup^.Arg:=arg;
+ Cleanup^.Next:=Pthread^.Cleanup;
+ Pthread^.Cleanup:=Cleanup;
+end;
+
+{==============================================================================}
+
+procedure pthread_cleanup_pop(execute: int); cdecl;
+{Pop thread cancellation clean-up handlers}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Pthread:PSyscallsPthread;
+ Cleanup:PSyscallsPthreadCleanup;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cleanup_pop (execute=' + IntToStr(execute) + ')');
+ {$ENDIF}
+
+ {Get Pthread}
+ Pthread:=SyscallsGetPthread;
+ if Pthread = nil then Exit;
+
+ {Get Cleanup}
+ Cleanup:=Pthread^.Cleanup;
+ if Cleanup <> nil then
+  begin
+   {Check Execute and Routine}
+   if (execute <> 0) and Assigned(Cleanup^.Routine) then
+    begin
+     {Call Routine}
+     Cleanup^.Routine(Cleanup^.Arg);
+    end;
+    
+   {Remove Cleanup}
+   Pthread^.Cleanup:=Cleanup^.Next;
+   
+   {Free Cleanup} 
+   FreeMem(Cleanup);
+  end; 
+end;
+
+{==============================================================================}
+
+function pthread_cond_init(cond: Ppthread_cond_t; attr: Ppthread_condattr_t): int; cdecl;
+{Initialize a condition variable}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Handle:TConditionHandle;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check cond}
+ if cond = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_init (cond=' + IntToHex(cond^,8) + ')');
+ {$ENDIF}
+ 
+ Result:=EAGAIN;
+ 
+ {Note: attr not used}
+ 
+ {Create Condition}
+ Handle:=ConditionCreate;
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Return cond}
+ cond^:=Handle;
+ 
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_init (Result=' + IntToStr(Result) + ' cond=' + IntToHex(cond^,8) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_cond_destroy(cond: Ppthread_cond_t): int; cdecl;
+{Destroy a condition variable}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check cond}
+ if cond = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_destroy (cond=' + IntToHex(cond^,8) + ')');
+ {$ENDIF}
+ 
+ {Destroy Condition}
+ if ConditionDestroy(TConditionHandle(cond^)) <> ERROR_SUCCESS then Exit;
+ 
+ {Invalidate cond}
+ cond^:=0; {Not INVALID_HANDLE_VALUE to allow detection of PTHREAD_COND_INITIALIZER}
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_cond_broadcast(cond: Ppthread_cond_t): int; cdecl;
+{Broadcast (Signal all) a condition variable}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check cond}
+ if cond = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_broadcast (cond=' + IntToHex(cond^,8) + ')');
+ {$ENDIF}
+
+ {Check cond}
+ if cond^ = PTHREAD_COND_INITIALIZER then
+  begin
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Wake All Condition} 
+ if ConditionWakeAll(TConditionHandle(cond^)) <> ERROR_SUCCESS then Exit;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_cond_signal(cond: Ppthread_cond_t): int; cdecl;
+{Signal a condition variable}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check cond}
+ if cond = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_signal (cond=' + IntToHex(cond^,8) + ')');
+ {$ENDIF}
+ 
+ {Check cond}
+ if cond^ = PTHREAD_COND_INITIALIZER then
+  begin
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Wake Condition} 
+ if ConditionWake(TConditionHandle(cond^)) <> ERROR_SUCCESS then Exit;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_cond_wait(cond: Ppthread_cond_t; mutex: Ppthread_mutex_t): int; cdecl;
+{Wait on a condition variable}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check cond}
+ if cond = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_wait (cond=' + IntToHex(cond^,8) + ' mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Check cond}
+ if cond^ = PTHREAD_COND_INITIALIZER then
+  begin
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Wait Condition Mutex}
+ ResultCode:=ConditionWaitMutex(TConditionHandle(cond^),TMutexHandle(mutex^),INFINITE);
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_WAIT_TIMEOUT then 
+  begin
+   Result:=ETIMEDOUT;
+  end;
+ 
+ {Check Cancellation} 
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_DISABLE)) = (THREAD_FLAG_CANCELLED) then
+  begin
+   SyscallsPthreadEnd(PTHREAD_CANCELED);
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_cond_timedwait(cond: Ppthread_cond_t; mutex: Ppthread_mutex_t; abstime: Ptimespec): int; cdecl;
+{Wait on a condition variable with timeout}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+ Timeout:LongWord;
+ Current:Ttimespec;
+ Relative:Ttimespec;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check cond}
+ if cond = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_timedwait (cond=' + IntToHex(cond^,8) + ' mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {Check abstime}
+ if abstime = nil then Exit;
+ 
+ {Get Timeout}
+ Timeout:=INFINITE;
+ if clock_gettime(CLOCK_REALTIME,@Current) = 0 then
+  begin
+   Relative.tv_nsec:=abstime^.tv_nsec - Current.tv_nsec;
+   Relative.tv_sec:=abstime^.tv_sec - Current.tv_sec;
+   if Relative.tv_nsec < 0 then
+    begin
+     Relative.tv_nsec:=Relative.tv_nsec + 1000000000;
+     Relative.tv_sec:=Relative.tv_sec - 1;
+    end;
+    
+   if Relative.tv_sec < 0 then Exit;
+   
+   Timeout:=(Relative.tv_sec * 1000) + (Relative.tv_nsec div 1000000);
+  end;
+ 
+ {Check cond}
+ if cond^ = PTHREAD_COND_INITIALIZER then
+  begin
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Wait Condition Mutex}
+ ResultCode:=ConditionWaitMutex(TConditionHandle(cond^),TMutexHandle(mutex^),Timeout);
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_WAIT_TIMEOUT then 
+  begin
+   Result:=ETIMEDOUT;
+  end;
+  
+ {Check Cancellation} 
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_DISABLE)) = (THREAD_FLAG_CANCELLED) then
+  begin
+   SyscallsPthreadEnd(PTHREAD_CANCELED);
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_condattr_init(attr: Ppthread_condattr_t): int; cdecl;
+{Initialize a condition variable attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Init attr}
+ attr^.is_initialized:=1;
+ attr^.clock:=0;
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ attr^.process_shared:=PTHREAD_PROCESS_PRIVATE;
+ {$ENDIF}
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_condattr_destroy(attr: Ppthread_condattr_t): int; cdecl;
+{Destroy a condition variable attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Destroy attr}
+ attr^.is_initialized:=0;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_condattr_getpshared(attr: Ppthread_condattr_t; pshared: Pint): int; cdecl;
+{Get the process-shared condition variable attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_getpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check pshared}
+ if pshared = nil then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ {Get pshared}
+ pshared^:=attr^.process_shared;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_condattr_setpshared(attr: Ppthread_condattr_t; pshared: int): int; cdecl;
+{Set the process-shared condition variable attribute}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_setpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check pshared}
+ if (pshared <> PTHREAD_PROCESS_PRIVATE) and (pshared <> PTHREAD_PROCESS_SHARED) then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ {Set pshared}
+ attr^.process_shared:=pshared;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_create(thread: Ppthread_t; attr: Ppthread_attr_t; start_routine: Tpthread_start_routine; arg: Pointer): int; cdecl;
+{Create a new thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+ Priority:LongWord;
+ StackSize:LongWord;
+ ThreadID:TThreadID;
+ Data:PSyscallsPthreadData;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check thread}
+ if thread = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (thread=' + IntToHex(PtrUInt(thread^),8) + ' attr=' + IntToHex(PtrUInt(attr),8) + ' start_routine=' + IntToHex(PtrUInt(start_routine),8) + ' arg=' + IntToHex(PtrUInt(arg),8) + ')');
+ {$ENDIF}
+ 
+ {Check attr}
+ if attr = nil then
+  begin
+   StackSize:=attr^.stacksize;
+   Priority:=attr^.schedparam.sched_priority;
+   Flags:=THREAD_FLAG_NONE;
+   if attr^.detachstate = PTHREAD_CREATE_JOINABLE then
+    begin
+     Flags:=THREAD_FLAG_PERSIST;
+    end;
+  end
+ else
+  begin
+   Flags:=THREAD_FLAG_PERSIST;
+   Priority:=THREAD_PRIORITY_DEFAULT;
+   StackSize:=THREAD_STACK_DEFAULT_SIZE;
+  end;  
+  
+ {Allocate Data}
+ Data:=GetMem(SizeOf(TSyscallsPthreadData));
+ Data^.Routine:=start_routine;
+ Data^.Arg:=arg;
+ 
+ Result:=EAGAIN;
+ 
+ {Create Thread}
+ thread^:=SysBeginThreadEx(nil,StackSize,TThreadFunc(@SyscallsPthreadStart),Data,THREAD_CREATE_SUSPENDED,Priority,CPU_AFFINITY_ALL,CPU_ID_ALL,SYSCALLS_THREAD_NAME,ThreadID);
+ if thread^ = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {Update Thread}
+ ThreadSetFlags(TThreadHandle(thread^),Flags);
+ 
+ {Resume Thread}
+ ThreadResume(TThreadHandle(thread^));
+ 
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (Result=' + IntToStr(Result) + ' thread=' + IntToHex(thread^,8) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_cancel(thread: pthread_t): int; cdecl;
+{Send a cancellation request to a thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+ State:LongWord;
+begin
+ {}
+ Result:=ESRCH;
+ 
+ {Check thread}
+ if thread = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cancel (thread=' + IntToHex(thread,8) + ')');
+ {$ENDIF}
+ 
+ Result:=EINVAL;
+ 
+ {Get Flags}
+ Flags:=ThreadGetFlags(TThreadHandle(thread));
+ if Flags = LongWord(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {Check Flags}
+ if (Flags and THREAD_FLAG_CANCELLED) = 0 then
+  begin
+   {Not Cancelled}
+   {Update Flags}
+   if ThreadAddFlags(TThreadHandle(thread),THREAD_FLAG_CANCELLED) <> ERROR_SUCCESS then Exit;
+   
+   {Check Flags}
+   if (Flags and THREAD_FLAG_CANCEL_DISABLE) = 0 then
+    begin
+     {Not Disabled}
+     {Get State}
+     State:=ThreadGetState(TThreadHandle(thread));
+     case State of
+      THREAD_STATE_SUSPENDED:begin
+        {Resume Thread}
+        if ThreadResume(TThreadHandle(thread)) <> ERROR_SUCCESS then Exit;
+       end;
+      THREAD_STATE_SLEEP,THREAD_STATE_WAIT,THREAD_STATE_WAIT_TIMEOUT,THREAD_STATE_RECEIVE,THREAD_STATE_RECEIVE_TIMEOUT:begin
+        {Wake Thread}
+        if ThreadWake(TThreadHandle(thread)) <> ERROR_SUCCESS then Exit;
+       end;      
+     end;
+    end;
+  end;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_detach(thread: pthread_t): int; cdecl;
+{Detach a thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+ State:LongWord;
+begin
+ {}
+ Result:=ESRCH;
+ 
+ {Check thread}
+ if thread = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_detach (thread=' + IntToHex(thread,8) + ')');
+ {$ENDIF}
+
+ Result:=EINVAL;
+ 
+ {Get Flags} 
+ Flags:=ThreadGetFlags(TThreadHandle(thread));
+ if Flags = LongWord(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {Check Flags}
+ if (Flags and THREAD_FLAG_PERSIST) = 0 then Exit;
+ 
+ {Update Flags}
+ if ThreadRemoveFlags(TThreadHandle(thread),THREAD_FLAG_PERSIST) <> ERROR_SUCCESS then Exit;
+ 
+ {Get State}
+ State:=ThreadGetState(TThreadHandle(thread));
+ if State = THREAD_STATE_TERMINATED then
+  begin
+   {Destroy Thread}
+   ThreadDestroy(TThreadHandle(thread));  
+  end;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+procedure pthread_exit(value_ptr: Pointer); cdecl;
+{Terminate calling thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_exit (value_ptr=' + IntToHex(PtrUInt(value_ptr),8) + ')');
+ {$ENDIF}
+ 
+ {Call Thread End}
+ SyscallsPthreadEnd(value_ptr);
+end;
+
+{==============================================================================}
+
+function pthread_equal(t1: pthread_t; t2: pthread_t): int; cdecl;
+{Compare thread IDs}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=0;
+ 
+ {Check t1}
+ if t1 = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+
+ {Check t2}
+ if t2 = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_equal (t1=' + IntToHex(t1,8) + ' t2=' + IntToHex(t2,8) + ')');
+ {$ENDIF}
+ 
+ {Compare t1 and t2}
+ if t1 <> t2 then Exit;
+ 
+ Result:=1;
+end;
+
+{==============================================================================}
+
+function pthread_join(thread: pthread_t; value_ptr: PPointer): int; cdecl; 
+{Join with a terminated thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+ State:LongWord;
+begin
+ {}
+ Result:=ESRCH;
+ 
+ {Check thread}
+ if thread = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_join (thread=' + IntToHex(thread,8) + ')');
+ {$ENDIF}
+ 
+ Result:=EINVAL;
+ 
+ {Get Flags} 
+ Flags:=ThreadGetFlags(TThreadHandle(thread));
+ if Flags = LongWord(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {Check Flags}
+ if (Flags and THREAD_FLAG_PERSIST) = 0 then Exit;
+
+ {Check Cancellation}
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_DISABLE)) = (THREAD_FLAG_CANCELLED) then
+  begin
+   SyscallsPthreadEnd(PTHREAD_CANCELED);
+  end;
+ 
+ {Wait Terminate}
+ if ThreadWaitTerminate(TThreadHandle(thread),INFINITE) <> ERROR_SUCCESS then
+  begin
+   {Check Cancellation}
+   Flags:=ThreadGetFlags(ThreadGetCurrent);
+   if (Flags and (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_DISABLE)) = (THREAD_FLAG_CANCELLED) then
+    begin
+     SyscallsPthreadEnd(PTHREAD_CANCELED);
+    end;
+   
+   Exit;
+  end;
+ 
+ {Check value_ptr}
+ if value_ptr <> nil then 
+  begin
+   {Get ExitCode}
+   value_ptr^:=Pointer(ThreadGetExitCode(TThreadHandle(thread)));
+  end; 
+
+ {Update Flags}
+ if ThreadRemoveFlags(TThreadHandle(thread),THREAD_FLAG_PERSIST) <> ERROR_SUCCESS then Exit;
+  
+ {Get State}
+ State:=ThreadGetState(TThreadHandle(thread));
+ if State = THREAD_STATE_TERMINATED then
+  begin
+   {Destroy Thread}
+   ThreadDestroy(TThreadHandle(thread));  
+  end; 
+ 
+ Result:=0; 
+end;
+
+{==============================================================================}
+
+function pthread_self: pthread_t; cdecl;
+{Get calling thread's ID}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=pthread_t(ThreadGetCurrent);
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_self (Result=' + IntToHex(Result,8) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_getconcurrency: int; cdecl;
+{Get the level of concurrency}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=SyscallsPthreadConcurrency;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_getconcurrency (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_setconcurrency(new_level: int): int; cdecl;
+{Set the level of concurrency}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setconcurrency (new_level=' + IntToStr(new_level) + ')');
+ {$ENDIF}
+ 
+ SyscallsPthreadConcurrency:=new_level;
+end;
+
+{==============================================================================}
+
+function pthread_getschedparam(thread: pthread_t; policy: Pint; param: Psched_param): int; cdecl;
+{Get scheduling policy and parameters of a thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Priority:LongWord;
+ Pthread:PSyscallsPthread;
+begin
+ {}
+ Result:=ESRCH;
+ 
+ {Check thread}
+ if thread = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_getschedparam (thread=' + IntToHex(thread,8) + ')');
+ {$ENDIF}
+ 
+ Result:=EINVAL;
+
+ {Check policy}
+ if policy = nil then Exit;
+ 
+ {Check param}
+ if param = nil then Exit;
+ 
+ {Get Priority}
+ Priority:=ThreadGetPriority(TThreadHandle(thread));
+ 
+ {Return policy}
+ policy^:=SCHED_OTHER;
+ 
+ {Return param}
+ param^.sched_priority:=Priority;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_setschedparam(thread: pthread_t; policy: int; param: Psched_param): int; cdecl;
+{Set scheduling policy and parameters of a thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ MaxPriority:int;
+ MinPriority:int;
+ Pthread:PSyscallsPthread;
+begin
+ {}
+ Result:=ESRCH;
+ 
+ {Check thread}
+ if thread = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setschedparam (thread=' + IntToHex(thread,8) + ')');
+ {$ENDIF}
+ 
+ Result:=EINVAL;
+ 
+ {Check param}
+ if param = nil then Exit;
+ 
+ {Get Min/Max}
+ MaxPriority:=sched_get_priority_max(SCHED_OTHER);
+ MinPriority:=sched_get_priority_min(SCHED_OTHER);
+ 
+ {Check Priority}
+ if (param^.sched_priority < MinPriority) or (param^.sched_priority > MaxPriority) then Exit;
+ 
+ {Set Priority}
+ if ThreadSetPriority(TThreadHandle(thread),param^.sched_priority) = LongWord(INVALID_HANDLE_VALUE) then Exit;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_key_create(key: Ppthread_key_t; destructor_routine: Tpthread_destructor_routine): int; cdecl;
+{Create a thread-specific data key (TLS Index)}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check key}
+ if key = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (key=' + IntToHex(PtrUInt(key^),8) + ' destructor_routine=' + IntToHex(PtrUInt(destructor_routine),8) + ')');
+ {$ENDIF}
+ 
+ Result:=EAGAIN;
+ 
+ if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+ try
+  {Create TLS Index}
+  key^:=ThreadAllocTlsIndex;
+  if key^ = TLS_OUT_OF_INDEXES then Exit;
+  
+  {Save Destructor}
+  SyscallsKeyDestructor[key^]:=destructor_routine;
+  
+  Result:=0;
+  
+  {$IFDEF SYSCALLS_DEBUG}
+  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (Result=' + IntToStr(Result) + ' key=' + IntToHex(key^,8) + ')');
+  {$ENDIF}
+ finally
+  MutexUnlock(SyscallsPthreadLock);
+ end; 
+end;
+
+{==============================================================================}
+
+function pthread_key_delete(key: pthread_key_t): int; cdecl;
+{Delete a thread-specific data key (TLS Index)}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_delete (key=' + IntToHex(key,8) + ')');
+ {$ENDIF}
+ 
+ if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+ try
+  {Destroy TLS Index}
+  if ThreadReleaseTlsIndex(key) <> ERROR_SUCCESS then Exit;
+ 
+  {Clear Destructor}
+  SyscallsKeyDestructor[key]:=nil;
+ 
+  Result:=0;
+ finally
+  MutexUnlock(SyscallsPthreadLock);
+ end; 
+end;
+
+{==============================================================================}
+
+function pthread_getspecific(key: pthread_key_t): Pointer; cdecl;
+{Get a thread-specific data value (TLS Value)}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=nil;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_getspecific (key=' + IntToHex(key,8) + ')');
+ {$ENDIF}
+ 
+ {Get TLS Value}
+ Result:=ThreadGetTlsValue(key);
+end;
+
+{==============================================================================}
+
+function pthread_setspecific(key: pthread_key_t; value: Pointer): int; cdecl;
+{Set a thread-specific data value (TLS Value)}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setspecific (key=' + IntToHex(key,8) + ' value=' + IntToHex(PtrUInt(value),8) + ')');
+ {$ENDIF}
+ 
+ {Set TLS Value}
+ if ThreadSetTlsValue(key,value) <> ERROR_SUCCESS then Exit;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_mutex_init(mutex: Ppthread_mutex_t; attr: Ppthread_mutexattr_t): int; cdecl;
+{Initialize a mutex}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+ Handle:TMutexHandle;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_init (mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ Result:=EAGAIN;
+ 
+ {Check attr}
+ if attr = nil then
+  begin
+   Flags:=MUTEX_FLAG_NONE;
+  end
+ else
+  begin
+   Flags:=MUTEX_FLAG_NONE;
+   {$IFDEF _UNIX98_THREAD_MUTEX_ATTRIBUTES}
+   if attr^._type = PTHREAD_MUTEX_RECURSIVE then
+    begin
+     Flags:=MUTEX_FLAG_RECURSIVE;
+    end
+   else if attr^._type = PTHREAD_MUTEX_ERRORCHECK then 
+    begin
+     Flags:=MUTEX_FLAG_ERRORCHECK;
+    end;
+   {$ENDIF}
+  end;  
+ 
+ {Create Mutex}
+ Handle:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,Flags);
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Return mutex}
+ mutex^:=Handle;
+ 
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_init (Result=' + IntToStr(Result) + ' mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutex_destroy(mutex: Ppthread_mutex_t): int; cdecl;
+{Destroy a mutex}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_destroy (mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Destroy Mutex}
+ if MutexDestroy(TMutexHandle(mutex^)) <> ERROR_SUCCESS then Exit;
+ 
+ {Invalidate mutex}
+ mutex^:=0; {Not INVALID_HANDLE_VALUE to allow detection of PTHREAD_MUTEX_INITIALIZER}
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_mutex_lock(mutex: Ppthread_mutex_t): int; cdecl;
+{Lock a mutex}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_lock (mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Check mutex}
+ if mutex^ = PTHREAD_MUTEX_INITIALIZER then
+  begin
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+  end;
+  
+ {Lock Mutex}
+ ResultCode:=MutexLock(TMutexHandle(mutex^));
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_ALREADY_OWNER then //To do //Implement this in MutexLock if flags is MUTEX_FLAG_ERRORCHECK
+  begin
+   Result:=EDEADLK;
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_mutex_trylock(mutex: Ppthread_mutex_t): int; cdecl;
+{Try to lock a mutex}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_trylock (mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Check mutex}
+ if mutex^ = PTHREAD_MUTEX_INITIALIZER then
+  begin
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Try Lock Mutex}
+ ResultCode:=MutexTryLock(TMutexHandle(mutex^));
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_LOCKED then
+  begin
+   Result:=EBUSY;
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_mutex_unlock(mutex: Ppthread_mutex_t): int; cdecl;
+{Unlock a mutex}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_unlock (mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Check mutex}
+ if mutex^ = PTHREAD_MUTEX_INITIALIZER then
+  begin
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Unlock Mutex}
+ ResultCode:=MutexUnlock(TMutexHandle(mutex^));
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_NOT_LOCKED then
+  begin
+   Result:=EPERM;
+  end
+ else if ResultCode = ERROR_NOT_OWNER then
+  begin
+   Result:=EPERM;
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_mutex_setprioceiling(mutex: Ppthread_mutex_t; prioceiling: int; old_ceiling: Pint): int; cdecl;
+{Set the priority ceiling of a mutex}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_setprioceiling (mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Check mutex}
+ if mutex^ = PTHREAD_MUTEX_INITIALIZER then
+  begin
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+ {Not supported}
+ Result:=ENOSYS;
+ {$ELSE}         
+ 
+ Result:=ENOSYS;
+ {$ENDIF}         
+end;
+
+{==============================================================================}
+
+function pthread_mutex_getprioceiling(mutex: Ppthread_mutex_t; prioceiling: Pint): int; cdecl;
+{Get the priority ceiling of a mutex}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check mutex}
+ if mutex = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_getprioceiling (mutex=' + IntToHex(mutex^,8) + ')');
+ {$ENDIF}
+ 
+ {Check mutex}
+ if mutex^ = PTHREAD_MUTEX_INITIALIZER then
+  begin
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+ {Not supported}
+ Result:=ENOSYS;
+ {$ELSE}         
+ 
+ Result:=ENOSYS;
+ {$ENDIF}         
+end;
+
+{==============================================================================}
+
+procedure pthread_mutex_unlock_internal(mutex: Ppthread_mutex_t); cdecl;
+{Unlock a mutex (Compatible with Tpthread_cleanup_routine)}
+
+{Note: Internal function, not intended to be called by applications}
+begin
+ {}
+ pthread_mutex_unlock(mutex);
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_init(attr: Ppthread_mutexattr_t): int; cdecl;
+{Initialize a mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Init attr}
+ attr^.is_initialized:=1;
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ attr^.process_shared:=PTHREAD_PROCESS_PRIVATE; 
+ {$ENDIF}
+ {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+ attr^.prio_ceiling:=0;
+ attr^.protocol:=0;
+ {$ENDIF}
+ {$IFDEF _UNIX98_THREAD_MUTEX_ATTRIBUTES}
+ attr^._type:=PTHREAD_MUTEX_DEFAULT;
+ {$ENDIF}
+ attr^.recursive:=0;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_destroy(attr: Ppthread_mutexattr_t): int; cdecl;
+{Destroy a mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Destroy attr}
+ attr^.is_initialized:=0;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_getprioceiling(attr: Ppthread_mutexattr_t; prioceiling: Pint): int; cdecl;
+{Get the prioceiling attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getprioceiling (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check prioceiling}
+ if prioceiling = nil then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+ {Get prioceiling}
+ prioceiling^:=attr^.prio_ceiling;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_setprioceiling(attr: Ppthread_mutexattr_t; prioceiling: int): int; cdecl;
+{Set the prioceiling attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setprioceiling (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+ {Set prioceiling}
+ attr^.prio_ceiling:=prioceiling;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_getprotocol(attr: Ppthread_mutexattr_t; protocol: Pint): int; cdecl;
+{Get the protocol attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getprotocol (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check protocol}
+ if protocol = nil then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+ {Get protocol}
+ protocol^:=attr^.protocol;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_setprotocol(attr: Ppthread_mutexattr_t; protocol: int): int; cdecl;
+{Set the protocol attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setprotocol (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
+ {Set protocol}
+ attr^.protocol:=protocol;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_getpshared(attr: Ppthread_mutexattr_t; pshared: Pint): int; cdecl;
+{Get the process-shared attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check pshared}
+ if pshared = nil then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ {Get pshared}
+ pshared^:=attr^.process_shared;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_setpshared(attr: Ppthread_mutexattr_t; pshared: int): int; cdecl;
+{Set the process-shared attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check pshared}
+ if (pshared <> PTHREAD_PROCESS_PRIVATE) and (pshared <> PTHREAD_PROCESS_SHARED) then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ {Set pshared}
+ attr^.process_shared:=pshared;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_gettype(attr: Ppthread_mutexattr_t; _type: Pint): int; cdecl;
+{Get the type attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_gettype (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check _type}
+ if _type = nil then Exit;
+ 
+ {$IFDEF _UNIX98_THREAD_MUTEX_ATTRIBUTES}
+ {Get _type}
+ _type^:=attr^._type;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_mutexattr_settype(attr: Ppthread_mutexattr_t; _type: int): int; cdecl;
+{Set the type attribute of the mutex attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_settype (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check _type}
+ if (_type <> PTHREAD_MUTEX_NORMAL) and (_type <> PTHREAD_MUTEX_RECURSIVE) and (_type <> PTHREAD_MUTEX_ERRORCHECK) and (_type <> PTHREAD_MUTEX_DEFAULT) then Exit;
+ 
+ {$IFDEF _UNIX98_THREAD_MUTEX_ATTRIBUTES}
+ {Set _type}
+ attr^._type:=_type;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_once(once_control: Ppthread_once_t; init_routine: Tpthread_init_routine): int; cdecl;
+{Dynamic package initialisation}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check once_control and init_routine}
+ if (once_control = nil) or not Assigned(init_routine) then
+  begin
+   {Return Error (Some callers incorrectly check errno on failure)}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_once (once_control=' + IntToHex(PtrUInt(once_control),8) + ' init_routine=' + IntToHex(PtrUInt(init_routine),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_once (is_initialized=' + IntToStr(once_control^.is_initialized) + ' init_executed=' + IntToStr(once_control^.init_executed) + ')');
+ {$ENDIF}
+ 
+ {Update is_initialized}
+ once_control^.is_initialized:=1;
+ 
+ {Check init_executed}
+ if once_control^.init_executed = 0 then
+  begin
+   if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+ 
+   {Recheck init_executed (Must be after lock)}
+   if once_control^.init_executed = 0 then
+    begin
+     {Add mutex unlock cleanup}
+     pthread_cleanup_push(Tpthread_cleanup_routine(@pthread_mutex_unlock_internal),@SyscallsPthreadLock);
+     
+     {Call init_routine}
+     init_routine();
+   
+     {Update is_initialized (Must be after init_routine)}
+     once_control^.init_executed:=1;
+  
+     {Remove mutex unlock cleanup}
+     pthread_cleanup_pop(0);
+    end; 
+
+   MutexUnlock(SyscallsPthreadLock);
+  end;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_rwlock_init(rwlock: Ppthread_rwlock_t ; attr: Ppthread_rwlockattr_t): int; cdecl;
+{Initialize a read-write lock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Handle:TSynchronizerHandle;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check rwlock}
+ if rwlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_init (rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+ 
+ Result:=EAGAIN;
+ 
+ {Note: attr not used}
+ 
+ {Create Synchronizer}
+ Handle:=SynchronizerCreate;
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Return rwlock}
+ rwlock^:=Handle;
+ 
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_init (Result=' + IntToStr(Result) + ' rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_rwlock_destroy(rwlock: Ppthread_rwlock_t): int; cdecl;
+{Destroy a read-write lock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check rwlock}
+ if rwlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_destroy (rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+ 
+ {Destroy Synchronizer}
+ if SynchronizerDestroy(TSynchronizerHandle(rwlock^)) <> ERROR_SUCCESS then Exit;
+ 
+ {Invalidate rwlock}
+ rwlock^:=0; {Not INVALID_HANDLE_VALUE to allow detection of PTHREAD_RWLOCK_INITIALIZER}
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_rwlock_rdlock(rwlock: Ppthread_rwlock_t): int; cdecl;
+{Lock a read-write lock for reading}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check rwlock}
+ if rwlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_rdlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+ 
+ {Check rwlock}
+ if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
+  begin
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Check Owner}
+ if SynchronizerWriterOwner(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
+  begin
+   Result:=EDEADLK;
+  end
+ else
+  begin 
+   {Lock Synchronizer}
+   ResultCode:=SynchronizerReaderLock(TSynchronizerHandle(rwlock^));
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_rwlock_wrlock(rwlock: Ppthread_rwlock_t): int; cdecl;
+{Lock a read-write lock for writing}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check rwlock}
+ if rwlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_wrlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+ 
+ {Check rwlock}
+ if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
+  begin
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Check Last}
+ if SynchronizerReaderLast(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
+  begin
+   Result:=EDEADLK;
+  end
+ else
+  begin 
+   {Lock Synchronizer}
+   ResultCode:=SynchronizerWriterLock(TSynchronizerHandle(rwlock^));
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_rwlock_tryrdlock(rwlock: Ppthread_rwlock_t): int; cdecl;
+{Try to lock a read-write lock for reading}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check rwlock}
+ if rwlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_tryrdlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+
+ {Check rwlock}
+ if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
+  begin
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Check Owner}
+ if SynchronizerWriterOwner(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
+  begin
+   Result:=EDEADLK;
+  end
+ else
+  begin 
+   {Try Lock Synchronizer}
+   ResultCode:=SynchronizerReaderLockEx(TSynchronizerHandle(rwlock^),0);
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end
+   else if ResultCode = ERROR_WAIT_TIMEOUT then
+    begin
+     Result:=EBUSY;
+    end;    
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_rwlock_trywrlock(rwlock: Ppthread_rwlock_t): int; cdecl;
+{Try to lock a read-write lock for writing}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check rwlock}
+ if rwlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_trywrlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+ 
+ {Check rwlock}
+ if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
+  begin
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Check Last}
+ if SynchronizerReaderLast(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
+  begin
+   Result:=EDEADLK;
+  end
+ else
+  begin 
+   {Try Lock Synchronizer}
+   ResultCode:=SynchronizerWriterLockEx(TSynchronizerHandle(rwlock^),0);
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end
+   else if ResultCode = ERROR_WAIT_TIMEOUT then
+    begin
+     Result:=EBUSY;
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_rwlock_unlock(rwlock: Ppthread_rwlock_t): int; cdecl;
+{Unlock a read-write lock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check rwlock}
+ if rwlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_unlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ {$ENDIF}
+ 
+ {Check rwlock}
+ if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
+  begin
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+  end;
+ 
+ {Check Owner}
+ if SynchronizerWriterOwner(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
+  begin
+   {Unlock Synchronizer}
+   ResultCode:=SynchronizerWriterUnlock(TSynchronizerHandle(rwlock^));
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end
+   else if ResultCode = ERROR_NOT_LOCKED then
+    begin
+     Result:=EPERM;
+    end    
+   else if ResultCode = ERROR_NOT_OWNER then
+    begin
+     Result:=EPERM;
+    end;
+  end
+ else
+  begin
+   {Unlock Synchronizer}
+   ResultCode:=SynchronizerReaderUnlock(TSynchronizerHandle(rwlock^));
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end
+   else if ResultCode = ERROR_NOT_LOCKED then
+    begin
+     Result:=EPERM;
+    end;
+  end;  
+end;
+
+{==============================================================================}
+
+function pthread_rwlockattr_init(attr: Ppthread_rwlockattr_t): int; cdecl;
+{Initialize a read-write lock attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlockattr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Init attr}
+ attr^.is_initialized:=1;
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ attr^.process_shared:=PTHREAD_PROCESS_PRIVATE; 
+ {$ENDIF}
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_rwlockattr_destroy(attr: Ppthread_rwlockattr_t): int; cdecl;
+{Destroy a read-write lock attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlockattr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Destroy attr}
+ attr^.is_initialized:=0;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_rwlockattr_getpshared(attr: Ppthread_rwlockattr_t; pshared: Pint): int; cdecl;
+{Get the process-shared attribute of the read-write lock attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check pshared}
+ if pshared = nil then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ {Get pshared}
+ pshared^:=attr^.process_shared;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_rwlockattr_setpshared(attr: Ppthread_rwlockattr_t; pshared: int): int; cdecl;
+{Set the process-shared attribute of the read-write lock attributes entry}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check attr}
+ if attr = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ {$ENDIF}
+ 
+ {Check pshared}
+ if (pshared <> PTHREAD_PROCESS_PRIVATE) and (pshared <> PTHREAD_PROCESS_SHARED) then Exit;
+ 
+ {$IFDEF _POSIX_THREAD_PROCESS_SHARED}
+ {Set pshared}
+ attr^.process_shared:=pshared;
+ 
+ Result:=0;
+ {$ELSE}
+ 
+ Result:=ENOSYS;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_setcancelstate(state: int; oldstate: Pint): int; cdecl;
+{Set cancelability state for the current thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setcancelstate (state=' + IntToStr(state) + ')');
+ {$ENDIF}
+ 
+ {Check state}
+ if (state < PTHREAD_CANCEL_ENABLE) or (state > PTHREAD_CANCEL_DISABLE) then Exit;
+ 
+ {Get Flags}
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and THREAD_FLAG_CANCEL_DISABLE) = 0 then
+  begin
+   {Cancel Enabled}
+   {Get oldstate}
+   if oldstate <> nil then oldstate^:=PTHREAD_CANCEL_ENABLE;
+  
+   {Check State}
+   if state = PTHREAD_CANCEL_DISABLE then
+    begin
+     ThreadAddFlags(ThreadGetCurrent,THREAD_FLAG_CANCEL_DISABLE);
+    end;
+  end
+ else
+  begin
+   {Cancel Disabled}
+   {Get oldstate}
+   if oldstate <> nil then oldstate^:=PTHREAD_CANCEL_DISABLE;
+
+   {Check State}
+   if state = PTHREAD_CANCEL_ENABLE then
+    begin
+     ThreadRemoveFlags(ThreadGetCurrent,THREAD_FLAG_CANCEL_DISABLE);
+    end;
+  end;  
+
+ {Check Cancelled/Enabled/Asynchronous}
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_DISABLE or THREAD_FLAG_CANCEL_ASYNCHRONOUS)) = (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_ASYNCHRONOUS) then
+  begin
+   SyscallsPthreadEnd(PTHREAD_CANCELED);
+  end;
+  
+ Result:=0; 
+end;
+
+{==============================================================================}
+
+function pthread_setcanceltype(_type: int; oldtype: Pint): int; cdecl;
+{Set cancelability type for the current thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setcanceltype (type=' + IntToStr(_type) + ')');
+ {$ENDIF}
+ 
+ {Check type}
+ if (_type < PTHREAD_CANCEL_DEFERRED) or (_type > PTHREAD_CANCEL_ASYNCHRONOUS) then Exit;
+ 
+ {Get Flags}
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and THREAD_FLAG_CANCEL_ASYNCHRONOUS) = 0 then
+  begin
+   {Cancel Deferred}
+   {Get oldtype}
+   if oldtype <> nil then oldtype^:=PTHREAD_CANCEL_DEFERRED;
+  
+   {Check Type}
+   if _type = PTHREAD_CANCEL_ASYNCHRONOUS then
+    begin
+     ThreadAddFlags(ThreadGetCurrent,THREAD_FLAG_CANCEL_ASYNCHRONOUS);
+    end;
+  end
+ else
+  begin
+   {Cancel Asynchronous}
+   {Get oldtype}
+   if oldtype <> nil then oldtype^:=PTHREAD_CANCEL_ASYNCHRONOUS;
+
+   {Check Type}
+   if _type = PTHREAD_CANCEL_DEFERRED then
+    begin
+     ThreadRemoveFlags(ThreadGetCurrent,THREAD_FLAG_CANCEL_ASYNCHRONOUS);
+    end;
+  end;  
+
+ {Check Cancelled/Enabled/Asynchronous}
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_DISABLE or THREAD_FLAG_CANCEL_ASYNCHRONOUS)) = (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_ASYNCHRONOUS) then
+  begin
+   SyscallsPthreadEnd(PTHREAD_CANCELED);
+  end;
+  
+ Result:=0; 
+end;
+
+{==============================================================================}
+
+procedure pthread_testcancel; cdecl;
+{Test if the current thread is cancelled}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Flags:LongWord;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_testcancel');
+ {$ENDIF}
+ 
+ {Check Cancelled/Enabled}
+ Flags:=ThreadGetFlags(ThreadGetCurrent);
+ if (Flags and (THREAD_FLAG_CANCELLED or THREAD_FLAG_CANCEL_DISABLE)) = (THREAD_FLAG_CANCELLED) then
+  begin
+   SyscallsPthreadEnd(PTHREAD_CANCELED);
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Semaphore)}
+function sem_close(sem: Psem_t): int; cdecl; 
+{Close a named semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+ Handle:TSemaphoreHandle;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_close (sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+
+ {Get Handle}
+ Entry:=HandleGet(sem^);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {Get Semaphore}
+ Handle:=Entry^.Data;
+ 
+ {Destroy Handle}
+ ResultCode:=HandleDestroy(sem^);
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   {Destroy Semaphore}
+   SemaphoreDestroy(Handle);
+   
+   {Update sem}
+   sem^:=0;
+   
+   {Return Result}
+   Result:=0;
+  end
+ else if ResultCode = ERROR_IN_USE then
+  begin
+   {Update sem}
+   sem^:=0;
+   
+   {Return Result}
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+  end;
+end;
+
+{==============================================================================}
+
+function sem_destroy(sem: Psem_t): int; cdecl;
+{Destroy an unnamed semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+ Handle:TSemaphoreHandle;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_destroy (sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+ 
+ {Get Handle}
+ Entry:=HandleGet(sem^);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {Get Semaphore}
+ Handle:=Entry^.Data;
+ 
+ {Destroy Handle}
+ ResultCode:=HandleDestroy(sem^);
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   {Destroy Semaphore}
+   SemaphoreDestroy(Handle);
+
+   {Update sem}
+   sem^:=0;
+   
+   {Return Result}
+   Result:=0;
+  end
+ else if ResultCode = ERROR_IN_USE then
+  begin
+   {Update sem}
+   sem^:=0;
+   
+   {Return Result}
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+  end;
+end;
+
+{==============================================================================}
+
+function sem_getvalue(sem: Psem_t; sval: Pint): int; cdecl;
+{Get the value of a semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_getvalue (sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+ 
+ {Check sval}
+ if sval = nil then Exit;
+
+ {Get Handle}
+ Entry:=HandleGet(sem^);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {Get Semaphore Count}
+ sval^:=SemaphoreCount(Entry^.Data);
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function sem_init(sem: Psem_t; pshared: int; value: uint): int; cdecl;
+{Initialize an unnamed semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+ Handle:TSemaphoreHandle;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_init (sem=' + IntToHex(sem^,8) + ' value=' + IntToStr(value) + ')');
+ {$ENDIF}
+ 
+ {Note: pshared not used}
+ 
+ {Check value}
+ if value > SEM_VALUE_MAX then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+  
+ {Create Semaphore}
+ Handle:=SemaphoreCreate(value);
+ if Handle = INVALID_HANDLE_VALUE then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+  
+ {Create Handle}
+ Entry:=HandleCreateEx('',HANDLE_FLAG_NONE,Handle,HANDLE_TYPE_SEMAPHORE);
+ if Entry = nil then 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+  
+ {Return sem}
+ sem^:=Entry^.Handle;
+          
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_init (Result=' + IntToStr(Result) + ' sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function sem_open(name: PChar; oflag: int): Psem_t; cdecl;
+{Initialize and open a named semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=sem_open_ext(name,oflag,0,0);
+end;
+
+{==============================================================================}
+
+function sem_open_ext(name: PChar; oflag: int; mode: mode_t; value: uint): Psem_t; cdecl;
+{Initialize and open a named semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Current:THandle;
+ Entry:PHandleEntry;
+ Handle:TSemaphoreHandle;
+begin
+ {}
+ Result:=SEM_FAILED;
+ 
+ {Check name}
+ if name = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_open_ext (name=' + StrPas(name) + ' oflag=' + IntToHex(oflag,8) + ' value=' + IntToStr(value) + ')');
+ {$ENDIF}
+ 
+ {Note: mode not used}
+ 
+ {Open Handle}
+ Current:=HandleOpen(name);
+ if Current = INVALID_HANDLE_VALUE then
+  begin
+   {Check Flags}
+   if (oflag and O_CREAT) = 0 then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOENT;
+     
+     Exit;
+    end;
+    
+   {Check value}
+   if value > SEM_VALUE_MAX then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     
+     Exit;
+    end;
+  
+   {Create Semaphore}
+   Handle:=SemaphoreCreate(value);
+   if Handle = INVALID_HANDLE_VALUE then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     
+     Exit;
+    end;
+    
+   {Create Handle}
+   Entry:=HandleCreateEx(name,HANDLE_FLAG_NAMED,Handle,HANDLE_TYPE_SEMAPHORE);
+   if Entry = nil then 
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     
+     Exit;
+    end;
+   
+   {Return Result}
+   Result:=@Entry^.Handle;
+  end
+ else 
+  begin
+   {Check Type}
+   Entry:=HandleGet(Current);
+   if (Entry <> nil) and (Entry^.HandleType <> HANDLE_TYPE_SEMAPHORE) then
+    begin
+     {Close Handle}
+     HandleClose(Current);
+     
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EACCES;
+     
+     Exit;
+    end;
+   
+   {Check Flags}
+   if (oflag and (O_CREAT or O_EXCL)) = (O_CREAT or O_EXCL) then
+    begin
+     {Close Handle}
+     HandleClose(Current);
+     
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EEXIST;
+     
+     Exit;
+    end;
+   
+   {Return Result}
+   Result:=@Entry^.Handle;
+  end;
+end;
+
+{==============================================================================}
+
+function sem_post(sem: Psem_t): int; cdecl;
+{Unlock (Signal) a semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_post (sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+ 
+ {Get Handle}
+ Entry:=HandleGet(sem^);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {Post Semaphore}
+ if SemaphoreSignal(Entry^.Data) <> ERROR_SUCCESS then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+  
+ Result:=0; 
+end;
+
+{==============================================================================}
+
+function sem_timedwait(sem: Psem_t; abs_timeout: Ptimespec): int; cdecl;
+{Lock (Wait for) a semaphore with a timeout}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+ Timeout:LongWord;
+ Current:Ttimespec;
+ Relative:Ttimespec;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_timedwait (sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+ 
+ {Check abs timeout}
+ if abs_timeout = nil then Exit;
+ 
+ {Get Timeout}
+ Timeout:=INFINITE;
+ if clock_gettime(CLOCK_REALTIME,@Current) = 0 then
+  begin
+   Relative.tv_nsec:=abs_timeout^.tv_nsec - Current.tv_nsec;
+   Relative.tv_sec:=abs_timeout^.tv_sec - Current.tv_sec;
+   if Relative.tv_nsec < 0 then
+    begin
+     Relative.tv_nsec:=Relative.tv_nsec + 1000000000;
+     Relative.tv_sec:=Relative.tv_sec - 1;
+    end;
+    
+   if Relative.tv_sec < 0 then Exit;
+   
+   Timeout:=(Relative.tv_sec * 1000) + (Relative.tv_nsec div 1000000);
+  end;
+ 
+ {Get Handle}
+ Entry:=HandleGet(sem^);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {Wait Semaphore}
+ ResultCode:=SemaphoreWaitEx(Entry^.Data,Timeout);
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_WAIT_TIMEOUT then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ETIMEDOUT;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+  end;
+end;
+
+{==============================================================================}
+
+function sem_trywait(sem: Psem_t): int; cdecl;
+{Try to lock (Wait for) a semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_trywait (sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+ 
+ {Get Handle}
+ Entry:=HandleGet(sem^);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {Wait Semaphore}
+ ResultCode:=SemaphoreWaitEx(Entry^.Data,0);
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_WAIT_TIMEOUT then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EAGAIN;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+  end;
+end;
+
+{==============================================================================}
+
+function sem_unlink(name: PChar): int; cdecl;
+{Remove a named semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+ Handle:TSemaphoreHandle;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check name}
+ if name = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_unlink (name=' + StrPas(name) + ')');
+ {$ENDIF}
+ 
+ {Find Handle}
+ Entry:=HandleFind(name);
+ if Entry = nil then 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   
+   Exit;
+  end;
+  
+ {Get Semaphore}
+ Handle:=Entry^.Data;
+ 
+ {Destroy Handle}
+ ResultCode:=HandleDestroy(Entry^.Handle);
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   {Destroy Semaphore}
+   SemaphoreDestroy(Handle);
+   
+   {Return Result}
+   Result:=0;
+  end
+ else if ResultCode = ERROR_IN_USE then
+  begin
+   {Return Result}
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+  end;
+end;
+
+{==============================================================================}
+
+function sem_wait(sem: Psem_t): int; cdecl;
+{Lock (Wait for) a semaphore}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PHandleEntry;
+begin
+ {}
+ Result:=-1;
+ 
+ {Check sem}
+ if sem = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_wait (sem=' + IntToHex(sem^,8) + ')');
+ {$ENDIF}
+ 
+ {Get Handle}
+ Entry:=HandleGet(sem^);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ {Wait Semaphore}
+ if SemaphoreWait(Entry^.Data) <> ERROR_SUCCESS then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   
+   Exit;
+  end;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Sockets)}
 
 {==============================================================================}
 {==============================================================================}
 {Syscalls Helper Functions}
 procedure __malloc_lock(ptr: P_reent); cdecl;
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  {Check reent}
@@ -2396,6 +6645,7 @@ end;
 {==============================================================================}
 
 procedure __malloc_unlock(ptr: P_reent); cdecl;
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  {Check reent}
@@ -2412,6 +6662,7 @@ end;
 {==============================================================================}
 
 procedure __env_lock(ptr: P_reent); cdecl;
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  {Check reent}
@@ -2428,6 +6679,7 @@ end;
 {==============================================================================}
 
 procedure __env_unlock(ptr: P_reent); cdecl;
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  {Check reent}
@@ -2440,6 +6692,79 @@ begin
  {Unlock Mutex}
  MutexUnlock(SyscallsEnvLock);
 end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Macro Functions (Ioctl)}
+function _IOC(dir,_type,nr,size: LongWord): LongWord;
+begin
+ {}
+ Result:=(dir shl _IOC_DIRSHIFT) or (_type shl _IOC_TYPESHIFT) or (nr shl _IOC_NRSHIFT) or (size shl _IOC_SIZESHIFT);
+end;
+
+{==============================================================================}
+
+function _IO(_type,nr: LongWord): LongWord;
+begin
+ {}
+ Result:=_IOC(_IOC_NONE,_type,nr,0);
+end;
+
+{==============================================================================}
+
+function _IOR(_type,nr,size: LongWord): LongWord;
+begin
+ {}
+ Result:=_IOC(_IOC_READ,_type,nr,size);
+end;
+
+{==============================================================================}
+
+function _IOW(_type,nr,size: LongWord): LongWord;
+begin
+ {}
+ Result:=_IOC(_IOC_WRITE,_type,nr,size);
+end;
+
+{==============================================================================}
+
+function _IOWR(_type,nr,size: LongWord): LongWord;
+begin
+ {}
+ Result:=_IOC(_IOC_READ or _IOC_WRITE,_type,nr,size);
+end;
+
+{==============================================================================}
+
+function _IOC_DIR(nr: LongWord): LongWord;
+begin
+ {}
+ Result:=(nr shr _IOC_DIRSHIFT) and _IOC_DIRMASK;
+end; 
+
+{==============================================================================}
+
+function _IOC_TYPE(nr: LongWord): LongWord;
+begin
+ {}
+ Result:=(nr shr _IOC_TYPESHIFT) and _IOC_TYPEMASK;
+end; 
+
+{==============================================================================}
+
+function _IOC_NR(nr: LongWord): LongWord;
+begin
+ {}
+ Result:=(nr shr _IOC_NRSHIFT) and _IOC_NRMASK;
+end; 
+
+{==============================================================================}
+
+function _IOC_SIZE(nr: LongWord): LongWord;
+begin
+ {}
+ Result:=(nr shr _IOC_SIZESHIFT) and _IOC_SIZEMASK;
+end; 
 
 {==============================================================================}
 {==============================================================================}
@@ -2577,6 +6902,25 @@ end;
 {==============================================================================}
 
 function SyscallsAddEntry(Handle:THandle):PSyscallsEntry; 
+
+ procedure SyscallsIncrementNext;
+ begin
+  {Update Next}
+  Inc(SyscallsTable.Next);
+  
+  {Check Next}
+  if SyscallsTable.Next > SYSCALLS_TABLE_MAX then
+   begin
+    SyscallsTable.Next:=SYSCALLS_TABLE_MIN;
+   end;
+  
+  {Check Next}
+  if SyscallsTable.Next < SYSCALLS_TABLE_MIN then
+   begin
+    SyscallsTable.Next:=SYSCALLS_TABLE_MIN;
+   end;
+ end;
+ 
 var
  Start:LongWord;
  First:PSyscallsEntry;
@@ -2602,20 +6946,8 @@ begin
  Next:=SyscallsGetEntry(SyscallsTable.Next);
  while Next <> nil do
   begin
-   {Update Next}
-   Inc(SyscallsTable.Next);
-   
-   {Check Next}
-   if SyscallsTable.Next > SYSCALLS_TABLE_MAX then
-    begin
-     SyscallsTable.Next:=SYSCALLS_TABLE_MIN;
-    end;
-   
-   {Check Next}
-   if SyscallsTable.Next < SYSCALLS_TABLE_MIN then
-    begin
-     SyscallsTable.Next:=SYSCALLS_TABLE_MIN;
-    end;
+   {Increment Next}
+   SyscallsIncrementNext;
    
    {Check Next}
    if SyscallsTable.Next = Start then Break;
@@ -2646,6 +6978,9 @@ begin
      
      {Increment Count}
      Inc(SyscallsTable.Count);
+     
+     {Increment Next}
+     SyscallsIncrementNext;
      
      {$IFDEF SYSCALLS_DEBUG}
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry Number=' + IntToStr(Next^.Number));
@@ -3134,6 +7469,151 @@ begin
  
  {Unlock Heap}
  MutexUnlock(SyscallsHeapLock);
+end;
+
+{==============================================================================}
+
+function SyscallsGetPthread:PSyscallsPthread; 
+var
+ Pthread:PSyscallsPthread;
+begin
+ {}
+ Result:=nil;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Thread=' + IntToHex(ThreadGetCurrent,8) + ')');
+ {$ENDIF}
+ 
+ {Get TLS Value}
+ Pthread:=ThreadGetTlsValue(SyscallsPThreadIndex);
+ if Pthread = nil then
+  begin
+   {Allocate TLS Value}
+   Pthread:=AllocMem(SyscallsPthreadSize);
+   if Pthread = nil then Exit;
+   
+   {$IFDEF SYSCALLS_DEBUG}
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Allocated Pthread=' + IntToHex(PtrUInt(Pthread),8) + ')');
+   {$ENDIF}
+   
+   {Set TLS Value}
+   if ThreadSetTlsValue(SyscallsPThreadIndex,Pthread) <> ERROR_SUCCESS then Exit;
+
+   {Initialize Pthread structure} 
+   Pthread^.Cleanup:=nil;
+  end; 
+ 
+ {Return Result}
+ Result:=Pthread;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Result=' + IntToHex(PtrUInt(Result),8) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function SyscallsPthreadStart(Data:PSyscallsPthreadData):PtrInt;
+var
+ Routine:Tpthread_start_routine;
+ Arg:Pointer;
+ Value:Pointer;
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread Start (Thread=' + IntToHex(ThreadGetCurrent,8) + ' Data=' + IntToHex(PtrUInt(Data),8) + ')');
+ {$ENDIF}
+ 
+ {Save the Parameters}
+ Routine:=Data^.Routine;
+ Arg:=Data^.Arg;
+ 
+ {Free the Data}
+ FreeMem(Data);
+ 
+ if Assigned(Routine) then
+  begin
+   {Call Start Function}
+   Value:=Routine(Arg);
+   
+   {Call Thread End}
+   SyscallsPthreadEnd(Value);
+  end; 
+end;
+
+{==============================================================================}
+
+procedure SyscallsPthreadEnd(Value:Pointer);
+var
+ Count:LongWord;
+ Data:Pointer;
+ Pthread:PSyscallsPthread;
+ Cleanup:PSyscallsPthreadCleanup;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Thread=' + IntToHex(ThreadGetCurrent,8) + ')');
+ {$ENDIF}
+
+ {Call Key Destructors}
+ for Count:=0 to THREAD_TLS_MAXIMUM - 1 do
+  begin
+   {Check Key Destructor}
+   if Assigned(SyscallsKeyDestructor[Count]) then
+    begin
+     {Get TLS Value}
+     Data:=ThreadGetTlsValue(Count);
+     if Data <> nil then
+      begin
+       {Clear TLS Value}
+       ThreadSetTlsValue(Count,nil);
+      
+       {$IFDEF SYSCALLS_DEBUG}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Key=' + IntToHex(Count,8) + ' Destructor=' + IntToHex(PtrUInt(SyscallsKeyDestructor[Count]),8) + ' Data=' + IntToHex(PtrUInt(Data),8) + ')');
+       {$ENDIF}
+      
+       {Call Key Destructor}
+       SyscallsKeyDestructor[Count](Data);
+      end;
+    end;
+  end;
+ 
+ {Get Pthread}
+ Pthread:=SyscallsGetPthread;
+ if Pthread <> nil then
+  begin
+   {Call Cleanup Handlers}
+   Cleanup:=Pthread^.Cleanup;
+   while Cleanup <> nil do
+    begin
+     {Check Routine}
+     if Assigned(Cleanup^.Routine) then
+      begin
+       {Call Routine}
+       Cleanup^.Routine(Cleanup^.Arg);
+      end;
+      
+     {Remove Cleanup}
+     Pthread^.Cleanup:=Cleanup^.Next;
+   
+     {Free Cleanup} 
+     FreeMem(Cleanup);
+     
+     {Get Next}
+     Cleanup:=Pthread^.Cleanup;
+    end;
+   
+   {Clear TLS Value}
+   ThreadSetTlsValue(SyscallsPThreadIndex,nil);
+   
+   {Free TLS Value}
+   FreeMem(Pthread);
+  end;  
+ 
+ {Call End Thread}
+ EndThread(PtrUInt(Value));
 end;
 
 {==============================================================================}

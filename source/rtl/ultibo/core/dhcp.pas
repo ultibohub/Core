@@ -284,12 +284,14 @@ type
    function ExtractDHCPOption(AOption:Byte;AHeader:PDHCPHeader;AValue:Pointer;var ASize:Integer):Boolean;
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
   public
    {Public Properties}
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -329,12 +331,14 @@ type
    function ExtractBOOTPOption(AOption:Byte;AHeader:PBOOTPHeader;AValue:Pointer;var ASize:Integer):Boolean;
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
   public
    {Public Properties}
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -367,12 +371,14 @@ type
 
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
   public
    {Public Properties}
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -403,12 +409,14 @@ type
 
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
   public
    {Public Properties}
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -439,12 +447,14 @@ type
 
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
   public
    {Public Properties}
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -474,12 +484,14 @@ type
 
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
   public
    {Public Properties}
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -595,11 +607,12 @@ begin
         {Set Configuring}
         AAdapter.Configuring:=True;
         try
-         {Delay Init}
-         Sleep(FInitDelay); 
-         
          {Check the Adapter}
          if AAdapter.Configured then Exit;
+
+         {Delay Init}
+         if FInitDelay > 0 then Sleep(FInitDelay); 
+         FInitDelay:=0;
          
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
@@ -698,14 +711,15 @@ begin
         {Set Configuring}
         AAdapter.Configuring:=True;
         try
-         {Delay Init}
-         Sleep(FInitDelay); 
-         
          {Check the Adapter}
          if AAdapter.Configured then Exit;
          
          {Check the Address}
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Address) then Exit;
+
+         {Delay Init}
+         if FInitDelay > 0 then Sleep(FInitDelay); 
+         FInitDelay:=0;
          
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
@@ -1279,7 +1293,7 @@ begin
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then Exit;
         
-        {Dont clear the Addresses, IP needs them to cleanup}
+        {Don't clear the Addresses, IP needs them to cleanup}
         Result:=True;
        end;
       CONFIG_ADAPTER_RENEW,CONFIG_ADAPTER_REBIND:begin
@@ -2482,7 +2496,7 @@ begin
  try
   Result:=True;
   
-  if (AInitDelay > DHCP_MIN_DELAY) and (AInitDelay <= DHCP_MAX_DELAY) then FInitDelay:=AInitDelay;
+  if (AInitDelay >= DHCP_MIN_DELAY) and (AInitDelay <= DHCP_MAX_DELAY) then FInitDelay:=AInitDelay;
   if (ARetryCount >= DHCP_MIN_RETRIES) and (ARetryCount <= DHCP_MAX_RETRIES) then FRetryCount:=ARetryCount;
   if (ARetryTimeout >= DHCP_MIN_TIMEOUT) and (ARetryTimeout <= DHCP_MAX_TIMEOUT) then FRetryTimeout:=ARetryTimeout;
  finally 
@@ -2572,11 +2586,12 @@ begin
       {Check Address Family}
       case Transport.Transport.Family of
        AF_INET:begin
-         {Delay Init}
-         Sleep(FInitDelay); 
-         
          {Check the Adapter}
          if AAdapter.Configured then Exit;
+
+         {Delay Init}
+         if FInitDelay > 0 then Sleep(FInitDelay); 
+         FInitDelay:=0;
          
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
@@ -3221,7 +3236,7 @@ begin
  try
   Result:=True;
   
-  if (AInitDelay > BOOTP_MIN_DELAY) and (AInitDelay <= BOOTP_MAX_DELAY) then FInitDelay:=AInitDelay;
+  if (AInitDelay >= BOOTP_MIN_DELAY) and (AInitDelay <= BOOTP_MAX_DELAY) then FInitDelay:=AInitDelay;
   if (ARetryCount >= BOOTP_MIN_RETRIES) and (ARetryCount <= BOOTP_MAX_RETRIES) then FRetryCount:=ARetryCount;
   if (ARetryTimeout >= BOOTP_MIN_TIMEOUT) and (ARetryTimeout <= BOOTP_MAX_TIMEOUT) then FRetryTimeout:=ARetryTimeout;
  finally 
@@ -4665,6 +4680,16 @@ end;
 {==============================================================================}
 {Initialization Functions}
 procedure DHCPInit;
+{Initialize the DHCP unit and create the Loopback, Static, DHCP, BOOTP, RARP and ARP configuration handlers}
+
+{Note: Called only during system startup}
+var
+ InitDelay:LongWord;
+ RetryCount:LongWord;
+ RetryTimeout:LongWord;
+
+ DHCPConfig:TDHCPConfig;
+ BOOTPConfig:TBOOTPConfig;
 begin
  {}
  {Check Initialized}
@@ -4688,13 +4713,29 @@ begin
  {Create DHCP Config}
  if NetworkSettings.GetBooleanDefault('DHCP_CONFIG_ENABLED',DHCP_CONFIG_ENABLED) then  
   begin
-   TDHCPConfig.Create(ProtocolManager);
+   DHCPConfig:=TDHCPConfig.Create(ProtocolManager);
+   
+   {Get Configuration}
+   InitDelay:=NetworkSettings.GetIntegerDefault('DHCP_CONFIG_DELAY',DHCP_DELAY);
+   RetryCount:=NetworkSettings.GetIntegerDefault('DHCP_CONFIG_RETRIES',DHCP_RETRIES);
+   RetryTimeout:=NetworkSettings.GetIntegerDefault('DHCP_CONFIG_TIMEOUT',DHCP_TIMEOUT);
+   
+   {Set Configuration}
+   DHCPConfig.SetConfig(InitDelay,RetryCount,RetryTimeout);
   end; 
  
  {Create BOOTP Config}
  if NetworkSettings.GetBooleanDefault('BOOTP_CONFIG_ENABLED',BOOTP_CONFIG_ENABLED) then  
   begin
-   TBOOTPConfig.Create(ProtocolManager);
+   BOOTPConfig:=TBOOTPConfig.Create(ProtocolManager);
+   
+   {Get Configuration}
+   InitDelay:=NetworkSettings.GetIntegerDefault('BOOTP_CONFIG_DELAY',BOOTP_DELAY);
+   RetryCount:=NetworkSettings.GetIntegerDefault('BOOTP_CONFIG_RETRIES',BOOTP_RETRIES);
+   RetryTimeout:=NetworkSettings.GetIntegerDefault('BOOTP_CONFIG_TIMEOUT',BOOTP_TIMEOUT);
+   
+   {Set Configuration}
+   BOOTPConfig.SetConfig(InitDelay,RetryCount,RetryTimeout);
   end; 
  
  {Create RARP Config}

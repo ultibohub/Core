@@ -56,6 +56,23 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalStrings,HeapManager,Dos,SysUtils
 const
  {Platform specific constants}
 
+ {Handle Flags}
+ HANDLE_FLAG_NONE      = $00000000;
+ HANDLE_FLAG_NAMED     = $00000001;  {Set if the handle has a name}
+ HANDLE_FLAG_DUPLICATE = $00000002;  {Set if the handle can be duplicated}
+ 
+ HANDLE_FLAG_INTERNAL = HANDLE_FLAG_NONE + $80000000; {Note: Temporary value to avoid warning}
+ 
+ {Handle constants}
+ HANDLE_SIGNATURE = $CD15E20A;
+ 
+ HANDLE_TABLE_MIN = $100;        {Minimum handle number (Skip first 256)}
+ HANDLE_TABLE_MAX = $7FFFFFFF;   {Maximum handle number (Avoid MSB as THandle is a signed value)}
+ 
+ HANDLE_TABLE_MASK = $7FF;       {2048 buckets for handle lookups}
+ 
+ HANDLE_NAME_LENGTH = 256;       {Maximum length of handle name}
+ 
  {DMA Data Flags}
  DMA_DATA_FLAG_NONE                = $00000000; 
  DMA_DATA_FLAG_STRIDE              = $00000001; {Transfer from the source to the destination using 2D stride (If supported)}
@@ -207,20 +224,43 @@ type
  end; 
  
 type 
+ {Prototypes for Handle methods}
+ THandleClose = procedure(Data:THandle);
+ THandleCloseEx = function(Data:THandle):LongWord;
+ THandleDuplicate = function(Data:THandle):THandle;
+ 
  {Handle Entry}
  PHandleEntry = ^THandleEntry;
+ 
+ {Handle Enumeration Callback}
+ THandleEnumerate = function(Handle:PHandleEntry;Data:Pointer):LongWord;
+ 
  THandleEntry = record
   {Handle Properties}
   Signature:LongWord;             {Signature for entry validation}
-  HandleType:LongWord;            {Type of this Handle (eg HANDLE_TYPE_THREAD)}
-  HandleCount:LongWord;           {Reference Count of the Handle}
+  Handle:THandle;                 {Handle (Number) of this Handle}
+  HandleType:LongWord;            {Type of this Handle (eg HANDLE_TYPE_FILE)}
+  Count:LongWord;                 {Reference Count of the Handle}
+  Flags:LongWord;                 {Flags for the Handle (eg HANDLE_FLAG_NAMED)}
+  Name:PChar;                     {The name of the Handle (Optional)}
+  Hash:LongWord;                  {Hash of the Handle name (Only if named)}
+  Data:THandle;                   {Purpose specific data for the Handle (eg a file handle or a socket handle)}
+  Close:THandleClose;             {Procedure to call on final close (Optional)}
+  CloseEx:THandleCloseEx;         {Function to call on final close (Optional)}
+  Duplicate:THandleDuplicate;     {Function to call when duplicating handle (Optional)}
   {Internal Properties}
   Prev:PHandleEntry;              {Previous entry in Handle table}
   Next:PHandleEntry;              {Next entry in Handle table}
   {Statistics Properties}
  end;
  
- //THandleList //To Do 
+ {Handle Table}
+ PHandleTable = ^THandleTable;
+ THandleTable = record
+  Next:LongWord;                  {The next handle number}
+  Count:LongWord;                 {The current handle count}
+  Handles:array of PHandleEntry;  {Array of handle entries hash buckets}
+ end;
  
 type
  {Shutdown Entry}
@@ -464,6 +504,7 @@ type
  TCPUGetCount = function:LongWord;
  TCPUGetMode = function:LongWord;
  TCPUGetState = function:LongWord;
+ TCPUGetGroup = function:LongWord;
  TCPUGetCurrent = function:LongWord;
  TCPUGetMemory = function(var Address:PtrUInt;var Length:LongWord):LongWord;
  TCPUGetPercentage = function(CPUID:LongWord):Double;
@@ -623,6 +664,7 @@ type
 type 
  {Prototypes for Touch Handlers}
  TTouchGetBuffer = function(var Address:LongWord):LongWord;
+ TTouchSetBuffer = function(Address:PtrUInt):LongWord;
  
 type
  {Prototypes for Cursor Handlers}
@@ -898,6 +940,8 @@ type
  {Prototypes for Text IO Handlers} 
  TTextIOWriteChar = function(ACh:Char;AUserData:Pointer):Boolean;
  TTextIOReadChar = function(var ACh:Char;AUserData:Pointer):Boolean;
+
+ TTextIOWriteBuffer = function(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
  
 type
  {Prototypes for Console Handlers} 
@@ -986,6 +1030,10 @@ var
  InterruptLock:TPlatformLock;
  PageTableLock:TPlatformLock;
  VectorTableLock:TPlatformLock;
+ HandleNameLock:TPlatformLock;
+ HandleTableLock:TPlatformLock;
+ 
+ UtilityLock:TPlatformLock;
  
 var
  {Semaphore Variables}
@@ -1163,6 +1211,7 @@ var
  CPUGetCountHandler:TCPUGetCount;
  CPUGetModeHandler:TCPUGetMode;
  CPUGetStateHandler:TCPUGetState;
+ CPUGetGroupHandler:TCPUGetGroup;
  CPUGetCurrentHandler:TCPUGetCurrent;
  CPUGetMemoryHandler:TCPUGetMemory;
  CPUGetPercentageHandler:TCPUGetPercentage;
@@ -1328,6 +1377,7 @@ var
 var 
  {Touch Handlers}
  TouchGetBufferHandler:TTouchGetBuffer;
+ TouchSetBufferHandler:TTouchSetBuffer;
  
 var
  {DMA Handlers}
@@ -1591,7 +1641,14 @@ var
 var
  {CountLeadingZeros Handlers}
  CountLeadingZerosHandler:TCountLeadingZeros;
-
+ 
+var 
+ {Text IO Handlers}
+ TextIOWriteCharHandler:TTextIOWriteChar;
+ TextIOReadCharHandler:TTextIOReadChar;
+ 
+ TextIOWriteBufferHandler:TTextIOWriteBuffer;
+ 
 var
  {Console Handlers}
  ConsoleGetKeyHandler:TConsoleGetKey;
@@ -1763,6 +1820,7 @@ function CPUGetMask:LongWord; inline;
 function CPUGetCount:LongWord; inline;
 function CPUGetMode:LongWord; inline;
 function CPUGetState:LongWord; inline;
+function CPUGetGroup:LongWord; inline;
 function CPUGetCurrent:LongWord; inline;
 function CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; inline; 
 function CPUGetPercentage(CPUID:LongWord):Double; inline;
@@ -1935,6 +1993,7 @@ function FramebufferSetBacklight(Brightness:LongWord):LongWord; inline;
 {==============================================================================}
 {Touch Functions}
 function TouchGetBuffer(var Address:LongWord):LongWord; inline;
+function TouchSetBuffer(Address:PtrUInt):LongWord; inline;
 
 {==============================================================================}
 {Cursor Functions}
@@ -1962,16 +2021,17 @@ function DMAGetChannels:LongWord; inline;
 
 {==============================================================================}
 {Handle Functions}
-//To Do
-//HandleCreate
-//HandleDestroy
+function HandleCreate(Data:THandle;AType:LongWord):THandle; inline;
+function HandleCreateEx(const Name:String;Flags:LongWord;Data:THandle;AType:LongWord):PHandleEntry;
+function HandleDestroy(Handle:THandle):LongWord;
 
-//HandleGet
-//HandleOpen
-//HandleClose
-//HandleDuplicate
+function HandleGet(Handle:THandle):PHandleEntry;
+function HandleFind(const Name:String):PHandleEntry;
+function HandleEnumerate(Callback:THandleEnumerate;Data:Pointer):LongWord;
 
-//etc
+function HandleOpen(const Name:String):THandle;
+function HandleClose(Handle:THandle):LongWord; inline;
+function HandleDuplicate(Handle:THandle):THandle;
 
 {==============================================================================}
 {GPIO Functions}
@@ -2199,6 +2259,11 @@ procedure TextIOWrite(var T:TextRec);
  
 function TextIOReadData(ARead:TTextIOReadChar;AUserData:Pointer;ABuffer:PChar;ACount:LongInt):LongInt;
 
+function TextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean; inline;
+function TextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean; inline;
+
+function TextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+
 {==============================================================================}
 {Console Functions}
 function ConsoleGetKey(var ACh:Char;AUserData:Pointer):Boolean; inline;
@@ -2279,6 +2344,8 @@ function SysUtilsGetLocalTimeOffset:Integer;
 
 {==============================================================================}
 {Platform Helper Functions}
+function HandleTypeToString(HandleType:LongWord):String;
+
 procedure PlatformLog(Level:LongWord;const AText:String);
 procedure PlatformLogInfo(const AText:String);
 procedure PlatformLogError(const AText:String);
@@ -2293,6 +2360,8 @@ implementation
 {==============================================================================}
 var
  {Platform specific variables}
+ HandleTable:THandleTable;
+ 
  DataAbortException:EDataAbort;
  PrefetchAbortException:EPrefetchAbort;
  UndefinedInstructionException:EUndefinedInstruction;
@@ -2302,6 +2371,8 @@ var
 {Initialization Functions}
 procedure PlatformInit;
 {Initialize platform specific information for the current hardware}
+var
+ Count:LongWord;
 begin
  {}
  {Check Initialized}
@@ -2350,6 +2421,21 @@ begin
  VectorTableLock.Lock:=INVALID_HANDLE_VALUE;
  VectorTableLock.AcquireLock:=nil;
  VectorTableLock.ReleaseLock:=nil;
+
+ {Initialize Handle Name Lock}
+ HandleNameLock.Lock:=INVALID_HANDLE_VALUE;
+ HandleNameLock.AcquireLock:=nil;
+ HandleNameLock.ReleaseLock:=nil;
+ 
+ {Initialize Handle Table Lock}
+ HandleTableLock.Lock:=INVALID_HANDLE_VALUE;
+ HandleTableLock.AcquireLock:=nil;
+ HandleTableLock.ReleaseLock:=nil;
+
+ {Initialize Utility Lock}
+ UtilityLock.Lock:=INVALID_HANDLE_VALUE;
+ UtilityLock.AcquireLock:=nil;
+ UtilityLock.ReleaseLock:=nil;
  
  {Initialize Shutdown Semaphore}
  ShutdownSemaphore.Semaphore:=INVALID_HANDLE_VALUE;
@@ -2438,6 +2524,15 @@ begin
 
  {Initialize Peripheral Access}
  PeripheralInit;
+ 
+ {Initialize Handle Table}
+ HandleTable.Next:=HANDLE_TABLE_MIN;
+ HandleTable.Count:=0;
+ SetLength(HandleTable.Handles,HANDLE_TABLE_MASK + 1);
+ for Count:=0 to HANDLE_TABLE_MASK do 
+  begin
+   HandleTable.Handles[Count]:=nil;
+  end;
  
  {Initialize Hardware Exceptions}
  DataAbortException:=EDataAbort.Create(STRING_DATA_ABORT);
@@ -3925,6 +4020,22 @@ begin
  else
   begin
    Result:=CPU_STATE_NONE;
+  end;
+end;
+
+{==============================================================================}
+
+function CPUGetGroup:LongWord; inline;
+{Get the current CPU group}
+begin
+ {}
+ if Assigned(CPUGetGroupHandler) then
+  begin
+   Result:=CPUGetGroupHandler;
+  end
+ else
+  begin
+   Result:=CPU_GROUP_0;
   end;
 end;
 
@@ -5672,6 +5783,22 @@ begin
 end;
 
 {==============================================================================}
+
+function TouchSetBuffer(Address:PtrUInt):LongWord; inline;
+{Set the Touchscreen memory buffer (Where Applicable)}  
+begin
+ {}
+ if Assigned(TouchSetBufferHandler) then
+  begin
+   Result:=TouchSetBufferHandler(Address);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
 {Cursor Functions}
 function CursorSetDefault:LongWord; inline;
 {Set the default Cursor Info (Where Applicable)}
@@ -5904,7 +6031,633 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Handle Functions}
-//To Do
+function HandleCreate(Data:THandle;AType:LongWord):THandle; inline;
+{Create and Open a new unnamed handle of the supplied type}
+{Data: Purpose specific data to be referenced by the new handle (Optional)}
+{AType: The type of the new handle (eg HANDLE_TYPE_FILE)}
+{Return: The newly created handle or INVALID_HANDLE_VALUE on failure}
+var
+ HandleEntry:PHandleEntry;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+ 
+ {Create Handle}
+ HandleEntry:=HandleCreateEx('',HANDLE_FLAG_NONE,Data,AType);
+ if HandleEntry <> nil then
+  begin
+   Result:=HandleEntry.Handle;
+  end;
+end;
+
+{==============================================================================}
+
+function HandleCreateEx(const Name:String;Flags:LongWord;Data:THandle;AType:LongWord):PHandleEntry;
+{Create and Open a new named or unnamed handle of the supplied type}
+{Name: The name of the new handle (Optional)}
+{Flags: The flags for the new handle (eg HANDLE_FLAG_DUPLICATE)}
+{Data: Purpose specific data to be referenced by the new handle (Optional)}
+{AType: The type of the new handle (eg HANDLE_TYPE_FILE)}
+{Return: The newly created handle entry or nil on failure}
+
+ procedure HandleIncrement;
+ begin
+  {Update Next}
+  Inc(HandleTable.Next);
+
+  {Check Next}
+  if HandleTable.Next > HANDLE_TABLE_MAX then
+   begin
+    HandleTable.Next:=HANDLE_TABLE_MIN;
+   end;
+  
+  {Check Next}
+  if HandleTable.Next < HANDLE_TABLE_MIN then
+   begin
+    HandleTable.Next:=HANDLE_TABLE_MIN;
+   end;
+ end;
+ 
+var
+ Start:LongWord;
+ FirstEntry:PHandleEntry;
+ HandleEntry:PHandleEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Name}
+ if (Length(Name) > 0) and (Length(Name) > HANDLE_NAME_LENGTH) then Exit;
+ 
+ {Check Flags}
+ if (Flags and HANDLE_FLAG_INTERNAL) <> 0 then Exit;
+ 
+ {Acquire Name Lock}
+ if HandleNameLock.Lock <> INVALID_HANDLE_VALUE then HandleNameLock.AcquireLock(HandleNameLock.Lock);
+ try
+  {Check Name}
+  if Length(Name) = 0 then 
+   begin
+    HandleEntry:=nil;
+   end
+  else 
+   begin
+    {Update Flags}
+    Flags:=Flags or HANDLE_FLAG_NAMED;
+    
+    {Find by Name}
+    HandleEntry:=HandleFind(Name);
+   end;
+  
+  {Check Handle entry}
+  if HandleEntry = nil then 
+   begin
+    {Get Start}
+    Start:=HandleTable.Next;
+
+    {Find by Next}
+    HandleEntry:=HandleGet(HandleTable.Next);
+    while HandleEntry <> nil do
+     begin
+      {Increment Next}
+      HandleIncrement;
+      
+      {Check Next}
+      if HandleTable.Next = Start then Break;
+      
+      {Find Next}
+      HandleEntry:=HandleGet(HandleTable.Next);
+     end;
+     
+    {Check Handle entry}
+    if HandleEntry <> nil then Exit;
+   end;
+   
+  {Acquire Table Lock}
+  if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+  try
+   {Check Handle entry}
+   if HandleEntry <> nil then 
+    begin
+     {Check Signature} 
+     if HandleEntry.Signature <> HANDLE_SIGNATURE then Exit;
+     
+     {Check Type}
+     if HandleEntry.HandleType <> AType then Exit;
+     
+     {Increment Count}
+     Inc(HandleEntry.Count);
+     
+     {Return Result}
+     Result:=HandleEntry;
+    end
+   else
+    begin
+     {Create Handle entry}
+     if HANDLE_SHARED_MEMORY then
+      begin
+       HandleEntry:=AllocSharedMem(SizeOf(THandleEntry)); 
+      end
+     else
+      begin 
+       HandleEntry:=AllocMem(SizeOf(THandleEntry)); 
+      end; 
+     if HandleEntry = nil then Exit;
+     
+     {Setup Handle entry}
+     HandleEntry.Signature:=HANDLE_SIGNATURE;
+     HandleEntry.Handle:=HandleTable.Next; 
+     HandleEntry.HandleType:=AType;
+     HandleEntry.Count:=1; 
+     HandleEntry.Flags:=Flags;
+     HandleEntry.Data:=Data; 
+     
+     {Setup Handle Name}
+     if Length(Name) > 0 then
+      begin
+       HandleEntry.Name:=AllocMem(HANDLE_NAME_LENGTH + 1);  
+       if HandleEntry.Name = nil then
+        begin
+         {Free Handle}
+         FreeMem(HandleEntry);
+         
+         Exit;
+        end;
+       
+       StrLCopy(HandleEntry.Name,PChar(Name),HANDLE_NAME_LENGTH);       
+       HandleEntry.Hash:=StringHash(Name);
+      end; 
+     
+     {Get First entry}
+     FirstEntry:=HandleTable.Handles[HandleEntry.Handle and HANDLE_TABLE_MASK];
+     
+     {Link Handle entry}
+     HandleEntry.Next:=FirstEntry;
+     if FirstEntry <> nil then FirstEntry.Prev:=HandleEntry;
+     HandleTable.Handles[HandleEntry.Handle and HANDLE_TABLE_MASK]:=HandleEntry;
+     
+     {Increment Count}
+     Inc(HandleTable.Count);
+
+     {Increment Next}
+     HandleIncrement;
+     
+     {Return Result}
+     Result:=HandleEntry;
+    end;    
+  finally
+   {Release Table Lock}
+   if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+  end;  
+ finally
+  {Release Name Lock}
+  if HandleNameLock.Lock <> INVALID_HANDLE_VALUE then HandleNameLock.ReleaseLock(HandleNameLock.Lock);
+ end;  
+end;
+
+{==============================================================================}
+
+function HandleDestroy(Handle:THandle):LongWord;
+{Close and Destroy a named or unnamed handle}
+{Handle: The handle to be closed and destroyed}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
+
+{Note: For handles which have been opened multiple times, the handle is not destroyed until the last reference is closed.
+       If there are still open references to the handle the return value will be ERROR_IN_USE instead of ERROR_SUCCESS}
+var
+ PrevEntry:PHandleEntry;
+ NextEntry:PHandleEntry;
+ HandleEntry:PHandleEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Get Handle}
+ HandleEntry:=HandleGet(Handle);
+ if HandleEntry = nil then Exit;
+ 
+ {Acquire Table Lock}
+ if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+ try
+  {Check Signature} 
+  if HandleEntry.Signature <> HANDLE_SIGNATURE then Exit;
+ 
+  {Check Count}
+  if HandleEntry.Count > 1 then
+   begin
+    {Decrement Count}
+    Dec(HandleEntry.Count);
+    
+    {Return Result}
+    Result:=ERROR_IN_USE;
+   end
+  else
+   begin
+    {Check Count}
+    if HandleEntry.Count < 1 then Exit;
+    
+    {Close Handle}
+    if Assigned(HandleEntry.Close) then
+     begin
+      HandleEntry.Close(HandleEntry.Data);
+     end
+    else if Assigned(HandleEntry.CloseEx) then 
+     begin
+      HandleEntry.CloseEx(HandleEntry.Data);
+     end;
+    
+    {Invalidate Handle entry}
+    HandleEntry.Signature:=0;
+
+    {Get Prev/Next entry}
+    PrevEntry:=HandleEntry.Prev;
+    NextEntry:=HandleEntry.Next;
+    
+    {Unlink Handle entry}
+    if PrevEntry = nil then
+     begin
+      HandleTable.Handles[HandleEntry.Handle and HANDLE_TABLE_MASK]:=NextEntry;
+      if NextEntry <> nil then
+       begin
+        NextEntry.Prev:=nil;
+       end;       
+     end
+    else
+     begin
+      PrevEntry.Next:=NextEntry;
+      if NextEntry <> nil then
+       begin
+        NextEntry.Prev:=PrevEntry;
+       end;       
+     end;     
+    
+    {Decrement Count}
+    Dec(HandleTable.Count);
+     
+    {Destroy Handle entry}
+    FreeMem(HandleEntry);
+   
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   end;   
+ finally
+  {Release Table Lock}
+  if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+ end;  
+end;
+
+{==============================================================================}
+
+function HandleGet(Handle:THandle):PHandleEntry;
+{Get the handle entry for the supplied handle}
+{Handle: The handle to get the entry for}
+{Return: The handle entry on success or nil on failure}
+var
+ HandleEntry:PHandleEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ if LongWord(Handle) > HANDLE_TABLE_MAX then Exit;
+ 
+ {Acquire Table Lock}
+ if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+ try
+  {Get First}
+  HandleEntry:=HandleTable.Handles[Handle and HANDLE_TABLE_MASK];
+  while HandleEntry <> nil do
+   begin
+    {Check Handle}
+    if HandleEntry.Handle = Handle then
+    begin
+      Result:=HandleEntry;
+      Exit;
+     end; 
+     
+    HandleEntry:=HandleEntry.Next; 
+   end; 
+ finally
+  {Release Table Lock}
+  if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+ end;  
+end;
+
+{==============================================================================}
+
+function HandleFind(const Name:String):PHandleEntry;
+{Find an existing named handle of the supplied type}
+{Name: The name of the handle to find}
+{Return: The handle entry on success or nil on failure}
+var
+ Hash:LongWord;
+ Count:LongWord;
+ HandleEntry:PHandleEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Name}
+ if Length(Name) = 0 then Exit;
+ 
+ {Calculate Hash}
+ Hash:=StringHash(Name);
+ if Hash = 0 then Exit;
+ 
+ {Acquire Table Lock}
+ if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+ try
+  {Check Handles}
+  for Count:=0 to HANDLE_TABLE_MASK do
+   begin
+    HandleEntry:=HandleTable.Handles[Count];
+    while HandleEntry <> nil do
+     begin
+      {Check Hash}
+      if HandleEntry.Hash = Hash then
+       begin
+        {Check Name}
+        if StrComp(HandleEntry.Name,PChar(Name)) = 0 then
+         begin
+          Result:=HandleEntry;
+          Exit;
+         end;
+       end;
+       
+      HandleEntry:=HandleEntry.Next; 
+     end;
+   end;
+ finally
+  {Release Table Lock}
+  if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+ end;  
+end;
+
+{==============================================================================}
+
+function HandleEnumerate(Callback:THandleEnumerate;Data:Pointer):LongWord;
+{Enumerate all handles in the handle table}
+{Callback: The callback function to call for each handle in the table}
+{Data: A private data pointer to pass to callback for each device in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Count:LongWord;
+ HandleEntry:PHandleEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Acquire Table Lock}
+ if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+ try
+  {Get Handles}
+  for Count:=0 to HANDLE_TABLE_MASK do
+   begin
+    {Get Handle}
+    HandleEntry:=HandleTable.Handles[Count];
+    while HandleEntry <> nil do
+     begin
+      {Call Callback}
+      if Callback(HandleEntry,Data) <> ERROR_SUCCESS then Exit;
+       
+      {Get Next} 
+      HandleEntry:=HandleEntry.Next; 
+     end;
+   end;
+ 
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Table Lock}
+  if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+ end;  
+end;
+
+{==============================================================================}
+
+function HandleOpen(const Name:String):THandle;
+{Open an existing named handle}
+{Name: The name of the handle to open}
+{Return: The handle matching the name or INVALID_HANDLE_VALUE on failure}
+var
+ HandleEntry:PHandleEntry;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+ 
+ {Check Name}
+ if Length(Name) = 0 then Exit;
+ 
+ {Acquire Name Lock}
+ if HandleNameLock.Lock <> INVALID_HANDLE_VALUE then HandleNameLock.AcquireLock(HandleNameLock.Lock);
+ try
+  {Find by Name}
+  HandleEntry:=HandleFind(Name);
+  if HandleEntry = nil then Exit;
+  
+  {Acquire Table Lock}
+  if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+  try
+   {Check Signature} 
+   if HandleEntry.Signature <> HANDLE_SIGNATURE then Exit;
+   
+   {Increment Count}
+   Inc(HandleEntry.Count);
+   
+   {Return Result}
+   Result:=HandleEntry.Handle;
+  finally
+   {Release Table Lock}
+   if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+  end;  
+ finally
+  {Release Name Lock}
+  if HandleNameLock.Lock <> INVALID_HANDLE_VALUE then HandleNameLock.ReleaseLock(HandleNameLock.Lock);
+ end;  
+end;
+
+{==============================================================================}
+
+function HandleClose(Handle:THandle):LongWord; inline;
+{Close a named or unnamed handle}
+{Handle: The handle to be closed}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
+
+{Note: For handles which have been opened multiple times, the handle is destroyed when the last reference is closed}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ ResultCode:=HandleDestroy(Handle);
+ if (ResultCode = ERROR_SUCCESS) or (ResultCode = ERROR_IN_USE) then
+  begin
+   Result:=ERROR_SUCCESS;
+  end
+ else
+  begin
+   Result:=ResultCode;
+  end;  
+end;
+
+{==============================================================================}
+
+function HandleDuplicate(Handle:THandle):THandle;
+{Duplicate an existing named or unnamed handle}
+{Handle: The handle to be duplicated}
+{Return: The newly duplicated handle or INVALID_HANDLE_VALUE on failure}
+
+{Note: Handles must be marked as HANDLE_FLAG_DUPLICATE to support duplication}
+
+ procedure HandleIncrement;
+ begin
+  {Update Next}
+  Inc(HandleTable.Next);
+
+  {Check Next}
+  if HandleTable.Next > HANDLE_TABLE_MAX then
+   begin
+    HandleTable.Next:=HANDLE_TABLE_MIN;
+   end;
+  
+  {Check Next}
+  if HandleTable.Next < HANDLE_TABLE_MIN then
+   begin
+    HandleTable.Next:=HANDLE_TABLE_MIN;
+   end;
+ end;
+
+var
+ Data:THandle;
+ Start:LongWord;
+ Unlock:Boolean;
+ FirstEntry:PHandleEntry;
+ HandleEntry:PHandleEntry;
+ DuplicateEntry:PHandleEntry;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+ 
+ {Acquire Name Lock}
+ if HandleNameLock.Lock <> INVALID_HANDLE_VALUE then HandleNameLock.AcquireLock(HandleNameLock.Lock);
+ try
+  {Get Handle}
+  HandleEntry:=HandleGet(Handle);
+  if HandleEntry = nil then Exit;
+ 
+  {Acquire Table Lock}
+  if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+  try
+   Unlock:=True;
+   
+   {Check Signature} 
+   if HandleEntry.Signature <> HANDLE_SIGNATURE then Exit;
+  
+   {Check Flags}
+   if (HandleEntry.Flags and HANDLE_FLAG_DUPLICATE) = 0 then Exit;
+   
+   {Duplicate Handle}
+   if Assigned(HandleEntry.Duplicate) then
+    begin
+     Data:=HandleEntry.Duplicate(HandleEntry.Data);
+     if Data = INVALID_HANDLE_VALUE then Exit;
+    end
+   else
+    begin
+     Data:=HandleEntry.Data;
+    end;   
+   
+   {Release Table Lock}
+   if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+   Unlock:=False;
+   
+   {Get Start}
+   Start:=HandleTable.Next;
+
+   {Find by Next}
+   DuplicateEntry:=HandleGet(HandleTable.Next);
+   while DuplicateEntry <> nil do
+    begin
+     {Increment Next}
+     HandleIncrement;
+     
+     {Check Next}
+     if HandleTable.Next = Start then Break;
+     
+     {Find Next}
+     DuplicateEntry:=HandleGet(HandleTable.Next);
+    end;
+    
+   {Check Duplicate entry}
+   if DuplicateEntry <> nil then Exit;
+   
+   {Acquire Table Lock}
+   if HandleTableLock.Lock <> INVALID_HANDLE_VALUE then HandleTableLock.AcquireLock(HandleTableLock.Lock);
+   Unlock:=True;
+   
+   {Create Duplicate entry}
+   if HANDLE_SHARED_MEMORY then
+    begin
+     DuplicateEntry:=AllocSharedMem(SizeOf(THandleEntry)); 
+    end
+   else
+    begin 
+     DuplicateEntry:=AllocMem(SizeOf(THandleEntry)); 
+    end; 
+   if DuplicateEntry = nil then Exit;
+   
+   {Setup Duplicate entry}
+   DuplicateEntry.Signature:=HANDLE_SIGNATURE;
+   DuplicateEntry.Handle:=HandleTable.Next; 
+   DuplicateEntry.HandleType:=HandleEntry.HandleType;
+   DuplicateEntry.Count:=1; 
+   DuplicateEntry.Flags:=HandleEntry.Flags;
+   DuplicateEntry.Data:=Data; 
+
+   {Setup Handle Name}
+   if HandleEntry.Name <> nil then
+    begin
+     DuplicateEntry.Name:=AllocMem(HANDLE_NAME_LENGTH + 1);  
+     if DuplicateEntry.Name = nil then
+      begin
+       {Free Handle}
+       FreeMem(DuplicateEntry);
+       
+       Exit;
+      end;
+     
+     StrLCopy(DuplicateEntry.Name,HandleEntry.Name,HANDLE_NAME_LENGTH);       
+     DuplicateEntry.Hash:=HandleEntry.Hash;
+    end; 
+   
+   {Get First entry}
+   FirstEntry:=HandleTable.Handles[DuplicateEntry.Handle and HANDLE_TABLE_MASK];
+   
+   {Link Handle entry}
+   DuplicateEntry.Next:=FirstEntry;
+   if FirstEntry <> nil then FirstEntry.Prev:=DuplicateEntry;
+   HandleTable.Handles[DuplicateEntry.Handle and HANDLE_TABLE_MASK]:=DuplicateEntry;
+   
+   {Increment Count}
+   Inc(HandleTable.Count);
+
+   {Increment Next}
+   HandleIncrement;
+     
+   {Return Result}
+   Result:=DuplicateEntry.Handle;
+  finally
+   {Release Table Lock}
+   if Unlock and (HandleTableLock.Lock <> INVALID_HANDLE_VALUE) then HandleTableLock.ReleaseLock(HandleTableLock.Lock);
+  end;  
+ finally
+  {Release Name Lock}
+  if HandleNameLock.Lock <> INVALID_HANDLE_VALUE then HandleNameLock.ReleaseLock(HandleNameLock.Lock);
+ end;  
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -8248,6 +9001,7 @@ end;
 {==============================================================================}
 {Text IO Functions}
 procedure TextIOOpen(var F:Text;AWrite:TTextIOWriteChar;ARead:TTextIOReadChar;AMode:LongInt;AUserData:Pointer);
+{Open a text file with the input or output directed to the default text IO device}
 var
  TextIOData:PTextIOData;
 begin
@@ -8283,6 +9037,7 @@ end;
 {==============================================================================}
 
 procedure TextIOClose(var T:TextRec);
+{Close a text file that was opened by TextIOOpen (Dummy only)}
 begin
  {}
  {Nothing}
@@ -8291,6 +9046,9 @@ end;
 {==============================================================================}
  
 procedure TextIORead(var T:TextRec);
+{Internal read function for text files using the text IO device}
+
+{Note: Not intended to be called directly by applications, use Read or ReadLn instead}
 var
  TextIOData:PTextIOData;
 begin
@@ -8306,6 +9064,9 @@ end;
 {==============================================================================}
 
 procedure TextIOWrite(var T:TextRec);
+{Internal write function for text files using the text IO device}
+
+{Note: Not intended to be called directly by applications, use Write or WriteLn instead}
 var
  Next:PChar;
  Count:LongInt;
@@ -8335,6 +9096,9 @@ end;
 {==============================================================================}
  
 function TextIOReadData(ARead:TTextIOReadChar;AUserData:Pointer;ABuffer:PChar;ACount:LongInt):LongInt;
+{Internal read function for text files using the text IO device}
+
+{Note: Not intended to be called directly by applications, use Read or ReadLn instead}
 var
  Ch:Char;
  EndChar:Boolean;
@@ -8345,24 +9109,109 @@ begin
  EndChar:=False;
  while (Result < ACount) and not(EndChar) do
   begin
-   if ARead(Ch,AUserData) then
+   if not ARead(Ch,AUserData) then Break;
+
+   if Ch = #13 then EndChar:=True;
+     
+   ABuffer^:=Ch;
+     
+   Inc(ABuffer);
+   Inc(Result);
+     
+   if EndChar and (Result < ACount) then 
     begin
-     if Ch = #13 then EndChar:=True;
-     
-     ABuffer^:=Ch;
-     
+     ABuffer^:=#10;
+       
      Inc(ABuffer);
      Inc(Result);
-     
-     if EndChar and (Result < ACount) then 
-      begin
-       ABuffer^:=#10;
-       
-       Inc(ABuffer);
-       Inc(Result);
-      end;
     end;
   end;
+end;
+
+{==============================================================================}
+
+function TextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean; inline;
+{Output a character to the default text IO device}
+
+{Note: Not intended to be called directly by applications, use Write or WriteLn instead}
+begin
+ {}
+ if Assigned(TextIOWriteCharHandler) then
+  begin
+   Result:=TextIOWriteCharHandler(ACh,AUserData);
+  end
+ else
+  begin
+   {Default to ConsoleWriteChar if assigned}
+   if Assigned(ConsoleWriteCharHandler) then
+    begin
+     Result:=ConsoleWriteCharHandler(ACh,AUserData);
+    end
+   else
+    begin
+     Result:=True; {Default True}
+    end;  
+  end;
+end;
+
+{==============================================================================}
+
+function TextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean; inline;
+{Input a character from the default text IO device}
+
+{Note: Not intended to be called directly by applications, use Read or ReadLn instead}
+begin
+ {}
+ if Assigned(TextIOReadCharHandler) then
+  begin
+   Result:=TextIOReadCharHandler(ACh,AUserData);
+  end
+ else
+  begin
+   {Default to ConsoleReadChar if assigned}
+   if Assigned(ConsoleReadCharHandler) then
+    begin
+     Result:=ConsoleReadCharHandler(ACh,AUserData);
+    end
+   else
+    begin
+     ACh:=#0;
+    
+     Result:=True; {Default True}    
+    end;    
+  end;  
+end;
+
+{==============================================================================}
+
+function TextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+{Output one or more characters to the default text IO device}
+
+{Note: Not intended to be called directly by applications, use Write or WriteLn instead}
+var
+ Next:PChar;
+ Count:LongInt;
+begin
+ {}
+ if Assigned(TextIOWriteBufferHandler) then
+  begin
+   Result:=TextIOWriteBufferHandler(ABuffer,ACount,AUserData);
+  end
+ else
+  begin
+   {Default to TextIOWriteChar if assigned}
+   Count:=0;
+   Next:=ABuffer;
+   while Count < ACount do
+    begin
+     if not TextIOWriteChar(Next^,nil) then Break;
+   
+     Inc(Next);
+     Inc(Count);
+    end;
+   
+   Result:=Count;
+  end;  
 end;
 
 {==============================================================================}
@@ -9130,6 +9979,48 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Platform Helper Functions}
+function HandleTypeToString(HandleType:LongWord):String;
+begin
+ {}
+ Result:='';
+ 
+ case HandleType of
+  HANDLE_TYPE_SPIN:Result:='HANDLE_TYPE_SPIN';
+  HANDLE_TYPE_MUTEX:Result:='HANDLE_TYPE_MUTEX';
+  HANDLE_TYPE_SECTION:Result:='HANDLE_TYPE_SECTION';
+  HANDLE_TYPE_SEMAPHORE:Result:='HANDLE_TYPE_SEMAPHORE';
+  HANDLE_TYPE_SYNCHRONIZER:Result:='HANDLE_TYPE_SYNCHRONIZER';
+  HANDLE_TYPE_CONDITION:Result:='HANDLE_TYPE_CONDITION';
+  HANDLE_TYPE_LIST:Result:='HANDLE_TYPE_LIST';
+  HANDLE_TYPE_QUEUE:Result:='HANDLE_TYPE_QUEUE';
+  HANDLE_TYPE_THREAD:Result:='HANDLE_TYPE_THREAD';
+  HANDLE_TYPE_MESSAGESLOT:Result:='HANDLE_TYPE_MESSAGESLOT';
+  HANDLE_TYPE_MAILSLOT:Result:='HANDLE_TYPE_MAILSLOT';
+  HANDLE_TYPE_BUFFER:Result:='HANDLE_TYPE_BUFFER';
+  HANDLE_TYPE_EVENT:Result:='HANDLE_TYPE_EVENT';
+  
+  HANDLE_TYPE_TIMER:Result:='HANDLE_TYPE_TIMER';
+  HANDLE_TYPE_WORKER:Result:='HANDLE_TYPE_WORKER';
+  HANDLE_TYPE_WINDOW:Result:='HANDLE_TYPE_WINDOW';
+  HANDLE_TYPE_FONT:Result:='HANDLE_TYPE_FONT';
+  HANDLE_TYPE_KEYMAP:Result:='HANDLE_TYPE_KEYMAP';
+  
+  HANDLE_TYPE_FILE:Result:='HANDLE_TYPE_FILE';
+  HANDLE_TYPE_PIPE:Result:='HANDLE_TYPE_PIPE';
+  HANDLE_TYPE_SOCKET:Result:='HANDLE_TYPE_SOCKET';
+  HANDLE_TYPE_DEVICE:Result:='HANDLE_TYPE_DEVICE';
+ else
+  begin
+   if HandleType > HANDLE_TYPE_USER_BASE then
+    begin
+     Result:='HANDLE_TYPE_USER_BASE+' + IntToStr(HandleType - HANDLE_TYPE_USER_BASE);
+    end;
+  end;
+ end;
+end;
+
+{==============================================================================}
+
 procedure PlatformLog(Level:LongWord;const AText:String);
 var
  WorkBuffer:String;

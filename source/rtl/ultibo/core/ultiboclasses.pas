@@ -1967,8 +1967,6 @@ begin
   end;
   
  AValue.Parent:=nil;
- //AValue.FirstChild:=nil;  //To Do //??? Wrong !! This messes up Move !! I think Registry needed this - Check it
- //AValue.LastChild:=nil;   //To Do //??? Wrong !! This messes up Move !! I think Registry needed this - Check it
  AValue.Prev:=nil;
  AValue.Next:=nil;
  

@@ -915,7 +915,7 @@ end;
 function SocketError: cint;
 begin
  {}
- Result:=GetLastError;
+ Result:=NetworkGetLastError;
 end;
 
 {==============================================================================}
@@ -1048,11 +1048,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(Sock);
   if Socket = nil then Exit;
 
@@ -1071,7 +1071,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: CloseSocket ' + E.Message);
     {$ENDIF}
@@ -1128,7 +1128,7 @@ function Inet_Pton(family: Longint; Source: PChar; Dest: Pointer): Longint;
 begin
  {}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEFAULT);
+ NetworkSetLastError(WSAEFAULT);
  
  {Check Source}
  if Source = nil then Exit;
@@ -1137,7 +1137,7 @@ begin
  if Dest = nil then Exit;
  
  {Check Family}
- SetLastError(WSAEAFNOSUPPORT);
+ NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
     PInAddr(Dest)^:=StringToInAddr(Source);
@@ -1145,7 +1145,7 @@ begin
     //To Do //Check result, if not valid return 0
     
     Result:=1; {As per Spec}
-    SetLastError(ERROR_SUCCESS);
+    NetworkSetLastError(ERROR_SUCCESS);
    end;
   AF_INET6:begin
     PIn6Addr(Dest)^:=StringToIn6Addr(Source);
@@ -1153,7 +1153,7 @@ begin
     //To Do //Check result, if not valid return 0
     
     Result:=1; {As per Spec}
-    SetLastError(ERROR_SUCCESS);
+    NetworkSetLastError(ERROR_SUCCESS);
    end;  
  end;
 end;
@@ -1166,7 +1166,7 @@ var
 begin
  {}
  Result:=nil;
- SetLastError(WSA_INVALID_PARAMETER);
+ NetworkSetLastError(WSA_INVALID_PARAMETER);
  
  {Check Source}
  if Source = nil then Exit;
@@ -1175,10 +1175,10 @@ begin
  if Dest = nil then Exit;
   
  {Check Family}
- SetLastError(WSAEAFNOSUPPORT);
+ NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
-    SetLastError(WSA_INVALID_PARAMETER);
+    NetworkSetLastError(WSA_INVALID_PARAMETER);
     if Size < INET_ADDRSTRLEN then Exit;
     
     WorkBuffer:=InAddrToString(PInAddr(Source)^);
@@ -1187,7 +1187,7 @@ begin
     Result:=Dest;
    end;
   AF_INET6:begin
-    SetLastError(WSA_INVALID_PARAMETER);
+    NetworkSetLastError(WSA_INVALID_PARAMETER);
     if Size < INET6_ADDRSTRLEN then Exit;
     
     WorkBuffer:=In6AddrToString(PIn6Addr(Source)^);
@@ -1206,11 +1206,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
   
   {Get Host By Address}
@@ -1219,7 +1219,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetHostByAddr ' + E.Message);
     {$ENDIF}
@@ -1235,11 +1235,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Host By Name}
@@ -1248,7 +1248,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetHostByName ' + E.Message);
     {$ENDIF}
@@ -1264,11 +1264,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Host Name}
@@ -1277,7 +1277,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetHostName ' + E.Message);
     {$ENDIF}
@@ -1293,11 +1293,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Network By Address}
@@ -1306,7 +1306,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetNetByAddr ' + E.Message);
     {$ENDIF}
@@ -1322,11 +1322,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Network By Name}
@@ -1335,7 +1335,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetNetByName ' + E.Message);
     {$ENDIF}
@@ -1351,11 +1351,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Service By Port}
@@ -1364,7 +1364,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetServByPort ' + E.Message);
     {$ENDIF}
@@ -1380,11 +1380,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Service By Name}
@@ -1393,7 +1393,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetServByName ' + E.Message);
     {$ENDIF}
@@ -1409,11 +1409,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Protocol By Number}
@@ -1422,7 +1422,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetProtoByNumber ' + E.Message);
     {$ENDIF}
@@ -1438,11 +1438,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Protocol By Name}
@@ -1451,7 +1451,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetProtoByName ' + E.Message);
     {$ENDIF}
@@ -1470,11 +1470,11 @@ begin
   Addr:=nil;
   
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
   
   //To Do //See: DNSClient.GetAddrInfo
@@ -1482,7 +1482,7 @@ begin
   on E: Exception do
    begin
     Result:=WSANO_RECOVERY;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetAddrInfo ' + E.Message);
     {$ENDIF}
@@ -1497,18 +1497,18 @@ begin
  {}
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
   
   //To Do //See: DNSClient.FreeAddrInfo
  except
   on E: Exception do
    begin
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: FreeAddrInfo ' + E.Message);
     {$ENDIF}
@@ -1524,11 +1524,11 @@ begin
  Result:=WSAEAFNOSUPPORT;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
  
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   //To Do //See: DNSClient.GetNameInfo
@@ -1536,7 +1536,7 @@ begin
   on E: Exception do
    begin
     Result:=WSANO_RECOVERY;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: GetNameInfo ' + E.Message);
     {$ENDIF}
@@ -1553,11 +1553,11 @@ begin
  Result:=LongInt(INVALID_SOCKET);
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
 
   {Check Manager}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if ProtocolManager = nil then Exit;
   
   {Create Socket}
@@ -1566,7 +1566,7 @@ begin
   on E: Exception do
    begin
     Result:=LongInt(INVALID_SOCKET);
-    SetLastError(WSAEPROTONOSUPPORT);
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpsocket ' + E.Message);
     {$ENDIF}
@@ -1584,11 +1584,11 @@ begin
  Result:=Word(SOCKET_ERROR);
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1607,7 +1607,7 @@ begin
   on E: Exception do
    begin
     Result:=Word(SOCKET_ERROR);
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpsend ' + E.Message);
     {$ENDIF}
@@ -1625,11 +1625,11 @@ begin
  Result:=Word(SOCKET_ERROR);
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1648,7 +1648,7 @@ begin
   on E: Exception do
    begin
     Result:=Word(SOCKET_ERROR);
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpsendto ' + E.Message);
     {$ENDIF}
@@ -1666,11 +1666,11 @@ begin
  Result:=Word(SOCKET_ERROR);
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1689,7 +1689,7 @@ begin
   on E: Exception do
    begin
     Result:=Word(SOCKET_ERROR);
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fprecv ' + E.Message);
     {$ENDIF}
@@ -1707,11 +1707,11 @@ begin
  Result:=Word(SOCKET_ERROR);
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1730,7 +1730,7 @@ begin
   on E: Exception do
    begin
     Result:=Word(SOCKET_ERROR);
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fprecvfrom ' + E.Message);
     {$ENDIF}
@@ -1748,11 +1748,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1771,7 +1771,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpconnect ' + E.Message);
     {$ENDIF}
@@ -1789,11 +1789,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1812,7 +1812,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpshutdown ' + E.Message);
     {$ENDIF}
@@ -1830,11 +1830,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1853,7 +1853,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpbind ' + E.Message);
     {$ENDIF}
@@ -1871,11 +1871,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1894,7 +1894,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fplisten ' + E.Message);
     {$ENDIF}
@@ -1912,11 +1912,11 @@ begin
  Result:=LongInt(INVALID_SOCKET);
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
   
@@ -1935,7 +1935,7 @@ begin
   on E: Exception do
    begin
     Result:=LongInt(INVALID_SOCKET);
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpaccept ' + E.Message);
     {$ENDIF}
@@ -1953,11 +1953,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -1976,7 +1976,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpgetsockname ' + E.Message);
     {$ENDIF}
@@ -1994,11 +1994,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -2017,7 +2017,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpgetpeername ' + E.Message);
     {$ENDIF}
@@ -2035,11 +2035,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -2058,7 +2058,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpgetsockopt ' + E.Message);
     {$ENDIF}
@@ -2076,11 +2076,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -2099,7 +2099,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpsetsockopt ' + E.Message);
     {$ENDIF}
@@ -2114,7 +2114,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -2129,11 +2129,11 @@ begin
  Result:=0;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
  
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(Handle);
   if Socket = nil then Exit;
 
@@ -2160,7 +2160,7 @@ begin
  except
   on E: Exception do
    begin
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpRead ' + E.Message);
     {$ENDIF}
@@ -2178,11 +2178,11 @@ begin
  Result:=0;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(Handle);
   if Socket = nil then Exit;
 
@@ -2201,7 +2201,7 @@ begin
  except
   on E: Exception do
    begin
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpWrite ' + E.Message);
     {$ENDIF}

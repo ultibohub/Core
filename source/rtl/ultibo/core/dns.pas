@@ -1236,7 +1236,7 @@ begin
    {Check for Response}
    if CheckDNSResponse(@Response,AIdentifier) then
     begin
-     {Handle Reponse}
+     {Handle Response}
      Result:=HandleDNSResponse(@Response,AIdentifier);
      if Result then Exit;
     end;
@@ -1669,7 +1669,7 @@ begin
   {$ENDIF}
   
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
   
   //To Do //IPv6 //Check ALength/AFamily for AF_INET/AF_INET6 etc
@@ -1679,7 +1679,7 @@ begin
   if Transport = nil then Exit;
   try
    {Check the Params}
-   SetLastError(WSANO_RECOVERY);
+   NetworkSetLastError(WSANO_RECOVERY);
    if AAddr = nil then Exit;
    if AFamily <> AF_INET then Exit;
    if ALength < SizeOf(TInAddr) then Exit;
@@ -1729,7 +1729,7 @@ begin
                  begin
                   {Return Host Entry if found}
                   Result:=HostEntryToHostEnt(HostEntry);
-                  SetLastError(ERROR_SUCCESS);
+                  NetworkSetLastError(ERROR_SUCCESS);
                   
                   {Unlock Host}
                   HostEntry.ReleaseLock;
@@ -1754,7 +1754,7 @@ begin
     begin
      {Return Host Entry if found}
      Result:=HostEntryToHostEnt(HostEntry);
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      
      {Unlock Host}
      HostEntry.ReleaseLock;
@@ -1797,7 +1797,7 @@ begin
   {$ENDIF}
   
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
   
   //To Do //IPv6 //AAAA etc 
@@ -1807,7 +1807,7 @@ begin
   if Transport = nil then Exit;
   try
    {Check the Params}
-   SetLastError(WSANO_RECOVERY);
+   NetworkSetLastError(WSANO_RECOVERY);
    if AName = nil then Exit;
 
    {Check the Name}
@@ -1828,7 +1828,7 @@ begin
          
          {Return Address Entry if found}
          Result:=AddressEntryToHostEnt(AddressEntry,FProtocol.Manager.Settings.HostName + AddLeadingDot(FProtocol.Manager.Settings.DomainName),Count);
-         SetLastError(ERROR_SUCCESS);
+         NetworkSetLastError(ERROR_SUCCESS);
         end
        else if AddressEntry.AddressType = ADDRESS_TYPE_SECONDARY then 
         begin
@@ -1836,7 +1836,7 @@ begin
          
          {Return Address Entry if found}
          Result:=AddressEntryToHostEnt(AddressEntry,FProtocol.Manager.Settings.HostName + AddLeadingDot(FProtocol.Manager.Settings.DomainName),Count);
-         SetLastError(ERROR_SUCCESS);
+         NetworkSetLastError(ERROR_SUCCESS);
         end;
         
        {Get Next}
@@ -1857,7 +1857,7 @@ begin
          
          {Return Address Entry if found}
          Result:=AddressEntryToHostEnt(AddressEntry,'localhost',Count);
-         SetLastError(ERROR_SUCCESS);
+         NetworkSetLastError(ERROR_SUCCESS);
         end;
      
        {Get Next}
@@ -1914,7 +1914,7 @@ begin
                    begin
                     {Return Host Entry if found}
                     Result:=HostEntryToHostEnt(HostEntry);
-                    SetLastError(ERROR_SUCCESS);
+                    NetworkSetLastError(ERROR_SUCCESS);
                     
                     {Unlock Host}
                     HostEntry.ReleaseLock;
@@ -1939,7 +1939,7 @@ begin
       begin
        {Return Host Entry if found}
        Result:=HostEntryToHostEnt(HostEntry);
-       SetLastError(ERROR_SUCCESS);
+       NetworkSetLastError(ERROR_SUCCESS);
      
        {Unlock Host}
        HostEntry.ReleaseLock;
@@ -1969,7 +1969,7 @@ begin
   {$ENDIF}
   
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
   
   //To Do //IPv6 
@@ -1979,14 +1979,14 @@ begin
   if Transport = nil then Exit;
   try
    {Get the Host Name}
-   SetLastError(WSAEFAULT);
+   NetworkSetLastError(WSAEFAULT);
    if AName = nil then Exit;
    if ALength < Length(FProtocol.Manager.Settings.HostName) then Exit;
    StrLCopy(AName,PChar(FProtocol.Manager.Settings.HostName),ALength);
   
    {Return Result}
    Result:=NO_ERROR;
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
   finally
    Transport.ReaderUnlock;
   end;  
@@ -2013,7 +2013,7 @@ begin
   {$ENDIF}
   
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
 
   //To Do //IPv6 
@@ -2023,17 +2023,17 @@ begin
   if Transport = nil then Exit;
   try
    {Check the Params}
-   SetLastError(WSANO_RECOVERY);
+   NetworkSetLastError(WSANO_RECOVERY);
    if AProto = nil then Exit;
   
    {Get the Service}
-   SetLastError(WSANO_DATA);
+   NetworkSetLastError(WSANO_DATA);
    ServEntry:=Transport.GetServByPort(WordBEtoN(APort),AProto,True);
    if ServEntry = nil then Exit;
   
    {Return Service Entry if found}
    Result:=ServEntryToServEnt(ServEntry);
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
   
    {Unlock Service}
    ServEntry.ReleaseLock;
@@ -2062,7 +2062,7 @@ begin
   {$ENDIF}
   
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
 
   //To Do //IPv6 
@@ -2072,18 +2072,18 @@ begin
   if Transport = nil then Exit;
   try
    {Check the Params}
-   SetLastError(WSANO_RECOVERY);
+   NetworkSetLastError(WSANO_RECOVERY);
    if AName = nil then Exit;
    if AProto = nil then Exit;
   
    {Get the Service}
-   SetLastError(WSANO_DATA);
+   NetworkSetLastError(WSANO_DATA);
    ServEntry:=Transport.GetServByName(AName,AProto,True); 
    if ServEntry = nil then Exit;
   
    {Return Service Entry if found}
    Result:=ServEntryToServEnt(ServEntry);
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
   
    {Unlock Service}
    ServEntry.ReleaseLock;
@@ -2113,7 +2113,7 @@ begin
   {$ENDIF}
 
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
   
   //To Do //IPv6 
@@ -2123,13 +2123,13 @@ begin
   if Transport = nil then Exit;
   try
    {Get the Protocol}
-   SetLastError(WSANO_DATA);
+   NetworkSetLastError(WSANO_DATA);
    ProtoEntry:=Transport.GetProtoByNumber(AProto,True); 
    if ProtoEntry = nil then Exit;
   
    {Return Protocol Entry if found}
    Result:=ProtoEntryToProtoEnt(ProtoEntry);
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
 
    {Unlock Protocol}
    ProtoEntry.ReleaseLock;
@@ -2158,7 +2158,7 @@ begin
   {$ENDIF}
 
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
 
   //To Do //IPv6 
@@ -2168,17 +2168,17 @@ begin
   if Transport = nil then Exit;
   try 
    {Check the Params}
-   SetLastError(WSANO_RECOVERY);
+   NetworkSetLastError(WSANO_RECOVERY);
    if AName = nil then Exit;
 
    {Get the Protocol}
-   SetLastError(WSANO_DATA);
+   NetworkSetLastError(WSANO_DATA);
    ProtoEntry:=Transport.GetProtoByName(AName,True);
    if ProtoEntry = nil then Exit;
   
    {Return Protocol Entry if found}
    Result:=ProtoEntryToProtoEnt(ProtoEntry);
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
    
    {Unlock Protocol}
    ProtoEntry.ReleaseLock;
@@ -2208,7 +2208,7 @@ begin
   {$ENDIF}
   
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
   
   //To Do //IPv6 //Check Struct etc
@@ -2218,19 +2218,19 @@ begin
   if Transport = nil then Exit;
   try
    {Check the Params}
-   SetLastError(WSANO_RECOVERY);
+   NetworkSetLastError(WSANO_RECOVERY);
    if AAddr = nil then Exit;
    if AStruct <> AF_INET then Exit;
    if ALength < SizeOf(TInAddr) then Exit;
   
    {Get the Network}
-   SetLastError(WSANO_DATA);
+   NetworkSetLastError(WSANO_DATA);
    NetworkEntry:=Transport.GetNetworkByAddress(InAddrToHost(TInAddr(AAddr^)),True);
    if NetworkEntry = nil then Exit;
   
    {Return Network Entry if found}
    Result:=NetworkEntryToNetEnt(NetworkEntry);
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
    
    {Unlock Network}
    NetworkEntry.ReleaseLock;
@@ -2259,7 +2259,7 @@ begin
   {$ENDIF}
   
   {Check the Protocol}
-  SetLastError(WSAENETDOWN);
+  NetworkSetLastError(WSAENETDOWN);
   if FProtocol = nil then Exit;
   
   //To Do //IPv6 
@@ -2269,17 +2269,17 @@ begin
   if Transport = nil then Exit;
   try
    {Check the Params}
-   SetLastError(WSANO_RECOVERY);
+   NetworkSetLastError(WSANO_RECOVERY);
    if AName = nil then Exit;
   
    {Get the Network}
-   SetLastError(WSANO_DATA);
+   NetworkSetLastError(WSANO_DATA);
    NetworkEntry:=Transport.GetNetworkByName(AName,True); 
    if NetworkEntry = nil then Exit;
   
    {Return Network Entry if found}
    Result:=NetworkEntryToNetEnt(NetworkEntry);
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
   
    {Unlock Network}
    NetworkEntry.ReleaseLock;

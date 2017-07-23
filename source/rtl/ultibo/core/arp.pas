@@ -139,12 +139,7 @@ type
    {Inherited Methods}
 
    {Internal Methods}
-   function GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TARPAddressEntry;
-   function GetAddressByHardware(const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TARPAddressEntry;
-   function GetAddressByNext(APrevious:TARPAddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TARPAddressEntry;
-   function AddAddress(const AAddress:TInAddr;const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TARPAddressEntry;
-   function RemoveAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter):Boolean;
-   procedure FlushAddresses(All:Boolean);
+   
   public
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; override;
@@ -158,6 +153,13 @@ type
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    
    {ARP Methods}
+   function GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TARPAddressEntry;
+   function GetAddressByHardware(const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TARPAddressEntry;
+   function GetAddressByNext(APrevious:TARPAddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TARPAddressEntry;
+   function AddAddress(const AAddress:TInAddr;const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TARPAddressEntry;
+   function RemoveAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter):Boolean;
+   procedure FlushAddresses(All:Boolean);
+   
    function LoadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr;const AHardware:THardwareAddress;AType:Word):Boolean;
    function UnloadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr):Boolean;
    
@@ -221,12 +223,7 @@ type
    {Inherited Methods}
 
    {Internal Methods}
-   function GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry; 
-   function GetAddressByHardware(const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
-   function GetAddressByNext(APrevious:TRARPAddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TRARPAddressEntry;
-   function AddAddress(const AAddress:TInAddr;const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
-   function RemoveAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter):Boolean;
-   procedure FlushAddresses(All:Boolean);
+   
   public
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; override;
@@ -240,6 +237,13 @@ type
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    
    {RARP Methods}
+   function GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry; 
+   function GetAddressByHardware(const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
+   function GetAddressByNext(APrevious:TRARPAddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TRARPAddressEntry;
+   function AddAddress(const AAddress:TInAddr;const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
+   function RemoveAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter):Boolean;
+   procedure FlushAddresses(All:Boolean);
+   
    function LoadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr;const AHardware:THardwareAddress;AType:Word):Boolean;
    function UnloadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr):Boolean;
    
@@ -788,6 +792,313 @@ end;
 
 {==============================================================================}
 
+function TARPTransport.AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean;
+{Add an adapter to this transport}
+{Adapter: The adapter to add}
+{ConfigType: The configuration type to use for configuring the adapter (eg CONFIG_TYPE_AUTO)}
+{Address: The transport address to use for this adapter (or nil if supplied during configuration)}
+{Netmask: The transport netmask to use for this adapter (or nil if supplied during configuration)}
+{Gateway: The transport default gateway to use for this adapter (or nil if supplied during configuration)}
+{Server: The transport configuration server to use for this adapter (or nil if supplied during configuration)}
+var
+ Handle:THandle;
+ Adapter:TARPTransportAdapter;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: AddAdapter');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Config = ' + ConfigTypeToString(AConfigType));
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
+ 
+  {Get Adapter}
+  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
+  if Adapter = nil then
+   begin
+    {Add ARP Type}
+    Handle:=AAdapter.AddTransport(PACKET_TYPE_ARP,FRAME_TYPE_ETHERNET_II,ARP_TRANSPORT_NAME,PacketHandler);
+    if Handle <> INVALID_HANDLE_VALUE then
+     begin
+      {Create Adapter}
+      Adapter:=TARPTransportAdapter.Create;
+      Adapter.UseCount:=1;
+      Adapter.Name:=AAdapter.Name;
+      Adapter.Handle:=Handle;
+      Adapter.PacketType:=PACKET_TYPE_ARP;
+      Adapter.Adapter:=AAdapter;
+      Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
+      Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
+      Adapter.MTU:=AAdapter.GetMTU(Handle);
+      Adapter.ConfigType:=CONFIG_TYPE_AUTO;
+      Adapter.Configured:=True;
+      Adapter.Configuring:=False;
+      
+      {Acquire Lock}
+      FAdapters.WriterLock;
+      try
+       {Add Adapter}
+       FAdapters.Add(Adapter);
+      
+       {Add Broadcast Address}
+       AddAddress(IP_BROADCAST_ADDRESS,Adapter.Broadcast,Adapter.Adapter,ADDRESS_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
+      
+       {Return Result}
+       Result:=True;
+      finally
+       {Release Lock}
+       FAdapters.WriterUnlock;
+      end;  
+     end;
+   end
+  else
+   begin
+    {Increment Count}
+    Inc(Adapter.UseCount);
+    
+    {Unlock Adapter}
+    Adapter.WriterUnlock;
+    
+    {Return Result}
+    Result:=True;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TARPTransport.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
+{Remove an adapter from this transport}
+{Adapter: The adapter to remove}
+var
+ Adapter:TARPTransportAdapter;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: RemoveAdapter');
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+  
+  {Get Adapter}
+  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
+  if Adapter = nil then Exit;
+  
+  {Check Count}
+  if Adapter.UseCount = 0 then
+   begin
+    {Unlock Adapter}
+    Adapter.WriterUnlock;
+    Exit;
+   end; 
+  
+  {Decrement Count}
+  Dec(Adapter.UseCount);
+  
+  if Adapter.UseCount < 1 then
+   begin
+    {Remove ARP Type}
+    if AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType) then
+     begin
+      {Remove Broadcast Address}
+      RemoveAddress(IP_BROADCAST_ADDRESS,AAdapter);
+     
+      {Acquire Lock}
+      FAdapters.WriterLock;
+      try
+       {Remove Adapter}
+       FAdapters.Remove(Adapter);
+      
+       {Unlock Adapter}
+       Adapter.WriterUnlock;
+      
+       {Destroy Adapter}
+       Adapter.Free;
+       
+       {Return Result}
+       Result:=True;
+      finally
+       {Release Lock}
+       FAdapters.WriterUnlock;
+      end;  
+     end;
+   end
+  else
+   begin
+    {Unlock Adapter}
+    Adapter.WriterUnlock;
+    
+    {Return Result}
+    Result:=True;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TARPTransport.StartTransport:Boolean;
+{Start this transport ready for sending and receiving}
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: StartTransport');
+  {$ENDIF}
+  
+  {Check Manager}
+  if Manager = nil then Exit;
+  
+  {Return Result}
+  Result:=True;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TARPTransport.StopTransport:Boolean;
+{Stop this transport ready for removal}
+var
+ Current:TARPTransportAdapter;
+ Adapter:TARPTransportAdapter;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: StopTransport');
+  {$ENDIF}
+  
+  {Check Manager}
+  if Manager = nil then Exit;
+  
+  {Get Adapter}
+  Adapter:=TARPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Adapter <> nil do
+   begin
+    {Get Next}
+    Current:=Adapter;
+    Adapter:=TARPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
+    
+    {Remove Adapter} 
+    RemoveAdapter(Adapter.Adapter);
+   end;
+  
+  {Remove all Addresses}
+  FlushAddresses(True);
+  
+  {Return Result}
+  Result:=True;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TARPTransport.ProcessTransport:Boolean;
+{Process periodic tasks for this transport}
+begin
+ {}
+ {Remove old Addresses}
+ FlushAddresses(False);
+  
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+{Bind this transport to an adapter if appropriate}
+{Adapter: The adapter to bind to}
+
+{Note: ARP binds to adapters only on request from other transports (eg IP)}
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+ 
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: BindTransport');
+  {$ENDIF}
+ 
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   State = ' + AdapterStateToString(AAdapter.State));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Status = ' + AdapterStatusToString(AAdapter.Status));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
+  {$ENDIF}
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
+
+  Result:=True; 
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+{Unbind this transport from an adapter if appropriate}
+{Adapter: The adapter to unbind from}
+
+{Note: ARP unbinds from adapters only on request from other transports (eg IP)}
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False; 
+ 
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: UnbindTransport');
+  {$ENDIF}
+ 
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
+  {$ENDIF}
+
+  Result:=True; 
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TARPTransport.GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TARPAddressEntry;
 {Find the IP address entry in the address cache}
 {Address: The IP address to find}
@@ -1145,313 +1456,6 @@ begin
    {Unlock Address}
    if Current <> nil then Current.ReaderUnlock;
   end;
-end;
-
-{==============================================================================}
-
-function TARPTransport.AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean;
-{Add an adapter to this transport}
-{Adapter: The adapter to add}
-{ConfigType: The configuration type to use for configuring the adapter (eg CONFIG_TYPE_AUTO)}
-{Address: The transport address to use for this adapter (or nil if supplied during configuration)}
-{Netmask: The transport netmask to use for this adapter (or nil if supplied during configuration)}
-{Gateway: The transport default gateway to use for this adapter (or nil if supplied during configuration)}
-{Server: The transport configuration server to use for this adapter (or nil if supplied during configuration)}
-var
- Handle:THandle;
- Adapter:TARPTransportAdapter;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: AddAdapter');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Config = ' + ConfigTypeToString(AConfigType));
-  {$ENDIF}
-  
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-
-  {Check State}
-  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
- 
-  {Get Adapter}
-  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
-  if Adapter = nil then
-   begin
-    {Add ARP Type}
-    Handle:=AAdapter.AddTransport(PACKET_TYPE_ARP,FRAME_TYPE_ETHERNET_II,ARP_TRANSPORT_NAME,PacketHandler);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Create Adapter}
-      Adapter:=TARPTransportAdapter.Create;
-      Adapter.UseCount:=1;
-      Adapter.Name:=AAdapter.Name;
-      Adapter.Handle:=Handle;
-      Adapter.PacketType:=PACKET_TYPE_ARP;
-      Adapter.Adapter:=AAdapter;
-      Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
-      Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
-      Adapter.MTU:=AAdapter.GetMTU(Handle);
-      Adapter.ConfigType:=CONFIG_TYPE_AUTO;
-      Adapter.Configured:=True;
-      Adapter.Configuring:=False;
-      
-      {Acquire Lock}
-      FAdapters.WriterLock;
-      try
-       {Add Adapter}
-       FAdapters.Add(Adapter);
-      
-       {Add Broadcast Address}
-       AddAddress(IP_BROADCAST_ADDRESS,Adapter.Broadcast,Adapter.Adapter,ADDRESS_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
-      
-       {Return Result}
-       Result:=True;
-      finally
-       {Release Lock}
-       FAdapters.WriterUnlock;
-      end;  
-     end;
-   end
-  else
-   begin
-    {Increment Count}
-    Inc(Adapter.UseCount);
-    
-    {Unlock Adapter}
-    Adapter.WriterUnlock;
-    
-    {Return Result}
-    Result:=True;
-   end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TARPTransport.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
-{Remove an adapter from this transport}
-{Adapter: The adapter to remove}
-var
- Adapter:TARPTransportAdapter;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: RemoveAdapter');
-  {$ENDIF}
-  
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-  
-  {Get Adapter}
-  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
-  if Adapter = nil then Exit;
-  
-  {Check Count}
-  if Adapter.UseCount = 0 then
-   begin
-    {Unlock Adapter}
-    Adapter.WriterUnlock;
-    Exit;
-   end; 
-  
-  {Decrement Count}
-  Dec(Adapter.UseCount);
-  
-  if Adapter.UseCount < 1 then
-   begin
-    {Remove ARP Type}
-    if AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType) then
-     begin
-      {Remove Broadcast Address}
-      RemoveAddress(IP_BROADCAST_ADDRESS,AAdapter);
-     
-      {Acquire Lock}
-      FAdapters.WriterLock;
-      try
-       {Remove Adapter}
-       FAdapters.Remove(Adapter);
-      
-       {Unlock Adapter}
-       Adapter.WriterUnlock;
-      
-       {Destroy Adapter}
-       Adapter.Free;
-       
-       {Return Result}
-       Result:=True;
-      finally
-       {Release Lock}
-       FAdapters.WriterUnlock;
-      end;  
-     end;
-   end
-  else
-   begin
-    {Unlock Adapter}
-    Adapter.WriterUnlock;
-    
-    {Return Result}
-    Result:=True;
-   end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TARPTransport.StartTransport:Boolean;
-{Start this transport ready for sending and receiving}
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: StartTransport');
-  {$ENDIF}
-  
-  {Check Manager}
-  if Manager = nil then Exit;
-  
-  {Return Result}
-  Result:=True;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TARPTransport.StopTransport:Boolean;
-{Stop this transport ready for removal}
-var
- Current:TARPTransportAdapter;
- Adapter:TARPTransportAdapter;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: StopTransport');
-  {$ENDIF}
-  
-  {Check Manager}
-  if Manager = nil then Exit;
-  
-  {Get Adapter}
-  Adapter:=TARPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
-  while Adapter <> nil do
-   begin
-    {Get Next}
-    Current:=Adapter;
-    Adapter:=TARPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
-    {Remove Adapter} 
-    RemoveAdapter(Adapter.Adapter);
-   end;
-  
-  {Remove all Addresses}
-  FlushAddresses(True);
-  
-  {Return Result}
-  Result:=True;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TARPTransport.ProcessTransport:Boolean;
-{Process periodic tasks for this transport}
-begin
- {}
- {Remove old Addresses}
- FlushAddresses(False);
-  
- {Return Result}
- Result:=True;
-end;
-
-{==============================================================================}
-
-function TARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
-{Bind this transport to an adapter if appropriate}
-{Adapter: The adapter to bind to}
-
-{Note: ARP binds to adapters only on request from other transports (eg IP)}
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
- 
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: BindTransport');
-  {$ENDIF}
- 
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   State = ' + AdapterStateToString(AAdapter.State));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Status = ' + AdapterStatusToString(AAdapter.Status));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
-  {$ENDIF}
-
-  {Check State}
-  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-
-  Result:=True; 
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
-{Unbind this transport from an adapter if appropriate}
-{Adapter: The adapter to unbind from}
-
-{Note: ARP unbinds from adapters only on request from other transports (eg IP)}
-begin
- {}
- ReaderLock;
- try
-  Result:=False; 
- 
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: UnbindTransport');
-  {$ENDIF}
- 
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
-  {$ENDIF}
-
-  Result:=True; 
- finally 
-  ReaderUnlock;
- end; 
 end;
 
 {==============================================================================}
@@ -2238,6 +2242,306 @@ end;
 
 {==============================================================================}
 
+function TRARPTransport.AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean;
+{Add an adapter to this transport}
+{Adapter: The adapter to add}
+{ConfigType: The configuration type to use for configuring the adapter (eg CONFIG_TYPE_AUTO)}
+{Address: The transport address to use for this adapter (or nil if supplied during configuration)}
+{Netmask: The transport netmask to use for this adapter (or nil if supplied during configuration)}
+{Gateway: The transport default gateway to use for this adapter (or nil if supplied during configuration)}
+{Server: The transport configuration server to use for this adapter (or nil if supplied during configuration)}
+var
+ Handle:THandle;
+ Adapter:TRARPTransportAdapter;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: AddAdapter');
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
+  
+  {Get Adapter}
+  Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
+  if Adapter = nil then
+   begin
+    {Add RARP Type}
+    Handle:=AAdapter.AddTransport(PACKET_TYPE_RARP,FRAME_TYPE_ETHERNET_II,RARP_TRANSPORT_NAME,PacketHandler);
+    if Handle <> INVALID_HANDLE_VALUE then
+     begin
+      {Create Adapter}
+      Adapter:=TRARPTransportAdapter.Create;
+      Adapter.UseCount:=1;
+      Adapter.Name:=AAdapter.Name;
+      Adapter.Handle:=Handle;
+      Adapter.PacketType:=PACKET_TYPE_RARP;
+      Adapter.Adapter:=AAdapter;
+      Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
+      Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
+      Adapter.MTU:=AAdapter.GetMTU(Handle);
+      Adapter.ConfigType:=CONFIG_TYPE_AUTO;
+      Adapter.Configured:=True;
+      Adapter.Configuring:=False;
+      
+      {Acquire Lock}
+      FAdapters.WriterLock;
+      try
+       {Add Adapter}
+       FAdapters.Add(Adapter);
+      
+       {Return Result}
+       Result:=True;
+      finally
+       {Release Lock}
+       FAdapters.WriterUnlock;
+      end;  
+     end;
+   end
+  else
+   begin
+    {Increment Count}
+    Inc(Adapter.UseCount);
+    
+    {Unlock Adapter}
+    Adapter.WriterUnlock;
+    
+    {Return Result}
+    Result:=True;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TRARPTransport.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
+{Remove an adapter from this transport}
+{Adapter: The adapter to remove}
+var
+ Adapter:TRARPTransportAdapter;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: RemoveAdapter');
+  {$ENDIF}
+  
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+  
+  {Get Adapter}
+  Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
+  if Adapter = nil then Exit;
+
+  {Check Count}
+  if Adapter.UseCount = 0 then
+   begin
+    {Unlock Adapter}
+    Adapter.WriterUnlock;
+    Exit;
+   end; 
+  
+  {Decrement Count}
+  Dec(Adapter.UseCount);
+
+  if Adapter.UseCount < 1 then
+   begin
+    {Remove RARP Type}
+    if AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType) then
+     begin
+      {Acquire Lock}
+      FAdapters.WriterLock;
+      try
+       {Remove Adapter}
+       FAdapters.Remove(Adapter);
+      
+       {Unlock Adapter}
+       Adapter.WriterUnlock;
+      
+       {Destroy Adapter}
+       Adapter.Free;
+      
+       {Return Result}
+       Result:=True;
+      finally
+       {Release Lock}
+       FAdapters.WriterUnlock;
+      end;  
+     end;
+   end
+  else
+   begin
+    {Unlock Adapter}
+    Adapter.WriterUnlock;
+    
+    {Return Result}
+    Result:=True;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TRARPTransport.StartTransport:Boolean;
+{Start this transport ready for sending and receiving}
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: StartTransport');
+  {$ENDIF}
+  
+  {Check Manager}
+  if Manager = nil then Exit;
+  
+  {Return Result}
+  Result:=True;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TRARPTransport.StopTransport:Boolean;
+{Stop this transport ready for removal}
+var
+ Current:TRARPTransportAdapter;
+ Adapter:TRARPTransportAdapter;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: StopTransport');
+  {$ENDIF}
+  
+  {Check Manager}
+  if Manager = nil then Exit;
+  
+  {Get Adapter}
+  Adapter:=TRARPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
+  while Adapter <> nil do
+   begin
+    {Get Next}
+    Current:=Adapter;
+    Adapter:=TRARPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
+    
+    {Remove Adapter}
+    RemoveAdapter(Adapter.Adapter);
+   end;
+   
+  {Remove all Addresses}
+  FlushAddresses(True);
+  
+  {Return Result}
+  Result:=True;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TRARPTransport.ProcessTransport:Boolean;
+{Process periodic tasks for this transport}
+begin
+ {}
+ {Remove old Addresses}
+ FlushAddresses(False);
+  
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TRARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+{Bind this transport to an adapter if appropriate}
+{Adapter: The adapter to bind to}
+
+{Note: RARP binds to adapters only on request from other transports (eg IP)}
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+ 
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: BindTransport');
+  {$ENDIF}
+ 
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   State = ' + AdapterStateToString(AAdapter.State));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Status = ' + AdapterStatusToString(AAdapter.Status));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
+  {$ENDIF}
+
+  {Check State}
+  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
+  
+  Result:=True; 
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TRARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+{Unbind this transport from an adapter if appropriate}
+{Adapter: The adapter to unbind from}
+
+{Note: RARP unbinds from adapters only on request from other transports (eg IP)}
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False; 
+ 
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: UnbindTransport');
+  {$ENDIF}
+ 
+  {Check Adapter}
+  if AAdapter = nil then Exit;
+  
+  {$IFDEF ARP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
+  {$ENDIF}
+
+  Result:=True; 
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TRARPTransport.GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
 {Find the IP address entry in the address cache}
 {Address: The IP address to find}
@@ -2595,306 +2899,6 @@ begin
    {Unlock Address}
    if Current <> nil then Current.ReaderUnlock;
   end;
-end;
-
-{==============================================================================}
-
-function TRARPTransport.AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean;
-{Add an adapter to this transport}
-{Adapter: The adapter to add}
-{ConfigType: The configuration type to use for configuring the adapter (eg CONFIG_TYPE_AUTO)}
-{Address: The transport address to use for this adapter (or nil if supplied during configuration)}
-{Netmask: The transport netmask to use for this adapter (or nil if supplied during configuration)}
-{Gateway: The transport default gateway to use for this adapter (or nil if supplied during configuration)}
-{Server: The transport configuration server to use for this adapter (or nil if supplied during configuration)}
-var
- Handle:THandle;
- Adapter:TRARPTransportAdapter;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: AddAdapter');
-  {$ENDIF}
-  
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-
-  {Check State}
-  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
-  {Get Adapter}
-  Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
-  if Adapter = nil then
-   begin
-    {Add RARP Type}
-    Handle:=AAdapter.AddTransport(PACKET_TYPE_RARP,FRAME_TYPE_ETHERNET_II,RARP_TRANSPORT_NAME,PacketHandler);
-    if Handle <> INVALID_HANDLE_VALUE then
-     begin
-      {Create Adapter}
-      Adapter:=TRARPTransportAdapter.Create;
-      Adapter.UseCount:=1;
-      Adapter.Name:=AAdapter.Name;
-      Adapter.Handle:=Handle;
-      Adapter.PacketType:=PACKET_TYPE_RARP;
-      Adapter.Adapter:=AAdapter;
-      Adapter.Hardware:=AAdapter.GetHardwareAddress(Handle);
-      Adapter.Broadcast:=AAdapter.GetBroadcastAddress(Handle);
-      Adapter.MTU:=AAdapter.GetMTU(Handle);
-      Adapter.ConfigType:=CONFIG_TYPE_AUTO;
-      Adapter.Configured:=True;
-      Adapter.Configuring:=False;
-      
-      {Acquire Lock}
-      FAdapters.WriterLock;
-      try
-       {Add Adapter}
-       FAdapters.Add(Adapter);
-      
-       {Return Result}
-       Result:=True;
-      finally
-       {Release Lock}
-       FAdapters.WriterUnlock;
-      end;  
-     end;
-   end
-  else
-   begin
-    {Increment Count}
-    Inc(Adapter.UseCount);
-    
-    {Unlock Adapter}
-    Adapter.WriterUnlock;
-    
-    {Return Result}
-    Result:=True;
-   end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TRARPTransport.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
-{Remove an adapter from this transport}
-{Adapter: The adapter to remove}
-var
- Adapter:TRARPTransportAdapter;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: RemoveAdapter');
-  {$ENDIF}
-  
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-  
-  {Get Adapter}
-  Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
-  if Adapter = nil then Exit;
-
-  {Check Count}
-  if Adapter.UseCount = 0 then
-   begin
-    {Unlock Adapter}
-    Adapter.WriterUnlock;
-    Exit;
-   end; 
-  
-  {Decrement Count}
-  Dec(Adapter.UseCount);
-
-  if Adapter.UseCount < 1 then
-   begin
-    {Remove RARP Type}
-    if AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType) then
-     begin
-      {Acquire Lock}
-      FAdapters.WriterLock;
-      try
-       {Remove Adapter}
-       FAdapters.Remove(Adapter);
-      
-       {Unlock Adapter}
-       Adapter.WriterUnlock;
-      
-       {Destroy Adapter}
-       Adapter.Free;
-      
-       {Return Result}
-       Result:=True;
-      finally
-       {Release Lock}
-       FAdapters.WriterUnlock;
-      end;  
-     end;
-   end
-  else
-   begin
-    {Unlock Adapter}
-    Adapter.WriterUnlock;
-    
-    {Return Result}
-    Result:=True;
-   end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TRARPTransport.StartTransport:Boolean;
-{Start this transport ready for sending and receiving}
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: StartTransport');
-  {$ENDIF}
-  
-  {Check Manager}
-  if Manager = nil then Exit;
-  
-  {Return Result}
-  Result:=True;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TRARPTransport.StopTransport:Boolean;
-{Stop this transport ready for removal}
-var
- Current:TRARPTransportAdapter;
- Adapter:TRARPTransportAdapter;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: StopTransport');
-  {$ENDIF}
-  
-  {Check Manager}
-  if Manager = nil then Exit;
-  
-  {Get Adapter}
-  Adapter:=TRARPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
-  while Adapter <> nil do
-   begin
-    {Get Next}
-    Current:=Adapter;
-    Adapter:=TRARPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
-    {Remove Adapter}
-    RemoveAdapter(Adapter.Adapter);
-   end;
-   
-  {Remove all Addresses}
-  FlushAddresses(True);
-  
-  {Return Result}
-  Result:=True;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TRARPTransport.ProcessTransport:Boolean;
-{Process periodic tasks for this transport}
-begin
- {}
- {Remove old Addresses}
- FlushAddresses(False);
-  
- {Return Result}
- Result:=True;
-end;
-
-{==============================================================================}
-
-function TRARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
-{Bind this transport to an adapter if appropriate}
-{Adapter: The adapter to bind to}
-
-{Note: RARP binds to adapters only on request from other transports (eg IP)}
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
- 
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: BindTransport');
-  {$ENDIF}
- 
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   State = ' + AdapterStateToString(AAdapter.State));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Status = ' + AdapterStatusToString(AAdapter.Status));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
-  {$ENDIF}
-
-  {Check State}
-  if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
-  Result:=True; 
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TRARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
-{Unbind this transport from an adapter if appropriate}
-{Adapter: The adapter to unbind from}
-
-{Note: RARP unbinds from adapters only on request from other transports (eg IP)}
-begin
- {}
- ReaderLock;
- try
-  Result:=False; 
- 
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: UnbindTransport');
-  {$ENDIF}
- 
-  {Check Adapter}
-  if AAdapter = nil then Exit;
-  
-  {$IFDEF ARP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
-  {$ENDIF}
-
-  Result:=True; 
- finally 
-  ReaderUnlock;
- end; 
 end;
 
 {==============================================================================}

@@ -1313,6 +1313,7 @@ type
   function Remove(AValue:TWinsock2SocketThread):Boolean; virtual;
   function Insert(APrev,AValue:TWinsock2SocketThread):Boolean; virtual;
   function Find(AValue:TWinsock2SocketThread):Boolean; virtual;
+  function FindByID(AThreadID:TThreadID):TWinsock2SocketThread; virtual;
   procedure Clear; virtual;
  end;
 
@@ -2024,8 +2025,8 @@ function getnameinfo(sa: PSockAddr; salen: Integer; host: PChar; hostlen: DWORD;
 
 function WSAStartup(wVersionRequired: word; var WSData: TWSAData): Longint;
 function WSACleanup: Longint; 
-procedure WSASetLastError(iError: Longint);
-function WSAGetLastError: Longint;
+procedure WSASetLastError(iError: Longint); inline;
+function WSAGetLastError: Longint; inline;
 function WSAIsBlocking: BOOL;
 function WSAUnhookBlockingHook: Longint; 
 function WSASetBlockingHook(lpBlockFunc: TFarProc): TFarProc;
@@ -2132,7 +2133,16 @@ function getnetbyname(name: PChar): PNetEnt;
 function WsControlEx(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
 
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+
+{==============================================================================}
 {Winsock2 Helper Functions}
+function Winsock2RedirectInput(s:TSocket):Boolean;
+function Winsock2RedirectOutput(s:TSocket):Boolean; 
+
 function Winsock2ErrorToString(AError:LongInt):String;
 
 {==============================================================================}
@@ -2156,6 +2166,9 @@ var
  WS2MaxSockets:Word;
  WS2MaxDatagram:Word;
 
+ WS2TextIOInputSocket:TSocket = INVALID_SOCKET;
+ WS2TextIOOutputSocket:TSocket = INVALID_SOCKET;
+ 
 {==============================================================================}
 {==============================================================================}
 {TWinsock2Socket}
@@ -2480,6 +2493,7 @@ begin
  if Winsock2.getaddrinfo(PChar(Name),nil,@HintsInfo,AddrInfo) <> ERROR_SUCCESS then
   begin
    FLastError:=Winsock2.WSAGetLastError;
+   
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -3365,7 +3379,6 @@ end;
 function TWinsock2Socket.Disconnect:Boolean;
 begin
  {}
- Result:=False;
  if Connected then
   begin
    Result:=CloseSocket;
@@ -3981,6 +3994,33 @@ begin
     if Next = AValue then
      begin
       Result:=True;
+      Exit;
+     end;
+     
+    Next:=Next.Next;
+   end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function TWinsock2SocketThreads.FindByID(AThreadID:TThreadID):TWinsock2SocketThread; 
+var
+ Next:TWinsock2SocketThread;
+begin
+ {}
+ Result:=nil;
+ 
+ if not AcquireLock then Exit;
+ try
+  Next:=FFirst;
+  while Next <> nil do
+   begin
+    if Next.ThreadID = AThreadID then
+     begin
+      Result:=Next;
       Exit;
      end;
      
@@ -7344,8 +7384,8 @@ var
  Success:Boolean;
 begin
  {}
+ Success:=False;
  try
-  Success:=False;
   if FServer = nil then Exit;
   if FServer.Listener = nil then Exit;
   
@@ -7402,8 +7442,8 @@ var
  Thread:TWinsock2TCPServerThread;
 begin
  {}
+ Success:=False;
  try
-  Success:=False;
   if FListener = nil then Exit;
 
   {Allocate Address}
@@ -7925,8 +7965,8 @@ begin
  {}
  if Active then
   begin
+   Success:=False;
    try
-    Success:=False;
     if FServer = nil then Exit;
     if FServer.Buffer = nil then Exit;
     if FServer.Listener = nil then Exit;
@@ -7998,8 +8038,8 @@ var
  Buffer:TWinsock2UDPServerBuffer;
 begin
  {}
+ Success:=False;
  try
-  Success:=False;
   if FListener = nil then Exit;
  
   {Get Buffer}
@@ -8747,6 +8787,11 @@ begin
  {Set WS2MaxDatagram}
  WS2MaxDatagram:=WINSOCK2_MAX_UDP;
  
+ {Setup Platform Text IO Handlers}
+ {TextIOReadCharHandler:=SysTextIOReadChar;}       {Only registered when calling Winsock2RedirectInput}
+ {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling Winsock2RedirectOutput}
+ {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling Winsock2RedirectOutput}
+ 
  WS2Initialized:=True;
 end;
 
@@ -8807,11 +8852,11 @@ begin
  Result:=INVALID_SOCKET;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
   
@@ -8830,7 +8875,7 @@ begin
   on E: Exception do
    begin
     Result:=INVALID_SOCKET;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: accept ' + E.Message);
     {$ENDIF}
@@ -8864,11 +8909,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -8887,7 +8932,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
     {$ENDIF}
@@ -8905,11 +8950,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -8928,7 +8973,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: closesocket ' + E.Message);
     {$ENDIF}
@@ -8954,11 +8999,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -8977,7 +9022,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: connect ' + E.Message);
     {$ENDIF}
@@ -8995,11 +9040,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9018,7 +9063,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: ioctlsocket ' + E.Message);
     {$ENDIF}
@@ -9044,11 +9089,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9067,7 +9112,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getpeername ' + E.Message);
     {$ENDIF}
@@ -9085,11 +9130,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9108,7 +9153,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getsockname ' + E.Message);
     {$ENDIF}
@@ -9126,11 +9171,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9149,7 +9194,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getsockopt ' + E.Message);
     {$ENDIF}
@@ -9242,11 +9287,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9265,7 +9310,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: listen ' + E.Message);
     {$ENDIF}
@@ -9299,11 +9344,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9322,7 +9367,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: recv ' + E.Message);
     {$ENDIF}
@@ -9372,11 +9417,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9395,7 +9440,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: recvfrom ' + E.Message);
     {$ENDIF}
@@ -9406,7 +9451,7 @@ end;
 {==============================================================================}
 
 function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint; 
-{Note: All sockets contained by the FDSet must by of the same type}
+{Note: All sockets contained by the FDSet must be of the same type}
 var
  Socket:TProtocolSocket;
 begin
@@ -9414,11 +9459,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Manager}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if ProtocolManager = nil then Exit;
   
   {Select Socket}
@@ -9427,7 +9472,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: select ' + E.Message);
     {$ENDIF}
@@ -9445,11 +9490,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9468,7 +9513,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: send ' + E.Message);
     {$ENDIF}
@@ -9502,11 +9547,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9525,7 +9570,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: sendto ' + E.Message);
     {$ENDIF}
@@ -9567,11 +9612,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9590,7 +9635,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: setsockopt ' + E.Message);
     {$ENDIF}
@@ -9616,11 +9661,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -9639,7 +9684,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: shutdown ' + E.Message);
     {$ENDIF}
@@ -9655,11 +9700,11 @@ begin
  Result:=INVALID_SOCKET;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Manager}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if ProtocolManager = nil then Exit;
   
   {Create Socket}
@@ -9668,7 +9713,7 @@ begin
   on E: Exception do
    begin
     Result:=INVALID_SOCKET;
-    SetLastError(WSAEPROTONOSUPPORT);
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: socket ' + E.Message);
     {$ENDIF}
@@ -9684,11 +9729,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
   
   {Get Host By Address}
@@ -9697,7 +9742,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: gethostbyaddr ' + E.Message);
     {$ENDIF}
@@ -9713,11 +9758,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Host By Name}
@@ -9726,7 +9771,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: gethostbyname ' + E.Message);
     {$ENDIF}
@@ -9742,11 +9787,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Host Name}
@@ -9755,7 +9800,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: gethostname ' + E.Message);
     {$ENDIF}
@@ -9771,11 +9816,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Service By Port}
@@ -9784,7 +9829,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getservbyport ' + E.Message);
     {$ENDIF}
@@ -9800,11 +9845,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Service By Name}
@@ -9813,7 +9858,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getservbyname ' + E.Message);
     {$ENDIF}
@@ -9829,11 +9874,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Protocol By Number}
@@ -9842,7 +9887,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getprotobynumber ' + E.Message);
     {$ENDIF}
@@ -9858,11 +9903,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Protocol By Name}
@@ -9871,7 +9916,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getprotobyname ' + E.Message);
     {$ENDIF}
@@ -9905,16 +9950,16 @@ begin
   ppResult:=nil;
   
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
  
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
  
   {Check Names}
   Result:=WSAHOST_NOT_FOUND;
-  SetLastError(WSAHOST_NOT_FOUND);
+  NetworkSetLastError(WSAHOST_NOT_FOUND);
   if (pNodeName = nil) and (pServiceName = nil) then Exit;
  
   {Check Hints}
@@ -9929,7 +9974,7 @@ begin
    begin
     {Check Hints}
     Result:=WSANO_RECOVERY;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     if pHints.ai_addrlen <> 0 then Exit;
     if pHints.ai_canonname <> nil then Exit;
     if pHints.ai_addr <> nil then Exit;
@@ -9946,7 +9991,7 @@ begin
   if (Flags and AI_CANONNAME) = AI_CANONNAME then
    begin
     Result:=WSANO_RECOVERY;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     if pNodeName = nil then Exit;
    end;
   
@@ -9954,7 +9999,7 @@ begin
   if (Flags and AI_NUMERICHOST) = AI_NUMERICHOST then
    begin
     Result:=WSAHOST_NOT_FOUND;
-    SetLastError(WSAHOST_NOT_FOUND);
+    NetworkSetLastError(WSAHOST_NOT_FOUND);
     if pNodeName = nil then Exit;
    end;
   
@@ -9962,13 +10007,13 @@ begin
   if (Flags and AI_NUMERICSERV) = AI_NUMERICSERV then
    begin
     Result:=WSAHOST_NOT_FOUND;
-    SetLastError(WSAHOST_NOT_FOUND);
+    NetworkSetLastError(WSAHOST_NOT_FOUND);
     if pServiceName = nil then Exit;
    end;
    
   {Check Family}
   Result:=WSAEAFNOSUPPORT;
-  SetLastError(WSAEAFNOSUPPORT);
+  NetworkSetLastError(WSAEAFNOSUPPORT);
   if (Family <> AF_UNSPEC) and (Family <> AF_INET) and (Family <> AF_INET6) then Exit;
   if not(IP_TRANSPORT_ENABLED) and (Family = AF_INET) then Exit;   //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
   if not(IP6_TRANSPORT_ENABLED) and (Family = AF_INET6) then Exit; //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
@@ -9980,7 +10025,7 @@ begin
    
   {Check Socket Type}
   Result:=WSAESOCKTNOSUPPORT;
-  SetLastError(WSAESOCKTNOSUPPORT);
+  NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if (SocketType <> SOCK_UNSPEC) and (SocketType <> SOCK_STREAM) and (SocketType <> SOCK_DGRAM) and (SocketType <> SOCK_RAW) then Exit;
   
   {Check Service Name}
@@ -9992,7 +10037,7 @@ begin
      begin
       {Convert Service}
       Result:=WSANO_RECOVERY;
-      SetLastError(WSANO_RECOVERY);
+      NetworkSetLastError(WSANO_RECOVERY);
       Port:=StrToIntDef(pServiceName,IPPORT_ANY);
       if Port = IPPORT_ANY then Exit;
      end
@@ -10007,7 +10052,7 @@ begin
        begin
         {Convert Service}
         Result:=WSATYPE_NOT_FOUND;
-        SetLastError(WSATYPE_NOT_FOUND);
+        NetworkSetLastError(WSATYPE_NOT_FOUND);
         Port:=StrToIntDef(pServiceName,IPPORT_ANY);
         if Port = IPPORT_ANY then Exit;
        end
@@ -10033,7 +10078,7 @@ begin
          begin
           {Create Address Info}
           Result:=WSA_NOT_ENOUGH_MEMORY;
-          SetLastError(WSA_NOT_ENOUGH_MEMORY); 
+          NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
           ppResult:=AllocMem(SizeOf(TAddrInfo));
           if ppResult = nil then Exit;
           
@@ -10064,7 +10109,7 @@ begin
          begin
           {Create Address Info}
           Result:=WSA_NOT_ENOUGH_MEMORY;
-          SetLastError(WSA_NOT_ENOUGH_MEMORY); 
+          NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
           ppResult:=AllocMem(SizeOf(TAddrInfo));
           if ppResult = nil then Exit;
       
@@ -10101,7 +10146,7 @@ begin
            begin
             {Create Address Info}
             Result:=WSA_NOT_ENOUGH_MEMORY;
-            SetLastError(WSA_NOT_ENOUGH_MEMORY); 
+            NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
             ppResult:=AllocMem(SizeOf(TAddrInfo));
             if ppResult = nil then Exit;
           
@@ -10132,7 +10177,7 @@ begin
            begin
             {Create Address Info}
             Result:=WSA_NOT_ENOUGH_MEMORY;
-            SetLastError(WSA_NOT_ENOUGH_MEMORY); 
+            NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
             ppResult:=AllocMem(SizeOf(TAddrInfo));
             if ppResult = nil then Exit;
         
@@ -10164,7 +10209,7 @@ begin
          begin
           {Create Address Info}
           Result:=WSA_NOT_ENOUGH_MEMORY;
-          SetLastError(WSA_NOT_ENOUGH_MEMORY); 
+          NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
           ppResult:=AllocMem(SizeOf(TAddrInfo));
           if ppResult = nil then Exit;
           
@@ -10196,7 +10241,7 @@ begin
        end;
      end;  
      
-    SetLastError(ERROR_SUCCESS); 
+    NetworkSetLastError(ERROR_SUCCESS); 
     Result:=ERROR_SUCCESS;
    end
   else
@@ -10206,7 +10251,7 @@ begin
      begin
       {Create Address Info}
       Result:=WSA_NOT_ENOUGH_MEMORY;
-      SetLastError(WSA_NOT_ENOUGH_MEMORY); 
+      NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
       ppResult:=AllocMem(SizeOf(TAddrInfo));
       if ppResult = nil then Exit;
       
@@ -10243,7 +10288,7 @@ begin
      begin
       {Create Address Info}
       Result:=WSA_NOT_ENOUGH_MEMORY;
-      SetLastError(WSA_NOT_ENOUGH_MEMORY); 
+      NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
       Current:=AllocMem(SizeOf(TAddrInfo));
       if Current = nil then Exit;
       
@@ -10278,14 +10323,14 @@ begin
        end;     
      end;
      
-    SetLastError(ERROR_SUCCESS); 
+    NetworkSetLastError(ERROR_SUCCESS); 
     Result:=ERROR_SUCCESS;
    end;   
  except
   on E: Exception do
    begin
     Result:=WSANO_RECOVERY;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getaddrinfo ' + E.Message);
     {$ENDIF}
@@ -10300,11 +10345,11 @@ begin
  {}
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Addr}
-  SetLastError(WSAEFAULT);
+  NetworkSetLastError(WSAEFAULT);
   if ai = nil then Exit;
  
   {Check Next}
@@ -10329,11 +10374,11 @@ begin
   {Free Addr}
   FreeMem(ai);
  
-  SetLastError(ERROR_SUCCESS);
+  NetworkSetLastError(ERROR_SUCCESS);
  except
   on E: Exception do
    begin
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: freeaddrinfo ' + E.Message);
     {$ENDIF}
@@ -10353,26 +10398,26 @@ begin
  Result:=WSAEAFNOSUPPORT;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
  
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
  
   {Check Sock}
   Result:=WSAEFAULT;
-  SetLastError(WSAEFAULT);
+  NetworkSetLastError(WSAEFAULT);
   if sa = nil then Exit;
   
   {Check Names}
   Result:=WSAHOST_NOT_FOUND;
-  SetLastError(WSAHOST_NOT_FOUND);
+  NetworkSetLastError(WSAHOST_NOT_FOUND);
   if (host = nil) and (serv = nil) then Exit;
 
   {Check Name Lengths}
   Result:=WSAEINVAL;
-  SetLastError(WSAEINVAL);
+  NetworkSetLastError(WSAEINVAL);
   if (host <> nil) and (hostlen = 0) then Exit;
   if (serv <> nil) and (servlen = 0) then Exit;
   
@@ -10381,7 +10426,7 @@ begin
    begin
     {Check AF_INET6}
     Result:=WSAEAFNOSUPPORT;
-    SetLastError(WSAEAFNOSUPPORT);
+    NetworkSetLastError(WSAEAFNOSUPPORT);
     if PSockAddr6(sa).sin6_family <> AF_INET6 then Exit;
     
     {Check Host}
@@ -10395,7 +10440,7 @@ begin
         
         {Check Host Length}
         Result:=WSAEINVAL;
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if hostlen < Length(WorkBuffer) then Exit;
         
         StrLCopy(host,PChar(WorkBuffer),hostlen);
@@ -10407,7 +10452,7 @@ begin
         if HostEnt = nil then
          begin
           Result:=WSAHOST_NOT_FOUND;
-          SetLastError(WSAHOST_NOT_FOUND);
+          NetworkSetLastError(WSAHOST_NOT_FOUND);
           if (flags and NI_NAMEREQD) = NI_NAMEREQD then Exit; 
           
           {Convert Address}
@@ -10415,7 +10460,7 @@ begin
           
           {Check Host Length}
           Result:=WSAEINVAL;
-          SetLastError(WSAEINVAL);
+          NetworkSetLastError(WSAEINVAL);
           if hostlen < Length(WorkBuffer) then Exit;
         
           StrLCopy(host,PChar(WorkBuffer),hostlen);
@@ -10440,7 +10485,7 @@ begin
         
         {Check Service Length}
         Result:=WSAEINVAL;
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if servlen < Length(WorkBuffer) then Exit;
         
         StrLCopy(serv,PChar(WorkBuffer),servlen);
@@ -10459,7 +10504,7 @@ begin
           
           {Check Service Length}
           Result:=WSAEINVAL;
-          SetLastError(WSAEINVAL);
+          NetworkSetLastError(WSAEINVAL);
           if servlen < Length(WorkBuffer) then Exit;
         
           StrLCopy(serv,PChar(WorkBuffer),servlen);
@@ -10471,14 +10516,14 @@ begin
        end;       
      end;
      
-    SetLastError(ERROR_SUCCESS); 
+    NetworkSetLastError(ERROR_SUCCESS); 
     Result:=ERROR_SUCCESS;
    end
   else if salen >= SizeOf(TSockAddr) then 
    begin
     {Check AF_INET}
     Result:=WSAEAFNOSUPPORT;
-    SetLastError(WSAEAFNOSUPPORT);
+    NetworkSetLastError(WSAEAFNOSUPPORT);
     if PSockAddr(sa).sin_family <> AF_INET then Exit;
     
     {Check Host}
@@ -10492,7 +10537,7 @@ begin
         
         {Check Host Length}
         Result:=WSAEINVAL;
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if hostlen < Length(WorkBuffer) then Exit;
         
         StrLCopy(host,PChar(WorkBuffer),hostlen);
@@ -10504,7 +10549,7 @@ begin
         if HostEnt = nil then
          begin
           Result:=WSAHOST_NOT_FOUND;
-          SetLastError(WSAHOST_NOT_FOUND);
+          NetworkSetLastError(WSAHOST_NOT_FOUND);
           if (flags and NI_NAMEREQD) = NI_NAMEREQD then Exit; 
           
           {Convert Address}
@@ -10512,7 +10557,7 @@ begin
           
           {Check Host Length}
           Result:=WSAEINVAL;
-          SetLastError(WSAEINVAL);
+          NetworkSetLastError(WSAEINVAL);
           if hostlen < Length(WorkBuffer) then Exit;
         
           StrLCopy(host,PChar(WorkBuffer),hostlen);
@@ -10537,7 +10582,7 @@ begin
         
         {Check Service Length}
         Result:=WSAEINVAL;
-        SetLastError(WSAEINVAL);
+        NetworkSetLastError(WSAEINVAL);
         if servlen < (Length(WorkBuffer) + 1) then Exit;
         
         StrLCopy(serv,PChar(WorkBuffer),servlen);
@@ -10556,7 +10601,7 @@ begin
         
           {Check Service Length}
           Result:=WSAEINVAL;
-          SetLastError(WSAEINVAL);
+          NetworkSetLastError(WSAEINVAL);
           if servlen < (Length(WorkBuffer) + 1) then Exit;
         
           StrLCopy(serv,PChar(WorkBuffer),servlen);
@@ -10568,14 +10613,14 @@ begin
        end;       
      end;
 
-    SetLastError(ERROR_SUCCESS); 
+    NetworkSetLastError(ERROR_SUCCESS); 
     Result:=ERROR_SUCCESS;
    end;
  except
   on E: Exception do
    begin
     Result:=WSANO_RECOVERY;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getnameinfo ' + E.Message);
     {$ENDIF}
@@ -10592,7 +10637,7 @@ begin
  try
   {Set Result}
   Result:=WSASYSNOTREADY; {SOCKET_ERROR; See Spec}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   
   {Acquire the Lock}
   if CriticalSectionLock(WS2StartupLock) = ERROR_SUCCESS then
@@ -10607,7 +10652,7 @@ begin
        
        {Check Version}
        Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
-       SetLastError(WSAVERNOTSUPPORTED);
+       NetworkSetLastError(WSAVERNOTSUPPORTED);
        if wVersionRequired < WINSOCK2_LOW_VERSION then Exit;
        if wVersionRequired > WINSOCK2_HIGH_VERSION then Exit;
    
@@ -10632,13 +10677,13 @@ begin
         begin
          {Return Result}
          Result:=WS2StartupError; {SOCKET_ERROR; See Spec}
-         SetLastError(WS2StartupError);
+         NetworkSetLastError(WS2StartupError);
         end
        else
         begin
          {Return Result}
          Result:=ERROR_SUCCESS; {NO_ERROR; See Spec}
-         SetLastError(ERROR_SUCCESS);
+         NetworkSetLastError(ERROR_SUCCESS);
         end;
       end
      else
@@ -10649,7 +10694,7 @@ begin
       
        {Check Version}
        Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
-       SetLastError(WSAVERNOTSUPPORTED);
+       NetworkSetLastError(WSAVERNOTSUPPORTED);
        WS2StartupError:=WSAVERNOTSUPPORTED;
        if wVersionRequired < WINSOCK2_LOW_VERSION then Exit;
        if wVersionRequired > WINSOCK2_HIGH_VERSION then Exit;
@@ -10671,7 +10716,7 @@ begin
     
        {Initialize Components}
        Result:=WSASYSNOTREADY; {SOCKET_ERROR; See Spec}
-       SetLastError(WSASYSNOTREADY);
+       NetworkSetLastError(WSASYSNOTREADY);
        WS2StartupError:=WSASYSNOTREADY;
        
        {Start Sockets}
@@ -10686,7 +10731,7 @@ begin
        
        {Return Result}
        Result:=ERROR_SUCCESS;  {NO_ERROR; See Spec}
-       SetLastError(ERROR_SUCCESS);
+       NetworkSetLastError(ERROR_SUCCESS);
        WS2StartupError:=ERROR_SUCCESS;
       end; 
     finally
@@ -10698,7 +10743,7 @@ begin
   on E: Exception do
    begin
     Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
-    SetLastError(WSAVERNOTSUPPORTED);
+    NetworkSetLastError(WSAVERNOTSUPPORTED);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAStartup ' + E.Message);
     {$ENDIF}
@@ -10714,20 +10759,20 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Set Error}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   
   {Acquire the Lock}
   if CriticalSectionLock(WS2StartupLock) = ERROR_SUCCESS then
    begin
     try
      {Check Started}
-     SetLastError(WSANOTINITIALISED);
+     NetworkSetLastError(WSANOTINITIALISED);
      if WS2StartupCount = 0 then Exit;
   
      {Decrement Count}
      Dec(WS2StartupCount);
      Result:=NO_ERROR;
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      if WS2StartupCount > 0 then Exit;
   
      {$IFDEF WINSOCK2_DEBUG}
@@ -10736,7 +10781,7 @@ begin
   
      {Shutdown and Cleanup}
      Result:=SOCKET_ERROR;
-     SetLastError(WSAENETDOWN);
+     NetworkSetLastError(WSAENETDOWN);
   
      {Stop Sockets}
      if SocketsStop <> ERROR_SUCCESS then Exit;
@@ -10750,7 +10795,7 @@ begin
  
      {Return Result}
      Result:=NO_ERROR;
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      WS2StartupError:=WSANOTINITIALISED;
     finally
      {Release the Lock}
@@ -10761,7 +10806,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSANOTINITIALISED);
+    NetworkSetLastError(WSANOTINITIALISED);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSACleanup ' + E.Message);
     {$ENDIF}
@@ -10771,18 +10816,18 @@ end;
 
 {==============================================================================}
 
-procedure WSASetLastError(iError: Longint);
+procedure WSASetLastError(iError: Longint); inline;
 begin
  {}
- SetLastError(iError);
+ NetworkSetLastError(iError);
 end;
 
 {==============================================================================}
 
-function WSAGetLastError: Longint;
+function WSAGetLastError: Longint; inline;
 begin
  {}
- Result:=GetLastError;
+ Result:=NetworkGetLastError;
 end;
 
 {==============================================================================}
@@ -10802,7 +10847,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
  {Compatible with Winsock 2}
 end;
 
@@ -10813,7 +10858,7 @@ begin
  {}
  {Not Implemented}
  Result:=nil;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
  {Return Success to be compatible with Winsock 2}
  {Result:=lpBlockFunc;}
 end;
@@ -10825,7 +10870,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
  {Compatible with Winsock 2}
 end;
 
@@ -10836,7 +10881,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10846,7 +10891,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10856,7 +10901,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10866,7 +10911,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10876,7 +10921,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10886,7 +10931,7 @@ begin
  {}
  {Not Implemented}
  Result:=0; {As per Spec}
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10896,7 +10941,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10906,7 +10951,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -10931,7 +10976,7 @@ function InetPtonA(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Lo
 begin
  {}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEFAULT);
+ NetworkSetLastError(WSAEFAULT);
  
  {Check Address}
  if pszAddrString = nil then Exit;
@@ -10940,7 +10985,7 @@ begin
  if pAddrBuf = nil then Exit;
  
  {Check Family}
- SetLastError(WSAEAFNOSUPPORT);
+ NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
     PInAddr(pAddrBuf)^:=StringToInAddr(pszAddrString);
@@ -10948,7 +10993,7 @@ begin
     //To Do //Check result, if not valid return 0
     
     Result:=1; {As per Spec}
-    SetLastError(ERROR_SUCCESS);
+    NetworkSetLastError(ERROR_SUCCESS);
    end;
   AF_INET6:begin
     PIn6Addr(pAddrBuf)^:=StringToIn6Addr(pszAddrString);
@@ -10956,7 +11001,7 @@ begin
     //To Do //Check result, if not valid return 0
     
     Result:=1; {As per Spec}
-    SetLastError(ERROR_SUCCESS);
+    NetworkSetLastError(ERROR_SUCCESS);
    end;  
  end;
 end;
@@ -10967,7 +11012,7 @@ function InetPtonW(Family: Longint; pszAddrString: PWideChar; pAddrBuf: Pointer)
 begin
  {}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEFAULT);
+ NetworkSetLastError(WSAEFAULT);
  
  {Check Address}
  if pszAddrString = nil then Exit;
@@ -10976,7 +11021,7 @@ begin
  if pAddrBuf = nil then Exit;
  
  {Check Family}
- SetLastError(WSAEAFNOSUPPORT);
+ NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
     //To Do
@@ -11003,7 +11048,7 @@ var
 begin
  {}
  Result:=nil;
- SetLastError(WSA_INVALID_PARAMETER);
+ NetworkSetLastError(WSA_INVALID_PARAMETER);
  
  {Check Address}
  if pAddr = nil then Exit;
@@ -11012,10 +11057,10 @@ begin
  if pStringBuf = nil then Exit;
   
  {Check Family}
- SetLastError(WSAEAFNOSUPPORT);
+ NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
-    SetLastError(WSA_INVALID_PARAMETER);
+    NetworkSetLastError(WSA_INVALID_PARAMETER);
     if StringBufSize < INET_ADDRSTRLEN then Exit;
     
     WorkBuffer:=InAddrToString(PInAddr(pAddr)^);
@@ -11024,7 +11069,7 @@ begin
     Result:=pStringBuf;
    end;
   AF_INET6:begin
-    SetLastError(WSA_INVALID_PARAMETER);
+    NetworkSetLastError(WSA_INVALID_PARAMETER);
     if StringBufSize < INET6_ADDRSTRLEN then Exit;
     
     WorkBuffer:=In6AddrToString(PIn6Addr(pAddr)^);
@@ -11041,7 +11086,7 @@ function InetNtopW(Family: Longint; pAddr: Pointer; pStringBuf: PWideChar; Strin
 begin
  {}
  Result:=nil;
- SetLastError(WSA_INVALID_PARAMETER);
+ NetworkSetLastError(WSA_INVALID_PARAMETER);
  
  {Check Address}
  if pAddr = nil then Exit;
@@ -11050,7 +11095,7 @@ begin
  if pStringBuf = nil then Exit;
   
  {Check Family}
- SetLastError(WSAEAFNOSUPPORT);
+ NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
     //To Do
@@ -11068,7 +11113,7 @@ begin
  {}
  {Not Implemented}
  Result:=INVALID_SOCKET;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11078,7 +11123,7 @@ begin
  {}
  {Not Implemented}
  Result:=False;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11088,7 +11133,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11098,7 +11143,7 @@ begin
  {}
  {Not Implemented}
  Result:=WSA_INVALID_EVENT;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11108,7 +11153,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11118,7 +11163,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11128,7 +11173,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11138,7 +11183,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11148,7 +11193,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11158,7 +11203,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11168,7 +11213,7 @@ begin
  {}
  {Not Implemented}
  Result:=False;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11178,7 +11223,7 @@ begin
  {}
  {Not Implemented}
  Result:=False;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11191,11 +11236,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -11212,13 +11257,13 @@ begin
   Socket.ReaderUnlock;
   
   {Return Result}
-  SetLastError(ERROR_SUCCESS);
+  NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
  except
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
     {$ENDIF}
@@ -11236,11 +11281,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -11257,13 +11302,13 @@ begin
   Socket.ReaderUnlock;
   
   {Return Result}
-  SetLastError(ERROR_SUCCESS);
+  NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
  except
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
     {$ENDIF}
@@ -11278,7 +11323,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11288,7 +11333,7 @@ begin
  {}
  {Not Implemented}
  Result:=INVALID_SOCKET;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11301,11 +11346,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -11322,13 +11367,13 @@ begin
   Socket.ReaderUnlock;
   
   {Return Result}
-  SetLastError(ERROR_SUCCESS);
+  NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
  except
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
     {$ENDIF}
@@ -11346,11 +11391,11 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
   {Check Socket}
-  SetLastError(WSAENOTSOCK);
+  NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
@@ -11367,13 +11412,13 @@ begin
   Socket.ReaderUnlock;
   
   {Return Result}
-  SetLastError(ERROR_SUCCESS);
+  NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
  except
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
     {$ENDIF}
@@ -11388,7 +11433,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11398,7 +11443,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11408,7 +11453,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11418,7 +11463,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11428,7 +11473,7 @@ begin
  {}
  {Not Implemented}
  Result:=False;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11438,7 +11483,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11448,7 +11493,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11458,7 +11503,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11468,7 +11513,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11478,7 +11523,7 @@ begin
  {}
  {Not Implemented}
  Result:=False;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11488,7 +11533,7 @@ begin
  {}
  {Not Implemented}
  Result:=INVALID_SOCKET;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11498,7 +11543,7 @@ begin
  {}
  {Not Implemented}
  Result:=INVALID_SOCKET;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11508,7 +11553,7 @@ begin
  {}
  {Not Implemented}
  Result:=WSA_WAIT_FAILED;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11518,7 +11563,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11528,7 +11573,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11538,7 +11583,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11548,7 +11593,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11558,7 +11603,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11568,7 +11613,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11578,7 +11623,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11588,7 +11633,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11598,7 +11643,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11608,7 +11653,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11618,7 +11663,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11628,7 +11673,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11638,7 +11683,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11648,7 +11693,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11658,7 +11703,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11668,7 +11713,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11678,7 +11723,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11688,7 +11733,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11698,7 +11743,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11708,7 +11753,7 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
- SetLastError(WSAEOPNOTSUPP);
+ NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
 {==============================================================================}
@@ -11837,17 +11882,17 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
   
-  SetLastError(WSAEPROTONOSUPPORT);
+  NetworkSetLastError(WSAEPROTONOSUPPORT);
   
   //To Do //For those that are documented call WsControlEx with adjusted params
  except
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAEPROTONOSUPPORT);
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WsControl ' + E.Message);
     {$ENDIF}
@@ -11863,11 +11908,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Network By Address}
@@ -11876,7 +11921,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getnetbyaddr ' + E.Message);
     {$ENDIF}
@@ -11892,11 +11937,11 @@ begin
  Result:=nil;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Check Client}
-  SetLastError(WSASYSNOTREADY);
+  NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
   {Get Network By Name}
@@ -11905,7 +11950,7 @@ begin
   on E: Exception do
    begin
     Result:=nil;
-    SetLastError(WSANO_RECOVERY);
+    NetworkSetLastError(WSANO_RECOVERY);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getnetbyname ' + E.Message);
     {$ENDIF}
@@ -11924,11 +11969,16 @@ var
  Binding:TTransportBinding;
  Protocol:TNetworkProtocol;
  Transport:TNetworkTransport;
+ 
+ ARPAddress:TARPAddressEntry;
+ ARPTransport:TARPTransport;
 
  WSAIfRow:PWSAIfRow;
  WSAIfTable:PWSAIfTable;
  WSAIpAddrRow:PWSAIpAddrRow;
  WSAIpAddrTable:PWSAIpAddrTable;
+ WSAIpNetRow:PWSAIpNetRow;
+ WSAIpNetTable:PWSAIpNetTable;
 
  WSATTL:LongWord;
  WSAIpStats:PWSAIpStats;
@@ -11941,289 +11991,639 @@ begin
  Result:=SOCKET_ERROR;
  try
   {Check Started}
-  SetLastError(WSANOTINITIALISED);
+  NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
   {Set Error}
-  SetLastError(WSAEPROTONOSUPPORT);
+  NetworkSetLastError(WSAEPROTONOSUPPORT);
   
   {Check Proto}
   case Proto of
    IPPROTO_IP:begin
      {Set Error}
-     SetLastError(WSAEOPNOTSUPP);
+     NetworkSetLastError(WSAEOPNOTSUPP);
      
-     {Check Action}
-     case Action of
-      WSA_GETIFTABLE:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IfTable}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIfTable) then Exit;
-        WSAIfTable:=PWSAIfTable(pRequestInfo);
-        if WSAIfTable = nil then Exit;
-        WSAIfTable.dwNumEntries:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - No !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(WSAIfTable.dwNumEntries);
-          if pcbRequestInfoLen < (SizeOf(TWSAIfTable) + (WSAIfTable.dwNumEntries * SizeOf(TWSAIfRow))) then Exit;
-          
-          {Get IfRow}
-          WSAIfRow:=PWSAIfRow(@WSAIfTable.table[WSAIfTable.dwNumEntries - 1]);
-          if WSAIfRow = nil then Exit;
-          //WSAIfRow.wszName:=Adapter.Name; //To Do
-          WSAIfRow.dwIndex:=Adapter.Index;
-          WSAIfRow.dwType:=Adapter.ConfigType;
-          WSAIfRow.dwMtu:=Adapter.Mtu;
-          WSAIfRow.dwSpeed:=0;
-          WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
-          System.Move(Adapter.Hardware[0],WSAIfRow.bPhysAddr[0],SizeOf(THardwareAddress));
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-         end;*)
+     {Get Transport}
+     Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
+     if Transport = nil then Exit;
+     try
+      {Check Action}
+      case Action of
+       WSA_GETNUMBEROFINTERFACES:begin
+         {Get NumberOfInterfaces}
+         NetworkSetLastError(WSAEINVAL);
+         if pRequestInfo = nil then Exit;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETIPADDRTABLE:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpAddrTable}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAddrTable) then Exit;
-        WSAIpAddrTable:=PWSAIpAddrTable(pRequestInfo);
-        if WSAIpAddrTable = nil then Exit;
-        WSAIpAddrTable.dwNumEntries:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - Yes !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(WSAIpAddrTable.dwNumEntries);
-          if pcbRequestInfoLen < (SizeOf(TWSAIpAddrTable) + (WSAIpAddrTable.dwNumEntries * SizeOf(TWSAIpAddrRow))) then Exit;
-          
-          {Get IpAddrRow}
-          WSAIpAddrRow:=PWSAIpAddrRow(@WSAIpAddrTable.table[WSAIpAddrTable.dwNumEntries - 1]);
-          if WSAIpAddrRow = nil then Exit;
-          WSAIpAddrRow.dwAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Address.S_addr); 
-          WSAIpAddrRow.dwIndex:=TIPTransportAdapter(Adapter).Index;
-          WSAIpAddrRow.dwMask:=LongWordNtoBE(TIPTransportAdapter(Adapter).Netmask.S_addr); 
-          WSAIpAddrRow.dwBCastAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Directed.S_addr);
-          WSAIpAddrRow.dwReasmSize:=0;
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-         end;*)
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(DWORD);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         Count:=0;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_SETIPSTATISTICS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpStats}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpStats) then Exit;
-        WSAIpStats:=PWSAIpStats(pRequestInfo);
-        if WSAIpStats = nil then Exit;
-        
-        {Set Forwarding}
-        if WSAIpStats.dwForwarding <> WSA_USE_CURRENT_FORWARDING then
-         begin
-          if WSAIpStats.dwForwarding < WSA_IP_FORWARDING then Exit;
-          if WSAIpStats.dwForwarding > WSA_IP_NOT_FORWARDING then Exit;
-          TIPTransport(Transport).Forwarding:=WSAIpStats.dwForwarding;
-         end;
-        
-        {Set DefaultTTL}
-        if WSAIpStats.dwDefaultTTL <> WSA_USE_CURRENT_TTL then
-         begin
-          if WSAIpStats.dwDefaultTTL = 0 then Exit;
-          if WSAIpStats.dwDefaultTTL > 512 then Exit;
-          TIPTransport(Transport).DefaultTTL:=WSAIpStats.dwDefaultTTL;
-         end;
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end; 
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_SETIPTTL:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-
-        {Get Value}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(LongWord) then Exit;
-        WSATTL:=LongWord(pRequestInfo);
-        if WSATTL = 0 then Exit;
-        if WSATTL > 512 then Exit;
-
-        {Set Value}
-        TIPTransport(Transport).DefaultTTL:=WSATTL;
+         {Return Count}
+         PDWORD(pRequestInfo)^:=Count;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETINTERFACEINFO:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpInterfaceInfo}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpInterfaceInfo) then Exit;
-        WSAIpInterfaceInfo:=PWSAIpInterfaceInfo(pRequestInfo);
-        if WSAIpInterfaceInfo = nil then Exit;
-        WSAIpInterfaceInfo.NumAdapters:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - No !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(WSAIpInterfaceInfo.NumAdapters);
-          if pcbRequestInfoLen < (SizeOf(TWSAIpInterfaceInfo) + (WSAIpInterfaceInfo.NumAdapters * SizeOf(TWSAIpAdapterIndexMap))) then Exit;
-          
-          {Get IpAdapterIndexMap}
-          WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(@WSAIpInterfaceInfo.Adapter[WSAIpInterfaceInfo.NumAdapters - 1]);
-          if WSAIpAdapterIndexMap = nil then Exit;
-          WSAIpAdapterIndexMap.Index:=Adapter.Index;
-          //WSAIpAdapterIndexMap.Name:=Adapter.Name; //To Do
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-         end;*)
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIFENTRY:begin
+         {Get IfEntry}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIfRow:=PWSAIfRow(pRequestInfo);
+         if WSAIfRow = nil then Exit;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETNETWORKPARAMS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get FixedInfo}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAFixedInfo) then Exit;
-        WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
-        if WSAFixedInfo = nil then Exit;
-        StrLCopy(WSAFixedInfo.HostName,PChar(Transport.Manager.Settings.HostName),WSA_MAX_HOSTNAME_LEN);
-        StrLCopy(WSAFixedInfo.DomainName,PChar(Transport.Manager.Settings.DomainName),WSA_MAX_DOMAIN_NAME_LEN);
-        WSAFixedInfo.DnsServerList.Next:=nil;
-        StrLCopy(WSAFixedInfo.DnsServerList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransport(Transport).Nameservers[0]))),15);
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIfRow);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETADAPTERSINFO:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpAdapterInfo}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAdapterInfo) then Exit;
-        WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
-        if WSAIpAdapterInfo = nil then Exit;
-        WSAIpAdapterInfo.Next:=nil;
-        Count:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - No !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(Count);
-          if pcbRequestInfoLen < (SizeOf(TWSAIpAdapterInfo) * Count) then Exit;
-          
-          {Get IpAdapterInfo}
-          //WSAIpAdapterInfo.AdapterName:=TIPTransportAdapter(Adapter).Name;       //To Do
-          //WSAIpAdapterInfo.Description:=TIPTransportAdapter(Adapter).Description; //To Do
-          WSAIpAdapterInfo.AddressLength:=SizeOf(THardwareAddress);
-          System.Move(TIPTransportAdapter(Adapter).Hardware[0],WSAIpAdapterInfo.Address[0],SizeOf(THardwareAddress));
-          WSAIpAdapterInfo.Index:=TIPTransportAdapter(Adapter).Index;
-          WSAIpAdapterInfo.DhcpEnabled:=0;
-          if TIPTransportAdapter(Adapter).ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
-          WSAIpAdapterInfo.IpAddressList.Next:=nil;
-          StrLCopy(WSAIpAdapterInfo.IpAddressList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Address))),15);
-          StrLCopy(WSAIpAdapterInfo.IpAddressList.IpMask.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Netmask))),15);
-          WSAIpAdapterInfo.GatewayList.Next:=nil;
-          StrLCopy(WSAIpAdapterInfo.GatewayList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Gateway))),15);
-          WSAIpAdapterInfo.DhcpServer.Next:=nil;
-          StrLCopy(WSAIpAdapterInfo.DhcpServer.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Server))),15);
-          WSAIpAdapterInfo.LeaseObtained:=TIPTransportAdapter(Adapter).LeaseTime;
-          WSAIpAdapterInfo.LeaseExpires:=TIPTransportAdapter(Adapter).ExpiryTime;
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-          
-          {Get Next IpAdapterInfo}
-          if Adapter <> nil then
-           begin
-            WSAIpAdapterInfo.Next:=Pointer(LongWord(WSAIpAdapterInfo) + SizeOf(TWSAIpAdapterInfo));
-            WSAIpAdapterInfo:=WSAIpAdapterInfo.Next;
+         NetworkSetLastError(WSAENOTSOCK);
+         
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           {Check Adapter}
+           if Adapter.Index = WSAIfRow.dwIndex then 
+            begin
+             {Get IfRow}
+             FillChar(WSAIfRow^,SizeOf(TWSAIfRow),0);
+             WSAIfRow.wszName:=Adapter.Name;
+             WSAIfRow.dwIndex:=Adapter.Index;
+             case Adapter.Adapter.MediaType of
+              MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
+              MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
+              MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
+              MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+              MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
+              MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
+             else  
+              WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
+             end;
+             WSAIfRow.dwMtu:=Adapter.MTU;
+             WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
+             System.Move(Adapter.Hardware[0],WSAIfRow.bPhysAddr[0],SizeOf(THardwareAddress));
+             WSAIfRow.dwAdminStatus:=WSA_IF_ADMIN_STATUS_UP;
+             WSAIfRow.dwOperStatus:=WSA_IF_OPER_STATUS_OPERATIONAL;
+             Break;
+            end;
+            
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         if Adapter = nil then Exit;
+         
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIFTABLE:begin
+         {Get IfTable}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIfTable:=PWSAIfTable(pRequestInfo);
+         if WSAIfTable = nil then Exit;
+         Count:=0;
+         
+         {Count Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIfTable) + (Count * SizeOf(TWSAIfRow))); 
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         WSAIfTable.dwNumEntries:=0;
+         
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(WSAIfTable.dwNumEntries);
+           
+           {Get IfRow}
+           WSAIfRow:=PWSAIfRow(@WSAIfTable.table[WSAIfTable.dwNumEntries - 1]);
+           if WSAIfRow = nil then Exit;
+           WSAIfRow.wszName:=Adapter.Name;
+           WSAIfRow.dwIndex:=Adapter.Index;
+           case Adapter.Adapter.MediaType of
+            MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
+            MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
+            MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
+            MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+            MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
+            MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
+           else  
+            WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
            end;
-         end;*)
-         
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_IPRELEASEADDRESS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-
-        {Get IpAdapterIndexMap}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAdapterIndexMap) then Exit;
-        WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
-        if WSAIpAdapterIndexMap = nil then Exit;
-
-        {Get Adapter} //To Do //Get Binding ??
+           WSAIfRow.dwMtu:=Adapter.MTU;
+           WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
+           System.Move(Adapter.Hardware[0],WSAIfRow.bPhysAddr[0],SizeOf(THardwareAddress));
+           WSAIfRow.dwAdminStatus:=WSA_IF_ADMIN_STATUS_UP;
+           WSAIfRow.dwOperStatus:=WSA_IF_OPER_STATUS_OPERATIONAL;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIPADDRTABLE:begin
+         {Get IpAddrTable}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAddrTable:=PWSAIpAddrTable(pRequestInfo);
+         if WSAIpAddrTable = nil then Exit;
+         Count:=0;
         
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
-      WSA_IPRENEWADDRESS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-
-        {Get IpAdapterIndexMap}
-        SetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAdapterIndexMap) then Exit;
-        WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
-        if WSAIpAdapterIndexMap = nil then Exit;
-
-        {Get Adapter} //To Do //Get Binding ??
-        
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIpAddrTable) + (Count * SizeOf(TWSAIpAddrRow)));
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         WSAIpAddrTable.dwNumEntries:=0;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        SetLastError(ERROR_SUCCESS);
-       end;
+         {Scan Adapters} //To Do //Change to Bindings
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(WSAIpAddrTable.dwNumEntries);
+           
+           {Get IpAddrRow}
+           WSAIpAddrRow:=PWSAIpAddrRow(@WSAIpAddrTable.table[WSAIpAddrTable.dwNumEntries - 1]);
+           if WSAIpAddrRow = nil then Exit;
+           WSAIpAddrRow.dwAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Address.S_addr); 
+           WSAIpAddrRow.dwIndex:=TIPTransportAdapter(Adapter).Index;
+           WSAIpAddrRow.dwMask:=LongWordNtoBE(TIPTransportAdapter(Adapter).Netmask.S_addr); 
+           WSAIpAddrRow.dwBCastAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Directed.S_addr);
+           WSAIpAddrRow.dwReasmSize:=0;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIPNETTABLE:begin
+         {Get ARP Transport}
+         NetworkSetLastError(WSAEOPNOTSUPP);
+         ARPTransport:=TARPTransport(TransportManager.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,True,NETWORK_LOCK_READ));
+         if ARPTransport = nil then Exit;
+         try
+          {Get IpNetTable}
+          NetworkSetLastError(WSAEINVAL);
+          WSAIpNetTable:=PWSAIpNetTable(pRequestInfo);
+          if (WSAIpNetTable = nil) and (pcbRequestInfoLen > 0) then Exit;
+          Count:=0;
+         
+          {Count Addresses}
+          ARPAddress:=ARPTransport.GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
+          while ARPAddress <> nil do
+           begin
+            Inc(Count);
+            
+            {Get Next Address}
+            ARPAddress:=ARPTransport.GetAddressByNext(ARPAddress,True,True,NETWORK_LOCK_READ);
+           end;
+          
+          NetworkSetLastError(WSAENOBUFS);
+          pcbResponseInfoLen:=(SizeOf(TWSAIpNetTable) + (Count * SizeOf(TWSAIpNetRow)));
+          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+          WSAIpNetTable.dwNumEntries:=0;
+          
+          {Scan Addresses} 
+          ARPAddress:=ARPTransport.GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
+          while ARPAddress <> nil do
+           begin
+            Inc(WSAIpNetTable.dwNumEntries);
+            
+            {Get IpNetRow}
+            WSAIpNetRow:=PWSAIpNetRow(@WSAIpNetTable.table[WSAIpNetTable.dwNumEntries - 1]);
+            if WSAIpNetRow = nil then Exit;
+            WSAIpNetRow.dwIndex:=WSAIpNetTable.dwNumEntries;
+            WSAIpNetRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
+            System.Move(ARPAddress.Hardware[0],WSAIpNetRow.bPhysAddr[0],SizeOf(THardwareAddress));
+            WSAIpNetRow.dwAddr:=LongWordNtoBE(ARPAddress.Address.S_addr); 
+            case ARPAddress.AddressType of
+             ADDRESS_TYPE_DYNAMIC:WSAIpNetRow.dwType:=WSA_IPNET_TYPE_DYNAMIC;
+             ADDRESS_TYPE_STATIC:WSAIpNetRow.dwType:=WSA_IPNET_TYPE_STATIC;
+            else
+             begin
+              WSAIpNetRow.dwType:=WSA_IPNET_TYPE_OTHER;
+             end;
+            end; 
+          
+           {Get Next Address}
+           ARPAddress:=ARPTransport.GetAddressByNext(ARPAddress,True,True,NETWORK_LOCK_READ);
+          end;
+          
+          {Return Result} 
+          Result:=NO_ERROR;
+          NetworkSetLastError(ERROR_SUCCESS);
+         finally
+          ARPTransport.ReaderUnlock;
+         end;
+        end; 
+       WSA_GETIPFORWARDTABLE:begin
+         {Get IpForwardTable}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;       
+       WSA_GETTCPTABLE:begin
+         {Get TcpTable}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;       
+       WSA_GETUDPTABLE:begin
+         {Get UdpTable}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;       
+       WSA_GETIPSTATISTICS:begin
+         {Get IpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;   
+       WSA_GETICMPSTATISTICS:begin
+         {Get IcmpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;   
+       WSA_GETTCPSTATISTICS:begin
+         {Get TcpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;   
+       WSA_GETUDPSTATISTICS:begin
+         {Get UdpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;   
+       WSA_SETIFENTRY:begin
+         {Set IfEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end; 
+       WSA_CREATEIPFORWARDENTRY:begin
+         {Create IpForwardEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_SETIPFORWARDENTRY:begin       
+         {Set IpForwardEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_DELETEIPFORWARDENTRY:begin       
+         {Delete IpForwardEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_SETIPSTATISTICS:begin
+         {Get IpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpStats:=PWSAIpStats(pRequestInfo);
+         if WSAIpStats = nil then Exit;
+
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIpStats);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         {Set Forwarding}
+         if WSAIpStats.dwForwarding <> WSA_USE_CURRENT_FORWARDING then
+          begin
+           if WSAIpStats.dwForwarding < WSA_IP_FORWARDING then Exit;
+           if WSAIpStats.dwForwarding > WSA_IP_NOT_FORWARDING then Exit;
+           TIPTransport(Transport).Forwarding:=WSAIpStats.dwForwarding;
+          end;
+         
+         {Set DefaultTTL}
+         if WSAIpStats.dwDefaultTTL <> WSA_USE_CURRENT_TTL then
+          begin
+           NetworkSetLastError(WSAEINVAL);
+           if WSAIpStats.dwDefaultTTL = 0 then Exit;
+           if WSAIpStats.dwDefaultTTL > 512 then Exit;
+           TIPTransport(Transport).DefaultTTL:=WSAIpStats.dwDefaultTTL;
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_SETIPTTL:begin
+         {Get Value}
+         NetworkSetLastError(WSAEINVAL);
+         WSATTL:=LongWord(pRequestInfo);
+
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(LongWord);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         {Set DefaultTTL}
+         NetworkSetLastError(WSAEINVAL);
+         if WSATTL = 0 then Exit;
+         if WSATTL > 512 then Exit;
+         TIPTransport(Transport).DefaultTTL:=WSATTL;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_CREATEIPNETENTRY:begin
+         {Create IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_SETIPNETENTRY:begin
+         {Set IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_DELETEIPNETENTRY:begin
+         {Delete IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_FLUSHIPNETTABLE:begin
+         {Flush IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_SETTCPENTRY:begin
+         {Set TcpEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_GETINTERFACEINFO:begin
+         {Get IpInterfaceInfo}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpInterfaceInfo:=PWSAIpInterfaceInfo(pRequestInfo);
+         if WSAIpInterfaceInfo = nil then Exit;
+         Count:=0;
+         
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIpInterfaceInfo) + (Count * SizeOf(TWSAIpAdapterIndexMap)));
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         WSAIpInterfaceInfo.NumAdapters:=0;
+         
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(WSAIpInterfaceInfo.NumAdapters);
+           
+           {Get IpAdapterIndexMap}
+           WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(@WSAIpInterfaceInfo.Adapter[WSAIpInterfaceInfo.NumAdapters - 1]);
+           if WSAIpAdapterIndexMap = nil then Exit;
+           WSAIpAdapterIndexMap.Index:=Adapter.Index;
+           WSAIpAdapterIndexMap.Name:=Adapter.Name;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETBESTINTERFACE:begin
+         {Get BestInterface}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_GETBESTROUTE:begin
+         {Get BestRoute}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_GETADAPTERINDEX:begin
+         {Get AdapterIndex}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_ADDIPADDRESS:begin
+         {Add IPAddress}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_DELETEIPADDRESS:begin
+         {Delete IPAddress}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_GETNETWORKPARAMS:begin
+         {Get FixedInfo}
+         NetworkSetLastError(WSAEINVAL);
+         WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
+         if WSAFixedInfo = nil then Exit;
+
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAFixedInfo);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+
+         StrLCopy(WSAFixedInfo.HostName,PChar(Transport.Manager.Settings.HostName),WSA_MAX_HOSTNAME_LEN);
+         StrLCopy(WSAFixedInfo.DomainName,PChar(Transport.Manager.Settings.DomainName),WSA_MAX_DOMAIN_NAME_LEN);
+         WSAFixedInfo.DnsServerList.Next:=nil;
+         StrLCopy(WSAFixedInfo.DnsServerList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransport(Transport).Nameservers[0]))),15);
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETADAPTERSINFO:begin
+         {Get IpAdapterInfo}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
+         if WSAIpAdapterInfo = nil then Exit;
+         Count:=0;
+         
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIpAdapterInfo) * Count);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         NetworkSetLastError(WSAENOBUFS);
+         
+         WSAIpAdapterInfo.Next:=nil;
+         
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           {Get IpAdapterInfo}
+           WSAIpAdapterInfo.AdapterName:=TIPTransportAdapter(Adapter).Name;
+           {WSAIpAdapterInfo.Description:=TIPTransportAdapter(Adapter).Description;} {Not supported}
+           WSAIpAdapterInfo.AddressLength:=SizeOf(THardwareAddress);
+           System.Move(TIPTransportAdapter(Adapter).Hardware[0],WSAIpAdapterInfo.Address[0],SizeOf(THardwareAddress));
+           WSAIpAdapterInfo.Index:=TIPTransportAdapter(Adapter).Index;
+           WSAIpAdapterInfo.DhcpEnabled:=0;
+           if TIPTransportAdapter(Adapter).ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
+           WSAIpAdapterInfo.IpAddressList.Next:=nil;
+           StrLCopy(WSAIpAdapterInfo.IpAddressList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Address))),15);
+           StrLCopy(WSAIpAdapterInfo.IpAddressList.IpMask.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Netmask))),15);
+           WSAIpAdapterInfo.GatewayList.Next:=nil;
+           StrLCopy(WSAIpAdapterInfo.GatewayList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Gateway))),15);
+           WSAIpAdapterInfo.DhcpServer.Next:=nil;
+           StrLCopy(WSAIpAdapterInfo.DhcpServer.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Server))),15);
+           WSAIpAdapterInfo.LeaseObtained:=TIPTransportAdapter(Adapter).LeaseTime;
+           WSAIpAdapterInfo.LeaseExpires:=TIPTransportAdapter(Adapter).ExpiryTime;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+           
+           {Get Next IpAdapterInfo}
+           if Adapter <> nil then
+            begin
+             WSAIpAdapterInfo.Next:=PWSAIpAdapterInfo(PtrUInt(WSAIpAdapterInfo) + SizeOf(TWSAIpAdapterInfo));
+             WSAIpAdapterInfo:=WSAIpAdapterInfo.Next;
+            end;
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETPERADAPTERINFO:begin
+         {Get PerAdapterInfo}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+        end;
+       WSA_IPRELEASEADDRESS:begin
+         {Get IpAdapterIndexMap}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
+         if WSAIpAdapterIndexMap = nil then Exit;
+
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIpAdapterIndexMap);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         {Get Adapter}
+         //To Do //TestingIPHLPAPI
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_IPRENEWADDRESS:begin
+         {Get IpAdapterIndexMap}
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
+         if WSAIpAdapterIndexMap = nil then Exit;
+
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIpAdapterIndexMap);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         {Get Adapter}
+         //To Do //TestingIPHLPAPI
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_SENDARP:begin
+         {Send ARP}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+
+        end;
+       WSA_GETRTTANDHOPCOUNT:begin
+         {Get RTTAndHopCount}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+
+        end;
+       WSA_GETFRIENDLYIFINDEX:begin
+         {Get FriendlyIfIndex}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+
+        end;
+       WSA_ENABLEROUTER:begin 
+         {Enable Router}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+
+        end;
+       WSA_UNENABLEROUTER:begin
+         {Unenable Router}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //TestingIPHLPAPI
+
+        end;
+      end;
+     finally
+      Transport.ReaderUnlock;
      end;
     end;
    IPPROTO_IPV6:begin
@@ -12234,7 +12634,7 @@ begin
   on E: Exception do
    begin
     Result:=SOCKET_ERROR;
-    SetLastError(WSAEPROTONOSUPPORT);
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WsControlEx ' + E.Message);
     {$ENDIF}
@@ -12244,7 +12644,159 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOReadChar function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Count:Integer;
+begin
+ {}
+ Result:=False;
+ 
+ Count:=Winsock2.recv(WS2TextIOInputSocket,ACh,SizeOf(Char),0);
+ if Count = SOCKET_ERROR then
+  begin
+   Winsock2.closesocket(WS2TextIOInputSocket);
+   WS2TextIOInputSocket:=INVALID_SOCKET;
+   Exit;
+  end
+ else
+  begin
+   if Count = 0 then
+    begin
+     Winsock2.closesocket(WS2TextIOInputSocket);
+     WS2TextIOInputSocket:=INVALID_SOCKET;
+     Exit;
+    end;
+  end;
+
+ Result:=True;  
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOWriteChar function}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=(SysTextIOWriteBuffer(@ACh,SizeOf(Char),AUserData) = SizeOf(Char));
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+{Handler for platform TextIOWriteBuffer function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Count:Integer;
+ Total:Integer;
+ Offset:Integer;
+begin
+ {}
+ Total:=0;
+ Result:=0;
+ 
+ if ABuffer = nil then Exit;
+ 
+ if ACount > 0 then
+  begin
+   Offset:=0;
+   repeat
+    Count:=Winsock2.send(WS2TextIOOutputSocket,Pointer(PtrUInt(ABuffer) + PtrUInt(Offset))^,ACount - Offset,0);
+    if Count = SOCKET_ERROR then
+     begin
+      Winsock2.closesocket(WS2TextIOOutputSocket);
+      WS2TextIOOutputSocket:=INVALID_SOCKET;
+      Exit;
+     end
+    else
+     begin
+      if Count = 0 then
+       begin
+        Winsock2.closesocket(WS2TextIOOutputSocket);
+        WS2TextIOOutputSocket:=INVALID_SOCKET;
+        Exit;
+       end
+      else
+       begin
+        Inc(Total,Count);
+        Inc(Offset,Count);
+       end;
+     end;
+   until Offset >= ACount;   
+  end;
+  
+ Result:=Total; 
+end;
+
+{==============================================================================}
+{==============================================================================}
 {Winsock2 Helper Functions}
+function Winsock2RedirectInput(s:TSocket):Boolean;
+{Redirect standard input to the socket specified by s}
+{s: The socket to redirect input to (or INVALID_SOCKET to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the input of the text file Input which also
+       redirects the input of Read, ReadLn and the standard C library}
+begin
+ {}
+ Result:=True;
+ 
+ if s = INVALID_SOCKET then
+  begin
+   {Stop Redirection}
+   TextIOReadCharHandler:=nil;
+   
+   WS2TextIOInputSocket:=INVALID_SOCKET;
+  end
+ else
+  begin
+   {Start Redirection}
+   TextIOReadCharHandler:=SysTextIOReadChar;
+  
+   WS2TextIOInputSocket:=s;
+  end;  
+end;
+
+{==============================================================================}
+
+function Winsock2RedirectOutput(s:TSocket):Boolean; 
+{Redirect standard output to the socket specified by s}
+{s: The socket to redirect output to (or INVALID_SOCKET to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the output of the text files Output, ErrOutput, StdOut and StdErr
+       which also redirects the output of Write, WriteLn and the standard C library}
+begin
+ {}
+ Result:=True;
+ 
+ if s = INVALID_SOCKET then
+  begin
+   {Stop Redirection}
+   TextIOWriteCharHandler:=nil;
+   TextIOWriteBufferHandler:=nil;
+   
+   WS2TextIOOutputSocket:=INVALID_SOCKET;
+  end
+ else
+  begin
+   {Start Redirection}
+   TextIOWriteCharHandler:=SysTextIOWriteChar;
+   TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
+  
+   WS2TextIOOutputSocket:=s;
+  end;  
+end;
+
+{==============================================================================}
+
 function Winsock2ErrorToString(AError:LongInt):String;
 begin
  {}

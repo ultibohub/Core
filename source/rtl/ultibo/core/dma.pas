@@ -109,7 +109,7 @@ type
   MaxSize:LongWord;    {Maximum transfer size}
   MaxCount:LongWord;   {Maximum Y count for 2D stride}  
   MaxLength:LongWord;  {Maximum X length for 2D stride}
-  MinStride:LongWord;  {Minimum stride value (Increment between rows)}
+  MinStride:LongInt;   {Minimum stride value (Increment between rows)(May be negative)}
   MaxStride:LongWord;  {Maximum stride value (Increment between rows)}
  end;
  
@@ -1005,7 +1005,7 @@ function DMABufferValidate(DMA:PDMAHost;Buffer:Pointer;Size:LongWord):LongWord;
 {Note: Does not check for cache coherency requirements (Shared, Non Cached) only alignment and size.
        Buffers used as the source of a DMA request do not neccessarily need to meet alignment and size
        requirements, however buffers used as a destintation must meet these requirements or the caller
-       must take appropriate actions to prevent undesiraable side effects from cache invalidation.}
+       must take appropriate actions to prevent undesirable side effects from cache invalidation.}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;

@@ -55,6 +55,7 @@ type
  TCriticalSectionHandle = THandle;
  TSemaphoreHandle = THandle;
  TSynchronizerHandle = THandle;
+ TConditionHandle = THandle;
  TListHandle = THandle;
  TQueueHandle = THandle;
  TThreadHandle = THandle;
@@ -76,6 +77,7 @@ type
  PCriticalSectionHandle = ^TCriticalSectionHandle;
  PSemaphoreHandle = ^TSemaphoreHandle;
  PSynchronizerHandle = ^TSynchronizerHandle;
+ PConditionHandle = ^TConditionHandle;
  PListHandle = ^TListHandle;
  PQueueHandle = ^TQueueHandle;
  PThreadHandle = ^TThreadHandle;
@@ -298,6 +300,32 @@ type
  {Procedure types}
  FARPROC = function: Integer;
  
+ {C types}
+ uint16_t = Word;
+ puint16_t = PWord;
+ 
+ int32_t = LongInt;
+ pint32_t = PLongInt;
+ 
+ uint32_t = LongWord;
+ puint32_t = PLongWord;
+ 
+ int64_t = Int64;
+ pint64_t = PInt64;
+ 
+ uint64_t = QWord;
+ puint64_t = PQWord;
+ 
+ patomic_t = ^atomic_t;
+ atomic_t = record
+  counter: LongInt;
+ end;
+ 
+ patomic64_t = ^atomic64_t;
+ atomic64_t = record
+  counter: Int64;
+ end;
+
 {==============================================================================}
 type
  {Socket types} 

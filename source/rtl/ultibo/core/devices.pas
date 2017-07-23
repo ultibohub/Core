@@ -248,8 +248,9 @@ const
  DEVICE_CLASS_CODEC           = 53; {A CODEC Device (eg Audio or Video)}
  DEVICE_CLASS_TOUCH           = 54; {A Touch Device}
  DEVICE_CLASS_MEMORY          = 55; {A Memory Device (eg OTP, NVRAM or Flash)}
+ DEVICE_CLASS_GENERIC         = 56; {A Generic Device}
  
- DEVICE_CLASS_MAX             = 55;
+ DEVICE_CLASS_MAX             = 56;
  
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
  
@@ -310,7 +311,8 @@ const
   'DEVICE_CLASS_CLOCK_MANAGER',
   'DEVICE_CLASS_CODEC',
   'DEVICE_CLASS_TOUCH',
-  'DEVICE_CLASS_MEMORY');
+  'DEVICE_CLASS_MEMORY',
+  'DEVICE_CLASS_GENERIC');
  
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
@@ -415,6 +417,13 @@ const
  HOST_STATE_UNREGISTERED   = 0;
  HOST_STATE_REGISTERED     = 1;
  
+ HOST_STATE_MAX            = 1;
+ 
+ {Host State Names}
+ HOST_STATE_NAMES:array[HOST_STATE_UNREGISTERED..HOST_STATE_MAX] of String = (
+  'HOST_STATE_UNREGISTERED',
+  'HOST_STATE_REGISTERED');
+ 
  {Host Ids}
  HOST_ID_ANY               = $FFFFFFFF; {Any Host (Pass to HostFind to match all hosts)}
  
@@ -445,10 +454,24 @@ const
  {Clock Device Types}
  CLOCK_TYPE_NONE      = 0;
  CLOCK_TYPE_HARDWARE  = 1;
+ 
+ CLOCK_TYPE_MAX       = 1;
   
+ {Clock Type Names}
+ CLOCK_TYPE_NAMES:array[CLOCK_TYPE_NONE..CLOCK_TYPE_MAX] of String = (
+  'CLOCK_TYPE_NONE',
+  'CLOCK_TYPE_HARDWARE');
+ 
  {Clock Device States}
  CLOCK_STATE_DISABLED   = 0;
  CLOCK_STATE_ENABLED    = 1;
+ 
+ CLOCK_STATE_MAX        = 1;
+ 
+ {Clock State Names}
+ CLOCK_STATE_NAMES:array[CLOCK_STATE_DISABLED..CLOCK_STATE_MAX] of String = (
+  'CLOCK_STATE_DISABLED',
+  'CLOCK_STATE_ENABLED');
  
  {Clock Device Flags}
  CLOCK_FLAG_NONE      = $00000000;
@@ -464,9 +487,23 @@ const
  TIMER_TYPE_NONE      = 0;
  TIMER_TYPE_HARDWARE  = 1;
   
+ TIMER_TYPE_MAX       = 1;
+  
+ {Timer Type Names}
+ TIMER_TYPE_NAMES:array[TIMER_TYPE_NONE..TIMER_TYPE_MAX] of String = (
+  'TIMER_TYPE_NONE',
+  'TIMER_TYPE_HARDWARE');
+  
  {Timer Device States}
  TIMER_STATE_DISABLED   = 0;
  TIMER_STATE_ENABLED    = 1;
+ 
+ TIMER_STATE_MAX        = 1;
+ 
+ {Timer State Names}
+ TIMER_STATE_NAMES:array[TIMER_STATE_DISABLED..TIMER_STATE_MAX] of String = (
+  'TIMER_STATE_DISABLED',
+  'TIMER_STATE_ENABLED');
  
  {Timer Device Flags}
  TIMER_FLAG_NONE       = $00000000;
@@ -490,9 +527,24 @@ const
  RANDOM_TYPE_HARDWARE  = 1;
  RANDOM_TYPE_SOFTWARE  = 2;
  
+ RANDOM_TYPE_MAX       = 2;
+  
+ {Random Type Names}
+ RANDOM_TYPE_NAMES:array[RANDOM_TYPE_NONE..RANDOM_TYPE_MAX] of String = (
+  'RANDOM_TYPE_NONE',
+  'RANDOM_TYPE_HARDWARE',
+  'RANDOM_TYPE_SOFTWARE');
+ 
  {Random Device States}
  RANDOM_STATE_DISABLED   = 0;
  RANDOM_STATE_ENABLED    = 1;
+ 
+ RANDOM_STATE_MAX        = 1;
+ 
+ {Random State Names}
+ RANDOM_STATE_NAMES:array[RANDOM_STATE_DISABLED..RANDOM_STATE_MAX] of String = (
+  'RANDOM_STATE_DISABLED',
+  'RANDOM_STATE_ENABLED');
  
  {Random Device Flags}
  RANDOM_FLAG_NONE      = $00000000;
@@ -507,9 +559,24 @@ const
  MAILBOX_TYPE_GPU       = 1;
  MAILBOX_TYPE_LOCAL     = 2;
   
+ MAILBOX_TYPE_MAX       = 2;
+  
+ {Mailbox Type Names}
+ MAILBOX_TYPE_NAMES:array[MAILBOX_TYPE_NONE..MAILBOX_TYPE_MAX] of String = (
+  'MAILBOX_TYPE_NONE',
+  'MAILBOX_TYPE_GPU',
+  'MAILBOX_TYPE_LOCAL');
+  
  {Mailbox Device States}
  MAILBOX_STATE_DISABLED   = 0;
  MAILBOX_STATE_ENABLED    = 1;
+ 
+ MAILBOX_STATE_MAX        = 1;
+ 
+ {Mailbox State Names}
+ MAILBOX_STATE_NAMES:array[MAILBOX_STATE_DISABLED..MAILBOX_STATE_MAX] of String = (
+  'MAILBOX_STATE_DISABLED',
+  'MAILBOX_STATE_ENABLED');
  
  {Mailbox Device Flags}
  MAILBOX_FLAG_NONE      = $00000000;
@@ -523,9 +590,23 @@ const
  WATCHDOG_TYPE_NONE      = 0;
  WATCHDOG_TYPE_HARDWARE  = 1;
  
+ WATCHDOG_TYPE_MAX       = 1;
+  
+ {Watchdog Type Names}
+ WATCHDOG_TYPE_NAMES:array[WATCHDOG_TYPE_NONE..WATCHDOG_TYPE_MAX] of String = (
+  'WATCHDOG_TYPE_NONE',
+  'WATCHDOG_TYPE_HARDWARE');
+ 
  {Watchdog Device States}
  WATCHDOG_STATE_DISABLED   = 0;
  WATCHDOG_STATE_ENABLED    = 1;
+ 
+ WATCHDOG_STATE_MAX        = 1;
+ 
+ {Watchdog State Names}
+ WATCHDOG_STATE_NAMES:array[WATCHDOG_STATE_DISABLED..WATCHDOG_STATE_MAX] of String = (
+  'WATCHDOG_STATE_DISABLED',
+  'WATCHDOG_STATE_ENABLED');
  
  {Watchdog Device Flags}
  WATCHDOG_FLAG_NONE      = $00000000;
@@ -1198,6 +1279,9 @@ function ClockDeviceSetDefault(Clock:PClockDevice):LongWord;
 
 function ClockDeviceCheck(Clock:PClockDevice):PClockDevice;
 
+function ClockTypeToString(ClockType:LongWord):String;
+function ClockStateToString(ClockState:LongWord):String;
+
 {==============================================================================}
 {Timer Device Helper Functions}
 function TimerDeviceGetCount:LongWord; inline;
@@ -1205,6 +1289,9 @@ function TimerDeviceGetDefault:PTimerDevice; inline;
 function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord; 
 
 function TimerDeviceCheck(Timer:PTimerDevice):PTimerDevice;
+
+function TimerTypeToString(TimerType:LongWord):String;
+function TimerStateToString(TimerState:LongWord):String;
 
 function TimerDeviceCreateWaiter(Timer:PTimerDevice;Callback:TTimerCallback;Data:Pointer):PTimerWaiter;
 function TimerDeviceDestroyWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongWord;
@@ -1220,6 +1307,9 @@ function RandomDeviceSetDefault(Random:PRandomDevice):LongWord;
 
 function RandomDeviceCheck(Random:PRandomDevice):PRandomDevice;
 
+function RandomTypeToString(RandomType:LongWord):String;
+function RandomStateToString(RandomState:LongWord):String;
+
 {==============================================================================}
 {Mailbox Device Helper Functions}
 function MailboxDeviceGetCount:LongWord; inline;
@@ -1228,13 +1318,19 @@ function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord;
 
 function MailboxDeviceCheck(Mailbox:PMailboxDevice):PMailboxDevice;
 
+function MailboxTypeToString(MailboxType:LongWord):String;
+function MailboxStateToString(MailboxState:LongWord):String;
+
 {==============================================================================}
 {Watchdog Device Helper Functions}
 function WatchdogDeviceGetCount:LongWord; inline;
 function WatchdogDeviceGetDefault:PWatchdogDevice; inline;
-function WatchdogDeviceSetDefault(Watchdog:PWatchdogDevice):LongWord; 
+function WatchdogDeviceSetDefault(Watchdog:PWatchdogDevice):LongWord;
 
 function WatchdogDeviceCheck(Watchdog:PWatchdogDevice):PWatchdogDevice;
+
+function WatchdogTypeToString(WatchdogType:LongWord):String;
+function WatchdogStateToString(WatchdogState:LongWord):String;
 
 {==============================================================================}
 {==============================================================================}
@@ -7131,6 +7227,34 @@ begin
 end;
 
 {==============================================================================}
+
+function ClockTypeToString(ClockType:LongWord):String;
+{Convert a Clock type value to a string}
+begin
+ {}
+ Result:='CLOCK_TYPE_UNKNOWN';
+ 
+ if ClockType <= CLOCK_TYPE_MAX then
+  begin
+   Result:=CLOCK_TYPE_NAMES[ClockType];
+  end;
+end;
+
+{==============================================================================}
+
+function ClockStateToString(ClockState:LongWord):String;
+{Convert a Clock state value to a string}
+begin
+ {}
+ Result:='CLOCK_STATE_UNKNOWN';
+ 
+ if ClockState <= CLOCK_STATE_MAX then
+  begin
+   Result:=CLOCK_STATE_NAMES[ClockState];
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Timer Device Helper Functions}
 function TimerDeviceGetCount:LongWord; inline;
@@ -7220,6 +7344,34 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(TimerDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function TimerTypeToString(TimerType:LongWord):String;
+{Convert a Timer type value to a string}
+begin
+ {}
+ Result:='TIMER_TYPE_UNKNOWN';
+ 
+ if TimerType <= TIMER_TYPE_MAX then
+  begin
+   Result:=TIMER_TYPE_NAMES[TimerType];
+  end;
+end;
+
+{==============================================================================}
+
+function TimerStateToString(TimerState:LongWord):String; 
+{Convert a Timer state value to a string}
+begin
+ {}
+ Result:='TIMER_STATE_UNKNOWN';
+ 
+ if TimerState <= TIMER_STATE_MAX then
+  begin
+   Result:=TIMER_STATE_NAMES[TimerState];
   end;
 end;
 
@@ -7452,6 +7604,34 @@ begin
 end;
 
 {==============================================================================}
+
+function RandomTypeToString(RandomType:LongWord):String;
+{Convert a Random type value to a string}
+begin
+ {}
+ Result:='RANDOM_TYPE_UNKNOWN';
+ 
+ if RandomType <= RANDOM_TYPE_MAX then
+  begin
+   Result:=RANDOM_TYPE_NAMES[RandomType];
+  end;
+end;
+
+{==============================================================================}
+
+function RandomStateToString(RandomState:LongWord):String;
+{Convert a Random state value to a string}
+begin
+ {}
+ Result:='RANDOM_STATE_UNKNOWN';
+ 
+ if RandomState <= RANDOM_STATE_MAX then
+  begin
+   Result:=RANDOM_STATE_NAMES[RandomState];
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Mailbox Device Helper Functions}
 function MailboxDeviceGetCount:LongWord; inline;
@@ -7545,6 +7725,34 @@ begin
 end;
 
 {==============================================================================}
+
+function MailboxTypeToString(MailboxType:LongWord):String;
+{Convert a Mailbox type value to a string}
+begin
+ {}
+ Result:='MAILBOX_TYPE_UNKNOWN';
+ 
+ if MailboxType <= MAILBOX_TYPE_MAX then
+  begin
+   Result:=MAILBOX_TYPE_NAMES[MailboxType];
+  end;
+end;
+
+{==============================================================================}
+
+function MailboxStateToString(MailboxState:LongWord):String;
+{Convert a Mailbox state value to a string}
+begin
+ {}
+ Result:='MAILBOX_STATE_UNKNOWN';
+ 
+ if MailboxState <= MAILBOX_STATE_MAX then
+  begin
+   Result:=MAILBOX_STATE_NAMES[MailboxState];
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Watchdog Device Helper Functions}
 function WatchdogDeviceGetCount:LongWord; inline;
@@ -7634,6 +7842,34 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(WatchdogDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function WatchdogTypeToString(WatchdogType:LongWord):String;
+{Convert a Watchdog type value to a string}
+begin
+ {}
+ Result:='WATCHDOG_TYPE_UNKNOWN';
+ 
+ if WatchdogType <= WATCHDOG_TYPE_MAX then
+  begin
+   Result:=WATCHDOG_TYPE_NAMES[WatchdogType];
+  end;
+end;
+
+{==============================================================================}
+
+function WatchdogStateToString(WatchdogState:LongWord):String;
+{Convert a Watchdog state value to a string}
+begin
+ {}
+ Result:='WATCHDOG_STATE_UNKNOWN';
+ 
+ if WatchdogState <= WATCHDOG_STATE_MAX then
+  begin
+   Result:=WATCHDOG_STATE_NAMES[WatchdogState];
   end;
 end;
 

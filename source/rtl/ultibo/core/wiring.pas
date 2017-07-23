@@ -98,7 +98,7 @@ const
  WPI_MODE_GPIO_SYS      = 2;
  WPI_MODE_PHYS          = 3;
  WPI_MODE_PIFACE        = 4;  {Not implemented}
- WPI_MODE_UNINITIALISED = -1;
+ WPI_MODE_UNINITIALISED = LongWord(-1);
  
  {Pin modes}
  INPUT            = 0;    
@@ -220,7 +220,7 @@ const
  
 {==============================================================================}
 const
- {Raspbery Pi (BCM2835) specific constants}
+ {Raspberry Pi (BCM2835) specific constants}
  {Note that these values are identical for Raspberry Pi 2 (BCM2836) and 3 (BCM2837)}
  
  {BCM2835 mailbox tag Get Board Revision values (See: http://elinux.org/RPi_HardwareHistory)}
@@ -589,25 +589,25 @@ var
  {gpioToClkCon (Offsets to the clock Control registers)}
  gpioToClkCon:array[0..63] of Byte = (
  
-         -1,        -1,        -1,        -1,       $70,       $78,       $80,        -1,  //  0 ->  7
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,  //  8 -> 15
-         -1,        -1,        -1,        -1,       $70,       $78,        -1,        -1,  // 16 -> 23
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,  // 24 -> 31
-        $70,        -1,       $70,        -1,        -1,        -1,        -1,        -1,  // 32 -> 39
-         -1,        -1,       $70,       $78,       $70,        -1,        -1,        -1,  // 40 -> 47 //To Do //Documentation says this should be GPCLK1/2/1 (This is 0/1/0 ?)
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,  // 48 -> 55
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1); // 56 -> 63
+          0,         0,         0,         0,       $70,       $78,       $80,         0,  //  0 ->  7
+          0,         0,         0,         0,         0,         0,         0,         0,  //  8 -> 15
+          0,         0,         0,         0,       $70,       $78,         0,         0,  // 16 -> 23
+          0,         0,         0,         0,         0,         0,         0,         0,  // 24 -> 31
+        $70,         0,       $70,         0,         0,         0,         0,         0,  // 32 -> 39
+          0,         0,       $70,       $78,       $70,         0,         0,         0,  // 40 -> 47 //To Do //Documentation says this should be GPCLK1/2/1 (This is 0/1/0 ?)
+          0,         0,         0,         0,         0,         0,         0,         0,  // 48 -> 55
+          0,         0,         0,         0,         0,         0,         0,         0); // 56 -> 63
  
  {gpioToClkDiv (Offsets to the clock Divisor registers)}
  gpioToClkDiv:array[0..63] of Byte = (
-         -1,        -1,        -1,        -1,       $74,       $7C,       $84,        -1,  //  0 ->  7
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,  //  8 -> 15
-         -1,        -1,        -1,        -1,       $74,       $7C,        -1,        -1,  // 16 -> 23
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,  // 24 -> 31
-        $74,        -1,       $74,        -1,        -1,        -1,        -1,        -1,  // 32 -> 39
-         -1,        -1,       $74,       $7C,       $74,        -1,        -1,        -1,  // 40 -> 47 //To Do //Documentation says this should be GPCLK1/2/1 (This is 0/1/0 ?)
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,  // 48 -> 55
-         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1); // 56 -> 63
+          0,         0,         0,         0,       $74,       $7C,       $84,         0,  //  0 ->  7
+          0,         0,         0,         0,         0,         0,         0,         0,  //  8 -> 15
+          0,         0,         0,         0,       $74,       $7C,         0,         0,  // 16 -> 23
+          0,         0,         0,         0,         0,         0,         0,         0,  // 24 -> 31
+        $74,         0,       $74,         0,         0,         0,         0,         0,  // 32 -> 39
+          0,         0,       $74,       $7C,       $74,         0,         0,         0,  // 40 -> 47 //To Do //Documentation says this should be GPCLK1/2/1 (This is 0/1/0 ?)
+          0,         0,         0,         0,         0,         0,         0,         0,  // 48 -> 55
+          0,         0,         0,         0,         0,         0,         0,         0); // 56 -> 63
  
 var
  piMutexes:array[0..3] of TMutexHandle;
@@ -1065,6 +1065,9 @@ begin
      Exit;
     end;
 
+   {Check Port}
+   if gpioToPwmPort[GPIOPin] = 0 then Exit;
+   
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
     
@@ -1997,6 +2000,12 @@ begin
     
    {Check Freq} 
    if freq < 1 then Exit;
+
+   {Check Clock Control} 
+   if gpioToClkCon[GPIOPin] = 0 then Exit;
+
+   {Check Clock Divisor} 
+   if gpioToClkDiv[GPIOPin] = 0 then Exit;
    
    divi:=19200000 div freq;
    divr:=19200000 mod freq;

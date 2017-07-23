@@ -365,7 +365,7 @@ type
        LowPart: DWORD;
        HighPart: DWORD);
      1: (
-       QuadPart: LONGLONG);
+       QuadPart: ULONGLONG);
  end;
  TULargeInteger = ULARGE_INTEGER;
  PULargeInteger = LPULARGE_INTEGER;
@@ -673,6 +673,19 @@ type
  PCriticalSection = PCRITICAL_SECTION;
  
 type
+ {Condition Variable types}
+ PRTL_CONDITION_VARIABLE = ^RTL_CONDITION_VARIABLE;
+ _RTL_CONDITION_VARIABLE = record
+  Ptr:Pointer;
+ end;
+ RTL_CONDITION_VARIABLE = _RTL_CONDITION_VARIABLE;
+ TRtlConditionVariable = RTL_CONDITION_VARIABLE;
+ PRtlConditionVariable = PRTL_CONDITION_VARIABLE;
+ 
+ CONDITION_VARIABLE = RTL_CONDITION_VARIABLE;
+ PCONDITION_VARIABLE = PRTL_CONDITION_VARIABLE;
+ 
+type
  {Counter types}
  PIO_COUNTERS = ^IO_COUNTERS;
  _IO_COUNTERS = record
@@ -935,7 +948,8 @@ type
  
 {==============================================================================}
 {Compatibility variables}
-{var}
+var
+ CONDITION_VARIABLE_INIT:CONDITION_VARIABLE = (Ptr:nil);
  
 {==============================================================================}
 {Ultibo constants}
@@ -1032,7 +1046,7 @@ type
  TUltiboSetVolumeLabelA = function(const AVolume:String;const ALabel:String):Boolean;
  TUltiboGetVolumeInformationA = function(const ARootPath:String;var AVolumeName:String;var VolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var SystemName:String):Boolean; 
  TUltiboGetDiskFreeSpaceA = function(const ARootPath:String;var ASectorsPerCluster,ABytesPerSector,ANumberOfFreeClusters,ATotalNumberOfClusters:LongWord):Boolean;
- TUltiboGetDiskFreeSpaceExA = function(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:Int64):Boolean;
+ TUltiboGetDiskFreeSpaceExA = function(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:QWord):Boolean;
 
  {Drive Functions (Ultibo)}
  TUltiboGetDriveType = function(ADrive:Byte):TDriveType;
@@ -1075,7 +1089,7 @@ type
  TUltiboReadFile = function(AHandle:THandle;var ABuffer;ABytesToRead:LongWord;var ABytesRead:LongWord):Boolean;
  TUltiboWriteFile = function(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var ABytesWritten:LongWord):Boolean;
  TUltiboSetEndOfFile = function(AHandle:THandle):Boolean;
- TUltiboSetFilePointer = function(AHandle:THandle;ADistanceToMove:LongWord;var ADistanceToMoveHigh:LongWord;AMoveMethod:LongWord):LongWord;
+ TUltiboSetFilePointer = function(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceToMoveHigh:LongInt;AMoveMethod:LongWord):LongWord;
  TUltiboSetFilePointerEx = function(AHandle:THandle;const ADistanceToMove:Int64;var ANewFilePointer:Int64;AMoveMethod:LongWord):Boolean;
  TUltiboFlushFileBuffers = function(AHandle:THandle):Boolean;
  TUltiboCopyFileA = function(const AExistingName,ANewName:String;AFailIfExists:Boolean):Boolean;
@@ -1492,8 +1506,8 @@ function ExpandEnvironmentStringsW(lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD):DWORD
 
 {==============================================================================}
 {Error Functions (Compatibility)}
-function GetLastError:DWORD;
-procedure SetLastError(dwErrCode:DWORD);
+function GetLastError:DWORD; inline;
+procedure SetLastError(dwErrCode:DWORD); inline;
 
 {==============================================================================}
 {String Functions (Ultibo)}
@@ -1821,6 +1835,17 @@ function SetCriticalSectionSpinCount(var lpCriticalSection:CRITICAL_SECTION;dwSp
 procedure DeleteCriticalSection(var lpCriticalSection:CRITICAL_SECTION);
 
 {==============================================================================}
+{Condition Variable Functions (Compatibility)}
+procedure InitializeConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+
+procedure WakeConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+procedure WakeAllConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+
+function SleepConditionVariableCS(var ConditionVariable:CONDITION_VARIABLE; var CriticalSection:CRITICAL_SECTION;dwMilliseconds:DWORD):BOOL; 
+
+procedure DeleteConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+
+{==============================================================================}
 {Event Functions (Compatibility)}
 function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE; inline;
 function CreateEventA(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE;
@@ -1899,10 +1924,6 @@ var
 procedure UltiboInit;
 begin
  {}
- {Setup Global Handlers}
- GetLastErrorHandler:=GetLastError;
- SetLastErrorHandler:=SetLastError;
- 
  {Setup System Handlers}
   {Nothing}
  
@@ -3718,15 +3739,15 @@ end;
 
 function GetDiskFreeSpaceExA(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 var
- TotalNumberOfFreeBytes:Int64;
+ TotalNumberOfFreeBytes:QWord;
 begin
  {}
  if Assigned(UltiboGetDiskFreeSpaceExAHandler) then
   begin
-   Result:=UltiboGetDiskFreeSpaceExAHandler(lpDirectoryName,Int64(lpFreeBytesAvailableToCaller),Int64(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
+   Result:=UltiboGetDiskFreeSpaceExAHandler(lpDirectoryName,QWord(lpFreeBytesAvailableToCaller),QWord(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
    if Result and (lpTotalNumberOfFreeBytes <> nil) then
     begin
-     PInt64(lpTotalNumberOfFreeBytes)^:=TotalNumberOfFreeBytes;
+     PQWord(lpTotalNumberOfFreeBytes)^:=TotalNumberOfFreeBytes;
     end;
   end
  else
@@ -3740,17 +3761,17 @@ end;
 function GetDiskFreeSpaceExW(lpDirectoryName:LPCWSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 var
  DirectoryName:String;
- TotalNumberOfFreeBytes:Int64;
+ TotalNumberOfFreeBytes:QWord;
 begin
  {}
  if Assigned(UltiboGetDiskFreeSpaceExAHandler) then
   begin
    DirectoryName:=WideCharToString(lpDirectoryName);
    
-   Result:=UltiboGetDiskFreeSpaceExAHandler(DirectoryName,Int64(lpFreeBytesAvailableToCaller),Int64(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
+   Result:=UltiboGetDiskFreeSpaceExAHandler(DirectoryName,QWord(lpFreeBytesAvailableToCaller),QWord(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
    if Result and (lpTotalNumberOfFreeBytes <> nil) then
     begin
-     PInt64(lpTotalNumberOfFreeBytes)^:=TotalNumberOfFreeBytes;
+     PQWord(lpTotalNumberOfFreeBytes)^:=TotalNumberOfFreeBytes;
     end;
   end
  else
@@ -4489,11 +4510,17 @@ end;
 {==============================================================================}
 
 function ReadFile(hFile:HANDLE;lpBuffer:LPVOID;nNumberOfBytesToRead:DWORD;lpNumberOfBytesRead:LPDWORD;lpOverlapped:LPOVERLAPPED):BOOL;
+var
+ BytesRead:LongWord;
 begin
  {}
  if Assigned(UltiboReadFileHandler) then
   begin
-   Result:=UltiboReadFileHandler(hFile,lpBuffer^,nNumberOfBytesToRead,lpNumberOfBytesRead^);
+   Result:=UltiboReadFileHandler(hFile,lpBuffer^,nNumberOfBytesToRead,BytesRead);
+   if Result and (lpNumberOfBytesRead <> nil) then
+    begin
+     lpNumberOfBytesRead^:=BytesRead;
+    end;
   end
  else
   begin
@@ -4504,11 +4531,17 @@ end;
 {==============================================================================}
 
 function WriteFile(hFile:HANDLE;lpBuffer:LPCVOID;nNumberOfBytesToWrite:DWORD;lpNumberOfBytesWritten:LPDWORD;lpOverlapped:LPOVERLAPPED):BOOL;
+var
+ BytesWritten:LongWord;
 begin
  {}
  if Assigned(UltiboWriteFileHandler) then
   begin
-   Result:=UltiboWriteFileHandler(hFile,lpBuffer^,nNumberOfBytesToWrite,lpNumberOfBytesWritten^);
+   Result:=UltiboWriteFileHandler(hFile,lpBuffer^,nNumberOfBytesToWrite,BytesWritten);
+   if Result and (lpNumberOfBytesWritten <> nil) then
+    begin
+     lpNumberOfBytesWritten^:=BytesWritten;
+    end;
   end
  else
   begin
@@ -5505,7 +5538,8 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Error Functions (Compatibility)}
-function GetLastError:DWORD;
+function GetLastError:DWORD; inline;
+{Get the last error value for the calling thread}
 begin
  {}
  Result:=ThreadGetLastError;
@@ -5513,7 +5547,8 @@ end;
 
 {==============================================================================}
 
-procedure SetLastError(dwErrCode:DWORD);
+procedure SetLastError(dwErrCode:DWORD); inline;
+{Set the last error value for the calling thread}
 begin
  {}
  ThreadSetLastError(dwErrCode);
@@ -6451,6 +6486,7 @@ begin
   CRITICAL_SECTION_SIGNATURE:Result:=(Threads.CriticalSectionDestroy(hObject) = ERROR_SUCCESS);
   SEMAPHORE_SIGNATURE:Result:=(Threads.SemaphoreDestroy(hObject) = ERROR_SUCCESS);
   SYNCHRONIZER_SIGNATURE:Result:=(Threads.SynchronizerDestroy(hObject) = ERROR_SUCCESS);
+  CONDITION_SIGNATURE:Result:=(Threads.ConditionDestroy(hObject) = ERROR_SUCCESS);
   THREAD_SIGNATURE:Result:=True; {No action for Threads}
   MESSAGESLOT_SIGNATURE:Result:=(Threads.MessageslotDestroy(hObject) = ERROR_SUCCESS);
   MAILSLOT_SIGNATURE:Result:=(Threads.MailslotDestroy(hObject) = ERROR_SUCCESS);
@@ -7394,6 +7430,7 @@ begin
  Result:=Threads.MutexCreateEx(bInitialOwner,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_NONE);
  
  //To Do //lpName to allow Open
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7404,6 +7441,7 @@ begin
  Result:=Threads.MutexCreateEx(bInitialOwner,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_NONE);
  
  //To Do //lpName to allow Open
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7422,6 +7460,7 @@ begin
  Result:=0;
  
  //To Do 
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7432,6 +7471,7 @@ begin
  Result:=0;
  
  //To Do 
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7459,6 +7499,7 @@ begin
  Result:=Threads.SemaphoreCreateEx(lInitialCount,lMaximumCount,SEMAPHORE_FLAG_NONE);
  
  //To Do //lpName to allow Open
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7469,6 +7510,7 @@ begin
  Result:=Threads.SemaphoreCreateEx(lInitialCount,lMaximumCount,SEMAPHORE_FLAG_NONE);
  
  //To Do //lpName to allow Open
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7487,6 +7529,7 @@ begin
  Result:=0;
  
  //To Do 
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7497,6 +7540,7 @@ begin
  Result:=0;
  
  //To Do 
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7569,6 +7613,80 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{Condition Variable Functions (Compatibility)}
+procedure InitializeConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
+{Initializes a condition variable}
+{ConditionVariable: The condition variable to initialize}
+begin
+ {}
+ FillChar(ConditionVariable,SizeOf(CONDITION_VARIABLE),0);
+ THandle(PtrUInt(ConditionVariable.Ptr)):=Threads.ConditionCreate;
+end;
+
+{==============================================================================}
+
+procedure WakeConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+{Wake a single thread waiting on the specified condition variable}
+{ConditionVariable: The condition variable to wake}
+begin
+ {}
+ if ConditionVariable.Ptr = nil then
+  begin
+   InitializeConditionVariable(ConditionVariable);
+  end;
+  
+ Threads.ConditionWake(THandle(ConditionVariable.Ptr));
+end;
+
+{==============================================================================}
+
+procedure WakeAllConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+{Wake all threads waiting on the specified condition variable}
+{ConditionVariable: The condition variable to wake}
+begin
+ {}
+ if ConditionVariable.Ptr = nil then
+  begin
+   InitializeConditionVariable(ConditionVariable);
+  end;
+  
+ Threads.ConditionWakeAll(THandle(ConditionVariable.Ptr));
+end;
+
+{==============================================================================}
+
+function SleepConditionVariableCS(var ConditionVariable:CONDITION_VARIABLE; var CriticalSection:CRITICAL_SECTION;dwMilliseconds:DWORD):BOOL; 
+{Sleeps on the specified condition variable and releases the specified critical section as an atomic operation}
+{ConditionVariable: The condition variable to sleep on}
+{CriticalSection: The critical section object to release (This critical section must be entered exactly once by the caller at the time SleepConditionVariableCS is called)}
+{dwMilliseconds: The time-out interval, in milliseconds. (If the time-out interval elapses, the function re-acquires the critical section and returns false)}
+begin
+ {}
+ if ConditionVariable.Ptr = nil then
+  begin
+   InitializeConditionVariable(ConditionVariable);
+  end;
+
+ Result:=(Threads.ConditionWaitCriticalSection(THandle(ConditionVariable.Ptr),CriticalSection.LockSemaphore,dwMilliseconds) = ERROR_SUCCESS);
+end;
+  
+{==============================================================================}
+
+procedure DeleteConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+{Destroy a condition variable}
+{ConditionVariable: The condition variable to destroy}
+
+{Note: This function is Ultibo specific and is not part of the normal Windows API}
+begin
+ {}
+ if ConditionVariable.Ptr <> nil then
+  begin
+   Threads.ConditionDestroy(THandle(ConditionVariable.Ptr));
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {Event Functions (Compatibility)}
 function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE; inline;
 begin
@@ -7584,6 +7702,7 @@ begin
  Result:=Threads.EventCreate(bManualReset,bInitialState);
  
  //To Do //lpName to allow OpenEvent
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7594,6 +7713,7 @@ begin
  Result:=Threads.EventCreate(bManualReset,bInitialState);
  
  //To Do //lpName to allow OpenEvent
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7612,6 +7732,7 @@ begin
  Result:=0;
  
  //To Do 
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}
@@ -7622,6 +7743,7 @@ begin
  Result:=0;
  
  //To Do 
+         //Use new HandleFind/HandleOpen functions in Platform
 end;
 
 {==============================================================================}

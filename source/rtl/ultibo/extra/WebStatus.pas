@@ -43,7 +43,8 @@ unit WebStatus;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
-     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Console,Framebuffer,Font,Logging,Timezone,Locale,Unicode;
+     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Console,Framebuffer,Font,Logging,Timezone,Locale,Unicode,
+     Iphlpapi;
 
 //To Do //Look for:
 
@@ -119,7 +120,7 @@ type
   function AddBold5Column(AResponse:THTTPServerResponse;const AName,AValue1,AValue2,AValue3,AValue4:String):Boolean;
   
   function AddHeader(AResponse:THTTPServerResponse;const ATitle:String;ASub:TWebStatusSub):Boolean;
-  function AddHeaderEx(AResponse:THTTPServerResponse;const ATitle:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
+  function AddHeaderEx(AResponse:THTTPServerResponse;const ATitle,ACaption:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
   
   function AddFooter(AResponse:THTTPServerResponse):Boolean;
   function AddFooterEx(AResponse:THTTPServerResponse;AColumns:LongWord):Boolean;
@@ -177,7 +178,7 @@ type
   function AddBold5Column(AResponse:THTTPServerResponse;const AName,AValue1,AValue2,AValue3,AValue4:String):Boolean;
   
   function AddHeader(AResponse:THTTPServerResponse;const ATitle:String;ASub:TWebStatusSub):Boolean;
-  function AddHeaderEx(AResponse:THTTPServerResponse;const ATitle:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
+  function AddHeaderEx(AResponse:THTTPServerResponse;const ATitle,ACaption:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
   
   function AddFooter(AResponse:THTTPServerResponse):Boolean;
   function AddFooterEx(AResponse:THTTPServerResponse;AColumns:LongWord):Boolean;
@@ -240,8 +241,10 @@ type
   constructor Create(AMain:TWebStatusMain);
  private
   {Internal Variables}
+
+  {Internal Methods}
+
   function FlagsToFlagName(AFlags:LongWord):String;
-  
  protected
   {Internal Variables}
  
@@ -402,6 +405,10 @@ type
  private
   {Internal Variables}
   
+  {Internal Methods}
+  
+  function FlagsToFlagNames(AFlags:LongWord):TStringList;
+  function AffinityToAffinityNames(AAffinity:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -442,6 +449,13 @@ type
  private
   {Internal Variables}
   
+  {Internal Methods}
+  
+  function ClockFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function TimerFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function RandomFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function MailboxFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function WatchdogFlagsToFlagNames(AFlags:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -462,6 +476,29 @@ type
  private
   {Internal Variables}
   
+ protected
+  {Internal Variables}
+ 
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
+ 
+ TWebStatusHandles = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+
+  {Internal Methods}
+  
+  function FlagsToFlagNames(AFlags:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -522,6 +559,9 @@ type
  private
   {Internal Variables}
   
+  {Internal Methods}
+  
+  function NetworkFlagsToFlagNames(AFlags:LongWord):TStringList; 
  protected
   {Internal Variables}
  
@@ -687,8 +727,10 @@ type
   constructor Create(AMain:TWebStatusMain);
  private
   {Internal Variables}
-  function FlagsToFlagNames(AFlags:LongWord):TStringList;
   
+  {Internal Methods}
+  
+  function FlagsToFlagNames(AFlags:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -826,8 +868,11 @@ type
  end;
  
 {==============================================================================}
-{var}
+var
  {Web Status specific variables}
+ WEBSTATUS_FONT_NAME:String = 'Arial';
+ WEBSTATUS_HEAP_FREE_COUNT:LongWord = 250;  {Maximum number of free heap blocks to display}
+ WEBSTATUS_HEAP_USED_COUNT:LongWord = 250;  {Maximum number of used heap blocks to display}
 
 {==============================================================================}
 {Initialization Functions}
@@ -841,6 +886,7 @@ function WebStatusDeregister(AListener:THTTPListener;const AHost:String):Boolean
 {Web Status Helper Functions}
 function WebStatusDeviceEnumerate(Device:PDevice;Data:Pointer):LongWord;
 function WebStatusDriverEnumerate(Driver:PDriver;Data:Pointer):LongWord;
+function WebStatusHandleEnumerate(Handle:PHandleEntry;Data:Pointer):LongWord;
 function WebStatusUSBDeviceEnumerate(Device:PUSBDevice;Data:Pointer):LongWord;
 function WebStatusUSBHostEnumerate(Host:PUSBHost;Data:Pointer):LongWord;
 function WebStatusUSBDriverEnumerate(Driver:PUSBDriver;Data:Pointer):LongWord;
@@ -875,6 +921,7 @@ var
  WebStatusScheduler:TWebStatusScheduler;
  WebStatusDevices:TWebStatusDevices;
  WebStatusDrivers:TWebStatusDrivers;
+ WebStatusHandles:TWebStatusHandles;
  WebStatusUSB:TWebStatusUSB;
  WebStatusMMC:TWebStatusMMC;
  WebStatusNetwork:TWebStatusNetwork;
@@ -894,9 +941,6 @@ var
  {$ENDIF}
  
  WebStatusRedirect:THTTPRedirect;
- 
- WEBSTATUS_HEAP_FREE_COUNT:LongWord = 250;  {Maximum number of free heap blocks to display}
- WEBSTATUS_HEAP_USED_COUNT:LongWord = 250;  {Maximum number of used heap blocks to display}
  
 {==============================================================================}
 {==============================================================================}
@@ -1323,13 +1367,15 @@ end;
 function TWebStatusMain.AddHeader(AResponse:THTTPServerResponse;const ATitle:String;ASub:TWebStatusSub):Boolean;
 begin
  {}
- Result:=AddHeaderEx(AResponse,ATitle,ASub,2);
+ Result:=AddHeaderEx(AResponse,ATitle,'',ASub,2);
 end;
 
 {==============================================================================}
 
-function TWebStatusMain.AddHeaderEx(AResponse:THTTPServerResponse;const ATitle:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
+function TWebStatusMain.AddHeaderEx(AResponse:THTTPServerResponse;const ATitle,ACaption:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
 var
+ Title:String;
+ Caption:String;
  Count:Integer;
  Percent:LongWord;
  Sub:TWebStatusSub;
@@ -1354,17 +1400,31 @@ begin
   AResponse.Status:=HTTP_STATUS_OK;
   AResponse.Reason:=HTTP_REASON_200;
   
+  {Check Title}
+  Title:=ATitle;
+  if Length(Title) = 0 then
+   begin
+    Title:=GetTitle;
+   end; 
+  
+  {Check Caption}
+  Caption:=ACaption;
+  if Length(ACaption) = 0 then
+   begin
+    if ASub = nil then Caption:=GetCaption else Caption:=ASub.Caption;
+   end; 
+  
   {Add Content}
   AddContent(AResponse,'<html>');
   AddContent(AResponse,' <head>');
   AddContent(AResponse,'   <meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">');
-  AddContent(AResponse,'   <title>' + ATitle + '</title>');
+  AddContent(AResponse,'   <title>' + Title + '</title>');
   AddContent(AResponse,' </head>');
   AddContent(AResponse,' <body>');
-  AddContent(AResponse,'   <table style=" text-align: left; width: 75%; height: 100%; margin-left: auto; margin-right: auto; font-family: Arial;" border="0" cellpadding="2" cellspacing="2">');
+  AddContent(AResponse,'   <table style=" text-align: left; width: 75%; height: 100%; margin-left: auto; margin-right: auto; font-family: ' + WEBSTATUS_FONT_NAME + ';" border="0" cellpadding="2" cellspacing="2">');
   AddContent(AResponse,'     <tbody>');
   AddContent(AResponse,'       <tr>');
-  AddContent(AResponse,'         <td colspan="' + IntToStr(AColumns + 1) + '" rowspan="1" style=" text-align: center; vertical-align: middle; background-color: rgb(255, 153, 0); height: 65px;"><strong>' + ATitle + '</strong><br>');
+  AddContent(AResponse,'         <td colspan="' + IntToStr(AColumns + 1) + '" rowspan="1" style=" text-align: center; vertical-align: middle; background-color: rgb(255, 153, 0); height: 65px;"><strong>' + Title + '</strong><br>');
   AddContent(AResponse,'         </td>');
   AddContent(AResponse,'       </tr>');
   AddContent(AResponse,'       <tr>');
@@ -1415,11 +1475,11 @@ begin
   AddContent(AResponse,'               <tr>');
   if ASub = nil then 
    begin
-    AddContent(AResponse,'                 <td colspan="' + IntToStr(AColumns) + '" rowspan="1" style=" text-align: center;"><strong>' + GetCaption + '</strong><br>');
+    AddContent(AResponse,'                 <td colspan="' + IntToStr(AColumns) + '" rowspan="1" style=" text-align: center;"><strong>' + Caption + '</strong><br>');
    end
   else
    begin
-    AddContent(AResponse,'                 <td colspan="' + IntToStr(AColumns) + '" rowspan="1" style=" text-align: center;"><strong>' + ASub.Caption + '</strong><br>');
+    AddContent(AResponse,'                 <td colspan="' + IntToStr(AColumns) + '" rowspan="1" style=" text-align: center;"><strong>' + Caption + '</strong><br>');
    end;
   AddContent(AResponse,'                 </td>');
   AddContent(AResponse,'               </tr>');
@@ -1872,14 +1932,14 @@ end;
 
 {==============================================================================}
 
-function TWebStatusSub.AddHeaderEx(AResponse:THTTPServerResponse;const ATitle:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
+function TWebStatusSub.AddHeaderEx(AResponse:THTTPServerResponse;const ATitle,ACaption:String;ASub:TWebStatusSub;AColumns:LongWord):Boolean;
 begin
  {}
  Result:=False;
  
  if FMain = nil then Exit;
  
- Result:=FMain.AddHeaderEx(AResponse,ATitle,ASub,AColumns);
+ Result:=FMain.AddHeaderEx(AResponse,ATitle,ACaption,ASub,AColumns);
 end;
 
 {==============================================================================}
@@ -2543,7 +2603,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (5 column)}
- AddHeaderEx(AResponse,GetTitle,Self,5); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,5); 
 
  {Add Free Blocks} 
  AddBold5Column(AResponse,'Address','Size','State','Flags','Affinity');
@@ -2683,8 +2743,11 @@ begin
  AddItem(AResponse,'CPU Mode:','0x' + IntToHex(CPUGetMode,8));
  
  //To Do //CPU State
- 
- {Add CPU Mode}
+
+ {Add CPU Group}
+ AddItem(AResponse,'CPU Group:',CPUGroupToString(CPUGetGroup));
+
+ {Add CPU Current}
  AddItem(AResponse,'CPU Current:',CPUIDToString(CPUGetCurrent));
 
  {Add CPU Memory}
@@ -3170,6 +3233,9 @@ begin
  {Add Synchronizer Count}
  AddItemEx(AResponse,'Synchronizer Count:',IntToStr(SynchronizerGetCount),2);
 
+ {Add Condition Count}
+ AddItemEx(AResponse,'Condition Count:',IntToStr(ConditionGetCount),2);
+ 
  {Add List Count}
  AddItemEx(AResponse,'Thread List Count:',IntToStr(ListGetCount),2);
 
@@ -3398,8 +3464,71 @@ end;
 
 {==============================================================================}
 
+function TWebStatusThreadList.FlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and THREAD_FLAG_PERSIST) = THREAD_FLAG_PERSIST then
+  begin
+   Result.Add('THREAD_FLAG_PERSIST');
+  end;
+ if (AFlags and THREAD_FLAG_CANCELLED) = THREAD_FLAG_CANCELLED then
+  begin
+   Result.Add('THREAD_FLAG_CANCELLED');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('THREAD_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusThreadList.AffinityToAffinityNames(AAffinity:LongWord):TStringList;
+var
+ Mask:LongWord;
+ Count:LongWord;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Affinity}
+ if AAffinity = CPU_AFFINITY_NONE then
+  begin
+   Result.Add('CPU_AFFINITY_NONE');
+  end
+ else if AAffinity = CPU_AFFINITY_ALL then
+  begin
+   Result.Add('CPU_AFFINITY_ALL');
+  end
+ else
+  begin
+   for Count:=0 to 31 do
+    begin
+     Mask:=1 shl Count;
+     if (AAffinity and Mask) = Mask then
+      begin
+       Result.Add('CPU_AFFINITY_' + IntToStr(Count));
+      end;
+    end;
+  end;  
+end;
+ 
+{==============================================================================}
+
 function TWebStatusThreadList.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
+ Action:String;
+ Handle:THandle;
+ Count:LongWord;
+ WorkBuffer:String;
+ WorkTime:TDateTime;
+ FlagNames:TStringList;
+ AffinityNames:TStringList;
  Current:PThreadSnapshot;
  Snapshot:PThreadSnapshot;
 begin
@@ -3415,35 +3544,149 @@ begin
  {Check Response}
  if AResponse = nil then Exit;
 
- {Add Header (5 column)}
- AddHeaderEx(AResponse,GetTitle,Self,5); 
-  
- {Add Thread List} 
- AddBold5Column(AResponse,'Handle','Name','State','Priority','CPU');
- AddBlankEx(AResponse,5);
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
+
+ {Get Handle}
+ WorkBuffer:=Uppercase(ARequest.GetParam('HANDLE'));
  
- {Create Snapshot}
- Snapshot:=ThreadSnapshotCreate;
- if Snapshot <> nil then
+ if (Action = 'THREAD') and (Length(WorkBuffer) > 0) then
   begin
-   {Get First}
-   Current:=Snapshot;
-   while Current <> nil do
-    begin
-     {Add Item}
-     AddItem5Column(AResponse,'0x' + IntToHex(Current.Handle,8),Current.Name,ThreadStateToString(Current.State),ThreadPriorityToString(Current.Priority),CPUIDToString(Current.CPU));
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'Thread Information',Self,2);
    
-     {Get Next}
-     Current:=Current.Next;
-    end;
+   {Get Handle}
+   Handle:=StrToIntDef('$' + WorkBuffer,0);
+   
+   {Create Snapshot}
+   Snapshot:=ThreadSnapshotCreate;
+   if Snapshot <> nil then
+    begin
+     {Get First}
+     Current:=Snapshot;
+     while Current <> nil do
+      begin
+       {Check Handle}
+       if Current.Handle = Handle then
+        begin
+         {Get Flag Names}
+         FlagNames:=FlagsToFlagNames(Current.Flags);
+         
+         {Get Affinity Names}
+         AffinityNames:=AffinityToAffinityNames(Current.Affinity);
+         
+         {Add Thread Information}
+         AddItem(AResponse,'Handle:','0x' + IntToHex(Current.Handle,8));
+         AddBlank(AResponse);
+         AddItem(AResponse,'Name:',Current.Name);
+         AddBlank(AResponse);
+         AddItem(AResponse,'State:',ThreadStateToString(Current.State));
+         AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+         
+         {Check Flag Count}
+         if FlagNames.Count > 1 then
+          begin
+           for Count:=1 to FlagNames.Count - 1 do
+            begin
+             {Add Flag Name}
+             AddItem(AResponse,'',FlagNames.Strings[Count]);
+            end;
+          end;
+          
+         AddItem(AResponse,'CPU:',CPUIDToString(Current.CPU));
+         AddItem(AResponse,'Priority:',ThreadPriorityToString(Current.Priority));
+         AddItem(AResponse,'Affinity:',AffinityNames.Strings[0]);
+         
+         {Check Affinity Count}
+         if AffinityNames.Count > 1 then
+          begin
+           for Count:=1 to AffinityNames.Count - 1 do
+            begin
+             {Add Affinity Name}
+             AddItem(AResponse,'',AffinityNames.Strings[Count]);
+            end;
+          end;
+         
+         AddBlank(AResponse);
+         AddItem(AResponse,'StackBase:','0x' + IntToHex(PtrUInt(Current.StackBase),8));
+         AddItem(AResponse,'StackSize:',IntToStr(Current.StackSize));
+         AddItem(AResponse,'StackFree:',IntToStr(PtrUInt(Current.StackPointer) - (PtrUInt(Current.StackBase) - Current.StackSize)));
+         AddItem(AResponse,'StackPointer:','0x' + IntToHex(PtrUInt(Current.StackPointer),8));
+         AddBlank(AResponse);
+         AddItem(AResponse,'Parent:',ThreadGetName(Current.Parent) + ' (0x' + IntToHex(Current.Parent,8) + ')');
+         AddItem(AResponse,'ExitCode:',IntToStr(Current.ExitCode));
+         AddItem(AResponse,'LastError:',ErrorToString(Current.LastError));
+         AddItem(AResponse,'Locale:',IntToStr(Current.Locale));
+         AddBlank(AResponse);
+         AddItem(AResponse,'TargetCPU:',CPUIDToString(Current.TargetCPU));
+         AddItem(AResponse,'TargetPriority:',ThreadPriorityToString(Current.TargetPriority));
+         AddBlank(AResponse);
+         
+         WorkTime:=SystemFileTimeToDateTime(TFileTime(Current.CreateTime));
+         if WorkTime <> 0 then AddItem(AResponse,'CreateTime:',DateTimeToStr(WorkTime)) else AddItem(AResponse,'CreateTime:','N/A');
+         
+         WorkTime:=SystemFileTimeToDateTime(TFileTime(Current.ExitTime));
+         if WorkTime <> 0 then AddItem(AResponse,'ExitTime:',DateTimeToStr(WorkTime)) else AddItem(AResponse,'ExitTime:','N/A');
+         
+         WorkTime:=SystemFileTimeToDateTime(TFileTime(Current.KernelTime)); {No Conversion}
+         AddItem(AResponse,'KernelTime:',IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+         AddItem(AResponse,'SwitchCount:',IntToStr(Current.SwitchCount));
+         
+         FlagNames.Free;
+         AffinityNames.Free;
+         
+         Break;
+        end; 
+       
+       {Get Next}
+       Current:=Current.Next;
+      end;
+     
+     {Check Current}
+     if Current = nil then
+      begin
+       AddItem(AResponse,'Not Found','');
+      end;
+      
+     {Destroy Snapshot}
+     ThreadSnapshotDestroy(Snapshot);
+    end; 
     
-   {Destroy Snapshot}
-   ThreadSnapshotDestroy(Snapshot);
-  end; 
- 
- {Add Footer (5 column)}
- AddFooterEx(AResponse,5); 
- 
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else
+  begin 
+   {Add Header (5 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,5); 
+    
+   {Add Thread List} 
+   AddBold5Column(AResponse,'Handle','Name','State','Priority','CPU');
+   AddBlankEx(AResponse,5);
+   
+   {Create Snapshot}
+   Snapshot:=ThreadSnapshotCreate;
+   if Snapshot <> nil then
+    begin
+     {Get First}
+     Current:=Snapshot;
+     while Current <> nil do
+      begin
+       {Add Item}
+       AddItem5Column(AResponse,MakeLink('0x' + IntToHex(Current.Handle,8),Name + '?action=thread&handle=' + IntToHex(Current.Handle,8)),Current.Name,ThreadStateToString(Current.State),ThreadPriorityToString(Current.Priority),CPUIDToString(Current.CPU));
+     
+       {Get Next}
+       Current:=Current.Next;
+      end;
+      
+     {Destroy Snapshot}
+     ThreadSnapshotDestroy(Snapshot);
+    end; 
+   
+   {Add Footer (5 column)}
+   AddFooterEx(AResponse,5); 
+  end;
+  
  {Return Result}
  Result:=True;
 end;
@@ -3621,9 +3864,123 @@ end;
 
 {==============================================================================}
 
+function TWebStatusDevices.ClockFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and CLOCK_FLAG_WRITABLE) = CLOCK_FLAG_WRITABLE then
+  begin
+   Result.Add('CLOCK_FLAG_WRITABLE');
+  end;
+ if (AFlags and CLOCK_FLAG_VARIABLE) = CLOCK_FLAG_VARIABLE then
+  begin
+   Result.Add('CLOCK_FLAG_VARIABLE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('CLOCK_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.TimerFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and TIMER_FLAG_WRAPPING) = TIMER_FLAG_WRAPPING then
+  begin
+   Result.Add('TIMER_FLAG_WRAPPING');
+  end;
+ if (AFlags and TIMER_FLAG_COUNTER) = TIMER_FLAG_COUNTER then
+  begin
+   Result.Add('TIMER_FLAG_COUNTER');
+  end;
+ if (AFlags and TIMER_FLAG_DOWN) = TIMER_FLAG_DOWN then
+  begin
+   Result.Add('TIMER_FLAG_DOWN');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('TIMER_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.RandomFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('RANDOM_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.MailboxFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('MAILBOX_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.WatchdogFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('WATCHDOG_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusDevices.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
+ Id:LongWord;
+ Action:String;
+ Device:PDevice;
+ Count:LongWord;
+ WorkBuffer:String;
  Data:TWebStatusData;
+ FlagNames:TStringList;
+ ClockDevice:PClockDevice;
+ TimerDevice:PTimerDevice;
+ RandomDevice:PRandomDevice;
+ MailboxDevice:PMailboxDevice;
+ WatchdogDevice:PWatchdogDevice;
 begin
  {}
  Result:=False;
@@ -3637,25 +3994,247 @@ begin
  {Check Response}
  if AResponse = nil then Exit;
 
- {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
 
- {Add Device List} 
- AddBold4Column(AResponse,'Device Id','Name','Class','Bus Type');
- AddBlankEx(AResponse,4);
+ {Get Id}
+ WorkBuffer:=Uppercase(ARequest.GetParam('ID'));
  
- {Setup Data}
- Data.Document:=Self;
- Data.Host:=AHost;
- Data.Request:=ARequest;
- Data.Response:=AResponse;
+ if (Action = 'DEVICE') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'Device Information',Self,2);
  
- {Enumerate Devices}
- DeviceEnumerate(DEVICE_CLASS_ANY,WebStatusDeviceEnumerate,@Data);
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
  
- {Add Footer (4 column)}
- AddFooterEx(AResponse,4); 
- 
+   {Get Device}
+   Device:=DeviceFind(DEVICE_CLASS_ANY,Id);
+   if Device <> nil then
+    begin
+     AddBold(AResponse,'Device','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Signature:',IntToHex(Device.Signature,8));
+     AddItem(AResponse,'Id:',IntToStr(Device.DeviceId));
+     AddItem(AResponse,'State:',DeviceStateToString(Device.DeviceState));
+     AddItem(AResponse,'Name:',Device.DeviceName);
+     AddItem(AResponse,'Class:',DeviceClassToString(Device.DeviceClass));
+     AddItem(AResponse,'Bus:',DeviceBusToString(Device.DeviceBus));
+     AddItem(AResponse,'Type:',IntToStr(Device.DeviceType) + ' (Class specific)');
+     AddItem(AResponse,'Flags:','0x' + IntToHex(Device.DeviceFlags,8) + ' (Class specific)');
+     AddItem(AResponse,'Data:','0x' + IntToHex(PtrUInt(Device.DeviceData),8));
+     AddItem(AResponse,'Description:',Device.DeviceDescription);
+     AddBlank(AResponse);
+     
+     {Check Class}
+     case Device.DeviceClass of
+      DEVICE_CLASS_CLOCK:begin
+        {Get Flags Names}
+        FlagNames:=ClockFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Clock}
+        ClockDevice:=PClockDevice(Device);
+       
+        AddBold(AResponse,'Clock','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',ClockTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+        
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+        
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(ClockDevice.ClockId));
+        AddItem(AResponse,'State:',ClockStateToString(ClockDevice.ClockState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Read Count:',IntToStr(ClockDevice.ReadCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Rate:',IntToStr(ClockDevice.Rate) + ' Hz');
+        AddItem(AResponse,'Min Rate:',IntToStr(ClockDevice.MinRate) + ' Hz');
+        AddItem(AResponse,'Max Rate:',IntToStr(ClockDevice.MaxRate) + ' Hz');
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_TIMER:begin
+        {Get Flags Names}
+        FlagNames:=TimerFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Timer}
+        TimerDevice:=PTimerDevice(Device);
+        
+        AddBold(AResponse,'Timer','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',TimerTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+        
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+        
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(TimerDevice.TimerId));
+        AddItem(AResponse,'State:',TimerStateToString(TimerDevice.TimerState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Read Count:',IntToStr(TimerDevice.ReadCount));
+        AddItem(AResponse,'Wait Count:',IntToStr(TimerDevice.WaitCount));
+        AddItem(AResponse,'Event Count:',IntToStr(TimerDevice.EventCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Rate:',IntToStr(TimerDevice.Rate) + ' Hz');
+        AddItem(AResponse,'Interval:',IntToStr(TimerDevice.Interval) + ' ticks');
+        AddItem(AResponse,'Bits:',IntToStr(TimerDevice.Properties.Bits));
+        AddItem(AResponse,'Min Rate:',IntToStr(TimerDevice.Properties.MinRate) + ' Hz');
+        AddItem(AResponse,'Max Rate:',IntToStr(TimerDevice.Properties.MaxRate) + ' Hz');
+        AddItem(AResponse,'Min Interval:',IntToStr(TimerDevice.Properties.MinInterval) + ' ms');
+        AddItem(AResponse,'Max Interval:',IntToStr(TimerDevice.Properties.MaxInterval) + ' ms');
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_RANDOM:begin
+        {Get Flags Names}
+        FlagNames:=RandomFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Random}
+        RandomDevice:=PRandomDevice(Device);
+        
+        AddBold(AResponse,'Random','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',RandomTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]); 
+        
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+        
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(RandomDevice.RandomId));
+        AddItem(AResponse,'State:',RandomStateToString(RandomDevice.RandomState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Seed Count:',IntToStr(RandomDevice.SeedCount));
+        AddItem(AResponse,'Read Count:',IntToStr(RandomDevice.ReadCount));
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_MAILBOX:begin
+        {Get Flags Names}
+        FlagNames:=MailboxFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Mailbox}
+        MailboxDevice:=PMailboxDevice(Device);
+        
+        AddBold(AResponse,'Mailbox','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',MailboxTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]); 
+        
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+        
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(MailboxDevice.MailboxId));
+        AddItem(AResponse,'State:',MailboxStateToString(MailboxDevice.MailboxState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Receive Count:',IntToStr(MailboxDevice.ReceiveCount));
+        AddItem(AResponse,'Send Count:',IntToStr(MailboxDevice.SendCount));
+        AddItem(AResponse,'Call Count:',IntToStr(MailboxDevice.CallCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Timeout:',IntToStr(MailboxDevice.Timeout) + ' ms');
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_WATCHDOG:begin      
+        {Get Flags Names}
+        FlagNames:=WatchdogFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Watchdog}
+        WatchdogDevice:=PWatchdogDevice(Device);
+        
+        AddBold(AResponse,'Watchdog','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',WatchdogTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+        
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+        
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(WatchdogDevice.WatchdogId));
+        AddItem(AResponse,'State:',WatchdogStateToString(WatchdogDevice.WatchdogState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Start Count:',IntToStr(WatchdogDevice.StartCount));
+        AddItem(AResponse,'Stop Count:',IntToStr(WatchdogDevice.StopCount));
+        AddItem(AResponse,'Refresh Count:',IntToStr(WatchdogDevice.RefreshCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Timeout:',IntToStr(WatchdogDevice.Timeout) + ' ms');
+        
+        FlagNames.Free;
+       end;
+       
+      //To Do //More //Console, Framebuffer, Logging etc
+     end;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+   
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else
+  begin 
+   {Add Header (4 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+  
+   {Add Device List} 
+   AddBold4Column(AResponse,'Device Id','Name','Class','Bus Type');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   
+   {Enumerate Devices}
+   DeviceEnumerate(DEVICE_CLASS_ANY,WebStatusDeviceEnumerate,@Data);
+   
+   {Add Footer (4 column)}
+   AddFooterEx(AResponse,4); 
+  end;
+  
  {Return Result}
  Result:=True;
 end;
@@ -3692,7 +4271,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Add Driver List} 
  AddBold4Column(AResponse,'Driver Id','Name','Class','State');
@@ -3709,6 +4288,84 @@ begin
  
  {Add Footer (4 column)}
  AddFooterEx(AResponse,4); 
+ 
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusHandles}
+constructor TWebStatusHandles.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='Handles'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/handles';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusHandles.FlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and HANDLE_FLAG_NAMED) = HANDLE_FLAG_NAMED then
+  begin
+   Result.Add('HANDLE_FLAG_NAMED');
+  end;
+ if (AFlags and HANDLE_FLAG_DUPLICATE) = HANDLE_FLAG_DUPLICATE then
+  begin
+   Result.Add('HANDLE_FLAG_DUPLICATE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('HANDLE_FLAG_NONE');
+  end; 
+end;
+  
+{==============================================================================}
+
+function TWebStatusHandles.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Data:TWebStatusData;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Add Header (5 column)}
+ AddHeaderEx(AResponse,GetTitle,'',Self,5); 
+
+ {Add Handle List} 
+ AddBold5Column(AResponse,'Handle','Type','Name','Count','Flags');
+ AddBlankEx(AResponse,5);
+ 
+ {Setup Data}
+ Data.Document:=Self;
+ Data.Host:=AHost;
+ Data.Request:=ARequest;
+ Data.Response:=AResponse;
+ 
+ {Enumerate Handles}
+ HandleEnumerate(WebStatusHandleEnumerate,@Data);
+ 
+ {Add Footer (5 column)}
+ AddFooterEx(AResponse,5); 
  
  {Return Result}
  Result:=True;
@@ -3746,7 +4403,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Add USB Device List} 
  AddBold4Column(AResponse,'Devices','','','');
@@ -3834,7 +4491,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Add MMC List} 
  AddBold4Column(AResponse,'Devices','','','');
@@ -3889,9 +4546,59 @@ end;
 
 {==============================================================================}
 
+function TWebStatusNetwork.NetworkFlagsToFlagNames(AFlags:LongWord):TStringList; 
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and NETWORK_FLAG_RX_BUFFER) = NETWORK_FLAG_RX_BUFFER then
+  begin
+   Result.Add('NETWORK_FLAG_RX_BUFFER');
+  end;
+ if (AFlags and NETWORK_FLAG_TX_BUFFER) = NETWORK_FLAG_TX_BUFFER then
+  begin
+   Result.Add('NETWORK_FLAG_TX_BUFFER');
+  end;
+ if (AFlags and NETWORK_FLAG_RX_MULTIPACKET) = NETWORK_FLAG_RX_MULTIPACKET then
+  begin
+   Result.Add('NETWORK_FLAG_RX_MULTIPACKET');
+  end;
+ if (AFlags and NETWORK_FLAG_TX_MULTIPACKET) = NETWORK_FLAG_TX_MULTIPACKET then
+  begin
+   Result.Add('NETWORK_FLAG_TX_MULTIPACKET');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('NETWORK_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusNetwork.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
+ Id:LongWord;
+ Name:String;
+ Action:String;
+ Count:LongWord;
+ WorkBuffer:String;
  Data:TWebStatusData;
+ FlagNames:TStringList;
+ Adapter:TNetworkAdapter;
+ Transport:TNetworkTransport;
+ Protocol:TNetworkProtocol;
+ NetworkDevice:PNetworkDevice;
+ 
+ Size:LongWord;
+ IfTable:PMIB_IFTABLE;
+ IpAddrTable:PMIB_IPADDRTABLE;
+ IpNetTable:PMIB_IPNETTABLE;
+ 
+ IPAddress:TInAddr;
+ HardwareAddress:THardwareAddress;
 begin
  {}
  Result:=False;
@@ -3905,38 +4612,378 @@ begin
  {Check Response}
  if AResponse = nil then Exit;
 
- {Add Header (5 column)}
- AddHeaderEx(AResponse,GetTitle,Self,5); 
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
 
- {Add Network Info} 
- AddBold5Column(AResponse,'Details','','','','');
- AddBlankEx(AResponse,5);
+ {Get Id}
+ WorkBuffer:=Uppercase(ARequest.GetParam('ID'));
 
- {Add Host Name/Domain}
- AddItem5Column(AResponse,'Host Name:',HostGetName,'','','');
- AddItem5Column(AResponse,'Domain Name:',HostGetDomain,'','','');
+ {Get Name}
+ Name:=Uppercase(ARequest.GetParam('NAME'));
 
- //To Do //Host name / IP / Netmask / DNS / DHCP etc
+ if (Action = 'NETWORK') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'Network Device Information',Self,2);
  
- {Add Network List}
- AddBlankEx(AResponse,5); 
- AddBold5Column(AResponse,'Devices','','','',''); 
- AddBlankEx(AResponse,5);
- AddBold5Column(AResponse,'Network Id','Name','State','Status','Type');
- AddBlankEx(AResponse,5);
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
  
- {Setup Data}
- Data.Document:=Self;
- Data.Host:=AHost;
- Data.Request:=ARequest;
- Data.Response:=AResponse;
+   {Get Network}
+   NetworkDevice:=NetworkDeviceFind(Id);
+   if NetworkDevice <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=NetworkFlagsToFlagNames(NetworkDevice.Device.DeviceFlags);
+     
+     AddBold(AResponse,'Network Device','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',NetworkDevice.Device.DeviceName);
+     AddItem(AResponse,'Class:',DeviceClassToString(NetworkDevice.Device.DeviceClass));
+     AddItem(AResponse,'Bus:',DeviceBusToString(NetworkDevice.Device.DeviceBus));
+     AddItem(AResponse,'Type:',NetworkDeviceTypeToString(NetworkDevice.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+     
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+     
+     AddItem(AResponse,'Description:',NetworkDevice.Device.DeviceDescription);
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(NetworkDevice.NetworkId));
+     AddItem(AResponse,'State:',NetworkDeviceStateToString(NetworkDevice.NetworkState));
+     AddItem(AResponse,'Status:',NetworkDeviceStatusToString(NetworkDevice.NetworkStatus));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Receive Count:',IntToStr(NetworkDevice.ReceiveCount));
+     AddItem(AResponse,'Receive Errors:',IntToStr(NetworkDevice.ReceiveErrors));
+     AddItem(AResponse,'Transmit Count:',IntToStr(NetworkDevice.TransmitCount));
+     AddItem(AResponse,'Transmit Errors:',IntToStr(NetworkDevice.TransmitErrors));
+     AddItem(AResponse,'Buffer Overruns:',IntToStr(NetworkDevice.BufferOverruns));
+     AddItem(AResponse,'Buffer Unavailable:',IntToStr(NetworkDevice.BufferUnavailable));
+     
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
  
- {Enumerate Networks}
- NetworkDeviceEnumerate(WebStatusNetworkEnumerate,@Data);
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else if (Action = 'ADAPTER') and (Length(Name) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'Adapter Information',Self,2);
+
+   {Get Adapter}
+   Adapter:=AdapterManager.GetAdapterByName(Name,True,NETWORK_LOCK_READ);
+   if Adapter <> nil then
+    begin
+     AddBold(AResponse,'Adapter','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',Adapter.Name);
+     AddBlank(AResponse);
+     AddItem(AResponse,'State:',AdapterStateToString(Adapter.State));
+     AddItem(AResponse,'Status:',AdapterStatusToString(Adapter.Status));
+     AddItem(AResponse,'Media Type:',Network.MediaTypeToString(Adapter.MediaType));
+     AddItem(AResponse,'Adapter Type:',AdapterTypeToString(Adapter.AdapterType));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Last Error:',ErrorToString(Adapter.LastError));
+     AddItem(AResponse,'Thread:',ThreadGetName(Adapter.ThreadID) + ' (0x' + IntToHex(Adapter.ThreadID,8) + ')');
+    
+     Adapter.ReaderUnlock;
+    end
+   else
+    begin   
+     AddItem(AResponse,'Not Found','');
+    end; 
  
- {Add Footer (5 column)}
- AddFooterEx(AResponse,5); 
+   {Add Footer}
+   AddFooter(AResponse);
+  end
+ else if (Action = 'TRANSPORT') and (Length(Name) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'Transport Information',Self,2);
+
+   {Get Transport}
+   Transport:=TransportManager.GetTransportByName(Name,True,NETWORK_LOCK_READ);
+   if Transport <> nil then
+    begin
+     AddBold(AResponse,'Transport','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',Transport.Name);
+     AddBlank(AResponse);
+     AddItem(AResponse,'Family:',AddressFamilyToString(Transport.Family));
+     AddItem(AResponse,'Packet Type:',PacketTypeToString(Transport.PacketType));
+
+     {Check Transport}
+     if Transport.Name = 'ARP' then
+      begin
+       {GetIpNetTable}
+       AddBlank(AResponse);
+       AddBold(AResponse,'ARP Table','');
+       Size:=0;
+       IpNetTable:=nil;
+       if (GetIpNetTable(nil,Size,False) = ERROR_INSUFFICIENT_BUFFER) and (Size > 0) then {First call with zero size}
+        begin
+         IpNetTable:=GetMem(Size);
+        end; 
+       if IpNetTable <> nil then
+        begin
+         if GetIpNetTable(IpNetTable,Size,False) = ERROR_SUCCESS then 
+          begin
+           for Count:=0 to IpNetTable.dwNumEntries - 1 do
+            begin
+             AddBlank(AResponse);
+             System.Move(IpNetTable.table[Count].bPhysAddr[0],HardwareAddress[0],HARDWARE_ADDRESS_SIZE);
+             AddItem(AResponse,'Physical Address:',HardwareAddressToString(HardwareAddress));
+             IPAddress.S_addr:=IpNetTable.table[Count].dwAddr;
+             AddItem(AResponse,'IP Address:',InAddrToString(IPAddress));
+             AddItem(AResponse,'Type:',IntToStr(IpNetTable.table[Count].dwType));
+             AddItem(AResponse,'Index:',IntToStr(IpNetTable.table[Count].dwIndex));
+            end;
+          end;
+          
+         FreeMem(IpNetTable); 
+        end;
+      end
+     else if Transport.Name = 'IP' then
+      begin
+       {GetNumberOfInterfaces}
+       GetNumberOfInterfaces(Count);
+       AddBlank(AResponse);
+       AddItem(AResponse,'Number of Interfaces:',IntToStr(Count));
+       
+       {GetIfTable}
+       if Count > 0 then
+        begin
+         AddBlank(AResponse);
+         AddBold(AResponse,'Interfaces','');
+         Size:=SizeOf(MIB_IFTABLE) + (Count * SizeOf(MIB_IFROW));
+         IfTable:=GetMem(Size);
+         if IfTable <> nil then
+          begin
+           if GetIfTable(IfTable,Size,False) = ERROR_SUCCESS then
+            begin
+             for Count:=0 to IfTable.dwNumEntries - 1 do
+              begin
+               AddBlank(AResponse);
+               AddItem(AResponse,'Name:',IfTable.table[Count].wszName);
+               AddItem(AResponse,'Index:',IntToStr(IfTable.table[Count].dwIndex));
+               AddItem(AResponse,'Type:',IntToStr(IfTable.table[Count].dwType));
+               AddItem(AResponse,'MTU:',IntToStr(IfTable.table[Count].dwMtu));
+               System.Move(IfTable.table[Count].bPhysAddr[0],HardwareAddress[0],HARDWARE_ADDRESS_SIZE);
+               AddItem(AResponse,'Physical Address:',HardwareAddressToString(HardwareAddress));
+              end;
+            end;  
+            
+           FreeMem(IfTable);
+          end;
+        end;
+       
+       {GetNumberOfInterfaces}
+       GetNumberOfInterfaces(Count);
+       
+       {GetIpAddrTable}
+       if Count > 0 then
+        begin
+         AddBlank(AResponse);
+         AddBold(AResponse,'Addresses','');
+         Size:=SizeOf(MIB_IPADDRTABLE) + (Count * SizeOf(MIB_IPADDRROW));
+         IpAddrTable:=GetMem(Size);
+         if IpAddrTable <> nil then
+          begin
+           if GetIpAddrTable(IpAddrTable,Size,False) = ERROR_SUCCESS then
+            begin
+             for Count:=0 to IpAddrTable.dwNumEntries - 1 do
+              begin
+               AddBlank(AResponse);
+               IPAddress.S_addr:=IpAddrTable.table[Count].dwAddr;
+               AddItem(AResponse,'Address:',InAddrToString(IPAddress));
+               IPAddress.S_addr:=IpAddrTable.table[Count].dwMask;
+               AddItem(AResponse,'Netmask:',InAddrToString(IPAddress));
+               IPAddress.S_addr:=IpAddrTable.table[Count].dwBCastAddr;
+               AddItem(AResponse,'Broadcast:',InAddrToString(IPAddress));
+               AddItem(AResponse,'Index:',IntToStr(IpAddrTable.table[Count].dwIndex));
+              end;
+            end;  
+           
+           FreeMem(IpAddrTable);
+          end;
+        end;  
+       
+       {GetIpForwardTable}
+       AddBlank(AResponse);
+       AddBold(AResponse,'Routes','');
+       //To Do 
+      
+       {GetIpStatistics}
+       AddBlank(AResponse);
+       AddBold(AResponse,'Statistics','');
+       //To Do 
+      end;
+     
+     Transport.ReaderUnlock;
+    end
+   else
+    begin   
+     AddItem(AResponse,'Not Found','');
+    end; 
  
+   {Add Footer}
+   AddFooter(AResponse);
+  end
+ else if (Action = 'PROTOCOL') and (Length(Name) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'Protocol Information',Self,2);
+
+   {Get Protocol}
+   Protocol:=ProtocolManager.GetProtocolByName(Name,True,NETWORK_LOCK_READ);
+   if Protocol <> nil then
+    begin
+     AddBold(AResponse,'Protocol','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',Protocol.Name);
+     AddBlank(AResponse);
+     AddItem(AResponse,'Protocol:',ProtocolToString(Protocol.Protocol));
+     AddItem(AResponse,'Socket Type:',SocketTypeToString(Protocol.SocketType));
+
+     {Check Protocol}
+     if Protocol.Name = 'ICMP' then
+      begin
+       {GetIcmpStatistics}
+       AddBlank(AResponse);
+       AddBold(AResponse,'Statistics','');
+       //To Do //
+      
+      end
+     else if Protocol.Name = 'TCP' then
+      begin
+       {GetTcpTable}
+       AddBlank(AResponse);
+       AddBold(AResponse,'TCP Table','');
+       //To Do //
+       
+       {GetTcpStatistics}
+       AddBlank(AResponse);
+       AddBold(AResponse,'Statistics','');
+       //To Do //
+      
+      end
+     else if Protocol.Name = 'UDP' then
+      begin
+       {GetUdpTable}
+       AddBlank(AResponse);
+       AddBold(AResponse,'UDP Table','');
+       //To Do //
+       
+       {GetUdpStatistics}
+       AddBlank(AResponse);
+       AddBold(AResponse,'Statistics','');
+       //To Do //
+      
+      end;
+    
+     Protocol.ReaderUnlock;
+    end
+   else
+    begin   
+     AddItem(AResponse,'Not Found','');
+    end; 
+ 
+   {Add Footer}
+   AddFooter(AResponse);
+  end
+ else
+  begin 
+   {Add Header (5 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,5); 
+  
+   {Add Network Info} 
+   AddBold5Column(AResponse,'Details','','','','');
+   AddBlankEx(AResponse,5);
+  
+   {Add Host Name/Domain}
+   AddItem5Column(AResponse,'Host Name:',HostGetName,'','','');
+   AddItem5Column(AResponse,'Domain Name:',HostGetDomain,'','','');
+   
+   {Add Network Devices}
+   AddBlankEx(AResponse,5); 
+   AddBold5Column(AResponse,'Devices','','','',''); 
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Network Id','Name','State','Status','Type');
+   AddBlankEx(AResponse,5);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   
+   {Enumerate Networks}
+   NetworkDeviceEnumerate(WebStatusNetworkEnumerate,@Data);
+   
+   {Add Adapters}
+   AddBlankEx(AResponse,5); 
+   AddBold5Column(AResponse,'Adapters','','','',''); 
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Name','State','Status','Media Type','');
+   AddBlankEx(AResponse,5);
+  
+   Adapter:=AdapterManager.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+   while Adapter <> nil do
+    begin
+     {Add Adapter}
+     AddItem5Column(AResponse,MakeLink(Adapter.Name,Name + '?action=adapter&name=' + Adapter.Name),AdapterStateToString(Adapter.State),AdapterStatusToString(Adapter.Status),Network.MediaTypeToString(Adapter.MediaType),''); 
+     
+     Adapter:=AdapterManager.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+    end;
+   
+   {Add Transports}
+   AddBlankEx(AResponse,5); 
+   AddBold5Column(AResponse,'Transports','','','',''); 
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Name','Family','Packet Type','','');
+   AddBlankEx(AResponse,5);
+   
+   Transport:=TransportManager.GetTransportByNext(nil,True,False,NETWORK_LOCK_READ);
+   while Transport <> nil do
+    begin
+     {Add Transport}
+     AddItem5Column(AResponse,MakeLink(Transport.Name,Name + '?action=transport&name=' + Transport.Name),AddressFamilyToString(Transport.Family),PacketTypeToString(Transport.PacketType),'',''); 
+    
+     Transport:=TransportManager.GetTransportByNext(Transport,True,True,NETWORK_LOCK_READ);
+    end;
+   
+   {Add Protocols}
+   AddBlankEx(AResponse,5); 
+   AddBold5Column(AResponse,'Protocols','','','',''); 
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Name','Protocol','Socket Type','','');
+   AddBlankEx(AResponse,5);
+   
+   Protocol:=ProtocolManager.GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ);
+   while Protocol <> nil do
+    begin
+     {Add Protocol}
+     AddItem5Column(AResponse,MakeLink(Protocol.Name,Name + '?action=protocol&name=' + Protocol.Name),ProtocolToString(Protocol.Protocol),SocketTypeToString(Protocol.SocketType),'',''); 
+    
+     Protocol:=ProtocolManager.GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ);
+    end;
+   
+   {Add Footer (5 column)}
+   AddFooterEx(AResponse,5); 
+  end;
+  
  {Return Result}
  Result:=True;
 end;
@@ -3973,7 +5020,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Add Storage List} 
  AddBold4Column(AResponse,'Storage Id','Name','State','Type');
@@ -4077,7 +5124,7 @@ begin
      AddItemEx(AResponse,'Identifier:',Device.Identifier,5);
      AddItemEx(AResponse,'Information:',Device.Information,5);
      AddBlank(AResponse);
-     AddItemEx(AResponse,'MediaType:',MediaTypeToString(Device.MediaType),5);
+     AddItemEx(AResponse,'MediaType:',FileSystem.MediaTypeToString(Device.MediaType),5);
      AddItemEx(AResponse,'FloppyType:',FloppyTypeToString(Device.FloppyType),5);
      AddBlank(AResponse);
      AddItemEx(AResponse,'LBA:',BooleanToString(Device.LBA),5);
@@ -4353,7 +5400,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Add Keyboard List} 
  AddBold4Column(AResponse,'Keyboard Id','Name','State','Type');
@@ -4407,7 +5454,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Add Mouse List} 
  AddBold4Column(AResponse,'Mouse Id','Name','State','Type');
@@ -4862,7 +5909,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Add Page Tables}
  Address:=$00000000;
@@ -4900,7 +5947,7 @@ begin
        for Count:=1 to FlagNames.Count - 1 do
         begin
          {Add Flag Name}
-         AddItem4Column(AResponse,'','','',FlagNames.Strings[count]);
+         AddItem4Column(AResponse,'','','',FlagNames.Strings[Count]);
         end;
       end;
      FlagNames.Free;
@@ -5044,7 +6091,7 @@ begin
  if AResponse = nil then Exit;
 
  {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,Self,4); 
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
  {Get Count}
  Count:=GetInterruptCount;
@@ -5330,6 +6377,7 @@ begin
  AddItemEx(AResponse,'SemaphoreDeadlockCounter:',IntToStr(SemaphoreDeadlockCounter),2);
  AddItemEx(AResponse,'SynchronizerDeadlockCounter:',IntToStr(SynchronizerDeadlockCounter),2);
  AddItemEx(AResponse,'SynchronizerRecursionCounter:',IntToStr(SynchronizerRecursionCounter),2);
+ AddItemEx(AResponse,'ConditionDeadlockCounter:',IntToStr(ConditionDeadlockCounter),2);
  AddItemEx(AResponse,'MessageslotDeadlockCounter:',IntToStr(MessageslotDeadlockCounter),2);
  AddItemEx(AResponse,'MailslotDeadlockCounter:',IntToStr(MailslotDeadlockCounter),2);
  AddItemEx(AResponse,'BufferDeadlockCounter:',IntToStr(BufferDeadlockCounter),2);
@@ -5871,7 +6919,7 @@ begin
   end
  else
   begin
-   AddHeaderEx(AResponse,GetTitle,Self,FColumns); 
+   AddHeaderEx(AResponse,GetTitle,'',Self,FColumns); 
   end;
 
  {Add Content}
@@ -5980,6 +7028,10 @@ begin
  {Register Drivers Page}
  WebStatusDrivers:=TWebStatusDrivers.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusDrivers);
+
+ {Register Handles Page}
+ WebStatusHandles:=TWebStatusHandles.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusHandles);
  
  {Register USB Page}
  WebStatusUSB:=TWebStatusUSB.Create(WebStatusMain);
@@ -6235,7 +7287,7 @@ begin
  if Response = nil then Exit;
  
  {Add Device}
- Document.AddItem4Column(Response,IntToStr(Device.DeviceId),DeviceGetName(Device),DeviceClassToString(Device.DeviceClass),DeviceBusToString(Device.DeviceBus));
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Device.DeviceId),Document.Name + '?action=device&id=' + IntToStr(Device.DeviceId)),DeviceGetName(Device),DeviceClassToString(Device.DeviceClass),DeviceBusToString(Device.DeviceBus));
  
  Result:=ERROR_SUCCESS;
 end;
@@ -6272,6 +7324,52 @@ end;
 
 {==============================================================================}
 
+function WebStatusHandleEnumerate(Handle:PHandleEntry;Data:Pointer):LongWord;
+var
+ Count:LongWord;
+ FlagNames:TStringList;
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handle}
+ if Handle = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Get Flag Names}
+ FlagNames:=TWebStatusHandles(Document).FlagsToFlagNames(Handle.Flags);
+ 
+ {Add Handle}
+ Document.AddItem5Column(Response,IntToStr(Handle.Handle),HandleTypeToString(Handle.HandleType),Handle.Name,IntToStr(Handle.Count),FlagNames.Strings[0]);
+ 
+ {Check Flag Count}
+ if FlagNames.Count > 1 then
+  begin
+   for Count:=1 to FlagNames.Count - 1 do
+    begin
+     {Add Flag Name}
+     Document.AddItem5Column(Response,'','','','',FlagNames.Strings[Count]);
+    end;
+  end;
+ FlagNames.Free;
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
 function WebStatusUSBDeviceEnumerate(Device:PUSBDevice;Data:Pointer):LongWord;
 var
  Document:TWebStatusSub;
@@ -6295,7 +7393,7 @@ begin
  if Response = nil then Exit;
  
  {Add Device}
- Document.AddItem4Column(Response,IntToStr(Device.USBId),DeviceGetName(@Device.Device),USBClassCodeToString(Device.Descriptor.bDeviceClass),USBDeviceStatusToString(Device.USBStatus));
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Device.USBId),Document.Name + '?action=usbdevice&id=' + IntToStr(Device.USBId)),DeviceGetName(@Device.Device),USBClassCodeToString(Device.Descriptor.bDeviceClass),USBDeviceStatusToString(Device.USBStatus));
  
  Result:=ERROR_SUCCESS;
 end;
@@ -6445,7 +7543,7 @@ begin
  if Response = nil then Exit;
  
  {Add Network}
- Document.AddItem5Column(Response,IntToStr(Network.NetworkId),DeviceGetName(@Network.Device),NetworkDeviceStateToString(Network.NetworkState),NetworkDeviceStatusToString(Network.NetworkStatus),NetworkDeviceTypeToString(Network.Device.DeviceType));
+ Document.AddItem5Column(Response,Document.MakeLink(IntToStr(Network.NetworkId),Document.Name + '?action=network&id=' + IntToStr(Network.NetworkId)),DeviceGetName(@Network.Device),NetworkDeviceStateToString(Network.NetworkState),NetworkDeviceStatusToString(Network.NetworkStatus),NetworkDeviceTypeToString(Network.Device.DeviceType));
  
  Result:=ERROR_SUCCESS;
 end;
@@ -6505,7 +7603,7 @@ begin
  if Response = nil then Exit;
  
  {Add Mouse}
- Document.AddItem4Column(Response,IntToStr(Mouse.MouseId),DeviceGetName(@Mouse.Device),MouseDeviceStateToString(Mouse.MouseState),MouseDeviceTypeToString(Mouse.Device.DeviceType));
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Mouse.MouseId),Document.Name + '?action=mouse&id=' + IntToStr(Mouse.MouseId)),DeviceGetName(@Mouse.Device),MouseDeviceStateToString(Mouse.MouseState),MouseDeviceTypeToString(Mouse.Device.DeviceType));
  
  Result:=ERROR_SUCCESS;
 end;
@@ -6535,7 +7633,7 @@ begin
  if Response = nil then Exit;
  
  {Add Keyboard}
- Document.AddItem4Column(Response,IntToStr(Keyboard.KeyboardId),DeviceGetName(@Keyboard.Device),KeyboardDeviceStateToString(Keyboard.KeyboardState),KeyboardDeviceTypeToString(Keyboard.Device.DeviceType));
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Keyboard.KeyboardId),Document.Name + '?action=keyboard&id=' + IntToStr(Keyboard.KeyboardId)),DeviceGetName(@Keyboard.Device),KeyboardDeviceStateToString(Keyboard.KeyboardState),KeyboardDeviceTypeToString(Keyboard.Device.DeviceType));
  
  Result:=ERROR_SUCCESS;
 end;

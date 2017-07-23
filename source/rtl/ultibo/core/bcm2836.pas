@@ -111,6 +111,9 @@ const
  {ARM Timer (See Section 14)}
  BCM2836_TIMER_REGS_BASE        = BCM2836_PERIPHERALS_BASE + $B400; {Note: Broadcom states 0xB000 but the offsets begin at 0x400 so 0xB400 will be correct} 
  
+ {ARM Doorbell}
+ BCM2836_DOORBELL_REGS_BASE     = BCM2836_PERIPHERALS_BASE + $B840;
+ 
  {ARM Mailbox 0}
  BCM2836_MAILBOX0_REGS_BASE     = BCM2836_PERIPHERALS_BASE + $B880;
  
@@ -147,6 +150,18 @@ const
  {BSC0 (I2C) (Broadcom Serial Controller)(See Section 3)}
  BCM2836_BSC0_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $205000;
  
+ {Pixel Valve 0}
+ BCM2836_PIXELVALVE0_REGS_BASE  = BCM2836_PERIPHERALS_BASE + $206000;
+ 
+ {Pixel Valve 1}
+ BCM2836_PIXELVALVE1_REGS_BASE  = BCM2836_PERIPHERALS_BASE + $207000;
+
+ {DPI (Display Parallel Interface)}
+ BCM2836_DPI_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $208000;
+
+ {DSI0 (Display Serial Interface}
+ BCM2836_DSI0_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $209000;
+ 
  {PWM (Pulse Width Modulator)(See Section 9)}
  BCM2836_PWM_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $20C000;
  
@@ -155,18 +170,36 @@ const
  
  {AUX (UART1, SPI1 and SPI2) (See Section 2)}
  BCM2836_AUX_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $215000;
- 
+ BCM2836_UART1_REGS_BASE        = BCM2836_PERIPHERALS_BASE + $215040;
+ BCM2836_SPI1_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $215080;
+ BCM2836_SPI2_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $2150C0;
+
  {SD host controller (EMMC - External Mass Media Controller)(See Section 5)}
  BCM2836_SDHCI_REGS_BASE        = BCM2836_PERIPHERALS_BASE + $300000;
 
- {SMI}
+ {HVS}
+ BCM2836_HVS_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $400000;
+ 
+ {SMI (Firmware KMS)}
  BCM2836_SMI_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $600000;
+ 
+ {DSI1 (Display Serial Interface}
+ BCM2836_DSI1_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $700000;
  
  {BSC1 (I2C) (Broadcom Serial Controller)(See Section 3)}
  BCM2836_BSC1_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $804000;
  
  {BSC2 (I2C) (Broadcom Serial Controller)(See Section 3)} {Note: BSC2 master is used dedicated with the HDMI interface and should not be used}
  BCM2836_BSC2_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $805000;
+ 
+ {VEC}
+ BCM2836_VEC_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $806000;
+ 
+ {Pixel Valve 2}
+ BCM2836_PIXELVALVE2_REGS_BASE  = BCM2836_PERIPHERALS_BASE + $807000;
+ 
+ {HDMI}
+ BCM2836_HDMI_REGS_BASE         = BCM2836_PERIPHERALS_BASE + $902000;
  
  {USB (Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller)(See Section 15)}
  BCM2836_USB_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $980000;
@@ -1771,10 +1804,10 @@ type
   CR:LongWord;         {Control register is used to configure the I2C or SPI operation}
   FR:LongWord;         {Flag register}
   IFLS:LongWord;       {Interrupt fifo level select register}
-  IMSC:LongWord;       {Interupt Mask Set Clear Register}
-  RIS:LongWord;        {Raw Interupt Status Register}
-  MIS:LongWord;        {Masked Interupt Status Register}
-  ICR:LongWord;        {Interupt Clear Register}
+  IMSC:LongWord;       {Interrupt Mask Set Clear Register}
+  RIS:LongWord;        {Raw Interrupt Status Register}
+  MIS:LongWord;        {Masked Interrupt Status Register}
+  ICR:LongWord;        {Interrupt Clear Register}
   DMACR:LongWord;      {DMA Control Register}
   TDR:LongWord;        {FIFO Test Data Register}
   GPUSTAT:LongWord;    {GPU Status Register}
@@ -1891,11 +1924,11 @@ type
   FBRD:LongWord;     {Fractional Baud rate divisor}
   LCRH:LongWord;     {Line Control register}
   CR:LongWord;       {Control register}
-  IFLS:LongWord;     {Interupt FIFO Level Select Register}
-  IMSC:LongWord;     {Interupt Mask Set Clear Register}
-  RIS:LongWord;      {Raw Interupt Status Register}
-  MIS:LongWord;      {Masked Interupt Status Register}
-  ICR:LongWord;      {Interupt Clear Register}
+  IFLS:LongWord;     {Interrupt FIFO Level Select Register}
+  IMSC:LongWord;     {Interrupt Mask Set Clear Register}
+  RIS:LongWord;      {Raw Interrupt Status Register}
+  MIS:LongWord;      {Masked Interrupt Status Register}
+  ICR:LongWord;      {Interrupt Clear Register}
   DMACR:LongWord;    {DMA Control Register}
   Reserved11:LongWord;
   Reserved12:LongWord;
@@ -3040,6 +3073,23 @@ type
   1:(Response:TBCM2836MailboxTagGetTouchResponse);
  end;
  
+ {Set Touch Buffer}
+ TBCM2836MailboxTagSetTouchRequest = record
+  Address:LongWord; 
+ end;
+ 
+ TBCM2836MailboxTagSetTouchResponse = record
+  Status:LongWord; 
+ end;
+ 
+ PBCM2836MailboxTagSetTouch = ^TBCM2836MailboxTagSetTouch;
+ TBCM2836MailboxTagSetTouch = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagSetTouchRequest);
+  1:(Response:TBCM2836MailboxTagSetTouchResponse);
+ end;
+ 
  {Get Virtual GPIO Buffer}
  TBCM2836MailboxTagGetVirtualGPIOResponse = record
   Address:LongWord; 
@@ -3051,6 +3101,23 @@ type
   case Integer of
   0:(Request:TBCM2836MailboxTagNoRequest);
   1:(Response:TBCM2836MailboxTagGetVirtualGPIOResponse);
+ end;
+ 
+ {Set Virtual GPIO Buffer}
+ TBCM2836MailboxTagSetVirtualGPIORequest = record
+  Address:LongWord; 
+ end;
+ 
+ TBCM2836MailboxTagSetVirtualGPIOResponse = record
+  Status:LongWord; 
+ end;
+
+ PBCM2836MailboxTagSetVirtualGPIO = ^TBCM2836MailboxTagSetVirtualGPIO;
+ TBCM2836MailboxTagSetVirtualGPIO = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagSetVirtualGPIORequest);
+  1:(Response:TBCM2836MailboxTagSetVirtualGPIOResponse);
  end;
  
  {Test Vsync}
@@ -3124,6 +3191,23 @@ type
   case Integer of
   0:(Request:TBCM2836MailboxTagSetCursorStateRequest);
   1:(Response:TBCM2836MailboxTagCursorResponse);
+ end;
+ 
+ {VCHIQ Init}
+ TBCM2836MailboxTagVCHIQInitRequest = record
+  Address:LongWord; 
+ end;
+
+ TBCM2836MailboxTagVCHIQInitResponse = record
+  Status:LongWord;  {0 is Success}
+ end;
+ 
+ PBCM2836MailboxTagVCHIQInit = ^TBCM2836MailboxTagVCHIQInit;
+ TBCM2836MailboxTagVCHIQInit = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagVCHIQInitRequest);
+  1:(Response:TBCM2836MailboxTagVCHIQInitResponse);
  end;
  
  {Get Command Line}
@@ -3226,7 +3310,9 @@ type
  
  PBCM2837VirtualGPIOBuffer = ^TBCM2837VirtualGPIOBuffer;
  TBCM2837VirtualGPIOBuffer = record
+  Buffer:Pointer;
   Address:LongWord;
+  CachedBuffer:LongBool;
   EnableDisable:array[0..BCM2837_VIRTUAL_GPIO_PIN_COUNT - 1] of LongWord; {Two packed 16-bit counts of enabled and disabled / Allows host to detect a brief enable that was missed}
  end;
 {$PACKRECORDS DEFAULT} 

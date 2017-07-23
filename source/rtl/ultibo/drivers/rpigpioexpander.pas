@@ -55,7 +55,7 @@ Raspberry Pi GPIO Expander
   GPIO_PIN_4 = HDMI Detect (Input / Active Low)
   GPIO_PIN_7 = Power LED (Input / Active Low)
 
- Note that this driver requires firmware the most recent firmware (later than February 2017)
+ Note that this driver requires the most recent firmware (later than February 2017)
  and has been tested successfully with the firmware release from 22 May 2017.
  
  The latest version of the firmware is available from https://github.com/raspberrypi/firmware
@@ -716,7 +716,11 @@ begin
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagGetGPIOState) + SizeOf(TRPiGPIOMailboxFooter);
  
  {Allocate Mailbox Buffer}
+ {$IFDEF CPUARMV6}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ELSE}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ENDIF}
  if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
  if Header = nil then Exit;
  try
@@ -775,7 +779,11 @@ begin
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagSetGPIOState) + SizeOf(TRPiGPIOMailboxFooter);
  
  {Allocate Mailbox Buffer}
+ {$IFDEF CPUARMV6}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ELSE}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ENDIF}
  if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
  if Header = nil then Exit;
  try
@@ -832,7 +840,11 @@ begin
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagGetGPIOConfig) + SizeOf(TRPiGPIOMailboxFooter);
  
  {Allocate Mailbox Buffer}
+ {$IFDEF CPUARMV6}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ELSE}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ENDIF}
  if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
  if Header = nil then Exit;
  try
@@ -894,7 +906,11 @@ begin
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagSetGPIOConfig) + SizeOf(TRPiGPIOMailboxFooter);
  
  {Allocate Mailbox Buffer}
+ {$IFDEF CPUARMV6}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ELSE}
  Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ {$ENDIF}
  if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
  if Header = nil then Exit;
  try

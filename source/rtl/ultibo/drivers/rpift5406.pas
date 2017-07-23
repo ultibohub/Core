@@ -57,7 +57,7 @@ unit RPiFT5406;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Touch,Mouse,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,Devices,Touch,Mouse,SysUtils;
      
 {==============================================================================}
 {Global definitions}
@@ -296,8 +296,13 @@ var
  X:Word;
  Y:Word;
  TouchID:Word;
+ Size:LongWord;
  Count:LongWord;
+ Buffer:Pointer;
+ Status:LongWord;
  Address:LongWord;
+ BoardType:LongWord;
+ CachedBuffer:Boolean;
  TouchData:PTouchData;
  MouseData:TMouseData;
  LastPoints:LongWord;
@@ -311,25 +316,102 @@ begin
  {Check Touch}
  if Touch = nil then Exit;
  
+ {Setup Defaults}
+ Buffer:=nil;
+ CachedBuffer:=False;
+ 
+ {Get Size}
+ Size:=RoundUp(MEMORY_PAGE_SIZE,DMA_MULTIPLIER);
+
+ {Get Board Type}
+ BoardType:=BoardGetType;
+ 
  {Check Registers}
  while Touch.Registers = nil do
   begin
-   {Get Touch Buffer}
-   Address:=0;
-   if TouchGetBuffer(Address) = ERROR_SUCCESS then
+   {Check Buffer}
+   if Buffer = nil then 
     begin
-     if Address <> 0 then
+     {Check Board Type}
+     case BoardType of
+      BOARD_TYPE_RPIA,BOARD_TYPE_RPIB,BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI_COMPUTE,BOARD_TYPE_RPI_ZERO,BOARD_TYPE_RPI_ZERO_W:begin
+        {Allocate Shared}
+        Buffer:=AllocSharedAlignedMem(Size,DMA_ALIGNMENT);
+       end;
+      BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
+        {Allocate Non Cached}
+        Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
+       end;
+     end;
+     
+     {Check Buffer}
+     if Buffer = nil then 
       begin
-       Touch.Registers:=PRPiFT5406Registers(BusAddressToPhysical(Pointer(Address)));
-       Break;
+       {Allocate Normal}
+       Buffer:=AllocAlignedMem(Size,DMA_ALIGNMENT);
+       
+       {Set Caching}
+       CachedBuffer:=not(DMA_CACHE_COHERENT);
       end;
-    end;
-    
+    end;  
+   
+   {Check Buffer}
+   if Buffer <> nil then
+    begin
+     {Set Touch Buffer}
+     Address:=PhysicalToBusAddress(Buffer);
+     Status:=TouchSetBuffer(Address);
+     if Status = ERROR_SUCCESS then
+      begin
+       {Get Registers}
+       Touch.Registers:=PRPiFT5406Registers(Buffer);
+       
+       Break;
+      end
+     else
+      begin
+       {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
+       if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: TouchSetBuffer Failed (Status=' + IntToHex(Status,8) + ')');
+       {$ENDIF}
+       
+       {Get Touch Buffer}
+       Address:=0;
+       Status:=TouchGetBuffer(Address);
+       if Status = ERROR_SUCCESS then
+        begin
+         if Address <> 0 then
+          begin
+           {Get Registers}
+           Touch.Registers:=PRPiFT5406Registers(BusAddressToPhysical(Pointer(Address)));
+           
+           {Set Caching}
+           CachedBuffer:=True;
+           
+           {Free Buffer}
+           FreeMem(Buffer);
+           Buffer:=nil;
+           
+           Break;
+          end;
+        end
+       else
+        begin
+         {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
+         if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: TouchGetBuffer Failed (Status=' + IntToHex(Status,8) + ')');
+         {$ENDIF}
+        end; 
+      end;
+    end; 
+   
    {Check Terminate}
    if Touch.Terminate then Break;
    
    ThreadSleep(1000);
   end;
+
+ {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: Touch Execute (Registers=' + IntToHex(LongWord(Touch.Registers),8) + ' Caching=' + BoolToStr(CachedBuffer) + ')');
+ {$ENDIF}
  
  {Setup Defaults}
  LastPoints:=0;
@@ -340,7 +422,7 @@ begin
    ThreadSleep(17); {17ms equals approx 60 times per second}
    
    {Invalidate Cache}
-   InvalidateDataCacheRange(LongWord(Touch.Registers),SizeOf(TRPiFT5406Registers));
+   if CachedBuffer then InvalidateDataCacheRange(LongWord(Touch.Registers),SizeOf(TRPiFT5406Registers));
    
    {Copy Registers}
    System.Move(Touch.Registers^,Registers,SizeOf(TRPiFT5406Registers));
@@ -349,7 +431,7 @@ begin
    Touch.Registers.NumPoints:=99;
    
    {Clean Cache}
-   CleanDataCacheRange(LongWord(Touch.Registers),SizeOf(TRPiFT5406Registers));
+   if CachedBuffer then CleanDataCacheRange(LongWord(Touch.Registers),SizeOf(TRPiFT5406Registers));
    
    {Check if anything changed}
    if (Registers.NumPoints <> 99) and ((Registers.NumPoints <> 0) or (LastPoints <> 0)) then
@@ -558,6 +640,8 @@ begin
       end;      
     end;
   end; 
+  
+ {Note: Do not free buffer, firmware may still be writing data to it} 
 end;
 
 {==============================================================================}

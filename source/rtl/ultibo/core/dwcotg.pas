@@ -461,7 +461,7 @@ const
   needs to be re-programmed if the transfer is moved to a different channel or the channel is re-used before the transfer is complete.  When doing so, software must save this
   field so that it can be re-programmed correctly}
  DWC_HOST_CHANNEL_TRANSFER_PACKET_ID    = ($03 shl 29);     {Bits 29-30}
- {Do PING protocol when 1 (See Seatcion 8.5.1 of Universal Serial Bus Specification 2.0)}
+ {Do PING protocol when 1 (See Section 8.5.1 of Universal Serial Bus Specification 2.0)}
  DWC_HOST_CHANNEL_TRANSFER_DO_PING      = (1 shl 31);       {Bit  31}
             
 {==============================================================================}
@@ -761,7 +761,7 @@ type
   DMABufferReadCount:LongWord;                                   {Number of IN requests that required a DMA buffer copy}
   DMABufferWriteCount:LongWord;                                  {Number of OUT requests that required a DMA buffer copy}
   
-  NAKReponseCount:LongWord;                                      {Number of NAK responses received by the host controller}
+  NAKResponseCount:LongWord;                                      {Number of NAK responses received by the host controller}
   NYETResponseCount:LongWord;                                    {Number of NYET responses received by the host controller}
   StallResponseCount:LongWord;                                   {Number of Stall responses received by the host controller}
   RequestCancelCount:LongWord;                                   {Number of requests Cancelled by the host controller}
@@ -1219,13 +1219,13 @@ begin
  {Stop Completion Thread}
  if PDWCUSBHost(Host).CompletionThread <> INVALID_HANDLE_VALUE then
   begin
-   KillThread(PDWCUSBHost(Host).CompletionThread); //To Do //Signal thread to terminate, dont kill
+   KillThread(PDWCUSBHost(Host).CompletionThread); //To Do //Signal thread to terminate, don't kill
   end; 
   
  {Stop Scheduler Thread}
  if PDWCUSBHost(Host).SchedulerThread <> INVALID_HANDLE_VALUE then
   begin
-   KillThread(PDWCUSBHost(Host).SchedulerThread); //To Do //Signal thread to terminate, dont kill
+   KillThread(PDWCUSBHost(Host).SchedulerThread); //To Do //Signal thread to terminate, don't kill
   end; 
  
  {Free Scheduler Mailslot}
@@ -4660,7 +4660,7 @@ begin
    Status:=DWC_STATUS_TRANSFER_RESUBMIT;
    
    {Update Statistics}
-   Inc(Host.NAKReponseCount); 
+   Inc(Host.NAKResponseCount); 
   end
  else 
   begin

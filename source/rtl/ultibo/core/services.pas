@@ -179,7 +179,7 @@ const
  TELNET_COMMAND_NOP    =  241; {0xF1 no operation command}
  TELNET_COMMAND_DM     =  242; {0xF2 data mark command}
  TELNET_COMMAND_BRK    =  243; {0xF3 break NVT charater}
- TELNET_COMMAND_IP     =  244; {0xF4 interupt process command}
+ TELNET_COMMAND_IP     =  244; {0xF4 interrupt process command}
  TELNET_COMMAND_AO     =  245; {0xF5 abort output command}
  TELNET_COMMAND_AYT    =  246; {0xF6 are you there command}
  TELNET_COMMAND_EC     =  247; {0xF7 erase character command}
@@ -2981,6 +2981,7 @@ end;
 procedure NTPUpdateTime(Client:TNTPClient);
 var
  Current:Int64;
+ Previous:Int64;
 begin
  {}
  {Check Client}
@@ -3000,12 +3001,13 @@ begin
    {$ENDIF}
 
    {Check Time}
-   if Current <> ClockGetTime then
+   Previous:=ClockGetTime;
+   if Current <> Previous then
     begin
      {Set Time}
      ClockSetTime(Current,True);
      
-     if SERVICE_LOG_ENABLED then ServiceLogInfo('NTP: Setting time to ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Current))));
+     if SERVICE_LOG_ENABLED then ServiceLogInfo('NTP: Setting time to ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Current))) + ' (from ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Previous))) + ')');
     end; 
    
    {Set Initial Clock}

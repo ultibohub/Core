@@ -103,7 +103,7 @@ Threads
                     Not suitable for use by Interrupt handlers.
                     Suitable for use on multiprocessor systems.
                     Recommended for long held operations or holding during I/O operations.
-                    Access is serialized, the next thread to obtain the lock when it is released will be the thread that has been waiting longest.
+                    Access is serialized, the next thread to obtain the lock when it is released will be the thread that has been waiting longest (See also stolen wakeups below).
 
                     Usage: 
                     ------
@@ -116,7 +116,7 @@ Threads
  
               Suitable for use by Interrupt handlers for signaling only if created with SEMAPHORE_FLAG_IRQ or FIQ (Interrupt handlers must not call wait).
               Suitable for use on multiprocessor systems.
-              Access is serialized, the next thread to acquire the semaphore when it is signaled will be the thread that has been waiting longest.
+              Access is serialized, the next thread to acquire the semaphore when it is signaled will be the thread that has been waiting longest (See also stolen wakeups below).
  
               Usage: 
               ------
@@ -130,7 +130,7 @@ Threads
                  Not suitable for use by Interrupt handlers.
                  Suitable for use on multiprocessor systems.
                  Recommended for long held operations or holding during I/O operations.
-                 Access is serialized, the next thread to obtain the lock when it is released will be the thread that has been waiting longest.
+                 Access is serialized, the next thread to obtain the lock when it is released will be the thread that has been waiting longest (See also stolen wakeups below).
                  
                  Usage: 
                  ------
@@ -139,6 +139,19 @@ Threads
              
                  //To Do
  
+  Condition - A condition variable for coordinating synchronized access to resources by multiple threads. Condition variables are similar in concept to both Semaphores and Events
+              but do not retain any internal state information so threads always wait until they are woken or the specified timeout interval expires.
+              Not suitable for use by Interrupt handlers.
+              Suitable for use on multiprocessor systems.
+              Access is serialized, the next thread released when a condition is woken will be the thread that has been waiting longest (See also stolen wakeups below).
+              
+              Usage: 
+              ------
+              
+              Create/Destroy
+             
+              //To Do
+  
  Thread Handling
  ---------------
   
@@ -230,6 +243,18 @@ Threads
           Idle Thread (An always ready thread which measures utilization)
           Main Thread (Main thread executes PASCALMAIN)
 
+ Stolen wakeups: Locking and synchronization types such as CriticalSection, Semaphore, Condition, Event, Messageslot and Mailslot use a 
+                 wait queue internally to determine which thread has been waiting the longest. When a thread is removed from the wait
+                 queue so it can obtain the lock, semaphore, event etc there is a small window where the lock, semaphore or event may
+                 be acquired by another thread before the thread that was just woken from the wait queue. This is called a stolen wakeup
+                 and can happen in many systems including Windows and Linux, in some systems the caller is expected to check the state
+                 of a predicate value on return in order to detect a stolen wakeup. In Ultibo the code within the lock, semaphore, event
+                 etc functions automatically checks for a stolen wakeup and takes appropriate action to either return the thread to the
+                 wait queue or return with a timeout (where appropriate) so that the caller can respond accordingly.
+                 
+                 In no case will a call to a locking or synchronization function fail due to a stolen wakeup, the worst case scenario is
+                 that a thread may wait longer than it should have (ie it is returned to the back of the queue) or it may return with a
+                 timeout before the specified timeout value has expired.
  
 }
               
@@ -286,8 +311,9 @@ const
  MUTEX_STATE_LOCKED   = 1;
 
  {Mutex flags constants}
- MUTEX_FLAG_NONE      = $00000000;
- MUTEX_FLAG_RECURSIVE = $00000001;
+ MUTEX_FLAG_NONE       = $00000000;
+ MUTEX_FLAG_RECURSIVE  = $00000001; {Mutex can be locked multiple times by the same thread if set (Must be unlocked the same number of times)}
+ MUTEX_FLAG_ERRORCHECK = $00000002; {Mutex will perform a deadlock check if set, will return with an error if already owned by the same thread (and not recursive)}
  
  {Critical Section constants}
  CRITICAL_SECTION_SIGNATURE = $25F3AE01;
@@ -318,18 +344,29 @@ const
  SYNCHRONIZER_FLAG_READ_PRIORITY  = $00000001;  {Synchronizer prioritises readers over writers} //To Do //Implement these (Change the wait/release priority)
  SYNCHRONIZER_FLAG_WRITE_PRIORITY = $00000002;  {Synchronizer prioritises writers over readers} //To Do //Implement these (Change the wait/release priority)
  
+ {Condition constants}
+ CONDITION_SIGNATURE = $D14D3C0A;
+ 
+ {Condition flag constants}
+ CONDITION_FLAG_NONE           = $00000000;
+
+ {Condition lock flag constants}
+ CONDITION_LOCK_FLAG_NONE      = $00000000;
+ CONDITION_LOCK_FLAG_WRITER    = $00000001; {Condition should release and acquire the writer lock on a Synchronizer when ConditionWaitSynchronizer is called (otherwise release and acquire the reader lock)}
+ 
  {List constants}
  LIST_SIGNATURE = $4A98BE2A;
-
+ 
  {List type constants}
  LIST_TYPE_NOT_SPECIFIED     = 0;  {A generic thread list without a specific purpose}
  LIST_TYPE_WAIT_SECTION      = 1;  {A Critical Section Wait List}
  LIST_TYPE_WAIT_SEMAPHORE    = 2;  {A Semaphore Wait List}
  LIST_TYPE_WAIT_SYNCHRONIZER = 3;  {A Synchronizer Wait List}
- LIST_TYPE_WAIT_EVENT        = 4;  {An Event Wait List}
- LIST_TYPE_WAIT_THREAD       = 5;  {A Thread Wait List}
- LIST_TYPE_WAIT_MESSAGESLOT  = 6;  {A Messageslot Wait List}
- LIST_TYPE_WAIT_OTHER        = 7;  {Another type of Wait List (Suitable for passing to ThreadWait/ThreadWaitEx/ThreadWaitMultiple/ThreadRelease)}
+ LIST_TYPE_WAIT_CONDITION    = 4;  {A Condition Wait List}
+ LIST_TYPE_WAIT_EVENT        = 5;  {An Event Wait List}
+ LIST_TYPE_WAIT_THREAD       = 6;  {A Thread Wait List}
+ LIST_TYPE_WAIT_MESSAGESLOT  = 7;  {A Messageslot Wait List}
+ LIST_TYPE_WAIT_OTHER        = 8;  {Another type of Wait List (Suitable for passing to ThreadWait/ThreadWaitEx/ThreadWaitMultiple/ThreadRelease)}
  
  {List flag constants}
  LIST_FLAG_NONE   = LOCK_FLAG_NONE;
@@ -378,11 +415,13 @@ const
  THREAD_TYPE_SWI    = 4;   {A Software Interrupt (SWI) thread (Used by the SWI handler during a system call)}
  
  {Thread flag constants}
- THREAD_FLAG_NONE      = $00000000;
- THREAD_FLAG_PERSIST   = $00000001; {If set thread handle will persist until explicitly destroyed (Otherwise destroyed after termination quantum has elapsed)}
- THREAD_FLAG_CANCELLED = $00000002; {Indicates that thread has been cancelled, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
+ THREAD_FLAG_NONE                = $00000000;
+ THREAD_FLAG_PERSIST             = $00000001; {If set thread handle will persist until explicitly destroyed (Otherwise destroyed after termination quantum has elapsed)}
+ THREAD_FLAG_CANCELLED           = $00000002; {Indicates that thread has been cancelled, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
+ THREAD_FLAG_CANCEL_DISABLE      = $00000004; {Indicates that thread cancellation is disabled for a thread, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
+ THREAD_FLAG_CANCEL_ASYNCHRONOUS = $00000008; {Indicates that asynchronous thread cancellation is enabled for a thread, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
  
- THREAD_FLAG_INTERNAL = THREAD_FLAG_NONE;
+ THREAD_FLAG_INTERNAL = THREAD_FLAG_NONE + $80000000; {Note: Temporary value to avoid warning}
  
  {Thread state constants} 
  THREAD_STATE_RUNNING         = 1;          {Thread is currently running}     
@@ -700,6 +739,25 @@ type
   {Statistics Properties}
  end;
   
+ {Condition entry}
+ {Note: Changes to this structure need to be accounted for in platform specific handlers}
+ PConditionEntry = ^TConditionEntry;
+ TConditionEntry = record
+  {Condition Properties}
+  Signature:LongWord;         {Signature for entry validation}
+  Flags:LongWord;             {Condition Flags (eg CONDITION_FLAG_NONE)}
+  Lock:TSpinHandle;           {Condition Lock}
+  List:TListHandle;           {List of threads waiting on this Condition (or INVALID_HANDLE_VALUE if never used)}
+  Wait:TThreadWait;           {Wait function to call to wait on the Condition}
+  WaitEx:TThreadWaitEx;       {Wait function to call to wait with timeout on the Condition}
+  Release:TThreadRelease;     {Release function to call if any threads are waiting when Condition is woken}
+  Abandon:TThreadAbandon;     {Abandon function to call if any threads are waiting when Condition is destroyed}
+  {Internal Properties}
+  Prev:PConditionEntry;       {Previous entry in Condition table}
+  Next:PConditionEntry;       {Next entry in Condition table}
+  {Statistics Properties}
+ end;
+ 
  {List entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PListElement = ^TListElement;
@@ -1112,6 +1170,14 @@ type
  TSynchronizerConvertEx = function(Synchronizer:PSynchronizerEntry;Timeout:LongWord):LongWord;
  
 type
+ {Prototypes for Condition Wait/Wake/WakeAll Handlers} 
+ TConditionWaitMutex = function(Condition:PConditionEntry;Mutex:TMutexHandle;Timeout:LongWord):LongWord;
+ TConditionWaitSynchronizer = function(Condition:PConditionEntry;Synchronizer:TSynchronizerHandle;Flags,Timeout:LongWord):LongWord;
+ TConditionWaitCriticalSection = function(Condition:PConditionEntry;CriticalSection:TCriticalSectionHandle;Timeout:LongWord):LongWord;
+ TConditionWake = function(Condition:PConditionEntry):LongWord;
+ TConditionWakeAll = function(Condition:PConditionEntry):LongWord;
+ 
+type
  {Prototypes for Messageslot Send/Receive Handlers} 
  TMessageslotSend = function(Messageslot:PMessageslotEntry;Message:PMessage):LongWord;
  TMessageslotReceive = function(Messageslot:PMessageslotEntry;Message:PMessage):LongWord;
@@ -1292,6 +1358,7 @@ var
  SemaphoreDeadlockCounter:Int64;      
  SynchronizerDeadlockCounter:Int64;    
  SynchronizerRecursionCounter:Int64;
+ ConditionDeadlockCounter:Int64;    
  MessageslotDeadlockCounter:Int64;     
  MailslotDeadlockCounter:Int64;        
  BufferDeadlockCounter:Int64;          
@@ -1403,6 +1470,14 @@ var
  SynchronizerReaderConvertHandler:TSynchronizerConvert;
  SynchronizerWriterConvertHandler:TSynchronizerConvert;
  SynchronizerReaderConvertExHandler:TSynchronizerConvertEx;
+ 
+var
+ {Condition Wait/Wake/WakeAll Handlers}
+ ConditionWaitMutexHandler:TConditionWaitMutex;
+ ConditionWaitSynchronizerHandler:TConditionWaitSynchronizer;
+ ConditionWaitCriticalSectionHandler:TConditionWaitCriticalSection;
+ ConditionWakeHandler:TConditionWake;
+ ConditionWakeAllHandler:TConditionWakeAll;
  
 var
  {Messageslot Send/Receive Handlers}
@@ -1595,6 +1670,18 @@ function SynchronizerWriterUnlock(Synchronizer:TSynchronizerHandle):LongWord;
 function SynchronizerWriterConvert(Synchronizer:TSynchronizerHandle):LongWord;
 
 {==============================================================================}
+{Condition Functions}
+function ConditionCreate:TConditionHandle;
+function ConditionDestroy(Condition:TConditionHandle):LongWord;
+
+function ConditionWaitMutex(Condition:TConditionHandle;Mutex:TMutexHandle;Timeout:LongWord = INFINITE):LongWord;                                     {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
+function ConditionWaitSynchronizer(Condition:TConditionHandle;Synchronizer:TSynchronizerHandle;Flags:LongWord;Timeout:LongWord = INFINITE):LongWord; {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
+function ConditionWaitCriticalSection(Condition:TConditionHandle;CriticalSection:TCriticalSectionHandle;Timeout:LongWord = INFINITE):LongWord;       {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
+
+function ConditionWake(Condition:TConditionHandle):LongWord;
+function ConditionWakeAll(Condition:TConditionHandle):LongWord;
+
+{==============================================================================}
 {List Functions}
 function ListCreate:TListHandle; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 function ListCreateEx(ListType:LongWord;Flags:LongWord):TListHandle;
@@ -1665,6 +1752,11 @@ function ThreadSetCPU(Thread:TThreadHandle;CPU:LongWord):LongWord;
 
 function ThreadGetState(Thread:TThreadHandle):LongWord;
 
+function ThreadGetFlags(Thread:TThreadHandle):LongWord;
+function ThreadSetFlags(Thread:TThreadHandle;Flags:LongWord):LongWord;
+function ThreadAddFlags(Thread:TThreadHandle;Flags:LongWord):LongWord;
+function ThreadRemoveFlags(Thread:TThreadHandle;Flags:LongWord):LongWord;
+
 function ThreadGetLocale(Thread:TThreadHandle):LCID;
 function ThreadSetLocale(Thread:TThreadHandle;Locale:LCID):LongWord;
 
@@ -1686,13 +1778,14 @@ function ThreadGetPriority(Thread:TThreadHandle):LongWord;
 function ThreadSetPriority(Thread:TThreadHandle;Priority:LongWord):LongWord;
 
 function ThreadGetLastError:LongWord;
-function ThreadSetLastError(LastError:LongWord):LongWord;
+procedure ThreadSetLastError(LastError:LongWord); 
+function ThreadSetLastErrorEx(LastError:LongWord):LongWord;
 
 function ThreadGetWaitResult:LongWord;
 function ThreadGetReceiveResult:LongWord;
 
 function ThreadGetTlsIndex(TlsIndex:LongWord):LongWord;                      
-function ThreadAllocTlsIndex:LongWord;
+function ThreadAllocTlsIndex:LongWord; inline;
 function ThreadAllocTlsIndexEx(Flags:LongWord):LongWord;
 function ThreadReleaseTlsIndex(TlsIndex:LongWord):LongWord;
 function ThreadGetTlsValue(TlsIndex:LongWord):Pointer;
@@ -1940,6 +2033,8 @@ function SemaphoreGetCount:LongWord; inline;
 
 function SynchronizerGetCount:LongWord; inline;
 
+function ConditionGetCount:LongWord; inline;
+
 function ListGetCount:LongWord; inline;
 
 function QueueGetCount:LongWord; inline;
@@ -2060,7 +2155,7 @@ const
   SemaphorePost:@SysSemaphorePost;
   SemaphoreWait:@SysSemaphoreWait;
  );
-
+ 
 {==============================================================================}
 {==============================================================================}
 
@@ -2101,6 +2196,10 @@ var
  SynchronizerTable:PSynchronizerEntry;
  SynchronizerTableLock:TSpinHandle;
  SynchronizerTableCount:LongWord;
+
+ ConditionTable:PConditionEntry;
+ ConditionTableLock:TSpinHandle;
+ ConditionTableCount:LongWord;
  
  ListTable:PListEntry;
  ListTableLock:TSpinHandle;
@@ -2175,7 +2274,7 @@ function SpinUnlockIRQFIQDefault(SpinEntry:PSpinEntry):LongWord; forward;
 function MutexLockDefault(MutexEntry:PMutexEntry):LongWord; forward;
 function MutexUnlockDefault(MutexEntry:PMutexEntry):LongWord; forward;
 function MutexTryLockDefault(MutexEntry:PMutexEntry):LongWord; forward;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Thread Forward Declarations}
@@ -2186,6 +2285,8 @@ procedure ThreadTimer(Data:Pointer); forward;
 {Initialization Functions}
 procedure LocksInit;
 {Initialize Locks}
+
+{Note: Called only during system startup}
 begin
  {}
  {Check Initialized}
@@ -2237,6 +2338,11 @@ begin
  SynchronizerTableLock:=SpinCreate;
  SynchronizerTableCount:=0;
 
+ {Initialize Condition Table}
+ ConditionTable:=nil;
+ ConditionTableLock:=SpinCreate;
+ ConditionTableCount:=0;
+ 
  {Initialize List Table}
  ListTable:=nil;
  ListTableLock:=SpinCreate;
@@ -2254,6 +2360,8 @@ end;
 
 procedure ThreadsInit;
 {Initialize Threading}
+
+{Note: Called only during system startup}
 var
  Count:LongWord;
  Thread:TThreadHandle; 
@@ -2342,6 +2450,10 @@ begin
  SysUtilsGetLastErrorHandler:=ThreadGetLastError;
  {Locale Functions}
  SysUtilsSysErrorMessageHandler:=SysErrorToString;
+ 
+ {Setup Global Handlers}
+ GetLastErrorHandler:=ThreadGetLastError;
+ SetLastErrorHandler:=ThreadSetLastError;
  
  {Setup Platform Handlers}
  HaltThreadHandler:=ThreadHalt;
@@ -2586,6 +2698,21 @@ begin
  VectorTableLock.AcquireLock:=SpinLockIRQFIQ;
  VectorTableLock.ReleaseLock:=SpinUnlockIRQFIQ; 
  
+ {Initialize Handle Name Lock}
+ HandleNameLock.Lock:=MutexCreate;
+ HandleNameLock.AcquireLock:=MutexLock;
+ HandleNameLock.ReleaseLock:=MutexUnlock;
+ 
+ {Initialize Handle Table Lock}
+ HandleTableLock.Lock:=SpinCreate;
+ HandleTableLock.AcquireLock:=SpinLock;
+ HandleTableLock.ReleaseLock:=SpinUnlock;
+
+ {Initialize Utility Lock}
+ UtilityLock.Lock:=SpinCreate;
+ UtilityLock.AcquireLock:=SpinLock;
+ UtilityLock.ReleaseLock:=SpinUnlock;
+ 
  {Initialize Shutdown Semaphore}
  ShutdownSemaphore.Semaphore:=SemaphoreCreate(0);
  ShutdownSemaphore.WaitSemaphore:=SemaphoreWait;
@@ -2619,11 +2746,11 @@ begin
  
  {Initialize Standard Text IO (Input/Output/ErrOutput/StdOut/StdErr)}
  {Note: Normally done by InitThread}
- TextIOOpen(Input,ConsoleWriteChar,ConsoleReadChar,fmInput,nil);
- TextIOOpen(Output,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
- TextIOOpen(ErrOutput,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
- TextIOOpen(StdOut,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
- TextIOOpen(StdErr,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
+ TextIOOpen(Input,TextIOWriteChar,TextIOReadChar,fmInput,nil);
+ TextIOOpen(Output,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
+ TextIOOpen(ErrOutput,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
+ TextIOOpen(StdOut,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
+ TextIOOpen(StdErr,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
  
  {Initialize InOutRes}
  {Note: Normally done by InitThread}
@@ -2893,6 +3020,8 @@ end;
 
 procedure PrimaryInit;
 {Initialize the primary CPU}
+
+{Note: Called only during system startup}
 begin
  {}
  {Check Initialized}
@@ -2959,6 +3088,8 @@ end;
 
 procedure SchedulerInit;
 {Initialize the thread scheduler}
+
+{Note: Called only during system startup}
 var
  Count:LongWord;
 begin
@@ -3271,6 +3402,8 @@ end;
 
 procedure SchedulerStart(CPUID:LongWord);
 {Initialize the thread scheduler for secondary CPUs (Where Applicable)}
+
+{Note: Called only during system startup}
 begin
  {}
  if Assigned(SchedulerStartHandler) then
@@ -3283,6 +3416,8 @@ end;
 
 procedure SecondaryInit;
 {Initialize the secondary CPUs (Where Applicable)}
+
+{Note: Called only during system startup}
 var
  Count:LongWord;
  ThreadEntry:PThreadEntry;
@@ -3547,6 +3682,8 @@ end;
 
 procedure SecondaryBoot(CPUID:LongWord);
 {Boot the specified secondary CPU (Where Applicable)}
+
+{Note: Called only during system startup}
 begin
  {}
  {Clean Cache for Secondary CPU Boot}
@@ -3566,6 +3703,8 @@ procedure SecondaryStart(CPUID:LongWord);
 {Startup procedure for secondary CPUs (Where Applicable)}
 {Note: The Secondary Boot procedure should have already cleared L1 cache, enabled FPU, MMU, Vectors and PageTables before
        calling this function. The thread id of the IRQ or FIQ should also have been loaded into the appropriate registers}
+       
+{Note: Called only during system startup}
 var
  Thread:TThreadHandle; 
 begin
@@ -3700,6 +3839,9 @@ end;
 {==============================================================================}
 
 function IRQExecute(Parameter:Pointer):PtrInt;
+{IRQ thread function}
+
+{Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=0;
@@ -3727,6 +3869,9 @@ begin
  {Mark Initialization Completed}
  if not(SCHEDULER_FIQ_ENABLED) then InitializationCompleted[CPUGetCurrent]:=True;
  
+ {Enable Abort}
+ if not(SCHEDULER_FIQ_ENABLED) then EnableAbort;
+ 
  {Enable IRQ}
  EnableIRQ; 
  
@@ -3746,6 +3891,9 @@ end;
 {==============================================================================}
 
 function FIQExecute(Parameter:Pointer):PtrInt;
+{FIQ thread function}
+
+{Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=0;
@@ -3773,6 +3921,9 @@ begin
  {Mark Initialization Completed}
  if SCHEDULER_FIQ_ENABLED then InitializationCompleted[CPUGetCurrent]:=True;
  
+ {Enable Abort}
+ if SCHEDULER_FIQ_ENABLED then EnableAbort;
+ 
  {Enable FIQ}
  EnableFIQ;
  
@@ -3792,6 +3943,9 @@ end;
 {==============================================================================}
 
 function SWIExecute(Parameter:Pointer):PtrInt;
+{SWI thread function}
+
+{Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=0;
@@ -3828,6 +3982,9 @@ end;
 {==============================================================================}
 
 function IdleExecute(Parameter:Pointer):PtrInt;
+{Idle thread function}
+
+{Note: Not intended to be called directly by applications}
 var
  CurrentCPU:LongWord;
 begin
@@ -3868,6 +4025,9 @@ end;
 {==============================================================================}
 
 function MainExecute(Parameter:Pointer):PtrInt;
+{Main thread function}
+
+{Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=0;
@@ -3895,6 +4055,9 @@ end;
 {==============================================================================}
 
 function TimerExecute(Parameter:Pointer):PtrInt;
+{Timer thread function}
+
+{Note: Not intended to be called directly by applications}
 var
  Ticks:Integer;
  Flags:LongWord;
@@ -4028,6 +4191,9 @@ end;
 {==============================================================================}
 
 function WorkerExecute(Parameter:Pointer):PtrInt;
+{Worker thread function}
+
+{Note: Not intended to be called directly by applications}
 var
  Data:Pointer;
  Task:TWorkerTask;
@@ -4144,6 +4310,9 @@ end;
 {==============================================================================}
 
 function TimerPriorityExecute(Parameter:Pointer):PtrInt;
+{Priority Timer thread function}
+
+{Note: Not intended to be called directly by applications}
 var
  Ticks:Integer;
  Flags:LongWord;
@@ -4262,6 +4431,9 @@ end;
 {==============================================================================}
 
 function WorkerPriorityExecute(Parameter:Pointer):PtrInt;
+{Priority Worker thread function}
+
+{Note: Not intended to be called directly by applications}
 var
  Data:Pointer;
  Task:TWorkerTask;
@@ -4370,6 +4542,8 @@ end;
     
 function IdleCalibrate:LongWord;
 {Calibrate the idle thread loop by counting the number of loops in 100ms}
+
+{Note: Called only during system startup}
 var
  Start:Int64;
  Target:Int64;
@@ -7534,7 +7708,7 @@ function SemaphoreSignal(Semaphore:TSemaphoreHandle):LongWord;
  If any threads are waiting on the Semaphore then one thread will be woken up and
  placed on the ready queue
  
- If no threads are wait then the Semaphore count will be incremented}
+ If no threads are waiting then the Semaphore count will be incremented by one}
 {Semaphore: Semaphore to signal} 
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -7548,10 +7722,10 @@ function SemaphoreSignalEx(Semaphore:TSemaphoreHandle;Count:LongWord;Previous:PL
 {Signal an existing Semaphore entry one or more times
 
  If any threads are waiting on the Semaphore then one thread will be woken up and
- placed on the ready queue for each interation of the count passed
+ placed on the ready queue for each iteration of the count passed
  
- If no threads are wait then the Semaphore count will be incremented once for each
- interation of the count passed}
+ If no threads are waiting then the Semaphore count will be incremented once for each
+ iteration of the count passed}
 {Semaphore: Semaphore to signal} 
 {Count: The number is times to signal the Semaphore, must be greater than zero}
 {Previous: A pointer to a value that receives the previous count of the Semaphore
@@ -8775,9 +8949,11 @@ begin
         {Check Timeout}
         if Timeout = 0 then
          begin
-          {Check Reader State}
+          {Check Reader and Writer State}
           Result:=ERROR_WAIT_TIMEOUT;
           if SynchronizerEntry.ReaderCount <> 0 then Exit;
+          if SynchronizerEntry.WriterCount <> 0 then Exit;
+          if SynchronizerEntry.WriterOwner <> INVALID_HANDLE_VALUE then Exit;
          end; 
          
         {Check State}
@@ -9100,6 +9276,813 @@ begin
      finally
       {Unlock the Synchronizer}
       SpinUnlock(SynchronizerEntry.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Condition Functions}
+function ConditionCreate:TConditionHandle;
+{Create and insert a new Condition entry}
+{Return: Handle of new Condition entry or INVALID_HANDLE_VALUE if entry could not be created}
+var
+ ConditionEntry:PConditionEntry;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+
+ {Create Condition entry}
+ if CONDITION_SHARED_MEMORY then
+  begin
+   ConditionEntry:=AllocSharedMem(SizeOf(TConditionEntry)); 
+  end
+ else
+  begin 
+   ConditionEntry:=AllocMem(SizeOf(TConditionEntry)); 
+  end; 
+ if ConditionEntry = nil then Exit;
+ 
+ {Setup Condition entry}
+ ConditionEntry.Signature:=CONDITION_SIGNATURE;
+ ConditionEntry.Flags:=CONDITION_FLAG_NONE;
+ ConditionEntry.Lock:=SpinCreate;
+ ConditionEntry.List:=INVALID_HANDLE_VALUE;
+ ConditionEntry.Wait:=ThreadWait;
+ ConditionEntry.WaitEx:=ThreadWaitEx;
+ ConditionEntry.Release:=ThreadRelease;
+ ConditionEntry.Abandon:=ThreadAbandon;
+ 
+ {Insert Condition entry}
+ if SpinLock(ConditionTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Link Condition entry}
+    if ConditionTable = nil then
+     begin
+      ConditionTable:=ConditionEntry;
+     end
+    else
+     begin
+      ConditionEntry.Next:=ConditionTable;
+      ConditionTable.Prev:=ConditionEntry;
+      ConditionTable:=ConditionEntry;
+     end;
+    
+    {Increment Condition Count}
+    Inc(ConditionTableCount);
+    
+    {Return Condition entry}
+    Result:=TConditionHandle(ConditionEntry);
+   finally
+    SpinUnlock(ConditionTableLock);
+   end;
+  end
+ else
+  begin
+   {Free Condition Lock}
+   SpinDestroy(ConditionEntry.Lock);
+   
+   {Free Condition Entry}
+   FreeMem(ConditionEntry);
+  end;  
+end;
+
+{==============================================================================}
+
+function ConditionDestroy(Condition:TConditionHandle):LongWord;
+{Destroy and remove an existing Condition entry}
+{Condition: Handle of Condition entry to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ ConditionEntry:PConditionEntry;
+ PrevEntry:PConditionEntry;
+ NextEntry:PConditionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Condition}
+ if Condition = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ConditionEntry:=PConditionEntry(Condition);
+ if ConditionEntry = nil then Exit;
+ if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+ 
+ {Remove Condition entry}
+ if SpinLock(ConditionTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Acquire the Lock}
+    Result:=SpinLock(ConditionEntry.Lock);
+    if Result <> ERROR_SUCCESS then Exit;
+ 
+    {Check Signature}
+    if ConditionEntry.Signature <> CONDITION_SIGNATURE then
+     begin
+      {Release the Lock}
+      Result:=SpinUnlock(ConditionEntry.Lock);
+      if Result <> ERROR_SUCCESS then Exit;
+      
+      {Return Result}
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end;
+    
+    {Invalidate Condition entry}
+    ConditionEntry.Signature:=0;
+ 
+    {Check Waiting Threads}
+    while ListNotEmpty(ConditionEntry.List) do
+     begin
+      {Abandon waiting thread}
+      ConditionEntry.Abandon(ConditionEntry.List);
+     end;
+   
+    {Unlink Condition entry}
+    PrevEntry:=ConditionEntry.Prev;
+    NextEntry:=ConditionEntry.Next;
+    if PrevEntry = nil then
+     begin
+      ConditionTable:=NextEntry;
+      if NextEntry <> nil then
+       begin
+        NextEntry.Prev:=nil;
+       end;       
+     end
+    else
+     begin
+      PrevEntry.Next:=NextEntry;
+      if NextEntry <> nil then
+       begin
+        NextEntry.Prev:=PrevEntry;
+       end;       
+     end;     
+    
+    {Decrement Condition Count}
+    Dec(ConditionTableCount);
+    
+    {Release the Lock}
+    Result:=SpinUnlock(ConditionEntry.Lock);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Free Condition List}
+    if ConditionEntry.List <> INVALID_HANDLE_VALUE then
+     begin
+      ListDestroy(ConditionEntry.List);
+     end;
+    
+    {Free Condition Lock}
+    SpinDestroy(ConditionEntry.Lock);
+    
+    {Free Condition Entry}
+    FreeMem(ConditionEntry);
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    SpinUnlock(ConditionTableLock);
+   end;
+  end
+ else
+  begin
+   {Return Result}
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function ConditionWaitMutex(Condition:TConditionHandle;Mutex:TMutexHandle;Timeout:LongWord):LongWord;
+{Release a Mutex and Wait on an existing Condition in an atomic operation}
+{Condition: Condition to wait on} 
+{Mutex: Mutex to release}
+{Timeout: Time in milliseconds to wait to be woken
+          0 = No Wait
+          INFINITE = Wait Indefinitely}
+{Return: ERROR_SUCCESS if completed or another error code on failure.
+         Before returning (with either success or failure) the thread will reacquire the Mutex}
+
+{Note: Caller must be the owner of the Mutex with a count of one on entry to this function}
+var
+ Unlock:Boolean;
+ WaitResult:LongWord;
+ ConditionEntry:PConditionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Condition}
+ if Condition = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ConditionEntry:=PConditionEntry(Condition);
+ if ConditionEntry = nil then Exit;
+ if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+
+ {$IFDEF LOCK_DEBUG}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end
+ else
+  begin
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end;  
+ {$ENDIF}
+ 
+ {Check the Handler}
+ if Assigned(ConditionWaitMutexHandler) then
+  begin
+   {Use the Handler method}
+   Result:=ConditionWaitMutexHandler(ConditionEntry,Mutex,Timeout);
+  end
+ else
+  begin
+   {Use the Default method}
+   {Lock the Condition}
+   if SpinLock(ConditionEntry.Lock) = ERROR_SUCCESS then
+    begin
+     Unlock:=True;
+     try
+      {Check Signature}
+      if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+    
+      Result:=ERROR_OPERATION_FAILED;
+      
+      {Check Timeout}
+      if Timeout = 0 then
+       begin
+        {Check Mutex}
+        if MutexOwner(Mutex) <> ThreadGetCurrent then Exit;
+        
+        {Return Error}
+        Result:=ERROR_WAIT_TIMEOUT;
+       end
+      else
+       begin
+        {Release the Mutex}
+        if MutexUnlock(Mutex) <> ERROR_SUCCESS then Exit;
+ 
+        {Check List}
+        if ConditionEntry.List = INVALID_HANDLE_VALUE then
+         begin
+          {Create List}
+          ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
+         end; 
+ 
+        {Check Timeout}
+        if Timeout = INFINITE then
+         begin
+          {Wait on Condition}
+          ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
+          Unlock:=False;
+          
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end
+        else
+         begin
+          {Wait on Condition with Timeout} 
+          ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
+          Unlock:=False;
+
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end; 
+        
+        {Acquire the Mutex}
+        if MutexLock(Mutex) <> ERROR_SUCCESS then Exit;
+        
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       end; 
+     finally
+      {Unlock the Condition}
+      if Unlock then SpinUnlock(ConditionEntry.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+function ConditionWaitSynchronizer(Condition:TConditionHandle;Synchronizer:TSynchronizerHandle;Flags:LongWord;Timeout:LongWord):LongWord;
+{Release a Synchronizer and Wait on an existing Condition in an atomic operation}
+{Condition: Condition to wait on} 
+{Synchronizer: Synchronizer to release}
+{Flags: Flags to indicate reader or writer lock for the Synchronizer (eg CONDITION_LOCK_FLAG_WRITER)}
+{Timeout: Time in milliseconds to wait to be woken
+          0 = No Wait
+          INFINITE = Wait Indefinitely}
+{Return: ERROR_SUCCESS if completed or another error code on failure.
+         Before returning (with either success or failure) the thread will reacquire the Synchronizer
+         for either reading or writing depending on the flags value}
+
+{Note: Caller must be the owner of the Synchronizer with a count of one on entry to this function
+       and the ownership must match the flags value provided}
+var
+ Unlock:Boolean;
+ WaitResult:LongWord;
+ ConditionEntry:PConditionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Condition}
+ if Condition = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ConditionEntry:=PConditionEntry(Condition);
+ if ConditionEntry = nil then Exit;
+ if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+
+ {$IFDEF LOCK_DEBUG}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end
+ else
+  begin
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end;  
+ {$ENDIF}
+ 
+ {Check the Handler}
+ if Assigned(ConditionWaitSynchronizerHandler) then
+  begin
+   {Use the Handler method}
+   Result:=ConditionWaitSynchronizerHandler(ConditionEntry,Synchronizer,Flags,Timeout);
+  end
+ else
+  begin
+   {Use the Default method}
+   {Lock the Condition}
+   if SpinLock(ConditionEntry.Lock) = ERROR_SUCCESS then
+    begin
+     Unlock:=True;
+     try
+      {Check Signature}
+      if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+    
+      Result:=ERROR_OPERATION_FAILED;
+    
+      {Check Timeout}
+      if Timeout = 0 then
+       begin
+        {Check Synchronizer}
+        if (Flags and CONDITION_LOCK_FLAG_WRITER) <> 0 then
+         begin
+          if SynchronizerWriterOwner(Synchronizer) <> ThreadGetCurrent then Exit;
+         end
+        else
+         begin
+          if SynchronizerReaderCount(Synchronizer) = 0 then Exit;
+         end;
+        
+        {Return Error}
+        Result:=ERROR_WAIT_TIMEOUT;
+       end
+      else
+       begin      
+        {Release the Synchronizer}
+        if (Flags and CONDITION_LOCK_FLAG_WRITER) <> 0 then
+         begin
+          if SynchronizerWriterUnlock(Synchronizer) <> ERROR_SUCCESS then Exit;
+         end
+        else
+         begin
+          if SynchronizerReaderUnlock(Synchronizer) <> ERROR_SUCCESS then Exit;
+         end;         
+ 
+        {Check List}
+        if ConditionEntry.List = INVALID_HANDLE_VALUE then
+         begin
+          {Create List}
+          ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
+         end; 
+ 
+        {Check Timeout}
+        if Timeout = INFINITE then
+         begin
+          {Wait on Condition}
+          ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
+          Unlock:=False;
+          
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end
+        else
+         begin
+          {Wait on Condition with Timeout} 
+          ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
+          Unlock:=False;
+
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end; 
+        
+        {Acquire the Synchronizer}
+        if (Flags and CONDITION_LOCK_FLAG_WRITER) <> 0 then
+         begin
+          if SynchronizerWriterLock(Synchronizer) <> ERROR_SUCCESS then Exit;
+         end
+        else
+         begin
+          if SynchronizerReaderLock(Synchronizer) <> ERROR_SUCCESS then Exit;
+         end;         
+      
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       end; 
+     finally
+      {Unlock the Condition}
+      if Unlock then SpinUnlock(ConditionEntry.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+function ConditionWaitCriticalSection(Condition:TConditionHandle;CriticalSection:TCriticalSectionHandle;Timeout:LongWord):LongWord;
+{Release a Critical Section and Wait on an existing Condition in an atomic operation}
+{Condition: Condition to wait on} 
+{CriticalSection: Critical Section to release}
+{Timeout: Time in milliseconds to wait to be woken
+          0 = No Wait
+          INFINITE = Wait Indefinitely}
+{Return: ERROR_SUCCESS if completed or another error code on failure.
+         Before returning (with either success or failure) the thread will reacquire the Synchronizer
+         for either reading or writing depending on the flags value}
+
+{Note: Caller must be the owner of the Critical Section with a count of one on entry to this function}
+var
+ Unlock:Boolean;
+ WaitResult:LongWord;
+ ConditionEntry:PConditionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Condition}
+ if Condition = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ConditionEntry:=PConditionEntry(Condition);
+ if ConditionEntry = nil then Exit;
+ if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+
+ {$IFDEF LOCK_DEBUG}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end
+ else
+  begin
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end;  
+ {$ENDIF}
+ 
+ {Check the Handler}
+ if Assigned(ConditionWaitCriticalSectionHandler) then
+  begin
+   {Use the Handler method}
+   Result:=ConditionWaitCriticalSectionHandler(ConditionEntry,CriticalSection,Timeout);
+  end
+ else
+  begin
+   {Use the Default method}
+   {Lock the Condition}
+   if SpinLock(ConditionEntry.Lock) = ERROR_SUCCESS then
+    begin
+     Unlock:=True;
+     try
+      {Check Signature}
+      if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+    
+      Result:=ERROR_OPERATION_FAILED;
+    
+      {Check Timeout}
+      if Timeout = 0 then
+       begin
+        {Check Critical Section}
+        if CriticalSectionOwner(CriticalSection) <> ThreadGetCurrent then Exit;
+        
+        {Return Error}
+        Result:=ERROR_WAIT_TIMEOUT;
+       end
+      else
+       begin      
+        {Release the Critical Section}
+        if CriticalSectionUnlock(CriticalSection) <> ERROR_SUCCESS then Exit;
+ 
+        {Check List}
+        if ConditionEntry.List = INVALID_HANDLE_VALUE then
+         begin
+          {Create List}
+          ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
+         end; 
+ 
+        {Check Timeout}
+        if Timeout = INFINITE then
+         begin
+          {Wait on Condition}
+          ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
+          Unlock:=False;
+          
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end
+        else
+         begin
+          {Wait on Condition with Timeout} 
+          ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
+          Unlock:=False;
+
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end; 
+        
+        {Acquire the Critical Section}
+        if CriticalSectionLock(CriticalSection) <> ERROR_SUCCESS then Exit;
+      
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       end; 
+     finally
+      {Unlock the Condition}
+      if Unlock then SpinUnlock(ConditionEntry.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+function ConditionWake(Condition:TConditionHandle):LongWord;
+{Wake one thread waiting on an existing Condition}
+{Condition: Condition to wake} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ ConditionEntry:PConditionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Condition}
+ if Condition = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ConditionEntry:=PConditionEntry(Condition);
+ if ConditionEntry = nil then Exit;
+ if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+ 
+ {$IFDEF LOCK_DEBUG}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end
+ else
+  begin
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end;  
+ {$ENDIF}
+ 
+ {Check the Handler}
+ if Assigned(ConditionWakeHandler) then
+  begin
+   {Use the Handler method}
+   Result:=ConditionWakeHandler(ConditionEntry);
+  end
+ else
+  begin
+   {Use the Default method}
+   {Lock the Condition}
+   if SpinLock(ConditionEntry.Lock) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Signature}
+      if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+ 
+      {Check List}
+      if ListNotEmpty(ConditionEntry.List) then
+       begin
+        {Release thread waiting on Condition}
+        ConditionEntry.Release(ConditionEntry.List);
+       end; 
+ 
+      {Return Result}
+      Result:=ERROR_SUCCESS; 
+     finally
+      {Unlock the Condition}
+      SpinUnlock(ConditionEntry.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+function ConditionWakeAll(Condition:TConditionHandle):LongWord;
+{Wake all threads waiting on an existing Condition}
+{Condition: Condition to wake} 
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ ConditionEntry:PConditionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Condition}
+ if Condition = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ConditionEntry:=PConditionEntry(Condition);
+ if ConditionEntry = nil then Exit;
+ if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+ 
+ {$IFDEF LOCK_DEBUG}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end
+ else
+  begin
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end;  
+ {$ENDIF}
+ 
+ {Check the Handler}
+ if Assigned(ConditionWakeAllHandler) then
+  begin
+   {Use the Handler method}
+   Result:=ConditionWakeAllHandler(ConditionEntry);
+  end
+ else
+  begin
+   {Use the Default method}
+   {Lock the Condition}
+   if SpinLock(ConditionEntry.Lock) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Signature}
+      if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+ 
+      {Check List}
+      while ListNotEmpty(ConditionEntry.List) do
+       begin
+        {Release thread waiting on Condition}
+        ConditionEntry.Release(ConditionEntry.List);
+       end;
+ 
+      {Return Result}
+      Result:=ERROR_SUCCESS; 
+     finally
+      {Unlock the Condition}
+      SpinUnlock(ConditionEntry.Lock);
      end;
     end
    else
@@ -11240,6 +12223,10 @@ begin
  {}
  Result:=INVALID_HANDLE_VALUE;
  
+ {$IFDEF THREAD_DEBUG}
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Create Ex (StackSize=' + IntToStr(StackSize) + ' Priority=' + IntToStr(Priority) + ' Affinity=' + IntToHex(Affinity,8) + ' CPU=' + IntToStr(CPU) + ' Name=' + Name + ')');
+ {$ENDIF}
+ 
  {Check Stack Size}
  if StackSize < THREAD_STACK_MINIMUM_SIZE then
   begin
@@ -11288,8 +12275,11 @@ begin
   end; 
  if ThreadEntry = nil then
   begin
+   if THREAD_LOG_ENABLED then ThreadLogError('ThreadCreateEx: Failed to allocate thread entry');
+   
    {Release Thread Stack}
    ThreadReleaseStack(StackBase,StackSize);
+   
    Exit;
   end; 
 
@@ -11334,6 +12324,8 @@ begin
  ThreadEntry.StackPointer:=ThreadSetupStack(StackBase,StartProc,ThreadEnd,Parameter);
  if ThreadEntry.StackPointer = nil then
   begin
+   if THREAD_LOG_ENABLED then ThreadLogError('ThreadCreateEx: Failed to setup stack');
+   
    {Release Thread Stack}
    ThreadReleaseStack(StackBase,StackSize);
    
@@ -11953,7 +12945,234 @@ begin
  {Return State} 
  Result:=ThreadEntry.State;
 end;
+
+{==============================================================================}
+
+function ThreadGetFlags(Thread:TThreadHandle):LongWord;
+{Get the current flags of a thread}
+{Thread: Handle of thread to get}
+{Return: Flags of the thread (eg THREAD_FLAG_PERSIST) or INVALID_HANDLE_VALUE on failure}
+var
+ ThreadEntry:PThreadEntry;
+begin
+ {}
+ {$IFDEF THREAD_DEBUG}
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Flags (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ {$ENDIF}
  
+ {Check Thread}
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+  
+ {Check the Handle}
+ ThreadEntry:=PThreadEntry(Thread);
+ if ThreadEntry = nil then Exit;
+ if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+ {Return Flags} 
+ Result:=ThreadEntry.Flags;
+end;
+
+{==============================================================================}
+ 
+function ThreadSetFlags(Thread:TThreadHandle;Flags:LongWord):LongWord;
+{Set the current flags of a thread}
+{Thread: Handle of thread to set}
+{Flags: Flags to set (eg THREAD_FLAG_PERSIST)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ ResultCode:LongWord;
+ ThreadEntry:PThreadEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IFDEF THREAD_DEBUG}
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Flags (Handle=' + IntToHex(LongWord(Thread),8) + ' Flags=' + IntToHex(Flags,8) + ')');
+ {$ENDIF}
+ 
+ {Check Flags}
+ if (Flags and THREAD_FLAG_INTERNAL) <> 0 then Exit;
+ 
+ {Check Thread}
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ThreadEntry:=PThreadEntry(Thread);
+ if ThreadEntry = nil then Exit;
+ if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+ {Acquire the Lock}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   ResultCode:=SpinLockIRQFIQ(ThreadEntry.Lock);
+  end
+ else
+  begin
+   ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
+  end;  
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+    {Set Flags}
+    ThreadEntry.Flags:=Flags;
+ 
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    if SCHEDULER_FIQ_ENABLED then
+     begin
+      SpinUnlockIRQFIQ(ThreadEntry.Lock);
+     end
+    else
+     begin
+      SpinUnlockIRQ(ThreadEntry.Lock);
+     end;     
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
+
+function ThreadAddFlags(Thread:TThreadHandle;Flags:LongWord):LongWord;
+{Add flags to the current flags of a thread}
+{Thread: Handle of thread to add flags for}
+{Flags: Flags to add (eg THREAD_FLAG_PERSIST)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ ResultCode:LongWord;
+ ThreadEntry:PThreadEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IFDEF THREAD_DEBUG}
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Add Flags (Handle=' + IntToHex(LongWord(Thread),8) + ' Flags=' + IntToHex(Flags,8) + ')');
+ {$ENDIF}
+ 
+ {Check Flags}
+ if (Flags and THREAD_FLAG_INTERNAL) <> 0 then Exit;
+ 
+ {Check Thread}
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ThreadEntry:=PThreadEntry(Thread);
+ if ThreadEntry = nil then Exit;
+ if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+ {Acquire the Lock}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   ResultCode:=SpinLockIRQFIQ(ThreadEntry.Lock);
+  end
+ else
+  begin
+   ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
+  end;  
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+    {Add Flags}
+    ThreadEntry.Flags:=ThreadEntry.Flags or Flags;
+ 
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    if SCHEDULER_FIQ_ENABLED then
+     begin
+      SpinUnlockIRQFIQ(ThreadEntry.Lock);
+     end
+    else
+     begin
+      SpinUnlockIRQ(ThreadEntry.Lock);
+     end;     
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
+
+function ThreadRemoveFlags(Thread:TThreadHandle;Flags:LongWord):LongWord;
+{Remove flags from the current flags of a thread}
+{Thread: Handle of thread to remove flags from}
+{Flags: Flags to remove (eg THREAD_FLAG_PERSIST)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ ResultCode:LongWord;
+ ThreadEntry:PThreadEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IFDEF THREAD_DEBUG}
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Remove Flags (Handle=' + IntToHex(LongWord(Thread),8) + ' Flags=' + IntToHex(Flags,8) + ')');
+ {$ENDIF}
+ 
+ {Check Flags}
+ if (Flags and THREAD_FLAG_INTERNAL) <> 0 then Exit;
+ 
+ {Check Thread}
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ThreadEntry:=PThreadEntry(Thread);
+ if ThreadEntry = nil then Exit;
+ if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+ {Acquire the Lock}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   ResultCode:=SpinLockIRQFIQ(ThreadEntry.Lock);
+  end
+ else
+  begin
+   ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
+  end;  
+ if ResultCode = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+    {Remove Flags}
+    ThreadEntry.Flags:=ThreadEntry.Flags and not(Flags);
+ 
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    if SCHEDULER_FIQ_ENABLED then
+     begin
+      SpinUnlockIRQFIQ(ThreadEntry.Lock);
+     end
+    else
+     begin
+      SpinUnlockIRQ(ThreadEntry.Lock);
+     end;     
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
 {==============================================================================}
 
 function ThreadGetLocale(Thread:TThreadHandle):LCID;
@@ -12621,7 +13840,30 @@ end;
 
 {==============================================================================}
 
-function ThreadSetLastError(LastError:LongWord):LongWord;
+procedure ThreadSetLastError(LastError:LongWord); 
+{Set the last error value for the current Thread}
+{Note: No lock required as only ever called by the thread itself}
+var
+ Thread:TThreadHandle;
+ ThreadEntry:PThreadEntry;
+begin
+ {}
+ {Get Thread}
+ Thread:=ThreadGetCurrent;
+ if Thread = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ThreadEntry:=PThreadEntry(Thread);
+ if ThreadEntry = nil then Exit;
+ if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+
+ {Set LastError}
+ ThreadEntry.LastError:=LastError;
+end;
+
+{==============================================================================}
+
+function ThreadSetLastErrorEx(LastError:LongWord):LongWord;
 {Set the last error value for the current Thread}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: No lock required as only ever called by the thread itself}
@@ -12724,7 +13966,7 @@ end;
 
 {==============================================================================}
 
-function ThreadAllocTlsIndex:LongWord;
+function ThreadAllocTlsIndex:LongWord; inline;
 {Allocate a TLS index in the TLS index table}
 {Return: Allocated TLS index or TLS_OUT_OF_INDEXES on failure}
 begin
@@ -14776,7 +16018,7 @@ end;
 {==============================================================================}
 
 function ThreadWaitMessage:LongWord;                     
-{Make the current thread wait until a message is received (indefinately)}
+{Make the current thread wait until a message is received (indefinitely)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: The received message is not removed from the message list}
 var
@@ -15000,7 +16242,7 @@ end;
 {==============================================================================}
 
 function ThreadReceiveMessage(var Message:TMessage):LongWord;                     
-{Make the current thread wait to receive a message (indefinately)}
+{Make the current thread wait to receive a message (indefinitely)}
 {Message: The received message if successful, undefined on error}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -18634,7 +19876,7 @@ function EventWaitEx(Event:TEventHandle;Timeout:LongWord):LongWord;
 {Event: Event to wait on} 
 {Timeout: Time in milliseconds to wait for the event to be signaled
           0 = No Wait
-          INFINITE = Wait Indefinately}
+          INFINITE = Wait Indefinitely}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Unlock:Boolean;
@@ -20967,6 +22209,8 @@ end;
 
 procedure WorkerTimer(WorkerRequest:PWorkerRequest);
 {Procedure called internally to schedule worker threads}
+
+{Note: Not intended to be called directly by applications}
 var
  Message:TMessage;
  RepeatRequest:PWorkerRequest;
@@ -21454,11 +22698,11 @@ begin
 
  {Initialize Standard Text IO (Input/Output/ErrOutput/StdOut/StdErr)}
  {Note: Normally done by InitThread}
- TextIOOpen(Input,ConsoleWriteChar,ConsoleReadChar,fmInput,nil);
- TextIOOpen(Output,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
- TextIOOpen(ErrOutput,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
- TextIOOpen(StdOut,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
- TextIOOpen(StdErr,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
+ TextIOOpen(Input,TextIOWriteChar,TextIOReadChar,fmInput,nil);
+ TextIOOpen(Output,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
+ TextIOOpen(ErrOutput,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
+ TextIOOpen(StdOut,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
+ TextIOOpen(StdErr,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
  
  {Initialize InOutRes}
  {Note: Normally done by InitThread}
@@ -21986,6 +23230,15 @@ end;
 
 {==============================================================================}
 
+function ConditionGetCount:LongWord; inline;
+{Get the current condition count}
+begin
+ {}
+ Result:=ConditionTableCount;
+end;
+
+{==============================================================================}
+
 function ListGetCount:LongWord; inline;
 {Get the current list count}
 begin
@@ -22333,6 +23586,7 @@ begin
   LIST_TYPE_WAIT_SECTION:Result:='LIST_TYPE_WAIT_SECTION';
   LIST_TYPE_WAIT_SEMAPHORE:Result:='LIST_TYPE_WAIT_SEMAPHORE';
   LIST_TYPE_WAIT_SYNCHRONIZER:Result:='LIST_TYPE_WAIT_SYNCHRONIZER';
+  LIST_TYPE_WAIT_CONDITION:Result:='LIST_TYPE_WAIT_CONDITION';
   LIST_TYPE_WAIT_EVENT:Result:='LIST_TYPE_WAIT_EVENT';
   LIST_TYPE_WAIT_THREAD:Result:='LIST_TYPE_WAIT_THREAD';
   LIST_TYPE_WAIT_MESSAGESLOT:Result:='LIST_TYPE_WAIT_MESSAGESLOT';
@@ -22497,6 +23751,7 @@ begin
   LIST_TYPE_WAIT_SECTION:Result:=Flags;
   LIST_TYPE_WAIT_SEMAPHORE:Result:=Flags;
   LIST_TYPE_WAIT_SYNCHRONIZER:Result:=Flags;
+  LIST_TYPE_WAIT_CONDITION:Result:=Flags;
   LIST_TYPE_WAIT_EVENT:Result:=Flags;
   LIST_TYPE_WAIT_THREAD:Result:=Flags;
   LIST_TYPE_WAIT_MESSAGESLOT:Result:=Flags;

@@ -106,21 +106,8 @@ const
  VERSATILEPB_CLOCK_DESCRIPTION = 'VersatilePB 24MHz Clock';  {Description of 24MHz clock device}
  
 {==============================================================================}
-var
+{var}
  {QEMUVersatilePB specific variables}
- QEMUVPB_REGISTER_DMA:LongBool = True;         {If True then register the QEMU VersatilePB DMA device during boot}
- QEMUVPB_REGISTER_UART0:LongBool = True;       {If True then register the QEMU VersatilePB UART0 device during boot}
- QEMUVPB_REGISTER_UART1:LongBool = True;       {If True then register the QEMU VersatilePB UART1 device during boot}
- QEMUVPB_REGISTER_UART2:LongBool = True;       {If True then register the QEMU VersatilePB UART2 device during boot}
- QEMUVPB_REGISTER_UART3:LongBool = True;       {If True then register the QEMU VersatilePB UART3 device during boot}
- QEMUVPB_REGISTER_RTC:LongBool = True;         {If True then register the QEMU VersatilePB RTC device during boot}
- QEMUVPB_REGISTER_CLOCK:LongBool = True;       {If True then register the QEMU VersatilePB 24MHz Clock device during boot}
- QEMUVPB_REGISTER_MMC0:LongBool = True;        {If True then register the QEMU VersatilePB MMC0 device during boot}
- QEMUVPB_REGISTER_MMC1:LongBool = True;        {If True then register the QEMU VersatilePB MMC1 device during boot}
- QEMUVPB_REGISTER_NETWORK:LongBool = True;     {If True then register the QEMU VersatilePB Network device during boot}
- QEMUVPB_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the QEMU VersatilePB Framebuffer device during boot}
- QEMUVPB_REGISTER_MOUSE:LongBool = True;       {If True then register the QEMU VersatilePB Mouse device during boot}
- QEMUVPB_REGISTER_KEYBOARD:LongBool = True;    {If True then register the QEMU VersatilePB Keyboard device during boot}
  
 {==============================================================================}
 {Initialization Functions}
@@ -355,7 +342,7 @@ function MMCIGetCardDetect(MMC:PMMCDevice):LongWord;
 {Implementation of MMCDeviceGetCardDetect API for QEMUVPB MMCI}
 {Note: Not intended to be called directly by applications, use MMCDeviceGetCardDetect instead}
 
-{Note: Not currently used as the VERSATILEPB_SYS_MCI register is not connected in QEMUVBP}
+{Note: Not currently used as the VERSATILEPB_SYS_MCI register is not connected in QEMUVPB}
 var
  Mask:LongWord;
  SDHCI:PSDHCIHost;
@@ -441,7 +428,7 @@ function MMCIGetWriteProtect(MMC:PMMCDevice):LongWord;
 {Implementation of MMCDeviceGetWriteProtect API for QEMUVPB MMCI}
 {Note: Not intended to be called directly by applications, use MMCDeviceGetWriteProtect instead}
 
-{Note: Not currently used as the VERSATILEPB_SYS_MCI register is not connected in QEMUVBP}
+{Note: Not currently used as the VERSATILEPB_SYS_MCI register is not connected in QEMUVPB}
 var
  Mask:LongWord;
  SDHCI:PSDHCIHost;

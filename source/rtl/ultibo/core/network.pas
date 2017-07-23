@@ -152,6 +152,8 @@ const
  ADAPTER_TYPE_WIRED    = 1;
  ADAPTER_TYPE_LOOPBACK = 2; 
  ADAPTER_TYPE_WIRELESS = 3;
+ ADAPTER_TYPE_SLIP     = 4;
+ ADAPTER_TYPE_PPP      = 5;
  
  {Adapter Threads}
  ADAPTER_THREAD_NAME     = 'Network Adapter';       {Thread name for Network adapter threads}
@@ -173,6 +175,8 @@ const
  CONFIG_TYPE_DHCP     = 4;
  CONFIG_TYPE_PSEUDO   = 5;
  CONFIG_TYPE_LOOPBACK = 6;
+ CONFIG_TYPE_SLIP     = 7;
+ CONFIG_TYPE_PPP      = 8;
  
  CONFIG_TYPE_UNKNOWN  = Word(-1);
  
@@ -233,8 +237,12 @@ const
  {Media Types}
  MEDIA_TYPE_UNKNOWN  = $0000;
  
- MEDIA_TYPE_ETHERNET  = $0001;  {ARP type of Ethernet Hardware (These values must not change, they are the actual values used by ARP packets)}
- MEDIA_TYPE_TOKENRING = $0006;  {ARP type of Token-Ring Hardware (These values must not change, they are the actual values used by ARP packets)}
+ MEDIA_TYPE_ETHERNET  = $0001;  {ARP type of Ethernet Hardware (This values must not change, they are the actual values used by ARP packets)}
+ MEDIA_TYPE_TOKENRING = $0006;  {ARP type of Token-Ring Hardware (This values must not change, they are the actual values used by ARP packets)}
+ MEDIA_TYPE_IEEE80211 = $1000;
+ MEDIA_TYPE_LOOPBACK  = $1001;
+ MEDIA_TYPE_PPP       = $1002;
+ MEDIA_TYPE_SLIP      = $1003;
 
  {Packet Types}
  PACKET_MIN_TYPE   = $0600;  {If the value Ethernet header TypeLength field is greater than this the frame is Ethernet II}
@@ -729,6 +737,7 @@ type
    function AddAdapter(AAdapter:TNetworkAdapter):Boolean;
    function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
    
+   function GetAdapterByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkAdapter;
    function GetAdapterByType(AAdapterType:Word;ALock:Boolean;AState:LongWord):TNetworkAdapter;
    function GetAdapterByDevice(ADevice:PNetworkDevice;ALock:Boolean;AState:LongWord):TNetworkAdapter;
    function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TNetworkAdapter;
@@ -845,6 +854,7 @@ type
   private
    {Internal Variables}
    FLock:TSynchronizerHandle;
+   FLocalLock:TMutexHandle;
   protected
    {Internal Variables}
    FManager:TAdapterManager;
@@ -868,7 +878,29 @@ type
    {Event Methods}
 
    {Internal Methods}
+   function GetName:String;
    function GetThreadID:TThreadID;
+   
+   function AcquireLock:Boolean;
+   function ReleaseLock:Boolean;
+  public
+   {Public Properties}
+   property Manager:TAdapterManager read FManager;
+   property Device:PNetworkDevice read FDevice;
+   property Name:String read GetName;
+
+   property State:Integer read FState;
+   property Status:Integer read FStatus;
+   property MediaType:Word read FMediaType;
+   property AdapterType:Word read FAdapterType;
+   property LastError:Integer read FLastError;
+   property ThreadID:TThreadID read GetThreadID;
+
+   {Public Methods}
+   function ReaderLock:Boolean;
+   function ReaderUnlock:Boolean;
+   function WriterLock:Boolean;
+   function WriterUnlock:Boolean;
    
    function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAdapterTransport;
    function GetTransportByType(APacketType,AFrameType:Word;ALock:Boolean;AState:LongWord):TAdapterTransport;
@@ -890,31 +922,12 @@ type
    function GetAuthenticatorByAuthenticator(AAuthenticator:TAdapterAuthenticator;ALock:Boolean;AState:LongWord):TAdapterAuthenticator;
    function GetAuthenticatorByNext(APrevious:TAdapterAuthenticator;ALock,AUnlock:Boolean;AState:LongWord):TAdapterAuthenticator;
    
-   {Protected Methods}
-   function AddBinding(ATransport:TAdapterTransport;APacketType,AFrameType:Word):THandle; virtual;
-   function RemoveBinding(AHandle:THandle;APacketType:Word):Boolean; virtual;
-  public
-   {Public Properties}
-   property Manager:TAdapterManager read FManager;
-   property Device:PNetworkDevice read FDevice;
-   property Name:String read FName;   //To Do //Does this need lock protection and UniqueString ? //Yes //LocalLock(Mutex)
-
-   property State:Integer read FState;
-   property Status:Integer read FStatus;
-   property MediaType:Word read FMediaType;
-   property AdapterType:Word read FAdapterType;
-   property LastError:Integer read FLastError;
-   property ThreadID:TThreadID read GetThreadID;
-
-   {Public Methods}
-   function ReaderLock:Boolean;
-   function ReaderUnlock:Boolean;
-   function WriterLock:Boolean;
-   function WriterUnlock:Boolean;
-   
    function AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle; virtual;
    function RemoveTransport(AHandle:THandle;APacketType:Word):Boolean; virtual;
 
+   function AddBinding(ATransport:TAdapterTransport;APacketType,AFrameType:Word):THandle; virtual;
+   function RemoveBinding(AHandle:THandle;APacketType:Word):Boolean; virtual;
+   
    function AddMonitor(AMonitorHandler:TAdapterMonitorHandler):THandle; virtual;
    function RemoveMonitor(AHandle:THandle):Boolean; virtual;
 
@@ -1017,7 +1030,7 @@ type
    {Inherited Methods}
 
   public
-   {}
+   {Public Methods}
    function AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle; override;
    function RemoveTransport(AHandle:THandle;APacketType:Word):Boolean; override;
 
@@ -1245,6 +1258,9 @@ function SysHostSetDomain(const ADomain:String):Boolean;
 
 {==============================================================================}
 {Network Helper Functions}
+function NetworkGetLastError:LongInt; inline;
+procedure NetworkSetLastError(Error:LongInt); inline;
+
 function NetworkGetCount:LongWord; inline;
 
 function NetworkDeviceCheck(Network:PNetworkDevice):PNetworkDevice;
@@ -1279,7 +1295,7 @@ function AdapterStatusToString(AStatus:Integer):String;
 
 function FrameTypeToString(AType:Word):String;
 function MediaTypeToString(AType:Word):String;
-function PacketTypetoString(AType:Word):String;
+function PacketTypeToString(AType:Word):String;
 
 function ConfigTypeToString(AType:Word):String;
 function ConfigCommandToString(ACommand:Word):String;
@@ -1307,6 +1323,11 @@ var
  NetworkEventLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  NetworkEventCount:LongWord;
  
+{==============================================================================}
+{==============================================================================}
+threadvar 
+ {Network specific thread variables}
+ NetworkLastError:LongInt;
  
 {==============================================================================}
 {==============================================================================}
@@ -1422,6 +1443,43 @@ begin
  finally 
   ReaderUnlock;
  end; 
+end;
+
+{==============================================================================}
+
+function TAdapterManager.GetAdapterByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkAdapter;
+var
+ Adapter:TNetworkAdapter;
+begin
+ {}
+ FAdapters.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Name}
+  if Length(AName) = 0 then Exit;
+  
+  {Get Adapter}
+  Adapter:=TNetworkAdapter(FAdapters.First);
+  while Adapter <> nil do
+   begin
+    {Check Adapter}
+    if Uppercase(Adapter.Name) = Uppercase(AName) then
+     begin
+      {Lock Adapter} 
+      if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
+      
+      {Return Result}
+      Result:=Adapter;
+      Exit;
+     end;
+    
+    {Get Next}
+    Adapter:=TNetworkAdapter(Adapter.Next);
+   end;
+ finally
+  FAdapters.ReaderUnlock;
+ end;   
 end;
 
 {==============================================================================}
@@ -2085,6 +2143,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
+ FLocalLock:=MutexCreate;
  
  FManager:=AManager;
  FDevice:=ADevice;
@@ -2121,6 +2180,7 @@ begin
   FStatus:=ADAPTER_STATUS_DOWN;
   FDevice:=nil;
   FManager:=nil;
+  MutexDestroy(FLocalLock);
   inherited Destroy;
  finally 
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
@@ -2130,15 +2190,77 @@ end;
 
 {==============================================================================}
 
+function TNetworkAdapter.GetName:String;
+begin
+ {}
+ Result:='';
+   
+ if not AcquireLock then Exit;
+   
+ Result:=FName;
+ UniqueString(Result);
+   
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
 function TNetworkAdapter.GetThreadID:TThreadID;
 begin
  {}
- //To Do //Lock
  Result:=INVALID_HANDLE_VALUE;
  
  if FThread = nil then Exit;
  
  Result:=FThread.ThreadID;
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.AcquireLock:Boolean;
+begin
+ {}
+ Result:=(MutexLock(FLocalLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.ReleaseLock:Boolean;
+begin
+ {}
+ Result:=(MutexUnlock(FLocalLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -2738,54 +2860,6 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.AddBinding(ATransport:TAdapterTransport;APacketType,AFrameType:Word):THandle;
-begin
- {Virtual Base Method}
- Result:=INVALID_HANDLE_VALUE;
-end;
-
-{==============================================================================}
-
-function TNetworkAdapter.RemoveBinding(AHandle:THandle;APacketType:Word):Boolean;
-begin
- {Virtual Base Method}
- Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkAdapter.ReaderLock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkAdapter.ReaderUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkAdapter.WriterLock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkAdapter.WriterUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
 function TNetworkAdapter.AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle;
 begin
  {Virtual Base Method}
@@ -2795,6 +2869,22 @@ end;
 {==============================================================================}
 
 function TNetworkAdapter.RemoveTransport(AHandle:THandle;APacketType:Word):Boolean;
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.AddBinding(ATransport:TAdapterTransport;APacketType,AFrameType:Word):THandle;
+begin
+ {Virtual Base Method}
+ Result:=INVALID_HANDLE_VALUE;
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.RemoveBinding(AHandle:THandle;APacketType:Word):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -6370,6 +6460,25 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Network Helper Functions}
+function NetworkGetLastError:LongInt; inline;
+{Get the last network error value for the current Thread}
+{Return: Last Network Error or ERROR_SUCCESS if no error}
+begin
+ {}
+ Result:=NetworkLastError;
+end;
+
+{==============================================================================}
+
+procedure NetworkSetLastError(Error:LongInt); inline;
+{Set the last network error value for the current Thread}
+begin
+ {}
+ NetworkLastError:=Error;
+end;
+
+{==============================================================================}
+
 function NetworkGetCount:LongWord; inline;
 {Get the current network count}
 begin
@@ -6673,6 +6782,8 @@ begin
   ADAPTER_TYPE_WIRED:Result:='ADAPTER_TYPE_WIRED';
   ADAPTER_TYPE_LOOPBACK:Result:='ADAPTER_TYPE_LOOPBACK';
   ADAPTER_TYPE_WIRELESS:Result:='ADAPTER_TYPE_WIRELESS';
+  ADAPTER_TYPE_SLIP:Result:='ADAPTER_TYPE_SLIP';
+  ADAPTER_TYPE_PPP:Result:='ADAPTER_TYPE_PPP';
  end; 
 end;
 
@@ -6775,7 +6886,7 @@ end;
 
 {==============================================================================}
 
-function PacketTypetoString(AType:Word):String;
+function PacketTypeToString(AType:Word):String;
 begin
  {}
  Result:='';
@@ -6808,6 +6919,8 @@ begin
   CONFIG_TYPE_DHCP:Result:='CONFIG_TYPE_DHCP';
   CONFIG_TYPE_PSEUDO:Result:='CONFIG_TYPE_PSEUDO';
   CONFIG_TYPE_LOOPBACK:Result:='CONFIG_TYPE_LOOPBACK';
+  CONFIG_TYPE_SLIP:Result:='CONFIG_TYPE_SLIP';
+  CONFIG_TYPE_PPP:Result:='CONFIG_TYPE_PPP';
  end; 
 end;
 

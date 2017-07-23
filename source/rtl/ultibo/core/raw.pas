@@ -103,12 +103,6 @@ type
    function PacketHandler(AHandle:THandle;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-
-   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
-   procedure FlushSockets(All:Boolean); override;
-
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; override;
    function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; override;
 
@@ -136,6 +130,12 @@ type
    function Socket(AFamily,AStruct,AProtocol:Integer):TProtocolSocket; override;
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+
+   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
+   procedure FlushSockets(All:Boolean); override;
+   
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
@@ -370,6 +370,1460 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer;
+{Source is the working set to check, Dest is the set passed to Select}
+var
+ Count:Integer;
+ Socket:TRAWSocket;
+begin
+ {}
+ Result:=0;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SelectCheck');
+ {$ENDIF}
+ 
+ {Check Dest}
+ if ADest = nil then Exit;
+ 
+ {Check Source}
+ if ASource = nil then Exit;
+ 
+ {Check Code}
+ case ACode of
+  SELECT_READ:begin
+    Result:=SOCKET_ERROR;
+    
+    {Get Sockets}
+    for Count:=ASource.fd_count - 1 downto 0 do
+     begin
+      {Get Socket}
+      Socket:=TRAWSocket(ASource.fd_array[Count]);
+      
+      {Check Socket}
+      if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
+      
+      {Check Receive Count}
+      if Socket.RecvData.GetCount > 0 then
+       begin
+        {Check Set}
+        if not FD_ISSET(TSocket(Socket),ADest^) then
+         begin
+          FD_SET(TSocket(Socket),ADest^);
+         end;
+       end;
+     
+      {Unlock Socket} 
+      Socket.ReaderUnlock;
+     end;
+     
+    {Return Result}
+    Result:=ADest.fd_count;
+   end;
+  SELECT_WRITE:begin
+    Result:=SOCKET_ERROR;
+    
+    {Get Sockets}
+    for Count:=ASource.fd_count - 1 downto 0 do
+     begin
+      {Get Socket}
+      Socket:=TRAWSocket(ASource.fd_array[Count]);
+      
+      {Check Socket}
+      if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
+      
+      {Check Set}
+      if not FD_ISSET(TSocket(Socket),ADest^) then
+       begin
+        FD_SET(TSocket(Socket),ADest^);
+       end;
+     
+      {Unlock Socket} 
+      Socket.ReaderUnlock;
+     end;
+     
+    {Return Result}
+    Result:=ADest.fd_count;
+   end;
+  SELECT_ERROR:begin
+    {Return Result}
+    Result:=0;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+{Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
+var
+ StartTime:Int64;
+ Socket:TRAWSocket;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SelectWait');
+ {$ENDIF}
+
+ {Get Socket}
+ Socket:=TRAWSocket(ASocket);
+ 
+ {Check Socket}
+ if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
+ try
+  {Check Code}
+  case ACode of
+   SELECT_READ:begin
+     {Wait for Data}
+     StartTime:=GetTickCount64;
+     while Socket.RecvData.GetCount = 0 do
+      begin
+       {Check Timeout}
+       if ATimeout = 0 then
+        begin
+         {Return Zero}
+         Result:=0;
+         Exit;
+        end
+       else if ATimeout = INFINITE then
+        begin
+         {Wait for Event}
+         if not Socket.WaitChange then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end
+       else 
+        begin
+         {Wait for Event}
+         if not Socket.WaitChangeEx(ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+
+         {Check for Timeout}
+         if GetTickCount64 > (StartTime + ATimeout) then
+          begin
+           {Return Error}
+           Result:=SOCKET_ERROR;
+           Exit;
+          end;
+        end;           
+      end;
+      
+     {Return One}
+     Result:=1; 
+    end;
+   SELECT_WRITE:begin
+     {Return One}
+     Result:=1; 
+    end;
+   SELECT_ERROR:begin
+     {Return Zero}
+     Result:=0;
+    end;
+  end;
+ 
+ finally
+  {Unlock Socket} 
+  Socket.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.SendPacket(ASocket:TProtocolSocket;ASource,ADest:Pointer;ASourcePort,ADestPort:Word;APacket:PPacketFragment;ASize,AFlags:Integer):Integer;
+{Send a Packet by adding the Protocol Header and other details to the Data}
+{Socket: The socket to use for sending the packet}
+{Source: The source address of the packet (Host Order)}
+{Dest: The destination address of the packet (Host Order)}
+{SourcePort: The source port of the packet (Host Order)}
+{DestPort: The destination port of the packet (Host Order)}
+{Packet: The packet data to send}
+{Size: The size of the packet data in bytes}
+{Flags: Any protocol specific flags for sending}
+
+{Note: RAW has no Protocol Header so the packet is passed unchanged}
+{Note: Caller must hold the Socket lock}
+var
+ Transport:TRAWProtocolTransport;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SendPacket');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Size = ' + IntToStr(ASize));
+ {$ENDIF}
+ 
+ {Check Socket}
+ if ASocket = nil then Exit;
+ 
+ {Check Address Family}
+ case ASocket.Family of
+  AF_INET:begin
+    {Get Transport}
+    Transport:=TRAWProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
+    if Transport = nil then Exit;
+  
+    {Send the Packet}
+    Result:=TIPTransport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,APacket,ASize,AFlags);
+    
+    {Unlock Transport}
+    Transport.ReaderUnlock;
+   end;
+  AF_INET6:begin
+    {Get Transport}
+    Transport:=TRAWProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
+    if Transport = nil then Exit;
+
+    {Send the Packet}
+    Result:=TIP6Transport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,APacket,ASize,AFlags);
+    
+    {Unlock Transport}
+    Transport.ReaderUnlock;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Accept(ASocket:TProtocolSocket;ASockAddr:PSockAddr;AAddrLength:PInteger):TProtocolSocket;
+{BSD compatible Accept}
+{Socket: The socket to accept from}
+{SockAddr: The socket address (Network Order)}
+{AddrLength: The socket address length}
+
+{Note: SockAddr is returned in Network order}
+{Note: Caller must hold the Socket lock}
+begin
+ {}
+ Result:=TProtocolSocket(INVALID_SOCKET);
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Accept');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Not supported}
+   NetworkSetLastError(WSAEOPNOTSUPP);
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Bind(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;AAddrLength:Integer):Integer;
+{BSD compatible Bind}
+{Sets the LocalAddress for future Sends and Receives, Address can be specified as INADDR_ANY which allows Listening or auto assignment}
+{If Port is IPPORT_ANY then a dynamic Port will be assigned}
+{Socket: The socket to bind}
+{SockAddr: The socket address (Network Order)}
+{AddrLength: The socket address length}
+
+{Note: SockAddr is passed in Network order}
+{Note: Caller must hold the Socket lock}
+var
+ SockAddr6:PSockAddr6;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Bind');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check for Connected or Bound}
+   NetworkSetLastError(WSAEINVAL);
+   if ASocket.SocketState.Connected then Exit;
+   if ASocket.SocketState.LocalAddress then Exit;
+   
+   {Check Address Family}
+   NetworkSetLastError(WSAEAFNOSUPPORT);
+   case ASocket.Family of
+    AF_INET:begin
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      if ASocket.Family <> ASockAddr.sin_family then Exit;
+      
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr) then Exit;
+      
+      {Check LocalAddress}
+      if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
+       begin
+        NetworkSetLastError(WSAEADDRNOTAVAIL);
+        if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
+       end;
+      
+      {Bind the Socket}
+      ASocket.SocketState.LocalAddress:=True;
+      TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
+      
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+    AF_INET6:begin
+      {Get Socket Address}
+      SockAddr6:=PSockAddr6(@ASockAddr);
+      
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      if ASocket.Family <> SockAddr6.sin6_family then Exit;
+      
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr6) then Exit;
+      
+      {Check LocalAddress}
+      if not TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then
+       begin
+        NetworkSetLastError(WSAEADDRNOTAVAIL);
+        if TIP6Transport(ASocket.Transport).GetAddressByAddress(SockAddr6.sin6_addr,False,NETWORK_LOCK_NONE) = nil then Exit;
+       end;
+      
+      {Bind the Socket}
+      ASocket.SocketState.LocalAddress:=True;
+      TIP6State(ASocket.TransportState).LocalAddress:=SockAddr6.sin6_addr;
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.CloseSocket(ASocket:TProtocolSocket):Integer;
+{BSD compatible Close Socket}
+{Closes and removes the socket, does not perform Linger}
+{Socket: The socket to close}
+
+{Note: Caller must hold the Socket lock}
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: CloseSocket');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Close Socket}
+   ASocket.SocketState.Closed:=True;
+   ASocket.CloseTime:=GetTickCount64;
+  
+   {Signal the Event}
+   ASocket.SignalChange;
+  
+   {Return Result}
+   NetworkSetLastError(ERROR_SUCCESS);
+   Result:=NO_ERROR;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Connect(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;AAddrLength:Integer):Integer;
+{BSD compatible Connect}
+{Sets the RemoteAddress of future Sends and Receives, if Bind has not been called then the
+ LocalAddress will be set appropriately as well based on the route to the RemoteAddress}
+{Socket: The socket to connect}
+{SockAddr: The socket address (Network Order)}
+{AddrLength: The socket address length}
+
+{Note: SockAddr is passed in Network order}
+{Note: Caller must hold the Socket lock}
+var
+ Route:TRouteEntry;
+ Address:TAddressEntry;
+ SockAddr6:PSockAddr6;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Connect');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check for Connected}
+   NetworkSetLastError(WSAEISCONN);
+   if ASocket.SocketState.Connected then Exit;
+   
+   {Check Address Family}
+   NetworkSetLastError(WSAEAFNOSUPPORT);
+   case ASocket.Family of
+    AF_INET:begin
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      if ASocket.Family <> ASockAddr.sin_family then Exit;
+      
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr) then Exit;
+      
+      {Check for Default RemoteAddress}
+      NetworkSetLastError(WSAEDESTADDRREQ);
+      if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
+      
+      {Check for Broadcast RemoteAddress}
+      NetworkSetLastError(WSAEACCES);
+      if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then
+       begin
+        if not ASocket.SocketOptions.Broadcast then Exit;
+       end;
+      
+      {Check the Route}
+      NetworkSetLastError(WSAENETUNREACH);
+      Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
+      if Route = nil then Exit;
+      try
+       {Check the LocalAddress}
+       NetworkSetLastError(WSAEADDRNOTAVAIL);
+       Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
+       if Address = nil then Exit;
+       try
+        {Check the Binding}
+        if not ASocket.SocketState.LocalAddress then
+         begin
+          {Bind the Socket}
+          ASocket.SocketState.LocalAddress:=True;
+          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
+         end;
+      
+        {Check for Default Binding}
+        if TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
+         begin
+          {Set the LocalAddress}
+          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
+         end;
+      
+        {Connect the Socket}
+        ASocket.SocketState.Connected:=True;
+        ASocket.SocketState.RemoteAddress:=True;
+        TIPState(ASocket.TransportState).RemoteAddress:=InAddrToHost(ASockAddr.sin_addr);
+      
+        {Signal the Event}
+        ASocket.SignalChange;
+      
+        {Return Result}
+        NetworkSetLastError(ERROR_SUCCESS);
+        Result:=NO_ERROR;
+       finally
+        Address.ReaderUnlock;
+       end;
+      finally
+       Route.ReaderUnlock;
+      end;      
+     end;
+    AF_INET6:begin
+      {Get Socket Address}
+      SockAddr6:=PSockAddr6(@ASockAddr);
+      
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      if ASocket.Family <> SockAddr6.sin6_family then Exit;
+      
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr6) then Exit;
+      
+      {Check for Default RemoteAddress}
+      NetworkSetLastError(WSAEDESTADDRREQ);
+      if TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then Exit;
+      
+      {Check for Broadcast RemoteAddress}
+      NetworkSetLastError(WSAEACCES);
+      if TIP6Transport(ASocket.Transport).CompareBroadcast(SockAddr6.sin6_addr) or TIP6Transport(ASocket.Transport).CompareDirected(SockAddr6.sin6_addr) then
+       begin
+        if not ASocket.SocketOptions.Broadcast then Exit;
+       end;
+      
+      {Check the Route}
+      NetworkSetLastError(WSAENETUNREACH);
+      Route:=TIP6Transport(ASocket.Transport).GetRouteByAddress(SockAddr6.sin6_addr,True,NETWORK_LOCK_READ);
+      if Route = nil then Exit;
+      try
+       {Check the LocalAddress}
+       NetworkSetLastError(WSAEADDRNOTAVAIL);
+       Address:=TIP6Transport(ASocket.Transport).GetAddressByAddress(TIP6RouteEntry(Route).Address,True,NETWORK_LOCK_READ);
+       if Address = nil then Exit;
+       try
+        {Check the Binding}
+        if not ASocket.SocketState.LocalAddress then
+         begin
+          {Bind the Address}
+          ASocket.SocketState.LocalAddress:=True;
+          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
+         end;
+         
+        {Check for Default Binding}
+        if TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
+         begin
+          {Set the LocalAddress}
+          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
+         end;
+      
+        {Connect the Socket}
+        ASocket.SocketState.Connected:=True;
+        ASocket.SocketState.RemoteAddress:=True;
+        TIP6State(ASocket.TransportState).RemoteAddress:=SockAddr6.sin6_addr;
+      
+        {Signal the Event}
+        ASocket.SignalChange;
+      
+        {Return Result}
+        NetworkSetLastError(ERROR_SUCCESS);
+        Result:=NO_ERROR;
+       finally
+        Address.ReaderUnlock;
+       end;
+      finally
+       Route.ReaderUnlock;
+      end;      
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.IoctlSocket(ASocket:TProtocolSocket;ACmd:DWORD;var AArg:u_long):Integer;
+{BSD compatible IO Control Socket}
+{Socket: The socket to control}
+{Cmd: The socket command}
+{Arg: The command argument}
+
+{Note: Caller must hold the Socket lock}
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: IoctlSocket');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Pass the call to the socket}
+   Result:=ASocket.IoCtl(ACmd,AArg);
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.GetPeerName(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;var AAddrLength:Integer):Integer;
+{BSD compatible Get Peer Name (Remote)}
+{Socket: The socket to get from}
+{SockAddr: The socket address (Network Order)}
+{AddrLength: The socket address length}
+
+{Note: SockAddr is returned in Network order}
+{Note: Caller must hold the Socket lock}
+var
+ SockAddr6:PSockAddr6;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: GetPeerName');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check Connected}
+   NetworkSetLastError(WSAENOTCONN);
+   if not ASocket.SocketState.Connected then Exit;
+   
+   {Check Address Family}
+   NetworkSetLastError(WSAEAFNOSUPPORT);
+   case ASocket.Family of
+    AF_INET:begin
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr) then Exit;
+      
+      {Return the Peer Details}
+      ASockAddr.sin_family:=ASocket.Family;
+      ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
+      ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).RemoteAddress);
+      AAddrLength:=SizeOf(TSockAddr);
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+    AF_INET6:begin
+      {Get Socket Address}
+      SockAddr6:=PSockAddr6(@ASockAddr);
+      
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr6) then Exit;
+      
+      {Return the Peer Details}
+      SockAddr6.sin6_family:=ASocket.Family;
+      SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
+      SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).RemoteAddress;
+      AAddrLength:=SizeOf(TSockAddr6);
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.GetSockName(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;var AAddrLength:Integer):Integer;
+{BSD compatible Get Sock Name (Local)}
+{Socket: The socket to get from}
+{SockAddr: The socket address (Network Order)}
+{AddrLength: The socket address length}
+
+{Note: SockAddr is returned in Network order}
+{Note: Caller must hold the Socket lock}
+var
+ SockAddr6:PSockAddr6;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: GetSockName');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check for Bound}
+   NetworkSetLastError(WSAEINVAL);
+   if not ASocket.SocketState.LocalAddress then Exit;
+   
+   {Check Address Family}
+   NetworkSetLastError(WSAEAFNOSUPPORT);
+   case ASocket.Family of
+    AF_INET:begin
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr) then Exit;
+      
+      {Return the Socket Details}
+      ASockAddr.sin_family:=ASocket.Family;
+      ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
+      ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).LocalAddress);
+      AAddrLength:=SizeOf(TSockAddr);
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+    AF_INET6:begin
+      {Get Socket Address}
+      SockAddr6:=PSockAddr6(@ASockAddr);
+      
+      {Check size of SockAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AAddrLength < SizeOf(TSockAddr6) then Exit;
+      
+      {Return the Peer Details}
+      SockAddr6.sin6_family:=ASocket.Family;
+      SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
+      SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).LocalAddress;
+      AAddrLength:=SizeOf(TSockAddr6);
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.GetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer;AOptValue:PChar;var AOptLength:Integer):Integer;
+{BSD compatible Get Socket Option}
+{Socket: The socket to get the option from}
+{Level: The protocol level for the option}
+{OptName: The name of the option to get}
+{OptValue: The value of the option}
+{OptLength: The length of the option}
+
+{Note: Caller must hold the Socket lock}
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: GetSockOpt');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check Level}
+   case ALevel of
+    IPPROTO_IP:begin
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      case ASocket.Family of
+       AF_INET:begin
+         {Pass the call to the transport}
+         Result:=TIPTransport(ASocket.Transport).GetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
+        end;
+       AF_INET6:begin
+         {Pass the call to the transport}
+         Result:=TIP6Transport(ASocket.Transport).GetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
+        end;
+      end;
+     end;
+    else
+     begin
+      {Pass the call to the socket}
+      Result:=ASocket.GetOption(ALevel,AOptName,AOptValue,AOptLength);
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Listen(ASocket:TProtocolSocket;ABacklog:Integer):Integer;
+{BSD compatible Listen}
+{Socket: The socket to listen on}
+{Backlog: Queue depth for accepted connections}
+
+{Note: Caller must hold the Socket lock}
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Listen');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Not supported}
+   NetworkSetLastError(WSAEOPNOTSUPP);
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Recv(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer):Integer;
+{BSD compatible Receive}
+{Socket: The socket to receive from}
+{Buffer: Buffer for received data}
+{Length: Length of buffer in bytes}
+{Flags: Protocol specific receive flags}
+
+{Note: Caller must hold the Socket lock}
+var
+ Size:Integer;
+ StartTime:Int64;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Recv');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check for Connected}
+   NetworkSetLastError(WSAENOTCONN);
+   if not ASocket.SocketState.Connected then Exit;
+   
+   {Check for Bound}
+   NetworkSetLastError(WSAEINVAL);
+   if not ASocket.SocketState.LocalAddress then Exit;
+   
+   {Check for Shutdown}
+   NetworkSetLastError(WSAESHUTDOWN);
+   if ASocket.SocketState.CantRecvMore then Exit;
+   
+   {Check for Flag MSG_OOB}
+   NetworkSetLastError(WSAEOPNOTSUPP);
+   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
+   
+   {Wait for Data}
+   StartTime:=GetTickCount64;
+   while TRAWSocket(ASocket).RecvData.GetCount = 0 do
+    begin
+     {Check for Timeout}
+     if ASocket.SocketOptions.RecvTimeout > 0 then
+      begin
+       {Wait for Event}
+       if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
+        begin
+         NetworkSetLastError(WSAECONNABORTED);
+         Exit;
+        end; 
+
+       {Check for Timeout}
+       if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
+        begin
+         NetworkSetLastError(WSAECONNABORTED);
+         Exit;
+        end;
+      end
+     else
+      begin
+       {Wait for Event}
+       if not ASocket.WaitChange then
+        begin
+         NetworkSetLastError(WSAECONNABORTED);
+         Exit;
+        end; 
+      end;      
+     
+     {Check for Closed}
+     if ASocket.SocketState.Closed then
+      begin
+       Result:=0;
+       Exit;
+      end;
+    end;
+   
+   {Check Size}
+   NetworkSetLastError(ERROR_SUCCESS);
+   Size:=TRAWSocket(ASocket).RecvData.GetNext;
+   if Size > ALength then
+    begin
+     NetworkSetLastError(WSAEMSGSIZE);
+     Size:=ALength;
+    end;
+   
+   {Read Data}
+   if TRAWSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,nil,AFlags) then
+    begin
+     {Return Size}
+     Result:=Size;
+    end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.RecvFrom(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer;var AFromAddr:TSockAddr;var AFromLength:Integer):Integer;
+{BSD compatible Receive From}
+{Socket: The socket to receive from}
+{Buffer: Buffer for received data}
+{Length: Length of buffer in bytes}
+{Flags: Protocol specific receive flags}
+{FromAddr: The address the data was received from (Network Order)}
+{FromLength: The length of the address}
+
+{Note: SockAddr is returned in Network order}
+{Note: Caller must hold the Socket lock}
+var
+ Size:Integer;
+ StartTime:Int64;
+ SockAddr6:PSockAddr6;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: RecvFrom');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check for Bound}
+   NetworkSetLastError(WSAEINVAL);
+   if not ASocket.SocketState.LocalAddress then Exit;
+   
+   {Check for Shutdown}
+   NetworkSetLastError(WSAESHUTDOWN);
+   if ASocket.SocketState.CantRecvMore then Exit;
+   
+   {Check for Flag MSG_OOB}
+   NetworkSetLastError(WSAEOPNOTSUPP);
+   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
+   
+   {Check Address Family}
+   NetworkSetLastError(WSAEAFNOSUPPORT);
+   case ASocket.Family of
+    AF_INET:begin
+      {Check size of FromAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AFromLength < SizeOf(TSockAddr) then Exit;
+     end;
+    AF_INET6:begin
+      {Get Socket Address}
+      SockAddr6:=PSockAddr6(@AFromAddr);
+      
+      {Check size of FromAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AFromLength < SizeOf(TSockAddr6) then Exit;
+     end;
+    else
+     begin
+      Exit;
+     end;     
+   end;
+   
+   {Wait for Data}
+   StartTime:=GetTickCount64;
+   while TRAWSocket(ASocket).RecvData.GetCount = 0 do
+    begin
+     {Check for Timeout}
+     if ASocket.SocketOptions.RecvTimeout > 0 then
+      begin
+       {Wait for Event}
+       if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
+        begin
+         NetworkSetLastError(WSAECONNABORTED);
+         Exit;
+        end; 
+
+       {Check for Timeout}
+       if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
+        begin
+         NetworkSetLastError(WSAECONNABORTED);
+         Exit;
+        end;
+      end
+     else
+      begin
+       {Wait for Event}
+       if not ASocket.WaitChange then
+        begin
+         NetworkSetLastError(WSAECONNABORTED);
+         Exit;
+        end; 
+      end;      
+     
+     {Check for Closed}
+     if ASocket.SocketState.Closed then
+      begin
+       Result:=0;
+       Exit;
+      end;
+    end;
+   
+   {Check Size}
+   NetworkSetLastError(ERROR_SUCCESS);
+   Size:=TRAWSocket(ASocket).RecvData.GetNext;
+   if Size > ALength then
+    begin
+     NetworkSetLastError(WSAEMSGSIZE);
+     Size:=ALength;
+    end;
+    
+   {Check Address Family}
+   case ASocket.Family of
+    AF_INET:begin
+      {Get Address}
+      AFromAddr.sin_family:=ASocket.Family; 
+      AFromAddr.sin_port:=WordNtoBE(IPPORT_ANY);
+   
+      {Read Data}
+      if TRAWSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@AFromAddr.sin_addr,AFlags) then
+       begin
+        {Get Address}
+        AFromAddr.sin_addr:=InAddrToNetwork(AFromAddr.sin_addr);
+        
+        {Return Size}
+        Result:=Size;
+       end;
+     end;
+    AF_INET6:begin
+      {Get Address}
+      SockAddr6.sin6_family:=ASocket.Family;
+      SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
+      
+      {Read Data}
+      if TRAWSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@SockAddr6.sin6_addr,AFlags) then
+       begin
+        {Return Size}
+        Result:=Size;
+       end;
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Send(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer):Integer;
+{BSD compatible Send}
+{Socket: The socket to send to}
+{Buffer: Buffer for data to send}
+{Length: Length of buffer in bytes}
+{Flags: Protocol specific send flags}
+
+{Note: Caller must hold the Socket lock}
+var
+ Packet:TPacketFragment;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Send');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check for Connected}
+   NetworkSetLastError(WSAENOTCONN);
+   if not ASocket.SocketState.Connected then Exit;
+   
+   {Check for Bound}
+   NetworkSetLastError(WSAEINVAL);
+   if not ASocket.SocketState.LocalAddress then Exit;
+   
+   {Check for Shutdown}
+   NetworkSetLastError(WSAESHUTDOWN);
+   if ASocket.SocketState.CantSendMore then Exit;
+   
+   {Check for Flag MSG_OOB}
+   NetworkSetLastError(WSAEOPNOTSUPP);
+   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
+   
+   {Check Address Family}
+   NetworkSetLastError(WSAEAFNOSUPPORT);
+   case ASocket.Family of
+    AF_INET:begin
+      {Check for Broadcast RemoteAddress}
+      NetworkSetLastError(WSAEACCES);
+      if TIPTransport(ASocket.Transport).CompareBroadcast(TIPState(ASocket.TransportState).RemoteAddress) or TIPTransport(ASocket.Transport).CompareDirected(TIPState(ASocket.TransportState).RemoteAddress) then
+       begin
+        if not ASocket.SocketOptions.Broadcast then Exit;
+       end;
+      
+      {Create the Fragment}
+      Packet.Size:=ALength;
+      Packet.Data:=@ABuffer;
+      Packet.Next:=nil;
+      
+      {Send the Packet}
+      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@TIPState(ASocket.TransportState).RemoteAddress,0,0,@Packet,ALength,AFlags);
+     end;
+    AF_INET6:begin
+      {Check for Broadcast RemoteAddress}
+      NetworkSetLastError(WSAEACCES);
+      if TIP6Transport(ASocket.Transport).CompareBroadcast(TIP6State(ASocket.TransportState).RemoteAddress) or TIP6Transport(ASocket.Transport).CompareDirected(TIP6State(ASocket.TransportState).RemoteAddress) then
+       begin
+        if not ASocket.SocketOptions.Broadcast then Exit;
+       end;
+      
+      {Create the Fragment}
+      Packet.Size:=ALength;
+      Packet.Data:=@ABuffer;
+      Packet.Next:=nil;
+      
+      {Send the Packet}
+      Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@TIP6State(ASocket.TransportState).RemoteAddress,0,0,@Packet,ALength,AFlags);
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.SendTo(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer;var AToAddr:TSockAddr;AToLength:Integer):Integer;
+{BSD compatible Send To}
+{Socket: The socket to send to}
+{Buffer: Buffer for data to send}
+{Length: Length of buffer in bytes}
+{Flags: Protocol specific send flags}
+{ToAddr: The socket address to send to (Network Order)}
+{ToLength: The length of the socket address}
+
+{Note: SockAddr is passed in Network order}
+{Note: Caller must hold the Socket lock}
+var
+ Address:TInAddr;
+ Address6:TIn6Addr;
+ SockAddr6:PSockAddr6;
+ Packet:TPacketFragment;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SendTo');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check for Bound}
+   NetworkSetLastError(WSAEINVAL);
+   if not ASocket.SocketState.LocalAddress then Exit;
+   
+   {Check for Shutdown}
+   NetworkSetLastError(WSAESHUTDOWN);
+   if ASocket.SocketState.CantSendMore then Exit;
+   
+   {Check for Flag MSG_OOB}
+   NetworkSetLastError(WSAEOPNOTSUPP);
+   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
+   
+   {Check Address Family}
+   NetworkSetLastError(WSAEAFNOSUPPORT);
+   case ASocket.Family of
+    AF_INET:begin
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      if ASocket.Family <> AToAddr.sin_family then Exit;
+      
+      {Check size of ToAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AToLength < SizeOf(TSockAddr) then Exit;
+      
+      {Get the RemoteAddress}
+      Address:=InAddrToHost(AToAddr.sin_addr);
+      
+      {Check for Default RemoteAddress}
+      NetworkSetLastError(WSAEDESTADDRREQ);
+      if TIPTransport(ASocket.Transport).CompareDefault(Address) then Exit;
+      
+      {Check for Broadcast RemoteAddress}
+      NetworkSetLastError(WSAEACCES);
+      if TIPTransport(ASocket.Transport).CompareBroadcast(Address) or TIPTransport(ASocket.Transport).CompareDirected(Address) then
+       begin
+        if not ASocket.SocketOptions.Broadcast then Exit;
+       end;
+      
+      {Create the Fragment}
+      Packet.Size:=ALength;
+      Packet.Data:=@ABuffer;
+      Packet.Next:=nil;
+      
+      {Send the Packet}
+      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@Address,0,0,@Packet,ALength,AFlags);
+     end;
+    AF_INET6:begin
+      {Get Socket Address}
+      SockAddr6:=PSockAddr6(@AToAddr);
+      
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      if ASocket.Family <> SockAddr6.sin6_family then Exit;
+      
+      {Check size of ToAddr}
+      NetworkSetLastError(WSAEFAULT);
+      if AToLength < SizeOf(TSockAddr6) then Exit;
+      
+      {Get the RemoteAddress}
+      Address6:=SockAddr6.sin6_addr;
+      
+      {Check for Default RemoteAddress}
+      NetworkSetLastError(WSAEDESTADDRREQ);
+      if TIP6Transport(ASocket.Transport).CompareDefault(Address6) then Exit;
+      
+      {Check for Broadcast RemoteAddress}
+      NetworkSetLastError(WSAEACCES);
+      if TIP6Transport(ASocket.Transport).CompareBroadcast(Address6) or TIP6Transport(ASocket.Transport).CompareDirected(Address6) then
+       begin
+        if not ASocket.SocketOptions.Broadcast then Exit;
+       end;
+      
+      {Create the Fragment}
+      Packet.Size:=ALength;
+      Packet.Data:=@ABuffer;
+      Packet.Next:=nil;
+      
+      {Send the Packet}
+      Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@Address6,0,0,@Packet,ALength,AFlags);
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.SetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer;AOptValue:PChar;AOptLength:Integer):Integer;
+{BSD compatible Set Socket Option}
+{Socket: The socket to set the option for}
+{Level: The protocol level for the option}
+{OptName: The name of the option to set}
+{OptValue: The value of the option}
+{OptLength: The length of the option}
+
+{Note: Caller must hold the Socket lock}
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SetSockOpt');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check Level}
+   case ALevel of
+    SOL_SOCKET:begin
+      {Socket Options Handled on Set}
+      case AOptName of
+       SO_RCVBUF:begin
+         NetworkSetLastError(WSAEFAULT);
+         
+         if AOptLength >= SizeOf(Integer) then
+          begin
+           TRAWSocket(ASocket).RecvData.Size:=PInteger(AOptValue)^;
+          end;
+        end;
+      end;
+      
+      {Pass the call to the socket}
+      Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
+     end;
+    IPPROTO_IP:begin
+      {Check Address Family}
+      NetworkSetLastError(WSAEAFNOSUPPORT);
+      case ASocket.Family of
+       AF_INET:begin
+         {Pass the call to the transport}
+         Result:=TIPTransport(ASocket.Transport).SetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
+        end;
+       AF_INET6:begin
+         {Pass the call to the transport}
+         Result:=TIP6Transport(ASocket.Transport).SetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
+        end;
+      end;
+     end;
+    else
+     begin
+      {Pass the call to the socket}
+      Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Shutdown(ASocket:TProtocolSocket;AHow:Integer):Integer;
+{BSD compatible Shutdown}
+{Socket: The socket to shutdown}
+{How: The direction to shutdown the socket}
+
+{Note: Shutdown does not result in CloseSocket so Closed must not get set}
+{Note: Caller must hold the Socket lock}
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ {$IFDEF RAW_DEBUG} 
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Shutdown');
+ {$ENDIF}
+ 
+ {Check Socket} 
+ if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
+  begin
+   {Check Direction}
+   case AHow of
+    SHUTDOWN_RECV:begin
+      {Shutdown Receive}
+      ASocket.SocketState.CantRecvMore:=True;
+      
+      {Signal the Event}
+      ASocket.SignalChange;
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+    SHUTDOWN_SEND:begin
+      {Shutdown Send}
+      ASocket.SocketState.CantSendMore:=True;
+      
+      {Signal the Event}
+      ASocket.SignalChange;
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+    SHUTDOWN_BOTH:begin
+      {Shutdown Both}
+      ASocket.SocketState.CantRecvMore:=True;
+      ASocket.SocketState.CantSendMore:=True;
+      
+      {Signal the Event}
+      ASocket.SignalChange;
+      
+      {Return Result}
+      NetworkSetLastError(ERROR_SUCCESS);
+      Result:=NO_ERROR;
+     end;
+    else
+     begin
+      NetworkSetLastError(WSAEINVAL);
+     end;
+   end;
+  end
+ else
+  begin
+   {Not Socket}
+   NetworkSetLastError(WSAENOTSOCK);
+  end;
+end;
+
+{==============================================================================}
+
+function TRAWProtocol.Socket(AFamily,AStruct,AProtocol:Integer):TProtocolSocket;
+{BSD compatible Socket (Create a new socket)}
+{Family: Socket address family (eg AF_INET}
+{Struct: Socket type (eg SOCK_DGRAM)}
+{Protocol: Socket protocol (eg IPPROTO_UDP)}
+var
+ Transport:TRAWProtocolTransport;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=TProtocolSocket(INVALID_SOCKET);
+ 
+  {$IFDEF RAW_DEBUG} 
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Socket');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Family = ' + AddressFamilyToString(AFamily));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Struct = ' + SocketTypeToString(AStruct));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Protocol = ' + ProtocolToString(AProtocol));
+  {$ENDIF}
+  
+  {Check Socket Type}
+  NetworkSetLastError(WSAESOCKTNOSUPPORT);
+  if AStruct <> SOCK_RAW then Exit;
+  
+  {Check Address Family}
+  NetworkSetLastError(WSAEAFNOSUPPORT);
+  if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
+
+  {Get Transport}
+  Transport:=TRAWProtocolTransport(GetTransportByFamily(AFamily,True,NETWORK_LOCK_READ));
+  if Transport = nil then Exit;
+  
+  {Create Socket}
+  Result:=TRAWSocket.Create(Self,Transport.Transport);
+  Result.Proto:=AProtocol; {SOCK_RAW accepts any Protocol}
+  
+  {Unlock Transport}
+  Transport.ReaderUnlock;
+  
+  {Acquire Lock}
+  FSockets.WriterLock;
+  try
+   {Add Socket}
+   FSockets.Add(Result);
+  finally 
+   {Release Lock}
+   FSockets.WriterUnlock;
+  end; 
+ finally 
+  ReaderUnlock;
  end; 
 end;
 
@@ -653,8 +2107,8 @@ var
 begin
  {}
  {$IFDEF RAW_DEBUG}
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: FlushSockets');
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  All = ' + BoolToStr(All));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: FlushSockets');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  All = ' + BoolToStr(All));
  {$ENDIF}
   
  {Get Tick Count}
@@ -699,1460 +2153,6 @@ begin
    {Unlock Socket}
    if Current <> nil then Current.ReaderUnlock;
   end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer;
-{Source is the working set to check, Dest is the set passed to Select}
-var
- Count:Integer;
- Socket:TRAWSocket;
-begin
- {}
- Result:=0;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SelectCheck');
- {$ENDIF}
- 
- {Check Dest}
- if ADest = nil then Exit;
- 
- {Check Source}
- if ASource = nil then Exit;
- 
- {Check Code}
- case ACode of
-  SELECT_READ:begin
-    Result:=SOCKET_ERROR;
-    
-    {Get Sockets}
-    for Count:=ASource.fd_count - 1 downto 0 do
-     begin
-      {Get Socket}
-      Socket:=TRAWSocket(ASource.fd_array[Count]);
-      
-      {Check Socket}
-      if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
-      {Check Receive Count}
-      if Socket.RecvData.GetCount > 0 then
-       begin
-        {Check Set}
-        if not FD_ISSET(TSocket(Socket),ADest^) then
-         begin
-          FD_SET(TSocket(Socket),ADest^);
-         end;
-       end;
-     
-      {Unlock Socket} 
-      Socket.ReaderUnlock;
-     end;
-     
-    {Return Result}
-    Result:=ADest.fd_count;
-   end;
-  SELECT_WRITE:begin
-    Result:=SOCKET_ERROR;
-    
-    {Get Sockets}
-    for Count:=ASource.fd_count - 1 downto 0 do
-     begin
-      {Get Socket}
-      Socket:=TRAWSocket(ASource.fd_array[Count]);
-      
-      {Check Socket}
-      if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
-      {Check Set}
-      if not FD_ISSET(TSocket(Socket),ADest^) then
-       begin
-        FD_SET(TSocket(Socket),ADest^);
-       end;
-     
-      {Unlock Socket} 
-      Socket.ReaderUnlock;
-     end;
-     
-    {Return Result}
-    Result:=ADest.fd_count;
-   end;
-  SELECT_ERROR:begin
-    {Return Result}
-    Result:=0;
-   end;
- end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
-{Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
-var
- StartTime:Int64;
- Socket:TRAWSocket;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SelectWait');
- {$ENDIF}
-
- {Get Socket}
- Socket:=TRAWSocket(ASocket);
- 
- {Check Socket}
- if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
- try
-  {Check Code}
-  case ACode of
-   SELECT_READ:begin
-     {Wait for Data}
-     StartTime:=GetTickCount64;
-     while Socket.RecvData.GetCount = 0 do
-      begin
-       {Check Timeout}
-       if ATimeout = 0 then
-        begin
-         {Return Zero}
-         Result:=0;
-         Exit;
-        end
-       else if ATimeout = INFINITE then
-        begin
-         {Wait for Event}
-         if not Socket.WaitChange then
-          begin
-           {Return Error}
-           Result:=SOCKET_ERROR;
-           Exit;
-          end;
-        end
-       else 
-        begin
-         {Wait for Event}
-         if not Socket.WaitChangeEx(ATimeout) then
-          begin
-           {Return Error}
-           Result:=SOCKET_ERROR;
-           Exit;
-          end;
-
-         {Check for Timeout}
-         if GetTickCount64 > (StartTime + ATimeout) then
-          begin
-           {Return Error}
-           Result:=SOCKET_ERROR;
-           Exit;
-          end;
-        end;           
-      end;
-      
-     {Return One}
-     Result:=1; 
-    end;
-   SELECT_WRITE:begin
-     {Return One}
-     Result:=1; 
-    end;
-   SELECT_ERROR:begin
-     {Return Zero}
-     Result:=0;
-    end;
-  end;
- 
- finally
-  {Unlock Socket} 
-  Socket.ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.SendPacket(ASocket:TProtocolSocket;ASource,ADest:Pointer;ASourcePort,ADestPort:Word;APacket:PPacketFragment;ASize,AFlags:Integer):Integer;
-{Send a Packet by adding the Protocol Header and other details to the Data}
-{Socket: The socket to use for sending the packet}
-{Source: The source address of the packet (Host Order)}
-{Dest: The destination address of the packet (Host Order)}
-{SourcePort: The source port of the packet (Host Order)}
-{DestPort: The destination port of the packet (Host Order)}
-{Packet: The packet data to send}
-{Size: The size of the packet data in bytes}
-{Flags: Any protocol specific flags for sending}
-
-{Note: RAW has no Protocol Header so the packet is passed unchanged}
-{Note: Caller must hold the Socket lock}
-var
- Transport:TRAWProtocolTransport;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SendPacket');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Size = ' + IntToStr(ASize));
- {$ENDIF}
- 
- {Check Socket}
- if ASocket = nil then Exit;
- 
- {Check Address Family}
- case ASocket.Family of
-  AF_INET:begin
-    {Get Transport}
-    Transport:=TRAWProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
-    if Transport = nil then Exit;
-  
-    {Send the Packet}
-    Result:=TIPTransport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,APacket,ASize,AFlags);
-    
-    {Unlock Transport}
-    Transport.ReaderUnlock;
-   end;
-  AF_INET6:begin
-    {Get Transport}
-    Transport:=TRAWProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
-    if Transport = nil then Exit;
-
-    {Send the Packet}
-    Result:=TIP6Transport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,APacket,ASize,AFlags);
-    
-    {Unlock Transport}
-    Transport.ReaderUnlock;
-   end;
- end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Accept(ASocket:TProtocolSocket;ASockAddr:PSockAddr;AAddrLength:PInteger):TProtocolSocket;
-{BSD compatible Accept}
-{Socket: The socket to accept from}
-{SockAddr: The socket address (Network Order)}
-{AddrLength: The socket address length}
-
-{Note: SockAddr is returned in Network order}
-{Note: Caller must hold the Socket lock}
-begin
- {}
- Result:=TProtocolSocket(INVALID_SOCKET);
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Accept');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Not supported}
-   SetLastError(WSAEOPNOTSUPP);
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Bind(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;AAddrLength:Integer):Integer;
-{BSD compatible Bind}
-{Sets the LocalAddress for future Sends and Receives, Address can be specified as INADDR_ANY which allows Listening or auto assignment}
-{If Port is IPPORT_ANY then a dynamic Port will be assigned}
-{Socket: The socket to bind}
-{SockAddr: The socket address (Network Order)}
-{AddrLength: The socket address length}
-
-{Note: SockAddr is passed in Network order}
-{Note: Caller must hold the Socket lock}
-var
- SockAddr6:PSockAddr6;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Bind');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check for Connected or Bound}
-   SetLastError(WSAEINVAL);
-   if ASocket.SocketState.Connected then Exit;
-   if ASocket.SocketState.LocalAddress then Exit;
-   
-   {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
-   case ASocket.Family of
-    AF_INET:begin
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      if ASocket.Family <> ASockAddr.sin_family then Exit;
-      
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
-      {Check LocalAddress}
-      if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
-       begin
-        SetLastError(WSAEADDRNOTAVAIL);
-        if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
-       end;
-      
-      {Bind the Socket}
-      ASocket.SocketState.LocalAddress:=True;
-      TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-    AF_INET6:begin
-      {Get Socket Address}
-      SockAddr6:=PSockAddr6(@ASockAddr);
-      
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
-      {Check LocalAddress}
-      if not TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then
-       begin
-        SetLastError(WSAEADDRNOTAVAIL);
-        if TIP6Transport(ASocket.Transport).GetAddressByAddress(SockAddr6.sin6_addr,False,NETWORK_LOCK_NONE) = nil then Exit;
-       end;
-      
-      {Bind the Socket}
-      ASocket.SocketState.LocalAddress:=True;
-      TIP6State(ASocket.TransportState).LocalAddress:=SockAddr6.sin6_addr;
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.CloseSocket(ASocket:TProtocolSocket):Integer;
-{BSD compatible Close Socket}
-{Closes and removes the socket, does not perform Linger}
-{Socket: The socket to close}
-
-{Note: Caller must hold the Socket lock}
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: CloseSocket');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Close Socket}
-   ASocket.SocketState.Closed:=True;
-   ASocket.CloseTime:=GetTickCount64;
-  
-   {Signal the Event}
-   ASocket.SignalChange;
-  
-   {Return Result}
-   SetLastError(ERROR_SUCCESS);
-   Result:=NO_ERROR;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Connect(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;AAddrLength:Integer):Integer;
-{BSD compatible Connect}
-{Sets the RemoteAddress of future Sends and Receives, if Bind has not been called then the
- LocalAddress will be set appropriately as well based on the route to the RemoteAddress}
-{Socket: The socket to connect}
-{SockAddr: The socket address (Network Order)}
-{AddrLength: The socket address length}
-
-{Note: SockAddr is passed in Network order}
-{Note: Caller must hold the Socket lock}
-var
- Route:TRouteEntry;
- Address:TAddressEntry;
- SockAddr6:PSockAddr6;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Connect');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check for Connected}
-   SetLastError(WSAEISCONN);
-   if ASocket.SocketState.Connected then Exit;
-   
-   {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
-   case ASocket.Family of
-    AF_INET:begin
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      if ASocket.Family <> ASockAddr.sin_family then Exit;
-      
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
-      {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
-      if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
-      
-      {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
-      if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then
-       begin
-        if not ASocket.SocketOptions.Broadcast then Exit;
-       end;
-      
-      {Check the Route}
-      SetLastError(WSAENETUNREACH);
-      Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
-      if Route = nil then Exit;
-      try
-       {Check the LocalAddress}
-       SetLastError(WSAEADDRNOTAVAIL);
-       Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
-       if Address = nil then Exit;
-       try
-        {Check the Binding}
-        if not ASocket.SocketState.LocalAddress then
-         begin
-          {Bind the Socket}
-          ASocket.SocketState.LocalAddress:=True;
-          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
-         end;
-      
-        {Check for Default Binding}
-        if TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
-         begin
-          {Set the LocalAddress}
-          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
-         end;
-      
-        {Connect the Socket}
-        ASocket.SocketState.Connected:=True;
-        ASocket.SocketState.RemoteAddress:=True;
-        TIPState(ASocket.TransportState).RemoteAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
-        {Signal the Event}
-        ASocket.SignalChange;
-      
-        {Return Result}
-        SetLastError(ERROR_SUCCESS);
-        Result:=NO_ERROR;
-       finally
-        Address.ReaderUnlock;
-       end;
-      finally
-       Route.ReaderUnlock;
-      end;      
-     end;
-    AF_INET6:begin
-      {Get Socket Address}
-      SockAddr6:=PSockAddr6(@ASockAddr);
-      
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
-      {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
-      if TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then Exit;
-      
-      {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
-      if TIP6Transport(ASocket.Transport).CompareBroadcast(SockAddr6.sin6_addr) or TIP6Transport(ASocket.Transport).CompareDirected(SockAddr6.sin6_addr) then
-       begin
-        if not ASocket.SocketOptions.Broadcast then Exit;
-       end;
-      
-      {Check the Route}
-      SetLastError(WSAENETUNREACH);
-      Route:=TIP6Transport(ASocket.Transport).GetRouteByAddress(SockAddr6.sin6_addr,True,NETWORK_LOCK_READ);
-      if Route = nil then Exit;
-      try
-       {Check the LocalAddress}
-       SetLastError(WSAEADDRNOTAVAIL);
-       Address:=TIP6Transport(ASocket.Transport).GetAddressByAddress(TIP6RouteEntry(Route).Address,True,NETWORK_LOCK_READ);
-       if Address = nil then Exit;
-       try
-        {Check the Binding}
-        if not ASocket.SocketState.LocalAddress then
-         begin
-          {Bind the Address}
-          ASocket.SocketState.LocalAddress:=True;
-          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
-         end;
-         
-        {Check for Default Binding}
-        if TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
-         begin
-          {Set the LocalAddress}
-          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
-         end;
-      
-        {Connect the Socket}
-        ASocket.SocketState.Connected:=True;
-        ASocket.SocketState.RemoteAddress:=True;
-        TIP6State(ASocket.TransportState).RemoteAddress:=SockAddr6.sin6_addr;
-      
-        {Signal the Event}
-        ASocket.SignalChange;
-      
-        {Return Result}
-        SetLastError(ERROR_SUCCESS);
-        Result:=NO_ERROR;
-       finally
-        Address.ReaderUnlock;
-       end;
-      finally
-       Route.ReaderUnlock;
-      end;      
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.IoctlSocket(ASocket:TProtocolSocket;ACmd:DWORD;var AArg:u_long):Integer;
-{BSD compatible IO Control Socket}
-{Socket: The socket to control}
-{Cmd: The socket command}
-{Arg: The command argument}
-
-{Note: Caller must hold the Socket lock}
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: IoctlSocket');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Pass the call to the socket}
-   Result:=ASocket.IoCtl(ACmd,AArg);
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.GetPeerName(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;var AAddrLength:Integer):Integer;
-{BSD compatible Get Peer Name (Remote)}
-{Socket: The socket to get from}
-{SockAddr: The socket address (Network Order)}
-{AddrLength: The socket address length}
-
-{Note: SockAddr is returned in Network order}
-{Note: Caller must hold the Socket lock}
-var
- SockAddr6:PSockAddr6;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: GetPeerName');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check Connected}
-   SetLastError(WSAENOTCONN);
-   if not ASocket.SocketState.Connected then Exit;
-   
-   {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
-   case ASocket.Family of
-    AF_INET:begin
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
-      {Return the Peer Details}
-      ASockAddr.sin_family:=ASocket.Family;
-      ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
-      ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).RemoteAddress);
-      AAddrLength:=SizeOf(TSockAddr);
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-    AF_INET6:begin
-      {Get Socket Address}
-      SockAddr6:=PSockAddr6(@ASockAddr);
-      
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
-      {Return the Peer Details}
-      SockAddr6.sin6_family:=ASocket.Family;
-      SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
-      SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).RemoteAddress;
-      AAddrLength:=SizeOf(TSockAddr6);
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.GetSockName(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;var AAddrLength:Integer):Integer;
-{BSD compatible Get Sock Name (Local)}
-{Socket: The socket to get from}
-{SockAddr: The socket address (Network Order)}
-{AddrLength: The socket address length}
-
-{Note: SockAddr is returned in Network order}
-{Note: Caller must hold the Socket lock}
-var
- SockAddr6:PSockAddr6;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: GetSockName');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check for Bound}
-   SetLastError(WSAEINVAL);
-   if not ASocket.SocketState.LocalAddress then Exit;
-   
-   {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
-   case ASocket.Family of
-    AF_INET:begin
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
-      {Return the Socket Details}
-      ASockAddr.sin_family:=ASocket.Family;
-      ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
-      ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).LocalAddress);
-      AAddrLength:=SizeOf(TSockAddr);
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-    AF_INET6:begin
-      {Get Socket Address}
-      SockAddr6:=PSockAddr6(@ASockAddr);
-      
-      {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
-      if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
-      {Return the Peer Details}
-      SockAddr6.sin6_family:=ASocket.Family;
-      SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
-      SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).LocalAddress;
-      AAddrLength:=SizeOf(TSockAddr6);
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.GetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer;AOptValue:PChar;var AOptLength:Integer):Integer;
-{BSD compatible Get Socket Option}
-{Socket: The socket to get the option from}
-{Level: The protocol level for the option}
-{OptName: The name of the option to get}
-{OptValue: The value of the option}
-{OptLength: The length of the option}
-
-{Note: Caller must hold the Socket lock}
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: GetSockOpt');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check Level}
-   case ALevel of
-    IPPROTO_IP:begin
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      case ASocket.Family of
-       AF_INET:begin
-         {Pass the call to the transport}
-         Result:=TIPTransport(ASocket.Transport).GetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
-        end;
-       AF_INET6:begin
-         {Pass the call to the transport}
-         Result:=TIP6Transport(ASocket.Transport).GetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
-        end;
-      end;
-     end;
-    else
-     begin
-      {Pass the call to the socket}
-      Result:=ASocket.GetOption(ALevel,AOptName,AOptValue,AOptLength);
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Listen(ASocket:TProtocolSocket;ABacklog:Integer):Integer;
-{BSD compatible Listen}
-{Socket: The socket to listen on}
-{Backlog: Queue depth for accepted connections}
-
-{Note: Caller must hold the Socket lock}
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Listen');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Not supported}
-   SetLastError(WSAEOPNOTSUPP);
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Recv(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer):Integer;
-{BSD compatible Receive}
-{Socket: The socket to receive from}
-{Buffer: Buffer for received data}
-{Length: Length of buffer in bytes}
-{Flags: Protocol specific receive flags}
-
-{Note: Caller must hold the Socket lock}
-var
- Size:Integer;
- StartTime:Int64;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Recv');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check for Connected}
-   SetLastError(WSAENOTCONN);
-   if not ASocket.SocketState.Connected then Exit;
-   
-   {Check for Bound}
-   SetLastError(WSAEINVAL);
-   if not ASocket.SocketState.LocalAddress then Exit;
-   
-   {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
-   if ASocket.SocketState.CantRecvMore then Exit;
-   
-   {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
-   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
-   {Wait for Data}
-   StartTime:=GetTickCount64;
-   while TRAWSocket(ASocket).RecvData.GetCount = 0 do
-    begin
-     {Check for Timeout}
-     if ASocket.SocketOptions.RecvTimeout > 0 then
-      begin
-       {Wait for Event}
-       if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end; 
-
-       {Check for Timeout}
-       if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end;
-      end
-     else
-      begin
-       {Wait for Event}
-       if not ASocket.WaitChange then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end; 
-      end;      
-     
-     {Check for Closed}
-     if ASocket.SocketState.Closed then
-      begin
-       Result:=0;
-       Exit;
-      end;
-    end;
-   
-   {Check Size}
-   SetLastError(ERROR_SUCCESS);
-   Size:=TRAWSocket(ASocket).RecvData.GetNext;
-   if Size > ALength then
-    begin
-     SetLastError(WSAEMSGSIZE);
-     Size:=ALength;
-    end;
-   
-   {Read Data}
-   if TRAWSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,nil,AFlags) then
-    begin
-     {Return Size}
-     Result:=Size;
-    end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.RecvFrom(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer;var AFromAddr:TSockAddr;var AFromLength:Integer):Integer;
-{BSD compatible Receive From}
-{Socket: The socket to receive from}
-{Buffer: Buffer for received data}
-{Length: Length of buffer in bytes}
-{Flags: Protocol specific receive flags}
-{FromAddr: The address the data was received from (Network Order)}
-{FromLength: The length of the address}
-
-{Note: SockAddr is returned in Network order}
-{Note: Caller must hold the Socket lock}
-var
- Size:Integer;
- StartTime:Int64;
- SockAddr6:PSockAddr6;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: RecvFrom');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check for Bound}
-   SetLastError(WSAEINVAL);
-   if not ASocket.SocketState.LocalAddress then Exit;
-   
-   {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
-   if ASocket.SocketState.CantRecvMore then Exit;
-   
-   {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
-   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
-   {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
-   case ASocket.Family of
-    AF_INET:begin
-      {Check size of FromAddr}
-      SetLastError(WSAEFAULT);
-      if AFromLength < SizeOf(TSockAddr) then Exit;
-     end;
-    AF_INET6:begin
-      {Get Socket Address}
-      SockAddr6:=PSockAddr6(@AFromAddr);
-      
-      {Check size of FromAddr}
-      SetLastError(WSAEFAULT);
-      if AFromLength < SizeOf(TSockAddr6) then Exit;
-     end;
-    else
-     begin
-      Exit;
-     end;     
-   end;
-   
-   {Wait for Data}
-   StartTime:=GetTickCount64;
-   while TRAWSocket(ASocket).RecvData.GetCount = 0 do
-    begin
-     {Check for Timeout}
-     if ASocket.SocketOptions.RecvTimeout > 0 then
-      begin
-       {Wait for Event}
-       if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end; 
-
-       {Check for Timeout}
-       if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end;
-      end
-     else
-      begin
-       {Wait for Event}
-       if not ASocket.WaitChange then
-        begin
-         SetLastError(WSAECONNABORTED);
-         Exit;
-        end; 
-      end;      
-     
-     {Check for Closed}
-     if ASocket.SocketState.Closed then
-      begin
-       Result:=0;
-       Exit;
-      end;
-    end;
-   
-   {Check Size}
-   SetLastError(ERROR_SUCCESS);
-   Size:=TRAWSocket(ASocket).RecvData.GetNext;
-   if Size > ALength then
-    begin
-     SetLastError(WSAEMSGSIZE);
-     Size:=ALength;
-    end;
-    
-   {Check Address Family}
-   case ASocket.Family of
-    AF_INET:begin
-      {Get Address}
-      AFromAddr.sin_family:=ASocket.Family; 
-      AFromAddr.sin_port:=WordNtoBE(IPPORT_ANY);
-   
-      {Read Data}
-      if TRAWSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@AFromAddr.sin_addr,AFlags) then
-       begin
-        {Get Address}
-        AFromAddr.sin_addr:=InAddrToNetwork(AFromAddr.sin_addr);
-        
-        {Return Size}
-        Result:=Size;
-       end;
-     end;
-    AF_INET6:begin
-      {Get Address}
-      SockAddr6.sin6_family:=ASocket.Family;
-      SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
-      
-      {Read Data}
-      if TRAWSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@SockAddr6.sin6_addr,AFlags) then
-       begin
-        {Return Size}
-        Result:=Size;
-       end;
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Send(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer):Integer;
-{BSD compatible Send}
-{Socket: The socket to send to}
-{Buffer: Buffer for data to send}
-{Length: Length of buffer in bytes}
-{Flags: Protocol specific send flags}
-
-{Note: Caller must hold the Socket lock}
-var
- Packet:TPacketFragment;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Send');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check for Connected}
-   SetLastError(WSAENOTCONN);
-   if not ASocket.SocketState.Connected then Exit;
-   
-   {Check for Bound}
-   SetLastError(WSAEINVAL);
-   if not ASocket.SocketState.LocalAddress then Exit;
-   
-   {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
-   if ASocket.SocketState.CantSendMore then Exit;
-   
-   {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
-   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
-   {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
-   case ASocket.Family of
-    AF_INET:begin
-      {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
-      if TIPTransport(ASocket.Transport).CompareBroadcast(TIPState(ASocket.TransportState).RemoteAddress) or TIPTransport(ASocket.Transport).CompareDirected(TIPState(ASocket.TransportState).RemoteAddress) then
-       begin
-        if not ASocket.SocketOptions.Broadcast then Exit;
-       end;
-      
-      {Create the Fragment}
-      Packet.Size:=ALength;
-      Packet.Data:=@ABuffer;
-      Packet.Next:=nil;
-      
-      {Send the Packet}
-      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@TIPState(ASocket.TransportState).RemoteAddress,0,0,@Packet,ALength,AFlags);
-     end;
-    AF_INET6:begin
-      {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
-      if TIP6Transport(ASocket.Transport).CompareBroadcast(TIP6State(ASocket.TransportState).RemoteAddress) or TIP6Transport(ASocket.Transport).CompareDirected(TIP6State(ASocket.TransportState).RemoteAddress) then
-       begin
-        if not ASocket.SocketOptions.Broadcast then Exit;
-       end;
-      
-      {Create the Fragment}
-      Packet.Size:=ALength;
-      Packet.Data:=@ABuffer;
-      Packet.Next:=nil;
-      
-      {Send the Packet}
-      Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@TIP6State(ASocket.TransportState).RemoteAddress,0,0,@Packet,ALength,AFlags);
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.SendTo(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:Integer;var AToAddr:TSockAddr;AToLength:Integer):Integer;
-{BSD compatible Send To}
-{Socket: The socket to send to}
-{Buffer: Buffer for data to send}
-{Length: Length of buffer in bytes}
-{Flags: Protocol specific send flags}
-{ToAddr: The socket address to send to (Network Order)}
-{ToLength: The length of the socket address}
-
-{Note: SockAddr is passed in Network order}
-{Note: Caller must hold the Socket lock}
-var
- Address:TInAddr;
- Address6:TIn6Addr;
- SockAddr6:PSockAddr6;
- Packet:TPacketFragment;
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SendTo');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check for Bound}
-   SetLastError(WSAEINVAL);
-   if not ASocket.SocketState.LocalAddress then Exit;
-   
-   {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
-   if ASocket.SocketState.CantSendMore then Exit;
-   
-   {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
-   if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
-   {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
-   case ASocket.Family of
-    AF_INET:begin
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      if ASocket.Family <> AToAddr.sin_family then Exit;
-      
-      {Check size of ToAddr}
-      SetLastError(WSAEFAULT);
-      if AToLength < SizeOf(TSockAddr) then Exit;
-      
-      {Get the RemoteAddress}
-      Address:=InAddrToHost(AToAddr.sin_addr);
-      
-      {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
-      if TIPTransport(ASocket.Transport).CompareDefault(Address) then Exit;
-      
-      {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
-      if TIPTransport(ASocket.Transport).CompareBroadcast(Address) or TIPTransport(ASocket.Transport).CompareDirected(Address) then
-       begin
-        if not ASocket.SocketOptions.Broadcast then Exit;
-       end;
-      
-      {Create the Fragment}
-      Packet.Size:=ALength;
-      Packet.Data:=@ABuffer;
-      Packet.Next:=nil;
-      
-      {Send the Packet}
-      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@Address,0,0,@Packet,ALength,AFlags);
-     end;
-    AF_INET6:begin
-      {Get Socket Address}
-      SockAddr6:=PSockAddr6(@AToAddr);
-      
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
-      {Check size of ToAddr}
-      SetLastError(WSAEFAULT);
-      if AToLength < SizeOf(TSockAddr6) then Exit;
-      
-      {Get the RemoteAddress}
-      Address6:=SockAddr6.sin6_addr;
-      
-      {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
-      if TIP6Transport(ASocket.Transport).CompareDefault(Address6) then Exit;
-      
-      {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
-      if TIP6Transport(ASocket.Transport).CompareBroadcast(Address6) or TIP6Transport(ASocket.Transport).CompareDirected(Address6) then
-       begin
-        if not ASocket.SocketOptions.Broadcast then Exit;
-       end;
-      
-      {Create the Fragment}
-      Packet.Size:=ALength;
-      Packet.Data:=@ABuffer;
-      Packet.Next:=nil;
-      
-      {Send the Packet}
-      Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@Address6,0,0,@Packet,ALength,AFlags);
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.SetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer;AOptValue:PChar;AOptLength:Integer):Integer;
-{BSD compatible Set Socket Option}
-{Socket: The socket to set the option for}
-{Level: The protocol level for the option}
-{OptName: The name of the option to set}
-{OptValue: The value of the option}
-{OptLength: The length of the option}
-
-{Note: Caller must hold the Socket lock}
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: SetSockOpt');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check Level}
-   case ALevel of
-    SOL_SOCKET:begin
-      {Socket Options Handled on Set}
-      case AOptName of
-       SO_RCVBUF:begin
-         SetLastError(WSAEFAULT);
-         
-         if AOptLength >= SizeOf(Integer) then
-          begin
-           TRAWSocket(ASocket).RecvData.Size:=PInteger(AOptValue)^;
-          end;
-        end;
-      end;
-      
-      {Pass the call to the socket}
-      Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
-     end;
-    IPPROTO_IP:begin
-      {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
-      case ASocket.Family of
-       AF_INET:begin
-         {Pass the call to the transport}
-         Result:=TIPTransport(ASocket.Transport).SetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
-        end;
-       AF_INET6:begin
-         {Pass the call to the transport}
-         Result:=TIP6Transport(ASocket.Transport).SetSockOpt(ASocket,ALevel,AOptName,AOptValue,AOptLength);
-        end;
-      end;
-     end;
-    else
-     begin
-      {Pass the call to the socket}
-      Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Shutdown(ASocket:TProtocolSocket;AHow:Integer):Integer;
-{BSD compatible Shutdown}
-{Socket: The socket to shutdown}
-{How: The direction to shutdown the socket}
-
-{Note: Shutdown does not result in CloseSocket so Closed must not get set}
-{Note: Caller must hold the Socket lock}
-begin
- {}
- Result:=SOCKET_ERROR;
- 
- {$IFDEF RAW_DEBUG} 
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Shutdown');
- {$ENDIF}
- 
- {Check Socket} 
- if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
-  begin
-   {Check Direction}
-   case AHow of
-    SHUTDOWN_RECV:begin
-      {Shutdown Receive}
-      ASocket.SocketState.CantRecvMore:=True;
-      
-      {Signal the Event}
-      ASocket.SignalChange;
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-    SHUTDOWN_SEND:begin
-      {Shutdown Send}
-      ASocket.SocketState.CantSendMore:=True;
-      
-      {Signal the Event}
-      ASocket.SignalChange;
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-    SHUTDOWN_BOTH:begin
-      {Shutdown Both}
-      ASocket.SocketState.CantRecvMore:=True;
-      ASocket.SocketState.CantSendMore:=True;
-      
-      {Signal the Event}
-      ASocket.SignalChange;
-      
-      {Return Result}
-      SetLastError(ERROR_SUCCESS);
-      Result:=NO_ERROR;
-     end;
-    else
-     begin
-      SetLastError(WSAEINVAL);
-     end;
-   end;
-  end
- else
-  begin
-   {Not Socket}
-   SetLastError(WSAENOTSOCK);
-  end;
-end;
-
-{==============================================================================}
-
-function TRAWProtocol.Socket(AFamily,AStruct,AProtocol:Integer):TProtocolSocket;
-{BSD compatible Socket (Create a new socket)}
-{Family: Socket address family (eg AF_INET}
-{Struct: Socket type (eg SOCK_DGRAM)}
-{Protocol: Socket protocol (eg IPPROTO_UDP)}
-var
- Transport:TRAWProtocolTransport;
-begin
- {}
- ReaderLock;
- try
-  Result:=TProtocolSocket(INVALID_SOCKET);
- 
-  {$IFDEF RAW_DEBUG} 
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW: Socket');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Family = ' + AddressFamilyToString(AFamily));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Struct = ' + SocketTypeToString(AStruct));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RAW:  Protocol = ' + ProtocolToString(AProtocol));
-  {$ENDIF}
-  
-  {Check Socket Type}
-  SetLastError(WSAESOCKTNOSUPPORT);
-  if AStruct <> SOCK_RAW then Exit;
-  
-  {Check Address Family}
-  SetLastError(WSAEAFNOSUPPORT);
-  if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
-
-  {Get Transport}
-  Transport:=TRAWProtocolTransport(GetTransportByFamily(AFamily,True,NETWORK_LOCK_READ));
-  if Transport = nil then Exit;
-  
-  {Create Socket}
-  Result:=TRAWSocket.Create(Self,Transport.Transport);
-  Result.Proto:=AProtocol; {SOCK_RAW accepts any Protocol}
-  
-  {Unlock Transport}
-  Transport.ReaderUnlock;
-  
-  {Acquire Lock}
-  FSockets.WriterLock;
-  try
-   {Add Socket}
-   FSockets.Add(Result);
-  finally 
-   {Release Lock}
-   FSockets.WriterUnlock;
-  end; 
- finally 
-  ReaderUnlock;
- end; 
 end;
 
 {==============================================================================}
@@ -2357,20 +2357,20 @@ begin
   {$ENDIF}
   
   {Check Commmand}
-  SetLastError(WSAEINVAL);
+  NetworkSetLastError(WSAEINVAL);
   case ACommand of
    FIONREAD:begin
      AArgument:=RecvData.GetNext;
 
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIONBIO:begin
      SocketState.NonBlocking:=(AArgument <> 0);
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
   end;
@@ -2809,13 +2809,7 @@ end;
 function TRAWBuffer.GetCount:LongWord;
 begin
  {}
- Result:=0;
- 
- if not AcquireLock then Exit;
-
  Result:=FCount;
-
- ReleaseLock;
 end;
 
 {==============================================================================}

@@ -113,7 +113,7 @@ type
   Device:TDevice;                                 {The Device entry for this Video device}
   {Video Properties}
   VideoId:LongWord;                               {Unique Id of this Video device in the Video device table}
-  VideoState:LongWord;                            {Video dveice state (eg VIDEO_STATE_ENABLED)}
+  VideoState:LongWord;                            {Video device state (eg VIDEO_STATE_ENABLED)}
   //To Do
   DeviceGetProperties:TVideoDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing the standard Video device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
@@ -440,7 +440,7 @@ end;
 {==============================================================================}
 
 function VideoDeviceDeregister(Video:PVideoDevice):LongWord;
-{Deregister an Video device from the Video device table}
+{Deregister a Video device from the Video device table}
 var
  Prev:PVideoDevice;
  Next:PVideoDevice;

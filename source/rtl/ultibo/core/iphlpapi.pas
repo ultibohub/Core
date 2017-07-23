@@ -1,7 +1,7 @@
 {
 Ultibo IP Helper interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2017 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -27,10 +27,15 @@ Credits
 References
 ==========
 
+ IP Helper Functions - https://msdn.microsoft.com/en-us/library/windows/desktop/aa366071(v=vs.85).aspx
 
 IP Helper
 =========
 
+ This unit provides a subset of the Windows IP Helper API functions for querying and managing configuration
+ of the TCP/IP transport and associated protocols.
+ 
+ Not all functions are currently implemented, more will be added as they are required.
  
 }
 
@@ -42,7 +47,7 @@ unit Iphlpapi;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Winsock2;
+uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Winsock2;
 
 {==============================================================================}
 {Global definitions}
@@ -564,46 +569,143 @@ implementation
 
 {==============================================================================}
 {==============================================================================}
-{var}
+var
  {IP Helper specific variables}
-
+ IPHelperStarted:Boolean;
+ 
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
+function IPHelperStart:Boolean;
+{Initialize and start the Winsock2 provider}
+
+{Note: Only called internally by IP Helper functions}
+var
+ WSAData:TWSAData;
+begin
+ {}
+ if not IPHelperStarted then
+  begin
+   FillChar(WSAData,SizeOf(TWSAData),0);
+   if WSAStartup(WINSOCK_VERSION,WSAData) = ERROR_SUCCESS then
+    begin
+     IPHelperStarted:=True;
+    end;
+  end;
+  
+ Result:=IPHelperStarted;
+end;
+
+{==============================================================================}
+
+function IPHelperStop:Boolean;
+{Terminate and stop the Winsock2 provider}
+
+{Note: Only called internally by IP Helper functions}
+begin
+ {}
+ if IPHelperStarted then
+  begin
+   if WSACleanup = ERROR_SUCCESS then
+    begin
+     IPHelperStarted:=False;
+    end;
+  end;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Helper Functions}
+function IPHelperConvertError(Status:Integer):DWORD;
+{Convert a Winsock2 error to an error code}
+begin
+ {}
+ case Status of
+  WSAEINVAL:Result:=ERROR_INVALID_PARAMETER;
+  WSANOTINITIALISED:Result:=ERROR_NOT_READY;
+  WSAEPROTONOSUPPORT:Result:=ERROR_NOT_SUPPORTED;
+  WSAEOPNOTSUPP:Result:=ERROR_NOT_SUPPORTED;
+  WSAENOBUFS:Result:=ERROR_INSUFFICIENT_BUFFER;
+  WSAEADDRNOTAVAIL:Result:=ERROR_INVALID_DATA;
+  WSAENOTSOCK:Result:=ERROR_NOT_FOUND
+ else
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+  end;
+ end;
+end;
 
 {==============================================================================}
 {==============================================================================}
 {IP Helper Functions}
 function GetNumberOfInterfaces(var pdwNumIf: DWORD): DWORD;
+var
+ Size:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(DWORD);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETNUMBEROFINTERFACES,@pdwNumIf,Size,@pdwNumIf,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetIfEntry(pIfRow: PMIB_IFROW): DWORD;
+var
+ Size:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IFROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETIFENTRY,pIfRow,Size,pIfRow,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetIfTable(pIfTable: PMIB_IFTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
 var
- WSAData:TWSAData;
+ Required:DWORD;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
-   Result:=WsControlEx(IPPROTO_IP,WSA_GETIFTABLE,pIfTable,pdwSize,pIfTable,pdwSize);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_GETIFTABLE,pIfTable,pdwSize,pIfTable,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
+      
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
@@ -611,119 +713,307 @@ end;
 
 function GetIpAddrTable(pIpAddrTable: PMIB_IPADDRTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
 var
- WSAData:TWSAData;
+ Required:DWORD;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
-   Result:=WsControlEx(IPPROTO_IP,WSA_GETIPADDRTABLE,pIpAddrTable,pdwSize,pIpAddrTable,pdwSize);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_GETIPADDRTABLE,pIpAddrTable,pdwSize,pIpAddrTable,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
 {==============================================================================}
 
 function GetIpNetTable(pIpNetTable: PMIB_IPNETTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+var
+ Required:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   if WsControlEx(IPPROTO_IP,WSA_GETIPNETTABLE,pIpNetTable,pdwSize,pIpNetTable,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetIpForwardTable(pIpForwardTable: PMIB_IPFORWARDTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+var
+ Required:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   if WsControlEx(IPPROTO_IP,WSA_GETIPFORWARDTABLE,pIpForwardTable,pdwSize,pIpForwardTable,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetTcpTable(pTcpTable: PMIB_TCPTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+var
+ Required:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   if WsControlEx(IPPROTO_IP,WSA_GETTCPTABLE,pTcpTable,pdwSize,pTcpTable,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetUdpTable(pUdpTable: PMIB_UDPTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+var
+ Required:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   if WsControlEx(IPPROTO_IP,WSA_GETUDPTABLE,pUdpTable,pdwSize,pUdpTable,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetIpStatistics(var pStats: MIB_IPSTATS): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IPSTATS);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETIPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetIcmpStatistics(var pStats: MIB_ICMP): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_ICMP);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETICMPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetTcpStatistics(var pStats: MIB_TCPSTATS): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented} 
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_TCPSTATS);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETTCPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetUdpStatistics(var pStats: MIB_UDPSTATS): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_UDPSTATS);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETUDPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function SetIfEntry(const pIfRow: MIB_IFROW): DWORD;
+var
+ Size:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IFROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_SETIFENTRY,@pIfRow,Size,@pIfRow,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function CreateIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+var
+ Size:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IPFORWARDROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_CREATEIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function SetIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+var
+ Size:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IPFORWARDROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_SETIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function DeleteIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+var
+ Size:DWORD;
 begin
  {}
- Result:=NO_ERROR;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IPFORWARDROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_DELETEIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
@@ -731,18 +1021,22 @@ end;
 function SetIpStatistics(const pIpStats: MIB_IPSTATS): DWORD;
 var
  Size:DWORD;
- WSAData:TWSAData;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPSTATS);
    
-   Result:=WsControlEx(IPPROTO_IP,WSA_SETIPSTATISTICS,@pIpStats,Size,@pIpStats,Size);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_SETIPSTATISTICS,@pIpStats,Size,@pIpStats,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
@@ -751,51 +1045,119 @@ end;
 function SetIpTTL(nTTL: UINT): DWORD;
 var
  Size:DWORD;
- WSAData:TWSAData;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
    Size:=SizeOf(UINT);
    
-   Result:=WsControlEx(IPPROTO_IP,WSA_SETIPTTL,@nTTL,Size,@nTTL,Size);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_SETIPTTL,@nTTL,Size,@nTTL,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
 {==============================================================================}
 
 function CreateIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IPNETROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_CREATEIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function SetIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IPNETROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_SETIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function DeleteIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_IPNETROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_DELETEIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function FlushIpNetTable(dwIfIndex: DWORD): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(DWORD);
+   
+   if WsControlEx(IPPROTO_IP,WSA_FLUSHIPNETTABLE,@dwIfIndex,Size,@dwIfIndex,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
@@ -817,25 +1179,47 @@ end;
 {==============================================================================}
 
 function SetTcpEntry(const pTcpRow: MIB_TCPROW): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(MIB_TCPROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_SETTCPENTRY,@pTcpRow,Size,@pTcpRow,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetInterfaceInfo(pIfTable: PIP_INTERFACE_INFO; var dwOutBufLen: DWORD): DWORD;
 var
- WSAData:TWSAData;
+ Required:DWORD;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
-   Result:=WsControlEx(IPPROTO_IP,WSA_GETINTERFACEINFO,pIfTable,dwOutBufLen,pIfTable,dwOutBufLen);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_GETINTERFACEINFO,pIfTable,dwOutBufLen,pIfTable,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then dwOutBufLen:=Required;
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
@@ -850,17 +1234,55 @@ end;
 {==============================================================================}
 
 function GetBestInterface(dwDestAddr: IPAddr; var pdwBestIfIndex: DWORD): DWORD;
+var 
+ DestSize:DWORD;
+ IndexSize:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   DestSize:=SizeOf(IPAddr);
+   IndexSize:=SizeOf(DWORD);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETBESTINTERFACE,@dwDestAddr,DestSize,@pdwBestIfIndex,IndexSize) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetBestRoute(dwDestAddr, dwSourceAddr: DWORD; pBestRoute: PMIB_IPFORWARDROW): DWORD;
+var 
+ DestSize:DWORD;
+ SourceSize:DWORD;
+ RouteSize:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   DestSize:=SizeOf(DWORD);
+   SourceSize:=SizeOf(DWORD);
+   RouteSize:=SizeOf(MIB_IPFORWARDROW);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETBESTROUTE,@dwDestAddr,DestSize,pBestRoute,RouteSize) <> NO_ERROR then //To Do //dwSourceAddr ? //Pass a structure
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
@@ -882,42 +1304,79 @@ end;
 {==============================================================================}
 
 function GetAdapterIndex(AdapterName: LPWSTR; var IfIndex: DWORD): DWORD;
+var
+ NameSize:DWORD;
+ IndexSize:DWORD;
 begin
  {}
- Result:=ERROR_INVALID_FUNCTION;
- //To Do
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   NameSize:=StrLen(AdapterName);
+   IndexSize:=SizeOf(DWORD);
+  
+   if WsControlEx(IPPROTO_IP,WSA_GETADAPTERINDEX,AdapterName,NameSize,@IfIndex,IndexSize) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function AddIPAddress(Address: IPAddr; IpMask: IPMask; IfIndex: DWORD; var NTEContext, NTEInstance: DWORD): DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   //if WsControlEx(IPPROTO_IP,WSA_ADDIPADDRESS ) <> NO_ERROR then //To Do //Pass and return a MIB_IPADDRROW
+
+   //Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function DeleteIPAddress(NTEContext: DWORD): DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   //if WsControlEx(IPPROTO_IP,WSA_DELETEIPADDRESS ) <> NO_ERROR then //To Do //NTEContext will be a handle to the Binding
+
+   //Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetNetworkParams(pFixedInfo: PFIXED_INFO; var pOutBufLen: DWORD): DWORD;
 var
- WSAData:TWSAData;
+ Required:DWORD;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
-   Result:=WsControlEx(IPPROTO_IP,WSA_GETNETWORKPARAMS,pFixedInfo,pOutBufLen,pFixedInfo,pOutBufLen);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_GETNETWORKPARAMS,pFixedInfo,pOutBufLen,pFixedInfo,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
@@ -925,25 +1384,50 @@ end;
 
 function GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO; var pOutBufLen: DWORD): DWORD;
 var
- WSAData:TWSAData;
+ Required:DWORD;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
-   Result:=WsControlEx(IPPROTO_IP,WSA_GETADAPTERSINFO,pAdapterInfo,pOutBufLen,pAdapterInfo,pOutBufLen);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_GETADAPTERSINFO,pAdapterInfo,pOutBufLen,pAdapterInfo,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
 {==============================================================================}
 
 function GetPerAdapterInfo(IfIndex: DWORD; pPerAdapterInfo: PIP_PER_ADAPTER_INFO; var pOutBufLen: DWORD): DWORD;
+var
+ Size:DWORD;
+ Required:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(DWORD);
+   Required:=pOutBufLen;
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETPERADAPTERINFO,@IfIndex,Size,pPerAdapterInfo,Required) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
@@ -951,18 +1435,22 @@ end;
 function IpReleaseAddress(const AdapterInfo: IP_ADAPTER_INDEX_MAP): DWORD;
 var
  Size:DWORD;
- WSAData:TWSAData;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
    Size:=SizeOf(IP_ADAPTER_INDEX_MAP);
    
-   Result:=WsControlEx(IPPROTO_IP,WSA_IPRELEASEADDRESS,@AdapterInfo,Size,@AdapterInfo,Size);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_IPRELEASEADDRESS,@AdapterInfo,Size,@AdapterInfo,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
@@ -971,18 +1459,22 @@ end;
 function IpRenewAddress(const AdapterInfo: IP_ADAPTER_INDEX_MAP): DWORD;
 var
  Size:DWORD;
- WSAData:TWSAData;
 begin
  {}
- FillChar(WSAData,SizeOf(TWSAData),0);
- Result:=WSAStartup(WINSOCK_VERSION,WSAData);
- if Result = ERROR_SUCCESS then
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
   begin
    Size:=SizeOf(IP_ADAPTER_INDEX_MAP);
    
-   Result:=WsControlEx(IPPROTO_IP,WSA_IPRENEWADDRESS,@AdapterInfo,Size,@AdapterInfo,Size);
-   
-   WSACleanup;
+   if WsControlEx(IPPROTO_IP,WSA_IPRENEWADDRESS,@AdapterInfo,Size,@AdapterInfo,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+    
+   Result:=ERROR_SUCCESS;
   end;
 end;
 
@@ -990,52 +1482,118 @@ end;
 
 function SendARP(const DestIP, SrcIP: IPAddr; pMacAddr: PDWORD; var PhyAddrLen: DWORD): DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   //if WsControlEx(IPPROTO_IP,WSA_SENDARP ) <> NO_ERROR then //To Do //Pass and return a structure
+
+   //Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function GetRTTAndHopCount(DestIpAddress: IPAddr; var HopCount: DWORD; MaxHops: DWORD; var RTT: DWORD): BOOL;
 begin
- {Not Implemented}
+ {}
  Result:=False;
+ 
+ if IPHelperStart then
+  begin
+   //if WsControlEx(IPPROTO_IP,WSA_GETRTTANDHOPCOUNT ) <> NO_ERROR then //To Do //Pass and return a structure
+
+   //Result:=True;
+  end;
 end;
 
 {==============================================================================}
 
 function GetFriendlyIfIndex(IfIndex: DWORD): DWORD;
+var
+ Size:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   Size:=SizeOf(DWORD);
+   
+   if WsControlEx(IPPROTO_IP,WSA_GETFRIENDLYIFINDEX,@IfIndex,Size,@IfIndex,Size) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function EnableRouter(var pHandle: THandle; pOverlapped: POVERLAPPED): DWORD;
+var
+ HandleSize:DWORD;
+ OverlappedSize:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   HandleSize:=SizeOf(THandle);
+   OverlappedSize:=SizeOf(OVERLAPPED);
+   
+   if WsControlEx(IPPROTO_IP,WSA_ENABLEROUTER,@pHandle,HandleSize,pOverlapped,OverlappedSize) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 
 function UnenableRouter(pOverlapped: POVERLAPPED; lpdwEnableCount: LPDWORD): DWORD;
+var
+ OverlappedSize:DWORD;
+ EnableCountSize:DWORD;
 begin
- {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ {}
+ Result:=ERROR_NOT_READY;
+ 
+ if IPHelperStart then
+  begin
+   OverlappedSize:=SizeOf(OVERLAPPED);
+   EnableCountSize:=SizeOf(DWORD);
+  
+   if WsControlEx(IPPROTO_IP,WSA_UNENABLEROUTER,pOverlapped,OverlappedSize,lpdwEnableCount,EnableCountSize) <> NO_ERROR then
+    begin
+     Result:=IPHelperConvertError(WSAGetLastError);
+     
+     Exit;
+    end;
+
+   Result:=ERROR_SUCCESS;
+  end;
 end;
 
 {==============================================================================}
 {==============================================================================}
 
-initialization
+{initialization}
  {Nothing}
 
 {==============================================================================}
  
 finalization
- {Nothing}
+ IPHelperStop;
 
 {==============================================================================}
 {==============================================================================}

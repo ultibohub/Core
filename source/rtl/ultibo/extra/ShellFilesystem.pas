@@ -4152,22 +4152,26 @@ begin
        {Check Existing}
        if FileSysDriver.FileExists(Path + Name) then
         begin
-         {Open File}
-         FileStream:=TFSFileStream.Create(Path + Name,fmOpenRead or fmShareDenyNone);
          try
-          {Load Lines}
-          Lines:=TStringList.Create;
+          {Open File}
+          FileStream:=TFSFileStream.Create(Path + Name,fmOpenRead or fmShareDenyNone);
           try
-           Lines.LoadFromStream(FileStream);
-           for Count:=0 to Lines.Count - 1 do
-            begin
-             AShell.DoOutput(ASession,Lines.Strings[Count]);
-            end;
+           {Load Lines}
+           Lines:=TStringList.Create;
+           try
+            Lines.LoadFromStream(FileStream);
+            for Count:=0 to Lines.Count - 1 do
+             begin
+              AShell.DoOutput(ASession,Lines.Strings[Count]);
+             end;
+           finally
+            Lines.Free;
+           end;
           finally
-           Lines.Free;
+           FileStream.Free;
           end;
-         finally
-          FileStream.Free;
+         except
+          AShell.DoOutput(ASession,'Failed to open file - ' + Name);
          end;
         end
        else

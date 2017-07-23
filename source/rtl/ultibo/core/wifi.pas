@@ -1041,7 +1041,7 @@ const
  {Extended Channel Switching capability to be set in the 1st byte of the WLAN_EID_EXT_CAPABILITY information element}
  WLAN_EXT_CAPA1_EXT_CHANNEL_SWITCHING    = (1 shl 2);
 
- {TDLS capabilities in the the 4th byte of WLAN_EID_EXT_CAPABILITY}
+ {TDLS capabilities in the 4th byte of WLAN_EID_EXT_CAPABILITY}
  WLAN_EXT_CAPA4_TDLS_BUFFER_STA          = (1 shl 4);
  WLAN_EXT_CAPA4_TDLS_PEER_PSM            = (1 shl 5);
  WLAN_EXT_CAPA4_TDLS_CHAN_SWITCH         = (1 shl 6);
@@ -1332,7 +1332,7 @@ const
  WIFI_FEATURE_SK_TX_STATUS               = (1 shl 0); {This driver supports reflecting back TX status to the socket error queue when requested with the socket option}
  WIFI_FEATURE_HT_IBSS                    = (1 shl 1); {This driver supports IBSS with HT datarates}
  WIFI_FEATURE_INACTIVITY_TIMER           = (1 shl 2); {This driver takes care of freeing up the connected inactive stations in AP mode}
- WIFI_FEATURE_CELL_BASE_REG_HINTS        = (1 shl 3); {This driver has been tested to work properly to suppport receiving regulatory hints from cellular base stations}
+ WIFI_FEATURE_CELL_BASE_REG_HINTS        = (1 shl 3); {This driver has been tested to work properly to support receiving regulatory hints from cellular base stations}
  WIFI_FEATURE_P2P_DEVICE_NEEDS_CHANNEL   = (1 shl 4); {(no longer available, only here to reserve the value for API/ABI compatibility)}
  WIFI_FEATURE_SAE                        = (1 shl 5); {This driver supports simultaneous authentication of equals (SAE) with user space SME (NL80211_CMD_AUTHENTICATE) in station mode}
  WIFI_FEATURE_LOW_PRIORITY_SCAN          = (1 shl 6); {This driver supports low priority scan}
@@ -2055,7 +2055,7 @@ type
   MinDataRate:LongWord; {LE32}
   MeanDataRate:LongWord; {LE32}
   PeakDataRate:LongWord; {LE32}
-  MaxBurstRize:LongWord; {LE32}
+  MaxBurstSize:LongWord; {LE32}
   DelayBound:LongWord; {LE32}
   MinPhyRate:LongWord; {LE32}
   SBA:Word; {LE16}
@@ -2128,7 +2128,7 @@ type
  TIEEE80211BSSConfiguration = record  {From Linux mac80211.h ieee80211_bss_conf}
   BSSID:PByte;                 {The BSSID for this BSS}
   {Association related}        
-  Associated:LongBool;         {Sssociation status}
+  Associated:LongBool;         {Association status}
   IBSSJoined:LongBool;         {Indicates whether this station is part of an IBSS or not}
   IBSSCreator:LongBool;        {Indicates if a new IBSS network is being created}
   AssociationID:Word;          {Association ID number, valid only when Associated is true}
@@ -2384,7 +2384,7 @@ type
    {Inherited Methods}
 
   public
-   {}
+   {Public Methods}
    function AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle; override;
    function RemoveTransport(AHandle:THandle;APacketType:Word):Boolean; override;
 
@@ -3252,7 +3252,7 @@ begin
   if NetworkDeviceOpen(FDevice) = ERROR_SUCCESS then
    begin
     {Default Flags (Configure all)}
-    ConfigurationFlags:=not(0);
+    ConfigurationFlags:=LongWord(not(0));
     
     {Copy Permanent Address} //To Do //Check for Address is zero (Default) (To allow specifying from config)
     System.Move(PWiFiDevice(FDevice).PermanentAddress,PWiFiDevice(FDevice).Interrface.Address,SizeOf(THardwareAddress));

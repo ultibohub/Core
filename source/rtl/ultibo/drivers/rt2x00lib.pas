@@ -372,7 +372,7 @@ type
   
   {VGC levels}
   VGCLevel:Byte;           {Driver will tune the VGC level during each call to the link tuner callback function}
-  VGCLevelRegister:Byte;   {The vgc_level is is determined based on the link quality statistics like average RSSI and the false CCA count}
+  VGCLevelRegister:Byte;   {The vgc_level is determined based on the link quality statistics like average RSSI and the false CCA count}
   
   RXSuccess:LongWord;      {Statistics required for Signal quality calculation}
   RXFailed:LongWord; 

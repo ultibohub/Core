@@ -42,7 +42,7 @@ GPIO Devices
  a structure which describes the number of pins as well as minimum and maximum pin numbers along
  with a set of flags that indicate what functionality is supported by the device.
  
- Multiple GPIO devices can be accomodated, each one is registered with this unit when the driver
+ Multiple GPIO devices can be accommodated, each one is registered with this unit when the driver
  for the device is loaded and initialized. This unit includes functions for enumerating the devices
  that are available and each function takes a GPIODevice parameter to allow specifying the exact
  device to control.

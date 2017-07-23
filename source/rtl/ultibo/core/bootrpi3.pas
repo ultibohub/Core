@@ -69,6 +69,10 @@ References
  
   https://github.com/slp/rpi2-hyp-boot/blob/master/rpi2-hyp-boot.S
     
+ Raspberry Pi Boot Stubs 
+ 
+  https://github.com/raspberrypi/tools/tree/master/armstubs
+  
 Raspberry Pi 3
 ==============
 
@@ -232,7 +236,7 @@ implementation
 {Boot Functions}
 procedure Startup; assembler; nostackframe; [public, alias: '_START'];
 {Entry point of Ultibo on Raspberry Pi 3, this will be the very first byte executed
- and will be loaded by the GPU at address 0x00008000}
+ and will be loaded by the GPU at address 0x00008000 (or 0x00080000 in 64-bit mode)}
 {$IFDEF CPUARM}
 asm
  //Save the pointer to the ARM Tags that the bootloader should have passed
@@ -529,7 +533,7 @@ asm
  //Register to simplify memory access routines from Pascal code.
  //
  //This would normally occur in CPUInit but is done here to allow
- //calls to Pascal code for during initialization. (Always enabled in ARMv8)
+ //calls to Pascal code during initialization. (Always enabled in ARMv8)
  //mrc p15, #0, r0, cr1, cr0, #0
  //orr r0, #ARMV8_CP15_C1_U_BIT
  //mcr p15, #0, r0, cr1, cr0, #0

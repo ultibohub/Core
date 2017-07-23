@@ -946,7 +946,7 @@ begin
           {Update Count}
           Inc(Count);
             
-          {Upate Size and Offset}
+          {Update Size and Offset}
           Dec(Size,SizeOf(TKeyboardData));
           Inc(Offset,SizeOf(TKeyboardData));
          finally
@@ -1054,7 +1054,7 @@ begin
         {Update Count}
         Dec(Count);
         
-        {Upate Size and Offset}
+        {Update Size and Offset}
         Dec(Size,SizeOf(TKeyboardData));
         Inc(Offset,SizeOf(TKeyboardData));
         
@@ -1247,7 +1247,7 @@ begin
           {Update Count}
           Inc(Count);
           
-          {Upate Size and Offset}
+          {Update Size and Offset}
           Dec(Size,SizeOf(TKeyboardData));
           Inc(Offset,SizeOf(TKeyboardData));
          finally
@@ -2087,6 +2087,7 @@ begin
    {Get Next Key}
    Status:=KeyboardRead(@Data,SizeOf(TKeyboardData),Count);
   end;
+  
  if Status <> ERROR_SUCCESS then 
   begin
    ACh:=#0;
@@ -2138,6 +2139,7 @@ begin
    {Get Next Key}
    Status:=KeyboardRead(@Data,SizeOf(TKeyboardData),Count);
   end;
+  
  if Status <> ERROR_SUCCESS then 
   begin
    ACh:=#0;
@@ -2209,7 +2211,7 @@ begin
         {Update Count}
         Inc(Count);
           
-        {Upate Size and Offset}
+        {Update Size and Offset}
         Dec(Size,SizeOf(TKeyboardData));
         Inc(Offset,SizeOf(TKeyboardData));
        finally

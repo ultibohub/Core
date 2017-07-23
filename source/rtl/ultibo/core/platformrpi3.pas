@@ -364,8 +364,10 @@ function RPi3FramebufferSetVsync:LongWord;
 function RPi3FramebufferSetBacklight(Brightness:LongWord):LongWord;
 
 function RPi3TouchGetBuffer(var Address:LongWord):LongWord;
+function RPi3TouchSetBuffer(Address:PtrUInt):LongWord;
 
 function RPi3VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
+function RPi3VirtualGPIOSetBuffer(Address:PtrUInt):LongWord;
 
 function RPi3CursorSetDefault:LongWord;
 function RPi3CursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
@@ -779,6 +781,7 @@ begin
  
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPi3TouchGetBuffer;
+ TouchSetBufferHandler:=RPi3TouchSetBuffer;
  
  {Register Platform Cursor Handlers}
  CursorSetDefaultHandler:=RPi3CursorSetDefault;
@@ -957,7 +960,7 @@ asm
  //Register to simplify memory access routines from Pascal code.
  //
  //This would normally occur in CPUInit but is done here to allow
- //calls to Pascal code for during initialization. (Always enabled in ARMv8)
+ //calls to Pascal code during initialization. (Always enabled in ARMv8)
  //mrc p15, #0, r0, cr1, cr0, #0
  //orr r0, #ARMV8_CP15_C1_U_BIT
  //mcr p15, #0, r0, cr1, cr0, #0
@@ -1437,6 +1440,12 @@ begin
   begin
    FIQLocalEnabled[Count]:=0;
   end;
+  
+ {Clear Interrupt Enabled}
+ InterruptRegisters.FIQ_control:=0;
+ InterruptRegisters.Disable_IRQs_1:=$FFFFFFFF;
+ InterruptRegisters.Disable_IRQs_2:=$FFFFFFFF;
+ InterruptRegisters.Disable_Basic_IRQs:=$FFFFFFFF;
 end;
 
 {==============================================================================}
@@ -7187,6 +7196,12 @@ end;
 
 function RPi3TouchGetBuffer(var Address:LongWord):LongWord;
 {Get the Touchscreen buffer from the Mailbox property tags channel}
+
+{Note: On current firmware versions calling TouchGetBuffer will allocate a buffer
+       from GPU memory and render subsequent calls to TouchSetBuffer ineffective.
+       
+       After an intial call to TouchSetBuffer calls to TouchGetBuffer will always
+       return the CPU allocated buffer}
 var
  Size:LongWord;
  Response:LongWord;
@@ -7234,6 +7249,61 @@ begin
   Address:=Tag.Response.Address;
   
   Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3TouchSetBuffer(Address:PtrUInt):LongWord;
+{Set the Touchscreen buffer in the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetTouch;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetTouch) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagSetTouch(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_TOUCHBUF;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetTouch) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.Address:=Address;
+ 
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetTouch)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('TouchSetBuffer - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  Result:=Tag.Response.Status;
  finally
   FreeMem(Header);
  end;
@@ -7297,6 +7367,61 @@ end;
 
 {==============================================================================}
 
+function RPi3VirtualGPIOSetBuffer(Address:PtrUInt):LongWord;
+{Set the Virtual GPIO buffer in the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetVirtualGPIO;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetVirtualGPIO) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagSetVirtualGPIO(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_GPIOVIRTBUF;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetVirtualGPIO) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.Address:=Address;
+ 
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetVirtualGPIO)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('VirtualGPIOSetBuffer - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  Result:=Tag.Response.Status;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
 function RPi3CursorSetDefault:LongWord;
 {Set Cursor Default (Pixels) from the Mailbox property tags channel}
 var
@@ -7307,6 +7432,9 @@ var
  Cursor:PLongWord;
  Address:LongWord;
 begin
+ {}
+ Result:=ERROR_OPERATION_FAILED;
+ 
  {Determine Cursor Size}
  Size:=CURSOR_ARROW_DEFAULT_WIDTH * CURSOR_ARROW_DEFAULT_HEIGHT * SizeOf(LongWord);
  
@@ -7330,7 +7458,7 @@ begin
    Address:=PhysicalToBusAddress(Cursor);
  
    {Set the Cursor}
-   RPi3CursorSetInfo(CURSOR_ARROW_DEFAULT_WIDTH,CURSOR_ARROW_DEFAULT_HEIGHT,0,0,Pointer(Address),Size);
+   Result:=RPi3CursorSetInfo(CURSOR_ARROW_DEFAULT_WIDTH,CURSOR_ARROW_DEFAULT_HEIGHT,0,0,Pointer(Address),Size);
  
    {Free the Cursor}
    FreeMem(Cursor);
@@ -7518,9 +7646,78 @@ end;
 
 {==============================================================================}
 
-function RPi3VirtualGPIOInputGet(Pin:LongWord):LongWord; 
+function RPi3VirtualGPIOAllocate:Boolean; 
+{Allocate the Virtual GPIO buffer either from memory or from the firmware}
 var
+ Size:LongWord;
  Address:LongWord;
+begin
+ {}
+ {Check Address}
+ if VirtualGPIOBuffer.Address = 0 then
+  begin
+   Result:=False;
+ 
+   {Acquire Lock}
+   if UtilityLock.Lock <> INVALID_HANDLE_VALUE then UtilityLock.AcquireLock(UtilityLock.Lock);
+   try
+    {Recheck Address (After Lock)}
+    if VirtualGPIOBuffer.Address = 0 then
+     begin
+      {Check Buffer}
+      if VirtualGPIOBuffer.Buffer = nil then
+       begin
+        {Get Size}
+        Size:=RoundUp(MEMORY_PAGE_SIZE,DMA_MULTIPLIER);
+      
+        {Allocate Non Cached}
+        VirtualGPIOBuffer.Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
+        if VirtualGPIOBuffer.Buffer = nil then 
+         begin
+          {Allocate Normal}
+          VirtualGPIOBuffer.Buffer:=AllocAlignedMem(Size,DMA_ALIGNMENT);
+          
+          {Set Caching}
+          VirtualGPIOBuffer.CachedBuffer:=not(DMA_CACHE_COHERENT);
+         end;  
+       end;  
+      
+      {Set Buffer}
+      Address:=PhysicalToBusAddress(VirtualGPIOBuffer.Buffer);
+      if (VirtualGPIOBuffer.Buffer <> nil) and (RPi3VirtualGPIOSetBuffer(Address) = ERROR_SUCCESS) then
+       begin
+        {Update Address}
+        VirtualGPIOBuffer.Address:=LongWord(VirtualGPIOBuffer.Buffer);
+       end
+      else
+       begin      
+        {Get Buffer}
+        Address:=0;
+        if RPi3VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
+      
+        {Update Address}
+        VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
+        
+        {Set Caching}
+        VirtualGPIOBuffer.CachedBuffer:=True;
+        
+        {Free Buffer}
+        if VirtualGPIOBuffer.Buffer <> nil then FreeMem(VirtualGPIOBuffer.Buffer);
+        VirtualGPIOBuffer.Buffer:=nil;
+       end; 
+     end; 
+   finally  
+    {Release Lock}
+    if UtilityLock.Lock <> INVALID_HANDLE_VALUE then UtilityLock.ReleaseLock(UtilityLock.Lock);
+   end; 
+  end;
+ 
+ Result:=True; 
+end;
+
+{==============================================================================}
+
+function RPi3VirtualGPIOInputGet(Pin:LongWord):LongWord; 
 begin
  {}
  Result:=GPIO_LEVEL_UNKNOWN;
@@ -7531,11 +7728,8 @@ begin
  {Check Address}
  if VirtualGPIOBuffer.Address = 0 then
   begin
-   {Get Buffer}
-   if RPi3VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
-   
-   {Update Address}
-   VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
+   {Allocate Buffer}
+   if not RPi3VirtualGPIOAllocate then Exit;
   end;
  
  {Check Address}
@@ -7550,7 +7744,6 @@ end;
 
 function RPi3VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; 
 var
- Address:LongWord;
  Enable:Word;
  Disable:Word;
  Difference:SmallInt;
@@ -7567,11 +7760,8 @@ begin
  {Check Address}
  if VirtualGPIOBuffer.Address = 0 then
   begin
-   {Get Buffer}
-   if RPi3VirtualGPIOGetBuffer(Address) <> ERROR_SUCCESS then Exit;
-   
-   {Update Address}
-   VirtualGPIOBuffer.Address:=BusAddressToPhysical(Pointer(Address));
+   {Allocate Buffer}
+   if not RPi3VirtualGPIOAllocate then Exit;
   end;
  
  {Check Address}

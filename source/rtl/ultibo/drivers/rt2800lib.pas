@@ -1579,7 +1579,7 @@ const
 
  {BBP 105}
  RT2800_BBP105_DETECT_SIG_ON_PRIMARY     = $01; {bit0: detect SIG on primary channel only (on 40MHz bandwidth)}
- RT2800_BBP105_FEQ       = $02; {bit1: FEQ (Feed Forward Compensation) for independend streams}
+ RT2800_BBP105_FEQ       = $02; {bit1: FEQ (Feed Forward Compensation) for independent streams}
  RT2800_BBP105_MLD       = $04; {bit2: MLD (Maximum Likehood Detection) for 2 streams (reserved on single stream)}
  RT2800_BBP105_SIG_REMODULATION      = $08; {bit4: channel estimation updates based on remodulation of L-SIG and HT-SIG symbols}
 
@@ -1632,7 +1632,7 @@ const
  RT2800_RFCSR3_BIT4       = $10;
  RT2800_RFCSR3_BIT5       = $20;
 
- {FRCSR 5}
+ {RFCSR 5}
  RT2800_RFCSR5_R1       = $0c;
 
  {RFCSR 6}
@@ -2118,7 +2118,7 @@ const
  RT2800_TXWI_W1_PACKETID               = $f0000000; {PACKETID: Will be latched into the TX_STA_FIFO register once the according frame was processed. If multiple frames are aggregated together}
                                                     {          (AMPDU==1; the reported tx status will always contain the packet id of the first frame. 0: Don't report tx status for this frame}
  RT2800_TXWI_W1_PACKETID_QUEUE         = $30000000; {PACKETID_QUEUE: Part of PACKETID, This is the queue index (0-3)}
- RT2800_TXWI_W1_PACKETID_ENTRY         = $c0000000; {PACKETID_ENTRY: Part of PACKETID, THis is the queue entry index (1-3; This identification number is calculated by ((idx % 3; + 1)}
+ RT2800_TXWI_W1_PACKETID_ENTRY         = $c0000000; {PACKETID_ENTRY: Part of PACKETID, This is the queue entry index (1-3; This identification number is calculated by ((idx % 3; + 1)}
                                                     {                The (+1; is required to prevent PACKETID to become 0}
 
  {Word2}
@@ -2166,7 +2166,7 @@ const
  
  //To Do //TXPOWER_G_FROM_DEV/TXPOWER_A_FROM_DEV Macros
  
- {Board's maximun TX power limitation}
+ {Board's maximum TX power limitation}
  RT2800_EIRP_MAX_TX_POWER_LIMIT = $50;
  
  {Number of TBTT intervals after which we have to adjust the hw beacon timer}
@@ -5224,7 +5224,7 @@ function RT2800CheckFirmware(RT2X00:PRT2X00WiFiDevice;Data:PByte;Size:LongWord):
   FirmwareCRC:=(Data[Size - 2] shl 8) or (Data[Size - 1]);
   
   {Calculate the CRC (Use the crc ccitt algorithm)}
-  CRC:=CRC16CCITT(not(0),Data,Size - 2);
+  CRC:=CRC16CCITT(Word(not(0)),Data,Size - 2);
   
   {Convert from CRC-CCITT to CRC-ITU-T + bit reversion}
   CRC:=Swap(CRC);
@@ -7054,7 +7054,7 @@ begin
  while Busy < RT2X00_REGISTER_BUSY_COUNT do
   begin
    RT2800RegisterRead(RT2X00,RT2800_MAC_CSR0,@Reg);
-   if (Reg <> 0) and (Reg <> not(0)) then
+   if (Reg <> 0) and (Reg <> LongWord(not(0))) then
     begin
      Result:=True;
      Exit;

@@ -5952,7 +5952,7 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AddEntryEx Parent = ' + AParent.Name + ' Name = ' + AName + ' AltName = ' + AAltName);
   {$ENDIF}
- 
+  
   {Check ReadOnly}
   if FReadOnly then Exit;
  
@@ -5962,6 +5962,23 @@ begin
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
  
+  {Check Attribtues (Exclude Label/Dot/DotDot)}
+  if (AAttributes and (faVolumeID or faDot or faDotDot)) = faNone then
+   begin
+    {Check Existing}
+    Result:=GetEntryEx(AParent,AName,faDirectory or faFile,AReference,False,True);
+    if Result <> nil then
+     begin
+      if (AAttributes and faMatchMask) <> (Result.Attributes and faMatchMask) then
+       begin
+        {Remove Reference}
+        if AReference then Result.RemoveReference;
+        Result:=nil;
+       end;
+      Exit;
+     end;     
+   end; 
+
   {Check for Short (or Label/Dot/DotDot)}
   if (IsEightDotThree(AName)) or ((AAttributes and (faVolumeID or faDot or faDotDot)) <> faNone) then
    begin
@@ -6181,6 +6198,9 @@ begin
   {Check ReadOnly}
   if FReadOnly then Exit;
  
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+ 
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
  
@@ -6243,6 +6263,16 @@ begin
  
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
+ 
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+ 
+  {Check Attribtues (Exclude Label)}
+  if (AEntry.Attributes and faVolumeID) = faNone then
+   begin
+    {Check Existing}
+    if GetEntryEx(AParent,AName,faDirectory or faFile,False,False,True) <> nil then Exit;
+   end; 
  
   {Get Offsets} {Always use the NameOffset/NameSector}
   SourceCount:=TFATDiskEntry(AEntry).EntryCount;
@@ -6373,6 +6403,12 @@ begin
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
 
+  {Check Parent}
+  if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
+  
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+  
   {Check for Short (or Label)}
   if (IsEightDotThree(AEntry.Name)) or ((AEntry.Attributes and faVolumeID) <> faNone) then
    begin
@@ -6453,6 +6489,16 @@ begin
   {Check Dest}
   if (ADest.Attributes and faMatchMask) <> faDirectory then Exit;
  
+  {Check Parent}
+  if AEntry.Parent <> ASource then Exit;
+ 
+  {Check Attribtues (Exclude Label)}
+  if (AEntry.Attributes and faVolumeID) = faNone then
+   begin
+    {Check Existing}
+    if GetEntryEx(ADest,AEntry.Name,faDirectory or faFile,False,False,True) <> nil then Exit;
+   end; 
+  
   {Get Offsets} {Always use the NameOffset/NameSector}
   EntryCount:=TFATDiskEntry(AEntry).EntryCount;
   SourceOffset:=TFATDiskEntry(AEntry).NameOffset;

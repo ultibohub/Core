@@ -561,9 +561,44 @@ const
  WSA_USE_CURRENT_FORWARDING = DWORD(-1);
 
 const
+ WSA_IF_OPER_STATUS_NON_OPERATIONAL = 0 ;
+ WSA_IF_OPER_STATUS_UNREACHABLE     = 1;
+ WSA_IF_OPER_STATUS_DISCONNECTED    = 2;
+ WSA_IF_OPER_STATUS_CONNECTING      = 3;
+ WSA_IF_OPER_STATUS_CONNECTED       = 4;
+ WSA_IF_OPER_STATUS_OPERATIONAL     = 5;
+ 
+const
+ WSA_IF_TYPE_OTHER              = 1;   {Some other type of network interface}
+ WSA_IF_TYPE_ETHERNET_CSMACD    = 6;   {An Ethernet network interface}
+ WSA_IF_TYPE_ISO88025_TOKENRING = 9;   {A token ring network interface}
+ WSA_IF_TYPE_FDDI               = 15;  {A Fiber Distributed Data Interface (FDDI) network interface}
+ WSA_IF_TYPE_PPP                = 23;  {A PPP network interface}
+ WSA_IF_TYPE_SOFTWARE_LOOPBACK  = 24;  {A software loopback network interface}
+ WSA_IF_TYPE_SLIP               = 28;  {A SLIP network interface}
+ WSA_IF_TYPE_ATM                = 37;  {An ATM network interface}
+ WSA_IF_TYPE_IEEE80211          = 71;  {An IEEE 802.11 wireless network interface}
+ WSA_IF_TYPE_TUNNEL             = 131; {A tunnel type encapsulation network interface}
+ WSA_IF_TYPE_IEEE1394           = 144; {An IEEE 1394 (Firewire) high performance serial bus network interface}
+ WSA_IF_TYPE_IEEE80216_WMAN     = 237; {A mobile broadband interface for WiMax devices}
+ WSA_IF_TYPE_WWANPP             = 243; {A mobile broadband interface for GSM-based devices}
+ WSA_IF_TYPE_WWANPP2            = 244; {An mobile broadband interface for CDMA-based devices}
+
+const 
+ WSA_IF_ADMIN_STATUS_UP         = 1;
+ WSA_IF_ADMIN_STATUS_DOWN       = 2;
+ WSA_IF_ADMIN_STATUS_TESTING    = 3;
+ 
+const
  WSA_IP_FORWARDING     = 1;
  WSA_IP_NOT_FORWARDING = 2;
 
+const 
+ WSA_IPNET_TYPE_OTHER   = 1;
+ WSA_IPNET_TYPE_INVALID = 2;
+ WSA_IPNET_TYPE_DYNAMIC = 3;
+ WSA_IPNET_TYPE_STATIC  = 4;
+ 
  {WsControlEx Functions}
  WSA_GETNUMBEROFINTERFACES  = 1;
  WSA_GETIFENTRY             = 2;
@@ -984,6 +1019,60 @@ type
  TWSAIpAddrTable = WSA_IPADDRTABLE;
  PWSAIpAddrTable = PWSA_IPADDRTABLE;
 
+ PWSA_IPFORWARDNUMBER = ^WSA_IPFORWARDNUMBER;
+ WSA_IPFORWARDNUMBER = record
+   dwValue: DWORD;
+ end;
+ TWSAIpForwardNumber = WSA_IPFORWARDNUMBER;
+ PWSAIpForwardNumber = PWSA_IPFORWARDNUMBER;
+
+ PWSA_IPFORWARDROW = ^WSA_IPFORWARDROW;
+ WSA_IPFORWARDROW = record
+   dwForwardDest: DWORD;
+   dwForwardMask: DWORD;
+   dwForwardPolicy: DWORD;
+   dwForwardNextHop: DWORD;
+   dwForwardIfIndex: DWORD;
+   dwForwardType: DWORD;
+   dwForwardProto: DWORD;
+   dwForwardAge: DWORD;
+   dwForwardNextHopAS: DWORD;
+   dwForwardMetric1: DWORD;
+   dwForwardMetric2: DWORD;
+   dwForwardMetric3: DWORD;
+   dwForwardMetric4: DWORD;
+   dwForwardMetric5: DWORD;
+ end;
+ TWSAIpForwardRow = WSA_IPFORWARDROW;
+ PWSAIpForwardRow = PWSA_IPFORWARDROW;
+
+ PWSA_IPFORWARDTABLE = ^WSA_IPFORWARDTABLE;
+ WSA_IPFORWARDTABLE = record
+   dwNumEntries: DWORD;
+   table: array [0..WSA_ANY_SIZE - 1] of WSA_IPFORWARDROW;
+ end;
+ TWSAIpForwardTable = WSA_IPFORWARDTABLE;
+ PWSAIpForwardTable = PWSA_IPFORWARDTABLE;
+ 
+ PWSA_IPNETROW = ^WSA_IPNETROW;
+ WSA_IPNETROW = record
+   dwIndex: DWORD;
+   dwPhysAddrLen: DWORD;
+   bPhysAddr: array [0..WSA_MAXLEN_PHYSADDR - 1] of BYTE;
+   dwAddr: DWORD;
+   dwType: DWORD;
+ end;
+ TWSAIpNetRow = WSA_IPNETROW;
+ PWSAIpNetRow = PWSA_IPNETROW;
+
+ PWSA_IPNETTABLE = ^WSA_IPNETTABLE;
+ WSA_IPNETTABLE = record
+   dwNumEntries: DWORD;
+   table: array [0..WSA_ANY_SIZE - 1] of WSA_IPNETROW;
+ end;
+ TWSAIpNetTable = WSA_IPNETTABLE;
+ PWSAIpNetTable = PWSA_IPNETTABLE;
+ 
  PWSA_IP_ADAPTER_INDEX_MAP = ^WSA_IP_ADAPTER_INDEX_MAP;
  WSA_IP_ADAPTER_INDEX_MAP = record
   Index: ULONG;

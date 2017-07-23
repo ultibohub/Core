@@ -1143,6 +1143,7 @@ begin
  
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPi3TouchGetBuffer;
+ TouchSetBufferHandler:=RPi3TouchSetBuffer;
  
  {Register Platform Cursor Handlers}
  CursorSetDefaultHandler:=RPi3CursorSetDefault;
@@ -6915,7 +6916,7 @@ begin
  {Reset Interrupt Mask (Disable Interrupts)}
  PBCM2837PL011Registers(PBCM2710UART0Device(UART).Address).IMSC:=0;
  
- {Ackowledge Interrupts}
+ {Acknowledge Interrupts}
  PBCM2837PL011Registers(PBCM2710UART0Device(UART).Address).ICR:=$7FF;
  
  {Reset Line Control (Flush FIFOs)}

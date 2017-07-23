@@ -2626,7 +2626,7 @@ begin
  if ASocket = nil then Exit;
   
  {Get the Route}
- SetLastError(WSAENETUNREACH);
+ NetworkSetLastError(WSAENETUNREACH);
  Route:=GetRouteByAddress(PInAddr(ADest)^,True,NETWORK_LOCK_READ);
  if Route = nil then Exit;
  try
@@ -2635,7 +2635,7 @@ begin
   {$ENDIF}
   
   {Get the Address}
-  SetLastError(WSAEADDRNOTAVAIL);
+  NetworkSetLastError(WSAEADDRNOTAVAIL);
   Address:=GetAddressByAddress(Route.Address,True,NETWORK_LOCK_READ);
   if Address = nil then Exit;
   try
@@ -2660,7 +2660,7 @@ begin
     {$ENDIF}
   
     {Get the Hardware}
-    SetLastError(WSAEHOSTUNREACH);
+    NetworkSetLastError(WSAEHOSTUNREACH);
     if CompareLoopback(Route.Address) then
      begin
       {Check ARP Transport}
@@ -2766,7 +2766,7 @@ begin
      end;
   
     {Check the Size}
-    SetLastError(WSAEMSGSIZE);
+    NetworkSetLastError(WSAEMSGSIZE);
     if Size > MAX_IP_PACKET then Exit;
     
     {Send the Packet}
@@ -2778,7 +2778,7 @@ begin
       {$ENDIF}
     
       {Send the Packet}
-      SetLastError(WSAENETDOWN);
+      NetworkSetLastError(WSAENETDOWN);
       if Adapter.Adapter.SendPacket(Adapter.Handle,@Hardware,@Header,Size) then
        begin
         {Return passed size not sent size}
@@ -2819,7 +2819,7 @@ begin
         end;
      
        {Send an MTU size Packet for each Fragment}
-       SetLastError(WSAENETDOWN);
+       NetworkSetLastError(WSAENETDOWN);
        while Size > (Adapter.MTU - Length) do
         begin
          {Create the Header}
@@ -2862,7 +2862,7 @@ begin
       
        Result:=ASize;
       finally
-       FreeMem(Pointer(LongWord(Buffer.Data) - Offset));
+       FreeMem(Pointer(PtrUInt(Buffer.Data) - Offset));
       end;
      end;
    finally
@@ -2943,12 +2943,12 @@ begin
  {Check Level}
  case ALevel of
   IPPROTO_IP:begin
-    SetLastError(WSAENOPROTOOPT);
+    NetworkSetLastError(WSAENOPROTOOPT);
     
     {Check Option}
     case AOptName of
      IP_OPTIONS:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
         
        if AOptLength >= TIPOptions(ASocket.TransportOptions).Length then
         begin
@@ -2960,7 +2960,7 @@ begin
       end;
      IP_MULTICAST_IF:begin
        {Note: MulticastIF only affects Sends}
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
         
        if AOptLength >= SizeOf(TInAddr) then
         begin
@@ -2971,7 +2971,7 @@ begin
         end;
       end;
      IP_MULTICAST_TTL:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
         
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -2982,7 +2982,7 @@ begin
         end;
       end;
      IP_MULTICAST_LOOP:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -2994,7 +2994,7 @@ begin
         end;
       end;
      IP_TTL:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
         
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3005,7 +3005,7 @@ begin
         end;
       end;
      IP_TOS:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3016,7 +3016,7 @@ begin
         end;
       end;
      IP_DONTFRAGMENT:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
         
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3028,7 +3028,7 @@ begin
         end;
       end;
      IP_HDRINCL:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3077,13 +3077,13 @@ begin
  {Check Level}
  case ALevel of
   IPPROTO_IP:begin
-    SetLastError(WSAENOPROTOOPT);
+    NetworkSetLastError(WSAENOPROTOOPT);
     
     {Check Option}
     case AOptName of
      IP_OPTIONS:begin
        {Note: Modified behaviour from other options}
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        TIPOptions(ASocket.TransportOptions).Length:=AOptLength;
        if TIPOptions(ASocket.TransportOptions).Length >= AOptLength then
@@ -3098,7 +3098,7 @@ begin
       end;
      IP_MULTICAST_IF:begin
        {Note: MulticastIF only affects Sends}
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(TInAddr) then
         begin
@@ -3108,7 +3108,7 @@ begin
         end;
       end;
      IP_MULTICAST_TTL:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3118,7 +3118,7 @@ begin
         end;
       end;
      IP_MULTICAST_LOOP:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3128,7 +3128,7 @@ begin
         end;
       end;
      IP_TTL:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3138,7 +3138,7 @@ begin
         end;
       end;
      IP_TOS:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3148,7 +3148,7 @@ begin
         end;
       end;
      IP_DONTFRAGMENT:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3165,7 +3165,7 @@ begin
         end;
       end;
      IP_HDRINCL:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(Integer) then
         begin
@@ -3176,7 +3176,7 @@ begin
       end;
      {Add/Drop Membership Options}
      IP_ADD_MEMBERSHIP:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(TMulticastRequest) then
         begin
@@ -3192,7 +3192,7 @@ begin
         end;
       end;
      IP_DROP_MEMBERSHIP:begin
-       SetLastError(WSAEFAULT);
+       NetworkSetLastError(WSAEFAULT);
        
        if AOptLength >= SizeOf(TMulticastRequest) then
         begin
@@ -3406,6 +3406,8 @@ begin
               {Check Handler}
               if Assigned(Config.ConfigHandler) then
                begin
+                if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                
                 {Call Request to confirm the Address}
                 if Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REQUEST) then
                  begin
@@ -3458,8 +3460,20 @@ begin
             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
            end;
           
-          {Check for Failure}
-          if not Result then
+          {Check for Completed}
+          if Result then
+           begin
+            if NETWORK_LOG_ENABLED then
+             begin
+              NetworkLogInfo(nil,'IP: Configuration completed for adapter ' + Current.Name);
+              NetworkLogInfo(nil,'IP:  Config = ' + ConfigTypeToString(Current.ConfigType));
+              NetworkLogInfo(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(Current.Address)));
+              NetworkLogInfo(nil,'IP:  Netmask = ' + InAddrToString(InAddrToNetwork(Current.Netmask)));
+              NetworkLogInfo(nil,'IP:  Gateway = ' + InAddrToString(InAddrToNetwork(Current.Gateway)));
+              NetworkLogInfo(nil,'IP:  Server = ' + InAddrToString(InAddrToNetwork(Current.Server)));
+             end;
+           end
+          else 
            begin
             {Reset Adapter if Config failed}
             Current.RetryTime:=GetTickCount64 + CONFIG_RETRY_TIMEOUT;
@@ -3486,6 +3500,8 @@ begin
               {Check Handler}
               if Assigned(Config.ConfigHandler) then
                begin
+                if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                
                 {Call Request to confirm the Address}
                 if Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REQUEST) then
                  begin
@@ -3529,8 +3545,21 @@ begin
             {Get Next} 
             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
            end;
-          {Check for Failure}
-          if not Result then
+           
+          {Check for Completed}
+          if Result then
+           begin
+            if NETWORK_LOG_ENABLED then
+             begin
+              NetworkLogInfo(nil,'IP: Configuration completed for adapter ' + Current.Name);
+              NetworkLogInfo(nil,'IP:  Config = ' + ConfigTypeToString(Current.ConfigType));
+              NetworkLogInfo(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(Current.Address)));
+              NetworkLogInfo(nil,'IP:  Netmask = ' + InAddrToString(InAddrToNetwork(Current.Netmask)));
+              NetworkLogInfo(nil,'IP:  Gateway = ' + InAddrToString(InAddrToNetwork(Current.Gateway)));
+              NetworkLogInfo(nil,'IP:  Server = ' + InAddrToString(InAddrToNetwork(Current.Server)));
+             end;
+           end
+          else 
            begin
             {Reset Adapter if Config failed}
             Current.RetryTime:=GetTickCount64 + CONFIG_RETRY_TIMEOUT;
@@ -3558,6 +3587,8 @@ begin
               {Check Handler}
               if Assigned(Config.ConfigHandler) then
                begin
+                if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                
                 {Call Reboot to confirm the Address}
                 if Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBOOT) then
                  begin
@@ -3656,8 +3687,21 @@ begin
             {Get Next}
             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
            end;
-          {Check for Failure}
-          if not Result then
+           
+          {Check for Completed}
+          if Result then
+           begin
+            if NETWORK_LOG_ENABLED then
+             begin
+              NetworkLogInfo(nil,'IP: Configuration completed for adapter ' + Current.Name);
+              NetworkLogInfo(nil,'IP:  Config = ' + ConfigTypeToString(Current.ConfigType));
+              NetworkLogInfo(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(Current.Address)));
+              NetworkLogInfo(nil,'IP:  Netmask = ' + InAddrToString(InAddrToNetwork(Current.Netmask)));
+              NetworkLogInfo(nil,'IP:  Gateway = ' + InAddrToString(InAddrToNetwork(Current.Gateway)));
+              NetworkLogInfo(nil,'IP:  Server = ' + InAddrToString(InAddrToNetwork(Current.Server)));
+             end;
+           end
+          else 
            begin
             {Reset Adapter if Config failed}
             Current.RetryTime:=GetTickCount64 + CONFIG_RETRY_TIMEOUT;
@@ -3691,7 +3735,8 @@ begin
               begin
                if Assigned(Config.ConfigHandler) then
                 begin
-                  
+                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Renewing adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                 
                  //To Do //Must implement a Retry Count and/or a Timeout backoff
                   
                  Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW);
@@ -3715,6 +3760,7 @@ begin
               begin
                if Assigned(Config.ConfigHandler) then
                 begin
+                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Rebinding adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
                  
                  //To Do //Must implement a Retry Count and/or a Timeout backoff
                   

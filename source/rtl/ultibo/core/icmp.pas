@@ -261,12 +261,6 @@ type
    function SendICMPRouterSolicit(ASocket:TICMPSocket;ASource,ADest:Pointer):Boolean;
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-
-   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
-   procedure FlushSockets(All:Boolean); override;
-
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; override;
    function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; override;
 
@@ -294,6 +288,12 @@ type
    function Socket(AFamily,AStruct,AProtocol:Integer):TProtocolSocket; override;
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+
+   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
+   procedure FlushSockets(All:Boolean); override;
+   
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
@@ -1916,279 +1916,6 @@ end;
 
 {==============================================================================}
 
-function TICMPProtocol.AddTransport(ATransport:TNetworkTransport):Boolean;
-{Add a transport to this protocol}
-{Transport: The transport to add}
-var
- Handle:THandle;
- Transport:TICMPProtocolTransport;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
-  
-  {$IFDEF ICMP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: AddTransport');
-  {$ENDIF}
- 
-  {Check Transport}
-  if ATransport = nil then Exit;
- 
-  {Get Transport} 
-  Transport:=TICMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
-  if Transport = nil then
-   begin
-    {Check Address Family}
-    case ATransport.Family of
-     AF_INET:begin
-       {Add ICMP Protocol}
-       Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_ICMP,PacketHandler,ControlHandler);
-       if Handle <> INVALID_HANDLE_VALUE then
-        begin
-         {Create Transport}
-         Transport:=TICMPProtocolTransport.Create;
-         Transport.Handle:=Handle;
-         Transport.Protocol:=IPPROTO_ICMP;
-         Transport.Transport:=ATransport;
-       
-         {Acquire Lock}
-         FTransports.WriterLock;
-         try
-          {Add Transport}
-          FTransports.Add(Transport);
-        
-          {Add Control Socket}
-          Transport.Socket:=TICMPSocket.Create(Self,ATransport);
-          {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-        
-          {Add Proto Entry}
-          TIPTransport(ATransport).AddProto(ICMP_PROTOCOL_NAME,IPPROTO_ICMP,False);
-       
-          {Return Result}
-          Result:=True;
-         finally
-          {Release Lock}
-          FTransports.WriterUnlock;
-         end;  
-        end;
-      end;
-    end;
-   end
-  else
-   begin
-    {Unlock Transport}
-    Transport.ReaderUnlock;
-    
-    {Return Result}
-    Result:=True;
-   end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TICMPProtocol.RemoveTransport(ATransport:TNetworkTransport):Boolean;
-{Remove a transport from this protocol}
-{Transport: The transport to remove}
-var
- Transport:TICMPProtocolTransport;
-begin
- {}
- ReaderLock;
- try
-  Result:=False;
- 
-  {$IFDEF ICMP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: RemoveTransport');
-  {$ENDIF}
- 
-  {Check Transport}
-  if ATransport = nil then Exit;
- 
-  {Get Transport}
-  Transport:=TICMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-  if Transport = nil then Exit;
- 
-  {Check Address Family}
-  case ATransport.Family of
-   AF_INET:begin
-     {Remove ICMP Protocol}
-     if TIPTransport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
-      begin
-       {Remove Proto Entry}
-       TIPTransport(ATransport).RemoveProto(ICMP_PROTOCOL_NAME);
-       
-       {Remove Control Socket}
-       {FSockets.Remove(Transport.Socket);} {This one is not on the list}
-       Transport.Socket.Free;
-       
-       {Acquire Lock}
-       FTransports.WriterLock;
-       try
-        {Remove Transport}
-        FTransports.Remove(Transport);
-       
-        {Unlock Transport}
-        Transport.WriterUnlock;
-       
-        {Destroy Transport}
-        Transport.Free;
-       
-        {Return Result}
-        Result:=True;
-       finally
-        {Release Lock}
-        FTransports.WriterUnlock;
-       end;  
-      end;
-    end;
-  end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TICMPProtocol.FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket;
-{Find a protocol socket based on all relevant parameters}
-{Family: Socket address family (eg AF_INET}
-{Struct: Socket type (eg SOCK_DGRAM)}
-{Protocol: Socket protocol (eg IPPROTO_UDP)}
-{LocalAddress: Local transport address to match (Host Order)}
-{RemoteAddress: Remote transport address to match (Host Order)}
-{LocalPort: Local port to match (Host Order)}
-{RemotePort: Remote port to match (Host Order)}
-{Broadcast: If True then match broadcast addresses}
-{Listen: If True then match only listening sockets}
-{Lock: If True then lock the found entry before returning}
-var
- Socket:TICMPSocket;
-begin
- {}
- FSockets.ReaderLock;
- try
-  Result:=nil;
- 
-  {$IFDEF ICMP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: FindSocket');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Family = ' + AddressFamilyToString(AFamily));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Struct = ' + SocketTypeToString(AStruct));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Protocol = ' + ProtocolToString(AProtocol));
-  {$ENDIF}
- 
-  {Get Socket}
-  Socket:=TICMPSocket(FSockets.First);
-  while Socket <> nil do
-   begin
-    {Check for Closed}
-    if not Socket.SocketState.Closed then
-     begin
-      {Check for Match}
-      if (Socket.Family = AFamily) and (Socket.Struct = AStruct) and (Socket.Proto = AProtocol) then
-       begin
-        if not AListen then
-         begin
-          {Check for a Connected Socket}
-          if Socket.IsConnected(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
-           begin
-            {Lock Socket}
-            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-           
-            {Return Result}
-            Result:=Socket;
-            Exit;
-           end;
-         end
-        else
-         begin
-          {Check for a Listening Socket}
-          if Socket.IsListening(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
-           begin
-            {Lock Socket}
-            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
-            {Return Result}
-            Result:=Socket;
-            Exit;
-           end;
-         end;
-       end;
-     end;  
-    
-    {Get Next}
-    Socket:=TICMPSocket(Socket.Next);
-   end;
- finally 
-  FSockets.ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-procedure TICMPProtocol.FlushSockets(All:Boolean);
-{Flush sockets from the socket cache}
-{All: If True flush all sockets, otherwise flush expired sockets}
-var
- CurrentTime:Int64;
- Socket:TICMPSocket;
- Current:TICMPSocket;
-begin
- {}
- {$IFDEF ICMP_DEBUG}
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: FlushSockets');
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  All = ' + BoolToStr(All));
- {$ENDIF}
-  
- {Get Tick Count}
- CurrentTime:=GetTickCount64;
-  
- {Get Socket}
- Socket:=TICMPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
- while Socket <> nil do
-  begin
-   {Get Next}
-   Current:=Socket;
-   Socket:=TICMPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
-    
-   {Check Socket State}
-   if (Current.SocketState.Closed) or (All) then
-    begin
-     {Check Socket Expired}
-     if ((Current.CloseTime + CLOSE_TIMEOUT) < CurrentTime) or (All) then
-      begin
-       {Convert Socket}
-       if Current.ReaderConvert then
-        begin
-         {Acquire Lock}
-         FSockets.WriterLock;
-       
-         {Remove Socket}
-         FSockets.Remove(Current);
-       
-         {Release Lock}
-         FSockets.WriterUnlock;
-       
-         {Unlock Socket}
-         Current.WriterUnlock;
-        
-         {Free Socket}
-         Current.Free;
-         Current:=nil;
-        end; 
-      end; 
-    end;
-    
-   {Unlock Socket}
-   if Current <> nil then Current.ReaderUnlock;
-  end;
-end;
-
-{==============================================================================}
-
 function TICMPProtocol.SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer;
 {Source is the working set to check, Dest is the set passed to Select}
 var
@@ -2425,12 +2152,12 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
-   SetLastError(WSAEOPNOTSUPP);
+   NetworkSetLastError(WSAEOPNOTSUPP);
   end
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2456,25 +2183,25 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected or Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Connected then Exit;
    if ASocket.SocketState.LocalAddress then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> ASockAddr.sin_family then Exit;
    
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Check LocalAddress}
       if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
        begin
-        SetLastError(WSAEADDRNOTAVAIL);
+        NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
       
@@ -2483,7 +2210,7 @@ begin
       TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
    end;
@@ -2491,7 +2218,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2522,13 +2249,13 @@ begin
    ASocket.SignalChange;
    
    {Return Result}
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
   end
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2558,38 +2285,38 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
-   SetLastError(WSAEISCONN);
+   NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> ASockAddr.sin_family then Exit;
    
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
+      NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
       
       {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
+      NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
       
       {Check the Route}
-      SetLastError(WSAENETUNREACH);
+      NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
       if Route = nil then Exit;
       try
        {Check the LocalAddress}
-       SetLastError(WSAEADDRNOTAVAIL);
+       NetworkSetLastError(WSAEADDRNOTAVAIL);
        Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
        if Address = nil then Exit;
       
@@ -2620,7 +2347,7 @@ begin
        ASocket.SignalChange;
        
        {Return Result}
-       SetLastError(ERROR_SUCCESS);
+       NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
       finally
        Route.ReaderUnlock;
@@ -2631,7 +2358,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2661,7 +2388,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2686,15 +2413,15 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Connected}
-   SetLastError(WSAENOTCONN);
+   NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Return the Peer Details}
@@ -2704,7 +2431,7 @@ begin
       AAddrLength:=SizeOf(TSockAddr);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
    end;
@@ -2712,7 +2439,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2737,15 +2464,15 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Return the Socket Details}
@@ -2755,7 +2482,7 @@ begin
       AAddrLength:=SizeOf(TSockAddr);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
    end;
@@ -2763,7 +2490,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2793,7 +2520,7 @@ begin
    case ALevel of
     IPPROTO_IP:begin
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       case ASocket.Family of
        AF_INET:begin
          {Pass the call to the transport}
@@ -2811,7 +2538,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2835,12 +2562,12 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
-   SetLastError(WSAEOPNOTSUPP);
+   NetworkSetLastError(WSAEOPNOTSUPP);
   end
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2869,19 +2596,19 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
-   SetLastError(WSAENOTCONN);
+   NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
    
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
+   NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
    
    {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
+   NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
    
    {Wait for Data}
@@ -2894,14 +2621,14 @@ begin
        {Wait for Event}
        if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
         begin
-         SetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAECONNABORTED);
          Exit;
         end; 
        
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         SetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAECONNABORTED);
          Exit;
         end;
       end
@@ -2910,7 +2637,7 @@ begin
        {Wait for Event}
        if not ASocket.WaitChange then
         begin
-         SetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAECONNABORTED);
          Exit;
         end; 
       end;      
@@ -2924,11 +2651,11 @@ begin
     end;
    
    {Check Size}
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
    Size:=TICMPSocket(ASocket).RecvData.GetNext;
    if Size > ALength then
     begin
-     SetLastError(WSAEMSGSIZE);
+     NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
     
@@ -2942,7 +2669,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -2973,19 +2700,19 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
+   NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
    
    {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
+   NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
    
    {Check size of FromAddr}
-   SetLastError(WSAEFAULT);
+   NetworkSetLastError(WSAEFAULT);
    if AFromLength < SizeOf(TSockAddr) then Exit;
    
    {Wait for Data}
@@ -2998,14 +2725,14 @@ begin
        {Wait for Event}
        if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
         begin
-         SetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAECONNABORTED);
          Exit;
         end; 
 
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         SetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAECONNABORTED);
          Exit;
         end;
       end
@@ -3014,7 +2741,7 @@ begin
        {Wait for Event}
        if not ASocket.WaitChange then
         begin
-         SetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAECONNABORTED);
          Exit;
         end; 
       end;      
@@ -3028,11 +2755,11 @@ begin
     end;
     
    {Check Size}
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
    Size:=TICMPSocket(ASocket).RecvData.GetNext;
    if Size > ALength then
     begin
-     SetLastError(WSAEMSGSIZE);
+     NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
    
@@ -3053,7 +2780,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3081,27 +2808,27 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
-   SetLastError(WSAENOTCONN);
+   NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
    
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
+   NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
    
    {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
+   NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
+      NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(TIPState(ASocket.TransportState).RemoteAddress) or TIPTransport(ASocket.Transport).CompareDirected(TIPState(ASocket.TransportState).RemoteAddress) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
@@ -3120,7 +2847,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3151,37 +2878,37 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
+   NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
    
    {Check for Flag MSG_OOB}
-   SetLastError(WSAEOPNOTSUPP);
+   NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> AToAddr.sin_family then Exit;
    
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of ToAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AToLength < SizeOf(TSockAddr) then Exit;
       
       {Get the RemoteAddress}
       Address:=InAddrToHost(AToAddr.sin_addr);
       
       {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
+      NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(Address) then Exit;
       
       {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEACCES);
+      NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(Address) or TIPTransport(ASocket.Transport).CompareDirected(Address) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
@@ -3200,7 +2927,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3233,7 +2960,7 @@ begin
       {Check Option}
       case AOptName of
        SO_RCVBUF:begin
-         SetLastError(WSAEFAULT);
+         NetworkSetLastError(WSAEFAULT);
          
          if AOptLength >= SizeOf(Integer) then
           begin
@@ -3247,7 +2974,7 @@ begin
      end;
     IPPROTO_IP:begin
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       case ASocket.Family of
        AF_INET:begin
          {Pass the call to the transport}
@@ -3265,7 +2992,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3299,7 +3026,7 @@ begin
       ASocket.SignalChange;
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     SHUTDOWN_SEND:begin
@@ -3310,7 +3037,7 @@ begin
       ASocket.SignalChange;
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     SHUTDOWN_BOTH:begin
@@ -3322,19 +3049,19 @@ begin
       ASocket.SignalChange;
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     else
      begin
-      SetLastError(WSAEINVAL);
+      NetworkSetLastError(WSAEINVAL);
      end;
    end;
   end
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3361,15 +3088,15 @@ begin
   {$ENDIF}
   
   {Check Socket Type}
-  SetLastError(WSAESOCKTNOSUPPORT);
+  NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if AStruct <> SOCK_RAW then Exit;
   
   {Check Address Family}
-  SetLastError(WSAEAFNOSUPPORT);
+  NetworkSetLastError(WSAEAFNOSUPPORT);
   if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
 
   {Check Protocol}
-  SetLastError(WSAEPROTOTYPE);
+  NetworkSetLastError(WSAEPROTOTYPE);
   if (AProtocol <> IPPROTO_ICMP) and (AProtocol <> IPPROTO_IP) then Exit;
   
   {Get Transport}
@@ -3394,6 +3121,279 @@ begin
  finally 
   ReaderUnlock;
  end; 
+end;
+
+{==============================================================================}
+
+function TICMPProtocol.AddTransport(ATransport:TNetworkTransport):Boolean;
+{Add a transport to this protocol}
+{Transport: The transport to add}
+var
+ Handle:THandle;
+ Transport:TICMPProtocolTransport;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+  
+  {$IFDEF ICMP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: AddTransport');
+  {$ENDIF}
+ 
+  {Check Transport}
+  if ATransport = nil then Exit;
+ 
+  {Get Transport} 
+  Transport:=TICMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
+  if Transport = nil then
+   begin
+    {Check Address Family}
+    case ATransport.Family of
+     AF_INET:begin
+       {Add ICMP Protocol}
+       Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_ICMP,PacketHandler,ControlHandler);
+       if Handle <> INVALID_HANDLE_VALUE then
+        begin
+         {Create Transport}
+         Transport:=TICMPProtocolTransport.Create;
+         Transport.Handle:=Handle;
+         Transport.Protocol:=IPPROTO_ICMP;
+         Transport.Transport:=ATransport;
+       
+         {Acquire Lock}
+         FTransports.WriterLock;
+         try
+          {Add Transport}
+          FTransports.Add(Transport);
+        
+          {Add Control Socket}
+          Transport.Socket:=TICMPSocket.Create(Self,ATransport);
+          {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
+        
+          {Add Proto Entry}
+          TIPTransport(ATransport).AddProto(ICMP_PROTOCOL_NAME,IPPROTO_ICMP,False);
+       
+          {Return Result}
+          Result:=True;
+         finally
+          {Release Lock}
+          FTransports.WriterUnlock;
+         end;  
+        end;
+      end;
+    end;
+   end
+  else
+   begin
+    {Unlock Transport}
+    Transport.ReaderUnlock;
+    
+    {Return Result}
+    Result:=True;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TICMPProtocol.RemoveTransport(ATransport:TNetworkTransport):Boolean;
+{Remove a transport from this protocol}
+{Transport: The transport to remove}
+var
+ Transport:TICMPProtocolTransport;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+ 
+  {$IFDEF ICMP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: RemoveTransport');
+  {$ENDIF}
+ 
+  {Check Transport}
+  if ATransport = nil then Exit;
+ 
+  {Get Transport}
+  Transport:=TICMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
+  if Transport = nil then Exit;
+ 
+  {Check Address Family}
+  case ATransport.Family of
+   AF_INET:begin
+     {Remove ICMP Protocol}
+     if TIPTransport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
+      begin
+       {Remove Proto Entry}
+       TIPTransport(ATransport).RemoveProto(ICMP_PROTOCOL_NAME);
+       
+       {Remove Control Socket}
+       {FSockets.Remove(Transport.Socket);} {This one is not on the list}
+       Transport.Socket.Free;
+       
+       {Acquire Lock}
+       FTransports.WriterLock;
+       try
+        {Remove Transport}
+        FTransports.Remove(Transport);
+       
+        {Unlock Transport}
+        Transport.WriterUnlock;
+       
+        {Destroy Transport}
+        Transport.Free;
+       
+        {Return Result}
+        Result:=True;
+       finally
+        {Release Lock}
+        FTransports.WriterUnlock;
+       end;  
+      end;
+    end;
+  end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TICMPProtocol.FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket;
+{Find a protocol socket based on all relevant parameters}
+{Family: Socket address family (eg AF_INET}
+{Struct: Socket type (eg SOCK_DGRAM)}
+{Protocol: Socket protocol (eg IPPROTO_UDP)}
+{LocalAddress: Local transport address to match (Host Order)}
+{RemoteAddress: Remote transport address to match (Host Order)}
+{LocalPort: Local port to match (Host Order)}
+{RemotePort: Remote port to match (Host Order)}
+{Broadcast: If True then match broadcast addresses}
+{Listen: If True then match only listening sockets}
+{Lock: If True then lock the found entry before returning}
+var
+ Socket:TICMPSocket;
+begin
+ {}
+ FSockets.ReaderLock;
+ try
+  Result:=nil;
+ 
+  {$IFDEF ICMP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: FindSocket');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Family = ' + AddressFamilyToString(AFamily));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Struct = ' + SocketTypeToString(AStruct));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Protocol = ' + ProtocolToString(AProtocol));
+  {$ENDIF}
+ 
+  {Get Socket}
+  Socket:=TICMPSocket(FSockets.First);
+  while Socket <> nil do
+   begin
+    {Check for Closed}
+    if not Socket.SocketState.Closed then
+     begin
+      {Check for Match}
+      if (Socket.Family = AFamily) and (Socket.Struct = AStruct) and (Socket.Proto = AProtocol) then
+       begin
+        if not AListen then
+         begin
+          {Check for a Connected Socket}
+          if Socket.IsConnected(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
+           begin
+            {Lock Socket}
+            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
+           
+            {Return Result}
+            Result:=Socket;
+            Exit;
+           end;
+         end
+        else
+         begin
+          {Check for a Listening Socket}
+          if Socket.IsListening(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
+           begin
+            {Lock Socket}
+            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
+            
+            {Return Result}
+            Result:=Socket;
+            Exit;
+           end;
+         end;
+       end;
+     end;  
+    
+    {Get Next}
+    Socket:=TICMPSocket(Socket.Next);
+   end;
+ finally 
+  FSockets.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+procedure TICMPProtocol.FlushSockets(All:Boolean);
+{Flush sockets from the socket cache}
+{All: If True flush all sockets, otherwise flush expired sockets}
+var
+ CurrentTime:Int64;
+ Socket:TICMPSocket;
+ Current:TICMPSocket;
+begin
+ {}
+ {$IFDEF ICMP_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: FlushSockets');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  All = ' + BoolToStr(All));
+ {$ENDIF}
+  
+ {Get Tick Count}
+ CurrentTime:=GetTickCount64;
+  
+ {Get Socket}
+ Socket:=TICMPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
+ while Socket <> nil do
+  begin
+   {Get Next}
+   Current:=Socket;
+   Socket:=TICMPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
+    
+   {Check Socket State}
+   if (Current.SocketState.Closed) or (All) then
+    begin
+     {Check Socket Expired}
+     if ((Current.CloseTime + CLOSE_TIMEOUT) < CurrentTime) or (All) then
+      begin
+       {Convert Socket}
+       if Current.ReaderConvert then
+        begin
+         {Acquire Lock}
+         FSockets.WriterLock;
+       
+         {Remove Socket}
+         FSockets.Remove(Current);
+       
+         {Release Lock}
+         FSockets.WriterUnlock;
+       
+         {Unlock Socket}
+         Current.WriterUnlock;
+        
+         {Free Socket}
+         Current.Free;
+         Current:=nil;
+        end; 
+      end; 
+    end;
+    
+   {Unlock Socket}
+   if Current <> nil then Current.ReaderUnlock;
+  end;
 end;
 
 {==============================================================================}
@@ -3567,20 +3567,20 @@ begin
   {$ENDIF}
   
   {Check Commmand}
-  SetLastError(WSAEINVAL);
+  NetworkSetLastError(WSAEINVAL);
   case ACommand of
    FIONREAD:begin
      AArgument:=RecvData.GetNext;
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIONBIO:begin
      SocketState.NonBlocking:=(AArgument <> 0);
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
   end;
@@ -3958,13 +3958,7 @@ end;
 function TICMPBuffer.GetCount:LongWord;
 begin
  {}
- Result:=0;
- 
- if not AcquireLock then Exit;
-
  Result:=FCount;
-
- ReleaseLock;
 end;
 
 {==============================================================================}

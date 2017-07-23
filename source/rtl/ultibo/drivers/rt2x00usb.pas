@@ -293,7 +293,7 @@ begin
  if USB_LOG_ENABLED then USBLogError(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2X00USB: Register busy read timeout');
  
  {Default return}
- Reg^:=not(0);
+ Reg^:=LongWord(not(0));
 end;
 
 {==============================================================================}

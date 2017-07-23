@@ -201,7 +201,7 @@ type
    FProtocols:TNetworkList;   {List of TNetworkProtocol objects}
    FFilters:TNetworkList;     {List of TNetworkFilter objects} 
    FConfigs:TNetworkList;     {List of TNetworkConfig objects}
-   //FClients
+   //FClients //To Do
    
    {Event Variables}
 
@@ -219,6 +219,7 @@ type
    function AddProtocol(AProtocol:TNetworkProtocol):Boolean;
    function RemoveProtocol(AProtocol:TNetworkProtocol):Boolean;
    
+   function GetProtocolByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolByType(AProtocol,ASocketType:Word;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolByProtocol(AProtocol:TNetworkProtocol;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolBySocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):TNetworkProtocol;
@@ -321,6 +322,7 @@ type
   private
    {Internal Variables}
    FLock:TSynchronizerHandle;
+   FLocalLock:TMutexHandle;
   protected
    {Internal Variables}
    FManager:TProtocolManager;
@@ -341,23 +343,15 @@ type
    {Event Methods}
 
    {Internal Methods}
-   function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TProtocolTransport;
-   function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TProtocolTransport;
-   function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TProtocolTransport;
-   function GetTransportByNext(APrevious:TProtocolTransport;ALock,AUnlock:Boolean;AState:LongWord):TProtocolTransport;
+   function GetName:String;
+   
+   function AcquireLock:Boolean;
+   function ReleaseLock:Boolean;
    
    {Protected Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
-
    function OpenPort(ASocket:TProtocolSocket;APort:Word):Boolean; virtual;
    function ClosePort(ASocket:TProtocolSocket):Boolean; virtual;
    function FindPort(APort:Word;AWrite,ALock:Boolean):TProtocolPort; virtual;
-
-   function GetSocketByNext(APrevious:TProtocolSocket;ALock,AUnlock:Boolean;AState:LongWord):TProtocolSocket;
-   function CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean; virtual;
-   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; virtual;
-   procedure FlushSockets(All:Boolean); virtual;
 
    function SelectGet(AReadfds,AWritefds,AExceptfds:PFDSet;var ACode:Integer):TProtocolSocket; virtual;
    
@@ -369,7 +363,7 @@ type
   public
    {Public Properties}
    property Manager:TProtocolManager read FManager;
-   property Name:String read FName;   //To Do //Does this need lock protection and UniqueString ? //Yes //LocalLock(Mutex)
+   property Name:String read GetName;
    
    property Protocol:Word read FProtocol;
    property SocketType:Word read FSocketType;
@@ -401,6 +395,19 @@ type
    
    function GetStatistics:TProtocolStatistics; virtual;
 
+   function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TProtocolTransport;
+   function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TProtocolTransport;
+   function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TProtocolTransport;
+   function GetTransportByNext(APrevious:TProtocolTransport;ALock,AUnlock:Boolean;AState:LongWord):TProtocolTransport;
+   
+   function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
+   
+   function GetSocketByNext(APrevious:TProtocolSocket;ALock,AUnlock:Boolean;AState:LongWord):TProtocolSocket;
+   function CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean; virtual;
+   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; virtual;
+   procedure FlushSockets(All:Boolean); virtual;
+   
    function StartProtocol:Boolean; virtual;
    function StopProtocol:Boolean; virtual;
    function ProcessProtocol:Boolean; virtual;
@@ -620,14 +627,7 @@ type
    {Event Methods}
 
    {Internal Methods}
-   function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFilterTransport;
-   function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TFilterTransport;
-   function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TFilterTransport;
-   function GetTransportByNext(APrevious:TFilterTransport;ALock,AUnlock:Boolean;AState:LongWord):TFilterTransport;
-
-   {Protected Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
+   
   public
    {Public Properties}
    property Manager:TProtocolManager read FManager;
@@ -638,6 +638,14 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   
+   function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFilterTransport;
+   function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TFilterTransport;
+   function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TFilterTransport;
+   function GetTransportByNext(APrevious:TFilterTransport;ALock,AUnlock:Boolean;AState:LongWord):TFilterTransport;
+
+   function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
    
    function StartFilter:Boolean; virtual;
    function StopFilter:Boolean; virtual;
@@ -686,14 +694,7 @@ type
    {Event Methods}
 
    {Internal Methods}
-   function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TConfigTransport;
-   function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TConfigTransport;
-   function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TConfigTransport;
-   function GetTransportByNext(APrevious:TConfigTransport;ALock,AUnlock:Boolean;AState:LongWord):TConfigTransport;
-
-   {Protected Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
+   
   public
    {Public Properties}
    property Manager:TProtocolManager read FManager;
@@ -707,6 +708,14 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   
+   function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TConfigTransport;
+   function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TConfigTransport;
+   function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TConfigTransport;
+   function GetTransportByNext(APrevious:TConfigTransport;ALock,AUnlock:Boolean;AState:LongWord):TConfigTransport;
+
+   function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
    
    function StartConfig:Boolean; virtual;
    function StopConfig:Boolean; virtual;
@@ -906,6 +915,43 @@ begin
   end; 
  finally 
   ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TProtocolManager.GetProtocolByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkProtocol;
+var
+ Protocol:TNetworkProtocol;
+begin
+ {}
+ FProtocols.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Name}
+  if Length(AName) = 0 then Exit;
+  
+  {Get Protocol}
+  Protocol:=TNetworkProtocol(FProtocols.First);
+  while Protocol <> nil do
+   begin
+    {Check Protocol}
+    if Uppercase(Protocol.Name) = Uppercase(AName) then
+     begin
+      {Lock Protocol} 
+      if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
+      
+      {Return Result}
+      Result:=Protocol;
+      Exit;
+     end;
+     
+    {Get Next}
+    Protocol:=TNetworkProtocol(Protocol.Next);
+   end;
+ finally 
+  FProtocols.ReaderUnlock;
  end; 
 end;
 
@@ -2129,7 +2175,7 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- SetLastError(WSAENOTSOCK);
+ NetworkSetLastError(WSAENOTSOCK);
  
  if not ReaderLock then Exit;
  try
@@ -2179,7 +2225,7 @@ var
 begin
  {}
  Result:=INVALID_SOCKET;
- SetLastError(WSAEPROTONOSUPPORT);
+ NetworkSetLastError(WSAEPROTONOSUPPORT);
  
  if not ReaderLock then Exit;
  try
@@ -2277,6 +2323,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
+ FLocalLock:=MutexCreate;
  
  FManager:=AManager;
  FName:=AName;
@@ -2307,6 +2354,7 @@ begin
   FTransports.Free;
   FProtocol:=IPPROTO_IP;
   FManager:=nil;
+  MutexDestroy(FLocalLock);
   inherited Destroy;
  finally 
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
@@ -2316,166 +2364,33 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TProtocolTransport;
-var
- Transport:TProtocolTransport;
+function TNetworkProtocol.GetName:String;
 begin
  {}
- FTransports.ReaderLock;
- try
-  Result:=nil;
-  
-  {Get Transport}
-  Transport:=TProtocolTransport(FTransports.First);
-  while Transport <> nil do
-   begin
-    {Check Transport}
-    if Transport.Handle = AHandle then
-     begin
-      {Lock Transport} 
-      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-
-      {Return Result}
-      Result:=Transport;
-      Exit;
-     end;
-     
-    {Get Next} 
-    Transport:=TProtocolTransport(Transport.Next);
-   end;
- finally 
-  FTransports.ReaderUnlock;
- end; 
+ Result:='';
+   
+ if not AcquireLock then Exit;
+   
+ Result:=FName;
+ UniqueString(Result);
+   
+ ReleaseLock;
 end;
-
+   
 {==============================================================================}
 
-function TNetworkProtocol.GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TProtocolTransport;
-var
- Transport:TProtocolTransport;
+function TNetworkProtocol.AcquireLock:Boolean;
 begin
  {}
- FTransports.ReaderLock;
- try
-  Result:=nil;
-  
-  {Get Transport}
-  Transport:=TProtocolTransport(FTransports.First);
-  while Transport <> nil do
-   begin
-    {Check Transport}
-    if Transport.Transport.Family = AFamily then
-     begin
-      {Lock Transport} 
-      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-
-      {Return Result}
-      Result:=Transport;
-      Exit;
-     end;
-     
-    {Get Next} 
-    Transport:=TProtocolTransport(Transport.Next);
-   end;
- finally 
-  FTransports.ReaderUnlock;
- end; 
+ Result:=(MutexLock(FLocalLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
 
-function TNetworkProtocol.GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TProtocolTransport;
-var
- Transport:TProtocolTransport;
+function TNetworkProtocol.ReleaseLock:Boolean;
 begin
  {}
- FTransports.ReaderLock;
- try
-  Result:=nil;
-  
-  {Get Transport}
-  Transport:=TProtocolTransport(FTransports.First);
-  while Transport <> nil do
-   begin
-    {Check Transport}
-    if Transport.Transport = ATransport then
-     begin
-      {Lock Transport} 
-      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-
-      {Return Result}
-      Result:=Transport;
-      Exit;
-     end;
-    
-    {Get Next}     
-    Transport:=TProtocolTransport(Transport.Next);
-   end;
- finally 
-  FTransports.ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.GetTransportByNext(APrevious:TProtocolTransport;ALock,AUnlock:Boolean;AState:LongWord):TProtocolTransport;
-var
- Transport:TProtocolTransport;
-begin
- {}
- FTransports.ReaderLock;
- try
-  Result:=nil;
-  
-  {Check Previous}
-  if APrevious = nil then
-   begin
-    {Get First}
-    Transport:=TProtocolTransport(FTransports.First);
-    if Transport <> nil then
-     begin
-      {Lock Transport}
-      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
-      {Return Result}
-      Result:=Transport;
-     end;
-   end
-  else
-   begin
-    {Get Next}
-    Transport:=TProtocolTransport(APrevious.Next);
-    if Transport <> nil then
-     begin
-      {Lock Transport}
-      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
-      {Return Result}
-      Result:=Transport;
-     end;
-
-    {Unlock Previous}
-    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
-  FTransports.ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.AddTransport(ATransport:TNetworkTransport):Boolean;
-begin
- {Virtual Base Method}
- Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.RemoveTransport(ATransport:TNetworkTransport):Boolean;
-begin
- {Virtual Base Method}
- Result:=False;
+ Result:=(MutexUnlock(FLocalLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -2500,101 +2415,6 @@ function TNetworkProtocol.FindPort(APort:Word;AWrite,ALock:Boolean):TProtocolPor
 begin
  {Virtual Base Method}
  Result:=nil;
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.GetSocketByNext(APrevious:TProtocolSocket;ALock,AUnlock:Boolean;AState:LongWord):TProtocolSocket;
-var
- Socket:TProtocolSocket;
-begin
- {}
- FSockets.ReaderLock;
- try
-  Result:=nil;
-  
-  {Check Previous}
-  if APrevious = nil then
-   begin
-    {Get First}
-    Socket:=TProtocolSocket(FSockets.First);
-    if Socket <> nil then
-     begin
-      {Lock Socket}
-      if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-      
-      {Return Result}
-      Result:=Socket;
-     end;
-   end
-  else
-   begin
-    {Get Next}
-    Socket:=TProtocolSocket(APrevious.Next);
-    if Socket <> nil then
-     begin
-      {Lock Socket}
-      if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-      
-      {Return Result}
-      Result:=Socket;
-     end;
-
-    {Unlock Previous}
-    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
-  FSockets.ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean;
-var
- Socket:TProtocolSocket;
-begin
- {}
- FSockets.ReaderLock;
- try
-  Result:=False;
-  
-  {Get Socket}
-  Socket:=TProtocolSocket(FSockets.First);
-  while Socket <> nil do
-   begin
-    {Check Socket}
-    if Socket = ASocket then
-     begin
-      {Lock Socket}
-      if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-      
-      {Return Result}
-      Result:=True;
-      Exit;
-     end;
-     
-    {Get Next} 
-    Socket:=TProtocolSocket(Socket.Next);
-   end;
- finally 
-  FSockets.ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TNetworkProtocol.FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket;
-begin
- {Virtual Base Method}
- Result:=nil;
-end;
-
-{==============================================================================}
-
-procedure TNetworkProtocol.FlushSockets(All:Boolean);
-begin
- {Virtual Base Method}
 end;
 
 {==============================================================================}
@@ -2828,7 +2648,7 @@ begin
   {$ENDIF}
   
   {Check the Parameters}
-  SetLastError(WSAEINVAL);
+  NetworkSetLastError(WSAEINVAL);
   if not Assigned(AReadfds) and not Assigned(AWritefds) and not Assigned(AExceptfds) then Exit;
   
   {Setup the Sets}
@@ -2865,7 +2685,7 @@ begin
    begin 
     {Multiple Sockets or Multiple Sets}
     {Poll the sets until one matches}
-    SetLastError(WSAENOTSOCK);
+    NetworkSetLastError(WSAENOTSOCK);
     StartTime:=GetTickCount64;
     while True do
      begin
@@ -3037,6 +2857,265 @@ function TNetworkProtocol.GetStatistics:TProtocolStatistics;
 begin
  {Virtual Base Method}
  FillChar(Result,SizeOf(TProtocolStatistics),0);
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TProtocolTransport;
+var
+ Transport:TProtocolTransport;
+begin
+ {}
+ FTransports.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Transport}
+  Transport:=TProtocolTransport(FTransports.First);
+  while Transport <> nil do
+   begin
+    {Check Transport}
+    if Transport.Handle = AHandle then
+     begin
+      {Lock Transport} 
+      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
+
+      {Return Result}
+      Result:=Transport;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Transport:=TProtocolTransport(Transport.Next);
+   end;
+ finally 
+  FTransports.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TProtocolTransport;
+var
+ Transport:TProtocolTransport;
+begin
+ {}
+ FTransports.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Transport}
+  Transport:=TProtocolTransport(FTransports.First);
+  while Transport <> nil do
+   begin
+    {Check Transport}
+    if Transport.Transport.Family = AFamily then
+     begin
+      {Lock Transport} 
+      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
+
+      {Return Result}
+      Result:=Transport;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Transport:=TProtocolTransport(Transport.Next);
+   end;
+ finally 
+  FTransports.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TProtocolTransport;
+var
+ Transport:TProtocolTransport;
+begin
+ {}
+ FTransports.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Get Transport}
+  Transport:=TProtocolTransport(FTransports.First);
+  while Transport <> nil do
+   begin
+    {Check Transport}
+    if Transport.Transport = ATransport then
+     begin
+      {Lock Transport} 
+      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
+
+      {Return Result}
+      Result:=Transport;
+      Exit;
+     end;
+    
+    {Get Next}     
+    Transport:=TProtocolTransport(Transport.Next);
+   end;
+ finally 
+  FTransports.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.GetTransportByNext(APrevious:TProtocolTransport;ALock,AUnlock:Boolean;AState:LongWord):TProtocolTransport;
+var
+ Transport:TProtocolTransport;
+begin
+ {}
+ FTransports.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Previous}
+  if APrevious = nil then
+   begin
+    {Get First}
+    Transport:=TProtocolTransport(FTransports.First);
+    if Transport <> nil then
+     begin
+      {Lock Transport}
+      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
+      
+      {Return Result}
+      Result:=Transport;
+     end;
+   end
+  else
+   begin
+    {Get Next}
+    Transport:=TProtocolTransport(APrevious.Next);
+    if Transport <> nil then
+     begin
+      {Lock Transport}
+      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
+      
+      {Return Result}
+      Result:=Transport;
+     end;
+
+    {Unlock Previous}
+    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+   end;   
+ finally 
+  FTransports.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.AddTransport(ATransport:TNetworkTransport):Boolean;
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.RemoveTransport(ATransport:TNetworkTransport):Boolean;
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.GetSocketByNext(APrevious:TProtocolSocket;ALock,AUnlock:Boolean;AState:LongWord):TProtocolSocket;
+var
+ Socket:TProtocolSocket;
+begin
+ {}
+ FSockets.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Previous}
+  if APrevious = nil then
+   begin
+    {Get First}
+    Socket:=TProtocolSocket(FSockets.First);
+    if Socket <> nil then
+     begin
+      {Lock Socket}
+      if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
+      
+      {Return Result}
+      Result:=Socket;
+     end;
+   end
+  else
+   begin
+    {Get Next}
+    Socket:=TProtocolSocket(APrevious.Next);
+    if Socket <> nil then
+     begin
+      {Lock Socket}
+      if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
+      
+      {Return Result}
+      Result:=Socket;
+     end;
+
+    {Unlock Previous}
+    if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
+   end;   
+ finally 
+  FSockets.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean;
+var
+ Socket:TProtocolSocket;
+begin
+ {}
+ FSockets.ReaderLock;
+ try
+  Result:=False;
+  
+  {Get Socket}
+  Socket:=TProtocolSocket(FSockets.First);
+  while Socket <> nil do
+   begin
+    {Check Socket}
+    if Socket = ASocket then
+     begin
+      {Lock Socket}
+      if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
+      
+      {Return Result}
+      Result:=True;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Socket:=TProtocolSocket(Socket.Next);
+   end;
+ finally 
+  FSockets.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TNetworkProtocol.FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket;
+begin
+ {Virtual Base Method}
+ Result:=nil;
+end;
+
+{==============================================================================}
+
+procedure TNetworkProtocol.FlushSockets(All:Boolean);
+begin
+ {Virtual Base Method}
 end;
 
 {==============================================================================}
@@ -4305,6 +4384,38 @@ end;
 
 {==============================================================================}
 
+function TNetworkFilter.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkFilter.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkFilter.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkFilter.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TNetworkFilter.GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFilterTransport;
 var
  Transport:TFilterTransport;
@@ -4469,38 +4580,6 @@ end;
 
 {==============================================================================}
 
-function TNetworkFilter.ReaderLock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkFilter.ReaderUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkFilter.WriterLock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkFilter.WriterUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
 function TNetworkFilter.StartFilter:Boolean;
 begin
  {Virtual Base Method}
@@ -4634,6 +4713,38 @@ begin
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
+end;
+
+{==============================================================================}
+
+function TNetworkConfig.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkConfig.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkConfig.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkConfig.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -4798,38 +4909,6 @@ function TNetworkConfig.RemoveTransport(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkConfig.ReaderLock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkConfig.ReaderUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkConfig.WriterLock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkConfig.WriterUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}

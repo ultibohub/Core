@@ -193,6 +193,11 @@ function ConsoleLoggingStop(Logging:PLoggingDevice):LongWord;
 function ConsoleLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
 
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+
+{==============================================================================}
 {RTL Logging Functions}
 procedure SysLoggingOutput(const AText:String);
 procedure SysLoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:String);
@@ -200,10 +205,13 @@ procedure SysLoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:St
 {==============================================================================}
 {Logging Helper Functions}
 function LoggingDeviceGetCount:LongWord; inline;
+
 function LoggingDeviceGetDefault:PLoggingDevice; inline;
 function LoggingDeviceSetDefault(Logging:PLoggingDevice):LongWord; 
 
 function LoggingDeviceCheck(Logging:PLoggingDevice):PLoggingDevice;
+
+function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean; 
 
 function LoggingGetMessageslotFlags:LongWord;
 
@@ -235,6 +243,14 @@ var
 
  LoggingDirectLock:TMutexHandle = INVALID_HANDLE_VALUE;
  LoggingOutputCount:LongWord;
+ 
+ LoggingTextIOOutputDevice:PLoggingDevice;
+ 
+{==============================================================================}
+{==============================================================================}
+threadvar
+ {Logging specific thread variables}
+ LoggingTextIOBuffer:String;
  
 {==============================================================================}
 {==============================================================================}
@@ -312,6 +328,10 @@ begin
  
  {Register Notification}
  ConsoleDeviceNotification(nil,LoggingConsoleDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_OPEN or DEVICE_NOTIFICATION_CLOSE,NOTIFIER_FLAG_WORKER);
+  
+ {Register Platform Text IO Handlers}
+ {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling LoggingDeviceRedirectOutput}
+ {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling LoggingDeviceRedirectOutput}
   
  {Register Platform Logging Handlers}
  LoggingOutputHandler:=SysLoggingOutput;
@@ -1153,6 +1173,72 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOWriteChar function}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=True;
+ 
+ {Check Char}
+ case ACh of
+  #10:begin
+    case DefaultTextLineBreakStyle of
+     tlbsLF,tlbsCRLF:begin
+       {Output Logging}
+       LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
+       
+       {Clear Buffer}
+       SetLength(LoggingTextIOBuffer,0);
+      end;
+    end;  
+   end; 
+  #13:begin
+    case DefaultTextLineBreakStyle of
+     tlbsCR:begin
+       {Output Logging}
+       LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
+       
+       {Clear Buffer}
+       SetLength(LoggingTextIOBuffer,0);
+      end;
+    end;
+   end;  
+  else
+   begin
+    {Add to Buffer}
+    LoggingTextIOBuffer:=LoggingTextIOBuffer + ACh;
+   end;
+ end;  
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+{Handler for platform TextIOWriteBuffer function}
+
+{Note: Not intended to be called directly by applications}
+var
+ WorkBuffer:String;
+begin
+ {}
+ Result:=0;
+ 
+ if (ABuffer <> nil) and (ACount > 0) then
+  begin
+   SetLength(WorkBuffer,ACount);
+   StrLCopy(PChar(WorkBuffer),ABuffer,ACount);
+   
+   if LoggingDeviceOutput(LoggingTextIOOutputDevice,WorkBuffer) <> ERROR_SUCCESS then Exit;
+  end;
+
+ Result:=ACount;  
+end;
+
+{==============================================================================}
+{==============================================================================}
 {RTL Logging Functions}
 procedure SysLoggingOutput(const AText:String);
 var
@@ -1421,6 +1507,42 @@ begin
     CriticalSectionUnlock(LoggingDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean; 
+{Redirect standard output to the logging device specified by Logging}
+{Logging: The logging device to redirect output to (or nil to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the output of the text files Output, ErrOutput, StdOut and StdErr
+       which also redirects the output of Write, WriteLn and the standard C library}
+begin
+ {}
+ Result:=False;
+ 
+ if Logging = nil then
+  begin
+   {Stop Redirection}
+   TextIOWriteCharHandler:=nil;
+   TextIOWriteBufferHandler:=nil;
+   
+   LoggingTextIOOutputDevice:=nil;
+  end
+ else
+  begin
+   {Check Logging}
+   if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+   
+   {Start Redirection}
+   TextIOWriteCharHandler:=SysTextIOWriteChar;
+   TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
+  
+   LoggingTextIOOutputDevice:=Logging;
+  end;  
+  
+ Result:=True;
 end;
 
 {==============================================================================}

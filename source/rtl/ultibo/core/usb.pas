@@ -2814,9 +2814,9 @@ end;
 {==============================================================================}
 
 function USBDeviceReadStringLanguageIds(Device:PUSBDevice):TUSBStringDescriptorLANGIDs; 
-{Get the list of supported string language identifiers from the the specified device}
+{Get the list of supported string language identifiers from the specified device}
 {Device: The USB device to read the language identifiers from}
-{Return: An array of supported language idenfitiers (Unused values are returned as zero)}
+{Return: An array of supported language identifiers (Unused values are returned as zero)}
 var
  Len:LongWord;
  Size:LongWord;

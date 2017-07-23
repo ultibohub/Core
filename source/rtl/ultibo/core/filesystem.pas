@@ -74,25 +74,23 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Logging,Storage,Dos,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
 
-
-//To Do //TFileSystem.RenameFile - Final //RemoveRef changes (plus Recheck all)
-
-//To Do //The handling of UpdateEnumHandles/UpdateFindHandles may still be not sufficient, handles are updated and then entry if removed etc
-                      //This could leave open the possibility of another thread moving to that entry in between time (need a WriterLock somewhere ?)
-                        //UpdateEnumHandles can be handled by moving into WriterLock block
-                        //UpdateFindHandles, wrapper usage with FEntries WriterLock to protect ?
+//To Do //The handling of UpdateEnumHandles/UpdateFindHandles may still be not sufficient, handles are updated and then entry is removed etc
+        //This could leave open the possibility of another thread moving to that entry in between time (need a WriterLock somewhere ?)
+        //UpdateEnumHandles can be handled by moving into WriterLock block
+        //UpdateFindHandles, wrapper usage with FEntries WriterLock to protect ?
                         
-                      //Really applies to CheckFileHandles as well, another thread could open in between
-                        //Wrapper usage with FEntries WriterLock to protect ?
+        //Really applies to CheckFileHandles as well, another thread could open in between
+        //Wrapper usage with FEntries WriterLock to protect ?
                         
-                      //ReleaseFindHandles/ReleaseFileHandles/ReleaseRawHandles/ReleaseEnumHandles are ok as they are after the remove
-                      //DismountFileHandles/DismountFindHandles are ok as they invalid or close the handle before remove
+        //ReleaseFindHandles/ReleaseFileHandles/ReleaseRawHandles/ReleaseEnumHandles are ok as they are after the remove
+        //DismountFileHandles/DismountFindHandles are ok as they invalid or close the handle before remove
                       
 //To Do //Complete Ansi/Unicode implementation (Both versions for each function)
 
 //To Do //Universal 64bit sectors etc
 
-//To Do //Change Handle values from Integer to THandle ?
+//To Do //Change Handle values from Integer to THandle to match FPC
+        //Change Integer to LongInt where applicable to match FPC
 
 //To Do //Look for:
 
@@ -112,12 +110,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 //Writer ?
  
 //Reader
- 
-//Critical //mtREMOVABLE  //VirtualDisk remaining
-
-//AddRef
-
-//RemoveRef
 
 //) = Uppercase(  //Use WorkBuffer
 
@@ -194,7 +186,7 @@ const
  MAX_SECTOR_SIZE = 4096;
  ISO_SECTOR_SIZE = 2048;
  
- VOLUME_PREFIX = '\Volume';         {eg \Volume1}  //To Do //Convert these //VOLUME_PREFIX etc
+ VOLUME_PREFIX = '\Volume';         {eg \Volume1}
  EXTENDED_PREFIX = '\Extended';     {eg \Extended1}
  PARTITION_PREFIX = '\Partition';   {eg \Partition1}
  CONTROLLER_PREFIX = '\Controller'; {eg \Controller0}
@@ -1678,14 +1670,14 @@ type
    function DeleteFile(const AFileName:String):Boolean;
    procedure FileClose(AHandle:Integer);
    function RenameFile(const AOldName,ANewName:String):Boolean;
-   function FileSeek(AHandle,AOffset,AOrigin:Integer):Integer;
+   function FileSeek(AHandle:THandle;AOffset,AOrigin:LongInt):LongInt;
    function FileFlush(AHandle:Integer):Boolean;
    function FileTruncate(AHandle:Integer):Boolean;
    function SetEndOfFile(AHandle:Integer):Boolean;
 
    function EndOfFile(AHandle:Integer):Boolean;
-   function FilePos(AHandle:Integer):Integer;
-   function FileSize(AHandle:Integer):Integer;
+   function FilePos(AHandle:THandle):LongInt;
+   function FileSize(AHandle:THandle):LongInt;
 
    function FileAge(const AFileName:String):Integer;
    function FileExists(const AFileName:String):Boolean;
@@ -1694,8 +1686,8 @@ type
    function FileSetAttr(const AFileName:String;AAttr:Integer):Integer;
    function FileSetDate(AHandle:Integer;AAge:Integer):Integer;
 
-   function FileRead(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
-   function FileWrite(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+   function FileRead(AHandle:THandle;var ABuffer;ACount:LongInt):LongInt;
+   function FileWrite(AHandle:THandle;const ABuffer;ACount:LongInt):LongInt;
 
     {Directory Methods}
    function CreateDir(const ADirName:String):Boolean;
@@ -1767,11 +1759,11 @@ type
    function FileCreateEx(const AFileName,AShortName:String):Integer;
    function CreateDirEx(const ADirName,AShortName:String):Boolean;
 
-   function FileSeekEx(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+   function FileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64;
 
    function EndOfFileEx(AHandle:Integer):Boolean;
-   function FilePosEx(AHandle:Integer):Int64;
-   function FileSizeEx(AHandle:Integer):Int64;
+   function FilePosEx(AHandle:THandle):Int64;
+   function FileSizeEx(AHandle:THandle):Int64;
 
    function FileAgeEx(const AFileName:String):TFileTime;
 
@@ -1795,7 +1787,7 @@ type
    function DefineDosDevice(const ADeviceName,ATargetPath:String;AFlags:LongWord):Boolean;
    function GetDiskType(const ARootPath:String):LongWord; {Equivalent to Win32 GetDriveType}
    function GetDiskFreeSpace(const ARootPath:String;var ASectorsPerCluster,ABytesPerSector,ANumberOfFreeClusters,ATotalNumberOfClusters:LongWord):Boolean;
-   function GetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:Int64):Boolean;
+   function GetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:QWord):Boolean;
    function GetLogicalDrives:LongWord;
    function GetLogicalDriveStrings:String;
    function GetVolumeInformation(const ARootPath:String;var AVolumeName:String;var AVolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var ASystemName:String):Boolean; 
@@ -1835,7 +1827,7 @@ type
    function SetFileApisToANSI:Boolean;
    function SetFileApisToOEM:Boolean;
    function SetFileAttributes(const AFileName:String;AFileAttributes:LongWord):Boolean;
-   function SetFilePointer(AHandle:THandle;ADistanceToMove:LongWord;var ADistanceToMoveHigh:LongWord;AMoveMethod:LongWord):LongWord;
+   function SetFilePointer(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceToMoveHigh:LongInt;AMoveMethod:LongWord):LongWord;
    function SetFilePointerEx(AHandle:THandle;const ADistanceToMove:Int64;var ANewFilePointer:Int64;AMoveMethod:LongWord):Boolean;
    {function SetFileTime} {Already Defined}
    //function SetHandleCount //To Do
@@ -3718,25 +3710,25 @@ type
    function DeleteFile(const FileName:String):Boolean; virtual;
    procedure FileClose(Handle:Integer); virtual;
    function RenameFile(const OldName,NewName:String):Boolean; virtual;
-   function FileSeek(Handle,Offset,Origin:Integer):Integer; virtual;
-   function FileSeekEx(Handle:Integer;const Offset:Int64;Origin:Integer):Int64; virtual;
+   function FileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt; virtual;
+   function FileSeekEx(Handle:THandle;const Offset:Int64;Origin:LongInt):Int64; virtual;
    function FileFlush(Handle:Integer):Boolean; virtual;
    function FileTruncate(Handle:Integer):Boolean; virtual;
 
-   function FilePos(Handle:Integer):Integer; virtual;
-   function FilePosEx(Handle:Integer):Int64; virtual;
+   function FilePos(Handle:THandle):LongInt; virtual;
+   function FilePosEx(Handle:THandle):Int64; virtual;
 
    function FileGetAttr(const FileName:String):Integer; virtual;
    function FileGetDate(Handle:Integer):Integer; virtual;
-   function FileGetSize(Handle:Integer):Integer; virtual;
-   function FileGetSizeEx(Handle:Integer):Int64; virtual;
+   function FileGetSize(Handle:THandle):LongInt; virtual;
+   function FileGetSizeEx(Handle:THandle):Int64; virtual;
    function FileSetAttr(const FileName:String;Attr:Integer):Integer; virtual;
    function FileSetDate(Handle:Integer;Age:Integer):Integer; virtual;
-   function FileSetSize(Handle:Integer;Size:Integer):Integer; virtual;
-   function FileSetSizeEx(Handle:Integer;const Size:Int64):Integer; virtual;
+   function FileSetSize(Handle:THandle;Size:LongInt):LongInt; virtual;
+   function FileSetSizeEx(Handle:THandle;const Size:Int64):LongInt; virtual;
 
-   function FileRead(Handle:Integer;var Buffer;Count:Integer):Integer; virtual;
-   function FileWrite(Handle:Integer;const Buffer;Count:Integer):Integer; virtual;
+   function FileRead(Handle:THandle;var Buffer;Count:LongInt):LongInt; virtual;
+   function FileWrite(Handle:THandle;const Buffer;Count:LongInt):LongInt; virtual;
 
     {Directory Functions}
    function CreateDir(const DirName:String):Boolean; virtual;
@@ -5153,6 +5145,8 @@ procedure FileSysInit;
 function FileSysStart:LongWord;
 function FileSysStop:LongWord;
 
+function FileSysStartCompleted:Boolean;
+
 procedure FileSysAsyncStart(Data:Pointer);
 
 {==============================================================================}
@@ -5186,14 +5180,14 @@ function FSFileCreate(const AFileName:String):Integer; inline;
 function FSDeleteFile(const AFileName:String):Boolean; inline;
 procedure FSFileClose(AHandle:Integer); inline;
 function FSRenameFile(const AOldName,ANewName:String):Boolean; inline;
-function FSFileSeek(AHandle,AOffset,AOrigin:Integer):Integer; inline;
+function FSFileSeek(AHandle:THandle;AOffset,AOrigin:LongInt):LongInt; inline;
 function FSFileFlush(AHandle:Integer):Boolean; inline;
 function FSFileTruncate(AHandle:Integer):Boolean; inline;
 function FSSetEndOfFile(AHandle:THandle):Boolean; inline;
 
 function FSEndOfFile(AHandle:Integer):Boolean; inline;
-function FSFilePos(AHandle:Integer):Integer; inline;
-function FSFileSize(AHandle:Integer):Integer; inline;
+function FSFilePos(AHandle:THandle):LongInt; inline;
+function FSFileSize(AHandle:THandle):LongInt; inline;
 
 function FSFileAge(const AFileName:String):Integer; inline;
 function FSFileExists(const AFileName:String):Boolean; inline;
@@ -5202,8 +5196,8 @@ function FSFileGetDate(AHandle:Integer):Integer; inline;
 function FSFileSetAttr(const AFileName:String;AAttr:Integer):Integer; inline;
 function FSFileSetDate(AHandle:Integer;AAge:Integer):Integer; inline;
 
-function FSFileRead(AHandle:Integer;var ABuffer;ACount:Integer):Integer; inline;
-function FSFileWrite(AHandle:Integer;const ABuffer;ACount:Integer):Integer; inline;
+function FSFileRead(AHandle:THandle;var ABuffer;ACount:LongInt):LongInt; inline;
+function FSFileWrite(AHandle:THandle;const ABuffer;ACount:LongInt):LongInt; inline;
 
 {Directory Functions}
 function FSCreateDir(const ADirName:String):Boolean; inline;
@@ -5229,10 +5223,10 @@ function FSGetLongName(const AFileName:String):String; inline;
 function FSGetTrueName(const AFileName:String):String; inline;
 
 {Extended Functions}
-function FSFileSeekEx(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64; inline;
+function FSFileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64; inline;
 
 function FSEndOfFileEx(AHandle:Integer):Boolean; inline;
-function FSFilePosEx(AHandle:Integer):Int64; inline;
+function FSFilePosEx(AHandle:THandle):Int64; inline;
 function FSFileSizeEx(AHandle:THandle):Int64; inline;
 
 function FSFileAgeEx(const AFileName:String):TFileTime; inline;
@@ -5255,7 +5249,7 @@ procedure FSFindCloseEx(var ASearchRec:TFileSearchRec); inline;
 function FSDefineDosDevice(const ADeviceName,ATargetPath:String;AFlags:LongWord):Boolean; inline;
 function FSGetDiskType(const ARootPath:String):LongWord; inline; {Equivalent to Win32 GetDriveType}
 function FSGetDiskFreeSpace(const ARootPath:String;var ASectorsPerCluster,ABytesPerSector,ANumberOfFreeClusters,ATotalNumberOfClusters:LongWord):Boolean; inline;
-function FSGetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:Int64):Boolean; inline;
+function FSGetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:QWord):Boolean; inline;
 function FSGetLogicalDrives:LongWord; inline;
 function FSGetLogicalDriveStrings:String; inline;
 function FSGetVolumeInformation(const ARootPath:String;var AVolumeName:String;var AVolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var ASystemName:String):Boolean; inline;
@@ -5281,7 +5275,7 @@ function FSReadFile(AHandle:THandle;var ABuffer;ABytesToRead:LongWord;var ABytes
 function FSSetFileApisToANSI:Boolean; inline;
 function FSSetFileApisToOEM:Boolean; inline;
 function FSSetFileAttributes(const AFileName:String;AFileAttributes:LongWord):Boolean; inline;
-function FSSetFilePointer(AHandle:THandle;ADistanceToMove:LongWord;var ADistanceToMoveHigh:LongWord;AMoveMethod:LongWord):LongWord; inline;
+function FSSetFilePointer(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceToMoveHigh:LongInt;AMoveMethod:LongWord):LongWord; inline;
 function FSSetFilePointerEx(AHandle:THandle;const ADistanceToMove:Int64;var ANewFilePointer:Int64;AMoveMethod:LongWord):Boolean; inline;
 function FSWriteFile(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var ABytesWritten:LongWord):Boolean; inline;
 function FSGetLongPathName(const AShortPath:String):String; inline;
@@ -5296,6 +5290,12 @@ function FSCreateDirectory(const APathName:String):Boolean; inline;
 function FSGetCurrentDirectory:String; inline;
 function FSRemoveDirectory(const APathName:String):Boolean; inline;
 function FSSetCurrentDirectory(const APathName:String):Boolean; inline;
+
+{==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
 
 {==============================================================================}
 {RTL FileSystem Functions}
@@ -5374,6 +5374,9 @@ function FileSysLoggingSetTarget(Logging:PLoggingDevice;const Target:String):Lon
 
 {==============================================================================}
 {FileSystem Helper Functions}
+function FileSysRedirectInput(Handle:THandle):Boolean;
+function FileSysRedirectOutput(Handle:THandle):Boolean;
+
 function FileSysStorageGetMediaType(Storage:PStorageDevice):TMediaType;
 function FileSysStorageGetController(Storage:PStorageDevice):TDiskController;
 
@@ -5435,6 +5438,9 @@ var
  FileSysSCSIController:TSCSIDiskController;
  FileSysUSBController:TUSBDiskController;
  FileSysMMCController:TMMCDiskController;
+ 
+ FileSysTextIOInputHandle:THandle = INVALID_HANDLE_VALUE;
+ FileSysTextIOOutputHandle:THandle = INVALID_HANDLE_VALUE;
  
 var 
  {Partitioning Variables}
@@ -15634,50 +15640,10 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileSeek(AHandle,AOffset,AOrigin:Integer):Integer;
-var
- Drive:TDiskDrive;
- Volume:TDiskVolume;
+function TFileSysDriver.FileSeek(AHandle:THandle;AOffset,AOrigin:LongInt):LongInt;
 begin
  {}
- Result:=-1;
- 
- if not ReaderLock then Exit;
- try
-  {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSeek Handle = ' + IntToHex(AHandle,8) + ' Offset = ' + IntToStr(AOffset));
-  {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
-  if Drive <> nil then
-   begin
-    try
-     if Drive.FileSystem = nil then Exit;
-   
-     Result:=Drive.FileSystem.FileSeek(AHandle,AOffset,AOrigin);
-    finally
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
-   end
-  else
-   begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
-    if Volume <> nil then
-     begin
-      try
-       if Volume.FileSystem = nil then Exit;
-     
-       Result:=Volume.FileSystem.FileSeek(AHandle,AOffset,AOrigin);
-      finally
-       {Unlock Volume}
-       Volume.ReaderUnlock;
-      end; 
-     end;
-   end;
- finally  
-  ReaderUnlock;
- end; 
+ Result:=FileSeekEx(AHandle,AOffset,AOrigin);
 end;
 
 {==============================================================================}
@@ -15797,71 +15763,23 @@ begin
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EndOfFile Handle = ' + IntToHex(AHandle,8));
  {$ENDIF}
  
- Result:=FilePos(AHandle) >= FileSize(AHandle);
+ Result:=FilePosEx(AHandle) >= FileSizeEx(AHandle);
 end;
 
 {==============================================================================}
 
-function TFileSysDriver.FilePos(AHandle:Integer):Integer;
-var
- Drive:TDiskDrive;
- Volume:TDiskVolume;
+function TFileSysDriver.FilePos(AHandle:THandle):LongInt;
 begin
  {}
- Result:=-1;
- 
- if not ReaderLock then Exit;
- try
-  {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FilePos Handle = ' + IntToHex(AHandle,8));
-  {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
-  if Drive <> nil then
-   begin
-    try
-     if Drive.FileSystem = nil then Exit;
-   
-     Result:=Drive.FileSystem.FilePos(AHandle);
-    finally
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
-   end
-  else
-   begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
-    if Volume <> nil then
-     begin
-      try
-       if Volume.FileSystem = nil then Exit;
-     
-       Result:=Volume.FileSystem.FilePos(AHandle);
-      finally
-       {Unlock Volume}
-       Volume.ReaderUnlock;
-      end; 
-     end;
-   end;
- finally  
-  ReaderUnlock;
- end; 
+ Result:=FilePosEx(AHandle);
 end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileSize(AHandle:Integer):Integer;
-var
- Current:Integer;
+function TFileSysDriver.FileSize(AHandle:THandle):LongInt;
 begin
  {}
- {$IFDEF FILESYS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSize Handle = ' + IntToHex(AHandle,8));
- {$ENDIF}
- 
- Current:=FilePos(AHandle);
- Result:=FileSeek(AHandle,0,soFromEnd);
- FileSeek(AHandle,Current,soFromBeginning);
+ Result:=FileSizeEx(AHandle);
 end;
 
 {==============================================================================}
@@ -16098,13 +16016,13 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileRead(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.FileRead(AHandle:THandle;var ABuffer;ACount:LongInt):LongInt;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
 begin
  {}
- Result:=0;
+ Result:=-1;
  
  if not ReaderLock then Exit;
  try
@@ -16146,13 +16064,13 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileWrite(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.FileWrite(AHandle:THandle;const ABuffer;ACount:LongInt):LongInt;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
 begin
  {}
- Result:=0;
+ Result:=-1;
  
  if not ReaderLock then Exit;
  try
@@ -18569,7 +18487,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileSeekEx(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TFileSysDriver.FileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -18629,7 +18547,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FilePosEx(AHandle:Integer):Int64;
+function TFileSysDriver.FilePosEx(AHandle:THandle):Int64;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -18677,7 +18595,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileSizeEx(AHandle:Integer):Int64;
+function TFileSysDriver.FileSizeEx(AHandle:THandle):Int64;
 var
  Current:Int64;
 begin
@@ -19270,7 +19188,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:Int64):Boolean;
+function TFileSysDriver.GetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:QWord):Boolean;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -19625,7 +19543,7 @@ begin
        {Truncate File}
        if Result <> INVALID_HANDLE_VALUE then
         begin
-         FileSeek(Result,0,soFromBeginning);
+         FileSeekEx(Result,0,soFromBeginning);
          FileTruncate(Result);
         end; 
       end
@@ -19671,7 +19589,7 @@ begin
        {Truncate File}
        if Result <> INVALID_HANDLE_VALUE then
         begin
-         FileSeek(Result,0,soFromBeginning);
+         FileSeekEx(Result,0,soFromBeginning);
          FileTruncate(Result);
         end; 
       end;
@@ -19891,7 +19809,7 @@ end;
 {==============================================================================}
 
 function TFileSysDriver.GetFileInformationByHandle(AHandle:THandle;var AFileInformation:TByHandleFileInformation):Boolean;
-{Get the defaukts of an existing entry with an open Handle}
+{Get the details of an existing entry with an open Handle}
 {Note: Returned times are UTC}
 var
  FileHandle:TFileHandle;
@@ -19991,11 +19909,18 @@ end;
 {==============================================================================}
 
 function TFileSysDriver.ReadFile(AHandle:THandle;var ABuffer;ABytesToRead:LongWord;var ABytesRead:LongWord):Boolean;
+var
+ Count:LongInt;
 begin
  {}
- ABytesRead:=FileRead(AHandle,ABuffer,ABytesToRead);
-  
- Result:=(ABytesRead <> 0);
+ ABytesRead:=0;
+ 
+ Count:=FileRead(AHandle,ABuffer,ABytesToRead);
+ Result:=(Count <> -1);
+ if Result then
+  begin
+   ABytesRead:=Count;
+  end;
 end;
 
 {==============================================================================}
@@ -20050,7 +19975,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SetFilePointer(AHandle:THandle;ADistanceToMove:LongWord;var ADistanceToMoveHigh:LongWord;AMoveMethod:LongWord):LongWord;
+function TFileSysDriver.SetFilePointer(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceToMoveHigh:LongInt;AMoveMethod:LongWord):LongWord;
 var
  Value:Int64;
 begin
@@ -20081,11 +20006,18 @@ end;
 {==============================================================================}
 
 function TFileSysDriver.WriteFile(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var ABytesWritten:LongWord):Boolean;
+var
+ Count:LongInt;
 begin
  {}
- ABytesWritten:=FileWrite(AHandle,ABuffer,ABytesToWrite);
-  
- Result:=(ABytesWritten <> 0);
+ ABytesWritten:=0;
+ 
+ Count:=FileWrite(AHandle,ABuffer,ABytesToWrite);
+ Result:=(Count <> -1);
+ if Result then
+  begin
+   ABytesWritten:=Count;
+  end; 
 end;
 
 {==============================================================================}
@@ -33802,98 +33734,86 @@ begin
        
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
-       if Current <> nil then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end;
-
-       {Split the Stream}
-       if SplitStream(StreamName,StreamName,StreamType) then
-        begin
-         {Get Stream}
-         Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
-        end;
-       if Current <> nil then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end;
-        
-       {Check Name}
-       if not CheckName(StreamName) then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
-       
-       {Add Stream}
-       Current:=AddEntry(Parent,StreamName,faStream,True); 
        if Current = nil then
         begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
+         {Split the Stream}
+         if SplitStream(StreamName,StreamName,StreamType) then
+          begin
+           {Get Stream}
+           Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
+          end;
+        end;  
+       if Current = nil then
+        begin
+         {Check Name}
+         if not CheckName(StreamName) then
+          begin
+           {Remove Reference}
+           Parent.RemoveReference;
+           Exit;
+          end; 
+         
+         {Add Stream}
+         Current:=AddEntry(Parent,StreamName,faStream,True); 
+         if Current = nil then
+          begin
+           {Remove Reference}
+           Parent.RemoveReference;
+           Exit;
+          end;
+        end;
       end
      else
       begin
        {Get File or Folder}
        Current:=GetEntryEx(Parent,Name,faDirectory or faFile,True,False,False);
-       if Current <> nil then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
-        
-       {Check Name}
-       if not CheckName(Name) then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
-       
-       {Add File}
-       Current:=AddEntry(Parent,Name,faFile,True);
        if Current = nil then
         begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
+         {Check Name}
+         if not CheckName(Name) then
+          begin
+           {Remove Reference}
+           Parent.RemoveReference;
+           Exit;
+          end; 
+         
+         {Add File}
+         Current:=AddEntry(Parent,Name,faFile,True);
+         if Current = nil then
+          begin
+           {Remove Reference}
+           Parent.RemoveReference;
+           Exit;
+          end; 
+         
+         {Check Encryption}
+         if (FFolderEncryption) and ((Parent.Attributes and faEncrypted) = faEncrypted) then
+          begin
+           {Set Encrypted}
+           Current.Attributes:=(Current.Attributes or faEncrypted);
+           if not SetEntry(Parent,Current) then
+            begin
+             {Remove Reference}
+             Current.RemoveReference;
+             Parent.RemoveReference;
+             Exit;
+            end; 
+          end;
+         
+         {Check Compression}
+         if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
+          begin
+           {Set Compressed}
+           Current.Attributes:=(Current.Attributes or faCompressed);
+           if not SetEntry(Parent,Current) then
+            begin
+             {Remove Reference}
+             Current.RemoveReference;
+             Parent.RemoveReference;
+             Exit;
+            end; 
+          end;
         end; 
-       
-       {Check Encryption}
-       if (FFolderEncryption) and ((Parent.Attributes and faEncrypted) = faEncrypted) then
-        begin
-         {Set Encrypted}
-         Current.Attributes:=(Current.Attributes or faEncrypted);
-         if not SetEntry(Parent,Current) then
-          begin
-           {Remove Reference}
-           Current.RemoveReference;
-           Parent.RemoveReference;
-           Exit;
-          end; 
-        end;
-       
-       {Check Compression}
-       if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
-        begin
-         {Set Compressed}
-         Current.Attributes:=(Current.Attributes or faCompressed);
-         if not SetEntry(Parent,Current) then
-          begin
-           {Remove Reference}
-           Current.RemoveReference;
-           Parent.RemoveReference;
-           Exit;
-          end; 
-        end;
       end;
      try
       {Open Handle}
@@ -34106,6 +34026,7 @@ var
  DestName:String;
  SourceName:String;
  Relative:Boolean;
+ MoveOnly:Boolean;
  ParentName:String;
  StreamName:String;
  StreamType:String;
@@ -34132,7 +34053,9 @@ begin
      Source:=FRoot;
      if Relative then Source:=GetCurrent;
      if Source = nil then Exit;
-    
+     
+     MoveOnly:=False;
+     
      {Add Reference}
      Source.AddReference; 
      
@@ -34182,8 +34105,12 @@ begin
         begin
          {Get Source File or Folder}
          Source:=GetEntryEx(Source,ParentName,faDirectory or faFile,True,True,False);
-         if Source = nil then Exit;
-         //RemoveRef
+         if Source = nil then
+          begin
+           {Remove Reference}
+           Dest.RemoveReference;
+           Exit;
+          end; 
          
          {Get Source Stream}
          Current:=GetEntryEx(Source,StreamName,faStream,True,False,False);
@@ -34196,131 +34123,148 @@ begin
              Current:=GetEntryEx(Source,StreamName,faStream,True,False,False);
             end;
           end;
-         if Current = nil then Exit;
-         //RemoveRef
+         if Current = nil then
+          begin
+           {Remove Reference}
+           Dest.RemoveReference;
+           Source.RemoveReference;
+           Exit;
+          end; 
          
          {Split the Dest Name}
-         if not SplitName(DestName,ParentName,StreamName) then Exit;
-         //RemoveRef
-         
-         {Get Dest File or Folder}
-         Dest:=GetEntryEx(Dest,ParentName,faDirectory or faFile,True,True,False);
-         if Dest = nil then Exit;
-         //RemoveRef
-         
-         {Check Dest Stream} {Allow for Current}
-         if (GetEntry(Dest,StreamName,faStream) <> nil) and (GetEntry(Dest,StreamName,faStream) <> Current) then Exit;
-         //RemoveRef
-         
-         {Split the Dest Stream}
-         if SplitStream(StreamName,StreamName,StreamType) then
+         if not SplitName(DestName,ParentName,StreamName) then
           begin
-           {Check Dest Stream} {Allow for Current}
-           if (GetEntry(Dest,StreamName,faStream) <> nil) and (GetEntry(Dest,StreamName,faStream) <> Current) then Exit;
-           //RemoveRef
-          end;
-         
-         {Check Dest Name}
-         if not CheckName(StreamName) then Exit;
-         //RemoveRef
-         
-         {Check Source Handles}
-         if not FDriver.CheckFileHandles(Current) then Exit;
-         //RemoveRef
-         
-         {Check for Move}
-         if Source <> Dest then
-          begin
-           try
-            {Update Source Handles}
-            if not FDriver.UpdateFindHandles(Current) then Exit;
-           
-            {Move Source Stream}
-            Result:=MoveEntry(Source,Dest,Current);
-            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
-            if not Result then Exit; 
-            
-            {Rename Source Stream} 
-            Result:=RenameEntry(Dest,Current,StreamName);
-            if Result and (Dest.Recent = Current) then Dest.Recent:=nil; 
-           finally
-            {Remove Reference}
-            Current.RemoveReference;
-            Dest.RemoveReference;
-            Source.RemoveReference;
-           end;           
-          end
-         else
-          begin
-           {Rename Source Stream}
-           Result:=RenameEntry(Source,Current,StreamName);
-           if Result and (Source.Recent = Current) then Source.Recent:=nil; 
-           
            {Remove Reference}
            Current.RemoveReference;
            Dest.RemoveReference;
            Source.RemoveReference;
-          end;
+           Exit;
+          end; 
+         
+         {Get Dest File or Folder}
+         Dest:=GetEntryEx(Dest,ParentName,faDirectory or faFile,True,True,False);
+         if Dest = nil then
+          begin
+           {Remove Reference}
+           Current.RemoveReference;
+           Source.RemoveReference;
+           Exit;
+          end; 
+         try
+          {Split the Dest Stream}
+          SplitStream(StreamName,StreamName,StreamType);
+          
+          {Check Dest Name}
+          if not CheckName(StreamName) then Exit;
+          
+          {Check Source Handles}
+          if not FDriver.CheckFileHandles(Current) then Exit;
+          
+          {Check for Move}
+          if Source <> Dest then
+           begin
+            {Check Dest Stream}
+            if GetEntry(Dest,StreamName,faStream) <> nil then Exit;
+            
+            {Check Source Stream} {Allow for Current}
+            if GetEntry(Source,StreamName,faStream) = Current then MoveOnly:=True;
+            
+            {Update Source Handles}
+            if not FDriver.UpdateFindHandles(Current) then Exit;
+            
+            {Move Source Stream}
+            Result:=MoveEntry(Source,Dest,Current);
+            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
+            if not Result then Exit; 
+             
+            {Check Rename}
+            if not MoveOnly then
+             begin
+              {Rename Dest Stream} 
+              Result:=RenameEntry(Dest,Current,StreamName);
+              if Result and (Dest.Recent = Current) then Dest.Recent:=nil; 
+             end; 
+           end
+          else
+           begin
+            {Check Source Stream}
+            if GetEntry(Source,StreamName,faStream) <> nil then Exit;
+             
+            {Rename Source Stream}
+            Result:=RenameEntry(Source,Current,StreamName);
+            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
+           end;
+         finally
+          {Remove Reference}
+          Current.RemoveReference;
+          Dest.RemoveReference;
+          Source.RemoveReference;
+         end;         
         end
        else
         begin
          {Get Source File or Folder}
          Current:=GetEntryEx(Source,SourceName,faDirectory or faFile,True,False,False);
-         if Current = nil then Exit;
-         //RemoveRef
-         
-         {Split the Dest Name}
-         if SplitName(DestName,ParentName,StreamName) then Exit;
-         //RemoveRef
-         
-         {Check Dest File or Folder} {Allow for Current}
-         if (GetEntry(Dest,DestName,faDirectory or faFile) <> nil) and (GetEntry(Dest,DestName,faDirectory or faFile) <> Current) then Exit;
-         //RemoveRef
-         
-         {Check Dest Name}
-         if not CheckName(DestName) then Exit;
-         //RemoveRef
-         
-         {Check Source Handles}
-         if not FDriver.CheckFileHandles(Current) then Exit;
-         //RemoveRef
-         
-         {Check for Move}
-         if Source <> Dest then
+         if Current = nil then
           begin
-           try
+           {Remove Reference}
+           Dest.RemoveReference;
+           Source.RemoveReference;
+           Exit;
+          end;
+         try 
+          {Split the Dest Name}
+          if SplitName(DestName,ParentName,StreamName) then Exit;
+          
+          {Check Dest Name}
+          if not CheckName(DestName) then Exit;
+          
+          {Check Source Handles}
+          if not FDriver.CheckFileHandles(Current) then Exit;
+          
+          {Check for Move}
+          if Source <> Dest then
+           begin
+            {Check Dest File or Folder}
+            if GetEntry(Dest,DestName,faDirectory or faFile) <> nil then Exit;
+             
+            {Check Source File or Folder} {Allow for Current}
+            if GetEntry(Source,DestName,faDirectory or faFile) = Current then MoveOnly:=True;
+             
             {Load Entries} {For Folder move update DotDot}
             if not LoadEntries(Current) then Exit;
-           
+            
             {Update Source Handles}
             if not FDriver.UpdateFindHandles(Current) then Exit;
-           
+            
             {Move Source File or Folder}
             Result:=MoveEntry(Source,Dest,Current);
             if Result and (Source.Recent = Current) then Source.Recent:=nil; 
             if not Result then Exit;
-           
-            {Rename Source File or Folder} 
-            Result:=RenameEntry(Dest,Current,DestName);
-            if Result and (Dest.Recent = Current) then Dest.Recent:=nil; 
-           finally
-            {Remove Reference}
-            Current.RemoveReference;
-            Dest.RemoveReference;
-            Source.RemoveReference;
-           end;           
-          end
-         else
-          begin
-           {Rename Source File or Folder}
-           Result:=RenameEntry(Source,Current,DestName);
-           if Result and (Source.Recent = Current) then Source.Recent:=nil; 
-           
-           {Remove Reference}
-           Current.RemoveReference;
-           Dest.RemoveReference;
-           Source.RemoveReference;
-          end;
+            
+            {Check Rename}
+            if not MoveOnly then
+             begin
+              {Rename Dest File or Folder} 
+              Result:=RenameEntry(Dest,Current,DestName);
+              if Result and (Dest.Recent = Current) then Dest.Recent:=nil; 
+             end; 
+           end
+          else
+           begin
+            {Check Source File or Folder}
+            if GetEntry(Source,DestName,faDirectory or faFile) <> nil then Exit;
+             
+            {Rename Source File or Folder}
+            Result:=RenameEntry(Source,Current,DestName);
+            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
+           end;
+         finally
+          {Remove Reference}
+          Current.RemoveReference;
+          Dest.RemoveReference;
+          Source.RemoveReference;
+         end;         
         end;
       end
      else
@@ -34339,24 +34283,16 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileSeek(Handle,Offset,Origin:Integer):Integer;
+function TFileSystem.FileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt;
 {Move the position of an open handle}
-var
- WorkInt:Int64;
 begin
  {Base Implementation}
- Result:=-1;
-
- {Move Pointer}
- TULargeInteger(WorkInt).HighPart:=0;
- TULargeInteger(WorkInt).LowPart:=Offset;
- WorkInt:=FileSeekEx(Handle,WorkInt,Origin);
- if WorkInt <> -1 then Result:=TULargeInteger(WorkInt).LowPart;
+ Result:=FileSeekEx(Handle,Offset,Origin);
 end;
 
 {==============================================================================}
 
-function TFileSystem.FileSeekEx(Handle:Integer;const Offset:Int64;Origin:Integer):Int64;
+function TFileSystem.FileSeekEx(Handle:THandle;const Offset:Int64;Origin:LongInt):Int64;
 {Move the position of an open handle}
 {Note: File Seeks can extend the size if OpenMode is Write or ReadWrite}
 var
@@ -34472,22 +34408,16 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FilePos(Handle:Integer):Integer;
+function TFileSystem.FilePos(Handle:THandle):LongInt;
 {Return the position of an open Handle}
-var
- WorkInt:Int64;
 begin
  {Base Implementation}
- Result:=-1;
-
- {Get the Position}
- WorkInt:=FilePosEx(Handle);
- if WorkInt <> -1 then Result:=TULargeInteger(WorkInt).LowPart;
+ Result:=FilePosEx(Handle);
 end;
 
 {==============================================================================}
 
-function TFileSystem.FilePosEx(Handle:Integer):Int64;
+function TFileSystem.FilePosEx(Handle:THandle):Int64;
 {Return the position of an open Handle}
 var
  FileHandle:TFileHandle;
@@ -34635,22 +34565,16 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileGetSize(Handle:Integer):Integer;
+function TFileSystem.FileGetSize(Handle:THandle):LongInt;
 {Get the size of an existing entry with an open Handle}
-var
- WorkInt:Int64;
 begin
  {Base Implementation}
- Result:=-1;
-
- {Get the Size}
- WorkInt:=FileGetSizeEx(Handle);
- if WorkInt <> -1 then Result:=TULargeInteger(WorkInt).LowPart;
+ Result:=FileGetSizeEx(Handle);
 end;
 
 {==============================================================================}
 
-function TFileSystem.FileGetSizeEx(Handle:Integer):Int64;
+function TFileSystem.FileGetSizeEx(Handle:THandle):Int64;
 {Get the size of an existing entry with an open Handle}
 var
  FileHandle:TFileHandle;
@@ -34802,23 +34726,16 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileSetSize(Handle:Integer;Size:Integer):Integer;
+function TFileSystem.FileSetSize(Handle:THandle;Size:LongInt):LongInt;
 {Set the size of an existing entry with an open Handle}
-var
- WorkInt:Int64;
 begin
  {Base Implementation}
- Result:=-1;
-
- {Set the Size}
- TULargeInteger(WorkInt).HighPart:=0;
- TULargeInteger(WorkInt).LowPart:=Size;
- Result:=FileSetSizeEx(Handle,WorkInt);
+ Result:=FileSetSizeEx(Handle,Size);
 end;
 
 {==============================================================================}
 
-function TFileSystem.FileSetSizeEx(Handle:Integer;const Size:Int64):Integer;
+function TFileSystem.FileSetSizeEx(Handle:THandle;const Size:Int64):LongInt;
 {Set the size of an existing entry with Open handle}
 var
  FileHandle:TFileHandle;
@@ -34859,7 +34776,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileRead(Handle:Integer;var Buffer;Count:Integer):Integer;
+function TFileSystem.FileRead(Handle:THandle;var Buffer;Count:LongInt):LongInt;
 {Read data from an existing entry with an open Handle}
 {Position may be beyond the end of the file}
 {A read from beyond the end of the file will return 0 bytes}
@@ -34867,15 +34784,15 @@ var
  FileHandle:TFileHandle;
 begin
  {Base Implementation}
- Result:=0;
+ Result:=-1;
 
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
-
-  {Check the Count}
-  if Count < 1 then Exit;
  
+  {Check Count (Negative byte read fails)}
+  if Count < 0 then Exit;
+  
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
@@ -34886,6 +34803,12 @@ begin
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
   
+   {Return Success}
+   Result:=0;
+   
+   {Check the Count (Zero byte read successful)}
+   if Count < 1 then Exit;
+  
    {Check Size}
    if (FileHandle.Position + Count) > FileHandle.HandleEntry.Size then
     begin
@@ -34895,7 +34818,7 @@ begin
      {Adjust Size}
      Count:=FileHandle.HandleEntry.Size - FileHandle.Position;
      
-     {Check the Count}
+     {Check the Count (Zero byte read successful)}
      if Count < 1 then Exit;
     end;
     
@@ -34905,7 +34828,12 @@ begin
     begin
      {Set Position}
      FileHandle.Position:=FileHandle.Position + Count;
-    end;
+    end
+   else
+    begin
+     {Return Error}
+     Result:=-1;
+    end;    
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
@@ -34917,7 +34845,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileWrite(Handle:Integer;const Buffer;Count:Integer):Integer;
+function TFileSystem.FileWrite(Handle:THandle;const Buffer;Count:LongInt):LongInt;
 {Write data to an existing entry with an open Handle}
 {Position may be beyond the end of the file}
 {A write to beyond the end of the file will succeed and Size will be Position plus Count}
@@ -34925,15 +34853,14 @@ var
  FileHandle:TFileHandle;
 begin
  {Base Implementation}
- Result:=0;
+ Result:=-1;
 
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
 
-  {Check the Count}
-  if Count < 1 then Exit;
-  //To Do //A zero byte Write should Truncate the file ??  //Not in Windows - See API Docs
+  {Check Count (Negative byte write fails)}
+  if Count < 0 then Exit;
  
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
@@ -34953,6 +34880,12 @@ begin
      {FileHandle.HandleEntry.Size:=FileHandle.Position + Count;} {Done by File System}
     end;
   
+   {Return Success}
+   Result:=0;
+  
+   {Check the Count (Zero byte write successful, does not truncate the file)}
+   if Count < 1 then Exit;
+  
    {Write Data}
    Result:=WriteEntry(FileHandle.ParentEntry,FileHandle.HandleEntry,Buffer,FileHandle.Position,Count,FileHandle.DataOffset,FileHandle.DataValue);
    if Result = Count then
@@ -34963,6 +34896,11 @@ begin
     
      {Set Position}
      FileHandle.Position:=FileHandle.Position + Count;
+    end
+   else
+    begin
+     {Return Error}
+     Result:=-1;
     end;
   finally
    {Unlock Handle}
@@ -37355,105 +37293,93 @@ begin
        
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
-       if Current <> nil then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end;
-        
-       {Split the Stream}
-       if SplitStream(StreamName,StreamName,StreamType) then
-        begin
-         {Get Stream}
-         Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
-        end;
-       if Current <> nil then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end;
-        
-       {Check Name}
-       if not CheckName(StreamName) then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
-       
-       {Add Stream}
-       Current:=AddEntry(Parent,StreamName,faStream,True); {Not AddEntryEx}
        if Current = nil then
         begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
+         {Split the Stream}
+         if SplitStream(StreamName,StreamName,StreamType) then
+          begin
+           {Get Stream}
+           Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
+          end;
+        end;
+       if Current = nil then
+        begin
+         {Check Name}
+         if not CheckName(StreamName) then
+          begin
+           {Remove Reference}
+           Parent.RemoveReference;
+           Exit;
+          end; 
+         
+         {Add Stream}
+         Current:=AddEntry(Parent,StreamName,faStream,True); {Not AddEntryEx}
+         if Current = nil then
+          begin
+           {Remove Reference}
+           Parent.RemoveReference;
+           Exit;
+          end; 
+        end;
       end
      else
       begin
        {Get File or Folder}
        Current:=GetEntryEx(Parent,Name,faDirectory or faFile,True,False,False);
-       if Current <> nil then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end;
-        
-       {Check Name}
-       if not CheckName(Name) then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
-       
-       {Check AltName} {Allow Blank}
-       if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then
-        begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
-       
-       {Add File}
-       Current:=AddEntryEx(Parent,Name,ShortName,faFile,True);
        if Current = nil then
         begin
-         {Remove Reference}
-         Parent.RemoveReference;
-         Exit;
-        end; 
-       
-       {Check Encryption}
-       if (FFolderEncryption) and ((Parent.Attributes and faEncrypted) = faEncrypted) then
-        begin
-         {Set Encrypted}
-         Current.Attributes:=(Current.Attributes or faEncrypted);
-         if not SetEntry(Parent,Current) then
+         {Check Name}
+         if not CheckName(Name) then
           begin
            {Remove Reference}
-           Current.RemoveReference;
            Parent.RemoveReference;
            Exit;
           end; 
-        end;
-       
-       {Check Compression}
-       if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
-        begin
-         {Set Compressed}
-         Current.Attributes:=(Current.Attributes or faCompressed);
-         if not SetEntry(Parent,Current) then
+         
+         {Check AltName} {Allow Blank}
+         if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then
           begin
            {Remove Reference}
-           Current.RemoveReference;
            Parent.RemoveReference;
            Exit;
           end; 
+         
+         {Add File}
+         Current:=AddEntryEx(Parent,Name,ShortName,faFile,True);
+         if Current = nil then
+          begin
+           {Remove Reference}
+           Parent.RemoveReference;
+           Exit;
+          end; 
+         
+         {Check Encryption}
+         if (FFolderEncryption) and ((Parent.Attributes and faEncrypted) = faEncrypted) then
+          begin
+           {Set Encrypted}
+           Current.Attributes:=(Current.Attributes or faEncrypted);
+           if not SetEntry(Parent,Current) then
+            begin
+             {Remove Reference}
+             Current.RemoveReference;
+             Parent.RemoveReference;
+             Exit;
+            end; 
+          end;
+         
+         {Check Compression}
+         if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
+          begin
+           {Set Compressed}
+           Current.Attributes:=(Current.Attributes or faCompressed);
+           if not SetEntry(Parent,Current) then
+            begin
+             {Remove Reference}
+             Current.RemoveReference;
+             Parent.RemoveReference;
+             Exit;
+            end; 
+          end;
         end;
       end;
      try
@@ -51438,7 +51364,7 @@ end;
 function TFSHandleStream.Seek(Offset:LongInt;Origin:Word):LongInt;
 begin
  {}
- Result:=FSFileSeek(FHandle,Offset,Origin);
+ Result:=FSFileSeekEx(FHandle,Offset,Origin);
 end;
 
 {=============================================================================}
@@ -51519,7 +51445,7 @@ end;
 function TFSHandleStreamEx.Seek(Offset:LongInt;Origin:Word):LongInt;
 begin
  {}
- Result:=FSFileSeek(FHandle,Offset,Origin);
+ Result:=FSFileSeekEx(FHandle,Offset,Origin);
 end;
 
 {=============================================================================}
@@ -51628,6 +51554,12 @@ begin
    FileSysMMCController:=TMMCDiskController.Create(FileSysDriver);
    FileSysMMCController.ControllerInit;
   end;
+  
+ {Setup Platform Handlers}
+ {Text IO}
+ {TextIOReadCharHandler:=SysTextIOReadChar;}       {Only registered when calling FileSysRedirectInput}
+ {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling FileSysRedirectOutput}
+ {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling FileSysRedirectOutput}
   
  {Setup System Handlers}
  {File Functions}
@@ -52011,6 +51943,15 @@ end;
 
 {==============================================================================}
 
+function FileSysStartCompleted:Boolean;
+{Returns True if the filesystem has been started}
+begin
+ {}
+ Result:=FileSysStartupError = ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
 procedure FileSysAsyncStart(Data:Pointer);
 begin
  {}
@@ -52380,7 +52321,7 @@ end;
 
 {==============================================================================}
 
-function FSFileSeek(AHandle,AOffset,AOrigin:Integer):Integer; inline;
+function FSFileSeek(AHandle:THandle;AOffset,AOrigin:LongInt):LongInt; inline;
 begin
  {}
  Result:=-1;
@@ -52389,7 +52330,7 @@ begin
  if FileSysDriver = nil then Exit;
 
  {Seek File}
- Result:=FileSysDriver.FileSeek(AHandle,AOffset,AOrigin);
+ Result:=FileSysDriver.FileSeekEx(AHandle,AOffset,AOrigin);
 end;
 
 {==============================================================================}
@@ -52450,7 +52391,7 @@ end;
 
 {==============================================================================}
 
-function FSFilePos(AHandle:Integer):Integer; inline;
+function FSFilePos(AHandle:THandle):LongInt; inline;
 begin
  {}
  Result:=-1;
@@ -52459,12 +52400,12 @@ begin
  if FileSysDriver = nil then Exit;
 
  {File Pos}
- Result:=FileSysDriver.FilePos(AHandle);
+ Result:=FileSysDriver.FilePosEx(AHandle);
 end;
 
 {==============================================================================}
 
-function FSFileSize(AHandle:Integer):Integer; inline;
+function FSFileSize(AHandle:THandle):LongInt; inline;
 begin
  {}
  Result:=-1;
@@ -52473,7 +52414,7 @@ begin
  if FileSysDriver = nil then Exit;
 
  {File Size}
- Result:=FileSysDriver.FileSize(AHandle);
+ Result:=FileSysDriver.FileSizeEx(AHandle);
 end;
 
 {==============================================================================}
@@ -52562,10 +52503,10 @@ end;
 
 {==============================================================================}
 
-function FSFileRead(AHandle:Integer;var ABuffer;ACount:Integer):Integer; inline;
+function FSFileRead(AHandle:THandle;var ABuffer;ACount:LongInt):LongInt; inline;
 begin
  {}
- Result:=0;
+ Result:=-1;
  
  {Check Driver}
  if FileSysDriver = nil then Exit;
@@ -52576,10 +52517,10 @@ end;
 
 {==============================================================================}
 
-function FSFileWrite(AHandle:Integer;const ABuffer;ACount:Integer):Integer; inline;
+function FSFileWrite(AHandle:THandle;const ABuffer;ACount:LongInt):LongInt; inline;
 begin
  {}
- Result:=0;
+ Result:=-1;
  
  {Check Driver}
  if FileSysDriver = nil then Exit;
@@ -52809,7 +52750,7 @@ end;
 
 {==============================================================================}
 {Extended Functions}
-function FSFileSeekEx(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64; inline;
+function FSFileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64; inline;
 begin
  {}
  Result:=-1;
@@ -52837,7 +52778,7 @@ end;
 
 {==============================================================================}
 
-function FSFilePosEx(AHandle:Integer):Int64; inline;
+function FSFilePosEx(AHandle:THandle):Int64; inline;
 begin
  {}
  Result:=-1;
@@ -53034,7 +52975,7 @@ end;
 
 {==============================================================================}
 
-function FSGetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:Int64):Boolean; inline;
+function FSGetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:QWord):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -53370,7 +53311,7 @@ end;
 
 {==============================================================================}
 
-function FSSetFilePointer(AHandle:THandle;ADistanceToMove:LongWord;var ADistanceToMoveHigh:LongWord;AMoveMethod:LongWord):LongWord; inline;
+function FSSetFilePointer(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceToMoveHigh:LongInt;AMoveMethod:LongWord):LongWord; inline;
 begin
  {}
  Result:=INVALID_SET_FILE_POINTER;
@@ -53537,6 +53478,41 @@ begin
 end;
 
 {==============================================================================}
+{==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOReadChar function}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=(FSFileRead(FileSysTextIOInputHandle,ACh,SizeOf(Char)) <> -1);
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOWriteChar function}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=(FSFileWrite(FileSysTextIOOutputHandle,ACh,SizeOf(Char)) <> -1);
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+{Handler for platform TextIOWriteBuffer function}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=FSFileWrite(FileSysTextIOOutputHandle,ABuffer^,ACount);
+end;
+
+{==============================================================================}
+{==============================================================================}
 {RTL FileSystem Functions}
 {System File Functions}
 procedure SystemDoClose(Handle:THandle);
@@ -53650,7 +53626,7 @@ begin
   end; 
 
  {File Pos}
- Result:=FileSysDriver.FilePos(Handle);
+ Result:=FileSysDriver.FilePosEx(Handle);
  if Result = -1 then
   begin
    InOutRes:=6;
@@ -53670,7 +53646,7 @@ begin
   end; 
 
  {Seek File}
- if FileSysDriver.FileSeek(Handle,Pos,soFromBeginning) = -1 then
+ if FileSysDriver.FileSeekEx(Handle,Pos,soFromBeginning) = -1 then
   begin
    InOutRes:=6;
   end;
@@ -53691,7 +53667,7 @@ begin
   end; 
 
  {Seek File}
- Result:=FileSysDriver.FileSeek(Handle,0,soFromEnd);
+ Result:=FileSysDriver.FileSeekEx(Handle,0,soFromEnd);
  if Result = -1 then
   begin
    InOutRes:=6;
@@ -53713,7 +53689,7 @@ begin
   end; 
 
  {File Size}
- Result:=FileSysDriver.FileSize(Handle);
+ Result:=FileSysDriver.FileSizeEx(Handle);
  if Result = -1 then
   begin
    InOutRes:=6;
@@ -53847,7 +53823,7 @@ begin
    if ((Flags and $100) <> 0) and (FileRec(F).Handle <> INVALID_HANDLE_VALUE) and (FileRec(F).Handle <> UnusedHandle) then
     begin
      {Seek File}
-     FileSysDriver.FileSeek(FileRec(F).Handle,0,soFromEnd);
+     FileSysDriver.FileSeekEx(FileRec(F).Handle,0,soFromEnd);
      FileRec(F).Mode:=fmOutput;
     end;
   end;
@@ -54297,7 +54273,7 @@ begin
  if FileSysDriver = nil then Exit;
 
  {Seek File}
- Result:=FileSysDriver.FileSeek(Handle,Offset,Origin);
+ Result:=FileSysDriver.FileSeekEx(Handle,Offset,Origin);
 end;
 
 {==============================================================================}
@@ -54533,6 +54509,8 @@ end;
 {==============================================================================}
 {FileSystem Logging Functions}
 function FileSysLoggingStart(Logging:PLoggingDevice):LongWord;
+{Implementation of LoggingDeviceStart API for FileSystem Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceStart instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -54595,6 +54573,8 @@ end;
 {==============================================================================}
 
 function FileSysLoggingStop(Logging:PLoggingDevice):LongWord;
+{Implementation of LoggingDeviceStop API for FileSystem Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceStop instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -54632,6 +54612,8 @@ end;
 {==============================================================================}
 
 function FileSysLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
+{Implementation of LoggingDeviceOutput API for FileSystem Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceOutput instead}
 var
  WorkBuffer:String;
 begin
@@ -54685,7 +54667,7 @@ begin
     {Check Size}
     if FILESYS_LOGGING_MAXSIZE > 0 then
      begin
-      if FSFileSize(Logging.Handle) > FILESYS_LOGGING_MAXSIZE then
+      if FSFileSizeEx(Logging.Handle) > FILESYS_LOGGING_MAXSIZE then
        begin
         if FILESYS_LOGGING_MAXCOPIES = 0 then
          begin
@@ -54720,6 +54702,8 @@ end;
 {==============================================================================}
 
 function FileSysLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
+{Implementation of LoggingDeviceSetTarget API for FileSystem Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceSetTarget instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -54790,6 +54774,66 @@ end;
 {==============================================================================}
 {==============================================================================}
 {FileSystem Helper Functions}
+function FileSysRedirectInput(Handle:THandle):Boolean;
+{Redirect standard input to the file specified by Handle}
+{Handle: The file handle to redirect input to (or INVALID_HANDLE_VALUE to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the input of the text file Input which also
+       redirects the input of Read, ReadLn and the standard C library}
+begin
+ {}
+ Result:=True;
+ 
+ if Handle = INVALID_HANDLE_VALUE then
+  begin
+   {Stop Redirection}
+   TextIOReadCharHandler:=nil;
+   
+   FileSysTextIOInputHandle:=INVALID_HANDLE_VALUE;
+  end
+ else
+  begin
+   {Start Redirection}
+   TextIOReadCharHandler:=SysTextIOReadChar;
+  
+   FileSysTextIOInputHandle:=Handle;
+  end;  
+end;
+
+{==============================================================================}
+
+function FileSysRedirectOutput(Handle:THandle):Boolean;
+{Redirect standard output to the file specified by Handle}
+{Handle: The file handle to redirect output to (or INVALID_HANDLE_VALUE to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the output of the text files Output, ErrOutput, StdOut and StdErr
+       which also redirects the output of Write, WriteLn and the standard C library}
+begin
+ {}
+ Result:=True;
+ 
+ if Handle = INVALID_HANDLE_VALUE then
+  begin
+   {Stop Redirection}
+   TextIOWriteCharHandler:=nil;
+   TextIOWriteBufferHandler:=nil;
+   
+   FileSysTextIOOutputHandle:=INVALID_HANDLE_VALUE;
+  end
+ else
+  begin
+   {Start Redirection}
+   TextIOWriteCharHandler:=SysTextIOWriteChar;
+   TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
+  
+   FileSysTextIOOutputHandle:=Handle;
+  end;  
+end;
+
+{==============================================================================}
+
 function FileSysStorageGetMediaType(Storage:PStorageDevice):TMediaType;
 begin
  {}

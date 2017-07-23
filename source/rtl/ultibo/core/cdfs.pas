@@ -3527,7 +3527,7 @@ begin
   Cluster:=ACluster;
   while Count > 0 do
    begin
-    {Read Cluster} {Dont need to read first}
+    {Read Cluster} {Don't need to read first}
     {if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;}
    
     {Fill Cluster}
@@ -8625,6 +8625,23 @@ begin
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
 
+  {Check Attribtues (Exclude Dot/DotDot)}
+  if (AAttributes and (faDot or faDotDot)) = faNone then
+   begin
+    {Check Existing}
+    Result:=GetEntryEx(AParent,AName,faDirectory or faFile,AReference,False,True);
+    if Result <> nil then
+     begin
+      if (AAttributes and faMatchMask) <> (Result.Attributes and faMatchMask) then
+       begin
+        {Remove Reference}
+        if AReference then Result.RemoveReference;
+        Result:=nil;
+       end;
+      Exit;
+     end;     
+   end; 
+  
   {Check for Short}
   if IsEightDotThree(AName) then
    begin
@@ -8979,6 +8996,9 @@ begin
   {Prepare Trees}
   if not PrepareTrees then Exit;
   
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+  
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
   
@@ -9118,6 +9138,16 @@ begin
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
 
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+  
+  {Check Attribtues (Include Folder/File)}
+  if (AEntry.Attributes and (faDirectory or faFile)) <> faNone then
+   begin
+    {Check Existing}
+    if GetEntryEx(AParent,AName,faDirectory or faFile,False,False,True) <> nil then Exit;
+   end; 
+  
   {Check for Short}
   if IsEightDotThree(AName) then
    begin
@@ -9375,6 +9405,9 @@ begin
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
  
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+ 
   //To Do //See Above and AddEntryEx
  finally
   FEntries.WriterUnlock;
@@ -9423,6 +9456,16 @@ begin
   {Check Dest}
   if (ADest.Attributes and faMatchMask) <> faDirectory then Exit;
 
+  {Check Parent}
+  if AEntry.Parent <> ASource then Exit;
+  
+  {Check Attribtues (Include Folder/File)}
+  if (AEntry.Attributes and (faDirectory or faFile)) <> faNone then
+   begin
+    {Check Existing}
+    if GetEntryEx(ADest,AEntry.Name,faDirectory or faFile,False,False,True) <> nil then Exit;
+   end; 
+  
   {Update Free}
   GetEntryDataFree(ASource);
   TCDFSDiskEntry(ASource).DataFree:=TCDFSDiskEntry(ASource).DataFree + TCDFSDiskEntry(AEntry).DirectoryRecordSize;

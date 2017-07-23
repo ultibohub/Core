@@ -379,7 +379,8 @@ type
   Version:Byte;                     {ISO/ECMA/ANSI Version (ISO Bits 7..6)(ECMA Bits 5..3)(ANSI Bits 2..0)}
   ResponseFormat:Byte;              {Response Data Format (Bits 3..0)}
   AdditionalLength:Byte;            {Additional Length}
-  Reserved:Word;
+  Reserved1:Byte;
+  Reserved2:Word;
   Vendor:array[0..7] of Char;       {Vendor Information}
   Product:array[0..15] of Char;     {Product Identification}
   Revision:array[0..3] of Char;     {Product Revision Level}

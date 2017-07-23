@@ -2884,7 +2884,7 @@ end;
 {==============================================================================}
 
 procedure PL18XSetInterruptMask1(SDHCI:PPL18XSDHCIHost;Mask:LongWord);
-{Setup the interrupt mask to use either Mask0 or Mask1 depending on configurtion}
+{Setup the interrupt mask to use either Mask0 or Mask1 depending on configuration}
 
 {Note: Caller must hold the host lock}
 var

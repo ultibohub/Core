@@ -80,7 +80,7 @@ type
    {Inherited Methods}
 
   public
-   {}
+   {Public Methods}
    function AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle; override;
    function RemoveTransport(AHandle:THandle;APacketType:Word):Boolean; override;
 

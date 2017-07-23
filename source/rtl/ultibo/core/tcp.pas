@@ -278,15 +278,9 @@ type
    function SendSegment(ASocket:TTCPSocket;ASource,ADest:Pointer;ASourcePort,ADestPort:Word;ASequence,AAcknowledge:LongWord;AWindow,AUrgent:Word;AFlags:Byte;AOptions,AData:Pointer;ASize:Integer):Integer;
   protected
    {Inherited Methods}
-   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
-   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-
    function OpenPort(ASocket:TProtocolSocket;APort:Word):Boolean; override;
    function ClosePort(ASocket:TProtocolSocket):Boolean; override;
    function FindPort(APort:Word;AWrite,ALock:Boolean):TProtocolPort; override;
-
-   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
-   procedure FlushSockets(All:Boolean); override;
 
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; override;
    function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; override;
@@ -313,6 +307,12 @@ type
    function Socket(AFamily,AStruct,AProtocol:Integer):TProtocolSocket; override;
 
    {Public Methods}
+   function AddTransport(ATransport:TNetworkTransport):Boolean; override;
+   function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
+   
+   function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
+   procedure FlushSockets(All:Boolean); override;
+   
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
@@ -1986,7 +1986,7 @@ begin
     if TIPTransport(ASocket.Transport).CompareDefault(PInAddr(ASource)^) then
      begin
       {Get the Route}
-      SetLastError(WSAENETUNREACH);
+      NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(PInAddr(ADest)^,True,NETWORK_LOCK_READ);
       if Route = nil then Exit;
       
@@ -2074,439 +2074,6 @@ begin
     
    end;
  end;
-end;
-
-{==============================================================================}
-
-function TTCPProtocol.AddTransport(ATransport:TNetworkTransport):Boolean;
-{Add a transport to this protocol}
-{Transport: The transport to add}
-var
- Handle:THandle;
- Transport:TTCPProtocolTransport;
-begin
- {}
- Result:=False;
- 
- if not ReaderLock then Exit;
- try
-  {$IFDEF TCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: AddTransport');
-  {$ENDIF}
-  
-  {Check Transport}
-  if ATransport = nil then Exit;
- 
-  {Get Transport} 
-  Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
-  if Transport = nil then
-   begin
-    {Check Address Family}
-    case ATransport.Family of
-     AF_INET:begin
-       {Add TCP Protocol}
-       Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_TCP,PacketHandler,nil);
-       if Handle <> INVALID_HANDLE_VALUE then
-        begin
-         {Create Transport}
-         Transport:=TTCPProtocolTransport.Create;
-         Transport.Handle:=Handle;
-         Transport.Protocol:=IPPROTO_TCP;
-         Transport.Transport:=ATransport;
-         
-         {Acquire Lock}
-         FTransports.WriterLock;
-         try
-          {Add Transport}
-          FTransports.Add(Transport);
-         
-          {Add Control Socket}
-          Transport.Socket:=TTCPSocket.Create(Self,ATransport);
-          {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-         
-          {Add Proto Entry}
-          TIPTransport(ATransport).AddProto(TCP_PROTOCOL_NAME,IPPROTO_TCP,False);
-         
-          {Add Serv Entries}
-          TIPTransport(ATransport).AddServ('ECHO',TCP_PROTOCOL_NAME,7,False);
-          TIPTransport(ATransport).AddServ('DISCARD',TCP_PROTOCOL_NAME,9,False);
-          TIPTransport(ATransport).AddServ('SYSTAT',TCP_PROTOCOL_NAME,11,False);
-          TIPTransport(ATransport).AddServ('DAYTIME',TCP_PROTOCOL_NAME,13,False);
-          TIPTransport(ATransport).AddServ('NETSTAT',TCP_PROTOCOL_NAME,15,False);
-          TIPTransport(ATransport).AddServ('QOTD',TCP_PROTOCOL_NAME,17,False);
-          TIPTransport(ATransport).AddServ('CHARGEN',TCP_PROTOCOL_NAME,19,False);
-          TIPTransport(ATransport).AddServ('FTP-DATA',TCP_PROTOCOL_NAME,20,False);
-          TIPTransport(ATransport).AddServ('FTP',TCP_PROTOCOL_NAME,21,False);
-          TIPTransport(ATransport).AddServ('TELNET',TCP_PROTOCOL_NAME,23,False);
-          TIPTransport(ATransport).AddServ('SMTP',TCP_PROTOCOL_NAME,25,False);
-          TIPTransport(ATransport).AddServ('TIME',TCP_PROTOCOL_NAME,37,False);
-          TIPTransport(ATransport).AddServ('NAME',TCP_PROTOCOL_NAME,42,False);
-          TIPTransport(ATransport).AddServ('WHOIS',TCP_PROTOCOL_NAME,43,False);
-          TIPTransport(ATransport).AddServ('DOMAIN',TCP_PROTOCOL_NAME,53,False);
-          TIPTransport(ATransport).AddServ('NAMESERVER',TCP_PROTOCOL_NAME,53,False);
-          TIPTransport(ATransport).AddServ('MTP',TCP_PROTOCOL_NAME,57,False);
-          TIPTransport(ATransport).AddServ('FINGER',TCP_PROTOCOL_NAME,79,False);
-          TIPTransport(ATransport).AddServ('POP3',TCP_PROTOCOL_NAME,110,False);
-          TIPTransport(ATransport).AddServ('PORTMAP',TCP_PROTOCOL_NAME,111,False);
-          TIPTransport(ATransport).AddServ('AUTH',TCP_PROTOCOL_NAME,113,False);
-          TIPTransport(ATransport).AddServ('NNTP',TCP_PROTOCOL_NAME,119,False);
-          TIPTransport(ATransport).AddServ('NBSESSION',TCP_PROTOCOL_NAME,139,False);
-          TIPTransport(ATransport).AddServ('IMAP4',TCP_PROTOCOL_NAME,143,False);
-         
-          {Return Result}
-          Result:=True;
-         finally
-          {Release Lock}
-          FTransports.WriterUnlock;
-         end;  
-        end;
-        
-       {Add ICMP Protocol}
-       Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_ICMP,PacketHandler,nil);
-       if Handle <> INVALID_HANDLE_VALUE then
-        begin
-         {Create Transport}
-         Transport:=TTCPProtocolTransport.Create;
-         Transport.Handle:=Handle;
-         Transport.Protocol:=IPPROTO_ICMP;
-         Transport.Transport:=ATransport;
-         
-         {Acquire Lock}
-         FTransports.WriterLock;
-         try
-          {Add Transport}
-          FTransports.Add(Transport);
-         
-          {Return Result}
-          Result:=True;
-         finally
-          {Release Lock}
-          FTransports.WriterUnlock;
-         end;  
-        end;
-      end;
-     AF_INET6:begin
-       {Add TCP Protocol}
-       Handle:=TIP6Transport(ATransport).AddProtocol(IPPROTO_TCP,PacketHandler,nil);
-       if Handle <> INVALID_HANDLE_VALUE then
-        begin
-         {Create Transport}
-         Transport:=TTCPProtocolTransport.Create;
-         Transport.Handle:=Handle;
-         Transport.Protocol:=IPPROTO_TCP;
-         Transport.Transport:=ATransport;
-         
-         {Acquire Lock}
-         FTransports.WriterLock;
-         try
-          {Add Transport}
-          FTransports.Add(Transport);
-         
-          {Add Control Socket}
-          Transport.Socket:=TTCPSocket.Create(Self,ATransport);
-          {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-          
-          {Add Proto Entry}
-          TIP6Transport(ATransport).AddProto(TCP_PROTOCOL_NAME,IPPROTO_TCP,False);
-          
-          {Add Serv Entries}
-          TIP6Transport(ATransport).AddServ('ECHO',TCP_PROTOCOL_NAME,7,False);
-          TIP6Transport(ATransport).AddServ('DISCARD',TCP_PROTOCOL_NAME,9,False);
-          TIP6Transport(ATransport).AddServ('SYSTAT',TCP_PROTOCOL_NAME,11,False);
-          TIP6Transport(ATransport).AddServ('DAYTIME',TCP_PROTOCOL_NAME,13,False);
-          TIP6Transport(ATransport).AddServ('NETSTAT',TCP_PROTOCOL_NAME,15,False);
-          TIP6Transport(ATransport).AddServ('QOTD',TCP_PROTOCOL_NAME,17,False);
-          TIP6Transport(ATransport).AddServ('CHARGEN',TCP_PROTOCOL_NAME,19,False);
-          TIP6Transport(ATransport).AddServ('FTP-DATA',TCP_PROTOCOL_NAME,20,False);
-          TIP6Transport(ATransport).AddServ('FTP',TCP_PROTOCOL_NAME,21,False);
-          TIP6Transport(ATransport).AddServ('TELNET',TCP_PROTOCOL_NAME,23,False);
-          TIP6Transport(ATransport).AddServ('SMTP',TCP_PROTOCOL_NAME,25,False);
-          TIP6Transport(ATransport).AddServ('TIME',TCP_PROTOCOL_NAME,37,False);
-          TIP6Transport(ATransport).AddServ('NAME',TCP_PROTOCOL_NAME,42,False);
-          TIP6Transport(ATransport).AddServ('WHOIS',TCP_PROTOCOL_NAME,43,False);
-          TIP6Transport(ATransport).AddServ('DOMAIN',TCP_PROTOCOL_NAME,53,False);
-          TIP6Transport(ATransport).AddServ('NAMESERVER',TCP_PROTOCOL_NAME,53,False);
-          TIP6Transport(ATransport).AddServ('MTP',TCP_PROTOCOL_NAME,57,False);
-          TIP6Transport(ATransport).AddServ('FINGER',TCP_PROTOCOL_NAME,79,False);
-          TIP6Transport(ATransport).AddServ('POP3',TCP_PROTOCOL_NAME,110,False);
-          TIP6Transport(ATransport).AddServ('PORTMAP',TCP_PROTOCOL_NAME,111,False);
-          TIP6Transport(ATransport).AddServ('AUTH',TCP_PROTOCOL_NAME,113,False);
-          TIP6Transport(ATransport).AddServ('NNTP',TCP_PROTOCOL_NAME,119,False);
-          TIP6Transport(ATransport).AddServ('NBSESSION',TCP_PROTOCOL_NAME,139,False);
-          TIP6Transport(ATransport).AddServ('IMAP4',TCP_PROTOCOL_NAME,143,False);
-          
-          {Return Result}
-          Result:=True;
-         finally
-          {Release Lock}
-          FTransports.WriterUnlock;
-         end;  
-        end;
-        
-       {Add ICMP6 Protocol}
-       Handle:=TIP6Transport(ATransport).AddProtocol(IPPROTO_ICMPV6,PacketHandler,nil);
-       if Handle <> INVALID_HANDLE_VALUE then
-        begin
-         {Create Transport}
-         Transport:=TTCPProtocolTransport.Create;
-         Transport.Handle:=Handle;
-         Transport.Protocol:=IPPROTO_ICMPV6;
-         Transport.Transport:=ATransport;
-         
-         {Acquire Lock}
-         FTransports.WriterLock;
-         try
-          {Add Transport}
-          FTransports.Add(Transport);
-         
-          {Return Result}
-          Result:=True;
-         finally
-          {Release Lock}
-          FTransports.WriterUnlock;
-         end;  
-        end;
-      end;
-    end;
-   end
-  else
-   begin
-    {Unlock Transport}
-    Transport.ReaderUnlock;
-    
-    {Return Result}
-    Result:=True;
-   end;
- finally 
-  ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-function TTCPProtocol.RemoveTransport(ATransport:TNetworkTransport):Boolean;
-{Remove a transport from this protocol}
-{Transport: The transport to remove}
-var
- Transport:TTCPProtocolTransport;
-begin
- {}
- Result:=False;
- 
- if not ReaderLock then Exit;
- try
-  {$IFDEF TCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: RemoveTransport');
-  {$ENDIF}
-  
-  {Check Transport}
-  if ATransport = nil then Exit;
-  
-  {Check Address Family}
-  case ATransport.Family of
-   AF_INET:begin
-     {Get Transport}
-     Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-     while Transport <> nil do
-      begin
-       {Check Protocol}
-       case Transport.Protocol of
-        IPPROTO_TCP:begin
-          {Remove TCP Protocol}
-          if TIPTransport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
-           begin
-            {Remove Serv Entries}
-            TIPTransport(ATransport).RemoveServ('ECHO',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('DISCARD',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('SYSTAT',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('DAYTIME',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('NETSTAT',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('QOTD',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('CHARGEN',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('FTP-DATA',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('FTP',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('TELNET',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('SMTP',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('TIME',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('NAME',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('WHOIS',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('DOMAIN',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('NAMESERVER',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('MTP',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('FINGER',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('POP3',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('PORTMAP',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('AUTH',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('NNTP',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('NBSESSION',TCP_PROTOCOL_NAME);
-            TIPTransport(ATransport).RemoveServ('IMAP4',TCP_PROTOCOL_NAME);
-            
-            {Remove Proto Entry}
-            TIPTransport(ATransport).RemoveProto(TCP_PROTOCOL_NAME);
-            
-            {Remove Control Socket}
-            {FSockets.Remove(Transport.Socket);} {This one is not on the list}
-            Transport.Socket.Free;
-            
-            {Acquire Lock}
-            FTransports.WriterLock;
-            try
-             {Remove Transport}
-             FTransports.Remove(Transport);
-            
-             {Unlock Transport}
-             Transport.WriterUnlock;
-            
-             {Destroy Transport}
-             Transport.Free;
-            
-             {Return Result}
-             Result:=True;
-            finally
-             {Release Lock}
-             FTransports.WriterUnlock;
-            end;  
-           end;
-         end;
-        IPPROTO_ICMP:begin
-          {Remove ICMP Protocol}
-          if TIPTransport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
-           begin
-            {Acquire Lock}
-            FTransports.WriterLock;
-            try
-             {Remove Transport}
-             FTransports.Remove(Transport);
-            
-             {Unlock Transport}
-             Transport.WriterUnlock;
-            
-             {Destroy Transport}
-             Transport.Free;
-            
-             {Return Result}
-             Result:=True;
-            finally
-             {Release Lock}
-             FTransports.WriterUnlock;
-            end;  
-           end;
-         end;
-        else
-         begin
-          {Unlock Transport}
-          Transport.WriterUnlock;
-         end;         
-       end;  
-    
-       {Get Transport}
-       Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-      end; 
-    end;
-   AF_INET6:begin
-     {Get Transport}
-     Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-     if Transport = nil then Exit;
-     while Transport <> nil do
-      begin
-       {Check Protocol}
-       case Transport.Protocol of
-        IPPROTO_TCP:begin
-          {Remove TCP Protocol}
-          if TIP6Transport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
-           begin
-            {Remove Serv Entries}
-            TIP6Transport(ATransport).RemoveServ('ECHO',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('DISCARD',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('SYSTAT',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('DAYTIME',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('NETSTAT',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('QOTD',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('CHARGEN',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('FTP-DATA',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('FTP',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('TELNET',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('SMTP',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('TIME',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('NAME',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('WHOIS',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('DOMAIN',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('NAMESERVER',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('MTP',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('FINGER',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('POP3',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('PORTMAP',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('AUTH',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('NNTP',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('NBSESSION',TCP_PROTOCOL_NAME);
-            TIP6Transport(ATransport).RemoveServ('IMAP4',TCP_PROTOCOL_NAME);
-            
-            {Remove Proto Entry}
-            TIP6Transport(ATransport).RemoveProto(TCP_PROTOCOL_NAME);
-            
-            {Remove Control Socket}
-            {FSockets.Remove(Transport.Socket);} {This one is not on the list}
-            Transport.Socket.Free;
-            
-            {Acquire Lock}
-            FTransports.WriterLock;
-            try
-             {Remove Transport}
-             FTransports.Remove(Transport);
-            
-             {Unlock Transport}
-             Transport.WriterUnlock;
-             
-             {Destroy Transport}
-             Transport.Free;
-            
-             {Return Result}
-             Result:=True;
-            finally
-             {Release Lock}
-             FTransports.WriterUnlock;
-            end;  
-           end;
-         end;
-        IPPROTO_ICMPV6:begin
-          {Remove ICMP6 Protocol}
-          if TIP6Transport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
-           begin
-            {Acquire Lock}
-            FTransports.WriterLock;
-            try
-             {Remove Transport}
-             FTransports.Remove(Transport);
-            
-             {Unlock Transport}
-             Transport.WriterUnlock;
-            
-             {Destroy Transport}
-             Transport.Free;
-            
-             {Return Result}
-             Result:=True;
-            finally
-             {Release Lock}
-             FTransports.WriterUnlock;
-            end;  
-           end;
-         end;
-        else
-         begin
-          {Unlock Transport}
-          Transport.WriterUnlock;
-         end;         
-       end;  
-      
-       {Get Transport}
-       Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-      end; 
-    end;
-  end;
- finally 
-  ReaderUnlock;
- end; 
 end;
 
 {==============================================================================}
@@ -2742,160 +2309,6 @@ begin
     FPorts.ReaderUnlock;
    end; 
  end; 
-end;
-
-{==============================================================================}
-
-function TTCPProtocol.FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket;
-{Find a protocol socket based on all relevant parameters}
-{Family: Socket address family (eg AF_INET}
-{Struct: Socket type (eg SOCK_DGRAM)}
-{Protocol: Socket protocol (eg IPPROTO_UDP)}
-{LocalAddress: Local transport address to match (Host Order)}
-{RemoteAddress: Remote transport address to match (Host Order)}
-{LocalPort: Local port to match (Host Order)}
-{RemotePort: Remote port to match (Host Order)}
-{Broadcast: If True then match broadcast addresses}
-{Listen: If True then match only listening sockets}
-{Lock: If True then lock the found entry before returning}
-var
- Socket:TTCPSocket;
-begin
- {}
- Result:=nil;
- 
- if not FSockets.ReaderLock then Exit;
- try
-  {$IFDEF TCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: FindSocket');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Family = ' + AddressFamilyToString(AFamily));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Struct = ' + SocketTypeToString(AStruct));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Protocol = ' + ProtocolToString(AProtocol));
-  {$ENDIF}
-  
-  {Get Socket}
-  Socket:=TTCPSocket(FSockets.First);
-  while Socket <> nil do
-   begin
-    {Check for Closed}
-    if not Socket.SocketState.Closed then
-     begin
-      {Check for Match}
-      if (Socket.Family = AFamily) and (Socket.Struct = AStruct) and (Socket.Proto = AProtocol) then
-       begin
-        if not AListen then
-         begin
-          {Check for a Connected Socket}
-          if Socket.IsConnected(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
-           begin
-            {Lock Socket}
-            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
-            {Return Result}
-            Result:=Socket;
-            Exit;
-           end;
-         end
-        else
-         begin
-          {Check for a Listening Socket}
-          if Socket.IsListening(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
-           begin
-            {Lock Socket}
-            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
-            {Return Result}
-            Result:=Socket;
-            Exit;
-           end;
-         end;
-       end;
-     end;
-     
-    {Get Next}
-    Socket:=TTCPSocket(Socket.Next);
-   end;
- finally 
-  FSockets.ReaderUnlock;
- end; 
-end;
-
-{==============================================================================}
-
-procedure TTCPProtocol.FlushSockets(All:Boolean);
-{Flush sockets from the socket cache}
-{All: If True flush all sockets, otherwise flush expired sockets}
-var
- CurrentTime:Int64;
- Socket:TTCPSocket;
- Current:TTCPSocket;
-begin
- {}
- {$IFDEF TCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: FlushSockets');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  All = ' + BoolToStr(All));
- {$ENDIF}
- 
- {Get Tick Count}
- CurrentTime:=GetTickCount64;
-  
- {Get Socket}
- Socket:=TTCPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
- while Socket <> nil do
-  begin
-   {Get Next}
-   Current:=Socket;
-   Socket:=TTCPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
-    
-   {Check Socket State}
-   if (Current.SocketState.Closed) or (All) then
-    begin
-     {Check for Close Timeout}
-     if ((Current.CloseTime + (CLOSE_TIMEOUT - TCP_TIMEOUT_OFFSET)) < CurrentTime) or (All) then
-      begin
-       {Convert Socket}
-       if Current.ReaderConvert then
-        begin
-         {Close Port}
-         ClosePort(Current);
-        
-         {Acquire Lock}
-         FSockets.WriterLock;
-        
-         {Remove Socket}
-         FSockets.Remove(Current);
-
-         {Release Lock}
-         FSockets.WriterUnlock;
-         
-         {Unlock Socket}
-         Current.WriterUnlock;
-        
-         {Free Socket}
-         Current.Free;
-         Current:=nil;
-        end; 
-      end;
-    end
-   else if TTCPState(Current.ProtocolState).State = TCP_STATE_TIMEWAIT then
-    begin
-     {Check for Timewait Timeout}
-     if ((Current.TimewaitTime + (TIMEWAIT_TIMEOUT - TCP_TIMEOUT_OFFSET)) < CurrentTime) then
-      begin
-       {Close the Socket}
-       Current.SocketError:=ERROR_SUCCESS;
-       Current.SocketState.Closed:=True;
-       Current.CloseTime:=GetTickCount64;
-       TTCPState(Current.ProtocolState).State:=TCP_STATE_CLOSED;
-       
-       {Signal the Event}
-       Current.SignalChange;
-      end;
-    end;
-    
-   {Unlock Socket}
-   if Current <> nil then Current.ReaderUnlock;
-  end;
 end;
 
 {==============================================================================}
@@ -3333,16 +2746,16 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Listening or Closed}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Closed then Exit;
    if not ASocket.SocketState.Listening then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if (AAddrLength <> nil) and (AAddrLength^ < SizeOf(TSockAddr)) then Exit;
       
       {Wait for Connection} 
@@ -3352,14 +2765,14 @@ begin
         {Wait for Event}
         if not ASocket.WaitChange then
          begin
-          SetLastError(WSAEINTR);
+          NetworkSetLastError(WSAEINTR);
           Exit;
          end; 
         
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
-          SetLastError(WSAEINTR);
+          NetworkSetLastError(WSAEINTR);
           Exit;
          end;
          
@@ -3376,7 +2789,7 @@ begin
       if AAddrLength <> nil then AAddrLength^:=SizeOf(TSockAddr);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=Socket;
       
       {Unlock Socket}
@@ -3387,7 +2800,7 @@ begin
       SockAddr6:=PSockAddr6(ASockAddr);
       
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if (AAddrLength <> nil) and (AAddrLength^ < SizeOf(TSockAddr6)) then Exit;
       
       {Wait for Connection} 
@@ -3397,14 +2810,14 @@ begin
         {Wait for Event}
         if not ASocket.WaitChange then
          begin
-          SetLastError(WSAEINTR);
+          NetworkSetLastError(WSAEINTR);
           Exit;
          end; 
         
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
-          SetLastError(WSAEINTR);
+          NetworkSetLastError(WSAEINTR);
           Exit;
          end; 
          
@@ -3421,7 +2834,7 @@ begin
       if AAddrLength <> nil then AAddrLength^:=SizeOf(TSockAddr6);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=Socket;
       
       {Unlock Socket}
@@ -3432,7 +2845,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3462,32 +2875,32 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected, Listening or Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Listening then Exit;
    if ASocket.SocketState.Connected then Exit;
    if ASocket.SocketState.LocalAddress then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> ASockAddr.sin_family then Exit;
       
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Check LocalAddress}
       if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
        begin
-        SetLastError(WSAEADDRNOTAVAIL);
+        NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
       
       {Bind the Port}
-      SetLastError(WSAEADDRINUSE);
+      NetworkSetLastError(WSAEADDRINUSE);
       if not OpenPort(ASocket,WordBEtoN(ASockAddr.sin_port)) then Exit;
       
       {Bind the Address}
@@ -3495,7 +2908,7 @@ begin
       TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     AF_INET6:begin
@@ -3503,22 +2916,22 @@ begin
       SockAddr6:=PSockAddr6(@ASockAddr);
       
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> SockAddr6.sin6_family then Exit;
       
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
       
       {Check LocalAddress}
       if not TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then
        begin
-        SetLastError(WSAEADDRNOTAVAIL);
+        NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIP6Transport(ASocket.Transport).GetAddressByAddress(SockAddr6.sin6_addr,False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
       
       {Bind the Port}
-      SetLastError(WSAEADDRINUSE);
+      NetworkSetLastError(WSAEADDRINUSE);
       if not OpenPort(ASocket,WordBEtoN(SockAddr6.sin6_port)) then Exit;
       
       {Bind the Address}
@@ -3526,7 +2939,7 @@ begin
       TIP6State(ASocket.TransportState).LocalAddress:=SockAddr6.sin6_addr;
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
    end;
@@ -3534,7 +2947,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3561,11 +2974,11 @@ begin
    if ASocket.SocketState.Listening then
     begin
      {Disconnect Socket}
-     SetLastError(WSAEINVAL);
+     NetworkSetLastError(WSAEINVAL);
      if not TTCPSocket(ASocket).Disconnect then Exit;
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
      Exit;
     end;
@@ -3574,13 +2987,13 @@ begin
    if (ASocket.SocketState.Closed) or (ASocket.SocketState.Unconnected) then
     begin
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
      Exit;
     end;
    
    {All other States}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    
    {Check Linger}
    if ASocket.SocketOptions.Linger.l_onoff = 0 then
@@ -3590,7 +3003,7 @@ begin
      if not TTCPSocket(ASocket).Disconnect then Exit;
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
      Exit;
     end
@@ -3611,7 +3024,7 @@ begin
        ASocket.SignalChange;
        
        {Return Result}
-       SetLastError(ERROR_SUCCESS);
+       NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
        Exit;
       end
@@ -3638,7 +3051,7 @@ begin
         end;
        
        {Return Result}
-       SetLastError(ERROR_SUCCESS);
+       NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
        Exit;
       end;
@@ -3647,7 +3060,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -3681,45 +3094,45 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
-   SetLastError(WSAEISCONN);
+   NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
    
    {Check for Listening or Closed}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Closed then Exit;
    if ASocket.SocketState.Listening then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> ASockAddr.sin_family then Exit;
       
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Check for Default Remote Port}
-      SetLastError(WSAEDESTADDRREQ);
+      NetworkSetLastError(WSAEDESTADDRREQ);
       if WordBEtoN(ASockAddr.sin_port) = IPPORT_ANY then Exit;
       
       {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
+      NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
       
       {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEADDRNOTAVAIL); {Normally WSAEACCES but TCP does not support Broadcast}
+      NetworkSetLastError(WSAEADDRNOTAVAIL); {Normally WSAEACCES but TCP does not support Broadcast}
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then Exit;
       
       {Check the Route}
-      SetLastError(WSAENETUNREACH);
+      NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
       if Route = nil then Exit;
       try
        {Check the LocalAddress}
-       SetLastError(WSAEADDRNOTAVAIL);
+       NetworkSetLastError(WSAEADDRNOTAVAIL);
        Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
        if Address = nil then Exit;
        try
@@ -3727,7 +3140,7 @@ begin
         if not ASocket.SocketState.LocalAddress then
          begin
           {Bind the Port}
-          SetLastError(WSAEADDRINUSE);
+          NetworkSetLastError(WSAEADDRINUSE);
           if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
         
           {Bind the Address}
@@ -3748,7 +3161,7 @@ begin
         TIPState(ASocket.TransportState).RemoteAddress:=InAddrToHost(ASockAddr.sin_addr);
        
         {Start the Handshake}
-        SetLastError(WSAENOBUFS);
+        NetworkSetLastError(WSAENOBUFS);
         if not TTCPSocket(ASocket).Connect then Exit;
       
         {Unlock Route} //To Do //Move the finally block ?
@@ -3773,14 +3186,14 @@ begin
               {Wait for Event}
               if not ASocket.WaitChangeEx(ASocket.SocketOptions.ConnTimeout) then
                begin
-                SetLastError(WSAETIMEDOUT);
+                NetworkSetLastError(WSAETIMEDOUT);
                 Exit;
                end; 
               
               {Check for Timeout}
               if GetTickCount64 > (StartTime + ASocket.SocketOptions.ConnTimeout) then
                begin
-                SetLastError(WSAETIMEDOUT);
+                NetworkSetLastError(WSAETIMEDOUT);
                 Exit;
                end;
              end
@@ -3789,7 +3202,7 @@ begin
               {Wait for Event}
               if not ASocket.WaitChange then
                begin
-                SetLastError(WSAECONNREFUSED);
+                NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
                end; 
              end;             
@@ -3797,12 +3210,12 @@ begin
             {Check for Closed}
             if ASocket.SocketState.Closed then
              begin
-              SetLastError(WSAECONNREFUSED);
+              NetworkSetLastError(WSAECONNREFUSED);
               
               {Check for Error}
               if ASocket.SocketError <> ERROR_SUCCESS then
                begin
-                SetLastError(ASocket.SocketError);
+                NetworkSetLastError(ASocket.SocketError);
                end;
               Break;
              end;
@@ -3817,12 +3230,12 @@ begin
         
           {Restart the Handshake}
           Sleep(TCP_RESTART_TIMEOUT);
-          SetLastError(WSAENOBUFS);
+          NetworkSetLastError(WSAENOBUFS);
           if not TTCPSocket(ASocket).Reconnect then Exit;
          end;
       
         {Return Result}
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
         Result:=NO_ERROR;
        finally
         if Address <> nil then Address.ReaderUnlock;
@@ -3836,32 +3249,32 @@ begin
       SockAddr6:=PSockAddr6(@ASockAddr);
       
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> SockAddr6.sin6_family then Exit;
       
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
       
       {Check for Default Remote Port}
-      SetLastError(WSAEDESTADDRREQ);
+      NetworkSetLastError(WSAEDESTADDRREQ);
       if WordBEtoN(SockAddr6.sin6_port) = IPPORT_ANY then Exit;
      
       {Check for Default RemoteAddress}
-      SetLastError(WSAEDESTADDRREQ);
+      NetworkSetLastError(WSAEDESTADDRREQ);
       if TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then Exit;
      
       {Check for Broadcast RemoteAddress}
-      SetLastError(WSAEADDRNOTAVAIL); {Normally WSAEACCES but TCP does not support Broadcast}
+      NetworkSetLastError(WSAEADDRNOTAVAIL); {Normally WSAEACCES but TCP does not support Broadcast}
       if TIP6Transport(ASocket.Transport).CompareBroadcast(SockAddr6.sin6_addr) or TIP6Transport(ASocket.Transport).CompareDirected(SockAddr6.sin6_addr) then Exit;
       
       {Check the Route}
-      SetLastError(WSAENETUNREACH);
+      NetworkSetLastError(WSAENETUNREACH);
       Route:=TIP6Transport(ASocket.Transport).GetRouteByAddress(SockAddr6.sin6_addr,True,NETWORK_LOCK_READ);
       if Route = nil then Exit;
       try
        {Check the LocalAddress}
-       SetLastError(WSAEADDRNOTAVAIL);
+       NetworkSetLastError(WSAEADDRNOTAVAIL);
        Address:=TIP6Transport(ASocket.Transport).GetAddressByAddress(TIP6RouteEntry(Route).Address,True,NETWORK_LOCK_READ);
        if Address = nil then Exit;
        try
@@ -3869,7 +3282,7 @@ begin
         if not ASocket.SocketState.LocalAddress then
          begin
           {Bind the Port}
-          SetLastError(WSAEADDRINUSE);
+          NetworkSetLastError(WSAEADDRINUSE);
           if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
           
           {Bind the Address}
@@ -3890,7 +3303,7 @@ begin
         TIP6State(ASocket.TransportState).RemoteAddress:=SockAddr6.sin6_addr;
       
         {Start the Handshake}
-        SetLastError(WSAENOBUFS);
+        NetworkSetLastError(WSAENOBUFS);
         if not TTCPSocket(ASocket).Connect then Exit;
       
         {Unlock Route} //To do //Move the finally block ?
@@ -3915,14 +3328,14 @@ begin
               {Wait for Event}
               if not ASocket.WaitChangeEx(ASocket.SocketOptions.ConnTimeout) then
                begin
-                SetLastError(WSAETIMEDOUT);
+                NetworkSetLastError(WSAETIMEDOUT);
                 Exit;
                end; 
               
               {Check for Timeout}
               if GetTickCount64 > (StartTime + ASocket.SocketOptions.ConnTimeout) then
                begin
-                SetLastError(WSAETIMEDOUT);
+                NetworkSetLastError(WSAETIMEDOUT);
                 Exit;
                end;
              end
@@ -3931,7 +3344,7 @@ begin
               {Wait for Event}
               if not ASocket.WaitChange then
                begin
-                SetLastError(WSAECONNREFUSED);
+                NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
                end; 
              end;             
@@ -3939,12 +3352,12 @@ begin
             {Check for Closed}
             if ASocket.SocketState.Closed then
              begin
-              SetLastError(WSAECONNREFUSED);
+              NetworkSetLastError(WSAECONNREFUSED);
               
               {Check for Error}
               if ASocket.SocketError <> ERROR_SUCCESS then
                begin
-                SetLastError(ASocket.SocketError);
+                NetworkSetLastError(ASocket.SocketError);
                end;
               Break;
              end;
@@ -3959,12 +3372,12 @@ begin
         
           {Restart the Handshake}
           Sleep(TCP_RESTART_TIMEOUT);
-          SetLastError(WSAENOBUFS);
+          NetworkSetLastError(WSAENOBUFS);
           if not TTCPSocket(ASocket).Reconnect then Exit;
          end;
       
         {Return Result}
-        SetLastError(ERROR_SUCCESS);
+        NetworkSetLastError(ERROR_SUCCESS);
         Result:=NO_ERROR;
        finally
         if Address <> nil then Address.ReaderUnlock;
@@ -3978,7 +3391,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4008,7 +3421,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4036,15 +3449,15 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Connected}
-   SetLastError(WSAENOTCONN);
+   NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Return the Peer Details}
@@ -4054,7 +3467,7 @@ begin
       AAddrLength:=SizeOf(TSockAddr);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     AF_INET6:begin
@@ -4062,7 +3475,7 @@ begin
       SockAddr6:=PSockAddr6(@ASockAddr);
       
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
       
       {Return the Peer Details}
@@ -4072,7 +3485,7 @@ begin
       AAddrLength:=SizeOf(TSockAddr6);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
    end;
@@ -4080,7 +3493,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4108,15 +3521,15 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
       
       {Return the Socket Details}
@@ -4126,7 +3539,7 @@ begin
       AAddrLength:=SizeOf(TSockAddr);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     AF_INET6:begin
@@ -4134,7 +3547,7 @@ begin
       SockAddr6:=PSockAddr6(@ASockAddr);
       
       {Check size of SockAddr}
-      SetLastError(WSAEFAULT);
+      NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
       
       {Return the Peer Details}
@@ -4144,7 +3557,7 @@ begin
       AAddrLength:=SizeOf(TSockAddr6);
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
    end;
@@ -4152,7 +3565,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4182,7 +3595,7 @@ begin
    case ALevel of
     IPPROTO_IP:begin
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       case ASocket.Family of
        AF_INET:begin
          {Pass the call to the transport}
@@ -4204,7 +3617,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4228,20 +3641,20 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Listening}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Listening then Exit;
    
    {Check for Connected}
-   SetLastError(WSAEISCONN);
+   NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
    
    {Check for Closed or not Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Closed then Exit;
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Start Listening}
-   SetLastError(WSAENOBUFS);
+   NetworkSetLastError(WSAENOBUFS);
    if not TTCPSocket(ASocket).Listen then Exit;
 
    {Set Backlog}
@@ -4265,13 +3678,13 @@ begin
     end;
    
    {Return Result}
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
   end
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4300,7 +3713,7 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
-   SetLastError(WSAENOTCONN);
+   NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then
     begin
      {Check for CLOSWAIT}
@@ -4308,11 +3721,11 @@ begin
     end;
    
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
+   NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
    
    {Wait for Data}
@@ -4328,14 +3741,14 @@ begin
          {Wait for Event}
          if not ASocket.WaitChangeEx(ASocket.SocketOptions.RecvTimeout) then
           begin
-           SetLastError(WSAECONNABORTED);
+           NetworkSetLastError(WSAECONNABORTED);
            Exit;
           end; 
   
          {Check for Timeout}
          if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
           begin
-           SetLastError(WSAECONNABORTED);
+           NetworkSetLastError(WSAECONNABORTED);
            Exit;
           end;
         end
@@ -4344,7 +3757,7 @@ begin
          {Wait for Event}
          if not ASocket.WaitChange then
           begin
-           SetLastError(WSAECONNABORTED);
+           NetworkSetLastError(WSAECONNABORTED);
            Exit;
           end; 
         end;
@@ -4353,11 +3766,11 @@ begin
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
-       SetLastError(WSAECONNRESET);
+       NetworkSetLastError(WSAECONNRESET);
        {Check for Error}
        if ASocket.SocketError <> ERROR_SUCCESS then
         begin
-         SetLastError(ASocket.SocketError);
+         NetworkSetLastError(ASocket.SocketError);
         end;
        Exit;
       end;
@@ -4365,7 +3778,7 @@ begin
      {Check for Unconnected}
      if ASocket.SocketState.Unconnected then
       begin
-       SetLastError(ASocket.SocketError);
+       NetworkSetLastError(ASocket.SocketError);
        Result:=0;
        Exit;
       end;
@@ -4373,14 +3786,14 @@ begin
      {Check for Disconnecting}
      if (ASocket.SocketState.Disconnecting) and (TTCPSocket(ASocket).RecvData.GetAvailable = 0) then
       begin
-       SetLastError(ASocket.SocketError);
+       NetworkSetLastError(ASocket.SocketError);
        Result:=0;
        Exit;
       end;
     end;
    
    {Check Size}
-   SetLastError(ERROR_SUCCESS);
+   NetworkSetLastError(ERROR_SUCCESS);
    Size:=TTCPSocket(ASocket).RecvData.GetAvailable;
    if Size > ALength then Size:=ALength;
    //To Do //MSG_OOB !!! What about SO_OOBLINE etc
@@ -4395,7 +3808,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4446,19 +3859,19 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
-   SetLastError(WSAENOTCONN);
+   NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
    
    {Check for Bound}
-   SetLastError(WSAEINVAL);
+   NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
    
    {Check for Shutdown}
-   SetLastError(WSAESHUTDOWN);
+   NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
    
    {Check Address Family}
-   SetLastError(WSAEAFNOSUPPORT);
+   NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
     AF_INET:begin
       {Wait for Space}
@@ -4471,14 +3884,14 @@ begin
           {Wait for Event}
           if not ASocket.WaitChangeEx(ASocket.SocketOptions.SendTimeout) then
            begin
-            SetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAECONNABORTED);
             Exit;
            end; 
 
           {Check for Timeout}
           if GetTickCount64 > (StartTime + ASocket.SocketOptions.SendTimeout) then
            begin
-            SetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAECONNABORTED);
             Exit;
            end;
          end
@@ -4487,7 +3900,7 @@ begin
           {Wait for Event}
           if not ASocket.WaitChange then
            begin
-            SetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAECONNABORTED);
             Exit;
            end; 
          end;         
@@ -4495,11 +3908,11 @@ begin
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
-          SetLastError(WSAECONNRESET);
+          NetworkSetLastError(WSAECONNRESET);
           {Check for Error}
           if ASocket.SocketError <> ERROR_SUCCESS then
            begin
-            SetLastError(ASocket.SocketError);
+            NetworkSetLastError(ASocket.SocketError);
            end;
           Exit;
          end;
@@ -4507,14 +3920,14 @@ begin
         {Check for Unconnected}
         if ASocket.SocketState.Unconnected then
          begin
-          SetLastError(ASocket.SocketError);
+          NetworkSetLastError(ASocket.SocketError);
           Result:=0;
           Exit;
          end;
        end;
       
       {Check Size}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Size:=TTCPSocket(ASocket).SendData.GetFree;
       if Size > ALength then Size:=ALength;
       //To Do //MSG_OOB !!! What about SO_OOBLINE etc - OOBINLINE not relevant to Send ?
@@ -4536,14 +3949,14 @@ begin
           {Wait for Event}
           if not ASocket.WaitChangeEx(ASocket.SocketOptions.SendTimeout) then
            begin
-            SetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAECONNABORTED);
             Exit;
            end; 
 
           {Check for Timeout}
           if GetTickCount64 > (StartTime + ASocket.SocketOptions.SendTimeout) then
            begin
-            SetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAECONNABORTED);
             Exit;
            end;
          end
@@ -4552,7 +3965,7 @@ begin
           {Wait for Event}
           if not ASocket.WaitChange then
            begin
-            SetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAECONNABORTED);
             Exit;
            end; 
          end;         
@@ -4560,11 +3973,11 @@ begin
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
-          SetLastError(WSAECONNRESET);
+          NetworkSetLastError(WSAECONNRESET);
           {Check for Error}
           if ASocket.SocketError <> ERROR_SUCCESS then
            begin
-            SetLastError(ASocket.SocketError);
+            NetworkSetLastError(ASocket.SocketError);
            end;
           Exit;
          end;
@@ -4572,14 +3985,14 @@ begin
         {Check for Unconnected}
         if ASocket.SocketState.Unconnected then
          begin
-          SetLastError(ASocket.SocketError);
+          NetworkSetLastError(ASocket.SocketError);
           Result:=0;
           Exit;
          end;
        end;
       
       {Check Size}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Size:=TTCPSocket(ASocket).SendData.GetFree;
       if Size > ALength then Size:=ALength;
       //To Do //MSG_OOB !!! What about SO_OOBLINE etc - OOBINLINE not relevant to Send ?
@@ -4595,7 +4008,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4646,7 +4059,7 @@ begin
       {Check Option}
       case AOptName of
        SO_RCVBUF:begin
-         SetLastError(WSAEFAULT);
+         NetworkSetLastError(WSAEFAULT);
          
          if AOptLength >= SizeOf(Integer) then
           begin
@@ -4654,7 +4067,7 @@ begin
           end;
         end;
        SO_SNDBUF:begin
-         SetLastError(WSAEFAULT);
+         NetworkSetLastError(WSAEFAULT);
          
          if AOptLength >= SizeOf(Integer) then
           begin
@@ -4668,7 +4081,7 @@ begin
      end;
     IPPROTO_IP:begin
       {Check Address Family}
-      SetLastError(WSAEAFNOSUPPORT);
+      NetworkSetLastError(WSAEAFNOSUPPORT);
       case ASocket.Family of
        AF_INET:begin
          {Pass the call to the transport}
@@ -4690,7 +4103,7 @@ begin
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4715,7 +4128,7 @@ begin
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
-   SetLastError(WSAENOTCONN);
+   NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
    
    {Check Direction}
@@ -4725,7 +4138,7 @@ begin
       ASocket.SocketState.CantRecvMore:=True;
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     SHUTDOWN_SEND:begin
@@ -4733,11 +4146,11 @@ begin
       ASocket.SocketState.CantSendMore:=True;
       
       {Disconnect Socket}
-      SetLastError(WSAENOBUFS);
+      NetworkSetLastError(WSAENOBUFS);
       if not TTCPSocket(ASocket).Disconnect then Exit;
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     SHUTDOWN_BOTH:begin
@@ -4746,23 +4159,23 @@ begin
       ASocket.SocketState.CantSendMore:=True;
       
       {Disconnect Socket}
-      SetLastError(WSAENOBUFS);
+      NetworkSetLastError(WSAENOBUFS);
       if not TTCPSocket(ASocket).Disconnect then Exit;
       
       {Return Result}
-      SetLastError(ERROR_SUCCESS);
+      NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
      end;
     else
      begin
-      SetLastError(WSAEINVAL);
+      NetworkSetLastError(WSAEINVAL);
      end;
    end;
   end
  else
   begin
    {Not Socket}
-   SetLastError(WSAENOTSOCK);
+   NetworkSetLastError(WSAENOTSOCK);
   end;
 end;
 
@@ -4791,15 +4204,15 @@ begin
   {$ENDIF}
   
   {Check Socket Type}
-  SetLastError(WSAESOCKTNOSUPPORT);
+  NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if AStruct <> SOCK_STREAM then Exit;
   
   {Check Address Family}
-  SetLastError(WSAEAFNOSUPPORT);
+  NetworkSetLastError(WSAEAFNOSUPPORT);
   if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
 
   {Check Protocol}
-  SetLastError(WSAEPROTOTYPE);
+  NetworkSetLastError(WSAEPROTOTYPE);
   if (AProtocol <> IPPROTO_TCP) and (AProtocol <> IPPROTO_IP) then Exit;
   
   {Get Transport}
@@ -4824,6 +4237,593 @@ begin
  finally 
   ReaderUnlock;
  end; 
+end;
+
+{==============================================================================}
+
+function TTCPProtocol.AddTransport(ATransport:TNetworkTransport):Boolean;
+{Add a transport to this protocol}
+{Transport: The transport to add}
+var
+ Handle:THandle;
+ Transport:TTCPProtocolTransport;
+begin
+ {}
+ Result:=False;
+ 
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF TCP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: AddTransport');
+  {$ENDIF}
+  
+  {Check Transport}
+  if ATransport = nil then Exit;
+ 
+  {Get Transport} 
+  Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
+  if Transport = nil then
+   begin
+    {Check Address Family}
+    case ATransport.Family of
+     AF_INET:begin
+       {Add TCP Protocol}
+       Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_TCP,PacketHandler,nil);
+       if Handle <> INVALID_HANDLE_VALUE then
+        begin
+         {Create Transport}
+         Transport:=TTCPProtocolTransport.Create;
+         Transport.Handle:=Handle;
+         Transport.Protocol:=IPPROTO_TCP;
+         Transport.Transport:=ATransport;
+         
+         {Acquire Lock}
+         FTransports.WriterLock;
+         try
+          {Add Transport}
+          FTransports.Add(Transport);
+         
+          {Add Control Socket}
+          Transport.Socket:=TTCPSocket.Create(Self,ATransport);
+          {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
+         
+          {Add Proto Entry}
+          TIPTransport(ATransport).AddProto(TCP_PROTOCOL_NAME,IPPROTO_TCP,False);
+         
+          {Add Serv Entries}
+          TIPTransport(ATransport).AddServ('ECHO',TCP_PROTOCOL_NAME,7,False);
+          TIPTransport(ATransport).AddServ('DISCARD',TCP_PROTOCOL_NAME,9,False);
+          TIPTransport(ATransport).AddServ('SYSTAT',TCP_PROTOCOL_NAME,11,False);
+          TIPTransport(ATransport).AddServ('DAYTIME',TCP_PROTOCOL_NAME,13,False);
+          TIPTransport(ATransport).AddServ('NETSTAT',TCP_PROTOCOL_NAME,15,False);
+          TIPTransport(ATransport).AddServ('QOTD',TCP_PROTOCOL_NAME,17,False);
+          TIPTransport(ATransport).AddServ('CHARGEN',TCP_PROTOCOL_NAME,19,False);
+          TIPTransport(ATransport).AddServ('FTP-DATA',TCP_PROTOCOL_NAME,20,False);
+          TIPTransport(ATransport).AddServ('FTP',TCP_PROTOCOL_NAME,21,False);
+          TIPTransport(ATransport).AddServ('TELNET',TCP_PROTOCOL_NAME,23,False);
+          TIPTransport(ATransport).AddServ('SMTP',TCP_PROTOCOL_NAME,25,False);
+          TIPTransport(ATransport).AddServ('TIME',TCP_PROTOCOL_NAME,37,False);
+          TIPTransport(ATransport).AddServ('NAME',TCP_PROTOCOL_NAME,42,False);
+          TIPTransport(ATransport).AddServ('WHOIS',TCP_PROTOCOL_NAME,43,False);
+          TIPTransport(ATransport).AddServ('DOMAIN',TCP_PROTOCOL_NAME,53,False);
+          TIPTransport(ATransport).AddServ('NAMESERVER',TCP_PROTOCOL_NAME,53,False);
+          TIPTransport(ATransport).AddServ('MTP',TCP_PROTOCOL_NAME,57,False);
+          TIPTransport(ATransport).AddServ('FINGER',TCP_PROTOCOL_NAME,79,False);
+          TIPTransport(ATransport).AddServ('POP3',TCP_PROTOCOL_NAME,110,False);
+          TIPTransport(ATransport).AddServ('PORTMAP',TCP_PROTOCOL_NAME,111,False);
+          TIPTransport(ATransport).AddServ('AUTH',TCP_PROTOCOL_NAME,113,False);
+          TIPTransport(ATransport).AddServ('NNTP',TCP_PROTOCOL_NAME,119,False);
+          TIPTransport(ATransport).AddServ('NBSESSION',TCP_PROTOCOL_NAME,139,False);
+          TIPTransport(ATransport).AddServ('IMAP4',TCP_PROTOCOL_NAME,143,False);
+         
+          {Return Result}
+          Result:=True;
+         finally
+          {Release Lock}
+          FTransports.WriterUnlock;
+         end;  
+        end;
+        
+       {Add ICMP Protocol}
+       Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_ICMP,PacketHandler,nil);
+       if Handle <> INVALID_HANDLE_VALUE then
+        begin
+         {Create Transport}
+         Transport:=TTCPProtocolTransport.Create;
+         Transport.Handle:=Handle;
+         Transport.Protocol:=IPPROTO_ICMP;
+         Transport.Transport:=ATransport;
+         
+         {Acquire Lock}
+         FTransports.WriterLock;
+         try
+          {Add Transport}
+          FTransports.Add(Transport);
+         
+          {Return Result}
+          Result:=True;
+         finally
+          {Release Lock}
+          FTransports.WriterUnlock;
+         end;  
+        end;
+      end;
+     AF_INET6:begin
+       {Add TCP Protocol}
+       Handle:=TIP6Transport(ATransport).AddProtocol(IPPROTO_TCP,PacketHandler,nil);
+       if Handle <> INVALID_HANDLE_VALUE then
+        begin
+         {Create Transport}
+         Transport:=TTCPProtocolTransport.Create;
+         Transport.Handle:=Handle;
+         Transport.Protocol:=IPPROTO_TCP;
+         Transport.Transport:=ATransport;
+         
+         {Acquire Lock}
+         FTransports.WriterLock;
+         try
+          {Add Transport}
+          FTransports.Add(Transport);
+         
+          {Add Control Socket}
+          Transport.Socket:=TTCPSocket.Create(Self,ATransport);
+          {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
+          
+          {Add Proto Entry}
+          TIP6Transport(ATransport).AddProto(TCP_PROTOCOL_NAME,IPPROTO_TCP,False);
+          
+          {Add Serv Entries}
+          TIP6Transport(ATransport).AddServ('ECHO',TCP_PROTOCOL_NAME,7,False);
+          TIP6Transport(ATransport).AddServ('DISCARD',TCP_PROTOCOL_NAME,9,False);
+          TIP6Transport(ATransport).AddServ('SYSTAT',TCP_PROTOCOL_NAME,11,False);
+          TIP6Transport(ATransport).AddServ('DAYTIME',TCP_PROTOCOL_NAME,13,False);
+          TIP6Transport(ATransport).AddServ('NETSTAT',TCP_PROTOCOL_NAME,15,False);
+          TIP6Transport(ATransport).AddServ('QOTD',TCP_PROTOCOL_NAME,17,False);
+          TIP6Transport(ATransport).AddServ('CHARGEN',TCP_PROTOCOL_NAME,19,False);
+          TIP6Transport(ATransport).AddServ('FTP-DATA',TCP_PROTOCOL_NAME,20,False);
+          TIP6Transport(ATransport).AddServ('FTP',TCP_PROTOCOL_NAME,21,False);
+          TIP6Transport(ATransport).AddServ('TELNET',TCP_PROTOCOL_NAME,23,False);
+          TIP6Transport(ATransport).AddServ('SMTP',TCP_PROTOCOL_NAME,25,False);
+          TIP6Transport(ATransport).AddServ('TIME',TCP_PROTOCOL_NAME,37,False);
+          TIP6Transport(ATransport).AddServ('NAME',TCP_PROTOCOL_NAME,42,False);
+          TIP6Transport(ATransport).AddServ('WHOIS',TCP_PROTOCOL_NAME,43,False);
+          TIP6Transport(ATransport).AddServ('DOMAIN',TCP_PROTOCOL_NAME,53,False);
+          TIP6Transport(ATransport).AddServ('NAMESERVER',TCP_PROTOCOL_NAME,53,False);
+          TIP6Transport(ATransport).AddServ('MTP',TCP_PROTOCOL_NAME,57,False);
+          TIP6Transport(ATransport).AddServ('FINGER',TCP_PROTOCOL_NAME,79,False);
+          TIP6Transport(ATransport).AddServ('POP3',TCP_PROTOCOL_NAME,110,False);
+          TIP6Transport(ATransport).AddServ('PORTMAP',TCP_PROTOCOL_NAME,111,False);
+          TIP6Transport(ATransport).AddServ('AUTH',TCP_PROTOCOL_NAME,113,False);
+          TIP6Transport(ATransport).AddServ('NNTP',TCP_PROTOCOL_NAME,119,False);
+          TIP6Transport(ATransport).AddServ('NBSESSION',TCP_PROTOCOL_NAME,139,False);
+          TIP6Transport(ATransport).AddServ('IMAP4',TCP_PROTOCOL_NAME,143,False);
+          
+          {Return Result}
+          Result:=True;
+         finally
+          {Release Lock}
+          FTransports.WriterUnlock;
+         end;  
+        end;
+        
+       {Add ICMP6 Protocol}
+       Handle:=TIP6Transport(ATransport).AddProtocol(IPPROTO_ICMPV6,PacketHandler,nil);
+       if Handle <> INVALID_HANDLE_VALUE then
+        begin
+         {Create Transport}
+         Transport:=TTCPProtocolTransport.Create;
+         Transport.Handle:=Handle;
+         Transport.Protocol:=IPPROTO_ICMPV6;
+         Transport.Transport:=ATransport;
+         
+         {Acquire Lock}
+         FTransports.WriterLock;
+         try
+          {Add Transport}
+          FTransports.Add(Transport);
+         
+          {Return Result}
+          Result:=True;
+         finally
+          {Release Lock}
+          FTransports.WriterUnlock;
+         end;  
+        end;
+      end;
+    end;
+   end
+  else
+   begin
+    {Unlock Transport}
+    Transport.ReaderUnlock;
+    
+    {Return Result}
+    Result:=True;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTCPProtocol.RemoveTransport(ATransport:TNetworkTransport):Boolean;
+{Remove a transport from this protocol}
+{Transport: The transport to remove}
+var
+ Transport:TTCPProtocolTransport;
+begin
+ {}
+ Result:=False;
+ 
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF TCP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: RemoveTransport');
+  {$ENDIF}
+  
+  {Check Transport}
+  if ATransport = nil then Exit;
+  
+  {Check Address Family}
+  case ATransport.Family of
+   AF_INET:begin
+     {Get Transport}
+     Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
+     while Transport <> nil do
+      begin
+       {Check Protocol}
+       case Transport.Protocol of
+        IPPROTO_TCP:begin
+          {Remove TCP Protocol}
+          if TIPTransport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
+           begin
+            {Remove Serv Entries}
+            TIPTransport(ATransport).RemoveServ('ECHO',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('DISCARD',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('SYSTAT',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('DAYTIME',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('NETSTAT',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('QOTD',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('CHARGEN',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('FTP-DATA',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('FTP',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('TELNET',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('SMTP',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('TIME',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('NAME',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('WHOIS',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('DOMAIN',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('NAMESERVER',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('MTP',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('FINGER',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('POP3',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('PORTMAP',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('AUTH',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('NNTP',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('NBSESSION',TCP_PROTOCOL_NAME);
+            TIPTransport(ATransport).RemoveServ('IMAP4',TCP_PROTOCOL_NAME);
+            
+            {Remove Proto Entry}
+            TIPTransport(ATransport).RemoveProto(TCP_PROTOCOL_NAME);
+            
+            {Remove Control Socket}
+            {FSockets.Remove(Transport.Socket);} {This one is not on the list}
+            Transport.Socket.Free;
+            
+            {Acquire Lock}
+            FTransports.WriterLock;
+            try
+             {Remove Transport}
+             FTransports.Remove(Transport);
+            
+             {Unlock Transport}
+             Transport.WriterUnlock;
+            
+             {Destroy Transport}
+             Transport.Free;
+            
+             {Return Result}
+             Result:=True;
+            finally
+             {Release Lock}
+             FTransports.WriterUnlock;
+            end;  
+           end;
+         end;
+        IPPROTO_ICMP:begin
+          {Remove ICMP Protocol}
+          if TIPTransport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
+           begin
+            {Acquire Lock}
+            FTransports.WriterLock;
+            try
+             {Remove Transport}
+             FTransports.Remove(Transport);
+            
+             {Unlock Transport}
+             Transport.WriterUnlock;
+            
+             {Destroy Transport}
+             Transport.Free;
+            
+             {Return Result}
+             Result:=True;
+            finally
+             {Release Lock}
+             FTransports.WriterUnlock;
+            end;  
+           end;
+         end;
+        else
+         begin
+          {Unlock Transport}
+          Transport.WriterUnlock;
+         end;         
+       end;  
+    
+       {Get Transport}
+       Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
+      end; 
+    end;
+   AF_INET6:begin
+     {Get Transport}
+     Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
+     if Transport = nil then Exit;
+     while Transport <> nil do
+      begin
+       {Check Protocol}
+       case Transport.Protocol of
+        IPPROTO_TCP:begin
+          {Remove TCP Protocol}
+          if TIP6Transport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
+           begin
+            {Remove Serv Entries}
+            TIP6Transport(ATransport).RemoveServ('ECHO',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('DISCARD',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('SYSTAT',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('DAYTIME',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('NETSTAT',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('QOTD',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('CHARGEN',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('FTP-DATA',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('FTP',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('TELNET',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('SMTP',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('TIME',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('NAME',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('WHOIS',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('DOMAIN',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('NAMESERVER',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('MTP',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('FINGER',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('POP3',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('PORTMAP',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('AUTH',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('NNTP',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('NBSESSION',TCP_PROTOCOL_NAME);
+            TIP6Transport(ATransport).RemoveServ('IMAP4',TCP_PROTOCOL_NAME);
+            
+            {Remove Proto Entry}
+            TIP6Transport(ATransport).RemoveProto(TCP_PROTOCOL_NAME);
+            
+            {Remove Control Socket}
+            {FSockets.Remove(Transport.Socket);} {This one is not on the list}
+            Transport.Socket.Free;
+            
+            {Acquire Lock}
+            FTransports.WriterLock;
+            try
+             {Remove Transport}
+             FTransports.Remove(Transport);
+            
+             {Unlock Transport}
+             Transport.WriterUnlock;
+             
+             {Destroy Transport}
+             Transport.Free;
+            
+             {Return Result}
+             Result:=True;
+            finally
+             {Release Lock}
+             FTransports.WriterUnlock;
+            end;  
+           end;
+         end;
+        IPPROTO_ICMPV6:begin
+          {Remove ICMP6 Protocol}
+          if TIP6Transport(ATransport).RemoveProtocol(Transport.Handle,Transport.Protocol) then
+           begin
+            {Acquire Lock}
+            FTransports.WriterLock;
+            try
+             {Remove Transport}
+             FTransports.Remove(Transport);
+            
+             {Unlock Transport}
+             Transport.WriterUnlock;
+            
+             {Destroy Transport}
+             Transport.Free;
+            
+             {Return Result}
+             Result:=True;
+            finally
+             {Release Lock}
+             FTransports.WriterUnlock;
+            end;  
+           end;
+         end;
+        else
+         begin
+          {Unlock Transport}
+          Transport.WriterUnlock;
+         end;         
+       end;  
+      
+       {Get Transport}
+       Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
+      end; 
+    end;
+  end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTCPProtocol.FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket;
+{Find a protocol socket based on all relevant parameters}
+{Family: Socket address family (eg AF_INET}
+{Struct: Socket type (eg SOCK_DGRAM)}
+{Protocol: Socket protocol (eg IPPROTO_UDP)}
+{LocalAddress: Local transport address to match (Host Order)}
+{RemoteAddress: Remote transport address to match (Host Order)}
+{LocalPort: Local port to match (Host Order)}
+{RemotePort: Remote port to match (Host Order)}
+{Broadcast: If True then match broadcast addresses}
+{Listen: If True then match only listening sockets}
+{Lock: If True then lock the found entry before returning}
+var
+ Socket:TTCPSocket;
+begin
+ {}
+ Result:=nil;
+ 
+ if not FSockets.ReaderLock then Exit;
+ try
+  {$IFDEF TCP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: FindSocket');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Family = ' + AddressFamilyToString(AFamily));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Struct = ' + SocketTypeToString(AStruct));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Protocol = ' + ProtocolToString(AProtocol));
+  {$ENDIF}
+  
+  {Get Socket}
+  Socket:=TTCPSocket(FSockets.First);
+  while Socket <> nil do
+   begin
+    {Check for Closed}
+    if not Socket.SocketState.Closed then
+     begin
+      {Check for Match}
+      if (Socket.Family = AFamily) and (Socket.Struct = AStruct) and (Socket.Proto = AProtocol) then
+       begin
+        if not AListen then
+         begin
+          {Check for a Connected Socket}
+          if Socket.IsConnected(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
+           begin
+            {Lock Socket}
+            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
+            
+            {Return Result}
+            Result:=Socket;
+            Exit;
+           end;
+         end
+        else
+         begin
+          {Check for a Listening Socket}
+          if Socket.IsListening(ALocalAddress,ARemoteAddress,ALocalPort,ARemotePort,ABroadcast) then
+           begin
+            {Lock Socket}
+            if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
+            
+            {Return Result}
+            Result:=Socket;
+            Exit;
+           end;
+         end;
+       end;
+     end;
+     
+    {Get Next}
+    Socket:=TTCPSocket(Socket.Next);
+   end;
+ finally 
+  FSockets.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+procedure TTCPProtocol.FlushSockets(All:Boolean);
+{Flush sockets from the socket cache}
+{All: If True flush all sockets, otherwise flush expired sockets}
+var
+ CurrentTime:Int64;
+ Socket:TTCPSocket;
+ Current:TTCPSocket;
+begin
+ {}
+ {$IFDEF TCP_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: FlushSockets');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  All = ' + BoolToStr(All));
+ {$ENDIF}
+ 
+ {Get Tick Count}
+ CurrentTime:=GetTickCount64;
+  
+ {Get Socket}
+ Socket:=TTCPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
+ while Socket <> nil do
+  begin
+   {Get Next}
+   Current:=Socket;
+   Socket:=TTCPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
+    
+   {Check Socket State}
+   if (Current.SocketState.Closed) or (All) then
+    begin
+     {Check for Close Timeout}
+     if ((Current.CloseTime + (CLOSE_TIMEOUT - TCP_TIMEOUT_OFFSET)) < CurrentTime) or (All) then
+      begin
+       {Convert Socket}
+       if Current.ReaderConvert then
+        begin
+         {Close Port}
+         ClosePort(Current);
+        
+         {Acquire Lock}
+         FSockets.WriterLock;
+        
+         {Remove Socket}
+         FSockets.Remove(Current);
+
+         {Release Lock}
+         FSockets.WriterUnlock;
+         
+         {Unlock Socket}
+         Current.WriterUnlock;
+        
+         {Free Socket}
+         Current.Free;
+         Current:=nil;
+        end; 
+      end;
+    end
+   else if TTCPState(Current.ProtocolState).State = TCP_STATE_TIMEWAIT then
+    begin
+     {Check for Timewait Timeout}
+     if ((Current.TimewaitTime + (TIMEWAIT_TIMEOUT - TCP_TIMEOUT_OFFSET)) < CurrentTime) then
+      begin
+       {Close the Socket}
+       Current.SocketError:=ERROR_SUCCESS;
+       Current.SocketState.Closed:=True;
+       Current.CloseTime:=GetTickCount64;
+       TTCPState(Current.ProtocolState).State:=TCP_STATE_CLOSED;
+       
+       {Signal the Event}
+       Current.SignalChange;
+      end;
+    end;
+    
+   {Unlock Socket}
+   if Current <> nil then Current.ReaderUnlock;
+  end;
 end;
 
 {==============================================================================}
@@ -5189,12 +5189,12 @@ begin
   {Check Level}
   case ALevel of
    IPPROTO_TCP:begin
-     SetLastError(WSAENOPROTOOPT);
+     NetworkSetLastError(WSAENOPROTOOPT);
      
      {Check Option}
      case AOptName of
       TCP_NODELAY,TCP_MAXSEG,TCP_NOPUSH,TCP_NOOPT,TCP_BSDURGENT,TCP_WSCALE,TCP_NOSACK:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then
          begin
@@ -5228,7 +5228,7 @@ begin
           end;
           
           {Return Result}
-          SetLastError(ERROR_SUCCESS);
+          NetworkSetLastError(ERROR_SUCCESS);
           Result:=NO_ERROR;
          end;
        end;
@@ -5261,12 +5261,12 @@ begin
   {Check Level}
   case ALevel of
    IPPROTO_TCP:begin
-     SetLastError(WSAENOPROTOOPT);
+     NetworkSetLastError(WSAENOPROTOOPT);
      
      {Check Option}
      case AOptName of
       TCP_NODELAY,TCP_MAXSEG,TCP_NOPUSH,TCP_NOOPT,TCP_BSDURGENT,TCP_WSCALE,TCP_NOSACK:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then
          begin
@@ -5307,7 +5307,7 @@ begin
           end;
           
           {Return Result}
-          SetLastError(ERROR_SUCCESS);
+          NetworkSetLastError(ERROR_SUCCESS);
           Result:=NO_ERROR;
          end;
        end;
@@ -5337,27 +5337,27 @@ begin
   {$ENDIF}
  
   {Check Commmand}
-  SetLastError(WSAEINVAL);
+  NetworkSetLastError(WSAEINVAL);
   case ACommand of
    FIONREAD:begin
      AArgument:=RecvData.GetAvailable;
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIONBIO:begin
      SocketState.NonBlocking:=(AArgument <> 0);
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIOASYNC:begin
      SocketState.Async:=(AArgument <> 0);
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    SIOCATMARK:begin
@@ -5369,7 +5369,7 @@ begin
      //RecvData.GetUrgent
      
      {Return Result}
-     SetLastError(ERROR_SUCCESS);
+     NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
   end;
@@ -8347,14 +8347,7 @@ end;
 function TTCPRecvBuffer.GetUrgent:LongWord;
 begin
  {}
- Result:=0;
- 
- if not AcquireLock then Exit;
-
  Result:=FUrgent;
- //To Do //???
-
- ReleaseLock;
 end;
 
 {==============================================================================}
@@ -8362,13 +8355,7 @@ end;
 function TTCPRecvBuffer.GetAvailable:LongWord;
 begin
  {}
- Result:=0;
- 
- if not AcquireLock then Exit;
-
  Result:=FAvailable;
-
- ReleaseLock;
 end;
 
 {==============================================================================}

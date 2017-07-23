@@ -15995,6 +15995,10 @@ begin
     {Check Parent}
     if (AParent.Attributes and faMatchMask) = faStream then Exit;
     
+    {Check Existing}
+    Result:=GetEntryEx(AParent,AName,faStream,AReference,False,True);
+    if Result <> nil then Exit;
+    
     {Get Origin}
     if not FRecords.WriterLock then Exit;
     try
@@ -16073,6 +16077,23 @@ begin
    begin
     {Check Parent}
     if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
+    
+    {Check Attribtues (Include Folder/File)}
+    if (AAttributes and (faDirectory or faFile)) <> faNone then
+     begin
+      {Check Existing}
+      Result:=GetEntryEx(AParent,AName,faDirectory or faFile,AReference,False,True);
+      if Result <> nil then
+       begin
+        if (AAttributes and faMatchMask) <> (Result.Attributes and faMatchMask) then
+         begin
+          {Remove Reference}
+          if AReference then Result.RemoveReference;
+          Result:=nil;
+         end;
+        Exit;
+       end;     
+     end; 
     
     {Check Short}
     if IsShort(AName) then
@@ -16424,6 +16445,10 @@ begin
     {Check Parent}
     if (AParent.Attributes and faMatchMask) = faStream then Exit;
     
+    {Check Existing}
+    Result:=GetEntryEx(AParent,AName,faStream,AReference,False,True);
+    if Result <> nil then Exit;
+    
     {Get Origin}
     if not FRecords.WriterLock then Exit;
     try
@@ -16502,6 +16527,23 @@ begin
    begin
     {Check Parent}
     if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
+    
+    {Check Attribtues (Include Folder/File)}
+    if (AAttributes and (faDirectory or faFile)) <> faNone then
+     begin
+      {Check Existing}
+      Result:=GetEntryEx(AParent,AName,faDirectory or faFile,AReference,False,True);
+      if Result <> nil then
+       begin
+        if (AAttributes and faMatchMask) <> (Result.Attributes and faMatchMask) then
+         begin
+          {Remove Reference}
+          if AReference then Result.RemoveReference;
+          Result:=nil;
+         end;
+        Exit;
+       end;     
+     end; 
     
     {Check Short}
     if IsShort(AName) then
@@ -16836,6 +16878,9 @@ begin
   {Check ReadOnly}
   if FReadOnly then Exit;
  
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+  
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
  
@@ -17133,6 +17178,9 @@ begin
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
   
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+   
   {Get Origin}
   if not FRecords.WriterLock then Exit;
   try
@@ -17146,6 +17194,9 @@ begin
    {Check Stream}
    if (AEntry.Attributes and faMatchMask) = faStream then
     begin
+     {Check Existing}
+     if GetEntryEx(AParent,AName,faStream,False,False,True) <> nil then Exit;
+     
      {Get Attribute}
      Attribute:=TNTFSDiskEntry(AEntry).Attribute; {Will always be the first instance due to LoadEntries}
      if Attribute = nil then Exit;
@@ -17182,6 +17233,13 @@ begin
     begin
      {Check Parent}
      if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
+     
+     {Check Attribtues (Include Folder/File)}
+     if (AEntry.Attributes and (faDirectory or faFile)) <> faNone then
+      begin
+       {Check Existing}
+       if GetEntryEx(AParent,AName,faDirectory or faFile,False,False,True) <> nil then Exit;
+      end; 
      
      {Check Short}
      if IsShort(AName) then
@@ -17410,6 +17468,9 @@ begin
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
   
+  {Check Parent}
+  if AEntry.Parent <> AParent then Exit;
+   
   {Get Origin}
   if not FRecords.WriterLock then Exit;
   try
@@ -17653,6 +17714,16 @@ begin
   {Check Source}
   if (ASource.Attributes and faMatchMask) <> faDirectory then Exit;
   
+  {Check Parent}
+  if AEntry.Parent <> ASource then Exit;
+  
+  {Check Attribtues (Include Folder/File)}
+  if (AEntry.Attributes and (faDirectory or faFile)) <> faNone then
+   begin
+    {Check Existing}
+    if GetEntryEx(ADest,AEntry.Name,faDirectory or faFile,False,False,True) <> nil then Exit;
+   end; 
+   
   {Get Origin}
   if not FRecords.WriterLock then Exit;
   try
@@ -17783,6 +17854,9 @@ begin
   {Check Target}
   if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
   
+  {Check Existing}
+  if GetEntryEx(AParent,AName,faDirectory or faFile,False,False,True) <> nil then Exit;
+   
   {Get Parent}
   if not FRecords.WriterLock then Exit;
   try
@@ -17895,7 +17969,7 @@ begin
   
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faDirectory then Exit;
-  
+   
   {Get Origin}
   if not FRecords.WriterLock then Exit;
   try
@@ -17989,7 +18063,7 @@ begin
   
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faDirectory then Exit;
-  
+   
   {Get Origin}
   if not FRecords.WriterLock then Exit;
   try
@@ -18057,7 +18131,7 @@ begin
   
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faDirectory then Exit;
-  
+   
   {Get Origin}
   if not FRecords.WriterLock then Exit;
   try
@@ -21755,7 +21829,7 @@ begin
                    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.SizeRecord Additional StartVCN = ' + IntToHex(Additional.StartVCN,16) + ' LastVCN = ' + IntToHex(Additional.LastVCN,16));
                    {$ENDIF}
                    
-                   {Next Interation will Move Attribute (either to existing or new record)}
+                   {Next Iteration will Move Attribute (either to existing or new record)}
                   end;
                 end;
               end
@@ -21807,7 +21881,7 @@ begin
                if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.SizeRecord Additional StartVCN = ' + IntToHex(Additional.StartVCN,16) + ' LastVCN = ' + IntToHex(Additional.LastVCN,16));
                {$ENDIF}
                
-               {Next Interation will Move Attribute (either to existing or new record) (if applicable)}
+               {Next Iteration will Move Attribute (either to existing or new record) (if applicable)}
               end;
             end;
             
@@ -23303,14 +23377,14 @@ begin
           {Size Record}
           if not SizeRecord(Current,Current.CalculatedSize(FVolumeVersion)) then Exit;
           
-          {Upate Position}
+          {Update Position}
           Inc(VCN,Count);
           Dec(Remain,Count);
          end;
        end
       else
        begin
-        {Upate Position}
+        {Update Position}
         Inc(VCN,Count);
         Dec(Remain,Count);
        end;

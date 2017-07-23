@@ -2033,7 +2033,7 @@ begin
  {Check Level}
  case ALevel of
   IPPROTO_IPV6:begin
-    SetLastError(WSAENOPROTOOPT);
+    NetworkSetLastError(WSAENOPROTOOPT);
  
     //To Do
     
@@ -2070,7 +2070,7 @@ begin
  {Check Level}
  case ALevel of
   IPPROTO_IPV6:begin
-    SetLastError(WSAENOPROTOOPT);
+    NetworkSetLastError(WSAENOPROTOOPT);
     
     //To Do
     

@@ -296,6 +296,12 @@ function SerialLoggingStop(Logging:PLoggingDevice):LongWord;
 function SerialLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
 
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+
+{==============================================================================}
 {RTL Serial Functions}
 function SysSerialAvailable:Boolean;
  
@@ -308,10 +314,14 @@ function SysSerialWrite(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWor
 {==============================================================================}
 {Serial Helper Functions}
 function SerialGetCount:LongWord; inline;
+
 function SerialDeviceGetDefault:PSerialDevice; inline;
 function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord; 
 
 function SerialDeviceCheck(Serial:PSerialDevice):PSerialDevice;
+
+function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean; 
+function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean; 
 
 function SerialBufferReadStart(Buffer:PSerialBuffer;var Available:LongWord):Pointer;
 function SerialBufferReadComplete(Buffer:PSerialBuffer;Removed:LongWord):Boolean;
@@ -353,6 +363,9 @@ var
 
  SerialDeviceDefault:PSerialDevice;
 
+ SerialTextIOInputDevice:PSerialDevice;
+ SerialTextIOOutputDevice:PSerialDevice;
+ 
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -399,6 +412,11 @@ begin
  
  {Register Notification}
  SerialDeviceNotification(nil,SerialLoggingDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER,NOTIFIER_FLAG_WORKER);
+ 
+ {Register Platform Text IO Handlers}
+ {TextIOReadCharHandler:=SysTextIOReadChar;}       {Only registered when calling SerialDeviceRedirectInput}
+ {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling SerialDeviceRedirectOutput}
+ {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling SerialDeviceRedirectOutput}
  
  {Register Platform Serial Handlers}
  SerialAvailableHandler:=SysSerialAvailable;
@@ -1356,6 +1374,51 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOReadChar function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=(SerialDeviceRead(SerialTextIOInputDevice,@ACh,SizeOf(Char),SERIAL_READ_NONE,Count) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOWriteChar function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=(SerialDeviceWrite(SerialTextIOOutputDevice,@ACh,SizeOf(Char),SERIAL_WRITE_NONE,Count) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):LongInt;
+{Handler for platform TextIOWriteBuffer function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if SerialDeviceWrite(SerialTextIOOutputDevice,ABuffer,ACount,SERIAL_WRITE_NONE,Count) = ERROR_SUCCESS then
+  begin
+   Result:=Count;
+  end;
+end;
+ 
+{==============================================================================}
+{==============================================================================}
 {RTL Serial Functions}
 function SysSerialAvailable:Boolean;
 {Check if a Serial device is available}
@@ -1524,6 +1587,76 @@ begin
     CriticalSectionUnlock(SerialDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean; 
+{Redirect standard input to the serial device specified by Serial}
+{Serial: The serial device to redirect input to (or nil to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the input of the text file Input which also
+       redirects the input of Read, ReadLn and the standard C library}
+begin
+ {}
+ Result:=False;
+ 
+ if Serial = nil then
+  begin
+   {Stop Redirection}
+   TextIOReadCharHandler:=nil;
+   
+   SerialTextIOInputDevice:=nil;
+  end
+ else
+  begin
+   {Check Serial}
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+  
+   {Start Redirection}
+   TextIOReadCharHandler:=SysTextIOReadChar;
+  
+   SerialTextIOInputDevice:=Serial;
+  end;  
+  
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean; 
+{Redirect standard output to the serial device specified by Serial}
+{Serial: The serial device to redirect output to (or nil to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the output of the text files Output, ErrOutput, StdOut and StdErr
+       which also redirects the output of Write, WriteLn and the standard C library}
+begin
+ {}
+ Result:=False;
+ 
+ if Serial = nil then
+  begin
+   {Stop Redirection}
+   TextIOWriteCharHandler:=nil;
+   TextIOWriteBufferHandler:=nil;
+   
+   SerialTextIOOutputDevice:=nil;
+  end
+ else
+  begin
+   {Check Serial}
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+   
+   {Start Redirection}
+   TextIOWriteCharHandler:=SysTextIOWriteChar;
+   TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
+  
+   SerialTextIOOutputDevice:=Serial;
+  end;  
+  
+ Result:=True;
 end;
 
 {==============================================================================}

@@ -58,6 +58,7 @@ Global Defines
 {$DEFINE CRITICALSECTION_INLINE}  {Inline parts of Critical Section handling for performance (Default: On)}
 {$DEFINE SEMAPHORE_INLINE}        {Inline parts of Semaphore handling for performance (Default: On)}
 {$DEFINE SYNCHRONIZER_INLINE}     {Inline parts of Synchronizer handling for performance (Default: On)}
+{$DEFINE CONDITION_INLINE}        {Inline parts of Condition handling for performance (Default: On)}
 {$DEFINE LIST_INLINE}             {Inline parts of List handling for performance (Default: On)}
 {$DEFINE QUEUE_INLINE}            {Inline parts of Queue handling for performance (Default: On)}
 {$DEFINE THREAD_INLINE}           {Inline parts of Thread handling for performance (Default: On)}
@@ -103,7 +104,8 @@ Global Defines
 {--$DEFINE THREAD_DEBUG}          {Enable debug output/counters for thread internals (Default: Off)}
 {--$DEFINE PLATFORM_DEBUG}        {Enable debug output/counters for platform internals (Default: Off)}
 {--$DEFINE SYSCALLS_DEBUG}        {Enable debug output/counters for C library syscalls (Default: Off)}
-{$DEFINE LOADER_DEBUG}          {Enable debug output/counters for loader internals (Default: Off)}
+{$DEFINE LINKER_DEBUG}          {Enable debug output/counters for static linker internals (Default: Off)}
+{$DEFINE LOADER_DEBUG}          {Enable debug output/counters for dynamic loader internals (Default: Off)}
 {--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off) (Do not enable when console logging is active)}
 {--$DEFINE LOGGING_DEBUG}         {Enable debug output/counters for logging devices (Default: Off)}
 
@@ -254,6 +256,12 @@ Global Defines
 
 {MMC/SDHCI}
 {--$DEFINE PL18X_DEBUG}           {Enable debug output/counters for PL18X driver (Default: Off)}
+
+{GPU}
+{--$DEFINE VC4_DEBUG}             {Enable debug output/counters for VC4 driver (Default: Off)}
+{--$DEFINE VC4VCHIQ_DEBUG}        {Enable debug output/counters for VC4 VCHIQ driver (Default: Off)}
+{--$DEFINE VC4VCSM_DEBUG}         {Enable debug output/counters for VC4 VCSM driver (Default: Off)}
+{--$DEFINE VC4V3D_DEBUG}          {Enable debug output/counters for VC4 V3D interface (Default: Off)}
 
 {Other}
 {--$DEFINE RPIUSBBOOT_DEBUG}      {Enable debug output/counters for RPIUSBBOOT driver (Default: Off)}

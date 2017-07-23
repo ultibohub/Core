@@ -524,6 +524,10 @@ procedure ConsoleReadLn(var AText:String);
 procedure ConsoleReadChr(var AChr:Char);
 
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+
+{==============================================================================}
 {RTL Console Functions}
 function SysConsoleWriteChar(ACh:Char;AUserData:Pointer):Boolean;
 
@@ -576,6 +580,8 @@ function ConsoleWindowSetDefault(Console:PConsoleDevice;Handle:TWindowHandle):Lo
 
 function ConsoleWindowCheck(Console:PConsoleDevice;Window:PConsoleWindow):PConsoleWindow;
 
+function ConsoleWindowRedirectOutput(Handle:TWindowHandle):Boolean;
+
 {==============================================================================}
 {==============================================================================}
 
@@ -592,6 +598,8 @@ var
  ConsoleDeviceTableCount:LongWord;
  
  ConsoleDeviceDefault:PConsoleDevice;
+ 
+ ConsoleTextIOOutputHandle:TWindowHandle = INVALID_HANDLE_VALUE;
  
 {==============================================================================}
 {==============================================================================}
@@ -646,13 +654,16 @@ begin
  FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR:=COLOR_ORANGE;
   
  {Check Environment Variables}
- //To Do
+ //To Do //CONSOLE_DEFAULT_FONT_NAME / WINDOW_DEFAULT_FONT_NAME
  
  {Enumerate Framebuffers}
  FramebufferDeviceEnumerate(ConsoleFramebufferDeviceEnum,nil);
  
  {Register Notification}
  FramebufferDeviceNotification(nil,ConsoleFramebufferDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_ENABLE or DEVICE_NOTIFICATION_DISABLE,NOTIFIER_FLAG_UNLOCK);
+ 
+ {Setup Platform Text IO Handlers}
+ {TextIOWriteCharHandler:=SysTextIOWriteChar;} {Only registered when calling ConsoleWindowRedirectOutput}
  
  {Setup Platform Console Handlers}
  ConsoleWriteCharHandler:=SysConsoleWriteChar;
@@ -5966,8 +5977,28 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{RTL Text IO Functions}
+function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform TextIOWriteChar function}
+
+{Note: Not intended to be called directly by applications}
+var
+ Handle:TWindowHandle;
+begin
+ {}
+ Result:=True;
+
+ {WriteChr}
+ ConsoleWindowWriteChr(ConsoleTextIOOutputHandle,ACh);
+end;
+
+{==============================================================================}
+{==============================================================================}
 {RTL Console Functions}
 function SysConsoleWriteChar(ACh:Char;AUserData:Pointer):Boolean;
+{Handler for platform ConsoleWriteChar function}
+
+{Note: Not intended to be called directly by applications}
 var
  Handle:TWindowHandle;
 begin
@@ -8251,6 +8282,46 @@ begin
     CriticalSectionUnlock(Console.WindowLock);
    end;
   end; 
+end;
+
+{==============================================================================}
+
+function ConsoleWindowRedirectOutput(Handle:TWindowHandle):Boolean;
+{Redirect standard output to the console window specified by Handle}
+{Handle: The window handle to redirect output to (or INVALID_HANDLE_VALUE to stop redirection)}
+{Return: True if completed successfully or False if an error occurred}
+
+{Note: Redirects the output of the text files Output, ErrOutput, StdOut and StdErr
+       which also redirects the output of Write, WriteLn and the standard C library}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=False;
+ 
+ if Handle = INVALID_HANDLE_VALUE then
+  begin
+   {Stop Redirection}
+   TextIOWriteCharHandler:=nil;
+   TextIOWriteBufferHandler:=nil;
+   
+   ConsoleTextIOOutputHandle:=INVALID_HANDLE_VALUE;
+  end
+ else
+  begin
+   {Get Window}
+   Window:=PConsoleWindow(Handle);
+   if Window = nil then Exit;
+   if Window.Signature <> WINDOW_SIGNATURE then Exit;
+   
+   {Start Redirection}
+   TextIOWriteCharHandler:=SysTextIOWriteChar;
+   TextIOWriteBufferHandler:=nil;
+  
+   ConsoleTextIOOutputHandle:=Handle;
+  end;  
+  
+ Result:=True;
 end;
 
 {==============================================================================}

@@ -240,6 +240,7 @@ type
    function AddTransport(ATransport:TNetworkTransport):Boolean;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean;
    
+   function GetTransportByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkTransport;
    function GetTransportByType(AFamily,APacketType:Word;ALock:Boolean;AState:LongWord):TNetworkTransport;
    function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TNetworkTransport;
    function GetTransportByNext(APrevious:TNetworkTransport;ALock,AUnlock:Boolean;AState:LongWord):TNetworkTransport;
@@ -348,8 +349,8 @@ type
    FLock:TSynchronizerHandle;
   public
    {Status Variables}
-   Name:String;
-   Index:LongWord;              //To do //Do we need this ? //Nothing seems to use it ? //Winsock uses it for IP Helper API
+   Name:String;                 //To Do //Does this need lock protection and UniqueString ?
+   Index:LongWord;
    Handle:THandle;              //To Do //Do these need lock protection ?
    PacketType:Word;
    Adapter:TNetworkAdapter;
@@ -379,8 +380,8 @@ type
    FLock:TSynchronizerHandle;
   public
    {Status Variables}
-   Name:String;                      //To Do //Does this need lock protection and UniqueString ? 
-   Index:LongWord;                   //To do //Do we need this ? //Nothing seems to use it ? //Winsock uses it for IP Helper API
+   Name:String;                      //To Do //Does this need lock protection and UniqueString ?
+   Index:LongWord;
    Adapter:TTransportAdapter;        //To Do //Do these need lock protection ?
 
    ConfigType:Word;     {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
@@ -463,6 +464,7 @@ type
   private
    {Internal Variables}
    FLock:TSynchronizerHandle;
+   FLocalLock:TMutexHandle;
   protected
    {Internal Variables}
    FManager:TTransportManager;
@@ -482,6 +484,37 @@ type
    {Event Methods}
 
    {Internal Methods}
+   function GetName:String;
+   
+   function AcquireLock:Boolean;
+   function ReleaseLock:Boolean;
+
+   {Protected Methods}
+   function SendPacket(ASocket:TTransportSocket;ASource,ADest:Pointer;APacket:PPacketFragment;ASize,AFlags:Integer):Integer; virtual;
+   function SendControl(ASource,ADest:Pointer;AProtocol,ACommand,ACode:Word;AAddress,AData:Pointer;ASize:Integer):Boolean; virtual;
+
+   function FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; virtual;
+   function ForwardPacket(AAdapter:TTransportAdapter;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; virtual;
+  public
+   {Public Properties}
+   property Manager:TTransportManager read FManager;
+   property Name:String read GetName; 
+   
+   property Family:Word read FFamily;
+   property PacketType:Word read FPacketType;
+
+   {BSD Socket Methods}
+   function GetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;var AOptLength:Integer):Integer; virtual;
+   function SetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;AOptLength:Integer):Integer; virtual;
+    
+   {Public Methods}
+   function ReaderLock:Boolean;
+   function ReaderUnlock:Boolean;
+   function WriterLock:Boolean;
+   function WriterUnlock:Boolean;
+   
+   function GetStatistics:TTransportStatistics; virtual;
+   
    function GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TTransportAdapter;
    function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TTransportAdapter;
    function GetAdapterByNext(APrevious:TTransportAdapter;ALock,AUnlock:Boolean;AState:LongWord):TTransportAdapter;
@@ -506,7 +539,6 @@ type
    function GetConfigByConfig(AConfig:TTransportConfig;ALock:Boolean;AState:LongWord):TTransportConfig;
    function GetConfigByNext(APrevious:TTransportConfig;ALock,AUnlock:Boolean;AState:LongWord):TTransportConfig;
    
-   {Protected Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; virtual;
    function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
 
@@ -521,31 +553,6 @@ type
 
    function AddConfig(AConfigType:Word;AConfigAuto:Boolean;AConfigHandler:TTransportConfigHandler):THandle; virtual;
    function RemoveConfig(AHandle:THandle;AConfigType:Word):Boolean; virtual;
-
-   function SendPacket(ASocket:TTransportSocket;ASource,ADest:Pointer;APacket:PPacketFragment;ASize,AFlags:Integer):Integer; virtual;
-   function SendControl(ASource,ADest:Pointer;AProtocol,ACommand,ACode:Word;AAddress,AData:Pointer;ASize:Integer):Boolean; virtual;
-
-   function FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; virtual;
-   function ForwardPacket(AAdapter:TTransportAdapter;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean; virtual;
-  public
-   {Public Properties}
-   property Manager:TTransportManager read FManager;
-   property Name:String read FName;   //To Do //Does this need lock protection and UniqueString ? //Yes //LocalLock(Mutex)
-   
-   property Family:Word read FFamily;
-   property PacketType:Word read FPacketType;
-
-   {BSD Socket Methods}
-   function GetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;var AOptLength:Integer):Integer; virtual;
-   function SetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;AOptLength:Integer):Integer; virtual;
-
-   function GetStatistics:TTransportStatistics; virtual;
-    
-   {Public Methods}
-   function ReaderLock:Boolean;
-   function ReaderUnlock:Boolean;
-   function WriterLock:Boolean;
-   function WriterUnlock:Boolean;
    
    function StartTransport:Boolean; virtual;
    function StopTransport:Boolean; virtual;
@@ -589,13 +596,7 @@ type
    {Event Methods}
 
    {Internal Methods}
-   function GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TMonitorAdapter;
-   function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TMonitorAdapter;
-   function GetAdapterByNext(APrevious:TMonitorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TMonitorAdapter;
-
-   {Protected Methods}
-   function AddAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
-   function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
+   
   public
    {Public Properties}
    property Manager:TTransportManager read FManager;
@@ -605,6 +606,13 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   
+   function GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TMonitorAdapter;
+   function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TMonitorAdapter;
+   function GetAdapterByNext(APrevious:TMonitorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TMonitorAdapter;
+
+   function AddAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
+   function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
    
    function StartMonitor:Boolean; virtual;
    function StopMonitor:Boolean; virtual;
@@ -652,13 +660,7 @@ type
    {Event Methods}
 
    {Internal Methods}
-   function GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
-   function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
-   function GetAdapterByNext(APrevious:TAuthenticatorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TAuthenticatorAdapter;
-
-   {Protected Methods}
-   function AddAdapter(AAdapter:TNetworkAdapter;AAuthType:Word;ACipher,AKey,AEntity,AToken:Pointer):Boolean; virtual;
-   function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
+   
   public
    {Public Properties}
    property Manager:TTransportManager read FManager;
@@ -672,6 +674,13 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   
+   function GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+   function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+   function GetAdapterByNext(APrevious:TAuthenticatorAdapter;ALock,AUnlock:Boolean;AState:LongWord):TAuthenticatorAdapter;
+
+   function AddAdapter(AAdapter:TNetworkAdapter;AAuthType:Word;ACipher,AKey,AEntity,AToken:Pointer):Boolean; virtual;
+   function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; virtual;
    
    function StartAuthenticator:Boolean; virtual;
    function StopAuthenticator:Boolean; virtual;
@@ -1461,6 +1470,43 @@ begin
   end; 
  finally 
   ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TTransportManager.GetTransportByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkTransport;
+var
+ Transport:TNetworkTransport;
+begin
+ {}
+ FTransports.ReaderLock;
+ try
+  Result:=nil;
+  
+  {Check Name}
+  if Length(AName) = 0 then Exit;
+  
+  {Get Transport}
+  Transport:=TNetworkTransport(FTransports.First);
+  while Transport <> nil do
+   begin
+    {Check Transport}
+    if Uppercase(Transport.Name) = Uppercase(AName) then
+     begin
+      {Lock Transport} 
+      if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
+      
+      {Return Result}
+      Result:=Transport;
+      Exit;
+     end;
+     
+    {Get Next} 
+    Transport:=TNetworkTransport(Transport.Next);
+   end;
+ finally 
+  FTransports.ReaderUnlock;
  end; 
 end;
 
@@ -2967,6 +3013,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
+ FLocalLock:=MutexCreate;
  
  FManager:=AManager;
  FName:=AName;
@@ -2998,11 +3045,131 @@ begin
   FPacketType:=PACKET_TYPE_RAW;
   FFamily:=AF_UNSPEC;
   FManager:=nil;
+  MutexDestroy(FLocalLock);
   inherited Destroy;
  finally 
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.GetName:String;
+begin
+ {}
+ Result:='';
+   
+ if not AcquireLock then Exit;
+   
+ Result:=FName;
+ UniqueString(Result);
+   
+ ReleaseLock;
+end;
+   
+{==============================================================================}
+
+function TNetworkTransport.AcquireLock:Boolean;
+begin
+ {}
+ Result:=(MutexLock(FLocalLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.ReleaseLock:Boolean;
+begin
+ {}
+ Result:=(MutexUnlock(FLocalLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.SendPacket(ASocket:TTransportSocket;ASource,ADest:Pointer;APacket:PPacketFragment;ASize,AFlags:Integer):Integer;
+begin
+ {Virtual Base Method}
+ Result:=SOCKET_ERROR;
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.SendControl(ASource,ADest:Pointer;AProtocol,ACommand,ACode:Word;AAddress,AData:Pointer;ASize:Integer):Boolean;
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.ForwardPacket(AAdapter:TTransportAdapter;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
+begin
+ {Virtual Base Method}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.GetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;var AOptLength:Integer):Integer;
+begin
+ {Virtual Base Method}
+ Result:=SOCKET_ERROR;
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.SetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;AOptLength:Integer):Integer;
+begin
+ {Virtual Base Method}
+ Result:=SOCKET_ERROR;
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkTransport.GetStatistics:TTransportStatistics;
+begin
+ {Virtual Base Method}
+ FillChar(Result,SizeOf(TTransportStatistics),0);
 end;
 
 {==============================================================================}
@@ -3630,94 +3797,6 @@ end;
 
 {==============================================================================}
 
-function TNetworkTransport.SendPacket(ASocket:TTransportSocket;ASource,ADest:Pointer;APacket:PPacketFragment;ASize,AFlags:Integer):Integer;
-begin
- {Virtual Base Method}
- Result:=SOCKET_ERROR;
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.SendControl(ASource,ADest:Pointer;AProtocol,ACommand,ACode:Word;AAddress,AData:Pointer;ASize:Integer):Boolean;
-begin
- {Virtual Base Method}
- Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.FilterPacket(ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
-begin
- {Virtual Base Method}
- Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.ForwardPacket(AAdapter:TTransportAdapter;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
-begin
- {Virtual Base Method}
- Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.GetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;var AOptLength:Integer):Integer;
-begin
- {Virtual Base Method}
- Result:=SOCKET_ERROR;
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.SetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integer;AOptValue:PChar;AOptLength:Integer):Integer;
-begin
- {Virtual Base Method}
- Result:=SOCKET_ERROR;
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.GetStatistics:TTransportStatistics;
-begin
- {Virtual Base Method}
- FillChar(Result,SizeOf(TTransportStatistics),0);
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.ReaderLock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.ReaderUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.WriterLock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkTransport.WriterUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
 function TNetworkTransport.StartTransport:Boolean;
 begin
  {Virtual Base Method}
@@ -3850,6 +3929,38 @@ end;
 
 {==============================================================================}
 
+function TNetworkMonitor.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkMonitor.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TNetworkMonitor.GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TMonitorAdapter;
 var
  Adapter:TMonitorAdapter;
@@ -3976,38 +4087,6 @@ function TNetworkMonitor.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkMonitor.ReaderLock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkMonitor.ReaderUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkMonitor.WriterLock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkMonitor.WriterUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -4147,6 +4226,38 @@ end;
 
 {==============================================================================}
 
+function TNetworkAuthenticator.ReaderLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.ReaderUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.WriterLock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAuthenticator.WriterUnlock:Boolean;
+begin
+ {}
+ Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TNetworkAuthenticator.GetAdapterByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAuthenticatorAdapter;
 var
  Adapter:TAuthenticatorAdapter;
@@ -4273,38 +4384,6 @@ function TNetworkAuthenticator.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
-end;
-
-{==============================================================================}
-
-function TNetworkAuthenticator.ReaderLock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkAuthenticator.ReaderUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerReaderUnlock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkAuthenticator.WriterLock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterLock(FLock) = ERROR_SUCCESS);
-end;
-
-{==============================================================================}
-
-function TNetworkAuthenticator.WriterUnlock:Boolean;
-begin
- {}
- Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -4560,14 +4639,14 @@ begin
   {Check Level}
   case ALevel of
    SOL_SOCKET:begin
-     SetLastError(WSAENOPROTOOPT);
+     NetworkSetLastError(WSAENOPROTOOPT);
      
      {Check Option}
      case AOptName of
       SO_DEBUG,SO_ACCEPTCONN,SO_REUSEADDR,SO_KEEPALIVE,SO_DONTROUTE,
       SO_BROADCAST,SO_USELOOPBACK,SO_OOBINLINE,SO_DONTLINGER,SO_SNDBUF,
       SO_RCVBUF,SO_SNDLOWAT,SO_RCVLOWAT,SO_SNDTIMEO,SO_RCVTIMEO,SO_CONNTIMEO:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then  {All these options a 4 bytes}
          begin
@@ -4630,7 +4709,7 @@ begin
          end;
        end;
       SO_ERROR:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then
          begin
@@ -4643,7 +4722,7 @@ begin
          end;
        end;
       SO_TYPE:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then
          begin
@@ -4654,7 +4733,7 @@ begin
          end;
        end;
       SO_LINGER:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(TLinger) then
          begin
@@ -4688,14 +4767,14 @@ begin
   {Check Level}
   case ALevel of
    SOL_SOCKET:begin
-     SetLastError(WSAENOPROTOOPT);
+     NetworkSetLastError(WSAENOPROTOOPT);
      
      {Check Option}
      case AOptName of
       SO_DEBUG,SO_ACCEPTCONN,SO_REUSEADDR,SO_KEEPALIVE,SO_DONTROUTE,
       SO_BROADCAST,SO_USELOOPBACK,SO_OOBINLINE,SO_DONTLINGER,SO_SNDBUF,
       SO_RCVBUF,SO_SNDLOWAT,SO_RCVLOWAT,SO_SNDTIMEO,SO_RCVTIMEO,SO_CONNTIMEO:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then
          begin
@@ -4765,7 +4844,7 @@ begin
          end;
        end;
       SO_ERROR:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then
          begin
@@ -4775,7 +4854,7 @@ begin
          end;
        end;
       SO_TYPE:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(Integer) then
          begin
@@ -4785,7 +4864,7 @@ begin
          end;
        end;
       SO_LINGER:begin
-        SetLastError(WSAEFAULT);
+        NetworkSetLastError(WSAEFAULT);
         
         if AOptLength >= SizeOf(TLinger) then
          begin
@@ -5575,13 +5654,7 @@ end;
 function TSocketBuffer.GetUsed:LongWord;
 begin
  {}
- Result:=0;
- 
- if not AcquireLock then Exit;
-
  Result:=FUsed;
-
- ReleaseLock;
 end;
 
 {==============================================================================}
@@ -5589,13 +5662,7 @@ end;
 function TSocketBuffer.GetFree:LongWord;
 begin
  {}
- Result:=0;
- 
- if not AcquireLock then Exit;
-
  Result:=FFree;
-
- ReleaseLock;
 end;
 
 {==============================================================================}

@@ -73,6 +73,9 @@ const
  {PL110 specific constants}
  PL110_FRAMEBUFFER_DESCRIPTION = 'ARM PrimeCell PL110 Color LCD';  {Description of PL110 device}
 
+ PL110_MAX_PHYSICALWIDTH = 1024;
+ PL110_MAX_PHYSICALHEIGHT = 1024;
+ 
  {PL110 mode constants}
  PL110_MODE_UNKNOWN = 0;
  PL110_MODE_VGA     = 1; {Connected to a VGA display}
@@ -281,6 +284,8 @@ begin
  {Check Width and Height}
  if Width < 1 then Exit;
  if Height < 1 then Exit;
+ if Width > PL110_MAX_PHYSICALWIDTH then Exit;
+ if Height > PL110_MAX_PHYSICALHEIGHT then Exit;
  
  {Check Depth}
  if (Depth <> FRAMEBUFFER_DEPTH_16) and (Depth <> FRAMEBUFFER_DEPTH_32) then Exit;
@@ -384,6 +389,8 @@ begin
  {Check Width and Height}
  if Width < 1 then Exit;
  if Height < 1 then Exit;
+ if Width > PL110_MAX_PHYSICALWIDTH then Exit;
+ if Height > PL110_MAX_PHYSICALHEIGHT then Exit;
  
  {Check Depth}
  if (Depth <> FRAMEBUFFER_DEPTH_16) and (Depth <> FRAMEBUFFER_DEPTH_32) then Exit;
@@ -552,7 +559,7 @@ begin
      begin
       {Adjust Physical Width}
       PhysicalWidth:=Defaults.PhysicalWidth;
-      if (Properties.PhysicalWidth <> 0) and (Properties.PhysicalWidth <> PPL110Framebuffer(Framebuffer).Width) then
+      if (Properties.PhysicalWidth <> 0) and (Properties.PhysicalWidth <> PhysicalWidth) and (Properties.PhysicalWidth <= PL110_MAX_PHYSICALWIDTH) then
        begin
         PhysicalWidth:=Properties.PhysicalWidth;
         Defaults.PhysicalWidth:=PhysicalWidth;
@@ -561,7 +568,7 @@ begin
        
       {Adjust Physical Height}
       PhysicalHeight:=Defaults.PhysicalHeight;
-      if (Properties.PhysicalHeight <> 0) and (Properties.PhysicalHeight <> PPL110Framebuffer(Framebuffer).Height) then
+      if (Properties.PhysicalHeight <> 0) and (Properties.PhysicalHeight <> PhysicalHeight) and (Properties.PhysicalHeight <= PL110_MAX_PHYSICALHEIGHT) then
        begin
         PhysicalHeight:=Properties.PhysicalHeight;
         Defaults.PhysicalHeight:=PhysicalHeight;
@@ -570,7 +577,7 @@ begin
        
       {Adjust Virtual Width}
       VirtualWidth:=Defaults.VirtualWidth;
-      if (Properties.VirtualWidth <> 0) and (Properties.VirtualWidth <> Properties.PhysicalWidth) then
+      if (Properties.VirtualWidth <> 0) and (Properties.VirtualWidth <> VirtualWidth) then
        begin
         {Check Virtual Width}
         if Properties.VirtualWidth < PhysicalWidth then
@@ -584,7 +591,7 @@ begin
        
       {Adjust Virtual Height}
       VirtualHeight:=Defaults.VirtualHeight;
-      if (Properties.VirtualHeight <> 0) and (Properties.VirtualHeight <> Properties.PhysicalHeight) then
+      if (Properties.VirtualHeight <> 0) and (Properties.VirtualHeight <> VirtualHeight) then
        begin
         {Check Virtual Height}
         if Properties.VirtualHeight < PhysicalHeight then
@@ -654,7 +661,7 @@ begin
          end;      
        end;
      end;
- 
+    
     {Get Format}  
     case Defaults.Depth of
      FRAMEBUFFER_DEPTH_16:begin

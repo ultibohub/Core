@@ -8880,31 +8880,6 @@ begin
         {Check Method}
         case Request.Method of
          HTTP_METHOD_GET:begin
-           (*{Get Host} //Remove
-           Host:=MatchHost(Request.GetHeader(HTTP_REQUEST_HEADER_HOST),Alias);
-           if Host = nil then Exit;
-           
-           {Check Alias}
-           if Alias = nil then
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Host.Name;
-            end
-           else
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Alias = ' + Alias.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Alias.Name;
-            end;*)
-           
            {Parse Query}
            if not HTTPParseQuery(Request.Query,Request.Params) then Exit;
            
@@ -8921,31 +8896,6 @@ begin
            Result:=Response.WriteResponse;
           end;
          HTTP_METHOD_HEAD:begin
-           (*{Get Host} //Remove
-           Host:=MatchHost(Request.GetHeader(HTTP_REQUEST_HEADER_HOST),Alias);
-           if Host = nil then Exit;
-           
-           {Check Alias}
-           if Alias = nil then
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Host.Name;
-            end
-           else
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Alias = ' + Alias.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Alias.Name;
-            end;*)
-           
            {Parse Query}
            if not HTTPParseQuery(Request.Query,Request.Params) then Exit;
            
@@ -8962,31 +8912,6 @@ begin
            Result:=Response.WriteResponse;
           end;
          HTTP_METHOD_POST:begin
-           (*{Get Host} //Remove
-           Host:=MatchHost(Request.GetHeader(HTTP_REQUEST_HEADER_HOST),Alias);
-           if Host = nil then Exit;
-           
-           {Check Alias}
-           if Alias = nil then
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Host.Name;
-            end
-           else
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Alias = ' + Alias.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Alias.Name;
-            end;*)
-           
            {Parse Query}
            if not HTTPParseQuery(Request.Query,Request.Params) then Exit;
            
@@ -9003,31 +8928,6 @@ begin
            Result:=Response.WriteResponse;
           end;
          HTTP_METHOD_PUT:begin
-           (*{Get Host} //Remove
-           Host:=MatchHost(Request.GetHeader(HTTP_REQUEST_HEADER_HOST),Alias);
-           if Host = nil then Exit;
-           
-           {Check Alias}
-           if Alias = nil then
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Host.Name;
-            end
-           else
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Alias = ' + Alias.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Alias.Name;
-            end;*)
-           
            {Parse Query}
            if not HTTPParseQuery(Request.Query,Request.Params) then Exit;
            
@@ -9049,31 +8949,6 @@ begin
            Response.Version:=HTTP_VERSION;
            Response.Status:=HTTP_STATUS_NOT_IMPLEMENTED;
            Response.Reason:=HTTP_REASON_501;
-           
-           (*{Get Host} //Remove
-           Host:=MatchHost(Request.GetHeader(HTTP_REQUEST_HEADER_HOST),Alias);
-           if Host = nil then Exit;
-        
-           {Check Alias}
-           if Alias = nil then
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Host.Name;
-            end
-           else
-            begin
-             {$IFDEF HTTP_DEBUG}
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Host = ' + Host.Name);
-             if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Alias = ' + Alias.Name);
-             {$ENDIF}
-             
-             {Set Base Host}
-             Request.BaseHost:=Alias.Name;
-            end;*)
         
            {Parse Query}
            if not HTTPParseQuery(Request.Query,Request.Params) then Exit;
@@ -9540,7 +9415,7 @@ begin
  if not HTTPBuildResponseLine(AResponse.Version,AResponse.Status,AResponse.Reason,WorkBuffer) then Exit;
  
  {$IFDEF HTTP_DEBUG}
- if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Reponse = ' + WorkBuffer);
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Response = ' + WorkBuffer);
  {$ENDIF}
 
  {Send Response Line}

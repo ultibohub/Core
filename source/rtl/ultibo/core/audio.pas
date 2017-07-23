@@ -116,7 +116,7 @@ type
   Device:TDevice;                                 {The Device entry for this Audio device}
   {Audio Properties}
   AudioId:LongWord;                               {Unique Id of this Audio device in the Audio device table}
-  AudioState:LongWord;                            {Audio dveice state (eg AUDIO_STATE_ENABLED)}
+  AudioState:LongWord;                            {Audio device state (eg AUDIO_STATE_ENABLED)}
   //To Do
   DeviceGetProperties:TAudioDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing the standard Audio device interface (Or nil if the default method is suitable)}
   {Statistics Properties}

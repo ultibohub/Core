@@ -287,6 +287,9 @@ var
 
  {Synchronizer defaults}
  SYNCHRONIZER_SHARED_MEMORY:LongBool;                {Synchronizers are allocated from Shared memory regions if True}
+
+ {Condition defaults}
+ CONDITION_SHARED_MEMORY:LongBool;                   {Condition variables are allocated from Shared memory regions if True}
  
  {Critical Section defaults}
  CRITICAL_SECTION_SHARED_MEMORY:LongBool;            {Critical Sections are allocated from Shared memory regions if True}
@@ -307,6 +310,9 @@ var
  
  {Event defaults}
  EVENT_SHARED_MEMORY:LongBool;                {Events are allocated from Shared memory regions if True}
+ 
+ {Handle defaults}
+ HANDLE_SHARED_MEMORY:LongBool;               {Handles are allocated from Shared memory regions if True}
  
 {==============================================================================}
 {Heap, Stack, and Thread configuration} 
@@ -840,6 +846,21 @@ var
  BCM2710_REGISTER_WATCHDOG:LongBool = True; {If True then register the BCM2710 Watchdog device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2710 Framebuffer device during boot (Only if BCM2710 unit included)}
  
+ {QEMUVPB}
+ QEMUVPB_REGISTER_DMA:LongBool = True;         {If True then register the QEMU VersatilePB DMA device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_UART0:LongBool = True;       {If True then register the QEMU VersatilePB UART0 device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_UART1:LongBool = True;       {If True then register the QEMU VersatilePB UART1 device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_UART2:LongBool = True;       {If True then register the QEMU VersatilePB UART2 device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_UART3:LongBool = True;       {If True then register the QEMU VersatilePB UART3 device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_RTC:LongBool = True;         {If True then register the QEMU VersatilePB RTC device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_CLOCK:LongBool = True;       {If True then register the QEMU VersatilePB 24MHz Clock device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_MMC0:LongBool = True;        {If True then register the QEMU VersatilePB MMC0 device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_MMC1:LongBool = True;        {If True then register the QEMU VersatilePB MMC1 device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_NETWORK:LongBool = True;     {If True then register the QEMU VersatilePB Network device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the QEMU VersatilePB Framebuffer device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_MOUSE:LongBool = True;       {If True then register the QEMU VersatilePB Mouse device during boot (Only if QEMUVersatilePB unit included)}
+ QEMUVPB_REGISTER_KEYBOARD:LongBool = True;    {If True then register the QEMU VersatilePB Keyboard device during boot (Only if QEMUVersatilePB unit included)}
+ 
 {==============================================================================}
 {Country, CodePage, Locale and Language configuration}
 var
@@ -1125,6 +1146,8 @@ function RoundDown(Value,Multiple:LongWord):LongWord;
 function DivRoundUp(Value,Divisor:LongInt):LongWord;
 function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 
+function IsPowerOf2(Value:LongWord):Boolean;
+
 function HIWORD(L:LongInt):Word; inline;
 function LOWORD(L:LongInt):Word; inline;
 
@@ -1160,6 +1183,8 @@ function BintoBCD(Value:Byte):Byte; inline;
 function GetLastError:LongWord; inline;
 procedure SetLastError(LastError:LongWord); inline;
 
+function StringHash(const Text:String):LongWord;
+
 {==============================================================================}
 {Conversion functions}
 function ErrorToString(Error:LongWord):String;
@@ -1171,6 +1196,7 @@ function CPUArchToString(CPUArch:LongWord):String;
 function CPUTypeToString(CPUType:LongWord):String;
 function CPUModelToString(CPUModel:LongWord):String;
 function CPUIDToString(CPUID:LongWord):String;
+function CPUGroupToString(CPUGroup:LongWord):String;
 
 function FPUTypeToString(FPUType:LongWord):String;
 function GPUTypeToString(GPUType:LongWord):String;
@@ -1306,6 +1332,14 @@ begin
   begin
    Result:=(Value - (Divisor div 2)) div Divisor;
   end;
+end;
+
+{==============================================================================}
+
+function IsPowerOf2(Value:LongWord):Boolean;
+begin
+ {}
+ Result:=(Value <> 0) and ((Value and (Value - 1)) = 0);
 end;
 
 {==============================================================================}
@@ -1516,6 +1550,35 @@ begin
 end;
 
 {==============================================================================}
+
+function StringHash(const Text:String):LongWord;
+{Calculate the sum of (byte value + 1) * (position + 257) for all bytes in an uppercase string}
+
+{Note: Case Insensitive Hash}
+var
+ Count:Integer;
+ Value:LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ if Length(Text) = 0 then Exit;
+ 
+ for Count:=1 to Length(Text) do
+  begin
+   Value:=Ord(Text[Count]);
+   if (Value >= 97) and (Value <= 122) then
+    begin
+     Result:=Result + (((Value - 32) + 1) * (LongWord(Count) + 257));
+    end
+   else
+    begin
+     Result:=Result + ((Value + 1) * (LongWord(Count) + 257));
+    end;
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Conversion functions}
 function ErrorToString(Error:LongWord):String;
@@ -1615,6 +1678,7 @@ begin
   ERROR_NOT_COMPATIBLE:Result:='ERROR_NOT_COMPATIBLE';
   ERROR_CANCELLED:Result:='ERROR_CANCELLED';
   ERROR_NOT_EXACT:Result:='ERROR_NOT_EXACT';
+  ERROR_ALREADY_OWNER:Result:='ERROR_ALREADY_OWNER';
   
   ERROR_UNKNOWN:Result:='ERROR_UNKNOWN';
  end;
@@ -1733,6 +1797,51 @@ begin
   CPU_ID_31:Result:='CPU_ID_31';
   
   CPU_ID_ALL:Result:='CPU_ID_ALL';
+ end;
+end;
+
+{==============================================================================}
+
+function CPUGroupToString(CPUGroup:LongWord):String;
+begin
+ {}
+ Result:='';
+ 
+ case CPUGroup of
+  CPU_GROUP_0:Result:='CPU_GROUP_0';
+  CPU_GROUP_1:Result:='CPU_GROUP_1';
+  CPU_GROUP_2:Result:='CPU_GROUP_2';
+  CPU_GROUP_3:Result:='CPU_GROUP_3';
+  CPU_GROUP_4:Result:='CPU_GROUP_4';
+  CPU_GROUP_5:Result:='CPU_GROUP_5';
+  CPU_GROUP_6:Result:='CPU_GROUP_6';
+  CPU_GROUP_7:Result:='CPU_GROUP_7';
+  CPU_GROUP_8:Result:='CPU_GROUP_8';
+  CPU_GROUP_9:Result:='CPU_GROUP_9';
+  CPU_GROUP_10:Result:='CPU_GROUP_10';
+  CPU_GROUP_11:Result:='CPU_GROUP_11';
+  CPU_GROUP_12:Result:='CPU_GROUP_12';
+  CPU_GROUP_13:Result:='CPU_GROUP_13';
+  CPU_GROUP_14:Result:='CPU_GROUP_14';
+  CPU_GROUP_15:Result:='CPU_GROUP_15';
+  CPU_GROUP_16:Result:='CPU_GROUP_16';
+  CPU_GROUP_17:Result:='CPU_GROUP_17';
+  CPU_GROUP_18:Result:='CPU_GROUP_18';
+  CPU_GROUP_19:Result:='CPU_GROUP_19';
+  CPU_GROUP_20:Result:='CPU_GROUP_20';
+  CPU_GROUP_21:Result:='CPU_GROUP_21';
+  CPU_GROUP_22:Result:='CPU_GROUP_22';
+  CPU_GROUP_23:Result:='CPU_GROUP_23';
+  CPU_GROUP_24:Result:='CPU_GROUP_24';
+  CPU_GROUP_25:Result:='CPU_GROUP_25';
+  CPU_GROUP_26:Result:='CPU_GROUP_26';
+  CPU_GROUP_27:Result:='CPU_GROUP_27';
+  CPU_GROUP_28:Result:='CPU_GROUP_28';
+  CPU_GROUP_29:Result:='CPU_GROUP_29';
+  CPU_GROUP_30:Result:='CPU_GROUP_30';
+  CPU_GROUP_31:Result:='CPU_GROUP_31';
+  
+  CPU_GROUP_ALL:Result:='CPU_GROUP_ALL';
  end;
 end;
 

@@ -349,6 +349,7 @@ function RPiFramebufferSetVsync:LongWord;
 function RPiFramebufferSetBacklight(Brightness:LongWord):LongWord;
 
 function RPiTouchGetBuffer(var Address:LongWord):LongWord;
+function RPiTouchSetBuffer(Address:PtrUInt):LongWord;
 
 function RPiCursorSetDefault:LongWord;
 function RPiCursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
@@ -747,6 +748,7 @@ begin
  
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPiTouchGetBuffer;
+ TouchSetBufferHandler:=RPiTouchSetBuffer;
  
  {Register Platform Cursor Handlers}
  CursorSetDefaultHandler:=RPiCursorSetDefault;
@@ -1136,6 +1138,12 @@ begin
 
  {Setup Enabled FIQ}
  FIQEnabled:=LongWord(-1);
+ 
+ {Clear Interrupt Enabled}
+ InterruptRegisters.FIQ_control:=0;
+ InterruptRegisters.Disable_IRQs_1:=$FFFFFFFF;
+ InterruptRegisters.Disable_IRQs_2:=$FFFFFFFF;
+ InterruptRegisters.Disable_Basic_IRQs:=$FFFFFFFF;
 end;
 
 {==============================================================================}
@@ -6385,6 +6393,12 @@ end;
 
 function RPiTouchGetBuffer(var Address:LongWord):LongWord;
 {Get the Touchscreen buffer from the Mailbox property tags channel}
+
+{Note: On current firmware versions calling TouchGetBuffer will allocate a buffer
+       from GPU memory and render subsequent calls to TouchSetBuffer ineffective.
+       
+       After an intial call to TouchSetBuffer calls to TouchGetBuffer will always
+       return the CPU allocated buffer}
 var
  Size:LongWord;
  Response:LongWord;
@@ -6439,6 +6453,61 @@ end;
 
 {==============================================================================}
 
+function RPiTouchSetBuffer(Address:PtrUInt):LongWord;
+{Set the Touchscreen buffer in the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2835MailboxHeader;
+ Footer:PBCM2835MailboxFooter;
+ Tag:PBCM2835MailboxTagSetTouch;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2835MailboxHeader) + SizeOf(TBCM2835MailboxTagSetTouch) + SizeOf(TBCM2835MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2835_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2835MailboxTagSetTouch(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2835MailboxHeader)));
+  Tag.Header.Tag:=BCM2835_MBOX_TAG_SET_TOUCHBUF;
+  Tag.Header.Size:=SizeOf(TBCM2835MailboxTagSetTouch) - SizeOf(TBCM2835MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.Address:=Address;
+ 
+  {Setup Footer}
+  Footer:=PBCM2835MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2835MailboxTagSetTouch)));
+  Footer.Tag:=BCM2835_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2835_MAILBOX_0,BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('TouchSetBuffer - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  Result:=Tag.Response.Status;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
 function RPiCursorSetDefault:LongWord;
 {Set Cursor Default (Pixels) from the Mailbox property tags channel}
 var
@@ -6449,6 +6518,9 @@ var
  Cursor:PLongWord;
  Address:LongWord;
 begin
+ {}
+ Result:=ERROR_OPERATION_FAILED;
+ 
  {Determine Cursor Size}
  Size:=CURSOR_ARROW_DEFAULT_WIDTH * CURSOR_ARROW_DEFAULT_HEIGHT * SizeOf(LongWord);
  
@@ -6472,7 +6544,7 @@ begin
    Address:=PhysicalToBusAddress(Cursor);
  
    {Set the Cursor}
-   RPiCursorSetInfo(CURSOR_ARROW_DEFAULT_WIDTH,CURSOR_ARROW_DEFAULT_HEIGHT,0,0,Pointer(Address),Size);
+   Result:=RPiCursorSetInfo(CURSOR_ARROW_DEFAULT_WIDTH,CURSOR_ARROW_DEFAULT_HEIGHT,0,0,Pointer(Address),Size);
  
    {Free the Cursor}
    FreeMem(Cursor);

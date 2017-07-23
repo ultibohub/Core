@@ -244,7 +244,7 @@ asm
  //Register to simplify memory access routines from Pascal code.
  //
  //This would normally occur in CPUInit but is done here to allow
- //calls to Pascal code for during initialization.
+ //calls to Pascal code during initialization.
  mrc p15, #0, r0, cr1, cr0, #0
  orr r0, #ARMV6_CP15_C1_U_BIT
  mcr p15, #0, r0, cr1, cr0, #0
