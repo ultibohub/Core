@@ -1982,7 +1982,7 @@ begin
  if GPU_MEMORY_SIZE > 0 then
   begin
    Address:=(GPU_MEMORY_BASE and ARMV7_L1D_SECTION_BASE_MASK);
-   while Address < (GPU_MEMORY_BASE + GPU_MEMORY_SIZE) do
+   while (Address < (GPU_MEMORY_BASE + GPU_MEMORY_SIZE)) and (Address < (PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK)) do
     begin
      if GPU_MEMORY_CACHED then
       begin
@@ -8086,6 +8086,12 @@ begin
  
  {Write the Handler Address to Mailbox 3}
  ARMLocalRegisters.MailboxWrite[CPUID].Mailbox3Write:=LongWord(@RPi2SecondaryHandler);
+ 
+ {Synchronization Barrier}
+ DataSynchronizationBarrier;
+ 
+ {Send Event to Wake CPUs}
+ SendEvent;
  
  {Setup Timeout}
  Timeout:=RPI2_LOCAL_MAILBOX_TIMEOUT;
