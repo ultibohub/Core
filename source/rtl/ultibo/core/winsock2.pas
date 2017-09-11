@@ -1391,7 +1391,6 @@ type
   {}
   property BufferSize:Integer read FBufferSize write SetBufferSize;
   property BroadcastEnabled:Boolean read FBroadcastEnabled write SetBroadcastEnabled;
-
   {}
   function RecvData(AData:Pointer;ACount:Integer):Integer; virtual;
   function SendData(AData:Pointer;ACount:Integer):Integer; virtual;
@@ -1480,7 +1479,7 @@ type
   {}
   function RecvData(AData:Pointer;ACount:Integer):Integer; virtual;
   function SendData(AData:Pointer;ACount:Integer):Integer; virtual;
-  function BroadcastData(AData:Pointer;ACount:Integer):Integer; virtual;
+  function BroadcastData(APort:Word;AData:Pointer;ACount:Integer):Integer; virtual;
 
   function RecvDataFrom(var AHost:String;var APort:Word;AData:Pointer;ACount:Integer):Integer; virtual;
   function SendDataTo(const AHost:String;APort:Word;AData:Pointer;ACount:Integer):Integer; virtual;
@@ -1763,9 +1762,13 @@ type
   property Size:Integer read GetSize;
   property Count:Integer read GetCount;
   
+  function RecvData(AData:Pointer;ACount:Integer):Integer; override;
   function SendData(AData:Pointer;ACount:Integer):Integer; override;
+  function BroadcastData(APort:Word;AData:Pointer;ACount:Integer):Integer; override;
   
+  function RecvDataFrom(var AHost:String;var APort:Word;AData:Pointer;ACount:Integer):Integer; override;
   function SendDataTo(const AHost:String;APort:Word;AData:Pointer;ACount:Integer):Integer; override;
+  function BroadcastDataTo(const AAddress:String;APort:Word;AData:Pointer;ACount:Integer):Integer; override;
  end;
  
  TWinsock2UDPServerThread = class(TWinsock2SocketThread)
@@ -3043,7 +3046,7 @@ begin
         
         Exit;
        end; 
-      if InAddr.S_addr = INADDR_ANY then
+      if (InAddr.S_addr = INADDR_ANY) and (FBoundAddress <> INET_ADDRSTR_ANY) then
        begin
         FLastError:=WSAEINVAL;
         ReleaseAddress(Result,ALength);
@@ -5398,7 +5401,7 @@ end;
 function TWinsock2UDPSocket.SendToSocket(ASockAddr:PSockAddr;ASockLen:Integer;AData:Pointer;ASize:Integer;var ACount:Integer):LongInt;
 begin
  {}
- Result:=SendToSocketEx(Handle,ASockAddr,ASockLen,AData,ASize,ACount)
+ Result:=SendToSocketEx(Handle,ASockAddr,ASockLen,AData,ASize,ACount);
 end;
 
 {==============================================================================}
@@ -5557,7 +5560,7 @@ end;
 
 {==============================================================================}
 
-function TWinsock2UDPSocket.BroadcastData(AData:Pointer;ACount:Integer):Integer;
+function TWinsock2UDPSocket.BroadcastData(APort:Word;AData:Pointer;ACount:Integer):Integer;
 begin
  {}
  Result:=0;
@@ -5570,7 +5573,7 @@ begin
  FLastError:=WSAEACCES;
  if not BroadcastEnabled then Exit;
  
- Result:=SendDataTo(GetBroadcastAddress,BoundPort,AData,ACount);
+ Result:=SendDataTo(GetBroadcastAddress,APort,AData,ACount);
 end;
 
 {==============================================================================}
@@ -5902,7 +5905,11 @@ begin
 
  FLastError:=WSAEINVAL;
  {Check Remote Address}
- if Length(FRemoteAddress) <> 0 then
+ if Length(FRemoteAddress) = 0 then
+  begin
+   Result:=inherited AllocateFamily;
+  end
+ else 
   begin
    {Check Family}
    case FFamily of
@@ -6002,7 +6009,7 @@ begin
     {Setup remote address}
     Result.sin_port:=Winsock2.htons(IPPORT_ANY);
     InAddr.S_addr:=Winsock2.inet_addr(PChar(FRemoteAddress));
-    if InAddr.S_addr = INADDR_NONE then
+    if (InAddr.S_addr = INADDR_NONE) and (FRemoteAddress <> INET_ADDRSTR_BROADCAST) then
      begin
       FLastError:=WSAEINVAL;
       ReleaseAddress(Result,ALength);
@@ -7016,7 +7023,11 @@ begin
 
  FLastError:=WSAEINVAL;
  {Check Remote Address}
- if Length(FRemoteAddress) <> 0 then
+ if Length(FRemoteAddress) = 0 then
+  begin
+   Result:=inherited AllocateFamily;
+  end
+ else 
   begin
    {Check Family}
    case FFamily of
@@ -7117,7 +7128,7 @@ begin
     {Setup remote address}
     Result.sin_port:=Winsock2.htons(FRemotePort);
     InAddr.S_addr:=Winsock2.inet_addr(PChar(FRemoteAddress));
-    if InAddr.S_addr = INADDR_NONE then
+    if (InAddr.S_addr = INADDR_NONE) and (FRemoteAddress <> INET_ADDRSTR_BROADCAST) then
      begin
       FLastError:=WSAEINVAL;
       ReleaseAddress(Result,ALength);
@@ -7825,6 +7836,24 @@ end;
 
 {==============================================================================}
 
+function TWinsock2UDPServer.RecvData(AData:Pointer;ACount:Integer):Integer; 
+begin
+ {}
+ if FUseListener then
+  begin
+   Result:=0;
+   FLastError:=WSAEINVAL;
+   
+   {Invalid, the listener thread will receive all data from the listening socket}
+  end
+ else
+  begin
+   Result:=inherited RecvData(AData,ACount);
+  end;  
+end;
+
+{==============================================================================}
+
 function TWinsock2UDPServer.SendData(AData:Pointer;ACount:Integer):Integer; 
 begin
  {}
@@ -7844,6 +7873,43 @@ end;
 
 {==============================================================================}
 
+function TWinsock2UDPServer.BroadcastData(APort:Word;AData:Pointer;ACount:Integer):Integer; 
+begin
+ {}
+ if FUseListener then
+  begin
+   Result:=0;
+   FLastError:=WSAEINVAL;
+   if FListener = nil then Exit; 
+  
+   Result:=FListener.BroadcastData(APort,AData,ACount);
+  end
+ else
+  begin
+   Result:=inherited BroadcastData(APort,AData,ACount);
+  end;  
+end;
+
+{==============================================================================}
+
+function TWinsock2UDPServer.RecvDataFrom(var AHost:String;var APort:Word;AData:Pointer;ACount:Integer):Integer; 
+begin
+ {}
+ if FUseListener then
+  begin
+   Result:=0;
+   FLastError:=WSAEINVAL;
+   
+   {Invalid, the listener thread will receive all data from the listening socket}
+  end
+ else
+  begin
+   Result:=inherited RecvDataFrom(AHost,APort,AData,ACount);
+  end;  
+end;
+
+{==============================================================================}
+
 function TWinsock2UDPServer.SendDataTo(const AHost:String;APort:Word;AData:Pointer;ACount:Integer):Integer; 
 begin
  {}
@@ -7858,6 +7924,25 @@ begin
  else
   begin
    Result:=inherited SendDataTo(AHost,APort,AData,ACount);
+  end;  
+end;
+
+{==============================================================================}
+
+function TWinsock2UDPServer.BroadcastDataTo(const AAddress:String;APort:Word;AData:Pointer;ACount:Integer):Integer; 
+begin
+ {}
+ if FUseListener then
+  begin
+   Result:=0;
+   FLastError:=WSAEINVAL;
+   if FListener = nil then Exit; 
+   
+   Result:=FListener.BroadcastDataTo(AAddress,APort,AData,ACount);
+  end
+ else
+  begin
+   Result:=inherited BroadcastDataTo(AAddress,APort,AData,ACount);
   end;  
 end;
 
@@ -8195,6 +8280,7 @@ end;
 
 function TWinsock2UDPServerThreads.CreateThread(AForce:Boolean):TWinsock2UDPServerThread;
 var
+ WorkBool:LongBool;
  Server:TWinsock2UDPServer;
 begin
  {}
@@ -8214,6 +8300,17 @@ begin
     
       {Allocate Socket}
       if Server.AllocateSocket(Server.SocketType) = INVALID_SOCKET then Exit;
+    
+      {Set Options}
+      if Server.BroadcastEnabled then
+       begin
+        WorkBool:=Server.BroadcastEnabled;
+        if Winsock2.setsockopt(Server.Handle,SOL_SOCKET,SO_BROADCAST,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
+         begin
+          Server.SetLastError(Winsock2.WSAGetLastError);
+          Exit;
+         end;
+       end;
     
       {Bind} 
       if Server.Bind = SOCKET_ERROR then Exit;
@@ -8665,6 +8762,8 @@ end;
 {==============================================================================}
   
 procedure TWinsock2UDPListener.SetActive(AActive:Boolean);
+var
+ WorkBool:LongBool;
 begin
  {}
  if FActive = AActive then Exit;
@@ -8676,6 +8775,17 @@ begin
    
    {Allocate Socket}
    if AllocateSocket(FSocketType) = INVALID_SOCKET then Exit;
+   
+   {Set Options}
+   if BroadcastEnabled then
+    begin
+     WorkBool:=BroadcastEnabled;
+     if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_BROADCAST,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
+      begin
+       FLastError:=Winsock2.WSAGetLastError;
+       Exit;
+      end;
+    end; 
    
    {Bind}
    if Bind = SOCKET_ERROR then Exit;
@@ -10074,7 +10184,7 @@ begin
        begin
         {Convert Host}
         Host:=StringToInAddr(pNodeName);
-        if not InAddrIsDefault(Host) then //To do //This doesn't allow 0.0.0.0 to bind to !
+        if (not InAddrIsDefault(Host)) or (pNodeName = INET_ADDRSTR_ANY) then
          begin
           {Create Address Info}
           Result:=WSA_NOT_ENOUGH_MEMORY;
@@ -10105,7 +10215,7 @@ begin
        begin
         {Convert Host}
         Host6:=StringToIn6Addr(pNodeName);
-        if not In6AddrIsDefault(Host6) then //To do //This doesn't allow 0::0 to bind to !
+        if (not In6AddrIsDefault(Host6)) or (pNodeName = INET6_ADDRSTR_INIT) then
          begin
           {Create Address Info}
           Result:=WSA_NOT_ENOUGH_MEMORY;
@@ -10142,7 +10252,7 @@ begin
          begin
           {Convert Host}
           Host:=StringToInAddr(pNodeName);
-          if not InAddrIsDefault(Host) then //To do //This doesn't allow 0.0.0.0 to bind to !
+          if (not InAddrIsDefault(Host)) or (pNodeName = INET_ADDRSTR_ANY) then
            begin
             {Create Address Info}
             Result:=WSA_NOT_ENOUGH_MEMORY;
@@ -10173,7 +10283,7 @@ begin
          begin
           {Convert Host}
           Host6:=StringToIn6Addr(pNodeName);
-          if not In6AddrIsDefault(Host6) then //To do //This doesn't allow 0::0 to bind to !
+          if not (In6AddrIsDefault(Host6)) or (pNodeName = INET6_ADDRSTR_INIT) then
            begin
             {Create Address Info}
             Result:=WSA_NOT_ENOUGH_MEMORY;
@@ -12487,9 +12597,6 @@ begin
         end;
        WSA_GETADAPTERSINFO:begin
          {Get IpAdapterInfo}
-         NetworkSetLastError(WSAEINVAL);
-         WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
-         if WSAIpAdapterInfo = nil then Exit;
          Count:=0;
          
          {Count Adapters}
@@ -12505,7 +12612,10 @@ begin
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=(SizeOf(TWSAIpAdapterInfo) * Count);
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         NetworkSetLastError(WSAENOBUFS);
+
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
+         if WSAIpAdapterInfo = nil then Exit;
          
          WSAIpAdapterInfo.Next:=nil;
          
@@ -12513,14 +12623,17 @@ begin
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
+           //To Do //FillChar
            {Get IpAdapterInfo}
            WSAIpAdapterInfo.AdapterName:=TIPTransportAdapter(Adapter).Name;
            {WSAIpAdapterInfo.Description:=TIPTransportAdapter(Adapter).Description;} {Not supported}
            WSAIpAdapterInfo.AddressLength:=SizeOf(THardwareAddress);
            System.Move(TIPTransportAdapter(Adapter).Hardware[0],WSAIpAdapterInfo.Address[0],SizeOf(THardwareAddress));
            WSAIpAdapterInfo.Index:=TIPTransportAdapter(Adapter).Index;
+           //WSAIpAdapterInfo.Type_ //To Do //MIB_IF_TYPE_ETHERNET //See: WSA_GETIFTABLE etc
            WSAIpAdapterInfo.DhcpEnabled:=0;
            if TIPTransportAdapter(Adapter).ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
+           WSAIpAdapterInfo.CurrentIpAddress:=@WSAIpAdapterInfo.IpAddressList;
            WSAIpAdapterInfo.IpAddressList.Next:=nil;
            StrLCopy(WSAIpAdapterInfo.IpAddressList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Address))),15);
            StrLCopy(WSAIpAdapterInfo.IpAddressList.IpMask.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Netmask))),15);
