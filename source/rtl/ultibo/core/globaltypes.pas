@@ -56,6 +56,7 @@ type
  TSemaphoreHandle = THandle;
  TSynchronizerHandle = THandle;
  TConditionHandle = THandle;
+ TCompletionHandle = THandle;
  TListHandle = THandle;
  TQueueHandle = THandle;
  TThreadHandle = THandle;
@@ -78,6 +79,7 @@ type
  PSemaphoreHandle = ^TSemaphoreHandle;
  PSynchronizerHandle = ^TSynchronizerHandle;
  PConditionHandle = ^TConditionHandle;
+ PCompletionHandle = ^TCompletionHandle;
  PListHandle = ^TListHandle;
  PQueueHandle = ^TQueueHandle;
  PThreadHandle = ^TThreadHandle;
@@ -301,6 +303,15 @@ type
  FARPROC = function: Integer;
  
  {C types}
+ int8_t = Shortint;
+ pint8_t = PShortint;
+ 
+ uint8_t = Byte;
+ puint8_t = PByte;
+
+ int16_t = Smallint;
+ pint16_t = PSmallint;
+ 
  uint16_t = Word;
  puint16_t = PWord;
  
@@ -315,6 +326,12 @@ type
  
  uint64_t = QWord;
  puint64_t = PQWord;
+ 
+ float_t = Single;
+ pfloat_t = PSingle;
+ 
+ double_t = Double;
+ pdouble_t = PDouble;
  
  patomic_t = ^atomic_t;
  atomic_t = record

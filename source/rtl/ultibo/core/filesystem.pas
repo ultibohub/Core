@@ -1665,8 +1665,8 @@ type
    function GetVolumeTotalSpaceEx(const AVolume:String):Int64;
 
     {File Methods}
-   function FileOpen(const AFileName:String;AMode:Integer):Integer;
-   function FileCreate(const AFileName:String):Integer;
+   function FileOpen(const AFileName:String;AMode:Integer):THandle;
+   function FileCreate(const AFileName:String;AMode:Integer = fmOpenReadWrite or fmShareExclusive):THandle;
    function DeleteFile(const AFileName:String):Boolean;
    procedure FileClose(AHandle:Integer);
    function RenameFile(const AOldName,ANewName:String):Boolean;
@@ -1756,7 +1756,7 @@ type
    function DeleteSlash(const AFilePath:String;ALeading,ATrailing:Boolean):String;
 
     {Extended Methods}
-   function FileCreateEx(const AFileName,AShortName:String):Integer;
+   function FileCreateEx(const AFileName,AShortName:String;AMode:Integer = fmOpenReadWrite or fmShareExclusive):THandle;
    function CreateDirEx(const ADirName,AShortName:String):Boolean;
 
    function FileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64;
@@ -3705,8 +3705,8 @@ type
    function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; virtual;
    
     {File Functions}
-   function FileOpen(const FileName:String;Mode:Integer):Integer; virtual;
-   function FileCreate(const FileName:String):Integer; virtual;
+   function FileOpen(const FileName:String;Mode:Integer):THandle; virtual;
+   function FileCreate(const FileName:String;Mode:Integer = fmOpenReadWrite or fmShareExclusive):THandle; virtual;
    function DeleteFile(const FileName:String):Boolean; virtual;
    procedure FileClose(Handle:Integer); virtual;
    function RenameFile(const OldName,NewName:String):Boolean; virtual;
@@ -3783,7 +3783,7 @@ type
    function GetTrueName(const FileName:String):String; virtual;
 
     {Extended Functions}
-   function FileCreateEx(const FileName,ShortName:String):Integer; virtual;
+   function FileCreateEx(const FileName,ShortName:String;Mode:Integer = fmOpenReadWrite or fmShareExclusive):THandle; virtual;
    function CreateDirEx(const DirName,ShortName:String):Boolean; virtual;
 
    function FileGetAttrEx(Handle:Integer):Integer; virtual;
@@ -5175,8 +5175,8 @@ function FSGetCurrentDrive:Byte; inline;
 function FSSetCurrentDrive(const ADrive:String):Boolean; inline;
 
 {File Functions}
-function FSFileOpen(const AFileName:String;AMode:Integer):Integer; inline;
-function FSFileCreate(const AFileName:String):Integer; inline;
+function FSFileOpen(const AFileName:String;AMode:Integer):THandle; inline;
+function FSFileCreate(const AFileName:String):THandle; inline;
 function FSDeleteFile(const AFileName:String):Boolean; inline;
 procedure FSFileClose(AHandle:Integer); inline;
 function FSRenameFile(const AOldName,ANewName:String):Boolean; inline;
@@ -5337,7 +5337,7 @@ function DosGetLongName(var p:ShortString):Boolean;
 
 {SysUtils File Functions}
 function SysUtilsFileOpen(const FileName:RawByteString;Mode:Integer):THandle;
-function SysUtilsFileCreate(const FileName:RawByteString):THandle;
+function SysUtilsFileCreate(const FileName:RawByteString;ShareMode:Integer):THandle;
 function SysUtilsDeleteFile(const FileName:RawByteString):Boolean;
 procedure SysUtilsFileClose(Handle:THandle);
 function SysUtilsRenameFile(const OldName,NewName:RawByteString):Boolean;
@@ -15409,13 +15409,13 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileOpen(const AFileName:String;AMode:Integer):Integer;
+function TFileSysDriver.FileOpen(const AFileName:String;AMode:Integer):THandle;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
  
  if not ReaderLock then Exit;
  try
@@ -15455,18 +15455,18 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileCreate(const AFileName:String):Integer;
+function TFileSysDriver.FileCreate(const AFileName:String;AMode:Integer = fmOpenReadWrite or fmShareExclusive):THandle;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
  
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCreate FileName = ' + AFileName);
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCreate FileName = ' + AFileName + ' Mode = ' + IntToHex(AMode,4));
   {$ENDIF}
  
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
@@ -15477,7 +15477,7 @@ begin
     try
      if Volume.FileSystem = nil then Exit;
    
-     Result:=Volume.FileSystem.FileCreate(AFileName);
+     Result:=Volume.FileSystem.FileCreate(AFileName,AMode);
     finally 
      {Unlock Volume}
      Volume.ReaderUnlock;
@@ -15488,7 +15488,7 @@ begin
     try
      if Drive.FileSystem = nil then Exit;
    
-     Result:=Drive.FileSystem.FileCreate(AFileName);
+     Result:=Drive.FileSystem.FileCreate(AFileName,AMode);
     finally 
      {Unlock Drive}
      Drive.ReaderUnlock;
@@ -18393,19 +18393,19 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileCreateEx(const AFileName,AShortName:String):Integer;
+function TFileSysDriver.FileCreateEx(const AFileName,AShortName:String;AMode:Integer = fmOpenReadWrite or fmShareExclusive):THandle;
 {Note: ShortName must not include drive or path (Name only)}
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
  
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCreateEx FileName = ' + AFileName + ' ShortName = ' + AShortName);
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCreateEx FileName = ' + AFileName + ' ShortName = ' + AShortName + ' Mode = ' + IntToHex(AMode,4));
   {$ENDIF}
  
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
@@ -18416,7 +18416,7 @@ begin
     try
      if Volume.FileSystem = nil then Exit;
    
-     Result:=Volume.FileSystem.FileCreateEx(AFileName,AShortName);
+     Result:=Volume.FileSystem.FileCreateEx(AFileName,AShortName,AMode);
     finally 
      {Unlock Volume}
      Volume.ReaderUnlock;
@@ -18427,7 +18427,7 @@ begin
     try
      if Drive.FileSystem = nil then Exit;
    
-     Result:=Drive.FileSystem.FileCreateEx(AFileName,AShortName);
+     Result:=Drive.FileSystem.FileCreateEx(AFileName,AShortName,AMode);
     finally 
      {Unlock Drive}
      Drive.ReaderUnlock;
@@ -19531,7 +19531,7 @@ begin
      if FileExists(AFileName) then Exit;
      
      {Create File}
-     Result:=FileCreate(AFileName);
+     Result:=FileCreate(AFileName,OpenMode or ShareMode);
     end;
    CREATE_ALWAYS:begin
      {Check Exists}
@@ -19553,7 +19553,7 @@ begin
        if DirectoryExists(AFileName) then Exit;
        
        {Create File}
-       Result:=FileCreate(AFileName);
+       Result:=FileCreate(AFileName,OpenMode or ShareMode);
       end;     
     end;
    OPEN_EXISTING:begin
@@ -19573,7 +19573,7 @@ begin
        if DirectoryExists(AFileName) then Exit;
        
        {Create File}
-       Result:=FileCreate(AFileName);
+       Result:=FileCreate(AFileName,OpenMode or ShareMode);
       end;     
     end;
    TRUNCATE_EXISTING:begin
@@ -33553,7 +33553,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileOpen(const FileName:String;Mode:Integer):Integer;
+function TFileSystem.FileOpen(const FileName:String;Mode:Integer):THandle;
 {Open existing entry and return Handle}
 {Note: FileOpen can also open Folders but the handle can only be used for Get/SetFileTime}
 {Note: Cannot create with FileOpen}
@@ -33571,7 +33571,7 @@ var
  Current:TDiskEntry;
 begin
  {Base Implementation}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -33679,7 +33679,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileCreate(const FileName:String):Integer;
+function TFileSystem.FileCreate(const FileName:String;Mode:Integer = fmOpenReadWrite or fmShareExclusive):THandle;
 {Create new entry or truncate existing entry and return Handle}
 {Note: Cannot create Folders with FileCreate}
 var
@@ -33696,7 +33696,7 @@ var
  Current:TDiskEntry;
 begin
  {Base Implementation}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -33817,7 +33817,7 @@ begin
       end;
      try
       {Open Handle}
-      FileHandle:=FDriver.OpenFileHandle(FVolume,FDrive,Parent,Current,fmOpenReadWrite or fmShareExclusive,True,FILESYS_LOCK_WRITE);
+      FileHandle:=FDriver.OpenFileHandle(FVolume,FDrive,Parent,Current,Mode,True,FILESYS_LOCK_WRITE);
       if FileHandle = nil then Exit;
      
       {Set the Size} {In case of existing file}
@@ -37237,7 +37237,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileCreateEx(const FileName,ShortName:String):Integer;
+function TFileSystem.FileCreateEx(const FileName,ShortName:String;Mode:Integer = fmOpenReadWrite or fmShareExclusive):THandle;
 {Create new entry or truncate existing entry and return Handle}
 {Note: Cannot create Folders with FileCreateEx}
 {Note: ShortName does not apply to Streams}
@@ -37255,7 +37255,7 @@ var
  Current:TDiskEntry;
 begin
  {Base Implementation}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -37384,7 +37384,7 @@ begin
       end;
      try
       {Open Handle}
-      FileHandle:=FDriver.OpenFileHandle(FVolume,FDrive,Parent,Current,fmOpenReadWrite or fmShareExclusive,True,FILESYS_LOCK_WRITE);
+      FileHandle:=FDriver.OpenFileHandle(FVolume,FDrive,Parent,Current,Mode,True,FILESYS_LOCK_WRITE);
       if FileHandle = nil then Exit;
      
       {Set the Size} {In case of existing file}
@@ -52253,10 +52253,10 @@ end;
 
 {==============================================================================}
 {File Functions}
-function FSFileOpen(const AFileName:String;AMode:Integer):Integer; inline;
+function FSFileOpen(const AFileName:String;AMode:Integer):THandle; inline;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
  
  {Check Driver}
  if FileSysDriver = nil then Exit;
@@ -52267,10 +52267,10 @@ end;
 
 {==============================================================================}
 
-function FSFileCreate(const AFileName:String):Integer; inline;
+function FSFileCreate(const AFileName:String):THandle; inline;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
  
  {Check Driver}
  if FileSysDriver = nil then Exit;
@@ -54199,7 +54199,7 @@ end;
 function SysUtilsFileOpen(const FileName:RawByteString;Mode:Integer):THandle;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
  
  {Check Driver}
  if FileSysDriver = nil then Exit;
@@ -54210,16 +54210,16 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileCreate(const FileName:RawByteString):THandle;
+function SysUtilsFileCreate(const FileName:RawByteString;ShareMode:Integer):THandle;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
  
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
  {Create File}
- Result:=FileSysDriver.FileCreate(FileName);
+ Result:=FileSysDriver.FileCreate(FileName,fmOpenReadWrite or ShareMode);
 end;
 
 {==============================================================================}

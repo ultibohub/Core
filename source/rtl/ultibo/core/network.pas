@@ -237,8 +237,8 @@ const
  {Media Types}
  MEDIA_TYPE_UNKNOWN  = $0000;
  
- MEDIA_TYPE_ETHERNET  = $0001;  {ARP type of Ethernet Hardware (This values must not change, they are the actual values used by ARP packets)}
- MEDIA_TYPE_TOKENRING = $0006;  {ARP type of Token-Ring Hardware (This values must not change, they are the actual values used by ARP packets)}
+ MEDIA_TYPE_ETHERNET  = $0001;  {ARP type of Ethernet Hardware (This value must not change, it is the actual values used by ARP packets)}
+ MEDIA_TYPE_TOKENRING = $0006;  {ARP type of Token-Ring Hardware (This value must not change, it is the actual values used by ARP packets)}
  MEDIA_TYPE_IEEE80211 = $1000;
  MEDIA_TYPE_LOOPBACK  = $1001;
  MEDIA_TYPE_PPP       = $1002;

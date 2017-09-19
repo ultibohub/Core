@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '11 September 2017';
- ULTIBO_RELEASE_NAME             = 'Cucumber';
- ULTIBO_RELEASE_VERSION          = '1.3.461';
- ULTIBO_RELEASE_VERSION_MAJOR    = 1;
- ULTIBO_RELEASE_VERSION_MINOR    = 3;
- ULTIBO_RELEASE_VERSION_REVISION = 461;
+ ULTIBO_RELEASE_DATE             = '18 September 2017';
+ ULTIBO_RELEASE_NAME             = 'Beetroot';
+ ULTIBO_RELEASE_VERSION          = '2.0.029';
+ ULTIBO_RELEASE_VERSION_MAJOR    = 2;
+ ULTIBO_RELEASE_VERSION_MINOR    = 0;
+ ULTIBO_RELEASE_VERSION_REVISION = 029;
  
 {==============================================================================}
 const
@@ -886,6 +886,14 @@ const
  COLOR_CYAN      = $FF00FFFF;
  COLOR_WHITE     = $FFFFFFFF;
  
+ {Ultibo release RGB colors}
+ COLOR_ULTIBO_LETTUCE  = $FF000000; {Ultibo Version 0.0 (Lettuce)}
+ COLOR_ULTIBO_POTATO   = $FF0000A0; {Ultibo Version 1.0 (Potato)}
+ COLOR_ULTIBO_CUCUMBER = $FFFF8500; {Ultibo Version 1.x (Cucumber)}
+ COLOR_ULTIBO_BEETROOT = $FF00BB00; {Ultibo Version 2.x (Beetroot)}
+ 
+ COLOR_ULTIBO = COLOR_ULTIBO_BEETROOT;
+ 
  {Color format constants}
  {See: https://en.wikipedia.org/wiki/Color_depth and https://en.wikipedia.org/wiki/RGBA_color_space}
  COLOR_FORMAT_ARGB32  = 0;  {32 bits per pixel Alpha/Red/Green/Blue (ARGB8888)}
@@ -1688,19 +1696,20 @@ const
  HANDLE_TYPE_SEMAPHORE    = 4;
  HANDLE_TYPE_SYNCHRONIZER = 5;
  HANDLE_TYPE_CONDITION    = 6;
- HANDLE_TYPE_LIST         = 7;
- HANDLE_TYPE_QUEUE        = 8;
- HANDLE_TYPE_THREAD       = 9;
- HANDLE_TYPE_MESSAGESLOT  = 10;
- HANDLE_TYPE_MAILSLOT     = 11;
- HANDLE_TYPE_BUFFER       = 12;
- HANDLE_TYPE_EVENT        = 13;
+ HANDLE_TYPE_COMPLETION   = 7;
+ HANDLE_TYPE_LIST         = 8;
+ HANDLE_TYPE_QUEUE        = 9;
+ HANDLE_TYPE_THREAD       = 10;
+ HANDLE_TYPE_MESSAGESLOT  = 11;
+ HANDLE_TYPE_MAILSLOT     = 12;
+ HANDLE_TYPE_BUFFER       = 13;
+ HANDLE_TYPE_EVENT        = 14;
 
- HANDLE_TYPE_TIMER        = 14;
- HANDLE_TYPE_WORKER       = 15;
- HANDLE_TYPE_WINDOW       = 16;
- HANDLE_TYPE_FONT         = 17;
- HANDLE_TYPE_KEYMAP       = 18;
+ HANDLE_TYPE_TIMER        = 15;
+ HANDLE_TYPE_WORKER       = 16;
+ HANDLE_TYPE_WINDOW       = 17;
+ HANDLE_TYPE_FONT         = 18;
+ HANDLE_TYPE_KEYMAP       = 19;
 
  HANDLE_TYPE_FILE         = 100;
  HANDLE_TYPE_PIPE         = 101;

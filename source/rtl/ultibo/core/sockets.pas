@@ -500,6 +500,7 @@ function CloseSocket(Sock:Longint):Longint;
 
 function Inet_Addr(cp: PChar): Longint;
 function Inet_Ntoa(inaddr: TInAddr): PChar; 
+function Inet_Aton(cp: PChar; inaddr: PInAddr): Longint;
 
 function Inet_Pton(family: Longint; Source: PChar; Dest: Pointer): Longint;
 function Inet_Ntop(family: Longint; Source: Pointer; Dest: PChar; Size: Longint): PChar;
@@ -1121,6 +1122,28 @@ begin
    Result:=PChar(NetToAddr); 
   end;
 end;
+
+{==============================================================================}
+
+function Inet_Aton(cp: PChar; inaddr: PInAddr): Longint;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ NetworkSetLastError(WSAEFAULT);
+ 
+ {Check Name}
+ if cp = nil then Exit;
+ 
+ {Check Address}
+ if inaddr = nil then Exit;
+ 
+ inaddr^:=StringToInAddr(cp);
+ 
+ //To Do //Check result, if not valid return 0
+    
+ Result:=1; {As per Spec}
+ NetworkSetLastError(ERROR_SUCCESS);
+end; 
 
 {==============================================================================}
 

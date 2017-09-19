@@ -521,27 +521,30 @@ begin
   end;
  
  {Create USB Storage Driver}
- USBStorageDriver:=USBDriverCreate;
- if USBStorageDriver <> nil then
+ if USB_STORAGE_REGISTER_DRIVER then
   begin
-   {Update USB Storage Driver}
-   {Driver}
-   USBStorageDriver.Driver.DriverName:=USBSTORAGE_DRIVER_NAME; 
-   {USB}
-   USBStorageDriver.DriverBind:=USBStorageDriverBind;
-   USBStorageDriver.DriverUnbind:=USBStorageDriverUnbind;
- 
-   {Register USB Storage driver}
-   Status:=USBDriverRegister(USBStorageDriver); 
-   if Status <> USB_STATUS_SUCCESS then
+   USBStorageDriver:=USBDriverCreate;
+   if USBStorageDriver <> nil then
     begin
-     if USB_LOG_ENABLED then USBLogError(nil,'Storage: Failed to register USB storage driver: ' + USBStatusToString(Status));
+     {Update USB Storage Driver}
+     {Driver}
+     USBStorageDriver.Driver.DriverName:=USBSTORAGE_DRIVER_NAME; 
+     {USB}
+     USBStorageDriver.DriverBind:=USBStorageDriverBind;
+     USBStorageDriver.DriverUnbind:=USBStorageDriverUnbind;
+   
+     {Register USB Storage driver}
+     Status:=USBDriverRegister(USBStorageDriver); 
+     if Status <> USB_STATUS_SUCCESS then
+      begin
+       if USB_LOG_ENABLED then USBLogError(nil,'Storage: Failed to register USB storage driver: ' + USBStatusToString(Status));
+      end;
+    end
+   else
+    begin
+     if STORAGE_LOG_ENABLED then StorageLogError(nil,'Failed to create USB storage driver');
     end;
-  end
- else
-  begin
-   if STORAGE_LOG_ENABLED then StorageLogError(nil,'Failed to create USB storage driver');
-  end;
+  end;  
  
  StorageInitialized:=True;
 end;

@@ -7200,7 +7200,7 @@ function RPi3TouchGetBuffer(var Address:LongWord):LongWord;
 {Note: On current firmware versions calling TouchGetBuffer will allocate a buffer
        from GPU memory and render subsequent calls to TouchSetBuffer ineffective.
        
-       After an intial call to TouchSetBuffer calls to TouchGetBuffer will always
+       After an initial call to TouchSetBuffer calls to TouchGetBuffer will always
        return the CPU allocated buffer}
 var
  Size:LongWord;

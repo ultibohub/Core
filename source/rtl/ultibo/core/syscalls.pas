@@ -33,6 +33,11 @@ References
   
   Libm - https://www.sourceware.org/newlib/libm.html
   
+  POSIX Threads (pthreads) - http://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread.h.html
+                             http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html
+  
+  POSIX Sockets - http://pubs.opengroup.org/onlinepubs/009695399/basedefs/sys/socket.h.html
+  
 Syscalls
 ========
 
@@ -181,6 +186,29 @@ Syscalls
   
    https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
   
+  Memory management for the C library and code compiled to use it is handled by Newlib itself
+  which provides a complete implementation of malloc(), free(), calloc(), realloc() and others.
+  
+  This implementation relies on the underlying platform to implement sbrk() (_sbrk_r for the
+  reentrant build of the library) and this unit provides all of the necessary details of this
+  to allow full functionality of the memory management within the C library.
+  
+  Because sbrk() expects a contiguous heap space that grows upward in response to each request
+  the Ultibo implementation uses the virtual memory functionality of the processor to map
+  blocks of (possibly not contiguous) memory allocated from the Ultibo heap manager into 
+  an address space dedicated to supporting the C library. 
+  
+  There are a number of parameters in the GlobalConfig unit which can be used to adjust the
+  default behaviour of this as follows:
+  
+   SYSCALLS_HEAP_BASE - The starting point (bottom) of the virtual heap provided by sbrk() (Default: $C0000000)
+   SYSCALLS_HEAP_MIN - The minimum (initial) allocation made to the virtual heap during startup (Default: 2MB)
+   SYSCALLS_HEAP_MAX - The maximum size the virtual heap will be allowed to grow to (Default: 1GB)
+   SYSCALLS_HEAP_BLOCKSIZE - The size of each block added to the virtual heap (Default: 1MB)
+  
+  Under normal usage these parameters should not need to be changed but they are available for
+  advanced use cases which may require them.
+  
 }
 
 {--$mode delphi} {Default to Delphi compatible syntax} {Not compatible with external definitions below}
@@ -192,13 +220,20 @@ unit Syscalls;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,FileSystem,Sockets,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManager,Devices,FileSystem,Sockets,SysUtils;
 
-//To Do //Sockets support
-        //Libstdc++ support
+//To Do //Libstdc++ support
         
 //To Do //Which Pthreads functions are cancellation points? (Find a list)
+        //See: http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_09_05
+
+//To Do //Implementation (dummy / wrapper) for pthread_kill() and others from later specifications (barrier, spinlock etc) ?        
+        //See: http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html
         
+//To Do //statfs / fstatfs / statfs64 / fstatfs64      
+
+//To Do //opendir / readdir / closedir and dirent
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -207,8 +242,12 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,F
 
 {==============================================================================}
 {Local definitions}
+{$DEFINE SYSCALLS_ERROR_UNINITIALIZED}      {Log use of uninitialized mutex, condition and rwlock variables as an error (Default: On)}
+{$DEFINE SYSCALLS_CREATE_UNINITIALIZED}     {Allow uninitialized mutex, condition and rwlock variables to be created on first use (Default: On)}
+
 {--$DEFINE SYSCALLS_LARGE64_FILES}          {Enable 64-bit file support for Libc calls (Default: Off)}
 
+{--$DEFINE _POSIX_THREAD_GUARDSIZE}         {Enable Pthread Guard Size attribute (Default: Off) (Not used by Ultibo}
 {--$DEFINE _POSIX_THREAD_CPUTIME}           {Enable Pthread CPU Time Clock Allowed attribute (Default: Off) (Not used by Ultibo}
 
 {--$DEFINE _POSIX_THREAD_SPORADIC_SERVER}   {Enable Pthread Scheduling for Sporadic server (Default: Off) (Not used by Ultibo}
@@ -690,7 +729,7 @@ const
  _IOC_NONE = 0;
  _IOC_WRITE = 1;
  _IOC_READ = 2;
- 
+
 const
  {Library names}
  libc = 'c';
@@ -1050,6 +1089,44 @@ type
   tv_nsec: long;  {and nanoseconds}
  end;
  
+type 
+ {From sys/statfs.h}
+ fsid_t = record
+  val: array[0..1] of int;
+ end; 
+
+ Pstatfs = ^Tstatfs;
+ Tstatfs = record
+  f_type: uint32_t;
+  f_bsize: uint32_t;
+  f_blocks: uint32_t;
+  f_bfree: uint32_t;
+  f_bavail: uint32_t;
+  f_files: uint32_t;
+  f_ffree: uint32_t;
+  f_fsid: fsid_t;
+  f_namelen: uint32_t;
+  f_frsize: uint32_t;
+  f_flags: uint32_t;
+  f_spare: array[0..3] of uint32_t;
+ end;
+
+ Pstatfs64 = ^Tstatfs64;
+ Tstatfs64 = record
+  f_type: uint64_t;
+  f_bsize: uint64_t;
+  f_blocks: uint64_t;
+  f_bfree: uint64_t;
+  f_bavail: uint64_t;
+  f_files: uint64_t;
+  f_ffree: uint64_t;
+  f_fsid: fsid_t;
+  f_namelen: uint32_t;
+  f_frsize: uint32_t;
+  f_flags: uint32_t;
+  f_spare: array[0..3] of uint32_t;
+ end;
+ 
 type
  {From sched.h}
  Psched_param = ^Tsched_param;
@@ -1078,7 +1155,9 @@ type
   inheritsched: int;
   schedpolicy: int;
   schedparam: Tsched_param;
-  guardsize: size_t;
+  {$IFDEF _POSIX_THREAD_GUARDSIZE}
+  guardsize: size_t; {Note: This is defined in the Linux version of pthread_attr_t but not for other platforms. Ultibo uses THREAD_STACK_GUARD_ENABLED from GlobalConfig}
+  {$ENDIF}
   {$IFDEF _POSIX_THREAD_CPUTIME}
   cputime_clock_allowed: int;  {See time.h}
   {$ENDIF}
@@ -1167,6 +1246,15 @@ type
  sem_t = Cardinal; {uint32_t} {sem_t should be opaque to the user}
  Psem_t = ^sem_t;
  
+type
+ {From linux/netdb.h} 
+ {Socket types}
+ Psocklen_t = ^socklen_t;
+ socklen_t = uint;
+ 
+ {From linux/arpa/inet.h}
+ in_addr_t = Cardinal; {uint32_t}
+ 
 {==============================================================================}
 var
  {Syscalls specific variables}
@@ -1252,7 +1340,8 @@ function _write_r(ptr: P_reent; fd: int; buf: Pointer; cnt: size_t): _ssize_t; c
        
 {==============================================================================}
 {Syscalls Functions (Stat)}
-function mkdir(path: PChar; mode: int): int; cdecl; public name 'mkdir';
+function mkdir(path: PChar; mode: mode_t): int; cdecl; public name 'mkdir';
+function chmod(path: PChar; mode: mode_t): int; cdecl; public name 'chmod';
      
 {==============================================================================}
 {Syscalls Functions (Stdlib)}
@@ -1272,7 +1361,12 @@ function getpagesize: int; cdecl; public name 'getpagesize';
 
 function ssleep(seconds: uint): uint; cdecl; public name 'sleep'; 
 function usleep(useconds: useconds_t): int; cdecl; public name 'usleep';
-    
+
+function symlink(path1, path2: PChar): int; cdecl; public name 'symlink';
+
+function ftruncate(fd: int; length: off_t): int; cdecl; public name 'ftruncate';
+function truncate(path: PChar; length: off_t): int; cdecl; public name 'truncate';
+
 {==============================================================================}
 {Syscalls Functions (Mman)}
 function mmap(addr: Pointer; length: size_t; prot, flags, fd: int; offset: off_t): Pointer; cdecl; public name 'mmap';
@@ -1287,6 +1381,14 @@ function clock_gettime(clk_id: clockid_t; tp: Ptimespec): int; cdecl; public nam
 function clock_settime(clk_id: clockid_t; tp: Ptimespec): int; cdecl; public name 'clock_settime';
 
 function nanosleep(req, rem: Ptimespec): int; cdecl; public name 'nanosleep';
+    
+{==============================================================================}
+{Syscalls Functions (Statfs)}
+function statfs(path: PChar; buf: Pstatfs): int; cdecl; public name 'statfs';
+function fstatfs(fd: int; buf: Pstatfs): int; cdecl; public name 'fstatfs';
+
+function statfs64(path: PChar; buf: Pstatfs64): int; cdecl; public name 'statfs64';
+function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl; public name 'fstatfs64';
     
 {==============================================================================}
 {Syscalls Functions (Sched)}
@@ -1407,7 +1509,55 @@ function sem_wait(sem: Psem_t): int; cdecl; public name 'sem_wait';
      
 {==============================================================================}
 {Syscalls Functions (Sockets)}
-//To Do     
+{From sys/socket.h}
+function socket_accept(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'accept';
+function socket_bind(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl; public name 'bind';
+function socket_connect(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl; public name 'connect';
+function socket_getpeername(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'getpeername';
+function socket_getsockname(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'getsockname';
+function socket_getsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: Psocklen_t): int; cdecl; public name 'getsockopt';
+function socket_listen(socket: int; backlog: int): int; cdecl; public name 'listen';
+function socket_recv(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'recv';
+function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: psockaddr; address_len: Psocklen_t): ssize_t; cdecl; public name 'recvfrom';
+//function socket_recvmsg //ssize_t recvmsg(int socket, struct msghdr *message, int flags); //To Do
+function socket_send(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'send';
+function socket_sendto(socket: int; buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl; public name 'sendto';
+//function socket_sendmsg //ssize_t sendmsg(int socket, const struct msghdr *message, int flags); //To Do
+function socket_setsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: socklen_t): int; cdecl; public name 'setsockopt';
+function socket_shutdown(socket: int; how: int): int; cdecl; public name 'shutdown';
+function socket_socket(domain, sockettype, protocol: int): int; cdecl; public name 'socket';
+function socket_socketpair(domain, sockettype, protocol: int; socket_vector: Pint): int; cdecl; public name 'socketpair';
+
+{From arpa/inet.h}
+function socket_htonl(hostlong: uint32_t): uint32_t; cdecl; public name 'htonl';
+function socket_htons(hostshort: uint16_t): uint16_t; cdecl; public name 'htons';
+function socket_ntohl(netlong: uint32_t): uint32_t; cdecl; public name 'ntohl';
+function socket_ntohs(netshort: uint16_t): uint16_t; cdecl; public name 'ntohs';
+       
+function socket_inet_addr(cp: PChar): in_addr_t; cdecl; public name '__inet_addr'; {Note: Linux has defines that remap to these names}
+function socket_inet_ntoa(inaddr: TInAddr): PChar; cdecl; public name '__inet_ntoa';
+function socket_inet_aton(cp: PChar; inaddr: PInAddr): int; cdecl; public name '__inet_aton';  
+
+{From netdb.h}
+function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): PHostEnt; cdecl; public name 'gethostbyaddr';
+function socket_gethostbyname(name: PChar): PHostEnt; cdecl; public name 'gethostbyname';
+
+function socket_getnetbyaddr(net: uint32_t; family: int): PNetEnt; cdecl; public name 'getnetbyaddr';
+function socket_getnetbyname(name: PChar): PNetEnt; cdecl; public name 'getnetbyname';
+
+function socket_getservbyport(port: int; proto: PChar): PServEnt; cdecl; public name 'getservbyport';
+function socket_getservbyname(name, proto: PChar): PServEnt; cdecl; public name 'getservbyname';
+
+function socket_getprotobynumber(proto: int): PProtoEnt; cdecl; public name 'getprotobynumber';
+function socket_getprotobyname(name: PChar): PProtoEnt; cdecl; public name 'getprotobyname';
+       
+//function socket_getaddrinfo //To Do //Include when added to DNS and updated in Sockets
+//function socket_getnameinfo //To Do //Include when added to DNS and updated in Sockets
+//function socket_freeaddrinfo //To Do //Include when added to DNS and updated in Sockets
+       
+{==============================================================================}
+{Syscalls Functions (Non Standard)}
+procedure msleep(msecs: uint); cdecl; public name 'msleep';
 
 {==============================================================================}
 {Syscalls Helper Functions}
@@ -1502,6 +1652,12 @@ type
   Arg:Pointer;
  end;
  
+ TSyscallsPreinit = procedure; cdecl;
+ TSyscallsInit = procedure; cdecl;
+ TSyscallsFini = procedure; cdecl;
+ TSyscallsCtor = procedure; cdecl;
+ TSyscallsDtor = procedure; cdecl;
+ 
 {==============================================================================}
 {==============================================================================}
 var
@@ -1524,19 +1680,15 @@ var
  SyscallsHeapLock:TMutexHandle = INVALID_HANDLE_VALUE;
  
  SyscallsPthreadSize:LongWord;
- SyscallsPthreadIndex:LongWord;                           {Pthread TLS index (For Cleanup handler and Cancellation states)}
+ SyscallsPthreadIndex:LongWord;                           {Pthread TLS index (For Cleanup handlers)}
  SyscallsPthreadLock:TMutexHandle = INVALID_HANDLE_VALUE;
  SyscallsPthreadConcurrency:Integer;                      {Pthread concurrency level (Not used by Ultibo)}
  
  SyscallsKeyDestructor:array[0..THREAD_TLS_MAXIMUM - 1] of Tpthread_destructor_routine;
  
- //__exidx_end //__exidx_start //TestingLIBSTDC++ //Possibly not required, used internally by Libgcc etc?
+ //To Do //Continuing 
  
- //__preinit_array_start //__preinit_array_end //TestingLIBSTDC++
- 
- //__init_array_start //__init_array_end //TestingLIBSTDC++
- 
- //__fini_array_start //__fini_array_end //TestingLIBSTDC++
+ //__exidx_end //__exidx_start //__dso_handle //TestingLIBSTDC++ //Possibly not required, used internally by Libgcc etc?
  
 {==============================================================================}
 {==============================================================================}
@@ -1566,6 +1718,9 @@ procedure SyscallsInit;
 {Note: Called only during system startup}
 var
  Count:LongWord;
+ TableStart:PPointer;
+ TableEnd:PPointer;
+ TableProc:procedure; cdecl;
 begin
  {}
  {Check Initialized}
@@ -1645,8 +1800,46 @@ begin
    environ[Count]:=StrNew(envp[Count]);
   end;
 
- {Constructors of Static Objects (cin / cout / cerr / clog etc)}
- //TestingLIBSTDC++
+ {Execute Preinit functions}
+ TableStart:=@__preinit_array_start;
+ TableEnd:=@__preinit_array_end;
+ while TableStart < TableEnd do
+  begin
+   {Call Preinit}
+   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc();
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end;
+ 
+ {Execute Init functions}
+ TableStart:=@__init_array_start;
+ TableEnd:=@__init_array_end;
+ while TableStart < TableEnd do
+  begin
+   {Call Init}
+   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc();
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end;
+ 
+ {Execute Constructor (ctor) functions}
+ TableStart:=@__ctors_start;
+ TableEnd:=@__ctors_end;
+ while TableStart < TableEnd do
+  begin
+   {Call Constructor}
+   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc();
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end;
+ 
+ //To Do //Register SyscallsQuit as a Shutdown handler
  
  SyscallsInitialized:=True;
 end; 
@@ -1657,13 +1850,40 @@ procedure SyscallsQuit;
 {Terminate the Syscalls unit and Syscalls handle table}
 
 {Note: Called only during system shutdown}
+var
+ TableStart:PPointer;
+ TableEnd:PPointer;
+ TableProc:procedure; cdecl;
 begin
  {}
  {Check Initialized}
  if not SyscallsInitialized then Exit;
  
- {Destructors of Static Objects (cin / cout / cerr / clog etc)}
- //TestingLIBSTDC++
+ {Execute Destructor (dtor) functions}
+ TableStart:=@__dtors_start;
+ TableEnd:=@__dtors_end;
+ while TableStart < TableEnd do
+  begin
+   {Call Destructor}
+   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc();
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end;
+ 
+ {Execute Fini functions}
+ TableStart:=@__fini_array_start;
+ TableEnd:=@__fini_array_end;
+ while TableStart < TableEnd do
+  begin
+   {Call Fini}
+   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc();
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end;
  
  SyscallsInitialized:=False;
 end;
@@ -2318,7 +2538,7 @@ begin
   end;
   
  {Get Share Mode}
- ShareMode:=0;
+ ShareMode:=FILE_SHARE_READ or FILE_SHARE_WRITE;
  
  {Get Create Flags} 
  CreateFlags:=OPEN_EXISTING;
@@ -2839,7 +3059,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Stat)}
-function mkdir(path: PChar; mode: int): int; cdecl;
+function mkdir(path: PChar; mode: mode_t): int; cdecl;
 {Create a directory}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -2850,6 +3070,21 @@ begin
  {$ENDIF}
 
  Result:=_mkdir_r(__getreent,path,mode);
+end;
+
+{==============================================================================}
+
+function chmod(path: PChar; mode: mode_t): int; cdecl;
+{Change mode of a file}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls chmod (path=' + StrPas(path) + ' mode=' + IntToStr(mode) + ')');
+ {$ENDIF}
+
+ Result:=0;
 end;
 
 {==============================================================================}
@@ -3024,6 +3259,8 @@ function usleep(useconds: useconds_t): int; cdecl;
 
 {Note: Does not support interruption by signal}
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Remain: PtrUInt;
 begin
  {}
  Result:=0;
@@ -3032,7 +3269,150 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls usleep (useconds=' + IntToStr(useconds) + ')');
  {$ENDIF}
  
- ThreadSleep(useconds div 1000);
+ Remain:=useconds;
+ 
+ if useconds > 1000 then
+  begin
+   ThreadSleep(useconds div 1000);
+   Remain:=useconds mod 1000;
+  end;
+ 
+ if Remain > 0 then
+  begin
+   MicrosecondDelay(Remain);
+  end;
+end;
+
+{==============================================================================}
+
+function symlink(path1, path2: PChar): int; cdecl; public name 'symlink';
+{Make a symbolic link to a file}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls symlink (path1=' + StrPas(path1) + ' path2=' + StrPas(path2) + ')');
+ {$ENDIF}
+
+ Result:=_link_r(__getreent,path1,path2);
+end;
+
+{==============================================================================}
+
+function ftruncate(fd: int; length: off_t): int; cdecl; public name 'ftruncate';
+{Truncate a file to a specified length}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PSyscallsEntry;
+begin
+ {}
+ Result:=-1;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls ftruncate (fd=' + IntToStr(fd) + ' length=' + IntToStr(length) + ')');
+ {$ENDIF}
+ 
+ {Check Length}
+ if length < 0 then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+  
+ {Check descriptor}
+ if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+  begin
+   {Stdin, Stdout, Stderr}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end
+ else
+  begin
+   {Normal file}
+   Entry:=SyscallsGetEntry(fd);
+   if Entry <> nil then
+    begin
+     {Truncate}
+     FSFileSeekEx(Entry^.Handle,length,FILE_BEGIN);
+     if not FSFileTruncate(Entry^.Handle) then
+      begin
+       {Return Error}
+       ptr:=__getreent;
+       if ptr <> nil then ptr^._errno:=EIO;
+       Exit;
+      end;
+     
+     {Return Result}
+     Result:=0;
+    end
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EBADF;
+    end;    
+  end;  
+end;
+
+{==============================================================================}
+
+function truncate(path: PChar; length: off_t): int; cdecl; public name 'truncate';
+{Truncate a file to a specified length}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Handle:THandle;
+begin
+ {}
+ Result:=-1;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls truncate (path=' + StrPas(path) + ' length=' + IntToStr(length) + ')');
+ {$ENDIF}
+ 
+ {Check Length}
+ if length < 0 then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+ 
+ {Open file}
+ Handle:=FSCreateFile(path,GENERIC_READ or GENERIC_WRITE,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL);
+ if Handle = INVALID_HANDLE_VALUE then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   Exit;
+  end;
+ 
+ {Truncate}
+ FSFileSeekEx(Handle,length,FILE_BEGIN);
+ if FSFileTruncate(Handle) then
+  begin
+   {Return Result}
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EIO;
+   Exit;
+  end;
+ 
+ {Close File}
+ FSFileClose(Handle);
 end;
 
 {==============================================================================}
@@ -3336,6 +3716,79 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{Syscalls Functions (Statfs)}
+function statfs(path: PChar; buf: Pstatfs): int; cdecl; public name 'statfs';
+{Get filesystem statistics}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+ 
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=ENOSYS;
+ 
+ {Not yet implemented}
+end;
+
+{==============================================================================}
+
+function fstatfs(fd: int; buf: Pstatfs): int; cdecl; public name 'fstatfs';
+{Get filesystem statistics}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+ 
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=ENOSYS;
+ 
+ {Not yet implemented}
+end;
+
+{==============================================================================}
+
+function statfs64(path: PChar; buf: Pstatfs64): int; cdecl; public name 'statfs64';
+{Get filesystem statistics}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+ 
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=ENOSYS;
+ 
+ {Not yet implemented}
+end;
+
+{==============================================================================}
+
+function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl; public name 'fstatfs64';
+{Get filesystem statistics}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+ 
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=ENOSYS;
+ 
+ {Not yet implemented}
+end;
+
+{==============================================================================}
+{==============================================================================}
 {Syscalls Functions (Sched)}
 function sched_get_priority_max(policy: int): int; cdecl;
 {Get scheduler priority range maximum}
@@ -3415,7 +3868,9 @@ begin
  attr^.inheritsched:=PTHREAD_EXPLICIT_SCHED;
  attr^.schedpolicy:=SCHED_OTHER;
  attr^.schedparam.sched_priority:=THREAD_PRIORITY_DEFAULT;
+ {$IFDEF _POSIX_THREAD_GUARDSIZE}
  attr^.guardsize:=MEMORY_PAGE_SIZE;
+ {$ENDIF}
  {$IFDEF _POSIX_THREAD_CPUTIME}
  attr^.cputime_clock_allowed:=0;
  {$ENDIF}
@@ -3516,6 +3971,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getguardsize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
  {$ENDIF}
  
+ {$IFDEF _POSIX_THREAD_GUARDSIZE}
  {Check guardsize}
  if guardsize = nil then Exit;
  
@@ -3523,6 +3979,10 @@ begin
  guardsize^:=attr^.guardsize;
  
  Result:=0;
+ {$ELSE}
+ {Not supported}
+ Result:=ENOSYS;
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -3542,6 +4002,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setguardsize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
  {$ENDIF}
  
+ {$IFDEF _POSIX_THREAD_GUARDSIZE}
  {Check guardsize}
  if (guardsize > attr^.stacksize) then Exit;
 
@@ -3549,6 +4010,10 @@ begin
  attr^.guardsize:=guardsize;
  
  Result:=0;
+ {$ELSE}
+ {Not supported}
+ Result:=ENOSYS;
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -4032,6 +4497,21 @@ begin
    if Result <> 0 then Exit;
   end;
  
+ {Check cond}
+ if cond^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {Uninitialized cond}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_broadcast');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+ 
  {Wake All Condition} 
  if ConditionWakeAll(TConditionHandle(cond^)) <> ERROR_SUCCESS then Exit;
  
@@ -4061,6 +4541,21 @@ begin
    {Initialize cond}
    Result:=pthread_cond_init(cond,nil);
    if Result <> 0 then Exit;
+  end;
+ 
+ {Check cond}
+ if cond^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized cond}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_signal');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
   end;
  
  {Wake Condition} 
@@ -4095,6 +4590,21 @@ begin
    {Initialize cond}
    Result:=pthread_cond_init(cond,nil);
    if Result <> 0 then Exit;
+  end;
+ 
+ {Check cond}
+ if cond^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized cond}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_wait');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
   end;
  
  {Wait Condition Mutex}
@@ -4168,6 +4678,21 @@ begin
    {Initialize cond}
    Result:=pthread_cond_init(cond,nil);
    if Result <> 0 then Exit;
+  end;
+ 
+ {Check cond}
+ if cond^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized cond}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_timedwait');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize cond}
+   Result:=pthread_cond_init(cond,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
   end;
  
  {Wait Condition Mutex}
@@ -4327,6 +4852,12 @@ begin
  {Check attr}
  if attr = nil then
   begin
+   Flags:=THREAD_FLAG_PERSIST;
+   Priority:=THREAD_PRIORITY_DEFAULT;
+   StackSize:=THREAD_STACK_DEFAULT_SIZE;
+  end
+ else
+  begin
    StackSize:=attr^.stacksize;
    Priority:=attr^.schedparam.sched_priority;
    Flags:=THREAD_FLAG_NONE;
@@ -4334,12 +4865,6 @@ begin
     begin
      Flags:=THREAD_FLAG_PERSIST;
     end;
-  end
- else
-  begin
-   Flags:=THREAD_FLAG_PERSIST;
-   Priority:=THREAD_PRIORITY_DEFAULT;
-   StackSize:=THREAD_STACK_DEFAULT_SIZE;
   end;  
   
  {Allocate Data}
@@ -4475,7 +5000,7 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_exit (value_ptr=' + IntToHex(PtrUInt(value_ptr),8) + ')');
  {$ENDIF}
- 
+  
  {Call Thread End}
  SyscallsPthreadEnd(value_ptr);
 end;
@@ -4570,7 +5095,7 @@ begin
  if State = THREAD_STATE_TERMINATED then
   begin
    {Destroy Thread}
-   ThreadDestroy(TThreadHandle(thread));  
+   ThreadDestroy(TThreadHandle(thread));
   end; 
  
  Result:=0; 
@@ -4914,7 +5439,22 @@ begin
    Result:=pthread_mutex_init(mutex,nil);
    if Result <> 0 then Exit;
   end;
-  
+ 
+ {Check mutex}
+ if mutex^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized mutex}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_lock');
+   {$ENDIF}  
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+ 
  {Lock Mutex}
  ResultCode:=MutexLock(TMutexHandle(mutex^));
  if ResultCode = ERROR_SUCCESS then
@@ -4954,6 +5494,21 @@ begin
    if Result <> 0 then Exit;
   end;
  
+ {Check mutex}
+ if mutex^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized mutex}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_trylock');
+   {$ENDIF}  
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+ 
  {Try Lock Mutex}
  ResultCode:=MutexTryLock(TMutexHandle(mutex^));
  if ResultCode = ERROR_SUCCESS then
@@ -4991,6 +5546,21 @@ begin
    {Initialize mutex}
    Result:=pthread_mutex_init(mutex,nil);
    if Result <> 0 then Exit;
+  end;
+ 
+ {Check mutex}
+ if mutex^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized mutex}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_unlock');
+   {$ENDIF}  
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
   end;
  
  {Unlock Mutex}
@@ -5034,6 +5604,21 @@ begin
    if Result <> 0 then Exit;
   end;
  
+ {Check mutex}
+ if mutex^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized mutex}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_setprioceiling');
+   {$ENDIF}  
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+ 
  {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
  {Not supported}
  Result:=ENOSYS;
@@ -5066,6 +5651,21 @@ begin
    {Initialize mutex}
    Result:=pthread_mutex_init(mutex,nil);
    if Result <> 0 then Exit;
+  end;
+ 
+ {Check mutex}
+ if mutex^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {Uninitialized mutex}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_getprioceiling');
+   {$ENDIF}  
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize mutex}
+   Result:=pthread_mutex_init(mutex,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
   end;
  
  {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
@@ -5534,6 +6134,21 @@ begin
    if Result <> 0 then Exit;
   end;
  
+ {Check rwlock}
+ if rwlock^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {Uninitialized rwlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_rdlock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+ 
  {Check Owner}
  if SynchronizerWriterOwner(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
   begin
@@ -5577,6 +6192,21 @@ begin
    if Result <> 0 then Exit;
   end;
  
+ {Check rwlock}
+ if rwlock^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {Uninitialized rwlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_wrlock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+ 
  {Check Last}
  if SynchronizerReaderLast(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
   begin
@@ -5618,6 +6248,21 @@ begin
    {Initialize rwlock}
    Result:=pthread_rwlock_init(rwlock,nil);
    if Result <> 0 then Exit;
+  end;
+ 
+ {Check rwlock}
+ if rwlock^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {Uninitialized rwlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_tryrdlock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
   end;
  
  {Check Owner}
@@ -5667,6 +6312,21 @@ begin
    if Result <> 0 then Exit;
   end;
  
+ {Check rwlock}
+ if rwlock^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {Uninitialized rwlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_trywrlock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+ 
  {Check Last}
  if SynchronizerReaderLast(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
   begin
@@ -5712,6 +6372,21 @@ begin
    {Initialize rwlock}
    Result:=pthread_rwlock_init(rwlock,nil);
    if Result <> 0 then Exit;
+  end;
+ 
+ {Check rwlock}
+ if rwlock^ = 0 then
+  begin
+   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {Uninitialized rwlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_unlock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize rwlock}
+   Result:=pthread_rwlock_init(rwlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
   end;
  
  {Check Owner}
@@ -6623,6 +7298,654 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Sockets)}
+function socket_get_error(error: int): int;
+{Map a Socket error to a POSIX error}
+
+{Note: Internal function, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ case error of
+  {Windows Sockets definitions of regular Microsoft C error constants}
+  WSAEINTR..WSAEMFILE:Result:=error - WSABASEERR;
+  
+  {Windows Sockets definitions of regular Berkeley error constants}
+  WSAEWOULDBLOCK:Result:=EWOULDBLOCK;
+  WSAEINPROGRESS:Result:=EINPROGRESS;
+  WSAEALREADY:Result:=EALREADY;
+  WSAENOTSOCK:Result:=ENOTSOCK;
+  WSAEDESTADDRREQ:Result:=EDESTADDRREQ;
+  WSAEMSGSIZE:Result:=EMSGSIZE;
+  WSAEPROTOTYPE:Result:=EPROTOTYPE;
+  WSAENOPROTOOPT:Result:=ENOPROTOOPT;
+  WSAEPROTONOSUPPORT:Result:=EPROTONOSUPPORT;
+  WSAESOCKTNOSUPPORT:Result:=ESOCKTNOSUPPORT;
+  WSAEOPNOTSUPP:Result:=EOPNOTSUPP;
+  WSAEPFNOSUPPORT:Result:=EPFNOSUPPORT;
+  WSAEAFNOSUPPORT:Result:=EAFNOSUPPORT;
+  WSAEADDRINUSE:Result:=EADDRINUSE;
+  WSAEADDRNOTAVAIL:Result:=EADDRNOTAVAIL;
+  WSAENETDOWN:Result:=ENETDOWN;
+  WSAENETUNREACH:Result:=ENETUNREACH;
+  WSAENETRESET:Result:=ENETRESET;
+  WSAECONNABORTED:Result:=ECONNABORTED;
+  WSAECONNRESET:Result:=ECONNRESET;
+  WSAENOBUFS:Result:=ENOBUFS;
+  WSAEISCONN:Result:=EISCONN;
+  WSAENOTCONN:Result:=ENOTCONN;
+  WSAESHUTDOWN:Result:=ESHUTDOWN;
+  WSAETOOMANYREFS:Result:=ETOOMANYREFS;
+  WSAETIMEDOUT:Result:=ETIMEDOUT;
+  WSAECONNREFUSED:Result:=ECONNREFUSED;
+  WSAELOOP:Result:=ELOOP;
+  WSAENAMETOOLONG:Result:=ENAMETOOLONG;
+  WSAEHOSTDOWN:Result:=EHOSTDOWN;
+  WSAEHOSTUNREACH:Result:=EHOSTUNREACH;
+  WSAENOTEMPTY:Result:=ENOTEMPTY;
+  WSAEPROCLIM:Result:=EPROCLIM;
+  WSAEUSERS:Result:=EUSERS;
+  WSAEDQUOT:Result:=EDQUOT;
+  WSAESTALE:Result:=ESTALE;
+  WSAEREMOTE:Result:=EREMOTE;
+  WSAEDISCON:Result:=ENOTCONN;
+  
+  {Extended Windows Sockets error constant definitions}
+  WSASYSNOTREADY:Result:=EIO;
+  WSAVERNOTSUPPORTED:Result:=ENOTSUP;
+  WSANOTINITIALISED:Result:=EIO;
+  
+  WSAENOMORE:Result:=ENOMEM;
+  WSAECANCELLED:Result:=ECANCELED;
+  WSAEINVALIDPROCTABLE:Result:=EINVAL;
+  WSAEINVALIDPROVIDER:Result:=EINVAL;
+  WSAEPROVIDERFAILEDINIT:Result:=EFAULT;
+  WSASYSCALLFAILURE:Result:=EFAULT;
+  WSASERVICE_NOT_FOUND:Result:=ESRCH;
+  WSATYPE_NOT_FOUND:Result:=ESRCH;
+  WSA_E_NO_MORE:Result:=ENOMEM;
+  WSA_E_CANCELLED:Result:=ECANCELED;
+  WSAEREFUSED:Result:=ECONNREFUSED;
+ end;
+end;
+
+{==============================================================================}
+
+function socket_accept(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl;
+{Accept a new connection on a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls accept (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ {$ENDIF}
+ 
+ Result:=fpaccept(socket,address,psocklen(address_len));
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_bind(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl;
+{Bind a name to a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls bind (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToStr(address_len) + ')');
+ {$ENDIF}
+ 
+ Result:=fpbind(socket,address,address_len);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_connect(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl;
+{Connect a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls connect (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToStr(address_len) + ')');
+ {$ENDIF}
+ 
+ Result:=fpconnect(socket,address,address_len);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_getpeername(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl;
+{Get the name of the peer socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getpeername (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ {$ENDIF}
+ 
+ Result:=fpgetpeername(socket,address,psocklen(address_len));
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_getsockname(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl;
+{Get the socket name}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockname (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ {$ENDIF}
+ 
+ Result:=fpgetsockname(socket,address,psocklen(address_len));
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_getsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: Psocklen_t): int; cdecl;
+{Get the socket options}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + IntToHex(PtrUInt(option_value),8) + ' option_len=' + IntToHex(PtrUInt(option_len),8) + ')');
+ {$ENDIF}
+ 
+ Result:=fpgetsockopt(socket,level,option_name,option_value,psocklen(option_len));
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_listen(socket: int; backlog: int): int; cdecl;
+{Listen for socket connections and limit the queue of incoming connections}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls listen (socket=' + IntToHex(socket,8) + ' backlog=' + IntToStr(backlog) + ')');
+ {$ENDIF}
+ 
+ Result:=fplisten(socket,backlog);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_recv(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl;
+{Receive a message from a connected socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
+ {$ENDIF}
+ 
+ Result:=fprecv(socket,buffer,len,flags);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: psockaddr; address_len: Psocklen_t): ssize_t; cdecl;
+{Receive a message from a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ {$ENDIF}
+ 
+ Result:=fprecvfrom(socket,buffer,len,flags,address,psocklen(address_len));
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_send(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl;
+{Send a message on a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls send (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
+ {$ENDIF}
+ 
+ Result:=fpsend(socket,buffer,len,flags);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_sendto(socket: int; buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl;
+{Send a message on a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendto (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' dest_addr=' + IntToHex(PtrUInt(dest_addr),8) + ' dest_len=' + IntToStr(dest_len) + ')');
+ {$ENDIF}
+ 
+ Result:=fpsendto(socket,buffer,len,flags,dest_addr,dest_len);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_setsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: socklen_t): int; cdecl;
+{Set the socket options}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls setsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + IntToHex(PtrUInt(option_value),8) + ' option_len=' + IntToStr(option_len) + ')');
+ {$ENDIF}
+ 
+ Result:=fpsetsockopt(socket,level,option_name,option_value,option_len);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_shutdown(socket: int; how: int): int; cdecl;
+{Shut down socket send and receive operations}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls shutdown (socket=' + IntToHex(socket,8) + ' how=' + IntToStr(how) + ')');
+ {$ENDIF}
+ 
+ Result:=fpshutdown(socket,how);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_socket(domain, sockettype, protocol: int): int; cdecl;
+{Create an endpoint for communication}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socket (domain=' + IntToStr(domain) + ' type=' + IntToStr(sockettype) + ' protocol=' + IntToStr(protocol) + ')');
+ {$ENDIF}
+ 
+ Result:=fpsocket(domain,sockettype,protocol);
+ if Result = Integer(INVALID_SOCKET) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_socketpair(domain, sockettype, protocol: int; socket_vector: Pint): int; cdecl;
+{Create a pair of connected sockets}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socketpair (domain=' + IntToStr(domain) + ' type=' + IntToStr(sockettype) + ' protocol=' + IntToStr(protocol) + ' socket_vector=' + IntToHex(PtrUInt(socket_vector),8) + ')');
+ {$ENDIF}
+ 
+ Result:=fpsocketpair(domain,sockettype,protocol,socket_vector);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
+function socket_htonl(hostlong: uint32_t): uint32_t; cdecl;
+{Convert values between host and network byte order}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=htonl(hostlong);
+end;
+
+{==============================================================================}
+
+function socket_htons(hostshort: uint16_t): uint16_t; cdecl;
+{Convert values between host and network byte order}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=htons(hostshort);
+end;
+
+{==============================================================================}
+
+function socket_ntohl(netlong: uint32_t): uint32_t; cdecl;
+{Convert values between host and network byte order}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=ntohl(netlong);
+end;
+
+{==============================================================================}
+
+function socket_ntohs(netshort: uint16_t): uint16_t; cdecl;
+{Convert values between host and network byte order}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=ntohs(netshort);
+end;
+
+{==============================================================================}
+
+function socket_inet_addr(cp: PChar): in_addr_t; cdecl;
+{IPv4 address manipulation}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=Inet_Addr(cp);
+end;
+{==============================================================================}
+
+function socket_inet_ntoa(inaddr: TInAddr): PChar; cdecl;
+{IPv4 address manipulation}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=Inet_Ntoa(inaddr);
+end;
+
+{==============================================================================}
+
+function socket_inet_aton(cp: PChar; inaddr: PInAddr): int; cdecl;
+{IPv4 address manipulation}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=Inet_Aton(cp,inaddr)
+end;
+
+{==============================================================================}
+
+function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): PHostEnt; cdecl;
+{Network host database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PHostEnt from Winsock and hostent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (addr=' + IntToHex(PtrUInt(addr),8) + ' len=' + IntToStr(len) + ' family=' + IntToStr(family) + ')');
+ {$ENDIF}
+ 
+ Result:=GetHostByAddr(addr,len,family);
+end;
+
+{==============================================================================}
+
+function socket_gethostbyname(name: PChar): PHostEnt; cdecl;
+{Network host database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PHostEnt from Winsock and hostent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls gethostbyname (name=' + StrPas(name) + ')');
+ {$ENDIF}
+ 
+ Result:=GetHostByName(name);
+end;
+
+{==============================================================================}
+
+function socket_getnetbyaddr(net: uint32_t; family: int): PNetEnt; cdecl;
+{Network database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Addr:TInAddr;
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PNetEnt from Winsock and netent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (net=' + IntToHex(net,8) + ' family=' + IntToStr(family) + ')');
+ {$ENDIF}
+ 
+ Addr.S_addr:=htonl(net);
+ 
+ Result:=GetNetByAddr(@Addr,SizeOf(TInAddr),family);
+end;
+
+{==============================================================================}
+
+function socket_getnetbyname(name: PChar): PNetEnt; cdecl;
+{Network database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PNetEnt from Winsock and netent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnetbyname (name=' + StrPas(name) + ')');
+ {$ENDIF}
+ 
+ Result:=GetNetByName(name);
+end;
+
+{==============================================================================}
+
+function socket_getservbyport(port: int; proto: PChar): PServEnt; cdecl;
+{Network services database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PServEnt from Winsock and servent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (port=' + IntToStr(port) + ' proto=' + StrPas(proto) + ')');
+ {$ENDIF}
+ 
+ Result:=GetServByPort(port,proto);
+end;
+
+{==============================================================================}
+
+function socket_getservbyname(name, proto: PChar): PServEnt; cdecl;
+{Network services database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PServEnt from Winsock and servent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyname (name=' + StrPas(name) + ' proto=' + StrPas(proto) + ')');
+ {$ENDIF}
+ 
+ Result:=GetServByName(name,proto);
+end;
+
+{==============================================================================}
+
+function socket_getprotobynumber(proto: int): PProtoEnt; cdecl;
+{Network protocol database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PProtoEnt from Winsock and protoent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobynumber (proto=' + IntToStr(proto) + ')');
+ {$ENDIF}
+ 
+ Result:=GetProtoByNumber(proto);
+end;
+
+{==============================================================================}
+
+function socket_getprotobyname(name: PChar): PProtoEnt; cdecl;
+{Network protocol database functions}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ //To Do //Resolve the discrepency in field sizes between PProtoEnt from Winsock and protoent from POSIX (short versus int)
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobyname (name=' + StrPas(name) + ')');
+ {$ENDIF}
+ 
+ Result:=GetProtoByName(name);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Non Standard)}
+procedure msleep(msecs: uint); cdecl;
+{Sleep for a specified number of milliseconds}
+
+{Note: Does not support interruption by signal}
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls msleep (msecs=' + IntToStr(msecs) + ')');
+ {$ENDIF}
+ 
+ ThreadSleep(msecs);
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -7138,7 +8461,7 @@ begin
   begin
    {Dynamic Heap}
    {Check Block}
-   PageTableEntry:=PageTableGetEntry(SyscallsHeapFirst^.PhysicalAddress);
+   PageTableGetEntry(SyscallsHeapFirst^.PhysicalAddress,PageTableEntry);
    if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
     begin
      {Map Block}
@@ -7153,7 +8476,7 @@ begin
     end;
    
    {Remap Block}
-   PageTableEntry:=PageTableGetEntry(SyscallsHeapFirst^.PhysicalAddress);
+   PageTableGetEntry(SyscallsHeapFirst^.PhysicalAddress,PageTableEntry);
    PageTableEntry.VirtualAddress:=SYSCALLS_HEAP_BASE;
    PageTableEntry.Size:=MEMORY_PAGE_SIZE;
    while PageTableEntry.VirtualAddress < (SYSCALLS_HEAP_BASE + SYSCALLS_HEAP_MIN) do
@@ -7335,7 +8658,7 @@ begin
         end; 
        
        {Check Block}
-       PageTableEntry:=PageTableGetEntry(Block^.PhysicalAddress);
+       PageTableGetEntry(Block^.PhysicalAddress,PageTableEntry);
        if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
         begin
          {Map Block}
@@ -7350,7 +8673,7 @@ begin
         end;
        
        {Remap Block}
-       PageTableEntry:=PageTableGetEntry(Block^.PhysicalAddress);
+       PageTableGetEntry(Block^.PhysicalAddress,PageTableEntry);
        PageTableEntry.VirtualAddress:=PtrUInt(SyscallsHeapEnd);
        PageTableEntry.Size:=MEMORY_PAGE_SIZE;
        while PageTableEntry.VirtualAddress < (PtrUInt(SyscallsHeapEnd) + SYSCALLS_HEAP_BLOCKSIZE) do
@@ -7554,7 +8877,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Thread=' + IntToHex(ThreadGetCurrent,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Thread=' + IntToHex(ThreadGetCurrent,8) + ' Value=' + IntToHex(PtrUInt(Value),8) + ')');
  {$ENDIF}
 
  {Call Key Destructors}
@@ -7588,6 +8911,10 @@ begin
    Cleanup:=Pthread^.Cleanup;
    while Cleanup <> nil do
     begin
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Cleanup=' + IntToHex(PtrUInt(Cleanup),8) + ' Routine=' + IntToHex(PtrUInt(Cleanup^.Routine),8) + ' Arg=' + IntToHex(PtrUInt(Cleanup^.Arg),8) + ')');
+     {$ENDIF}
+
      {Check Routine}
      if Assigned(Cleanup^.Routine) then
       begin

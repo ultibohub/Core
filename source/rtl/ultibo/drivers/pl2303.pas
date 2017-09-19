@@ -1598,6 +1598,9 @@ begin
  {Check Count}
  if Count > 0 then
   begin
+   {Set Event}
+   EventSet(Serial.Serial.Transmit.Wait);
+   
    {Update Request}
    Request.Size:=Count;
    

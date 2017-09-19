@@ -999,7 +999,7 @@ begin
     PPL110Framebuffer(Framebuffer).Registers.UPBASE:=UpperBase;
     PPL110Framebuffer(Framebuffer).Registers.LPBASE:=LowerBase;
     
-    {Udpate Offset}
+    {Update Offset}
     if not(Pan) then
      begin
       Framebuffer.OffsetY:=Y;

@@ -78,7 +78,7 @@ const
 type
  {Logging specific types}
  PLoggingEntry = ^TLoggingEntry;
- TLoggingEntry = record {Note: Overlayed on TMessage to avoid memory allocation on each output}
+ TLoggingEntry = record {Note: Overlaid on TMessage to avoid memory allocation on each output}
   Data:String;          {TMessage.Msg:LongWord}
   Reserved1:LongInt;    {TMessage.wParam:LongInt}
   Reserved2:LongInt;    {TMessage.lParam:LongInt}
@@ -86,7 +86,7 @@ type
  end;
 
  PLoggingEntryEx = ^TLoggingEntryEx;
- TLoggingEntryEx = record {Note: Overlayed on TMessage to avoid memory allocation on each output}
+ TLoggingEntryEx = record {Note: Overlaid on TMessage to avoid memory allocation on each output}
   Content:String;         {TMessage.Msg:LongWord}
   Tag:String;             {TMessage.wParam:LongInt}
   Severity:LongInt;       {TMessage.lParam:LongInt}
@@ -1187,8 +1187,17 @@ begin
   #10:begin
     case DefaultTextLineBreakStyle of
      tlbsLF,tlbsCRLF:begin
-       {Output Logging}
-       LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
+       {Check Default}
+       if LoggingTextIOOutputDevice = LoggingDeviceDefault then
+        begin
+         {Output Logging}
+         LoggingOutput(LoggingTextIOBuffer);
+        end
+       else
+        begin       
+         {Output Logging}
+         LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
+        end; 
        
        {Clear Buffer}
        SetLength(LoggingTextIOBuffer,0);
@@ -1198,8 +1207,17 @@ begin
   #13:begin
     case DefaultTextLineBreakStyle of
      tlbsCR:begin
-       {Output Logging}
-       LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
+       {Check Default}
+       if LoggingTextIOOutputDevice = LoggingDeviceDefault then
+        begin
+         {Output Logging}
+         LoggingOutput(LoggingTextIOBuffer);
+        end
+       else
+        begin       
+         {Output Logging}
+         LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
+        end; 
        
        {Clear Buffer}
        SetLength(LoggingTextIOBuffer,0);
@@ -1228,10 +1246,23 @@ begin
  
  if (ABuffer <> nil) and (ACount > 0) then
   begin
+   {Allocate Buffer}
    SetLength(WorkBuffer,ACount);
+   
+   {Copy Buffer}
    StrLCopy(PChar(WorkBuffer),ABuffer,ACount);
    
-   if LoggingDeviceOutput(LoggingTextIOOutputDevice,WorkBuffer) <> ERROR_SUCCESS then Exit;
+   {Check Default}
+   if LoggingTextIOOutputDevice = LoggingDeviceDefault then
+    begin
+     {Output Logging}
+     LoggingOutput(WorkBuffer);
+    end
+   else
+    begin   
+     {Output Logging}
+     if LoggingDeviceOutput(LoggingTextIOOutputDevice,WorkBuffer) <> ERROR_SUCCESS then Exit;
+    end; 
   end;
 
  Result:=ACount;  

@@ -582,7 +582,7 @@ const
  WSA_IF_TYPE_IEEE1394           = 144; {An IEEE 1394 (Firewire) high performance serial bus network interface}
  WSA_IF_TYPE_IEEE80216_WMAN     = 237; {A mobile broadband interface for WiMax devices}
  WSA_IF_TYPE_WWANPP             = 243; {A mobile broadband interface for GSM-based devices}
- WSA_IF_TYPE_WWANPP2            = 244; {An mobile broadband interface for CDMA-based devices}
+ WSA_IF_TYPE_WWANPP2            = 244; {A mobile broadband interface for CDMA-based devices}
 
 const 
  WSA_IF_ADMIN_STATUS_UP         = 1;

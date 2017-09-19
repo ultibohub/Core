@@ -1420,11 +1420,11 @@ begin
   AddContent(AResponse,'   <meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">');
   AddContent(AResponse,'   <title>' + Title + '</title>');
   AddContent(AResponse,' </head>');
-  AddContent(AResponse,' <body>');
+  AddContent(AResponse,' <body link=#4dad00 vlink=#4dad00 alink=#00cc00>');
   AddContent(AResponse,'   <table style=" text-align: left; width: 75%; height: 100%; margin-left: auto; margin-right: auto; font-family: ' + WEBSTATUS_FONT_NAME + ';" border="0" cellpadding="2" cellspacing="2">');
   AddContent(AResponse,'     <tbody>');
   AddContent(AResponse,'       <tr>');
-  AddContent(AResponse,'         <td colspan="' + IntToStr(AColumns + 1) + '" rowspan="1" style=" text-align: center; vertical-align: middle; background-color: rgb(255, 153, 0); height: 65px;"><strong>' + Title + '</strong><br>');
+  AddContent(AResponse,'         <td colspan="' + IntToStr(AColumns + 1) + '" rowspan="1" style=" text-align: center; vertical-align: middle; color: rgb(231, 231, 231); background-color: rgb(0, 187, 0); height: 65px;"><strong>' + Title + '</strong><br>');
   AddContent(AResponse,'         </td>');
   AddContent(AResponse,'       </tr>');
   AddContent(AResponse,'       <tr>');
@@ -1436,11 +1436,11 @@ begin
   AddContent(AResponse,'               <tr>');
   if ASub = nil then
    begin
-    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(130, 130, 130)"><span style="color: rgb(255, 255, 255);"><a href="' + Name + '">' + GetCaption + '</a></span><br>');
+    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><span style="color: rgb(255, 255, 255);"><a href="' + Name + '">' + GetCaption + '</a></span><br>');
    end
   else
    begin
-    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><a href="' + Name + '">' + GetCaption + '</a><br>');
+    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><a href="' + Name + '">' + GetCaption + '</a><br>');
    end;   
   AddContent(AResponse,'                 </td>');
   AddContent(AResponse,'               </tr>');
@@ -1454,11 +1454,11 @@ begin
       AddContent(AResponse,'               <tr>');
       if Sub = ASub then
        begin
-        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(130, 130, 130)"><span style="color: rgb(255, 255, 255);"><a href="' + Sub.Name + '">' + Sub.Caption + '</a></span><br>');
+        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><span style="color: rgb(255, 255, 255);"><a href="' + Sub.Name + '">' + Sub.Caption + '</a></span><br>');
        end
       else
        begin      
-        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><a href="' + Sub.Name + '">' + Sub.Caption + '</a><br>');
+        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><a href="' + Sub.Name + '">' + Sub.Caption + '</a><br>');
        end; 
       AddContent(AResponse,'                 </td>');
       AddContent(AResponse,'               </tr>');
@@ -2056,7 +2056,7 @@ begin
 
  {Add Firmware Revision}
  AddBlank(AResponse);
- AddItem(AResponse,'Firmware Revision:','0x' + IntToHex(FirmwareGetRevision,8));
+ AddItem(AResponse,'Firmware Revision:','0x' + IntToHex(FirmwareGetRevision,8) + ' (' + IntToStr(FirmwareGetRevision) + ')');
  
  {Add Machine Type}
  AddBlank(AResponse);
@@ -3235,6 +3235,9 @@ begin
 
  {Add Condition Count}
  AddItemEx(AResponse,'Condition Count:',IntToStr(ConditionGetCount),2);
+
+ {Add Completion Count}
+ AddItemEx(AResponse,'Completion Count:',IntToStr(CompletionGetCount),2);
  
  {Add List Count}
  AddItemEx(AResponse,'Thread List Count:',IntToStr(ListGetCount),2);
@@ -5919,7 +5922,7 @@ begin
  AddBold4Column(AResponse,'Virtual','Physical','Size','Flags');
  AddBlankEx(AResponse,4);
  {Get First} 
- NextEntry:=PageTableGetEntry(Address);
+ PageTableGetEntry(Address,NextEntry);
  while NextEntry.Size > 0 do
   begin
    if (NextEntry.Size <> CurrentEntry.Size) or (NextEntry.Flags <> CurrentEntry.Flags) then
@@ -5980,7 +5983,7 @@ begin
    Inc(Address,NextEntry.Size);
    
    {Get Next}
-   NextEntry:=PageTableGetEntry(Address);
+   PageTableGetEntry(Address,NextEntry);
   end;
  
  {Add Footer (4 column)}
@@ -6378,6 +6381,7 @@ begin
  AddItemEx(AResponse,'SynchronizerDeadlockCounter:',IntToStr(SynchronizerDeadlockCounter),2);
  AddItemEx(AResponse,'SynchronizerRecursionCounter:',IntToStr(SynchronizerRecursionCounter),2);
  AddItemEx(AResponse,'ConditionDeadlockCounter:',IntToStr(ConditionDeadlockCounter),2);
+ AddItemEx(AResponse,'CompletionDeadlockCounter:',IntToStr(CompletionDeadlockCounter),2);
  AddItemEx(AResponse,'MessageslotDeadlockCounter:',IntToStr(MessageslotDeadlockCounter),2);
  AddItemEx(AResponse,'MailslotDeadlockCounter:',IntToStr(MailslotDeadlockCounter),2);
  AddItemEx(AResponse,'BufferDeadlockCounter:',IntToStr(BufferDeadlockCounter),2);

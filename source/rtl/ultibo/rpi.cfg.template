@@ -8,3 +8,4 @@
 -Fu%INSTALLDIRECTORY%/units/armv6-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv6-ultibo/packages
 -Fl%INSTALLDIRECTORY%/units/armv6-ultibo/lib
+-Fl%INSTALLDIRECTORY%/units/armv6-ultibo/lib/vc4

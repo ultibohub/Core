@@ -17,6 +17,7 @@ begin
     P.Directory:=ADirectory;
 {$endif ALLPACKAGES}
     P.Version:='3.1.1';
+    P.Dependencies.Add('pasjpeg'); //Add pasjpeg for JPEGLib units
     P.Dependencies.Add('fcl-image'); //Add fcl-image for BMPcomn unit
     
     P.Author := 'Garry Wood';
@@ -35,6 +36,11 @@ begin
     T:=P.Targets.AddUnit('ubitmap.pas');
     T:=P.Targets.AddUnit('uscreenshot.pas');
 
+    T:=P.Targets.AddUnit('dispmanx.pas');
+    T:=P.Targets.AddUnit('egl.pas');
+    T:=P.Targets.AddUnit('openvg.pas');
+    T:=P.Targets.AddUnit('vgshapes.pas');
+    
 {$ifndef ALLPACKAGES}
     Run;
     end;

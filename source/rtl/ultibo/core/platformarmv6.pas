@@ -603,7 +603,7 @@ function ARMv6InterlockedExchange(var Target:LongInt;Source:LongInt):LongInt;
 function ARMv6InterlockedAddExchange(var Target:LongInt;Source:LongInt):LongInt; 
 function ARMv6InterlockedCompareExchange(var Target:LongInt;Source,Compare:LongInt):LongInt;
 
-function ARMv6PageTableGetEntry(Address:PtrUInt):TPageTableEntry;
+procedure ARMv6PageTableGetEntry(Address:PtrUInt;var Entry:TPageTableEntry);
 function ARMv6PageTableSetEntry(const Entry:TPageTableEntry):LongWord; 
 
 function ARMv6VectorTableGetEntry(Number:LongWord):PtrUInt;
@@ -2237,13 +2237,13 @@ end;
 
 {==============================================================================}
 
-function ARMv6PageTableGetEntry(Address:PtrUInt):TPageTableEntry;
+procedure ARMv6PageTableGetEntry(Address:PtrUInt;var Entry:TPageTableEntry);
 {Get and Decode the entry in the Page Table that corresponds to the supplied virtual address}
 var
  TableEntry:LongWord;
 begin
  {}
- FillChar(Result,SizeOf(TPageTableEntry),0);
+ FillChar(Entry,SizeOf(TPageTableEntry),0);
  
  {Check Address}
  {Zero may be valid}
@@ -2257,67 +2257,67 @@ begin
    if TableEntry <> 0 then
     begin
      {Get Virtual Address}
-     Result.VirtualAddress:=(Address and ARMV6_L2D_SMALL_BASE_MASK);
+     Entry.VirtualAddress:=(Address and ARMV6_L2D_SMALL_BASE_MASK);
 
      {Get Physical Address and Size}
-     Result.PhysicalAddress:=(TableEntry and ARMV6_L2D_SMALL_BASE_MASK);
-     Result.Size:=SIZE_4K;
+     Entry.PhysicalAddress:=(TableEntry and ARMV6_L2D_SMALL_BASE_MASK);
+     Entry.Size:=SIZE_4K;
     
      {Get Flags} {ARMv6 uses the standard L2D values (Not Cacheable or TEX Remap values)}
-     Result.Flags:=PAGE_TABLE_FLAG_NONE;
+     Entry.Flags:=PAGE_TABLE_FLAG_NONE;
     
      {Check Normal/Cacheable/WriteBack/WriteThrough}     
      if (TableEntry and (ARMV6_L2D_SMALL_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_SMALL_CACHE_NORMAL_NONCACHED then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL;
       end
      else if (TableEntry and (ARMV6_L2D_SMALL_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_SMALL_CACHE_NORMAL_WRITE_BACK then 
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK;
       end
      else if (TableEntry and (ARMV6_L2D_SMALL_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_SMALL_CACHE_NORMAL_WRITE_THROUGH then 
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH;
       end;
      
      {Check Device}
      if (TableEntry and (ARMV6_L2D_SMALL_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_SMALL_CACHE_SHARED_DEVICE then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_SHARED;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_SHARED;
       end
      else if (TableEntry and (ARMV6_L2D_SMALL_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_SMALL_CACHE_NONSHARED_DEVICE then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_DEVICE;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_DEVICE;
       end;
      
      {Check Ordered}
      if (TableEntry and (ARMV6_L2D_SMALL_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_SMALL_CACHE_STRONGLY_ORDERED then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_SHARED;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_SHARED;
       end;
      
      {Check Shared}
      if (TableEntry and ARMV6_L2D_FLAG_SHARED) = ARMV6_L2D_FLAG_SHARED then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_SHARED;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_SHARED;
       end;
      
      {Check ReadOnly}
      if (TableEntry and (ARMV6_L2D_AP_MASK or ARMV6_L2D_FLAG_APX)) = ARMV6_L2D_ACCESS_READONLY then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_READONLY;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READONLY;
       end;
      
      {Check ReadWrite}
      if (TableEntry and (ARMV6_L2D_AP_MASK or ARMV6_L2D_FLAG_APX)) = ARMV6_L2D_ACCESS_READWRITE then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_READWRITE;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READWRITE;
       end;
      
      {Check Executable}
      if (TableEntry and ARMV6_L2D_FLAG_SMALL_XN) <> ARMV6_L2D_FLAG_SMALL_XN then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_EXECUTABLE;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_EXECUTABLE;
       end;
     end
    else
@@ -2327,67 +2327,67 @@ begin
      if TableEntry <> 0 then
       begin
        {Get Virtual Address}
-       Result.VirtualAddress:=(Address and ARMV6_L2D_LARGE_BASE_MASK);
+       Entry.VirtualAddress:=(Address and ARMV6_L2D_LARGE_BASE_MASK);
        
        {Get Physical Address and Size}
-       Result.PhysicalAddress:=(TableEntry and ARMV6_L2D_LARGE_BASE_MASK);
-       Result.Size:=SIZE_64K;
+       Entry.PhysicalAddress:=(TableEntry and ARMV6_L2D_LARGE_BASE_MASK);
+       Entry.Size:=SIZE_64K;
        
        {Get Flags} {ARMv6 uses the standard L2D values (Not Cacheable or TEX Remap values)}
-       Result.Flags:=PAGE_TABLE_FLAG_NONE;
+       Entry.Flags:=PAGE_TABLE_FLAG_NONE;
        
        {Check Normal/Cacheable/WriteBack/WriteThrough}     
        if (TableEntry and (ARMV6_L2D_LARGE_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_LARGE_CACHE_NORMAL_NONCACHED then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL;
         end
        else if (TableEntry and (ARMV6_L2D_LARGE_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_LARGE_CACHE_NORMAL_WRITE_BACK then 
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK;
         end
        else if (TableEntry and (ARMV6_L2D_LARGE_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_LARGE_CACHE_NORMAL_WRITE_THROUGH then 
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH;
         end;
        
        {Check Device}
        if (TableEntry and (ARMV6_L2D_LARGE_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_LARGE_CACHE_SHARED_DEVICE then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_SHARED;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_SHARED;
         end
        else if (TableEntry and (ARMV6_L2D_LARGE_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_LARGE_CACHE_NONSHARED_DEVICE then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_DEVICE;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_DEVICE;
         end;
        
        {Check Ordered}
        if (TableEntry and (ARMV6_L2D_LARGE_TEX_MASK or ARMV6_L2D_FLAG_C or ARMV6_L2D_FLAG_B)) = ARMV6_L2D_LARGE_CACHE_STRONGLY_ORDERED then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_SHARED;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_SHARED;
         end;
        
        {Check Shared}
        if (TableEntry and ARMV6_L2D_FLAG_SHARED) = ARMV6_L2D_FLAG_SHARED then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_SHARED;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_SHARED;
         end;
        
        {Check ReadOnly}
        if (TableEntry and (ARMV6_L2D_AP_MASK or ARMV6_L2D_FLAG_APX)) = ARMV6_L2D_ACCESS_READONLY then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_READONLY;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READONLY;
         end;
        
        {Check ReadWrite}
        if (TableEntry and (ARMV6_L2D_AP_MASK or ARMV6_L2D_FLAG_APX)) = ARMV6_L2D_ACCESS_READWRITE then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_READWRITE;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READWRITE;
         end;
        
        {Check Executable}
        if (TableEntry and ARMV6_L2D_FLAG_LARGE_XN) <> ARMV6_L2D_FLAG_LARGE_XN then
         begin
-         Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_EXECUTABLE;
+         Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_EXECUTABLE;
         end;
       end;
     end;  
@@ -2402,77 +2402,77 @@ begin
      if (TableEntry and ARMV6_L1D_FLAG_SUPERSECTION) = 0 then
       begin
        {Get Virtual Address}
-       Result.VirtualAddress:=(Address and ARMV6_L1D_SECTION_BASE_MASK);
+       Entry.VirtualAddress:=(Address and ARMV6_L1D_SECTION_BASE_MASK);
       
        {Get Physical Address and Size}
-       Result.PhysicalAddress:=(TableEntry and ARMV6_L1D_SECTION_BASE_MASK);
-       Result.Size:=SIZE_1M;
+       Entry.PhysicalAddress:=(TableEntry and ARMV6_L1D_SECTION_BASE_MASK);
+       Entry.Size:=SIZE_1M;
       end
      else
       begin
        {Get Virtual Address}
-       Result.VirtualAddress:=(Address and ARMV6_L1D_SUPERSECTION_BASE_MASK);
+       Entry.VirtualAddress:=(Address and ARMV6_L1D_SUPERSECTION_BASE_MASK);
 
        {Get Physical Address and Size}
-       Result.PhysicalAddress:=(TableEntry and ARMV6_L1D_SUPERSECTION_BASE_MASK);
-       Result.Size:=SIZE_16M;
+       Entry.PhysicalAddress:=(TableEntry and ARMV6_L1D_SUPERSECTION_BASE_MASK);
+       Entry.Size:=SIZE_16M;
       end;      
      
      {Get Flags} {ARMv6 uses the standard L1D values (Not Cacheable or TEX Remap values)}
-     Result.Flags:=PAGE_TABLE_FLAG_NONE;
+     Entry.Flags:=PAGE_TABLE_FLAG_NONE;
      
      {Check Normal/Cacheable/WriteBack/WriteThrough}     
      if (TableEntry and (ARMV6_L1D_TEX_MASK or ARMV6_L1D_FLAG_C or ARMV6_L1D_FLAG_B)) = ARMV6_L1D_CACHE_NORMAL_NONCACHED then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL;
       end
      else if (TableEntry and (ARMV6_L1D_TEX_MASK or ARMV6_L1D_FLAG_C or ARMV6_L1D_FLAG_B)) = ARMV6_L1D_CACHE_NORMAL_WRITE_BACK then 
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK;
       end
      else if (TableEntry and (ARMV6_L1D_TEX_MASK or ARMV6_L1D_FLAG_C or ARMV6_L1D_FLAG_B)) = ARMV6_L1D_CACHE_NORMAL_WRITE_THROUGH then 
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_NORMAL or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITETHROUGH;
       end;
      
      {Check Device}
      if (TableEntry and (ARMV6_L1D_TEX_MASK or ARMV6_L1D_FLAG_C or ARMV6_L1D_FLAG_B)) = ARMV6_L1D_CACHE_SHARED_DEVICE then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_SHARED;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_DEVICE or PAGE_TABLE_FLAG_SHARED;
       end
      else if (TableEntry and (ARMV6_L1D_TEX_MASK or ARMV6_L1D_FLAG_C or ARMV6_L1D_FLAG_B)) = ARMV6_L1D_CACHE_NONSHARED_DEVICE then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_DEVICE;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_DEVICE;
       end;
      
      {Check Ordered}
      if (TableEntry and (ARMV6_L1D_TEX_MASK or ARMV6_L1D_FLAG_C or ARMV6_L1D_FLAG_B)) = ARMV6_L1D_CACHE_STRONGLY_ORDERED then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_SHARED;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_ORDERED or PAGE_TABLE_FLAG_SHARED;
       end;
      
      {Check Shared}
      if (TableEntry and ARMV6_L1D_FLAG_SHARED) = ARMV6_L1D_FLAG_SHARED then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_SHARED;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_SHARED;
       end;
      
      {Check ReadOnly}
      if (TableEntry and (ARMV6_L1D_AP_MASK or ARMV6_L1D_FLAG_APX)) = ARMV6_L1D_ACCESS_READONLY then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_READONLY;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READONLY;
       end;
      
      {Check ReadWrite}
      if (TableEntry and (ARMV6_L1D_AP_MASK or ARMV6_L1D_FLAG_APX)) = ARMV6_L1D_ACCESS_READWRITE then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_READWRITE;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READWRITE;
       end;
      
      {Check Executable}
      if (TableEntry and ARMV6_L1D_FLAG_XN) <> ARMV6_L1D_FLAG_XN then
       begin
-       Result.Flags:=Result.Flags or PAGE_TABLE_FLAG_EXECUTABLE;
+       Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_EXECUTABLE;
       end;
     end;
   end; 
@@ -2781,7 +2781,7 @@ begin
  Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
  
  {Get Page Table Entry}
- Entry:=ARMv6PageTableGetEntry(Offset);
+ ARMv6PageTableGetEntry(Offset,Entry);
  
  {Check for Read Only or Read Write}
  if (Entry.Flags and (PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE)) <> 0 then
@@ -2816,7 +2816,7 @@ begin
   Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
  
   {Get Page Table Entry}
-  Entry:=ARMv6PageTableGetEntry(Offset);
+  ARMv6PageTableGetEntry(Offset,Entry);
   
   {Check for Read Only}
   if (Entry.Flags and PAGE_TABLE_FLAG_READONLY) <> 0 then

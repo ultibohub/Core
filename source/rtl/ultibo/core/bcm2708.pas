@@ -9958,7 +9958,7 @@ begin
     Result:=FramebufferSetOffset(X,Y);
     if Result <> ERROR_SUCCESS then Exit;
     
-    {Udpate Offset}
+    {Update Offset}
     if not(Pan) then
      begin
       Framebuffer.OffsetX:=X;

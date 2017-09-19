@@ -1303,7 +1303,7 @@ begin
        Break;
       end;
       
-     {Udpate Offset}
+     {Update Offset}
      Inc(Offset);
     end;
    

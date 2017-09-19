@@ -187,18 +187,25 @@ const
  USBKEYBOARD_KEYBOARD_DESCRIPTION = 'USB HID Keyboard'; {Description of USB keyboard device}
  
  {HID Interface Subclass types (See USB HID v1.11 specification)}
+ USB_HID_SUBCLASS_NONE           = 0;     {Section 4.2}
  USB_HID_SUBCLASS_BOOT           = 1;     {Section 4.2}
  
  {HID Interface Protocol types (See USB HID v1.11 specification)}
+ USB_HID_BOOT_PROTOCOL_NONE      = 0;     {Section 4.3}
  USB_HID_BOOT_PROTOCOL_KEYBOARD  = 1;     {Section 4.3}
  USB_HID_BOOT_PROTOCOL_MOUSE     = 2;     {Section 4.3}
 
+ {HID Class Descriptor Types (See USB HID v1.11 specification)}
+ USB_HID_DESCRIPTOR_TYPE_HID                  = $21;  {Section 7.1}
+ USB_HID_DESCRIPTOR_TYPE_REPORT               = $22;  {Section 7.1}
+ USB_HID_DESCRIPTOR_TYPE_PHYSICAL_DESCRIPTOR  = $23;  {Section 7.1}
+ 
  {HID Request types}
- USB_HID_REQUEST_GET_REPORT      = $01;
- USB_HID_REQUEST_GET_IDLE        = $02;
+ USB_HID_REQUEST_GET_REPORT      = $01;   {Section 7.2}
+ USB_HID_REQUEST_GET_IDLE        = $02;   {Section 7.2}
  USB_HID_REQUEST_GET_PROTOCOL    = $03;   {Section 7.2}
- USB_HID_REQUEST_SET_REPORT      = $09;
- USB_HID_REQUEST_SET_IDLE        = $0A;
+ USB_HID_REQUEST_SET_REPORT      = $09;   {Section 7.2}
+ USB_HID_REQUEST_SET_IDLE        = $0A;   {Section 7.2}
  USB_HID_REQUEST_SET_PROTOCOL    = $0B;   {Section 7.2}
  
  {HID Protocol types}
@@ -233,7 +240,7 @@ const
  USB_HID_BOOT_COMPOSE_LED     = (1 shl 3);
  USB_HID_BOOT_KANA_LED        = (1 shl 4);
  
- USB_HIB_BOOT_LEDMASK = USB_HID_BOOT_NUMLOCK_LED or USB_HID_BOOT_CAPSLOCK_LED or USB_HID_BOOT_SCROLLLOCK_LED or USB_HID_BOOT_COMPOSE_LED or USB_HID_BOOT_KANA_LED;
+ USB_HID_BOOT_LEDMASK = USB_HID_BOOT_NUMLOCK_LED or USB_HID_BOOT_CAPSLOCK_LED or USB_HID_BOOT_SCROLLLOCK_LED or USB_HID_BOOT_COMPOSE_LED or USB_HID_BOOT_KANA_LED;
  
  {HID Boot Protocol Output data}
  USB_HID_BOOT_OUTPUT_SIZE  = 1;            {Appendix B of HID Device Class Definition 1.11}
@@ -765,27 +772,30 @@ begin
   end;  
  
  {Create USB Keyboard Driver}
- USBKeyboardDriver:=USBDriverCreate;
- if USBKeyboardDriver <> nil then
+ if USB_KEYBOARD_REGISTER_DRIVER then
   begin
-   {Update USB Keyboard Driver}
-   {Driver}
-   USBKeyboardDriver.Driver.DriverName:=USBKEYBOARD_DRIVER_NAME; 
-   {USB}
-   USBKeyboardDriver.DriverBind:=USBKeyboardDriverBind;
-   USBKeyboardDriver.DriverUnbind:=USBKeyboardDriverUnbind;
-   
-   {Register USB Keyboard Driver}
-   Status:=USBDriverRegister(USBKeyboardDriver); 
-   if Status <> USB_STATUS_SUCCESS then
+   USBKeyboardDriver:=USBDriverCreate;
+   if USBKeyboardDriver <> nil then
     begin
-     if USB_LOG_ENABLED then USBLogError(nil,'Keyboard: Failed to register USB keyboard driver: ' + USBStatusToString(Status));
+     {Update USB Keyboard Driver}
+     {Driver}
+     USBKeyboardDriver.Driver.DriverName:=USBKEYBOARD_DRIVER_NAME; 
+     {USB}
+     USBKeyboardDriver.DriverBind:=USBKeyboardDriverBind;
+     USBKeyboardDriver.DriverUnbind:=USBKeyboardDriverUnbind;
+     
+     {Register USB Keyboard Driver}
+     Status:=USBDriverRegister(USBKeyboardDriver); 
+     if Status <> USB_STATUS_SUCCESS then
+      begin
+       if USB_LOG_ENABLED then USBLogError(nil,'Keyboard: Failed to register USB keyboard driver: ' + USBStatusToString(Status));
+      end;
+    end
+   else
+    begin
+     if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'Failed to create USB keyboard driver');
     end;
-  end
- else
-  begin
-   if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'Failed to create USB keyboard driver');
-  end;
+  end;  
   
  {Setup Platform Console Handlers}
  ConsoleGetKeyHandler:=SysConsoleGetKey;

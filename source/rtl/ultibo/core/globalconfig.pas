@@ -67,6 +67,24 @@ var
  _bss_start: record end; external name '_bss_start';
  _bss_end: record end; external name '_bss_end';
 
+var
+ {Library Initialization and Finalization sections}
+ {Note: To access these from Pascal code use the address of the variable (eg @__ctors_start). Empty record definition prevents access to contents}
+ __preinit_array_start: record end; external name '__preinit_array_start';
+ __preinit_array_end: record end; external name '__preinit_array_end';
+ 
+ __init_array_start: record end; external name '__init_array_start';
+ __init_array_end: record end; external name '__init_array_end';
+ 
+ __fini_array_start: record end; external name '__fini_array_start';
+ __fini_array_end: record end; external name '__fini_array_end';
+ 
+ __ctors_start: record end; external name '__ctors_start';
+ __ctors_end: record end; external name '__ctors_end';
+
+ __dtors_start: record end; external name '__dtors_start';
+ __dtors_end: record end; external name '__dtors_end';
+ 
 {==============================================================================}
 var
  {RTL Initial Heap allocation}
@@ -87,11 +105,11 @@ var
 {Memory and Peripheral mapping configuration}
 var
  {Physical to IO Address Mapping}
- IO_BASE:LongWord;                 {The base for conversion from a Physical Address to an IO Address and back (Where Applicable)}
- IO_ALIAS:LongWord;                {The alias for conversion from a Physical Address to an IO Address and back (Where Applicable)}
+ IO_BASE:PtrUInt;                  {The base for conversion from a Physical Address to an IO Address and back (Where Applicable)}
+ IO_ALIAS:PtrUInt;                 {The alias for conversion from a Physical Address to an IO Address and back (Where Applicable)}
  
  {Physical to Bus Address Mapping}
- BUS_ALIAS:LongWord;               {The mask for conversion from a Physical Address to a Bus Address and back (Where Applicable)}
+ BUS_ALIAS:PtrUInt;                {The mask for conversion from a Physical Address to a Bus Address and back (Where Applicable)}
 
 {==============================================================================}
 var
@@ -290,6 +308,9 @@ var
 
  {Condition defaults}
  CONDITION_SHARED_MEMORY:LongBool;                   {Condition variables are allocated from Shared memory regions if True}
+
+ {Completion defaults}
+ COMPLETION_SHARED_MEMORY:LongBool;                  {Completion variables are allocated from Shared memory regions if True}
  
  {Critical Section defaults}
  CRITICAL_SECTION_SHARED_MEMORY:LongBool;            {Critical Sections are allocated from Shared memory regions if True}
@@ -677,17 +698,19 @@ var
  
  {USB Hub}
  USB_HUB_MESSAGESLOT_MAXIMUM:LongWord = SIZE_512; {Maximum number of messages for the USB hub messageslot}
+ USB_HUB_REGISTER_DRIVER:LongBool = True;         {If True then register the USB HUB driver during boot (Only if USB unit included)(Note: USB cannot function correctly without a hub driver)}
  
  {USB Keyboard}
- USB_KEYBOARD_POLLING_INTERVAL:LongWord = 10; {Override the default polling interval for a USB keyboard (Milliseconds)}
+ USB_KEYBOARD_POLLING_INTERVAL:LongWord = 10;  {Override the default polling interval for a USB keyboard (Milliseconds)}
+ USB_KEYBOARD_REGISTER_DRIVER:LongBool = True; {If True then register the USB Keyboard driver during boot (Only if Keyboard unit included)}
  
  {USB Mouse}
- USB_MOUSE_POLLING_INTERVAL:LongWord = 10;    {Override the default polling interval for a USB mouse (Milliseconds)}
+ USB_MOUSE_POLLING_INTERVAL:LongWord = 10;  {Override the default polling interval for a USB mouse (Milliseconds)}
+ USB_MOUSE_REGISTER_DRIVER:LongBool = True; {If True then register the USB Mouse driver during boot (Only if Mouse unit included)}
  
  {USB Storage}
- USB_STORAGE_FORCE_REMOVABLE:LongBool;   {If True then all USB storage devices will be assumed to be removable}
-
- //To Do //More
+ USB_STORAGE_FORCE_REMOVABLE:LongBool;        {If True then all USB storage devices will be assumed to be removable}
+ USB_STORAGE_REGISTER_DRIVER:LongBool = True; {If True then register the USB Storage driver during boot (Only if Storage unit included)}
  
 {==============================================================================}
 {Specific Peripheral configuration (Set by PeripheralInit)}
@@ -1023,9 +1046,9 @@ var
 {==============================================================================}
 {Shell configuration}
 var
- CONSOLE_SHELL_ENABLED:LongBool = True;         {If True then automatically create a console shell window when a new console is registers (Only if ConsoleShell unit included)}
+ CONSOLE_SHELL_ENABLED:LongBool = True;         {If True then automatically create a console shell window when a new console is registered (Only if ConsoleShell unit included)}
  CONSOLE_SHELL_POSITION:LongWord = CONSOLE_POSITION_RIGHT; {The default Console Window position for the console shell}
- CONSOLE_SHELL_DEVICE:String;                   {The console device Name (or Desription) to create the shell window on, if blank create on default device unless forced (Only if ConsoleShell unit included)}
+ CONSOLE_SHELL_DEVICE:String;                   {The console device Name (or Description) to create the shell window on, if blank create on default device unless forced (Only if ConsoleShell unit included)}
  
 {==============================================================================}
 {Specific Service configuration}

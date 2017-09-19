@@ -557,7 +557,7 @@ begin
             {Update Count}
             Inc(Count);
             
-            {Upate Size and Offset}
+            {Update Size and Offset}
             Dec(Size,SizeOf(TTouchData));
             Inc(Offset,SizeOf(TTouchData));
            finally
@@ -656,7 +656,7 @@ begin
           {Update Count}
           Dec(Count);
           
-          {Upate Size and Offset}
+          {Update Size and Offset}
           Dec(Size,SizeOf(TTouchData));
           Inc(Offset,SizeOf(TTouchData));
           

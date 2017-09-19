@@ -150,12 +150,19 @@ const
  USBMOUSE_MOUSE_DESCRIPTION = 'USB HID Mouse'; {Description of USB mouse device}
  
  {HID Interface Subclass types (See USB HID v1.11 specification)}
+ USB_HID_SUBCLASS_NONE           = 0;     {Section 4.2}
  USB_HID_SUBCLASS_BOOT           = 1;     {Section 4.2}
  
  {HID Interface Protocol types (See USB HID v1.11 specification)}
+ USB_HID_BOOT_PROTOCOL_NONE      = 0;     {Section 4.3}
  USB_HID_BOOT_PROTOCOL_KEYBOARD  = 1;     {Section 4.3}
  USB_HID_BOOT_PROTOCOL_MOUSE     = 2;     {Section 4.3}
 
+ {HID Class Descriptor Types (See USB HID v1.11 specification)}
+ USB_HID_DESCRIPTOR_TYPE_HID                  = $21;  {Section 7.1}
+ USB_HID_DESCRIPTOR_TYPE_REPORT               = $22;  {Section 7.1}
+ USB_HID_DESCRIPTOR_TYPE_PHYSICAL_DESCRIPTOR  = $23;  {Section 7.1}
+ 
  {HID Request types}
  USB_HID_REQUEST_GET_REPORT      = $01;
  USB_HID_REQUEST_GET_IDLE        = $02;
@@ -411,27 +418,30 @@ begin
   end;  
  
  {Create USB Mouse Driver}
- USBMouseDriver:=USBDriverCreate;
- if USBMouseDriver <> nil then
+ if USB_MOUSE_REGISTER_DRIVER then
   begin
-   {Update USB Mouse Driver}
-   {Driver}
-   USBMouseDriver.Driver.DriverName:=USBMOUSE_DRIVER_NAME; 
-   {USB}
-   USBMouseDriver.DriverBind:=USBMouseDriverBind;
-   USBMouseDriver.DriverUnbind:=USBMouseDriverUnbind;
-   
-   {Register USB Mouse Driver}
-   Status:=USBDriverRegister(USBMouseDriver); 
-   if Status <> USB_STATUS_SUCCESS then
+   USBMouseDriver:=USBDriverCreate;
+   if USBMouseDriver <> nil then
     begin
-     if USB_LOG_ENABLED then USBLogError(nil,'Mouse: Failed to register USB mouse driver: ' + USBStatusToString(Status));
+     {Update USB Mouse Driver}
+     {Driver}
+     USBMouseDriver.Driver.DriverName:=USBMOUSE_DRIVER_NAME; 
+     {USB}
+     USBMouseDriver.DriverBind:=USBMouseDriverBind;
+     USBMouseDriver.DriverUnbind:=USBMouseDriverUnbind;
+     
+     {Register USB Mouse Driver}
+     Status:=USBDriverRegister(USBMouseDriver); 
+     if Status <> USB_STATUS_SUCCESS then
+      begin
+       if USB_LOG_ENABLED then USBLogError(nil,'Mouse: Failed to register USB mouse driver: ' + USBStatusToString(Status));
+      end;
+    end
+   else
+    begin
+     if MOUSE_LOG_ENABLED then MouseLogError(nil,'Failed to create USB mouse driver');
     end;
-  end
- else
-  begin
-   if MOUSE_LOG_ENABLED then MouseLogError(nil,'Failed to create USB mouse driver');
-  end;
+  end;  
  
  {Setup Platform Console Handlers}
  ConsoleHideMouseHandler:=SysConsoleHideMouse;
@@ -560,7 +570,7 @@ begin
           {Update Count}
           Inc(Count);
             
-          {Upate Size and Offset}
+          {Update Size and Offset}
           Dec(Size,SizeOf(TMouseData));
           Inc(Offset,SizeOf(TMouseData));
          finally
@@ -637,7 +647,7 @@ begin
         {Update Count}
         Dec(Count);
         
-        {Upate Size and Offset}
+        {Update Size and Offset}
         Dec(Size,SizeOf(TMouseData));
         Inc(Offset,SizeOf(TMouseData));
         
@@ -782,7 +792,7 @@ begin
           {Update Count}
           Inc(Count);
           
-          {Upate Size and Offset}
+          {Update Size and Offset}
           Dec(Size,SizeOf(TMouseData));
           Inc(Offset,SizeOf(TMouseData));
          finally
@@ -1471,7 +1481,7 @@ begin
         {Update Count}
         Inc(Count);
           
-        {Upate Size and Offset}
+        {Update Size and Offset}
         Dec(Size,SizeOf(TMouseData));
         Inc(Offset,SizeOf(TMouseData));
        finally

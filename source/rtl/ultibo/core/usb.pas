@@ -108,7 +108,7 @@ behaviour of the device but at the generic level each device will have:
  - One or more endpoints available. All devices must have a control endpoint
    and most devices will have one or more bulk, interrupt or isochronous endpoints
    as well. The USB core will only communicate with the control endpoint to perform
-   generic operations like reading the desriptors and assigning a device addresss.
+   generic operations like reading the desriptors and assigning a device address.
    
    Drivers are expected to understand which endpoints they need to communicate with
    to provide the device specific functionality.
@@ -1773,28 +1773,31 @@ begin
   end;
 
  {Create USB Hub Driver}
- USBHubDriver:=USBDriverCreate;
- if USBHubDriver <> nil then
+ if USB_HUB_REGISTER_DRIVER then
   begin
-   {Update USB Hub Driver}
-   {Driver}
-   USBHubDriver.Driver.DriverName:=USBHUB_DRIVER_NAME; 
-   {USB}
-   USBHubDriver.DriverBind:=USBHubDriverBind;
-   USBHubDriver.DriverUnbind:=USBHubDriverUnbind;
-   
-   {Register USB Hub Driver}
-   Status:=USBDriverRegister(USBHubDriver);
-   if Status <> USB_STATUS_SUCCESS then
+   USBHubDriver:=USBDriverCreate;
+   if USBHubDriver <> nil then
     begin
-     if USB_LOG_ENABLED then USBLogError(nil,'Failed to register USB hub driver: ' + USBStatusToString(Status));
+     {Update USB Hub Driver}
+     {Driver}
+     USBHubDriver.Driver.DriverName:=USBHUB_DRIVER_NAME; 
+     {USB}
+     USBHubDriver.DriverBind:=USBHubDriverBind;
+     USBHubDriver.DriverUnbind:=USBHubDriverUnbind;
+     
+     {Register USB Hub Driver}
+     Status:=USBDriverRegister(USBHubDriver);
+     if Status <> USB_STATUS_SUCCESS then
+      begin
+       if USB_LOG_ENABLED then USBLogError(nil,'Failed to register USB hub driver: ' + USBStatusToString(Status));
+      end;
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(nil,'Failed to create USB hub driver');
     end;
-  end
- else
-  begin
-   if USB_LOG_ENABLED then USBLogError(nil,'Failed to create USB hub driver');
   end;
- 
+  
  USBInitialized:=True;
 end;
 
@@ -3397,25 +3400,29 @@ begin
  if MutexLock(Device.Lock) = ERROR_SUCCESS then
   begin
    try 
-    {Find Endpoint}
-    for Count:=0 to Length(Interrface.Endpoints) - 1 do
+    {Check Endpoint Count}
+    if Length(Interrface.Endpoints) > 0 then
      begin
-      {Check Endpoint}
-      Endpoint:=Interrface.Endpoints[Count];
-      if Endpoint <> nil then
+      {Find Endpoint}
+      for Count:=0 to Length(Interrface.Endpoints) - 1 do
        begin
-        {Check Direction}
-        if (Endpoint.bEndpointAddress shr 7) = Direction then
+        {Check Endpoint}
+        Endpoint:=Interrface.Endpoints[Count];
+        if Endpoint <> nil then
          begin
-          {Check Transfer Type}
-          if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+          {Check Direction}
+          if (Endpoint.bEndpointAddress shr 7) = Direction then
            begin
-            {Return Result}
-            Result:=Endpoint;
-            Exit;
+            {Check Transfer Type}
+            if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+             begin
+              {Return Result}
+              Result:=Endpoint;
+              Exit;
+             end;
            end;
          end;
-       end;
+       end;  
      end;  
    finally
     {Release the Lock}
@@ -3452,32 +3459,36 @@ begin
  if MutexLock(Device.Lock) = ERROR_SUCCESS then
   begin
    try 
-    {Find Endpoint}
-    for Count:=0 to Length(Interrface.Endpoints) - 1 do
+    {Check Endpoint Count}
+    if Length(Interrface.Endpoints) > 0 then
      begin
-      {Check Endpoint}
-      Endpoint:=Interrface.Endpoints[Count];
-      if Endpoint <> nil then
+      {Find Endpoint}
+      for Count:=0 to Length(Interrface.Endpoints) - 1 do
        begin
-        {Check Direction}
-        if (Endpoint.bEndpointAddress shr 7) = Direction then
+        {Check Endpoint}
+        Endpoint:=Interrface.Endpoints[Count];
+        if Endpoint <> nil then
          begin
-          {Check Transfer Type}
-          if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+          {Check Direction}
+          if (Endpoint.bEndpointAddress shr 7) = Direction then
            begin
-            {Check Index}
-            if (Count >= Index) then
+            {Check Transfer Type}
+            if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
              begin
-              {Update Index}
-              Index:=Count + 1;
-              
-              {Return Result}
-              Result:=Endpoint;
-              Exit;
-             end; 
+              {Check Index}
+              if (Count >= Index) then
+               begin
+                {Update Index}
+                Index:=Count + 1;
+                
+                {Return Result}
+                Result:=Endpoint;
+                Exit;
+               end; 
+             end;
            end;
          end;
-       end;
+       end;  
      end;  
    finally
     {Release the Lock}
@@ -3513,24 +3524,28 @@ begin
  if MutexLock(Device.Lock) = ERROR_SUCCESS then
   begin
    try 
-    {Find Endpoint}
-    for Count:=0 to Length(Interrface.Endpoints) - 1 do
+    {Check Endpoint Count}
+    if Length(Interrface.Endpoints) > 0 then
      begin
-      {Check Endpoint}
-      Endpoint:=Interrface.Endpoints[Count];
-      if Endpoint <> nil then
+      {Find Endpoint}
+      for Count:=0 to Length(Interrface.Endpoints) - 1 do
        begin
-        {Check Direction}
-        if (Endpoint.bEndpointAddress shr 7) = Direction then
+        {Check Endpoint}
+        Endpoint:=Interrface.Endpoints[Count];
+        if Endpoint <> nil then
          begin
-          {Check Transfer Type}
-          if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+          {Check Direction}
+          if (Endpoint.bEndpointAddress shr 7) = Direction then
            begin
-            {Update Result}
-            Inc(Result);
+            {Check Transfer Type}
+            if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+             begin
+              {Update Result}
+              Inc(Result);
+             end;
            end;
          end;
-       end;
+       end;  
      end;  
    finally
     {Release the Lock}
@@ -3644,25 +3659,29 @@ begin
  if MutexLock(Device.Lock) = ERROR_SUCCESS then
   begin
    try 
-    {Find Endpoint}
-    for Count:=0 to Length(Alternate.Endpoints) - 1 do
+    {Check Endpoint Count}
+    if Length(Alternate.Endpoints) > 0 then
      begin
-      {Check Endpoint}
-      Endpoint:=Alternate.Endpoints[Count];
-      if Endpoint <> nil then
+      {Find Endpoint}
+      for Count:=0 to Length(Alternate.Endpoints) - 1 do
        begin
-        {Check Direction}
-        if (Endpoint.bEndpointAddress shr 7) = Direction then
+        {Check Endpoint}
+        Endpoint:=Alternate.Endpoints[Count];
+        if Endpoint <> nil then
          begin
-          {Check Transfer Type}
-          if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+          {Check Direction}
+          if (Endpoint.bEndpointAddress shr 7) = Direction then
            begin
-            {Return Result}
-            Result:=Endpoint;
-            Exit;
+            {Check Transfer Type}
+            if (Endpoint.bmAttributes and USB_TRANSFER_TYPE_MASK) = TransferType then
+             begin
+              {Return Result}
+              Result:=Endpoint;
+              Exit;
+             end;
            end;
          end;
-       end;
+       end;  
      end;  
    finally
     {Release the Lock}
@@ -3857,13 +3876,34 @@ begin
  {Check Driver}
  if Device.Driver <> nil then
   begin
-   {Already bound}
+   {Already Bound}
    Result:=USB_STATUS_SUCCESS;
    Exit;
-  end; 
+  end
+ else
+  begin
+   {Set Default}
+   Bound:=False;
+   
+   {Check Configuration}
+   if Device.ConfigurationValue > 0 then
+    begin
+     {Get Interface}
+     for Count:=0 to Length(Device.Configuration.Interfaces) - 1 do
+      begin
+       Interrface:=Device.Configuration.Interfaces[Count];
+       {Check Driver}
+       if (Interrface <> nil) and (Interrface.Driver <> nil) then
+        begin
+         {Already Bound on at least one interface}
+         Bound:=True;
+         Break;
+        end;
+      end;  
+    end; 
+  end;  
 
  {Set Default}
- Bound:=False;
  Status:=USB_STATUS_DEVICE_UNSUPPORTED;
  
  //Critical //Lock the Device table (Can't lock the Device because Bind will call Submit !)
@@ -3872,38 +3912,42 @@ begin
  if CriticalSectionLock(USBDriverTableLock) = ERROR_SUCCESS then
   begin
    try
-    {Get Driver}
-    Driver:=USBDriverTable;
-    while Driver <> nil do
+    {Check Bound}
+    if not Bound then
      begin
-      {$IFDEF USB_DEBUG}      
-      if USB_LOG_ENABLED then USBLogDebug(Device,'Attempting to bind ' + DriverGetName(@Driver.Driver) + ' to device');
-      {$ENDIF}
-
-      {Attempt to Bind (Device)}
-      Status:=Driver.DriverBind(Device,nil);
-      if Status <> USB_STATUS_DEVICE_UNSUPPORTED then
+      {Get Driver}
+      Driver:=USBDriverTable;
+      while Driver <> nil do
        begin
-        if Status = USB_STATUS_SUCCESS then
+        {$IFDEF USB_DEBUG}      
+        if USB_LOG_ENABLED then USBLogDebug(Device,'Attempting to bind ' + DriverGetName(@Driver.Driver) + ' to device');
+        {$ENDIF}
+  
+        {Attempt to Bind (Device)}
+        Status:=Driver.DriverBind(Device,nil);
+        if Status <> USB_STATUS_DEVICE_UNSUPPORTED then
          begin
-          if USB_LOG_ENABLED then USBLogInfo(nil,'Bound ' + DriverGetName(@Driver.Driver) + ' to ' + USBDeviceToString(Device));
-          
-          {Set Driver}
-          Device.Driver:=Driver;
-          
-          {Set Bound}
-          Bound:=True;
-          
-          {Set Status to Bound}
-          USBDeviceSetStatus(Device,USB_STATUS_BOUND);
+          if Status = USB_STATUS_SUCCESS then
+           begin
+            if USB_LOG_ENABLED then USBLogInfo(nil,'Bound ' + DriverGetName(@Driver.Driver) + ' to ' + USBDeviceToString(Device));
+            
+            {Set Driver}
+            Device.Driver:=Driver;
+            
+            {Set Bound}
+            Bound:=True;
+            
+            {Set Status to Bound}
+            USBDeviceSetStatus(Device,USB_STATUS_BOUND);
+           end;
+           
+          Break; {Break to return Status}
          end;
-         
-        Break; {Break to return Status}
+        
+        {Get Next}
+        Driver:=Driver.Next;
        end;
-      
-      {Get Next}
-      Driver:=Driver.Next;
-     end;
+     end;  
     
     {Check Status}
     if Status = USB_STATUS_DEVICE_UNSUPPORTED then 
@@ -6244,6 +6288,10 @@ function USBRequestCancel(Request:PUSBRequest):LongWord;
 {Request: The request to be cancelled}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
+ {$IFDEF USB_DEBUG}
+ Direction:Byte;
+ TransferType:Byte;
+ {$ENDIF}
  Device:PUSBDevice;
 begin
  {}
@@ -6409,7 +6457,7 @@ end;
 {==============================================================================}
 
 function USBControlRequest(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word):LongWord; inline;
-{Send of USB control request to the specified device and wait for the request to complete}
+{Send a USB control request to the specified device and wait for the request to complete}
 {Device: The USB device to send the control request to}
 {Endpoint: The Endpoint to use for the control request (or nil for the default control endpoint)}
 {bRequest: The request to send (See Section 9.4 of the USB 2.0 specification for Standard requests)}
@@ -6427,7 +6475,7 @@ end;
 {==============================================================================}
 
 function USBControlRequestEx(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bRequest,bmRequestType:Byte;wValue,wIndex:Word;Data:Pointer;wLength:Word;Timeout:LongWord;AllowShort:Boolean):LongWord;
-{Send of USB control request to the specified device and wait for the request to complete}
+{Send a USB control request to the specified device and wait for the request to complete}
 {Device: The USB device to send the control request to}
 {Endpoint: The Endpoint to use for the control request (or nil for the default control endpoint)}
 {bRequest: The request to send (See Section 9.4 of the USB 2.0 specification for Standard requests)}
@@ -6743,7 +6791,7 @@ begin
    USBLogDebug(Device,'USBTransfer: BytesAttempted = ' + IntToStr(Request.BytesAttempted));
    USBLogDebug(Device,'USBTransfer: BytesTransferred = ' + IntToStr(Request.BytesTransferred));
    USBLogDebug(Device,'USBTransfer: SplitErrorCount = ' + IntToStr(Request.SplitErrorCount));
-   USBLogDebug(Device,'USBTransfer: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries))
+   USBLogDebug(Device,'USBTransfer: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries));
    USBLogDebug(Device,'USBTransfer: StartSplitAttempts = ' + IntToStr(Request.StartSplitAttempts));
    USBLogDebug(Device,'USBTransfer: CompleteSplitAttempts = ' + IntToStr(Request.CompleteSplitAttempts));
    USBLogDebug(Device,'USBTransfer: CompleteSplitRestarts = ' + IntToStr(Request.CompleteSplitRestarts)); 
@@ -9641,15 +9689,21 @@ begin
  
  {Log Configuration Descriptor}
  USBLogConfigurationDescriptor(Device,Device.Configuration.Descriptor);
+ 
  {Log Interface Descriptors}
  for Count:=0 to Device.Configuration.Descriptor.bNumInterfaces - 1 do
   begin
    USBLogInterfaceDescriptor(Device,Device.Configuration.Interfaces[Count].Descriptor);
-   {Log Endpoint Descriptors}
-   for Counter:=0 to Device.Configuration.Interfaces[Count].Descriptor.bNumEndpoints - 1 do
+   
+   {Check Endpoint Count}
+   if Device.Configuration.Interfaces[Count].Descriptor.bNumEndpoints > 0 then
     begin
-     USBLogEndpointDescriptor(Device,Device.Configuration.Interfaces[Count].Endpoints[Counter]);
-    end;
+     {Log Endpoint Descriptors}
+     for Counter:=0 to Device.Configuration.Interfaces[Count].Descriptor.bNumEndpoints - 1 do
+      begin
+       USBLogEndpointDescriptor(Device,Device.Configuration.Interfaces[Count].Endpoints[Counter]);
+      end;
+    end;  
   end;
 end;
 

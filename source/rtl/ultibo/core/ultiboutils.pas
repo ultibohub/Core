@@ -145,6 +145,9 @@ function AddQuotesIfSpaced(const AValue:String):String;
 function ExtractCommand(const ACommandLine:String):String;
 function ExtractParameters(const ACommandLine:String):String;
 
+function AllocateCommandLine(const ACommandLine:String;out AArgC:Integer):PPChar;
+procedure ReleaseCommandLine(AArgV:PPChar);
+
 function MultiStringToStrings(ABuffer:Pointer;ASize:Integer;AStrings:TStrings):Boolean;
 function StringsToMultiString(AStrings:TStrings;var ABuffer:Pointer;var ASize:Integer):Boolean;
 
@@ -1016,6 +1019,7 @@ var
 begin
  {}
  if AStrings = nil then Exit;
+ if Length(ADelimiter) = 0 then Exit; {Dont Trim Space is Allowed}
  
  AString:='';
  
@@ -1037,7 +1041,9 @@ var
  WorkBuffer:String;
 begin
  {}
- if ADelimiter = '' then Exit; {Trim(ADelimiter)} {Dont Trim Space is Allowed}
+ if Length(AString) = 0 then Exit;
+ if AStrings = nil then Exit;
+ if Length(ADelimiter) = 0 then Exit; {Dont Trim Space is Allowed}
  
  WorkBuffer := AString;
  
@@ -1710,6 +1716,91 @@ begin
       end;
     end;
   end;
+end;
+
+{==============================================================================}
+
+function AllocateCommandLine(const ACommandLine:String;out AArgC:Integer):PPChar;
+{Allocate a C style command line and return ArgC and ArgV in the correct format}
+{CommandLine: The command line to be formatted into C style ArgV and ArgC}
+{ArgC: The count of command line parameters in the result}
+var
+ Name:String;
+ Param:String;
+ Size:LongWord;
+ Index:LongWord;
+ Offset:LongWord;
+ Buffer:PPChar;
+ Counter:Integer;
+ Params:TStringList;
+begin
+ {}
+ Result:=nil;
+ 
+ {Get Name}
+ Name:=ParamStr(0);
+ 
+ {Setup Defaults (Include argv[0])}
+ AArgC:=1; 
+ Size:=Length(Name) + SizeOf(Char);
+ 
+ Params:=TStringList.Create;
+ try
+  {Get Params}
+  UndelimitString(ACommandLine,Params,' ');
+  
+  {Check Params}
+  for Counter:=0 to Params.Count - 1 do
+   begin
+    Param:=Params.Strings[Counter];
+    if Length(Param) > 0 then
+     begin
+      Inc(AArgC);
+      Inc(Size,Length(Param) + SizeOf(Char));
+     end;
+   end;
+   
+  {Allocate Command Line}
+  Buffer:=AllocMem((AArgC * SizeOf(PChar)) + Size);
+
+  {Copy Name}
+  Index:=0;
+  Offset:=AArgC * SizeOf(PChar);
+  Buffer[Index]:=PChar(Pointer(Buffer) + Offset);
+  StrLCopy(Buffer[Index],PChar(Name),Length(Name));
+  Inc(Offset,Length(Name) + SizeOf(Char));
+  
+  {Copy Params}
+  for Counter:=0 to Params.Count - 1 do
+   begin
+    Param:=Params.Strings[Counter];
+    if Length(Param) > 0 then
+     begin
+      Inc(Index);
+      Buffer[Index]:=PChar(Pointer(Buffer) + Offset);
+      StrLCopy(Buffer[Index],PChar(Param),Length(Param));
+      Inc(Offset,Length(Param) + SizeOf(Char));
+     end;
+   end;
+   
+  Result:=Buffer; 
+ finally
+  Params.Free;
+ end;
+end;
+
+{==============================================================================}
+
+procedure ReleaseCommandLine(AArgV:PPChar);
+{Free a C command line allocated by AllocateCommandLine}
+{ArgV: The command line to be freed}
+begin
+ {}
+ {Check ArgV}
+ if AArgV = nil then Exit;
+ 
+ {Free ArgV}
+ FreeMem(AArgV);
 end;
 
 {==============================================================================}

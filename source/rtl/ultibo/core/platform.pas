@@ -906,9 +906,14 @@ type
  {Prototypes for PageTable Handlers}
  TPageTableGetBase = function:PtrUInt;
  TPageTableGetSize = function:LongWord;
- TPageTableGetEntry = function(Address:PtrUInt):TPageTableEntry;
+ 
+ TPageTableGetEntry = procedure(Address:PtrUInt;var Entry:TPageTableEntry);
  TPageTableSetEntry = function(const Entry:TPageTableEntry):LongWord;
 
+ TPageTableGetPageSize = function(Address:PtrUInt):LongWord;
+ TPageTableGetPageFlags = function(Address:PtrUInt):LongWord;
+ TPageTableGetPagePhysical = function(Address:PtrUInt):PtrUInt;
+ 
  type
  {Prototypes for PageTables Handlers}
  TPageTablesGetAddress = function:PtrUInt;
@@ -1612,8 +1617,13 @@ var
  {PageTable Handlers}
  PageTableGetBaseHandler:TPageTableGetBase;
  PageTableGetSizeHandler:TPageTableGetSize;
+ 
  PageTableGetEntryHandler:TPageTableGetEntry; 
  PageTableSetEntryHandler:TPageTableSetEntry;
+ 
+ PageTableGetPageSizeHandler:TPageTableGetPageSize;
+ PageTableGetPageFlagsHandler:TPageTableGetPageFlags;
+ PageTableGetPagePhysicalHandler:TPageTableGetPagePhysical;
  
 var
  {PageTables Handlers}
@@ -2226,8 +2236,14 @@ function InterlockedCompareExchange(var Target:LongInt;Source,Compare:LongInt):L
 
 function PageTableGetBase:PtrUInt; inline;
 function PageTableGetSize:LongWord; inline;
-function PageTableGetEntry(Address:PtrUInt):TPageTableEntry; inline;
+
+function PageTableGetEntry(Address:PtrUInt):TPageTableEntry; overload;
+procedure PageTableGetEntry(Address:PtrUInt;var Entry:TPageTableEntry); inline; overload;
 function PageTableSetEntry(const Entry:TPageTableEntry):LongWord; inline;
+
+function PageTableGetPageSize(Address:PtrUInt):LongWord; inline;
+function PageTableGetPageFlags(Address:PtrUInt):LongWord; inline;
+function PageTableGetPagePhysical(Address:PtrUInt):PtrUInt; inline;
 
 function PageTablesGetAddress:PtrUInt; inline;
 function PageTablesGetLength:LongWord; inline;
@@ -2299,11 +2315,11 @@ procedure LoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:Strin
 function FirstBitSet(Value:LongWord):LongWord; inline;
 function CountLeadingZeros(Value:LongWord):LongWord; inline;
 
-function PhysicalToIOAddress(Address:Pointer):LongWord; inline;
-function IOAddressToPhysical(Address:Pointer):LongWord; inline;
+function PhysicalToIOAddress(Address:Pointer):PtrUInt; inline;
+function IOAddressToPhysical(Address:Pointer):PtrUInt; inline;
 
-function PhysicalToBusAddress(Address:Pointer):LongWord; inline;
-function BusAddressToPhysical(Address:Pointer):LongWord; inline;
+function PhysicalToBusAddress(Address:Pointer):PtrUInt; inline;
+function BusAddressToPhysical(Address:Pointer):PtrUInt; inline;
 
 procedure NanosecondDelay(Nanoseconds:LongWord);
 procedure MicrosecondDelay(Microseconds:LongWord);
@@ -8702,17 +8718,26 @@ end;
 
 {==============================================================================}
 
-function PageTableGetEntry(Address:PtrUInt):TPageTableEntry; inline;
+function PageTableGetEntry(Address:PtrUInt):TPageTableEntry; 
+{Get the Page Table entry that corresponds to the supplied virtual address}
+begin
+ {}
+ PageTableGetEntry(Address,Result);
+end;
+
+{==============================================================================}
+
+procedure PageTableGetEntry(Address:PtrUInt;var Entry:TPageTableEntry); inline; 
 {Get the Page Table entry that corresponds to the supplied virtual address}
 begin
  {}
  if Assigned(PageTableGetEntryHandler) then
   begin
-   Result:=PageTableGetEntryHandler(Address);
+   PageTableGetEntryHandler(Address,Entry);
   end
  else
   begin
-   FillChar(Result,SizeOf(TPageTableEntry),0);
+   FillChar(Entry,SizeOf(TPageTableEntry),0);
   end;
 end;
 
@@ -8730,6 +8755,72 @@ begin
   begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
+end;
+
+{==============================================================================}
+
+function PageTableGetPageSize(Address:PtrUInt):LongWord; inline;
+{Get the Size from the Page Table page that corresponds to the supplied virtual address}
+var
+ Entry:TPageTableEntry;
+begin
+ {}
+ if Assigned(PageTableGetPageSizeHandler) then
+  begin
+   Result:=PageTableGetPageSizeHandler(Address);
+  end
+ else
+  begin
+   {Default Method}
+   PageTableGetEntry(Address,Entry);
+   
+   {Get Page Size}
+   Result:=Entry.Size;
+  end;  
+end;
+
+{==============================================================================}
+
+function PageTableGetPageFlags(Address:PtrUInt):LongWord; inline;
+{Get the Flags from the Page Table page that corresponds to the supplied virtual address}
+var
+ Entry:TPageTableEntry;
+begin
+ {}
+ if Assigned(PageTableGetPageFlagsHandler) then
+  begin
+   Result:=PageTableGetPageFlagsHandler(Address);
+  end
+ else
+  begin
+   {Default Method}
+   PageTableGetEntry(Address,Entry);
+   
+   {Get Page Flags}
+   Result:=Entry.Flags;
+  end;  
+end;
+
+{==============================================================================}
+
+function PageTableGetPagePhysical(Address:PtrUInt):PtrUInt; inline;
+{Get the Physical Address from the Page Table page that corresponds to the supplied virtual address}
+var
+ Entry:TPageTableEntry;
+begin
+ {}
+ if Assigned(PageTableGetPagePhysicalHandler) then
+  begin
+   Result:=PageTableGetPagePhysicalHandler(Address);
+  end
+ else
+  begin
+   {Default Method}
+   PageTableGetEntry(Address,Entry);
+   
+   {Get Page Physical Address}
+   Result:=Entry.PhysicalAddress;
+  end;  
 end;
 
 {==============================================================================}
@@ -9513,38 +9604,38 @@ end;
 
 {==============================================================================}
 
-function PhysicalToIOAddress(Address:Pointer):LongWord; inline;
+function PhysicalToIOAddress(Address:Pointer):PtrUInt; inline;
 {Convert Physical address to an IO addresses (Where Applicable)}
 begin
  {}
- Result:=(LongWord(Address) - IO_BASE) + IO_ALIAS;
+ Result:=(PtrUInt(Address) - IO_BASE) + IO_ALIAS;
 end;
 
 {==============================================================================}
 
-function IOAddressToPhysical(Address:Pointer):LongWord; inline;
+function IOAddressToPhysical(Address:Pointer):PtrUInt; inline;
 {Convert an IO address to a Physical address (Where Applicable)}
 begin
  {}
- Result:=(LongWord(Address) - IO_ALIAS) + IO_BASE;
+ Result:=(PtrUInt(Address) - IO_ALIAS) + IO_BASE;
 end;
 
 {==============================================================================}
 
-function PhysicalToBusAddress(Address:Pointer):LongWord; inline;
+function PhysicalToBusAddress(Address:Pointer):PtrUInt; inline;
 {Convert a Physical address to a Bus address (Where Applicable)}
 begin
  {}
- Result:=LongWord(Address) or BUS_ALIAS;
+ Result:=PtrUInt(Address) or BUS_ALIAS;
 end;
 
 {==============================================================================}
 
-function BusAddressToPhysical(Address:Pointer):LongWord; inline;
+function BusAddressToPhysical(Address:Pointer):PtrUInt; inline;
 {Convert a Bus address to a Physical address (Where Applicable)}
 begin
  {}
- Result:=LongWord(Address) and not(BUS_ALIAS);
+ Result:=PtrUInt(Address) and not(BUS_ALIAS);
 end;
 
 {==============================================================================}

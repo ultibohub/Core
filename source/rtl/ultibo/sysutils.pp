@@ -65,7 +65,7 @@ type
 type
  {File Functions}
  TSysUtilsFileOpen = function(const FileName:RawByteString;Mode:Integer):THandle;
- TSysUtilsFileCreate = function(const FileName:RawByteString):THandle;
+ TSysUtilsFileCreate = function(const FileName:RawByteString;ShareMode:Integer):THandle;
  TSysUtilsDeleteFile = function(const FileName:RawByteString):Boolean;
  TSysUtilsFileClose = procedure(Handle:THandle);
  TSysUtilsRenameFile = function(const OldName,NewName:RawByteString):Boolean;
@@ -197,7 +197,7 @@ function FileCreate(const FileName: RawByteString) : THandle;
 begin
  if Assigned(SysUtilsFileCreateHandler) then
   begin
-   Result:=SysUtilsFileCreateHandler(FileName);
+   Result:=SysUtilsFileCreateHandler(FileName,fmShareExclusive);
   end
  else
   begin
@@ -207,12 +207,26 @@ end;
 
 function FileCreate(const FileName: RawByteString; Rights: integer): THandle;
 begin
- Result:=FileCreate(FileName); {Rights is ignored by Ultibo}
+ if Assigned(SysUtilsFileCreateHandler) then
+  begin
+   Result:=SysUtilsFileCreateHandler(FileName,fmShareExclusive); {Rights is ignored by Ultibo}
+  end
+ else
+  begin
+   Result:=-1;
+  end;
 end;
 
-function FileCreate(const FileName: RawByteString; ShareMode: integer; rights : integer): THandle;
+function FileCreate(const FileName: RawByteString; ShareMode: integer; Rights : integer): THandle;
 begin
- Result:=FileCreate(FileName); {ShareMode and Rights are ignored by Ultibo}
+ if Assigned(SysUtilsFileCreateHandler) then
+  begin
+   Result:=SysUtilsFileCreateHandler(FileName,ShareMode); {Rights is ignored by Ultibo}
+  end
+ else
+  begin
+   Result:=-1;
+  end;
 end;
 
 function FileRead(Handle: THandle; Out Buffer; Count: LongInt): LongInt;

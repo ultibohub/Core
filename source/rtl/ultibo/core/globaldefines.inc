@@ -59,6 +59,7 @@ Global Defines
 {$DEFINE SEMAPHORE_INLINE}        {Inline parts of Semaphore handling for performance (Default: On)}
 {$DEFINE SYNCHRONIZER_INLINE}     {Inline parts of Synchronizer handling for performance (Default: On)}
 {$DEFINE CONDITION_INLINE}        {Inline parts of Condition handling for performance (Default: On)}
+{$DEFINE COMPLETION_INLINE}       {Inline parts of Completion handling for performance (Default: On)}
 {$DEFINE LIST_INLINE}             {Inline parts of List handling for performance (Default: On)}
 {$DEFINE QUEUE_INLINE}            {Inline parts of Queue handling for performance (Default: On)}
 {$DEFINE THREAD_INLINE}           {Inline parts of Thread handling for performance (Default: On)}
@@ -258,7 +259,7 @@ Global Defines
 {--$DEFINE PL18X_DEBUG}           {Enable debug output/counters for PL18X driver (Default: Off)}
 
 {GPU}
-{--$DEFINE VC4_DEBUG}             {Enable debug output/counters for VC4 driver (Default: Off)}
+{--$DEFINE VC4_DEBUG}             {Enable debug output/counters for VC4 interface (Default: Off)}
 {--$DEFINE VC4VCHIQ_DEBUG}        {Enable debug output/counters for VC4 VCHIQ driver (Default: Off)}
 {--$DEFINE VC4VCSM_DEBUG}         {Enable debug output/counters for VC4 VCSM driver (Default: Off)}
 {--$DEFINE VC4V3D_DEBUG}          {Enable debug output/counters for VC4 V3D interface (Default: Off)}

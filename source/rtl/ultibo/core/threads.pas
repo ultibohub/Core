@@ -151,6 +151,34 @@ Threads
               Create/Destroy
              
               //To Do
+              
+  Completion - A completion is similar in concept to both condition variables and events but behaves differently to each of them. Completions are designed to be similar to the Linux
+               synchronization object of the same name and provide a light weight mechanism for allowing one or more threads to wait for a signal that they can proceed. The 
+               completion differs from a condition variable because it maintains an internal state, once the state has been set (complete) threads pass through the completion 
+               without waiting (until the state is reset). This is similar to an event (see below) but in the case of a completion the state remains set indefinately or until
+               reset is called, a completion also allows explicitly releasing one thread at a time or all threads at once. More generally the event was created to model a
+               behavour that is similar to the same object in Windows and the completion models the Linux object instead.
+               
+               Completions can use a counted state rather than a single state if they are created with COMPLETION_FLAG_COUNTED, this is to mimic the implementation of the
+               Linux variation however there is a slight but important change in the way counted completions are implemented in Ultibo. The Linux completion sets the count
+               to UMAX_INT / 2 on complete_all() which is documented as "effectively infinite". This is of course incorrect and seriously flawed because the count value is 
+               only set to a little over 2 billion, a long running application could easily consume this count with calls to wait_for_completion() and then the application 
+               would potentially fail without explanation.
+               
+               To prevent this same fatal flaw the Ultibo implementation sets the count at LongWord(-1) on CompletionCompleteAll() and all other operations check for this
+               value before incrementing or decrementing the count further. In this way the setting of complete all is geniunely infinite and will not fail on a long running
+               application.
+  
+               Suitable for use by Interrupt handlers to call complete only if created with COMPLETION_FLAG_IRQ or FIQ (Interrupt handlers must not call wait).
+               Suitable for use on multiprocessor systems.
+               Access is serialized, the next thread released when a completion is set will be the thread that has been waiting longest (See also stolen wakeups below).
+  
+               Usage: 
+               ------
+              
+               Create/Destroy
+             
+               //To Do
   
  Thread Handling
  ---------------
@@ -354,6 +382,20 @@ const
  CONDITION_LOCK_FLAG_NONE      = $00000000;
  CONDITION_LOCK_FLAG_WRITER    = $00000001; {Condition should release and acquire the writer lock on a Synchronizer when ConditionWaitSynchronizer is called (otherwise release and acquire the reader lock)}
  
+ {Completion constants}
+ COMPLETION_SIGNATURE = $FCE24CA1;
+ 
+ {Completion state constants}
+ COMPLETION_STATE_RESET    = 0;
+ COMPLETION_STATE_COMPLETE = 1;
+ 
+ {Completion flag constants}
+ COMPLETION_FLAG_NONE    = LOCK_FLAG_NONE;
+ COMPLETION_FLAG_IRQ     = LOCK_FLAG_IRQ;    {Disable IRQ during completion operations (Wait/Reset/Complete)}
+ COMPLETION_FLAG_FIQ     = LOCK_FLAG_FIQ;    {Disable FIQ during completion operations (Wait/Reset/Complete)}
+ COMPLETION_FLAG_IRQFIQ  = LOCK_FLAG_IRQFIQ; {Disable IRQ and FIQ during completion operations (Wait/Reset/Complete)}
+ COMPLETION_FLAG_COUNTED = $00000008;        {Use a counted value instead of a single state (Affects behaviour of Wait and Complete)}
+ 
  {List constants}
  LIST_SIGNATURE = $4A98BE2A;
  
@@ -363,10 +405,11 @@ const
  LIST_TYPE_WAIT_SEMAPHORE    = 2;  {A Semaphore Wait List}
  LIST_TYPE_WAIT_SYNCHRONIZER = 3;  {A Synchronizer Wait List}
  LIST_TYPE_WAIT_CONDITION    = 4;  {A Condition Wait List}
- LIST_TYPE_WAIT_EVENT        = 5;  {An Event Wait List}
- LIST_TYPE_WAIT_THREAD       = 6;  {A Thread Wait List}
- LIST_TYPE_WAIT_MESSAGESLOT  = 7;  {A Messageslot Wait List}
- LIST_TYPE_WAIT_OTHER        = 8;  {Another type of Wait List (Suitable for passing to ThreadWait/ThreadWaitEx/ThreadWaitMultiple/ThreadRelease)}
+ LIST_TYPE_WAIT_COMPLETION   = 5;  {A Condition Wait List}
+ LIST_TYPE_WAIT_EVENT        = 6;  {An Event Wait List}
+ LIST_TYPE_WAIT_THREAD       = 7;  {A Thread Wait List}
+ LIST_TYPE_WAIT_MESSAGESLOT  = 8;  {A Messageslot Wait List}
+ LIST_TYPE_WAIT_OTHER        = 9;  {Another type of Wait List (Suitable for passing to ThreadWait/ThreadWaitEx/ThreadWaitMultiple/ThreadRelease)}
  
  {List flag constants}
  LIST_FLAG_NONE   = LOCK_FLAG_NONE;
@@ -755,6 +798,27 @@ type
   {Internal Properties}
   Prev:PConditionEntry;       {Previous entry in Condition table}
   Next:PConditionEntry;       {Next entry in Condition table}
+  {Statistics Properties}
+ end;
+
+ {Completion entry}
+ {Note: Changes to this structure need to be accounted for in platform specific handlers}
+ PCompletionEntry = ^TCompletionEntry;
+ TCompletionEntry = record
+  {Completion Properties}
+  Signature:LongWord;         {Signature for entry validation}
+  State:LongWord;             {State of the completion (Reset/Complete)}
+  Count:LongWord;             {Count of the completion (Only applicable if COMPLETION_FLAG_COUNTED)}
+  Flags:LongWord;             {Completion Flags (eg COMPLETION_FLAG_IRQ)}
+  Lock:TSpinHandle;           {Completion Lock}
+  List:TListHandle;           {List of threads waiting on this Completion (or INVALID_HANDLE_VALUE if never used)}
+  Wait:TThreadWait;           {Wait function to call to wait on the Completion}
+  WaitEx:TThreadWaitEx;       {Wait function to call to wait with timeout on the Completion}
+  Release:TThreadRelease;     {Release function to call if any threads are waiting when Completion is completed}
+  Abandon:TThreadAbandon;     {Abandon function to call if any threads are waiting when Completion is destroyed}
+  {Internal Properties}
+  Prev:PCompletionEntry;       {Previous entry in Completion table}
+  Next:PCompletionEntry;       {Next entry in Completion table}
   {Statistics Properties}
  end;
  
@@ -1171,11 +1235,20 @@ type
  
 type
  {Prototypes for Condition Wait/Wake/WakeAll Handlers} 
+ TConditionWait = function(Condition:PConditionEntry;Timeout:LongWord):LongWord;
  TConditionWaitMutex = function(Condition:PConditionEntry;Mutex:TMutexHandle;Timeout:LongWord):LongWord;
  TConditionWaitSynchronizer = function(Condition:PConditionEntry;Synchronizer:TSynchronizerHandle;Flags,Timeout:LongWord):LongWord;
  TConditionWaitCriticalSection = function(Condition:PConditionEntry;CriticalSection:TCriticalSectionHandle;Timeout:LongWord):LongWord;
  TConditionWake = function(Condition:PConditionEntry):LongWord;
  TConditionWakeAll = function(Condition:PConditionEntry):LongWord;
+ 
+type
+ {Prototypes for Completion Wait/TryWait/Reset/Complete/CompleteAll Handlers}
+ TCompletionWait = function(Completion:PCompletionEntry;Timeout:LongWord):LongWord; 
+ TCompletionTryWait = function(Completion:PCompletionEntry):LongWord; 
+ TCompletionReset = function(Completion:PCompletionEntry):LongWord; 
+ TCompletionComplete = function(Completion:PCompletionEntry):LongWord; 
+ TCompletionCompleteAll = function(Completion:PCompletionEntry):LongWord; 
  
 type
  {Prototypes for Messageslot Send/Receive Handlers} 
@@ -1359,6 +1432,7 @@ var
  SynchronizerDeadlockCounter:Int64;    
  SynchronizerRecursionCounter:Int64;
  ConditionDeadlockCounter:Int64;    
+ CompletionDeadlockCounter:Int64;    
  MessageslotDeadlockCounter:Int64;     
  MailslotDeadlockCounter:Int64;        
  BufferDeadlockCounter:Int64;          
@@ -1473,11 +1547,20 @@ var
  
 var
  {Condition Wait/Wake/WakeAll Handlers}
+ ConditionWaitHandler:TConditionWait;
  ConditionWaitMutexHandler:TConditionWaitMutex;
  ConditionWaitSynchronizerHandler:TConditionWaitSynchronizer;
  ConditionWaitCriticalSectionHandler:TConditionWaitCriticalSection;
  ConditionWakeHandler:TConditionWake;
  ConditionWakeAllHandler:TConditionWakeAll;
+ 
+var
+ {Completion Wait/TryWait/Reset/Complete/CompleteAll Handlers}
+ CompletionWaitHandler:TCompletionWait;
+ CompletionTryWaitHandler:TCompletionTryWait;
+ CompletionResetHandler:TCompletionReset;
+ CompletionCompleteHandler:TCompletionComplete;
+ CompletionCompleteAllHandler:TCompletionCompleteAll;
  
 var
  {Messageslot Send/Receive Handlers}
@@ -1596,6 +1679,9 @@ function SpinUnlockFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$
 function SpinLockIRQFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 function SpinUnlockIRQFIQ(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
 
+function SpinLockPreempt(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+function SpinUnlockPreempt(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+
 function SpinCheckIRQ(Spin:TSpinHandle):Boolean;
 function SpinCheckFIQ(Spin:TSpinHandle):Boolean;
 
@@ -1674,12 +1760,27 @@ function SynchronizerWriterConvert(Synchronizer:TSynchronizerHandle):LongWord;
 function ConditionCreate:TConditionHandle;
 function ConditionDestroy(Condition:TConditionHandle):LongWord;
 
+function ConditionWait(Condition:TConditionHandle;Timeout:LongWord = INFINITE):LongWord;                                                             {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 function ConditionWaitMutex(Condition:TConditionHandle;Mutex:TMutexHandle;Timeout:LongWord = INFINITE):LongWord;                                     {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 function ConditionWaitSynchronizer(Condition:TConditionHandle;Synchronizer:TSynchronizerHandle;Flags:LongWord;Timeout:LongWord = INFINITE):LongWord; {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 function ConditionWaitCriticalSection(Condition:TConditionHandle;CriticalSection:TCriticalSectionHandle;Timeout:LongWord = INFINITE):LongWord;       {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 
 function ConditionWake(Condition:TConditionHandle):LongWord;
 function ConditionWakeAll(Condition:TConditionHandle):LongWord;
+
+{==============================================================================}
+{Completion Functions}
+function CompletionCreate(Flags:LongWord = COMPLETION_FLAG_NONE):TCompletionHandle;
+function CompletionDestroy(Completion:TCompletionHandle):LongWord;
+
+function CompletionState(Completion:TCompletionHandle):LongWord;
+
+function CompletionWait(Completion:TCompletionHandle;Timeout:LongWord = INFINITE):LongWord; 
+function CompletionTryWait(Completion:TCompletionHandle):LongWord; 
+ 
+function CompletionReset(Completion:TCompletionHandle):LongWord; 
+function CompletionComplete(Completion:TCompletionHandle):LongWord; 
+function CompletionCompleteAll(Completion:TCompletionHandle):LongWord; 
 
 {==============================================================================}
 {List Functions}
@@ -2035,6 +2136,8 @@ function SynchronizerGetCount:LongWord; inline;
 
 function ConditionGetCount:LongWord; inline;
 
+function CompletionGetCount:LongWord; inline;
+
 function ListGetCount:LongWord; inline;
 
 function QueueGetCount:LongWord; inline;
@@ -2200,6 +2303,10 @@ var
  ConditionTable:PConditionEntry;
  ConditionTableLock:TSpinHandle;
  ConditionTableCount:LongWord;
+
+ CompletionTable:PCompletionEntry;
+ CompletionTableLock:TSpinHandle;
+ CompletionTableCount:LongWord;
  
  ListTable:PListEntry;
  ListTableLock:TSpinHandle;
@@ -2342,6 +2449,11 @@ begin
  ConditionTable:=nil;
  ConditionTableLock:=SpinCreate;
  ConditionTableCount:=0;
+
+ {Initialize Completion Table}
+ CompletionTable:=nil;
+ CompletionTableLock:=SpinCreate;
+ CompletionTableCount:=0;
  
  {Initialize List Table}
  ListTable:=nil;
@@ -5130,6 +5242,48 @@ end;
 
 {==============================================================================}
 
+function SpinLockPreempt(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+{Lock an existing Spin entry, disable IRQ or IRQ/FIQ and save the previous IRQ or IRQ/FIQ state}
+{Spin: Handle of Spin entry to lock}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: This is a convenience wrapper which determines the appropriate SpinLock call to disable preemption}
+begin
+ {}
+ {Check Scheduler FIQ}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   Result:=SpinLockIRQFIQ(Spin);
+  end
+ else
+  begin
+   Result:=SpinLockIRQ(Spin);
+  end;  
+end;
+
+{==============================================================================}
+
+function SpinUnlockPreempt(Spin:TSpinHandle):LongWord; {$IFDEF SPIN_INLINE}inline;{$ENDIF}
+{Unlock an existing Spin entry and restore the previous IRQ or IRQ/FIQ state}
+{Spin: Handle of Spin entry to unlock}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: This is a convenience wrapper which determines the appropriate SpinUnlock call to enable preemption}
+begin
+ {}
+ {Check Scheduler FIQ}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   Result:=SpinUnlockIRQFIQ(Spin);
+  end
+ else
+  begin
+   Result:=SpinUnlockIRQ(Spin);
+  end;  
+end;
+
+{==============================================================================}
+
 function SpinCheckIRQ(Spin:TSpinHandle):Boolean;
 {Check the mask that stores the previous IRQ state to determine if IRQ is enabled}
 {Spin: Handle of Spin entry to check}
@@ -7209,7 +7363,7 @@ begin
  {Check Semaphore flags}
  if (Flags and (SEMAPHORE_FLAG_IRQ or SEMAPHORE_FLAG_FIQ or SEMAPHORE_FLAG_IRQFIQ)) <> 0 then
   begin
-   {Create Messageslot List}
+   {Create Semaphore List}
    SemaphoreEntry.List:=ListCreateEx(LIST_TYPE_WAIT_SEMAPHORE,SchedulerGetListFlags(LIST_TYPE_WAIT_SEMAPHORE));
   end;
  
@@ -9459,6 +9613,145 @@ end;
 
 {==============================================================================}
 
+function ConditionWait(Condition:TConditionHandle;Timeout:LongWord):LongWord; 
+{Wait on an existing Condition}
+{Condition: Condition to wait on} 
+{Timeout: Time in milliseconds to wait to be woken
+          0 = No Wait
+          INFINITE = Wait Indefinitely}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Unlock:Boolean;
+ WaitResult:LongWord;
+ ConditionEntry:PConditionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Condition}
+ if Condition = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ ConditionEntry:=PConditionEntry(Condition);
+ if ConditionEntry = nil then Exit;
+ if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+
+ {$IFDEF LOCK_DEBUG}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end
+ else
+  begin
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+    begin
+     Inc(ConditionDeadlockCounter);
+    end;
+  end;  
+ {$ENDIF}
+ 
+ {Check the Handler}
+ if Assigned(ConditionWaitHandler) then
+  begin
+   {Use the Handler method}
+   Result:=ConditionWaitHandler(ConditionEntry,Timeout);
+  end
+ else
+  begin
+   {Use the Default method}
+   {Lock the Condition}
+   if SpinLock(ConditionEntry.Lock) = ERROR_SUCCESS then
+    begin
+     Unlock:=True;
+     try
+      {Check Signature}
+      if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
+      
+      {Check Timeout}
+      if Timeout = 0 then
+       begin
+        {Return Error}
+        Result:=ERROR_WAIT_TIMEOUT;
+       end
+      else
+       begin
+        {Check List}
+        if ConditionEntry.List = INVALID_HANDLE_VALUE then
+         begin
+          {Create List}
+          ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
+         end; 
+ 
+        {Check Timeout}
+        if Timeout = INFINITE then
+         begin
+          {Wait on Condition}
+          ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
+          Unlock:=False;
+          
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end
+        else
+         begin
+          {Wait on Condition with Timeout} 
+          ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
+          Unlock:=False;
+
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end; 
+        
+        {Return Result}
+        Result:=ERROR_SUCCESS; 
+       end; 
+     finally
+      {Unlock the Condition}
+      if Unlock then SpinUnlock(ConditionEntry.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
 function ConditionWaitMutex(Condition:TConditionHandle;Mutex:TMutexHandle;Timeout:LongWord):LongWord;
 {Release a Mutex and Wait on an existing Condition in an atomic operation}
 {Condition: Condition to wait on} 
@@ -10083,6 +10376,786 @@ begin
      finally
       {Unlock the Condition}
       SpinUnlock(ConditionEntry.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Completion Functions}
+function CompletionLock(Completion:PCompletionEntry):LongWord; {$IFDEF COMPLETION_INLINE}inline;{$ENDIF}
+{Internal function to lock an existing Completion entry based on the entry flags}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Completion}
+ if Completion = nil then Exit;
+ 
+ {Acquire the Lock}
+ if (Completion.Flags and COMPLETION_FLAG_IRQFIQ) <> 0 then
+  begin
+   Result:=SpinLockIRQFIQ(Completion.Lock);
+  end
+ else if (Completion.Flags and COMPLETION_FLAG_FIQ) <> 0 then
+  begin
+   Result:=SpinLockFIQ(Completion.Lock);
+  end
+ else if (Completion.Flags and COMPLETION_FLAG_IRQ) <> 0 then
+  begin
+   Result:=SpinLockIRQ(Completion.Lock);
+  end
+ else
+  begin
+   Result:=SpinLock(Completion.Lock);
+  end;    
+end;
+
+{==============================================================================}
+
+function CompletionUnlock(Completion:PCompletionEntry):LongWord; {$IFDEF COMPLETION_INLINE}inline;{$ENDIF}
+{Internal function to unlock an existing Completion entry based on the entry flags}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not intended to be called directly by applications}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Completion}
+ if Completion = nil then Exit;
+ 
+ {Release the Lock}
+ if (Completion.Flags and COMPLETION_FLAG_IRQFIQ) <> 0 then
+  begin
+   Result:=SpinUnlockIRQFIQ(Completion.Lock);
+  end
+ else if (Completion.Flags and COMPLETION_FLAG_FIQ) <> 0 then
+  begin
+   Result:=SpinUnlockFIQ(Completion.Lock);
+  end
+ else if (Completion.Flags and COMPLETION_FLAG_IRQ) <> 0 then
+  begin
+   Result:=SpinUnlockIRQ(Completion.Lock);
+  end
+ else
+  begin
+   Result:=SpinUnlock(Completion.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function CompletionCreate(Flags:LongWord):TCompletionHandle;
+{Create and insert a new Completion entry}
+{Flags: The flags for the Completion entry (eg COMPLETION_FLAG_IRQ)}
+{Return: Handle of new Completion entry or INVALID_HANDLE_VALUE if entry could not be created}
+var
+ CompletionEntry:PCompletionEntry;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+ 
+ {Create Completion entry}
+ if COMPLETION_SHARED_MEMORY then
+  begin
+   CompletionEntry:=AllocSharedMem(SizeOf(TCompletionEntry)); 
+  end
+ else
+  begin
+   CompletionEntry:=AllocMem(SizeOf(TCompletionEntry)); 
+  end;
+ if CompletionEntry = nil then Exit;
+ 
+ {Setup Completion entry}
+ CompletionEntry.Signature:=COMPLETION_SIGNATURE;
+ CompletionEntry.State:=COMPLETION_STATE_RESET;
+ CompletionEntry.Count:=0;
+ CompletionEntry.Flags:=Flags;
+ CompletionEntry.Lock:=SpinCreate;
+ CompletionEntry.List:=INVALID_HANDLE_VALUE;
+ CompletionEntry.Wait:=ThreadWait;
+ CompletionEntry.WaitEx:=ThreadWaitEx;
+ CompletionEntry.Release:=ThreadRelease;
+ CompletionEntry.Abandon:=ThreadAbandon;
+ 
+ {Check Completion flags}
+ if (Flags and (COMPLETION_FLAG_IRQ or COMPLETION_FLAG_FIQ or COMPLETION_FLAG_IRQFIQ)) <> 0 then
+  begin
+   {Create Completion List}
+   CompletionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_COMPLETION,SchedulerGetListFlags(LIST_TYPE_WAIT_COMPLETION));
+  end;
+ 
+ {Insert Completion entry}
+ if SpinLock(CompletionTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Link Completion entry}
+    if CompletionTable = nil then
+     begin
+      CompletionTable:=CompletionEntry;
+     end
+    else
+     begin
+      CompletionEntry.Next:=CompletionTable;
+      CompletionTable.Prev:=CompletionEntry;
+      CompletionTable:=CompletionEntry;
+     end;
+    
+    {Increment Completion Count}
+    Inc(CompletionTableCount);
+    
+    {Return Completion entry}
+    Result:=TCompletionHandle(CompletionEntry);
+   finally
+    SpinUnlock(CompletionTableLock);
+   end;
+  end
+ else
+  begin
+   {Free Completion List}
+   if CompletionEntry.List <> INVALID_HANDLE_VALUE then
+    begin
+     ListDestroy(CompletionEntry.List);
+    end;
+
+   {Free Completion Lock}
+   SpinDestroy(CompletionEntry.Lock);
+   
+   {Free Completion Entry}
+   FreeMem(CompletionEntry);
+  end;  
+end;
+
+{==============================================================================}
+
+function CompletionDestroy(Completion:TCompletionHandle):LongWord;
+{Destroy and remove an existing Completion entry}
+{Completion: Handle of Completion entry to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ CompletionEntry:PCompletionEntry;
+ PrevEntry:PCompletionEntry;
+ NextEntry:PCompletionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ CompletionEntry:=PCompletionEntry(Completion);
+ if CompletionEntry = nil then Exit;
+ if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+ {Remove Completion entry}
+ if SpinLock(CompletionTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Acquire the Lock}
+    Result:=CompletionLock(CompletionEntry);
+    if Result <> ERROR_SUCCESS then Exit;
+   
+    {Check Signature}
+    if CompletionEntry.Signature <> COMPLETION_SIGNATURE then
+     begin
+      {Release the Lock}
+      Result:=CompletionUnlock(CompletionEntry);
+      if Result <> ERROR_SUCCESS then Exit;
+     
+      {Return Result}
+      Result:=ERROR_INVALID_PARAMETER;
+      Exit;
+     end; 
+    
+    {Invalidate Completion entry}
+    CompletionEntry.Signature:=0;
+    
+    {Check Waiting Threads}
+    while ListNotEmpty(CompletionEntry.List) do
+     begin
+      {Abandon waiting thread}
+      CompletionEntry.Abandon(CompletionEntry.List);
+     end;
+    
+    {Unlink Completion entry}
+    PrevEntry:=CompletionEntry.Prev;
+    NextEntry:=CompletionEntry.Next;
+    if PrevEntry = nil then
+     begin
+      CompletionTable:=NextEntry;
+      if NextEntry <> nil then
+       begin
+        NextEntry.Prev:=nil;
+       end;       
+     end
+    else
+     begin
+      PrevEntry.Next:=NextEntry;
+      if NextEntry <> nil then
+       begin
+        NextEntry.Prev:=PrevEntry;
+       end;       
+     end;     
+
+    {Decrement Completion Count}
+    Dec(CompletionTableCount);
+    
+    {Release the Lock}
+    Result:=CompletionUnlock(CompletionEntry);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Free Completion List}
+    if CompletionEntry.List <> INVALID_HANDLE_VALUE then
+     begin
+      ListDestroy(CompletionEntry.List);
+     end;
+    
+    {Free Completion Lock}
+    SpinDestroy(CompletionEntry.Lock);
+    
+    {Free Completion Entry}
+    FreeMem(CompletionEntry);
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    SpinUnlock(CompletionTableLock);
+   end;
+  end
+ else
+  begin
+   {Return Result}
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function CompletionState(Completion:TCompletionHandle):LongWord;
+{Get the current state of an existing Completion entry}
+{Completion: Completion to get the state for}
+{Return: Current state (eg COMPLETION_STATE_COMPLETE) or INVALID_HANDLE_VALUE on error}
+var
+ CompletionEntry:PCompletionEntry;
+begin
+ {}
+ Result:=LongWord(INVALID_HANDLE_VALUE);
+
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ CompletionEntry:=PCompletionEntry(Completion);
+ if CompletionEntry = nil then Exit;
+ if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+
+ {Lock the Completion}
+ if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Signature}
+    if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+    
+    {Get the State}
+    Result:=CompletionEntry.State;
+   finally
+    {Unlock the Completion}
+    CompletionUnlock(CompletionEntry);
+   end;
+  end;    
+end;
+ 
+{==============================================================================}
+
+function CompletionWait(Completion:TCompletionHandle;Timeout:LongWord):LongWord; 
+{Wait on an existing Completion
+
+ If the completion is set (complete) then return immediately with success
+ 
+ If the completion is not set then wait for it to be completed before
+ returning
+ 
+ For counted completions, decrement the count if it is not 0 or -1 after
+ testing if the completion is set}
+{Completion: Completion to wait on} 
+{Timeout: Time in milliseconds to wait to be woken
+          0 = No Wait
+          INFINITE = Wait Indefinitely}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Unlock:Boolean;
+ WaitResult:LongWord;
+ CompletionEntry:PCompletionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ CompletionEntry:=PCompletionEntry(Completion);
+ if CompletionEntry = nil then Exit;
+ if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+ {Check the Handler}
+ if Assigned(CompletionWaitHandler) then
+  begin
+   {Use the Handler method}
+   Result:=CompletionWaitHandler(CompletionEntry,Timeout);
+  end
+ else
+  begin
+   {Use the Default method}
+   {$IFDEF LOCK_DEBUG}
+   if (CompletionEntry.Flags and (COMPLETION_FLAG_IRQ or COMPLETION_FLAG_FIQ or COMPLETION_FLAG_IRQFIQ)) = 0 then
+    begin
+     if SCHEDULER_FIQ_ENABLED then
+      begin
+       if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end
+     else
+      begin
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end;  
+    end;  
+   {$ENDIF}
+   
+   {Lock the Completion}
+   if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
+    begin
+     Unlock:=True;
+     try
+      {Check Signature}
+      if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+
+      {Check Timeout}
+      if Timeout = 0 then
+       begin
+        {Check State}
+        Result:=ERROR_WAIT_TIMEOUT;
+        if CompletionEntry.State = COMPLETION_STATE_RESET then Exit;
+       end; 
+
+      {Check State}
+      if CompletionEntry.State = COMPLETION_STATE_COMPLETE then
+       begin
+        {Check Counted}
+        if (CompletionEntry.Flags and COMPLETION_FLAG_COUNTED) <> 0 then
+         begin
+          {Check Count}
+          if CompletionEntry.Count = 0 then
+           begin
+            Result:=ERROR_INVALID_FUNCTION; 
+            Exit;
+           end;
+           
+          {Check Count}
+          if CompletionEntry.Count <> LongWord(-1) then
+           begin
+            {Decrement Count}
+            Dec(CompletionEntry.Count);
+           end;
+           
+          {Check Count}
+          if CompletionEntry.Count = 0 then
+           begin
+            {Reset State}
+            CompletionEntry.State:=COMPLETION_STATE_RESET;
+           end;
+         end;
+       end
+      else
+       begin
+        {Check List}
+        if CompletionEntry.List = INVALID_HANDLE_VALUE then
+         begin
+          {Create List}
+          CompletionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_COMPLETION,SchedulerGetListFlags(LIST_TYPE_WAIT_COMPLETION));
+         end; 
+       
+        {Check Timeout}
+        if Timeout = INFINITE then
+         begin
+          {Wait on Completion}
+          CompletionEntry.Wait(CompletionEntry.List,CompletionEntry.Lock,CompletionEntry.Flags);
+          Unlock:=False;
+          
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end
+        else
+         begin
+          {Wait on Completion with Timeout} 
+          CompletionEntry.WaitEx(CompletionEntry.List,CompletionEntry.Lock,CompletionEntry.Flags,Timeout);
+          Unlock:=False;
+
+          {Check Result}
+          WaitResult:=ThreadGetWaitResult;
+          if WaitResult = WAIT_TIMEOUT then
+           begin
+            Result:=ERROR_WAIT_TIMEOUT;
+            Exit;
+           end
+          else if WaitResult = WAIT_ABANDONED then 
+           begin
+            Result:=ERROR_WAIT_ABANDONED;
+            Exit;
+           end
+          else if WaitResult <> ERROR_SUCCESS then
+           begin
+            Result:=WaitResult;
+            Exit;
+           end;         
+         end; 
+       end;    
+    
+      {Return Result}
+      Result:=ERROR_SUCCESS; 
+     finally
+      {Unlock the Completion}
+      if Unlock then CompletionUnlock(CompletionEntry);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+function CompletionTryWait(Completion:TCompletionHandle):LongWord; 
+{Try an existing Completion to see if it is completed
+ 
+ If the completion is not set (complete) then return immediately with an error
+ and do not wait for it to be completed}
+{Completion: Completion to try} 
+{Return: ERROR_SUCCESS if completed, ERROR_NOT_READY if not completed or another error code on failure}
+begin
+ {}
+ Result:=CompletionWait(Completion,0);
+ if Result = ERROR_WAIT_TIMEOUT then Result:=ERROR_NOT_READY;
+end;
+
+{==============================================================================}
+ 
+function CompletionReset(Completion:TCompletionHandle):LongWord; 
+{Reset (uncomplete) the state of an existing Completion entry
+
+ If the completion is not set then return with no action
+ 
+ If the completion is set then change the state to not set
+ 
+ For counted completions, reset the counter to 0}
+{Completion: Completion to reset the state for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ CompletionEntry:PCompletionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ CompletionEntry:=PCompletionEntry(Completion);
+ if CompletionEntry = nil then Exit;
+ if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+ {Check the Handler}
+ if Assigned(CompletionResetHandler) then
+  begin
+   {Use the Handler method}
+   Result:=CompletionResetHandler(CompletionEntry);
+  end
+ else
+  begin
+   {Use the Default method}
+   {$IFDEF LOCK_DEBUG}
+   if (CompletionEntry.Flags and (COMPLETION_FLAG_IRQ or COMPLETION_FLAG_FIQ or COMPLETION_FLAG_IRQFIQ)) = 0 then
+    begin
+     if SCHEDULER_FIQ_ENABLED then
+      begin
+       if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end
+     else
+      begin
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end;  
+    end;  
+   {$ENDIF}
+   
+   {Lock the Completion}
+   if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Signature}
+      if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+      {Check State}
+      if CompletionEntry.State = COMPLETION_STATE_COMPLETE then
+       begin
+        {Reset State}
+        CompletionEntry.State:=COMPLETION_STATE_RESET;
+        
+        {Reset Count}
+        CompletionEntry.Count:=0;
+       end; 
+      
+      {Return Result}
+      Result:=ERROR_SUCCESS; 
+     finally
+      {Unlock the Completion}
+      CompletionUnlock(CompletionEntry);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+function CompletionComplete(Completion:TCompletionHandle):LongWord; 
+{Set (complete) the state of an existing Completion entry
+
+ If the completion is already set then return with no action
+ 
+ If the completion is not set then release one waiting thread (if any)
+ and return
+ 
+ For counted completions, release one waiting thread, if there are no
+ waiting threads increment the count if it is not -1 and return}
+{Completion: Completion to set the state for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ CompletionEntry:PCompletionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ CompletionEntry:=PCompletionEntry(Completion);
+ if CompletionEntry = nil then Exit;
+ if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+ {Check the Handler}
+ if Assigned(CompletionCompleteHandler) then
+  begin
+   {Use the Handler method}
+   Result:=CompletionCompleteHandler(CompletionEntry);
+  end
+ else
+  begin
+   {Use the Default method}
+   {$IFDEF LOCK_DEBUG}
+   if (CompletionEntry.Flags and (COMPLETION_FLAG_IRQ or COMPLETION_FLAG_FIQ or COMPLETION_FLAG_IRQFIQ)) = 0 then
+    begin
+     if SCHEDULER_FIQ_ENABLED then
+      begin
+       if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end
+     else
+      begin
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end;  
+    end;  
+   {$ENDIF}
+   
+   {Lock the Completion}
+   if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Signature}
+      if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+      {Check Counted}
+      if (CompletionEntry.Flags and COMPLETION_FLAG_COUNTED) <> 0 then
+       begin
+        {Check List}
+        if ListIsEmpty(CompletionEntry.List) then
+         begin
+          {Check Count}
+          if CompletionEntry.Count <> LongWord(-1) then
+           begin
+            {Set State}
+            CompletionEntry.State:=COMPLETION_STATE_COMPLETE;
+            
+            {Increment Count}
+            Inc(CompletionEntry.Count);
+           end;  
+         end
+        else
+         begin        
+          {Release thread waiting on Completion}
+          CompletionEntry.Release(CompletionEntry.List);
+         end; 
+       end
+      else
+       begin
+        {Check State}
+        if CompletionEntry.State = COMPLETION_STATE_RESET then
+         begin
+          {Check List}
+          if ListNotEmpty(CompletionEntry.List) then
+           begin
+            {Release thread waiting on Completion}
+            CompletionEntry.Release(CompletionEntry.List);
+           end; 
+         end; 
+       end;       
+      
+      {Return Result}
+      Result:=ERROR_SUCCESS; 
+     finally
+      {Unlock the Completion}
+      CompletionUnlock(CompletionEntry);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;    
+  end; 
+end;
+
+{==============================================================================}
+
+function CompletionCompleteAll(Completion:TCompletionHandle):LongWord; 
+{Set (complete) the state of an existing Completion entry
+
+ If the completion is already set then return with no action
+ 
+ If the completion is not set then release all waiting threads (if any)
+ and return
+ 
+ For counted completions, set the count to -1, release all waiting threads
+ (if any) and return}
+{Completion: Completion to set the state for}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ CompletionEntry:PCompletionEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Check the Handle}
+ CompletionEntry:=PCompletionEntry(Completion);
+ if CompletionEntry = nil then Exit;
+ if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+ {Check the Handler}
+ if Assigned(CompletionCompleteAllHandler) then
+  begin
+   {Use the Handler method}
+   Result:=CompletionCompleteAllHandler(CompletionEntry);
+  end
+ else
+  begin
+   {Use the Default method}
+   {$IFDEF LOCK_DEBUG}
+   if (CompletionEntry.Flags and (COMPLETION_FLAG_IRQ or COMPLETION_FLAG_FIQ or COMPLETION_FLAG_IRQFIQ)) = 0 then
+    begin
+     if SCHEDULER_FIQ_ENABLED then
+      begin
+       if not(GetFIQ) and (InitializationCompleted[CPUGetCurrent]) then
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end
+     else
+      begin
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+        begin
+         Inc(CompletionDeadlockCounter);
+        end;
+      end;  
+    end;  
+   {$ENDIF}
+   
+   {Lock the Completion}
+   if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Signature}
+      if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
+ 
+      {Check State}
+      if CompletionEntry.State = COMPLETION_STATE_RESET then
+       begin
+        {Set State}
+        CompletionEntry.State:=COMPLETION_STATE_COMPLETE;
+        
+        {Set Count}
+        CompletionEntry.Count:=LongWord(-1);
+        
+        {Check List}
+        while ListNotEmpty(CompletionEntry.List) do
+         begin
+          {Release thread waiting on Completion}
+          CompletionEntry.Release(CompletionEntry.List);
+         end;
+       end; 
+      
+      {Return Result}
+      Result:=ERROR_SUCCESS; 
+     finally
+      {Unlock the Completion}
+      CompletionUnlock(CompletionEntry);
      end;
     end
    else
@@ -11415,8 +12488,6 @@ begin
          if ThreadEntry = nil then Exit;
          if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
          
-         //To Do //Critical //Lock the thread for SMP ? //No ? //No one else can dequeue (or enqueue) the thread because we have the queue lock ?
-         
          {Set ScheduleQueue}
          ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
         end;
@@ -11430,8 +12501,6 @@ begin
          ThreadEntry:=PThreadEntry(Result);
          if ThreadEntry = nil then Exit;
          if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-         
-         //To Do //Critical //Lock the thread for SMP ? //No ? //No one else can dequeue (or enqueue) the thread because we have the queue lock ?
          
          {Set ScheduleQueue}
          ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
@@ -12469,6 +13538,17 @@ begin
       try
        {Check Signature}
        if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
+    
+       {Check for Queue}
+       if ThreadEntry.ScheduleQueue <> INVALID_HANDLE_VALUE then
+        begin
+         {Remove from Queue (Scheduler Termination)}
+         Result:=QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
+         if Result <> ERROR_SUCCESS then Exit;
+
+         {Set ScheduleQueue}
+         ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
+        end; 
     
        {Check Stack Base}
        if ThreadEntry.StackBase <> nil then
@@ -23239,6 +24319,15 @@ end;
 
 {==============================================================================}
 
+function CompletionGetCount:LongWord; inline;
+{Get the current completion count}
+begin
+ {}
+ Result:=CompletionTableCount;
+end;
+
+{==============================================================================}
+
 function ListGetCount:LongWord; inline;
 {Get the current list count}
 begin
@@ -23304,7 +24393,7 @@ begin
    if StackMemory = nil then Exit;
 
    {Get Page}
-   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory));
+   PageTableGetEntry(PtrUInt(StackMemory),PageTableEntry);
    if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
     begin
      {Map Page}
@@ -23313,7 +24402,7 @@ begin
     end;
     
    {Get Next Page}
-   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE));
+   PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE),PageTableEntry);
    if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
     begin
      {Map Page}
@@ -23322,7 +24411,7 @@ begin
     end; 
 
    {Check Page}
-   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory));
+   PageTableGetEntry(PtrUInt(StackMemory),PageTableEntry);
    if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
     begin
      FreeMem(StackMemory);
@@ -23376,10 +24465,10 @@ begin
    StackMemory:=StackBase - (StackSize + MEMORY_PAGE_SIZE);
    
    {Get Next Page}
-   PageTableEntry:=PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE));
+   PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE),PageTableEntry);
    
    {Get Guard Page}
-   GuardPageEntry:=PageTableGetEntry(PtrUInt(StackMemory));
+   PageTableGetEntry(PtrUInt(StackMemory),GuardPageEntry);
    
    {Unmap Guard Page (Normal Access)} 
    GuardPageEntry.Flags:=PageTableEntry.Flags;
@@ -23587,6 +24676,7 @@ begin
   LIST_TYPE_WAIT_SEMAPHORE:Result:='LIST_TYPE_WAIT_SEMAPHORE';
   LIST_TYPE_WAIT_SYNCHRONIZER:Result:='LIST_TYPE_WAIT_SYNCHRONIZER';
   LIST_TYPE_WAIT_CONDITION:Result:='LIST_TYPE_WAIT_CONDITION';
+  LIST_TYPE_WAIT_COMPLETION:Result:='LIST_TYPE_WAIT_COMPLETION';
   LIST_TYPE_WAIT_EVENT:Result:='LIST_TYPE_WAIT_EVENT';
   LIST_TYPE_WAIT_THREAD:Result:='LIST_TYPE_WAIT_THREAD';
   LIST_TYPE_WAIT_MESSAGESLOT:Result:='LIST_TYPE_WAIT_MESSAGESLOT';
@@ -23752,6 +24842,7 @@ begin
   LIST_TYPE_WAIT_SEMAPHORE:Result:=Flags;
   LIST_TYPE_WAIT_SYNCHRONIZER:Result:=Flags;
   LIST_TYPE_WAIT_CONDITION:Result:=Flags;
+  LIST_TYPE_WAIT_COMPLETION:Result:=Flags;
   LIST_TYPE_WAIT_EVENT:Result:=Flags;
   LIST_TYPE_WAIT_THREAD:Result:=Flags;
   LIST_TYPE_WAIT_MESSAGESLOT:Result:=Flags;

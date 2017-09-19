@@ -309,7 +309,7 @@ const
  DWC_HOST_PORT_CTRLSTATUS_RESUME              = (1 shl 6);    {Bit 6}
  {Set by software to suspend the port}
  DWC_HOST_PORT_CTRLSTATUS_SUSPENDED           = (1 shl 7);    {Bit 7}
- {Software can set this to start a reset on this port.  Software must clear this after waiting 60 milliseconds for the reset is complete}
+ {Software can set this to start a reset on this port. Software must clear this after waiting 60 milliseconds for the reset to complete}
  DWC_HOST_PORT_CTRLSTATUS_RESET               = (1 shl 8);    {Bit 8}
  DWC_HOST_PORT_CTRLSTATUS_RESERVED            = (1 shl 9);    {Bit 9}
  {Current logic of data lines (10: logic of D+; 11: logic of D-). Changed by hardware only}
@@ -455,7 +455,7 @@ const
  DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT = ($3FF shl 19);    {Bits 19-28}
  {High 2 bits of the Packet ID used in the USB protocol. When performing the SETUP phase of a control transfer, specify 0x3 here to generate the needed SETUP token.
   When performing the DATA phase of a control transfer, initially specify 0x2 here to begin the DATA packets with the needed DATA1 Packet ID.
-  When performing the STATUS phase of a control transfer, specify 0x2 here to generate the neeed DATA1 Packet ID.
+  When performing the STATUS phase of a control transfer, specify 0x2 here to generate the needed DATA1 Packet ID.
   When starting a bulk, isochronous, or interrupt transfer, specify 0x0 here to generate the needed DATA0 Packet ID.
   In the case of a transfer consisting of multiple DATA packets, the hardware will update this field with the Packet ID to use for the next packet.  This field therefore only
   needs to be re-programmed if the transfer is moved to a different channel or the channel is re-used before the transfer is complete.  When doing so, software must save this
@@ -1425,7 +1425,7 @@ end;
 function DWCHostCancel(Host:PUSBHost;Request:PUSBRequest):LongWord;
 {Implementation of USBHostCancel for the DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
 
- See usb.pas for the documentation of thisinterface of the Host Controller Driver}
+ See usb.pas for the documentation of this interface of the Host Controller Driver}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure} 
 
 {Note: Caller must hold the device lock}
@@ -2815,15 +2815,18 @@ begin
  Host.ChannelRequests[Channel]:=Request;
 
  {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Setting up transaction on channel ' + IntToStr(Channel) + ':');
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   CHARACTERISTICS_MAX_PACKET_SIZE=' + IntToStr(Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) + ', CHARACTERISTICS_ENDPOINT_NUMBER=' + IntToStr((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_NUMBER) shr 11) + ',');
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   CHARACTERISTICS_ENDPOINT_DIRECTION=' + USBDirectionToString((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_DIRECTION) shr 15) + ', CHARACTERISTICS_LOWSPEED=' + IntToStr((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_LOWSPEED) shr 17) + ',');
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   CHARACTERISTICS_ENDPOINT_TYPE=' + USBTransferTypeToString((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_TYPE) shr 18) + ', CHARACTERISTICS_DEVICE_ADDRESS=' + IntToStr((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_DEVICE_ADDRESS) shr 22) + ',');
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   TRANSFER_SIZE=' + IntToStr(Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) + ', TRANSFER_PACKET_COUNT=' + IntToStr((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19) + ',');
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   TRANSFER_PACKET_ID=' + IntToStr((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_ID) shr 29) + ', SPLIT_CONTROL_SPLIT_ENABLE=' + IntToStr((SplitControl and DWC_HOST_CHANNEL_SPLIT_CONTROL_SPLIT_ENABLE) shr 31) + ',');
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   CompleteSplit=' + BooleanToString(Request.CompleteSplit));
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   DMAAddress=' + IntToHex(HostChannel.DMAAddress,8) + ', CurrentData=' + IntToHex(LongWord(Request.CurrentData),8));
- if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG:   AttemptedSize=' + IntToStr(Request.AttemptedSize) + ', AttemptedBytesRemaining=' + IntToStr(Request.AttemptedBytesRemaining) + ', AttemptedPacketsRemaining=' + IntToStr(Request.AttemptedPacketsRemaining));
+ if USB_LOG_ENABLED then
+  begin
+   USBLogDebug(Request.Device,'DWCOTG: Setting up transaction on channel ' + IntToStr(Channel) + ':');
+   USBLogDebug(Request.Device,'DWCOTG:   CHARACTERISTICS_MAX_PACKET_SIZE=' + IntToStr(Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_MAX_PACKET_SIZE) + ', CHARACTERISTICS_ENDPOINT_NUMBER=' + IntToStr((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_NUMBER) shr 11) + ',');
+   USBLogDebug(Request.Device,'DWCOTG:   CHARACTERISTICS_ENDPOINT_DIRECTION=' + USBDirectionToString((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_DIRECTION) shr 15) + ', CHARACTERISTICS_LOWSPEED=' + IntToStr((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_LOWSPEED) shr 17) + ',');
+   USBLogDebug(Request.Device,'DWCOTG:   CHARACTERISTICS_ENDPOINT_TYPE=' + USBTransferTypeToString((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_ENDPOINT_TYPE) shr 18) + ', CHARACTERISTICS_DEVICE_ADDRESS=' + IntToStr((Characteristics and DWC_HOST_CHANNEL_CHARACTERISTICS_DEVICE_ADDRESS) shr 22) + ',');
+   USBLogDebug(Request.Device,'DWCOTG:   TRANSFER_SIZE=' + IntToStr(Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) + ', TRANSFER_PACKET_COUNT=' + IntToStr((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19) + ',');
+   USBLogDebug(Request.Device,'DWCOTG:   TRANSFER_PACKET_ID=' + IntToStr((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_ID) shr 29) + ', SPLIT_CONTROL_SPLIT_ENABLE=' + IntToStr((SplitControl and DWC_HOST_CHANNEL_SPLIT_CONTROL_SPLIT_ENABLE) shr 31) + ',');
+   USBLogDebug(Request.Device,'DWCOTG:   CompleteSplit=' + BooleanToString(Request.CompleteSplit));
+   USBLogDebug(Request.Device,'DWCOTG:   DMAAddress=' + IntToHex(HostChannel.DMAAddress,8) + ', CurrentData=' + IntToHex(LongWord(Request.CurrentData),8));
+   USBLogDebug(Request.Device,'DWCOTG:   AttemptedSize=' + IntToStr(Request.AttemptedSize) + ', AttemptedBytesRemaining=' + IntToStr(Request.AttemptedBytesRemaining) + ', AttemptedPacketsRemaining=' + IntToStr(Request.AttemptedPacketsRemaining));
+  end; 
  {$ENDIF}
  
  {Program the channel registers}
@@ -3155,7 +3158,7 @@ begin
     Result:=USB_STATUS_SUCCESS;
    end;
   USB_C_PORT_ENABLE:begin
-    {Clear Enaled Change}
+    {Clear Enabled Change}
     Host.PortStatus.wPortChange:=Host.PortStatus.wPortChange and not(USB_PORT_CHANGE_ENABLED); 
     
     {Return Result}
