@@ -57,11 +57,11 @@ VideoCore IV VCHIQ
  VCHIQ is the VideoCore Host Interface driver which implements a messaging interface 
  between the host running on the ARM CPU and the VC4 GPU firmware.
  
- The format and content of the messages the are passed is not defined by this driver
+ The format and content of the messages that are passed is not defined by this driver
  but can be found throughout the various libraries that make up the userland interface
  and ultimately expose standard interfaces such as OpenGL ES, OpenVG and OpenMAX IL.
  
- There is no specific documentation for the VCHIQ messaging protocol or behavior and
+ There is no specific documentation for the VCHIQ messaging protocol or behaviour and
  all of the information for this driver has been obtained directly from the equivalent 
  Linux driver. The protocol basically uses a series of memory based slots that form
  a circular buffer, both the master (GPU) and slave (CPU) side have their own set of
@@ -69,7 +69,7 @@ VideoCore IV VCHIQ
  then receives messages from those slots and signals when processing has completed so
  that the slot can be freed.
  
- All requests from higher level interaces are received in the form of IO control requests
+ All requests from higher level interfaces are received in the form of IO control requests
  which are then formed into VCHIQ messages and submitted. The driver uses multiple threads
  to perform the message passing process, the primary ones being a slot handler thread and
  a slot recycle thread.
@@ -85,7 +85,7 @@ VideoCore IV VCHIQ
  are ported directly from the Linux driver and no other source of documentation exists.
  
  Not all of the defined constants and types are required for this driver, some are made
- available as imports for the VC4 unit because they are identical to the defintions of 
+ available as imports for the VC4 unit because they are identical to the definitions of 
  the interface used by applications to communicate with VCHI or VCHIQ services using
  the libvchiq_arm interface.
  
@@ -93,7 +93,7 @@ VideoCore IV VCHIQ
  ----------------------------
  
  Because the implementation of VCHIQ shares multiple structures between the ARM and the VC4
- it is essential that the sizes of those structures do not changes when compiling this driver
+ it is essential that the sizes of those structures do not change when compiling this driver
  for 64-bit. Of particular interest are things that refer to a memory address (a pointer)
  or things that are otherwise adjusted in size when changing between 32 and 64-bit.
  
@@ -10214,7 +10214,7 @@ begin
      Inc(AddressIndex);
      
      {Get Next Page}
-     BaseAddress:=NextAddress;
+     BaseAddress:=PageAddress;
      NextAddress:=BaseAddress + MEMORY_PAGE_SIZE;
      RunLength:=0;
     end;
