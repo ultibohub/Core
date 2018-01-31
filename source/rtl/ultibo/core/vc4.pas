@@ -57,17 +57,17 @@ VideoCore IV
  The VC4 is made up of many subsystems that perform functions ranging from 2D and 3D graphics acceleration
  to hardware audio, video and image encoding and decoding as well as display and camera interfaces.
 
- This unit provide common defintions, imports and support routines needed to enable all of the VC4 functionality
+ This unit provides common definitions, imports and support routines needed to enable all of the VC4 functionality
  for use in Ultibo. In addition to the functionality provided by this unit there are a number of drivers 
  that implement specific parts of the control and communication such as VCHIQ, VCSM and VCCMA.
  
  The majority of the interface between the ARM CPU and the VC4 GPU is contained with the userland libraries
- which are maintain by both Broadcom and Raspberry Pi. These have been ported to Ultibo and are provided
+ which are maintained by both Broadcom and Raspberry Pi. These have been ported to Ultibo and are provided
  as a series of static libraries that are included as required in order to expose the appropriate parts
  of the interface.
 
- There is currently no intention to directly port these libraries to Pascal as they represent are a vast
- and actively changing codebase, a direct port would offer no advantages and would require more maintenance
+ There is currently no intention to directly port these libraries to Pascal as they represent a vast and
+ actively changing codebase, a direct port would offer no advantages and would require more maintenance
  than the current form.
   
  Building the Userland libraries:
@@ -311,7 +311,9 @@ const
 {==============================================================================}
 var
  {VC4 specific variables}
- VC4_FILESYS_START:LongBool = True; {If True then start the VC File Service}
+ VC4_FILESYS_START:LongBool = False; {If True then start the VC File Service}
+ {Note: According to several reports the vcfiled service is no longer supported. 
+  It is disabled here by default as it appears to conflict with MMAL and OpenMAX}
  
 {==============================================================================}
 {VC4 VCOS Types (From interface\vcos_types.h)}
