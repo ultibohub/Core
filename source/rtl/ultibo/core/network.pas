@@ -880,7 +880,9 @@ type
    {Internal Methods}
    function GetName:String;
    function GetThreadID:TThreadID;
-   
+
+   procedure SetStatus(AStatus:Integer); virtual;
+
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
   public
@@ -890,7 +892,7 @@ type
    property Name:String read GetName;
 
    property State:Integer read FState;
-   property Status:Integer read FStatus;
+   property Status:Integer read FStatus write SetStatus;
    property MediaType:Word read FMediaType;
    property AdapterType:Word read FAdapterType;
    property LastError:Integer read FLastError;
@@ -2213,6 +2215,30 @@ begin
  if FThread = nil then Exit;
  
  Result:=FThread.ThreadID;
+end;
+
+{==============================================================================}
+
+procedure TNetworkAdapter.SetStatus(AStatus:Integer); 
+begin
+ {}
+ {Check State}
+ if FState <> ADAPTER_STATE_ENABLED then Exit; {Check Status}
+ 
+ {Check Status}
+ case AStatus of
+  ADAPTER_STATUS_DOWN:begin
+    {Set Status}
+    FStatus:=AStatus;
+   end;
+  ADAPTER_STATUS_UP:begin
+    {Check Device}
+    //To Do //Check Device status before allowing ADAPTER_STATUS_UP 
+    
+    {Set Status}
+    FStatus:=AStatus;
+   end;  
+ end;
 end;
 
 {==============================================================================}

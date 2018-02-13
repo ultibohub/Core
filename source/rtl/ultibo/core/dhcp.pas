@@ -1301,7 +1301,13 @@ begin
         if not ExtractDHCPOption(DHCP_MSG_TYPE,AHeader,Option,Length) then Exit;
         
         {Check Message Type}
-        if PByte(Option)^ <> DHCP_ACK then Exit;
+        if PByte(Option)^ <> DHCP_ACK then
+         begin
+          {On DHCP NAK expire the address immediately to restart init}
+          if PByte(Option)^ = DHCP_NAK then TIPTransportAdapter(AAdapter).ExpiryTime:=GetTickCount64;
+           
+          Exit;
+         end;
         
         {Get the Lease Time}
         if not ExtractDHCPOption(DHCP_IP_ADDR_LEASE_TIME,AHeader,Option,Length) then Exit;

@@ -3724,74 +3724,300 @@ begin
        {Check for Lease}
        if Current.LeaseTime <> 0 then
         begin
-         {Check for Renew}
-         if (Current.RenewalTime <> 0) and (Current.RenewalTime < CurrentTime) then
+         {Check for Expire}
+         if (Current.ExpiryTime <> 0) and (Current.ExpiryTime < CurrentTime) then
           begin
+           {Get Next}
+           {Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));} {Not required}
+            
+           {Remove Adapter}
+           {RemoveAdapter(Current.Adapter);} {Not required}
+           
            {Call Config Handlers}
            Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
            while Config <> nil do
             begin
+             {Check Type}
              if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
               begin
+               {Check Handler}
                if Assigned(Config.ConfigHandler) then
                 begin
-                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Renewing adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuration expired, unconfiguring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
                  
-                 //To Do //Must implement a Retry Count and/or a Timeout backoff
-                  
-                 Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW);
+                 {Check for Release}
+                 if FAutoRelease then
+                  begin
+                   {Call Config Handler}
+                   Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RELEASE); {Do not check return}
+                  end;
+           
+                 {Update Adapter}
+                 Current.Configured:=False;
                  
+                 {Remove Default Route}
+                 if not CompareDefault(Current.Gateway) then
+                  begin
+                   RemoveRoute(IP_DEFAULT_NETWORK,Current.Address);
+                  end;
+                 
+                 {Remove Broadcast Route}
+                 RemoveRoute(IP_BROADCAST_NETWORK,Current.Address);
+                 
+                 {Remove Multicast Route}
+                 RemoveRoute(IP_MULTICAST_NETWORK,Current.Address);
+                 
+                 {Remove Routes (Network, Address, Directed)}
+                 RemoveRoute(Current.Directed,Current.Address);
+                 RemoveRoute(Current.Address,IP_LOOPBACK_ADDRESS);
+                 RemoveRoute(Current.Network,Current.Address);
+                 
+                 {Remove Address}
+                 RemoveAddress(Current.Address);
+                 
+                 {Remove RARP Address}
+                 FRARP.UnloadAddress(Current.Adapter,Current.Address);
+                 
+                 {Remove ARP Addresses}
+                 {FARP.UnloadAddress(Current.Adapter,IP_BROADCAST_ADDRESS);} {Removed in ARP.RemoveAdapter}
+                 FARP.UnloadAddress(Current.Adapter,Current.Directed);
+                 FARP.UnloadAddress(Current.Adapter,Current.Address);
+         
+                 {Reset Adapter}
+                 LongWord(Current.Address.S_addr):=INADDR_ANY;
+                 LongWord(Current.Netmask.S_addr):=INADDR_ANY;
+                 LongWord(Current.Gateway.S_addr):=INADDR_ANY;
+                 LongWord(Current.Network.S_addr):=INADDR_ANY;
+                 LongWord(Current.Directed.S_addr):=INADDR_BROADCAST;
+                 
+                 LongWord(Current.Server.S_addr):=INADDR_BROADCAST;
+                 
+                 Current.LeaseTime:=0;
+                 Current.RetryTime:=GetTickCount64; {Initial Configuration}
+                 Current.ExpiryTime:=0;
+                 Current.RenewalTime:=0;
+                 Current.RebindingTime:=0;
+                 
+                 Current.ConfigType:=Current.ConfigDefault;
+                 
+                 {Unlock Config}
+                 Config.ReaderUnlock;
+                 
+                 Break;
                 end;
               end;
               
              {Get Next} 
              Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
             end;
-          end;
-         
-         {Check for Rebind}
-         if (Current.RebindingTime <> 0) and (Current.RebindingTime < CurrentTime) then
+          end
+         else
           begin
-           {Call Config Handlers}
-           Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
-           while Config <> nil do
+           {Check for Rebind}
+           if (Current.RebindingTime <> 0) and (Current.RebindingTime < CurrentTime) then
             begin
-             if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+             {Check for Retry}
+             if (Current.RetryTime <> 0) and (Current.RetryTime < CurrentTime) then
               begin
-               if Assigned(Config.ConfigHandler) then
+               {Call Config Handlers}
+               Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
+               while Config <> nil do
                 begin
-                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Rebinding adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                 {Check Type}
+                 if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+                  begin
+                   {Check Handler}
+                   if Assigned(Config.ConfigHandler) then
+                    begin
+                     if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Rebinding adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                     
+                     {Call Rebind to extend the Lease}
+                     if not Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND) then
+                      begin
+                       if NETWORK_LOG_ENABLED then NetworkLogError(nil,'IP: Rebind failed for adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                       
+                       {Set Retry if Config failed}
+                       Current.RetryTime:=GetTickCount64 + CONFIG_REBIND_TIMEOUT;
+                       
+                       {Check Expiry (Expires immediately on NAK)}
+                       if Current.ExpiryTime <= GetTickCount64 then Current.RetryTime:=GetTickCount64;
+                      end;
+                    end;
+                  end;
                  
-                 //To Do //Must implement a Retry Count and/or a Timeout backoff
-                  
-                 Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND);
-                 
+                 {Get Next} 
+                 Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
                 end;
               end;
-             
-             {Get Next} 
-             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
+            end
+           else
+            begin
+             {Check for Renew}
+             if (Current.RenewalTime <> 0) and (Current.RenewalTime < CurrentTime) then
+              begin
+               {Check for Retry}
+               if (Current.RetryTime <> 0) and (Current.RetryTime < CurrentTime) then
+                begin
+                 {Call Config Handlers}
+                 Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
+                 while Config <> nil do
+                  begin
+                   {Check Type}
+                   if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+                    begin
+                     {Check Handler}
+                     if Assigned(Config.ConfigHandler) then
+                      begin
+                       if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Renewing adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                        
+                       {Call Renew to extend the Lease}
+                       if not Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW) then
+                        begin
+                         if NETWORK_LOG_ENABLED then NetworkLogError(nil,'IP: Renew failed for adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
+                         
+                         {Set Retry if Config failed}
+                         Current.RetryTime:=GetTickCount64 + CONFIG_RENEW_TIMEOUT;
+                         
+                         {Check Expiry (Expires immediately on NAK)}
+                         if Current.ExpiryTime <= GetTickCount64 then Current.RetryTime:=GetTickCount64;
+                        end;
+                      end;
+                    end;
+                    
+                   {Get Next} 
+                   Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
+                  end;
+                end;
+              end;
             end;
-          end;
-          
-         {Check for Expire}
-         if (Current.ExpiryTime <> 0) and (Current.ExpiryTime < CurrentTime) then
-          begin
-           {Get Next}
-           Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-            
-           {Remove Adapter}
-           RemoveAdapter(Current.Adapter);
-           
-           //To Do //This should unconfigure the adapter and start again instead of removing it
           end;
         end;
       end
      else
       begin
-       //To do //Unconfigure
+       {Unconfigure on Status Down}
+       if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Status change to down, unconfiguring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Current.ConfigType));
        
-       //Current.ConfigType:=Current.ConfigDefault;
+       case Current.ConfigType of
+        CONFIG_TYPE_STATIC:begin
+          {Update Adapter}
+          Current.Configured:=False;
+      
+          {Remove Default Route}
+          if not CompareDefault(Current.Gateway) then
+           begin
+            RemoveRoute(IP_DEFAULT_NETWORK,Current.Address);
+           end;
+          
+          {Remove Broadcast Route}
+          RemoveRoute(IP_BROADCAST_NETWORK,Current.Address);
+          
+          {Remove Multicast Route}
+          RemoveRoute(IP_MULTICAST_NETWORK,Current.Address);
+          
+          {Remove Routes (Network, Address, Directed)}
+          RemoveRoute(Current.Directed,Current.Address);
+          RemoveRoute(Current.Address,IP_LOOPBACK_ADDRESS);
+          RemoveRoute(Current.Network,Current.Address);
+          
+          {Remove Address}
+          RemoveAddress(Current.Address);
+         end;
+        CONFIG_TYPE_LOOPBACK:begin
+          {Update Adapter}
+          Current.Configured:=False;
+          
+          {Remove loopback Network}
+          RemoveNetwork('loopback');
+          
+          {Remove loopback Address}
+          RemoveAddress(IP_LOOPBACK_ADDRESS);
+          
+          {Remove loopback Route}
+          RemoveRoute(IP_LOOPBACK_NETWORK,IP_LOOPBACK_ADDRESS);
+          
+          {Remove localhost Host}
+          RemoveHost(IP_LOOPBACK_ADDRESS);
+         end;
+        else
+         begin
+          {Get Config}
+          Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
+          while Config <> nil do
+           begin
+            {Check Type}
+            if Config.ConfigType = Current.ConfigType then {Note: Cannot be Auto if Configured}
+             begin
+              {Check Handler}
+              if Assigned(Config.ConfigHandler) then
+               begin
+                {Check for Release}
+                if FAutoRelease then
+                 begin
+                  {Call Config Handler}
+                  Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RELEASE); {Do not check return}
+                 end; 
+
+                {Update Adapter}
+                Current.Configured:=False;
+                
+                {Remove Default Route}
+                if not CompareDefault(Current.Gateway) then
+                 begin
+                  RemoveRoute(IP_DEFAULT_NETWORK,Current.Address);
+                 end;
+                
+                {Remove Broadcast Route}
+                RemoveRoute(IP_BROADCAST_NETWORK,Current.Address);
+                
+                {Remove Multicast Route}
+                RemoveRoute(IP_MULTICAST_NETWORK,Current.Address);
+                
+                {Remove Routes (Network, Address, Directed)}
+                RemoveRoute(Current.Directed,Current.Address);
+                RemoveRoute(Current.Address,IP_LOOPBACK_ADDRESS);
+                RemoveRoute(Current.Network,Current.Address);
+                
+                {Remove Address}
+                RemoveAddress(Current.Address);
+                 
+                {Unlock Config}
+                Config.ReaderUnlock;
+                 
+                Break;
+               end;     
+             end;
+             
+            {Get Next} 
+            Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
+           end;
+         end;
+       end;
+          
+       {Remove RARP Address}
+       FRARP.UnloadAddress(Current.Adapter,Current.Address);
+       
+       {Remove ARP Addresses}
+       {FARP.UnloadAddress(Current.Adapter,IP_BROADCAST_ADDRESS);} {Removed in ARP.RemoveAdapter}
+       FARP.UnloadAddress(Current.Adapter,Current.Directed);
+       FARP.UnloadAddress(Current.Adapter,Current.Address);
+          
+       {Reset Adapter}
+       LongWord(Current.Address.S_addr):=INADDR_ANY;
+       LongWord(Current.Netmask.S_addr):=INADDR_ANY;
+       LongWord(Current.Gateway.S_addr):=INADDR_ANY;
+       LongWord(Current.Network.S_addr):=INADDR_ANY;
+       LongWord(Current.Directed.S_addr):=INADDR_BROADCAST;
+       
+       LongWord(Current.Server.S_addr):=INADDR_BROADCAST;
+       
+       Current.LeaseTime:=0;
+       Current.RetryTime:=GetTickCount64; {Initial Configuration}
+       Current.ExpiryTime:=0;
+       Current.RenewalTime:=0;
+       Current.RebindingTime:=0;
+       
+       Current.ConfigType:=Current.ConfigDefault;
       end;      
     end;
     
