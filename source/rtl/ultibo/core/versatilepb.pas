@@ -6,7 +6,7 @@ Copyright (C) 2016 - SoftOz Pty Ltd.
 Arch
 ====
 
- ARMv7 (Cortex A8)
+ ARMv7 (Cortex-A8)
 
 Boards
 ======
