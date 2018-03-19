@@ -258,6 +258,10 @@ type
  PLONG = ^LONG;
  LPLONG = ^LONG;
  LPDWORD = ^DWORD;
+ PUINT = ^UINT;
+ PUCHAR = ^UCHAR;
+ PUSHORT = ^USHORT;
+ PULONG = ^ULONG;
  INT_PTR = PtrInt;    {Integer}
  UINT_PTR = PtrUInt;  {LongWord}
  LONG_PTR = PtrInt;   {LongInt}

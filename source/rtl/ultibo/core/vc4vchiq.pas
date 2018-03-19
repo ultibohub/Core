@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV VCHIQ driver unit.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -16,7 +16,7 @@ Boards
  Raspberry Pi - Model A/B/A+/B+/CM1
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  Raspberry Pi CM3
  
 Licence
@@ -3405,7 +3405,7 @@ begin
  Result:=VCHIQ_ERROR;
  
  {$IFDEF VC4VCHIQ_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VCHIQ: Mark Service Closing (Service=' + IntToHex(PtrUInt(Service),8) + ' Reason=' + VCHIQReasonToString(Reason) + ' Header=' + IntToHex(PtrUInt(Header),8) + ' BulkUserdata=' + IntToHex(PtrUInt(BulkUserdata),8) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VCHIQ: Make Service Callback (Service=' + IntToHex(PtrUInt(Service),8) + ' Reason=' + VCHIQReasonToString(Reason) + ' Header=' + IntToHex(PtrUInt(Header),8) + ' BulkUserdata=' + IntToHex(PtrUInt(BulkUserdata),8) + ')');
  {$ENDIF}
  
  {Check Service}
@@ -10234,7 +10234,7 @@ begin
   begin
 
    //To Do //Continuing //Resolve cache line size difference between ARMv6 and ARMv7
-   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'VCHIQ: VCHIQCreatePagelist - Fragments'); //To Do //Temp
+   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQCreatePagelist - Fragments'); //To Do //Temp
    
    {Wait Free Fragments}
    if SemaphoreWait(VCHIQDevice.FragmentsSemaphore) <> ERROR_SUCCESS then
@@ -10360,7 +10360,7 @@ begin
   begin
   
    //To Do //Continuing //Resolve cache line size difference between ARMv6 and ARMv7
-   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'VCHIQ: VCHIQFreePagelist - Fragments'); //To Do //Temp
+   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQFreePagelist - Fragments'); //To Do //Temp
    
    {Get Fragments}
    Fragments:=VCHIQDevice.FragmentsBase + ((Pagelist.pagetype - VCHIQ_PAGELIST_READ_WITH_FRAGMENTS) * VCHIQDevice.FragmentsSize);

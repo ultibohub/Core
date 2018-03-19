@@ -946,16 +946,20 @@ begin
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Commit (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
- {Check Flags}
- if (Flags and FRAMEBUFFER_TRANSFER_DMA) = 0 then
+ {Check Cache}
+ if not DMA_CACHE_COHERENT then
   begin
-   {Clean Cache}
-   //To Do //Continuing //Check for DMA Cache Coherent ?
-  end
- else
-  begin
-   {Invalidate Cache}
-   //To Do //Continuing //Check for DMA Cache Coherent ?
+   {Check Flags}
+   if (Flags and FRAMEBUFFER_TRANSFER_DMA) = 0 then
+    begin
+     {Clean Cache}
+     CleanAndInvalidateDataCacheRange(Address,Size); 
+    end
+   else
+    begin
+     {Invalidate Cache}
+     InvalidateDataCacheRange(Address,Size);
+    end;  
   end;  
  
  {Return Result}

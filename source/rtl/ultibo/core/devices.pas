@@ -354,6 +354,7 @@ const
  {Device logging}
  DEVICE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Device debugging messages}
  DEVICE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Device informational messages, such as a device being attached or detached}
+ DEVICE_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Device warning messages}
  DEVICE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Device error messages}
  DEVICE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Device messages}
 
@@ -1258,9 +1259,10 @@ function DeviceClassToString(DeviceClass:LongWord):String;
 function NotificationToString(Notification:LongWord):String;
 
 procedure DeviceLog(Level:LongWord;Device:PDevice;const AText:String);
-procedure DeviceLogInfo(Device:PDevice;const AText:String);
-procedure DeviceLogError(Device:PDevice;const AText:String);
-procedure DeviceLogDebug(Device:PDevice;const AText:String);
+procedure DeviceLogInfo(Device:PDevice;const AText:String); inline;
+procedure DeviceLogWarn(Device:PDevice;const AText:String); inline;
+procedure DeviceLogError(Device:PDevice;const AText:String); inline;
+procedure DeviceLogDebug(Device:PDevice;const AText:String); inline;
 
 {==============================================================================}
 {Driver Helper Functions}
@@ -7016,6 +7018,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = DEVICE_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = DEVICE_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -7036,7 +7042,7 @@ end;
 
 {==============================================================================}
 
-procedure DeviceLogInfo(Device:PDevice;const AText:String);
+procedure DeviceLogInfo(Device:PDevice;const AText:String); inline;
 begin
  {}
  DeviceLog(DEVICE_LOG_LEVEL_INFO,Device,AText);
@@ -7044,7 +7050,15 @@ end;
 
 {==============================================================================}
 
-procedure DeviceLogError(Device:PDevice;const AText:String);
+procedure DeviceLogWarn(Device:PDevice;const AText:String); inline;
+begin
+ {}
+ DeviceLog(DEVICE_LOG_LEVEL_WARN,Device,AText);
+end;
+
+{==============================================================================}
+
+procedure DeviceLogError(Device:PDevice;const AText:String); inline;
 begin
  {}
  DeviceLog(DEVICE_LOG_LEVEL_ERROR,Device,AText);
@@ -7052,7 +7066,7 @@ end;
 
 {==============================================================================}
 
-procedure DeviceLogDebug(Device:PDevice;const AText:String);
+procedure DeviceLogDebug(Device:PDevice;const AText:String); inline;
 begin
  {}
  DeviceLog(DEVICE_LOG_LEVEL_DEBUG,Device,AText);

@@ -280,6 +280,7 @@ const
  {SCSI logging}
  SCSI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SCSI debugging messages}
  SCSI_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SCSI informational messages, such as a device being attached or detached}
+ SCSI_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SCSI warning messages}
  SCSI_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SCSI error messages}
  SCSI_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SCSI messages}
 
@@ -473,9 +474,10 @@ function SCSIGetCount:LongWord; inline;
 function SCSIDeviceCheck(SCSI:PSCSIDevice):PSCSIDevice;
 
 procedure SCSILog(Level:LongWord;SCSI:PSCSIDevice;const AText:String);
-procedure SCSILogInfo(SCSI:PSCSIDevice;const AText:String);
-procedure SCSILogError(SCSI:PSCSIDevice;const AText:String);
-procedure SCSILogDebug(SCSI:PSCSIDevice;const AText:String);
+procedure SCSILogInfo(SCSI:PSCSIDevice;const AText:String); inline;
+procedure SCSILogWarn(SCSI:PSCSIDevice;const AText:String); inline;
+procedure SCSILogError(SCSI:PSCSIDevice;const AText:String); inline;
+procedure SCSILogDebug(SCSI:PSCSIDevice;const AText:String); inline;
 
 function SCSIDeviceTypeToStorageType(DeviceType:Byte;Removable,Floppy:Boolean):LongWord;
 
@@ -1384,6 +1386,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = SCSI_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = SCSI_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1404,7 +1410,7 @@ end;
 
 {==============================================================================}
 
-procedure SCSILogInfo(SCSI:PSCSIDevice;const AText:String);
+procedure SCSILogInfo(SCSI:PSCSIDevice;const AText:String); inline;
 begin
  {}
  SCSILog(SCSI_LOG_LEVEL_INFO,SCSI,AText);
@@ -1412,7 +1418,15 @@ end;
 
 {==============================================================================}
 
-procedure SCSILogError(SCSI:PSCSIDevice;const AText:String);
+procedure SCSILogWarn(SCSI:PSCSIDevice;const AText:String); inline;
+begin
+ {}
+ SCSILog(SCSI_LOG_LEVEL_WARN,SCSI,AText);
+end;
+
+{==============================================================================}
+
+procedure SCSILogError(SCSI:PSCSIDevice;const AText:String); inline;
 begin
  {}
  SCSILog(SCSI_LOG_LEVEL_ERROR,SCSI,AText);
@@ -1420,7 +1434,7 @@ end;
 
 {==============================================================================}
 
-procedure SCSILogDebug(SCSI:PSCSIDevice;const AText:String);
+procedure SCSILogDebug(SCSI:PSCSIDevice;const AText:String); inline;
 begin
  {}
  SCSILog(SCSI_LOG_LEVEL_DEBUG,SCSI,AText);

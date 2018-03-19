@@ -61,6 +61,7 @@ const
  {SIP logging}
  SIP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SIP debugging messages}
  SIP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SIP informational messages,}
+ SIP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SIP warning messages,}
  SIP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SIP error messages}
  SIP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SIP messages}
 
@@ -101,9 +102,10 @@ procedure SIPInit;
 {==============================================================================}
 {SIP Helper Functions}
 procedure SIPLog(Level:LongWord;const AText:String);
-procedure SIPLogInfo(const AText:String);
-procedure SIPLogError(const AText:String);
-procedure SIPLogDebug(const AText:String);
+procedure SIPLogInfo(const AText:String); inline;
+procedure SIPLogWarn(const AText:String); inline;
+procedure SIPLogError(const AText:String); inline;
+procedure SIPLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -152,6 +154,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = SIP_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = SIP_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -166,7 +172,7 @@ end;
 
 {==============================================================================}
 
-procedure SIPLogInfo(const AText:String);
+procedure SIPLogInfo(const AText:String); inline;
 begin
  {}
  SIPLog(SIP_LOG_LEVEL_INFO,AText);
@@ -174,7 +180,15 @@ end;
 
 {==============================================================================}
 
-procedure SIPLogError(const AText:String);
+procedure SIPLogWarn(const AText:String); inline;
+begin
+ {}
+ SIPLog(SIP_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure SIPLogError(const AText:String); inline;
 begin
  {}
  SIPLog(SIP_LOG_LEVEL_ERROR,AText);
@@ -182,7 +196,7 @@ end;
 
 {==============================================================================}
 
-procedure SIPLogDebug(const AText:String);
+procedure SIPLogDebug(const AText:String); inline;
 begin
  {}
  SIPLog(SIP_LOG_LEVEL_DEBUG,AText);

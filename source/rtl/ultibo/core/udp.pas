@@ -2243,8 +2243,10 @@ function TUDPProtocol.SendTo(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:
 
 {Note: Caller must hold the Socket lock}
 var
- Address:TInAddr;
- Address6:TIn6Addr;
+ InAddr:TInAddr;
+ In6Addr:TIn6Addr;
+ Route:TRouteEntry;
+ Address:TAddressEntry;
  SockAddr6:PSockAddr6;
  Packet:TPacketFragment;
 begin
@@ -2258,9 +2260,9 @@ begin
  {Check Socket} 
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
-   {Check for Bound}
-   NetworkSetLastError(WSAEINVAL);
-   if not ASocket.SocketState.LocalAddress then Exit;
+   {Check for Bound} {Moved Below}
+   {NetworkSetLastError(WSAEINVAL);}
+   {if not ASocket.SocketState.LocalAddress then Exit;}
    
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
@@ -2283,18 +2285,51 @@ begin
       if AToLength < SizeOf(TSockAddr) then Exit;
       
       {Get the RemoteAddress}
-      Address:=InAddrToHost(AToAddr.sin_addr);
+      InAddr:=InAddrToHost(AToAddr.sin_addr);
       
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
-      if TIPTransport(ASocket.Transport).CompareDefault(Address) then Exit;
+      if TIPTransport(ASocket.Transport).CompareDefault(InAddr) then Exit;
       
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
-      if TIPTransport(ASocket.Transport).CompareBroadcast(Address) or TIPTransport(ASocket.Transport).CompareDirected(Address) then
+      if TIPTransport(ASocket.Transport).CompareBroadcast(InAddr) or TIPTransport(ASocket.Transport).CompareDirected(InAddr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
+      
+      {Check the Binding}
+      if not(ASocket.SocketState.LocalAddress) or TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
+       begin
+        {Check the Route}
+        NetworkSetLastError(WSAENETUNREACH);
+        Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddr,True,NETWORK_LOCK_READ);
+        if Route = nil then Exit;
+        try
+         {Check the LocalAddress}
+         NetworkSetLastError(WSAEADDRNOTAVAIL);
+         Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
+         if Address = nil then Exit;
+         try
+          {Bind the Port}
+          if not ASocket.SocketState.LocalAddress then
+           begin
+            NetworkSetLastError(WSAEADDRINUSE);
+            if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
+           end; 
+          
+          {Bind the Address}
+          ASocket.SocketState.LocalAddress:=True;
+          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
+         finally
+          {Unlock Address}
+          Address.ReaderUnlock;
+         end;
+        finally
+         {Unlock Route}
+         Route.ReaderUnlock;
+        end;      
+       end; 
       
       {Create the Fragment}
       Packet.Size:=ALength;
@@ -2302,7 +2337,7 @@ begin
       Packet.Next:=nil;
       
       {Send the Packet}
-      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@Address,ASocket.ProtocolState.LocalPort,WordBEtoN(AToAddr.sin_port),@Packet,ALength,AFlags);
+      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@InAddr,ASocket.ProtocolState.LocalPort,WordBEtoN(AToAddr.sin_port),@Packet,ALength,AFlags);
      end;
     AF_INET6:begin
       {Get Socket Address}
@@ -2317,18 +2352,51 @@ begin
       if AToLength < SizeOf(TSockAddr6) then Exit;
       
       {Get the RemoteAddress}
-      Address6:=SockAddr6.sin6_addr;
+      In6Addr:=SockAddr6.sin6_addr;
       
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
-      if TIP6Transport(ASocket.Transport).CompareDefault(Address6) then Exit;
+      if TIP6Transport(ASocket.Transport).CompareDefault(In6Addr) then Exit;
       
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
-      if TIP6Transport(ASocket.Transport).CompareBroadcast(Address6) or TIP6Transport(ASocket.Transport).CompareDirected(Address6) then
+      if TIP6Transport(ASocket.Transport).CompareBroadcast(In6Addr) or TIP6Transport(ASocket.Transport).CompareDirected(In6Addr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
+      
+      {Check the Binding}
+      if not(ASocket.SocketState.LocalAddress) or TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
+       begin
+        {Check the Route}
+        NetworkSetLastError(WSAENETUNREACH);
+        Route:=TIP6Transport(ASocket.Transport).GetRouteByAddress(In6Addr,True,NETWORK_LOCK_READ);
+        if Route = nil then Exit;
+        try
+         {Check the LocalAddress}
+         NetworkSetLastError(WSAEADDRNOTAVAIL);
+         Address:=TIP6Transport(ASocket.Transport).GetAddressByAddress(TIP6RouteEntry(Route).Address,True,NETWORK_LOCK_READ);
+         if Address = nil then Exit;
+         try
+          {Bind the Port}
+          if not ASocket.SocketState.LocalAddress then
+           begin
+            NetworkSetLastError(WSAEADDRINUSE);
+            if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
+           end; 
+          
+          {Bind the Address}
+          ASocket.SocketState.LocalAddress:=True;
+          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
+         finally
+          {Unlock Address}
+          Address.ReaderUnlock;
+         end;
+        finally
+         {Unlock Route}
+         Route.ReaderUnlock;
+        end;      
+       end; 
       
       {Create the Fragment}
       Packet.Size:=ALength;
@@ -2336,7 +2404,7 @@ begin
       Packet.Next:=nil;
       
       {Send the Packet}
-      Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@Address6,ASocket.ProtocolState.LocalPort,WordBEtoN(SockAddr6.sin6_port),@Packet,ALength,AFlags);
+      Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@In6Addr,ASocket.ProtocolState.LocalPort,WordBEtoN(SockAddr6.sin6_port),@Packet,ALength,AFlags);
      end;
    end;
   end

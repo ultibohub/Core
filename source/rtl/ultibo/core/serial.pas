@@ -114,6 +114,11 @@ const
  SERIAL_WRITE_NON_BLOCK   = $00000001; {Do not block when writing, if the buffer is full return immediately}
  SERIAL_WRITE_PEEK_BUFFER = $00000002; {Return the number of bytes free in the transmit buffer without writing anything}
  
+ {Serial Wait Directions}
+ SERIAL_WAIT_NONE     = 0;
+ SERIAL_WAIT_RECEIVE  = 1; {Wait for data to be available in the receive buffer}
+ SERIAL_WAIT_TRANSMIT = 2; {Wait for space to be available in the transmit buffer}
+ 
  {Serial Flush Flags}
  SERIAL_FLUSH_NONE     = $00000000;
  SERIAL_FLUSH_RECEIVE  = $00000001; {Flush the receive buffer}
@@ -140,6 +145,7 @@ const
  {Serial logging}
  SERIAL_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Serial debugging messages}
  SERIAL_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Serial informational messages, such as a device being attached or detached}
+ SERIAL_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Serial warning messages}
  SERIAL_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Serial error messages}
  SERIAL_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Serial messages}
 
@@ -199,9 +205,14 @@ type
  TSerialDeviceRead = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  TSerialDeviceWrite = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
+ TSerialDeviceWait = function(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;
  TSerialDeviceFlush = function(Serial:PSerialDevice;Flags:LongWord):LongWord;
- TSerialDeviceStatus = function(Serial:PSerialDevice):LongWord;
+ 
+ TSerialDeviceGetStatus = function(Serial:PSerialDevice):LongWord;
+ TSerialDeviceSetStatus = function(Serial:PSerialDevice;Status:LongWord):LongWord;
+ 
  TSerialDeviceGetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+ TSerialDeviceSetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
  
  TSerialDevice = record
   {Device Properties}
@@ -214,9 +225,12 @@ type
   DeviceClose:TSerialDeviceClose;                 {A Device specific DeviceClose method implementing the standard Serial device interface (Mandatory)}
   DeviceRead:TSerialDeviceRead;                   {A Device specific DeviceRead method implementing the standard Serial device interface (Mandatory)}
   DeviceWrite:TSerialDeviceWrite;                 {A Device specific DeviceWrite method implementing the standard Serial device interface (Mandatory)}
-  DeviceFlush:TSerialDeviceFlush;                 {A Device specific DeviceFlush method implementing the standard Serial device interface (Or nil if the default method is suitable)}   
-  DeviceStatus:TSerialDeviceStatus;               {A Device specific DeviceStatus method implementing the standard Serial device interface (Or nil if the default method is suitable)}
+  DeviceWait:TSerialDeviceWait;                   {A Device specific DeviceWait method implementing the standard Serial device interface (Or nil if the default method is suitable)}
+  DeviceFlush:TSerialDeviceFlush;                 {A Device specific DeviceFlush method implementing the standard Serial device interface (Or nil if the default method is suitable)}
+  DeviceGetStatus:TSerialDeviceGetStatus;         {A Device specific DeviceGetStatus method implementing the standard Serial device interface (Or nil if the default method is suitable)}
+  DeviceSetStatus:TSerialDeviceSetStatus;         {A Device specific DeviceSetStatus method implementing the standard Serial device interface (Optional)}
   DeviceGetProperties:TSerialDeviceGetProperties; {A Device specific DeviceGetProperties method implementing the standard Serial device interface (Or nil if the default method is suitable)}
+  DeviceSetProperties:TSerialDeviceSetProperties; {A Device specific DeviceSetProperties method implementing the standard Serial device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   Receive:TSerialBuffer;                          {Serial receive buffer}
@@ -268,11 +282,16 @@ function SerialDeviceClose(Serial:PSerialDevice):LongWord;
 function SerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function SerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
+function SerialDeviceWait(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;
 function SerialDeviceFlush(Serial:PSerialDevice;Flags:LongWord):LongWord;
-function SerialDeviceStatus(Serial:PSerialDevice):LongWord;
+
+function SerialDeviceStatus(Serial:PSerialDevice):LongWord; inline;
+function SerialDeviceGetStatus(Serial:PSerialDevice):LongWord;
+function SerialDeviceSetStatus(Serial:PSerialDevice;Status:LongWord):LongWord;
 
 function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord; inline;
 function SerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+function SerialDeviceSetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
   
 function SerialDeviceCreate:PSerialDevice;
 function SerialDeviceCreateEx(Size:LongWord):PSerialDevice;
@@ -331,6 +350,7 @@ function SerialBufferWriteComplete(Buffer:PSerialBuffer;Added:LongWord):Boolean;
 
 procedure SerialLog(Level:LongWord;Serial:PSerialDevice;const AText:String);
 procedure SerialLogInfo(Serial:PSerialDevice;const AText:String); inline;
+procedure SerialLogWarn(Serial:PSerialDevice;const AText:String); inline;
 procedure SerialLogError(Serial:PSerialDevice;const AText:String); inline;
 procedure SerialLogDebug(Serial:PSerialDevice;const AText:String); inline;
 
@@ -670,6 +690,116 @@ end;
 
 {==============================================================================}
 
+function SerialDeviceWait(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;
+{Wait for data to be available in the receive or transmit buffers of a Serial device}
+{Serial: The Serial device to wait for}
+{Direction: The direction of data to wait for (eg SERIAL_WAIT_RECEIVE)}
+{Timeout: The number of milliseconds to wait for data (INFINITE to wait forever)}
+{Count: The number of bytes available on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Unlock:Boolean;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Serial}
+ if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF SERIAL_DEBUG}
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Wait (Direction=' + IntToStr(Direction) + ' Timeout=' + IntToStr(Timeout) + ')');
+ {$ENDIF}
+
+ {Check Timeout}
+ if Timeout = 0 then Timeout:=INFINITE;
+ 
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
+ 
+ if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    Unlock:=True;
+    
+    if Assigned(Serial.DeviceWait) then
+     begin
+      {Call Device Wait}
+      Result:=Serial.DeviceWait(Serial,Direction,Timeout,Count);
+     end
+    else
+     begin 
+      {Setup Result}
+      Count:=0;
+      
+      {Check Receive}
+      if Direction = SERIAL_WAIT_RECEIVE then
+       begin
+        {Release the Lock}
+        MutexUnlock(Serial.Lock);
+        Unlock:=False;
+        
+        {Wait for Data}
+        Result:=EventWaitEx(Serial.Receive.Wait,Timeout);
+        if Result <> ERROR_SUCCESS then Exit;
+
+        {Acquire the Lock}
+        if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+         begin
+          Unlock:=True;
+          
+          {Get Count}
+          Count:=Serial.Receive.Count;
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS;
+         end
+        else
+         begin
+          Result:=ERROR_CAN_NOT_COMPLETE;
+         end;
+       end
+      {Check Transmit}
+      else if Direction = SERIAL_WAIT_TRANSMIT then
+       begin
+        {Release the Lock}
+        MutexUnlock(Serial.Lock);
+        Unlock:=False;
+        
+        {Wait for Space}
+        Result:=EventWaitEx(Serial.Transmit.Wait,Timeout);
+        if Result <> ERROR_SUCCESS then Exit;
+        
+        {Acquire the Lock}
+        if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+         begin
+          Unlock:=True;
+          
+          {Get Count}
+          Count:=Serial.Transmit.Size - Serial.Transmit.Count;
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS;
+         end
+        else
+         begin
+          Result:=ERROR_CAN_NOT_COMPLETE;
+         end;
+       end;
+     end;
+   finally
+    if Unlock then MutexUnlock(Serial.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
 function SerialDeviceFlush(Serial:PSerialDevice;Flags:LongWord):LongWord;
 {Discard the contents of the receive and/or transmit buffers of a Serial device}
 {Serial: The Serial device to flush}
@@ -726,11 +856,28 @@ begin
     MutexUnlock(Serial.Lock);
    end; 
   end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}
 
-function SerialDeviceStatus(Serial:PSerialDevice):LongWord;
+function SerialDeviceStatus(Serial:PSerialDevice):LongWord; inline;
+{Get the current line status of a Serial device}
+{Serial: The Serial device to get the status from}
+{Return: A set of flags containing the device status (eg SERIAL_STATUS_RTS)}
+
+{Note: Replaced by SerialDeviceGetStatus for consistency}
+begin
+ {}
+ Result:=SerialDeviceGetStatus(Serial);
+end;
+
+{==============================================================================}
+
+function SerialDeviceGetStatus(Serial:PSerialDevice):LongWord;
 {Get the current line status of a Serial device}
 {Serial: The Serial device to get the status from}
 {Return: A set of flags containing the device status (eg SERIAL_STATUS_RTS)}
@@ -743,19 +890,18 @@ begin
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SERIAL_DEBUG}
- if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Status');
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Get Status');
  {$ENDIF}
  
  {Check State}
- Result:=ERROR_NOT_READY;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
  
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(Serial.DeviceStatus) then
+   if Assigned(Serial.DeviceGetStatus) then
     begin
-     {Call Device Status}
-     Result:=Serial.DeviceStatus(Serial);
+     {Call Device Get Status}
+     Result:=Serial.DeviceGetStatus(Serial);
     end
    else
     begin
@@ -764,7 +910,53 @@ begin
     end;  
     
    MutexUnlock(Serial.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function SerialDeviceSetStatus(Serial:PSerialDevice;Status:LongWord):LongWord;
+{Set the current line status of a Serial device}
+{Serial: The Serial device to set the status for}
+{Status: The device status flags to be set (eg SERIAL_STATUS_RTS)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not all SERIAL_STATUS_* flags can be set, the device may ignore invalid values}
+{Note: Not all serial devices support set status, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Serial}
+ if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF SERIAL_DEBUG}
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Set Status (Status=' + IntToHex(Status,8) + ')');
+ {$ENDIF}
+
+ {Check State}
+ Result:=ERROR_NOT_READY;
+ if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
+ 
+ if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(Serial.DeviceSetStatus) then
+    begin
+     {Call Device Set Status}
+     Result:=Serial.DeviceSetStatus(Serial,Status);
+    end
+   else
+    begin
+     Result:=ERROR_CALL_NOT_IMPLEMENTED;
+    end;  
+    
+   MutexUnlock(Serial.Lock);
   end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}
@@ -833,6 +1025,56 @@ end;
 
 {==============================================================================}
 
+function SerialDeviceSetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+{Set the properties for the specified Serial device}
+{Serial: The Serial device to set properties for}
+{Properties: Pointer to a PSerialProperties structure to use}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Properties}
+ if Properties = nil then Exit;
+ 
+ {Check Serial}
+ if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF SERIAL_DEBUG}
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Set Properties');
+ {$ENDIF}
+ 
+ {Check Open}
+ Result:=ERROR_NOT_READY;
+ if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
+ 
+ if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(Serial.DeviceSetProperties) then
+    begin
+     {Call Device Set Properites}
+     Result:=Serial.DeviceSetProperties(Serial,Properties);
+    end
+   else
+    begin
+     {Close Device}
+     SerialDeviceClose(Serial);
+     
+     {Open Device}
+     Result:=SerialDeviceOpen(Serial,Properties.BaudRate,Properties.DataBits,Properties.StopBits,Properties.Parity,Properties.FlowControl,Properties.ReceiveDepth,Properties.TransmitDepth);
+    end;  
+    
+   MutexUnlock(Serial.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
 function SerialDeviceCreate:PSerialDevice;
 {Create a new Serial entry}
 {Return: Pointer to new Serial entry or nil if Serial could not be created}
@@ -872,9 +1114,12 @@ begin
  Result.DeviceClose:=nil;
  Result.DeviceRead:=nil;
  Result.DeviceWrite:=nil;
+ Result.DeviceWait:=nil;
  Result.DeviceFlush:=nil;
- Result.DeviceStatus:=nil;
+ Result.DeviceGetStatus:=nil;
+ Result.DeviceSetStatus:=nil;
  Result.DeviceGetProperties:=nil;
+ Result.DeviceSetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Receive.Wait:=INVALID_HANDLE_VALUE;
  Result.Transmit.Wait:=INVALID_HANDLE_VALUE;
@@ -1796,6 +2041,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = SERIAL_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = SERIAL_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1820,6 +2069,14 @@ procedure SerialLogInfo(Serial:PSerialDevice;const AText:String); inline;
 begin
  {}
  SerialLog(SERIAL_LOG_LEVEL_INFO,Serial,AText);
+end;
+
+{==============================================================================}
+
+procedure SerialLogWarn(Serial:PSerialDevice;const AText:String); inline;
+begin
+ {}
+ SerialLog(SERIAL_LOG_LEVEL_WARN,Serial,AText);
 end;
 
 {==============================================================================}

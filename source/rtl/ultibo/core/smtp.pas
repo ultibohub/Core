@@ -158,6 +158,7 @@ const
  {SMTP logging}
  SMTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SMTP debugging messages}
  SMTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SMTP informational messages,}
+ SMTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SMTP warning messages,}
  SMTP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SMTP error messages}
  SMTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SMTP messages}
 
@@ -442,9 +443,10 @@ procedure SMTPInit;
 {==============================================================================}
 {SMTP Helper Functions}
 procedure SMTPLog(Level:LongWord;const AText:String);
-procedure SMTPLogInfo(const AText:String);
-procedure SMTPLogError(const AText:String);
-procedure SMTPLogDebug(const AText:String);
+procedure SMTPLogInfo(const AText:String); inline;
+procedure SMTPLogWarn(const AText:String); inline;
+procedure SMTPLogError(const AText:String); inline;
+procedure SMTPLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -3417,6 +3419,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = SMTP_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = SMTP_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -3431,7 +3437,7 @@ end;
 
 {==============================================================================}
 
-procedure SMTPLogInfo(const AText:String);
+procedure SMTPLogInfo(const AText:String); inline;
 begin
  {}
  SMTPLog(SMTP_LOG_LEVEL_INFO,AText);
@@ -3439,7 +3445,15 @@ end;
 
 {==============================================================================}
 
-procedure SMTPLogError(const AText:String);
+procedure SMTPLogWarn(const AText:String); inline;
+begin
+ {}
+ SMTPLog(SMTP_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure SMTPLogError(const AText:String); inline;
 begin
  {}
  SMTPLog(SMTP_LOG_LEVEL_ERROR,AText);
@@ -3447,7 +3461,7 @@ end;
 
 {==============================================================================}
 
-procedure SMTPLogDebug(const AText:String);
+procedure SMTPLogDebug(const AText:String); inline;
 begin
  {}
  SMTPLog(SMTP_LOG_LEVEL_DEBUG,AText);

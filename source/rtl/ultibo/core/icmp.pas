@@ -2864,7 +2864,9 @@ function TICMPProtocol.SendTo(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags
 
 {Note: Caller must hold the Socket lock}
 var
- Address:TInAddr;
+ InAddr:TInAddr;
+ Route:TRouteEntry;
+ Address:TAddressEntry;
  Packet:TPacketFragment;
 begin
  {}
@@ -2877,9 +2879,9 @@ begin
  {Check Socket} 
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
-   {Check for Bound}
-   NetworkSetLastError(WSAEINVAL);
-   if not ASocket.SocketState.LocalAddress then Exit;
+   {Check for Bound} {Moved Below}
+   {NetworkSetLastError(WSAEINVAL);}
+   {if not ASocket.SocketState.LocalAddress then Exit;}
    
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
@@ -2901,18 +2903,43 @@ begin
       if AToLength < SizeOf(TSockAddr) then Exit;
       
       {Get the RemoteAddress}
-      Address:=InAddrToHost(AToAddr.sin_addr);
+      InAddr:=InAddrToHost(AToAddr.sin_addr);
       
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
-      if TIPTransport(ASocket.Transport).CompareDefault(Address) then Exit;
+      if TIPTransport(ASocket.Transport).CompareDefault(InAddr) then Exit;
       
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
-      if TIPTransport(ASocket.Transport).CompareBroadcast(Address) or TIPTransport(ASocket.Transport).CompareDirected(Address) then
+      if TIPTransport(ASocket.Transport).CompareBroadcast(InAddr) or TIPTransport(ASocket.Transport).CompareDirected(InAddr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
+      
+      {Check the Binding}
+      if not(ASocket.SocketState.LocalAddress) or TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
+       begin
+        {Check the Route}
+        NetworkSetLastError(WSAENETUNREACH);
+        Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddr,True,NETWORK_LOCK_READ);
+        if Route = nil then Exit;
+        try
+         {Check the LocalAddress}
+         NetworkSetLastError(WSAEADDRNOTAVAIL);
+         Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
+         if Address = nil then Exit;
+      
+         {Bind the Socket}
+         ASocket.SocketState.LocalAddress:=True;
+         TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
+         
+         {Unlock Address}
+         Address.ReaderUnlock;
+        finally
+         {Unlock Route}
+         Route.ReaderUnlock;
+        end;      
+       end; 
       
       {Create the Fragment}
       Packet.Size:=ALength;
@@ -2920,7 +2947,7 @@ begin
       Packet.Next:=nil;
       
       {Send the Packet}
-      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@Address,0,0,@Packet,ALength,AFlags);
+      Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@InAddr,0,0,@Packet,ALength,AFlags);
      end;
    end;
   end

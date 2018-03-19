@@ -1,7 +1,7 @@
 {
 Ultibo BCM2709 interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -12,7 +12,7 @@ Boards
 ======
 
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  Raspberry Pi CM3
  
 Licence
@@ -47,6 +47,7 @@ Credits
    Linux - \drivers\pwm\pwm-bcm2835.c - Copyright (C) 2014 Bart Tanghe
    
    Linux - \drivers\clk\bcm\clk-bcm2835.c - Copyright (C) 2010,2015 Broadcom
+   Linux - \drivers\watchdog\bcm2835_wdt.c - Copyright (C) 2013 Lubomir Rintel
    
    Linux - \drivers\clocksource\timer-sp804.c - Copyright (C) 1999 - 2003 ARM Limited
    
@@ -929,7 +930,8 @@ function BCM2709UART0Close(UART:PUARTDevice):LongWord;
 function BCM2709UART0Read(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function BCM2709UART0Write(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
-function BCM2709UART0Status(UART:PUARTDevice):LongWord;
+function BCM2709UART0GetStatus(UART:PUARTDevice):LongWord;
+function BCM2709UART0SetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
 
 procedure BCM2709UART0InterruptHandler(UART:PUARTDevice);
 
@@ -1029,6 +1031,9 @@ function BCM2709FramebufferGetPalette(Framebuffer:PFramebufferDevice;Palette:PFr
 function BCM2709FramebufferSetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
 
 function BCM2709FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
+
+function BCM2709FramebufferSetCursor(Framebuffer:PFramebufferDevice;Width,Height,HotspotX,HotspotY:LongWord;Image:Pointer;Len:LongWord):LongWord;
+function BCM2709FramebufferUpdateCursor(Framebuffer:PFramebufferDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;
 
 function BCM2709FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 
@@ -1586,7 +1591,8 @@ begin
      BCM2709UART0.UART.DeviceClose:=BCM2709UART0Close;
      BCM2709UART0.UART.DeviceRead:=BCM2709UART0Read;
      BCM2709UART0.UART.DeviceWrite:=BCM2709UART0Write;
-     BCM2709UART0.UART.DeviceStatus:=BCM2709UART0Status;
+     BCM2709UART0.UART.DeviceGetStatus:=BCM2709UART0GetStatus;
+     BCM2709UART0.UART.DeviceSetStatus:=BCM2709UART0SetStatus;
      {Driver}
      BCM2709UART0.UART.Properties.Flags:=BCM2709UART0.UART.Device.DeviceFlags;
      BCM2709UART0.UART.Properties.MinRate:=BCM2709_UART0_MIN_BAUD;
@@ -1901,7 +1907,7 @@ begin
      {Device}
      BCM2709Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2709Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-     BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC;
+     BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC or FRAMEBUFFER_FLAG_CURSOR;
      BCM2709Framebuffer.Framebuffer.Device.DeviceData:=nil;
      BCM2709Framebuffer.Framebuffer.Device.DeviceDescription:=BCM2709_FRAMEBUFFER_DESCRIPTION;
      {Framebuffer}
@@ -1915,6 +1921,8 @@ begin
      BCM2709Framebuffer.Framebuffer.DeviceGetPalette:=BCM2709FramebufferGetPalette;
      BCM2709Framebuffer.Framebuffer.DeviceSetPalette:=BCM2709FramebufferSetPalette;
      BCM2709Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2709FramebufferSetBacklight;
+     BCM2709Framebuffer.Framebuffer.DeviceSetCursor:=BCM2709FramebufferSetCursor;
+     BCM2709Framebuffer.Framebuffer.DeviceUpdateCursor:=BCM2709FramebufferUpdateCursor;
      BCM2709Framebuffer.Framebuffer.DeviceSetProperties:=BCM2709FramebufferSetProperties;
      {Driver}
      
@@ -4942,7 +4950,7 @@ begin
      GPIO_PIN_45:begin
        {Check Board Type}
        case BoardType of
-        BOARD_TYPE_RPI3B:begin
+        BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS:begin
           {Do Not Set}
           Exit;
          end;
@@ -5057,7 +5065,7 @@ begin
      GPIO_PIN_45:begin
        {Check Board Type}
        case BoardType of
-        BOARD_TYPE_RPI3B:begin
+        BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS:begin
           {Do Not Reset}
          end;
         else 
@@ -6854,6 +6862,8 @@ end;
 {==============================================================================}
 {BCM2709 UART0 Functions}
 function BCM2709UART0Open(UART:PUARTDevice;BaudRate,DataBits,StopBits,Parity,FlowControl:LongWord):LongWord;
+{Implementation of UARTDeviceOpen API for BCM2709 UART0}
+{Note: Not intended to be called directly by applications, use UARTDeviceOpen instead}
 var
  Control:LongWord;
  Divisor:LongWord;
@@ -6903,17 +6913,40 @@ begin
   end; 
 
  {Enable GPIO Pins}
- if BoardGetType = BOARD_TYPE_RPI3B then
-  begin
-   {On Raspberry Pi 3B UART0 may be connected to the Bluetooth on pins 32 and 33}
-   GPIOFunctionSelect(GPIO_PIN_32,GPIO_FUNCTION_IN);
-   GPIOFunctionSelect(GPIO_PIN_33,GPIO_FUNCTION_IN);
-  end;
+ case BoardGetType of 
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS:begin
+    {On Raspberry Pi 3B/B+ UART0 may be connected to the Bluetooth on pins 32 and 33}
+    GPIOFunctionSelect(GPIO_PIN_32,GPIO_FUNCTION_IN);
+    GPIOFunctionSelect(GPIO_PIN_33,GPIO_FUNCTION_IN);
+   end;
+ end;  
  GPIOPullSelect(GPIO_PIN_14,GPIO_PULL_NONE);
  GPIOFunctionSelect(GPIO_PIN_14,GPIO_FUNCTION_ALT0);
  GPIOPullSelect(GPIO_PIN_15,GPIO_PULL_UP);
  GPIOFunctionSelect(GPIO_PIN_15,GPIO_FUNCTION_ALT0);
  
+ {Check Flow Conrol}
+ if FlowControl > SERIAL_FLOW_NONE then
+  begin 
+   case BoardGetType of
+    BOARD_TYPE_RPIA,BOARD_TYPE_RPIB:begin
+      {On the Raspberry Pi A and B the RTS/CTS lines are available on header P5 (GPIO 30/31)}
+      GPIOPullSelect(GPIO_PIN_30,GPIO_PULL_NONE);
+      GPIOFunctionSelect(GPIO_PIN_30,GPIO_FUNCTION_ALT3);
+      GPIOPullSelect(GPIO_PIN_31,GPIO_PULL_NONE);
+      GPIOFunctionSelect(GPIO_PIN_31,GPIO_FUNCTION_ALT3);
+     end;
+    else
+     begin
+      {On all models with a 40 pin header the RTS/CTS lines are on GPIO 16/17}
+      GPIOPullSelect(GPIO_PIN_16,GPIO_PULL_NONE);
+      GPIOFunctionSelect(GPIO_PIN_16,GPIO_FUNCTION_ALT3);
+      GPIOPullSelect(GPIO_PIN_17,GPIO_PULL_NONE);
+      GPIOFunctionSelect(GPIO_PIN_17,GPIO_FUNCTION_ALT3);
+     end;
+   end;  
+  end;
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
   
@@ -7055,6 +7088,8 @@ end;
 {==============================================================================}
 
 function BCM2709UART0Close(UART:PUARTDevice):LongWord;
+{Implementation of UARTDeviceClose API for BCM2709 UART0}
+{Note: Not intended to be called directly by applications, use UARTDeviceClose instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7110,6 +7145,8 @@ end;
 {==============================================================================}
  
 function BCM2709UART0Read(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of UARTDeviceRead API for BCM2709 UART0}
+{Note: Not intended to be called directly by applications, use UARTDeviceRead instead}
 var
  Value:LongWord;
  Total:LongWord;
@@ -7260,6 +7297,8 @@ end;
 {==============================================================================}
 
 function BCM2709UART0Write(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of UARTDeviceWrite API for BCM2709 UART0}
+{Note: Not intended to be called directly by applications, use UARTDeviceWrite instead}
 var
  Total:LongWord;
  Offset:LongWord;
@@ -7368,7 +7407,9 @@ end;
 
 {==============================================================================}
  
-function BCM2709UART0Status(UART:PUARTDevice):LongWord;
+function BCM2709UART0GetStatus(UART:PUARTDevice):LongWord;
+{Implementation of UARTDeviceGetStatus API for BCM2709 UART0}
+{Note: Not intended to be called directly by applications, use UARTDeviceGetStatus instead}
 var
  Flags:LongWord;
  Status:LongWord;
@@ -7381,7 +7422,7 @@ begin
  if UART = nil then Exit;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
- if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Status');
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Get Status');
  {$ENDIF}
  
  {Get Flags}
@@ -7439,6 +7480,46 @@ begin
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+function BCM2709UART0SetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
+{Implementation of UARTDeviceSetStatus API for BCM2709 UART0}
+{Note: Not intended to be called directly by applications, use UARTDeviceSetStatus instead}
+var
+ Control:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(BCM2709_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2709: UART0 Set Status (Status=' + IntToHex(Status,8) + ')');
+ {$ENDIF}
+ 
+ {Get Control}
+ Control:=PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read / Before the First Write} 
+ 
+ {Check RTS}
+ if (Status and UART_STATUS_RTS) <> 0 then
+  begin
+   {Enable}
+   PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR:=Control or BCM2836_PL011_CR_RTS;
+  end
+ else
+  begin
+   {Disable}
+   PBCM2836PL011Registers(PBCM2709UART0Device(UART).Address).CR:=Control and not(BCM2836_PL011_CR_RTS);
+  end;  
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
@@ -10037,6 +10118,131 @@ begin
  {Set Backlight}
  Result:=FramebufferSetBacklight(Brightness);
 end; 
+ 
+{==============================================================================}
+
+function BCM2709FramebufferSetCursor(Framebuffer:PFramebufferDevice;Width,Height,HotspotX,HotspotY:LongWord;Image:Pointer;Len:LongWord):LongWord;
+{Implementation of FramebufferDeviceSetCursor API for BCM2709 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceSetCursor instead}
+var
+ Cursor:Pointer;
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Image}
+    if Image = nil then
+     begin
+      {Set Properties}
+      Framebuffer.CursorWidth:=CURSOR_ARROW_DEFAULT_WIDTH;
+      Framebuffer.CursorHeight:=CURSOR_ARROW_DEFAULT_HEIGHT;
+      Framebuffer.CursorHotspotX:=0;
+      Framebuffer.CursorHotspotY:=0;
+      
+      {Set Default}
+      Result:=CursorSetDefault;
+     end
+    else
+     begin
+      {Check Width and Height}
+      if (Width = 0) or (Height = 0) then Exit;
+    
+      {Check Len}
+      if Len < (Width * Height * ColorFormatToBytes(COLOR_FORMAT_DEFAULT)) then Exit;
+      
+      {Set Properties}
+      Framebuffer.CursorWidth:=Width;
+      Framebuffer.CursorHeight:=Height;
+      Framebuffer.CursorHotspotX:=HotspotX;
+      Framebuffer.CursorHotspotY:=HotspotY;
+      
+      {Allocate the Cursor (No Cache)}
+      Cursor:=AllocNoCacheMem(Len);
+      if Cursor = nil then Exit;
+      
+      {Copy the Cursor}
+      System.Move(Image^,Cursor^,Len);
+      
+      {Convert to Physical Address}
+      Address:=PhysicalToBusAddress(Cursor);
+      
+      {Set Cursor}
+      Result:=CursorSetInfo(Width,Height,HotspotX,HotspotY,Pointer(Address),Len);
+      
+      {Free the Cursor}
+      FreeMem(Cursor);
+     end; 
+   finally
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end; 
+
+{==============================================================================}
+
+function BCM2709FramebufferUpdateCursor(Framebuffer:PFramebufferDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;
+{Implementation of FramebufferDeviceUpdateCursor API for BCM2709 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceUpdateCursor instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Framebuffer}
+ if Framebuffer = nil then Exit;
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Properties}
+    (*if Enabled and ((Framebuffer.CursorWidth = 0) or (Framebuffer.CursorHeight = 0)) then
+     begin
+      {Set Properties}
+      Framebuffer.CursorWidth:=CURSOR_ARROW_DEFAULT_WIDTH;
+      Framebuffer.CursorHeight:=CURSOR_ARROW_DEFAULT_HEIGHT;
+      Framebuffer.CursorHotspotX:=0;
+      Framebuffer.CursorHotspotY:=0;
+      
+      {Set Default}
+      Result:=CursorSetDefault;
+     end;*)
+    
+    {Set Properties}
+    if Enabled then Framebuffer.CursorState:=FRAMEBUFFER_CURSOR_ENABLED else Framebuffer.CursorState:=FRAMEBUFFER_CURSOR_DISABLED;
+    if not Relative then
+     begin
+      Framebuffer.CursorX:=X;
+      Framebuffer.CursorY:=Y;
+     end
+    else
+     begin
+      Framebuffer.CursorX:=Framebuffer.CursorX + X;
+      Framebuffer.CursorY:=Framebuffer.CursorY + Y;
+     end;
+    
+    {Update Cursor}
+    Result:=CursorSetState(Enabled,X,Y,Relative);
+   finally
+    MutexUnlock(Framebuffer.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
  
 {==============================================================================}
 

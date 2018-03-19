@@ -264,8 +264,11 @@ const
  LMI_LM3S_EVAL_BOARD_PID  = $bcd9;
  LMI_LM3S_ICDI_BOARD_PID  = $bcda;
 
+ {Revolution Education Limited / PICAXE (http://www.picaxe.com)}
+ FTDI_REVED_AXE027_PID = $BD90; {AXE027 PICAXE USB cable}
+ 
  FTDI_TURTELIZER_PID = $BDC8; {JTAG/RS-232 adapter by egnite GmbH}
-
+ 
  {OpenDCC (www.opendcc.de) product id}
  FTDI_OPENDCC_PID = $BFD8;
  FTDI_OPENDCC_SNIFFER_PID = $BFD9;
@@ -1392,7 +1395,7 @@ const
  CHETCO_SEASMART_ANALOG_PID = $A5AF; {SeaSmart Analog Adapter}
 
  {FTDI Serial Device ID constants}
- FTDISERIAL_DEVICE_ID_COUNT = 818; {Number of supported Device IDs}
+ FTDISERIAL_DEVICE_ID_COUNT = 819; {Number of supported Device IDs}
  
  FTDISERIAL_DEVICE_ID:array[0..FTDISERIAL_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:FTDI_VID;idProduct:FTDI_BRICK_PID),
@@ -2056,6 +2059,7 @@ const
   (idVendor:FTDI_VID;idProduct:LMI_LM3S_DEVEL_BOARD_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:FTDI_VID;idProduct:LMI_LM3S_EVAL_BOARD_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:FTDI_VID;idProduct:LMI_LM3S_ICDI_BOARD_PID), {FTDISERIAL_QUIRK_JTAG}
+  (idVendor:FTDI_VID;idProduct:FTDI_REVED_AXE027_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_TURTELIZER_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:RATOC_VENDOR_ID;idProduct:RATOC_PRODUCT_ID_USB60F),
   (idVendor:RATOC_VENDOR_ID;idProduct:RATOC_PRODUCT_ID_SCU18),

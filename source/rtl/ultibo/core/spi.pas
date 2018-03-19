@@ -99,6 +99,7 @@ const
  {SPI logging}
  SPI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SPI debugging messages}
  SPI_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SPI informational messages, such as a device being attached or detached}
+ SPI_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SPI warning messages}
  SPI_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SPI error messages}
  SPI_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SPI messages}
 
@@ -299,6 +300,7 @@ function SPIDeviceCheck(SPI:PSPIDevice):PSPIDevice;
 
 procedure SPILog(Level:LongWord;SPI:PSPIDevice;const AText:String);
 procedure SPILogInfo(SPI:PSPIDevice;const AText:String); inline;
+procedure SPILogWarn(SPI:PSPIDevice;const AText:String); inline;
 procedure SPILogError(SPI:PSPIDevice;const AText:String); inline;
 procedure SPILogDebug(SPI:PSPIDevice;const AText:String); inline;
 
@@ -1984,6 +1986,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = SPI_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = SPI_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -2008,6 +2014,14 @@ procedure SPILogInfo(SPI:PSPIDevice;const AText:String); inline;
 begin
  {}
  SPILog(SPI_LOG_LEVEL_INFO,SPI,AText);
+end;
+
+{==============================================================================}
+
+procedure SPILogWarn(SPI:PSPIDevice;const AText:String); inline;
+begin
+ {}
+ SPILog(SPI_LOG_LEVEL_WARN,SPI,AText);
 end;
 
 {==============================================================================}

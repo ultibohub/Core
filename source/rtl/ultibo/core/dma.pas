@@ -85,6 +85,7 @@ const
  {DMA logging}
  DMA_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {DMA debugging messages}
  DMA_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {DMA informational messages, such as a device being attached or detached}
+ DMA_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {DMA warning messages}
  DMA_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {DMA error messages}
  DMA_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No DMA messages}
 
@@ -259,9 +260,10 @@ function DMAHostSetDefault(DMA:PDMAHost):LongWord;
 function DMAHostCheck(DMA:PDMAHost):PDMAHost;
 
 procedure DMALog(Level:Integer;DMA:PDMAHost;const AText:String);
-procedure DMALogInfo(DMA:PDMAHost;const AText:String);
-procedure DMALogError(DMA:PDMAHost;const AText:String);
-procedure DMALogDebug(DMA:PDMAHost;const AText:String);
+procedure DMALogInfo(DMA:PDMAHost;const AText:String); inline;
+procedure DMALogWarn(DMA:PDMAHost;const AText:String); inline;
+procedure DMALogError(DMA:PDMAHost;const AText:String); inline;
+procedure DMALogDebug(DMA:PDMAHost;const AText:String); inline;
  
 {==============================================================================}
 {==============================================================================}
@@ -1926,6 +1928,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = DMA_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = DMA_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1946,7 +1952,7 @@ end;
 
 {==============================================================================}
 
-procedure DMALogInfo(DMA:PDMAHost;const AText:String);
+procedure DMALogInfo(DMA:PDMAHost;const AText:String); inline;
 begin
  {}
  DMALog(DMA_LOG_LEVEL_INFO,DMA,AText);
@@ -1954,7 +1960,15 @@ end;
 
 {==============================================================================}
 
-procedure DMALogError(DMA:PDMAHost;const AText:String);
+procedure DMALogWarn(DMA:PDMAHost;const AText:String); inline;
+begin
+ {}
+ DMALog(DMA_LOG_LEVEL_WARN,DMA,AText);
+end;
+
+{==============================================================================}
+
+procedure DMALogError(DMA:PDMAHost;const AText:String); inline;
 begin
  {}
  DMALog(DMA_LOG_LEVEL_ERROR,DMA,AText);
@@ -1962,7 +1976,7 @@ end;
 
 {==============================================================================}
 
-procedure DMALogDebug(DMA:PDMAHost;const AText:String);
+procedure DMALogDebug(DMA:PDMAHost;const AText:String); inline;
 begin
  {}
  DMALog(DMA_LOG_LEVEL_DEBUG,DMA,AText);

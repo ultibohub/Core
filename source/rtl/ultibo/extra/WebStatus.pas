@@ -2909,6 +2909,9 @@ end;
 function TWebStatusRTL.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
  Count:LongWord;
+ TableStart:PPointer;
+ TableEnd:PPointer;
+ TableProc:Pointer;
  Table:PRtlInitFinalTable;
 begin
  {}
@@ -2927,36 +2930,116 @@ begin
  AddHeader(AResponse,GetTitle,Self); 
 
  {Add TEXT Start}
- AddItem(AResponse,'TEXT Start:','0x' + IntToHex(LongWord(@_text_start),8));
+ AddItem(AResponse,'TEXT Start:','0x' + IntToHex(PtrUInt(@_text_start),8));
 
  {Add ETEXT}
- AddItem(AResponse,'ETEXT:','0x' + IntToHex(LongWord(@_etext),8));
+ AddItem(AResponse,'ETEXT:','0x' + IntToHex(PtrUInt(@_etext),8));
 
  {Add DATA}
- AddItem(AResponse,'DATA:','0x' + IntToHex(LongWord(@_data),8));
+ AddItem(AResponse,'DATA:','0x' + IntToHex(PtrUInt(@_data),8));
 
  {Add EDATA}
- AddItem(AResponse,'EDATA:','0x' + IntToHex(LongWord(@_edata),8));
+ AddItem(AResponse,'EDATA:','0x' + IntToHex(PtrUInt(@_edata),8));
 
  {Add BSS Start}
- AddItem(AResponse,'BSS Start:','0x' + IntToHex(LongWord(@_bss_start),8));
+ AddItem(AResponse,'BSS Start:','0x' + IntToHex(PtrUInt(@_bss_start),8));
 
  {Add BSS End}
- AddItem(AResponse,'BSS End:','0x' + IntToHex(LongWord(@_bss_end),8));
+ AddItem(AResponse,'BSS End:','0x' + IntToHex(PtrUInt(@_bss_end),8));
 
+ {Add Preinit Array Start / Preinit Array End}
+ TableStart:=@__preinit_array_start;
+ TableEnd:=@__preinit_array_end;
+ AddBlank(AResponse);
+ AddItem(AResponse,'Preinit Array Start:','0x' + IntToHex(PtrUInt(@__preinit_array_start),8));
+ AddItem(AResponse,'Preinit Array End:','0x' + IntToHex(PtrUInt(@__preinit_array_end),8));
+ while TableStart < TableEnd do
+  begin
+   {Get Proc}
+   TableProc:=TableStart^;
+   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end; 
+ 
+ {Add Init Array Start / Init Array End}
+ TableStart:=@__init_array_start;
+ TableEnd:=@__init_array_end;
+ AddBlank(AResponse);
+ AddItem(AResponse,'Init Array Start:','0x' + IntToHex(PtrUInt(@__init_array_start),8));
+ AddItem(AResponse,'Init Array End:','0x' + IntToHex(PtrUInt(@__init_array_end),8));
+ while TableStart < TableEnd do
+  begin
+   {Get Proc}
+   TableProc:=TableStart^;
+   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end; 
+
+ {Add Ctors Start / Ctors End}
+ TableStart:=@__ctors_start;
+ TableEnd:=@__ctors_end;
+ AddBlank(AResponse);
+ AddItem(AResponse,'Ctors Start:','0x' + IntToHex(PtrUInt(@__ctors_start),8));
+ AddItem(AResponse,'Ctors End:','0x' + IntToHex(PtrUInt(@__ctors_end),8));
+ while TableStart < TableEnd do
+  begin
+   {Get Proc}
+   TableProc:=TableStart^;
+   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end; 
+ 
+ {Add Fini Array Start / Fini Array End}
+ TableStart:=@__fini_array_start;
+ TableEnd:=@__fini_array_end;
+ AddBlank(AResponse);
+ AddItem(AResponse,'Fini Array Start:','0x' + IntToHex(PtrUInt(@__fini_array_start),8));
+ AddItem(AResponse,'Fini Array End:','0x' + IntToHex(PtrUInt(@__fini_array_end),8));
+ while TableStart < TableEnd do
+  begin
+   {Get Proc}
+   TableProc:=TableStart^;
+   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end; 
+
+ {Add Dtors Start / Dtors End}
+ TableStart:=@__dtors_start;
+ TableEnd:=@__dtors_end;
+ AddBlank(AResponse);
+ AddItem(AResponse,'Dtors Start:','0x' + IntToHex(PtrUInt(@__dtors_start),8));
+ AddItem(AResponse,'Dtors End:','0x' + IntToHex(PtrUInt(@__dtors_end),8));
+ while TableStart < TableEnd do
+  begin
+   {Get Proc}
+   TableProc:=TableStart^;
+   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end; 
+ 
  {Add ThreadVarBlockSize}
  AddBlank(AResponse);
  AddItem(AResponse,'ThreadVarBlockSize:',IntToStr(ThreadVarBlockSize));
 
  {Add InitProc/ExitProc}
  AddBlank(AResponse); 
- AddItem(AResponse,'InitProc:','0x' + IntToHex(LongWord(InitProc),8));
- AddItem(AResponse,'ExitProc:','0x' + IntToHex(LongWord(ExitProc),8));
+ AddItem(AResponse,'InitProc:','0x' + IntToHex(PtrUInt(InitProc),8));
+ AddItem(AResponse,'ExitProc:','0x' + IntToHex(PtrUInt(ExitProc),8));
  
  {Add ErrorBase/ErrorAddr/ErrorCode}
  AddBlank(AResponse); 
- AddItem(AResponse,'ErrorBase:','0x' + IntToHex(LongWord(RtlErrorBase),8));
- AddItem(AResponse,'ErrorAddr:','0x' + IntToHex(LongWord(ErrorAddr),8));
+ AddItem(AResponse,'ErrorBase:','0x' + IntToHex(PtrUInt(RtlErrorBase),8));
+ AddItem(AResponse,'ErrorAddr:','0x' + IntToHex(PtrUInt(ErrorAddr),8));
  AddItem(AResponse,'ErrorCode:','0x' + IntToHex(ErrorCode,4));
  
  {Add InitFinalTable}
@@ -2969,8 +3052,8 @@ begin
    AddItemEx(AResponse,'InitCount:',IntToStr(Table.InitCount),2);
    for Count:=1 to Table.InitCount do
     begin
-     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].InitProc:','0x' + IntToHex(LongWord(@Table.Procs[Count].InitProc),8),2);
-     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].FinalProc:','0x' + IntToHex(LongWord(@Table.Procs[Count].FinalProc),8),2);
+     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].InitProc:','0x' + IntToHex(PtrUInt(@Table.Procs[Count].InitProc),8),2);
+     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].FinalProc:','0x' + IntToHex(PtrUInt(@Table.Procs[Count].FinalProc),8),2);
     end;
   end;
   
@@ -3773,9 +3856,9 @@ begin
    AddItemEx(AResponse,CPUIDToString(Count) + ':',IntToStr(SchedulerGetThreadCount(Count)),3);
   end;
 
- {Add Scheduler Thread Quantums}
+ {Add Scheduler Thread Quanta}
  AddBlank(AResponse);
- AddBold(AResponse,'Scheduler Thread Quantums','');
+ AddBold(AResponse,'Scheduler Thread Quanta','');
  AddBlank(AResponse);
  for Count:=0 to CPUGetCount - 1 do
   begin
@@ -3797,18 +3880,18 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,CPUIDToString(CPU_ID_0) + ':',IntToStr(SchedulerGetMigrationQuantum),3);
  
- {Add Scheduler Starvation Quantums}
+ {Add Scheduler Starvation Quanta}
  AddBlank(AResponse);
- AddBold(AResponse,'Scheduler Starvation Quantums','');
+ AddBold(AResponse,'Scheduler Starvation Quanta','');
  AddBlank(AResponse);
  for Count:=0 to CPUGetCount - 1 do
   begin
    AddItemEx(AResponse,CPUIDToString(Count) + ':',IntToStr(SchedulerGetStarvationQuantum(Count)),3);
   end;
  
- {Add Scheduler Priority Quantums}
+ {Add Scheduler Priority Quanta}
  AddBlank(AResponse);
- AddBold(AResponse,'Scheduler Priority Quantums','');
+ AddBold(AResponse,'Scheduler Priority Quanta','');
  AddBlank(AResponse);
  for Count:=0 to THREAD_PRIORITY_COUNT - 1 do
   begin
@@ -4597,8 +4680,11 @@ var
  
  Size:LongWord;
  IfTable:PMIB_IFTABLE;
+ TcpTable:PMIB_TCPTABLE;
+ UdpTable:PMIB_UDPTABLE;
  IpAddrTable:PMIB_IPADDRTABLE;
  IpNetTable:PMIB_IPNETTABLE;
+ IpForwardTable:PMIB_IPFORWARDTABLE;
  
  IPAddress:TInAddr;
  HardwareAddress:THardwareAddress;
@@ -4826,7 +4912,43 @@ begin
        {GetIpForwardTable}
        AddBlank(AResponse);
        AddBold(AResponse,'Routes','');
-       //To Do 
+       Size:=0;
+       IpForwardTable:=nil;
+       if (GetIpForwardTable(nil,Size,False) = ERROR_INSUFFICIENT_BUFFER) and (Size > 0) then {First call with zero size}
+        begin
+         IpForwardTable:=GetMem(Size);
+        end; 
+       if IpForwardTable <> nil then
+        begin
+         if GetIpForwardTable(IpForwardTable,Size,False) = ERROR_SUCCESS then 
+          begin
+           for Count:=0 to IpForwardTable.dwNumEntries - 1 do
+            begin
+             AddBlank(AResponse);
+             IPAddress.S_addr:=IpForwardTable.table[Count].dwForwardDest;
+             AddItem(AResponse,'Destination:',InAddrToString(IPAddress));
+             IPAddress.S_addr:=IpForwardTable.table[Count].dwForwardMask;
+             AddItem(AResponse,'Netmask:',InAddrToString(IPAddress));
+             AddItem(AResponse,'Policy:',IntToStr(IpForwardTable.table[Count].dwForwardPolicy));
+             if IpForwardTable.table[Count].dwForwardNextHop = 0 then
+              begin
+               AddItem(AResponse,'Gateway:','Local');
+              end
+             else
+              begin
+               IPAddress.S_addr:=IpForwardTable.table[Count].dwForwardNextHop;
+               AddItem(AResponse,'Gateway:',InAddrToString(IPAddress));
+              end;
+             AddItem(AResponse,'Index:',IntToStr(IpForwardTable.table[Count].dwForwardIfIndex));
+             AddItem(AResponse,'Type:',IntToStr(IpForwardTable.table[Count].dwForwardType));
+             AddItem(AResponse,'Protocol:',IntToStr(IpForwardTable.table[Count].dwForwardProto));
+             AddItem(AResponse,'Age:',IntToStr(IpForwardTable.table[Count].dwForwardAge));
+             AddItem(AResponse,'Metric:',IntToStr(IpForwardTable.table[Count].dwForwardMetric1));
+            end;
+          end;
+          
+         FreeMem(IpForwardTable); 
+        end;
       
        {GetIpStatistics}
        AddBlank(AResponse);
@@ -4874,7 +4996,31 @@ begin
        {GetTcpTable}
        AddBlank(AResponse);
        AddBold(AResponse,'TCP Table','');
-       //To Do //
+       Size:=0;
+       TcpTable:=nil;
+       if (GetTcpTable(nil,Size,False) = ERROR_INSUFFICIENT_BUFFER) and (Size > 0) then {First call with zero size}
+        begin
+         TcpTable:=GetMem(Size);
+        end; 
+       if TcpTable <> nil then
+        begin
+         if GetTcpTable(TcpTable,Size,False) = ERROR_SUCCESS then 
+          begin
+           for Count:=0 to TcpTable.dwNumEntries - 1 do
+            begin
+             AddBlank(AResponse);
+             AddItem(AResponse,'State:',MIBTCPStateToString(TcpTable.table[Count].dwState));
+             IPAddress.S_addr:=TcpTable.table[Count].dwLocalAddr;
+             AddItem(AResponse,'Local Address:',InAddrToString(IPAddress));
+             AddItem(AResponse,'Local Port:',IntToStr(WordBEtoN(TcpTable.table[Count].dwLocalPort)));
+             IPAddress.S_addr:=TcpTable.table[Count].dwRemoteAddr;
+             AddItem(AResponse,'Remote Address:',InAddrToString(IPAddress));
+             AddItem(AResponse,'Remote Port:',IntToStr(WordBEtoN(TcpTable.table[Count].dwRemotePort)));
+            end;
+          end;
+          
+         FreeMem(TcpTable); 
+        end;
        
        {GetTcpStatistics}
        AddBlank(AResponse);
@@ -4887,7 +5033,27 @@ begin
        {GetUdpTable}
        AddBlank(AResponse);
        AddBold(AResponse,'UDP Table','');
-       //To Do //
+       Size:=0;
+       UdpTable:=nil;
+       if (GetUdpTable(nil,Size,False) = ERROR_INSUFFICIENT_BUFFER) and (Size > 0) then {First call with zero size}
+        begin
+         UdpTable:=GetMem(Size);
+        end; 
+       if UdpTable <> nil then
+        begin
+         if GetUdpTable(UdpTable,Size,False) = ERROR_SUCCESS then 
+          begin
+           for Count:=0 to UdpTable.dwNumEntries - 1 do
+            begin
+             AddBlank(AResponse);
+             IPAddress.S_addr:=UdpTable.table[Count].dwLocalAddr;
+             AddItem(AResponse,'Local Address:',InAddrToString(IPAddress));
+             AddItem(AResponse,'Local Port:',IntToStr(WordBEtoN(UdpTable.table[Count].dwLocalPort)));
+            end;
+          end;
+          
+         FreeMem(UdpTable); 
+        end;
        
        {GetUdpStatistics}
        AddBlank(AResponse);
@@ -5619,8 +5785,8 @@ begin
    AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
    AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Virtual Offset X:',IntToStr(FramebufferProperties.OffsetX),2);
-   AddItemEx(AResponse,'Virtual Offset Y:',IntToStr(FramebufferProperties.OffsetY),2);
+   AddItemEx(AResponse,'Virtual Offset X (Pixels):',IntToStr(FramebufferProperties.OffsetX),2);
+   AddItemEx(AResponse,'Virtual Offset Y (Pixels):',IntToStr(FramebufferProperties.OffsetY),2);
    AddBlank(AResponse);
    AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
    AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
@@ -5628,6 +5794,10 @@ begin
    AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
    AddBlank(AResponse);
    AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'Cursor X (Pixels):',IntToStr(FramebufferProperties.CursorX),2);
+   AddItemEx(AResponse,'Cursor Y (Pixels):',IntToStr(FramebufferProperties.CursorY),2);
+   AddItemEx(AResponse,'Cursor State:',FramebufferCursorToString(FramebufferProperties.CursorState),2);
   end;
  
  {Check Device Count}
@@ -5664,8 +5834,8 @@ begin
        AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
        AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
        AddBlank(AResponse);
-       AddItemEx(AResponse,'Virtual Offset X:',IntToStr(FramebufferProperties.OffsetX),2);
-       AddItemEx(AResponse,'Virtual Offset Y:',IntToStr(FramebufferProperties.OffsetY),2);
+       AddItemEx(AResponse,'Virtual Offset X (Pixels):',IntToStr(FramebufferProperties.OffsetX),2);
+       AddItemEx(AResponse,'Virtual Offset Y (Pixels):',IntToStr(FramebufferProperties.OffsetY),2);
        AddBlank(AResponse);
        AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
        AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
@@ -5673,6 +5843,10 @@ begin
        AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
        AddBlank(AResponse);
        AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
+       AddBlank(AResponse);
+       AddItemEx(AResponse,'Cursor X (Pixels):',IntToStr(FramebufferProperties.CursorX),2);
+       AddItemEx(AResponse,'Cursor Y (Pixels):',IntToStr(FramebufferProperties.CursorY),2);
+       AddItemEx(AResponse,'Cursor State:',FramebufferCursorToString(FramebufferProperties.CursorState),2);
       end;
     end;
   end; 

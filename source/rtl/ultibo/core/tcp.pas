@@ -3840,10 +3840,6 @@ function TTCPProtocol.Send(ASocket:TProtocolSocket;var ABuffer;ALength,AFlags:In
 {Flags: Protocol specific send flags}
 
 {Note: Caller must hold the Socket lock}
-//To Do //According to Winshoes this should return 0 if closed gracefully
-//but the Winsock spec doesnt say so whereas it does for Recv
-
-//The check for Unconnected will affectively do this as per Winshoes
 var
  Size:Integer;
  StartTime:Int64;

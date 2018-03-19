@@ -77,6 +77,7 @@ const
  {Audio logging}
  AUDIO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Audio debugging messages}
  AUDIO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Audio informational messages, such as a device being attached or detached}
+ AUDIO_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Audio warning messages}
  AUDIO_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Audio error messages}
  AUDIO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Audio messages}
 
@@ -172,6 +173,7 @@ function AudioDeviceCheck(Audio:PAudioDevice):PAudioDevice;
 
 procedure AudioLog(Level:LongWord;Audio:PAudioDevice;const AText:String);
 procedure AudioLogInfo(Audio:PAudioDevice;const AText:String); inline;
+procedure AudioLogWarn(Audio:PAudioDevice;const AText:String); inline;
 procedure AudioLogError(Audio:PAudioDevice;const AText:String); inline;
 procedure AudioLogDebug(Audio:PAudioDevice;const AText:String); inline;
 
@@ -749,6 +751,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = AUDIO_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = AUDIO_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -773,6 +779,14 @@ procedure AudioLogInfo(Audio:PAudioDevice;const AText:String); inline;
 begin
  {}
  AudioLog(AUDIO_LOG_LEVEL_INFO,Audio,AText);
+end;
+
+{==============================================================================}
+
+procedure AudioLogWarn(Audio:PAudioDevice;const AText:String); inline;
+begin
+ {}
+ AudioLog(AUDIO_LOG_LEVEL_WARN,Audio,AText);
 end;
 
 {==============================================================================}

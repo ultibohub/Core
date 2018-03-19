@@ -1,7 +1,7 @@
 {
 Ultibo Initialization code for QEMU VersatilePB.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -76,7 +76,7 @@ QEMU VersatilePB
 Boot QEMUVPB
 ============
 
- The QMEU system emulator (qemu-system-arm) will load this code at address 0x00010000 onwards and set the
+ The QEMU system emulator (qemu-system-arm) will load this code at address 0x00010000 onwards and set the
  following registers before jumping to this code.
 
  R0 - Zero

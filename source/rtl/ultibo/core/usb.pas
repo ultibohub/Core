@@ -108,7 +108,7 @@ behaviour of the device but at the generic level each device will have:
  - One or more endpoints available. All devices must have a control endpoint
    and most devices will have one or more bulk, interrupt or isochronous endpoints
    as well. The USB core will only communicate with the control endpoint to perform
-   generic operations like reading the desriptors and assigning a device address.
+   generic operations like reading the descriptors and assigning a device address.
    
    Drivers are expected to understand which endpoints they need to communicate with
    to provide the device specific functionality.
@@ -167,7 +167,7 @@ A host driver can also be registered after the USB core has been started and it 
 be given the opportunity to start itself immediately. In this way USB hosts can potentially
 be hot pluggable.
 
-Each host driver must also implement a root hub which respresents the port or ports that
+Each host driver must also implement a root hub which represents the port or ports that
 are directly connected to the controller hardware. In many cases this will not be a real
 hub but will be simulated in the host driver so that the hub driver can interact with it
 as though it was a standard hub device.
@@ -850,6 +850,7 @@ const
  {USB logging}
  USB_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {USB debugging messages}
  USB_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {USB informational messages, such as a device being attached or detached}
+ USB_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {USB warning messages}
  USB_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {USB error messages}
  USB_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No USB messages}
 
@@ -1646,9 +1647,10 @@ function USBHostStateToString(HostState:LongWord):String;
 function USBHostStateToNotification(State:LongWord):LongWord;
 
 procedure USBLog(Level:LongWord;Device:PUSBDevice;const AText:String);
-procedure USBLogInfo(Device:PUSBDevice;const AText:String);
-procedure USBLogError(Device:PUSBDevice;const AText:String);
-procedure USBLogDebug(Device:PUSBDevice;const AText:String);
+procedure USBLogInfo(Device:PUSBDevice;const AText:String); inline;
+procedure USBLogWarn(Device:PUSBDevice;const AText:String); inline;
+procedure USBLogError(Device:PUSBDevice;const AText:String); inline;
+procedure USBLogDebug(Device:PUSBDevice;const AText:String); inline;
 
 procedure USBLogDeviceConfiguration(Device:PUSBDevice);
 procedure USBLogDeviceDescriptor(Device:PUSBDevice;Descriptor:PUSBDeviceDescriptor);
@@ -9634,6 +9636,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = USB_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = USB_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -9654,7 +9660,7 @@ end;
 
 {==============================================================================}
 
-procedure USBLogInfo(Device:PUSBDevice;const AText:String);
+procedure USBLogInfo(Device:PUSBDevice;const AText:String); inline;
 begin
  {}
  USBLog(USB_LOG_LEVEL_INFO,Device,AText);
@@ -9662,7 +9668,15 @@ end;
 
 {==============================================================================}
 
-procedure USBLogError(Device:PUSBDevice;const AText:String);
+procedure USBLogWarn(Device:PUSBDevice;const AText:String); inline;
+begin
+ {}
+ USBLog(USB_LOG_LEVEL_WARN,Device,AText);
+end;
+
+{==============================================================================}
+
+procedure USBLogError(Device:PUSBDevice;const AText:String); inline;
 begin
  {}
  USBLog(USB_LOG_LEVEL_ERROR,Device,AText);
@@ -9670,7 +9684,7 @@ end;
 
 {==============================================================================}
 
-procedure USBLogDebug(Device:PUSBDevice;const AText:String);
+procedure USBLogDebug(Device:PUSBDevice;const AText:String); inline;
 begin
  {}
  USBLog(USB_LOG_LEVEL_DEBUG,Device,AText);

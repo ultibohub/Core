@@ -1,7 +1,7 @@
 {
 Ultibo Global Configuration Defaults.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -119,7 +119,7 @@ var
 {==============================================================================}
 var
  {Startup Handler Address}
- STARTUP_ADDRESS:LongWord;         {The physical address of the Startup Handler on Reset}
+ STARTUP_ADDRESS:PtrUInt;          {The physical address of the Startup Handler on Reset}
  
 {==============================================================================}
 var 
@@ -515,6 +515,8 @@ var
 
  CONSOLE_LINE_WRAP:LongBool = True;              {If True then wrap long lines to the next line when writing to the console (Sets CONSOLE_FLAG_LINE_WRAP on device / WINDOW_FLAG_LINE_WRAP on windows)}
  CONSOLE_AUTO_SCROLL:LongBool = True;            {If True then automatically scroll up on reaching the last line of the console (Sets CONSOLE_FLAG_AUTO_SCROLL on device / WINDOW_FLAG_AUTO_SCROLL on windows)}
+ CONSOLE_FOCUS_CURSOR:LongBool = True;           {If True then cursor (caret) is only visible on the focused (active) window (Sets CONSOLE_FLAG_FOCUS_CARET on device / WINDOW_FLAG_FOCUS_CURSOR on windows)}         
+ CONSOLE_CURSOR_BLINK_RATE:LongWord = 500;       {Blink rate (in milliseconds) of the console cursor (caret)}
  
  CONSOLE_DMA_BOX:LongBool = True;                {If True then use DMA (If available) to draw console window boxes (Sets CONSOLE_FLAG_DMA_BOX on device)}
  CONSOLE_DMA_TEXT:LongBool = False;              {If True then use DMA (If available) to draw console window text (Sets CONSOLE_FLAG_DMA_TEXT on device)}
@@ -542,6 +544,7 @@ var
  
  WINDOW_DEFAULT_BORDERWIDTH:LongWord;            {The default border width for console windows}
  WINDOW_DEFAULT_BORDERCOLOR:LongWord;            {The default border color for console windows}
+ WINDOW_DEFAULT_ACTIVEBORDER:LongWord;           {The default active border color for console windows}
  
  WINDOW_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE; {The default Font for console windows}
  WINDOW_DEFAULT_FONT_NAME:String;                {The default Font name for console windows}
@@ -575,6 +578,7 @@ var
  KERNEL_NAME:PChar;                           {The name of the Kernel image (Returned by ParamStr(0) or argv[0])}
  KERNEL_CONFIG:PChar;                         {The name of the Kernel configuration file (Where Applicable)}
  KERNEL_COMMAND:PChar;                        {The name of the Kernel command line file (Where Applicable)}
+ FIRMWARE_FILES:PChar;                        {The name of the Firmare files (Where Applicable)}
  
  {Environment}
  ENVIRONMENT_STRING_COUNT:LongWord = SIZE_64; {How many strings are allocated in the environment block (for Get/SetEnvironmentVariable)}
@@ -737,8 +741,11 @@ var
  DWCOTG_HOST_FRAME_INTERVAL:LongBool; {Update the host frame interval register on root port enable if True}
  //To Do //Number of Channels ?
  
+ {LAN78XX (Microchip LAN78XX USB Gigabit Ethernet)}
+ LAN78XX_MAC_ADDRESS:String;          {The preconfigured MAC address for a LAN78XX device}
+ 
  {SMSC95XX (SMSC LAN95xx USB Ethernet Driver)}
- SMSC95XX_MAC_ADDRESS:String;       {The preconfigured MAC address for an SMSC95XX device}
+ SMSC95XX_MAC_ADDRESS:String;         {The preconfigured MAC address for a SMSC95XX device}
   
  {BCM2708}
  BCM2708DMA_ALIGNMENT:LongWord;             {The default alignment for BCM2708 DMA memory allocations}
@@ -1149,6 +1156,9 @@ var
 
  {PiTFT35}
  PiTFT35_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT35 device on boot (Only if PiTFT35 unit included)}
+
+ {RPiSenseHat}
+ RPISENSE_AUTOSTART:LongBool = True;            {If True then auto start the RPiSenseHat device on boot (Only if RPiSenseHat unit included)}
  
 {==============================================================================}
 {Global handlers}
@@ -1243,11 +1253,12 @@ function TemperatureIDToString(TemperatureID:LongWord):String;
 
 function ColorFormatToBytes(Format:LongWord):LongWord;
 function ColorFormatToString(Format:LongWord):String;
+function ColorFormatToMask(Format:LongWord;Reverse:Boolean):LongWord;
 
 procedure ColorDefaultToFormat(Format,Color:LongWord;Dest:Pointer;Reverse:Boolean); inline;
-procedure ColorFormatToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+procedure ColorFormatToDefault(Format:LongWord;Source:Pointer;var Color:LongWord;Reverse:Boolean); inline;
 procedure ColorDefaultAltToFormat(Format,Color:LongWord;Dest:Pointer;Reverse:Boolean); {Not inline}
-procedure ColorFormatAltToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+procedure ColorFormatAltToDefault(Format:LongWord;Source:Pointer;var Color:LongWord;Reverse:Boolean); inline;
 
 procedure PixelsDefaultToFormat(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean); 
 procedure PixelsFormatToDefault(Format:LongWord;Source,Dest:Pointer;Count:LongWord;Reverse:Boolean);
@@ -1949,6 +1960,7 @@ begin
   BOARD_TYPE_QEMUVPB:Result:='BOARD_TYPE_QEMUVPB';
   BOARD_TYPE_RPI_COMPUTE3:Result:='BOARD_TYPE_RPI_COMPUTE3';
   BOARD_TYPE_RPI_ZERO_W:Result:='BOARD_TYPE_RPI_ZERO_W';
+  BOARD_TYPE_RPI3B_PLUS:Result:='BOARD_TYPE_RPI3B_PLUS';
  end;
 end;
 
@@ -2174,6 +2186,42 @@ end;
 
 {==============================================================================}
 
+function ColorFormatToMask(Format:LongWord;Reverse:Boolean):LongWord;
+{Convert a color format constant into the mask needed for color inversion}
+{Format: The color format constant to get the mask for (eg COLOR_FORMAT_ARGB32)}
+{Reverse: If true then reverse the byte order of the mask}
+{Return: The mask required for color inversion}
+
+{Note: XOR the color with the returned mask to produce the inverted color
+       eg Result := Color xor Mask}
+begin
+ {}
+ Result:=0;
+
+ case Format of
+  {RGB/BGR Formats}
+  COLOR_FORMAT_ARGB32:if not(Reverse) then Result:=$00FFFFFF else Result:=SwapEndian($00FFFFFF);
+  COLOR_FORMAT_ABGR32:if not(Reverse) then Result:=$00FFFFFF else Result:=SwapEndian($00FFFFFF);
+  COLOR_FORMAT_RGBA32:if not(Reverse) then Result:=$FFFFFF00 else Result:=SwapEndian($FFFFFF00);
+  COLOR_FORMAT_BGRA32:if not(Reverse) then Result:=$FFFFFF00 else Result:=SwapEndian($FFFFFF00);
+  COLOR_FORMAT_URGB32:if not(Reverse) then Result:=$00FFFFFF else Result:=SwapEndian($00FFFFFF);
+  COLOR_FORMAT_UBGR32:if not(Reverse) then Result:=$00FFFFFF else Result:=SwapEndian($00FFFFFF);
+  COLOR_FORMAT_RGBU32:if not(Reverse) then Result:=$FFFFFF00 else Result:=SwapEndian($FFFFFF00);
+  COLOR_FORMAT_BGRU32:if not(Reverse) then Result:=$FFFFFF00 else Result:=SwapEndian($FFFFFF00);
+  COLOR_FORMAT_RGB24:Result:=$FFFFFF; {No reverse}
+  COLOR_FORMAT_BGR24:Result:=$FFFFFF; {No reverse}
+  COLOR_FORMAT_RGB16:if not(Reverse) then Result:=$FFFF else Result:=SwapEndian(Word($FFFF));
+  COLOR_FORMAT_BGR16:if not(Reverse) then Result:=$FFFF else Result:=SwapEndian(Word($FFFF));
+  COLOR_FORMAT_RGB15:if not(Reverse) then Result:=$7FFF else Result:=SwapEndian(Word($7FFF));
+  COLOR_FORMAT_BGR15:if not(Reverse) then Result:=$7FFF else Result:=SwapEndian(Word($7FFF));
+  COLOR_FORMAT_RGB8:Result:=$FF; {No reverse}
+  COLOR_FORMAT_BGR8:Result:=$FF; {No reverse}
+  {Grayscale and Index Formats not supported}
+ end;
+end;
+
+{==============================================================================}
+
 procedure ColorDefaultToFormat(Format,Color:LongWord;Dest:Pointer;Reverse:Boolean); inline;
 {Convert a color value in the default format to the specified format}
 {Format: The color format to convert to (eg COLOR_FORMAT_RGB24)}
@@ -2351,7 +2399,7 @@ end;
 {$ENDIF FPC_BIG_ENDIAN}
 {==============================================================================}
 
-procedure ColorFormatToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+procedure ColorFormatToDefault(Format:LongWord;Source:Pointer;var Color:LongWord;Reverse:Boolean); inline;
 {Convert a color value in the specified format to the default format}
 {Format: The color format to convert from (eg COLOR_FORMAT_RGB24)}
 {Source: Pointer to the source buffer for the color to convert}
@@ -2579,7 +2627,7 @@ end;
 
 {==============================================================================}
 
-procedure ColorFormatAltToDefault(Format:LongWord;Source:Pointer;var Color:Longword;Reverse:Boolean); inline;
+procedure ColorFormatAltToDefault(Format:LongWord;Source:Pointer;var Color:LongWord;Reverse:Boolean); inline;
 {Convert a color value in the specified format to the default format (Alternate)}
 {Format: The color format to convert from (eg COLOR_FORMAT_RGB24)}
 {Source: Pointer to the source buffer for the color to convert}
@@ -2945,6 +2993,7 @@ begin
  case LogLevel of
   LOG_LEVEL_DEBUG:Result:=LOGGING_SEVERITY_DEBUG;
   LOG_LEVEL_INFO:Result:=LOGGING_SEVERITY_INFO;
+  LOG_LEVEL_WARN:Result:=LOGGING_SEVERITY_WARN;
   LOG_LEVEL_ERROR:Result:=LOGGING_SEVERITY_ERROR;
  end;
 end;

@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -112,6 +112,7 @@ const
  RPI_KERNEL_NAME = 'kernel.img';
  RPI_KERNEL_CONFIG = 'config.txt';
  RPI_KERNEL_COMMAND = 'cmdline.txt';
+ RPI_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat';
  
 const
  {GPIO Power LED constants (GPIO Pin 35 - A+/B+ Only)} 
@@ -451,7 +452,7 @@ begin
  SECURE_BOOT:=True;
  
  {Setup STARTUP_ADDRESS}
- STARTUP_ADDRESS:=RPI_STARTUP_ADDRESS;
+ STARTUP_ADDRESS:=PtrUInt(@_text_start); {RPI_STARTUP_ADDRESS} {Obtain from linker}
  
  {Setup PERIPHERALS_BASE and SIZE}
  PERIPHERALS_BASE:=BCM2835_PERIPHERALS_BASE;
@@ -568,6 +569,7 @@ begin
  KERNEL_NAME:=RPI_KERNEL_NAME;
  KERNEL_CONFIG:=RPI_KERNEL_CONFIG;
  KERNEL_COMMAND:=RPI_KERNEL_COMMAND;
+ FIRMWARE_FILES:=RPI_FIRMWARE_FILES;
  
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2835_GPIO_REGS_BASE;
@@ -1264,10 +1266,6 @@ begin
   BOARD_TYPE_RPIB,BOARD_TYPE_RPI_COMPUTE,BOARD_TYPE_RPIB_PLUS:begin
     SMSC95XX_MAC_ADDRESS:=BoardGetMACAddress;
    end;
- else
-  begin
-   SMSC95XX_MAC_ADDRESS:='';
-  end;
  end;
 end;
 
@@ -6554,7 +6552,7 @@ end;
 {==============================================================================}
 
 function RPiCursorSetInfo(Width,Height,HotspotX,HotspotY:LongWord;Pixels:Pointer;Length:LongWord):LongWord;
-{Set Curson Info (Pixels) from the Mailbox property tags channel}
+{Set Cursor Info (Pixels) from the Mailbox property tags channel}
 var
  Size:LongWord;
  Response:LongWord;

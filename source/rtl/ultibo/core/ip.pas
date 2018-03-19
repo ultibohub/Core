@@ -1,7 +1,7 @@
 {
 Ultibo IP (Internet Protocol) unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2166,67 +2166,36 @@ begin
            if FAutoRelease then
             begin
              {Call Config Handler}
-             if Config.ConfigHandler(THandle(Config),Adapter,CONFIG_ADAPTER_RELEASE) then
-              begin
-               {Update Adapter}
-               Adapter.Configured:=False;
-               
-               {Remove Default Route}
-               if not CompareDefault(Adapter.Gateway) then
-                begin
-                 RemoveRoute(IP_DEFAULT_NETWORK,Adapter.Address);
-                end;
-               
-               {Remove Broadcast Route}
-               RemoveRoute(IP_BROADCAST_NETWORK,Adapter.Address);
-               
-               {Remove Multicast Route}
-               RemoveRoute(IP_MULTICAST_NETWORK,Adapter.Address);
-               
-               {Remove Routes (Network, Address, Directed)}
-               RemoveRoute(Adapter.Directed,Adapter.Address);
-               RemoveRoute(Adapter.Address,IP_LOOPBACK_ADDRESS);
-               RemoveRoute(Adapter.Network,Adapter.Address);
-               
-               {Remove Address}
-               RemoveAddress(Adapter.Address);
-               
-               {Unlock Config}
-               Config.ReaderUnlock;
-               
-               Break;
-              end;
-            end
-           else
+             Config.ConfigHandler(THandle(Config),Adapter,CONFIG_ADAPTER_RELEASE); {Do not check return}
+            end; 
+
+           {Update Adapter}
+           Adapter.Configured:=False;
+           
+           {Remove Default Route}
+           if not CompareDefault(Adapter.Gateway) then
             begin
-             {Update Adapter}
-             Adapter.Configured:=False;
-             
-             {Remove Default Route}
-             if not CompareDefault(Adapter.Gateway) then
-              begin
-               RemoveRoute(IP_DEFAULT_NETWORK,Adapter.Address);
-              end;
-             
-             {Remove Broadcast Route}
-             RemoveRoute(IP_BROADCAST_NETWORK,Adapter.Address);
-             
-             {Remove Multicast Route}
-             RemoveRoute(IP_MULTICAST_NETWORK,Adapter.Address);
-             
-             {Remove Routes (Network, Address, Directed)}
-             RemoveRoute(Adapter.Directed,Adapter.Address);
-             RemoveRoute(Adapter.Address,IP_LOOPBACK_ADDRESS);
-             RemoveRoute(Adapter.Network,Adapter.Address);
-             
-             {Remove Address}
-             RemoveAddress(Adapter.Address);
-             
-             {Unlock Config}
-             Config.ReaderUnlock;
-             
-             Break;
+             RemoveRoute(IP_DEFAULT_NETWORK,Adapter.Address);
             end;
+           
+           {Remove Broadcast Route}
+           RemoveRoute(IP_BROADCAST_NETWORK,Adapter.Address);
+           
+           {Remove Multicast Route}
+           RemoveRoute(IP_MULTICAST_NETWORK,Adapter.Address);
+           
+           {Remove Routes (Network, Address, Directed)}
+           RemoveRoute(Adapter.Directed,Adapter.Address);
+           RemoveRoute(Adapter.Address,IP_LOOPBACK_ADDRESS);
+           RemoveRoute(Adapter.Network,Adapter.Address);
+           
+           {Remove Address}
+           RemoveAddress(Adapter.Address);
+           
+           {Unlock Config}
+           Config.ReaderUnlock;
+           
+           Break;
           end;
         end;
         
@@ -3842,6 +3811,11 @@ begin
                        {Check Expiry (Expires immediately on NAK)}
                        if Current.ExpiryTime <= GetTickCount64 then Current.RetryTime:=GetTickCount64;
                       end;
+
+                     {Unlock Config}
+                     Config.ReaderUnlock;
+
+                     Break;
                     end;
                   end;
                  
@@ -3881,6 +3855,11 @@ begin
                          {Check Expiry (Expires immediately on NAK)}
                          if Current.ExpiryTime <= GetTickCount64 then Current.RetryTime:=GetTickCount64;
                         end;
+                        
+                       {Unlock Config}
+                       Config.ReaderUnlock;
+
+                       Break;
                       end;
                     end;
                     

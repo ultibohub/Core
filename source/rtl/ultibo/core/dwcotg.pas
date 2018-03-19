@@ -1,7 +1,7 @@
 {
 USB Host Controller Driver for the Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -13,7 +13,7 @@ Boards
 
  Raspberry Pi - Model A/B/A+/B+
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  
 Licence
 =======

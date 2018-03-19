@@ -1,7 +1,7 @@
 {
 Raspberry Pi FT5406 Touch Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -14,7 +14,7 @@ Boards
  Raspberry Pi - Model A/B/A+/B+/CM1
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  Raspberry Pi CM3
 
 Licence
@@ -338,7 +338,7 @@ begin
         {Allocate Shared}
         Buffer:=AllocSharedAlignedMem(Size,DMA_ALIGNMENT);
        end;
-      BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
+      BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
         {Allocate Non Cached}
         Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
        end;

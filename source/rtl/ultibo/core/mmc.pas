@@ -712,6 +712,7 @@ const
  {MMC logging}
  MMC_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {MMC debugging messages}
  MMC_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {MMC informational messages, such as a device being attached or detached}
+ MMC_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {MMC warning messages}
  MMC_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {MMC error messages}
  MMC_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No MMC messages}
 
@@ -1976,9 +1977,10 @@ function MMCDeviceTypeToString(MMCType:LongWord):String;
 function MMCDeviceStateToString(MMCState:LongWord):String;
 
 procedure MMCLog(Level:LongWord;MMC:PMMCDevice;const AText:String);
-procedure MMCLogInfo(MMC:PMMCDevice;const AText:String);
-procedure MMCLogError(MMC:PMMCDevice;const AText:String);
-procedure MMCLogDebug(MMC:PMMCDevice;const AText:String);
+procedure MMCLogInfo(MMC:PMMCDevice;const AText:String); inline;
+procedure MMCLogWarn(MMC:PMMCDevice;const AText:String); inline;
+procedure MMCLogError(MMC:PMMCDevice;const AText:String); inline;
+procedure MMCLogDebug(MMC:PMMCDevice;const AText:String); inline;
 
 {==============================================================================}
 {SD Helper Functions}
@@ -8291,6 +8293,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = MMC_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = MMC_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -8311,7 +8317,7 @@ end;
 
 {==============================================================================}
 
-procedure MMCLogInfo(MMC:PMMCDevice;const AText:String);
+procedure MMCLogInfo(MMC:PMMCDevice;const AText:String); inline;
 begin
  {}
  MMCLog(MMC_LOG_LEVEL_INFO,MMC,AText);
@@ -8319,7 +8325,15 @@ end;
 
 {==============================================================================}
 
-procedure MMCLogError(MMC:PMMCDevice;const AText:String);
+procedure MMCLogWarn(MMC:PMMCDevice;const AText:String); inline;
+begin
+ {}
+ MMCLog(MMC_LOG_LEVEL_WARN,MMC,AText);
+end;
+
+{==============================================================================}
+
+procedure MMCLogError(MMC:PMMCDevice;const AText:String); inline;
 begin
  {}
  MMCLog(MMC_LOG_LEVEL_ERROR,MMC,AText);
@@ -8327,7 +8341,7 @@ end;
 
 {==============================================================================}
 
-procedure MMCLogDebug(MMC:PMMCDevice;const AText:String);
+procedure MMCLogDebug(MMC:PMMCDevice;const AText:String); inline;
 begin
  {}
  MMCLog(MMC_LOG_LEVEL_DEBUG,MMC,AText);

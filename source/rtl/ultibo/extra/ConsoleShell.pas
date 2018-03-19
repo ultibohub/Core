@@ -1,7 +1,7 @@
 {
 Ultibo Console Shell unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -44,10 +44,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils,Classes,UltiboClasses,Console,Shell;
 
-//To Do //Look for:
-
-//--
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
@@ -61,7 +57,7 @@ const
  
  {Console Shell constants}
  CONSOLE_SHELL_NAME = 'Console Shell';
-
+ 
  {Console Shell Command constants}
  CONSOLE_SHELL_COMMAND_EXIT = 'EXIT';
  
@@ -72,6 +68,7 @@ const
 {==============================================================================}
 type
  {Console Shell specific clases}
+ TConsoleSession = class;
  TConsoleShellThread = class;
  TConsoleShell = class(TShell)
  public
@@ -85,7 +82,27 @@ type
   FDefaultSession:TShellSession;
   
   {Internal Methods}
+  procedure Reset(ASession:TConsoleSession);
   
+  procedure MoveFirst(ASession:TConsoleSession);
+  procedure MoveLast(ASession:TConsoleSession);
+  procedure MoveLeft(ASession:TConsoleSession);
+  procedure MoveRight(ASession:TConsoleSession);
+  
+  procedure EraseLine(ASession:TConsoleSession);
+  procedure OutputLine(ASession:TConsoleSession;const AValue:String);
+  function ExpandLine(ASession:TConsoleSession):Boolean;
+  
+  procedure EraseCharacter(ASession:TConsoleSession);
+  procedure DeleteCharacter(ASession:TConsoleSession);
+  procedure InsertCharacter(ASession:TConsoleSession;ACh:Char);
+  procedure OverwriteCharacter(ASession:TConsoleSession;ACh:Char);
+  
+  procedure PrevHistory(ASession:TConsoleSession);
+  procedure NextHistory(ASession:TConsoleSession);
+  procedure FirstHistory(ASession:TConsoleSession);
+  procedure LastHistory(ASession:TConsoleSession);
+  procedure CurrentHistory(ASession:TConsoleSession);
  protected
   {Internal Variables}
 
@@ -115,6 +132,12 @@ type
   
   function DoGetCoordinates(ASession:TShellSession;var ARow,ACol:LongWord):Boolean; override;
   function DoSetCoordinates(ASession:TShellSession;ARow,ACol:LongWord):Boolean; override;
+
+  function DoGetCursorMode(ASession:TShellSession;var AMode:LongWord):Boolean; override;
+  function DoSetCursorMode(ASession:TShellSession;AMode:LongWord):Boolean; override;
+  
+  function DoGetCursorShape(ASession:TShellSession;var AShape:LongWord):Boolean; override;
+  function DoSetCursorShape(ASession:TShellSession;AShape:LongWord):Boolean; override;
   
   function ConsoleChar(ASession:TShellSession;AChar:Char):Boolean;
   function ConsoleExtended(ASession:TShellSession;AChar:Char):Boolean;
@@ -135,7 +158,16 @@ type
  public
   {Public Properties}
   Command:String;
-  Position:LongWord;
+  MaxX:LongWord;
+  MaxY:LongWord;
+  LastX:LongWord;
+  LastY:LongWord;
+  FirstX:LongWord;
+  FirstY:LongWord;
+  CurrentX:LongWord;
+  CurrentY:LongWord;
+  Mode:LongWord;
+  Shape:LongWord;
   Window:TWindowHandle;
   
   {Public Methods}
@@ -255,6 +287,607 @@ end;
 
 {==============================================================================}
 
+procedure TConsoleShell.Reset(ASession:TConsoleSession);
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Setup Start}
+ ASession.Command:='';
+ ASession.MaxX:=ConsoleWindowGetCols(TConsoleSession(ASession).Window);
+ ASession.MaxY:=ConsoleWindowGetRows(TConsoleSession(ASession).Window);
+ ASession.CurrentX:=ConsoleWindowGetX(TConsoleSession(ASession).Window);
+ ASession.CurrentY:=ConsoleWindowGetY(TConsoleSession(ASession).Window);
+ ASession.FirstX:=ASession.CurrentX;
+ ASession.FirstY:=ASession.CurrentY;
+ ASession.LastX:=ASession.CurrentX;
+ ASession.LastY:=ASession.CurrentY;
+ ASession.Mode:=SHELL_CURSOR_MODE_INSERT;
+ ASession.Shape:=SHELL_CURSOR_SHAPE_LINE;
+ 
+ {Setup Cursor}
+ ConsoleWindowSetCursorMode(ASession.Window,CURSOR_MODE_INSERT);
+ ConsoleWindowSetCursorShape(ASession.Window,CURSOR_SHAPE_LINE);
+ ConsoleWindowSetCursorBlink(ASession.Window,True);
+ ConsoleWindowSetCursorState(ASession.Window,CURSOR_STATE_ON);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.MoveFirst(ASession:TConsoleSession);
+{Move the cursor to the starting position of the line}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ ASession.CurrentX:=ASession.FirstX;
+ ASession.CurrentY:=ASession.FirstY;
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.MoveLast(ASession:TConsoleSession);
+{Move the cursor to the ending position of the line}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ ASession.CurrentX:=ASession.LastX;
+ ASession.CurrentY:=ASession.LastY;
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.MoveLeft(ASession:TConsoleSession);
+{Move the cursor one position to the left in the line}
+var
+ First:LongWord;
+ Current:LongWord;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get Offsets}
+ First:=(ASession.FirstY * ASession.MaxX) + ASession.FirstX;
+ Current:=(ASession.CurrentY * ASession.MaxX) + ASession.CurrentX;
+ 
+ {Check Offset}
+ if Current = First then Exit;
+ 
+ {Update Position}
+ Dec(ASession.CurrentX);
+ if (ASession.CurrentY > ASession.FirstY) and (ASession.CurrentX < 1) then
+  begin
+   ASession.CurrentX:=ASession.MaxX;
+   Dec(ASession.CurrentY);
+  end;
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.MoveRight(ASession:TConsoleSession);
+{Move the cursor one position to the right in the line}
+var
+ Last:LongWord;
+ Current:LongWord;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get Offsets}
+ Last:=(ASession.LastY * ASession.MaxX) + ASession.LastX;
+ Current:=(ASession.CurrentY * ASession.MaxX) + ASession.CurrentX;
+ 
+ {Check Offset}
+ if Current = Last then Exit;
+ 
+ {Update Position}
+ Inc(ASession.CurrentX);
+ if (ASession.CurrentY < ASession.LastY) and (ASession.CurrentX > ASession.MaxX) then
+  begin
+   ASession.CurrentX:=1;
+   Inc(ASession.CurrentY);
+  end;
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.EraseLine(ASession:TConsoleSession);
+{Erase all characters in the line and reset the cursor position}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Update Position}
+ ASession.CurrentX:=ASession.FirstX;
+ ASession.CurrentY:=ASession.FirstY;
+ ASession.LastX:=ASession.FirstX;
+ ASession.LastY:=ASession.FirstY;
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+ 
+ {Update Line}
+ ConsoleWindowWrite(ASession.Window,StringOfChar(' ',Length(ASession.Command)));
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+
+ {Update Command}
+ ASession.Command:='';  
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.OutputLine(ASession:TConsoleSession;const AValue:String);
+{Output all characters in value and update the cursor position}
+var
+ Count:Integer;
+ Value:String;
+begin
+ {}
+ {Check Value}
+ if Length(AValue) = 0 then Exit;
+ 
+ {Move Last}
+ MoveLast(ASession);
+ 
+ {Output Line}
+ Value:='';
+ for Count:=1 to Length(AValue) do
+  begin
+   {Update Position}
+   Inc(ASession.LastX);
+   if ASession.LastX > ASession.MaxX then
+    begin
+     if ASession.LastY < ASession.MaxY then
+      begin
+       ASession.LastX:=1;
+       Inc(ASession.LastY);
+      end
+     else
+      begin
+       if ASession.FirstY > 1 then
+        begin
+         ASession.LastX:=1;
+         Dec(ASession.FirstY);
+        end
+       else
+        begin
+         Dec(ASession.LastX);     
+         Break;
+        end; 
+      end;
+    end;
+   
+   {Get Character}
+   Value:=Value + AValue[Count];
+  end;
+
+ {Update Position}
+ ASession.CurrentX:=ASession.LastX;
+ ASession.CurrentY:=ASession.LastY;
+ 
+ {Update Line}
+ ConsoleWindowWrite(ASession.Window,Value);
+
+ {Update Command}
+ ASession.Command:=Value;
+end;
+
+{==============================================================================}
+
+function TConsoleShell.ExpandLine(ASession:TConsoleSession):Boolean;
+{Expand the tab key to a command completion if available}
+var
+ Value:String;
+ Error:Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Complete Command}
+ Value:=CompleteCommand(ASession,ASession.Command,Error);
+ if Value <> ASession.Command then
+  begin
+   {Erase Current}
+   EraseLine(ASession);
+       
+   {Output Line}
+   OutputLine(ASession,Value);
+     
+   {Update Command}
+   ASession.Command:=Value;
+  end;
+  
+ {Return True (Prevent Tab Character)} 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.EraseCharacter(ASession:TConsoleSession);
+{Erase the character to the left of the cursor position}
+var
+ Head:String;
+ Tail:String;
+ Last:LongWord;
+ First:LongWord;
+ Current:LongWord;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get Offsets}
+ First:=(ASession.FirstY * ASession.MaxX) + ASession.FirstX;
+ Last:=(ASession.LastY * ASession.MaxX) + ASession.LastX;
+ Current:=(ASession.CurrentY * ASession.MaxX) + ASession.CurrentX;
+ 
+ {Check Offset}
+ if Current = First then Exit;
+ 
+ {Get Head and Tail}
+ Head:=Copy(ASession.Command,1,(Current - First) - 1);
+ Tail:=Copy(ASession.Command,(Current - First) + 1,Length(ASession.Command));
+ 
+ {Update Position}
+ Dec(ASession.CurrentX);
+ if (ASession.CurrentY > ASession.FirstY) and (ASession.CurrentX < 1) then
+  begin
+   ASession.CurrentX:=ASession.MaxX;
+   Dec(ASession.CurrentY);
+  end;
+  
+ Dec(ASession.LastX);
+ if (ASession.LastY > ASession.FirstY) and (ASession.LastX < 1) then
+  begin
+   ASession.LastX:=ASession.MaxX;
+   Dec(ASession.LastY);
+  end;
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+ 
+ {Update Line}
+ ConsoleWindowWrite(ASession.Window,Tail + ' ');
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+ 
+ {Update Command}
+ ASession.Command:=Head + Tail;
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.DeleteCharacter(ASession:TConsoleSession);
+{Delete the character to the right of the cursor position}
+var
+ Head:String;
+ Tail:String;
+ Last:LongWord;
+ First:LongWord;
+ Current:LongWord;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get Offsets}
+ First:=(ASession.FirstY * ASession.MaxX) + ASession.FirstX;
+ Last:=(ASession.LastY * ASession.MaxX) + ASession.LastX;
+ Current:=(ASession.CurrentY * ASession.MaxX) + ASession.CurrentX;
+ 
+ {Check Offset}
+ if Current = Last then Exit;
+ 
+ {Get Head and Tail}
+ Head:=Copy(ASession.Command,1,Current - First);
+ Tail:=Copy(ASession.Command,(Current - First) + 2,Length(ASession.Command));
+ 
+ {Update Position}
+ Dec(ASession.LastX);
+ if (ASession.LastY > ASession.FirstY) and (ASession.LastX < 1) then
+  begin
+   ASession.LastX:=ASession.MaxX;
+   Dec(ASession.LastY);
+  end;
+ 
+ {Update Line}
+ ConsoleWindowWrite(ASession.Window,Tail + ' ');
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+ 
+ {Update Command}
+ ASession.Command:=Head + Tail;
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.InsertCharacter(ASession:TConsoleSession;ACh:Char);
+{Insert a character at the cursor position}
+var
+ Head:String;
+ Tail:String;
+ Last:LongWord;
+ First:LongWord;
+ Current:LongWord;
+ Scroll:Boolean;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get Offsets}
+ First:=(ASession.FirstY * ASession.MaxX) + ASession.FirstX;
+ Last:=(ASession.LastY * ASession.MaxX) + ASession.LastX;
+ Current:=(ASession.CurrentY * ASession.MaxX) + ASession.CurrentX;
+ 
+ {Get Head and Tail}
+ Head:=Copy(ASession.Command,1,Current - First);
+ Tail:=Copy(ASession.Command,(Current - First) + 1,Length(ASession.Command));
+ 
+ Scroll:=False;
+ 
+ {Update Position}
+ Inc(ASession.LastX);
+ if ASession.LastX > ASession.MaxX then
+  begin
+   if ASession.LastY < ASession.MaxY then
+    begin
+     ASession.LastX:=1;
+     Inc(ASession.LastY);
+    end
+   else
+    begin
+     if ASession.FirstY > 1 then
+      begin
+       ASession.LastX:=1;
+       Dec(ASession.FirstY);
+       Dec(ASession.CurrentY);
+       Scroll:=True;
+      end
+     else
+      begin
+       Dec(ASession.LastX);     
+       Exit;
+      end; 
+    end;
+  end;
+  
+ Inc(ASession.CurrentX);
+ if ASession.CurrentX > ASession.MaxX then
+  begin
+   if ASession.CurrentY < ASession.MaxY then
+    begin
+     ASession.CurrentX:=1;
+     Inc(ASession.CurrentY);
+    end
+   else
+    begin 
+     if Scroll then
+      begin
+       ASession.CurrentX:=1;
+      end
+     else
+      begin
+       Dec(ASession.CurrentX);
+       Exit;
+      end; 
+    end;
+  end;
+ 
+ {Update Line}
+ ConsoleWindowWrite(ASession.Window,ACh + Tail);
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+ 
+ {Update Command}
+ ASession.Command:=Head + ACh + Tail;
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.OverwriteCharacter(ASession:TConsoleSession;ACh:Char);
+{Overwrite the character at the cursor position}
+var
+ Head:String;
+ Tail:String;
+ Last:LongWord;
+ First:LongWord;
+ Current:LongWord;
+ Scroll:Boolean;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get Offsets}
+ First:=(ASession.FirstY * ASession.MaxX) + ASession.FirstX;
+ Last:=(ASession.LastY * ASession.MaxX) + ASession.LastX;
+ Current:=(ASession.CurrentY * ASession.MaxX) + ASession.CurrentX;
+ 
+ {Get Head and Tail}
+ Head:=Copy(ASession.Command,1,Current - First);
+ Tail:=Copy(ASession.Command,(Current - First) + 2,Length(ASession.Command));
+ 
+ Scroll:=False;
+ 
+ {Update Position}
+ if (ASession.CurrentX = ASession.LastX) and (ASession.CurrentY = ASession.LastY) then
+  begin
+   Inc(ASession.LastX);
+  end; 
+ 
+ Inc(ASession.CurrentX);
+ if ASession.CurrentX > ASession.MaxX then
+  begin
+   if (ASession.CurrentX = ASession.LastX) and (ASession.CurrentY = ASession.LastY) then 
+    begin
+     if ASession.LastY < ASession.MaxY then
+      begin
+       ASession.LastX:=1;
+       Inc(ASession.LastY);
+      end
+     else
+      begin
+       if ASession.FirstY > 1 then
+        begin
+         ASession.LastX:=1;
+         Dec(ASession.FirstY);
+         Dec(ASession.CurrentY);
+         Scroll:=True;
+        end
+       else
+        begin
+         Dec(ASession.LastX);
+        end; 
+      end;
+    end;
+    
+   if ASession.CurrentY < ASession.MaxY then
+    begin
+     ASession.CurrentX:=1;
+     Inc(ASession.CurrentY);
+    end
+   else
+    begin    
+     if Scroll then
+      begin
+       ASession.CurrentX:=1;
+      end
+     else
+      begin
+       Dec(ASession.CurrentX);
+       Exit;
+      end; 
+    end;
+  end;
+ 
+ {Update Line}
+ ConsoleWindowWrite(ASession.Window,ACh + Tail);
+ ConsoleWindowSetXY(ASession.Window,ASession.CurrentX,ASession.CurrentY);
+ 
+ {Update Command}
+ ASession.Command:=Head + ACh + Tail;
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.PrevHistory(ASession:TConsoleSession);
+{Get the previous command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.PrevHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.NextHistory(ASession:TConsoleSession);
+{Get the next command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.NextHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.FirstHistory(ASession:TConsoleSession);
+{Get the first command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.FirstHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.LastHistory(ASession:TConsoleSession);
+{Get the last command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.LastHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
+procedure TConsoleShell.CurrentHistory(ASession:TConsoleSession);
+{Get the current command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.CurrentHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
 function TConsoleShell.CreateWindow:TShellSession;
 var
  Handle:TWindowHandle;
@@ -266,86 +899,92 @@ begin
  {Check Console}
  if FConsole = nil then Exit;
  
- //To Do //Lock
- 
- {Create Window (Default position)}
- Handle:=ConsoleWindowCreate(FConsole,CONSOLE_SHELL_POSITION,False);
- 
- {Create Window (Any position)}
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_FULL,False);
-  end; 
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_TOP,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_BOTTOM,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_LEFT,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_RIGHT,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_TOPLEFT,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_TOPRIGHT,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_BOTTOMLEFT,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then
-  begin
-   Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_BOTTOMRIGHT,False);
-  end;
- if Handle = INVALID_HANDLE_VALUE then Exit;
- 
- {Create Session}
- Session:=TConsoleSession.Create(Self,Handle);
- Session.Window:=Handle;
- 
- {Register Session}
- if not RegisterSession(Session) then
-  begin
-   {Destroy Window}
-   ConsoleWindowDestroy(Handle);
-
-   {Destroy Session}
-   Session.Free;
-   
-   Exit;
-  end;
+ if not AcquireLock then Exit;
+ try
+  {Create Window (Default position)}
+  Handle:=ConsoleWindowCreate(FConsole,CONSOLE_SHELL_POSITION,False);
   
- {Clear Screen}
- if not DoClear(Session) then Exit;
+  {Create Window (Any position)}
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_FULL,False);
+   end; 
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_TOP,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_BOTTOM,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_LEFT,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_RIGHT,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_TOPLEFT,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_TOPRIGHT,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_BOTTOMLEFT,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then
+   begin
+    Handle:=ConsoleWindowCreate(FConsole,CONSOLE_POSITION_BOTTOMRIGHT,False);
+   end;
+  if Handle = INVALID_HANDLE_VALUE then Exit;
+  
+  {Create Session}
+  Session:=TConsoleSession.Create(Self,Handle);
+  Session.Window:=Handle;
+  
+  {Register Session}
+  if not RegisterSession(Session) then
+   begin
+    {Destroy Window}
+    ConsoleWindowDestroy(Handle);
  
- {Send Banner}
- if not DoBanner(Session) then Exit;
- 
- {Send Welcome}
- if not DoOutput(Session,CONSOLE_SHELL_DEFAULT_WELCOME) then Exit;
- 
- {Send Prompt}
- if not DoPrompt(Session) then Exit;
+    {Destroy Session}
+    Session.Free;
+    
+    Exit;
+   end;
+   
+  {Clear Screen}
+  if not DoClear(Session) then Exit;
+  
+  {Send Banner}
+  if not DoBanner(Session) then Exit;
+  
+  {Send Welcome}
+  if not DoOutput(Session,CONSOLE_SHELL_DEFAULT_WELCOME) then Exit;
+  
+  {Send Prompt}
+  if not DoPrompt(Session) then Exit;
 
- {Check Default}
- if FDefaultSession = nil then
-  begin
-   FDefaultSession:=Session;
-  end;
- 
- {Return Result}
- Result:=Session;
+  {Reset Session}
+  Reset(Session);
+  
+  {Check Default}
+  if FDefaultSession = nil then
+   begin
+    FDefaultSession:=Session;
+   end;
+  
+  {Return Result}
+  Result:=Session;
+ finally
+  ReleaseLock;
+ end; 
 end;
 
 {==============================================================================}
@@ -358,27 +997,30 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //Lock
- 
- {Check Window}
- if TConsoleSession(ASession).Window = INVALID_HANDLE_VALUE then Exit;
- 
- {Deregister Session}
- if not DeregisterSession(ASession) then Exit;
- 
- {Destroy Window}
- ConsoleWindowDestroy(TConsoleSession(ASession).Window);
- 
- {Check Default}
- if FDefaultSession = ASession then
-  begin
-   FDefaultSession:=nil;
-  end;
- 
- {Destroy Session}
- ASession.Free;
- 
- Result:=True;
+ if not AcquireLock then Exit;
+ try
+  {Check Window}
+  if TConsoleSession(ASession).Window = INVALID_HANDLE_VALUE then Exit;
+  
+  {Deregister Session}
+  if not DeregisterSession(ASession) then Exit;
+  
+  {Destroy Window}
+  ConsoleWindowDestroy(TConsoleSession(ASession).Window);
+  
+  {Check Default}
+  if FDefaultSession = ASession then
+   begin
+    FDefaultSession:=nil;
+   end;
+  
+  {Destroy Session}
+  ASession.Free;
+  
+  Result:=True;
+ finally
+  ReleaseLock;
+ end; 
 end;
 
 {==============================================================================}
@@ -401,6 +1043,8 @@ end;
 {==============================================================================}
 
 function TConsoleShell.DoInput(ASession:TShellSession;var AInput:String):Boolean; 
+var
+ Session:TConsoleSession;
 begin
  {}
  Result:=False;
@@ -408,7 +1052,10 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do
+ {Get Session}
+ Session:=TConsoleSession(ASession);
+ 
+ //To Do //ConsoleWindowReadLnEx - No History / No Completion
 end;
 
 {==============================================================================}
@@ -587,6 +1234,109 @@ end;
 
 {==============================================================================}
 
+function TConsoleShell.DoGetCursorMode(ASession:TShellSession;var AMode:LongWord):Boolean; 
+var
+ Mode:TCursorMode;
+begin
+ {}
+ Result:=False;
+ 
+ {Set Default}
+ AMode:=SHELL_CURSOR_MODE_INSERT;
+ 
+ {Check Session}
+ if ASession = nil then Exit;
+
+ {Check Window}
+ if TConsoleSession(ASession).Window = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Mode}
+ Mode:=ConsoleWindowGetCursorMode(TConsoleSession(ASession).Window);
+ if Mode = CURSOR_MODE_OVERWRITE then AMode:=SHELL_CURSOR_MODE_OVERWRITE;
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TConsoleShell.DoSetCursorMode(ASession:TShellSession;AMode:LongWord):Boolean; 
+const
+ Modes:array[SHELL_CURSOR_MODE_INSERT..SHELL_CURSOR_MODE_OVERWRITE] of TCursorMode = 
+  (CURSOR_MODE_INSERT, CURSOR_MODE_OVERWRITE);
+begin
+ {}
+ Result:=False;
+
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Check Window}
+ if TConsoleSession(ASession).Window = INVALID_HANDLE_VALUE then Exit;
+
+ {Check Mode}
+ if AMode > SHELL_CURSOR_MODE_OVERWRITE then Exit;
+ 
+ {Set Mode}
+ Result:=(ConsoleWindowSetCursorMode(TConsoleSession(ASession).Window,Modes[AMode]) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+  
+function TConsoleShell.DoGetCursorShape(ASession:TShellSession;var AShape:LongWord):Boolean; 
+var
+ Shape:TCursorShape;
+begin
+ {}
+ Result:=False;
+ 
+ {Set Default}
+ AShape:=SHELL_CURSOR_SHAPE_LINE;
+ 
+ {Check Session}
+ if ASession = nil then Exit;
+
+ {Check Window}
+ if TConsoleSession(ASession).Window = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Get Shape}
+ Shape:=ConsoleWindowGetCursorShape(TConsoleSession(ASession).Window);
+ if Shape = CURSOR_SHAPE_BAR then
+  begin
+   AShape:=SHELL_CURSOR_SHAPE_BAR;
+  end
+ else if Shape = CURSOR_SHAPE_BLOCK then
+  begin
+   AShape:=SHELL_CURSOR_SHAPE_BLOCK;
+  end;
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TConsoleShell.DoSetCursorShape(ASession:TShellSession;AShape:LongWord):Boolean; 
+const
+ Shapes:array[SHELL_CURSOR_SHAPE_LINE..SHELL_CURSOR_SHAPE_BLOCK] of TCursorShape = 
+  (CURSOR_SHAPE_LINE, CURSOR_SHAPE_BAR, CURSOR_SHAPE_BLOCK);
+begin
+ {}
+ Result:=False;
+
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Check Window}
+ if TConsoleSession(ASession).Window = INVALID_HANDLE_VALUE then Exit;
+
+ {Check Shape}
+ if AShape > SHELL_CURSOR_SHAPE_BLOCK then Exit;
+ 
+ {Set Shape}
+ Result:=(ConsoleWindowSetCursorShape(TConsoleSession(ASession).Window,Shapes[AShape]) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TConsoleShell.ConsoleChar(ASession:TShellSession;AChar:Char):Boolean;
 var
  Session:TConsoleSession;
@@ -600,53 +1350,72 @@ begin
  {Get Session}
  Session:=TConsoleSession(ASession);
  
- {Check for ENTER}
- if AChar  = #13 then //To Do
-  begin
-   {Send Char}
-   DoOutput(Session,'');
-
-   {Check Command}
-   if Length(Session.Command) > 0 then
-    begin
-     {Process Command}
-     ProcessCommand(Session,Session.Command);
-         
-     {Clear Command}
-     SetLength(Session.Command,0);
-     Session.Position:=0;
-    end;
-        
-   {Send Prompt} 
-   DoPrompt(Session);
-  end
- {Check for TAB}
- else if AChar = #9 then //To Do
-  begin
-   {Match Command}
-   //To Do 
-  end
- {Check for Backspace}
- else if AChar = #8 then //To Do
-  begin
-   if Length(Session.Command) > 0 then
-    begin
-     //To Do //Remove from screen
+ {Check Key}
+ case AChar of
+  #8:begin  {Backspace}
+    EraseCharacter(Session);
+   end;
+  #9:begin  {Tab}
+    if not ExpandLine(Session) then
+     begin
+      if Session.Mode = SHELL_CURSOR_MODE_INSERT then
+       begin
+        InsertCharacter(Session,AChar);
+       end
+      else
+       begin
+        OverwriteCharacter(Session,AChar);
+       end;
+     end;
+   end;
+  #13:begin {Return}
+    {End}
+    MoveLast(Session);
+    
+    {Send Char}
+    DoOutput(Session,'');
+    
+    {Check Command}
+    if Length(Session.Command) > 0 then
+     begin
+      {Process Command}
+      ProcessCommand(Session,Session.Command);
+      
+      {Add History}
+      Session.AddHistory(Session.Command);
+     end;
      
-     {Remove Character}
-     SetLength(Session.Command,Length(Session.Command) - 1);
-     Dec(Session.Position);
-    end; 
-  end
- else
-  begin     
-   {Send Char}
-   DoOutputEx(Session,AChar,False);
-
-   {Add Command}
-   Session.Command:=Session.Command + AChar;
-   Inc(Session.Position);
-  end; 
+    {Send Prompt} 
+    DoPrompt(Session);
+    
+    {Reset State}
+    Reset(Session);
+   end;
+  #27:begin {Escape}
+    {Clear Command}
+    EraseLine(Session);      
+    
+    {Send Char}
+    DoOutput(Session,'');
+    
+    {Send Prompt} 
+    DoPrompt(Session);
+    
+    {Reset State}
+    Reset(Session);
+   end;
+  else
+   begin    {Any Other Key}
+    if Session.Mode = SHELL_CURSOR_MODE_INSERT then
+     begin
+      InsertCharacter(Session,AChar);
+     end
+    else
+     begin
+      OverwriteCharacter(Session,AChar);
+     end;
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -664,7 +1433,85 @@ begin
  {Get Session}
  Session:=TConsoleSession(ASession);
 
- //To Do
+ {Check Key}
+ case AChar of
+  #75:begin {Left Arrow}
+    MoveLeft(Session);
+   end;
+  #77:begin {Right Arrow}
+    MoveRight(Session);
+   end;
+  #72:begin {Up Arrow}
+    PrevHistory(Session);
+   end;
+  #80:begin {Down Arrow}
+    NextHistory(Session);
+   end;
+  #82:begin {Insert}
+    {Check Mode}
+    if Session.Mode = SHELL_CURSOR_MODE_INSERT then
+     begin
+      Session.Mode:=SHELL_CURSOR_MODE_OVERWRITE;
+      Session.Shape:=SHELL_CURSOR_SHAPE_BAR;
+     end
+    else
+     begin
+      Session.Mode:=SHELL_CURSOR_MODE_INSERT;
+      Session.Shape:=SHELL_CURSOR_SHAPE_LINE;
+     end;
+     
+    {Set Mode} 
+    DoSetCursorMode(Session,Session.Mode);
+    DoSetCursorShape(Session,Session.Shape);
+   end;
+  #83:begin {Delete}
+    DeleteCharacter(Session);
+   end;
+  #71:begin {Home}
+    MoveFirst(Session);
+   end;
+  #79:begin {End}
+    MoveLast(Session);
+   end;
+  #73:begin {Page Up}
+    FirstHistory(Session);
+   end;
+  #81:begin {Page Down}
+    LastHistory(Session);
+   end;
+  #59:begin {F1}
+    {Nothing}
+   end;
+  #60:begin {F2}
+    {Nothing}
+   end;
+  #61:begin {F3}
+    CurrentHistory(Session);
+   end;
+  #62:begin {F4}
+    {Nothing}
+   end;
+  #63:begin {F5}
+    {Nothing}
+   end;
+  #64:begin {F6}
+    {Nothing}
+   end;
+  #65:begin {F7}
+    {Nothing}
+   end;
+  #66:begin {F8}
+    {Nothing}
+   end;
+  #67:begin {F9}
+    {Nothing}
+   end;
+  #68:begin {F10}
+    {Nothing}
+   end;
+ end;
+ 
+ Result:=True;
 end;
 
 {==============================================================================}

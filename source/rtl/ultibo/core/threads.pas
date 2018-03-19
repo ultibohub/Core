@@ -1,7 +1,7 @@
 {
 Ultibo Threads interface unit.
            
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -58,7 +58,7 @@ Threads
          
          To use a Spin lock to synchronise data access between threads and an interrupt handler each thread should call SpinLockIRQ() or SpinLockFIQ(), depending on 
          whether the interrupt handler is servicing IRQ or FIQ requests, before accessing the data and SpinUnlockIRQ() or SpinUnlockFIQ() when finished accessing the data.
-         These calls disable interrupts before aquiring the lock (with deadlock protection) and restore interrupts after releaseing the lock and therefore should only be
+         These calls disable interrupts before acquiring the lock (with deadlock protection) and restore interrupts after releasing the lock and therefore should only be
          used to protect very short sections of code accessing shared data to minimise the impact on interrupt latency.
          
          Interrupt handlers should call SpinLock() before accessing the data and SpinUnlock() when finished accessing the data. In a Uniprocessor system it is technically
@@ -66,8 +66,8 @@ Threads
          lock. On a Multiprocessor system however interrupt handlers can execute on one processor while a thread is executing on another (which will not deadlock), to correctly
          synchronise data access both threads and interrupt handlers should call the appropriate lock/unlock before and after access to the data.
   
-         Lock Hierachy:
-         --------------
+         Lock Hierarchy:
+         ---------------
          It is safe to acquire one lock using SpinLock() then another lock using SpinLock() and then release them in reverse order.
          
          It is also safe to acquire one lock using SpinLock() then another lock using SpinLockIRQ(or FIQ)() and then release them in reverse order.
@@ -77,11 +77,11 @@ Threads
          the second lock then this sequence will deadlock (Except on a multicore system where the other thread is running on a different CPU).
          
          It is also safe to acquire one lock using SpinLockIRQ(or FIQ)() then another lock using SpinLockIRQ(or FIQ)() and then release them in reverse order.
-         In this case you must ensure that any thread aquiring the second lock also calls SpinLockIRQ(or FIQ)() to thereby avoid the deadlock.
+         In this case you must ensure that any thread acquiring the second lock also calls SpinLockIRQ(or FIQ)() to thereby avoid the deadlock.
          
          It is NOT safe to acquire one lock using SpinLockIRQ(or FIQ)() then another lock using SpinLockIRQ(or FIQ)() and then release them in the SAME order.
-         If the situation absolutely requires this behavious then you must use SpinExchangeIRQ(or FIQ)() when holding both locks in order to reverse the order of the
-         IRQ or FIQ renabling.
+         If the situation absolutely requires this behaviour then you must use SpinExchangeIRQ(or FIQ)() when holding both locks in order to reverse the order of the
+         IRQ or FIQ re-enabling.
          
 
   Mutex - A mutually exclusive lock for controlling access to data. Threads yield while waiting to acquire the lock.
@@ -98,7 +98,7 @@ Threads
           
           //To Do
  
-  CriticalSection - A mutually exlusive lock for serializing access to data. Threads are placed on a wait list while waiting to acquire the lock.
+  CriticalSection - A mutually exclusive lock for serializing access to data. Threads are placed on a wait list while waiting to acquire the lock.
                     Recursive (can be acquired multiple times by the same thread)
                     Not suitable for use by Interrupt handlers.
                     Suitable for use on multiprocessor systems.
@@ -155,9 +155,9 @@ Threads
   Completion - A completion is similar in concept to both condition variables and events but behaves differently to each of them. Completions are designed to be similar to the Linux
                synchronization object of the same name and provide a light weight mechanism for allowing one or more threads to wait for a signal that they can proceed. The 
                completion differs from a condition variable because it maintains an internal state, once the state has been set (complete) threads pass through the completion 
-               without waiting (until the state is reset). This is similar to an event (see below) but in the case of a completion the state remains set indefinately or until
+               without waiting (until the state is reset). This is similar to an event (see below) but in the case of a completion the state remains set indefinitely or until
                reset is called, a completion also allows explicitly releasing one thread at a time or all threads at once. More generally the event was created to model a
-               behavour that is similar to the same object in Windows and the completion models the Linux object instead.
+               behaviour that is similar to the same object in Windows and the completion models the Linux object instead.
                
                Completions can use a counted state rather than a single state if they are created with COMPLETION_FLAG_COUNTED, this is to mimic the implementation of the
                Linux variation however there is a slight but important change in the way counted completions are implemented in Ultibo. The Linux completion sets the count
@@ -166,7 +166,7 @@ Threads
                would potentially fail without explanation.
                
                To prevent this same fatal flaw the Ultibo implementation sets the count at LongWord(-1) on CompletionCompleteAll() and all other operations check for this
-               value before incrementing or decrementing the count further. In this way the setting of complete all is geniunely infinite and will not fail on a long running
+               value before incrementing or decrementing the count further. In this way the setting of complete all is genuinely infinite and will not fail on a long running
                application.
   
                Suitable for use by Interrupt handlers to call complete only if created with COMPLETION_FLAG_IRQ or FIQ (Interrupt handlers must not call wait).
@@ -666,6 +666,7 @@ const
  {Thread logging}
  THREAD_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Thread debugging messages}
  THREAD_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Thread informational messages, such as a thread being created or destroyed}
+ THREAD_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Thread warning messages}
  THREAD_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Thread error messages}
  THREAD_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Thread messages}
 
@@ -2175,9 +2176,10 @@ function ThreadStateToString(ThreadState:LongWord):String;
 function ThreadPriorityToString(ThreadPriority:LongWord):String;
 
 procedure ThreadLog(Level:LongWord;const AText:String);
-procedure ThreadLogInfo(const AText:String);
-procedure ThreadLogError(const AText:String);
-procedure ThreadLogDebug(const AText:String);
+procedure ThreadLogInfo(const AText:String); inline;
+procedure ThreadLogWarn(const AText:String); inline;
+procedure ThreadLogError(const AText:String); inline;
+procedure ThreadLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {Scheduler Helper Functions}
@@ -24779,6 +24781,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = THREAD_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = THREAD_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -24793,7 +24799,7 @@ end;
 
 {==============================================================================}
 
-procedure ThreadLogInfo(const AText:String);
+procedure ThreadLogInfo(const AText:String); inline;
 begin
  {}
  ThreadLog(THREAD_LOG_LEVEL_INFO,AText);
@@ -24801,7 +24807,15 @@ end;
 
 {==============================================================================}
 
-procedure ThreadLogError(const AText:String);
+procedure ThreadLogWarn(const AText:String); inline;
+begin
+ {}
+ ThreadLog(THREAD_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure ThreadLogError(const AText:String); inline;
 begin
  {}
  ThreadLog(THREAD_LOG_LEVEL_ERROR,AText);
@@ -24809,7 +24823,7 @@ end;
 
 {==============================================================================}
 
-procedure ThreadLogDebug(const AText:String);
+procedure ThreadLogDebug(const AText:String); inline;
 begin
  {}
  ThreadLog(THREAD_LOG_LEVEL_DEBUG,AText);

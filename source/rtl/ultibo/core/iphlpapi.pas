@@ -1,7 +1,7 @@
 {
 Ultibo IP Helper interface unit.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -73,7 +73,7 @@ const
  MAXLEN_IFDESCR                     = 256;
  MAXLEN_PHYSADDR                    = 8;
 
- MIB_IF_OPER_STATUS_NON_OPERATIONAL = 0 ;
+ MIB_IF_OPER_STATUS_NON_OPERATIONAL = 0;
  MIB_IF_OPER_STATUS_UNREACHABLE     = 1;
  MIB_IF_OPER_STATUS_DISCONNECTED    = 2;
  MIB_IF_OPER_STATUS_CONNECTING      = 3;
@@ -561,6 +561,20 @@ function GetRTTAndHopCount(DestIpAddress: IPAddr; var HopCount: DWORD; MaxHops: 
 function GetFriendlyIfIndex(IfIndex: DWORD): DWORD;
 function EnableRouter(var pHandle: THandle; pOverlapped: POVERLAPPED): DWORD;
 function UnenableRouter(pOverlapped: POVERLAPPED; lpdwEnableCount: LPDWORD): DWORD;
+
+{==============================================================================}
+{IP Helper Helper Functions}
+function MIBIFOperStatusToString(AValue:DWORD):String;
+function MIBIFTypeToString(AValue:DWORD):String;
+function MIBIFAdminStatusToString(AValue:DWORD):String;
+
+function MIBTCPRTOToString(AValue:DWORD):String;
+function MIBTCPStateToString(AValue:DWORD):String;
+
+function MIBIPForwardingToString(AValue:DWORD):String;
+function MIBIPRouteTypeToString(AValue:DWORD):String;
+function MIBIPProtoToString(AValue:DWORD):String;
+function MIBIPNetTypeToString(AValue:DWORD):String;
 
 {==============================================================================}
 {==============================================================================}
@@ -1582,6 +1596,165 @@ begin
 
    Result:=ERROR_SUCCESS;
   end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{IP Helper Helper Functions}
+function MIBIFOperStatusToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_IF_OPER_STATUS_UNKNOWN';
+ 
+ case AValue of
+  MIB_IF_OPER_STATUS_NON_OPERATIONAL:Result:='MIB_IF_OPER_STATUS_NON_OPERATIONAL';
+  MIB_IF_OPER_STATUS_UNREACHABLE:Result:='MIB_IF_OPER_STATUS_UNREACHABLE';
+  MIB_IF_OPER_STATUS_DISCONNECTED:Result:='MIB_IF_OPER_STATUS_DISCONNECTED';
+  MIB_IF_OPER_STATUS_CONNECTING:Result:='MIB_IF_OPER_STATUS_CONNECTING';
+  MIB_IF_OPER_STATUS_CONNECTED:Result:='MIB_IF_OPER_STATUS_CONNECTED';
+  MIB_IF_OPER_STATUS_OPERATIONAL:Result:='MIB_IF_OPER_STATUS_OPERATIONAL';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBIFTypeToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_IF_TYPE_UNKNOWN';
+ 
+ case AValue of
+  MIB_IF_TYPE_OTHER:Result:='MIB_IF_TYPE_OTHER';
+  MIB_IF_TYPE_ETHERNET:Result:='MIB_IF_TYPE_ETHERNET';
+  MIB_IF_TYPE_TOKENRING:Result:='MIB_IF_TYPE_TOKENRING';
+  MIB_IF_TYPE_FDDI:Result:='MIB_IF_TYPE_FDDI';
+  MIB_IF_TYPE_PPP:Result:='MIB_IF_TYPE_PPP';
+  MIB_IF_TYPE_LOOPBACK:Result:='MIB_IF_TYPE_LOOPBACK';
+  MIB_IF_TYPE_SLIP:Result:='MIB_IF_TYPE_SLIP';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBIFAdminStatusToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_IF_ADMIN_STATUS_UNKNOWN';
+ 
+ case AValue of
+  MIB_IF_ADMIN_STATUS_UP:Result:='MIB_IF_ADMIN_STATUS_UP';
+  MIB_IF_ADMIN_STATUS_DOWN:Result:='MIB_IF_ADMIN_STATUS_DOWN';
+  MIB_IF_ADMIN_STATUS_TESTING:Result:='MIB_IF_ADMIN_STATUS_TESTING';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBTCPRTOToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_TCP_RTO_UNKNOWN';
+ 
+ case AValue of
+  MIB_TCP_RTO_OTHER:Result:='MIB_TCP_RTO_OTHER';
+  MIB_TCP_RTO_CONSTANT:Result:='MIB_TCP_RTO_CONSTANT';
+  MIB_TCP_RTO_RSRE:Result:='MIB_TCP_RTO_RSRE';
+  MIB_TCP_RTO_VANJ:Result:='MIB_TCP_RTO_VANJ';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBTCPStateToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_TCP_STATE_UNKNOWN';
+ 
+ case AValue of
+  MIB_TCP_STATE_CLOSED:Result:='MIB_TCP_STATE_CLOSED';
+  MIB_TCP_STATE_LISTEN:Result:='MIB_TCP_STATE_LISTEN';
+  MIB_TCP_STATE_SYN_SENT:Result:='MIB_TCP_STATE_SYN_SENT';
+  MIB_TCP_STATE_SYN_RCVD:Result:='MIB_TCP_STATE_SYN_RCVD';
+  MIB_TCP_STATE_ESTAB:Result:='MIB_TCP_STATE_ESTAB';
+  MIB_TCP_STATE_FIN_WAIT1:Result:='MIB_TCP_STATE_FIN_WAIT1';
+  MIB_TCP_STATE_FIN_WAIT2:Result:='MIB_TCP_STATE_FIN_WAIT2';
+  MIB_TCP_STATE_CLOSE_WAIT:Result:='MIB_TCP_STATE_CLOSE_WAIT';
+  MIB_TCP_STATE_CLOSING:Result:='MIB_TCP_STATE_CLOSING';
+  MIB_TCP_STATE_LAST_ACK:Result:='MIB_TCP_STATE_LAST_ACK';
+  MIB_TCP_STATE_TIME_WAIT:Result:='MIB_TCP_STATE_TIME_WAIT';
+  MIB_TCP_STATE_DELETE_TCB:Result:='MIB_TCP_STATE_DELETE_TCB';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBIPForwardingToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_IP_UNKNOWN';
+ 
+ case AValue of
+  MIB_IP_FORWARDING:Result:='MIB_IP_FORWARDING';
+  MIB_IP_NOT_FORWARDING:Result:='MIB_IP_NOT_FORWARDING';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBIPRouteTypeToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_IPROUTE_TYPE_UNKNOWN';
+ 
+ case AValue of
+  MIB_IPROUTE_TYPE_OTHER:Result:='MIB_IPROUTE_TYPE_OTHER';
+  MIB_IPROUTE_TYPE_INVALID:Result:='MIB_IPROUTE_TYPE_INVALID';
+  MIB_IPROUTE_TYPE_DIRECT:Result:='MIB_IPROUTE_TYPE_DIRECT';
+  MIB_IPROUTE_TYPE_INDIRECT:Result:='MIB_IPROUTE_TYPE_INDIRECT';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBIPProtoToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_IPPROTO_UNKNOWN';
+ 
+ case AValue of
+  MIB_IPPROTO_OTHER:Result:='MIB_IPPROTO_OTHER';
+  MIB_IPPROTO_LOCAL:Result:='MIB_IPPROTO_LOCAL';
+  MIB_IPPROTO_NETMGMT:Result:='MIB_IPPROTO_NETMGMT';
+  MIB_IPPROTO_ICMP:Result:='MIB_IPPROTO_ICMP';
+  MIB_IPPROTO_EGP:Result:='MIB_IPPROTO_EGP';
+  MIB_IPPROTO_GGP:Result:='MIB_IPPROTO_GGP';
+  MIB_IPPROTO_HELLO:Result:='MIB_IPPROTO_HELLO';
+  MIB_IPPROTO_RIP:Result:='MIB_IPPROTO_RIP';
+  MIB_IPPROTO_IS_IS:Result:='MIB_IPPROTO_IS_IS';
+  MIB_IPPROTO_ES_IS:Result:='MIB_IPPROTO_ES_IS';
+  MIB_IPPROTO_CISCO:Result:='MIB_IPPROTO_CISCO';
+  MIB_IPPROTO_BBN:Result:='MIB_IPPROTO_BBN';
+  MIB_IPPROTO_OSPF:Result:='MIB_IPPROTO_OSPF';
+  MIB_IPPROTO_BGP:Result:='MIB_IPPROTO_BGP';
+  MIB_IPPROTO_NT_AUTOSTATIC:Result:='MIB_IPPROTO_NT_AUTOSTATIC';
+  MIB_IPPROTO_NT_STATIC:Result:='MIB_IPPROTO_NT_STATIC';
+  MIB_IPPROTO_NT_STATIC_NON_DOD:Result:='MIB_IPPROTO_NT_STATIC_NON_DOD';
+ end;
+end;
+
+{==============================================================================}
+
+function MIBIPNetTypeToString(AValue:DWORD):String;
+begin
+ {}
+ Result:='MIB_IPNET_TYPE_UNKNOWN';
+ 
+ case AValue of
+  MIB_IPNET_TYPE_OTHER:Result:='MIB_IPNET_TYPE_OTHER';
+  MIB_IPNET_TYPE_INVALID:Result:='MIB_IPNET_TYPE_INVALID';
+  MIB_IPNET_TYPE_DYNAMIC:Result:='MIB_IPNET_TYPE_DYNAMIC';
+  MIB_IPNET_TYPE_STATIC:Result:='MIB_IPNET_TYPE_STATIC';
+ end;
 end;
 
 {==============================================================================}

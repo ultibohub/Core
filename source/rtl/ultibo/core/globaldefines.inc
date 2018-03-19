@@ -1,7 +1,7 @@
 {
 Ultibo Global Define Defaults.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -105,7 +105,7 @@ Global Defines
 {--$DEFINE THREAD_DEBUG}          {Enable debug output/counters for thread internals (Default: Off)}
 {--$DEFINE PLATFORM_DEBUG}        {Enable debug output/counters for platform internals (Default: Off)}
 {--$DEFINE SYSCALLS_DEBUG}        {Enable debug output/counters for C library syscalls (Default: Off)}
-{$DEFINE LINKER_DEBUG}          {Enable debug output/counters for static linker internals (Default: Off)}
+{$DEFINE API_DEBUG}             {Enable debug output/counters for library API internals (Default: Off)}
 {$DEFINE LOADER_DEBUG}          {Enable debug output/counters for dynamic loader internals (Default: Off)}
 {--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off) (Do not enable when console logging is active)}
 {--$DEFINE LOGGING_DEBUG}         {Enable debug output/counters for logging devices (Default: Off)}
@@ -236,6 +236,7 @@ Global Defines
 {--$DEFINE MCP230XX_DEBUG}        {Enable debug output/counters for MCP230XX driver (Default: Off)}
 {--$DEFINE STMPE_DEBUG}           {Enable debug output/counters for STMPE driver (Default: Off)}
 {--$DEFINE RPIGPIOEXP_DEBUG}      {Enable debug output/counters for RPiGPIO Expander driver (Default: Off)}
+{--$DEFINE REMOTEGPIO_DEBUG}      {Enable debug output/counters for RemoteGPIO driver (Default: Off)}
 
 {Framebuffer/Console}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
@@ -265,7 +266,9 @@ Global Defines
 {--$DEFINE VC4V3D_DEBUG}          {Enable debug output/counters for VC4 V3D interface (Default: Off)}
 
 {Other}
+{--$DEFINE RPIOTP_DEBUG}          {Enable debug output/counters for RPIOTP interface (Default: Off)}
 {--$DEFINE RPIUSBBOOT_DEBUG}      {Enable debug output/counters for RPIUSBBOOT driver (Default: Off)}
+{--$DEFINE RPISENSEHAT_DEBUG}     {Enable debug output/counters for RPISENSEHAT driver (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}
@@ -325,32 +328,49 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {Syscalls definitions}
-{--$DEFINE SYSCALLS_LARGE64_FILES}    {Enable support for 64bit file access in Syscalls unit (Default: Off)} 
-                                      {Note: Not currently supported by Newlib, need to modify \newlib\configure.host to enable stdio64 support for arm-none-eabi or aarch64-none-elf}
+{--$DEFINE SYSCALLS_LARGE64_FILES}   {Enable support for 64bit file access in Syscalls unit (Default: Off)} 
+                                     {Note: Not currently supported by Newlib, need to modify \newlib\configure.host to enable stdio64 support for arm-none-eabi or aarch64-none-elf}
 {==============================================================================}
 {==============================================================================}
-{Loader definitions}
-{$DEFINE LOADER_EXPORT_SYSTEM}      {Enable the library loader to export symbols for System unit (Default: On)} 
-{--$DEFINE LOADER_EXPORT_OBJPAS}    {Enable the library loader to export symbols for ObjPas unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_CLASSES}   {Enable the library loader to export symbols for Classes unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_SYSUTILS}  {Enable the library loader to export symbols for SysUtils unit (Default: Off)} 
+{API definitions}
+{$DEFINE API_EXPORT_PLATFORM}        {Enable the library API unit to export symbols for the Platform unit (Default: On)}
+{$DEFINE API_EXPORT_THREADS}         {Enable the library API unit to export symbols for the Threads unit (Default: On)}
+{$DEFINE API_EXPORT_HEAP}            {Enable the library API unit to export symbols for the HeapManager unit (Default: On)}
 
-{--$DEFINE LOADER_EXPORT_HEAP}      {Enable the library loader to export symbols for Heap unit (Default: Off)}
-{--$DEFINE LOADER_EXPORT_THREADS}   {Enable the library loader to export symbols for Threads unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_PLATFORM}  {Enable the library loader to export symbols for Platform unit (Default: Off)} 
+{$DEFINE API_EXPORT_DEVICES}         {Enable the library API unit to export symbols for the Devices unit (Default: On)}
+{$DEFINE API_EXPORT_CONSOLE}         {Enable the library API unit to export symbols for the Console unit (Default: On)}
+{$DEFINE API_EXPORT_LOGGING}         {Enable the library API unit to export symbols for the Logging unit (Default: On)}
+{$DEFINE API_EXPORT_DMA}             {Enable the library API unit to export symbols for the DMA unit (Default: On)}
+{$DEFINE API_EXPORT_USB}             {Enable the library API unit to export symbols for the USB unit (Default: On)}
+{$DEFINE API_EXPORT_MMC}             {Enable the library API unit to export symbols for the MMC unit (Default: On)}
+{$DEFINE API_EXPORT_SPI}             {Enable the library API unit to export symbols for the SPI unit (Default: On)}
+{$DEFINE API_EXPORT_I2C}             {Enable the library API unit to export symbols for the I2C unit (Default: On)}
+{$DEFINE API_EXPORT_PWM}             {Enable the library API unit to export symbols for the PWM unit (Default: On)}
+{$DEFINE API_EXPORT_PCM}             {Enable the library API unit to export symbols for the PCM unit (Default: On)}
+{$DEFINE API_EXPORT_GPIO}            {Enable the library API unit to export symbols for the GPIO unit (Default: On)}
+{$DEFINE API_EXPORT_UART}            {Enable the library API unit to export symbols for the UART unit (Default: On)}
+{$DEFINE API_EXPORT_SERIAL}          {Enable the library API unit to export symbols for the Serial unit (Default: On)}
+{$DEFINE API_EXPORT_RTC}             {Enable the library API unit to export symbols for the RTC unit (Default: On)}
+{$DEFINE API_EXPORT_FONT}            {Enable the library API unit to export symbols for the Font unit (Default: On)}
+{$DEFINE API_EXPORT_FRAMEBUFFER}     {Enable the library API unit to export symbols for the Framebuffer unit (Default: On)}
+{$DEFINE API_EXPORT_GRAPHICSCONSOLE} {Enable the library API unit to export symbols for the GraphicsConsole unit (Default: On)}
+{$DEFINE API_EXPORT_KEYMAP}          {Enable the library API unit to export symbols for the Keymap unit (Default: On)}
+{$DEFINE API_EXPORT_KEYBOARD}        {Enable the library API unit to export symbols for the Keyboard unit (Default: On)}
+{$DEFINE API_EXPORT_MOUSE}           {Enable the library API unit to export symbols for the Mouse unit (Default: On)}
+{$DEFINE API_EXPORT_TOUCH}           {Enable the library API unit to export symbols for the Touch unit (Default: On)}
+{$DEFINE API_EXPORT_STORAGE}         {Enable the library API unit to export symbols for the Storage unit (Default: On)}
+{$DEFINE API_EXPORT_TIMEZONE}        {Enable the library API unit to export symbols for the Timezone unit (Default: On)}
+{$DEFINE API_EXPORT_LOCALE}          {Enable the library API unit to export symbols for the Locale unit (Default: On)}
+{$DEFINE API_EXPORT_UNICODE}         {Enable the library API unit to export symbols for the Unicode unit (Default: On)}
+{$DEFINE API_EXPORT_TFTFRAMEBUFFER}  {Enable the library API unit to export symbols for the TFTFramebuffer unit (Default: On)}
 
-{--$DEFINE LOADER_EXPORT_DEVICE}    {Enable the library loader to export symbols for Device unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_CONSOLE}   {Enable the library loader to export symbols for Console unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_LOGGING}   {Enable the library loader to export symbols for Logging unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_DMA}       {Enable the library loader to export symbols for DMA unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_USB}       {Enable the library loader to export symbols for USB unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_MMC}       {Enable the library loader to export symbols for MMC unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_SPI}       {Enable the library loader to export symbols for SPI unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_I2C}       {Enable the library loader to export symbols for I2C unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_PWM}       {Enable the library loader to export symbols for PWM unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_PCM}       {Enable the library loader to export symbols for PCM unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_GPIO}      {Enable the library loader to export symbols for GPIO unit (Default: Off)} 
-{--$DEFINE LOADER_EXPORT_UART}      {Enable the library loader to export symbols for UART unit (Default: Off)} 
+{$DEFINE API_EXPORT_FILESYSTEM}      {Enable the library API unit to export symbols for the FileSystem unit (Default: On)}
+{--$DEFINE API_EXPORT_SOCKETS}       {Enable the library API unit to export symbols for the Sockets unit (Default: Off)}
+{--$DEFINE API_EXPORT_WINSOCK}       {Enable the library API unit to export symbols for the Winsock unit (Default: Off)}
+{--$DEFINE API_EXPORT_WINSOCK2}      {Enable the library API unit to export symbols for the Winsock2 unit (Default: Off)}
+{--$DEFINE API_EXPORT_IPHLPAPI}      {Enable the library API unit to export symbols for the Iphlpapi unit (Default: Off)}
+
+{$DEFINE API_EXPORT_ULTIBO}          {Enable the library API unit to export symbols for the Ultibo unit (Default: On)}
 
 {==============================================================================}
 {==============================================================================}

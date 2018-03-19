@@ -106,6 +106,7 @@ const
  {Touch logging}
  TOUCH_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Touch debugging messages}
  TOUCH_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Touch informational messages, such as a device being attached or detached}
+ TOUCH_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Touch warning messages}
  TOUCH_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Touch error messages}
  TOUCH_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Touch messages}
 
@@ -248,8 +249,11 @@ function TouchDeviceSetDefault(Touch:PTouchDevice):LongWord;
 
 function TouchDeviceCheck(Touch:PTouchDevice):PTouchDevice;
 
+function TouchInsertData(Touch:PTouchDevice;Data:PTouchData;Signal:Boolean):LongWord;
+
 procedure TouchLog(Level:LongWord;Touch:PTouchDevice;const AText:String);
 procedure TouchLogInfo(Touch:PTouchDevice;const AText:String); inline;
+procedure TouchLogWarn(Touch:PTouchDevice;const AText:String); inline;
 procedure TouchLogError(Touch:PTouchDevice;const AText:String); inline;
 procedure TouchLogDebug(Touch:PTouchDevice;const AText:String); inline;
 
@@ -1402,6 +1406,59 @@ end;
 
 {==============================================================================}
 
+function TouchInsertData(Touch:PTouchDevice;Data:PTouchData;Signal:Boolean):LongWord;
+{Insert a TTouchData entry into the touch device buffer}
+{Touch: The touch device to insert data for}
+{Data: The TTouchData entry to insert}
+{Signal: If True then signal that new data is available in the buffer}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must hold the touch device lock}
+var
+ Next:PTouchData;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Touch}
+ if Touch = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Check Buffer}
+ if (Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
+  begin
+   {Get Next}
+   Next:=@Touch.Buffer.Buffer[(Touch.Buffer.Start + Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
+   if Next <> nil then
+    begin
+     {Copy Data}
+     Next^:=Data^;
+   
+     {Update Count}
+     Inc(Touch.Buffer.Count);
+     
+     {Signal Data Received}
+     if Signal then SemaphoreSignal(Touch.Buffer.Wait); 
+   
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+    end;
+  end
+ else
+  begin
+   if TOUCH_LOG_ENABLED then TouchLogError(Touch,'Buffer overflow, key discarded');
+     
+   {Update Statistics}
+   Inc(Touch.BufferOverruns); 
+  
+   Result:=ERROR_INSUFFICIENT_BUFFER;
+  end;
+end;
+
+{==============================================================================}
+
 procedure TouchLog(Level:LongWord;Touch:PTouchDevice;const AText:String);
 var
  WorkBuffer:String;
@@ -1415,6 +1472,10 @@ begin
  if Level = TOUCH_LOG_LEVEL_DEBUG then
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
+  end
+ else if Level = TOUCH_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
   end
  else if Level = TOUCH_LOG_LEVEL_ERROR then
   begin
@@ -1440,6 +1501,14 @@ procedure TouchLogInfo(Touch:PTouchDevice;const AText:String); inline;
 begin
  {}
  TouchLog(TOUCH_LOG_LEVEL_INFO,Touch,AText);
+end;
+
+{==============================================================================}
+
+procedure TouchLogWarn(Touch:PTouchDevice;const AText:String); inline;
+begin
+ {}
+ TouchLog(TOUCH_LOG_LEVEL_WARN,Touch,AText);
 end;
 
 {==============================================================================}

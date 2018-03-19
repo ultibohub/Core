@@ -56,6 +56,7 @@ const
  {IMAP4 logging}
  IMAP4_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {IMAP4 debugging messages}
  IMAP4_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {IMAP4 informational messages,}
+ IMAP4_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {IMAP4 warning messages}
  IMAP4_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {IMAP4 error messages}
  IMAP4_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No IMAP4 messages}
 
@@ -96,9 +97,10 @@ procedure IMAP4Init;
 {==============================================================================}
 {IMAP4 Helper Functions}
 procedure IMAP4Log(Level:LongWord;const AText:String);
-procedure IMAP4LogInfo(const AText:String);
-procedure IMAP4LogError(const AText:String);
-procedure IMAP4LogDebug(const AText:String);
+procedure IMAP4LogInfo(const AText:String); inline;
+procedure IMAP4LogWarn(const AText:String); inline;
+procedure IMAP4LogError(const AText:String); inline;
+procedure IMAP4LogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -163,6 +165,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = IMAP4_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = IMAP4_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -177,7 +183,7 @@ end;
 
 {==============================================================================}
 
-procedure IMAP4LogInfo(const AText:String);
+procedure IMAP4LogInfo(const AText:String); inline;
 begin
  {}
  IMAP4Log(IMAP4_LOG_LEVEL_INFO,AText);
@@ -185,7 +191,15 @@ end;
 
 {==============================================================================}
 
-procedure IMAP4LogError(const AText:String);
+procedure IMAP4LogWarn(const AText:String); inline;
+begin
+ {}
+ IMAP4Log(IMAP4_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure IMAP4LogError(const AText:String); inline;
 begin
  {}
  IMAP4Log(IMAP4_LOG_LEVEL_ERROR,AText);
@@ -193,7 +207,7 @@ end;
 
 {==============================================================================}
 
-procedure IMAP4LogDebug(const AText:String);
+procedure IMAP4LogDebug(const AText:String); inline;
 begin
  {}
  IMAP4Log(IMAP4_LOG_LEVEL_DEBUG,AText);

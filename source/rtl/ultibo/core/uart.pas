@@ -111,6 +111,11 @@ const
  UART_WRITE_NONE      = SERIAL_WRITE_NONE;
  UART_WRITE_NON_BLOCK = SERIAL_WRITE_NON_BLOCK; {Do not block when transmitting, if the FIFO is full return immediately}
  
+ {UART Wait Directions}
+ UART_WAIT_NONE     = SERIAL_WAIT_NONE;
+ UART_WAIT_RECEIVE  = SERIAL_WAIT_RECEIVE;  {Wait for data to be available in the receive FIFO}
+ UART_WAIT_TRANSMIT = SERIAL_WAIT_TRANSMIT; {Wait for space to be available in the transmit FIFO}
+ 
  {UART Status Flags}
  UART_STATUS_NONE          = SERIAL_STATUS_NONE;
  UART_STATUS_RTS           = SERIAL_STATUS_RTS;
@@ -132,6 +137,7 @@ const
  {UART logging}
  UART_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {UART debugging messages}
  UART_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {UART informational messages, such as a device being attached or detached}
+ UART_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {UART warning messages}
  UART_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {UART error messages}
  UART_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No UART messages}
  
@@ -174,8 +180,13 @@ type
  TUARTDeviceRead = function(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  TUARTDeviceWrite = function(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
- TUARTDeviceStatus = function(UART:PUARTDevice):LongWord;
+ TUARTDeviceWait = function(UART:PUARTDevice;Direction,Timeout:LongWord):LongWord;
+ 
+ TUARTDeviceGetStatus = function(UART:PUARTDevice):LongWord;
+ TUARTDeviceSetStatus = function(UART:PUARTDevice;Status:LongWord):LongWord;
+ 
  TUARTDeviceGetProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+ TUARTDeviceSetProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
  
  TUARTDevice = record
   {Device Properties}
@@ -189,8 +200,11 @@ type
   DeviceClose:TUARTDeviceClose;                   {A Device specific DeviceClose method implementing the standard UART device interface (Mandatory)}
   DeviceRead:TUARTDeviceRead;                     {A Device specific DeviceRead method implementing the standard UART device interface (Mandatory)}
   DeviceWrite:TUARTDeviceWrite;                   {A Device specific DeviceWrite method implementing the standard UART device interface (Mandatory)}
-  DeviceStatus:TUARTDeviceStatus;                 {A Device specific DeviceStatus method implementing the standard UART device interface (Or nil if the default method is suitable)}
+  DeviceWait:TUARTDeviceWait;                     {A Device specific DeviceWait method implementing the standard UART device interface (Or nil if the default method is suitable)}
+  DeviceGetStatus:TUARTDeviceGetStatus;           {A Device specific DeviceGetStatus method implementing the standard UART device interface (Or nil if the default method is suitable)}
+  DeviceSetStatus:TUARTDeviceSetStatus;           {A Device specific DeviceSetStatus method implementing the standard UART device interface (Optional)}
   DeviceGetProperties:TUARTDeviceGetProperties;   {A Device specific DeviceGetProperties method implementing the standard UART device interface (Or nil if the default method is suitable)}
+  DeviceSetProperties:TUARTDeviceSetProperties;   {A Device specific DeviceSetProperties method implementing the standard UART device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   ReceiveWait:TEventHandle;                       {Read wait event}
@@ -224,10 +238,15 @@ function UARTDeviceClose(UART:PUARTDevice):LongWord;
 function UARTDeviceRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function UARTDeviceWrite(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
-function UARTDeviceStatus(UART:PUARTDevice):LongWord;
+function UARTDeviceWait(UART:PUARTDevice;Direction,Timeout:LongWord):LongWord;
+ 
+function UARTDeviceStatus(UART:PUARTDevice):LongWord; inline;
+function UARTDeviceGetStatus(UART:PUARTDevice):LongWord;
+function UARTDeviceSetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
 
 function UARTDeviceProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord; inline;
 function UARTDeviceGetProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+function UARTDeviceSetProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
   
 function UARTDeviceCreate:PUARTDevice;
 function UARTDeviceCreateEx(Size:LongWord):PUARTDevice;
@@ -251,7 +270,11 @@ function UARTSerialDeviceClose(Serial:PSerialDevice):LongWord;
 function UARTSerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function UARTSerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
-function UARTSerialDeviceStatus(Serial:PSerialDevice):LongWord;
+function UARTSerialDeviceWait(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;
+
+function UARTSerialDeviceStatus(Serial:PSerialDevice):LongWord; inline;
+function UARTSerialDeviceGetStatus(Serial:PSerialDevice):LongWord;
+function UARTSerialDeviceSetStatus(Serial:PSerialDevice;Status:LongWord):LongWord;
 
 function UARTSerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
  
@@ -265,6 +288,7 @@ function UARTDeviceCheck(UART:PUARTDevice):PUARTDevice;
 
 procedure UARTLog(Level:LongWord;UART:PUARTDevice;const AText:String);
 procedure UARTLogInfo(UART:PUARTDevice;const AText:String); inline;
+procedure UARTLogWarn(UART:PUARTDevice;const AText:String); inline;
 procedure UARTLogError(UART:PUARTDevice;const AText:String); inline;
 procedure UARTLogDebug(UART:PUARTDevice;const AText:String); inline;
  
@@ -563,7 +587,96 @@ end;
 
 {==============================================================================}
 
-function UARTDeviceStatus(UART:PUARTDevice):LongWord;
+function UARTDeviceWait(UART:PUARTDevice;Direction,Timeout:LongWord):LongWord;
+{Wait for data to be available in the receive or transmit FIFO of a UART device}
+{UART: The UART device to wait for}
+{Direction: The direction of data to wait for (eg UART_WAIT_RECEIVE)}
+{Timeout: The number of milliseconds to wait for data (INFINITE to wait forever)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Unlock:Boolean;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF UART_DEBUG}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Wait (Direction=' + IntToStr(Direction) + ' Timeout=' + IntToStr(Timeout) + ')');
+ {$ENDIF}
+ 
+ {Check Timeout}
+ if Timeout = 0 then Timeout:=INFINITE;
+ 
+ {Check Mode}
+ Result:=ERROR_INVALID_FUNCTION;
+ if UART.UARTMode = UART_MODE_SERIAL then Exit;
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if UART.UARTState <> UART_STATE_ENABLED then Exit;
+
+ if MutexLock(UART.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    Unlock:=True;
+    
+    if Assigned(UART.DeviceWait) then
+     begin
+      {Call Device Wait}
+      Result:=UART.DeviceWait(UART,Direction,Timeout);
+     end
+    else
+     begin 
+      {Check Receive}
+      if Direction = UART_WAIT_RECEIVE then
+       begin
+        {Release the Lock}
+        MutexUnlock(UART.Lock);
+        Unlock:=False;
+        
+        {Wait for Data}
+        Result:=EventWaitEx(UART.ReceiveWait,Timeout);
+       end
+      {Check Transmit}
+      else if Direction = UART_WAIT_TRANSMIT then
+       begin
+        {Release the Lock}
+        MutexUnlock(UART.Lock);
+        Unlock:=False;
+        
+        {Wait for Space}
+        Result:=EventWaitEx(UART.TransmitWait,Timeout);
+       end;
+     end;
+   finally  
+    if Unlock then MutexUnlock(UART.Lock);
+   end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function UARTDeviceStatus(UART:PUARTDevice):LongWord; inline;
+{Get the current line status of a UART device}
+{UART: The UART device to get the status from}
+{Return: A set of flags containing the device status (eg UART_STATUS_RTS)}
+
+{Note: Replaced by UARTDeviceGetStatus for consistency}
+begin
+ {}
+ Result:=UARTDeviceGetStatus(UART);
+end;
+
+{==============================================================================}
+
+function UARTDeviceGetStatus(UART:PUARTDevice):LongWord;
 {Get the current line status of a UART device}
 {UART: The UART device to get the status from}
 {Return: A set of flags containing the device status (eg UART_STATUS_RTS)}
@@ -576,23 +689,21 @@ begin
  if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF UART_DEBUG}
- if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Status');
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Get Status');
  {$ENDIF}
  
  {Check Mode}
- Result:=ERROR_INVALID_FUNCTION;
  if UART.UARTMode = UART_MODE_SERIAL then Exit;
  
  {Check Enabled}
- Result:=ERROR_NOT_SUPPORTED;
  if UART.UARTState <> UART_STATE_ENABLED then Exit;
  
  if MutexLock(UART.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(UART.DeviceStatus) then
+   if Assigned(UART.DeviceGetStatus) then
     begin
-     {Call Device Status}
-     Result:=UART.DeviceStatus(UART);
+     {Call Device Get Status}
+     Result:=UART.DeviceGetStatus(UART);
     end
    else
     begin
@@ -601,6 +712,56 @@ begin
     end;  
     
    MutexUnlock(UART.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function UARTDeviceSetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
+{Set the current line status of a UART device}
+{UART: The UART device to set the status for}
+{Status: The device status flags to be set (eg UART_STATUS_RTS)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Not all UART_STATUS_* flags can be set, the device may ignore invalid values}
+{Note: Not all UART devices support set status, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF UART_DEBUG}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Set Status (Status=' + IntToHex(Status,8) + ')');
+ {$ENDIF}
+
+ {Check Mode}
+ Result:=ERROR_INVALID_FUNCTION;
+ if UART.UARTMode = UART_MODE_SERIAL then Exit;
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_READY;
+ if UART.UARTState <> UART_STATE_ENABLED then Exit;
+ 
+ if MutexLock(UART.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(UART.DeviceSetStatus) then
+    begin
+     {Call Device Set Status}
+     Result:=UART.DeviceSetStatus(UART,Status);
+    end
+   else
+    begin
+     Result:=ERROR_CALL_NOT_IMPLEMENTED;
+    end;  
+    
+   MutexUnlock(UART.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
 
@@ -674,6 +835,60 @@ end;
 
 {==============================================================================}
 
+function UARTDeviceSetProperties(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+{Set the properties for the specified UART device}
+{UART: The UART device to set properties for}
+{Properties: Pointer to a PUARTProperties structure to use}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Properties}
+ if Properties = nil then Exit;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {$IFDEF UART_DEBUG}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Set Properties');
+ {$ENDIF}
+ 
+ {Check Mode}
+ Result:=ERROR_INVALID_FUNCTION;
+ if UART.UARTMode = UART_MODE_SERIAL then Exit;
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if UART.UARTState <> UART_STATE_ENABLED then Exit;
+ 
+ if MutexLock(UART.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(UART.DeviceSetProperties) then
+    begin
+     {Call Device Set Properites}
+     Result:=UART.DeviceSetProperties(UART,Properties);
+    end
+   else
+    begin
+     {Close Device}
+     UARTDeviceClose(UART);
+     
+     {Open Device}
+     Result:=UARTDeviceOpen(UART,Properties.BaudRate,Properties.DataBits,Properties.StopBits,Properties.Parity,Properties.FlowControl);
+    end;  
+    
+   MutexUnlock(UART.Lock);
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;    
+end;
+
+{==============================================================================}
+
 function UARTDeviceCreate:PUARTDevice;
 {Create a new UART entry}
 {Return: Pointer to new UART entry or nil if UART could not be created}
@@ -714,8 +929,11 @@ begin
  Result.DeviceClose:=nil;
  Result.DeviceRead:=nil;
  Result.DeviceWrite:=nil;
- Result.DeviceStatus:=nil;
+ Result.DeviceWait:=nil;
+ Result.DeviceGetStatus:=nil;
+ Result.DeviceSetStatus:=nil;
  Result.DeviceGetProperties:=nil;
+ Result.DeviceSetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.ReceiveWait:=INVALID_HANDLE_VALUE;
  Result.TransmitWait:=INVALID_HANDLE_VALUE;
@@ -749,7 +967,9 @@ begin
  Result.Serial.DeviceClose:=UARTSerialDeviceClose;
  Result.Serial.DeviceRead:=UARTSerialDeviceRead;
  Result.Serial.DeviceWrite:=UARTSerialDeviceWrite;
- Result.Serial.DeviceStatus:=UARTSerialDeviceStatus;
+ Result.Serial.DeviceWait:=UARTSerialDeviceWait;
+ Result.Serial.DeviceGetStatus:=UARTSerialDeviceGetStatus;
+ Result.Serial.DeviceSetStatus:=UARTSerialDeviceSetStatus;
  Result.Serial.DeviceGetProperties:=UARTSerialDeviceGetProperties;
  {Driver}
  Result.Serial.Properties.ReceiveDepth:=SERIAL_RECEIVE_DEPTH_DEFAULT;
@@ -1407,6 +1627,27 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Get Timeout}
+   Timeout:=INFINITE;
+   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_RX) <> 0 then Timeout:=UART_PUSH_TIMEOUT;
+   
+   {Check State}
+   if (Timeout <> INFINITE) and (EventState(Serial.Receive.Wait) <> EVENT_STATE_SIGNALED) then
+    begin
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
+     
+     {Push Receive}
+     UARTSerialDeviceReceive(UART);
+     
+     {Acquire the Lock}
+     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;      
+    end;
+   
    {Check Non Blocking}
    if ((Flags and SERIAL_READ_NON_BLOCK) <> 0) and (Serial.Receive.Count = 0) then
     begin
@@ -1421,10 +1662,6 @@ begin
      Result:=ERROR_SUCCESS;
      Break;
     end;
-   
-   {Get Timeout}
-   Timeout:=INFINITE;
-   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_RX) <> 0 then Timeout:=UART_PUSH_TIMEOUT;
    
    {Release the Lock}
    MutexUnlock(Serial.Lock);
@@ -1478,13 +1715,11 @@ begin
     end
    else if Status = ERROR_WAIT_TIMEOUT then
     begin
+     {Push Receive}
+     UARTSerialDeviceReceive(UART);
+     
      {Acquire the Lock}
-     if MutexLock(Serial.Lock) = ERROR_SUCCESS then
-      begin
-       {Push Receive}
-       UARTSerialDeviceReceive(UART);
-      end
-     else
+     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
@@ -1555,6 +1790,27 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Get Timeout}
+   Timeout:=INFINITE;
+   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_TX) <> 0 then Timeout:=UART_PUSH_TIMEOUT;
+   
+   {Check State}
+   if (Timeout <> INFINITE) and (EventState(Serial.Transmit.Wait) <> EVENT_STATE_SIGNALED) then
+    begin
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
+     
+     {Push Transmit}
+     UARTSerialDeviceTransmit(UART);
+     
+     {Acquire the Lock}
+     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;      
+    end;    
+   
    {Check Non Blocking}
    if ((Flags and SERIAL_WRITE_NON_BLOCK) <> 0) and ((Serial.Transmit.Size - Serial.Transmit.Count) = 0) then
     begin
@@ -1569,10 +1825,6 @@ begin
      Result:=ERROR_SUCCESS;
      Break;
     end;
-   
-   {Get Timeout}
-   Timeout:=INFINITE;
-   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_TX) <> 0 then Timeout:=UART_PUSH_TIMEOUT;
    
    {Release the Lock}
    MutexUnlock(Serial.Lock);
@@ -1636,13 +1888,11 @@ begin
     end
    else if Status = ERROR_WAIT_TIMEOUT then
     begin
+     {Push Transmit}
+     UARTSerialDeviceTransmit(UART);
+     
      {Acquire the Lock}
-     if MutexLock(Serial.Lock) = ERROR_SUCCESS then
-      begin
-       {Push Transmit}
-       UARTSerialDeviceTransmit(UART);
-      end
-     else
+     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
@@ -1665,9 +1915,183 @@ end;
 
 {==============================================================================}
 
-function UARTSerialDeviceStatus(Serial:PSerialDevice):LongWord;
+function UARTSerialDeviceWait(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceWait API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceWait instead}
+var
+ Start:Int64;
+ Current:Int64;
+ Retry:LongWord;
+ Status:LongWord;
+ UART:PUARTDevice;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Serial}
+ if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {$IFDEF SERIAL_DEBUG}
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Wait (Direction=' + IntToStr(Direction) + ' Timeout=' + IntToStr(Timeout) + ')');
+ {$ENDIF}
+
+ {Get UART}
+ UART:=PUARTDevice(Serial.Device.DeviceData);
+ if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {Check Mode}
+ Result:=ERROR_INVALID_FUNCTION;
+ if UART.UARTMode = UART_MODE_UART then Exit;
+ 
+ {Check Enabled}
+ Result:=ERROR_NOT_SUPPORTED;
+ if UART.UARTState <> UART_STATE_ENABLED then Exit;
+ 
+ {Check Receive}
+ if Direction = SERIAL_WAIT_RECEIVE then
+  begin
+   {Get Retry Timeout}
+   Retry:=INFINITE;
+   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_RX) <> 0 then Retry:=UART_PUSH_TIMEOUT;
+   if Timeout < Retry then Retry:=Timeout;
+
+   {Get Start}
+   Start:=GetTickCount64;
+   Current:=Start;
+   while (Timeout = INFINITE) or (Current < (Start + Timeout)) do
+    begin
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
+     
+     {Wait for Data}
+     Status:=EventWaitEx(Serial.Receive.Wait,Retry);
+     if Status = ERROR_SUCCESS then
+      begin
+       {Acquire the Lock}
+       if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+        begin
+         {Get Count}
+         Count:=Serial.Receive.Count;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+         Exit;
+        end
+       else
+        begin
+         Result:=ERROR_CAN_NOT_COMPLETE;
+         Exit;
+        end;      
+      end
+     else if Status = ERROR_WAIT_TIMEOUT then
+      begin
+       {Push Receive}
+       UARTSerialDeviceReceive(UART);
+
+       {Acquire the Lock}
+       if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+        begin
+         Result:=ERROR_CAN_NOT_COMPLETE;
+         Exit;
+        end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;
+      
+     {Get Current}
+     Current:=GetTickCount64;     
+    end;    
+   
+   {Return Timeout}
+   Result:=ERROR_WAIT_TIMEOUT;
+  end
+ {Check Transmit}
+ else if Direction = SERIAL_WAIT_TRANSMIT then
+  begin
+   {Get Retry Timeout}
+   Retry:=INFINITE;
+   if (UART.Device.DeviceFlags and UART_FLAG_PUSH_TX) <> 0 then Retry:=UART_PUSH_TIMEOUT;
+   if Timeout < Retry then Retry:=Timeout;
+   
+   {Get Start}
+   Start:=GetTickCount64;
+   Current:=Start;
+   while (Timeout = INFINITE) or (Current < (Start + Timeout)) do
+    begin
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
+     
+     {Wait for Space}
+     Status:=EventWaitEx(Serial.Transmit.Wait,Retry);
+     if Status = ERROR_SUCCESS then
+      begin
+       {Acquire the Lock}
+       if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+        begin
+         {Get Count}
+         Count:=Serial.Transmit.Size - Serial.Transmit.Count;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+         Exit;
+        end
+       else
+        begin
+         Result:=ERROR_CAN_NOT_COMPLETE;
+         Exit;
+        end;
+      end
+     else if Status = ERROR_WAIT_TIMEOUT then
+      begin
+       {Push Transmit}
+       UARTSerialDeviceTransmit(UART);
+       
+       {Acquire the Lock}
+       if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+        begin
+         Result:=ERROR_CAN_NOT_COMPLETE;
+         Exit;
+        end;
+      end
+     else
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;
+
+     {Get Current}
+     Current:=GetTickCount64;     
+    end;
+
+   {Return Timeout}
+   Result:=ERROR_WAIT_TIMEOUT;
+  end;
+end;
+
+{==============================================================================}
+
+function UARTSerialDeviceStatus(Serial:PSerialDevice):LongWord; inline;
 {Implementation of SerialDeviceStatus API for UART Serial}
 {Note: Not intended to be called directly by applications, use SerialDeviceStatus instead}
+
+{Note: Replaced by UARTSerialDeviceGetStatus for consistency}
+begin
+ {}
+ Result:=UARTSerialDeviceGetStatus(Serial);
+end;
+
+{==============================================================================}
+
+function UARTSerialDeviceGetStatus(Serial:PSerialDevice):LongWord;
+{Implementation of SerialDeviceGetStatus API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceGetStatus instead}
 var 
  UART:PUARTDevice;
 begin
@@ -1679,7 +2103,54 @@ begin
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {$IFDEF SERIAL_DEBUG}
- if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Status');
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Get Status');
+ {$ENDIF}
+
+ {Get UART}
+ UART:=PUARTDevice(Serial.Device.DeviceData);
+ if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ 
+ {Check Mode}
+ if UART.UARTMode = UART_MODE_UART then Exit;
+ 
+ {Check Enabled}
+ if UART.UARTState <> UART_STATE_ENABLED then Exit;
+ 
+ if MutexLock(UART.Lock) = ERROR_SUCCESS then
+  begin
+   if Assigned(UART.DeviceGetStatus) then
+    begin
+     {Call Device Status}
+     Result:=UART.DeviceGetStatus(UART);
+    end
+   else
+    begin
+     {Get Status}
+     Result:=UART.UARTStatus;
+    end;
+     
+   MutexUnlock(UART.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function UARTSerialDeviceSetStatus(Serial:PSerialDevice;Status:LongWord):LongWord;
+{Implementation of SerialDeviceSetStatus API for UART Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceSetStatus instead}
+var 
+ UART:PUARTDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Serial}
+ if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ {$IFDEF SERIAL_DEBUG}
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Set Status (Status=' + IntToHex(Status,8) + ')');
  {$ENDIF}
 
  {Get UART}
@@ -1697,15 +2168,14 @@ begin
  
  if MutexLock(UART.Lock) = ERROR_SUCCESS then
   begin
-   if Assigned(UART.DeviceStatus) then
+   if Assigned(UART.DeviceSetStatus) then
     begin
      {Call Device Status}
-     Result:=UART.DeviceStatus(UART);
+     Result:=UART.DeviceSetStatus(UART,Status);
     end
    else
     begin
-     {Get Status}
-     Result:=UART.UARTStatus;
+     Result:=ERROR_CALL_NOT_IMPLEMENTED;
     end;
      
    MutexUnlock(UART.Lock);
@@ -1908,6 +2378,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = UART_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = UART_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1932,6 +2406,14 @@ procedure UARTLogInfo(UART:PUARTDevice;const AText:String); inline;
 begin
  {}
  UARTLog(UART_LOG_LEVEL_INFO,UART,AText);
+end;
+
+{==============================================================================}
+
+procedure UARTLogWarn(UART:PUARTDevice;const AText:String); inline;
+begin
+ {}
+ UARTLog(UART_LOG_LEVEL_WARN,UART,AText);
 end;
 
 {==============================================================================}
@@ -1969,10 +2451,12 @@ begin
  
  {Check UART}
  if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {Get Serial}
  Serial:=UART.Serial;
  if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Receive');
@@ -1998,7 +2482,7 @@ begin
    Result:=ERROR_CAN_NOT_COMPLETE;
    Exit;
   end;
-
+ 
  {Acquire the Lock (Serial)}
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
@@ -2067,10 +2551,12 @@ begin
  
  {Check UART}
  if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {Get Serial}
  Serial:=UART.Serial;
  if Serial = nil then Exit;
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Transmit');

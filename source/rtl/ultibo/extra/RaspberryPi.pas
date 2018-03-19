@@ -12,7 +12,7 @@ Boards
 ======
 
  Raspberry Pi - Model A/B/A+/B+
- Raspberry Pi - Model Zero
+ Raspberry Pi - Model Zero/ZeroW
 
 Licence
 =======

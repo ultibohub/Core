@@ -1,7 +1,7 @@
 {
 Ultibo TFT Framebuffer driver library unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====

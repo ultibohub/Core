@@ -163,7 +163,7 @@ function HD44780ConsoleScroll(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction
 function HD44780ConsoleDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;
 function HD44780ConsoleDrawText(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
 function HD44780ConsoleDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
-function HD44780ConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
+function HD44780ConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle;Flags:LongWord):LongWord;
 
 function HD44780ConsolePutText(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;
 
@@ -246,7 +246,7 @@ begin
    {Device}
    HD44780Console.Console.Device.DeviceBus:=GPIO.Device.DeviceBus; 
    HD44780Console.Console.Device.DeviceType:=CONSOLE_TYPE_LCD;
-   HD44780Console.Console.Device.DeviceFlags:=CONSOLE_FLAG_SINGLE_WINDOW or CONSOLE_FLAG_HARDWARE_CURSOR or CONSOLE_FLAG_SINGLE_CURSOR or CONSOLE_FLAG_BLINK_CURSOR or CONSOLE_FLAG_FULLSCREEN;
+   HD44780Console.Console.Device.DeviceFlags:=CONSOLE_FLAG_SINGLE_WINDOW or CONSOLE_FLAG_HARDWARE_CARET or CONSOLE_FLAG_BLINK_CARET or CONSOLE_FLAG_FULLSCREEN;
    HD44780Console.Console.Device.DeviceData:=nil;
    if Length(Name) <> 0 then HD44780Console.Console.Device.DeviceDescription:=Name else HD44780Console.Console.Device.DeviceDescription:=HD44780_CONSOLE_DESCRIPTION;
    {Console}
@@ -278,6 +278,7 @@ begin
    {Setup Flags}
    if CONSOLE_LINE_WRAP then HD44780Console.Console.Device.DeviceFlags:=HD44780Console.Console.Device.DeviceFlags or CONSOLE_FLAG_LINE_WRAP;
    if CONSOLE_AUTO_SCROLL then HD44780Console.Console.Device.DeviceFlags:=HD44780Console.Console.Device.DeviceFlags or CONSOLE_FLAG_AUTO_SCROLL;
+   if CONSOLE_FOCUS_CURSOR then HD44780Console.Console.Device.DeviceFlags:=HD44780Console.Console.Device.DeviceFlags or CONSOLE_FLAG_FOCUS_CARET;
    
    {Register Console}
    Status:=ConsoleDeviceRegister(@HD44780Console.Console);
@@ -1049,7 +1050,7 @@ end;
     
 {==============================================================================}
 
-function HD44780ConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
+function HD44780ConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle;Flags:LongWord):LongWord;
 {Implementation of ConsoleDeviceDrawWindow API for HD44780}
 {Note: Not intended to be called directly by applications, use ConsoleDeviceDrawWindow instead}
 
@@ -1081,34 +1082,42 @@ begin
  {Check Window State}
  if Window.WindowState = WINDOW_STATE_INVISIBLE then
   begin
-   {Clear Display}
-   HD44780WriteData(PHD44780Console(Console),HD44780_CLEARDISPLAY);
+   {Check Flags}
+   if (Flags and WINDOW_DRAW_FLAG_ALL) = WINDOW_DRAW_FLAG_ALL then
+    begin
+     {Clear Display}
+     HD44780WriteData(PHD44780Console(Console),HD44780_CLEARDISPLAY);
     
-   {Delay 3mS}
-   MillisecondDelay(3);
+     {Delay 3mS}
+     MillisecondDelay(3);
     
-   {Cursor Home}
-   HD44780CursorHome(PHD44780Console(Console));
+     {Cursor Home}
+     HD44780CursorHome(PHD44780Console(Console));
+    end;  
    
    Result:=ERROR_SUCCESS;
   end
  else if Window.WindowState = WINDOW_STATE_VISIBLE then
   begin 
-   {Draw Window}
-   for CurrentY:=0 to Console.Height - 1 do
+   {Check Flags}
+   if (Flags and WINDOW_DRAW_FLAG_ALL) = WINDOW_DRAW_FLAG_ALL then
     begin
-     {Cursor Position}
-     HD44780CursorPosition(PHD44780Console(Console),CurrentY,0);
-    
-     for CurrentX:=0 to Console.Width - 1 do
+     {Draw Window}
+     for CurrentY:=0 to Console.Height - 1 do
       begin
-       {Write Char}
-       HD44780WriteChar(PHD44780Console(Console),Chr(PByte(PHD44780Console(Console).Buffer + (CurrentX + (CurrentY * Console.Width)))^));
+       {Cursor Position}
+       HD44780CursorPosition(PHD44780Console(Console),CurrentY,0);
+      
+       for CurrentX:=0 to Console.Width - 1 do
+        begin
+         {Write Char}
+         HD44780WriteChar(PHD44780Console(Console),Chr(PByte(PHD44780Console(Console).Buffer + (CurrentX + (CurrentY * Console.Width)))^));
+        end;
       end;
-    end;
-   
-   {Cursor Position}
-   HD44780CursorPosition(PHD44780Console(Console),0,0);
+     
+     {Cursor Position}
+     HD44780CursorPosition(PHD44780Console(Console),0,0);
+    end; 
    
    Result:=ERROR_SUCCESS;
   end; 

@@ -109,6 +109,7 @@ const
  {POP3 logging}
  POP3_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {POP3 debugging messages}
  POP3_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {POP3 informational messages,}
+ POP3_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {POP3 warning messages,}
  POP3_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {POP3 error messages}
  POP3_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No POP3 messages}
 
@@ -389,9 +390,10 @@ procedure POP3Init;
 {==============================================================================}
 {POP3 Helper Functions}
 procedure POP3Log(Level:LongWord;const AText:String);
-procedure POP3LogInfo(const AText:String);
-procedure POP3LogError(const AText:String);
-procedure POP3LogDebug(const AText:String);
+procedure POP3LogInfo(const AText:String); inline;
+procedure POP3LogWarn(const AText:String); inline;
+procedure POP3LogError(const AText:String); inline;
+procedure POP3LogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -2736,6 +2738,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = POP3_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = POP3_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -2750,7 +2756,7 @@ end;
 
 {==============================================================================}
 
-procedure POP3LogInfo(const AText:String);
+procedure POP3LogInfo(const AText:String); inline;
 begin
  {}
  POP3Log(POP3_LOG_LEVEL_INFO,AText);
@@ -2758,7 +2764,15 @@ end;
 
 {==============================================================================}
 
-procedure POP3LogError(const AText:String);
+procedure POP3LogWarn(const AText:String); inline;
+begin
+ {}
+ POP3Log(POP3_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure POP3LogError(const AText:String); inline;
 begin
  {}
  POP3Log(POP3_LOG_LEVEL_ERROR,AText);
@@ -2766,7 +2780,7 @@ end;
 
 {==============================================================================}
 
-procedure POP3LogDebug(const AText:String);
+procedure POP3LogDebug(const AText:String); inline;
 begin
  {}
  POP3Log(POP3_LOG_LEVEL_DEBUG,AText);

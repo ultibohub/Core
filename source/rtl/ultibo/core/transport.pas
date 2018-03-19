@@ -1,7 +1,7 @@
 {
 Ultibo Network Transport interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -368,8 +368,10 @@ type
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
+   function ReaderConvert:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   function WriterConvert:Boolean;
  end;
 
  TTransportBinding = class(TListObject) {Midstream}
@@ -393,8 +395,10 @@ type
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
+   function ReaderConvert:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   function WriterConvert:Boolean;
  end;
 
  //To Do //TTransportTransport = class(TListObject) {Midstream} 
@@ -1304,6 +1308,7 @@ function InAddrToString(const AAddress:TInAddr):String;
 function StringToInAddr(const AAddress:String):TInAddr;
 
 function InAddrIsEqual(const AAddress1,AAddress2:TInAddr):Boolean;
+function InAddrIsNone(const AAddress:TInAddr):Boolean;
 function InAddrIsDefault(const AAddress:TInAddr):Boolean;
 function InAddrIsLoopback(const AAddress:TInAddr):Boolean;
 function InAddrIsBroadcast(const AAddress:TInAddr):Boolean;
@@ -2743,6 +2748,15 @@ end;
 
 {==============================================================================}
 
+function TTransportAdapter.ReaderConvert:Boolean; 
+{Convert a Reader lock to a Writer lock}
+begin
+ {}
+ Result:=(SynchronizerReaderConvert(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TTransportAdapter.WriterLock:Boolean;
 begin
  {}
@@ -2755,6 +2769,15 @@ function TTransportAdapter.WriterUnlock:Boolean;
 begin
  {}
  Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TTransportAdapter.WriterConvert:Boolean;
+{Convert a Writer lock to a Reader lock}
+begin
+ {}
+ Result:=(SynchronizerWriterConvert(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -2808,6 +2831,15 @@ end;
 
 {==============================================================================}
 
+function TTransportBinding.ReaderConvert:Boolean; 
+{Convert a Reader lock to a Writer lock}
+begin
+ {}
+ Result:=(SynchronizerReaderConvert(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TTransportBinding.WriterLock:Boolean;
 begin
  {}
@@ -2820,6 +2852,15 @@ function TTransportBinding.WriterUnlock:Boolean;
 begin
  {}
  Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TTransportBinding.WriterConvert:Boolean;
+{Convert a Writer lock to a Reader lock}
+begin
+ {}
+ Result:=(SynchronizerWriterConvert(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -7240,6 +7281,16 @@ function InAddrIsEqual(const AAddress1,AAddress2:TInAddr):Boolean;
 begin
  {}
  Result:=(LongWord(AAddress1.S_addr) = LongWord(AAddress2.S_addr));
+end;
+
+{==============================================================================}
+
+function InAddrIsNone(const AAddress:TInAddr):Boolean;
+{Check the supplied address to see if it is equal to INADDR_NONE}
+{Note: Expects Address to be in Host order}
+begin
+ {}
+ Result:=(LongWord(AAddress.S_addr) = INADDR_NONE);
 end;
 
 {==============================================================================}

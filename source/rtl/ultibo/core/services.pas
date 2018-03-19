@@ -1,7 +1,7 @@
 {
 Ultibo Services interface unit.
 
-Copyright (C) 2014 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -153,13 +153,38 @@ const
  NTP_STRATUM_UNSYNCRONIZED = 16; {unsynchronized}
  NTP_STRATUM_RESERVED      = 17; {reserved}
  
- {Telnet constants}
+ {Telnet character constants}
  TELNET_CHAR_NUL       = #0;
  TELNET_CHAR_CR        = #13;
  TELNET_CHAR_LF        = #10;
+ TELNET_CHAR_BELL      = #7;
  TELNET_CHAR_TAB       = #9;
  TELNET_CHAR_ESC       = #27;
  TELNET_CHAR_BACKSPACE = #127;
+ 
+ {Telnet escape sequences}
+ TELNET_SEQUENCE_UP_ARROW    = #27#91#65; {ESC[A}
+ TELNET_SEQUENCE_DOWN_ARROW  = #27#91#66; {ESC[B}
+ TELNET_SEQUENCE_RIGHT_ARROW = #27#91#67; {ESC[C}
+ TELNET_SEQUENCE_LEFT_ARROW  = #27#91#68; {ESC[D}
+ 
+ TELNET_SEQUENCE_HOME        = #27#91#49#126; {ESC[1~}
+ TELNET_SEQUENCE_INSERT      = #27#91#50#126; {ESC[2~}
+ TELNET_SEQUENCE_DELETE      = #27#91#51#126; {ESC[3~}
+ TELNET_SEQUENCE_END         = #27#91#52#126; {ESC[4~}
+ TELNET_SEQUENCE_PGUP        = #27#91#53#126; {ESC[5~}
+ TELNET_SEQUENCE_PGDN        = #27#91#54#126; {ESC[6~}
+ 
+ TELNET_SEQUENCE_F1          = #27#91#49#49#126; {ESC[11~} 
+ TELNET_SEQUENCE_F2          = #27#91#49#50#126; {ESC[12~} 
+ TELNET_SEQUENCE_F3          = #27#91#49#51#126; {ESC[13~} 
+ TELNET_SEQUENCE_F4          = #27#91#49#52#126; {ESC[14~} 
+ TELNET_SEQUENCE_F5          = #27#91#49#53#126; {ESC[15~} 
+ TELNET_SEQUENCE_F6          = #27#91#49#55#126; {ESC[17~} 
+ TELNET_SEQUENCE_F7          = #27#91#49#56#126; {ESC[18~} 
+ TELNET_SEQUENCE_F8          = #27#91#49#57#126; {ESC[19~} 
+ TELNET_SEQUENCE_F9          = #27#91#50#48#126; {ESC[20~} 
+ TELNET_SEQUENCE_F10         = #27#91#50#49#126; {ESC[21~} 
  
  TELNET_BUFFER_SIZE = SIZE_2K;
  
@@ -248,6 +273,7 @@ const
  {Service logging}
  SERVICE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Service debugging messages}
  SERVICE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Service informational messages, such as a service being created or destroyed}
+ SERVICE_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Service warning messages}
  SERVICE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Service error messages}
  SERVICE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Service messages}
 
@@ -655,9 +681,10 @@ function SysLogLoggingSetTarget(Logging:PLoggingDevice;const Target:String):Long
 {==============================================================================}
 {Service Helper Functions}
 procedure ServiceLog(Level:LongWord;const AText:String);
-procedure ServiceLogInfo(const AText:String);
-procedure ServiceLogError(const AText:String);
-procedure ServiceLogDebug(const AText:String);
+procedure ServiceLogInfo(const AText:String); inline;
+procedure ServiceLogWarn(const AText:String); inline;
+procedure ServiceLogError(const AText:String); inline;
+procedure ServiceLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {Ping Helper Functions}
@@ -3293,6 +3320,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = SERVICE_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = SERVICE_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -3307,7 +3338,7 @@ end;
 
 {==============================================================================}
 
-procedure ServiceLogInfo(const AText:String);
+procedure ServiceLogInfo(const AText:String); inline;
 begin
  {}
  ServiceLog(SERVICE_LOG_LEVEL_INFO,AText);
@@ -3315,7 +3346,15 @@ end;
 
 {==============================================================================}
 
-procedure ServiceLogError(const AText:String);
+procedure ServiceLogWarn(const AText:String); inline;
+begin
+ {}
+ ServiceLog(SERVICE_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure ServiceLogError(const AText:String); inline;
 begin
  {}
  ServiceLog(SERVICE_LOG_LEVEL_ERROR,AText);
@@ -3323,7 +3362,7 @@ end;
 
 {==============================================================================}
 
-procedure ServiceLogDebug(const AText:String);
+procedure ServiceLogDebug(const AText:String); inline;
 begin
  {}
  ServiceLog(SERVICE_LOG_LEVEL_DEBUG,AText);
@@ -3561,6 +3600,7 @@ begin
  
  case Severity of
   LOGGING_SEVERITY_ERROR:Result:=SYSLOG_SEVERITY_ERROR;
+  LOGGING_SEVERITY_WARN:Result:=SYSLOG_SEVERITY_WARNING;
   LOGGING_SEVERITY_INFO:Result:=SYSLOG_SEVERITY_INFORMATION;
   LOGGING_SEVERITY_DEBUG:Result:=SYSLOG_SEVERITY_DEBUG;
  end;

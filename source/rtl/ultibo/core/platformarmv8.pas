@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv8.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -11,7 +11,7 @@ Arch
 Boards
 ======
  
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  Raspberry Pi CM3
  QEMU - VersatilePB 
  
@@ -116,6 +116,13 @@ const
  ARMV8_CP15_C0_MAINID_ARCHITECTURE_ARMV6    = ($7 shl 16);
  ARMV8_CP15_C0_MAINID_ARCHITECTURE_CPUID    = ($F shl 16);
  
+ {Cortex A5 to Cortext A17 are ARMv7 part numbers, included here to allow ARMv7 code on ARMv8 in 32bit mode}
+ ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A5   = ($C05 shl 4);
+ ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A7   = ($C07 shl 4);
+ ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A8   = ($C08 shl 4);
+ ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A9   = ($C09 shl 4);
+ ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A15  = ($C0F shl 4);
+ ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A17  = ($C0E shl 4);
  ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A53  = ($D03 shl 4);
  ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A57  = ($D07 shl 4);
  ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A72  = ($D08 shl 4);
@@ -1503,7 +1510,32 @@ begin
  if MainID <> 0 then
   begin 
    {Check Primary Part Number}
-   if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A53 then 
+   {Cortex A5 to Cortext A17 are ARMv7 part numbers, included here to allow ARMv7 code on ARMv8 in 32bit mode}
+   if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A5 then
+    begin
+     Result:=CPU_MODEL_CORTEX_A5;
+    end
+   else if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A7 then 
+    begin
+     Result:=CPU_MODEL_CORTEX_A7;
+    end
+   else if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A8 then 
+    begin
+     Result:=CPU_MODEL_CORTEX_A8;
+    end
+   else if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A9 then 
+    begin
+     Result:=CPU_MODEL_CORTEX_A9;
+    end
+   else if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A15 then 
+    begin
+     Result:=CPU_MODEL_CORTEX_A15;
+    end
+   else if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A17 then 
+    begin
+     Result:=CPU_MODEL_CORTEX_A17;
+    end
+   else if (MainID and ARMV8_CP15_C0_MAINID_PARTNUMBER_MASK) = ARMV8_CP15_C0_MAINID_PARTNUMBER_CORTEX_A53 then 
     begin
      Result:=CPU_MODEL_CORTEX_A53;
     end

@@ -69,6 +69,7 @@ const
  {Codec logging}
  CODEC_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Codec debugging messages}
  CODEC_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Codec informational messages, such as a device being attached or detached}
+ CODEC_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Codec warning messages}
  CODEC_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Codec error messages}
  CODEC_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Codec messages}
 
@@ -164,6 +165,7 @@ function CodecDeviceCheck(Codec:PCodecDevice):PCodecDevice;
 
 procedure CodecLog(Level:LongWord;Codec:PCodecDevice;const AText:String);
 procedure CodecLogInfo(Codec:PCodecDevice;const AText:String); inline;
+procedure CodecLogWarn(Codec:PCodecDevice;const AText:String); inline;
 procedure CodecLogError(Codec:PCodecDevice;const AText:String); inline;
 procedure CodecLogDebug(Codec:PCodecDevice;const AText:String); inline;
 
@@ -741,6 +743,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = CODEC_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = CODEC_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -765,6 +771,14 @@ procedure CodecLogInfo(Codec:PCodecDevice;const AText:String); inline;
 begin
  {}
  CodecLog(CODEC_LOG_LEVEL_INFO,Codec,AText);
+end;
+
+{==============================================================================}
+
+procedure CodecLogWarn(Codec:PCodecDevice;const AText:String); inline;
+begin
+ {}
+ CodecLog(CODEC_LOG_LEVEL_WARN,Codec,AText);
 end;
 
 {==============================================================================}

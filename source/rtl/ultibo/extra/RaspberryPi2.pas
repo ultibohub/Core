@@ -12,7 +12,7 @@ Boards
 ======
 
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  
 Licence
 =======

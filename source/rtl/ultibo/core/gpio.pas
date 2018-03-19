@@ -98,6 +98,7 @@ const
  {GPIO logging}
  GPIO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {GPIO debugging messages}
  GPIO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {GPIO informational messages, such as a device being attached or detached}
+ GPIO_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {GPIO warning messages}
  GPIO_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {GPIO error messages}
  GPIO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No GPIO messages}
 
@@ -309,9 +310,10 @@ function GPIODeviceRegisterEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Event:PGPIOEvent)
 function GPIODeviceDeregisterEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Event:PGPIOEvent):LongWord;
 
 procedure GPIOLog(Level:LongWord;GPIO:PGPIODevice;const AText:String);
-procedure GPIOLogInfo(GPIO:PGPIODevice;const AText:String);
-procedure GPIOLogError(GPIO:PGPIODevice;const AText:String);
-procedure GPIOLogDebug(GPIO:PGPIODevice;const AText:String);
+procedure GPIOLogInfo(GPIO:PGPIODevice;const AText:String); inline;
+procedure GPIOLogWarn(GPIO:PGPIODevice;const AText:String); inline;
+procedure GPIOLogError(GPIO:PGPIODevice;const AText:String); inline;
+procedure GPIOLogDebug(GPIO:PGPIODevice;const AText:String); inline;
 
 function GPIOPinToString(Pin:LongWord):String;
 function GPIOLevelToString(Level:LongWord):String;
@@ -1758,6 +1760,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = GPIO_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = GPIO_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1778,7 +1784,7 @@ end;
 
 {==============================================================================}
 
-procedure GPIOLogInfo(GPIO:PGPIODevice;const AText:String);
+procedure GPIOLogInfo(GPIO:PGPIODevice;const AText:String); inline;
 begin
  {}
  GPIOLog(GPIO_LOG_LEVEL_INFO,GPIO,AText);
@@ -1786,7 +1792,15 @@ end;
 
 {==============================================================================}
 
-procedure GPIOLogError(GPIO:PGPIODevice;const AText:String);
+procedure GPIOLogWarn(GPIO:PGPIODevice;const AText:String); inline;
+begin
+ {}
+ GPIOLog(GPIO_LOG_LEVEL_WARN,GPIO,AText);
+end;
+
+{==============================================================================}
+
+procedure GPIOLogError(GPIO:PGPIODevice;const AText:String); inline;
 begin
  {}
  GPIOLog(GPIO_LOG_LEVEL_ERROR,GPIO,AText);
@@ -1794,7 +1808,7 @@ end;
 
 {==============================================================================}
 
-procedure GPIOLogDebug(GPIO:PGPIODevice;const AText:String);
+procedure GPIOLogDebug(GPIO:PGPIODevice;const AText:String); inline;
 begin
  {}
  GPIOLog(GPIO_LOG_LEVEL_DEBUG,GPIO,AText);

@@ -170,6 +170,7 @@ const
  {Storage logging}
  STORAGE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Storage debugging messages}
  STORAGE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Storage informational messages, such as a device being attached or detached}
+ STORAGE_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Storage warning messages}
  STORAGE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Storage error messages}
  STORAGE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Storage messages}
 
@@ -431,9 +432,10 @@ function StorageDeviceStateToString(StorageState:LongWord):String;
 function StorageDeviceStateToNotification(State:LongWord):LongWord;
 
 procedure StorageLog(Level:LongWord;Storage:PStorageDevice;const AText:String);
-procedure StorageLogInfo(Storage:PStorageDevice;const AText:String);
-procedure StorageLogError(Storage:PStorageDevice;const AText:String);
-procedure StorageLogDebug(Storage:PStorageDevice;const AText:String);
+procedure StorageLogInfo(Storage:PStorageDevice;const AText:String); inline;
+procedure StorageLogWarn(Storage:PStorageDevice;const AText:String); inline;
+procedure StorageLogError(Storage:PStorageDevice;const AText:String); inline;
+procedure StorageLogDebug(Storage:PStorageDevice;const AText:String); inline;
 
 procedure StorageStatusTimer(Storage:PStorageDevice);
 
@@ -2598,6 +2600,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = STORAGE_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = STORAGE_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -2618,7 +2624,7 @@ end;
 
 {==============================================================================}
 
-procedure StorageLogInfo(Storage:PStorageDevice;const AText:String);
+procedure StorageLogInfo(Storage:PStorageDevice;const AText:String); inline;
 begin
  {}
  StorageLog(STORAGE_LOG_LEVEL_INFO,Storage,AText);
@@ -2626,7 +2632,15 @@ end;
 
 {==============================================================================}
 
-procedure StorageLogError(Storage:PStorageDevice;const AText:String);
+procedure StorageLogWarn(Storage:PStorageDevice;const AText:String); inline;
+begin
+ {}
+ StorageLog(STORAGE_LOG_LEVEL_WARN,Storage,AText);
+end;
+
+{==============================================================================}
+
+procedure StorageLogError(Storage:PStorageDevice;const AText:String); inline;
 begin
  {}
  StorageLog(STORAGE_LOG_LEVEL_ERROR,Storage,AText);
@@ -2634,7 +2648,7 @@ end;
 
 {==============================================================================}
 
-procedure StorageLogDebug(Storage:PStorageDevice;const AText:String);
+procedure StorageLogDebug(Storage:PStorageDevice;const AText:String); inline;
 begin
  {}
  StorageLog(STORAGE_LOG_LEVEL_DEBUG,Storage,AText);

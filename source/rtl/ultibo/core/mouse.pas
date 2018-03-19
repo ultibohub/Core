@@ -132,6 +132,7 @@ const
  {Mouse logging}
  MOUSE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Mouse debugging messages}
  MOUSE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Mouse informational messages, such as a device being attached or detached}
+ MOUSE_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Mouse warning messages}
  MOUSE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Mouse error messages}
  MOUSE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Mouse messages}
 
@@ -335,9 +336,10 @@ function MouseDeviceStateToNotification(State:LongWord):LongWord;
 function MouseInsertData(Mouse:PMouseDevice;Data:PMouseData;Signal:Boolean):LongWord;
 
 procedure MouseLog(Level:LongWord;Mouse:PMouseDevice;const AText:String);
-procedure MouseLogInfo(Mouse:PMouseDevice;const AText:String);
-procedure MouseLogError(Mouse:PMouseDevice;const AText:String);
-procedure MouseLogDebug(Mouse:PMouseDevice;const AText:String);
+procedure MouseLogInfo(Mouse:PMouseDevice;const AText:String); inline;
+procedure MouseLogWarn(Mouse:PMouseDevice;const AText:String); inline;
+procedure MouseLogError(Mouse:PMouseDevice;const AText:String); inline;
+procedure MouseLogDebug(Mouse:PMouseDevice;const AText:String); inline;
 
 {==============================================================================}
 {USB Mouse Helper Functions}
@@ -2277,7 +2279,88 @@ begin
  {Check Data}
  if Data = nil then Exit;
  
- //To Do //Continuing
+ {Check Flags}
+ if (Mouse.Device.DeviceFlags and MOUSE_FLAG_DIRECT_READ) = 0 then
+  begin
+   {Global Buffer}
+   {Acquire the Lock}
+   if MutexLock(MouseBufferLock) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Buffer}
+      if (MouseBuffer.Count < MOUSE_BUFFER_SIZE) then
+       begin
+        {Get Next}
+        Next:=@MouseBuffer.Buffer[(MouseBuffer.Start + MouseBuffer.Count) mod MOUSE_BUFFER_SIZE];
+        if Next <> nil then
+         begin
+          {Copy Data}
+          Next^:=Data^;
+      
+          {Update Count}
+          Inc(MouseBuffer.Count);
+          
+          {Signal Data Received}
+          if Signal then SemaphoreSignal(MouseBuffer.Wait);
+          
+          {Return Result}
+          Result:=ERROR_SUCCESS;
+         end;
+       end
+      else
+       begin
+        if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, key discarded');
+        
+        {Update Statistics}
+        Inc(Mouse.BufferOverruns); 
+        
+        Result:=ERROR_INSUFFICIENT_BUFFER;
+       end;            
+     finally
+      {Release the Lock}
+      MutexUnlock(MouseBufferLock);
+     end;
+    end
+   else
+    begin
+     if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Failed to acquire lock on buffer');
+     
+     Result:=ERROR_CAN_NOT_COMPLETE;
+    end;
+  end
+ else
+  begin              
+   {Direct Buffer}
+   {Check Buffer}
+   if (Mouse.Buffer.Count < MOUSE_BUFFER_SIZE) then
+    begin
+     {Get Next}
+     Next:=@Mouse.Buffer.Buffer[(Mouse.Buffer.Start + Mouse.Buffer.Count) mod MOUSE_BUFFER_SIZE];
+     if Next <> nil then
+      begin
+       {Copy Data}
+       Next^:=Data^;
+       
+       {Update Count}
+       Inc(Mouse.Buffer.Count);
+       
+       {Signal Data Received}
+       if Signal then SemaphoreSignal(Mouse.Buffer.Wait);
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;
+    end
+   else
+    begin
+     if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, key discarded');
+     
+     {Update Statistics}
+     Inc(Mouse.BufferOverruns); 
+     
+     Result:=ERROR_INSUFFICIENT_BUFFER;
+    end;            
+  end;
 end;
 
 {==============================================================================}
@@ -2295,6 +2378,10 @@ begin
  if Level = MOUSE_LOG_LEVEL_DEBUG then
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
+  end
+ else if Level = MOUSE_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
   end
  else if Level = MOUSE_LOG_LEVEL_ERROR then
   begin
@@ -2316,7 +2403,7 @@ end;
 
 {==============================================================================}
 
-procedure MouseLogInfo(Mouse:PMouseDevice;const AText:String);
+procedure MouseLogInfo(Mouse:PMouseDevice;const AText:String); inline;
 begin
  {}
  MouseLog(MOUSE_LOG_LEVEL_INFO,Mouse,AText);
@@ -2324,7 +2411,15 @@ end;
 
 {==============================================================================}
 
-procedure MouseLogError(Mouse:PMouseDevice;const AText:String);
+procedure MouseLogWarn(Mouse:PMouseDevice;const AText:String); inline;
+begin
+ {}
+ MouseLog(MOUSE_LOG_LEVEL_WARN,Mouse,AText);
+end;
+
+{==============================================================================}
+
+procedure MouseLogError(Mouse:PMouseDevice;const AText:String); inline;
 begin
  {}
  MouseLog(MOUSE_LOG_LEVEL_ERROR,Mouse,AText);
@@ -2332,7 +2427,7 @@ end;
 
 {==============================================================================}
 
-procedure MouseLogDebug(Mouse:PMouseDevice;const AText:String);
+procedure MouseLogDebug(Mouse:PMouseDevice;const AText:String); inline;
 begin
  {}
  MouseLog(MOUSE_LOG_LEVEL_DEBUG,Mouse,AText);

@@ -65,6 +65,7 @@ const
  {I2S logging}
  I2S_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {I2S debugging messages}
  I2S_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {I2S informational messages, such as a device being attached or detached}
+ I2S_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {I2S warning messages}
  I2S_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {I2S error messages}
  I2S_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No I2S messages}
 
@@ -157,6 +158,7 @@ function I2SDeviceCheck(I2S:PI2SDevice):PI2SDevice;
 
 procedure I2SLog(Level:LongWord;I2S:PI2SDevice;const AText:String);
 procedure I2SLogInfo(I2S:PI2SDevice;const AText:String); inline;
+procedure I2SLogWarn(I2S:PI2SDevice;const AText:String); inline;
 procedure I2SLogError(I2S:PI2SDevice;const AText:String); inline;
 procedure I2SLogDebug(I2S:PI2SDevice;const AText:String); inline;
  
@@ -693,6 +695,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = I2S_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = I2S_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -717,6 +723,14 @@ procedure I2SLogInfo(I2S:PI2SDevice;const AText:String); inline;
 begin
  {}
  I2SLog(I2S_LOG_LEVEL_INFO,I2S,AText);
+end;
+
+{==============================================================================}
+
+procedure I2SLogWarn(I2S:PI2SDevice;const AText:String); inline;
+begin
+ {}
+ I2SLog(I2S_LOG_LEVEL_WARN,I2S,AText);
 end;
 
 {==============================================================================}

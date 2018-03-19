@@ -1,7 +1,7 @@
 {
 SMSC LAN95xx USB Ethernet Driver.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====

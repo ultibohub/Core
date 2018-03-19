@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv7.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -12,7 +12,7 @@ Boards
 ======
  
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  Raspberry Pi CM3
  BeagleBone Black
  Banana Pi

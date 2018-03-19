@@ -55,6 +55,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
 {==============================================================================}
 const
  {Shell Update specific constants}
+ SHELL_UPDATE_HTTP_DELIMITER = ':';  
  SHELL_UPDATE_HTTP_SEPARATOR = '/';  
  SHELL_UPDATE_HTTP_PROTOCOL = 'http://';
  
@@ -75,17 +76,22 @@ const
  SHELL_UPDATE_ITEM_KERNEL         = 'KERNEL';
  SHELL_UPDATE_ITEM_CONFIG         = 'CONFIG';
  SHELL_UPDATE_ITEM_COMMAND        = 'COMMAND';
+ SHELL_UPDATE_ITEM_FIRMWARE       = 'FIRMWARE';
+ SHELL_UPDATE_ITEM_FILE           = 'FILE';
  
  SHELL_UPDATE_ITEM_HTTP_SERVER    = 'SERVER';
+ SHELL_UPDATE_ITEM_HTTP_PROXY     = 'PROXY';
  SHELL_UPDATE_ITEM_HTTP_PATH      = 'REMOTE';
  SHELL_UPDATE_ITEM_LOCAL_PATH     = 'LOCAL';
  SHELL_UPDATE_ITEM_KERNEL_IMAGE   = 'IMAGE';
  SHELL_UPDATE_ITEM_KERNEL_CONFIG  = 'CONFIG';
  SHELL_UPDATE_ITEM_KERNEL_COMMAND = 'COMMAND';
+ SHELL_UPDATE_ITEM_FIRMWARE_FILES = 'FIRMWARE';
  
  {Shell Update Parameter constants}
  SHELL_UPDATE_PARAMETER_REBOOT      = 'R';
  SHELL_UPDATE_PARAMETER_FORCE       = 'F';
+ SHELL_UPDATE_PARAMETER_CURRENT     = 'C';
 
 {==============================================================================}
 {type}
@@ -102,8 +108,11 @@ type
   {Internal Variables}
  
   {Internal Methods}
-  function GetLocal(const AName:String):String;
+  function GetList(const ANames:String):TStringList;
+  function GetLocal(const AName:String;ACurrent:Boolean):String;
   function GetRemote(const AName:String):String;
+  
+  procedure SetProxy(AClient:THTTPClient);
  protected
   {Internal Variables}
 
@@ -126,11 +135,13 @@ type
 var
  {Shell Update specific variables}
  SHELL_UPDATE_HTTP_SERVER:String;    {Name or IP of http server for updates (eg 192.168.0.1)}
+ SHELL_UPDATE_HTTP_PROXY:String;     {Name or IP and Port of http proxy server (eg 192.168.0.100:8080)}
  SHELL_UPDATE_HTTP_PATH:String;      {URL path on http server for updates (eg /updates/)}
  SHELL_UPDATE_LOCAL_PATH:String;     {Local path for updates (eg C:\)}
  SHELL_UPDATE_KERNEL_IMAGE:String;   {Name of the kernel image file for updates (eg kernel.img)}
  SHELL_UPDATE_KERNEL_CONFIG:String;  {Name of the kernel config file for updates (eg config.txt)}
  SHELL_UPDATE_KERNEL_COMMAND:String; {Name of the kernel command file for updates (eg cmdline.txt)}
+ SHELL_UPDATE_FIRMWARE_FILES:String; {Name of the firmware files for updates (eg bootcode.bin,start.elf,fixup.dat)}
 
 {==============================================================================}
 {Initialization Functions}
@@ -167,7 +178,23 @@ end;
 
 {==============================================================================}
 
-function TShellUpdate.GetLocal(const AName:String):String;
+function TShellUpdate.GetList(const ANames:String):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Names}
+ if Length(ANames) = 0 then Exit;
+ 
+ {Undelimit Names}
+ UndelimitString(ANames,Result,',');
+end;
+
+{==============================================================================}
+
+function TShellUpdate.GetLocal(const AName:String;ACurrent:Boolean):String;
+var
+ WorkBuffer:String;
 begin
  {}
  Result:='';
@@ -175,8 +202,23 @@ begin
  {Check Name}
  if Length(AName) = 0 then Exit;
  
+ {Get Path}
+ WorkBuffer:=SHELL_UPDATE_LOCAL_PATH;
+ if ACurrent then
+  begin
+   WorkBuffer:=FSGetCurrentDir;
+   if Length(WorkBuffer) <> 0 then
+    begin
+     WorkBuffer:=AddTrailingChar(WorkBuffer,DirectorySeparator);
+    end
+   else
+    begin
+     WorkBuffer:=SHELL_UPDATE_LOCAL_PATH;
+    end;    
+  end;
+  
  {Get Local}
- Result:=SHELL_UPDATE_LOCAL_PATH + AName;
+ Result:=WorkBuffer + AName;
 end;
 
 {==============================================================================}
@@ -198,6 +240,33 @@ begin
  {Get Remote}
  Result:=SHELL_UPDATE_HTTP_PROTOCOL + SHELL_UPDATE_HTTP_SERVER + AddLeadingChar(WorkBuffer,SHELL_UPDATE_HTTP_SEPARATOR) + AName;
 end;
+
+{==============================================================================}
+
+procedure TShellUpdate.SetProxy(AClient:THTTPClient);
+var
+ ProxyHost:String;
+ ProxyPort:String;
+ 
+ WorkBuffer:String;
+begin
+ {}
+ {Check Client}
+ if AClient = nil then Exit;
+ 
+ {Check Proxy}
+ if Length(SHELL_UPDATE_HTTP_PROXY) = 0 then Exit;
+ 
+ {Get Proxy}
+ WorkBuffer:=SHELL_UPDATE_HTTP_PROXY;
+ ProxyHost:=GetFirstWord(WorkBuffer,SHELL_UPDATE_HTTP_DELIMITER);
+ ProxyPort:=GetFirstWord(WorkBuffer,SHELL_UPDATE_HTTP_DELIMITER);
+ 
+ {Set Proxy}
+ if Length(ProxyHost) <> 0 then AClient.ProxyHost:=ProxyHost;
+ if Length(ProxyPort) <> 0 then AClient.ProxyPort:=ProxyPort;
+end;
+
 
 {==============================================================================}
 
@@ -234,6 +303,9 @@ begin
      {Create Client}
      HTTPClient:=THTTPClient.Create;
      try
+      {Set Proxy}
+      SetProxy(HTTPClient);
+      
       {Set Receive Size}
       HTTPClient.ReceiveSize:=SIZE_2M; //To Do //This doesn't work until after Connect (Add to TWinsockTCPClient)
       try
@@ -379,6 +451,9 @@ begin
    {Create Client}
    HTTPClient:=THTTPClient.Create;
    try
+    {Set Proxy}
+    SetProxy(HTTPClient);
+    
     {HEAD Request}
     if HTTPClient.Head(ARemote) then
      begin
@@ -463,35 +538,43 @@ begin
  if AShell = nil then Exit;
  
  {Do Help}
- AShell.DoOutput(ASession,'Get or display available kernel updates from a http server');
+ AShell.DoOutput(ASession,'Get or display available file updates from a http server');
  AShell.DoOutput(ASession,'');
- AShell.DoOutput(ASession,' ' + Name + ' CHECK <ITEM>      (Display available kernel item updates and information)');
- AShell.DoOutput(ASession,' ' + Name + ' GET <ITEM>        (Get a kernel item update from a http server)');
- AShell.DoOutput(ASession,' ' + Name + ' SET <PARAMETER>   (Set kernel item update parameters)');
+ AShell.DoOutput(ASession,' ' + Name + ' CHECK <ITEM>      (Display available updates and information)');
+ AShell.DoOutput(ASession,' ' + Name + ' GET <ITEM>        (Get an update from a http server)');
+ AShell.DoOutput(ASession,' ' + Name + ' SET <PARAMETER>   (Set update parameters)');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Check/Get Items:');
- AShell.DoOutput(ASession,'    ALL     - Get or check all items');
- AShell.DoOutput(ASession,'    KERNEL  - Get or check the kernel image');
- AShell.DoOutput(ASession,'    CONFIG  - Get or check the kernel config file');
- AShell.DoOutput(ASession,'    COMMAND - Get or check the kernel command file');
+ AShell.DoOutput(ASession,'    ALL         - Get or check all items');
+ AShell.DoOutput(ASession,'    KERNEL      - Get or check the kernel image');
+ AShell.DoOutput(ASession,'    CONFIG      - Get or check the kernel config file');
+ AShell.DoOutput(ASession,'    COMMAND     - Get or check the kernel command file');
+ AShell.DoOutput(ASession,'    FIRMWARE    - Get or check the firmware file(s)');
+ AShell.DoOutput(ASession,'    FILE <FILE> - Get or check any named file');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Set Parameters:');
- AShell.DoOutput(ASession,'    SERVER  - Set the name or IP of the http URL');
- AShell.DoOutput(ASession,'    REMOTE  - Set the remote path of the http URL');
- AShell.DoOutput(ASession,'    LOCAL   - Set the local path for updates');
- AShell.DoOutput(ASession,'    IMAGE   - Set the name of the kernel image file');
- AShell.DoOutput(ASession,'    CONFIG  - Set the name of the kernel config file');
- AShell.DoOutput(ASession,'    COMMAND - Set the name of the kernel command file');
+ AShell.DoOutput(ASession,'    SERVER   - Set the name or IP of the http URL');
+ AShell.DoOutput(ASession,'    PROXY    - Set the name or IP and port of the http proxy');
+ AShell.DoOutput(ASession,'    REMOTE   - Set the remote path of the http URL');
+ AShell.DoOutput(ASession,'    LOCAL    - Set the local path for updates');
+ AShell.DoOutput(ASession,'    IMAGE    - Set the name of the kernel image file');
+ AShell.DoOutput(ASession,'    CONFIG   - Set the name of the kernel config file');
+ AShell.DoOutput(ASession,'    COMMAND  - Set the name of the kernel command file');
+ AShell.DoOutput(ASession,'    FIRMWARE - Set the name of the firmware file(s)');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Optional Parameters:');
- AShell.DoOutput(ASession,'    /R      - Reboot after successfully getting new kernel items');
+ AShell.DoOutput(ASession,'    /R      - Reboot after successfully updating items');
  AShell.DoOutput(ASession,'    /F      - Force an update even if available items are unchanged');
+ AShell.DoOutput(ASession,'    /C      - Update the file in the current directory (FILE item only)');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Examples:');
  AShell.DoOutput(ASession,'    ' + Name + ' GET KERNEL');
  AShell.DoOutput(ASession,'    ' + Name + ' CHECK CONFIG');
  AShell.DoOutput(ASession,'    ' + Name + ' GET ALL /R');
+ AShell.DoOutput(ASession,'    ' + Name + ' GET FILE Myfile.txt /C');
  AShell.DoOutput(ASession,'    ' + Name + ' SET SERVER 192.168.0.1');
+ AShell.DoOutput(ASession,'    ' + Name + ' SET PROXY 192.168.0.100:8080');
+ AShell.DoOutput(ASession,'    ' + Name + ' SET FIRMWARE bootcode.bin,start.elf,fixup.dat');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   ' + Name + ' with no parameters is equivalent to CHECK ALL');
  AShell.DoOutput(ASession,'   ' + Name + ' GET is equivalent to GET KERNEL');
@@ -521,11 +604,14 @@ function TShellUpdate.DoCommand(AShell:TShell;ASession:TShellSession;AParameters
 var 
  Item:String;
  Action:String;
+ Count:Integer;
  Force:Boolean;
  Reboot:Boolean;
+ Current:Boolean;
  Update:Boolean;
  Updated:Boolean;
  Parameter:String;
+ Filenames:TStringList;
 begin
  {}
  Result:=False;
@@ -547,17 +633,23 @@ begin
    AShell.DoOutput(ASession,'');
    AShell.DoOutput(ASession,' Current parameters:');
    AShell.DoOutput(ASession,'  HTTP server:         ' + SHELL_UPDATE_HTTP_SERVER);
+   if Length(SHELL_UPDATE_HTTP_PROXY) <> 0 then
+    begin
+     AShell.DoOutput(ASession,'  HTTP proxy:          ' + SHELL_UPDATE_HTTP_PROXY);
+    end; 
    AShell.DoOutput(ASession,'  Remote path:         ' + SHELL_UPDATE_HTTP_PATH);
    AShell.DoOutput(ASession,'  Local path:          ' + SHELL_UPDATE_LOCAL_PATH);
    AShell.DoOutput(ASession,'  Kernel image file:   ' + SHELL_UPDATE_KERNEL_IMAGE);
    AShell.DoOutput(ASession,'  Kernel config file:  ' + SHELL_UPDATE_KERNEL_CONFIG);
    AShell.DoOutput(ASession,'  Kernel command file: ' + SHELL_UPDATE_KERNEL_COMMAND);
+   AShell.DoOutput(ASession,'  Firmware file(s):    ' + SHELL_UPDATE_FIRMWARE_FILES);
    AShell.DoOutput(ASession,'');
    
    {Get Item}
    Item:=AShell.ParameterIndex(1,AParameters);
    
    {Get Options}
+   Current:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_CURRENT,AParameters);
    Update:=False;
    
    {Check Item}
@@ -567,13 +659,25 @@ begin
      AShell.DoOutput(ASession,''); 
      
      {Check KERNEL_IMAGE}
-     if not UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),False,Update) then Exit;
+     if not UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE,False),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),False,Update) then Exit;
 
      {Check KERNEL_CONFIG}
-     if not UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),False,Update) then Exit;
+     if not UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG,False),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),False,Update) then Exit;
 
      {Check KERNEL_COMMAND}
-     if not UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),False,Update) then Exit;
+     if not UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND,False),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),False,Update) then Exit;
+     
+     {Split FIRMWARE_FILES}
+     Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
+     try
+      {Check FIRMWARE_FILES}
+      for Count:=0 to Filenames.Count - 1 do
+       begin
+        if not UpdateCheck(AShell,ASession,GetLocal(Filenames.Strings[Count],False),GetRemote(Filenames.Strings[Count]),False,Update) then Exit;
+       end;       
+     finally
+      Filenames.Free;
+     end;
      
      {Return Result}
      Result:=True;
@@ -584,7 +688,7 @@ begin
      AShell.DoOutput(ASession,''); 
 
      {Check KERNEL_IMAGE}
-     Result:=UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),False,Update);
+     Result:=UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE,False),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),False,Update);
     end
    else if Uppercase(Item) = SHELL_UPDATE_ITEM_CONFIG then 
     begin
@@ -592,7 +696,7 @@ begin
      AShell.DoOutput(ASession,''); 
      
      {Check KERNEL_CONFIG}
-     Result:=UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),False,Update);
+     Result:=UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG,False),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),False,Update);
     end
    else if Uppercase(Item) = SHELL_UPDATE_ITEM_COMMAND then 
     begin
@@ -600,7 +704,42 @@ begin
      AShell.DoOutput(ASession,''); 
      
      {Check KERNEL_COMMAND}
-     Result:=UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),False,Update);
+     Result:=UpdateCheck(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND,False),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),False,Update);
+    end
+   else if Uppercase(Item) = SHELL_UPDATE_ITEM_FIRMWARE then 
+    begin
+     AShell.DoOutput(ASession,' Checking firmware file(s)');
+     AShell.DoOutput(ASession,''); 
+     
+     {Split FIRMWARE_FILES}
+     Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
+     try
+      {Check FIRMWARE_FILES}
+      for Count:=0 to Filenames.Count - 1 do
+       begin
+        if not UpdateCheck(AShell,ASession,GetLocal(Filenames.Strings[Count],False),GetRemote(Filenames.Strings[Count]),False,Update) then Exit;
+       end;       
+     finally
+      Filenames.Free;
+     end;
+    end
+   else if Uppercase(Item) = SHELL_UPDATE_ITEM_FILE then 
+    begin
+     {Get Parameter}
+     Parameter:=AShell.ParameterIndex(2,AParameters);
+     if Length(Parameter) <> 0 then
+      begin
+       AShell.DoOutput(ASession,' Checking file ' + Parameter);
+       AShell.DoOutput(ASession,''); 
+     
+       {Check File}
+       Result:=UpdateCheck(AShell,ASession,GetLocal(Parameter,Current),GetRemote(Parameter),False,Update);
+      end
+     else
+      begin
+       {No file}
+       Result:=AShell.DoOutput(ASession,'File name not supplied');
+      end;
     end
    else
     begin
@@ -615,11 +754,16 @@ begin
    AShell.DoOutput(ASession,'');
    AShell.DoOutput(ASession,' Current parameters:');
    AShell.DoOutput(ASession,'  HTTP server:         ' + SHELL_UPDATE_HTTP_SERVER);
+   if Length(SHELL_UPDATE_HTTP_PROXY) <> 0 then
+    begin
+     AShell.DoOutput(ASession,'  HTTP proxy:          ' + SHELL_UPDATE_HTTP_PROXY);
+    end; 
    AShell.DoOutput(ASession,'  Remote path:         ' + SHELL_UPDATE_HTTP_PATH);
    AShell.DoOutput(ASession,'  Local path:          ' + SHELL_UPDATE_LOCAL_PATH);
    AShell.DoOutput(ASession,'  Kernel image file:   ' + SHELL_UPDATE_KERNEL_IMAGE);
    AShell.DoOutput(ASession,'  Kernel config file:  ' + SHELL_UPDATE_KERNEL_CONFIG);
    AShell.DoOutput(ASession,'  Kernel command file: ' + SHELL_UPDATE_KERNEL_COMMAND);
+   AShell.DoOutput(ASession,'  Firmware file(s):    ' + SHELL_UPDATE_FIRMWARE_FILES);
    AShell.DoOutput(ASession,'');
   
    {Get Item}
@@ -628,6 +772,7 @@ begin
    {Get Options}
    Force:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_FORCE,AParameters);
    Reboot:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_REBOOT,AParameters);
+   Current:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_CURRENT,AParameters);
    Update:=False;
    
    {Check Item}
@@ -639,16 +784,29 @@ begin
      Updated:=False;
      
      {Get KERNEL_IMAGE}
-     if not UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),Force,Update) then Exit;
+     if not UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE,False),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),Force,Update) then Exit;
      if not Updated then Updated:=Update;
      
      {Get KERNEL_CONFIG}
-     if not UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),Force,Update) then Exit;
+     if not UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG,False),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),Force,Update) then Exit;
      if not Updated then Updated:=Update;
      
      {Get KERNEL_COMMAND}
-     if not UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),Force,Update) then Exit;
+     if not UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND,False),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),Force,Update) then Exit;
      if not Updated then Updated:=Update;
+     
+     {Split FIRMWARE_FILES}
+     Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
+     try
+      {Get FIRMWARE_FILES}
+      for Count:=0 to Filenames.Count - 1 do
+       begin
+        if not UpdateGet(AShell,ASession,GetLocal(Filenames.Strings[Count],False),GetRemote(Filenames.Strings[Count]),Force,Update) then Exit;
+        if not Updated then Updated:=Update;
+       end;       
+     finally
+      Filenames.Free;
+     end;
      
      {Return Result}
      Result:=True;
@@ -669,7 +827,7 @@ begin
      AShell.DoOutput(ASession,''); 
 
      {Get KERNEL_IMAGE}
-     Result:=UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),Force,Update);
+     Result:=UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_IMAGE,False),GetRemote(SHELL_UPDATE_KERNEL_IMAGE),Force,Update);
 
      {Check Reboot}
      if Result and Update and Reboot then
@@ -687,7 +845,7 @@ begin
      AShell.DoOutput(ASession,''); 
 
      {Get KERNEL_CONFIG}
-     Result:=UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),Force,Update);
+     Result:=UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_CONFIG,False),GetRemote(SHELL_UPDATE_KERNEL_CONFIG),Force,Update);
 
      {Check Reboot}
      if Result and Update and Reboot then
@@ -705,7 +863,7 @@ begin
      AShell.DoOutput(ASession,''); 
 
      {Get KERNEL_COMMAND}
-     Result:=UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),Force,Update);
+     Result:=UpdateGet(AShell,ASession,GetLocal(SHELL_UPDATE_KERNEL_COMMAND,False),GetRemote(SHELL_UPDATE_KERNEL_COMMAND),Force,Update);
 
      {Check Reboot}
      if Result and Update and Reboot then
@@ -715,6 +873,41 @@ begin
        
        {Restart System}
        SystemRestart(1000);
+      end;
+    end
+   else if Uppercase(Item) = SHELL_UPDATE_ITEM_FIRMWARE then 
+    begin
+     AShell.DoOutput(ASession,' Getting firmware file(s)');
+     AShell.DoOutput(ASession,''); 
+     
+     {Split FIRMWARE_FILES}
+     Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
+     try
+      {Get FIRMWARE_FILES}
+      for Count:=0 to Filenames.Count - 1 do
+       begin
+        if not UpdateGet(AShell,ASession,GetLocal(Filenames.Strings[Count],False),GetRemote(Filenames.Strings[Count]),Force,Update) then Exit;
+       end;       
+     finally
+      Filenames.Free;
+     end;
+    end
+   else if Uppercase(Item) = SHELL_UPDATE_ITEM_FILE then 
+    begin
+     {Get Parameter}
+     Parameter:=AShell.ParameterIndex(2,AParameters);
+     if Length(Parameter) <> 0 then
+      begin
+       AShell.DoOutput(ASession,' Getting file ' + Parameter);
+       AShell.DoOutput(ASession,''); 
+     
+       {Get File}
+       Result:=UpdateGet(AShell,ASession,GetLocal(Parameter,Current),GetRemote(Parameter),Force,Update);
+      end
+     else
+      begin
+       {No file}
+       Result:=AShell.DoOutput(ASession,'File name not supplied');
       end;
     end
    else
@@ -737,6 +930,18 @@ begin
      {Set HTTP_SERVER}
      AShell.DoOutput(ASession,'Setting HTTP server to ' + Parameter);
      SHELL_UPDATE_HTTP_SERVER:=Parameter;
+   
+     {Return Result}
+     Result:=True;
+    end
+   else if Uppercase(Item) = SHELL_UPDATE_ITEM_HTTP_PROXY then
+    begin
+     {Get Parameter}
+     Parameter:=AShell.ParameterIndex(2,AParameters);
+  
+     {Set HTTP_PROXY}
+     AShell.DoOutput(ASession,'Setting HTTP proxy to ' + Parameter);
+     SHELL_UPDATE_HTTP_PROXY:=Parameter;
    
      {Return Result}
      Result:=True;
@@ -802,6 +1007,19 @@ begin
      {Return Result}
      Result:=True;
     end
+   else if Uppercase(Item) = SHELL_UPDATE_ITEM_FIRMWARE_FILES then 
+    begin
+     {Get Parameter}
+     Parameter:=AShell.ParameterIndex(2,AParameters);
+  
+     {Update FIRMWARE_FILES}
+     AShell.DoOutput(ASession,'Setting firmware file(s) name to ' + Parameter);
+     
+     SHELL_UPDATE_FIRMWARE_FILES:=Parameter;
+   
+     {Return Result}
+     Result:=True;
+    end
    else
     begin
      {Show Error}
@@ -831,17 +1049,23 @@ begin
  
  {Setup Defaults}
  SHELL_UPDATE_HTTP_SERVER:='127.0.0.1';
+ SHELL_UPDATE_HTTP_PROXY:='';
  SHELL_UPDATE_HTTP_PATH:='/';
  SHELL_UPDATE_LOCAL_PATH:='C:\';
  SHELL_UPDATE_KERNEL_IMAGE:=KERNEL_NAME;  
  SHELL_UPDATE_KERNEL_CONFIG:=KERNEL_CONFIG; 
  SHELL_UPDATE_KERNEL_COMMAND:=KERNEL_COMMAND;
+ SHELL_UPDATE_FIRMWARE_FILES:=FIRMWARE_FILES;
  
  {Check Environment Variables}
  {SHELL_UPDATE_HTTP_SERVER}
  WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_HTTP_SERVER');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_HTTP_SERVER:=WorkBuffer;
-  
+
+ {SHELL_UPDATE_HTTP_PROXY}
+ WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_HTTP_PROXY');
+ if Length(WorkBuffer) <> 0 then SHELL_UPDATE_HTTP_PROXY:=WorkBuffer;
+ 
  {SHELL_UPDATE_HTTP_PATH}
  WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_HTTP_PATH');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_HTTP_PATH:=WorkBuffer;
@@ -861,6 +1085,10 @@ begin
  {SHELL_UPDATE_KERNEL_COMMAND}
  WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_KERNEL_COMMAND');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_KERNEL_COMMAND:=WorkBuffer;
+
+ {SHELL_UPDATE_FIRMWARE_FILES}
+ WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_FIRMWARE_FILES');
+ if Length(WorkBuffer) <> 0 then SHELL_UPDATE_FIRMWARE_FILES:=WorkBuffer;
  
  ShellUpdateInitialized:=True;
 end;

@@ -2,7 +2,7 @@
 Ultibo Newlib C Library Syscalls interface unit.
 
 Copyright (C) 2016 - Paul Jervois.
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -227,12 +227,18 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManage
 //To Do //Which Pthreads functions are cancellation points? (Find a list)
         //See: http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_09_05
 
-//To Do //Implementation (dummy / wrapper) for pthread_kill() and others from later specifications (barrier, spinlock etc) ?        
+//To Do //Implementation (dummy / wrapper) for pthread_kill() and others from later specifications (barrier, spinlock etc) ?
         //See: http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html
         
 //To Do //statfs / fstatfs / statfs64 / fstatfs64      
 
 //To Do //opendir / readdir / closedir and dirent
+
+//To Do //lseek64 etc
+
+//To Do //select
+
+//To Do //statvfs / fstatvfs
 
 {==============================================================================}
 {Global definitions}
@@ -242,9 +248,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManage
 
 {==============================================================================}
 {Local definitions}
-{$DEFINE SYSCALLS_ERROR_UNINITIALIZED}      {Log use of uninitialized mutex, condition and rwlock variables as an error (Default: On)}
+{$DEFINE SYSCALLS_WARN_UNINITIALIZED}       {Log use of uninitialized mutex, condition and rwlock variables as a warning (Default: On)}
 {$DEFINE SYSCALLS_CREATE_UNINITIALIZED}     {Allow uninitialized mutex, condition and rwlock variables to be created on first use (Default: On)}
 
+{--$DEFINE SYSCALLS_FILE_OFFSET64}          {Enable 64-bit file offsets for Libc calls (Default: Off)}
 {--$DEFINE SYSCALLS_LARGE64_FILES}          {Enable 64-bit file support for Libc calls (Default: Off)}
 
 {--$DEFINE _POSIX_THREAD_GUARDSIZE}         {Enable Pthread Guard Size attribute (Default: Off) (Not used by Ultibo}
@@ -269,6 +276,15 @@ const
  LONG_MAX  = {$ifdef CPU64}9223372036854775807{$else CPU64}2147483647{$endif CPU64};
  LONG_MIN  = -LONG_MAX - 1;
  ULONG_MAX = (LONG_MAX * 2) + 1; 
+ 
+ ARG_MAX = 4096;
+ PATH_MAX = 4096;
+ 
+const
+ {From sys/syslimits.h} 
+ {ARG_MAX = 65536;} {max bytes for an exec function}
+ NAME_MAX = 255; {max bytes in a file name}
+ {PATH_MAX = 1024;} {max bytes in pathname}
  
 const 
  {Newlib constants from sys/errno.h}
@@ -738,11 +754,13 @@ const
 type
  {Syscalls specific types}
  
- {Basic Types}
+ {Basic Types} {Note: These may differ from GlobalTypes unit}
  int = Integer; {INT_MAX}
  Pint = ^int;
  long = PtrInt; {LONG_MAX}
+ Plong = ^long;
  short = Smallint;
+ Pshort = ^short;
  uint = Cardinal; {unsigned int}
  Puint = ^uint;
  
@@ -758,7 +776,8 @@ type
  {From sys/types.h}
  dev_t = Smallint;  {short}              
  mode_t = Cardinal; {unsigned int}          
- ino_t = Word;      {unsigned short}           
+ ino_t = Word;      {unsigned short}
+ ino64_t = Qword;   {unsigned long long} 
  nlink_t = Word;    {unsigned short}           
  gid_t = Word;      {unsigned short}             
  uid_t = Word;      {unsigned short}
@@ -768,6 +787,17 @@ type
  clock_t = PtrUInt; {_CLOCK_T_ in machine/types.h}{unsigned long}
  clockid_t = PtrUInt; {_CLOCK_T_ in machine/types.h}{unsigned long}
  useconds_t = PtrUInt; {unsigned long}
+
+ fsblkcnt_t = uint64_t;
+ fsfilcnt_t = uint32_t;
+ 
+ fsblkcnt64_t = uint64_t;
+ fsfilcnt64_t = uint64_t;
+ 
+type
+ {From sys/lock.h}
+ _LOCK_T = int;
+ _LOCK_RECURSIVE_T = int;
  
 type 
  {From sys/_types.h}
@@ -1127,6 +1157,51 @@ type
   f_spare: array[0..3] of uint32_t;
  end;
  
+type 
+ {From sys/statvfs.h}
+ Pstatvfs = ^Tstatvfs;
+ Tstatvfs = record
+  f_bsize: PtrUInt;
+  f_frsize: PtrUInt;
+  {$IFNDEF SYSCALLS_FILE_OFFSET64}  
+  f_blocks: fsblkcnt_t;
+  f_bfree: fsblkcnt_t;
+  f_bavail: fsblkcnt_t;
+  f_files: fsfilcnt_t;
+  f_ffree: fsfilcnt_t;
+  f_favail: fsfilcnt_t;
+  {$ELSE}
+  f_blocks: fsblkcnt64_t;
+  f_bfree: fsblkcnt64_t;
+  f_bavail: fsblkcnt64_t;
+  f_files: fsfilcnt64_t;
+  f_ffree: fsfilcnt64_t;
+  f_favail: fsfilcnt64_t;
+  {$ENDIF}
+  f_fsid: PtrUInt;
+  f_flag: PtrUInt;
+  f_namemax: PtrUInt;
+  __f_spare: array[0..5] of int;
+ end;
+ 
+ {$IFDEF SYSCALLS_LARGE64_FILES}  
+ Pstatvfs64 = ^Tstatvfs64;
+ Tstatvfs64 = record
+  f_bsize: PtrUInt;
+  f_frsize: PtrUInt;
+  f_blocks: fsblkcnt64_t;
+  f_bfree: fsblkcnt64_t;
+  f_bavail: fsblkcnt64_t;
+  f_files: fsfilcnt64_t;
+  f_ffree: fsfilcnt64_t;
+  f_favail: fsfilcnt64_t;
+  f_fsid: PtrUInt;
+  f_flag: PtrUInt;
+  f_namemax: PtrUInt;
+  __f_spare[6]: array[0..5] of int;
+ end;
+ {$ENDIF}
+ 
 type
  {From sched.h}
  Psched_param = ^Tsched_param;
@@ -1138,6 +1213,46 @@ type
   sched_ss_init_budget: Ttimespec; {Initial budget for sporadic server}
   sched_ss_max_repl: int;          {Maximum pending replenishments for sporadic server}
   {$ENDIF}
+ end;
+
+type
+ {From dirent.h}
+ PPdirent = ^Pdirent;
+ Pdirent = ^Tdirent;
+ Tdirent = record
+  {$IFNDEF SYSCALLS_FILE_OFFSET64}  
+  d_ino: ino_t;
+  d_off: off_t;
+  {$ELSE}
+  d_ino: ino64_t;
+  d_off: off64_t;
+  {$ENDIF}
+  d_reclen: Word;
+  d_type: Byte;
+  d_name:array[0..255] of Char;
+ end;
+ 
+ {$IFDEF SYSCALLS_LARGE64_FILES}  
+ PPdirent64 = ^Pdirent64;
+ Pdirent64 = ^Tdirent64;
+ Tdirent64 = record
+  d_ino: ino64_t;
+  d_off: off64_t;
+  d_reclen: Word;
+  d_type: Byte;
+  d_name:array[0..255] of Char;
+ end;
+ {$ENDIF}
+
+ PDIR = ^DIR;
+ DIR = record
+  dd_fd: int;    {directory file}
+  dd_loc: int;   {position in buffer}
+  dd_seek: int;
+  dd_buf: PByte; {buffer}
+  dd_len: int;   {buffer length}
+  dd_size: int;  {amount of data in buffer}
+  dd_lock: _LOCK_RECURSIVE_T;
  end;
  
 type
@@ -1345,9 +1460,12 @@ function chmod(path: PChar; mode: mode_t): int; cdecl; public name 'chmod';
      
 {==============================================================================}
 {Syscalls Functions (Stdlib)}
+function malloc(size: size_t): Pointer; cdecl; external libc name 'malloc';
 function memalign(alignment, size: size_t): Pointer; cdecl; external libc name 'memalign';
 
 function posix_memalign(memptr: PPointer; alignment, size: size_t): int; cdecl; public name 'posix_memalign';
+
+function realpath(path, resolved_path: PChar): PChar; cdecl; public name 'realpath';
 
 {==============================================================================}
 {Syscalls Functions (Unistd)}
@@ -1366,6 +1484,9 @@ function symlink(path1, path2: PChar): int; cdecl; public name 'symlink';
 
 function ftruncate(fd: int; length: off_t): int; cdecl; public name 'ftruncate';
 function truncate(path: PChar; length: off_t): int; cdecl; public name 'truncate';
+
+function fsync(fd: int): int; cdecl; public name 'fsync';
+function fdatasync(fd: int): int; cdecl; public name 'fdatasync';
 
 {==============================================================================}
 {Syscalls Functions (Mman)}
@@ -1391,6 +1512,11 @@ function statfs64(path: PChar; buf: Pstatfs64): int; cdecl; public name 'statfs6
 function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl; public name 'fstatfs64';
     
 {==============================================================================}
+{Syscalls Functions (Statvfs)}
+function statvfs(path: PChar; buf: Pstatvfs): int; cdecl; public name 'statvfs';
+function fstatvfs(fd: int; buf: Pstatvfs): int; cdecl; public name 'fstatvfs';
+    
+{==============================================================================}
 {Syscalls Functions (Sched)}
 //To Do //http://man7.org/linux/man-pages/man2/sched_setaffinity.2.html
 //int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask);
@@ -1399,6 +1525,17 @@ function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl; public name 'fstatfs64'
 function sched_get_priority_max(policy: int): int; cdecl; public name 'sched_get_priority_max'; 
 function sched_get_priority_min(policy: int): int; cdecl; public name 'sched_get_priority_min';  
 
+{==============================================================================}
+{Syscalls Functions (Dirent)}
+function opendir(name: PChar): PDIR; cdecl; public name 'opendir'; 
+function readdir(dirp: PDIR): Pdirent; cdecl; public name 'readdir'; 
+function readdir_r(dirp: PDIR; entry: Pdirent; _result: PPdirent): int; cdecl; public name 'readdir_r'; 
+function closedir(dirp: PDIR): int; cdecl; public name 'closedir'; 
+
+{$IFDEF SYSCALLS_LARGE64_FILES}  
+function readdir64(dirp: PDIR): Pdirent64; cdecl; public name 'readdir64'; 
+function readdir64_r(dirp: PDIR; entry: Pdirent64; _result: PPdirent64): int; cdecl; public name 'readdir64_r'; 
+{$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Pthread) (http://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread.h.html)}
 function pthread_attr_init(attr: Ppthread_attr_t): int; cdecl; public name 'pthread_attr_init';
@@ -1538,6 +1675,9 @@ function socket_inet_addr(cp: PChar): in_addr_t; cdecl; public name '__inet_addr
 function socket_inet_ntoa(inaddr: TInAddr): PChar; cdecl; public name '__inet_ntoa';
 function socket_inet_aton(cp: PChar; inaddr: PInAddr): int; cdecl; public name '__inet_aton';  
 
+function socket_inet_pton(af: int; src: PChar; dst: Pointer): int; cdecl; public name '__inet_pton';  
+function socket_inet_ntop(af: int; src: Pointer; dst: PChar; size: socklen_t): PChar; cdecl; public name '__inet_ntop';  
+
 {From netdb.h}
 function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): PHostEnt; cdecl; public name 'gethostbyaddr';
 function socket_gethostbyname(name: PChar): PHostEnt; cdecl; public name 'gethostbyname';
@@ -1551,9 +1691,9 @@ function socket_getservbyname(name, proto: PChar): PServEnt; cdecl; public name 
 function socket_getprotobynumber(proto: int): PProtoEnt; cdecl; public name 'getprotobynumber';
 function socket_getprotobyname(name: PChar): PProtoEnt; cdecl; public name 'getprotobyname';
        
-//function socket_getaddrinfo //To Do //Include when added to DNS and updated in Sockets
-//function socket_getnameinfo //To Do //Include when added to DNS and updated in Sockets
-//function socket_freeaddrinfo //To Do //Include when added to DNS and updated in Sockets
+function socket_getaddrinfo(node: PChar; service: PChar; hints: PAddrInfo; var res: PAddrInfo): int; cdecl; public name 'getaddrinfo';   
+function socket_getnameinfo(addr: PSockAddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl; public name 'getnameinfo';   
+procedure socket_freeaddrinfo(res: PAddrInfo); cdecl; public name 'freeaddrinfo';   
        
 {==============================================================================}
 {Syscalls Functions (Non Standard)}
@@ -3092,6 +3232,8 @@ end;
 {Syscalls Functions (Stdlib)}
 function posix_memalign(memptr: PPointer; alignment, size: size_t): int; cdecl;
 {Aligned memory allocation}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  mem:Pointer;
 begin
@@ -3118,6 +3260,61 @@ begin
  Result:=0;
 end;
 
+{==============================================================================}
+
+function realpath(path, resolved_path: PChar): PChar; cdecl;
+{Return the canonicalized absolute pathname}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Buffer:PChar;
+ Fullpath:String;
+begin
+ {}
+ Result:=nil;
+
+ {Check path}
+ if path = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+  
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls realpath (path=' + StrPas(path) + ' resolved_path=' + StrPas(resolved_path) + ')');
+ {$ENDIF}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls realpath (path=' + StrPas(path) + ' resolved_path=' + StrPas(resolved_path) + ')'); //TestingMicroPython
+
+ {Get resolved path}
+ Buffer:=resolved_path;
+ if Buffer = nil then
+  begin
+   {Allocate buffer (Must use malloc)}
+   Buffer:=malloc(PATH_MAX);
+  end;
+
+ {Check Buffer}
+ if Buffer = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+   Exit;
+  end;  
+ 
+ {Get Full Path}
+ Fullpath:=FSGetLongName(path);
+ 
+ {Copy Full Path}
+ StrLCopy(Buffer,PChar(Fullpath),PATH_MAX);
+ 
+ {Return Result}
+ Result:=Buffer;
+end;
+ 
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Unistd)}
@@ -3224,6 +3421,8 @@ end;
 
 function getpagesize: int; cdecl;
 {Return the number of bytes in a memory page}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=sysconf(_SC_PAGESIZE); 
@@ -3285,7 +3484,7 @@ end;
 
 {==============================================================================}
 
-function symlink(path1, path2: PChar): int; cdecl; public name 'symlink';
+function symlink(path1, path2: PChar): int; cdecl;
 {Make a symbolic link to a file}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -3300,7 +3499,7 @@ end;
 
 {==============================================================================}
 
-function ftruncate(fd: int; length: off_t): int; cdecl; public name 'ftruncate';
+function ftruncate(fd: int; length: off_t): int; cdecl;
 {Truncate a file to a specified length}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -3362,7 +3561,7 @@ end;
 
 {==============================================================================}
 
-function truncate(path: PChar; length: off_t): int; cdecl; public name 'truncate';
+function truncate(path: PChar; length: off_t): int; cdecl;
 {Truncate a file to a specified length}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -3416,10 +3615,116 @@ begin
 end;
 
 {==============================================================================}
+
+function fsync(fd: int): int; cdecl;
+{Synchronize a file's state with storage}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PSyscallsEntry;
+begin 
+ {}
+ Result:=-1;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fsync (fd=' + IntToStr(fd) + ')');
+ {$ENDIF}
+
+ {Check descriptor}
+ if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+  begin
+   {Stdin, Stdout, Stderr}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end
+ else
+  begin
+   {Normal file}
+   Entry:=SyscallsGetEntry(fd);
+   if Entry <> nil then
+    begin
+     {Flush}
+     if not FSFileFlush(Entry^.Handle) then
+      begin
+       {Return Error}
+       ptr:=__getreent;
+       if ptr <> nil then ptr^._errno:=EIO;
+       Exit;
+      end;
+     
+     {Return Result}
+     Result:=0;
+    end
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EBADF;
+    end;    
+  end;  
+end; 
+
+{==============================================================================}
+
+function fdatasync(fd: int): int; cdecl;
+{Synchronize a file's state with storage}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PSyscallsEntry;
+begin 
+ {}
+ Result:=-1;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fdatasync (fd=' + IntToStr(fd) + ')');
+ {$ENDIF}
+
+ {Check descriptor}
+ if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+  begin
+   {Stdin, Stdout, Stderr}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end
+ else
+  begin
+   {Normal file}
+   Entry:=SyscallsGetEntry(fd);
+   if Entry <> nil then
+    begin
+     {Flush}
+     if not FSFileFlush(Entry^.Handle) then
+      begin
+       {Return Error}
+       ptr:=__getreent;
+       if ptr <> nil then ptr^._errno:=EIO;
+       Exit;
+      end;
+     
+     {Return Result}
+     Result:=0;
+    end
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EBADF;
+    end;    
+  end;  
+end; 
+
+{==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Mman)}
 function mmap(addr: Pointer; length: size_t; prot, flags, fd: int; offset: off_t): Pointer; cdecl;
 {Map files or devices into memory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
 begin
@@ -3438,6 +3743,8 @@ end;
 
 function munmap(addr: Pointer; length: size_t): int; cdecl;
 {Unmap files or devices into memory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
 begin
@@ -3717,7 +4024,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Statfs)}
-function statfs(path: PChar; buf: Pstatfs): int; cdecl; public name 'statfs';
+function statfs(path: PChar; buf: Pstatfs): int; cdecl;
 {Get filesystem statistics}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -3735,7 +4042,7 @@ end;
 
 {==============================================================================}
 
-function fstatfs(fd: int; buf: Pstatfs): int; cdecl; public name 'fstatfs';
+function fstatfs(fd: int; buf: Pstatfs): int; cdecl;
 {Get filesystem statistics}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -3753,7 +4060,7 @@ end;
 
 {==============================================================================}
 
-function statfs64(path: PChar; buf: Pstatfs64): int; cdecl; public name 'statfs64';
+function statfs64(path: PChar; buf: Pstatfs64): int; cdecl;
 {Get filesystem statistics}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -3771,8 +4078,45 @@ end;
 
 {==============================================================================}
 
-function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl; public name 'fstatfs64';
+function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl;
 {Get filesystem statistics}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+ 
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=ENOSYS;
+ 
+ {Not yet implemented}
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Statvfs)}
+function statvfs(path: PChar; buf: Pstatvfs): int; cdecl;
+{Get file system information}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+ 
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=ENOSYS;
+ 
+ {Not yet implemented}
+end;
+
+{==============================================================================}
+
+function fstatvfs(fd: int; buf: Pstatvfs): int; cdecl;
+{Get file system information}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
@@ -3842,6 +4186,202 @@ begin
  Result:=THREAD_PRIORITY_IDLE;
 end;
 
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Dirent)}
+function opendir(name: PChar): PDIR; cdecl;
+{Open a directory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check name}
+ if name = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+  
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls opendir (name=' + StrPas(name) + ')');
+ {$ENDIF}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls opendir (name=' + StrPas(name) + ')'); //TestingMicroPython
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function readdir(dirp: PDIR): Pdirent; cdecl;
+{Read a directory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=nil;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ {$ENDIF}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')'); //TestingMicroPython
+
+ {Check dirp}
+ if dirp = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function readdir_r(dirp: PDIR; entry: Pdirent; _result: PPdirent): int; cdecl;
+{Read a directory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EBADF;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')');
+ {$ENDIF}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')'); //TestingMicroPython
+ 
+ {Check dirp}
+ if dirp = nil then
+  begin
+   {Return Error}
+   Exit;
+  end;
+ 
+ {Check entry}
+ if entry = nil then
+  begin
+   {Return Error}
+   Exit;
+  end;
+
+ {Check _result}  
+ if _result = nil then
+  begin
+   {Return Error}
+   Exit;
+  end;
+ 
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function closedir(dirp: PDIR): int; cdecl;
+{Close a directory }
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+  
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls closedir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ {$ENDIF}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls closedir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')'); //TestingMicroPython
+ 
+ {Check dirp}
+ if dirp = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+{$IFDEF SYSCALLS_LARGE64_FILES}  
+function readdir64(dirp: PDIR): Pdirent64; cdecl;
+{Read a directory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=nil;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64 (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ {$ENDIF}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64 (dirp=' + IntToHex(PtrUInt(dirp),8) + ')'); //TestingMicroPython
+ 
+ {Check dirp}
+ if dirp = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+ 
+ //To Do
+end;
+
+{==============================================================================}
+
+function readdir64_r(dirp: PDIR; entry: Pdirent64; _result: PPdirent64): int; cdecl;
+{Read a directory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EBADF;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')');
+ {$ENDIF}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')'); //TestingMicroPython
+
+ {Check dirp}
+ if dirp = nil then
+  begin
+   {Return Error}
+   Exit;
+  end;
+ 
+ {Check entry}
+ if entry = nil then
+  begin
+   {Return Error}
+   Exit;
+  end;
+
+ {Check _result}  
+ if _result = nil then
+  begin
+   {Return Error}
+   Exit;
+  end;
+ 
+ //To Do
+end;
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Pthread)}
@@ -4500,9 +5040,9 @@ begin
  {Check cond}
  if cond^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
    {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_broadcast');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_broadcast');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -4546,9 +5086,9 @@ begin
  {Check cond}
  if cond^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_signal');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_signal');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -4595,9 +5135,9 @@ begin
  {Check cond}
  if cond^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_wait');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_wait');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -4683,9 +5223,9 @@ begin
  {Check cond}
  if cond^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized condition in call to pthread_cond_timedwait');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_timedwait');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -5443,9 +5983,9 @@ begin
  {Check mutex}
  if mutex^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_lock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_lock');
    {$ENDIF}  
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -5497,9 +6037,9 @@ begin
  {Check mutex}
  if mutex^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_trylock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_trylock');
    {$ENDIF}  
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -5551,9 +6091,9 @@ begin
  {Check mutex}
  if mutex^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_unlock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_unlock');
    {$ENDIF}  
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -5607,9 +6147,9 @@ begin
  {Check mutex}
  if mutex^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_setprioceiling');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_setprioceiling');
    {$ENDIF}  
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -5656,9 +6196,9 @@ begin
  {Check mutex}
  if mutex^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}  
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
    {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized mutex in call to pthread_mutex_getprioceiling');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_getprioceiling');
    {$ENDIF}  
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -6137,9 +6677,9 @@ begin
  {Check rwlock}
  if rwlock^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
    {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_rdlock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_rdlock');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -6195,9 +6735,9 @@ begin
  {Check rwlock}
  if rwlock^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
    {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_wrlock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_wrlock');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -6253,9 +6793,9 @@ begin
  {Check rwlock}
  if rwlock^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
    {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_tryrdlock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_tryrdlock');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -6315,9 +6855,9 @@ begin
  {Check rwlock}
  if rwlock^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
    {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_trywrlock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_trywrlock');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -6377,9 +6917,9 @@ begin
  {Check rwlock}
  if rwlock^ = 0 then
   begin
-   {$IFDEF SYSCALLS_ERROR_UNINITIALIZED}
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
    {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogError('Unitialized rwlock in call to pthread_rwlock_unlock');
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_unlock');
    {$ENDIF}
    
    {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
@@ -7787,7 +8327,29 @@ function socket_inet_aton(cp: PChar; inaddr: PInAddr): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=Inet_Aton(cp,inaddr)
+ Result:=Inet_Aton(cp,inaddr);
+end;
+
+{==============================================================================}
+
+function socket_inet_pton(af: int; src: PChar; dst: Pointer): int; cdecl;
+{Convert IPv4 and IPv6 addresses from text to binary form}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=Inet_Pton(af,src,dst);
+end;
+
+{==============================================================================}
+
+function socket_inet_ntop(af: int; src: Pointer; dst: PChar; size: socklen_t): PChar; cdecl;
+{Convert IPv4 and IPv6 addresses from binary to text form}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=Inet_Ntop(af,src,dst,size);
 end;
 
 {==============================================================================}
@@ -7928,6 +8490,51 @@ begin
  {$ENDIF}
  
  Result:=GetProtoByName(name);
+end;
+
+{==============================================================================}
+
+function socket_getaddrinfo(node: PChar; service: PChar; hints: PAddrInfo; var res: PAddrInfo): int; cdecl;
+{Network address and service translation}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getaddrinfo (node=' + StrPas(node) + ' service=' + StrPas(service) + ')');
+ {$ENDIF}
+ 
+ Result:=GetAddrInfo(node,service,hints,res);
+end;
+
+{==============================================================================}
+
+function socket_getnameinfo(addr: PSockAddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl;
+{Address-to-name  translation  in protocol-independent manner}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnameinfo');
+ {$ENDIF}
+ 
+ Result:=GetNameInfo(addr,addrlen,host,hostlen,serv,servlen,flags);
+end;
+
+{==============================================================================}
+
+procedure socket_freeaddrinfo(res: PAddrInfo); cdecl;
+{Network address and service translation}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls freeaddrinfo');
+ {$ENDIF}
+ 
+ FreeAddrInfo(res);
 end;
 
 {==============================================================================}

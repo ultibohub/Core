@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -123,6 +123,7 @@ const
  {Platform logging}
  PLATFORM_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Platform debugging messages}
  PLATFORM_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Platform informational messages}
+ PLATFORM_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Platform warning messages}
  PLATFORM_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Platform error messages}
  PLATFORM_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Platform messages}
 
@@ -140,6 +141,7 @@ const
  {IRQ logging}
  IRQ_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {IRQ debugging messages}
  IRQ_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {IRQ informational messages}
+ IRQ_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {IRQ warning messages}
  IRQ_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {IRQ error messages}
  IRQ_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No IRQ messages}
 
@@ -157,6 +159,7 @@ const
  {FIQ logging}
  FIQ_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {FIQ debugging messages}
  FIQ_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {FIQ informational messages}
+ FIQ_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {FIQ warning messages}
  FIQ_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {FIQ error messages}
  FIQ_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FIQ messages}
 
@@ -174,6 +177,7 @@ const
  {SWI logging}
  SWI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SWI debugging messages}
  SWI_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SWI informational messages}
+ SWI_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SWI warning messages}
  SWI_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SWI error messages}
  SWI_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SWI messages}
 
@@ -218,9 +222,9 @@ type
  PSystemCallRequest = ^TSystemCallRequest;
  TSystemCallRequest = record
   Number:LongWord;
-  Param1:LongWord;
-  Param2:LongWord;
-  Param3:LongWord;
+  Param1:PtrUInt;
+  Param2:PtrUInt;
+  Param3:PtrUInt;
  end; 
  
 type 
@@ -974,6 +978,18 @@ type
  THostSetDomain = function(const ADomain:String):Boolean;
  
 type
+ {Prototypes for Module Handlers}
+ TModuleLoad = function(const AName:String):THandle;
+ TModuleUnload = function(AHandle:THandle):Boolean;
+ TModuleGetName = function(AHandle:THandle):String;
+ 
+type
+ {Prototypes for Symbol Handlers}
+ TSymbolAdd = function(AHandle:THandle;const AName:String;AAddress:PtrUInt):Boolean; 
+ TSymbolRemove = function(AHandle:THandle;const AName:String):Boolean; 
+ TSymbolGetAddress = function(AHandle:THandle;const AName:String):PtrUInt; 
+ 
+type
  {Prototype for Logging Handlers}
  TLoggingOutput = procedure(const AText:String);
  TLoggingOutputEx = procedure(AFacility,ASeverity:LongWord;const ATag,AContent:String);
@@ -1683,6 +1699,18 @@ var
  HostSetNameHandler:THostSetName;
  HostGetDomainHandler:THostGetDomain;
  HostSetDomainHandler:THostSetDomain;
+
+var
+ {Module Handlers}
+ ModuleLoadHandler:TModuleLoad;
+ ModuleUnloadHandler:TModuleUnload;
+ ModuleGetNameHandler:TModuleGetName;
+ 
+var
+ {Symbol Handlers}
+ SymbolAddHandler:TSymbolAdd;
+ SymbolRemoveHandler:TSymbolRemove;
+ SymbolGetAddressHandler:TSymbolGetAddress;
  
 var 
  {Logging Handlers}
@@ -2306,6 +2334,18 @@ function HostGetDomain:String; inline;
 function HostSetDomain(const ADomain:String):Boolean; inline;
  
 {==============================================================================}
+{Module Functions}
+function ModuleLoad(const AName:String):THandle; inline;
+function ModuleUnload(AHandle:THandle):Boolean; inline;
+function ModuleGetName(AHandle:THandle):String; inline;
+
+{==============================================================================}
+{Symbol Functions}
+function SymbolAdd(AHandle:THandle;const AName:String;AAddress:PtrUInt):Boolean; inline;
+function SymbolRemove(AHandle:THandle;const AName:String):Boolean; inline;
+function SymbolGetAddress(AHandle:THandle;const AName:String):PtrUInt; inline;
+
+{==============================================================================}
 {Logging Functions}
 procedure LoggingOutput(const AText:String); inline;
 procedure LoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:String); inline;
@@ -2363,9 +2403,10 @@ function SysUtilsGetLocalTimeOffset:Integer;
 function HandleTypeToString(HandleType:LongWord):String;
 
 procedure PlatformLog(Level:LongWord;const AText:String);
-procedure PlatformLogInfo(const AText:String);
-procedure PlatformLogError(const AText:String);
-procedure PlatformLogDebug(const AText:String);
+procedure PlatformLogInfo(const AText:String); inline;
+procedure PlatformLogWarn(const AText:String); inline;
+procedure PlatformLogError(const AText:String); inline;
+procedure PlatformLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -3840,6 +3881,7 @@ begin
    //To Do //Implement Delay (by Worker)
    
    //To Do //Call Shutdown handlers (Worker with Callback using Semaphore with Timeout)
+   //To Do //Optional Force parameter to bypass handlers
    
    Result:=SystemRestartHandler(Delay); //To Do //Pass default delay
   end
@@ -3862,6 +3904,7 @@ begin
    //To Do //Implement Delay (by Worker)
   
    //To Do //Call Shutdown handlers (Worker with Callback using Semaphore with Timeout)
+   //To Do //Optional Force parameter to bypass handlers
    
    Result:=SystemShutdownHandler(Delay); //To Do //Pass default delay
   end
@@ -9422,7 +9465,7 @@ end;
 {==============================================================================}
 
 function ConsoleReadMouse(var X,Y,Buttons:LongWord;AUserData:Pointer):Boolean; inline;
- begin
+begin
  {}
  if Assigned(ConsoleReadMouseHandler) then
   begin
@@ -9541,6 +9584,98 @@ begin
    HOST_DOMAIN:=ADomain;
    
    Result:=True;
+  end;  
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Module Functions}
+function ModuleLoad(const AName:String):THandle; inline;
+begin
+ {}
+ if Assigned(ModuleLoadHandler) then
+  begin
+   Result:=ModuleLoadHandler(AName);
+  end
+ else
+  begin
+   Result:=INVALID_HANDLE_VALUE; 
+  end;  
+end;
+
+{==============================================================================}
+
+function ModuleUnload(AHandle:THandle):Boolean; inline;
+begin
+ {}
+ if Assigned(ModuleUnloadHandler) then
+  begin
+   Result:=ModuleUnloadHandler(AHandle);
+  end
+ else
+  begin
+   Result:=False; 
+  end;  
+end;
+
+{==============================================================================}
+
+function ModuleGetName(AHandle:THandle):String; inline;
+begin
+ {}
+ if Assigned(ModuleGetNameHandler) then
+  begin
+   Result:=ModuleGetNameHandler(AHandle);
+  end
+ else
+  begin
+   Result:=''; 
+  end;  
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Symbol Functions}
+function SymbolAdd(AHandle:THandle;const AName:String;AAddress:PtrUInt):Boolean; inline;
+begin
+ {}
+ if Assigned(SymbolAddHandler) then
+  begin
+   Result:=SymbolAddHandler(AHandle,AName,AAddress);
+  end
+ else
+  begin
+   Result:=False; 
+  end;  
+end;
+
+{==============================================================================}
+
+function SymbolRemove(AHandle:THandle;const AName:String):Boolean; inline;
+begin
+ {}
+ if Assigned(SymbolRemoveHandler) then
+  begin
+   Result:=SymbolRemoveHandler(AHandle,AName);
+  end
+ else
+  begin
+   Result:=False; 
+  end;  
+end;
+
+{==============================================================================}
+
+function SymbolGetAddress(AHandle:THandle;const AName:String):PtrUInt; inline;
+begin
+ {}
+ if Assigned(SymbolGetAddressHandler) then
+  begin
+   Result:=SymbolGetAddressHandler(AHandle,AName);
+  end
+ else
+  begin
+   Result:=PtrUInt(nil); 
   end;  
 end;
 
@@ -10126,6 +10261,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = PLATFORM_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = PLATFORM_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -10140,7 +10279,7 @@ end;
 
 {==============================================================================}
 
-procedure PlatformLogInfo(const AText:String);
+procedure PlatformLogInfo(const AText:String); inline;
 begin
  {}
  PlatformLog(PLATFORM_LOG_LEVEL_INFO,AText);
@@ -10148,7 +10287,15 @@ end;
 
 {==============================================================================}
 
-procedure PlatformLogError(const AText:String);
+procedure PlatformLogWarn(const AText:String); inline;
+begin
+ {}
+ PlatformLog(PLATFORM_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure PlatformLogError(const AText:String); inline;
 begin
  {}
  PlatformLog(PLATFORM_LOG_LEVEL_ERROR,AText);
@@ -10156,7 +10303,7 @@ end;
 
 {==============================================================================}
 
-procedure PlatformLogDebug(const AText:String);
+procedure PlatformLogDebug(const AText:String); inline;
 begin
  {}
  PlatformLog(PLATFORM_LOG_LEVEL_DEBUG,AText);

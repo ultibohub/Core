@@ -78,7 +78,7 @@ function DrawBitmap(Handle:TWindowHandle;const Filename:String;X,Y:LongWord):Boo
 {Filename: The name of the file to load the bitmap from}
 {X: The column position for the left edge of the bitmap}
 {Y: The row position for the top row of the bitmap}
-{Return: True if successful or False is an error occurred}
+{Return: True if successful or False if an error occurred}
 var
  Size:LongWord;
  Count:LongWord;
@@ -242,7 +242,7 @@ function DrawBitmapFromStream(Handle:TWindowHandle;Stream:TStream;X,Y:LongWord):
 {Stream: A stream object containing the bitmap exactly as it would appear in a file (including the header etc)}
 {X: The column position for the left edge of the bitmap}
 {Y: The row position for the top row of the bitmap}
-{Return: True if successful or False is an error occurred}
+{Return: True if successful or False if an error occurred}
 var
  Format:LongWord;
  TopDown:Boolean;
@@ -258,7 +258,7 @@ begin
  {This is a variation of the earlier example that showed how to load a bitmap from a file and draw it on the
   screen in Ultibo, this version takes a stream object and loads the bitmap from that instead.
  
-  It also demostrates the use of the GraphicsWindowImageFromStream() function to draw the image without
+  It also demonstrates the use of the GraphicsWindowImageFromStream() function to draw the image without
   copying to a memory buffer first}
  
  {Check the parameters}
@@ -352,7 +352,7 @@ function DrawBitmapFromBuffer(Handle:TWindowHandle;const Buf;Len,X,Y:LongWord):B
 {Buf: A memory buffer containing the bitmap exactly as it would appear in a file (including the header etc)}
 {X: The column position for the left edge of the bitmap}
 {Y: The row position for the top row of the bitmap}
-{Return: True if successful or False is an error occurred}
+{Return: True if successful or False if an error occurred}
 var
  Size:LongWord;
  Count:LongWord;
@@ -502,7 +502,7 @@ function SaveBitmap(Handle:TWindowHandle;const Filename:String;X,Y,Width,Height,
 {Width: The width (in pixels) of the bitmap}
 {Height: The height (in pixels) of the bitmap}
 {BPP: The bits per pixel value for the bitmap (eg 16, 24 or 32)}
-{Return: True if successful or False is an error occurred}
+{Return: True if successful or False if an error occurred}
 var
  Size:LongWord;
  Count:LongWord;
@@ -640,13 +640,13 @@ end;
 {==============================================================================}
 
 function LoadBitmapToStream(const Filename:String;Stream:TStream;out Width,Height,Format:LongWord):Boolean;
-{A function for extract a standard bitmap image into a stream object as a raw image and return the size and format}
+{A function to extract a standard bitmap image into a stream object as a raw image and return the size and format}
 {Filename: The name of the file to load the bitmap from}
 {Stream: A stream object to receive the extracted image}
 {Width: The width in pixels of the extracted image}
 {Height: The height in pixels of the extracted image}
 {Format: The color format of the extracted image (eg COLOR_FORMAT_RGB24)}
-{Return: True if successful or False is an error occurred}
+{Return: True if successful or False if an error occurred}
 var
  Size:LongWord;
  Count:LongWord;
@@ -799,14 +799,14 @@ end;
 {==============================================================================}
 
 function LoadBitmapToBuffer(const Filename:String;var Buf;var Len:LongWord;out Width,Height,Format:LongWord):Boolean;
-{A function for extract a standard bitmap image into a memory buffer as a raw image and return the size and format}
+{A function to extract a standard bitmap image into a memory buffer as a raw image and return the size and format}
 {Filename: The name of the file to load the bitmap from}
 {Buf: A memory buffer to receive the extracted image (Must be large enough to contain the extracted image)}
-{Len: The size in bytes of the extracted image (Pass 0 to find how how many bytes are required)}
+{Len: The size in bytes of the extracted image (Pass 0 to find out how many bytes are required)}
 {Width: The width in pixels of the extracted image}
 {Height: The height in pixels of the extracted image}
 {Format: The color format of the extracted image (eg COLOR_FORMAT_RGB24)}
-{Return: True if successful or False is an error occurred}
+{Return: True if successful or False if an error occurred}
 var
  Size:LongWord;
  Count:LongWord;
@@ -829,7 +829,7 @@ begin
   in a particular format with a header etc.
 
   In order to determine the size of the buffer you need to allocate you should call this function twice,
-  the first time simply pass 0 to for Len parameter (and a dummy variable for Buf), the function will
+  the first time simply pass 0 for Len parameter (and a dummy variable for Buf), the function will
   return False but the Len parameter will be updated to the number of bytes needed to contain the 
   extracted image.
   

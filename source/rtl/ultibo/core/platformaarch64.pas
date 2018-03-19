@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for AARCH64 (ARM64).
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -11,7 +11,7 @@ Arch
 Boards
 ======
 
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  QEMU VersatilePB
  
 Licence

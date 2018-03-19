@@ -289,7 +289,8 @@ function PL011UARTClose(UART:PUARTDevice):LongWord;
 function PL011UARTRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function PL011UARTWrite(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
-function PL011UARTStatus(UART:PUARTDevice):LongWord;
+function PL011UARTGetStatus(UART:PUARTDevice):LongWord;
+function PL011UARTSetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
 
 procedure PL011UARTInterruptHandler(UART:PUARTDevice);
 
@@ -365,7 +366,8 @@ begin
    PL011UART.UART.DeviceClose:=PL011UARTClose;
    PL011UART.UART.DeviceRead:=PL011UARTRead;
    PL011UART.UART.DeviceWrite:=PL011UARTWrite;
-   PL011UART.UART.DeviceStatus:=PL011UARTStatus;
+   PL011UART.UART.DeviceGetStatus:=PL011UARTGetStatus;
+   PL011UART.UART.DeviceSetStatus:=PL011UARTSetStatus;
    {Driver}
    PL011UART.UART.Properties.Flags:=PL011UART.UART.Device.DeviceFlags;
    PL011UART.UART.Properties.MinRate:=PL011_UART_MIN_BAUD;
@@ -947,9 +949,9 @@ end;
 
 {==============================================================================}
  
-function PL011UARTStatus(UART:PUARTDevice):LongWord;
-{Implementation of UARTDeviceStatus API for PL011 UART}
-{Note: Not intended to be called directly by applications, use UARTDeviceStatus instead}
+function PL011UARTGetStatus(UART:PUARTDevice):LongWord;
+{Implementation of UARTDeviceGetStatus API for PL011 UART}
+{Note: Not intended to be called directly by applications, use UARTDeviceGetStatus instead}
 var
  Flags:LongWord;
  Status:LongWord;
@@ -962,7 +964,7 @@ begin
  if UART = nil then Exit;
  
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
- if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Status');
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Get Status');
  {$ENDIF}
  
  {Get Flags}
@@ -1020,6 +1022,46 @@ begin
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
+end;
+
+{==============================================================================}
+
+function PL011UARTSetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
+{Implementation of UARTDeviceSetStatus API for PL011 UART}
+{Note: Not intended to be called directly by applications, use UARTDeviceSetStatus instead}
+var
+ Control:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check UART}
+ if UART = nil then Exit;
+ 
+ {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART0 Set Status (Status=' + IntToHex(Status,8) + ')');
+ {$ENDIF}
+ 
+ {Get Control}
+ Control:=PPL011UART(UART).Registers.CR;
+ 
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read / Before the First Write} 
+ 
+ {Check RTS}
+ if (Status and UART_STATUS_RTS) <> 0 then
+  begin
+   {Enable}
+   PPL011UART(UART).Registers.CR:=Control or PL011_UART_CR_RTS;
+  end
+ else
+  begin
+   {Disable}
+   PPL011UART(UART).Registers.CR:=Control and not(PL011_UART_CR_RTS);
+  end;  
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}

@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi 3.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -11,7 +11,7 @@ Arch
 Boards
 ======
 
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  Raspberry Pi CM3
  
 Licence
@@ -64,7 +64,8 @@ References
 Platform RPi3
 =============
 
- Notes: The RPi3 B has the Activity LED connected to the GPU, access is via a Virtual GPIO (Power LED appears to be unavailable)
+ Notes: The RPi3 B has the Activity LED connected to the GPU, access is via a Virtual GPIO (Power LED is only accessible via the GPIO expander driver)
+        The RPi3 B+ has the Activity LED connected to GPIO Pin 29 (Power LED is only accessible via the GPIO expander driver)
 
 }
 
@@ -147,6 +148,7 @@ const
  {$ENDIF CPUAARCH64}
  RPI3_KERNEL_CONFIG = 'config.txt';
  RPI3_KERNEL_COMMAND = 'cmdline.txt';
+ RPI3_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat';
  
 const
  {Mailbox constants}
@@ -476,7 +478,7 @@ begin
  SECURE_BOOT:=(RPI3_SECURE_BOOT <> 0);
  
  {Setup STARTUP_ADDRESS}
- STARTUP_ADDRESS:=RPI3_STARTUP_ADDRESS;
+ STARTUP_ADDRESS:=PtrUInt(@_text_start); {RPI3_STARTUP_ADDRESS} {Obtain from linker}
  
  {Setup PERIPHERALS_BASE and SIZE}
  PERIPHERALS_BASE:=BCM2837_PERIPHERALS_BASE;
@@ -595,6 +597,7 @@ begin
  KERNEL_NAME:=RPI3_KERNEL_NAME;
  KERNEL_CONFIG:=RPI3_KERNEL_CONFIG;
  KERNEL_COMMAND:=RPI3_KERNEL_COMMAND;
+ FIRMWARE_FILES:=RPI3_FIRMWARE_FILES;
 
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2837_GPIO_REGS_BASE;
@@ -1178,8 +1181,25 @@ begin
   begin
    {New Style Revision}
    case (Revision and BCM2837_BOARD_REVISION_MODEL_MASK) of
+    BCM2837_BOARD_REVISION_MODEL_2B:begin
+      BOARD_TYPE:=BOARD_TYPE_RPI2B;
+      
+      {Check for 2B Revision 1 (BCM2836 with Cortex A7)}
+      case (Revision and BCM2837_BOARD_REVISION_PROCESSOR_MASK) of 
+       BCM2837_BOARD_REVISION_PROCESSOR_BCM2836:begin
+         {Adjust CPU Type}
+         CPU_TYPE:=CPU_TYPE_ARMV7;
+       
+         {Adjust Machine Type}
+         MACHINE_TYPE:=MACHINE_TYPE_BCM2709;
+        end;
+      end;  
+     end;
     BCM2837_BOARD_REVISION_MODEL_3B:begin
       BOARD_TYPE:=BOARD_TYPE_RPI3B;
+     end;
+    BCM2837_BOARD_REVISION_MODEL_3BPLUS:begin
+      BOARD_TYPE:=BOARD_TYPE_RPI3B_PLUS;
      end;
     BCM2837_BOARD_REVISION_MODEL_COMPUTE3:begin
       BOARD_TYPE:=BOARD_TYPE_RPI_COMPUTE3;
@@ -1234,7 +1254,9 @@ begin
   begin
    {New Style Revision}
    case (Revision and BCM2837_BOARD_REVISION_MODEL_MASK) of
+    BCM2837_BOARD_REVISION_MODEL_2B,
     BCM2837_BOARD_REVISION_MODEL_3B,
+    BCM2837_BOARD_REVISION_MODEL_3BPLUS,
     BCM2837_BOARD_REVISION_MODEL_COMPUTE3:begin
       {Get Memory Base/Size}
       MEMORY_BASE:=$00000000;
@@ -1472,16 +1494,40 @@ begin
  GPIO_PIN_COUNT:=BCM2837_GPIO_PIN_COUNT;
  
  {Setup Virtual GPIO}
- VIRTUAL_GPIO_PIN_COUNT:=BCM2837_VIRTUAL_GPIO_PIN_COUNT;
+ case BOARD_TYPE of 
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
+    VIRTUAL_GPIO_PIN_COUNT:=BCM2837_VIRTUAL_GPIO_PIN_COUNT;
+   end; 
+ end;  
  
  {Setup LEDs}
  case BOARD_TYPE of
+  BOARD_TYPE_RPI2B:begin
+    {Power LED}
+    POWER_LED_PIN:=GPIO_PIN_35;
+    POWER_LED_PULL:=GPIO_PULL_NONE;
+    POWER_LED_FUNCTION:=GPIO_FUNCTION_OUT;
+    POWER_LED_ACTIVE_LOW:=False;
+    
+    {Activity LED}
+    ACTIVITY_LED_PIN:=GPIO_PIN_47;
+    ACTIVITY_LED_PULL:=GPIO_PULL_NONE;
+    ACTIVITY_LED_FUNCTION:=GPIO_FUNCTION_OUT;
+    ACTIVITY_LED_ACTIVE_LOW:=False;
+   end;
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
     {Activity LED}
     ACTIVITY_LED_PIN:=VIRTUAL_GPIO_PIN_0;
     ACTIVITY_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
     ACTIVITY_LED_ACTIVE_LOW:=False;
    end;
+  BOARD_TYPE_RPI3B_PLUS:begin
+    {Activity LED}
+    ACTIVITY_LED_PIN:=GPIO_PIN_29;
+    ACTIVITY_LED_PULL:=GPIO_PULL_NONE;
+    ACTIVITY_LED_FUNCTION:=GPIO_FUNCTION_OUT;
+    ACTIVITY_LED_ACTIVE_LOW:=False;
+   end;  
  end;
  
  {Setup DMA}
@@ -1545,13 +1591,12 @@ begin
  
  {Setup SMSC95XX}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
+  BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
     SMSC95XX_MAC_ADDRESS:=BoardGetMACAddress;
    end;
- else
-  begin
-   SMSC95XX_MAC_ADDRESS:='';
-  end;
+  BOARD_TYPE_RPI3B_PLUS:begin
+    LAN78XX_MAC_ADDRESS:=BoardGetMACAddress; 
+   end;
  end;
 end;
 
@@ -1960,7 +2005,13 @@ procedure RPi3PowerLEDEnable;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
+  BOARD_TYPE_RPI2B:begin
+    {Disable Pull Up/Down}
+    GPIOPullSelect(GPIO_PIN_35,GPIO_PULL_NONE);
+    {Enable Output}
+    GPIOFunctionSelect(GPIO_PIN_35,GPIO_FUNCTION_OUT);
+   end;
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
     {Virtual GPIO}
     VirtualGPIOFunctionSelect(POWER_LED_PIN,POWER_LED_FUNCTION);
    end;  
@@ -1973,9 +2024,20 @@ procedure RPi3PowerLEDOn;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
+  BOARD_TYPE_RPI2B:begin
     {LED On}
-    VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_HIGH);
+    GPIOOutputSet(GPIO_PIN_35,GPIO_LEVEL_HIGH);
+   end;
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
+    {LED On}
+    if POWER_LED_ACTIVE_LOW then
+     begin
+      VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_LOW);
+     end
+    else
+     begin
+      VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_HIGH);
+     end;
    end;  
  end;
 end;
@@ -1986,9 +2048,20 @@ procedure RPi3PowerLEDOff;
 begin
  {}
  case BOARD_TYPE of
-  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
+  BOARD_TYPE_RPI2B:begin
     {LED Off}
-    VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_LOW);
+    GPIOOutputSet(GPIO_PIN_35,GPIO_LEVEL_LOW);
+   end;
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin 
+    {LED Off}
+    if POWER_LED_ACTIVE_LOW then
+     begin
+      VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_HIGH);
+     end
+    else
+     begin
+      VirtualGPIOOutputSet(POWER_LED_PIN,GPIO_LEVEL_LOW);
+     end;
    end;
  end;
 end;
@@ -2001,9 +2074,21 @@ var
 begin
  {}
  case BOARD_TYPE of
+  BOARD_TYPE_RPI2B:begin
+    {Disable Pull Up/Down}
+    GPIOPullSelect(GPIO_PIN_47,GPIO_PULL_NONE);
+    {Enable Output}
+    GPIOFunctionSelect(GPIO_PIN_47,GPIO_FUNCTION_OUT);
+   end;
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {Virtual GPIO}
     VirtualGPIOFunctionSelect(ACTIVITY_LED_PIN,ACTIVITY_LED_FUNCTION);
+   end;
+  BOARD_TYPE_RPI3B_PLUS:begin
+    {Setup Pull Up/Down}
+    GPIOPullSelect(ACTIVITY_LED_PIN,ACTIVITY_LED_PULL);
+    {Enable Function}
+    GPIOFunctionSelect(ACTIVITY_LED_PIN,ACTIVITY_LED_FUNCTION);
    end;
  end;
 end;
@@ -2014,10 +2099,18 @@ procedure RPi3ActivityLEDOn;
 begin
  {}
  case BOARD_TYPE of
+  BOARD_TYPE_RPI2B:begin
+    {LED On}
+    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_HIGH);
+   end;
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {LED On}
     VirtualGPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_HIGH);
    end;
+  BOARD_TYPE_RPI3B_PLUS:begin
+    {LED On}
+    GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_HIGH);
+   end;  
  end;
 end;
 
@@ -2027,10 +2120,18 @@ procedure RPi3ActivityLEDOff;
 begin
  {}
  case BOARD_TYPE of
+  BOARD_TYPE_RPI2B:begin
+    {LED Off}
+    GPIOOutputSet(GPIO_PIN_47,GPIO_LEVEL_LOW);
+   end;
   BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin 
     {LED Off}
     VirtualGPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_LOW);
    end;
+  BOARD_TYPE_RPI3B_PLUS:begin
+    {LED Off}
+    GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_LOW);
+   end;  
  end;
 end;
 

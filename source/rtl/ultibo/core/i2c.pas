@@ -93,6 +93,7 @@ const
  {I2C logging}
  I2C_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {I2C debugging messages}
  I2C_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {I2C informational messages, such as a device being attached or detached}
+ I2C_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {I2C warning messages}
  I2C_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {I2C error messages}
  I2C_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No I2C messages}
  
@@ -245,6 +246,7 @@ function I2CDeviceCheck(I2C:PI2CDevice):PI2CDevice;
 
 procedure I2CLog(Level:LongWord;I2C:PI2CDevice;const AText:String);
 procedure I2CLogInfo(I2C:PI2CDevice;const AText:String); inline;
+procedure I2CLogWarn(I2C:PI2CDevice;const AText:String); inline;
 procedure I2CLogError(I2C:PI2CDevice;const AText:String); inline;
 procedure I2CLogDebug(I2C:PI2CDevice;const AText:String); inline;
  
@@ -1553,6 +1555,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = I2C_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = I2C_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1577,6 +1583,14 @@ procedure I2CLogInfo(I2C:PI2CDevice;const AText:String); inline;
 begin
  {}
  I2CLog(I2C_LOG_LEVEL_INFO,I2C,AText);
+end;
+
+{==============================================================================}
+
+procedure I2CLogWarn(I2C:PI2CDevice;const AText:String); inline;
+begin
+ {}
+ I2CLog(I2C_LOG_LEVEL_WARN,I2C,AText);
 end;
 
 {==============================================================================}

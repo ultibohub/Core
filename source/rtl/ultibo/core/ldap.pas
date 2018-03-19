@@ -59,6 +59,7 @@ const
  {LDAP logging}
  LDAP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {LDAP debugging messages}
  LDAP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {LDAP informational messages,}
+ LDAP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {LDAP warning messages}
  LDAP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {LDAP error messages}
  LDAP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No LDAP messages}
 
@@ -68,7 +69,6 @@ var
 var 
  {LDAP logging}
  LDAP_LOG_ENABLED:Boolean; 
-        
               
 {==============================================================================}
 //type
@@ -99,9 +99,10 @@ procedure LDAPInit;
 {==============================================================================}
 {LDAP Helper Functions}
 procedure LDAPLog(Level:LongWord;const AText:String);
-procedure LDAPLogInfo(const AText:String);
-procedure LDAPLogError(const AText:String);
-procedure LDAPLogDebug(const AText:String);
+procedure LDAPLogInfo(const AText:String); inline;
+procedure LDAPLogWarn(const AText:String); inline;
+procedure LDAPLogError(const AText:String); inline;
+procedure LDAPLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -166,6 +167,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = LDAP_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = LDAP_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -180,7 +185,7 @@ end;
 
 {==============================================================================}
 
-procedure LDAPLogInfo(const AText:String);
+procedure LDAPLogInfo(const AText:String); inline;
 begin
  {}
  LDAPLog(LDAP_LOG_LEVEL_INFO,AText);
@@ -188,7 +193,15 @@ end;
 
 {==============================================================================}
 
-procedure LDAPLogError(const AText:String);
+procedure LDAPLogWarn(const AText:String); inline;
+begin
+ {}
+ LDAPLog(LDAP_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure LDAPLogError(const AText:String); inline;
 begin
  {}
  LDAPLog(LDAP_LOG_LEVEL_ERROR,AText);
@@ -196,7 +209,7 @@ end;
 
 {==============================================================================}
 
-procedure LDAPLogDebug(const AText:String);
+procedure LDAPLogDebug(const AText:String); inline;
 begin
  {}
  LDAPLog(LDAP_LOG_LEVEL_DEBUG,AText);

@@ -74,6 +74,7 @@ const
  {Video logging}
  VIDEO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Video debugging messages}
  VIDEO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Video informational messages, such as a device being attached or detached}
+ VIDEO_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Video warning messages}
  VIDEO_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Video error messages}
  VIDEO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Video messages}
 
@@ -169,6 +170,7 @@ function VideoDeviceCheck(Video:PVideoDevice):PVideoDevice;
 
 procedure VideoLog(Level:LongWord;Video:PVideoDevice;const AText:String);
 procedure VideoLogInfo(Video:PVideoDevice;const AText:String); inline;
+procedure VideoLogWarn(Video:PVideoDevice;const AText:String); inline;
 procedure VideoLogError(Video:PVideoDevice;const AText:String); inline;
 procedure VideoLogDebug(Video:PVideoDevice;const AText:String); inline;
 
@@ -746,6 +748,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = VIDEO_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = VIDEO_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -770,6 +776,14 @@ procedure VideoLogInfo(Video:PVideoDevice;const AText:String); inline;
 begin
  {}
  VideoLog(VIDEO_LOG_LEVEL_INFO,Video,AText);
+end;
+
+{==============================================================================}
+
+procedure VideoLogWarn(Video:PVideoDevice;const AText:String); inline;
+begin
+ {}
+ VideoLog(VIDEO_LOG_LEVEL_WARN,Video,AText);
 end;
 
 {==============================================================================}

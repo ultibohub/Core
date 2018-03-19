@@ -1,7 +1,7 @@
 {
 Ultibo Network interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -428,6 +428,7 @@ const
  {Network logging}
  NETWORK_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Network debugging messages}
  NETWORK_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Network informational messages, such as a device being attached or detached}
+ NETWORK_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Network warning messages}
  NETWORK_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Network error messages}
  NETWORK_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Network messages}
 
@@ -1277,9 +1278,10 @@ function NetworkDeviceStatusToNotification(Status:LongWord):LongWord;
 function NetworkEventCheck(Event:PNetworkEvent):PNetworkEvent;
 
 procedure NetworkLog(Level:LongWord;Network:PNetworkDevice;const AText:String);
-procedure NetworkLogInfo(Network:PNetworkDevice;const AText:String);
-procedure NetworkLogError(Network:PNetworkDevice;const AText:String);
-procedure NetworkLogDebug(Network:PNetworkDevice;const AText:String);
+procedure NetworkLogInfo(Network:PNetworkDevice;const AText:String); inline;
+procedure NetworkLogWarn(Network:PNetworkDevice;const AText:String); inline;
+procedure NetworkLogError(Network:PNetworkDevice;const AText:String); inline;
+procedure NetworkLogDebug(Network:PNetworkDevice;const AText:String); inline;
 
 function HardwareAddressToString(const AAddress:THardwareAddress):String;
 function StringToHardwareAddress(const AAddress:String):THardwareAddress;
@@ -6677,6 +6679,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = NETWORK_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = NETWORK_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -6697,7 +6703,7 @@ end;
 
 {==============================================================================}
 
-procedure NetworkLogInfo(Network:PNetworkDevice;const AText:String);
+procedure NetworkLogInfo(Network:PNetworkDevice;const AText:String); inline;
 begin
  {}
  NetworkLog(NETWORK_LOG_LEVEL_INFO,Network,AText);
@@ -6705,7 +6711,15 @@ end;
 
 {==============================================================================}
 
-procedure NetworkLogError(Network:PNetworkDevice;const AText:String);
+procedure NetworkLogWarn(Network:PNetworkDevice;const AText:String); inline;
+begin
+ {}
+ NetworkLog(NETWORK_LOG_LEVEL_WARN,Network,AText);
+end;
+
+{==============================================================================}
+
+procedure NetworkLogError(Network:PNetworkDevice;const AText:String); inline;
 begin
  {}
  NetworkLog(NETWORK_LOG_LEVEL_ERROR,Network,AText);
@@ -6713,7 +6727,7 @@ end;
 
 {==============================================================================}
 
-procedure NetworkLogDebug(Network:PNetworkDevice;const AText:String);
+procedure NetworkLogDebug(Network:PNetworkDevice;const AText:String); inline;
 begin
  {}
  NetworkLog(NETWORK_LOG_LEVEL_DEBUG,Network,AText);

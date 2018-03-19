@@ -169,6 +169,7 @@ const
  {Keyboard logging}
  KEYBOARD_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Keyboard debugging messages}
  KEYBOARD_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Keyboard informational messages, such as a device being attached or detached}
+ KEYBOARD_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Keyboard warning messages}
  KEYBOARD_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Keyboard error messages}
  KEYBOARD_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Keyboard messages}
 
@@ -675,9 +676,10 @@ function KeyboardRemapScanCode(ScanCode,KeyCode:Word;var CharCode:Byte;Modifiers
 function KeyboardInsertData(Keyboard:PKeyboardDevice;Data:PKeyboardData;Signal:Boolean):LongWord;
 
 procedure KeyboardLog(Level:LongWord;Keyboard:PKeyboardDevice;const AText:String);
-procedure KeyboardLogInfo(Keyboard:PKeyboardDevice;const AText:String);
-procedure KeyboardLogError(Keyboard:PKeyboardDevice;const AText:String);
-procedure KeyboardLogDebug(Keyboard:PKeyboardDevice;const AText:String);
+procedure KeyboardLogInfo(Keyboard:PKeyboardDevice;const AText:String); inline;
+procedure KeyboardLogWarn(Keyboard:PKeyboardDevice;const AText:String); inline;
+procedure KeyboardLogError(Keyboard:PKeyboardDevice;const AText:String); inline;
+procedure KeyboardLogDebug(Keyboard:PKeyboardDevice;const AText:String); inline;
 
 {==============================================================================}
 {USB Helper Functions}
@@ -3002,7 +3004,7 @@ begin
                   Data.CharUnicode:=KeymapGetCharUnicode(Keymap,Data.KeyCode);
 
                   {Insert Data}
-                  if USBKeyboardInsertData(Keyboard,@Data) = ERROR_SUCCESS then
+                  if KeyboardInsertData(@Keyboard.Keyboard,@Data,False) = ERROR_SUCCESS then
                    begin
                     {Update Count}
                     Inc(Counter);
@@ -3025,7 +3027,7 @@ begin
                       Data.CharUnicode:=KeymapGetCharUnicode(Keymap,Data.KeyCode);
                       
                       {Insert Data}
-                      if USBKeyboardInsertData(Keyboard,@Data) = ERROR_SUCCESS then
+                      if KeyboardInsertData(@Keyboard.Keyboard,@Data,False) = ERROR_SUCCESS then
                        begin
                         {Update Count}
                         Inc(Counter);
@@ -3049,7 +3051,7 @@ begin
                   {$ENDIF}
                   
                   {Insert Data}
-                  if USBKeyboardInsertData(Keyboard,@Data) = ERROR_SUCCESS then
+                  if KeyboardInsertData(@Keyboard.Keyboard,@Data,False) = ERROR_SUCCESS then
                    begin
                     {Update Count}
                     Inc(Counter);
@@ -3074,7 +3076,7 @@ begin
                 Data.CharUnicode:=KeymapGetCharUnicode(Keymap,Data.KeyCode);
                 
                 {Insert Data}
-                if USBKeyboardInsertData(Keyboard,@Data) = ERROR_SUCCESS then
+                if KeyboardInsertData(@Keyboard.Keyboard,@Data,False) = ERROR_SUCCESS then
                  begin
                   {Update Count}
                   Inc(Counter);
@@ -3164,7 +3166,7 @@ begin
               Data.CharUnicode:=KeymapGetCharUnicode(Keymap,Data.KeyCode);
               
               {Insert Data}
-              if USBKeyboardInsertData(Keyboard,@Data) = ERROR_SUCCESS then
+              if KeyboardInsertData(@Keyboard.Keyboard,@Data,False) = ERROR_SUCCESS then
                begin
                 {Update Count}
                 Inc(Counter);
@@ -4464,6 +4466,8 @@ begin
         
         {Update Statistics}
         Inc(Keyboard.BufferOverruns); 
+        
+        Result:=ERROR_INSUFFICIENT_BUFFER;
        end;            
      finally
       {Release the Lock}
@@ -4473,6 +4477,8 @@ begin
    else
     begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(Keyboard,'Failed to acquire lock on buffer');
+     
+     Result:=ERROR_CAN_NOT_COMPLETE;
     end;
   end
  else
@@ -4504,6 +4510,8 @@ begin
      
      {Update Statistics}
      Inc(Keyboard.BufferOverruns); 
+     
+     Result:=ERROR_INSUFFICIENT_BUFFER;
     end;            
   end;
 end;
@@ -4523,6 +4531,10 @@ begin
  if Level = KEYBOARD_LOG_LEVEL_DEBUG then
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
+  end
+ else if Level = KEYBOARD_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
   end
  else if Level = KEYBOARD_LOG_LEVEL_ERROR then
   begin
@@ -4544,7 +4556,7 @@ end;
 
 {==============================================================================}
 
-procedure KeyboardLogInfo(Keyboard:PKeyboardDevice;const AText:String);
+procedure KeyboardLogInfo(Keyboard:PKeyboardDevice;const AText:String); inline;
 begin
  {}
  KeyboardLog(KEYBOARD_LOG_LEVEL_INFO,Keyboard,AText);
@@ -4552,7 +4564,16 @@ end;
 
 {==============================================================================}
 
-procedure KeyboardLogError(Keyboard:PKeyboardDevice;const AText:String);
+procedure KeyboardLogWarn(Keyboard:PKeyboardDevice;const AText:String); inline;
+begin
+ {}
+ KeyboardLog(KEYBOARD_LOG_LEVEL_WARN,Keyboard,AText);
+end;
+
+
+{==============================================================================}
+
+procedure KeyboardLogError(Keyboard:PKeyboardDevice;const AText:String); inline;
 begin
  {}
  KeyboardLog(KEYBOARD_LOG_LEVEL_ERROR,Keyboard,AText);
@@ -4560,7 +4581,7 @@ end;
 
 {==============================================================================}
 
-procedure KeyboardLogDebug(Keyboard:PKeyboardDevice;const AText:String);
+procedure KeyboardLogDebug(Keyboard:PKeyboardDevice;const AText:String); inline;
 begin
  {}
  KeyboardLog(KEYBOARD_LOG_LEVEL_DEBUG,Keyboard,AText);
@@ -4624,6 +4645,8 @@ begin
         
         {Update Statistics}
         Inc(Keyboard.Keyboard.BufferOverruns); 
+        
+        Result:=ERROR_INSUFFICIENT_BUFFER;
        end;            
      finally
       {Release the Lock}
@@ -4633,6 +4656,8 @@ begin
    else
     begin
      if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Failed to acquire lock on buffer');
+     
+     Result:=ERROR_CAN_NOT_COMPLETE;
     end;
   end
  else
@@ -4661,6 +4686,8 @@ begin
      
      {Update Statistics}
      Inc(Keyboard.Keyboard.BufferOverruns); 
+     
+     Result:=ERROR_INSUFFICIENT_BUFFER;
     end;            
   end;
 end;

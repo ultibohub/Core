@@ -1,7 +1,7 @@
 {
 Raspberry Pi Firmware GPIO Expander Driver.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -11,7 +11,7 @@ Arch
 Boards
 ======
 
- Raspberry Pi 3 - Model B
+ Raspberry Pi 3 - Model B/B+
  Raspberry Pi CM3
 
 Licence
@@ -55,8 +55,14 @@ Raspberry Pi GPIO Expander
   GPIO_PIN_4 = HDMI Detect (Input / Active Low)
   GPIO_PIN_7 = Power LED (Input / Active Low)
 
+ For the Raspberry Pi 3B+ the assignments show in /arch/arm/boot/dts/bcm2710-rpi-3-b.dts have
+ changed as follows:
+ 
+  GPIO_PIN_2 = Power LED (Active Low)
+  GPIO_PIN_4 = HDMI Detect (Input / Active Low)
+  
  Note that this driver requires the most recent firmware (later than February 2017)
- and has been tested successfully with the firmware release from 22 May 2017.
+ and has been tested successfully with the firmware release from 17 March 2018.
  
  The latest version of the firmware is available from https://github.com/raspberrypi/firmware
  
@@ -253,7 +259,7 @@ begin
  {Check Board Type}
  BoardType:=BoardGetType;
  case BoardType of
-  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
     {Create GPIO}
     RPiGPIOExpander:=PRPiGPIOExpander(GPIODeviceCreateEx(SizeOf(TRPiGPIOExpander)));
     if RPiGPIOExpander <> nil then
@@ -304,15 +310,26 @@ begin
           {Setup Virtual GPIO}
           VIRTUAL_GPIO_PIN_COUNT:=RPIGPIOEXP_GPIO_PIN_COUNT;
           
-          {Setup Activity LED}
-          ACTIVITY_LED_PIN:=VIRTUAL_GPIO_PIN_2;
-          ACTIVITY_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
-          ACTIVITY_LED_ACTIVE_LOW:=False;
+          case BoardType of
+           BOARD_TYPE_RPI3B,BOARD_TYPE_RPI_COMPUTE3:begin
+             {Setup Activity LED}
+             ACTIVITY_LED_PIN:=VIRTUAL_GPIO_PIN_2;
+             ACTIVITY_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
+             ACTIVITY_LED_ACTIVE_LOW:=False;
           
-          {Setup Power LED}
-          POWER_LED_PIN:=VIRTUAL_GPIO_PIN_7;
-          POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
-          POWER_LED_ACTIVE_LOW:=False;
+             {Setup Power LED}
+             POWER_LED_PIN:=VIRTUAL_GPIO_PIN_7;
+             POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
+             POWER_LED_ACTIVE_LOW:=False;
+            end; 
+           BOARD_TYPE_RPI3B_PLUS:begin
+             {Activity LED is on GPIO 29}
+             {Setup Power LED}
+             POWER_LED_PIN:=VIRTUAL_GPIO_PIN_2;
+             POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
+             POWER_LED_ACTIVE_LOW:=True;
+            end;
+          end;  
          end
         else 
          begin

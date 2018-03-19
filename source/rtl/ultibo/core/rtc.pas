@@ -67,6 +67,7 @@ const
  {RTC logging}
  RTC_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {RTC debugging messages}
  RTC_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {RTC informational messages, such as a device being attached or detached}
+ RTC_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {RTC warning messages}
  RTC_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {RTC error messages}
  RTC_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No RTC messages}
 
@@ -182,6 +183,7 @@ function RTCFileTimeToSystemTime(const FileTime:Int64;var SystemTime:TSystemTime
 
 procedure RTCLog(Level:LongWord;RTC:PRTCDevice;const AText:String);
 procedure RTCLogInfo(RTC:PRTCDevice;const AText:String); inline;
+procedure RTCLogWarn(RTC:PRTCDevice;const AText:String); inline;
 procedure RTCLogError(RTC:PRTCDevice;const AText:String); inline;
 procedure RTCLogDebug(RTC:PRTCDevice;const AText:String); inline;
 
@@ -1017,6 +1019,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = RTC_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = RTC_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1041,6 +1047,14 @@ procedure RTCLogInfo(RTC:PRTCDevice;const AText:String); inline;
 begin
  {}
  RTCLog(RTC_LOG_LEVEL_INFO,RTC,AText);
+end;
+
+{==============================================================================}
+
+procedure RTCLogWarn(RTC:PRTCDevice;const AText:String); inline;
+begin
+ {}
+ RTCLog(RTC_LOG_LEVEL_WARN,RTC,AText);
 end;
 
 {==============================================================================}

@@ -1,7 +1,7 @@
 {
 Ultibo Global Socket Definitions.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -590,9 +590,49 @@ const
  WSA_IF_ADMIN_STATUS_TESTING    = 3;
  
 const
+ WSA_TCP_STATE_CLOSED     = 1;
+ WSA_TCP_STATE_LISTEN     = 2;
+ WSA_TCP_STATE_SYN_SENT   = 3;
+ WSA_TCP_STATE_SYN_RCVD   = 4;
+ WSA_TCP_STATE_ESTAB      = 5;
+ WSA_TCP_STATE_FIN_WAIT1  = 6;
+ WSA_TCP_STATE_FIN_WAIT2  = 7;
+ WSA_TCP_STATE_CLOSE_WAIT = 8;
+ WSA_TCP_STATE_CLOSING    = 9;
+ WSA_TCP_STATE_LAST_ACK   = 10;
+ WSA_TCP_STATE_TIME_WAIT  = 11;
+ WSA_TCP_STATE_DELETE_TCB = 12;
+ 
+const
  WSA_IP_FORWARDING     = 1;
  WSA_IP_NOT_FORWARDING = 2;
 
+const
+ WSA_IPROUTE_TYPE_OTHER    = 1;
+ WSA_IPROUTE_TYPE_INVALID  = 2;
+ WSA_IPROUTE_TYPE_DIRECT   = 3;
+ WSA_IPROUTE_TYPE_INDIRECT = 4;
+ WSA_IPROUTE_METRIC_UNUSED = DWORD(-1);
+ 
+const
+ WSA_IPPROTO_OTHER   = 1;
+ WSA_IPPROTO_LOCAL   = 2;
+ WSA_IPPROTO_NETMGMT = 3;
+ WSA_IPPROTO_ICMP    = 4;
+ WSA_IPPROTO_EGP     = 5;
+ WSA_IPPROTO_GGP     = 6;
+ WSA_IPPROTO_HELLO   = 7;
+ WSA_IPPROTO_RIP     = 8;
+ WSA_IPPROTO_IS_IS   = 9;
+ WSA_IPPROTO_ES_IS   = 10;
+ WSA_IPPROTO_CISCO   = 11;
+ WSA_IPPROTO_BBN     = 12;
+ WSA_IPPROTO_OSPF    = 13;
+ WSA_IPPROTO_BGP     = 14;
+ WSA_IPPROTO_NT_AUTOSTATIC     = 10002;
+ WSA_IPPROTO_NT_STATIC         = 10006;
+ WSA_IPPROTO_NT_STATIC_NON_DOD = 10007;
+ 
 const 
  WSA_IPNET_TYPE_OTHER   = 1;
  WSA_IPNET_TYPE_INVALID = 2;
@@ -969,6 +1009,105 @@ type
  TWSAIftable = WSA_IFTABLE;
  PWSAIftable = PWSA_IFTABLE;
 
+ WSAICMPSTATS = record
+   dwMsgs: DWORD;
+   dwErrors: DWORD;
+   dwDestUnreachs: DWORD;
+   dwTimeExcds: DWORD;
+   dwParmProbs: DWORD;
+   dwSrcQuenchs: DWORD;
+   dwRedirects: DWORD;
+   dwEchos: DWORD;
+   dwEchoReps: DWORD;
+   dwTimestamps: DWORD;
+   dwTimestampReps: DWORD;
+   dwAddrMasks: DWORD;
+   dwAddrMaskReps: DWORD;
+ end;
+ TWSAIcmpStats = WSAICMPSTATS;
+ PWSAIcmpStats = ^TWSAIcmpStats;
+
+ WSAICMPINFO = record
+   icmpInStats: WSAICMPSTATS;
+   icmpOutStats: WSAICMPSTATS;
+ end;
+ TWSAIcmpInfo = WSAICMPINFO;
+ PWSAIcmpInfo = ^TWSAIcmpInfo;
+
+ PWSA_ICMP = ^WSA_ICMP;
+ WSA_ICMP = record
+   stats: WSAICMPINFO;
+ end;
+ TWSAIcmp = WSA_ICMP;
+ PWSAIcmp = PWSA_ICMP;
+
+ PWSA_UDPSTATS = ^WSA_UDPSTATS;
+ WSA_UDPSTATS = record
+   dwInDatagrams: DWORD;
+   dwNoPorts: DWORD;
+   dwInErrors: DWORD;
+   dwOutDatagrams: DWORD;
+   dwNumAddrs: DWORD;
+ end;
+ TWSAUdpStats = WSA_UDPSTATS;
+ PWSAUdpStats = PWSA_UDPSTATS;
+
+ PWSA_UDPROW = ^WSA_UDPROW;
+ WSA_UDPROW = record
+   dwLocalAddr: DWORD;
+   dwLocalPort: DWORD;
+ end;
+ TWSAUdpRow = WSA_UDPROW;
+ PWSAUdpRow = PWSA_UDPROW;
+
+ PWSA_UDPTABLE = ^WSA_UDPTABLE;
+ WSA_UDPTABLE = record
+   dwNumEntries: DWORD;
+   table: array [0..WSA_ANY_SIZE - 1] of WSA_UDPROW;
+ end;
+ TWSAUdpTable = WSA_UDPTABLE;
+ PWSAUdpTable = PWSA_UDPTABLE;
+
+ PWSA_TCPSTATS = ^WSA_TCPSTATS;
+ WSA_TCPSTATS = record
+   dwRtoAlgorithm: DWORD;
+   dwRtoMin: DWORD;
+   dwRtoMax: DWORD;
+   dwMaxConn: DWORD;
+   dwActiveOpens: DWORD;
+   dwPassiveOpens: DWORD;
+   dwAttemptFails: DWORD;
+   dwEstabResets: DWORD;
+   dwCurrEstab: DWORD;
+   dwInSegs: DWORD;
+   dwOutSegs: DWORD;
+   dwRetransSegs: DWORD;
+   dwInErrs: DWORD;
+   dwOutRsts: DWORD;
+   dwNumConns: DWORD;
+ end;
+ TWSATcpStats = WSA_TCPSTATS;
+ PWSATcpStats = PWSA_TCPSTATS;
+
+ PWSA_TCPROW = ^WSA_TCPROW;
+ WSA_TCPROW = record
+   dwState: DWORD;
+   dwLocalAddr: DWORD;
+   dwLocalPort: DWORD;
+   dwRemoteAddr: DWORD;
+   dwRemotePort: DWORD;
+ end;
+ TWSATcpRow = WSA_TCPROW;
+ PWSATcpRow = PWSA_TCPROW;
+
+ PWSA_TCPTABLE = ^WSA_TCPTABLE;
+ WSA_TCPTABLE = record
+   dwNumEntries: DWORD;
+   table: array [0..WSA_ANY_SIZE - 1] of WSA_TCPROW;
+ end;
+ TWSATcpTable = WSA_TCPTABLE;
+ PWSATcpTable = PWSA_TCPTABLE;
+ 
  PWSA_IPSTATS = ^WSA_IPSTATS;
  WSA_IPSTATS = record
   dwForwarding: DWORD;

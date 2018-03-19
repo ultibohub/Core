@@ -1,7 +1,7 @@
 {
 Ultibo Remote Shell unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -44,10 +44,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,UltiboClasses,Winsock2,Services,Shell;
 
-//To Do //Look for:
-
-//--
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
@@ -82,6 +78,7 @@ const
 {==============================================================================}
 type
  {Remote Shell specific clases}
+ TTelnetSession = class;
  TTelnetShell = class(TShell)
  public
   {}
@@ -92,7 +89,25 @@ type
   FListener:TTelnetListener;
   
   {Internal Methods}
+  procedure Reset(ASession:TTelnetSession);
   
+  procedure MoveFirst(ASession:TTelnetSession);
+  procedure MoveLast(ASession:TTelnetSession);
+  procedure MoveLeft(ASession:TTelnetSession);
+  procedure MoveRight(ASession:TTelnetSession);
+  
+  procedure EraseLine(ASession:TTelnetSession);
+  procedure OutputLine(ASession:TTelnetSession;const AValue:String);
+  function ExpandLine(ASession:TTelnetSession):Boolean;
+  
+  procedure EraseCharacter(ASession:TTelnetSession);
+  procedure DeleteCharacter(ASession:TTelnetSession);
+  procedure InsertCharacter(ASession:TTelnetSession;ACh:Char);
+  procedure OverwriteCharacter(ASession:TTelnetSession;ACh:Char);
+  
+  procedure PrevHistory(ASession:TTelnetSession);
+  procedure NextHistory(ASession:TTelnetSession);
+  procedure CurrentHistory(ASession:TTelnetSession);
  protected
   {Internal Variables}
 
@@ -266,6 +281,239 @@ end;
 
 {==============================================================================}
 
+procedure TTelnetShell.Reset(ASession:TTelnetSession);
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Setup Start}
+ //To Do //See ConsoleShell
+ 
+ {Setup Cursor}
+ //To Do //See ConsoleShell
+end;
+ 
+{==============================================================================}
+
+procedure TTelnetShell.MoveFirst(ASession:TTelnetSession);
+{Move the cursor to the starting position of the line}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+ 
+{==============================================================================}
+
+procedure TTelnetShell.MoveLast(ASession:TTelnetSession);
+{Move the cursor to the ending position of the line}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.MoveLeft(ASession:TTelnetSession);
+{Move the cursor one position to the left in the line}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.MoveRight(ASession:TTelnetSession);
+{Move the cursor one position to the right in the line}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.EraseLine(ASession:TTelnetSession);
+{Erase all characters in the line and reset the cursor position}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.OutputLine(ASession:TTelnetSession;const AValue:String);
+{Output all characters in value and update the cursor position}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+function TTelnetShell.ExpandLine(ASession:TTelnetSession):Boolean;
+{Expand the tab key to a command completion if available}
+var
+ Value:String;
+ Error:Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Session}
+ if ASession = nil then Exit;
+
+ {Complete Command}
+ Value:=CompleteCommand(ASession,ASession.Command,Error);
+ if Value <> ASession.Command then
+  begin
+   {Erase Current}
+   EraseLine(ASession);
+ 
+   {Output Line}
+   OutputLine(ASession,Value);
+   
+   {Update Command}
+   ASession.Command:=Value;
+  end;
+  
+ {Return True (Prevent Tab Character)} 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.EraseCharacter(ASession:TTelnetSession);
+{Erase the character to the left of the cursor position}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.DeleteCharacter(ASession:TTelnetSession);
+{Delete the character to the right of the cursor position}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.InsertCharacter(ASession:TTelnetSession;ACh:Char);
+{Insert a character at the cursor position}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.OverwriteCharacter(ASession:TTelnetSession;ACh:Char);
+{Overwrite the character at the cursor position}
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+
+ //To Do //See ConsoleShell 
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.PrevHistory(ASession:TTelnetSession);
+{Get the previous command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.PrevHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.NextHistory(ASession:TTelnetSession);
+{Get the next command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.NextHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
+procedure TTelnetShell.CurrentHistory(ASession:TTelnetSession);
+{Get the current command history value}
+var
+ Value:String;
+begin
+ {}
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Get History}
+ Value:=ASession.CurrentHistory;
+ if Length(Value) = 0 then Exit;
+ 
+ {Erase Current}
+ EraseLine(ASession);
+ 
+ {Output Line}
+ OutputLine(ASession,Value);
+end;
+
+{==============================================================================}
+
 procedure TTelnetShell.TelnetConnected(AConnection:TTelnetConnection);
 var
  Session:TShellSession;
@@ -413,6 +661,9 @@ begin
          {Process Command}
          ProcessCommand(Session,Session.Command);
         
+         {Add History}
+         Session.AddHistory(Session.Command);
+        
          {Clear Command}
          SetLength(Session.Command,0);
          Session.Position:=0;
@@ -445,6 +696,9 @@ begin
         begin
          {Process Command}
          ProcessCommand(Session,Session.Command);
+         
+         {Add History}
+         Session.AddHistory(Session.Command);
          
          {Clear Command}
          SetLength(Session.Command,0);

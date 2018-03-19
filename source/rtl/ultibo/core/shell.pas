@@ -1,7 +1,7 @@
 {
 Ultibo Generic Shell unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -64,16 +64,26 @@ const
  SHELL_FLAG_COLORS      = $00000008;
  SHELL_FLAG_COORDINATES = $00000010;
  
+ {Shell Cursor Mode constants}
+ SHELL_CURSOR_MODE_INSERT    = 0;
+ SHELL_CURSOR_MODE_OVERWRITE = 1;
+ 
+ {Shell Cursor Shape constants}
+ SHELL_CURSOR_SHAPE_LINE  = 0;
+ SHELL_CURSOR_SHAPE_BAR   = 1;
+ SHELL_CURSOR_SHAPE_BLOCK = 2;
+ 
  {Shell Session Flag constants}
  SHELL_SESSION_FLAG_NONE = $00000000;
  
  {Shell Command Flag constants}
- SHELL_COMMAND_FLAG_NONE     = $00000000;
- SHELL_COMMAND_FLAG_HIDDEN   = $00000001;  {Hidden command, do not show in HELP or INFO}
- SHELL_COMMAND_FLAG_HELP     = $00000002;  {Command has HELP available}
- SHELL_COMMAND_FLAG_INFO     = $00000004;  {Command has INFO available}
- SHELL_COMMAND_FLAG_DEFAULT  = $00000008;  {Default command, pass unknown commands to this before showing error}
- SHELL_COMMAND_FLAG_EXTENDED = $00000008;  {Extended command, pass command name to command for extended handling}
+ SHELL_COMMAND_FLAG_NONE       = $00000000;
+ SHELL_COMMAND_FLAG_HIDDEN     = $00000001;  {Hidden command, do not show in HELP or INFO}
+ SHELL_COMMAND_FLAG_HELP       = $00000002;  {Command has HELP available}
+ SHELL_COMMAND_FLAG_INFO       = $00000004;  {Command has INFO available}
+ SHELL_COMMAND_FLAG_DEFAULT    = $00000008;  {Default command, pass unknown commands to this before showing error}
+ SHELL_COMMAND_FLAG_EXTENDED   = $00000008;  {Extended command, pass command name to command for extended handling}
+ SHELL_COMMAND_FLAG_COMPLETION = $00000008;  {Command supports auto completion}
  
  {Shell Alias Flag constants}
  SHELL_ALIAS_FLAG_NONE   = $00000000;
@@ -100,9 +110,13 @@ const
  SHELL_ALIAS_CLEAR   = 'CLEAR';
  SHELL_ALIAS_REBOOT  = 'REBOOT';
  
+ {Shell History constants}
+ SHELL_HISTORY_MAX_COUNT = 100;
+ 
  {Shell logging}
  SHELL_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Shell debugging messages}
  SHELL_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Shell informational messages}
+ SHELL_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {Shell warning messages}
  SHELL_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Shell error messages}
  SHELL_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Shell messages}
 
@@ -161,7 +175,6 @@ type
  end;
  
  TShellSession = class;
- //TShellHistory = class; //To Do
  TShell = class(TListObject)
  public
   {}
@@ -241,6 +254,12 @@ type
   function DoGetCoordinates(ASession:TShellSession;var ARow,ACol:LongWord):Boolean; virtual;
   function DoSetCoordinates(ASession:TShellSession;ARow,ACol:LongWord):Boolean; virtual;
   
+  function DoGetCursorMode(ASession:TShellSession;var AMode:LongWord):Boolean; virtual;
+  function DoSetCursorMode(ASession:TShellSession;AMode:LongWord):Boolean; virtual;
+  
+  function DoGetCursorShape(ASession:TShellSession;var AShape:LongWord):Boolean; virtual;
+  function DoSetCursorShape(ASession:TShellSession;AShape:LongWord):Boolean; virtual;
+  
   function GetSession(APrevious:TShellSession;ALock,AUnlock:Boolean):TShellSession;
   function FindSession(AIdentifier:LongWord):TShellSession;
   
@@ -257,12 +276,16 @@ type
   function RegisterCommand(ACommand:TShellCommand):Boolean;
   function DeregisterCommand(ACommand:TShellCommand):Boolean;
   
-  function MatchCommand(const ACommand:String;var AContinue:Boolean):TShellCommand; virtual;
+  function MatchCommand(const ACommand:String;var AName:String;var AParameters:TStrings;var AContinue:Boolean):TShellCommand; virtual;
+  function CompleteCommand(ASession:TShellSession;const ACommand:String;var AError:Boolean):String; virtual;
+  
   function ProcessCommand(ASession:TShellSession;const ACommand:String):Boolean; virtual;
   
   function CommandName(const ACommand:String):String;
   function CommandSplit(const ACommand:String):TStrings;
+  function CommandJoin(AParameters:TStrings):String;
   function CommandParse(const ACommand:String;var AName:String;var AParameters:TStrings):Boolean;
+  function CommandConcat(const AName:String;AParameters:TStrings):String;
   function CommandIndex(AIndex:Integer;const ACommand:String):String;
 
   function ParameterIndex(AIndex:Integer;AParameters:TStrings):String;
@@ -275,6 +298,7 @@ type
   function AddOutput(var AOutput:String;ACol:LongWord;const AValue:String):Boolean;
  end;
  
+ TShellHistory = class;
  TShellSession = class(TListObject)
  public
   {}
@@ -292,6 +316,9 @@ type
   FPrompt:String;        {Current prompt for this session}
   
   FData:Pointer;         {Shell private data for this session}
+  
+  FHistories:TLinkedObjList;
+  FCurrentHistory:TShellHistory;
   
   {Internal Methods}
   procedure SetFlags(AFlags:LongWord);
@@ -317,7 +344,13 @@ type
   property Data:Pointer read FData write SetData;
   
   {Public Methods}
-  
+  function AddHistory(const ACommand:String):Boolean;
+  procedure ClearHistory;
+  function FirstHistory:String;
+  function LastHistory:String;
+  function NextHistory:String;
+  function PrevHistory:String;
+  function CurrentHistory:String;
  end;
  
  TShellAlias = class;
@@ -363,11 +396,15 @@ type
   function DoDefault(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; virtual;
   function DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; virtual;
   
+  function DoCompletion(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings;var AError:Boolean):String; virtual;
+  
   function GetAlias(APrevious:TShellAlias;ALock,AUnlock:Boolean):TShellAlias;
   function FindAlias(const AName:String):TShellAlias;
   
   function RegisterAlias(AAlias:TShellAlias):Boolean;
   function DeregisterAlias(AAlias:TShellAlias):Boolean;
+  
+  function MatchAlias(const AName:String;var AContinue:Boolean):TShellAlias;
  end;
 
  TShellAlias = class(TListObject)
@@ -403,7 +440,22 @@ type
  
  end;
  
- //TShellHistory = class(TListObject) //To Do
+ TShellHistory = class(TListObject)
+ private
+  {Internal Variables}
+  FCommand:String;
+  FLength:Integer;
+  
+  {Internal Methods}
+  
+ public
+  {Public Properties}
+  property Command:String read FCommand write FCommand;
+  property Length:Integer read FLength write FLength;
+  
+  {Public Methods}
+ 
+ end;
  
  TShellCommandHelp = class(TShellCommand)
  public
@@ -687,9 +739,10 @@ function ShellDeregisterCommand(ACommand:TShellCommand):Boolean;
 {==============================================================================}
 {Shell Helper Functions}
 procedure ShellLog(Level:LongWord;const AText:String);
-procedure ShellLogInfo(const AText:String);
-procedure ShellLogError(const AText:String);
-procedure ShellLogDebug(const AText:String);
+procedure ShellLogInfo(const AText:String); inline;
+procedure ShellLogWarn(const AText:String); inline;
+procedure ShellLogError(const AText:String); inline;
+procedure ShellLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -1364,6 +1417,38 @@ begin
 end;
  
 {==============================================================================}
+ 
+function TShell.DoGetCursorMode(ASession:TShellSession;var AMode:LongWord):Boolean; 
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoSetCursorMode(ASession:TShellSession;AMode:LongWord):Boolean; 
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoGetCursorShape(ASession:TShellSession;var AShape:LongWord):Boolean; 
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoSetCursorShape(ASession:TShellSession;AShape:LongWord):Boolean; 
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+ 
+{==============================================================================}
 
 function TShell.GetSession(APrevious:TShellSession;ALock,AUnlock:Boolean):TShellSession;
 var
@@ -1712,15 +1797,204 @@ end;
  
  {==============================================================================}
 
-function TShell.MatchCommand(const ACommand:String;var AContinue:Boolean):TShellCommand; 
+function TShell.MatchCommand(const ACommand:String;var AName:String;var AParameters:TStrings;var AContinue:Boolean):TShellCommand; 
 {Check the supplied command against registered commands, if matched return command as result}
 {Command: The command to match}
-{Continue: Returns true if more than one command matches and matching should be retried}
+{Name: The actual command name matched (May be an alias of the returned command)}
+{Parameters: The parameters parsed from the command line}
+{Continue: Returns true if more than one command matches and matching should be retried with more input}
+var
+ Name:String;
+ Alias:TShellAlias;
+ Command:TShellCommand;
 begin
  {Virtual Base}
  Result:=nil;
  
- //To Do
+ {Setup Defaults}
+ AName:='';
+ AContinue:=False;
+ 
+ {Parse Command}
+ Name:='';
+ AParameters:=nil;
+ if CommandParse(ACommand,Name,AParameters) then
+  begin
+   {Check Global Commands}
+   Command:=Manager.GetCommand(nil,True,False);
+   while Command <> nil do
+    begin
+     {Check Command}
+     if Uppercase(Copy(Command.Name,1,Length(Name))) = Uppercase(Name) then
+      begin
+       if Result = nil then
+        begin
+         {Return Command}
+         Result:=Command;
+         AName:=Command.Name;
+        end
+       else
+        begin
+         {Return Continue}
+         Result:=nil;
+         AName:='';
+         AContinue:=True;
+         
+         {Unlock Command}
+         Command.ReleaseLock;
+         Exit;
+        end;
+      end;
+     
+     {Check Aliases}
+     Alias:=Command.MatchAlias(Name,AContinue);
+     if Alias <> nil then
+      begin
+       if Result = nil then
+        begin
+         {Return Command}
+         Result:=Command;
+         AName:=Alias.Name;
+        end
+       else
+        begin
+         {Return Continue}
+         Result:=nil;
+         AName:='';
+         AContinue:=True;
+         
+         {Unlock Command}
+         Command.ReleaseLock;
+         Exit;
+        end;
+      end;
+      
+     {Check Continue}
+     if AContinue then
+      begin
+       Result:=nil;
+       AName:='';
+       
+       {Unlock Command}
+       Command.ReleaseLock;
+       Exit;
+      end;
+      
+     {Get Next}
+     Command:=Manager.GetCommand(Command,True,True);
+    end;
+   
+   {Check Local Commands}
+   Command:=GetCommand(nil,True,False);
+   while Command <> nil do
+    begin
+     {Check Command}
+     if Uppercase(Copy(Command.Name,1,Length(Name))) = Uppercase(Name) then
+      begin
+       if Result = nil then
+        begin
+         {Return Command}
+         Result:=Command;
+         AName:=Command.Name;
+        end
+       else
+        begin
+         {Return Continue}
+         Result:=nil;
+         AName:='';
+         AContinue:=True;
+         
+         {Unlock Command}
+         Command.ReleaseLock;
+         Exit;
+        end;
+      end;
+     
+     {Check Aliases}
+     Alias:=Command.MatchAlias(Name,AContinue);
+     if Alias <> nil then
+      begin
+       if Result = nil then
+        begin
+         {Return Command}
+         Result:=Command;
+         AName:=Alias.Name;
+        end
+       else
+        begin
+         {Return Continue}
+         Result:=nil;
+         AName:='';
+         AContinue:=True;
+         
+         {Unlock Command}
+         Command.ReleaseLock;
+         Exit;
+        end;
+      end;
+      
+     {Check Continue}
+     if AContinue then
+      begin
+       Result:=nil;
+       AName:='';
+       
+       {Unlock Command}
+       Command.ReleaseLock;
+       Exit;
+      end;
+    
+     {Get Next}
+     Command:=GetCommand(Command,True,True);
+    end; 
+  end;  
+end;
+
+{==============================================================================}
+
+function TShell.CompleteCommand(ASession:TShellSession;const ACommand:String;var AError:Boolean):String; 
+{Attempt to complete the supplied command by matching an existing command and performing command completion}
+{Command: The command to complete}
+{Error: Returns true if there was on error in the supplied command}
+var
+ Name:String;
+ Retry:Boolean;
+ Parameters:TStrings;
+ Command:TShellCommand;
+begin
+ {}
+ Result:=ACommand;
+ 
+ {Setup Default}
+ AError:=False;
+
+ {Check Session}
+ if ASession = nil then Exit;
+ 
+ {Match Command}
+ Name:='';
+ Parameters:=nil;
+ try
+  Command:=MatchCommand(ACommand,Name,Parameters,Retry);
+  if Command = nil then Exit;    
+  
+  {Check Flags}
+  if (Command.Flags and SHELL_COMMAND_FLAG_COMPLETION) <> 0 then
+   begin
+    {Check Completion}
+    Result:=Command.DoCompletion(Self,ASession,Name,Parameters,AError);
+   end
+  else
+   begin
+    {Return Command}
+    Result:=CommandConcat(Name,Parameters);
+   end;
+ finally
+  if Parameters <> nil then
+   begin
+    Parameters.Free;
+   end; 
+ end; 
 end;
 
 {==============================================================================}
@@ -1745,93 +2019,95 @@ begin
  Parameters:=nil;
  if CommandParse(ACommand,Name,Parameters) then
   begin
-   Command:=nil;
-   
-   {Check Global Commands}
-   Command:=Manager.FindCommand(Name);
-   if Command = nil then
-    begin
-     {Check Local Commands}
-     Command:=FindCommand(Name);
-     if Command = nil then 
-      begin
-       {Check Global Aliases}
-       Current:=Manager.GetCommand(nil,True,False);
-       while Current <> nil do
-        begin
-         {Check Aliases}
-         if Current.FindAlias(Name) <> nil then
-          begin
-           {Get Command}
-           Command:=Current;
+   try
+    {Check Global Commands}
+    Command:=Manager.FindCommand(Name);
+    if Command = nil then
+     begin
+      {Check Local Commands}
+      Command:=FindCommand(Name);
+      if Command = nil then 
+       begin
+        {Check Global Aliases}
+        Current:=Manager.GetCommand(nil,True,False);
+        while Current <> nil do
+         begin
+          {Check Aliases}
+          if Current.FindAlias(Name) <> nil then
+           begin
+            {Get Command}
+            Command:=Current;
+            
+            {Unlock Current}
+            Current.ReleaseLock;
+            Break;
+           end;
            
-           {Unlock Current}
-           Current.ReleaseLock;
-           Break;
-          end;
-          
-         {Get Next}
-         Current:=Manager.GetCommand(Current,True,True);
-        end;
-      end;
-     if Command = nil then
-      begin
-       {Check Local Aliases}
-       Current:=GetCommand(nil,True,False);
-       while Current <> nil do
-        begin
-         {Check Aliases}
-         if Current.FindAlias(Name) <> nil then
-          begin
-           {Get Command}
-           Command:=Current;
-           
-           {Unlock Current}
-           Current.ReleaseLock;
-           Break;
-          end;
-        
-         {Get Next}
-         Current:=GetCommand(Current,True,True);
-        end;
-      end;
-    end;
-   
-   {Check Command}   
-   if Command <> nil then
-    begin
-     {Check Flags}
-     if (Command.Flags and SHELL_COMMAND_FLAG_EXTENDED) = 0 then
-      begin
-       {Process Command}
-       Result:=Command.DoCommand(Self,ASession,Parameters);
-      end
-     else
-      begin
-       {Process Extended}
-       Result:=Command.DoExtended(Self,ASession,Name,Parameters);
-      end;      
-    end
-   else
-    begin
-     {Check Global Default}
-     Command:=Manager.DefaultCommand;
-     if Command = nil then
-      begin
-       {Check Local Default}
-       Command:=DefaultCommand;
-      end;
-      
-     {Check Command}
-     if Command <> nil then
-      begin     
-       {Process Default}
-       Result:=Command.DoDefault(Self,ASession,Name,Parameters);
-      end;
-      
-     {Send Error}
-     if not(Result) then DoError(ASession);
-    end;    
+          {Get Next}
+          Current:=Manager.GetCommand(Current,True,True);
+         end;
+       end;
+      if Command = nil then
+       begin
+        {Check Local Aliases}
+        Current:=GetCommand(nil,True,False);
+        while Current <> nil do
+         begin
+          {Check Aliases}
+          if Current.FindAlias(Name) <> nil then
+           begin
+            {Get Command}
+            Command:=Current;
+            
+            {Unlock Current}
+            Current.ReleaseLock;
+            Break;
+           end;
+         
+          {Get Next}
+          Current:=GetCommand(Current,True,True);
+         end;
+       end;
+     end;
+    
+    {Check Command}   
+    if Command <> nil then
+     begin
+      {Check Flags}
+      if (Command.Flags and SHELL_COMMAND_FLAG_EXTENDED) = 0 then
+       begin
+        {Process Command}
+        Result:=Command.DoCommand(Self,ASession,Parameters);
+       end
+      else
+       begin
+        {Process Extended}
+        Result:=Command.DoExtended(Self,ASession,Name,Parameters);
+       end;      
+     end
+    else
+     begin
+      {Check Global Default}
+      Command:=Manager.DefaultCommand;
+      if Command = nil then
+       begin
+        {Check Local Default}
+        Command:=DefaultCommand;
+       end;
+       
+      {Check Command}
+      if Command <> nil then
+       begin     
+        {Process Default}
+        Result:=Command.DoDefault(Self,ASession,Name,Parameters);
+       end;
+       
+      {Send Error}
+      if not(Result) then DoError(ASession);
+     end;    
+   finally
+    Parameters.Free;
+   end;   
   end;  
 end;
  
@@ -1868,7 +2144,7 @@ end;
 {==============================================================================}
 
 function TShell.CommandSplit(const ACommand:String):TStrings;
-{Split the command line into individual components}
+{Split the command line into individual parameters}
 {Note: Allows for quoted parameters which include spaces}
 var
  Count:Integer;
@@ -1936,6 +2212,43 @@ end;
 
 {==============================================================================}
 
+function TShell.CommandJoin(AParameters:TStrings):String;
+{Join the individual parameters into a command line}
+{Note: Allows for quoted parameters which include spaces}
+var
+ Count:Integer;
+ Parameter:String;
+begin
+ {}
+ Result:='';
+ 
+ {Check Parameters}
+ if AParameters = nil then Exit;
+ 
+ {Join Parameters}
+ for Count:=0 to AParameters.Count - 1 do
+  begin
+   {Get Parameter}
+   Parameter:=AParameters.Strings[Count];
+   if Pos(' ',Parameter) <> 0 then
+    begin
+     Parameter:='"' + Parameter + '"';    
+    end;
+   
+   {Add Parameter}
+   if Count = 0 then
+    begin
+     Result:=Result + Parameter;
+    end
+   else
+    begin
+     Result:=Result + ' ' + Parameter;
+    end;
+  end;
+end;
+
+{==============================================================================}
+
 function TShell.CommandParse(const ACommand:String;var AName:String;var AParameters:TStrings):Boolean;
 {Parse the command line into the command name and parameters}
 begin
@@ -1959,6 +2272,24 @@ begin
  
  {Return Result}
  Result:=True;
+end;
+
+{==============================================================================}
+
+function TShell.CommandConcat(const AName:String;AParameters:TStrings):String;
+{Concatenate the command name and parameters into a command line}
+begin
+ {}
+ Result:='';
+ 
+ {Check Name}
+ if Length(AName) = 0 then Exit;
+ 
+ {Check Parameters}
+ if AParameters = nil then Exit;
+ 
+ {Concatenate Name and Parameters}
+ Result:=AName + ' ' + CommandJoin(AParameters);
 end;
 
 {==============================================================================}
@@ -2190,6 +2521,9 @@ begin
  
  Prompt:=SHELL_DEFAULT_BANNER;
  if FShell <> nil then Prompt:=FShell.Prompt;
+ 
+ FHistories:=TLinkedObjList.Create;
+ FCurrentHistory:=nil;
 end;
 
 {==============================================================================}
@@ -2200,6 +2534,8 @@ begin
  AcquireLock;
  try
   FShell:=nil;
+  FHistories.Free;
+  FCurrentHistory:=nil;
   inherited Destroy;
  finally
   {ReleaseLock;} {Can destroy Critical Section while holding lock}
@@ -2273,6 +2609,217 @@ function TShellSession.ReleaseLock:Boolean;
 begin
  {}
  Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
+end;
+ 
+{==============================================================================}
+
+function TShellSession.AddHistory(const ACommand:String):Boolean;
+var
+ History:TShellHistory;
+begin
+ {}
+ Result:=False;
+ 
+ if not AcquireLock then Exit;
+ try
+  if Length(ACommand) > 0 then
+   begin
+    {Check Last}
+    History:=TShellHistory(FHistories.Last);
+    if History <> nil then
+     begin
+      if (Length(ACommand) = History.Length) and (ACommand = History.Command) then
+       begin
+        {Clear Current}
+        FCurrentHistory:=nil;
+        
+        {Return Result}
+        Result:=True;  
+        Exit;
+       end; 
+     end;
+     
+    {Check Maximum}
+    if FHistories.Count >= SHELL_HISTORY_MAX_COUNT then
+     begin
+      {Get First}
+      History:=TShellHistory(FHistories.First);
+      
+      {Delete First}
+      FHistories.Remove(History);
+      History.Free;
+     end;
+    
+    {Add History}
+    History:=TShellHistory.Create;
+    History.Command:=ACommand;
+    History.Length:=Length(ACommand);
+    FHistories.Add(History);
+    
+    {Clear Current}
+    FCurrentHistory:=nil;
+   end;
+ 
+  Result:=True;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TShellSession.ClearHistory;
+begin
+ {}
+ if not AcquireLock then Exit;
+ 
+ {Clear Histories}
+ FHistories.ClearList;
+ 
+ {Clear Current}
+ FCurrentHistory:=nil;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function TShellSession.FirstHistory:String;
+var
+ History:TShellHistory;
+begin
+ {}
+ Result:='';
+ 
+ if not AcquireLock then Exit;
+ try
+  History:=TShellHistory(FHistories.First);
+  if History = nil then Exit;
+ 
+  FCurrentHistory:=History;
+  
+  Result:=History.Command;
+ finally
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TShellSession.LastHistory:String;
+var
+ History:TShellHistory;
+begin
+ {}
+ Result:='';
+ 
+ if not AcquireLock then Exit;
+ try
+  History:=TShellHistory(FHistories.Last);
+  if History = nil then Exit;
+ 
+  FCurrentHistory:=History;
+ 
+  Result:=History.Command;
+ finally
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TShellSession.NextHistory:String;
+begin
+ {}
+ Result:='';
+ 
+ if not AcquireLock then Exit;
+ try
+  {Check Current}
+  if FCurrentHistory = nil then
+   begin
+    {Nothing}
+   end
+  else if FCurrentHistory = FHistories.Last then
+   begin
+    {Nothing}
+   end
+  else
+   begin
+    {Get Next}
+    FCurrentHistory:=TShellHistory(FCurrentHistory.Next);
+    if FCurrentHistory = nil then Exit;
+    
+    {Return Result}
+    Result:=FCurrentHistory.Command;
+   end;   
+ finally
+  ReleaseLock;
+ end; 
+end;
+ 
+{==============================================================================}
+
+function TShellSession.PrevHistory:String;
+begin
+ {}
+ Result:='';
+ 
+ if not AcquireLock then Exit;
+ try
+  {Check Current}
+  if FCurrentHistory = nil then
+   begin
+    {Get Last}
+    FCurrentHistory:=TShellHistory(FHistories.Last);
+    if FCurrentHistory = nil then Exit;
+    
+    {Return Result}
+    Result:=FCurrentHistory.Command;
+   end
+  else if FCurrentHistory = TShellHistory(FHistories.First) then
+   begin
+    {Nothing}
+   end
+  else
+   begin
+    {Get Previous}
+    FCurrentHistory:=TShellHistory(FCurrentHistory.Prev);
+    if FCurrentHistory = nil then Exit;
+    
+    {Return Result}
+    Result:=FCurrentHistory.Command;
+   end;   
+ finally
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TShellSession.CurrentHistory:String;
+var
+ History:TShellHistory;
+begin
+ {}
+ Result:='';
+ 
+ if not AcquireLock then Exit;
+ try
+  {Get Current}
+  History:=FCurrentHistory;
+  if History = nil then
+   begin
+    {Get Last}
+    History:=TShellHistory(FHistories.Last);
+    if History = nil then Exit;
+   end;
+   
+  {Return Result}
+  if History <> nil then Result:=History.Command;
+ finally 
+  ReleaseLock;
+ end; 
 end;
  
 {==============================================================================}
@@ -2409,6 +2956,23 @@ end;
 
 {==============================================================================}
 
+function TShellCommand.DoCompletion(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings;var AError:Boolean):String; 
+begin
+ {Virtual Base}
+ Result:='';
+ 
+ {Setup Defaults}
+ AError:=False;
+ 
+ {Check Shell}
+ if AShell = nil then Exit;
+ 
+ {Concatenate Command}
+ Result:=AShell.CommandConcat(AName,AParameters);
+end;
+
+{==============================================================================}
+
 function TShellCommand.GetAlias(APrevious:TShellAlias;ALock,AUnlock:Boolean):TShellAlias;
 var
  Alias:TShellAlias;
@@ -2486,7 +3050,7 @@ begin
   ReleaseLock;
  end; 
 end;
- 
+
 {==============================================================================}
  
 function TShellCommand.RegisterAlias(AAlias:TShellAlias):Boolean;
@@ -2535,6 +3099,52 @@ begin
   
   {Remove Alias}
   Result:=FAliases.Remove(AAlias);
+ finally
+  ReleaseLock;
+ end; 
+end;
+ 
+{==============================================================================}
+ 
+function TShellCommand.MatchAlias(const AName:String;var AContinue:Boolean):TShellAlias;
+{Check the supplied command name against registered aliases, if matched return alias as result}
+{Name: The command name to match}
+{Continue: Returns true if more than one alias matches and matching should be retried}
+var
+ Alias:TShellAlias;
+begin
+ {}
+ Result:=nil;
+ 
+ {Setup Defaults}
+ AContinue:=False;
+ 
+ if not AcquireLock then Exit;
+ try
+  if Length(AName) = 0 then Exit;
+ 
+  Alias:=TShellAlias(FAliases.First);
+  while Alias <> nil do
+   begin
+    if Uppercase(Copy(Alias.Name,1,Length(AName))) = Uppercase(AName) then
+     begin
+      if Result = nil then
+       begin
+        {Return Alias}
+        Result:=Alias;
+       end
+      else
+       begin
+        {Return Continue}
+        Result:=nil;
+        AContinue:=True;
+        
+        Exit;
+       end;
+     end;
+
+    Alias:=TShellAlias(Alias.Next);   
+   end;
  finally
   ReleaseLock;
  end; 
@@ -3890,6 +4500,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = SHELL_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = SHELL_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -3904,7 +4518,7 @@ end;
 
 {==============================================================================}
 
-procedure ShellLogInfo(const AText:String);
+procedure ShellLogInfo(const AText:String); inline;
 begin
  {}
  ShellLog(SHELL_LOG_LEVEL_INFO,AText);
@@ -3912,7 +4526,15 @@ end;
 
 {==============================================================================}
 
-procedure ShellLogError(const AText:String);
+procedure ShellLogWarn(const AText:String); inline;
+begin
+ {}
+ ShellLog(SHELL_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure ShellLogError(const AText:String); inline;
 begin
  {}
  ShellLog(SHELL_LOG_LEVEL_ERROR,AText);
@@ -3920,7 +4542,7 @@ end;
 
 {==============================================================================}
 
-procedure ShellLogDebug(const AText:String);
+procedure ShellLogDebug(const AText:String); inline;
 begin
  {}
  ShellLog(SHELL_LOG_LEVEL_DEBUG,AText);

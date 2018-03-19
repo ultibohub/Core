@@ -74,6 +74,7 @@ const
  {W1 logging}
  W1_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {W1 debugging messages}
  W1_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {W1 informational messages, such as a device being attached or detached}
+ W1_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {W1 warning messages}
  W1_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {W1 error messages}
  W1_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No W1 messages}
 
@@ -168,6 +169,7 @@ function W1DeviceCheck(W1:PW1Device):PW1Device;
 
 procedure W1Log(Level:LongWord;W1:PW1Device;const AText:String);
 procedure W1LogInfo(W1:PW1Device;const AText:String); inline;
+procedure W1LogWarn(W1:PW1Device;const AText:String); inline;
 procedure W1LogError(W1:PW1Device;const AText:String); inline;
 procedure W1LogDebug(W1:PW1Device;const AText:String); inline;
  
@@ -746,6 +748,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = W1_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = W1_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -770,6 +776,14 @@ procedure W1LogInfo(W1:PW1Device;const AText:String); inline;
 begin
  {}
  W1Log(W1_LOG_LEVEL_INFO,W1,AText);
+end;
+
+{==============================================================================}
+
+procedure W1LogWarn(W1:PW1Device;const AText:String); inline;
+begin
+ {}
+ W1Log(W1_LOG_LEVEL_WARN,W1,AText);
 end;
 
 {==============================================================================}

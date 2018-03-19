@@ -393,6 +393,7 @@ const
  {HTTP logging}
  HTTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {HTTP debugging messages}
  HTTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {HTTP informational messages,}
+ HTTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {HTTP warning messages,}
  HTTP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {HTTP error messages}
  HTTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No HTTP messages}
 
@@ -1525,9 +1526,10 @@ function StringToHTTPStatus(const AStatus:String):LongWord;
 function HTTPStatusToString(AStatus:LongWord):String;
 
 procedure HTTPLog(Level:LongWord;const AText:String);
-procedure HTTPLogInfo(const AText:String);
-procedure HTTPLogError(const AText:String);
-procedure HTTPLogDebug(const AText:String);
+procedure HTTPLogInfo(const AText:String); inline;
+procedure HTTPLogWarn(const AText:String); inline;
+procedure HTTPLogError(const AText:String); inline;
+procedure HTTPLogDebug(const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -10972,6 +10974,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = HTTP_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = HTTP_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -10986,7 +10992,7 @@ end;
 
 {==============================================================================}
 
-procedure HTTPLogInfo(const AText:String);
+procedure HTTPLogInfo(const AText:String); inline;
 begin
  {}
  HTTPLog(HTTP_LOG_LEVEL_INFO,AText);
@@ -10994,7 +11000,15 @@ end;
 
 {==============================================================================}
 
-procedure HTTPLogError(const AText:String);
+procedure HTTPLogWarn(const AText:String); inline;
+begin
+ {}
+ HTTPLog(HTTP_LOG_LEVEL_WARN,AText);
+end;
+
+{==============================================================================}
+
+procedure HTTPLogError(const AText:String); inline;
 begin
  {}
  HTTPLog(HTTP_LOG_LEVEL_ERROR,AText);
@@ -11002,7 +11016,7 @@ end;
 
 {==============================================================================}
 
-procedure HTTPLogDebug(const AText:String);
+procedure HTTPLogDebug(const AText:String); inline;
 begin
  {}
  HTTPLog(HTTP_LOG_LEVEL_DEBUG,AText);

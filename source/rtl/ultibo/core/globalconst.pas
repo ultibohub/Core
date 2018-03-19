@@ -1,7 +1,7 @@
 {
 Ultibo Global Constant Definitions.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '14 February 2018';
+ ULTIBO_RELEASE_DATE             = '19 March 2018';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.189';
+ ULTIBO_RELEASE_VERSION          = '2.0.235';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 189;
+ ULTIBO_RELEASE_VERSION_REVISION = 235;
  
 {==============================================================================}
 const
@@ -1047,6 +1047,7 @@ const
  BOARD_TYPE_QEMUVPB      = 25; {QEMU Versatile PB}
  BOARD_TYPE_RPI_COMPUTE3 = 26; {Raspberry Pi Compute Module 3}
  BOARD_TYPE_RPI_ZERO_W   = 27; {Raspberry Pi Model Zero W}
+ BOARD_TYPE_RPI3B_PLUS   = 28; {Raspberry Pi 3 Model B+}
  
 {==============================================================================}
 const 
@@ -1626,8 +1627,9 @@ const
  {Log Level constants}
  LOG_LEVEL_DEBUG     = 1;  {Debugging messages}
  LOG_LEVEL_INFO      = 2;  {Informational messages}
- LOG_LEVEL_ERROR     = 3;  {Error messages}
- LOG_LEVEL_NONE      = 4;  {No messages}
+ LOG_LEVEL_WARN      = 3;  {Warning messages}
+ LOG_LEVEL_ERROR     = 4;  {Error messages}
+ LOG_LEVEL_NONE      = 5;  {No messages}
  
 const
  {Logging Protocol constants}
@@ -1682,8 +1684,9 @@ const
 const
  {Logging Severity constants}
  LOGGING_SEVERITY_ERROR = 0;    {Error log messages}
- LOGGING_SEVERITY_INFO  = 1;    {Informational log messages}
- LOGGING_SEVERITY_DEBUG = 2;    {Debugging log messages}
+ LOGGING_SEVERITY_WARN  = 1;    {Warning log messages}
+ LOGGING_SEVERITY_INFO  = 2;    {Informational log messages}
+ LOGGING_SEVERITY_DEBUG = 3;    {Debugging log messages}
  
  LOGGING_SEVERITY_INVALID    = $FFFFFFFF;
  

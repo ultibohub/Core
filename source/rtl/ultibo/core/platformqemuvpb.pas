@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for QEMU VersatilePB.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -99,6 +99,7 @@ const
  {$ENDIF CPUAARCH64}
  QEMUVPB_KERNEL_CONFIG = '';  {Not available as a file}
  QEMUVPB_KERNEL_COMMAND = ''; {Not available as a file}
+ QEMUVPB_FIRMWARE_FILES = ''; {Not available as a file}
  
 {$IFDEF CONSOLE_EARLY_INIT}
 const
@@ -385,7 +386,7 @@ begin
  SECURE_BOOT:=False; {Versatile PB does not support PL3 (TrustZone)}
  
  {Setup STARTUP_ADDRESS}
- STARTUP_ADDRESS:=QEMUVPB_STARTUP_ADDRESS;
+ STARTUP_ADDRESS:=PtrUInt(@_text_start); {QEMUVPB_STARTUP_ADDRESS} {Obtain from linker}
  
  {Setup PERIPHERALS_BASE and SIZE}
  PERIPHERALS_BASE:=VERSATILEPB_PERIPHERALS_BASE;
@@ -525,6 +526,7 @@ begin
  KERNEL_NAME:=QEMUVPB_KERNEL_NAME;
  KERNEL_CONFIG:=QEMUVPB_KERNEL_CONFIG;
  KERNEL_COMMAND:=QEMUVPB_KERNEL_COMMAND;
+ FIRMWARE_FILES:=QEMUVPB_FIRMWARE_FILES;
  
  {Register Platform BoardInit Handler}
  BoardInitHandler:=QEMUVPBBoardInit;
@@ -774,10 +776,10 @@ begin
  {Setup DMA}
  DMA_ALIGNMENT:=SizeOf(LongWord); 
  DMA_MULTIPLIER:=SizeOf(LongWord);
- DMA_SHARED_MEMORY:=True;    //To Do //Continuing //To be determined
- DMA_NOCACHE_MEMORY:=False;  //To Do //Continuing //To be determined
- DMA_BUS_ADDRESSES:=False;   //To Do //Continuing //To be determined
- DMA_CACHE_COHERENT:=True;   //To Do //Continuing //To be determined
+ DMA_SHARED_MEMORY:=True;
+ DMA_NOCACHE_MEMORY:=False;
+ DMA_BUS_ADDRESSES:=False;
+ DMA_CACHE_COHERENT:=True; 
  if CacheLineSize > DMA_ALIGNMENT then DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > DMA_MULTIPLIER then DMA_MULTIPLIER:=CacheLineSize;
  

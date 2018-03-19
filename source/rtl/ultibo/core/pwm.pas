@@ -93,6 +93,7 @@ const
  {PWM logging}
  PWM_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {PWM debugging messages}
  PWM_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {PWM informational messages, such as a device being attached or detached}
+ PWM_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {PWM warning messages}
  PWM_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {PWM error messages}
  PWM_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No PWM messages}
 
@@ -261,6 +262,7 @@ function PWMDeviceCheck(PWM:PPWMDevice):PPWMDevice;
 
 procedure PWMLog(Level:LongWord;PWM:PPWMDevice;const AText:String);
 procedure PWMLogInfo(PWM:PPWMDevice;const AText:String); inline;
+procedure PWMLogWarn(PWM:PPWMDevice;const AText:String); inline;
 procedure PWMLogError(PWM:PPWMDevice;const AText:String); inline;
 procedure PWMLogDebug(PWM:PPWMDevice;const AText:String); inline;
  
@@ -1592,6 +1594,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = PWM_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = PWM_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -1616,6 +1622,14 @@ procedure PWMLogInfo(PWM:PPWMDevice;const AText:String); inline;
 begin
  {}
  PWMLog(PWM_LOG_LEVEL_INFO,PWM,AText);
+end;
+
+{==============================================================================}
+
+procedure PWMLogWarn(PWM:PPWMDevice;const AText:String); inline;
+begin
+ {}
+ PWMLog(PWM_LOG_LEVEL_WARN,PWM,AText);
 end;
 
 {==============================================================================}

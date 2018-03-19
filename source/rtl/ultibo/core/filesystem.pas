@@ -858,6 +858,7 @@ const
  {FileSystem logging}
  FILESYS_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {FileSystem debugging messages}
  FILESYS_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {FileSystem informational messages, such as a filesystem being mounted or dismounted}
+ FILESYS_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {FileSystem warning messages}
  FILESYS_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {FileSystem error messages}
  FILESYS_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FileSystem messages}
 
@@ -5393,6 +5394,7 @@ function ComparePartitions(APartition1,APartition2:Pointer):Integer;
 
 procedure FileSysLog(Level:Integer;const AText:String);
 procedure FileSysLogInfo(const AText:String); inline;
+procedure FileSysLogWarn(const AText:String); inline;
 procedure FileSysLogError(const AText:String); inline;
 procedure FileSysLogDebug(const AText:String); inline;
 
@@ -55353,6 +55355,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[DEBUG] ';
   end
+ else if Level = FILESYS_LOG_LEVEL_WARN then
+  begin
+   WorkBuffer:=WorkBuffer + '[WARN] ';
+  end
  else if Level = FILESYS_LOG_LEVEL_ERROR then
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
@@ -55371,6 +55377,14 @@ procedure FileSysLogInfo(const AText:String); inline;
 begin
  {}
  FileSysLog(FILESYS_LOG_LEVEL_INFO,AText);
+end;
+
+{==============================================================================}
+
+procedure FileSysLogWarn(const AText:String); inline;
+begin
+ {}
+ FileSysLog(FILESYS_LOG_LEVEL_WARN,AText);
 end;
 
 {==============================================================================}
