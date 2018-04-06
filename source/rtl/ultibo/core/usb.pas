@@ -1,7 +1,7 @@
 {
 Ultibo USB interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1301,6 +1301,9 @@ type
   {$ENDIF}
  end;
   
+ PUSBRequests = ^TUSBRequests;
+ TUSBRequests = array[0..0] of PUSBRequest;
+ 
 {==============================================================================}
 type
  {USB Hub specific types}
@@ -5888,7 +5891,7 @@ begin
   end;
  
  {Check Host Multiplier}
- if RoundUp(Size,Device.Host.Multiplier) = Size then
+ if RoundUp(Size,Device.Host.Multiplier) <= Size then
   begin
    {Set Flags}
    Flags:=Flags or USB_REQUEST_FLAG_SIZED;
@@ -5899,8 +5902,8 @@ begin
    HeapSize:=MemSize(Buffer);
    if HeapSize <> 0 then
     begin
-     {Check Host Multiplier}
-     if RoundUp(HeapSize,Device.Host.Multiplier) = HeapSize then
+     {Check Host Multiplier (Note: RoundUp Size not HeapSize)}
+     if RoundUp(Size,Device.Host.Multiplier) <= HeapSize then
       begin
        {Set Flags}
        Flags:=Flags or USB_REQUEST_FLAG_SIZED;
