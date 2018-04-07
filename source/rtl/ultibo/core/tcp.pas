@@ -1156,7 +1156,6 @@ begin
          {Validate Acknowledge}
          if not ASocket.SendData.ValidateAcknowledge(TCP.Acknowledge) then
           begin
-           
            {Check for RST}
            if (Flags and TCP_FLAG_RST) = TCP_FLAG_RST then Exit;
            
@@ -7601,31 +7600,24 @@ begin
            begin
             {$IFDEF TCP_DEBUG}
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Sending window probe');
+            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  NextSequence = ' + IntToStr(NextSequence));
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
             {$ENDIF}  
             
-            {Send unsent Segment to probe the Window}
-            ASequence:=Segment.FirstSequence;
-            AUrgent:=0; //To Do //UrgentPointer  ?? UrgentPointer - Segment.FirstSequence ?? //or just LastSequence or Size ??
-            AFlags:=Segment.Control;
-            AData:=Segment.Data;
-            ASize:=Segment.Size;
+            {Send a keep alive to probe the Window (Instead of a 1 byte probe segment)}
+            ASequence:=NextSequence - 1;
+            AUrgent:=UrgentPointer;
+            AFlags:=0;
+            AData:=nil; {Zero length keep alive}
+            ASize:=0;
             
-            {Stamp the Segment}
-            Inc(Segment.Count);
-            Segment.Timeout:=CurrentTime;
+            {Do not update segment or next sequence}
             
-            {Move the NextSequence}
-            NextSequence:=Segment.LastSequence;
-            
-            {Reset the Window Timeout}
-            WindowTimeout:=0;
+            {Set the Window Timeout}
+            WindowTimeout:=CurrentTime;
             
             {Schedule the Thread}  
-            TProtocolSocket(FSocket).ScheduleSocketItem(@Segment.Item,TCP_RETRY_TIMEOUT[Segment.Count]);
-            
-            {Signal the Thread}  
-            if Segment.Next <> nil then TProtocolSocket(FSocket).SendSocket;
+            TProtocolSocket(FSocket).ScheduleSocket(TCP_WINDOW_TIMEOUT);
             
             {Return Result}
             Result:=True;
@@ -7727,6 +7719,9 @@ begin
   
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: AcknowledgeSegments');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Sequence = ' + IntToStr(ASequence));  
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Acknowledge = ' + IntToStr(AAcknowledge));  
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Window = ' + IntToStr(AWindow)); 
   {$ENDIF}
   
   {Check the Acknowledge}
@@ -7781,23 +7776,23 @@ begin
     
     {Move the LastAcknowledge}
     LastAcknowledge:=AAcknowledge;
+   end;
     
-    {$IFDEF TCP_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Update Window'); 
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowSequence = ' + IntToStr(WindowSequence));
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Sequence = ' + IntToStr(ASequence));  
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowAcknowledge = ' + IntToStr(WindowAcknowledge)); 
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Acknowledge = ' + IntToStr(AAcknowledge));  
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Window = ' + IntToStr(AWindow)); 
-    {$ENDIF}
+  {$IFDEF TCP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Update Window'); 
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowSequence = ' + IntToStr(WindowSequence));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowAcknowledge = ' + IntToStr(WindowAcknowledge)); 
+  {$ENDIF}
+  
+  {Update the Window}
+  if SequenceLEQ(WindowSequence,ASequence) and SequenceLEQ(WindowAcknowledge,AAcknowledge) then
+   begin
+    WindowSequence:=ASequence;
+    WindowAcknowledge:=AAcknowledge;
+    WindowSize:=(AWindow shl WindowScale);
     
-    {Update the Window}
-    if SequenceLEQ(WindowSequence,ASequence) and SequenceLEQ(WindowAcknowledge,AAcknowledge) then
-     begin
-      WindowSequence:=ASequence;
-      WindowAcknowledge:=AAcknowledge;
-      WindowSize:=(AWindow shl WindowScale);
-     end;
+    {Signal the Thread}
+    if WindowTimeout <> 0 then TProtocolSocket(FSocket).SendSocket;
    end;
    
   {Return Result}
