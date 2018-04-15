@@ -206,7 +206,6 @@ Global Defines
 {--$DEFINE EHCI_DEBUG}            {Enable debug output/counters for EHCI driver (Default: Off)}
 {--$DEFINE XHCI_DEBUG}            {Enable debug output/counters for XHCI driver (Default: Off)}
 {--$DEFINE DWCOTG_DEBUG}          {Enable debug output/counters for DWCOTG driver (Default: Off)}
-{--$DEFINE SMSC95XX_DEBUG}        {Enable debug output/counters for SMSC95XX driver (Default: Off)}
 {--$DEFINE BCM2708_DEBUG}         {Enable debug output/counters for BCM2708 drivers (Default: Off)}
 {--$DEFINE BCM2709_DEBUG}         {Enable debug output/counters for BCM2709 drivers (Default: Off)}
 {--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
@@ -215,7 +214,9 @@ Global Defines
 {--$DEFINE PL08X_DEBUG}           {Enable debug output/counters for PL08X driver (Default: Off)}
 
 {Network}
+{--$DEFINE SMSC95XX_DEBUG}        {Enable debug output/counters for SMSC95XX driver (Default: Off)}
 {--$DEFINE SMC91X_DEBUG}          {Enable debug output/counters for SMC91X driver (Default: Off)}
+{--$DEFINE LAN78XX_DEBUG}         {Enable debug output/counters for SMSC95XX driver (Default: Off)}
 
 {WiFi}
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
@@ -379,6 +380,9 @@ Global Defines
 
 {==============================================================================}
 {==============================================================================}
+{BigInt definitions}
+{--$DEFINE BIGINT_DEBUG}                         {Enable debug output/functions for BitInt library (Default: Off)}
+
 {Crypto definitions}
 {--$DEFINE CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}  {Enable precomputed permutations (IP/FP) for DES cipher (Faster but bigger) (Default: Off)}
 {--$DEFINE CRYPTO_AES_PRECOMPUTED_TABLES}        {Enable precomputed tables (TE1/TE2/TE3/TE4/TD1/TD2/TD3/TD4 etc) for AES cipher (Faster but bigger) (Default: Off)}

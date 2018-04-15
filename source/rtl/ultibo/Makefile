@@ -509,6 +509,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    pitft35 \
 		    smc91x \
 		    pl18x \
+		    lan78xx \
 		    rpigpioexpander \
 		    rpisensehat
 ULTIBO_KEYMAP_UNITS=keymap_us \

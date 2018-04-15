@@ -995,9 +995,9 @@ begin
        {Check Transmit Queue Semaphore}
        if Network.TransmitQueue.Wait <> INVALID_HANDLE_VALUE then
         begin
-          {Deallocate Transmit Queue Semaphore}
-          SemaphoreDestroy(Network.TransmitQueue.Wait);
-          Network.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
+         {Deallocate Transmit Queue Semaphore}
+         SemaphoreDestroy(Network.TransmitQueue.Wait);
+         Network.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
         end;
        
        {Check Receive Queue Buffer}
@@ -1034,9 +1034,9 @@ begin
        {Check Receive Queue Semaphore}
        if Network.ReceiveQueue.Wait <> INVALID_HANDLE_VALUE then
         begin
-          {Deallocate Receive Queue Semaphore}
-          SemaphoreDestroy(Network.ReceiveQueue.Wait);
-          Network.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
+         {Deallocate Receive Queue Semaphore}
+         SemaphoreDestroy(Network.ReceiveQueue.Wait);
+         Network.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
         end;
       end;
     end;    
@@ -1166,9 +1166,9 @@ begin
     {Check Transmit Queue Semaphore}
     if Network.TransmitQueue.Wait <> INVALID_HANDLE_VALUE then
      begin
-       {Deallocate Transmit Queue Semaphore}
-       SemaphoreDestroy(Network.TransmitQueue.Wait);
-       Network.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
+      {Deallocate Transmit Queue Semaphore}
+      SemaphoreDestroy(Network.TransmitQueue.Wait);
+      Network.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
      end;
    
     {Check Receive Queue Buffer}
@@ -1205,9 +1205,9 @@ begin
     {Check Receive Queue Semaphore}
     if Network.ReceiveQueue.Wait <> INVALID_HANDLE_VALUE then
      begin
-       {Deallocate Receive Queue Semaphore}
-       SemaphoreDestroy(Network.ReceiveQueue.Wait);
-       Network.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
+      {Deallocate Receive Queue Semaphore}
+      SemaphoreDestroy(Network.ReceiveQueue.Wait);
+      Network.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
      end;
     
     {Return Result}

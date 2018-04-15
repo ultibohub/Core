@@ -101,8 +101,8 @@ const
  
  SMSC95XX_DEFAULT_BULK_IN_DELAY = $2000;
  
- SMSC95XX_MAX_TX_REQUESTS = 1;
- SMSC95XX_MAX_RX_REQUESTS = 1; //((60 * 1518) div SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE) + 1; {SMSC95XX_MAX_RX_REQUESTS (DIV_ROUND_UP(60 * 1518, SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE))} //To Do
+ SMSC95XX_MAX_TX_REQUESTS = 1; //To Do //Buffered Transmit
+ SMSC95XX_MAX_RX_REQUESTS = 1; //((60 * 1518) div SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE) + 1; {SMSC95XX_MAX_RX_REQUESTS (DIV_ROUND_UP(60 * 1518, SMSC95XX_DEFAULT_HS_BURST_CAP_SIZE))} //To Do //Buffered Receive
 
  {Transmitted Ethernet frames (To the Bulk OUT endpoint) must be prefixed with an 8-byte header containing the "Tx command word A" followed by the "Tx command word B"}
  {TX Command word A} 
@@ -242,7 +242,7 @@ const
      Apply FC on any frame}
  SMSC95XX_AFC_CONFIG_DEFAULT          = $00F830A1;    
  
- {Unknown Register}
+ {EEPROM Command Register}
  SMSC95XX_E2P_COMMAND                 = $30;
  SMSC95XX_E2P_COMMAND_BUSY            = $80000000;
  SMSC95XX_E2P_COMMAND_MASK            = $70000000;
@@ -260,7 +260,7 @@ const
  
  SMSC95XX_MAX_EEPROM_SIZE             = 512;
  
- {Unknown Register}
+ {EEPROM Data Register}
  SMSC95XX_E2P_DATA                    = $34;
  SMSC95XX_E2P_DATA_MASK               = $000000FF;
  
@@ -352,13 +352,13 @@ const
  {used together with HASH_HIGH to filter specific multicast packets}
  SMSC95XX_HASH_LOW                     = $110;
  
- {Unknown Register}
+ {MII Access Register}
  SMSC95XX_MII_ADDR                     = $114;
  SMSC95XX_MII_WRITE                    = $02;
  SMSC95XX_MII_BUSY                     = $01;
  SMSC95XX_MII_READ                     = $00; {~of MII Write bit}
 
- {Unknown Register}
+ {MII Data Register}
  SMSC95XX_MII_DATA                     = $118;
  
  {Unknown Register,(Default 0)}
@@ -379,7 +379,7 @@ const
  SMSC95XX_LAN9500_WUFF_NUM             = 4;
  SMSC95XX_LAN9500A_WUFF_NUM            = 8;
  
- {Unknown Register}
+ {Wakeup Control and Status Register}
  SMSC95XX_WUCSR                        = $12C;
  SMSC95XX_WUCSR_WFF_PTR_RST            = $80000000;
  SMSC95XX_WUCSR_GUE                    = $00000200;
@@ -545,6 +545,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure SMSC95XXInit;
+{Initialize the SMSC95XX unit, create and register the driver}
+
+{Note: Called only during system startup}
 var
  Status:LongWord;
 begin
@@ -583,6 +586,7 @@ end;
 {SMSC95XX Network Functions}
 function SMSC95XXDeviceOpen(Network:PNetworkDevice):LongWord;
 {Implementation of NetworkDeviceOpen for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkDeviceOpen instead}
 var
  Count:Integer;
  Status:LongWord;
@@ -767,6 +771,7 @@ end;
 
 function SMSC95XXDeviceClose(Network:PNetworkDevice):LongWord;
 {Implementation of NetworkDeviceClose for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkDeviceClose instead}
 var
  Count:Integer;
  Status:LongWord;
@@ -879,6 +884,7 @@ end;
 
 function SMSC95XXDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
 {Implementation of NetworkDeviceRead for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkDeviceRead instead}
 var
  Packet:PNetworkPacket;
 begin
@@ -953,12 +959,11 @@ end;
 
 function SMSC95XXDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
 {Implementation of NetworkDeviceWrite for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkDeviceWrite instead}
 var
  Unlock:Boolean;
  Status:LongWord;
  Request:PUSBRequest;
- //TransmitCommandA:LongWord;
- //TransmitCommandB:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -998,13 +1003,7 @@ begin
         beginning that contain device-specific flags.  These two fields are
         required, although we essentially just use them to tell the hardware we
         are transmitting one (1) packet with no extra bells and whistles}
-       //TransmitCommandA:=Size or SMSC95XX_TX_COMMAND_A_FIRST_SEG or SMSC95XX_TX_COMMAND_A_LAST_SEG;
-       //PLongWord(PtrUInt(Request.Data) + 0)^:=LongWordNToLE(TransmitCommandA);
-       
        PLongWord(PtrUInt(Request.Data) + 0)^:=LongWordNToLE(Size or SMSC95XX_TX_COMMAND_A_FIRST_SEG or SMSC95XX_TX_COMMAND_A_LAST_SEG);
-      
-       //TransmitCommandB:=Size;
-       //PLongWord(PtrUInt(Request.Data) + 4)^:=LongWordNToLE(TransmitCommandB);
        
        PLongWord(PtrUInt(Request.Data) + 4)^:=LongWordNToLE(Size);
        
@@ -1071,6 +1070,7 @@ end;
 
 function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of NetworkDeviceControl for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkDeviceControl instead}
 var
  Status:LongWord;
  Device:PUSBDevice;
@@ -1173,6 +1173,7 @@ end;
 
 function SMSC95XXBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 {Implementation of NetworkBufferAllocate for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkBufferAllocate instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1199,6 +1200,7 @@ end;
 
 function SMSC95XXBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
 {Implementation of NetworkBufferRelease for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkBufferRelease instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1225,6 +1227,7 @@ end;
 
 function SMSC95XXBufferReceive(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 {Implementation of NetworkBufferReceive for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkBufferReceive instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1251,6 +1254,7 @@ end;
 
 function SMSC95XXBufferTransmit(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
 {Implementation of NetworkBufferTransmit for the SMSC95XX device}
+{Note: Not intended to be called directly by applications, use NetworkBufferTransmit instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1409,14 +1413,26 @@ begin
  if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Default Address = ' + HardwareAddressToString(Address^));
  {$ENDIF}
  
- if CompareHardwareBroadcast(Address^) then
+ {Check MAC Address}
+ if not ValidHardwareAddress(Address^) then
   begin
-   {Set MAC address}
+   {Convert MAC address}
    Address^:=StringToHardwareAddress(SMSC95XX_MAC_ADDRESS); 
    {$IFDEF SMSC95XX_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Hardware Address = ' + HardwareAddressToString(Address^));
    {$ENDIF}
    
+   {Check MAC Address}
+   if not ValidHardwareAddress(Address^) then
+    begin
+     {Random MAC Address}
+     Address^:=RandomHardwareAddress;
+     {$IFDEF LAN78XX_DEBUG}
+     if USB_LOG_ENABLED then USBLogDebug(Device,'SMSC95XX: Random Address = ' + HardwareAddressToString(Address^));
+     {$ENDIF}
+    end;
+   
+   {Set MAC Address} 
    Status:=SMSC95XXSetMacAddress(Device,Address);
    if Status <> USB_STATUS_SUCCESS then
     begin
@@ -1430,7 +1446,7 @@ begin
   end; 
  FreeMem(Address);
  
- {Allow multiple Ethernet frames to be received in a single USB transfer. Also set a couple flags of unknown function}
+ {Allow multiple Ethernet frames to be received in a single USB transfer. Also set a Bulk In Request and Burst Cap Enable}
  Status:=SMSC95XXSetRegisterBits(Device,SMSC95XX_HW_CONFIG,SMSC95XX_HW_CONFIG_MEF or SMSC95XX_HW_CONFIG_BIR or SMSC95XX_HW_CONFIG_BCE);
  if Status <> USB_STATUS_SUCCESS then
   begin
@@ -1690,13 +1706,15 @@ begin
                begin
                 if USB_LOG_ENABLED then USBLogError(Request.Device,'SMSC95XX: Buffer invalid, packet discarded');
                 
-                //To Do //Update Statistics ?
+                {Update Statistics}
+                Inc(Network.Network.BufferUnavailable); 
                end;               
              end
             else
              begin
               if USB_LOG_ENABLED then USBLogError(Request.Device,'SMSC95XX: Failed to acquire lock');
-              Exit; //To Do //Do not exit ? Will deadlock the hub thread if waiting for detach ? //Must exit though ?
+              
+              Break; {Break to allow signalling waiter or resubmitting request}
              end;
            end;      
           

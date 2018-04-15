@@ -266,7 +266,7 @@ begin
   if FState = ADAPTER_STATE_DISABLED then Exit;
  
   {Return Result}
-  Result:=MAX_ETHERNET_PACKET - ETHERNET_HEADER_SIZE;
+  Result:=ETHERNET_MAX_PACKET_SIZE - ETHERNET_HEADER_SIZE;
  finally 
   ReaderUnlock;
  end; 
@@ -304,7 +304,7 @@ begin
  if FThread = nil then Exit;
  
  {Check Size}
- if ASize > (MAX_ETHERNET_PACKET - ETHERNET_HEADER_SIZE) then Exit;
+ if ASize > (ETHERNET_MAX_PACKET_SIZE - ETHERNET_HEADER_SIZE) then Exit;
   
  {Get Transport}
  Transport:=TLoopbackAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));

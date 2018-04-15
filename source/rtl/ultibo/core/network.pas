@@ -111,11 +111,33 @@ const
  NETWORK_CONTROL_GET_BROADCAST = 8;  {Get Broadcast address for this device}
  NETWORK_CONTROL_GET_MTU       = 9;  {Get MTU for this device}
  NETWORK_CONTROL_GET_HEADERLEN = 10; {Get Header length for this device}
+ NETWORK_CONTROL_GET_LINK      = 11; {Get link status for this device}
+ NETWORK_CONTROL_GET_SPEED     = 12; {Get link speed for this device}
+ NETWORK_CONTROL_GET_DUPLEX    = 13; {Get link speed for this device}
+ NETWORK_CONTROL_RESET_LINK    = 14; {Reset link for this device}
+ NETWORK_CONTROL_GET_STATS     = 15; {Get statistics for this device}
+ NETWORK_CONTROL_ADD_MULTICAST = 16; {Add a multicast address to this device}
+ NETWORK_CONTROL_DEL_MULTICAST = 17; {Delete a multicast address from this device}
  
  //To Do //Broadcast/Multicast/Promiscuous/Speed/Duplex/Link etc
  //To Do //Get DeviceId/VendorId/Stats etc
  //To Do //Get Overhead
  //To Do //Get/Set VLAN tags
+ 
+ {Network Link States}
+ NETWORK_LINK_DOWN = NETWORK_STATUS_DOWN;
+ NETWORK_LINK_UP   = NETWORK_STATUS_UP;
+ 
+ {Network Speed States}
+ NETWORK_SPEED_NONE = 0;
+ NETWORK_SPEED_10   = 10;
+ NETWORK_SPEED_100  = 100;
+ NETWORK_SPEED_1000 = 1000;
+ 
+ {Network Duplex States}
+ NETWORK_DUPLEX_NONE = 0;
+ NETWORK_DUPLEX_HALF = 1;
+ NETWORK_DUPLEX_FULL = 2; 
  
  {Network Lock States}
  NETWORK_LOCK_NONE  = 0;
@@ -261,12 +283,6 @@ const
  PACKET_TYPE_RAW   = $FFFF;  {IPX on 802.3}  //To Do //$00     //See: https://en.wikipedia.org/wiki/Ethernet_frame
  PACKET_TYPE_LLC   = $0001;  {IPX on 802.2}  //To Do //$E0 ??  //See: https://en.wikipedia.org/wiki/Ethernet_frame
  
- {Ehternet Network} //To Do //Move to Ethernet constants below
- MIN_ETHERNET_PACKET = 60;
- MAX_ETHERNET_PACKET = 1514;
-
- //ETHERNET_HEADER_SIZE = 14; {SizeOf(TEthernetHeader);}
-
  {Ethernet 802.3 Network} {FRAME_TYPE_ETHERNET_8022}
  LLC_HEADER_SIZE = 3;  {SizeOf(TLLCHeader);} {Optionally can be 4 if Control is 2 octets}
 
@@ -445,11 +461,14 @@ const
  ETHERNET_ADDRESS_SIZE = 6;   {SizeOf(TEthernetAddress)}
  ETHERNET_HEADER_SIZE  = 14;  {SizeOf(TEthernetHeader);}
  ETHERNET_VLAN_SIZE    = 4;   {Length of Ethernet VLAN tag}
- ETHERNET_CRC_SIZE     = 4;   {Length of Ethernet CRC}
+ ETHERNET_CRC_SIZE     = 4;   {Length of Ethernet CRC (FCS)}
 
  {Ethernet specific sizes}
- ETHERNET_MTU                  = 1500;
- ETHERNET_MAX_PACKET_SIZE      = ETHERNET_HEADER_SIZE + ETHERNET_VLAN_SIZE + ETHERNET_MTU; //To Do //Change this to ETHERNET_MAX_PACKET ?
+ ETHERNET_MTU             = 1500;
+ ETHERNET_MIN_PAYLOAD     = 46;
+ ETHERNET_MIN_PACKET_SIZE = ETHERNET_HEADER_SIZE + ETHERNET_VLAN_SIZE + ETHERNET_MIN_PAYLOAD;
+ ETHERNET_MAX_PACKET_SIZE = ETHERNET_HEADER_SIZE + ETHERNET_VLAN_SIZE + ETHERNET_MTU;    
+ 
  //ETHERNET_RECEIVE_BUFFER_SIZE  = ETHERNET_MAX_PACKET_SIZE + ETHERNET_CRC_SIZE + ?? //To Do //See: ETH_RX_BUF_SIZE in ether.h
  ETHERNET_TRANSMIT_BUFFER_SIZE = ETHERNET_MAX_PACKET_SIZE;
  
@@ -555,6 +574,8 @@ type
   ReceiveErrors:LongWord;                
   TransmitCount:LongWord;                
   TransmitErrors:LongWord;               
+  StatusCount:LongWord;
+  StatusErrors:LongWord;
   BufferOverruns:LongWord;               
   BufferUnavailable:LongWord;               
   {Internal Properties}                                                                          
@@ -747,7 +768,6 @@ type
    function StartAdapters:Boolean;
    function StopAdapters:Boolean;
    function ProcessStatus:Boolean;
-   function ProcessAdapters:Boolean; //To do //Remove ?
    
    function EnumerateAdapters(ACallback:TAdapterCallback):Boolean;
  end;
@@ -866,9 +886,12 @@ type
    FState:Integer;
    FStatus:Integer;
    FMediaType:Word;                   {Physical Media type (Ethernet/Tokenring etc)}
-   FAdapterType:Word;             
+   FAdapterType:Word;                 {Adapter type (Wired/Loopback/Wireless etc)}
    FLastError:Integer;
    FThread:TAdapterThread;            {Thread for adapter receiving}
+   FBufferedReceive:Boolean;
+   FBufferedTransmit:Boolean;
+   
    FBindings:TNetworkList;            {List of TAdapterBinding objects}
    FTransports:TNetworkList;          {List of TAdapterTransport objects}
    FMonitors:TNetworkList;            {List of TAdapterMonitor objects}
@@ -883,7 +906,7 @@ type
    function GetThreadID:TThreadID;
 
    procedure SetStatus(AStatus:Integer); virtual;
-
+   
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
   public
@@ -898,6 +921,8 @@ type
    property AdapterType:Word read FAdapterType;
    property LastError:Integer read FLastError;
    property ThreadID:TThreadID read GetThreadID;
+   property BufferedReceive:Boolean read FBufferedReceive;
+   property BufferedTransmit:Boolean read FBufferedTransmit;
 
    {Public Methods}
    function ReaderLock:Boolean;
@@ -1029,6 +1054,9 @@ type
    FHardwareAddress:THardwareAddress;
    FBroadcastAddress:THardwareAddress;
    FMulticastAddresses:TMulticastAddresses;
+   
+   {Private Methods}
+   function ProcessPacket(ABuffer:Pointer;ASize:Integer):Boolean;
   protected
    {Inherited Methods}
 
@@ -1285,6 +1313,9 @@ procedure NetworkLogDebug(Network:PNetworkDevice;const AText:String); inline;
 
 function HardwareAddressToString(const AAddress:THardwareAddress):String;
 function StringToHardwareAddress(const AAddress:String):THardwareAddress;
+
+function ValidHardwareAddress(const AAddress:THardwareAddress):Boolean; 
+function RandomHardwareAddress:THardwareAddress;
 
 function CompareHardwareAddress(const AAddress1,AAddress2:THardwareAddress):Boolean; 
 function CompareHardwareDefault(const AAddress:THardwareAddress):Boolean; 
@@ -1729,36 +1760,6 @@ begin
 end;
 
 {==============================================================================}
-//To do //Remove ?
-function TAdapterManager.ProcessAdapters:Boolean;
-var
- Adapter:TNetworkAdapter;
-begin
- {}
- ReaderLock;
- try
-  Result:=True;
-  
-  {$IFDEF NETWORK_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'AdapterManager: ProcessAdapters');
-  {$ENDIF}
-  
-  {Get Adapter}
-  Adapter:=TNetworkAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
-  while Adapter <> nil do
-   begin
-    {Process Adapter}
-    if not(Adapter.ProcessAdapter) then Result:=False;
-    
-    {Get Next}
-    Adapter:=TNetworkAdapter(GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ));
-   end;
- finally
-  ReaderUnlock;
- end;   
-end;
-
-{==============================================================================}
 
 function TAdapterManager.EnumerateAdapters(ACallback:TAdapterCallback):Boolean;
 var
@@ -2159,11 +2160,16 @@ begin
  FAdapterType:=ADAPTER_TYPE_UNKNOWN;
  FLastError:=0;
  FThread:=nil;
+ FBufferedReceive:=False;
+ FBufferedTransmit:=False;
+ 
  FBindings:=TNetworkList.Create;
  FTransports:=TNetworkList.Create;
  FMonitors:=TNetworkList.Create;
  FAuthenticators:=TNetworkList.Create;
+ 
  FillChar(FStatistics,SizeOf(TAdapterStatistics),0);
+ 
  if FManager <> nil then FManager.AddAdapter(Self);
 end;
 
@@ -2175,15 +2181,18 @@ begin
  WriterLock;
  try
   if FManager <> nil then FManager.RemoveAdapter(Self);
+  
   FAuthenticators.Free;
   FMonitors.Free;
   FTransports.Free;
   FBindings.Free;
+  
   FThread:=nil;
   FState:=ADAPTER_STATE_DISABLED;
   FStatus:=ADAPTER_STATUS_DOWN;
   FDevice:=nil;
   FManager:=nil;
+  
   MutexDestroy(FLocalLock);
   inherited Destroy;
  finally 
@@ -3422,6 +3431,133 @@ end;
 
 {==============================================================================}
 
+function TWiredAdapter.ProcessPacket(ABuffer:Pointer;ASize:Integer):Boolean;
+var
+ Data:Pointer;
+ Size:LongWord;
+ FrameType:Word;
+ PacketType:Word;
+ LLC:PLLCHeader;
+ SNAP:PSNAPHeader;
+ Dest:PHardwareAddress;
+ Source:PHardwareAddress;
+ Ethernet:PEthernetHeader;
+ Transport:TAdapterTransport;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Media Type}
+ case FMediaType of
+  MEDIA_TYPE_ETHERNET:begin
+    {Check Size}
+    if ASize < ETHERNET_HEADER_SIZE then Exit;
+     
+    {Get Header}
+    Ethernet:=PEthernetHeader(ABuffer);
+     
+    {Determine Frame Type}
+    FrameType:=FRAME_TYPE_UNKNOWN;
+     
+    //To Do //Check for 802.1Q tag here, TypeLength = $8100 if tagged, real TypeLength is after the 4 byte 802.1Q tag
+    
+    {Check Type Length}
+    if WordBEtoN(Ethernet.TypeLength) > PACKET_MIN_TYPE then
+     begin
+      {$IFDEF NETWORK_DEBUG}
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_II));
+      {$ENDIF}
+       
+      {Get Frame Type}
+      FrameType:=FRAME_TYPE_ETHERNET_II;
+       
+      {Get Packet Type}
+      PacketType:=WordBEtoN(Ethernet.TypeLength);
+       
+      {Get Size}
+      Size:=ASize - ETHERNET_HEADER_SIZE;
+       
+      {Get Data}
+      Data:=Pointer(PtrUInt(ABuffer) + ETHERNET_HEADER_SIZE);
+       
+      {Get Dest Address}
+      Dest:=@Ethernet.DestAddress;
+      {Get Source Address}
+      Source:=@Ethernet.SourceAddress;
+     end
+    else
+     begin
+      {Check Payload Start}
+      if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_SNAP then
+       begin
+        {$IFDEF NETWORK_DEBUG}
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_SNAP));
+        {$ENDIF}
+         
+        {Get Frame Type}
+        FrameType:=FRAME_TYPE_ETHERNET_SNAP;
+         
+        {Get LLC}
+        LLC:=PLLCHeader(@Ethernet.Data);
+         
+        Exit; //To Do
+       end
+      else if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_8023 then 
+       begin
+        {$IFDEF NETWORK_DEBUG}
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8023));
+        {$ENDIF}
+        
+        {Get Frame Type}
+        FrameType:=FRAME_TYPE_ETHERNET_8023;
+        
+        Exit; //To Do
+       end
+      else
+       begin
+        {$IFDEF NETWORK_DEBUG}
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8022));
+        {$ENDIF}
+         
+        {Get Frame Type}
+        FrameType:=FRAME_TYPE_ETHERNET_8022;
+
+        {Get LLC}
+        LLC:=PLLCHeader(@Ethernet.Data);
+         
+        Exit; //To Do
+       end;           
+     end;         
+   end; 
+  MEDIA_TYPE_TOKENRING:begin
+    Exit; //To Do
+   end;
+ end; 
+  
+ {$IFDEF NETWORK_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(PacketType));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(Size));
+ {$ENDIF}
+  
+ {Get Transport}
+ Transport:=TAdapterTransport(GetTransportByType(PacketType,FrameType,True,NETWORK_LOCK_READ));
+ if Transport = nil then Exit;
+ try
+  {Check Handler}
+  if not(Assigned(Transport.PacketHandler)) then Exit;
+  
+  {Call the Packet Handler}
+  Transport.PacketHandler(THandle(Transport),Source,Dest,Data,Size,CompareBroadcast(THandle(Transport),Dest^));
+  
+  {Return Result}
+  Result:=True;
+ finally 
+  Transport.ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TWiredAdapter.AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle;
 var
  Transport:TAdapterTransport;
@@ -3588,6 +3724,8 @@ var
  Packet:PPacketFragment;
  Ethernet:PEthernetHeader;
  Transport:TAdapterTransport;
+ NetworkEntry:PNetworkEntry;
+ NetworkPacket:PNetworkPacket;
 begin
  {}
  Result:=False;
@@ -3617,20 +3755,39 @@ begin
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Media = ' + MediaTypeToString(FMediaType));
   {$ENDIF}
+  
   {Check Media Type}
   case FMediaType of
    MEDIA_TYPE_ETHERNET:begin
      {$IFDEF NETWORK_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
      {$ENDIF}
+     
      {Check Frame Type}
      case Transport.FrameType of
       FRAME_TYPE_ETHERNET_II:begin
         {Check Size}
-        if ASize > (MAX_ETHERNET_PACKET - ETHERNET_HEADER_SIZE) then Exit;
+        if ASize > (ETHERNET_MAX_PACKET_SIZE - ETHERNET_HEADER_SIZE) then Exit;
      
-        {Get Buffer} //To Do //Call Device to Allocate for non copy //Device should return an Offset to allow for it's own header (if any, eg USB)
-        Buffer:=GetMem(ASize + ETHERNET_HEADER_SIZE);
+        {Check Buffered} 
+        if FBufferedTransmit then
+         begin
+          {Allocate Buffer}
+          if NetworkBufferAllocate(FDevice,NetworkEntry) <> ERROR_SUCCESS then Exit;
+          
+          {Get First Packet}
+          NetworkPacket:=@NetworkEntry.Packets[0];
+          
+          {Get Buffer}
+          Buffer:=NetworkPacket.Data;
+         end
+        else
+         begin
+          {Get Buffer}
+          Buffer:=GetMem(ASize + ETHERNET_HEADER_SIZE);
+         end;
+        
+        {Check Buffer}
         if Buffer = nil then Exit;
      
         {Get Header}
@@ -3664,6 +3821,7 @@ begin
      {$IFDEF NETWORK_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
      {$ENDIF}
+     
      {Check Frame Type}
      case Transport.FrameType of
       FRAME_TYPE_TOKEN_RING:begin
@@ -3675,23 +3833,54 @@ begin
     end;
   end;
   
-  {Copy Packet Fragments to Buffer}
-  Packet:=APacket;
-  while Packet <> nil do
+  {Check Buffered}
+  if FBufferedTransmit then
    begin
-    System.Move(Packet.Data^,Pointer(PtrUInt(Buffer) + PtrUInt(Size))^,Packet.Size);
-    Inc(Size,Packet.Size);
-    Packet:=Packet.Next;
-   end;
-  
-  {Send the Packet}
-  if NetworkDeviceWrite(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
+    {Copy Packet Fragments to Buffer}
+    Packet:=APacket;
+    while Packet <> nil do
+     begin
+      {Check Size}
+      if (Size + Packet.Size) > NetworkPacket.Length then
+       begin
+        System.Move(Packet.Data^,Pointer(PtrUInt(Buffer) + PtrUInt(Size))^,NetworkPacket.Length - Size);
+        Size:=NetworkPacket.Length;
+        
+        Break;
+       end
+      else
+       begin
+        System.Move(Packet.Data^,Pointer(PtrUInt(Buffer) + PtrUInt(Size))^,Packet.Size);
+        Inc(Size,Packet.Size);
+       end; 
+      
+      Packet:=Packet.Next;
+     end;
+     
+    {Update Packet}
+    NetworkPacket.Length:=Size;
+     
+    {Transmit Buffer}
+    Result:=NetworkBufferTransmit(FDevice,NetworkEntry) = ERROR_SUCCESS;
+   end
+  else
    begin
-    Result:=True;
-   end;
+    {Copy Packet Fragments to Buffer}
+    Packet:=APacket;
+    while Packet <> nil do
+     begin
+      System.Move(Packet.Data^,Pointer(PtrUInt(Buffer) + PtrUInt(Size))^,Packet.Size);
+      Inc(Size,Packet.Size);
+      
+      Packet:=Packet.Next;
+     end;
+     
+    {Send the Packet}
+    Result:=NetworkDeviceWrite(FDevice,Buffer,Size,Length) = ERROR_SUCCESS;
    
-  {Release Buffer} //To Do //Call Device to Release for non copy
-  FreeMem(Buffer);
+    {Release Buffer}
+    FreeMem(Buffer);
+   end; 
  finally 
   Transport.ReaderUnlock;
  end; 
@@ -3924,6 +4113,10 @@ begin
   end;
   if FMediaType = MEDIA_TYPE_UNKNOWN then Exit;   
   
+  {Check Buffered Receive/Transmit}
+  FBufferedReceive:=(FDevice.Device.DeviceFlags and NETWORK_FLAG_RX_BUFFER) <> 0;
+  FBufferedTransmit:=(FDevice.Device.DeviceFlags and NETWORK_FLAG_TX_BUFFER) <> 0;
+  
   {Open Device}
   if FDevice.DeviceOpen(FDevice) = ERROR_SUCCESS then
    begin
@@ -4030,18 +4223,12 @@ end;
 
 function TWiredAdapter.ProcessAdapter:Boolean;
 var
- Data:Pointer;
+ Count:Integer;
  Size:LongWord;
  Length:LongWord;
  Buffer:Pointer;
- FrameType:Word;
- PacketType:Word;
- LLC:PLLCHeader;
- SNAP:PSNAPHeader;
- Dest:PHardwareAddress;
- Source:PHardwareAddress;
- Ethernet:PEthernetHeader;
- Transport:TAdapterTransport;
+ NetworkEntry:PNetworkEntry;
+ NetworkPacket:PNetworkPacket;
 begin
  {}
  Result:=False;
@@ -4055,142 +4242,65 @@ begin
  {Check Thread}
  if FThread = nil then Exit;
  
- {Check Media Type}
- case FMediaType of
-  MEDIA_TYPE_ETHERNET:begin
-    {Get Size}
-    Size:=ETHERNET_MAX_PACKET_SIZE;
-   end;
-  MEDIA_TYPE_TOKENRING:begin
-    
-    Size:=0;
-    Exit; //To Do
-   end;
- end; 
-                      //Need to check device flags/capabilities for support of buffer allocate etc //See TWiFiAdapter.ProcessAdapter
- {Get Buffer} //To Do //Call Device to Allocate for non copy //Device should return an Offset to allow for it's own header (if any, eg USB)
- Buffer:=GetMem(Size);
- if Buffer = nil then Exit;
- try
-  {Receive a Packet}
-  if NetworkDeviceRead(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
-   begin
+ {Check Buffered}
+ if FBufferedReceive then
+  begin
+   {Receive a Buffer}
+   if NetworkBufferReceive(FDevice,NetworkEntry) <> ERROR_SUCCESS then Exit;
+   try
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: ProcessAdapter (' + Name + ')');
     {$ENDIF}
    
-    {Check Media Type}
-    case FMediaType of
-     MEDIA_TYPE_ETHERNET:begin
-       {Check Length}
-       if Length < ETHERNET_HEADER_SIZE then Exit;
-        
-       {Get Header}
-       Ethernet:=PEthernetHeader(Buffer);
-        
-       {Determine Frame Type}
-       FrameType:=FRAME_TYPE_UNKNOWN;
-        
-       //To Do //Check for 802.1Q tag here, TypeLength = = $8100 if tagged, real TypeLength is after the 4 byte 802.1Q tag
-       
-       {Check Type Length}
-       if WordBEtoN(Ethernet.TypeLength) > PACKET_MIN_TYPE then
-        begin
-         {$IFDEF NETWORK_DEBUG}
-         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_II));
-         {$ENDIF}
-          
-         {Get Frame Type}
-         FrameType:=FRAME_TYPE_ETHERNET_II;
-          
-         {Get Packet Type}
-         PacketType:=WordBEtoN(Ethernet.TypeLength);
-          
-         {Get Size}
-         Size:=Length - ETHERNET_HEADER_SIZE;
-          
-         {Get Data}
-         Data:=Pointer(PtrUInt(Buffer) + ETHERNET_HEADER_SIZE);
-          
-         {Get Dest Address}
-         Dest:=@Ethernet.DestAddress;
-         {Get Source Address}
-         Source:=@Ethernet.SourceAddress;
-        end
-       else
-        begin
-         {Check Payload Start}
-         if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_SNAP then
-          begin
-           {$IFDEF NETWORK_DEBUG}
-           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_SNAP));
-           {$ENDIF}
-            
-           {Get Frame Type}
-           FrameType:=FRAME_TYPE_ETHERNET_SNAP;
-            
-           {Get LLC}
-           LLC:=PLLCHeader(@Ethernet.Data);
-            
-           Exit; //To Do
-          end
-         else if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_8023 then 
-          begin
-           {$IFDEF NETWORK_DEBUG}
-           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8023));
-           {$ENDIF}
-           
-           {Get Frame Type}
-           FrameType:=FRAME_TYPE_ETHERNET_8023;
-           
-           Exit; //To Do
-          end
-         else
-          begin
-           {$IFDEF NETWORK_DEBUG}
-           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8022));
-           {$ENDIF}
-            
-           {Get Frame Type}
-           FrameType:=FRAME_TYPE_ETHERNET_8022;
-
-           {Get LLC}
-           LLC:=PLLCHeader(@Ethernet.Data);
-            
-           Exit; //To Do
-          end;           
-        end;         
-      end; 
-     MEDIA_TYPE_TOKENRING:begin
-       Exit; //To Do
-      end;
-    end; 
+    {Get each Packet}
+    for Count:=0 to NetworkEntry.Count - 1 do
+     begin
+      {Get Packet}
+      NetworkPacket:=@NetworkEntry.Packets[Count];
      
-    {$IFDEF NETWORK_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(PacketType));
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(Size));
-    {$ENDIF}
-     
-    {Get Transport}
-    Transport:=TAdapterTransport(GetTransportByType(PacketType,FrameType,True,NETWORK_LOCK_READ));
-    if Transport = nil then Exit;
-    try
-     {Check Handler}
-     if not(Assigned(Transport.PacketHandler)) then Exit;
-     
-     {Call the Packet Handler}
-     Transport.PacketHandler(THandle(Transport),Source,Dest,Data,Size,CompareBroadcast(THandle(Transport),Dest^));
-     
-     {Return Result}
-     Result:=True;
-    finally 
-     Transport.ReaderUnlock;
-    end; 
+      {Process Packet}
+      Result:=ProcessPacket(NetworkPacket.Data,NetworkPacket.Length);
+      if not Result then Exit;
+     end;
+   finally
+    {Release Buffer}
+    NetworkBufferRelease(FDevice,NetworkEntry);
+   end;
+  end
+ else
+  begin
+   {Check Media Type}
+   case FMediaType of
+    MEDIA_TYPE_ETHERNET:begin
+      {Get Size}
+      Size:=ETHERNET_MAX_PACKET_SIZE;
+     end;
+    MEDIA_TYPE_TOKENRING:begin
+      
+      Size:=0;
+      Exit; //To Do
+     end;
    end; 
- finally
-  {Release Buffer} //To Do //Call Device to Release for non copy
-  FreeMem(Buffer);
- end; 
+               
+   {Get Buffer}
+   Buffer:=GetMem(Size);
+   if Buffer = nil then Exit;
+   try
+    {Receive a Packet}
+    if NetworkDeviceRead(FDevice,Buffer,Size,Length) = ERROR_SUCCESS then
+     begin
+      {$IFDEF NETWORK_DEBUG}
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: ProcessAdapter (' + Name + ')');
+      {$ENDIF}
+
+      {Process Packet}
+      Result:=ProcessPacket(Buffer,Length);
+     end; 
+   finally
+    {Release Buffer}
+    FreeMem(Buffer);
+   end; 
+  end; 
 end;
 
 {==============================================================================}
@@ -6769,6 +6879,39 @@ begin
      Result[Count]:=StrToIntDef('$' + Copy(AAddress,(Count * 3) + 1,2),0);
     end;
   end;
+end;
+
+{==============================================================================}
+
+function ValidHardwareAddress(const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=False;
+ if CompareHardwareMulticast(AAddress) then Exit;
+ if CompareHardwareDefault(AAddress) then Exit;
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RandomHardwareAddress:THardwareAddress;
+var
+ Count:Integer;
+begin
+ {}
+ Randomize;
+ 
+ {Generate Random Address}
+ for Count:=0 to HARDWARE_ADDRESS_SIZE - 1 do
+  begin
+   Result[Count]:=Random(256);
+  end;
+  
+ {Clear Multicast Bit}
+ Result[0]:=Result[0] and $FE;
+ 
+ {Set Local Assignment Bit} 
+ Result[0]:=Result[0] or $02;
 end;
 
 {==============================================================================}
