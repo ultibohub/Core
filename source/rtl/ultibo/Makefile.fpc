@@ -149,7 +149,10 @@ ULTIBO_UNITS=globalconfig \
              gc2000 \
              mali400 \
              mali450 \
+             bigint \
              crypto \
+             asn1 \
+             x509 \
              ssl \
              security \
              authentication \

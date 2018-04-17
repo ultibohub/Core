@@ -1,7 +1,7 @@
 {
 Ultibo Crypto interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,78 +17,116 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- \wpa_supplicant-2.5\src\crypto\md5-internal.c - Copyright (c) 2003-2005, Jouni Malinen
+ WPA Supplicant - \src\crypto\md5-internal.c - Copyright (c) 2003-2005, Jouni Malinen
                                                  (Public domain implementation of MD5 by Colin Plumb 1993)
- 
- \wpa_supplicant-2.5\src\crypto\sha1-internal.c - Copyright (c) 2003-2005, Jouni Malinen
+
+ WPA Supplicant - \src\crypto\sha1-internal.c - Copyright (c) 2003-2005, Jouni Malinen
                                                   (Public domain implementation of SHA1 by Steve Reid and others)
- 
- \wpa_supplicant-2.5\src\crypto\sha256-internal.c - Copyright (c) 2003-2011, Jouni Malinen
+
+ WPA Supplicant - \src\crypto\sha256-internal.c - Copyright (c) 2003-2011, Jouni Malinen
                                                     (Public domain implementation of SHA256 by Tom St Denis)
 
- \wpa_supplicant-2.5\src\crypto\aes-internal.c - Copyright (c) 2003-2012, Jouni Malinen
+ WPA Supplicant - \src\crypto\sha384-internal.c - Copyright (c) 2015, Pali Rohar
+                                                    (Public domain implementation of SHA384 by Tom St Denis)
+
+ WPA Supplicant - \src\crypto\sha512-internal.c - Copyright (c) 2015, Pali Rohar
+                                                    (Public domain implementation of SHA512 by Tom St Denis)
+
+ WPA Supplicant - \src\crypto\aes-internal.c - Copyright (c) 2003-2012, Jouni Malinen
                                                  (Public domain implementation of AES by Vincent Rijmen, Antoon Bosselaers and Paulo Barreto)
- 
- \wpa_supplicant-2.5\src\crypto\des-internal.c - Copyright (c) 2006-2009, Jouni Malinen
+
+ WPA Supplicant - \src\crypto\des-internal.c - Copyright (c) 2006-2009, Jouni Malinen
                                                  (Public domain implementation of DES by Tom St Denis)
- 
- \wpa_supplicant-2.5\src\crypto\rc4.c - Copyright (c) 2002-2005, Jouni Malinen
- 
- \wpa_supplicant-2.5\src\utils\base64.c - Copyright (c) 2005-2011, Jouni Malinen
- 
+
+ WPA Supplicant - \src\crypto\rc4.c - Copyright (c) 2002-2005, Jouni Malinen
+
+ WPA Supplicant - \src\utils\base64.c - Copyright (c) 2005-2011, Jouni Malinen
+
+ WPA Supplicant - \src\crypto\aes-ctr.c - Copyright (c) 2003-2007, Jouni Malinen
+
+ WPA Supplicant - \src\crypto\aes-gcm.c - Copyright (c) 2012, Jouni Malinen
+
+ AXTLS - \crypto\rsa.c - Copyright (c) 2007-2014, Cameron Rich
+
+ WPA Supplicant - \src\tls\rsa.c - Copyright (c) 2006-2014, Jouni Malinen
+
+ WPA Supplicant - \src\tls\pkcs1.c - Copyright (c) 2006-2014, Jouni Malinen
+
 References
 ==========
 
- Based on sources from OpenSSL, WPA supplicant, the Linux kernel and others
- 
+ Based on sources from OpenSSL, WPA supplicant, LibTomCrypt the Linux kernel and others
+
  RFC3174 - US Secure Hash Algorithm 1 (SHA1) - https://tools.ietf.org/html/rfc3174
- 
+
  RFC4634 - US Secure Hash Algorithms (SHA and HMAC-SHA) - https://tools.ietf.org/html/rfc4634
- 
+
  RFC2104 - HMAC: Keyed-Hashing for Message Authentication - https://www.ietf.org/rfc/rfc2104.txt
 
  RFC1341 - MIME  (Multipurpose Internet Mail Extensions) - https://tools.ietf.org/html/rfc1341
- 
+
+ RFC2313 - PKCS #1: RSA Encryption Version 1.5 - https://tools.ietf.org/html/rfc2313
+
 Cryptography
 ============
 
  MD5 - https://en.wikipedia.org/wiki/MD5
- 
+
  AES (Rijndael) - https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
- 
+
  DES - https://en.wikipedia.org/wiki/Data_Encryption_Standard
        https://en.wikipedia.org/wiki/DES_supplementary_material
        https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-       
+
  3DES - https://en.wikipedia.org/wiki/Triple_DES
         https://en.wikipedia.org/wiki/DES_supplementary_material
         https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-        
+
  RC4 - https://en.wikipedia.org/wiki/RC4
- 
+
  SHA1 - https://en.wikipedia.org/wiki/SHA-1
- 
+
  SHA256 - https://en.wikipedia.org/wiki/SHA-2
- 
- RSA - bignum.c / rsa.c
- 
+
+ SHA384 - https://en.wikipedia.org/wiki/SHA-2
+
+ SHA512 - https://en.wikipedia.org/wiki/SHA-2
+
+ RSA - https://simple.wikipedia.org/wiki/RSA_algorithm
+       https://en.wikipedia.org/wiki/PKCS
+       https://en.wikipedia.org/wiki/PKCS_1
+
+ ECC - https://en.wikipedia.org/wiki/Elliptic-curve_cryptography
+
+ DSA - https://en.wikipedia.org/wiki/Digital_Signature_Algorithm
+
+ ECDSA - https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+
+ DH (Diffie Hellman) - https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
+
+ ECDH / ECDHE - https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman
+
  HMAC (Hash based message authenitcation code) - https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
- 
+
  CRC - https://en.wikipedia.org/wiki/Cyclic_redundancy_check
        CRC is not a cryptographic algorithm but an error checking scheme for binary data.
        It is included here for convenience as it is used by some drivers such as Wireless USB drivers for firmware checking.
-       
- MIME64 - https://en.wikipedia.org/wiki/MIME
+
+ Base64 - https://en.wikipedia.org/wiki/MIME
           https://en.wikipedia.org/wiki/Base64
           MIME Base64 is not a cryptographic algorithm but an encoding scheme for binary to text conversion.
           It is included here for convenience as it is used by protocols such as SMTP for encoding plain text passwords.
- 
+
+ Cipher Modes - https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+
+ Galois/Counter Mode (GCM) - https://en.wikipedia.org/wiki/Galois/Counter_Mode
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -99,14 +137,8 @@ unit Crypto;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,BigInt,SysUtils;
 
-//To do //See: \wpa_supplicant-2.4\src\crypto
-        //See: \wpa_supplicant-2.4\src\tls
-
-//To Do //See also: \source\packages\hash
-        //Implementations of CRC, MD5, NTLM, SHA1 etc
-        
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -114,21 +146,23 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils;
 {==============================================================================}
 const
  {Crypto specific constants}
- 
+
  {Cipher algorithms}
  CRYPTO_CIPHER_ALG_NONE = 0;
  CRYPTO_CIPHER_ALG_AES  = 1;
  CRYPTO_CIPHER_ALG_DES  = 2;
  CRYPTO_CIPHER_ALG_3DES = 3;
  CRYPTO_CIPHER_ALG_RC4  = 4;
- 
+
  {Cipher modes}
  CRYPTO_CIPHER_MODE_ECB = 0; {Electronic Codebook}
  CRYPTO_CIPHER_MODE_CBC = 1; {Cipher Block Chaining}
  CRYPTO_CIPHER_MODE_CFB = 2; {Cipher Feedback}
  CRYPTO_CIPHER_MODE_OFB = 3; {Output Feedback}
- CRYPTO_CIPHER_MODE_CRT = 4; {Counter}
- 
+ CRYPTO_CIPHER_MODE_CTR = 4; {Counter}
+ CRYPTO_CIPHER_MODE_CCM = 5; {Counter with CBC-MAC}
+ CRYPTO_CIPHER_MODE_GCM = 5; {Galois/Counter Mode}
+
  {Hash algorithms}
  CRYPTO_HASH_ALG_NONE        = 0;
  CRYPTO_HASH_ALG_MD5         = 1;
@@ -137,16 +171,20 @@ const
  CRYPTO_HASH_ALG_HMAC_MD5    = 4;
  CRYPTO_HASH_ALG_HMAC_SHA1   = 5;
  CRYPTO_HASH_ALG_HMAC_SHA256 = 6;
- 
+ CRYPTO_HASH_ALG_SHA384      = 7;
+ CRYPTO_HASH_ALG_SHA512      = 8;
+ CRYPTO_HASH_ALG_HMAC_SHA384 = 9;
+ CRYPTO_HASH_ALG_HMAC_SHA512 = 10;
+
  {MD5 constants}
 
  {AES constants}
  AES_BLOCK_SIZE = 16;  {128 bit blocks}
- 
+
  AES_KEY_SIZE128 = 16; {128 bit keys}
  AES_KEY_SIZE192 = 24; {192 bit keys}
  AES_KEY_SIZE256 = 32; {256 bit keys}
- 
+
  {Precomputed tables for AES}
  {Encrypting}
  {Te0[x] = S [x].[02, 01, 01, 03]}
@@ -154,15 +192,15 @@ const
  {Te2[x] = S [x].[01, 03, 02, 01]}
  {Te3[x] = S [x].[01, 01, 03, 02]}
  {Te4[x] = S [x].[01, 01, 01, 01]}
- 
+
  {Decrypting}
  {Td0[x] = Si[x].[0e, 09, 0d, 0b]}
  {Td1[x] = Si[x].[0b, 0e, 09, 0d]}
  {Td2[x] = Si[x].[0d, 0b, 0e, 09]}
  {Td3[x] = Si[x].[09, 0d, 0b, 0e]}
  {Td4[x] = Si[x].[01, 01, 01, 01]}
- 
- AES_TE0:array[0..255] of LongWord = (  
+
+ AES_TE0:array[0..255] of LongWord = (
   $c66363a5, $f87c7c84, $ee777799, $f67b7b8d,
   $fff2f20d, $d66b6bbd, $de6f6fb1, $91c5c554,
   $60303050, $02010103, $ce6767a9, $562b2b7d,
@@ -229,7 +267,7 @@ const
   $7bb0b0cb, $a85454fc, $6dbbbbd6, $2c16163a);
 
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
- AES_TE1:array[0..255] of LongWord = (  
+ AES_TE1:array[0..255] of LongWord = (
   $a5c66363, $84f87c7c, $99ee7777, $8df67b7b,
   $0dfff2f2, $bdd66b6b, $b1de6f6f, $5491c5c5,
   $50603030, $03020101, $a9ce6767, $7d562b2b,
@@ -295,7 +333,7 @@ const
   $c3824141, $b0299999, $775a2d2d, $111e0f0f,
   $cb7bb0b0, $fca85454, $d66dbbbb, $3a2c1616);
 
- AES_TE2:array[0..255] of LongWord = (  
+ AES_TE2:array[0..255] of LongWord = (
   $63a5c663, $7c84f87c, $7799ee77, $7b8df67b,
   $f20dfff2, $6bbdd66b, $6fb1de6f, $c55491c5,
   $30506030, $01030201, $67a9ce67, $2b7d562b,
@@ -361,7 +399,7 @@ const
   $41c38241, $99b02999, $2d775a2d, $0f111e0f,
   $b0cb7bb0, $54fca854, $bbd66dbb, $163a2c16);
 
- AES_TE3:array[0..255] of LongWord = (  
+ AES_TE3:array[0..255] of LongWord = (
   $6363a5c6, $7c7c84f8, $777799ee, $7b7b8df6,
   $f2f20dff, $6b6bbdd6, $6f6fb1de, $c5c55491,
   $30305060, $01010302, $6767a9ce, $2b2b7d56,
@@ -428,7 +466,7 @@ const
   $b0b0cb7b, $5454fca8, $bbbbd66d, $16163a2c);
  {$ENDIF CRYPTO_AES_PRECOMPUTED_TABLES}
 
- AES_TE4:array[0..255] of LongWord = (  
+ AES_TE4:array[0..255] of LongWord = (
   $63636363, $7c7c7c7c, $77777777, $7b7b7b7b,
   $f2f2f2f2, $6b6b6b6b, $6f6f6f6f, $c5c5c5c5,
   $30303030, $01010101, $67676767, $2b2b2b2b,
@@ -493,9 +531,9 @@ const
   $bfbfbfbf, $e6e6e6e6, $42424242, $68686868,
   $41414141, $99999999, $2d2d2d2d, $0f0f0f0f,
   $b0b0b0b0, $54545454, $bbbbbbbb, $16161616);
- 
+
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
- AES_TE4_0:array[0..255] of LongWord = (  
+ AES_TE4_0:array[0..255] of LongWord = (
   $00000063, $0000007c, $00000077, $0000007b, $000000f2, $0000006b, $0000006f, $000000c5,
   $00000030, $00000001, $00000067, $0000002b, $000000fe, $000000d7, $000000ab, $00000076,
   $000000ca, $00000082, $000000c9, $0000007d, $000000fa, $00000059, $00000047, $000000f0,
@@ -529,7 +567,7 @@ const
   $0000008c, $000000a1, $00000089, $0000000d, $000000bf, $000000e6, $00000042, $00000068,
   $00000041, $00000099, $0000002d, $0000000f, $000000b0, $00000054, $000000bb, $00000016);
 
- AES_TE4_1:array[0..255] of LongWord = (  
+ AES_TE4_1:array[0..255] of LongWord = (
   $00006300, $00007c00, $00007700, $00007b00, $0000f200, $00006b00, $00006f00, $0000c500,
   $00003000, $00000100, $00006700, $00002b00, $0000fe00, $0000d700, $0000ab00, $00007600,
   $0000ca00, $00008200, $0000c900, $00007d00, $0000fa00, $00005900, $00004700, $0000f000,
@@ -563,7 +601,7 @@ const
   $00008c00, $0000a100, $00008900, $00000d00, $0000bf00, $0000e600, $00004200, $00006800,
   $00004100, $00009900, $00002d00, $00000f00, $0000b000, $00005400, $0000bb00, $00001600);
 
- AES_TE4_2:array[0..255] of LongWord = (  
+ AES_TE4_2:array[0..255] of LongWord = (
   $00630000, $007c0000, $00770000, $007b0000, $00f20000, $006b0000, $006f0000, $00c50000,
   $00300000, $00010000, $00670000, $002b0000, $00fe0000, $00d70000, $00ab0000, $00760000,
   $00ca0000, $00820000, $00c90000, $007d0000, $00fa0000, $00590000, $00470000, $00f00000,
@@ -597,7 +635,7 @@ const
   $008c0000, $00a10000, $00890000, $000d0000, $00bf0000, $00e60000, $00420000, $00680000,
   $00410000, $00990000, $002d0000, $000f0000, $00b00000, $00540000, $00bb0000, $00160000);
 
- AES_TE4_3:array[0..255] of LongWord = (  
+ AES_TE4_3:array[0..255] of LongWord = (
   $63000000, $7c000000, $77000000, $7b000000, $f2000000, $6b000000, $6f000000, $c5000000,
   $30000000, $01000000, $67000000, $2b000000, $fe000000, $d7000000, $ab000000, $76000000,
   $ca000000, $82000000, $c9000000, $7d000000, $fa000000, $59000000, $47000000, $f0000000,
@@ -631,8 +669,8 @@ const
   $8c000000, $a1000000, $89000000, $0d000000, $bf000000, $e6000000, $42000000, $68000000,
   $41000000, $99000000, $2d000000, $0f000000, $b0000000, $54000000, $bb000000, $16000000);
  {$ENDIF CRYPTO_AES_PRECOMPUTED_TABLES}
- 
- AES_TD0:array[0..255] of LongWord = (  
+
+ AES_TD0:array[0..255] of LongWord = (
   $51f4a750, $7e416553, $1a17a4c3, $3a275e96,
   $3bab6bcb, $1f9d45f1, $acfa58ab, $4be30393,
   $2030fa55, $ad766df6, $88cc7691, $f5024c25,
@@ -697,9 +735,9 @@ const
   $161dc372, $bce2250c, $283c498b, $ff0d9541,
   $39a80171, $080cb3de, $d8b4e49c, $6456c190,
   $7bcb8461, $d532b670, $486c5c74, $d0b85742);
- 
+
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
- AES_TD1:array[0..255] of LongWord = (  
+ AES_TD1:array[0..255] of LongWord = (
   $5051f4a7, $537e4165, $c31a17a4, $963a275e,
   $cb3bab6b, $f11f9d45, $abacfa58, $934be303,
   $552030fa, $f6ad766d, $9188cc76, $25f5024c,
@@ -765,7 +803,7 @@ const
   $7139a801, $de080cb3, $9cd8b4e4, $906456c1,
   $617bcb84, $70d532b6, $74486c5c, $42d0b857);
 
- AES_TD2:array[0..255] of LongWord = (  
+ AES_TD2:array[0..255] of LongWord = (
   $a75051f4, $65537e41, $a4c31a17, $5e963a27,
   $6bcb3bab, $45f11f9d, $58abacfa, $03934be3,
   $fa552030, $6df6ad76, $769188cc, $4c25f502,
@@ -831,7 +869,7 @@ const
   $017139a8, $b3de080c, $e49cd8b4, $c1906456,
   $84617bcb, $b670d532, $5c74486c, $5742d0b8);
 
- AES_TD3:array[0..255] of LongWord = (  
+ AES_TD3:array[0..255] of LongWord = (
   $f4a75051, $4165537e, $17a4c31a, $275e963a,
   $ab6bcb3b, $9d45f11f, $fa58abac, $e303934b,
   $30fa5520, $766df6ad, $cc769188, $024c25f5,
@@ -898,7 +936,7 @@ const
   $cb84617b, $32b670d5, $6c5c7448, $b85742d0);
  {$ENDIF CRYPTO_AES_PRECOMPUTED_TABLES}
 
- AES_TD4:array[0..255] of LongWord = (  
+ AES_TD4:array[0..255] of LongWord = (
   $52525252, $09090909, $6a6a6a6a, $d5d5d5d5,
   $30303030, $36363636, $a5a5a5a5, $38383838,
   $bfbfbfbf, $40404040, $a3a3a3a3, $9e9e9e9e,
@@ -968,9 +1006,9 @@ const
   $01000000, $02000000, $04000000, $08000000,
   $10000000, $20000000, $40000000, $80000000,
   $1B000000, $36000000);
- 
+
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
- AES_TKS0:array[0..255] of LongWord = (  
+ AES_TKS0:array[0..255] of LongWord = (
   $00000000, $0e090d0b, $1c121a16, $121b171d, $3824342c, $362d3927, $24362e3a, $2a3f2331,
   $70486858, $7e416553, $6c5a724e, $62537f45, $486c5c74, $4665517f, $547e4662, $5a774b69,
   $e090d0b0, $ee99ddbb, $fc82caa6, $f28bc7ad, $d8b4e49c, $d6bde997, $c4a6fe8a, $caaff381,
@@ -1004,7 +1042,7 @@ const
   $d731dcca, $d938d1c1, $cb23c6dc, $c52acbd7, $ef15e8e6, $e11ce5ed, $f307f2f0, $fd0efffb,
   $a779b492, $a970b999, $bb6bae84, $b562a38f, $9f5d80be, $91548db5, $834f9aa8, $8d4697a3);
 
- AES_TKS1:array[0..255] of LongWord = (  
+ AES_TKS1:array[0..255] of LongWord = (
   $00000000, $0b0e090d, $161c121a, $1d121b17, $2c382434, $27362d39, $3a24362e, $312a3f23,
   $58704868, $537e4165, $4e6c5a72, $4562537f, $74486c5c, $7f466551, $62547e46, $695a774b,
   $b0e090d0, $bbee99dd, $a6fc82ca, $adf28bc7, $9cd8b4e4, $97d6bde9, $8ac4a6fe, $81caaff3,
@@ -1038,7 +1076,7 @@ const
   $cad731dc, $c1d938d1, $dccb23c6, $d7c52acb, $e6ef15e8, $ede11ce5, $f0f307f2, $fbfd0eff,
   $92a779b4, $99a970b9, $84bb6bae, $8fb562a3, $be9f5d80, $b591548d, $a8834f9a, $a38d4697);
 
- AES_TKS2:array[0..255] of LongWord = (  
+ AES_TKS2:array[0..255] of LongWord = (
   $00000000, $0d0b0e09, $1a161c12, $171d121b, $342c3824, $3927362d, $2e3a2436, $23312a3f,
   $68587048, $65537e41, $724e6c5a, $7f456253, $5c74486c, $517f4665, $4662547e, $4b695a77,
   $d0b0e090, $ddbbee99, $caa6fc82, $c7adf28b, $e49cd8b4, $e997d6bd, $fe8ac4a6, $f381caaf,
@@ -1072,7 +1110,7 @@ const
   $dccad731, $d1c1d938, $c6dccb23, $cbd7c52a, $e8e6ef15, $e5ede11c, $f2f0f307, $fffbfd0e,
   $b492a779, $b999a970, $ae84bb6b, $a38fb562, $80be9f5d, $8db59154, $9aa8834f, $97a38d46);
 
- AES_TKS3:array[0..255] of LongWord = (  
+ AES_TKS3:array[0..255] of LongWord = (
   $00000000, $090d0b0e, $121a161c, $1b171d12, $24342c38, $2d392736, $362e3a24, $3f23312a,
   $48685870, $4165537e, $5a724e6c, $537f4562, $6c5c7448, $65517f46, $7e466254, $774b695a,
   $90d0b0e0, $99ddbbee, $82caa6fc, $8bc7adf2, $b4e49cd8, $bde997d6, $a6fe8ac4, $aff381ca,
@@ -1106,17 +1144,17 @@ const
   $31dccad7, $38d1c1d9, $23c6dccb, $2acbd7c5, $15e8e6ef, $1ce5ede1, $07f2f0f3, $0efffbfd,
   $79b492a7, $70b999a9, $6bae84bb, $62a38fb5, $5d80be9f, $548db591, $4f9aa883, $4697a38d);
  {$ENDIF CRYPTO_AES_PRECOMPUTED_TABLES}
- 
+
  {DES constants}
  DES_BLOCK_SIZE = 8;  {64 bit blocks}
- 
+
  DES_KEY_SIZE = 8; {64 bit keys}
- 
+
  DES_KEYTYPE_ENCRYPT = 0;
  DES_KEYTYPE_DECRYPT = 1;
- 
+
  DES_BYTEBIT:array[0..7] of LongWord = (
-  $80, $40, $20, $10, $08, $04, $02, $01); 
+  $80, $40, $20, $10, $08, $04, $02, $01);
 
  DES_BIGBYTE:array[0..23] of LongWord = (
   $00800000, $00400000, $00200000, $00100000,
@@ -1124,26 +1162,26 @@ const
   $00008000, $00004000, $00002000, $00001000,
   $00000800, $00000400, $00000200, $00000100,
   $00000080, $00000040, $00000020, $00000010,
-  $00000008, $00000004, $00000002, $00000001); 
-  
+  $00000008, $00000004, $00000002, $00000001);
+
  DES_TOTROT:array[0..15] of Byte = (
   1,   2,  4,  6,
-  8,  10, 12, 14, 
-  15, 17, 19, 21, 
+  8,  10, 12, 14,
+  15, 17, 19, 21,
   23, 25, 27, 28);
-  
+
  DES_PC1:array[0..55] of Byte = (       {Permuted choice 1 (PC-1)}
-  56, 48, 40, 32, 24, 16,  8,  0, 57, 49, 41, 33, 25, 17,  
-   9,  1, 58, 50, 42, 34, 26, 18, 10,  2, 59, 51, 43, 35, 
+  56, 48, 40, 32, 24, 16,  8,  0, 57, 49, 41, 33, 25, 17,
+   9,  1, 58, 50, 42, 34, 26, 18, 10,  2, 59, 51, 43, 35,
   62, 54, 46, 38, 30, 22, 14,  6, 61, 53, 45, 37, 29, 21,
   13,  5, 60, 52, 44, 36, 28, 20, 12,  4, 27, 19, 11,  3);
-  
+
  DES_PC2:array[0..47] of Byte = (       {Permuted choice 2 (PC-2)}
   13, 16, 10, 23,  0,  4,  2, 27, 14,  5, 20,  9,
   22, 18, 11,  3, 25,  7, 15,  6, 26, 19, 12,  1,
   40, 51, 30, 36, 46, 54, 29, 39, 50, 44, 32, 47,
   43, 48, 38, 55, 33, 52, 45, 41, 49, 35, 28, 31);
-  
+
  DES_S1:array[0..63] of LongWord = (    {Substitution boxes (S-boxes)(S1)}
   $01010400, $00000000, $00010000, $01010404,
   $01010004, $00010404, $00000004, $00010000,
@@ -1161,7 +1199,7 @@ const
   $01000004, $00000404, $00010404, $01010400,
   $00000404, $01000400, $01000400, $00000000,
   $00010004, $00010400, $00000000, $01010004);
-  
+
  DES_S2:array[0..63] of LongWord = (    {Substitution boxes (S-boxes)(S2)}
   $80108020, $80008000, $00008000, $00108020,
   $00100000, $00000020, $80100020, $80008020,
@@ -1287,7 +1325,7 @@ const
   $10040000, $10001000, $10001040, $00000000,
   $10041040, $00041000, $00041000, $00001040,
   $00001040, $00040040, $10000000, $10041000);
-  
+
  {$IFDEF CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}
  DES_IP:array[0..7,0..255] of QWord = ( {Initial permutation (IP)}
 ( $0000000000000000, $0000001000000000, $0000000000000010, $0000001000000010,
@@ -1354,7 +1392,7 @@ const
   $1010100010100000, $1010101010100000, $1010100010100010, $1010101010100010,
   $1010000010101000, $1010001010101000, $1010000010101010, $1010001010101010,
   $1010100010101000, $1010101010101000, $1010100010101010, $1010101010101010),
-  
+
 ( $0000000000000000, $0000000800000000, $0000000000000008, $0000000800000008,
   $0000080000000000, $0000080800000000, $0000080000000008, $0000080800000008,
   $0000000000000800, $0000000800000800, $0000000000000808, $0000000800000808,
@@ -1419,7 +1457,7 @@ const
   $0808080008080000, $0808080808080000, $0808080008080008, $0808080808080008,
   $0808000008080800, $0808000808080800, $0808000008080808, $0808000808080808,
   $0808080008080800, $0808080808080800, $0808080008080808, $0808080808080808),
-  
+
 ( $0000000000000000, $0000000400000000, $0000000000000004, $0000000400000004,
   $0000040000000000, $0000040400000000, $0000040000000004, $0000040400000004,
   $0000000000000400, $0000000400000400, $0000000000000404, $0000000400000404,
@@ -1484,7 +1522,7 @@ const
   $0404040004040000, $0404040404040000, $0404040004040004, $0404040404040004,
   $0404000004040400, $0404000404040400, $0404000004040404, $0404000404040404,
   $0404040004040400, $0404040404040400, $0404040004040404, $0404040404040404),
-  
+
 ( $0000000000000000, $0000000200000000, $0000000000000002, $0000000200000002,
   $0000020000000000, $0000020200000000, $0000020000000002, $0000020200000002,
   $0000000000000200, $0000000200000200, $0000000000000202, $0000000200000202,
@@ -1549,7 +1587,7 @@ const
   $0202020002020000, $0202020202020000, $0202020002020002, $0202020202020002,
   $0202000002020200, $0202000202020200, $0202000002020202, $0202000202020202,
   $0202020002020200, $0202020202020200, $0202020002020202, $0202020202020202),
-  
+
 ( $0000000000000000, $0000010000000000, $0000000000000100, $0000010000000100,
   $0001000000000000, $0001010000000000, $0001000000000100, $0001010000000100,
   $0000000000010000, $0000010000010000, $0000000000010100, $0000010000010100,
@@ -1614,7 +1652,7 @@ const
   $0101000101000001, $0101010101000001, $0101000101000101, $0101010101000101,
   $0100000101010001, $0100010101010001, $0100000101010101, $0100010101010101,
   $0101000101010001, $0101010101010001, $0101000101010101, $0101010101010101),
-  
+
 ( $0000000000000000, $0000008000000000, $0000000000000080, $0000008000000080,
   $0000800000000000, $0000808000000000, $0000800000000080, $0000808000000080,
   $0000000000008000, $0000008000008000, $0000000000008080, $0000008000008080,
@@ -1679,7 +1717,7 @@ const
   $8080800080800000, $8080808080800000, $8080800080800080, $8080808080800080,
   $8080000080808000, $8080008080808000, $8080000080808080, $8080008080808080,
   $8080800080808000, $8080808080808000, $8080800080808080, $8080808080808080),
-  
+
 ( $0000000000000000, $0000004000000000, $0000000000000040, $0000004000000040,
   $0000400000000000, $0000404000000000, $0000400000000040, $0000404000000040,
   $0000000000004000, $0000004000004000, $0000000000004040, $0000004000004040,
@@ -1744,7 +1782,7 @@ const
   $4040400040400000, $4040404040400000, $4040400040400040, $4040404040400040,
   $4040000040404000, $4040004040404000, $4040000040404040, $4040004040404040,
   $4040400040404000, $4040404040404000, $4040400040404040, $4040404040404040),
-  
+
 ( $0000000000000000, $0000002000000000, $0000000000000020, $0000002000000020,
   $0000200000000000, $0000202000000000, $0000200000000020, $0000202000000020,
   $0000000000002000, $0000002000002000, $0000000000002020, $0000002000002020,
@@ -1810,7 +1848,7 @@ const
   $2020000020202000, $2020002020202000, $2020000020202020, $2020002020202020,
   $2020200020202000, $2020202020202000, $2020200020202020, $2020202020202020)
   );
- 
+
  DES_FP:array[0..7,0..255] of QWord = ( {Final permutation (IP-1)}
 ( $0000000000000000, $0000008000000000, $0000000002000000, $0000008002000000,
   $0000000000020000, $0000008000020000, $0000000002020000, $0000008002020000,
@@ -1876,7 +1914,7 @@ const
   $0202020000020002, $0202028000020002, $0202020002020002, $0202028002020002,
   $0202020000000202, $0202028000000202, $0202020002000202, $0202028002000202,
   $0202020000020202, $0202028000020202, $0202020002020202, $0202028002020202),
-  
+
 ( $0000000000000000, $0000000200000000, $0000000008000000, $0000000208000000,
   $0000000000080000, $0000000200080000, $0000000008080000, $0000000208080000,
   $0000000000000800, $0000000200000800, $0000000008000800, $0000000208000800,
@@ -1941,7 +1979,7 @@ const
   $0808080000080008, $0808080200080008, $0808080008080008, $0808080208080008,
   $0808080000000808, $0808080200000808, $0808080008000808, $0808080208000808,
   $0808080000080808, $0808080200080808, $0808080008080808, $0808080208080808),
-  
+
 ( $0000000000000000, $0000000800000000, $0000000020000000, $0000000820000000,
   $0000000000200000, $0000000800200000, $0000000020200000, $0000000820200000,
   $0000000000002000, $0000000800002000, $0000000020002000, $0000000820002000,
@@ -2006,7 +2044,7 @@ const
   $2020200000200020, $2020200800200020, $2020200020200020, $2020200820200020,
   $2020200000002020, $2020200800002020, $2020200020002020, $2020200820002020,
   $2020200000202020, $2020200800202020, $2020200020202020, $2020200820202020),
-  
+
 ( $0000000000000000, $0000002000000000, $0000000080000000, $0000002080000000,
   $0000000000800000, $0000002000800000, $0000000080800000, $0000002080800000,
   $0000000000008000, $0000002000008000, $0000000080008000, $0000002080008000,
@@ -2071,7 +2109,7 @@ const
   $8080800000800080, $8080802000800080, $8080800080800080, $8080802080800080,
   $8080800000008080, $8080802000008080, $8080800080008080, $8080802080008080,
   $8080800000808080, $8080802000808080, $8080800080808080, $8080802080808080),
-  
+
 ( $0000000000000000, $0000004000000000, $0000000001000000, $0000004001000000,
   $0000000000010000, $0000004000010000, $0000000001010000, $0000004001010000,
   $0000000000000100, $0000004000000100, $0000000001000100, $0000004001000100,
@@ -2136,7 +2174,7 @@ const
   $0101010000010001, $0101014000010001, $0101010001010001, $0101014001010001,
   $0101010000000101, $0101014000000101, $0101010001000101, $0101014001000101,
   $0101010000010101, $0101014000010101, $0101010001010101, $0101014001010101),
-  
+
 ( $0000000000000000, $0000000100000000, $0000000004000000, $0000000104000000,
   $0000000000040000, $0000000100040000, $0000000004040000, $0000000104040000,
   $0000000000000400, $0000000100000400, $0000000004000400, $0000000104000400,
@@ -2201,7 +2239,7 @@ const
   $0404040000040004, $0404040100040004, $0404040004040004, $0404040104040004,
   $0404040000000404, $0404040100000404, $0404040004000404, $0404040104000404,
   $0404040000040404, $0404040100040404, $0404040004040404, $0404040104040404),
-  
+
 ( $0000000000000000, $0000000400000000, $0000000010000000, $0000000410000000,
   $0000000000100000, $0000000400100000, $0000000010100000, $0000000410100000,
   $0000000000001000, $0000000400001000, $0000000010001000, $0000000410001000,
@@ -2266,7 +2304,7 @@ const
   $1010100000100010, $1010100400100010, $1010100010100010, $1010100410100010,
   $1010100000001010, $1010100400001010, $1010100010001010, $1010100410001010,
   $1010100000101010, $1010100400101010, $1010100010101010, $1010100410101010),
-  
+
 ( $0000000000000000, $0000001000000000, $0000000040000000, $0000001040000000,
   $0000000000400000, $0000001000400000, $0000000040400000, $0000001040400000,
   $0000000000004000, $0000001000004000, $0000000040004000, $0000001040004000,
@@ -2333,20 +2371,20 @@ const
   $4040400000404040, $4040401000404040, $4040400040404040, $4040401040404040)
   );
  {$ENDIF}
- 
+
  {3DES constants}
  DES3_BLOCK_SIZE = 8;  {64 bit blocks}
- 
+
  DES3_KEY_SIZE = 24; {192 bit (3 x 64 bit) keys}
- 
+
  {RC4 constants}
- 
+
  {SHA1 constants}
  SHA1_K20 = $5A827999;
  SHA1_K40 = $6ED9EBA1;
  SHA1_K60 = $8F1BBCDC;
  SHA1_K80 = $CA62C1D6;
- 
+
  {SHA256 constants}
  SHA256_K:array[0..63] of LongWord = (
   $428a2f98, $71374491, $b5c0fbcf, $e9b5dba5, $3956c25b, $59f111f1, $923f82a4, $ab1c5ed5,
@@ -2356,13 +2394,58 @@ const
   $27b70a85, $2e1b2138, $4d2c6dfc, $53380d13, $650a7354, $766a0abb, $81c2c92e, $92722c85,
   $a2bfe8a1, $a81a664b, $c24b8b70, $c76c51a3, $d192e819, $d6990624, $f40e3585, $106aa070,
   $19a4c116, $1e376c08, $2748774c, $34b0bcb5, $391c0cb3, $4ed8aa4a, $5b9cca4f, $682e6ff3,
-  $748f82ee, $78a5636f, $84c87814, $8cc70208, $90befffa, $a4506ceb, $bef9a3f7, $c67178f2); 
+  $748f82ee, $78a5636f, $84c87814, $8cc70208, $90befffa, $a4506ceb, $bef9a3f7, $c67178f2);
   {This is the precalculated K array for the SHA256 algorithm}
 
+ {SHA512 constants}
+ SHA512_K:array[0..79] of QWord = (
+  $428a2f98d728ae22, $7137449123ef65cd,
+  $b5c0fbcfec4d3b2f, $e9b5dba58189dbbc,
+  $3956c25bf348b538, $59f111f1b605d019,
+  $923f82a4af194f9b, $ab1c5ed5da6d8118,
+  $d807aa98a3030242, $12835b0145706fbe,
+  $243185be4ee4b28c, $550c7dc3d5ffb4e2,
+  $72be5d74f27b896f, $80deb1fe3b1696b1,
+  $9bdc06a725c71235, $c19bf174cf692694,
+  $e49b69c19ef14ad2, $efbe4786384f25e3,
+  $0fc19dc68b8cd5b5, $240ca1cc77ac9c65,
+  $2de92c6f592b0275, $4a7484aa6ea6e483,
+  $5cb0a9dcbd41fbd4, $76f988da831153b5,
+  $983e5152ee66dfab, $a831c66d2db43210,
+  $b00327c898fb213f, $bf597fc7beef0ee4,
+  $c6e00bf33da88fc2, $d5a79147930aa725,
+  $06ca6351e003826f, $142929670a0e6e70,
+  $27b70a8546d22ffc, $2e1b21385c26c926,
+  $4d2c6dfc5ac42aed, $53380d139d95b3df,
+  $650a73548baf63de, $766a0abb3c77b2a8,
+  $81c2c92e47edaee6, $92722c851482353b,
+  $a2bfe8a14cf10364, $a81a664bbc423001,
+  $c24b8b70d0f89791, $c76c51a30654be30,
+  $d192e819d6ef5218, $d69906245565a910,
+  $f40e35855771202a, $106aa07032bbd1b8,
+  $19a4c116b8d2d0c8, $1e376c085141ab53,
+  $2748774cdf8eeb99, $34b0bcb5e19b48a8,
+  $391c0cb3c5c95a63, $4ed8aa4ae3418acb,
+  $5b9cca4f7763e373, $682e6ff3d6b2b8a3,
+  $748f82ee5defb2fc, $78a5636f43172f60,
+  $84c87814a1f0ab72, $8cc702081a6439ec,
+  $90befffa23631e28, $a4506cebde82bde9,
+  $bef9a3f7b2c67915, $c67178f2e372532b,
+  $ca273eceea26619c, $d186b8c721c0c207,
+  $eada7dd6cde0eb1e, $f57d4f7fee6ed178,
+  $06f067aa72176fba, $0a637dc5a2c898a6,
+  $113f9804bef90dae, $1b710b35131c471b,
+  $28db77f523047d84, $32caab7b40c72493,
+  $3c9ebe0a15c9bebc, $431d67c49c100d4c,
+  $4cc5d4becb3e42b6, $597f299cfc657e2a,
+  $5fcb6fab3ad6faec, $6c44198c4a475817);
+  {This is the precalculated K array for the SHA512 algorithm}
+
  {RSA constants}
- 
+ RSA_MODULUS_BYTES_MAX = 512; {4096 bit maximum}
+
  {Random constants}
- 
+
  {CRC constants}
  CRC16_CCITT:array[0..255] of Word = (
   $0000, $1189, $2312, $329b, $4624, $57ad, $6536, $74bf,
@@ -2398,25 +2481,25 @@ const
   $f78f, $e606, $d49d, $c514, $b1ab, $a022, $92b9, $8330,
   $7bc7, $6a4e, $58d5, $495c, $3de3, $2c6a, $1ef1, $0f78);
   {Precomputed table for CRC16 CCITT values}
-  
- {MIME64 constants}
- MIME64EncodingTable:String = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-              
+
+ {Base64 constants}
+ Base64EncodeTable:String = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
 {==============================================================================}
 type
  {Crypto specific types}
- 
+
  {MD5 types}
  PMD5Digest = ^TMD5Digest;
  TMD5Digest = array[0..15] of Byte;
- 
+
  PMD5Block = ^TMD5Block;
  TMD5Block = record
   Data:Pointer;
   Size:LongWord;
   Next:PMD5Block;
  end;
- 
+
  PMD5Context = ^TMD5Context;
  TMD5Context = record
   Data:array[0..63] of Byte;
@@ -2426,10 +2509,10 @@ type
 
  PMD5ByteBuffer = ^TMD5ByteBuffer;
  TMD5ByteBuffer = array[0..63] of Byte;
- 
+
  PMD5LongBuffer = ^TMD5LongBuffer;
  TMD5LongBuffer = array[0..15] of LongWord;
- 
+
  {AES types}
  PAESKey = ^TAESKey;
  TAESKey = record
@@ -2437,17 +2520,18 @@ type
   EncryptKey:array[0..59] of LongWord;
   DecryptKey:array[0..59] of LongWord;
  end;
- 
+
  PAESContext = ^TAESContext;
  TAESContext = record
   AESKey:TAESKey;
   CBC:array[0..AES_BLOCK_SIZE - 1] of Byte;
+  CTR:array[0..AES_BLOCK_SIZE - 1] of Byte;
  end;
- 
+
  {DES types}
  PDESKey = ^TDESKey;
  TDESKey = array[0..31] of LongWord;
- 
+
  PDESContext = ^TDESContext;
  TDESContext = record
   EncryptKey:TDESKey;
@@ -2461,48 +2545,48 @@ type
   EncryptKey:array[0..2] of TDESKey;
   DecryptKey:array[0..2] of TDESKey;
  end;
- 
+
  PDES3Context = ^TDES3Context;
  TDES3Context = record
   DES3Key:TDES3Key;
   CBC:array[0..DES3_BLOCK_SIZE - 1] of Byte;
  end;
- 
+
  {RC4 types}
  PRC4State = ^TRC4State;
  TRC4State = array[0..255] of Byte;
- 
+
  PRC4Context = ^TRC4Context;
  TRC4Context = record
   Key:array[0..31] of Byte;
   KeySize:LongWord;
   Start:LongWord;
  end;
-  
+
  {SHA1 types}
  PSHA1Digest = ^TSHA1Digest;
  TSHA1Digest = array[0..19] of Byte;
- 
+
  PSHA1Block = ^TSHA1Block;
  TSHA1Block = record
   Data:Pointer;
   Size:LongWord;
   Next:PSHA1Block;
  end;
- 
+
  PSHA1Context = ^TSHA1Context;
  TSHA1Context = record
   Data:array[0..63] of Byte;
   State:array[0..4] of LongWord;
   Count:QWord;
  end;
- 
+
  PSHA1ByteBuffer = ^TSHA1ByteBuffer;
  TSHA1ByteBuffer = array[0..63] of Byte;
- 
+
  PSHA1LongBuffer = ^TSHA1LongBuffer;
  TSHA1LongBuffer = array[0..15] of LongWord;
- 
+
  {SHA256 types}
  PSHA256Digest = ^TSHA256Digest;
  TSHA256Digest = array[0..31] of Byte;
@@ -2513,7 +2597,7 @@ type
   Size:LongWord;
   Next:PSHA256Block;
  end;
- 
+
  PSHA256Context = ^TSHA256Context;
  TSHA256Context = record
   Data:array[0..63] of Byte;
@@ -2523,52 +2607,104 @@ type
 
  PSHA256ByteBuffer = ^TSHA256ByteBuffer;
  TSHA256ByteBuffer = array[0..63] of Byte;
- 
+
  PSHA256LongBuffer = ^TSHA256LongBuffer;
  TSHA256LongBuffer = array[0..15] of LongWord;
- 
+
  PSHA256_W = ^TSHA256_W;
  TSHA256_W = array[0..63] of LongWord; {This is the W array for the SHA256 algorithm}
- 
+
+ {SHA512 types}
+ PSHA512Digest = ^TSHA512Digest;
+ TSHA512Digest = array[0..63] of Byte;
+
+ PSHA512Block = ^TSHA512Block;
+ TSHA512Block = record
+  Data:Pointer;
+  Size:LongWord;
+  Next:PSHA512Block;
+ end;
+
+ PSHA512Context = ^TSHA512Context;
+ TSHA512Context = record
+  Data:array[0..127] of Byte;
+  State:array[0..7] of QWord;
+  Count:QWord;
+ end;
+
+ PSHA512ByteBuffer = ^TSHA512ByteBuffer;
+ TSHA512ByteBuffer = array[0..127] of Byte;
+
+ PSHA512_W = ^TSHA512_W;
+ TSHA512_W = array[0..79] of QWord; {This is the W array for the SHA512 algorithm}
+
+ {SHA384 types}
+ PSHA384Digest = ^TSHA384Digest;
+ TSHA384Digest = array[0..47] of Byte;
+
+ PSHA384Block = PSHA512Block;
+ TSHA384Block = TSHA512Block;
+
+ PSHA384Context = PSHA512Context;
+ TSHA384Context = TSHA512Context;
+
+ PSHA384ByteBuffer = PSHA512ByteBuffer;
+ TSHA384ByteBuffer = TSHA512ByteBuffer;
+
  {RSA types}
- 
+ PRSAContext = ^TRSAContext;
+ TRSAContext = record
+  M:PBigInt;             {Modulus}
+  E:PBigInt;             {Public exponent}
+  D:PBigInt;             {Private exponent}
+  P:PBigInt;             {p in m = pq}
+  Q:PBigInt;             {q in m = pq}
+  DP:PBigInt;            {d mod (p-1)}
+  DQ:PBigInt;            {d mod (q-1)}
+  QInv:PBigInt;          {q^-1 mod p}
+  ModulusLen:Integer;
+  Context:PBigIntContext;
+ end;
+
  {Random types}
- 
+ TGetRandomBytes = function(Buffer:PByte;Count:Integer):Boolean;
+
  {CRC types}
- 
- {MIME64 types}
- 
+
+ {Base64 types}
+ TBase64DecodeTable = array[0..255] of Char;
+
  {Hash context}
  PHashContext = ^THashContext;
  THashContext = record
   Algorithm:LongWord;
-  Key:array[0..63] of Byte;
-  KeySize:LongWord;  
-  case Integer of 
+  Key:array[0..127] of Byte;
+  KeySize:LongWord;
+  case Integer of
    0:(MD5:TMD5Context);
    1:(SHA1:TSHA1Context);
    2:(SHA256:TSHA256Context);
+   3:(SHA384:TSHA384Context);
+   4:(SHA512:TSHA512Context);
  end;
- 
+
  {Cipher context}
  PCipherContext = ^TCipherContext;
  TCipherContext = record
   Algorithm:LongWord;
-  case Integer of 
+  Mode:LongWord;
+  case Integer of
    0:(RC4:TRC4Context);
    1:(DES:TDESContext);
    2:(DES3:TDES3Context);
    3:(AES:TAESContext);
  end;
-  
+
 {==============================================================================}
 var
  {Crypto specific variables}
- CryptoInitialized:Boolean;
+ CryptoGetRandomBytesHandler:TGetRandomBytes;
 
- {MIME64 variables}
- MIME64DecodingTable:String;
- 
 {==============================================================================}
 {Initialization Functions}
 procedure CryptoInit;
@@ -2581,7 +2717,8 @@ function HashDestroy(Context:PHashContext):Boolean;
 function HashUpdate(Context:PHashContext;Data:Pointer;Size:LongWord):Boolean;
 function HashFinish(Context:PHashContext;Digest:Pointer;Size:LongWord):Boolean;
 
-function CipherCreate(Algorithm:LongWord;Vector,Key:Pointer;KeySize:LongWord):PCipherContext;
+function CipherCreate(Algorithm:LongWord;Vector,Key:Pointer;KeySize:LongWord):PCipherContext; overload;
+function CipherCreate(Algorithm,Mode:LongWord;Nonce,Vector,Key:Pointer;VectorSize,KeySize:LongWord):PCipherContext; overload;
 function CipherDestroy(Context:PCipherContext):Boolean;
 
 function CipherEncrypt(Context:PCipherContext;Plain,Crypt:Pointer;Size:LongWord):Boolean;
@@ -2600,6 +2737,14 @@ function HMACMD5DigestString(const Key,Value:String;Digest:PMD5Digest):Boolean;
 function AESEncryptData(Key:Pointer;KeySize:LongWord;Vector,Plain,Crypt:Pointer;Size:LongWord):Boolean;
 function AESDecryptData(Key:Pointer;KeySize:LongWord;Vector,Crypt,Plain:Pointer;Size:LongWord):Boolean;
 
+function AESCTREncryptData(Key:Pointer;KeySize:LongWord;Nonce,Plain,Crypt:Pointer;Size:LongWord):Boolean;
+function AESCTRDecryptData(Key:Pointer;KeySize:LongWord;Nonce,Crypt,Plain:Pointer;Size:LongWord):Boolean; inline;
+
+function AESGCMEncryptData(Key:Pointer;KeySize:LongWord;IV,AAD,Plain,Crypt:Pointer;IVSize,AADSize,Size:LongWord;Tag:Pointer):Boolean;
+function AESGCMDecryptData(Key:Pointer;KeySize:LongWord;IV,AAD,Crypt,Plain:Pointer;IVSize,AADSize,Size:LongWord;const Tag:Pointer):Boolean;
+
+function AESGCMGMAC(Key:Pointer;KeySize:LongWord;IV,AAD:Pointer;IVSize,AADSize:LongWord;Tag:Pointer):Boolean;
+
 {==============================================================================}
 {DES Functions}
 function DESEncryptData(Key:Pointer;KeySize:LongWord;Vector,Plain,Crypt:Pointer;Size:LongWord):Boolean;
@@ -2609,7 +2754,7 @@ function DESDecryptData(Key:Pointer;KeySize:LongWord;Vector,Crypt,Plain:Pointer;
 {3DES Functions}
 function DES3EncryptData(Key:Pointer;KeySize:LongWord;Vector,Plain,Crypt:Pointer;Size:LongWord):Boolean;
 function DES3DecryptData(Key:Pointer;KeySize:LongWord;Vector,Crypt,Plain:Pointer;Size:LongWord):Boolean;
- 
+
 {==============================================================================}
 {RC4 Functions}
 function RC4EncryptData(Key:Pointer;KeySize:LongWord;Plain,Crypt:Pointer;Size,Start:LongWord):Boolean;
@@ -2619,7 +2764,7 @@ function RC4DecryptData(Key:Pointer;KeySize:LongWord;Crypt,Plain:Pointer;Size,St
 {SHA1 Functions}
 function SHA1DigestData(Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
 function SHA1DigestString(const Value:String;Digest:PSHA1Digest):Boolean;
- 
+
 function HMACSHA1DigestData(const Key:String;Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
 function HMACSHA1DigestString(const Key,Value:String;Digest:PSHA1Digest):Boolean;
 
@@ -2627,71 +2772,82 @@ function HMACSHA1DigestString(const Key,Value:String;Digest:PSHA1Digest):Boolean
 {SHA256 Functions}
 function SHA256DigestData(Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
 function SHA256DigestString(const Value:String;Digest:PSHA256Digest):Boolean;
- 
+
 function HMACSHA256DigestData(const Key:String;Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
 function HMACSHA256DigestString(const Key,Value:String;Digest:PSHA256Digest):Boolean;
- 
+
+{==============================================================================}
+{SHA384 Functions}
+function SHA384DigestData(Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
+function SHA384DigestString(const Value:String;Digest:PSHA384Digest):Boolean;
+
+function HMACSHA384DigestData(const Key:String;Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
+function HMACSHA384DigestString(const Key,Value:String;Digest:PSHA384Digest):Boolean;
+
+{==============================================================================}
+{SHA512 Functions}
+function SHA512DigestData(Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
+function SHA512DigestString(const Value:String;Digest:PSHA512Digest):Boolean;
+
+function HMACSHA512DigestData(const Key:String;Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
+function HMACSHA512DigestString(const Key,Value:String;Digest:PSHA512Digest):Boolean;
+
 {==============================================================================}
 {RSA Functions}
+function RSAInitPrivateKey(Modulus,PublicExp,PrivateExp,P,Q,DP,DQ,QInv:PByte;ModulusLen,PublicExpLen,PrivateExpLen,PLen,QLen,DPLen,DQLen,QInvLen:Integer):PRSAContext;
+function RSAInitPublicKey(Modulus,PublicExp:PByte;ModulusLen,PublicExpLen:Integer):PRSAContext;
+function RSAFreeKey(Context:PRSAContext):Boolean;
+
+function RSAEncryptSign(Context:PRSAContext;const Input:PByte;Len:Word;Output:PByte;Sign:Boolean):Integer;
+function RSADecryptVerify(Context:PRSAContext;const Input:PByte;Output:PByte;Len:Integer;Verify:Boolean):Integer;
 
 {==============================================================================}
 {Random Functions}
+function GetRandomBytes(Buffer:PByte;Count:Integer):Boolean;
+function GetRandomBytesNonZero(Buffer:PByte;Count:Integer):Boolean;
 
 {==============================================================================}
 {CRC Functions}
 function CRC16CCITT(CRC:Word;Data:PByte;Size:LongWord):Word;
 
 {==============================================================================}
-{MIME64 Functions}
-function MIME64EncodeString(const AValue:String):String;
-function MIME64DecodeString(const AValue:String):String;
+{Base64 Functions}
+function Base64EncodeString(const Value:String):String;
+function Base64DecodeString(const Value:String):String;
+
+function Base64EncodeBuffer(const Source:PChar;SourceLen:Integer;Dest:PChar;var DestLen:Integer):Boolean;
+function Base64DecodeBuffer(const Source:PChar;SourceLen:Integer;Dest:PChar;var DestLen:Integer):Boolean;
 
 {==============================================================================}
 {Crypto Helper Functions}
-procedure BytesToLE(Buffer:PByte;Count:LongWord);
-procedure BytesToBE(Buffer:PByte;Count:LongWord);
+procedure BytesToLE32(Buffer:PByte;Count:LongWord);
+procedure BytesToBE32(Buffer:PByte;Count:LongWord);
+
+procedure BytesToLE64(Buffer:PByte;Count:LongWord);
+procedure BytesToBE64(Buffer:PByte;Count:LongWord);
 
 function LongWordToBE(Buffer:PByte):LongWord; inline;
 procedure BEToLongWord(Value:LongWord;Buffer:PByte); inline;
+
+function QWordToBE(Buffer:PByte):QWord; inline;
+procedure BEToQWord(Value:QWord;Buffer:PByte); inline;
 
 {==============================================================================}
 {MD5 Helper Functions}
 procedure MD5Init(var Context:TMD5Context);
 procedure MD5Update(var Context:TMD5Context;Data:Pointer;Size:LongWord);
 procedure MD5Final(var Context:TMD5Context;var Digest:TMD5Digest);
-procedure MD5Transform(var Context:TMD5Context;Buffer:Pointer);
 
 function MD5DigestToString(Digest:PMD5Digest):String;
 
 {==============================================================================}
 {AES Helper Functions}
-function AESTE0(I:Byte):LongWord; inline;
-function AESTE1(I:Byte):LongWord; inline;
-function AESTE2(I:Byte):LongWord; inline;
-function AESTE3(I:Byte):LongWord; inline;
-
-function AESTD0(I:Byte):LongWord; inline;
-function AESTD1(I:Byte):LongWord; inline;
-function AESTD2(I:Byte):LongWord; inline;
-function AESTD3(I:Byte):LongWord; inline;
- 
-function AESTE4_0(I:Byte):LongWord; inline;
-function AESTE4_1(I:Byte):LongWord; inline;
-function AESTE4_2(I:Byte):LongWord; inline;
-function AESTE4_3(I:Byte):LongWord; inline;
- 
-function AESByte(X,N:LongWord):Byte; inline; 
- 
 function AESKeySetup(Key:Pointer;KeySize:LongWord;AESKey:PAESKey):Boolean;
 procedure AESEncryptBlock(Plain,Crypt:Pointer;AESKey:PAESKey);
 procedure AESDecryptBlock(Crypt,Plain:Pointer;AESKey:PAESKey);
 
 {==============================================================================}
 {DES Helper Functions}
-procedure DESKey(Key:PByte;KeyType:LongWord;CryptKey:PDESKey);
-procedure DESCook(Raw1:PLongWord;Key:PDESKey);
-procedure DESProcess(Block,Key:PLongWord);
-
 function DESKeySetup(Key:Pointer;KeySize:LongWord;EncryptKey,DecryptKey:PDESKey):Boolean;
 procedure DESEncryptBlock(Plain,Crypt:Pointer;EncryptKey:PDESKey);
 procedure DESDecryptBlock(Crypt,Plain:Pointer;DecryptKey:PDESKey);
@@ -2701,28 +2857,42 @@ procedure DESDecryptBlock(Crypt,Plain:Pointer;DecryptKey:PDESKey);
 function DES3KeySetup(Key:Pointer;KeySize:LongWord;DES3Key:PDES3Key):Boolean;
 procedure DES3EncryptBlock(Plain,Crypt:Pointer;DES3Key:PDES3Key);
 procedure DES3DecryptBlock(Crypt,Plain:Pointer;DES3Key:PDES3Key);
- 
+
 {==============================================================================}
 {RC4 Helper Functions}
- 
+
 {==============================================================================}
 {SHA1 Helper Functions}
 procedure SHA1Init(var Context:TSHA1Context);
 procedure SHA1Update(var Context:TSHA1Context;Data:Pointer;Size:LongWord);
 procedure SHA1Final(var Context:TSHA1Context;var Digest:TSHA1Digest);
-procedure SHA1Transform(var Context:TSHA1Context;Buffer:Pointer);
- 
+
 function SHA1DigestToString(Digest:PSHA1Digest):String;
- 
+
 {==============================================================================}
 {SHA256 Helper Functions}
 procedure SHA256Init(var Context:TSHA256Context);
 procedure SHA256Process(var Context:TSHA256Context;Data:Pointer;Size:LongWord);
 procedure SHA256Complete(var Context:TSHA256Context;var Digest:TSHA256Digest);
-procedure SHA256Compress(var Context:TSHA256Context;Buffer:Pointer);
 
 function SHA256DigestToString(Digest:PSHA256Digest):String;
- 
+
+{==============================================================================}
+{SHA384 Helper Functions}
+procedure SHA384Init(var Context:TSHA384Context);
+procedure SHA384Process(var Context:TSHA384Context;Data:Pointer;Size:LongWord);
+procedure SHA384Complete(var Context:TSHA384Context;var Digest:TSHA384Digest);
+
+function SHA384DigestToString(Digest:PSHA384Digest):String;
+
+{==============================================================================}
+{SHA512 Helper Functions}
+procedure SHA512Init(var Context:TSHA512Context);
+procedure SHA512Process(var Context:TSHA512Context;Data:Pointer;Size:LongWord);
+procedure SHA512Complete(var Context:TSHA512Context;var Digest:TSHA512Digest);
+
+function SHA512DigestToString(Digest:PSHA512Digest):String;
+
 {==============================================================================}
 {RSA Helper Functions}
 
@@ -2733,13 +2903,22 @@ function SHA256DigestToString(Digest:PSHA256Digest):String;
 {CRC Helper Functions}
 
 {==============================================================================}
-{MIME64 Helper Functions}
-procedure MIME64InitTables;
+{Base64 Helper Functions}
+procedure Base64InitTables;
 
 {==============================================================================}
 {==============================================================================}
 
 implementation
+
+{==============================================================================}
+{==============================================================================}
+var
+ {Crypto specific variables}
+ CryptoInitialized:Boolean;
+
+ {Base64 variables}
+ Base64DecodeTable:TBase64DecodeTable;
 
 {==============================================================================}
 {==============================================================================}
@@ -2749,12 +2928,12 @@ begin
  {}
  {Check Initialized}
  if CryptoInitialized then Exit;
- 
- {Init MIME64 Tables}
- MIME64InitTables;
- 
+
+ {Init Base64 Tables}
+ Base64InitTables;
+
  //To Do //Init Random
- 
+
  CryptoInitialized:=True;
 end;
 
@@ -2772,17 +2951,21 @@ var
  SHA1PadBuffer:TSHA1ByteBuffer;
  SHA256KeyDigest:TSHA256Digest;
  SHA256PadBuffer:TSHA256ByteBuffer;
+ SHA384KeyDigest:TSHA384Digest;
+ SHA384PadBuffer:TSHA384ByteBuffer;
+ SHA512KeyDigest:TSHA512Digest;
+ SHA512PadBuffer:TSHA512ByteBuffer;
 begin
  {}
  Result:=nil;
- 
+
  {Allocate context}
  Context:=AllocMem(SizeOf(THashContext));
  if Context = nil then Exit;
- 
+
  {Update context}
  Context.Algorithm:=Algorithm;
- 
+
  {Check algorithm}
  case Algorithm of
   CRYPTO_HASH_ALG_MD5:begin
@@ -2797,25 +2980,33 @@ begin
     {Init SHA256}
     SHA256Init(Context.SHA256);
    end;
+  CRYPTO_HASH_ALG_SHA384:begin
+    {Init SHA384}
+    SHA384Init(Context.SHA384);
+   end;
+  CRYPTO_HASH_ALG_SHA512:begin
+    {Init SHA512}
+    SHA512Init(Context.SHA512);
+   end;
   CRYPTO_HASH_ALG_HMAC_MD5:begin
     {Get key length}
     Context.KeySize:=KeySize;
-    
+
     {Check key length}
     if Context.KeySize > 64 then
      begin
       {Init MD5}
       MD5Init(Context.MD5);
-      
+
       {Update MD5 with Key}
       MD5Update(Context.MD5,Key,KeySize);
-      
+
       {Finish MD5 with Key}
       MD5Final(Context.MD5,MD5KeyDigest);
-      
+
       {Copy digest to key buffer}
       System.Move(MD5KeyDigest[0],Context.Key[0],16);
-      
+
       {Update key length}
       Context.KeySize:=16;
      end
@@ -2823,39 +3014,39 @@ begin
      begin
       {Copy key to key buffer}
       System.Move(Key^,Context.Key,Context.KeySize);
-     end;  
-  
+     end;
+
     {XOR the key buffer with the iPad value}
     for Count:=0 to 63 do
      begin
       MD5PadBuffer[Count]:=Context.Key[Count] xor $36;
      end;
-  
+
     {Init MD5}
     MD5Init(Context.MD5);
-  
+
     {Update MD5 with iPad Key}
     MD5Update(Context.MD5,@MD5PadBuffer,SizeOf(TMD5ByteBuffer));
    end;
   CRYPTO_HASH_ALG_HMAC_SHA1:begin
     {Get key length}
     Context.KeySize:=KeySize;
-    
+
     {Check key length}
     if Context.KeySize > 64 then
      begin
       {Init SHA1}
       SHA1Init(Context.SHA1);
-       
+
       {Update SHA1 with Key}
       SHA1Update(Context.SHA1,Key,KeySize);
-      
+
       {Finish SHA1 with Key}
       SHA1Final(Context.SHA1,SHA1KeyDigest);
-      
+
       {Copy digest to key buffer}
       System.Move(SHA1KeyDigest[0],Context.Key[0],20);
-      
+
       {Update key length}
       Context.KeySize:=20;
      end
@@ -2863,8 +3054,8 @@ begin
      begin
       {Copy key to key buffer}
       System.Move(Key^,Context.Key[0],Context.KeySize);
-     end;  
-    
+     end;
+
     {XOR the key buffer with the iPad value}
     for Count:=0 to 63 do
      begin
@@ -2873,29 +3064,29 @@ begin
 
     {Init SHA1}
     SHA1Init(Context.SHA1);
-     
+
     {Update SHA1 with iPad Key}
     SHA1Update(Context.SHA1,@SHA1PadBuffer,SizeOf(TSHA1ByteBuffer));
    end;
   CRYPTO_HASH_ALG_HMAC_SHA256:begin
     {Get key length}
     Context.KeySize:=KeySize;
-    
+
     {Check key length}
     if Context.KeySize > 64 then
      begin
       {Init SHA256}
       SHA256Init(Context.SHA256);
-       
+
       {Update SHA256 with Key}
       SHA256Process(Context.SHA256,Key,KeySize);
-      
+
       {Finish SHA256 with Key}
       SHA256Complete(Context.SHA256,SHA256KeyDigest);
-  
+
       {Copy digest to key buffer}
       System.Move(SHA256KeyDigest[0],Context.Key[0],32);
-      
+
       {Update key length}
       Context.KeySize:=32;
      end
@@ -2903,28 +3094,108 @@ begin
      begin
       {Copy key to key buffer}
       System.Move(Key^,Context.Key[0],Context.KeySize);
-     end;  
-   
+     end;
+
     {XOR the key buffer with the iPad value}
     for Count:=0 to 63 do
      begin
       SHA256PadBuffer[Count]:=Context.Key[Count] xor $36;
      end;
- 
+
     {Init SHA256}
     SHA256Init(Context.SHA256);
-     
+
     {Update SHA256 with iPad Key}
     SHA256Process(Context.SHA256,@SHA256PadBuffer,SizeOf(TSHA256ByteBuffer));
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA384:begin
+    {Get key length}
+    Context.KeySize:=KeySize;
+
+    {Check key length}
+    if Context.KeySize > 128 then
+     begin
+      {Init SHA384}
+      SHA384Init(Context.SHA384);
+
+      {Update SHA384 with Key}
+      SHA384Process(Context.SHA384,Key,KeySize);
+
+      {Finish SHA384 with Key}
+      SHA384Complete(Context.SHA384,SHA384KeyDigest);
+
+      {Copy digest to key buffer}
+      System.Move(SHA384KeyDigest[0],Context.Key[0],48);
+
+      {Update key length}
+      Context.KeySize:=48;
+     end
+    else
+     begin
+      {Copy key to key buffer}
+      System.Move(Key^,Context.Key[0],Context.KeySize);
+     end;
+
+    {XOR the key buffer with the iPad value}
+    for Count:=0 to 127 do
+     begin
+      SHA384PadBuffer[Count]:=Context.Key[Count] xor $36;
+     end;
+
+    {Init SHA384}
+    SHA384Init(Context.SHA384);
+
+    {Update SHA384 with iPad Key}
+    SHA384Process(Context.SHA384,@SHA384PadBuffer,SizeOf(TSHA384ByteBuffer));
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA512:begin
+    {Get key length}
+    Context.KeySize:=KeySize;
+
+    {Check key length}
+    if Context.KeySize > 128 then
+     begin
+      {Init SHA512}
+      SHA512Init(Context.SHA512);
+
+      {Update SHA512 with Key}
+      SHA512Process(Context.SHA512,Key,KeySize);
+
+      {Finish SHA512 with Key}
+      SHA512Complete(Context.SHA512,SHA512KeyDigest);
+
+      {Copy digest to key buffer}
+      System.Move(SHA512KeyDigest[0],Context.Key[0],64);
+
+      {Update key length}
+      Context.KeySize:=64;
+     end
+    else
+     begin
+      {Copy key to key buffer}
+      System.Move(Key^,Context.Key[0],Context.KeySize);
+     end;
+
+    {XOR the key buffer with the iPad value}
+    for Count:=0 to 127 do
+     begin
+      SHA512PadBuffer[Count]:=Context.Key[Count] xor $36;
+     end;
+
+    {Init SHA512}
+    SHA512Init(Context.SHA512);
+
+    {Update SHA512 with iPad Key}
+    SHA512Process(Context.SHA512,@SHA512PadBuffer,SizeOf(TSHA512ByteBuffer));
    end;
   else
    begin
     {Invalid algorithm}
     FreeMem(Context);
     Exit;
-   end;   
+   end;
  end;
- 
+
  Result:=Context;
 end;
 
@@ -2935,9 +3206,9 @@ function HashDestroy(Context:PHashContext):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Context = nil then Exit;
- 
+
  {Check algorithm}
  case Context.Algorithm of
   CRYPTO_HASH_ALG_MD5:begin
@@ -2949,6 +3220,12 @@ begin
   CRYPTO_HASH_ALG_SHA256:begin
     {Nothing}
    end;
+  CRYPTO_HASH_ALG_SHA384:begin
+    {Nothing}
+   end;
+  CRYPTO_HASH_ALG_SHA512:begin
+    {Nothing}
+   end;
   CRYPTO_HASH_ALG_HMAC_MD5:begin
     {Nothing}
    end;
@@ -2958,18 +3235,24 @@ begin
   CRYPTO_HASH_ALG_HMAC_SHA256:begin
     {Nothing}
    end;
+  CRYPTO_HASH_ALG_HMAC_SHA384:begin
+    {Nothing}
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA512:begin
+    {Nothing}
+   end;
   else
    begin
     Exit;
    end;
  end;
- 
+
  {Zero context}
  FillChar(Context^,SizeOf(THashContext),0);
- 
+
  {Free context}
  FreeMem(Context);
- 
+
  Result:=True;
 end;
 
@@ -2980,7 +3263,7 @@ function HashUpdate(Context:PHashContext;Data:Pointer;Size:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Context = nil then Exit;
  if Data = nil then Exit;
 
@@ -2998,13 +3281,21 @@ begin
     {Update SHA256}
     SHA256Process(Context.SHA256,Data,Size);
    end;
+  CRYPTO_HASH_ALG_SHA384,CRYPTO_HASH_ALG_HMAC_SHA384:begin
+    {Update SHA384}
+    SHA384Process(Context.SHA384,Data,Size);
+   end;
+  CRYPTO_HASH_ALG_SHA512,CRYPTO_HASH_ALG_HMAC_SHA512:begin
+    {Update SHA512}
+    SHA512Process(Context.SHA512,Data,Size);
+   end;
   else
    begin
     Exit;
    end;
  end;
- 
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -3016,10 +3307,12 @@ var
  MD5PadBuffer:TMD5ByteBuffer;
  SHA1PadBuffer:TSHA1ByteBuffer;
  SHA256PadBuffer:TSHA256ByteBuffer;
+ SHA384PadBuffer:TSHA384ByteBuffer;
+ SHA512PadBuffer:TSHA512ByteBuffer;
 begin
  {}
  Result:=False;
- 
+
  if Context = nil then Exit;
  if Digest = nil then Exit;
 
@@ -3028,7 +3321,7 @@ begin
   CRYPTO_HASH_ALG_MD5:begin
     {Check size}
     if Size < 16 then Exit;
-    
+
     {Finish MD5}
     MD5Final(Context.MD5,PMD5Digest(Digest)^);
    end;
@@ -3046,53 +3339,67 @@ begin
     {Finish SHA256}
     SHA256Complete(Context.SHA256,PSHA256Digest(Digest)^);
    end;
+  CRYPTO_HASH_ALG_SHA384:begin
+    {Check size}
+    if Size < 48 then Exit;
+
+    {Finish SHA384}
+    SHA384Complete(Context.SHA384,PSHA384Digest(Digest)^);
+   end;
+  CRYPTO_HASH_ALG_SHA512:begin
+    {Check size}
+    if Size < 64 then Exit;
+
+    {Finish SHA512}
+    SHA512Complete(Context.SHA512,PSHA512Digest(Digest)^);
+   end;
   CRYPTO_HASH_ALG_HMAC_MD5:begin
     {Check size}
     if Size < 16 then Exit;
-    
+
     {Finish MD5}
     MD5Final(Context.MD5,PMD5Digest(Digest)^);
-    
+
     {XOR the key buffer with the oPad value}
     for Count:=0 to 63 do
      begin
       MD5PadBuffer[Count]:=Context.Key[Count] xor $5c;
      end;
-    
+
     {Init MD5}
     MD5Init(Context.MD5);
-  
+
     {Update MD5 with oPad Key}
     MD5Update(Context.MD5,@MD5PadBuffer,SizeOf(TMD5ByteBuffer));
-    
+
     {Update MD5 with Digest}
     MD5Update(Context.MD5,Digest,16);
-    
+
     {Finish MD5}
     MD5Final(Context.MD5,PMD5Digest(Digest)^);
    end;
   CRYPTO_HASH_ALG_HMAC_SHA1:begin
     {Check size}
     if Size < 20 then Exit;
-    
+
     {Finish SHA1}
     SHA1Final(Context.SHA1,PSHA1Digest(Digest)^);
-    
+
     {XOR the key buffer with the oPad value}
     for Count:=0 to 63 do
      begin
       SHA1PadBuffer[Count]:=Context.Key[Count] xor $5c;
      end;
-    
+
     {Init SHA1}
     SHA1Init(Context.SHA1);
-  
+
     {Update SHA1 with oPad Key}
     SHA1Update(Context.SHA1,@SHA1PadBuffer,SizeOf(TSHA1ByteBuffer));
-    
+
     {Update SHA1 with Digest}
     SHA1Update(Context.SHA1,Digest,20);
-    
+
     {Finish SHA1}
     SHA1Final(Context.SHA1,PSHA1Digest(Digest)^);
    end;
@@ -3102,88 +3409,159 @@ begin
 
     {Finish SHA256}
     SHA256Complete(Context.SHA256,PSHA256Digest(Digest)^);
-    
+
     {XOR the key buffer with the oPad value}
     for Count:=0 to 63 do
      begin
       SHA256PadBuffer[Count]:=Context.Key[Count] xor $5c;
      end;
-    
+
     {Init SHA256}
     SHA256Init(Context.SHA256);
-  
+
     {Update SHA256 with oPad Key}
     SHA256Process(Context.SHA256,@SHA256PadBuffer,SizeOf(TSHA256ByteBuffer));
-    
+
     {Update SHA256 with Digest}
     SHA256Process(Context.SHA256,Digest,32);
-    
+
     {Finish SHA256}
     SHA256Complete(Context.SHA256,PSHA256Digest(Digest)^);
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA384:begin
+    {Check size}
+    if Size < 48 then Exit;
+
+    {Finish SHA384}
+    SHA384Complete(Context.SHA384,PSHA384Digest(Digest)^);
+
+    {XOR the key buffer with the oPad value}
+    for Count:=0 to 127 do
+     begin
+      SHA384PadBuffer[Count]:=Context.Key[Count] xor $5c;
+     end;
+
+    {Init SHA384}
+    SHA384Init(Context.SHA384);
+
+    {Update SHA384 with oPad Key}
+    SHA384Process(Context.SHA384,@SHA384PadBuffer,SizeOf(TSHA384ByteBuffer));
+
+    {Update SHA384 with Digest}
+    SHA384Process(Context.SHA384,Digest,48);
+
+    {Finish SHA384}
+    SHA384Complete(Context.SHA384,PSHA384Digest(Digest)^);
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA512:begin
+    {Check size}
+    if Size < 64 then Exit;
+
+    {Finish SHA512}
+    SHA512Complete(Context.SHA512,PSHA512Digest(Digest)^);
+
+    {XOR the key buffer with the oPad value}
+    for Count:=0 to 127 do
+     begin
+      SHA512PadBuffer[Count]:=Context.Key[Count] xor $5c;
+     end;
+
+    {Init SHA512}
+    SHA512Init(Context.SHA512);
+
+    {Update SHA512 with oPad Key}
+    SHA512Process(Context.SHA512,@SHA512PadBuffer,SizeOf(TSHA512ByteBuffer));
+
+    {Update SHA512 with Digest}
+    SHA512Process(Context.SHA512,Digest,64);
+
+    {Finish SHA512}
+    SHA512Complete(Context.SHA512,PSHA512Digest(Digest)^);
    end;
   else
    begin
     Exit;
    end;
  end;
- 
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
 
 function CipherCreate(Algorithm:LongWord;Vector,Key:Pointer;KeySize:LongWord):PCipherContext;
 {Initialize a cipher context based on an algorithm and a key}
-{For block ciphers also include an initialization vector for CBC mode}
+{For block ciphers an initialization vector can be passed to enable CBC mode}
+begin
+ {}
+ if Vector = nil then
+  begin
+   Result:=CipherCreate(Algorithm,CRYPTO_CIPHER_MODE_ECB,nil,nil,Key,0,KeySize);
+  end
+ else
+  begin
+   Result:=CipherCreate(Algorithm,CRYPTO_CIPHER_MODE_CBC,nil,Vector,Key,0,KeySize);
+  end;
+end;
+
+{==============================================================================}
+
+function CipherCreate(Algorithm,Mode:LongWord;Nonce,Vector,Key:Pointer;VectorSize,KeySize:LongWord):PCipherContext;
+{Initialize a cipher context based on an algorithm, mode and key}
+{For block ciphers a Nonce or IV can be passed if the selected mode requires it}
 var
  Context:PCipherContext;
 begin
  {}
  Result:=nil;
- 
+
+ //To Do //Mode, Nonce and VectorSize
+
  {Allocate context}
  Context:=AllocMem(SizeOf(TCipherContext));
  if Context = nil then Exit;
 
  {Update context}
  Context.Algorithm:=Algorithm;
- 
+
  {Check algorithm}
  case Algorithm of
   CRYPTO_CIPHER_ALG_RC4:begin
+    {Mode not supported}
+
     {Check Key}
-    if Key = nil then 
+    if Key = nil then
      begin
       FreeMem(Context);
       Exit;
      end;
-     
+
     {Check Key Size}
     if (KeySize = 0) or (KeySize > SizeOf(Context.RC4.Key)) then
      begin
       FreeMem(Context);
       Exit;
      end;
-     
+
     {Copy Key}
-    Context.RC4.KeySize:=KeySize;   
+    Context.RC4.KeySize:=KeySize;
     System.Move(Key^,Context.RC4.Key[0],KeySize);
    end;
   CRYPTO_CIPHER_ALG_AES:begin
     {Check Key}
-    if Key = nil then 
+    if Key = nil then
      begin
       FreeMem(Context);
       Exit;
      end;
-    
+
     {Check Vector}
-    if Vector = nil then 
+    if Vector = nil then
      begin
       FreeMem(Context);
       Exit;
      end;
-    
+
     {Setup Keys}
     if not AESKeySetup(Key,KeySize,@Context.AES.AESKey) then
      begin
@@ -3193,42 +3571,42 @@ begin
 
     {Copy Vector}
     System.Move(Vector^,Context.AES.CBC[0],AES_BLOCK_SIZE);
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_3DES:begin
     {Check Key}
-    if Key = nil then 
+    if Key = nil then
      begin
       FreeMem(Context);
       Exit;
      end;
-    
+
     {Check Vector}
-    if Vector = nil then 
+    if Vector = nil then
      begin
       FreeMem(Context);
       Exit;
      end;
-    
+
     {Setup Keys}
     if not DES3KeySetup(Key,KeySize,@Context.DES3.DES3Key) then
      begin
       FreeMem(Context);
       Exit;
      end;
-  
+
     {Copy Vector}
     System.Move(Vector^,Context.DES3.CBC[0],DES3_BLOCK_SIZE);
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_DES:begin
     {Check Key}
-    if Key = nil then 
+    if Key = nil then
      begin
       FreeMem(Context);
       Exit;
      end;
-    
+
     {Check Vector}
-    if Vector = nil then 
+    if Vector = nil then
      begin
       FreeMem(Context);
       Exit;
@@ -3240,7 +3618,7 @@ begin
       FreeMem(Context);
       Exit;
      end;
-    
+
     {Copy Vector}
     System.Move(Vector^,Context.DES.CBC[0],DES_BLOCK_SIZE);
    end;
@@ -3249,9 +3627,9 @@ begin
     {Invalid algorithm}
     FreeMem(Context);
     Exit;
-   end;   
+   end;
  end;
- 
+
  Result:=Context;
 end;
 
@@ -3262,9 +3640,9 @@ function CipherDestroy(Context:PCipherContext):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Context = nil then Exit;
- 
+
  {Check algorithm}
  case Context.Algorithm of
   CRYPTO_CIPHER_ALG_RC4:begin
@@ -3272,25 +3650,25 @@ begin
    end;
   CRYPTO_CIPHER_ALG_AES:begin
     {Nothing}
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_3DES:begin
     {Nothing}
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_DES:begin
     {Nothing}
    end;
   else
    begin
     Exit;
-   end;   
+   end;
  end;
- 
+
  {Zero context}
  FillChar(Context^,SizeOf(TCipherContext),0);
- 
+
  {Free context}
  FreeMem(Context);
- 
+
  Result:=True;
 end;
 
@@ -3305,28 +3683,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Context = nil then Exit;
  if Plain = nil then Exit;
- if Crypt = nil then Exit;     
+ if Crypt = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Check algorithm}
  case Context.Algorithm of
   CRYPTO_CIPHER_ALG_RC4:begin
     {Encrypt Data}
     if not RC4EncryptData(@Context.RC4.Key[0],Context.RC4.KeySize,Plain,Crypt,Size,Context.RC4.Start) then Exit;
-    
+
     {Update Start}
     Inc(Context.RC4.Start,Size);
    end;
   CRYPTO_CIPHER_ALG_AES:begin
     {Check Size}
     if (Size mod AES_BLOCK_SIZE) <> 0 then Exit;
-  
+
     {Get Blocks}
     Blocks:=Size div AES_BLOCK_SIZE;
-  
+
     {Process Blocks}
     for I:=0 to Blocks - 1 do
      begin
@@ -3335,25 +3713,25 @@ begin
        begin
         Context.AES.CBC[J]:=Context.AES.CBC[J] xor PByte(Plain)[J];
        end;
-       
+
       {Encrypt Block}
       AESEncryptBlock(@Context.AES.CBC[0],@Context.AES.CBC[0],@Context.AES.AESKey);
-      
+
       {Copy Crypt}
       System.Move(Context.AES.CBC[0],Crypt^,AES_BLOCK_SIZE);
-      
+
       {Update Pointers}
       Inc(Plain,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
       Inc(Crypt,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      end;
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_3DES:begin
     {Check Size}
     if (Size mod DES3_BLOCK_SIZE) <> 0 then Exit;
-    
+
     {Get Blocks}
     Blocks:=Size div DES3_BLOCK_SIZE;
-    
+
     {Process Blocks}
     for I:=0 to Blocks - 1 do
      begin
@@ -3362,22 +3740,22 @@ begin
        begin
         Context.DES3.CBC[J]:=Context.DES3.CBC[J] xor PByte(Plain)[J];
        end;
-       
+
       {Encrypt Block}
       DES3EncryptBlock(@Context.DES3.CBC[0],@Context.DES3.CBC[0],@Context.DES3.DES3Key);
-      
+
       {Copy Crypt}
       System.Move(Context.DES3.CBC[0],Crypt^,DES3_BLOCK_SIZE);
-      
+
       {Update Pointers}
       Inc(Plain,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
       Inc(Crypt,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      end;
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_DES:begin
     {Check Size}
     if (Size mod DES_BLOCK_SIZE) <> 0 then Exit;
-    
+
     {Get Blocks}
     Blocks:=Size div DES_BLOCK_SIZE;
 
@@ -3389,13 +3767,13 @@ begin
        begin
         Context.DES.CBC[J]:=Context.DES.CBC[J] xor PByte(Plain)[J];
        end;
-       
+
       {Encrypt Block}
       DESEncryptBlock(@Context.DES.CBC[0],@Context.DES.CBC[0],@Context.DES.EncryptKey);
-      
+
       {Copy Crypt}
       System.Move(Context.DES.CBC[0],Crypt^,DES_BLOCK_SIZE);
-      
+
       {Update Pointers}
       Inc(Plain,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
       Inc(Crypt,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
@@ -3404,9 +3782,9 @@ begin
   else
    begin
     Exit;
-   end;   
+   end;
  end;
- 
+
  Result:=True;
 end;
 
@@ -3424,83 +3802,83 @@ begin
  Result:=False;
 
  if Context = nil then Exit;
- if Crypt = nil then Exit;     
+ if Crypt = nil then Exit;
  if Plain = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Check algorithm}
  case Context.Algorithm of
   CRYPTO_CIPHER_ALG_RC4:begin
     {Decrypt Data}
     if not RC4DecryptData(@Context.RC4.Key[0],Context.RC4.KeySize,Crypt,Plain,Size,Context.RC4.Start) then Exit;
-    
+
     {Update Start}
     Inc(Context.RC4.Start,Size);
    end;
   CRYPTO_CIPHER_ALG_AES:begin
     {Check Size}
     if (Size mod AES_BLOCK_SIZE) <> 0 then Exit;
-    
+
     {Get Blocks}
     Blocks:=Size div AES_BLOCK_SIZE;
-  
+
     {Process Blocks}
     for I:=0 to Blocks - 1 do
      begin
       {Copy Crypt}
       System.Move(Crypt^,Temp[0],AES_BLOCK_SIZE);
-      
+
       {Decrypt Block}
       AESDecryptBlock(Crypt,Plain,@Context.AES.AESKey);
-      
+
       {Update Vector}
       for J:=0 to AES_BLOCK_SIZE - 1 do
        begin
         PByte(Plain)[J]:=PByte(Plain)[J] xor Context.AES.CBC[J];
        end;
-      
+
       {Copy Vector}
       System.Move(Temp[0],Context.AES.CBC[0],AES_BLOCK_SIZE);
-      
+
       {Update Pointers}
       Inc(Crypt,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
       Inc(Plain,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      end;
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_3DES:begin
     {Check Size}
     if (Size mod DES3_BLOCK_SIZE) <> 0 then Exit;
-    
+
     {Get Blocks}
     Blocks:=Size div DES3_BLOCK_SIZE;
-    
+
     {Process Blocks}
     for I:=0 to Blocks - 1 do
      begin
       {Copy Crypt}
       System.Move(Crypt^,Temp[0],DES3_BLOCK_SIZE);
-      
+
       {Decrypt Block}
       DES3DecryptBlock(Crypt,Plain,@Context.DES3.DES3Key);
-      
+
       {Update Vector}
       for J:=0 to DES3_BLOCK_SIZE - 1 do
        begin
         PByte(Plain)[J]:=PByte(Plain)[J] xor Context.DES3.CBC[J];
        end;
-      
+
       {Copy Vector}
       System.Move(Temp[0],Context.DES3.CBC[0],DES3_BLOCK_SIZE);
-      
+
       {Update Pointers}
       Inc(Crypt,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
       Inc(Plain,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      end;
-   end;  
+   end;
   CRYPTO_CIPHER_ALG_DES:begin
     {Check Size}
     if (Size mod DES_BLOCK_SIZE) <> 0 then Exit;
-    
+
     {Get Blocks}
     Blocks:=Size div DES_BLOCK_SIZE;
 
@@ -3509,19 +3887,19 @@ begin
      begin
       {Copy Crypt}
       System.Move(Crypt^,Temp[0],DES_BLOCK_SIZE);
-  
+
       {Decrypt Block}
       DESDecryptBlock(Crypt,Plain,@Context.DES.DecryptKey);
-      
+
       {Update Vector}
       for J:=0 to DES_BLOCK_SIZE - 1 do
        begin
         PByte(Plain)[J]:=PByte(Plain)[J] xor Context.DES.CBC[J];
        end;
-      
+
       {Copy Vector}
       System.Move(Temp[0],Context.DES.CBC[0],DES_BLOCK_SIZE);
-      
+
       {Update Pointers}
       Inc(Crypt,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
       Inc(Plain,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
@@ -3530,9 +3908,9 @@ begin
   else
    begin
     Exit;
-   end;   
+   end;
  end;
- 
+
  Result:=True;
 end;
 
@@ -3549,11 +3927,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  if Data = nil then Exit;
  if Digest = nil then Exit;
- 
+
  {Init Context}
  MD5Init(Context);
 
@@ -3564,13 +3942,13 @@ begin
    {Add Data}
    MD5Update(Context,Block.Data,Block.Size);
 
-   {Get Next}   
+   {Get Next}
    Block:=Block.Next;
-  end; 
+  end;
 
  {Return Digest}
  MD5Final(Context,Digest^);
- 
+
  Result:=True;
 end;
 
@@ -3583,20 +3961,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  {if Length(Value) = 0 then Exit;} {Allow blank string}
  if Digest = nil then Exit;
- 
+
  {Init Context}
  MD5Init(Context);
- 
+
  {Add Data}
  MD5Update(Context,PChar(Value),Length(Value));
- 
+
  {Return Digest}
  MD5Final(Context,Digest^);
- 
+
  Result:=True;
 end;
 
@@ -3607,13 +3985,13 @@ function HMACMD5DigestData(const Key:String;Data:PMD5Block;Digest:PMD5Digest):Bo
 {The MD5 HMAC algorithm is:
 
  MD5(Key xor oPad, MD5(Key xor iPad, Data))
- 
+
  Where iPad is the byte $36 repeated 64 times
        oPad is the byte $5c repeated 64 times
-  
+
  If Key is more than 64 bytes it will be hashed to Key = MD5(Key) instead
  If Key is less than 64 bytes it will be padded with zeros
- 
+
 }
 var
  Count:LongWord;
@@ -3626,26 +4004,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
  {Get key length}
  KeyLength:=Length(Key);
- 
+
  {Check key length}
  if KeyLength > 64 then
   begin
    {MD5 the key}
    if not MD5DigestString(Key,@KeyDigest) then Exit;
-   
+
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TMD5ByteBuffer),0);
-   
+
    {Copy digest to key buffer}
    System.Move(KeyDigest[0],KeyBuffer[0],16);
-   
+
    {Update key length}
    KeyLength:=16;
   end
@@ -3656,43 +4034,43 @@ begin
 
    {Copy key to key buffer}
    System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
-  end;  
+  end;
 
  {XOR the key buffer with the iPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $36;
   end;
- 
+
  {MD5 the key buffer and the data (Inner)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=Data;
- 
+
  if not MD5DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {XOR the key buffer with the oPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
   end;
- 
+
  {MD5 the key buffer and the result of the inner MD5 (Outer)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=Digest;
  Block.Size:=16;
  Block.Next:=nil;
- 
+
  if not MD5DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {Wipe the buffers to prevent leakage}
  FillChar(KeyDigest,SizeOf(TMD5Digest),0);
  FillChar(KeyBuffer,SizeOf(TMD5ByteBuffer),0);
  FillChar(PadBuffer,SizeOf(TMD5ByteBuffer),0);
- 
+
  Result:=True;
 end;
 
@@ -3703,13 +4081,13 @@ function HMACMD5DigestString(const Key,Value:String;Digest:PMD5Digest):Boolean;
 {The MD5 HMAC algorithm is:
 
  MD5(Key xor oPad, MD5(Key xor iPad, Value))
- 
+
  Where iPad is the byte $36 repeated 64 times
        oPad is the byte $5c repeated 64 times
-  
+
  If Key is more than 64 bytes it will be hashed to Key = MD5(Key) instead
  If Key is less than 64 bytes it will be padded with zeros
- 
+
 }
 var
  Count:LongWord;
@@ -3722,27 +4100,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  {if Length(Key) = 0 then Exit;} {Allow blank string}
  {if Length(Value) = 0 then Exit;} {Allow blank string}
  if Digest = nil then Exit;
- 
+
  {Get key length}
  KeyLength:=Length(Key);
- 
+
  {Check key length}
  if KeyLength > 64 then
   begin
    {MD5 the key}
    if not MD5DigestString(Key,@KeyDigest) then Exit;
-   
+
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TMD5ByteBuffer),0);
-   
+
    {Copy digest to key buffer}
    System.Move(KeyDigest[0],KeyBuffer[0],16);
-   
+
    {Update key length}
    KeyLength:=16;
   end
@@ -3753,54 +4131,59 @@ begin
 
    {Copy key to key buffer}
    System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
-  end;  
+  end;
 
  {XOR the key buffer with the iPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $36;
   end;
- 
+
  {MD5 the key buffer and the value (Inner)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=PChar(Value);
  Block.Size:=Length(Value);
  Block.Next:=nil;
- 
+
  if not MD5DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {XOR the key buffer with the oPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
   end;
- 
+
  {MD5 the key buffer and the result of the inner MD5 (Outer)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=Digest;
  Block.Size:=16;
  Block.Next:=nil;
- 
+
  if not MD5DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {Wipe the buffers to prevent leakage}
  FillChar(KeyDigest,SizeOf(TMD5Digest),0);
  FillChar(KeyBuffer,SizeOf(TMD5ByteBuffer),0);
  FillChar(PadBuffer,SizeOf(TMD5ByteBuffer),0);
- 
+
  Result:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {AES Functions}
 function AESEncryptData(Key:Pointer;KeySize:LongWord;Vector,Plain,Crypt:Pointer;Size:LongWord):Boolean;
+{Encrypt a block of data using the AES cipher, if Vector is supplied use CBC mode else use ECB}
+{Key size must be 16, 24 or 32 bytes (128, 192 or 256 bits)}
+{Vector must be 16 bytes (128 bits) long if supplied}
+{Size must be a multiple of 16 bytes long}
+{Plain text and Crypt data pointers must be the same length (and can point to the same value)}
 var
  I:LongWord;
  J:LongWord;
@@ -3810,7 +4193,8 @@ var
 begin
  {}
  Result:=False;
- 
+
+ {Check Params}
  if Key = nil then Exit;
  if KeySize = 0 then Exit;
  if Plain = nil then Exit;
@@ -3819,10 +4203,10 @@ begin
 
  {Check Size}
  if (Size mod AES_BLOCK_SIZE) <> 0 then Exit;
- 
+
  {Setup Keys}
  if not AESKeySetup(Key,KeySize,@AESKey) then Exit;
- 
+
  {Check Vector}
  if Vector = nil then
   begin
@@ -3835,10 +4219,10 @@ begin
   begin
    {Copy Vector}
    System.Move(Vector^,CBC[0],AES_BLOCK_SIZE);
-   
+
    {Get Blocks}
    Blocks:=Size div AES_BLOCK_SIZE;
-   
+
    {Process Blocks}
    for I:=0 to Blocks - 1 do
     begin
@@ -3847,29 +4231,34 @@ begin
       begin
        CBC[J]:=CBC[J] xor PByte(Plain)[J];
       end;
-      
+
      {Encrypt Block}
      AESEncryptBlock(@CBC[0],@CBC[0],@AESKey);
-     
+
      {Copy Crypt}
      System.Move(CBC[0],Crypt^,AES_BLOCK_SIZE);
-     
+
      {Update Pointers}
      Inc(Plain,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      Inc(Crypt,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
     end;
-   
+
    {Zero Key and Vector}
    FillChar(AESKey,SizeOf(TAESKey),0);
    FillChar(CBC,SizeOf(CBC),0);
-   
+
    Result:=True;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function AESDecryptData(Key:Pointer;KeySize:LongWord;Vector,Crypt,Plain:Pointer;Size:LongWord):Boolean;
+{Decrypt a block of data using the AES cipher, if Vector is supplied use CBC mode else use ECB}
+{Key size must be 16, 24 or 32 bytes (128, 192 or 256 bits)}
+{Vector must be 16 bytes (128 bits) long if supplied}
+{Size must be a multiple of 16 bytes long}
+{Plain text and Crypt data pointers must be the same length (and can point to the same value)}
 var
  I:LongWord;
  J:LongWord;
@@ -3880,20 +4269,21 @@ var
 begin
  {}
  Result:=False;
- 
+
+ {Check Params}
  if Key = nil then Exit;
  if KeySize = 0 then Exit;
  if Crypt = nil then Exit;
  if Plain = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Check Size}
  if (Size mod AES_BLOCK_SIZE) <> 0 then Exit;
- 
+
  {Setup Keys}
  if not AESKeySetup(Key,KeySize,@AESKey) then Exit;
- 
- {Check Vector} 
+
+ {Check Vector}
  if Vector = nil then
   begin
    {Get Blocks}
@@ -3905,7 +4295,7 @@ begin
   begin
    {Copy Vector}
    System.Move(Vector^,CBC[0],AES_BLOCK_SIZE);
-   
+
    {Get Blocks}
    Blocks:=Size div AES_BLOCK_SIZE;
 
@@ -3914,33 +4304,577 @@ begin
     begin
      {Copy Crypt}
      System.Move(Crypt^,Temp[0],AES_BLOCK_SIZE);
-     
+
      {Decrypt Block}
      AESDecryptBlock(Crypt,Plain,@AESKey);
-     
+
      {Update Vector}
      for J:=0 to AES_BLOCK_SIZE - 1 do
       begin
        PByte(Plain)[J]:=PByte(Plain)[J] xor CBC[J];
       end;
-     
+
      {Copy Vector}
      System.Move(Temp[0],CBC[0],AES_BLOCK_SIZE);
-     
+
      {Update Pointers}
      Inc(Crypt,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      Inc(Plain,AES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
     end;
-   
+
    {Zero Key and Vector}
    FillChar(AESKey,SizeOf(TAESKey),0);
    FillChar(Temp,SizeOf(Temp),0);
    FillChar(CBC,SizeOf(CBC),0);
-   
+
    Result:=True;
-  end;  
+  end;
 end;
- 
+
+{==============================================================================}
+
+function AESCTREncryptData(Key:Pointer;KeySize:LongWord;Nonce,Plain,Crypt:Pointer;Size:LongWord):Boolean;
+{Encrypt a block of data with the supplied Key and Nonce using AES CTR mode}
+{Key size must be 16, 24 or 32 bytes (128, 192 or 256 bits)}
+{Nonce must be 16 bytes (128 bits) long}
+{Plain text and Crypt data pointers must be the same length (and can point to the same value)}
+var
+ I:LongWord;
+ J:LongWord;
+ AESKey:TAESKey;
+ Block:LongWord;
+ Remain:LongWord;
+ CTR:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ Temp:array[0..AES_BLOCK_SIZE - 1] of Byte;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ if Key = nil then Exit;
+ if KeySize = 0 then Exit;
+ if Nonce = nil then Exit;
+ if Plain = nil then Exit;
+ if Crypt = nil then Exit;
+ if Size = 0 then Exit;
+
+ {Setup Keys}
+ if not AESKeySetup(Key,KeySize,@AESKey) then Exit;
+
+ {Copy Nonce}
+ System.Move(Nonce^,CTR[0],AES_BLOCK_SIZE);
+
+ {Process Blocks}
+ Remain:=Size;
+ while Remain > 0 do
+  begin
+   {Encrypt Block}
+   AESEncryptBlock(@CTR[0],@Temp[0],@AESKey);
+
+   {Get Block Size}
+   Block:=AES_BLOCK_SIZE;
+   if Remain < Block then Block:=Remain;
+
+   {XOR Plain Text}
+   for J:=0 to Block - 1 do
+    begin
+     PByte(Crypt)[J]:=PByte(Plain)[J] xor Temp[J];
+    end;
+
+   {Update Pointers}
+   Inc(PByte(Plain),Block); {Increment untyped pointer increments in bytes}
+   Inc(PByte(Crypt),Block); {Increment untyped pointer increments in bytes}
+
+   {Update Remain}
+   Dec(Remain,Block);
+
+   {Increment Counter}
+   for I:=AES_BLOCK_SIZE - 1 downto 0 do
+    begin
+     Inc(CTR[I]);
+     if CTR[I] <> 0 then Break;
+    end;
+  end;
+
+ {Zero Key and Counter}
+ FillChar(AESKey,SizeOf(TAESKey),0);
+ FillChar(Temp,SizeOf(Temp),0);
+ FillChar(CTR,SizeOf(CTR),0);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function AESCTRDecryptData(Key:Pointer;KeySize:LongWord;Nonce,Crypt,Plain:Pointer;Size:LongWord):Boolean; inline;
+{Decrypt a block of data with the supplied Key and Nonce using AES CTR mode}
+{Key size must be 16, 24 or 32 bytes (128, 192 or 256 bits)}
+{Nonce must be 16 bytes (128 bits) long}
+{Plain text and Crypt data pointers must be the same length (and can point to the same value)}
+begin
+ {}
+ Result:=AESCTREncryptData(Key,Keysize,Nonce,Plain,Crypt,Size);
+end;
+
+{==============================================================================}
+
+procedure GCMInc32(Block:PByte); inline;
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ Value:LongWord;
+begin
+ {}
+ Value:=LongWordToBE(PByte(PtrUInt(Block) + AES_BLOCK_SIZE - 4));
+ Inc(Value);
+ BEToLongWord(Value,PByte(PtrUInt(Block) + AES_BLOCK_SIZE - 4));
+end;
+
+{==============================================================================}
+
+procedure GCMXORBlock(Dest:PByte;const Source:PByte); inline;
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ D:PLongWord;
+ S:PLongWord;
+begin
+ {}
+ D:=PLongWord(Dest);
+ S:=PLongWord(Source);
+
+ D^:=D^ xor S^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S);
+
+ D^:=D^ xor S^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S);
+
+ D^:=D^ xor S^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S);
+
+ D^:=D^ xor S^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S);
+end;
+
+{==============================================================================}
+
+procedure GCMXORBlocks(Dest:PByte;const Source1,Source2:PByte); inline;
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ D:PLongWord;
+ S1:PLongWord;
+ S2:PLongWord;
+begin
+ {}
+ D:=PLongWord(Dest);
+ S1:=PLongWord(Source1);
+ S2:=PLongWord(Source2);
+
+ D^:=S1^ xor S2^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S1);
+ Inc(S2);
+
+ D^:=S1^ xor S2^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S1);
+ Inc(S2);
+
+ D^:=S1^ xor S2^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S1);
+ Inc(S2);
+
+ D^:=S1^ xor S2^;
+ Inc(D);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(S1);
+ Inc(S2);
+end;
+
+{==============================================================================}
+
+procedure GCMShiftRightBlock(V:PByte);
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ Value:LongWord;
+begin
+ {}
+ Value:=LongWordToBE(PByte(PtrUInt(PtrUInt(V) + 12)));
+ Value:=Value shr 1;
+ if (V[11] and $01) <> 0 then
+  begin
+   Value:=Value or $80000000;
+  end;
+ BEToLongWord(Value,PByte(PtrUInt(PtrUInt(V) + 12)));
+
+ Value:=LongWordToBE(PByte(PtrUInt(PtrUInt(V) + 8)));
+ Value:=Value shr 1;
+ if (V[7] and $01) <> 0 then
+  begin
+   Value:=Value or $80000000;
+  end;
+ BEToLongWord(Value,PByte(PtrUInt(PtrUInt(V) + 8)));
+
+ Value:=LongWordToBE(PByte(PtrUInt(PtrUInt(V) + 4)));
+ Value:=Value shr 1;
+ if (V[3] and $01) <> 0 then
+  begin
+   Value:=Value or $80000000;
+  end;
+ BEToLongWord(Value,PByte(PtrUInt(PtrUInt(V) + 4)));
+
+ Value:=LongWordToBE(V);
+ Value:=Value shr 1;
+ BEToLongWord(Value,V);
+end;
+
+{==============================================================================}
+
+procedure GCMGFMult(const X,Y:PByte;Z:PByte);
+{Multiplication in GF(2^128)}
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ I:Integer;
+ J:Integer;
+ V:array[0..AES_BLOCK_SIZE - 1] of Byte;
+begin
+ {}
+ {Z_0 = 0^128}
+ FillChar(Z^,AES_BLOCK_SIZE,0);
+
+ {V_0 = Y}
+ System.Move(Y^,V,AES_BLOCK_SIZE);
+
+ for I := 0 to AES_BLOCK_SIZE - 1 do
+  begin
+   for J := 0 to 7 do
+    begin
+     if (X[I] and (1 shl (7 - J))) <> 0 then
+      begin
+       {Z_(i + 1) = Z_i XOR V_i}
+       GCMXORBlock(Z,@V);
+      end
+     else
+      begin
+       {Z_(i + 1) = Z_i}
+       {Nothing}
+      end;
+
+     if (V[15] and $01) <> 0 then
+      begin
+       {V_(i + 1) = (V_i >> 1) XOR R}
+       GCMShiftRightBlock(@V);
+
+       {R = 11100001 || 0^120}
+       V[0]:=V[0] xor $e1;
+      end
+     else
+      begin
+       {V_(i + 1) = V_i >> 1}
+       GCMShiftRightBlock(@V);
+      end;
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+procedure GCMGHashStart(Y:PByte);
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+begin
+ {}
+ {Y_0 = 0^128}
+ FillChar(Y^,AES_BLOCK_SIZE,0);
+end;
+
+{==============================================================================}
+
+procedure GCMGHash(const H,X:PByte;XSize:PtrUInt;Y:PByte);
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ I:Integer;
+ M:PtrUInt;
+ Last:PtrUInt;
+ Temp:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ XPos:PByte;
+begin
+ {}
+ M:=XSize div 16;
+ XPos:=X;
+
+ for I := 0 to M - 1 do
+  begin
+   {Y_i = (Y^(i-1) XOR X_i) dot H}
+   GCMXORBlock(Y,XPos);
+
+   Inc(XPos,AES_BLOCK_SIZE);
+
+   {Dot operation, multiplication operation for binary Galois (finite) field of 2^128 elements}
+   GCMGFMult(Y,H,@Temp);
+   System.Move(Temp,Y^,AES_BLOCK_SIZE);
+  end;
+
+ if (PtrUInt(X) + XSize) > PtrUInt(XPos) then
+  begin
+   {Add zero padded last block}
+   Last:=(PtrUInt(X) + XSize) - PtrUInt(XPos);
+   System.Move(XPos^,Temp,Last);
+   FillChar(Pointer(PtrUInt(@Temp) + Last)^,AES_BLOCK_SIZE - Last,0);
+
+   {Y_i = (Y^(i-1) XOR X_i) dot H}
+   GCMXORBlock(Y,@Temp);
+
+   {Dot operation, multiplication operation for binary Galois (finite) field of 2^128 elements}
+   GCMGFMult(Y,H,@Temp);
+   System.Move(Temp,Y^,AES_BLOCK_SIZE);
+  end;
+
+ {Return Y_m}
+end;
+
+{==============================================================================}
+
+procedure AESGCTR(AESKey:PAESKey;const ICB,X:PByte;XSize:PtrUInt;Y:PByte);
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ I:Integer;
+ N:PtrUInt;
+ Last:PtrUInt;
+ CB:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ Temp:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ XPos:PByte;
+ YPos:PByte;
+begin
+ {}
+ XPos:=X;
+ YPos:=Y;
+
+ {Check Size}
+ if XSize = 0 then Exit;
+
+ N:=XSize div 16;
+
+ System.Move(ICB^,CB,AES_BLOCK_SIZE);
+
+ {Full Blocks}
+ for I := 0 to N - 1 do
+  begin
+   if X = Y then
+    begin
+     AESEncryptBlock(@CB,@Temp,AESKey);
+     GCMXORBlocks(YPos,XPos,@Temp);
+    end
+   else
+    begin
+     AESEncryptBlock(@CB,YPos,AESKey);
+     GCMXORBlock(YPos,XPos);
+    end;
+
+   Inc(XPos,AES_BLOCK_SIZE);
+   Inc(YPos,AES_BLOCK_SIZE);
+
+   GCMInc32(@CB);
+  end;
+
+ Last:=PtrUInt(X) + XSize - PtrUInt(XPos);
+ if Last > 0 then
+  begin
+   {Last, partial block}
+   AESEncryptBlock(@CB,@Temp,AESKey);
+   for I := 0 to Last - 1 do
+    begin
+     YPos^:=XPos^ xor Temp[I];
+
+     Inc(XPos); {Increment PByte increments by SizeOf(Byte)}
+     Inc(YPos); {Increment PByte increments by SizeOf(Byte)}
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function AESGCMHashSubkey(Key:Pointer;KeySize:LongWord;AESKey:PAESKey;H:PByte):Boolean;
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+begin
+ {}
+ Result:=False;
+
+ {Setup Keys}
+ if not AESKeySetup(Key,KeySize,AESKey) then Exit;
+
+ {Generate hash subkey H = AES_K(0^128)}
+ FillChar(H^,AES_BLOCK_SIZE,0);
+ AESEncryptBlock(H,H,AESKey);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+procedure AESGCMPrepareJ0(const IV:PByte;IVSize:PtrUInt;const H:PByte;J0:PByte);
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ LEN:array[0..AES_BLOCK_SIZE - 1] of Byte;
+begin
+ {}
+ if IVSize = 12 then
+  begin
+   {Prepare block J_0 = IV || 0^31 || 1 [len(IV) = 96]}
+   System.Move(IV^,J0^,IVSize);
+   FillChar(PByte(PtrUInt(J0) + IVSize)^,AES_BLOCK_SIZE - IVSize,0);
+   J0[AES_BLOCK_SIZE - 1]:=$01;
+  end
+ else
+  begin
+   {s = 128 * ceil(len(IV)/128) - len(IV)
+		J_0 = GHASH_H(IV || 0^(s+64) || [len(IV)]_64)}
+
+   GCMGHashStart(J0);
+   GCMGHash(H,IV,IVSize,J0);
+   BEToQWord(0,@LEN);
+   BEToQWord(IVSize * 8,PByte(PtrUInt(@LEN) + 8));
+   GCMGHash(H,@LEN,AES_BLOCK_SIZE,J0);
+  end;
+end;
+
+{==============================================================================}
+
+procedure AESGCMGCTR(AESKey:PAESKey;const J0,Input:PByte;Size:PtrUInt;Output:PByte);
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ J0Inc:array[0..AES_BLOCK_SIZE - 1] of Byte;
+begin
+ {}
+ {Check Size}
+ if Size = 0 then Exit;
+
+ System.Move(J0^,J0Inc,AES_BLOCK_SIZE);
+ GCMInc32(@J0Inc);
+ AESGCTR(AESKey,@J0Inc,Input,Size,Output);
+end;
+
+{==============================================================================}
+
+procedure AESGCMGHash(const H,AAD:PByte;AADSize:PtrUInt;const Crypt:PByte;CryptSize:PtrUInt;S:PByte);
+{Internal function used by AESGCMEncryptData/AESGCMDecryptData}
+var
+ LEN:array[0..AES_BLOCK_SIZE - 1] of Byte;
+begin
+ {}
+ {u = 128 * ceil[len(C)/128] - len(C)
+	v = 128 * ceil[len(A)/128] - len(A)
+	S = GHASH_H(A || 0^v || C || 0^u || [len(A)]64 || [len(C)]64)
+	(i.e., zero padded to block size A || C and lengths of each in bits)}
+
+ GCMGHashStart(S);
+ GCMGHash(H,AAD,AADSize,S);
+ GCMGHash(H,Crypt,CryptSize,S);
+ BEToQWord(AADSize * 8,@LEN);
+ BEToQWord(CryptSize * 8,PByte(PtrUInt(@LEN) + 8));
+ GCMGHash(H,@LEN,AES_BLOCK_SIZE,S);
+end;
+
+{==============================================================================}
+
+function AESGCMEncryptData(Key:Pointer;KeySize:LongWord;IV,AAD,Plain,Crypt:Pointer;IVSize,AADSize,Size:LongWord;Tag:Pointer):Boolean;
+{Encrypt a block of data with the supplied Key, IV and AAD using AES GCM mode, return the authentication Tag}
+{Plain text and Crypt data pointers must be the same length (and can point to the same value)}
+{Tag must be 16 bytes (128 bits) long}
+var
+ AESKey:TAESKey;
+ H:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ S:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ J0:array[0..AES_BLOCK_SIZE - 1] of Byte;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ if Key = nil then Exit;
+ if KeySize = 0 then Exit;
+ if IV = nil then Exit;
+ if AAD = nil then Exit;
+ if (Plain = nil) and (Crypt <> nil) then Exit; {Allow for GMAC}
+ if (Crypt = nil) and (Plain <> nil) then Exit; {Allow for GMAC}
+ if IVSize = 0 then Exit;
+ if AADSize = 0 then Exit;
+ if (Plain <> nil) and (Size = 0) then Exit;    {Allow for GMAC}
+ if Tag = nil then Exit;
+
+ {Setup Keys}
+ if not AESGCMHashSubkey(Key,KeySize,@AESKey,@H) then Exit;
+
+ AESGCMPrepareJ0(IV,IVSize,@H,@J0);
+
+ {C = GCTR_K(inc_32(J_0), P)}
+ AESGCMGCTR(@AESKey,@J0,Plain,Size,Crypt);
+
+ AESGCMGHash(@H,AAD,AADSize,Crypt,Size,@S);
+
+ {T = MSB_t(GCTR_K(J_0, S))}
+ AESGCTR(@AESKey,@J0,@S,AES_BLOCK_SIZE,Tag);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function AESGCMDecryptData(Key:Pointer;KeySize:LongWord;IV,AAD,Crypt,Plain:Pointer;IVSize,AADSize,Size:LongWord;const Tag:Pointer):Boolean;
+{Decrypt a block of data with the supplied Key, IV and AAD using AES GCM mode, validate the authentication Tag}
+{Plain text and Crypt data pointers must be the same length (and can point to the same value)}
+{Tag must be 16 bytes (128 bits) long}
+var
+ AESKey:TAESKey;
+ H:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ S:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ T:array[0..AES_BLOCK_SIZE - 1] of Byte;
+ J0:array[0..AES_BLOCK_SIZE - 1] of Byte;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ if Key = nil then Exit;
+ if KeySize = 0 then Exit;
+ if IV = nil then Exit;
+ if AAD = nil then Exit;
+ if Plain = nil then Exit;
+ if Crypt = nil then Exit;
+ if IVSize = 0 then Exit;
+ if AADSize = 0 then Exit;
+ if Size = 0 then Exit;
+ if Tag = nil then Exit;
+
+ {Setup Keys}
+ if not AESGCMHashSubkey(Key,KeySize,@AESKey,@H) then Exit;
+
+ AESGCMPrepareJ0(IV,IVSize,@H,@J0);
+
+ {P = GCTR_K(inc_32(J_0), C)}
+ AESGCMGCTR(@AESKey,@J0,Crypt,Size,Plain);
+
+ AESGCMGHash(@H,AAD,AADSize,Crypt,Size,@S);
+
+ {T' = MSB_t(GCTR_K(J_0, S))}
+ AESGCTR(@AESKey,@J0,@S,AES_BLOCK_SIZE,@T);
+
+ if not CompareMem(Tag,@T,AES_BLOCK_SIZE) then Exit;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function AESGCMGMAC(Key:Pointer;KeySize:LongWord;IV,AAD:Pointer;IVSize,AADSize:LongWord;Tag:Pointer):Boolean;
+{Generate the GMAC authentication Tag for a given Key, IV and AAD using AES GCM mode}
+{Tag must be 16 bytes (128 bits) long}
+begin
+ {}
+ Result:=AESGCMEncryptData(Key,KeySize,IV,AAD,nil,nil,IVSize,AADSize,0,Tag);
+end;
+
 {==============================================================================}
 {==============================================================================}
 {DES Functions}
@@ -3955,7 +4889,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Key = nil then Exit;
  if KeySize = 0 then Exit;
  if Plain = nil then Exit;
@@ -3967,7 +4901,7 @@ begin
 
  {Setup Keys}
  if not DESKeySetup(Key,KeySize,@EncryptKey,@DecryptKey) then Exit;
- 
+
  {Check Vector}
  if Vector = nil then
   begin
@@ -3980,10 +4914,10 @@ begin
   begin
    {Copy Vector}
    System.Move(Vector^,CBC[0],DES_BLOCK_SIZE);
-   
+
    {Get Blocks}
    Blocks:=Size div DES_BLOCK_SIZE;
-   
+
    {Process Blocks}
    for I:=0 to Blocks - 1 do
     begin
@@ -3992,27 +4926,27 @@ begin
       begin
        CBC[J]:=CBC[J] xor PByte(Plain)[J];
       end;
-      
+
      {Encrypt Block}
      DESEncryptBlock(@CBC[0],@CBC[0],@EncryptKey);
-     
+
      {Copy Crypt}
      System.Move(CBC[0],Crypt^,DES_BLOCK_SIZE);
-     
+
      {Update Pointers}
      Inc(Plain,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      Inc(Crypt,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
     end;
-   
+
    {Zero Keys and Vector}
    FillChar(EncryptKey,SizeOf(TDESKey),0);
    FillChar(DecryptKey,SizeOf(TDESKey),0);
    FillChar(CBC,SizeOf(CBC),0);
 
-   Result:=True;   
-  end;  
+   Result:=True;
+  end;
 end;
- 
+
 {==============================================================================}
 
 function DESDecryptData(Key:Pointer;KeySize:LongWord;Vector,Crypt,Plain:Pointer;Size:LongWord):Boolean;
@@ -4027,7 +4961,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Key = nil then Exit;
  if KeySize = 0 then Exit;
  if Crypt = nil then Exit;
@@ -4039,7 +4973,7 @@ begin
 
  {Setup Keys}
  if not DESKeySetup(Key,KeySize,@EncryptKey,@DecryptKey) then Exit;
- 
+
  {Check Vector}
  if Vector = nil then
   begin
@@ -4052,7 +4986,7 @@ begin
   begin
    {Copy Vector}
    System.Move(Vector^,CBC[0],DES_BLOCK_SIZE);
-   
+
    {Get Blocks}
    Blocks:=Size div DES_BLOCK_SIZE;
 
@@ -4061,19 +4995,19 @@ begin
     begin
      {Copy Crypt}
      System.Move(Crypt^,Temp[0],DES_BLOCK_SIZE);
-  
+
      {Decrypt Block}
      DESDecryptBlock(Crypt,Plain,@DecryptKey);
-     
+
      {Update Vector}
      for J:=0 to DES_BLOCK_SIZE - 1 do
       begin
        PByte(Plain)[J]:=PByte(Plain)[J] xor CBC[J];
       end;
-     
+
      {Copy Vector}
      System.Move(Temp[0],CBC[0],DES_BLOCK_SIZE);
-     
+
      {Update Pointers}
      Inc(Crypt,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      Inc(Plain,DES_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
@@ -4085,8 +5019,8 @@ begin
    FillChar(Temp,SizeOf(Temp),0);
    FillChar(CBC,SizeOf(CBC),0);
 
-   Result:=True;   
-  end;  
+   Result:=True;
+  end;
 end;
 
 {==============================================================================}
@@ -4102,7 +5036,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Key = nil then Exit;
  if KeySize = 0 then Exit;
  if Plain = nil then Exit;
@@ -4114,7 +5048,7 @@ begin
 
  {Setup Keys}
  if not DES3KeySetup(Key,KeySize,@DES3Key) then Exit;
- 
+
  {Check Vector}
  if Vector = nil then
   begin
@@ -4127,10 +5061,10 @@ begin
   begin
    {Copy Vector}
    System.Move(Vector^,CBC[0],DES3_BLOCK_SIZE);
-   
+
    {Get Blocks}
    Blocks:=Size div DES3_BLOCK_SIZE;
-   
+
    {Process Blocks}
    for I:=0 to Blocks - 1 do
     begin
@@ -4139,24 +5073,24 @@ begin
       begin
        CBC[J]:=CBC[J] xor PByte(Plain)[J];
       end;
-      
+
      {Encrypt Block}
      DES3EncryptBlock(@CBC[0],@CBC[0],@DES3Key);
-     
+
      {Copy Crypt}
      System.Move(CBC[0],Crypt^,DES3_BLOCK_SIZE);
-     
+
      {Update Pointers}
      Inc(Plain,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      Inc(Crypt,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
     end;
-    
+
    {Zero Keys and Vector}
    FillChar(DES3Key,SizeOf(TDES3Key),0);
    FillChar(CBC,SizeOf(CBC),0);
 
-   Result:=True;   
-  end;  
+   Result:=True;
+  end;
 end;
 
 {==============================================================================}
@@ -4172,7 +5106,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Key = nil then Exit;
  if KeySize = 0 then Exit;
  if Crypt = nil then Exit;
@@ -4184,7 +5118,7 @@ begin
 
  {Setup Keys}
  if not DES3KeySetup(Key,KeySize,@DES3Key) then Exit;
- 
+
  {Check Vector}
  if Vector = nil then
   begin
@@ -4197,7 +5131,7 @@ begin
   begin
    {Copy Vector}
    System.Move(Vector^,CBC[0],DES3_BLOCK_SIZE);
-   
+
    {Get Blocks}
    Blocks:=Size div DES3_BLOCK_SIZE;
 
@@ -4206,41 +5140,41 @@ begin
     begin
      {Copy Crypt}
      System.Move(Crypt^,Temp[0],DES3_BLOCK_SIZE);
-     
+
      {Decrypt Block}
      DES3DecryptBlock(Crypt,Plain,@DES3Key);
-     
+
      {Update Vector}
      for J:=0 to DES3_BLOCK_SIZE - 1 do
       begin
        PByte(Plain)[J]:=PByte(Plain)[J] xor CBC[J];
       end;
-     
+
      {Copy Vector}
      System.Move(Temp[0],CBC[0],DES3_BLOCK_SIZE);
-     
+
      {Update Pointers}
      Inc(Crypt,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
      Inc(Plain,DES3_BLOCK_SIZE); {Increment untyped pointer increments in bytes}
     end;
-   
+
    {Zero Keys and Vector}
    FillChar(DES3Key,SizeOf(TDES3Key),0);
    FillChar(Temp,SizeOf(Temp),0);
    FillChar(CBC,SizeOf(CBC),0);
 
-   Result:=True;   
-  end;  
+   Result:=True;
+  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RC4 Functions}
 function RC4EncryptData(Key:Pointer;KeySize:LongWord;Plain,Crypt:Pointer;Size,Start:LongWord):Boolean;
 {Encrypt the supplied data with a key using the RC4 cipher algorithm}
 {Start specifies how many bytes of the RC4 cipher stream to skip to allow for previous blocks of data
- or to comply with RFC4345 requirements to discard the first 1536 bytes of the RC4 cipher stream} 
- 
+ or to comply with RFC4345 requirements to discard the first 1536 bytes of the RC4 cipher stream}
+
  procedure RC4SwapState(A,B:LongWord;State:PRC4State); inline;
  var
   Temp:Byte;
@@ -4248,9 +5182,9 @@ function RC4EncryptData(Key:Pointer;KeySize:LongWord;Plain,Crypt:Pointer;Size,St
   {}
   Temp:=State[A];
   State[A]:=State[B];
-  State[B]:=Temp; 
+  State[B]:=Temp;
  end;
- 
+
 var
  I:LongWord;
  J:LongWord;
@@ -4262,31 +5196,31 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Key = nil then Exit;
  if KeySize = 0 then Exit;
  if Plain = nil then Exit;
  if Crypt = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Create state (KSA)}
  for I:=0 to 255 do
   begin
    State[I]:=I;
   end;
- 
+
  J:=0;
  Offset:=0;
  for I:=0 to 255 do
   begin
    J:=(J + State[I] + PByte(Key)[Offset]) and $FF;
-   
+
    Inc(Offset);
    if Offset >= KeySize then Offset:=0;
-   
+
    RC4SwapState(I,J,@State);
   end;
- 
+
  {Skip start bytes of the RC4 stream (PRGA)}
  I:=0;
  J:=0;
@@ -4296,11 +5230,11 @@ begin
     begin
      I:=(I + 1) and $FF;
      J:=(J + State[I]) and $FF;
-     
+
      RC4SwapState(I,J,@State);
     end;
-  end;  
- 
+  end;
+
  {Encrypt the data with the RC4 stream (PRGA)}
  PlainBuffer:=Plain;
  CryptBuffer:=Crypt;
@@ -4308,15 +5242,15 @@ begin
   begin
    I:=(I + 1) and $FF;
    J:=(J + State[I]) and $FF;
-   
+
    RC4SwapState(I,J,@State);
-   
+
    CryptBuffer^:=PlainBuffer^ xor State[(State[I] + State[J]) and $FF];
-   
+
    Inc(PlainBuffer);
    Inc(CryptBuffer);
   end;
- 
+
  Result:=True;
 end;
 
@@ -4328,7 +5262,7 @@ begin
  {}
  Result:=RC4EncryptData(Key,KeySize,Crypt,Plain,Size,Start);
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {SHA1 Functions}
@@ -4342,11 +5276,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  if Data = nil then Exit;
  if Digest = nil then Exit;
- 
+
  {Init Context}
  SHA1Init(Context);
 
@@ -4357,13 +5291,13 @@ begin
    {Add Data}
    SHA1Update(Context,Block.Data,Block.Size);
 
-   {Get Next}   
+   {Get Next}
    Block:=Block.Next;
-  end; 
+  end;
 
  {Return Digest}
  SHA1Final(Context,Digest^);
- 
+
  Result:=True;
 end;
 
@@ -4376,37 +5310,37 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  {if Length(Value) = 0 then Exit;} {Allow blank string}
  if Digest = nil then Exit;
- 
+
  {Init Context}
  SHA1Init(Context);
- 
+
  {Add Data}
  SHA1Update(Context,PChar(Value),Length(Value));
- 
+
  {Return Digest}
  SHA1Final(Context,Digest^);
- 
+
  Result:=True;
 end;
 
 {==============================================================================}
- 
+
 function HMACSHA1DigestData(const Key:String;Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
 {Generate a SHA1 HMAC (Hashed Message Authentication Code) using the Key and Data}
 {The SHA1 HMAC algorithm is:
 
  SHA1(Key xor oPad, SHA1(Key xor iPad, Data))
- 
+
  Where iPad is the byte $36 repeated 64 times
        oPad is the byte $5c repeated 64 times
-  
+
  If Key is more than 64 bytes it will be hashed to Key = SHA1(Key) instead
  If Key is less than 64 bytes it will be padded with zeros
- 
+
 }
 var
  Count:LongWord;
@@ -4419,26 +5353,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
  {Get key length}
  KeyLength:=Length(Key);
- 
+
  {Check key length}
  if KeyLength > 64 then
   begin
    {SHA1 the key}
    if not SHA1DigestString(Key,@KeyDigest) then Exit;
-   
+
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA1ByteBuffer),0);
-   
+
    {Copy digest to key buffer}
    System.Move(KeyDigest[0],KeyBuffer[0],20);
-   
+
    {Update key length}
    KeyLength:=20;
   end
@@ -4449,43 +5383,43 @@ begin
 
    {Copy key to key buffer}
    System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
-  end;  
+  end;
 
  {XOR the key buffer with the iPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $36;
   end;
- 
+
  {SHA1 the key buffer and the data (Inner)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=Data;
- 
+
  if not SHA1DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {XOR the key buffer with the oPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
   end;
- 
+
  {SHA1 the key buffer and the result of the inner SHA1 (Outer)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=Digest;
  Block.Size:=20;
  Block.Next:=nil;
- 
+
  if not SHA1DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {Wipe the buffers to prevent leakage}
  FillChar(KeyDigest,SizeOf(TSHA1Digest),0);
  FillChar(KeyBuffer,SizeOf(TSHA1ByteBuffer),0);
  FillChar(PadBuffer,SizeOf(TSHA1ByteBuffer),0);
- 
+
  Result:=True;
 end;
 
@@ -4496,13 +5430,13 @@ function HMACSHA1DigestString(const Key,Value:String;Digest:PSHA1Digest):Boolean
 {The SHA1 HMAC algorithm is:
 
  SHA1(Key xor oPad, SHA1(Key xor iPad, Value))
- 
+
  Where iPad is the byte $36 repeated 64 times
        oPad is the byte $5c repeated 64 times
-  
+
  If Key is more than 64 bytes it will be hashed to Key = SHA1(Key) instead
  If Key is less than 64 bytes it will be padded with zeros
- 
+
 }
 var
  Count:LongWord;
@@ -4515,27 +5449,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  {if Length(Key) = 0 then Exit;} {Allow blank string}
  {if Length(Value) = 0 then Exit;} {Allow blank string}
  if Digest = nil then Exit;
- 
+
  {Get key length}
  KeyLength:=Length(Key);
- 
+
  {Check key length}
  if KeyLength > 64 then
   begin
    {SHA1 the key}
    if not SHA1DigestString(Key,@KeyDigest) then Exit;
-   
+
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA1ByteBuffer),0);
-   
+
    {Copy digest to key buffer}
    System.Move(KeyDigest[0],KeyBuffer[0],20);
-   
+
    {Update key length}
    KeyLength:=20;
   end
@@ -4546,47 +5480,47 @@ begin
 
    {Copy key to key buffer}
    System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
-  end;  
+  end;
 
  {XOR the key buffer with the iPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $36;
   end;
- 
+
  {SHA1 the key buffer and the value (Inner)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=PChar(Value);
  Block.Size:=Length(Value);
  Block.Next:=nil;
- 
+
  if not SHA1DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {XOR the key buffer with the oPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
   end;
- 
+
  {SHA1 the key buffer and the result of the inner SHA1 (Outer)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=Digest;
  Block.Size:=20;
  Block.Next:=nil;
- 
+
  if not SHA1DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {Wipe the buffers to prevent leakage}
  FillChar(KeyDigest,SizeOf(TSHA1Digest),0);
  FillChar(KeyBuffer,SizeOf(TSHA1ByteBuffer),0);
  FillChar(PadBuffer,SizeOf(TSHA1ByteBuffer),0);
- 
+
  Result:=True;
 end;
 
@@ -4603,11 +5537,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  if Data = nil then Exit;
  if Digest = nil then Exit;
- 
+
  {Init Context}
  SHA256Init(Context);
 
@@ -4618,13 +5552,13 @@ begin
    {Add Data}
    SHA256Process(Context,Block.Data,Block.Size);
 
-   {Get Next}   
+   {Get Next}
    Block:=Block.Next;
-  end; 
+  end;
 
  {Return Digest}
  SHA256Complete(Context,Digest^);
- 
+
  Result:=True;
 end;
 
@@ -4637,37 +5571,37 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  {if Length(Value) = 0 then Exit;} {Allow blank string}
  if Digest = nil then Exit;
- 
+
  {Init Context}
  SHA256Init(Context);
- 
+
  {Add Data}
  SHA256Process(Context,PChar(Value),Length(Value));
- 
+
  {Return Digest}
  SHA256Complete(Context,Digest^);
- 
+
  Result:=True;
 end;
 
 {==============================================================================}
- 
+
 function HMACSHA256DigestData(const Key:String;Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
 {Generate a SHA256 HMAC (Hashed Message Authentication Code) using the Key and Data}
 {The SHA256 HMAC algorithm is:
 
  SHA256(Key xor oPad, SHA256(Key xor iPad, Data))
- 
+
  Where iPad is the byte $36 repeated 64 times
        oPad is the byte $5c repeated 64 times
-  
+
  If Key is more than 64 bytes it will be hashed to Key = SHA256(Key) instead
  If Key is less than 64 bytes it will be padded with zeros
- 
+
 }
 var
  Count:LongWord;
@@ -4680,26 +5614,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
  {Get key length}
  KeyLength:=Length(Key);
- 
+
  {Check key length}
  if KeyLength > 64 then
   begin
    {SHA256 the key}
    if not SHA256DigestString(Key,@KeyDigest) then Exit;
-   
+
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA256ByteBuffer),0);
-   
+
    {Copy digest to key buffer}
    System.Move(KeyDigest[0],KeyBuffer[0],32);
-   
+
    {Update key length}
    KeyLength:=32;
   end
@@ -4710,43 +5644,43 @@ begin
 
    {Copy key to key buffer}
    System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
-  end;  
+  end;
 
  {XOR the key buffer with the iPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $36;
   end;
- 
+
  {SHA256 the key buffer and the data (Inner)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=Data;
- 
+
  if not SHA256DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {XOR the key buffer with the oPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
   end;
- 
+
  {SHA256 the key buffer and the result of the inner SHA256 (Outer)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=Digest;
  Block.Size:=32;
  Block.Next:=nil;
- 
+
  if not SHA256DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {Wipe the buffers to prevent leakage}
  FillChar(KeyDigest,SizeOf(TSHA256Digest),0);
  FillChar(KeyBuffer,SizeOf(TSHA256ByteBuffer),0);
  FillChar(PadBuffer,SizeOf(TSHA256ByteBuffer),0);
- 
+
  Result:=True;
 end;
 
@@ -4757,13 +5691,13 @@ function HMACSHA256DigestString(const Key,Value:String;Digest:PSHA256Digest):Boo
 {The SHA256 HMAC algorithm is:
 
  SHA256(Key xor oPad, SHA256(Key xor iPad, Value))
- 
+
  Where iPad is the byte $36 repeated 64 times
        oPad is the byte $5c repeated 64 times
-  
+
  If Key is more than 64 bytes it will be hashed to Key = SHA256(Key) instead
  If Key is less than 64 bytes it will be padded with zeros
- 
+
 }
 var
  Count:LongWord;
@@ -4776,27 +5710,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Params}
  {if Length(Key) = 0 then Exit;} {Allow blank string}
  {if Length(Value) = 0 then Exit;} {Allow blank string}
  if Digest = nil then Exit;
- 
+
  {Get key length}
  KeyLength:=Length(Key);
- 
+
  {Check key length}
  if KeyLength > 64 then
   begin
    {SHA256 the key}
    if not SHA256DigestString(Key,@KeyDigest) then Exit;
-   
+
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA256ByteBuffer),0);
-   
+
    {Copy digest to key buffer}
    System.Move(KeyDigest[0],KeyBuffer[0],32);
-   
+
    {Update key length}
    KeyLength:=32;
   end
@@ -4807,57 +5741,779 @@ begin
 
    {Copy key to key buffer}
    System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
-  end;  
+  end;
 
  {XOR the key buffer with the iPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $36;
   end;
- 
+
  {SHA256 the key buffer and the value (Inner)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=PChar(Value);
  Block.Size:=Length(Value);
  Block.Next:=nil;
- 
+
  if not SHA256DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {XOR the key buffer with the oPad value}
  for Count:=0 to 63 do
   begin
    PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
   end;
- 
+
  {SHA256 the key buffer and the result of the inner SHA256 (Outer)}
  KeyBlock.Data:=@PadBuffer;
  KeyBlock.Size:=64;
  KeyBlock.Next:=@Block;
- 
+
  Block.Data:=Digest;
  Block.Size:=32;
  Block.Next:=nil;
- 
+
  if not SHA256DigestData(@KeyBlock,Digest) then Exit;
- 
+
  {Wipe the buffers to prevent leakage}
  FillChar(KeyDigest,SizeOf(TSHA256Digest),0);
  FillChar(KeyBuffer,SizeOf(TSHA256ByteBuffer),0);
  FillChar(PadBuffer,SizeOf(TSHA256ByteBuffer),0);
- 
+
  Result:=True;
 end;
 
 {==============================================================================}
 {==============================================================================}
+{SHA384 Functions}
+function SHA384DigestData(Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
+{Generate a 384 bit SHA384 digest (Hash) from the supplied data}
+{Data is a linked list which can contain multiple independent blocks to be
+ included in the hash. The data block itself does not form part of the hash}
+var
+ Block:PSHA384Block;
+ Context:TSHA384Context;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ if Data = nil then Exit;
+ if Digest = nil then Exit;
+
+ {Init Context}
+ SHA384Init(Context);
+
+ {Get Block}
+ Block:=Data;
+ while Block <> nil do
+  begin
+   {Add Data}
+   SHA384Process(Context,Block.Data,Block.Size);
+
+   {Get Next}
+   Block:=Block.Next;
+  end;
+
+ {Return Digest}
+ SHA384Complete(Context,Digest^);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function SHA384DigestString(const Value:String;Digest:PSHA384Digest):Boolean;
+{Generate a 384 bit SHA384 digest (Hash) from the supplied string value}
+var
+ Context:TSHA384Context;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ {if Length(Value) = 0 then Exit;} {Allow blank string}
+ if Digest = nil then Exit;
+
+ {Init Context}
+ SHA384Init(Context);
+
+ {Add Data}
+ SHA384Process(Context,PChar(Value),Length(Value));
+
+ {Return Digest}
+ SHA384Complete(Context,Digest^);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HMACSHA384DigestData(const Key:String;Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
+{Generate a SHA384 HMAC (Hashed Message Authentication Code) using the Key and Data}
+{The SHA384 HMAC algorithm is:
+
+ SHA384(Key xor oPad, SHA384(Key xor iPad, Data))
+
+ Where iPad is the byte $36 repeated 128 times
+       oPad is the byte $5c repeated 128 times
+
+ If Key is more than 128 bytes it will be hashed to Key = SHA384(Key) instead
+ If Key is less than 128 bytes it will be padded with zeros
+
+}
+var
+ Count:LongWord;
+ Block:TSHA384Block;
+ KeyBlock:TSHA384Block;
+ KeyLength:PtrUInt;
+ KeyDigest:TSHA384Digest;
+ KeyBuffer:TSHA384ByteBuffer;
+ PadBuffer:TSHA384ByteBuffer;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ if Data = nil then Exit;
+ if Digest = nil then Exit;
+
+ {Get key length}
+ KeyLength:=Length(Key);
+
+ {Check key length}
+ if KeyLength > 128 then
+  begin
+   {SHA384 the key}
+   if not SHA384DigestString(Key,@KeyDigest) then Exit;
+
+   {Zero key buffer}
+   FillChar(KeyBuffer[0],SizeOf(TSHA384ByteBuffer),0);
+
+   {Copy digest to key buffer}
+   System.Move(KeyDigest[0],KeyBuffer[0],48);
+
+   {Update key length}
+   KeyLength:=48;
+  end
+ else
+  begin
+   {Zero key buffer}
+   FillChar(KeyBuffer[0],SizeOf(TSHA384ByteBuffer),0);
+
+   {Copy key to key buffer}
+   System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
+  end;
+
+ {XOR the key buffer with the iPad value}
+ for Count:=0 to 127 do
+  begin
+   PadBuffer[Count]:=KeyBuffer[Count] xor $36;
+  end;
+
+ {SHA384 the key buffer and the data (Inner)}
+ KeyBlock.Data:=@PadBuffer;
+ KeyBlock.Size:=128;
+ KeyBlock.Next:=Data;
+
+ if not SHA384DigestData(@KeyBlock,Digest) then Exit;
+
+ {XOR the key buffer with the oPad value}
+ for Count:=0 to 127 do
+  begin
+   PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
+  end;
+
+ {SHA384 the key buffer and the result of the inner SHA384 (Outer)}
+ KeyBlock.Data:=@PadBuffer;
+ KeyBlock.Size:=128;
+ KeyBlock.Next:=@Block;
+
+ Block.Data:=Digest;
+ Block.Size:=48;
+ Block.Next:=nil;
+
+ if not SHA384DigestData(@KeyBlock,Digest) then Exit;
+
+ {Wipe the buffers to prevent leakage}
+ FillChar(KeyDigest,SizeOf(TSHA384Digest),0);
+ FillChar(KeyBuffer,SizeOf(TSHA384ByteBuffer),0);
+ FillChar(PadBuffer,SizeOf(TSHA384ByteBuffer),0);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HMACSHA384DigestString(const Key,Value:String;Digest:PSHA384Digest):Boolean;
+{Generate a SHA384 HMAC (Hashed Message Authentication Code) using the Key and Value}
+var
+ Data:TSHA384Block;
+begin
+ {}
+ Data.Data:=PChar(Value);
+ Data.Size:=Length(Value);
+ Data.Next:=nil;
+
+ Result:=HMACSHA384DigestData(Key,@Data,Digest);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{SHA512 Functions}
+function SHA512DigestData(Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
+{Generate a 512 bit SHA512 digest (Hash) from the supplied data}
+{Data is a linked list which can contain multiple independent blocks to be
+ included in the hash. The data block itself does not form part of the hash}
+var
+ Block:PSHA512Block;
+ Context:TSHA512Context;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ if Data = nil then Exit;
+ if Digest = nil then Exit;
+
+ {Init Context}
+ SHA512Init(Context);
+
+ {Get Block}
+ Block:=Data;
+ while Block <> nil do
+  begin
+   {Add Data}
+   SHA512Process(Context,Block.Data,Block.Size);
+
+   {Get Next}
+   Block:=Block.Next;
+  end;
+
+ {Return Digest}
+ SHA512Complete(Context,Digest^);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function SHA512DigestString(const Value:String;Digest:PSHA512Digest):Boolean;
+{Generate a 512 bit SHA512 digest (Hash) from the supplied string value}
+var
+ Context:TSHA512Context;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ {if Length(Value) = 0 then Exit;} {Allow blank string}
+ if Digest = nil then Exit;
+
+ {Init Context}
+ SHA512Init(Context);
+
+ {Add Data}
+ SHA512Process(Context,PChar(Value),Length(Value));
+
+ {Return Digest}
+ SHA512Complete(Context,Digest^);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HMACSHA512DigestData(const Key:String;Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
+{Generate a SHA512 HMAC (Hashed Message Authentication Code) using the Key and Data}
+{The SHA512 HMAC algorithm is:
+
+ SHA512(Key xor oPad, SHA512(Key xor iPad, Data))
+
+ Where iPad is the byte $36 repeated 128 times
+       oPad is the byte $5c repeated 128 times
+
+ If Key is more than 128 bytes it will be hashed to Key = SHA512(Key) instead
+ If Key is less than 128 bytes it will be padded with zeros
+
+}
+var
+ Count:LongWord;
+ Block:TSHA512Block;
+ KeyBlock:TSHA512Block;
+ KeyLength:PtrUInt;
+ KeyDigest:TSHA512Digest;
+ KeyBuffer:TSHA512ByteBuffer;
+ PadBuffer:TSHA512ByteBuffer;
+begin
+ {}
+ Result:=False;
+
+ {Check Params}
+ if Data = nil then Exit;
+ if Digest = nil then Exit;
+
+ {Get key length}
+ KeyLength:=Length(Key);
+
+ {Check key length}
+ if KeyLength > 128 then
+  begin
+   {SHA512 the key}
+   if not SHA512DigestString(Key,@KeyDigest) then Exit;
+
+   {Zero key buffer}
+   FillChar(KeyBuffer[0],SizeOf(TSHA512ByteBuffer),0);
+
+   {Copy digest to key buffer}
+   System.Move(KeyDigest[0],KeyBuffer[0],64);
+
+   {Update key length}
+   KeyLength:=64;
+  end
+ else
+  begin
+   {Zero key buffer}
+   FillChar(KeyBuffer[0],SizeOf(TSHA512ByteBuffer),0);
+
+   {Copy key to key buffer}
+   System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
+  end;
+
+ {XOR the key buffer with the iPad value}
+ for Count:=0 to 127 do
+  begin
+   PadBuffer[Count]:=KeyBuffer[Count] xor $36;
+  end;
+
+ {SHA512 the key buffer and the data (Inner)}
+ KeyBlock.Data:=@PadBuffer;
+ KeyBlock.Size:=128;
+ KeyBlock.Next:=Data;
+
+ if not SHA512DigestData(@KeyBlock,Digest) then Exit;
+
+ {XOR the key buffer with the oPad value}
+ for Count:=0 to 127 do
+  begin
+   PadBuffer[Count]:=KeyBuffer[Count] xor $5c;
+  end;
+
+ {SHA512 the key buffer and the result of the inner SHA512 (Outer)}
+ KeyBlock.Data:=@PadBuffer;
+ KeyBlock.Size:=128;
+ KeyBlock.Next:=@Block;
+
+ Block.Data:=Digest;
+ Block.Size:=64;
+ Block.Next:=nil;
+
+ if not SHA512DigestData(@KeyBlock,Digest) then Exit;
+
+ {Wipe the buffers to prevent leakage}
+ FillChar(KeyDigest,SizeOf(TSHA512Digest),0);
+ FillChar(KeyBuffer,SizeOf(TSHA512ByteBuffer),0);
+ FillChar(PadBuffer,SizeOf(TSHA512ByteBuffer),0);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HMACSHA512DigestString(const Key,Value:String;Digest:PSHA512Digest):Boolean;
+{Generate a SHA512 HMAC (Hashed Message Authentication Code) using the Key and Value}
+var
+ Data:TSHA512Block;
+begin
+ {}
+ Data.Data:=PChar(Value);
+ Data.Size:=Length(Value);
+ Data.Next:=nil;
+
+ Result:=HMACSHA512DigestData(Key,@Data,Digest);
+end;
+
+{==============================================================================}
+{==============================================================================}
 {RSA Functions}
+function RSAInitPrivateKey(Modulus,PublicExp,PrivateExp,P,Q,DP,DQ,QInv:PByte;ModulusLen,PublicExpLen,PrivateExpLen,PLen,QLen,DPLen,DQLen,QInvLen:Integer):PRSAContext;
+begin
+ {}
+ {Initialize Public Key}
+ Result:=RSAInitPublicKey(Modulus,PublicExp,ModulusLen,PublicExpLen);
+ if Result = nil then Exit;
+
+ if PrivateExp = nil then Exit;
+ if P = nil then Exit;
+ if Q = nil then Exit;
+ if DP = nil then Exit;
+ if DQ = nil then Exit;
+ if QInv = nil then Exit;
+
+ {Import Private Exponent}
+ Result.D:=BIImport(Result.Context,PrivateExp,PrivateExpLen);
+ BIPermanent(Result.D);
+
+ {Import P, Q DP, DP, QInv}
+ Result.P:=BIImport(Result.Context,P,PLen);
+ Result.Q:=BIImport(Result.Context,Q,QLen);
+ Result.DP:=BIImport(Result.Context,DP,DPLen);
+ Result.DQ:=BIImport(Result.Context,DQ,DQLen);
+ Result.QInv:=BIImport(Result.Context,QInv,QInvLen);
+
+ BIPermanent(Result.DP);
+ BIPermanent(Result.DQ);
+ BIPermanent(Result.QInv);
+ BISetMod(Result.Context,Result.P,BIGINT_P_OFFSET);
+ BISetMod(Result.Context,Result.Q,BIGINT_Q_OFFSET);
+end;
+
+{==============================================================================}
+
+function RSAInitPublicKey(Modulus,PublicExp:PByte;ModulusLen,PublicExpLen:Integer):PRSAContext;
+var
+ Context:PRSAContext;
+begin
+ {}
+ Result:=nil;
+
+ if Modulus = nil then Exit;
+ if PublicExp = nil then Exit;
+
+ {Allocate Context}
+ Context:=AllocMem(SizeOf(TRSAContext));
+ if Context = nil then Exit;
+
+ {Initialize BigInt}
+ Context.Context:=BIInitialize;
+ if Context.Context = nil then
+  begin
+   FreeMem(Context);
+   Exit;
+  end;
+
+ {Import Modulus}
+ Context.ModulusLen:=ModulusLen;
+ Context.M:=BIImport(Context.Context,Modulus,ModulusLen);
+ BISetMod(Context.Context,Context.M,BIGINT_M_OFFSET);
+
+ {Import Public Exponent}
+ Context.E:=BIImport(Context.Context,PublicExp,PublicExpLen);
+ BIPermanent(Context.E);
+
+ Result:=Context;
+end;
+
+{==============================================================================}
+
+function RSAFreeKey(Context:PRSAContext):Boolean;
+{Free an RSA context containing Private and/or Public keys}
+begin
+ {}
+ Result:=False;
+
+ if Context = nil then Exit;
+
+ {Free Public Exponent}
+ BIDepermanent(Context.e);
+ BIFree(Context.Context,Context.e);
+
+ {Free Modulus}
+ BIFreeMod(Context.Context,BIGINT_M_OFFSET);
+
+ {Check Private Exponent}
+ if Context.D <> nil then
+  begin
+   {Free Private Exponent}
+   BIDepermanent(Context.D);
+   BIFree(Context.Context,Context.D);
+
+   {Free DP, DQ, QInv}
+   BIDepermanent(Context.DP);
+   BIDepermanent(Context.DQ);
+   BIDepermanent(Context.QInv);
+
+   BIFree(Context.Context,Context.DP);
+   BIFree(Context.Context,Context.DQ);
+   BIFree(Context.Context,Context.QInv);
+
+   {Free P, Q}
+   BIFreeMod(Context.Context,BIGINT_P_OFFSET);
+   BIFreeMod(Context.Context,BIGINT_Q_OFFSET);
+  end;
+
+ {Free Context}
+ BITerminate(Context.Context);
+ FreeMem(Context);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function RSAEncryptSign(Context:PRSAContext;const Input:PByte;Len:Word;Output:PByte;Sign:Boolean):Integer;
+{Perform PKCS1.5 Encryption or Signing}
+{Context: The RSA context containing Private and/or Public keys}
+{Input: The data to be encrypted}
+{Len: The size of the input data in bytes (Must be <= Modulus length - 11 to make the padding at least 8 bytes as recommended by RFC2313)}
+{Output: The buffer for the encrypted result (Must always be Modulus length)}
+{Sign: If true then sign instead of encrypting}
+{Return: The number of bytes encrypted or -1 on error}
+var
+ Size:Integer;
+ Padding:Integer;
+ Block:PBigInt;
+ Encrypted:PBigInt;
+begin
+ {}
+ Result:=-1;
+
+ {Check Context}
+ if Context = nil then Exit;
+
+ {Check Parameters}
+ if Input = nil then Exit;
+ if Output = nil then Exit;
+
+ {Get Size and Padding}
+ Size:=Context.ModulusLen;
+ Padding:=Size - Len - 3;
+ if Len > Size - 11 then Exit;
+
+ {Leading zero to ensure encryption block is less than modulus (when converted to an integer)}
+ Output[0]:=0;
+
+ {Check Sign}
+ if Sign then
+  begin
+   {Block Type 1}
+   Output[1]:=1;
+
+   {Pad with 0xff bytes}
+   FillChar(Output[2],Padding,$FF);
+  end
+ else
+  begin
+   {Block Type 2}
+   Output[1]:=2;
+
+   {Pad with random non-zero bytes}
+   if not GetRandomBytesNonZero(@Output[2],Padding) then Exit;
+  end;
+
+ {Trailing zero after padding bytes}
+ Output[2 + Padding]:=0;
+
+ {Copy Input to Output}
+ System.Move(Input^,PByte(@Output[3 + Padding])^,Len);
+
+ {Encrypt the Block}
+ Block:=BIImport(Context.Context,Output,Size);
+ if Sign then
+  begin
+   {Sign with Private Key}
+   Encrypted:=BICRT(Context.Context,Block,Context.DP,Context.DQ,Context.P,Context.Q,Context.QInv);
+  end
+ else
+  begin
+   {Encrypt with Public Key}
+   Context.Context.ModOffset:=BIGINT_M_OFFSET;
+   Encrypted:=BIModPower(Context.Context,Block,Context.E);
+  end;
+ BIExport(Context.Context,Encrypted,Output,Size);
+
+ {Return Result}
+ Result:=Size;
+end;
+
+{==============================================================================}
+
+function RSADecryptVerify(Context:PRSAContext;const Input:PByte;Output:PByte;Len:Integer;Verify:Boolean):Integer;
+{Perform PKCS1.5 Decryption or Verification}
+{Context: The RSA context containing Private and/or Public keys}
+{Input: The data to be decrypted (Must always be Modulus length)}
+{Output: The buffer for the decrypted result}
+{Len: The size of the output buffer in bytes}
+{Verify: If true then verify instead of decrypting}
+{Return: The number of bytes decrypted or -1 on error}
+var
+ Size:Integer;
+ Count:Integer;
+ Padding:Integer;
+ Exported:PByte;
+ Encrypted:PBigInt;
+ Decrypted:PBigInt;
+ Block:array[0..RSA_MODULUS_BYTES_MAX - 1] of Byte;
+begin
+ {}
+ Result:=-1;
+
+ {Check Context}
+ if Context = nil then Exit;
+
+ {Check Parameters}
+ if Input = nil then Exit;
+ if Output = nil then Exit;
+
+ {Get Size}
+ Size:=Context.ModulusLen;
+ Count:=0;
+ Padding:=0;
+
+ {Decrypt the Block}
+ Encrypted:=BIImport(Context.Context,Input,Size);
+ if Verify then
+  begin
+   {Verify with Public Key}
+   Context.Context.ModOffset:=BIGINT_M_OFFSET;
+   Decrypted:=BIModPower(Context.Context,Encrypted,Context.E);
+  end
+ else
+  begin
+   {Decrypt with Private Key}
+   Decrypted:=BICRT(Context.Context,Encrypted,Context.DP,Context.DQ,Context.P,Context.Q,Context.QInv);
+  end;
+ Exported:=@Block;
+ if Size > RSA_MODULUS_BYTES_MAX then Exported:=GetMem(Size);
+ if Exported = nil then Exit;
+ try
+  BIExport(Context.Context,Decrypted,Exported,Size);
+
+  {Check Leading Zero}
+  if Exported[Count] <> 0 then Exit;
+  Inc(Count);
+
+  {Check Verify}
+  if Verify then
+   begin
+    {Check Block Type 1}
+    if Exported[Count] <> 1 then Exit;
+    Inc(Count);
+
+    {Padded with 0xff bytes}
+    while (Exported[Count] = $FF) and (Count < Size) do
+     begin
+      Inc(Count);
+      Inc(Padding);
+     end;
+   end
+  else
+   begin
+    {Check Block Type 2}
+    if Exported[Count] <> 2 then Exit;
+    Inc(Count);
+
+    {Padded with random non-zero bytes}
+    while (Exported[Count] <> 0) and (Count < Size) do
+     begin
+      Inc(Count);
+      Inc(Padding);
+     end;
+   end;
+
+  {Check trailing zero byte and padding size}
+  if (Count = Size) or (Padding < 8) then Exit;
+  if Exported[Count] <> 0 then Exit;
+  Inc(Count);
+
+  {Get Result}
+  Result:=(Size - Count);
+
+  {Check length}
+  if Len < Result then
+   begin
+    Result:=-1;
+    Exit;
+   end;
+
+  {Zero Output}
+  if Len > Result then
+   begin
+    FillChar(Output[Result],Len - Result,0);
+   end;
+
+  {Copy Block to Output}
+  System.Move(Exported[Count],Output^,Result);
+ finally
+  if Size > RSA_MODULUS_BYTES_MAX then FreeMem(Exported);
+ end;
+end;
 
 {==============================================================================}
 {==============================================================================}
 {Random Functions}
+function GetRandomBytes(Buffer:PByte;Count:Integer):Boolean;
+var
+ Data:PLongWord;
+ Offset:LongWord;
+ Remain:LongWord;
+begin
+ {}
+ if Assigned(CryptoGetRandomBytesHandler) then
+  begin
+   Result:=CryptoGetRandomBytesHandler(Buffer,Count);
+  end
+ else
+  begin
+   {Default Method}
+   Result:=False;
+   
+   if RandomAvailable then
+    begin
+     {Get Start}
+     Offset:=0;
+     Remain:=Count;
+     Data:=PLongWord(Buffer);
+     
+     {Get Data}
+     while Remain >= SizeOf(LongWord) do
+      begin
+       {Read LongWord}
+       Data[Offset]:=RandomReadLongInt(0);
+       
+       {Update Position}
+       Inc(Offset);
+       Dec(Remain,SizeOf(LongWord));
+      end;
+    
+     {Check Remain}
+     while Remain > 0 do
+      begin
+       {Read Byte}
+       Buffer[Count - Remain]:=RandomReadLongInt(0);
+       
+       {Update Position}
+       Dec(Remain);
+      end;
+      
+     Result:=True; 
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function GetRandomBytesNonZero(Buffer:PByte;Count:Integer):Boolean;
+var
+ Counter:Integer;
+begin
+ {}
+ Result:=GetRandomBytes(Buffer,Count);
+ if not Result then Exit;
+
+ Randomize;
+
+ for Counter := 0 to Count - 1 do
+  begin
+   {Check for Zero}
+   while Buffer[Counter] = 0 do
+    begin
+     Buffer[Counter]:=Random(256);
+    end;
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -4869,49 +6525,349 @@ function CRC16CCITT(CRC:Word;Data:PByte;Size:LongWord):Word;
   {}
   Result:=(CRC shr 8) xor CRC16_CCITT[(CRC xor Data) and $FF];
  end;
- 
+
 begin
  {}
  Result:=0;
- 
+
  if Data = nil then Exit;
- 
+
  while Size > 0 do
   begin
    {CRC the next byte}
    CRC:=CRC16CCITTByte(CRC,Data^);
-   
+
    {Update Size and Data}
    Dec(Size);
    Inc(Data);
   end;
-  
- Result:=CRC; 
+
+ Result:=CRC;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
-{MIME64 Functions}
-function MIME64EncodeString(const AValue:String):String;
+{Base64 Functions}
+function Base64EncodeString(const Value:String):String;
+{Encode a string using Base64 encoding and return the encoded result}
+var
+ DestLen:Integer;
 begin
  {}
- Result:=AValue; //To Do
- 
+ Result:='';
+
+ {Get Length}
+ if Base64EncodeBuffer(PChar(Value),Length(Value),nil,DestLen) then
+  begin
+   {Setup Result}
+   SetLength(Result,DestLen - 1); {Subtract null terminator}
+
+   {Encode Buffer}
+   if Base64EncodeBuffer(PChar(Value),Length(Value),PChar(Result),DestLen) then
+    begin
+     {Update Length}
+     SetLength(Result,DestLen - 1); {Subtract null terminator}
+    end
+   else
+    begin
+     {Reset Result}
+     SetLength(Result,0);
+    end;
+  end;
 end;
 
 {==============================================================================}
 
-function MIME64DecodeString(const AValue:String):String;
+function Base64DecodeString(const Value:String):String;
+{Decode a Base64 encoded string and return the decoded result}
+var
+ DestLen:Integer;
 begin
  {}
- Result:=AValue; //To Do
- 
+ Result:='';
+
+ {Get Length}
+ if Base64DecodeBuffer(PChar(Value),Length(Value),nil,DestLen) then
+  begin
+   {Setup Result}
+   SetLength(Result,DestLen); {Does not include null terminator}
+
+   {Decode Buffer}
+   if Base64DecodeBuffer(PChar(Value),Length(Value),PChar(Result),DestLen) then
+    begin
+     {Update Length}
+     SetLength(Result,DestLen); {Does not include null terminator}
+    end
+   else
+    begin
+     {Reset Result}
+     SetLength(Result,0);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function Base64EncodeBuffer(const Source:PChar;SourceLen:Integer;Dest:PChar;var DestLen:Integer):Boolean;
+{Encode the source buffer using Base64 encoding and return the encoded result in the destination buffer}
+{On success DestLen contains the actual encoded length including a null terminator}
+{If Dest is nil then return success (True) with the required size in DestLen}
+var
+ Input:PByte;
+ Output:PByte;
+ Last:PByte;
+ Next:PChar;
+ LineLen:Integer;
+ LineCount:Integer;
+ OutputLen:Integer;
+begin
+ {}
+ Result:=False;
+
+ {Check Source}
+ if Source = nil then Exit;
+
+ {Get Output Length}
+ OutputLen:=SourceLen * 4 div 3 + 4;      {Convert 3-byte blocks to 4-byte}
+ Inc(OutputLen,2 * (OutputLen div 64));   {Add space for end of line (CRLF)}
+ Inc(OutputLen);                          {Add null terminator}
+
+ {Check Overflow}
+ if OutputLen < SourceLen then Exit;
+
+ {Check DestLen}
+ if (OutputLen > DestLen) and (Dest <> nil) then Exit;
+
+ {Setup DestLen}
+ DestLen:=OutputLen;
+
+ {Return Result}
+ Result:=True;
+
+ {Check Dest (Return Success)}
+ if Dest = nil then Exit;
+
+ {Get Pointers}
+ Input:=PByte(Source);
+ Output:=PByte(Dest);
+ Last:=PByte(PtrUInt(Source) + SourceLen);
+ Next:=PChar(Output);
+
+ {Setup Start}
+ LineLen:=0;
+ LineCount:=1;
+
+ {Check Remaining}
+ while (Last - Input) >= 3 do
+  begin
+   {Encode 3 characters}
+   Next^:=Base64EncodeTable[((Input[0] shr 2) and $3F) + 1];
+   Inc(Next);
+
+   Next^:=Base64EncodeTable[((((Input[0] and $03) shl 4) or (Input[1] shr 4)) and $3F) + 1];
+   Inc(Next);
+
+   Next^:=Base64EncodeTable[((((Input[1] and $0F) shl 2) or (Input[2] shr 6)) and $3F) + 1];
+   Inc(Next);
+
+   Next^:=Base64EncodeTable[(Input[2] and $3F) + 1];
+   Inc(Next);
+
+   {Update Position}
+   Inc(Input,3);
+
+   {Update Line Length}
+   Inc(LineLen,4);
+
+   {Check Line Length}
+   if LineLen >= 64 then
+    begin
+     {Add CRLF}
+     Next^:=#13;
+     Inc(Next);
+     Next^:=#10;
+     Inc(Next);
+
+     {Reset Line}
+     LineLen:=0;
+
+     {Update Count}
+     Inc(LineCount);
+    end;
+  end;
+
+ {Check Remaining}
+ if (Last - Input) > 0 then
+  begin
+   {Encode 1 or 2 characters}
+   Next^:=Base64EncodeTable[((Input[0] shr 2) and $3F) + 1];
+   Inc(Next);
+
+   if (Last - Input) = 1 then
+    begin
+     {Encode 1 character}
+     Next^:=Base64EncodeTable[(((Input[0] and $03) shl 4) and $3F) + 1];
+     Inc(Next);
+
+     {Add Padding}
+     Next^:='=';
+     Inc(Next);
+    end
+   else
+    begin
+     {Encode 2 characters}
+     Next^:=Base64EncodeTable[((((Input[0] and $03) shl 4) or (Input[1] shr 4)) and $3F) + 1];
+     Inc(Next);
+
+     Next^:=Base64EncodeTable[(((Input[1] and $0F) shl 2) and $3F) + 1];
+     Inc(Next);
+    end;
+
+   {Add Padding}
+   Next^:='=';
+   Inc(Next);
+
+   {Update Line Length}
+   Inc(LineLen,4);
+  end;
+
+ {Check Line Length}
+ if (LineCount > 1) and (LineLen > 0) then
+  begin
+   {Add CRLF}
+   Next^:=#13;
+   Inc(Next);
+   Next^:=#10;
+   Inc(Next);
+  end;
+
+ {Add Terminator}
+ Next^:=#0;
+ Inc(Next);
+
+ {Finalize DestLen}
+ DestLen:=Next - PChar(Output);
+end;
+
+{==============================================================================}
+
+function Base64DecodeBuffer(const Source:PChar;SourceLen:Integer;Dest:PChar;var DestLen:Integer):Boolean;
+{Decode a Base64 encoded source buffer and return the decoded result in the destination buffer}
+{On success DestLen contains the actual decoded length (Null terminator is not added to this value)}
+{If Dest is nil then return success (True) with the required size in DestLen}
+var
+ Count:Integer;
+ Total:Integer;
+ Input:PByte;
+ Output:PByte;
+ Temp:Char;
+ Next:PChar;
+ Padding:Integer;
+ OutputLen:Integer;
+ Block:array[0..3] of Char;
+begin
+ {}
+ Result:=False;
+
+ {Check Source}
+ if Source = nil then Exit;
+
+ {Get Input}
+ Input:=PByte(Source);
+
+ {Check Input}
+ Total:=0;
+ for Count:=0 to SourceLen - 1 do
+  begin
+   if Base64DecodeTable[Input[Count]] <> #128 then
+    begin
+     Inc(Total);
+    end;
+  end;
+ if (Total = 0) or ((Total mod 4) <> 0) then Exit;
+
+ {Get Output Length}
+ OutputLen:=Total div 4 * 3;
+
+ {Check DestLen}
+ if (OutputLen > DestLen) and (Dest <> nil) then Exit;
+
+ {Setup DestLen}
+ DestLen:=OutputLen;
+
+ {Return Result}
+ Result:=True;
+
+ {Check Dest (Return Success)}
+ if Dest = nil then Exit;
+
+ {Get Pointers}
+ Output:=PByte(Dest);
+ Next:=PChar(Output);
+
+ {Setup Start}
+ Padding:=0;
+
+ Total:=0;
+ for Count:=0 to SourceLen - 1 do
+  begin
+   Temp:=Base64DecodeTable[Input[Count]];
+   if Temp <> #128 then
+    begin
+     if Char(Input[Count]) = '=' then Inc(Padding);
+
+     {Update Block}
+     Block[Total]:=Temp;
+     Inc(Total);
+
+     if Total = 4 then
+      begin
+       {Decode 4 character block}
+       Next^:=Char((Ord(Block[0]) shl 2) or (Ord(Block[1]) shr 4));
+       Inc(Next);
+
+       Next^:=Char((Ord(Block[1]) shl 4) or (Ord(Block[2]) shr 2));
+       Inc(Next);
+
+       Next^:=Char((Ord(Block[2]) shl 6) or Ord(Block[3]));
+       Inc(Next);
+
+       {Reset Block}
+       Total:=0;
+
+       {Check Padding}
+       if Padding > 0 then
+        begin
+         if Padding = 1 then
+          begin
+           Dec(Next);
+          end
+         else if Padding = 2 then
+          begin
+           Dec(Next,2);
+          end
+         else
+          begin
+           {Invalid padding}
+           Result:=False;
+           Exit;
+          end;
+
+         {Completed}
+         Break;
+        end;
+      end;
+    end;
+  end;
+
+ {Finalize DestLen}
+ DestLen:=Next - PChar(Output);
 end;
 
 {==============================================================================}
 {==============================================================================}
 {Crypto Helper Functions}
-procedure BytesToLE(Buffer:PByte;Count:LongWord);
+procedure BytesToLE32(Buffer:PByte;Count:LongWord);
 {Change the byte order of count longwords in the supplied buffer to little endian}
 {$IFDEF FPC_BIG_ENDIAN}
 var
@@ -4921,12 +6877,11 @@ begin
  while Count > 0 do
   begin
    {Reverse LongWord}
-   Value:=(Buffer[3] shl 24) or (Buffer[2] shl 16) or (Buffer[1] shl 8) or Buffer[0]; 
-   //To Do //RolDWord implementation as BytesToBE ?
-   
+   Value:=(RolDWord(PLongWord(Buffer)^,24) and $FF00FF00) or (RolDWord(PLongWord(Buffer)^,8) and $00FF00FF);
+
    {Save to buffer}
    PLongWord(Buffer)^:=Value;
-   
+
    {Update buffer}
    Inc(Buffer,SizeOf(LongWord)); {Increment PByte increments by SizeOf(Byte)}
    Dec(Count);
@@ -4939,7 +6894,7 @@ end;
 {$ENDIF FPC_BIG_ENDIAN}
 {==============================================================================}
 
-procedure BytesToBE(Buffer:PByte;Count:LongWord);
+procedure BytesToBE32(Buffer:PByte;Count:LongWord);
 {Change the byte order of count longwords in the supplied buffer to big endian}
 {$IFDEF FPC_BIG_ENDIAN}
 begin
@@ -4953,12 +6908,11 @@ begin
  while Count > 0 do
   begin
    {Reverse LongWord}
-   //Value:=(Buffer[0] shl 24) or (Buffer[1] shl 16) or (Buffer[2] shl 8) or Buffer[3]; //To Do //Which is better ?
    Value:=(RolDWord(PLongWord(Buffer)^,24) and $FF00FF00) or (RolDWord(PLongWord(Buffer)^,8) and $00FF00FF);
-   
+
    {Save to buffer}
    PLongWord(Buffer)^:=Value;
-   
+
    {Update buffer}
    Inc(Buffer,SizeOf(LongWord)); {Increment PByte increments by SizeOf(Byte)}
    Dec(Count);
@@ -4967,23 +6921,109 @@ end;
 {$ENDIF FPC_BIG_ENDIAN}
 {==============================================================================}
 
+procedure BytesToLE64(Buffer:PByte;Count:LongWord);
+{Change the byte order of count quadwords in the supplied buffer to little endian}
+{$IFDEF FPC_BIG_ENDIAN}
+var
+ Value:QWord;
+begin
+ {}
+ while Count > 0 do
+  begin
+   {Reverse QWord}
+   Value:=(QWord((RolDWord(PLongWord(Buffer)^,24) and $FF00FF00) or (RolDWord(PLongWord(Buffer)^,8) and $00FF00FF)) shl 32)
+           or ((RolDWord(PLongWord(Buffer + 4)^,24) and $FF00FF00) or (RolDWord(PLongWord(Buffer + 4)^,8) and $00FF00FF));
+
+   {Save to buffer}
+   PQWord(Buffer)^:=Value;
+
+   {Update buffer}
+   Inc(Buffer,SizeOf(QWord)); {Increment PByte increments by SizeOf(Byte)}
+   Dec(Count);
+  end;
+end;
+{$ELSE FPC_BIG_ENDIAN}
+begin
+ {Nothing}
+end;
+{$ENDIF FPC_BIG_ENDIAN}
+{==============================================================================}
+
+procedure BytesToBE64(Buffer:PByte;Count:LongWord);
+{Change the byte order of count quadwords in the supplied buffer to big endian}
+{$IFDEF FPC_BIG_ENDIAN}
+begin
+ {Nothing}
+end;
+{$ELSE FPC_BIG_ENDIAN}
+var
+ Value:QWord;
+begin
+ {}
+ while Count > 0 do
+  begin
+   {Reverse QWord}
+   Value:=(QWord((RolDWord(PLongWord(Buffer)^,24) and $FF00FF00) or (RolDWord(PLongWord(Buffer)^,8) and $00FF00FF)) shl 32)
+           or ((RolDWord(PLongWord(Buffer + 4)^,24) and $FF00FF00) or (RolDWord(PLongWord(Buffer + 4)^,8) and $00FF00FF));
+
+   {Save to buffer}
+   PQWord(Buffer)^:=Value;
+
+   {Update buffer}
+   Inc(Buffer,SizeOf(QWord)); {Increment PByte increments by SizeOf(Byte)}
+   Dec(Count);
+  end;
+end;
+{$ENDIF FPC_BIG_ENDIAN}
+{==============================================================================}
+
 function LongWordToBE(Buffer:PByte):LongWord; inline;
 begin
- {} 
- Result:=((Buffer[0] and 255) shl 24) or ((Buffer[1] and 255) shl 16) or ((Buffer[2] and 255) shl 8)  or (Buffer[3] and 255); 
+ {}
+ Result:=((Buffer[0] and 255) shl 24) or ((Buffer[1] and 255) shl 16) or ((Buffer[2] and 255) shl 8) or (Buffer[3] and 255);
 end;
 
 {==============================================================================}
 
 procedure BEToLongWord(Value:LongWord;Buffer:PByte); inline;
 begin
- {} 
+ {}
  Buffer[0]:=((Value shr 24) and 255);
  Buffer[1]:=((Value shr 16) and 255);
  Buffer[2]:=((Value shr 8) and 255);
  Buffer[3]:=(Value and 255);
 end;
-     
+
+{==============================================================================}
+
+function QWordToBE(Buffer:PByte):QWord; inline;
+begin
+ {}
+ Result:=(QWord(Buffer[0] and 255) shl 56)
+      or (QWord(Buffer[1] and 255) shl 48)
+      or (QWord(Buffer[2] and 255) shl 40)
+      or (QWord(Buffer[3] and 255) shl 32)
+      or (QWord(Buffer[4] and 255) shl 24)
+      or (QWord(Buffer[5] and 255) shl 16)
+      or (QWord(Buffer[6] and 255) shl 8)
+      or QWord(Buffer[7] and 255);
+end;
+
+{==============================================================================}
+
+procedure BEToQWord(Value:QWord;Buffer:PByte); inline;
+begin
+ {}
+ Buffer[0]:=((Value shr 56) and 255);
+ Buffer[1]:=((Value shr 48) and 255);
+ Buffer[2]:=((Value shr 40) and 255);
+ Buffer[3]:=((Value shr 32) and 255);
+ Buffer[4]:=((Value shr 24) and 255);
+ Buffer[5]:=((Value shr 16) and 255);
+ Buffer[6]:=((Value shr 8) and 255);
+ Buffer[7]:=(Value and 255);
+end;
+
 {==============================================================================}
 {==============================================================================}
 {MD5 Helper Functions}
@@ -4999,146 +7039,6 @@ begin
 
  {Zero the bit count}
  Context.Count:=0;
-end;
-
-{==============================================================================}
-
-procedure MD5Update(var Context:TMD5Context;Data:Pointer;Size:LongWord);
-{Add more bytes to the data buffer, add to the hash in 64 byte chunks}
-var
- Count:PtrUInt;
- Buffer:Pointer;
-begin
- {}
- if Data = nil then Exit;
- if Size = 0 then Exit;
- 
- {Get the data buffer count}
- Count:=(Context.Count shr 3) and $3F;
- 
- {Update the total bit count}
- Inc(Context.Count,(Size shl 3));
- 
- {Check for bytes already buffered}
- if Count > 0 then
-  begin
-   {Get the data buffer pointer}
-   Buffer:=Pointer(PtrUInt(@Context.Data[0]) + Count);
-   
-   {Get bytes remaining to fill the buffer}
-   Count:=64 - Count;
-   
-   {Check size}
-   if Size < Count then
-    begin
-     {Copy to data buffer}
-     System.Move(Data^,Buffer^,Size);
-     
-     Exit;
-    end
-   else
-    begin
-     {Copy to data buffer}
-     System.Move(Data^,Buffer^,Count);
-     
-     {Reverse the bytes}
-     BytesToLE(@Context.Data[0],16);
-     
-     {Add to hash}
-     MD5Transform(Context,@Context.Data[0]);
-     
-     {Update data}
-     Inc(Data,Count);
-     Dec(Size,Count);
-    end; 
-  end;
-  
- {Process 64 byte chunks of data}
- while Size >= 64 do
-  begin
-   {Copy to data buffer (Avoid reversing bytes in the source data)}
-   System.Move(Data^,Context.Data[0],64);
-
-   {Reverse the bytes}
-   BytesToLE(@Context.Data[0],16);
-
-   {Add to hash}
-   MD5Transform(Context,@Context.Data[0]);
-   
-   {Update data}
-   Inc(Data,64);
-   Dec(Size,64);
-  end;
-  
- {Copy remaining bytes to data buffer}
- System.Move(Data^,Context.Data[0],Size);
-end;
-
-{==============================================================================}
-
-procedure MD5Final(var Context:TMD5Context;var Digest:TMD5Digest);
-{Finalize the MD5 context by padding to a 64 Byte boundary, adding 
- QWord count of bits processed and copying the hash to the digest}
-var
- Count:PtrUInt;
- Buffer:Pointer;
-begin
- {}
- {Get the data buffer count}
- Count:=(Context.Count shr 3) and $3F;
- 
- {Get the data buffer pointer}
- Buffer:=Pointer(PtrUInt(@Context.Data[0]) + Count);
- 
- {Set the first padding byte to $80}
- PByte(Buffer)^:=$80;
- 
- {Update buffer}
- Inc(Buffer);
- 
- {Determine bytes of padding to make 64 byte buffer}
- Count:=64 - (Count + 1);
- 
- {Pad the buffer to 56 bytes}
- if Count < 8 then
-  begin
-   {Not enough room for count}
-   {Fill with padding to 64 bytes}
-   FillChar(Buffer^,Count,0);
-   
-   {Reverse the bytes}
-   BytesToLE(@Context.Data[0],16);
-   
-   {Add to hash}
-   MD5Transform(Context,@Context.Data[0]);
-   
-   {Add 56 bytes of padding to the buffer}
-   FillChar(Context.Data[0],56,0);
-  end
- else
-  begin
-   {Fill with padding to 56 bytes}
-   FillChar(Buffer^,Count - 8,0);
-  end;  
-
- {Reverse the bytes}
- BytesToLE(@Context.Data[0],14);
- 
- {Add count of bits}
- PLongWord(@Context.Data[56])^:=Int64Rec(Context.Count).Lo; //To Do //LongWordNToLE //See SHA1/256
- PLongWord(@Context.Data[60])^:=Int64Rec(Context.Count).Hi; //To Do //LongWordNToLE //See SHA1/256
- 
- {Add to hash}
- MD5Transform(Context,@Context.Data[0]);
- 
- {Reverse the hash}
- BytesToLE(@Context.Buffer[0],4);
- 
- {Copy the hash to the digest}
- System.Move(Context.Buffer[0],Digest,16);
- 
- {Clear the context to prevent data leakage}
- FillChar(Context,SizeOf(TMD5Context),0);
 end;
 
 {==============================================================================}
@@ -5171,21 +7071,21 @@ procedure MD5Transform(var Context:TMD5Context;Buffer:Pointer);
   {}
   W:=X + RolDWord(DWord(W + ((X and Z) or (Y and (not Z))) + Data),Shift);
  end;
- 
+
  procedure MD5Step3(var W:LongWord;X,Y,Z:LongWord;Data:LongWord;Shift:Byte); inline;
  {F3(X, Y, Z) = X xor Y xor Z}
  begin
   {}
   W:=X + RolDWord(DWord(W + (X xor Y xor Z) + Data),Shift);
  end;
- 
+
  procedure MD5Step4(var W:LongWord;X,Y,Z:LongWord;Data:LongWord;Shift:Byte); inline;
  {F4(X,Y,Z) = Y xor (X or (not Z))}
  begin
   {}
   W:=X + RolDWord(DWord(W + (Y xor (X or (not Z))) + Data),Shift);
  end;
- 
+
 {$POP}  {Restore compiler settings}
 var
  A:LongWord;
@@ -5196,16 +7096,16 @@ var
 begin
  {}
  if Buffer = nil then Exit;
- 
+
  {Get current hash}
  A:=Context.Buffer[0];
  B:=Context.Buffer[1];
  C:=Context.Buffer[2];
  D:=Context.Buffer[3];
- 
+
  {Get data buffer}
  Data:=PMD5LongBuffer(Buffer);
- 
+
  {Step 1}
  MD5Step1(A,B,C,D,Data[0] + $d76aa478,7);
  MD5Step1(D,A,B,C,Data[1] + $e8c7b756,12);
@@ -5277,12 +7177,152 @@ begin
  MD5Step4(D,A,B,C,Data[11] + $bd3af235,10);
  MD5Step4(C,D,A,B,Data[2] + $2ad7d2bb,15);
  MD5Step4(B,C,D,A,Data[9] + $eb86d391,21);
- 
+
  {Save new hash}
  Inc(Context.Buffer[0],A);
  Inc(Context.Buffer[1],B);
  Inc(Context.Buffer[2],C);
  Inc(Context.Buffer[3],D);
+end;
+
+{==============================================================================}
+
+procedure MD5Update(var Context:TMD5Context;Data:Pointer;Size:LongWord);
+{Add more bytes to the data buffer, add to the hash in 64 byte chunks}
+var
+ Count:PtrUInt;
+ Buffer:Pointer;
+begin
+ {}
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $3F;
+
+ {Update the total bit count}
+ Inc(Context.Count,(Size shl 3));
+
+ {Check for bytes already buffered}
+ if Count > 0 then
+  begin
+   {Get the data buffer pointer}
+   Buffer:=Pointer(PtrUInt(@Context.Data[0]) + Count);
+
+   {Get bytes remaining to fill the buffer}
+   Count:=64 - Count;
+
+   {Check size}
+   if Size < Count then
+    begin
+     {Copy to data buffer}
+     System.Move(Data^,Buffer^,Size);
+
+     Exit;
+    end
+   else
+    begin
+     {Copy to data buffer}
+     System.Move(Data^,Buffer^,Count);
+
+     {Reverse the bytes}
+     BytesToLE32(@Context.Data[0],16);
+
+     {Add to hash}
+     MD5Transform(Context,@Context.Data[0]);
+
+     {Update data}
+     Inc(Data,Count);
+     Dec(Size,Count);
+    end;
+  end;
+
+ {Process 64 byte chunks of data}
+ while Size >= 64 do
+  begin
+   {Copy to data buffer (Avoid reversing bytes in the source data)}
+   System.Move(Data^,Context.Data[0],64);
+
+   {Reverse the bytes}
+   BytesToLE32(@Context.Data[0],16);
+
+   {Add to hash}
+   MD5Transform(Context,@Context.Data[0]);
+
+   {Update data}
+   Inc(Data,64);
+   Dec(Size,64);
+  end;
+
+ {Copy remaining bytes to data buffer}
+ System.Move(Data^,Context.Data[0],Size);
+end;
+
+{==============================================================================}
+
+procedure MD5Final(var Context:TMD5Context;var Digest:TMD5Digest);
+{Finalize the MD5 context by padding to a 64 Byte boundary, adding
+ QWord count of bits processed and copying the hash to the digest}
+var
+ Count:PtrUInt;
+ Buffer:Pointer;
+begin
+ {}
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $3F;
+
+ {Get the data buffer pointer}
+ Buffer:=Pointer(PtrUInt(@Context.Data[0]) + Count);
+
+ {Set the first padding byte to $80}
+ PByte(Buffer)^:=$80;
+
+ {Update buffer}
+ Inc(Buffer);
+
+ {Determine bytes of padding to make 64 byte buffer}
+ Count:=64 - (Count + 1);
+
+ {Pad the buffer to 56 bytes}
+ if Count < 8 then
+  begin
+   {Not enough room for count}
+   {Fill with padding to 64 bytes}
+   FillChar(Buffer^,Count,0);
+
+   {Reverse the bytes}
+   BytesToLE32(@Context.Data[0],16);
+
+   {Add to hash}
+   MD5Transform(Context,@Context.Data[0]);
+
+   {Add 56 bytes of padding to the buffer}
+   FillChar(Context.Data[0],56,0);
+  end
+ else
+  begin
+   {Fill with padding to 56 bytes}
+   FillChar(Buffer^,Count - 8,0);
+  end;
+
+ {Reverse the bytes}
+ BytesToLE32(@Context.Data[0],14);
+
+ {Add count of bits}
+ PLongWord(@Context.Data[56])^:=Int64Rec(Context.Count).Lo; //To Do //LongWordNToLE //See SHA1/256
+ PLongWord(@Context.Data[60])^:=Int64Rec(Context.Count).Hi; //To Do //LongWordNToLE //See SHA1/256
+
+ {Add to hash}
+ MD5Transform(Context,@Context.Data[0]);
+
+ {Reverse the hash}
+ BytesToLE32(@Context.Buffer[0],4);
+
+ {Copy the hash to the digest}
+ System.Move(Context.Buffer[0],Digest,16);
+
+ {Clear the context to prevent data leakage}
+ FillChar(Context,SizeOf(TMD5Context),0);
 end;
 
 {==============================================================================}
@@ -5293,14 +7333,14 @@ var
 begin
  {}
  Result:='';
- 
+
  if Digest = nil then Exit;
- 
+
  for Count:=0 to 15 do
   begin
    Result:=Result + HexStr(Digest[Count],2);
   end;
- 
+
  Result:=Lowercase(Result);
 end;
 
@@ -5308,6 +7348,7 @@ end;
 {==============================================================================}
 {AES Helper Functions}
 function AESTE0(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  Result:=AES_TE0[I];
@@ -5316,6 +7357,7 @@ end;
 {==============================================================================}
 
 function AESTE1(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5328,6 +7370,7 @@ end;
 {==============================================================================}
 
 function AESTE2(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5340,6 +7383,7 @@ end;
 {==============================================================================}
 
 function AESTE3(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5352,6 +7396,7 @@ end;
 {==============================================================================}
 
 function AESTD0(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  Result:=AES_TD0[I];
@@ -5360,6 +7405,7 @@ end;
 {==============================================================================}
 
 function AESTD1(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5372,6 +7418,7 @@ end;
 {==============================================================================}
 
 function AESTD2(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5384,6 +7431,7 @@ end;
 {==============================================================================}
 
 function AESTD3(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5394,8 +7442,9 @@ begin
 end;
 
 {==============================================================================}
- 
+
 function AESTE4_0(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5408,6 +7457,7 @@ end;
 {==============================================================================}
 
 function AESTE4_1(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5420,6 +7470,7 @@ end;
 {==============================================================================}
 
 function AESTE4_2(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5432,6 +7483,7 @@ end;
 {==============================================================================}
 
 function AESTE4_3(I:Byte):LongWord; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  {$IFDEF CRYPTO_AES_PRECOMPUTED_TABLES}
@@ -5443,7 +7495,8 @@ end;
 
 {==============================================================================}
 
-function AESByte(X,N:LongWord):Byte; inline; 
+function AESByte(X,N:LongWord):Byte; inline;
+{Internal function used by AESEncryptBlock/AESDecryptBlock}
 begin
  {}
  Result:=(X shr (N shl 3)) and 255;
@@ -5452,20 +7505,22 @@ end;
 {==============================================================================}
 
 function AESKeySetup(Key:Pointer;KeySize:LongWord;AESKey:PAESKey):Boolean;
+{Create a pair of AES keys using the supplied key}
+{Key size must be 16, 24 or 32 bytes (128, 192 or 256 bits)}
 
  function AESSetupMix(Temp:LongWord):LongWord; inline;
  begin
   {}
   Result:=AESTE4_3(AESByte(Temp,2)) xor AESTE4_2(AESByte(Temp,1)) xor AESTE4_1(AESByte(Temp,0)) xor AESTE4_0(AESByte(Temp,3));
-  
+
  end;
- 
+
  function AESSetupMix2(Temp:LongWord):LongWord; inline;
  begin
   {}
   Result:=AESTD0(255 and AES_TE4[AESByte(Temp,3)]) xor AESTD1(255 and AES_TE4[AESByte(Temp,2)]) xor AESTD2(255 and AES_TE4[AESByte(Temp,1)]) xor AESTD3(255 and AES_TE4[AESByte(Temp,0)]);
  end;
-  
+
 var
  Temp:LongWord;
  Count:LongWord;
@@ -5474,23 +7529,24 @@ var
 begin
  {}
  Result:=False;
- 
+
+ {Check Params}
  if Key = nil then Exit;
  if AESKey = nil then Exit;
 
  {Check size}
  if (KeySize <> AES_KEY_SIZE128) and (KeySize <> AES_KEY_SIZE192) and (KeySize <> AES_KEY_SIZE256) then Exit;
- 
+
  {Setup rounds}
  AESKey.Rounds:=10 + ((KeySize div 8) - 2) * 2;
- 
+
  {Setup encryption key}
  RK:=@AESKey.EncryptKey;
  RK[0]:=LongWordToBE(Key);
  RK[1]:=LongWordToBE(Key + 4);
  RK[2]:=LongWordToBE(Key + 8);
  RK[3]:=LongWordToBE(Key + 12);
- 
+
  {Check size}
  if KeySize = AES_KEY_SIZE128 then
   begin
@@ -5501,7 +7557,7 @@ begin
      RK[5]:=RK[1] xor RK[4];
      RK[6]:=RK[2] xor RK[5];
      RK[7]:=RK[3] xor RK[6];
-     
+
      Inc(RK,4); {Increment PLongWord increments by SizeOf(LongWord)}
     end;
   end
@@ -5509,7 +7565,7 @@ begin
   begin
    RK[4]:=LongWordToBE(Key + 16);
    RK[5]:=LongWordToBE(Key + 20);
-   
+
    for Count:=0 to 7 do
     begin
      Temp:=RK[5];
@@ -5517,22 +7573,22 @@ begin
      RK[7]:=RK[1] xor RK[6];
      RK[8]:=RK[2] xor RK[7];
      RK[9]:=RK[3] xor RK[8];
-     
+
      if Count = 7 then Break;
 
      RK[10]:=RK[4] xor RK[9];
      RK[11]:=RK[5] xor RK[10];
-     
+
      Inc(RK,6); {Increment PLongWord increments by SizeOf(LongWord)}
-    end; 
+    end;
   end
- else if KeySize = AES_KEY_SIZE256 then  
+ else if KeySize = AES_KEY_SIZE256 then
   begin
    RK[4]:=LongWordToBE(Key + 16);
    RK[5]:=LongWordToBE(Key + 20);
    RK[6]:=LongWordToBE(Key + 24);
    RK[7]:=LongWordToBE(Key + 28);
-   
+
    for Count:=0 to 6 do
     begin
      Temp:=RK[7];
@@ -5540,7 +7596,7 @@ begin
      RK[9]:=RK[1] xor RK[8];
      RK[10]:=RK[2] xor RK[9];
      RK[11]:=RK[3] xor RK[10];
-     
+
      if Count = 6 then Break;
 
      Temp:=RK[11];
@@ -5548,15 +7604,15 @@ begin
      RK[13]:=RK[5] xor RK[12];
      RK[14]:=RK[6] xor RK[13];
      RK[15]:=RK[7] xor RK[14];
-     
+
      Inc(RK,8); {Increment PLongWord increments by SizeOf(LongWord)}
-    end; 
+    end;
   end;
-  
+
  {Setup decryption key}
  RK:=@AESKey.DecryptKey;
  RRK:=PLongWord(@AESKey.EncryptKey + ((28 + KeySize) * SizeOf(LongWord)) - (4 * SizeOf(LongWord)));
- 
+
  {Apply the inverse MixColumn transform to all round keys but the first and the last}
  {Copy first round}
  RK^:=RRK^;
@@ -5572,51 +7628,47 @@ begin
  Inc(RRK);
 
  RK^:=RRK^;
- 
+
  Dec(RK,3); {Decrement PLongWord decrements by SizeOf(LongWord)}
  Dec(RRK,3);
- 
+
  for Count:=1 to AESKey.Rounds - 1 do
   begin
    Dec(RRK,4); {Increment PLongWord increments by SizeOf(LongWord)}
    Inc(RK,4);  {Decrement PLongWord decrements by SizeOf(LongWord)}
-   
+
    {$IFNDEF CRYPTO_AES_PRECOMPUTED_TABLES}
    Temp:=RRK[0];
    RK[0]:=AESSetupMix2(Temp);
-   
+
    Temp:=RRK[1];
    RK[1]:=AESSetupMix2(Temp);
-   
+
    Temp:=RRK[2];
    RK[2]:=AESSetupMix2(Temp);
-   
+
    Temp:=RRK[3];
    RK[3]:=AESSetupMix2(Temp);
-   
+
    {$ELSE}
    Temp:=RRK[0];
    RK[0]:=AES_TKS0[AESByte(Temp,3)] xor AES_TKS1[AESByte(Temp,2)] xor AES_TKS2[AESByte(Temp,1)] xor AES_TKS3[AESByte(Temp,0)];
-   
+
    Temp:=RRK[1];
    RK[1]:=AES_TKS0[AESByte(Temp,3)] xor AES_TKS1[AESByte(Temp,2)] xor AES_TKS2[AESByte(Temp,1)] xor AES_TKS3[AESByte(Temp,0)];
-   
+
    Temp:=RRK[2];
    RK[2]:=AES_TKS0[AESByte(Temp,3)] xor AES_TKS1[AESByte(Temp,2)] xor AES_TKS2[AESByte(Temp,1)] xor AES_TKS3[AESByte(Temp,0)];
-   
+
    Temp:=RRK[3];
    RK[3]:=AES_TKS0[AESByte(Temp,3)] xor AES_TKS1[AESByte(Temp,2)] xor AES_TKS2[AESByte(Temp,1)] xor AES_TKS3[AESByte(Temp,0)];
-   
+
    {$ENDIF}
   end;
-  
+
  {Copy last round}
  Dec(RRK,4);
  Inc(RK,4);
- 
- RK^:=RRK^;
- Inc(RK);  {Increment PLongWord increments by SizeOf(LongWord)}
- Inc(RRK);
 
  RK^:=RRK^;
  Inc(RK);  {Increment PLongWord increments by SizeOf(LongWord)}
@@ -5627,13 +7679,18 @@ begin
  Inc(RRK);
 
  RK^:=RRK^;
- 
+ Inc(RK);  {Increment PLongWord increments by SizeOf(LongWord)}
+ Inc(RRK);
+
+ RK^:=RRK^;
+
  Result:=True;
 end;
 
 {==============================================================================}
 
 procedure AESEncryptBlock(Plain,Crypt:Pointer;AESKey:PAESKey);
+{AES Encrypt a 16 byte (128 bit) block of data using the supplied key}
 var
  S0:LongWord;
  S1:LongWord;
@@ -5648,20 +7705,21 @@ var
  Rounds:LongWord;
 begin
  {}
+ {Check Params}
  if Plain = nil then Exit;
  if Crypt = nil then Exit;
  if AESKey = nil then Exit;
- 
+
  {Get rounds and key}
  Rounds:=AESKey.Rounds;
  RK:=@AESKey.EncryptKey;
- 
+
  {Map byte array block to cipher state and add initial round key}
  S0:=LongWordToBE(Plain) xor RK[0];
  S1:=LongWordToBE(Plain +  4) xor RK[1];
  S2:=LongWordToBE(Plain +  8) xor RK[2];
  S3:=LongWordToBE(Plain + 12) xor RK[3];
- 
+
  {$IFNDEF CRYPTO_AES_PRECOMPUTED_TABLES}
  Count:=0;
  while True do
@@ -5672,19 +7730,19 @@ begin
    T1:=AESTE0(AESByte(S1,3)) xor AESTE1(AESByte(S2,2)) xor AESTE2(AESByte(S3,1)) xor AESTE3(AESByte(S0,0)) xor RK[1];
    T2:=AESTE0(AESByte(S2,3)) xor AESTE1(AESByte(S3,2)) xor AESTE2(AESByte(S0,1)) xor AESTE3(AESByte(S1,0)) xor RK[2];
    T3:=AESTE0(AESByte(S3,3)) xor AESTE1(AESByte(S0,2)) xor AESTE2(AESByte(S1,1)) xor AESTE3(AESByte(S2,0)) xor RK[3];
-   
+
    if Count = (Rounds - 2) then Break;
 
    S0:=T0;
    S1:=T1;
    S2:=T2;
    S3:=T3;
-    
+
    Inc(Count);
   end;
-  
+
  Inc(RK,4); {Increment PLongWord increments by SizeOf(LongWord)}
- 
+
  {$ELSE}
  {Rounds - 1 full rounds}
  Count:=Rounds shr 1;
@@ -5696,7 +7754,7 @@ begin
    T3:=AESTE0(AESByte(S3,3)) xor AESTE1(AESByte(S0,2)) xor AESTE2(AESByte(S1,1)) xor AESTE3(AESByte(S2,0)) xor RK[7];
 
    Inc(RK,8); {Increment PLongWord increments by SizeOf(LongWord)}
-   
+
    Dec(Count);
    if Count = 0 then Break;
 
@@ -5704,20 +7762,20 @@ begin
    S1:=AESTE0(AESByte(T1,3)) xor AESTE1(AESByte(T2,2)) xor AESTE2(AESByte(T3,1)) xor AESTE3(AESByte(T0,0)) xor RK[1];
    S2:=AESTE0(AESByte(T2,3)) xor AESTE1(AESByte(T3,2)) xor AESTE2(AESByte(T0,1)) xor AESTE3(AESByte(T1,0)) xor RK[2];
    S3:=AESTE0(AESByte(T3,3)) xor AESTE1(AESByte(T0,2)) xor AESTE2(AESByte(T1,1)) xor AESTE3(AESByte(T2,0)) xor RK[3];
-  end; 
- 
+  end;
+
  {$ENDIF}
- 
+
  {Apply last round and map cipher state to byte array block}
  S0:=AESTE4_3(AESByte(T0,3)) xor AESTE4_2(AESByte(T1,2)) xor AESTE4_1(AESByte(T2,1)) xor AESTE4_0(AESByte(T3,0)) xor RK[0];
  BEToLongWord(S0,Crypt);
- 
+
  S1:=AESTE4_3(AESByte(T1,3)) xor AESTE4_2(AESByte(T2,2)) xor AESTE4_1(AESByte(T3,1)) xor AESTE4_0(AESByte(T0,0)) xor RK[1];
  BEToLongWord(S1,Crypt + 4);
- 
+
  S2:=AESTE4_3(AESByte(T2,3)) xor AESTE4_2(AESByte(T3,2)) xor AESTE4_1(AESByte(T0,1)) xor AESTE4_0(AESByte(T1,0)) xor RK[2];
  BEToLongWord(S2,Crypt + 8);
- 
+
  S3:=AESTE4_3(AESByte(T3,3)) xor AESTE4_2(AESByte(T0,2)) xor AESTE4_1(AESByte(T1,1)) xor AESTE4_0(AESByte(T2,0)) xor RK[3];
  BEToLongWord(S3,Crypt + 12);
 end;
@@ -5725,6 +7783,7 @@ end;
 {==============================================================================}
 
 procedure AESDecryptBlock(Crypt,Plain:Pointer;AESKey:PAESKey);
+{AES Decrypt a 16 byte (128 bit) block of data using the supplied key}
 var
  S0:LongWord;
  S1:LongWord;
@@ -5739,6 +7798,7 @@ var
  Rounds:LongWord;
 begin
  {}
+ {Check Params}
  if Crypt = nil then Exit;
  if Plain = nil then Exit;
  if AESKey = nil then Exit;
@@ -5746,13 +7806,13 @@ begin
  {Get rounds and key}
  Rounds:=AESKey.Rounds;
  RK:=@AESKey.DecryptKey;
- 
+
  {Map byte array block to cipher state and add initial round key}
  S0:=LongWordToBE(Crypt) xor RK[0];
  S1:=LongWordToBE(Crypt +  4) xor RK[1];
  S2:=LongWordToBE(Crypt +  8) xor RK[2];
  S3:=LongWordToBE(Crypt + 12) xor RK[3];
- 
+
  {$IFNDEF CRYPTO_AES_PRECOMPUTED_TABLES}
  Count:=0;
  while True do
@@ -5763,19 +7823,19 @@ begin
    T1:=AESTD0(AESByte(S1,3)) xor AESTD1(AESByte(S0,2)) xor AESTD2(AESByte(S3,1)) xor AESTD3(AESByte(S2,0)) xor RK[1];
    T2:=AESTD0(AESByte(S2,3)) xor AESTD1(AESByte(S1,2)) xor AESTD2(AESByte(S0,1)) xor AESTD3(AESByte(S3,0)) xor RK[2];
    T3:=AESTD0(AESByte(S3,3)) xor AESTD1(AESByte(S2,2)) xor AESTD2(AESByte(S1,1)) xor AESTD3(AESByte(S0,0)) xor RK[3];
-   
+
    if Count = (Rounds - 2) then Break;
 
    S0:=T0;
    S1:=T1;
    S2:=T2;
    S3:=T3;
-    
+
    Inc(Count);
   end;
-  
+
  Inc(RK,4); {Increment PLongWord increments by SizeOf(LongWord)}
- 
+
  {$ELSE}
  {Rounds - 1 full rounds}
  Count:=Rounds shr 1;
@@ -5787,7 +7847,7 @@ begin
    T3:=AESTD0(AESByte(S3,3)) xor AESTD1(AESByte(S2,2)) xor AESTD2(AESByte(S1,1)) xor AESTD3(AESByte(S0,0)) xor RK[7];
 
    Inc(RK,8); {Increment PLongWord increments by SizeOf(LongWord)}
-   
+
    Dec(Count);
    if Count = 0 then Break;
 
@@ -5795,20 +7855,20 @@ begin
    S1:=AESTD0(AESByte(T1,3)) xor AESTD1(AESByte(T0,2)) xor AESTD2(AESByte(T3,1)) xor AESTD3(AESByte(T2,0)) xor RK[1];
    S2:=AESTD0(AESByte(T2,3)) xor AESTD1(AESByte(T1,2)) xor AESTD2(AESByte(T0,1)) xor AESTD3(AESByte(T3,0)) xor RK[2];
    S3:=AESTD0(AESByte(T3,3)) xor AESTD1(AESByte(T2,2)) xor AESTD2(AESByte(T1,1)) xor AESTD3(AESByte(T0,0)) xor RK[3];
-  end; 
- 
+  end;
+
  {$ENDIF}
- 
+
  {Apply last round and map cipher state to byte array block}
  S0:=(AES_TD4[AESByte(T0,3)] and $ff000000) xor (AES_TD4[AESByte(T3,2)] and $00ff0000) xor (AES_TD4[AESByte(T2,1)] and $0000ff00) xor (AES_TD4[AESByte(T1,0)] and $000000ff) xor RK[0];
  BEToLongWord(S0,Plain);
- 
+
  S1:=(AES_TD4[AESByte(T1,3)] and $ff000000) xor (AES_TD4[AESByte(T0,2)] and $00ff0000) xor (AES_TD4[AESByte(T3,1)] and $0000ff00) xor (AES_TD4[AESByte(T2,0)] and $000000ff) xor RK[1];
  BEToLongWord(S1,Plain + 4);
- 
+
  S2:=(AES_TD4[AESByte(T2,3)] and $ff000000) xor (AES_TD4[AESByte(T1,2)] and $00ff0000) xor (AES_TD4[AESByte(T0,1)] and $0000ff00) xor (AES_TD4[AESByte(T3,0)] and $000000ff) xor RK[2];
  BEToLongWord(S2,Plain + 8);
- 
+
  S3:=(AES_TD4[AESByte(T3,3)] and $ff000000) xor (AES_TD4[AESByte(T2,2)] and $00ff0000) xor (AES_TD4[AESByte(T1,1)] and $0000ff00) xor (AES_TD4[AESByte(T0,0)] and $000000ff) xor RK[3];
  BEToLongWord(S3,Plain + 12);
 end;
@@ -5816,6 +7876,41 @@ end;
 {==============================================================================}
 {==============================================================================}
 {DES Helper Functions}
+procedure DESCook(Raw1:PLongWord;Key:PDESKey);
+var
+ Count:LongWord;
+ Raw0:PLongWord;
+ Cook:PLongWord;
+ Dough:TDESkey;
+begin
+ {}
+ Cook:=@Dough;
+
+ for Count:=0 to 15 do
+  begin
+   Raw0:=Raw1;
+   Inc(Raw1); {Increment PLongWord increments by SizeOf(LongWord)}
+
+   Cook^:=(Raw0^ and $00fc0000) shl 6;
+   Cook^:=Cook^ or ((Raw0^ and $00000fc0) shl 10);
+   Cook^:=Cook^ or ((Raw1^ and $00fc0000) shr 10);
+   Cook^:=Cook^ or ((Raw1^ and $00000fc0) shr 6);
+   Inc(Cook); {Increment PLongWord increments by SizeOf(LongWord)}
+
+   Cook^:=(Raw0^ and $0003f000) shl 12;
+   Cook^:=Cook^ or ((Raw0^ and $0000003f) shl 16);
+   Cook^:=Cook^ or ((Raw1^ and $0003f000) shr 4);
+   Cook^:=Cook^ or (Raw1^ and $0000003f);
+   Inc(Cook); {Increment PLongWord increments by SizeOf(LongWord)}
+
+   Inc(Raw1); {Increment PLongWord increments by SizeOf(LongWord)}
+  end;
+
+ System.Move(Dough[0],Key^,SizeOf(TDESkey));
+end;
+
+{==============================================================================}
+
 procedure DESKey(Key:PByte;KeyType:LongWord;CryptKey:PDESKey);
 var
  I:LongWord;
@@ -5839,7 +7934,7 @@ begin
    else
     begin
      PC1M[J]:=0;
-    end;    
+    end;
   end;
 
  for I:=0 to 15 do
@@ -5852,81 +7947,45 @@ begin
     begin
      M:=I shl 1;
     end;
-   
+
    N:=M + 1;
    Raw[M]:=0;
    Raw[N]:=0;
-   
+
    for J:=0 to 27 do
     begin
      L:=J + DES_TOTROT[I];
      if L < 28 then
       begin
        PCR[J]:=PC1M[L];
-      end 
+      end
      else
       begin
        PCR[J]:=PC1M[L - 28];
-      end; 
+      end;
     end;
-   
+
    for J:=28 to 55 do
     begin
      L:=J + DES_TOTROT[I];
      if L < 56 then
       begin
        PCR[J]:=PC1M[L];
-      end 
+      end
      else
       begin
        PCR[J]:=PC1M[L - 28];
-      end; 
+      end;
     end;
-    
+
    for J:=0 to 23 do
     begin
-     if PCR[DES_PC2[J]] <> 0 then Raw[M]:=Raw[M] or DES_BIGBYTE[J];    
+     if PCR[DES_PC2[J]] <> 0 then Raw[M]:=Raw[M] or DES_BIGBYTE[J];
      if PCR[DES_PC2[J + 24]] <> 0 then Raw[N]:=Raw[N] or DES_BIGBYTE[J];
     end;
   end;
- 
+
  DESCook(@Raw,CryptKey);
-end;
-
-
-{==============================================================================}
-
-procedure DESCook(Raw1:PLongWord;Key:PDESKey);
-var
- Count:LongWord;
- Raw0:PLongWord;
- Cook:PLongWord;
- Dough:TDESkey; 
-begin
- {}
- Cook:=@Dough;
- 
- for Count:=0 to 15 do
-  begin
-   Raw0:=Raw1;
-   Inc(Raw1); {Increment PLongWord increments by SizeOf(LongWord)}
-   
-   Cook^:=(Raw0^ and $00fc0000) shl 6;
-   Cook^:=Cook^ or ((Raw0^ and $00000fc0) shl 10);
-   Cook^:=Cook^ or ((Raw1^ and $00fc0000) shr 10);
-   Cook^:=Cook^ or ((Raw1^ and $00000fc0) shr 6);
-   Inc(Cook); {Increment PLongWord increments by SizeOf(LongWord)}
-   
-   Cook^:=(Raw0^ and $0003f000) shl 12;
-   Cook^:=Cook^ or ((Raw0^ and $0000003f) shl 16);
-   Cook^:=Cook^ or ((Raw1^ and $0003f000) shr 4);
-   Cook^:=Cook^ or (Raw1^ and $0000003f);
-   Inc(Cook); {Increment PLongWord increments by SizeOf(LongWord)}
-   
-   Inc(Raw1); {Increment PLongWord increments by SizeOf(LongWord)}
-  end; 
- 
- System.Move(Dough[0],Key^,SizeOf(TDESkey));
 end;
 
 {==============================================================================}
@@ -5938,21 +7997,21 @@ procedure DESProcess(Block,Key:PLongWord);
   {}
   Result:=((X shl (Y and 31)) or ((X and $FFFFFFFF) shr (32 - (Y and 31)))) and $FFFFFFFF;
  end;
- 
+
  function DESRORc(X,Y:LongWord):LongWord; inline; {Not Used}
  begin
   {}
   Result:=(((X and $FFFFFFFF) shr (Y and 31)) or (X shl (32 - (Y and 31)))) and $FFFFFFFF;
  end;
- 
+
  {$IFDEF CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}
- function DESByte(X,N:LongWord):Byte; inline; 
+ function DESByte(X,N:LongWord):Byte; inline;
  begin
   {}
   Result:=(X shr (N shl 3)) and 255;
  end;
  {$ENDIF}
- 
+
 var
  {$IFDEF CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}
  Temp:QWord;
@@ -5965,64 +8024,64 @@ begin
  {}
  Left:=Block[0];
  Right:=Block[1];
- 
+
  {$IFNDEF CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}
  Work:=((Left shr 4) xor Right) and $0f0f0f0f;
  Right:=Right xor Work;
  Left:=Left xor (Work shl 4);
- 
+
  Work:=((Left shr 16) xor Right) and $0000ffff;
  Right:=Right xor Work;
  Left:=Left xor (Work shl 16);
- 
+
  Work:=((Right shr 2) xor Left) and $33333333;
  Left:=Left xor Work;
  Right:=Right xor (Work shl 2);
- 
+
  Work:=((Right shr 8) xor Left) and $00ff00ff;
  Left:=Left xor Work;
  Right:=Right xor (Work shl 8);
- 
+
  {Right:=DESROLc(Right,1);}
  Right:=RolDWord(Right,1);
  Work:=(Left xor Right) and $aaaaaaaa;
- 
+
  Left:=Left xor Work;
  Right:=Right xor Work;
  {Left:=DESROLc(Left,1);}
  Left:=RolDWord(Left,1);
- 
+
  {$ELSE}
  Temp:=DES_IP[0][DESByte(Left,0)] xor DES_IP[1][DESByte(Left,1)] xor DES_IP[2][DESByte(Left,2)] xor DES_IP[3][DESByte(Left,3)] xor
        DES_IP[4][DESByte(Right,0)] xor DES_IP[5][DESByte(Right,1)] xor DES_IP[6][DESByte(Right,2)] xor DES_IP[7][DESByte(Right,3)];
- 
+
  Left:=Int64Rec(Temp).Hi;
  Right:=Int64Rec(Temp).Lo;
- 
+
  {$ENDIF}
- 
+
  for Round:=0 to 7 do
   begin
    {Work:=DESRORc(Right,4) xor Key^;}
    Work:=RorDWord(Right,4) xor Key^;
    Inc(Key); {Increment PLongWord increments by SizeOf(LongWord)}
-   
+
    Left:=Left xor (DES_S7[Work and $3f] xor DES_S5[(Work shr  8) and $3f] xor DES_S3[(Work shr 16) and $3f] xor DES_S1[(Work shr 24) and $3f]);
 
    Work:=Right xor Key^;
    Inc(Key); {Increment PLongWord increments by SizeOf(LongWord)}
-   
+
    Left:=Left xor (DES_S8[Work and $3f] xor DES_S6[(Work shr  8) and $3f] xor DES_S4[(Work shr 16) and $3f] xor DES_S2[(Work shr 24) and $3f]);
-         
+
    {Work:=DESRORc(Left,4) xor Key^;}
    Work:=RorDWord(Left,4) xor Key^;
    Inc(Key); {Increment PLongWord increments by SizeOf(LongWord)}
-   
+
    Right:=Right xor (DES_S7[Work and $3f] xor DES_S5[(Work shr  8) and $3f] xor DES_S3[(Work shr 16) and $3f] xor DES_S1[(Work shr 24) and $3f]);
 
    Work:=Left xor Key^;
    Inc(Key); {Increment PLongWord increments by SizeOf(LongWord)}
-   
+
    Right:=Right xor (DES_S8[Work and $3f] xor DES_S6[(Work shr  8) and $3f] xor DES_S4[(Work shr 16) and $3f] xor DES_S2[(Work shr 24) and $3f]);
   end;
 
@@ -6032,7 +8091,7 @@ begin
  Work:=(Left xor Right) and $aaaaaaaa;
  Left:=Left xor Work;
  Right:=Right xor Work;
- 
+
  {Left:=DESRORc(Left,1);}
  Left:=RorDWord(Left,1);
  Work:=((Left shr 8) xor Right) and $00ff00ff;
@@ -6042,24 +8101,24 @@ begin
  Work:=((Left shr 2) xor Right) and $33333333;
  Right:=Right xor Work;
  Left:=Left xor (Work shl 2);
- 
+
  Work:=((Right shr 16) xor Left) and $0000ffff;
  Left:=Left xor Work;
  Right:=Right xor (Work shl 16);
- 
+
  Work:=((Right shr 4) xor Left) and $0f0f0f0f;
  Left:=Left xor Work;
  Right:=Right xor (Work shl 4);
- 
+
  {$ELSE}
  Temp:=DES_FP[0][DESByte(Left,0)] xor DES_FP[1][DESByte(Left,1)] xor DES_FP[2][DESByte(Left,2)] xor DES_FP[3][DESByte(Left,3)] xor
        DES_FP[4][DESByte(Right,0)] xor DES_FP[5][DESByte(Right,1)] xor DES_FP[6][DESByte(Right,2)] xor DES_FP[7][DESByte(Right,3)];
-            
+
  Left:=Int64Rec(Temp).Hi;
  Right:=Int64Rec(Temp).Lo;
- 
+
  {$ENDIF}
- 
+
  Block[0]:=Right;
  Block[1]:=Left;
 end;
@@ -6070,17 +8129,17 @@ function DESKeySetup(Key:Pointer;KeySize:LongWord;EncryptKey,DecryptKey:PDESKey)
 begin
  {}
  Result:=False;
- 
+
  if Key = nil then Exit;
  if EncryptKey = nil then Exit;
  if DecryptKey = nil then Exit;
- 
+
  {Check size}
  if KeySize <> DES_KEY_SIZE then Exit;
- 
+
  DESKey(Key,DES_KEYTYPE_ENCRYPT,EncryptKey);
  DESKey(Key,DES_KEYTYPE_DECRYPT,DecryptKey);
- 
+
  Result:=True;
 end;
 
@@ -6094,13 +8153,13 @@ begin
  if Plain = nil then Exit;
  if Crypt = nil then Exit;
  if EncryptKey = nil then Exit;
- 
+
  Work[0]:=LongWordToBE(PByte(Plain));
  Work[1]:=LongWordToBE(PByte(Plain + 4));
- 
+
  DESProcess(@Work,PLongWord(EncryptKey));
- 
- BEToLongWord(Work[0],PByte(Crypt)); 
+
+ BEToLongWord(Work[0],PByte(Crypt));
  BEToLongWord(Work[1],PByte(Crypt + 4));
 end;
 
@@ -6115,12 +8174,12 @@ begin
  if Plain = nil then Exit;
  if DecryptKey = nil then Exit;
 
- Work[0]:=LongWordToBE(PByte(Crypt)); 
+ Work[0]:=LongWordToBE(PByte(Crypt));
  Work[1]:=LongWordToBE(PByte(Crypt + 4));
- 
+
  DESProcess(@Work,PLongWord(DecryptKey));
- 
- BEToLongWord(Work[0],PByte(Plain)); 
+
+ BEToLongWord(Work[0],PByte(Plain));
  BEToLongWord(Work[1],PByte(Plain + 4));
 end;
 
@@ -6131,21 +8190,21 @@ function DES3KeySetup(Key:Pointer;KeySize:LongWord;DES3Key:PDES3Key):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Key = nil then Exit;
  if DES3Key = nil then Exit;
- 
+
  {Check size}
  if KeySize <> DES3_KEY_SIZE then Exit;
- 
+
  DESKey(Key,DES_KEYTYPE_ENCRYPT,@DES3Key.EncryptKey[0]);
  DESKey(Key + 8,DES_KEYTYPE_DECRYPT,@DES3Key.EncryptKey[1]);
  DESKey(Key + 16,DES_KEYTYPE_ENCRYPT,@DES3Key.EncryptKey[2]);
-   
+
  DESKey(Key,DES_KEYTYPE_DECRYPT,@DES3Key.DecryptKey[2]);
  DESKey(Key + 8,DES_KEYTYPE_ENCRYPT,@DES3Key.DecryptKey[1]);
  DESKey(Key + 16,DES_KEYTYPE_DECRYPT,@DES3Key.DecryptKey[0]);
- 
+
  Result:=True;
 end;
 
@@ -6160,14 +8219,14 @@ begin
  if Crypt = nil then Exit;
  if DES3Key = nil then Exit;
 
- Work[0]:=LongWordToBE(PByte(Plain));   
+ Work[0]:=LongWordToBE(PByte(Plain));
  Work[1]:=LongWordToBE(PByte(Plain + 4));
- 
+
  DESProcess(@Work,PLongWord(@DES3Key.EncryptKey[0]));
  DESProcess(@Work,PLongWord(@DES3Key.EncryptKey[1]));
  DESProcess(@Work,PLongWord(@DES3Key.EncryptKey[2]));
- 
- BEToLongWord(Work[0],PByte(Crypt)); 
+
+ BEToLongWord(Work[0],PByte(Crypt));
  BEToLongWord(Work[1],PByte(Crypt + 4));
 end;
 
@@ -6182,21 +8241,21 @@ begin
  if Plain = nil then Exit;
  if DES3Key = nil then Exit;
 
- Work[0]:=LongWordToBE(PByte(Crypt)); 
+ Work[0]:=LongWordToBE(PByte(Crypt));
  Work[1]:=LongWordToBE(PByte(Crypt + 4));
- 
+
  DESProcess(@Work,PLongWord(@DES3Key.DecryptKey[0]));
  DESProcess(@Work,PLongWord(@DES3Key.DecryptKey[1]));
  DESProcess(@Work,PLongWord(@DES3Key.DecryptKey[2]));
- 
- BEToLongWord(Work[0],PByte(Plain)); 
+
+ BEToLongWord(Work[0],PByte(Plain));
  BEToLongWord(Work[1],PByte(Plain + 4));
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RC4 Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {SHA1 Helper Functions}
@@ -6214,121 +8273,10 @@ begin
  {Zero the bit count}
  Context.Count:=0;
 end;
- 
+
 {==============================================================================}
 
-procedure SHA1Update(var Context:TSHA1Context;Data:Pointer;Size:LongWord);
-{Add more bytes to the data buffer, add to the hash in 64 byte chunks}
-var
- Count:PtrUInt;
- Offset:PtrUInt;
-begin
- {}
- if Data = nil then Exit;
- if Size = 0 then Exit;
-
- {Get the data buffer count}
- Count:=(Context.Count shr 3) and $3F;
- 
- {Update the total bit count}
- Inc(Context.Count,(Size shl 3));
- 
- {Check size and buffer count}
- if (Count + Size) > 63 then
-  begin
-   {Get bytes remaining to fill the buffer}
-   Offset:=64 - Count;
-   
-   {Copy to data buffer}
-   System.Move(Data^,Context.Data[Count],Offset);
-  
-   {Reverse the bytes}
-   {BytesToBE(@Context.Data[0],16);} {Done in SHA1Transform}
-   
-   {Add to hash}
-   SHA1Transform(Context,@Context.Data[0]);
-  
-   {Reset buffer count}
-   Count:=0;
-   
-   {Process 64 byte chunks of data}
-   while (Offset + 63) < Size do
-    begin
-     {Copy to data buffer}
-     System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[0],64);
-     
-     {Reverse the bytes}
-     {BytesToBE(@Context.Data[0],16);} {Done in SHA1Transform}
-     
-     {Add to hash}
-     SHA1Transform(Context,@Context.Data[0]);
-     
-     {Update offset}
-     Inc(Offset,64);
-    end;
-  end
- else
-  begin
-   {Reset offset}
-   Offset:=0;
-  end;  
-  
- {Copy remaining bytes to data buffer}
- System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[Count],Size - Offset);
-end;
- 
-{==============================================================================}
-
-procedure SHA1Final(var Context:TSHA1Context;var Digest:TSHA1Digest);
-{Finalize the SHA1 context by padding to a 64 Byte boundary, adding 
- QWord count of bits processed and copying the hash to the digest}
-var
- Total:QWord;
- Count:PtrUInt;
- Padding:TSHA1ByteBuffer;
-begin
- {}
- {Get the total bit count}
- Total:=Int64NtoBE(Context.Count);
- 
- {Get the data buffer count}
- Count:=(Context.Count shr 3) and $3F;
- 
- {Fill the padding with zeros}
- FillChar(Padding[0],SizeOf(TSHA1ByteBuffer),0);
-
- {Set the first padding byte to $80}
- Padding[0]:=$80;
- 
- {Determine bytes of padding to make 64 byte buffer}
- if Count >=56 then
-  begin
-   Count:=120 - Count;
-  end
- else
-  begin
-   Count:=56 - Count;
-  end;
-  
- {Pad the buffer to 56 bytes}
- SHA1Update(Context,@Padding[0],Count);
- 
- {Add total count of bits}
- SHA1Update(Context,@Total,8);
-  
- {Reverse the hash}
- BytesToBE(@Context.State[0],5);
- 
- {Copy the hash to the digest}
- System.Move(Context.State[0],Digest,20);
- 
- {Clear the context to prevent data leakage}
- FillChar(Context,SizeOf(TSHA1Context),0);
-end;
- 
-{==============================================================================}
-
-procedure SHA1Transform(var Context:TSHA1Context;Buffer:Pointer); 
+procedure SHA1Transform(var Context:TSHA1Context;Buffer:Pointer);
 {The core SHA1 algorithm, adds an additional 64 Bytes (512 bits) to the hash}
 
  {$IFDEF FPC_BIG_ENDIAN}
@@ -6350,7 +8298,7 @@ procedure SHA1Transform(var Context:TSHA1Context;Buffer:Pointer);
   Result:=RolDWord(Data[(Index + 13) and 15] xor Data[(Index + 8) and 15] xor Data[(Index + 2) and 15] xor Data[Index and 15],1);
   Data[Index and 15]:=Result;
  end;
- 
+
  procedure SHA1Round0(V:LongWord;var W:LongWord;X,Y:LongWord;var Z:LongWord;Data:PSHA1LongBuffer;Index:LongWord); inline;
  begin
   {}
@@ -6364,28 +8312,28 @@ procedure SHA1Transform(var Context:TSHA1Context;Buffer:Pointer);
   Z:=Z + ((W and (X xor Y)) xor Y) + SHA1Block(Data,Index) + $5A827999 + RolDWord(V,5);
   W:=RolDWord(W,30);
  end;
- 
+
  procedure SHA1Round2(V:LongWord;var W:LongWord;X,Y:LongWord;var Z:LongWord;Data:PSHA1LongBuffer;Index:LongWord); inline;
  begin
   {}
   Z:=Z + (W xor X xor Y) + SHA1Block(Data,Index) + $6ED9EBA1 + RolDWord(V,5);
   W:=RolDWord(W,30);
  end;
- 
+
  procedure SHA1Round3(V:LongWord;var W:LongWord;X,Y:LongWord;var Z:LongWord;Data:PSHA1LongBuffer;Index:LongWord); inline;
  begin
   {}
   Z:=Z + (((W or X) and Y) or (W and X)) + SHA1Block(Data,Index) + $8F1BBCDC + RolDWord(V,5);
   W:=RolDWord(W,30);
  end;
- 
+
  procedure SHA1Round4(V:LongWord;var W:LongWord;X,Y:LongWord;var Z:LongWord;Data:PSHA1LongBuffer;Index:LongWord); inline;
  begin
   {}
   Z:=Z + (W xor X xor Y) + SHA1Block(Data,Index) + $CA62C1D6 + RolDWord(V,5);
   W:=RolDWord(W,30);
  end;
- 
+
 var
  A:LongWord;
  B:LongWord;
@@ -6403,10 +8351,10 @@ begin
  C:=Context.State[2];
  D:=Context.State[3];
  E:=Context.State[4];
- 
+
  {Get data buffer}
  Data:=PSHA1LongBuffer(Buffer);
- 
+
  {Round 0}
  SHA1Round0(A,B,C,D,E,Data,0);
  SHA1Round0(e,a,b,c,d,Data,1);
@@ -6424,13 +8372,13 @@ begin
  SHA1Round0(c,d,e,a,b,Data,13);
  SHA1Round0(b,c,d,e,a,Data,14);
  SHA1Round0(a,b,c,d,e,Data,15);
- 
+
  {Round 1}
  SHA1Round1(e,a,b,c,d,Data,16);
  SHA1Round1(d,e,a,b,c,Data,17);
  SHA1Round1(c,d,e,a,b,Data,18);
  SHA1Round1(b,c,d,e,a,Data,19);
- 
+
  {Round 2}
  SHA1Round2(a,b,c,d,e,Data,20);
  SHA1Round2(e,a,b,c,d,Data,21);
@@ -6452,7 +8400,7 @@ begin
  SHA1Round2(d,e,a,b,c,Data,37);
  SHA1Round2(c,d,e,a,b,Data,38);
  SHA1Round2(b,c,d,e,a,Data,39);
- 
+
  {Round 3}
  SHA1Round3(a,b,c,d,e,Data,40);
  SHA1Round3(e,a,b,c,d,Data,41);
@@ -6474,7 +8422,7 @@ begin
  SHA1Round3(d,e,a,b,c,Data,57);
  SHA1Round3(c,d,e,a,b,Data,58);
  SHA1Round3(b,c,d,e,a,Data,59);
- 
+
  {Round 4}
  SHA1Round4(a,b,c,d,e,Data,60);
  SHA1Round4(e,a,b,c,d,Data,61);
@@ -6484,7 +8432,7 @@ begin
  SHA1Round4(a,b,c,d,e,Data,65);
  SHA1Round4(e,a,b,c,d,Data,66);
  SHA1Round4(d,e,a,b,c,Data,67);
- SHA1Round4(c,d,e,a,b,Data,68); 
+ SHA1Round4(c,d,e,a,b,Data,68);
  SHA1Round4(b,c,d,e,a,Data,69);
  SHA1Round4(a,b,c,d,e,Data,70);
  SHA1Round4(e,a,b,c,d,Data,71);
@@ -6496,7 +8444,7 @@ begin
  SHA1Round4(d,e,a,b,c,Data,77);
  SHA1Round4(c,d,e,a,b,Data,78);
  SHA1Round4(b,c,d,e,a,Data,79);
- 
+
  {Save new hash}
  Inc(Context.State[0],A);
  Inc(Context.State[1],B);
@@ -6504,26 +8452,137 @@ begin
  Inc(Context.State[3],D);
  Inc(Context.State[4],E);
 end;
- 
+
 {==============================================================================}
- 
+
+procedure SHA1Update(var Context:TSHA1Context;Data:Pointer;Size:LongWord);
+{Add more bytes to the data buffer, add to the hash in 64 byte chunks}
+var
+ Count:PtrUInt;
+ Offset:PtrUInt;
+begin
+ {}
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $3F;
+
+ {Update the total bit count}
+ Inc(Context.Count,(Size shl 3));
+
+ {Check size and buffer count}
+ if (Count + Size) > 63 then
+  begin
+   {Get bytes remaining to fill the buffer}
+   Offset:=64 - Count;
+
+   {Copy to data buffer}
+   System.Move(Data^,Context.Data[Count],Offset);
+
+   {Reverse the bytes}
+   {BytesToBE32(@Context.Data[0],16);} {Done in SHA1Transform}
+
+   {Add to hash}
+   SHA1Transform(Context,@Context.Data[0]);
+
+   {Reset buffer count}
+   Count:=0;
+
+   {Process 64 byte chunks of data}
+   while (Offset + 63) < Size do
+    begin
+     {Copy to data buffer}
+     System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[0],64);
+
+     {Reverse the bytes}
+     {BytesToBE32(@Context.Data[0],16);} {Done in SHA1Transform}
+
+     {Add to hash}
+     SHA1Transform(Context,@Context.Data[0]);
+
+     {Update offset}
+     Inc(Offset,64);
+    end;
+  end
+ else
+  begin
+   {Reset offset}
+   Offset:=0;
+  end;
+
+ {Copy remaining bytes to data buffer}
+ System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[Count],Size - Offset);
+end;
+
+{==============================================================================}
+
+procedure SHA1Final(var Context:TSHA1Context;var Digest:TSHA1Digest);
+{Finalize the SHA1 context by padding to a 64 Byte boundary, adding
+ QWord count of bits processed and copying the hash to the digest}
+var
+ Total:QWord;
+ Count:PtrUInt;
+ Padding:TSHA1ByteBuffer;
+begin
+ {}
+ {Get the total bit count}
+ Total:=Int64NtoBE(Context.Count);
+
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $3F;
+
+ {Fill the padding with zeros}
+ FillChar(Padding[0],SizeOf(TSHA1ByteBuffer),0);
+
+ {Set the first padding byte to $80}
+ Padding[0]:=$80;
+
+ {Determine bytes of padding to make 64 byte buffer}
+ if Count >= 56 then
+  begin
+   Count:=120 - Count;
+  end
+ else
+  begin
+   Count:=56 - Count;
+  end;
+
+ {Pad the buffer to 56 bytes}
+ SHA1Update(Context,@Padding[0],Count);
+
+ {Add total count of bits}
+ SHA1Update(Context,@Total,8);
+
+ {Reverse the hash}
+ BytesToBE32(@Context.State[0],5);
+
+ {Copy the hash to the digest}
+ System.Move(Context.State[0],Digest,20);
+
+ {Clear the context to prevent data leakage}
+ FillChar(Context,SizeOf(TSHA1Context),0);
+end;
+
+{==============================================================================}
+
 function SHA1DigestToString(Digest:PSHA1Digest):String;
 var
  Count:Integer;
 begin
  {}
  Result:='';
- 
+
  if Digest = nil then Exit;
- 
+
  for Count:=0 to 19 do
   begin
    Result:=Result + HexStr(Digest[Count],2);
   end;
- 
+
  Result:=Lowercase(Result);
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {SHA256 Helper Functions}
@@ -6540,145 +8599,34 @@ begin
  Context.State[5]:=$9B05688C;
  Context.State[6]:=$1F83D9AB;
  Context.State[7]:=$5BE0CD19;
- 
+
  {Zero the bit count}
  Context.Count:=0;
 end;
 
 {==============================================================================}
 
-procedure SHA256Process(var Context:TSHA256Context;Data:Pointer;Size:LongWord);
-{Add more bytes to the data buffer, add to the hash in 64 byte chunks}
-var
- Count:PtrUInt;
- Offset:PtrUInt;
-begin
- {}
- if Data = nil then Exit;
- if Size = 0 then Exit;
-
- {Get the data buffer count}
- Count:=(Context.Count shr 3) and $3F;
- 
- {Update the total bit count}
- Inc(Context.Count,(Size shl 3));
- 
- {Check size and buffer count}
- if (Count + Size) > 63 then
-  begin
-   {Get bytes remaining to fill the buffer}
-   Offset:=64 - Count;
-   
-   {Copy to data buffer}
-   System.Move(Data^,Context.Data[Count],Offset);
-  
-   {Reverse the bytes}
-   BytesToBE(@Context.Data[0],16);
-   
-   {Add to hash}
-   SHA256Compress(Context,@Context.Data[0]);
-  
-   {Reset buffer count}
-   Count:=0;
-   
-   {Process 64 byte chunks of data}
-   while (Offset + 63) < Size do
-    begin
-     {Copy to data buffer}
-     System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[0],64);
-     
-     {Reverse the bytes}
-     BytesToBE(@Context.Data[0],16);
-     
-     {Add to hash}
-     SHA256Compress(Context,@Context.Data[0]);
-     
-     {Update offset}
-     Inc(Offset,64);
-    end;
-  end
- else
-  begin
-   {Reset offset}
-   Offset:=0;
-  end;  
-  
- {Copy remaining bytes to data buffer}
- System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[Count],Size - Offset);
-end;
-
-{==============================================================================}
-
-procedure SHA256Complete(var Context:TSHA256Context;var Digest:TSHA256Digest);
-{Finalize the SHA256 context by padding to a 64 Byte boundary, adding 
- QWord count of bits processed and copying the hash to the digest}
-var
- Total:QWord;
- Count:PtrUInt;
- Padding:TSHA256ByteBuffer;
-begin
- {}
- {Get the total bit count}
- Total:=Int64NtoBE(Context.Count);
- 
- {Get the data buffer count}
- Count:=(Context.Count shr 3) and $3F;
- 
- {Fill the padding with zeros}
- FillChar(Padding[0],SizeOf(TSHA256ByteBuffer),0);
-
- {Set the first padding byte to $80}
- Padding[0]:=$80;
- 
- {Determine bytes of padding to make 64 byte buffer}
- if Count >=56 then
-  begin
-   Count:=120 - Count;
-  end
- else
-  begin
-   Count:=56 - Count;
-  end;
-  
- {Pad the buffer to 56 bytes}
- SHA256Process(Context,@Padding[0],Count);
- 
- {Add total count of bits}
- SHA256Process(Context,@Total,8);
-  
- {Reverse the hash}
- BytesToBE(@Context.State[0],8);
- 
- {Copy the hash to the digest}
- System.Move(Context.State[0],Digest,32);
- 
- {Clear the context to prevent data leakage}
- FillChar(Context,SizeOf(TSHA256Context),0);
-end;
-
-{==============================================================================}
-
 procedure SHA256Compress(var Context:TSHA256Context;Buffer:Pointer);
 {The core SHA256 algorithm, adds an additional 64 Bytes (512 bits) to the hash}
- 
+
  function SHA256RORc(X,Y:LongWord):LongWord; inline; {Not Used}
  begin
   {}
   Result:=(((X and $FFFFFFFF) shr (Y and 31)) or (X shl (32 - (Y and 31)))) and $FFFFFFFF;
  end;
- 
+
  function SHA256Ch(X,Y,Z:LongWord):LongWord; inline;
  begin
   {}
   Result:=Z xor (X and (Y xor Z));
  end;
- 
+
  function SHA256Maj(X,Y,Z:LongWord):LongWord; inline;
  begin
   {}
   Result:=((X or Y) and Z) or (X and Y);
  end;
- 
+
  function SHA256S(X,N:LongWord):LongWord; inline;
  begin
   {}
@@ -6701,7 +8649,7 @@ procedure SHA256Compress(var Context:TSHA256Context;Buffer:Pointer);
  function SHA256Sigma1(X:LongWord):LongWord; inline;
  begin
   {}
-  Result:=SHA256S(X,6) xor SHA256S(X,11) xor SHA256S(X,25)
+  Result:=SHA256S(X,6) xor SHA256S(X,11) xor SHA256S(X,25);
  end;
 
  function SHA256Gamma0(X:LongWord):LongWord; inline;
@@ -6727,8 +8675,8 @@ procedure SHA256Compress(var Context:TSHA256Context;Buffer:Pointer);
   D:=D + Temp0;
   H:=Temp0 + Temp1;
  end;
- 
-var 
+
+var
  Temp:LongWord;
  Count:LongWord;
  Offset:PtrUInt;
@@ -6737,14 +8685,14 @@ var
 begin
  {}
  if Buffer = nil then Exit;
- 
+
  {Copy the state}
  for Count:=0 to 7 do
   begin
    State[Count]:=Context.State[Count];
   end;
-  
- {Fill W[0..15] (Data) with the data} 
+
+ {Fill W[0..15] (Data) with the data}
  Offset:=0;
  for Count:=0 to 15 do
   begin
@@ -6752,36 +8700,147 @@ begin
    Data[Count]:=PLongWord(PtrUInt(Buffer) + Offset)^;
    Inc(Offset,4);
   end;
- 
+
  {Fill W[16..63] (Data) with extended values}
  for Count:=16 to 63 do
   begin
    Data[Count]:=SHA256Gamma1(Data[Count - 2]) + Data[Count - 7] + SHA256Gamma0(Data[Count - 15]) + Data[Count - 16];
   end;
- 
+
  {Perform the compression rounds}
  for Count:=0 to 63 do
   begin
    {Round X}
    SHA256Round(State[0],State[1],State[2],State[3],State[4],State[5],State[6],State[7],@Data,Count);
-   
+
    {Rotate state}
    Temp:=State[7];
    State[7]:=State[6];
    State[6]:=State[5];
-   State[5]:=State[4]; 
+   State[5]:=State[4];
    State[4]:=State[3];
    State[3]:=State[2];
    State[2]:=State[1];
    State[1]:=State[0];
    State[0]:=Temp;
   end;
- 
+
  {Save the state}
  for Count:=0 to 7 do
   begin
    Inc(Context.State[Count],State[Count]);
   end;
+end;
+
+{==============================================================================}
+
+procedure SHA256Process(var Context:TSHA256Context;Data:Pointer;Size:LongWord);
+{Add more bytes to the data buffer, add to the hash in 64 byte chunks}
+var
+ Count:PtrUInt;
+ Offset:PtrUInt;
+begin
+ {}
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $3F;
+
+ {Update the total bit count}
+ Inc(Context.Count,(Size shl 3));
+
+ {Check size and buffer count}
+ if (Count + Size) > 63 then
+  begin
+   {Get bytes remaining to fill the buffer}
+   Offset:=64 - Count;
+
+   {Copy to data buffer}
+   System.Move(Data^,Context.Data[Count],Offset);
+
+   {Reverse the bytes}
+   BytesToBE32(@Context.Data[0],16);
+
+   {Add to hash}
+   SHA256Compress(Context,@Context.Data[0]);
+
+   {Reset buffer count}
+   Count:=0;
+
+   {Process 64 byte chunks of data}
+   while (Offset + 63) < Size do
+    begin
+     {Copy to data buffer}
+     System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[0],64);
+
+     {Reverse the bytes}
+     BytesToBE32(@Context.Data[0],16);
+
+     {Add to hash}
+     SHA256Compress(Context,@Context.Data[0]);
+
+     {Update offset}
+     Inc(Offset,64);
+    end;
+  end
+ else
+  begin
+   {Reset offset}
+   Offset:=0;
+  end;
+
+ {Copy remaining bytes to data buffer}
+ System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[Count],Size - Offset);
+end;
+
+{==============================================================================}
+
+procedure SHA256Complete(var Context:TSHA256Context;var Digest:TSHA256Digest);
+{Finalize the SHA256 context by padding to a 64 Byte boundary, adding
+ QWord count of bits processed and copying the hash to the digest}
+var
+ Total:QWord;
+ Count:PtrUInt;
+ Padding:TSHA256ByteBuffer;
+begin
+ {}
+ {Get the total bit count}
+ Total:=Int64NtoBE(Context.Count);
+
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $3F;
+
+ {Fill the padding with zeros}
+ FillChar(Padding[0],SizeOf(TSHA256ByteBuffer),0);
+
+ {Set the first padding byte to $80}
+ Padding[0]:=$80;
+
+ {Determine bytes of padding to make 64 byte buffer}
+ if Count >= 56 then
+  begin
+   Count:=120 - Count;
+  end
+ else
+  begin
+   Count:=56 - Count;
+  end;
+
+ {Pad the buffer to 56 bytes}
+ SHA256Process(Context,@Padding[0],Count);
+
+ {Add total count of bits}
+ SHA256Process(Context,@Total,8);
+
+ {Reverse the hash}
+ BytesToBE32(@Context.State[0],8);
+
+ {Copy the hash to the digest}
+ System.Move(Context.State[0],Digest,32);
+
+ {Clear the context to prevent data leakage}
+ FillChar(Context,SizeOf(TSHA256Context),0);
 end;
 
 {==============================================================================}
@@ -6792,17 +8851,351 @@ var
 begin
  {}
  Result:='';
- 
+
  if Digest = nil then Exit;
- 
+
  for Count:=0 to 31 do
   begin
    Result:=Result + HexStr(Digest[Count],2);
   end;
- 
+
  Result:=Lowercase(Result);
 end;
- 
+
+{==============================================================================}
+{==============================================================================}
+{SHA384 Helper Functions}
+procedure SHA384Init(var Context:TSHA384Context);
+{Initialize a SHA384 context with constants}
+begin
+ {}
+ {Set the state constants}
+ Context.State[0]:=$cbbb9d5dc1059ed8;
+ Context.State[1]:=$629a292a367cd507;
+ Context.State[2]:=$9159015a3070dd17;
+ Context.State[3]:=$152fecd8f70e5939;
+ Context.State[4]:=$67332667ffc00b31;
+ Context.State[5]:=$8eb44a8768581511;
+ Context.State[6]:=$db0c2e0d64f98fa7;
+ Context.State[7]:=$47b5481dbefa4fa4;
+
+ {Zero the bit count}
+ Context.Count:=0;
+end;
+
+{==============================================================================}
+
+procedure SHA384Process(var Context:TSHA384Context;Data:Pointer;Size:LongWord);
+{Add more bytes to the data buffer, add to the hash in 128 byte chunks}
+begin
+ {}
+ SHA512Process(Context,Data,Size);
+end;
+
+{==============================================================================}
+
+procedure SHA384Complete(var Context:TSHA384Context;var Digest:TSHA384Digest);
+{Finalize the SHA384 context by padding to a 128 Byte boundary, adding
+ QWord count of bits processed and copying the hash to the digest}
+var
+ SHA512Digest:TSHA512Digest;
+begin
+ {}
+ SHA512Complete(Context,SHA512Digest);
+
+ System.Move(SHA512Digest,Digest,SizeOf(TSHA384Digest));
+end;
+
+{==============================================================================}
+
+function SHA384DigestToString(Digest:PSHA384Digest):String;
+var
+ Count:Integer;
+begin
+ {}
+ Result:='';
+
+ if Digest = nil then Exit;
+
+ for Count:=0 to 47 do
+  begin
+   Result:=Result + HexStr(Digest[Count],2);
+  end;
+
+ Result:=Lowercase(Result);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{SHA512 Helper Functions}
+procedure SHA512Init(var Context:TSHA512Context);
+{Initialize a SHA512 context with constants}
+begin
+ {}
+ {Set the state constants}
+ Context.State[0]:=$6a09e667f3bcc908;
+ Context.State[1]:=$bb67ae8584caa73b;
+ Context.State[2]:=$3c6ef372fe94f82b;
+ Context.State[3]:=$a54ff53a5f1d36f1;
+ Context.State[4]:=$510e527fade682d1;
+ Context.State[5]:=$9b05688c2b3e6c1f;
+ Context.State[6]:=$1f83d9abfb41bd6b;
+ Context.State[7]:=$5be0cd19137e2179;
+
+ {Zero the bit count}
+ Context.Count:=0;
+end;
+
+{==============================================================================}
+
+procedure SHA512Compress(var Context:TSHA512Context;Buffer:Pointer);
+{The core SHA512 algorithm, adds an additional 128 Bytes (1024 bits) to the hash}
+
+ function SHA512ROR64c(X,Y:QWord):QWord; inline; {Not Used}
+ begin
+  {}
+  Result:=(((X and $FFFFFFFFFFFFFFFF) shr (Y and 63)) or (X shl (64 - (Y and 63)))) and $FFFFFFFFFFFFFFFF;
+ end;
+
+ function SHA512Ch(X,Y,Z:QWord):QWord; inline;
+ begin
+  {}
+  Result:=Z xor (X and (Y xor Z));
+ end;
+
+ function SHA512Maj(X,Y,Z:QWord):QWord; inline;
+ begin
+  {}
+  Result:=((X or Y) and Z) or (X and Y);
+ end;
+
+ function SHA512S(X,N:QWord):QWord; inline;
+ begin
+  {}
+  {Result:=SHA512ROR64c(X,N);}
+  Result:=RorQWord(X,N);
+ end;
+
+ function SHA512R(X,N:QWord):QWord; inline;
+ begin
+  {}
+  Result:=(X and $FFFFFFFFFFFFFFFF) shr N;
+ end;
+
+ function SHA512Sigma0(X:QWord):QWord; inline;
+ begin
+  {}
+  Result:=SHA512S(X,28) xor SHA512S(X,34) xor SHA512S(X,39);
+ end;
+
+ function SHA512Sigma1(X:QWord):QWord; inline;
+ begin
+  {}
+  Result:=SHA512S(X,14) xor SHA512S(X,18) xor SHA512S(X,41);
+ end;
+
+ function SHA512Gamma0(X:QWord):QWord; inline;
+ begin
+  {}
+  Result:=SHA512S(X,1) xor SHA512S(X,8) xor SHA512R(X,7);
+ end;
+
+ function SHA512Gamma1(X:QWord):QWord; inline;
+ begin
+  {}
+  Result:=SHA512S(X,19) xor SHA512S(X,61) xor SHA512R(X,6);
+ end;
+var
+ Count:LongWord;
+ Offset:PtrUInt;
+
+ Temp0:QWord;
+ Temp1:QWord;
+ Data:TSHA512_W;
+ State:array[0..7] of QWord;
+begin
+ {}
+ if Buffer = nil then Exit;
+
+ {Copy the state}
+ for Count:=0 to 7 do
+  begin
+   State[Count]:=Context.State[Count];
+  end;
+
+ {Fill W[0..15] (Data) with the data}
+ Offset:=0;
+ for Count:=0 to 15 do
+  begin
+   {Data[Count]:=QWordNtoBE(PQWord(PtrUInt(Buffer) + Offset)^);} {Big endian swap moved to SHA512Process}
+   Data[Count]:=PQWord(PtrUInt(Buffer) + Offset)^;
+   Inc(Offset,8);
+  end;
+
+ {Fill W[16..79] (Data) with extended values}
+ for Count:=16 to 79 do
+  begin
+   Data[Count]:=SHA512Gamma1(Data[Count - 2]) + Data[Count - 7] + SHA512Gamma0(Data[Count - 15]) + Data[Count - 16];
+  end;
+
+ {Perform the compression rounds}
+ for Count:=0 to 79 do
+  begin
+   Temp0:=State[7] + SHA512Sigma1(State[4]) + SHA512Ch(State[4],State[5],State[6]) + SHA512_K[Count] + Data[Count];
+   Temp1:=SHA512Sigma0(State[0]) + SHA512Maj(State[0],State[1],State[2]);
+   State[7]:=State[6];
+   State[6]:=State[5];
+   State[5]:=State[4];
+   State[4]:=State[3] + Temp0;
+   State[3]:=State[2];
+   State[2]:=State[1];
+   State[1]:=State[0];
+   State[0]:=Temp0 + Temp1;
+  end;
+
+ {Save the state}
+ for Count:=0 to 7 do
+  begin
+   Inc(Context.State[Count],State[Count]);
+  end;
+end;
+
+{==============================================================================}
+
+procedure SHA512Process(var Context:TSHA512Context;Data:Pointer;Size:LongWord);
+{Add more bytes to the data buffer, add to the hash in 128 byte chunks}
+var
+ Count:PtrUInt;
+ Offset:PtrUInt;
+begin
+ {}
+ if Data = nil then Exit;
+ if Size = 0 then Exit;
+
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $7F;
+
+ {Update the total bit count}
+ Inc(Context.Count,(Size shl 3));
+
+ {Check size and buffer count}
+ if (Count + Size) > 127 then
+  begin
+   {Get bytes remaining to fill the buffer}
+   Offset:=128 - Count;
+
+   {Copy to data buffer}
+   System.Move(Data^,Context.Data[Count],Offset);
+
+   {Reverse the bytes}
+   BytesToBE64(@Context.Data[0],16);
+
+   {Add to hash}
+   SHA512Compress(Context,@Context.Data[0]);
+
+   {Reset buffer count}
+   Count:=0;
+
+   {Process 128 byte chunks of data}
+   while (Offset + 127) < Size do
+    begin
+     {Copy to data buffer}
+     System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[0],128);
+
+     {Reverse the bytes}
+     BytesToBE64(@Context.Data[0],16);
+
+     {Add to hash}
+     SHA512Compress(Context,@Context.Data[0]);
+
+     {Update offset}
+     Inc(Offset,128);
+    end;
+  end
+ else
+  begin
+   {Reset offset}
+   Offset:=0;
+  end;
+
+ {Copy remaining bytes to data buffer}
+ System.Move(Pointer(PtrUInt(Data) + Offset)^,Context.Data[Count],Size - Offset);
+end;
+
+{==============================================================================}
+
+procedure SHA512Complete(var Context:TSHA512Context;var Digest:TSHA512Digest);
+{Finalize the SHA512 context by padding to a 128 Byte boundary, adding
+ QWord count of bits processed and copying the hash to the digest}
+var
+ Total:QWord;
+ Count:PtrUInt;
+ Extra:PtrUInt;
+ Padding:TSHA512ByteBuffer;
+begin
+ {}
+ {Get the total bit count}
+ Total:=Int64NtoBE(Context.Count);
+
+ {Get the data buffer count}
+ Count:=(Context.Count shr 3) and $7F;
+
+ {Fill the padding with zeros}
+ FillChar(Padding[0],SizeOf(TSHA512ByteBuffer),0);
+
+ {Set the first padding byte to $80}
+ Padding[0]:=$80;
+
+ {Determine bytes of padding to make 128 byte buffer}
+ {Total count of bits is a 128 bit integer but we only ever use 64 bits}
+ if Count >= 112 then
+  begin
+   {Pad the buffer to 128 bytes}
+   SHA512Process(Context,@Padding[0],128 - Count);
+
+   {Update Count}
+   Count:=0;
+
+   {Clear the padding byte}
+   Padding[0]:=0;
+  end;
+
+ {Pad the buffer to 120 bytes}
+ Count:=120 - Count;
+ SHA512Process(Context,@Padding[0],Count);
+
+ {Add total count of bits}
+ SHA512Process(Context,@Total,8);
+
+ {Reverse the hash}
+ BytesToBE64(@Context.State[0],8);
+
+ {Copy the hash to the digest}
+ System.Move(Context.State[0],Digest,64);
+
+ {Clear the context to prevent data leakage}
+ FillChar(Context,SizeOf(TSHA512Context),0);
+end;
+
+{==============================================================================}
+
+function SHA512DigestToString(Digest:PSHA512Digest):String;
+var
+ Count:Integer;
+begin
+ {}
+ Result:='';
+
+ if Digest = nil then Exit;
+
+ for Count:=0 to 63 do
+  begin
+   Result:=Result + HexStr(Digest[Count],2);
+  end;
+
+ Result:=Lowercase(Result);
+end;
+
 {==============================================================================}
 {==============================================================================}
 {RSA Helper Functions}
@@ -6817,11 +9210,20 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{MIME64 Helper Functions}
-procedure MIME64InitTables;
+{Base64 Helper Functions}
+procedure Base64InitTables;
+var
+ Count:Integer;
 begin
  {}
- //To Do
+ FillChar(Base64DecodeTable,SizeOf(TBase64DecodeTable),#128); {0x80}
+
+ for Count:=1 to Length(Base64EncodeTable) do
+  begin
+   Base64DecodeTable[Ord(Base64EncodeTable[Count])]:=Char(Count - 1);
+  end;
+
+ Base64DecodeTable[Ord('=')]:=#0;
 end;
 
 {==============================================================================}
@@ -6831,7 +9233,7 @@ initialization
  CryptoInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

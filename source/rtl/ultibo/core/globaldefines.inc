@@ -381,11 +381,23 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {BigInt definitions}
-{--$DEFINE BIGINT_DEBUG}                         {Enable debug output/functions for BitInt library (Default: Off)}
+{--$DEFINE BIGINT_DEBUG}                         {Enable debug output/functions for BitInt unit (Default: Off)}
+{$DEFINE BIGINT_SQUARE}                          {Enable use of squaring instead of multiplication (Default: On)}
+{$DEFINE BIGINT_SLIDING_WINDOW}                  {Enable use of Sliding-Window Exponentiation (Default: On)}
+{$DEFINE BIGINT_CRT}                             {Enable use of the Chinese Remainder Theorem (Default: On)}
+{$DEFINE BIGINT_BARRETT}                         {Enable use of the Barrett reduction algorithm (Default: On)}
+{--$DEFINE BIGINT_MONTGOMERY}                    {Enable use of the Montgomery reduction algorithm (Default: Off)}
+
+{ASN1 definitions}
+{--$DEFINE ASN1_DEBUG}                           {Enable debug output/functions for ASN1 unit (Default: Off)}
 
 {Crypto definitions}
+{--$DEFINE CRYPTO_DEBUG}                         {Enable debug output/functions for Crypto unit (Default: Off)}
 {--$DEFINE CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}  {Enable precomputed permutations (IP/FP) for DES cipher (Faster but bigger) (Default: Off)}
 {--$DEFINE CRYPTO_AES_PRECOMPUTED_TABLES}        {Enable precomputed tables (TE1/TE2/TE3/TE4/TD1/TD2/TD3/TD4 etc) for AES cipher (Faster but bigger) (Default: Off)}
+
+{X509 definitions}
+{--$DEFINE X509_DEBUG}                           {Enable debug output/functions for X509 unit (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

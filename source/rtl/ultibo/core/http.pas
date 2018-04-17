@@ -392,8 +392,8 @@ const
  
  {HTTP logging}
  HTTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {HTTP debugging messages}
- HTTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {HTTP informational messages,}
- HTTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {HTTP warning messages,}
+ HTTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {HTTP informational messages}
+ HTTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {HTTP warning messages}
  HTTP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {HTTP error messages}
  HTTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No HTTP messages}
 
@@ -4327,13 +4327,13 @@ begin
    {Add Authorization}
    if Length(Username) <> 0 then
     begin
-     FRequest.SetHeader(HTTP_REQUEST_HEADER_AUTHORIZATION,'Basic ' +  MIME64EncodeString(Username + ':' + Password));
+     FRequest.SetHeader(HTTP_REQUEST_HEADER_AUTHORIZATION,'Basic ' +  Base64EncodeString(Username + ':' + Password));
     end; 
    
    {Add Proxy-Authorization}
    if (Length(ProxyHost) <> 0) and (Length(ProxyUsername) <> 0) then
     begin
-     FRequest.SetHeader(HTTP_REQUEST_HEADER_PROXY_AUTH,'Basic ' +  MIME64EncodeString(ProxyUsername + ':' + ProxyPassword));
+     FRequest.SetHeader(HTTP_REQUEST_HEADER_PROXY_AUTH,'Basic ' +  Base64EncodeString(ProxyUsername + ':' + ProxyPassword));
     end; 
    
    {Setup Host/Port}

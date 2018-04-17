@@ -157,8 +157,8 @@ const
  
  {SMTP logging}
  SMTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SMTP debugging messages}
- SMTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SMTP informational messages,}
- SMTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SMTP warning messages,}
+ SMTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SMTP informational messages}
+ SMTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SMTP warning messages}
  SMTP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SMTP error messages}
  SMTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SMTP messages}
 
@@ -1035,7 +1035,7 @@ begin
      if Uppercase(Copy(Trim(AReply),1,Length(Trim(SMTP_STRING_AUTH_CHALLENGE)))) = Uppercase(Trim(SMTP_STRING_AUTH_CHALLENGE)) then
       begin
        {Send Username}
-       if not SendRequest(MIME64EncodeString(AUsername)) then Exit; 
+       if not SendRequest(Base64EncodeString(AUsername)) then Exit; 
 
        {Get Reply}
        if not GetReply(AReply) then Exit;
@@ -1044,7 +1044,7 @@ begin
        if Uppercase(Copy(Trim(AReply),1,Length(Trim(SMTP_STRING_AUTH_CHALLENGE)))) = Uppercase(Trim(SMTP_STRING_AUTH_CHALLENGE)) then
         begin
          {Send Password}
-         if not SendRequest(MIME64EncodeString(APassword)) then Exit;
+         if not SendRequest(Base64EncodeString(APassword)) then Exit;
          
          {Get Reply}
          if not GetReply(AReply) then Exit;
@@ -2677,21 +2677,21 @@ begin
        {Get Method}
        Method:=Params.Strings[0];
        
-       {Send Reply}   {Mime64 Encoded}
-       Reply:=SMTP_STRING_AUTH_CHALLENGE + MIME64EncodeString('Username:');
+       {Send Reply}   {Base64 Encoded}
+       Reply:=SMTP_STRING_AUTH_CHALLENGE + Base64EncodeString('Username:');
        if not SendReply(AThread,Reply) then Exit;
        
-       {Get Username} {Mime64 Encoded}
+       {Get Username} {Base64 Encoded}
        if not GetRequest(AThread,Username) then Exit;
-       Username:=MIME64DecodeString(Username);
+       Username:=Base64DecodeString(Username);
        
-       {Send Reply}   {Mime64 Encoded}
-       Reply:=SMTP_STRING_AUTH_CHALLENGE + MIME64EncodeString('Password:');
+       {Send Reply}   {Base64 Encoded}
+       Reply:=SMTP_STRING_AUTH_CHALLENGE + Base64EncodeString('Password:');
        if not SendReply(AThread,Reply) then Exit;
        
-       {Get Password} {Mime64 Encoded}
+       {Get Password} {Base64 Encoded}
        if not GetRequest(AThread,Password) then Exit;
-       Password:=MIME64DecodeString(Password);
+       Password:=Base64DecodeString(Password);
        
        if FOnAuth(Connection,Method,Username,Password,Reply) then
         begin
@@ -2709,16 +2709,16 @@ begin
        {Get Method}
        Method:=Params.Strings[0];
        
-       {Get Username} {Mime64 Encoded}
-       Username:=MIME64DecodeString(Params.Strings[1]);
+       {Get Username} {Base64 Encoded}
+       Username:=Base64DecodeString(Params.Strings[1]);
        
-       {Send Reply}   {Mime64 Encoded}
-       Reply:=SMTP_STRING_AUTH_CHALLENGE + MIME64EncodeString('Password:');
+       {Send Reply}   {Base64 Encoded}
+       Reply:=SMTP_STRING_AUTH_CHALLENGE + Base64EncodeString('Password:');
        if not SendReply(AThread,Reply) then Exit;
        
-       {Get Password} {Mime64 Encoded}
+       {Get Password} {Base64 Encoded}
        if not GetRequest(AThread,Password) then Exit;
-       Password:=MIME64DecodeString(Password);
+       Password:=Base64DecodeString(Password);
        
        if FOnAuth(Connection,Method,Username,Password,Reply) then
         begin
