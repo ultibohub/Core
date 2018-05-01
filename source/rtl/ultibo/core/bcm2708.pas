@@ -378,7 +378,7 @@ unit BCM2708;
  
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,MMC,Framebuffer,Audio,SysUtils; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,Framebuffer,Audio,SysUtils; 
 
 {==============================================================================}
 {Global definitions}
@@ -548,6 +548,10 @@ const
  BCM2708_UART0_MAX_FLOW = SERIAL_FLOW_RTS_CTS;
  
  BCM2708_UART0_CLOCK_RATE = 3000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
+ {$IFDEF BCM2708_UART0_RX_BUFFER}
+ BCM2708_UART0_RX_POLL_LIMIT = 256; {Number of times interrupt handler may poll the read FIFO}
+ BCM2708_UART0_RX_BUFFER_SIZE = 1024;
+ {$ENDIF}
  
  {BCM2708 UART1 (AUX) constants}
  BCM2708_UART1_DESCRIPTION = 'BCM2835 AUX (Mini) UART';
@@ -757,6 +761,11 @@ type
   Lock:TSpinHandle;                                                       {Device lock (Differs from lock in UART device) (Spin lock due to use by interrupt handler)}
   Address:Pointer;                                                        {Device register base address}
   ClockRate:LongWord;                                                     {Device clock rate}
+  {$IFDEF BCM2708_UART0_RX_BUFFER}
+  Start:LongWord;                                                         {Index of first available buffer entry}
+  Count:LongWord;                                                         {Number of available entries in the buffer}
+  Buffer:array[0..(BCM2708_UART0_RX_BUFFER_SIZE - 1)] of Word;            {Buffer for received data (Includes data and status)}
+  {$ENDIF}
   {Statistics Properties}                                        
   InterruptCount:LongWord;                                                {Number of interrupt requests received by the device}
  end;
@@ -7173,6 +7182,55 @@ end;
 function BCM2708UART0Read(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of UARTDeviceRead API for BCM2708 UART0}
 {Note: Not intended to be called directly by applications, use UARTDeviceRead instead}
+
+ {$IFDEF BCM2708_UART0_RX_BUFFER}
+ function BCM2708UART0PushRX(UART:PUARTDevice):LongWord;
+ var
+  Limit:LongWord;
+  Status:LongWord;
+ begin
+  {}
+  if SpinLockIRQ(PBCM2708UART0Device(UART).Lock) = ERROR_SUCCESS then
+   begin
+    {Memory Barrier}
+    DataMemoryBarrier; {Before the First Write}
+    
+    {Buffer Received Data}
+    Limit:=BCM2708_UART0_RX_POLL_LIMIT;
+    Status:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).FR;
+    while ((Status and BCM2835_PL011_FR_RXFE) = 0) and (PBCM2708UART0Device(UART).Count < BCM2708_UART0_RX_BUFFER_SIZE) do
+     begin
+      {Read Data}
+      PBCM2708UART0Device(UART).Buffer[(PBCM2708UART0Device(UART).Start + PBCM2708UART0Device(UART).Count) mod BCM2708_UART0_RX_BUFFER_SIZE]:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).DR;
+      
+      {Update Count}
+      Inc(PBCM2708UART0Device(UART).Count);
+      
+      {Update Limit}
+      Dec(Limit);
+      if Limit = 0 then Break;
+      
+      {Get Status}
+      Status:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).FR;
+     end;
+     
+    {Memory Barrier}
+    DataMemoryBarrier; {After the Last Read} 
+    
+    SpinUnlockIRQ(PBCM2708UART0Device(UART).Lock);
+    
+    {Set Event}
+    EventSet(UART.ReceiveWait);
+    
+    Result:=ERROR_SUCCESS;
+   end
+  else
+   begin
+    Result:=ERROR_CAN_NOT_COMPLETE;
+   end; 
+ end;
+ {$ENDIF}
+
 var
  Value:LongWord;
  Total:LongWord;
@@ -7202,8 +7260,17 @@ begin
    {Check State}
    if (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) and ((PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).FR and BCM2835_PL011_FR_RXFE) = 0) then
     begin
-     {Set Event}
+     {$IFDEF BCM2708_UART0_RX_BUFFER}
+     {Push Receive}
+     if BCM2708UART0PushRX(UART) <> ERROR_SUCCESS then
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;
+     {$ELSE}
+     {Push Receive (Set Event)}
      EventSet(UART.ReceiveWait);
+     {$ENDIF}
     end;
   
    {Check Non Blocking}
@@ -7223,6 +7290,82 @@ begin
      {Acquire the Lock}
      if MutexLock(UART.Lock) = ERROR_SUCCESS then
       begin
+       {$IFDEF BCM2708_UART0_RX_BUFFER}
+       while (PBCM2708UART0Device(UART).Count > 0) and (Size > 0) do
+        begin
+         if SpinLockIRQ(PBCM2708UART0Device(UART).Lock) = ERROR_SUCCESS then
+          begin
+           {Read Data}
+           Value:=PBCM2708UART0Device(UART).Buffer[PBCM2708UART0Device(UART).Start];
+
+           {Update Start}
+           PBCM2708UART0Device(UART).Start:=(PBCM2708UART0Device(UART).Start + 1) mod BCM2708_UART0_RX_BUFFER_SIZE;
+         
+           {Update Count}
+           Dec(PBCM2708UART0Device(UART).Count);
+          
+           SpinUnlockIRQ(PBCM2708UART0Device(UART).Lock);
+          end
+         else
+          begin
+           Result:=ERROR_CAN_NOT_COMPLETE;
+           Exit;
+          end;
+         
+         {Check for Error}
+         if (Value and BCM2835_PL011_DR_ERROR) <> 0 then
+          begin
+           {Check Error}
+           if (Value and BCM2835_PL011_DR_OE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Overrun error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_OVERRUN_ERROR;
+            end;
+           if (Value and BCM2835_PL011_DR_BE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Break error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_BREAK_ERROR;
+            end;
+           if (Value and BCM2835_PL011_DR_PE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Parity error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_PARITY_ERROR;
+            end;
+           if (Value and BCM2835_PL011_DR_FE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Framing error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_FRAMING_ERROR;
+            end;
+           
+           {Update Statistics}
+           Inc(UART.ReceiveErrors);
+          end;
+
+         {Save Data}
+         PByte(Buffer + Offset)^:=Value and BCM2835_PL011_DR_DATA;
+         
+         {Update Statistics}
+         Inc(UART.ReceiveCount);
+         
+         {Update Count}
+         Inc(Count);
+         
+         {Update Size and Offset}
+         Dec(Size);
+         Inc(Offset);
+        end;
+        
+       {Check Count} 
+       if PBCM2708UART0Device(UART).Count = 0 then
+        begin
+         {Reset Event}
+         EventReset(UART.ReceiveWait);
+        end;
+       {$ELSE}
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
  
@@ -7240,18 +7383,26 @@ begin
            if (Value and BCM2835_PL011_DR_OE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Overrun error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_OVERRUN_ERROR;
             end;
            if (Value and BCM2835_PL011_DR_BE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Break error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_BREAK_ERROR;
             end;
            if (Value and BCM2835_PL011_DR_PE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Parity error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_PARITY_ERROR;
             end;
            if (Value and BCM2835_PL011_DR_FE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'BCM2708: Framing error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_FRAMING_ERROR;
             end;
            
            {Update Statistics}
@@ -7284,6 +7435,7 @@ begin
  
        {Memory Barrier}
        DataMemoryBarrier; {After the Last Read} 
+       {$ENDIF}
       end
      else
       begin
@@ -7296,8 +7448,17 @@ begin
      {Acquire the Lock}
      if MutexLock(UART.Lock) = ERROR_SUCCESS then
       begin
+       {$IFDEF BCM2708_UART0_RX_BUFFER}
+       {Push Receive}
+       if BCM2708UART0PushRX(UART) <> ERROR_SUCCESS then
+        begin
+         Result:=ERROR_CAN_NOT_COMPLETE;
+         Exit;
+        end;
+       {$ELSE}
        {Push Receive (Set Event)}
        EventSet(UART.ReceiveWait);
+       {$ENDIF}
       end
      else
       begin
@@ -7480,21 +7641,37 @@ begin
  
  {Get Status}
  Status:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).RSRECR;
- if (Status and BCM2835_PL011_RSRECR_OE) <> 0 then
+ if Status <> 0 then
   begin
-   Result:=Result or UART_STATUS_OVERRUN_ERROR;
-  end;
- if (Status and BCM2835_PL011_RSRECR_BE) <> 0 then
+   if (Status and BCM2835_PL011_RSRECR_OE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_OVERRUN_ERROR;
+    end;
+   if (Status and BCM2835_PL011_RSRECR_BE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_BREAK_ERROR;
+    end;
+   if (Status and BCM2835_PL011_RSRECR_PE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_PARITY_ERROR;
+    end;
+   if (Status and BCM2835_PL011_RSRECR_FE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_FRAMING_ERROR;
+    end;
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Clear Status} 
+   PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).RSRECR:=0;  
+  end;  
+
+ {Get UART Status} 
+ if UART.UARTStatus <> UART_STATUS_NONE then
   begin
-   Result:=Result or UART_STATUS_BREAK_ERROR;
-  end;
- if (Status and BCM2835_PL011_RSRECR_PE) <> 0 then
-  begin
-   Result:=Result or UART_STATUS_PARITY_ERROR;
-  end;
- if (Status and BCM2835_PL011_RSRECR_FE) <> 0 then
-  begin
-   Result:=Result or UART_STATUS_FRAMING_ERROR;
+   Result:=Result or UART.UARTStatus;
+   {Clear UART Status}
+   UART.UARTStatus:=UART_STATUS_NONE;
   end;
 
  {Get Control}
@@ -7554,6 +7731,9 @@ procedure BCM2708UART0InterruptHandler(UART:PUARTDevice);
 {Interrupt handler for the BCM2708 UART0 device}
 {Note: Not intended to be called directly by applications}
 var
+ {$IFDEF BCM2708_UART0_RX_BUFFER}
+ Limit:LongWord;
+ {$ENDIF}
  Status:LongWord;
 begin
  {}
@@ -7596,6 +7776,27 @@ begin
      {Acknowledge Receive}
      PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).ICR:=BCM2835_PL011_ICR_RXIC;
 
+     {$IFDEF BCM2708_UART0_RX_BUFFER}
+     {Buffer Received Data}
+     Limit:=BCM2708_UART0_RX_POLL_LIMIT;
+     Status:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).FR;
+     while ((Status and BCM2835_PL011_FR_RXFE) = 0) and (PBCM2708UART0Device(UART).Count < BCM2708_UART0_RX_BUFFER_SIZE) do
+      begin
+       {Read Data}
+       PBCM2708UART0Device(UART).Buffer[(PBCM2708UART0Device(UART).Start + PBCM2708UART0Device(UART).Count) mod BCM2708_UART0_RX_BUFFER_SIZE]:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).DR;
+       
+       {Update Count}
+       Inc(PBCM2708UART0Device(UART).Count);
+       
+       {Update Limit}
+       Dec(Limit);
+       if Limit = 0 then Break;
+       
+       {Get Status}
+       Status:=PBCM2835PL011Registers(PBCM2708UART0Device(UART).Address).FR;
+      end;
+     {$ENDIF}
+     
      {Send Receive}
      WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2708UART0Receive),UART,nil);
     end;
@@ -7613,30 +7814,50 @@ end;
 procedure BCM2708UART0Receive(UART:PUARTDevice);
 {Receive handler for the BCM2708 UART0 device}
 {Note: Not intended to be called directly by applications}
+var
+ Serial:PSerialDevice;
 begin
  {}
  {Check UART}
  if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2708: UART0 Receive');
  {$ENDIF}
  
- {Acquire the Lock}
- if MutexLock(UART.Lock) = ERROR_SUCCESS then
+ {Check Mode}
+ if UART.UARTMode = UART_MODE_SERIAL then
   begin
-   {Set Event}
-   EventSet(UART.ReceiveWait);
+   {Get Serial}
+   Serial:=UART.Serial;
+   if Serial = nil then Exit;
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
    
-   {Check Mode}
-   if UART.UARTMode = UART_MODE_SERIAL then
+   {Acquire the Lock}
+   if MutexLock(Serial.Lock) = ERROR_SUCCESS then
     begin
+     {Set Event}
+     EventSet(UART.ReceiveWait);
+     
      {Serial Receive}
      UARTSerialDeviceReceive(UART);
+ 
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
     end;
-
-   {Release the Lock}
-   MutexUnlock(UART.Lock);
+  end
+ else if UART.UARTMode = UART_MODE_UART then
+  begin
+   {Acquire the Lock}
+   if MutexLock(UART.Lock) = ERROR_SUCCESS then
+    begin
+     {Set Event}
+     EventSet(UART.ReceiveWait);
+     
+     {Release the Lock}
+     MutexUnlock(UART.Lock);
+    end;
   end;
 end;
 
@@ -7645,30 +7866,50 @@ end;
 procedure BCM2708UART0Transmit(UART:PUARTDevice);
 {Transmit handler for the BCM2708 UART0 device}
 {Note: Not intended to be called directly by applications}
+var
+ Serial:PSerialDevice;
 begin
  {}
  {Check UART}
  if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'BCM2708: UART0 Transmit');
  {$ENDIF}
  
- {Acquire the Lock}
- if MutexLock(UART.Lock) = ERROR_SUCCESS then
+ {Check Mode}
+ if UART.UARTMode = UART_MODE_SERIAL then
   begin
-   {Set Event}
-   EventSet(UART.TransmitWait);
+   {Get Serial}
+   Serial:=UART.Serial;
+   if Serial = nil then Exit;
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
    
-   {Check Mode}
-   if UART.UARTMode = UART_MODE_SERIAL then
+   {Acquire the Lock}
+   if MutexLock(Serial.Lock) = ERROR_SUCCESS then
     begin
+     {Set Event}
+     EventSet(UART.TransmitWait);
+     
      {Serial Transmit}
      UARTSerialDeviceTransmit(UART);
-    end;    
-
-   {Release the Lock}
-   MutexUnlock(UART.Lock);
+ 
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
+    end;
+  end
+ else if UART.UARTMode = UART_MODE_UART then
+  begin
+   {Acquire the Lock}
+   if MutexLock(UART.Lock) = ERROR_SUCCESS then
+    begin
+     {Set Event}
+     EventSet(UART.TransmitWait);
+     
+     {Release the Lock}
+     MutexUnlock(UART.Lock);
+    end;
   end;
 end;
 

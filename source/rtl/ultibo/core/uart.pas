@@ -1634,18 +1634,8 @@ begin
    {Check State}
    if (Timeout <> INFINITE) and (EventState(Serial.Receive.Wait) <> EVENT_STATE_SIGNALED) then
     begin
-     {Release the Lock}
-     MutexUnlock(Serial.Lock);
-     
      {Push Receive}
      UARTSerialDeviceReceive(UART);
-     
-     {Acquire the Lock}
-     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
-      begin
-       Result:=ERROR_CAN_NOT_COMPLETE;
-       Exit;
-      end;      
     end;
    
    {Check Non Blocking}
@@ -1715,11 +1705,13 @@ begin
     end
    else if Status = ERROR_WAIT_TIMEOUT then
     begin
-     {Push Receive}
-     UARTSerialDeviceReceive(UART);
-     
      {Acquire the Lock}
-     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+     if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+      begin
+       {Push Receive}
+       UARTSerialDeviceReceive(UART);
+      end
+     else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
@@ -1797,18 +1789,8 @@ begin
    {Check State}
    if (Timeout <> INFINITE) and (EventState(Serial.Transmit.Wait) <> EVENT_STATE_SIGNALED) then
     begin
-     {Release the Lock}
-     MutexUnlock(Serial.Lock);
-     
      {Push Transmit}
      UARTSerialDeviceTransmit(UART);
-     
-     {Acquire the Lock}
-     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
-      begin
-       Result:=ERROR_CAN_NOT_COMPLETE;
-       Exit;
-      end;      
     end;    
    
    {Check Non Blocking}
@@ -1888,11 +1870,13 @@ begin
     end
    else if Status = ERROR_WAIT_TIMEOUT then
     begin
-     {Push Transmit}
-     UARTSerialDeviceTransmit(UART);
-     
      {Acquire the Lock}
-     if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+     if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+      begin
+       {Push Transmit}
+       UARTSerialDeviceTransmit(UART);
+      end
+     else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
@@ -1989,11 +1973,13 @@ begin
       end
      else if Status = ERROR_WAIT_TIMEOUT then
       begin
-       {Push Receive}
-       UARTSerialDeviceReceive(UART);
-
        {Acquire the Lock}
-       if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+       if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+        begin
+         {Push Receive}
+         UARTSerialDeviceReceive(UART);
+        end
+       else
         begin
          Result:=ERROR_CAN_NOT_COMPLETE;
          Exit;
@@ -2050,11 +2036,13 @@ begin
       end
      else if Status = ERROR_WAIT_TIMEOUT then
       begin
-       {Push Transmit}
-       UARTSerialDeviceTransmit(UART);
-       
        {Acquire the Lock}
-       if MutexLock(Serial.Lock) <> ERROR_SUCCESS then
+       if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+        begin
+         {Push Transmit}
+         UARTSerialDeviceTransmit(UART);
+        end 
+       else
         begin
          Result:=ERROR_CAN_NOT_COMPLETE;
          Exit;
@@ -2438,6 +2426,8 @@ end;
 function UARTSerialDeviceReceive(UART:PUARTDevice):LongWord;
 {Read data from a UART device into the receive buffer of the associated Serial device}
 {Note: Not intended to be called directly by applications}
+
+{Note: Caller must hold the lock on the serial device which owns the UART}
 var
  Lock:Boolean;
  Data:Pointer;
@@ -2472,76 +2462,49 @@ begin
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if UART.UARTState <> UART_STATE_ENABLED then Exit;
- 
- {Check Lock}
- Lock:=(MutexOwner(UART.Lock) <> ThreadGetCurrent);
- 
- {Acquire the Lock (UART)}
- if Lock and (MutexLock(UART.Lock) <> ERROR_SUCCESS) then
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-   Exit;
-  end;
 
- {Acquire the Lock (UART)} {Second recursion to allow for release by UARTDeviceRead}
+ {Acquire the Lock}
  if MutexLock(UART.Lock) = ERROR_SUCCESS then
   begin
-   {Acquire the Lock (Serial)}
-   if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+   {Setup Count}
+   Count:=0;
+  
+   {Start Write}
+   Data:=SerialBufferWriteStart(@Serial.Receive,Available);
+   while (Data <> nil) and (Available > 0) do
     begin
-     {Setup Count}
-     Count:=0;
-    
+     {Read from UART}
+     UART.DeviceRead(UART,Data,Available,UART_READ_NON_BLOCK,Added);
+     
+     {Complete Write}
+     if Added > 0 then SerialBufferWriteComplete(@Serial.Receive,Added);
+     
+     {Update Count}
+     Inc(Count,Added);
+     
+     {Check Added}
+     if Added < Available then Break;
+     
      {Start Write}
      Data:=SerialBufferWriteStart(@Serial.Receive,Available);
-     while (Data <> nil) and (Available > 0) do
-      begin
-       {Read from UART}
-       UART.DeviceRead(UART,Data,Available,UART_READ_NON_BLOCK,Added);
-       
-       {Complete Write}
-       if Added > 0 then SerialBufferWriteComplete(@Serial.Receive,Added);
-       
-       {Update Count}
-       Inc(Count,Added);
-       
-       {Check Added}
-       if Added < Available then Break;
-       
-       {Start Write}
-       Data:=SerialBufferWriteStart(@Serial.Receive,Available);
-      end; 
-   
-     {Check Count}
-     if Count > 0 then
-      begin
-       {Set Event}
-       EventSet(Serial.Receive.Wait);
-      end;
-   
-     Result:=ERROR_SUCCESS;
-     
-     {Release the Lock (Serial)}
-     MutexUnlock(Serial.Lock);
-    end
-   else
+    end; 
+ 
+   {Check Count}
+   if Count > 0 then
     begin
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;      
+     {Set Event}
+     EventSet(Serial.Receive.Wait);
+    end;
+ 
+   Result:=ERROR_SUCCESS;
 
-   {Release the Lock (UART)} {Second recursion to allow for release by UARTDeviceRead}
+   {Release the Lock}
    MutexUnlock(UART.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;      
-  
- if Lock then
-  begin
-   {Release the Lock (UART))}
-   MutexUnlock(UART.Lock);
-  end; 
 end;
 
 {==============================================================================}
@@ -2549,8 +2512,9 @@ end;
 function UARTSerialDeviceTransmit(UART:PUARTDevice):LongWord;
 {Write data to a UART device from the transmit buffer of the associated Serial device}
 {Note: Not intended to be called directly by applications}
+
+{Note: Caller must hold the lock on the serial device which owns the UART}
 var
- Lock:Boolean;
  Data:Pointer;
  Count:LongWord;
  Removed:LongWord;
@@ -2584,75 +2548,48 @@ begin
  Result:=ERROR_NOT_SUPPORTED;
  if UART.UARTState <> UART_STATE_ENABLED then Exit;
  
- {Check Lock}
- Lock:=(MutexOwner(UART.Lock) <> ThreadGetCurrent);
- 
- {Acquire the Lock (UART)}
- if Lock and (MutexLock(UART.Lock) <> ERROR_SUCCESS) then
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-   Exit;
-  end;
- 
- {Acquire the Lock (UART)} {Second recursion to allow for release by UARTDeviceWrite}
+ {Acquire the Lock}
  if MutexLock(UART.Lock) = ERROR_SUCCESS then
   begin
-   {Acquire the Lock (Serial)}
-   if MutexLock(Serial.Lock) = ERROR_SUCCESS then
+   {Setup Count}
+   Count:=0;
+   
+   {Start Read}
+   Data:=SerialBufferReadStart(@Serial.Transmit,Available);
+   while (Data <> nil) and (Available > 0) do
     begin
-     {Setup Count}
-     Count:=0;
+     {Write to UART}
+     UART.DeviceWrite(UART,Data,Available,UART_WRITE_NON_BLOCK,Removed);
+     
+     {Complete Read}
+     if Removed > 0 then SerialBufferReadComplete(@Serial.Transmit,Removed);
+     
+     {Update Count}
+     Inc(Count,Removed);
+     
+     {Check Removed}
+     if Removed < Available then Break;
      
      {Start Read}
      Data:=SerialBufferReadStart(@Serial.Transmit,Available);
-     while (Data <> nil) and (Available > 0) do
-      begin
-       {Write to UART}
-       UART.DeviceWrite(UART,Data,Available,UART_WRITE_NON_BLOCK,Removed);
-       
-       {Complete Read}
-       if Removed > 0 then SerialBufferReadComplete(@Serial.Transmit,Removed);
-       
-       {Update Count}
-       Inc(Count,Removed);
-       
-       {Check Removed}
-       if Removed < Available then Break;
-       
-       {Start Read}
-       Data:=SerialBufferReadStart(@Serial.Transmit,Available);
-      end; 
-     
-     {Check Count}
-     if Count > 0 then
-      begin
-       {Set Event}
-       EventSet(Serial.Transmit.Wait);
-      end;
-      
-     Result:=ERROR_SUCCESS;
-     
-     {Release the Lock (Serial)}
-     MutexUnlock(Serial.Lock);
-    end
-   else
+    end; 
+   
+   {Check Count}
+   if Count > 0 then
     begin
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;      
+     {Set Event}
+     EventSet(Serial.Transmit.Wait);
+    end;
+    
+   Result:=ERROR_SUCCESS;
   
-   {Release the Lock (UART)} {Second recursion to allow for release by UARTDeviceWrite}
+   {Release the Lock}
    MutexUnlock(UART.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;      
-  
- if Lock then
-  begin
-   {Release the Lock (UART))}
-   MutexUnlock(UART.Lock);
-  end; 
 end;
 
 {==============================================================================}

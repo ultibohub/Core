@@ -1,7 +1,7 @@
 {
 Ultibo Serial interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -41,7 +41,7 @@ Serial Devices
  includes a set of flags that indicate what features are supported.
  
  Reads from and writes to serial devices are buffered so that varying data transfer rates can be
- accomodated and both reads and writes allow for non blocking so that a caller can avoid waiting
+ accommodated and both reads and writes allow for non blocking so that a caller can avoid waiting
  for received data to be available or the device to be ready to transmit.
  
  This unit also implements the serial logging device which can be configured via parameters in the
@@ -133,7 +133,7 @@ const
  SERIAL_STATUS_RX_FULL       = $00000010; {Receive buffer is full}
  SERIAL_STATUS_RX_EMPTY      = $00000020; {Receive buffer is empty}
  SERIAL_STATUS_TX_FULL       = $00000040; {Transmit buffer is full}
- SERIAL_STATUS_TX_EMPTY      = $00000080; {Transmit buffer is empry}
+ SERIAL_STATUS_TX_EMPTY      = $00000080; {Transmit buffer is empty}
  SERIAL_STATUS_BUSY          = $00000100; {Device is busy}
  SERIAL_STATUS_BREAK_ERROR   = $00000200; {Break error reported}
  SERIAL_STATUS_PARITY_ERROR  = $00000400; {Parity error reported}

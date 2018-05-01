@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL011 UART Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -43,7 +43,7 @@ unit PL011;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,UART,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,UART,Serial,SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -68,7 +68,11 @@ const
  PL011_UART_MAX_FLOW = SERIAL_FLOW_RTS_CTS;
  
  PL011_UART_CLOCK_RATE = 24000000; 
-
+ {$IFDEF PL011_UART_RX_BUFFER}
+ PL011_UART_RX_POLL_LIMIT = 256; {Number of times interrupt handler may poll the read FIFO}
+ PL011_UART_RX_BUFFER_SIZE = 1024;
+ {$ENDIF}
+ 
 const
  {PL011 UART Data register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_DR_OE    = (1 shl 11);   {Overrun error}
@@ -263,6 +267,11 @@ type
   Lock:TSpinHandle;                                                       {Device lock (Differs from lock in UART device) (Spin lock due to use by interrupt handler)}
   ClockRate:LongWord;                                                     {Device clock rate}
   Registers:PPL011UARTRegisters;                                          {Device registers}
+  {$IFDEF PL011_UART_RX_BUFFER}
+  Start:LongWord;                                                         {Index of first available buffer entry}
+  Count:LongWord;                                                         {Number of available entries in the buffer}
+  Buffer:array[0..(PL011_UART_RX_BUFFER_SIZE - 1)] of Word;               {Buffer for received data (Includes data and status)}
+  {$ENDIF}
   {Statistics Properties}                                        
   InterruptCount:LongWord;                                                {Number of interrupt requests received by the device}
  end;
@@ -697,6 +706,64 @@ end;
 function PL011UARTRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of UARTDeviceRead API for PL011 UART}
 {Note: Not intended to be called directly by applications, use UARTDeviceRead instead}
+
+ {$IFDEF PL011_UART_RX_BUFFER}
+ function PL011UARTPushRX(UART:PUARTDevice):LongWord;
+ var
+  Limit:LongWord;
+  Status:LongWord;
+ begin
+  {}
+  if SpinLockIRQ(PPL011UART(UART).Lock) = ERROR_SUCCESS then
+   begin
+    {Memory Barrier}
+    DataMemoryBarrier; {Before the First Write}
+    
+    {Buffer Received Data}
+    Limit:=PL011_UART_RX_POLL_LIMIT;
+    Status:=PPL011UART(UART).Registers.FR;
+    while ((Status and PL011_UART_FR_RXFE) = 0) and (PPL011UART(UART).Count < PL011_UART_RX_BUFFER_SIZE) do
+     begin
+      {Read Data}
+      PPL011UART(UART).Buffer[(PPL011UART(UART).Start + PPL011UART(UART).Count) mod PL011_UART_RX_BUFFER_SIZE]:=PPL011UART(UART).Registers.DR;
+      
+      {Update Count}
+      Inc(PPL011UART(UART).Count);
+
+      {Update Limit}
+      Dec(Limit);
+      
+      {Get Status}
+      Status:=PPL011UART(UART).Registers.FR;
+
+      {Check Limit}
+      if Limit = 0 then Break;
+     end;
+    
+    {Check Mask and Status}
+    if (PL011_RX_IRQ_MASK) and ((Status and PL011_UART_FR_RXFE) <> 0) then
+     begin
+      {Enable Receive}
+      PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC or PL011_UART_IMSC_RXIM;
+     end; 
+    
+    {Memory Barrier}
+    DataMemoryBarrier; {After the Last Read} 
+    
+    SpinUnlockIRQ(PPL011UART(UART).Lock);
+    
+    {Set Event}
+    EventSet(UART.ReceiveWait);
+    
+    Result:=ERROR_SUCCESS;
+   end
+  else
+   begin
+    Result:=ERROR_CAN_NOT_COMPLETE;
+   end; 
+ end;
+ {$ENDIF}
+
 var
  Value:LongWord;
  Total:LongWord;
@@ -726,8 +793,17 @@ begin
    {Check State}
    if (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) and ((PPL011UART(UART).Registers.FR and PL011_UART_FR_RXFE) = 0) then
     begin
-     {Set Event}
+     {$IFDEF PL011_UART_RX_BUFFER}
+     {Push Receive}
+     if PL011UARTPushRX(UART) <> ERROR_SUCCESS then
+      begin
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;
+     {$ELSE}
+     {Push Receive (Set Event)}
      EventSet(UART.ReceiveWait);
+     {$ENDIF}
     end;
     
    {Check Non Blocking}
@@ -746,6 +822,82 @@ begin
      {Acquire the Lock}
      if MutexLock(UART.Lock) = ERROR_SUCCESS then
       begin
+       {$IFDEF PL011_UART_RX_BUFFER}
+       while (PPL011UART(UART).Count > 0) and (Size > 0) do
+        begin
+         if SpinLockIRQ(PPL011UART(UART).Lock) = ERROR_SUCCESS then
+          begin
+           {Read Data}
+           Value:=PPL011UART(UART).Buffer[PPL011UART(UART).Start];
+
+           {Update Start}
+           PPL011UART(UART).Start:=(PPL011UART(UART).Start + 1) mod PL011_UART_RX_BUFFER_SIZE;
+         
+           {Update Count}
+           Dec(PPL011UART(UART).Count);
+          
+           SpinUnlockIRQ(PPL011UART(UART).Lock);
+          end
+         else
+          begin
+           Result:=ERROR_CAN_NOT_COMPLETE;
+           Exit;
+          end;
+         
+         {Check for Error}
+         if (Value and PL011_UART_DR_ERROR) <> 0 then
+          begin
+           {Check Error}
+           if (Value and PL011_UART_DR_OE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Overrun error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_OVERRUN_ERROR;
+            end;
+           if (Value and PL011_UART_DR_BE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Break error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_BREAK_ERROR;
+            end;
+           if (Value and PL011_UART_DR_PE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Parity error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_PARITY_ERROR;
+            end;
+           if (Value and PL011_UART_DR_FE) <> 0 then
+            begin
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Framing error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_FRAMING_ERROR;
+            end;
+           
+           {Update Statistics}
+           Inc(UART.ReceiveErrors);
+          end;
+
+         {Save Data}
+         PByte(Buffer + Offset)^:=Value and PL011_UART_DR_DATA;
+         
+         {Update Statistics}
+         Inc(UART.ReceiveCount);
+         
+         {Update Count}
+         Inc(Count);
+         
+         {Update Size and Offset}
+         Dec(Size);
+         Inc(Offset);
+        end;
+        
+       {Check Count} 
+       if PPL011UART(UART).Count = 0 then
+        begin
+         {Reset Event}
+         EventReset(UART.ReceiveWait);
+        end;
+       {$ELSE}
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
  
@@ -763,18 +915,26 @@ begin
            if (Value and PL011_UART_DR_OE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Overrun error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_OVERRUN_ERROR;
             end;
            if (Value and PL011_UART_DR_BE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Break error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_BREAK_ERROR;
             end;
            if (Value and PL011_UART_DR_PE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Parity error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_PARITY_ERROR;
             end;
            if (Value and PL011_UART_DR_FE) <> 0 then
             begin
              if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Framing error on receive character'); 
+             
+             UART.UARTStatus:=UART.UARTStatus or UART_STATUS_FRAMING_ERROR;
             end;
            
            {Update Statistics}
@@ -814,6 +974,7 @@ begin
  
        {Memory Barrier}
        DataMemoryBarrier; {After the Last Read} 
+       {$ENDIF}
       end
      else
       begin
@@ -996,21 +1157,37 @@ begin
  
  {Get Status}
  Status:=PPL011UART(UART).Registers.RSRECR;
- if (Status and PL011_UART_RSRECR_OE) <> 0 then
+ if Status <> 0 then
   begin
-   Result:=Result or UART_STATUS_OVERRUN_ERROR;
-  end;
- if (Status and PL011_UART_RSRECR_BE) <> 0 then
+   if (Status and PL011_UART_RSRECR_OE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_OVERRUN_ERROR;
+    end;
+   if (Status and PL011_UART_RSRECR_BE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_BREAK_ERROR;
+    end;
+   if (Status and PL011_UART_RSRECR_PE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_PARITY_ERROR;
+    end;
+   if (Status and PL011_UART_RSRECR_FE) <> 0 then
+    begin
+     Result:=Result or UART_STATUS_FRAMING_ERROR;
+    end;
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Clear Status} 
+   PPL011UART(UART).Registers.RSRECR:=0;  
+  end;  
+
+ {Get UART Status} 
+ if UART.UARTStatus <> UART_STATUS_NONE then
   begin
-   Result:=Result or UART_STATUS_BREAK_ERROR;
-  end;
- if (Status and PL011_UART_RSRECR_PE) <> 0 then
-  begin
-   Result:=Result or UART_STATUS_PARITY_ERROR;
-  end;
- if (Status and PL011_UART_RSRECR_FE) <> 0 then
-  begin
-   Result:=Result or UART_STATUS_FRAMING_ERROR;
+   Result:=Result or UART.UARTStatus;
+   {Clear UART Status}
+   UART.UARTStatus:=UART_STATUS_NONE;
   end;
 
  {Get Control}
@@ -1070,6 +1247,9 @@ procedure PL011UARTInterruptHandler(UART:PUARTDevice);
 {Interrupt handler for the PL011 UART device}
 {Note: Not intended to be called directly by applications}
 var
+ {$IFDEF PL011_UART_RX_BUFFER}
+ Limit:LongWord;
+ {$ENDIF}
  Status:LongWord;
 begin
  {}
@@ -1112,12 +1292,45 @@ begin
      {Acknowledge Receive}
      PPL011UART(UART).Registers.ICR:=PL011_UART_ICR_RXIC;
 
+     {$IFDEF PL011_UART_RX_BUFFER}
+     {Buffer Received Data}
+     Limit:=PL011_UART_RX_POLL_LIMIT;
+     Status:=PPL011UART(UART).Registers.FR;
+     while ((Status and PL011_UART_FR_RXFE) = 0) and (PPL011UART(UART).Count < PL011_UART_RX_BUFFER_SIZE) do
+      begin
+       {Read Data}
+       PPL011UART(UART).Buffer[(PPL011UART(UART).Start + PPL011UART(UART).Count) mod PL011_UART_RX_BUFFER_SIZE]:=PPL011UART(UART).Registers.DR;
+       
+       {Update Count}
+       Inc(PPL011UART(UART).Count);
+       
+       {Update Limit}
+       Dec(Limit);
+       
+       {Get Status}
+       Status:=PPL011UART(UART).Registers.FR;
+       
+       {Check Limit}
+       if Limit = 0 then Break;
+      end;
+
+     {Check Mask and Status}
+     if (PL011_RX_IRQ_MASK) and ((Status and PL011_UART_FR_RXFE) = 0) then
+      begin
+       {Mask Receive}
+       PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC and not(PL011_UART_IMSC_RXIM);
+      end; 
+       
+     {Send Receive}
+     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTReceive),UART,nil);
+     {$ELSE}
      {Send Receive and Check Mask}
      if (WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTReceive),UART,nil) = ERROR_SUCCESS) and (PL011_RX_IRQ_MASK) then
       begin
        {Mask Receive}
        PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC and not(PL011_UART_IMSC_RXIM);
       end; 
+     {$ENDIF}
     end;
   end; 
  
@@ -1133,30 +1346,50 @@ end;
 procedure PL011UARTReceive(UART:PUARTDevice);
 {Receive handler for the PL011 UART device}
 {Note: Not intended to be called directly by applications}
+var
+ Serial:PSerialDevice;
 begin
  {}
  {Check UART}
  if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Receive');
  {$ENDIF}
  
- {Acquire the Lock}
- if MutexLock(UART.Lock) = ERROR_SUCCESS then
+ {Check Mode}
+ if UART.UARTMode = UART_MODE_SERIAL then
   begin
-   {Set Event}
-   EventSet(UART.ReceiveWait);
+   {Get Serial}
+   Serial:=UART.Serial;
+   if Serial = nil then Exit;
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
    
-   {Check Mode}
-   if UART.UARTMode = UART_MODE_SERIAL then
+   {Acquire the Lock}
+   if MutexLock(Serial.Lock) = ERROR_SUCCESS then
     begin
+     {Set Event}
+     EventSet(UART.ReceiveWait);
+     
      {Serial Receive}
      UARTSerialDeviceReceive(UART);
+ 
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
     end;
-
-   {Release the Lock}
-   MutexUnlock(UART.Lock);
+  end
+ else if UART.UARTMode = UART_MODE_UART then
+  begin
+   {Acquire the Lock}
+   if MutexLock(UART.Lock) = ERROR_SUCCESS then
+    begin
+     {Set Event}
+     EventSet(UART.ReceiveWait);
+     
+     {Release the Lock}
+     MutexUnlock(UART.Lock);
+    end;
   end;
 end;
 
@@ -1165,30 +1398,50 @@ end;
 procedure PL011UARTTransmit(UART:PUARTDevice);
 {Transmit handler for the PL011 UART device}
 {Note: Not intended to be called directly by applications}
+var
+ Serial:PSerialDevice;
 begin
  {}
  {Check UART}
  if UART = nil then Exit;
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Transmit');
  {$ENDIF}
  
- {Acquire the Lock}
- if MutexLock(UART.Lock) = ERROR_SUCCESS then
+ {Check Mode}
+ if UART.UARTMode = UART_MODE_SERIAL then
   begin
-   {Set Event}
-   EventSet(UART.TransmitWait);
+   {Get Serial}
+   Serial:=UART.Serial;
+   if Serial = nil then Exit;
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
    
-   {Check Mode}
-   if UART.UARTMode = UART_MODE_SERIAL then
+   {Acquire the Lock}
+   if MutexLock(Serial.Lock) = ERROR_SUCCESS then
     begin
+     {Set Event}
+     EventSet(UART.TransmitWait);
+     
      {Serial Transmit}
      UARTSerialDeviceTransmit(UART);
-    end;    
-
-   {Release the Lock}
-   MutexUnlock(UART.Lock);
+ 
+     {Release the Lock}
+     MutexUnlock(Serial.Lock);
+    end;
+  end
+ else if UART.UARTMode = UART_MODE_UART then
+  begin
+   {Acquire the Lock}
+   if MutexLock(UART.Lock) = ERROR_SUCCESS then
+    begin
+     {Set Event}
+     EventSet(UART.TransmitWait);
+     
+     {Release the Lock}
+     MutexUnlock(UART.Lock);
+    end;
   end;
 end;
 
