@@ -107,22 +107,72 @@ const
  X509_EXT_ISSUER_ALT_NAME     = (1 shl 4);
  X509_EXT_EXT_KEY_USAGE       = (1 shl 5);
 
- {Certificate Key Usage}
- X509_KEY_USAGE_DIGITAL_SIGNATURE	= (1 shl 0);
- X509_KEY_USAGE_NON_REPUDIATION		= (1 shl 1);
- X509_KEY_USAGE_KEY_ENCIPHERMENT  = (1 shl 2);
- X509_KEY_USAGE_DATA_ENCIPHERMENT	= (1 shl 3);
- X509_KEY_USAGE_KEY_AGREEMENT		  = (1 shl 4);
- X509_KEY_USAGE_KEY_CERT_SIGN		  = (1 shl 5);
- X509_KEY_USAGE_CRL_SIGN			    = (1 shl 6);
- X509_KEY_USAGE_ENCIPHER_ONLY		  = (1 shl 7);
- X509_KEY_USAGE_DECIPHER_ONLY		  = (1 shl 8);
+ {Certificate Key Usage (RFC5280 Section 4.2.1.3. - Key Usage)}
+ X509_KEY_USAGE_DIGITAL_SIGNATURE = (1 shl 0); {digitalSignature - The digitalSignature bit is asserted when the subject public key
+                                                                   is used for verifying digital signatures, other than signatures
+                                                                   on certificates}
+ X509_KEY_USAGE_NON_REPUDIATION   = (1 shl 1); {nonRepudiation - The nonRepudiation bit is asserted when the subject public key is
+                                                                 used to verify digital signatures, other than signatures on certificates}
+ X509_KEY_USAGE_KEY_ENCIPHERMENT  = (1 shl 2); {keyEncipherment - The keyEncipherment bit is asserted when the subject public key is
+                                                                  used for enciphering private or secret keys, i.e., for key transport}
+ X509_KEY_USAGE_DATA_ENCIPHERMENT = (1 shl 3); {dataEncipherment - The dataEncipherment bit is asserted when the subject public key
+                                                                   is used for directly enciphering raw user data without the use of
+                                                                   an intermediate symmetric cipher}
+ X509_KEY_USAGE_KEY_AGREEMENT     = (1 shl 4); {keyAgreement - The keyAgreement bit is asserted when the subject public key is used
+                                                               for key agreement}
+ X509_KEY_USAGE_KEY_CERT_SIGN     = (1 shl 5); {keyCertSign - The keyCertSign bit is asserted when the subject public key is
+                                                              used for verifying signatures on public key certificates}
+ X509_KEY_USAGE_CRL_SIGN          = (1 shl 6); {cRLSign - The cRLSign bit is asserted when the subject public key is used
+                                                          for verifying signatures on certificate revocation lists}
+ X509_KEY_USAGE_ENCIPHER_ONLY     = (1 shl 7); {encipherOnly -  When the encipherOnly bit is asserted and the keyAgreement bit
+                                                                is also set, the subject public key may be used only for
+                                                                enciphering data while performing key agreement}
+ X509_KEY_USAGE_DECIPHER_ONLY     = (1 shl 8); {decipherOnly - When the decipherOnly bit is asserted and the keyAgreement bit
+                                                               is also set, the subject public key may be used only for
+                                                               deciphering data while performing key agreement}
 
  {Certificate Extended Key Usage}
- X509_EXT_KEY_USAGE_ANY	        = (1 shl 0);
+ X509_EXT_KEY_USAGE_ANY         = (1 shl 0);
  X509_EXT_KEY_USAGE_SERVER_AUTH = (1 shl 1);
  X509_EXT_KEY_USAGE_CLIENT_AUTH = (1 shl 2);
  X509_EXT_KEY_USAGE_OCSP        = (1 shl 3);
+
+ {Certificate PEM Encoding}
+ X509_PEM_LINE_END = #13#10;
+
+ X509_PEM_CERTIFICATE_BEGIN = '-----BEGIN CERTIFICATE-----';
+ X509_PEM_CERTIFICATE_END = '-----END CERTIFICATE-----';
+
+ X509_PEM_PRIVATE_KEY_BEGIN = '-----BEGIN PRIVATE KEY-----'; {Private Key in PKCS#8 format (RFC5208 - Section 5)}
+ X509_PEM_PRIVATE_KEY_END = '-----END PRIVATE KEY-----';
+
+ X509_PEM_PUBLIC_KEY_BEGIN = '-----BEGIN PUBLIC KEY-----';
+ X509_PEM_PUBLIC_KEY_END = '-----END PUBLIC KEY-----';
+
+ X509_PEM_RSA_PRIVATE_KEY_BEGIN = '-----BEGIN RSA PRIVATE KEY-----'; {Private Key in PKCS#1 format (RFC3447 - Appendix A.1.2)}
+ X509_PEM_RSA_PRIVATE_KEY_END = '-----END RSA PRIVATE KEY-----';
+
+ X509_PEM_RSA_PUBLIC_KEY_BEGIN = '-----BEGIN RSA PUBLIC KEY-----';
+ X509_PEM_RSA_PUBLIC_KEY_END = '-----END RSA PUBLIC KEY-----';
+
+ X509_PEM_EC_PRIVATE_KEY_BEGIN = '-----BEGIN EC PRIVATE KEY-----';
+ X509_PEM_EC_PRIVATE_KEY_END = '-----END EC PRIVATE KEY-----';
+ 
+ X509_PEM_ENCRYPTED_PRIVATE_KEY_BEGIN = '-----BEGIN ENCRYPTED PRIVATE KEY-----'; {Encrypted Private Key in PKCS#8 format (RFC5208 - Section 6)}
+ X509_PEM_ENCRYPTED_PRIVATE_KEY_END = '-----END ENCRYPTED PRIVATE KEY-----';
+
+ X509_PEM_CERTIFICATE_REQUEST_BEGIN = '-----BEGIN CERTIFICATE REQUEST-----';
+ X509_PEM_CERTIFICATE_REQUEST_END = '-----END CERTIFICATE REQUEST-----';
+
+ X509_PEM_DH_PARAMETERS_BEGIN = '-----BEGIN DH PARAMETERS-----';
+ X509_PEM_DH_PARAMETERS_END = '-----END DH PARAMETERS-----';
+
+ X509_PEM_EC_PARAMETERS_BEGIN = '-----BEGIN EC PARAMETERS-----';
+ X509_PEM_EC_PARAMETERS_END = '-----END EC PARAMETERS-----';
+ 
+ {Certificate File Types}
+ X509_FILETYPE_PEM     = 1;
+ X509_FILETYPE_ASN1    = 2;
 
 {==============================================================================}
 type
@@ -164,6 +214,17 @@ type
   function ToString:String;
  end;
 
+ PX509PrivateKey = ^TX509PrivateKey;
+ TX509PrivateKey = record
+  Algorithm:TX509AlgorithmIdentifier;
+  Key:PByte;
+  Length:Integer;
+
+  procedure Release;
+
+  function ToString:String;
+ end;
+
  PX509Signature = ^TX509Signature;
  TX509Signature = record
   Algorithm:TX509AlgorithmIdentifier;
@@ -186,7 +247,7 @@ type
   procedure Release;
  end;
 
- PX509RSAPrivateKey = ^TX509RSAPrivateKey;
+ PX509RSAPrivateKey = ^TX509RSAPrivateKey; {RFC3447 - Appendix A.1.2 - RSA private key syntax}
  TX509RSAPrivateKey = record
   Version:Integer;
   Modulus:PByte;             {M}
@@ -260,7 +321,10 @@ type
   function FindBySubject(AName:TX509Name):TX509Certificate; virtual;
 
   function ImportDER(ABuffer:Pointer;ASize:Integer):TX509Certificate; virtual;
-  function ImportPEM(ABuffer:Pointer;ASize:Integer):TX509Certificate; virtual;
+  function ImportPEM(ABuffer:Pointer;var ASize:Integer):TX509Certificate; virtual;
+
+  function ExportDER(ABuffer:Pointer;var ASize:Integer;ACertificate:TX509Certificate):Boolean; virtual;
+  function ExportPEM(ABuffer:Pointer;var ASize:Integer;AStart:TX509Certificate):Boolean; virtual;
  end;
 
  TX509CertificateChain = class(TObject)
@@ -294,11 +358,11 @@ type
   function FindBySubjectDN(const AName:String):TX509Certificate; virtual;
 
   function ImportDER(ABuffer:Pointer;ASize:Integer;AParent:TX509Certificate):TX509Certificate; virtual;
-  function ImportPEM(ABuffer:Pointer;ASize:Integer;AParent:TX509Certificate):TX509Certificate; virtual;
+  function ImportPEM(ABuffer:Pointer;var ASize:Integer;AParent:TX509Certificate):TX509Certificate; virtual;
   //function ImportPKCS8(ABuffer:Pointer;ASize:Integer;AParent:TX509Certificate):TX509Certificate; virtual; //To Do
 
-  //function ExportDER //To Do
-  //function ExportPEM //To Do
+  function ExportDER(ABuffer:Pointer;var ASize:Integer;ACertificate:TX509Certificate):Boolean; virtual;
+  function ExportPEM(ABuffer:Pointer;var ASize:Integer;AStart:TX509Certificate):Boolean; virtual;
 
   function GetPathLength(ACertificate:TX509Certificate):LongWord; virtual;
 
@@ -314,6 +378,7 @@ type
   FChild:TX509Certificate;
 
   FData:PByte;       //Copy of certificate data from import
+  FSize:LongWord;    //Total size of certificate data
 
   FTBSData:PByte;    //Pointer to start of TBS (To Be Signed) data
   FTBSSize:LongWord; //Length of TBS (To Be Signed) data
@@ -383,10 +448,10 @@ type
   destructor Destroy; override;
 
   function ImportDER(ABuffer:Pointer;ASize:Integer):Boolean; virtual;
-  function ImportPEM(ABuffer:Pointer;ASize:Integer):Boolean; virtual;
+  function ImportPEM(ABuffer:Pointer;var ASize:Integer):Boolean; virtual;
 
-  //function ExportDER //To Do
-  //function ExportPEM //To Do
+  function ExportDER(ABuffer:Pointer;var ASize:Integer):Boolean; virtual;
+  function ExportPEM(ABuffer:Pointer;var ASize:Integer):Boolean; virtual;
 
   function IsValidIssuer:Boolean; virtual;
   function IsSelfSigned:Boolean; virtual;
@@ -635,6 +700,40 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{TX509PrivateKey}
+procedure TX509PrivateKey.Release;
+begin
+ {}
+ {Clear Algorithm}
+ FillChar(Algorithm.OID,SizeOf(TASN1OID),0);
+
+ {Release Key}
+ if Key <> nil then FreeMem(Key);
+ Key:=nil;
+
+ {Reset Length}
+ Length:=0;
+end;
+
+{==============================================================================}
+
+function TX509PrivateKey.ToString:String;
+var
+ Count:Integer;
+begin
+ {}
+ Result:='';
+
+ if Key = nil then Exit;
+
+ for Count:=0 to Length - 1 do
+  begin
+   Result:=Result + IntToHex(Key[Count],2);
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {TX509Signature}
 procedure TX509Signature.Release;
 begin
@@ -664,8 +763,8 @@ begin
  Result:=False;
 
  {RSAPublicKey ::= SEQUENCE (
-	    modulus INTEGER, -- n
-	    publicExponent INTEGER -- e)}
+     modulus INTEGER, -- n
+     publicExponent INTEGER -- e)}
 
  {$IFDEF X509_DEBUG}       
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509RSAPublicKey.ImportDER Size = ' + IntToStr(ASize));
@@ -738,24 +837,23 @@ var
  Next:PByte;
  Last:PByte;
  Tag:TASN1Tag;
- Value:Integer;
 begin
  {}
  Result:=False;
 
  {RSAPrivateKey ::= SEQUENCE (
-	   version Version,
-	   modulus INTEGER, -- n
-	   publicExponent INTEGER, -- e
-	   privateExponent INTEGER, -- d
-	   prime1 INTEGER, -- p
-	   prime2 INTEGER, -- q
-	   exponent1 INTEGER, -- d mod (p-1)
-	   exponent2 INTEGER, -- d mod (q-1)
-	   coefficient INTEGER -- (inverse of q) mod p
-	)
+     version Version,
+     modulus INTEGER, -- n
+     publicExponent INTEGER, -- e
+     privateExponent INTEGER, -- d
+     prime1 INTEGER, -- p
+     prime2 INTEGER, -- q
+     exponent1 INTEGER, -- d mod (p-1)
+     exponent2 INTEGER, -- d mod (q-1)
+     coefficient INTEGER -- (inverse of q) mod p
+  )
 
-	Version ::= INTEGER -- shall be 0 for this version of the standard}
+  Version ::= INTEGER -- shall be 0 for this version of the standard}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509RSAPrivateKey.ImportDER Size = ' + IntToStr(ASize));
@@ -780,7 +878,7 @@ begin
  if (Tag.TagClass <> ASN1_CLASS_UNIVERSAL) or (Tag.TagNumber <> ASN1_TAG_INTEGER) then Exit;
 
  {Check Version}
- if not ASN1ParseInt(Tag.Contents,Tag.Length,Value) then Exit;
+ if not ASN1ParseInt(Tag.Contents,Tag.Length,Version) then Exit;
  if Version <> 0 then Exit;
 
  Next:=Tag.Contents + Tag.Length;
@@ -1244,7 +1342,7 @@ end;
 
 {==============================================================================}
 
-function TX509CertificateList.ImportPEM(ABuffer:Pointer;ASize:Integer):TX509Certificate;
+function TX509CertificateList.ImportPEM(ABuffer:Pointer;var ASize:Integer):TX509Certificate;
 var
  Certificate:TX509Certificate;
 begin
@@ -1265,6 +1363,84 @@ begin
  Add(Certificate);
 
  Result:=Certificate;
+end;
+
+{==============================================================================}
+
+function TX509CertificateList.ExportDER(ABuffer:Pointer;var ASize:Integer;ACertificate:TX509Certificate):Boolean;
+begin
+ {}
+ Result:=False;
+
+ if ACertificate = nil then Exit;
+
+ if ACertificate.FList <> Self then Exit;
+
+ {Export Certificate}
+ Result:=ACertificate.ExportDER(ABuffer,ASize);
+end;
+
+{==============================================================================}
+
+function TX509CertificateList.ExportPEM(ABuffer:Pointer;var ASize:Integer;AStart:TX509Certificate):Boolean;
+var
+ Size:Integer;
+ Start:Integer;
+ Count:Integer;
+ Remain:Integer;
+ Offset:PtrUInt;
+ Certificate:TX509Certificate;
+begin
+ {}
+ Result:=False;
+
+ if AStart = nil then Exit;
+
+ if AStart.FList <> Self then Exit;
+
+ if ASize = 0 then Exit;
+
+ AcquireLock;
+
+ {Get Start}
+ Start:=0;
+ Remain:=ASize;
+ Offset:=0;
+
+ {Find Start}
+ for Count:=0 to FList.Count - 1 do
+  begin
+   Certificate:=FList.Items[Count];
+   if Certificate = AStart then
+    begin
+     Start:=Count;
+     Break;
+    end;
+  end;
+
+ {Export Certificates}
+ for Count:=Start to FList.Count - 1 do
+  begin
+   Certificate:=FList.Items[Count];
+   if Certificate <> nil then
+    begin
+     {Get Size}
+     Size:=Remain;
+
+     {Export Certificate}
+     Result:=Certificate.ExportPEM(Pointer(PtrUInt(ABuffer) + Offset),Size);
+     if not Result then Break;
+
+     {Update Position}
+     Dec(Remain,Size);
+     Inc(Offset,Size);
+    end;
+  end;
+
+ ReleaseLock;
+
+ {Update Size}
+ if Result then ASize:=Offset;
 end;
 
 {==============================================================================}
@@ -1682,7 +1858,7 @@ end;
 
 {==============================================================================}
 
-function TX509CertificateChain.ImportPEM(ABuffer:Pointer;ASize:Integer;AParent:TX509Certificate):TX509Certificate;
+function TX509CertificateChain.ImportPEM(ABuffer:Pointer;var ASize:Integer;AParent:TX509Certificate):TX509Certificate;
 var
  Certificate:TX509Certificate;
 begin
@@ -1699,6 +1875,68 @@ begin
   end;
 
  Result:=Certificate;
+end;
+
+{==============================================================================}
+
+function TX509CertificateChain.ExportDER(ABuffer:Pointer;var ASize:Integer;ACertificate:TX509Certificate):Boolean;
+begin
+ {}
+ Result:=False;
+
+ if ACertificate = nil then Exit;
+
+ if ACertificate.FChain <> Self then Exit;
+
+ {Export Certificate}
+ Result:=ACertificate.ExportDER(ABuffer,ASize);
+end;
+
+{==============================================================================}
+
+function TX509CertificateChain.ExportPEM(ABuffer:Pointer;var ASize:Integer;AStart:TX509Certificate):Boolean;
+var
+ Size:Integer;
+ Remain:Integer;
+ Offset:PtrUInt;
+ Certificate:TX509Certificate;
+begin
+ {}
+ Result:=False;
+
+ if AStart = nil then Exit;
+
+ if AStart.FChain <> Self then Exit;
+
+ if ASize = 0 then Exit;
+
+ AcquireLock;
+
+ {Get Start}
+ Remain:=ASize;
+ Offset:=0;
+ Certificate:=AStart;
+ while Certificate <> nil do
+  begin
+   {Get Size}
+   Size:=Remain;
+
+   {Export Certificate}
+   Result:=Certificate.ExportPEM(Pointer(PtrUInt(ABuffer) + Offset),Size);
+   if not Result then Break;
+
+   {Update Position}
+   Dec(Remain,Size);
+   Inc(Offset,Size);
+
+   {Get Previous}
+   Certificate:=Prev(Certificate);
+  end;
+
+ ReleaseLock;
+
+ {Update Size}
+ if Result then ASize:=Offset;
 end;
 
 {==============================================================================}
@@ -1791,12 +2029,12 @@ begin
  Result:=False;
 
  {Time ::= CHOICE (
-	    utcTime        UTCTime,
-	    generalTime    GeneralizedTime
-	)
+     utcTime        UTCTime,
+     generalTime    GeneralizedTime
+  )
 
-	UTCTime: YYMMDDHHMMSSZ
-	GeneralizedTime: YYYYMMDDHHMMSSZ}
+  UTCTime: YYMMDDHHMMSSZ
+  GeneralizedTime: YYYYMMDDHHMMSSZ}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportTime Size = ' + IntToStr(ASize));
@@ -1911,14 +2149,14 @@ begin
  Result:=False;
 
  {Name ::= CHOICE ( RDNSequence )
-	RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
-	RelativeDistinguishedName ::= SET OF AttributeTypeAndValue
-	AttributeTypeAndValue ::= SEQUENCE (
-	    type     AttributeType,
-	    value    AttributeValue
-	)
-	AttributeType ::= OBJECT IDENTIFIER
-	AttributeValue ::= ANY DEFINED BY AttributeType}
+  RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
+  RelativeDistinguishedName ::= SET OF AttributeTypeAndValue
+  AttributeTypeAndValue ::= SEQUENCE (
+     type     AttributeType,
+     value    AttributeValue
+  )
+  AttributeType ::= OBJECT IDENTIFIER
+  AttributeValue ::= ANY DEFINED BY AttributeType}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportName Size = ' + IntToStr(ASize));
@@ -2047,24 +2285,24 @@ begin
 
  {GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
 
-	GeneralName ::= CHOICE (
-	    otherName                       [0]     OtherName,
-	    rfc822Name                      [1]     IA5String,
-	    dNSName                         [2]     IA5String,
-	    x400Address                     [3]     ORAddress,
-	    directoryName                   [4]     Name,
-	    ediPartyName                    [5]     EDIPartyName,
-	    uniformResourceIdentifier       [6]     IA5String,
-	    iPAddress                       [7]     OCTET STRING,
-	    registeredID                    [8]     OBJECT IDENTIFIER )
+  GeneralName ::= CHOICE (
+     otherName                       [0]     OtherName,
+     rfc822Name                      [1]     IA5String,
+     dNSName                         [2]     IA5String,
+     x400Address                     [3]     ORAddress,
+     directoryName                   [4]     Name,
+     ediPartyName                    [5]     EDIPartyName,
+     uniformResourceIdentifier       [6]     IA5String,
+     iPAddress                       [7]     OCTET STRING,
+     registeredID                    [8]     OBJECT IDENTIFIER )
 
-	OtherName ::= SEQUENCE (
-	    type-id    OBJECT IDENTIFIER,
-	    value      [0] EXPLICIT ANY DEFINED BY type-id )
+  OtherName ::= SEQUENCE (
+     type-id    OBJECT IDENTIFIER,
+     value      [0] EXPLICIT ANY DEFINED BY type-id )
 
-	EDIPartyName ::= SEQUENCE (
-	    nameAssigner            [0]     DirectoryString OPTIONAL,
-	    partyName               [1]     DirectoryString )}
+  EDIPartyName ::= SEQUENCE (
+     nameAssigner            [0]     DirectoryString OPTIONAL,
+     partyName               [1]     DirectoryString )}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportExtensionAltName Size = ' + IntToStr(ASize));
@@ -2151,8 +2389,8 @@ begin
  Result:=False;
 
  {AlgorithmIdentifier ::= SEQUENCE {
-	    algorithm            OBJECT IDENTIFIER,
-      parameters           ANY DEFINED BY algorithm OPTIONAL}
+     algorithm            OBJECT IDENTIFIER,
+     parameters           ANY DEFINED BY algorithm OPTIONAL}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportAlgorithmIdentifier Size = ' + IntToStr(ASize));
@@ -2196,8 +2434,8 @@ begin
  {$ENDIF}
 
  {Validity ::= SEQUENCE (
-	    notBefore      Time,
-	    notAfter       Time)}
+     notBefore      Time,
+     notAfter       Time)}
 
  if ABuffer = nil then Exit;
 
@@ -2252,8 +2490,8 @@ begin
  Result:=False;
 
  {SubjectPublicKeyInfo ::= SEQUENCE (
-	   algorithm            AlgorithmIdentifier,
-	   subjectPublicKey     BIT STRING)}
+    algorithm            AlgorithmIdentifier,
+    subjectPublicKey     BIT STRING)}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportPublicKey Size = ' + IntToStr(ASize));
@@ -2278,7 +2516,7 @@ begin
  ANext:=Last;
 
  {Get algorithm (AlgorithmIdentifier)}
- if not ImportAlgorithmIdentifier(Next, Last - Next,PublicKey.Algorithm,Next) then Exit;
+ if not ImportAlgorithmIdentifier(Next,Last - Next,PublicKey.Algorithm,Next) then Exit;
 
  {Get subjectPublicKey (BitString)}
  if not ASN1GetTag(Next,Last - Next,Tag) then Exit;
@@ -2318,9 +2556,9 @@ begin
  Result:=False;
 
  {Extension  ::=  SEQUENCE  (
-	    extnID      OBJECT IDENTIFIER,
-	    critical    BOOLEAN DEFAULT FALSE,
-	    extnValue   OCTET STRING)}
+     extnID      OBJECT IDENTIFIER,
+     critical    BOOLEAN DEFAULT FALSE,
+     extnValue   OCTET STRING)}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportExtension Size = ' + IntToStr(ASize));
@@ -2442,15 +2680,15 @@ begin
  Result:=False;
 
  {KeyUsage ::= BIT STRING (
-	    digitalSignature        (0),
-	    nonRepudiation          (1),
-	    keyEncipherment         (2),
-	    dataEncipherment        (3),
-	    keyAgreement            (4),
-	    keyCertSign             (5),
-	    cRLSign                 (6),
-	    encipherOnly            (7),
-	    decipherOnly            (8) )}
+     digitalSignature        (0),
+     nonRepudiation          (1),
+     keyEncipherment         (2),
+     dataEncipherment        (3),
+     keyAgreement            (4),
+     keyCertSign             (5),
+     cRLSign                 (6),
+     encipherOnly            (7),
+     decipherOnly            (8) )}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportExtensionKeyUsage Size = ' + IntToStr(ASize));
@@ -2607,7 +2845,7 @@ begin
 
  {ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId
 
-	KeyPurposeId ::= OBJECT IDENTIFIER}
+  KeyPurposeId ::= OBJECT IDENTIFIER}
 
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportExtensionExtKeyUsage Size = ' + IntToStr(ASize));
@@ -2730,7 +2968,7 @@ begin
  ANext:=Last;
 
  {version [0]  EXPLICIT Version DEFAULT v1
-	Version  ::=  INTEGER  (  v1(0), v2(1), v3(2)  )}
+  Version  ::=  INTEGER  (  v1(0), v2(1), v3(2)  )}
 
  {Get version (Integer)}
  if not ASN1GetTag(Next,Last - Next,Tag) then Exit;
@@ -2971,9 +3209,9 @@ begin
     Next:=Tag.Contents;
     Last:=Next + Tag.Length;
 
- 	 {AlgorithmIdentifier ::= SEQUENCE (
- 	      algorithm            OBJECT IDENTIFIER,
- 	      parameters           ANY DEFINED BY algorithm OPTIONAL)}
+    {AlgorithmIdentifier ::= SEQUENCE (
+        algorithm            OBJECT IDENTIFIER,
+        parameters           ANY DEFINED BY algorithm OPTIONAL)}
 
     {Get AlgorithmIdentifier (Sequence)}
     if not ASN1GetTag(Next,Last - Next,Tag) then Exit;
@@ -3062,7 +3300,7 @@ begin
      end;
 
     {$IFDEF X509_DEBUG}
-    if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.VerifyRSASignature - Verify Success');
+    if Result and PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.VerifyRSASignature - Verify Success');
     {$ENDIF}
    finally
     FreeMem(Data);
@@ -3290,10 +3528,13 @@ begin
 
  if ABuffer = nil then Exit;
 
+ if ASize = 0 then Exit;
+
  {Copy Buffer}
  FData:=GetMem(ASize);
  if FData = nil then Exit;
- System.Move(ABuffer^,FData^,ASize);
+ FSize:=ASize;
+ System.Move(ABuffer^,FData^,FSize);
 
  {Get Pointers}
  Next:=ABuffer;
@@ -3351,20 +3592,167 @@ end;
 
 {==============================================================================}
 
-function TX509Certificate.ImportPEM(ABuffer:Pointer;ASize:Integer):Boolean;
+function TX509Certificate.ImportPEM(ABuffer:Pointer;var ASize:Integer):Boolean;
+
+ function FindTag(const Tag:String;Buffer:PByte;Size:Integer):PByte;
+ var
+  Len:Integer;
+  Count:Integer;
+ begin
+   {}
+   Result:=nil;
+
+   {Get Tag Length}
+   Len:=Length(Tag);
+   if Size < Len then Exit;
+
+   {Search the Buffer}
+   for Count:=0 to Size - Len do
+    begin
+     {Check for Tag}
+     if CompareMem(Buffer + Count,PChar(Tag),Len) then
+      begin
+       Result:=Buffer + Count;
+       Exit;
+      end;
+    end;
+ end;
+
+var
+ Next:PByte;
+ Remain:Integer;
+ BeginTag:PByte;
+ EndTag:PByte;
+ DecodedSize:Integer;
+ DecodedData:Pointer;
 begin
  {}
  Result:=False;
 
  if ABuffer = nil then Exit;
 
- //Find Start and End
+ if ASize = 0 then Exit;
 
- //Decode PEM (Base64)
+ {Get Start}
+ Next:=ABuffer;
+ Remain:=ASize;
 
- //Call ImportDER
+ {Find Begin Tag}
+ BeginTag:=FindTag(X509_PEM_CERTIFICATE_BEGIN,Next,Remain);
+ if BeginTag = nil then Exit;
 
- //To Do
+ {Update Position}
+ Inc(BeginTag,Length(X509_PEM_CERTIFICATE_BEGIN));
+ Dec(Remain,Length(X509_PEM_CERTIFICATE_BEGIN));
+ Next:=BeginTag;
+
+ {Find End Tag}
+ EndTag:=FindTag(X509_PEM_CERTIFICATE_END,Next,Remain);
+ if EndTag = nil then Exit;
+
+ {Update Position}
+ Dec(Remain,Length(X509_PEM_CERTIFICATE_END));
+
+ {Size Certificate}
+ if not Base64DecodeBuffer(PChar(BeginTag),EndTag - BeginTag,nil,DecodedSize) then Exit;
+
+ {Allocate Data}
+ DecodedData:=GetMem(DecodedSize);
+ if DecodedData = nil then Exit;
+ try
+  {Decode Certificate}
+  if not Base64DecodeBuffer(PChar(BeginTag),EndTag - BeginTag,DecodedData,DecodedSize) then Exit;
+
+  {Import Certificate}
+  if not ImportDER(DecodedData,DecodedSize) then Exit;
+
+  {Update Size}
+  Next:=ABuffer;
+  ASize:=(EndTag + Length(X509_PEM_CERTIFICATE_END)) - Next;
+
+  Result:=True;
+ finally
+  FreeMem(DecodedData);
+ end;
+end;
+
+{==============================================================================}
+
+function TX509Certificate.ExportDER(ABuffer:Pointer;var ASize:Integer):Boolean;
+begin
+ {}
+ Result:=False;
+
+ if ABuffer = nil then Exit;
+
+ if ASize = 0 then Exit;
+
+ if LongWord(ASize) < FSize then Exit;
+
+ {Export Data}
+ System.Move(FData^,ABuffer^,FSize);
+
+ {Update Size}
+ ASize:=FSize;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TX509Certificate.ExportPEM(ABuffer:Pointer;var ASize:Integer):Boolean;
+var
+ Size:Integer;
+ Remain:Integer;
+ Offset:PtrUInt;
+begin
+ {}
+ Result:=False;
+
+ if ABuffer = nil then Exit;
+
+ if ASize = 0 then Exit;
+
+ {Get Start}
+ Offset:=0;
+ Remain:=ASize;
+
+ {Check Begin Certificate}
+ Size:=Length(X509_PEM_CERTIFICATE_BEGIN + X509_PEM_LINE_END);
+ if Remain < Size then Exit;
+
+ {Add Begin Certificate}
+ System.Move(PChar(X509_PEM_CERTIFICATE_BEGIN + X509_PEM_LINE_END)^,Pointer(PtrUInt(ABuffer) + Offset)^,Size);
+
+ {Update Position}
+ Inc(Offset,Size);
+ Dec(Remain,Size);
+
+ {Check Encoded Certificate}
+ if not Base64EncodeBuffer(PChar(FData),FSize,nil,Size) then Exit;
+ if Remain < Size then Exit;
+
+ {Add Encoded Certificate}
+ if not Base64EncodeBuffer(PChar(FData),FSize,PChar(PtrUInt(ABuffer) + Offset),Size) then Exit;
+
+ {Update Position (Remove Terminator)}
+ Inc(Offset,Size - 1);
+ Dec(Remain,Size - 1);
+
+ {Check End Certificate}
+ Size:=Length(X509_PEM_CERTIFICATE_END + X509_PEM_LINE_END);
+ if Remain < Size then Exit;
+
+ {Add End Certificate}
+ System.Move(PChar(X509_PEM_CERTIFICATE_END + X509_PEM_LINE_END)^,Pointer(PtrUInt(ABuffer) + Offset)^,Size);
+
+ {Update Position}
+ Inc(Offset,Size);
+
+ {Update Size}
+ ASize:=Offset;
+
+ Result:=True;
 end;
 
 {==============================================================================}

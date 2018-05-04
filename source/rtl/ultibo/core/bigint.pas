@@ -944,7 +944,7 @@ end;
 procedure BIExport(Context:PBigIntContext;BI:PBigInt;Data:PByte;Size:Integer);
 {Take a bigint and convert it into a byte sequence}
 {Context: The bigint session context}
-{X: The bigint to be converted}
+{BI: The bigint to be converted}
 {Data: The converted data as a byte stream}
 {Size: The maximum size of the byte stream. Unused bytes will be zeroed}
 var
@@ -1218,7 +1218,7 @@ begin
  Quotient:=BIAllocate(Context,M + 1);
  TmpU:=BIAllocate(Context,N + 1);
  V:=BITrim(V); {Make sure we have no leading 0's}
- D:=BIGINT_COMP_RADIX div (BIDivide_V1(V) + 1);
+ D:=BIGINT_COMP_RADIX div (TLongComponent(BIDivide_V1(V)) + 1);
 
  {Clear}
  FillChar(Quotient.Components^,Quotient.Size * BIGINT_COMP_BYTE_SIZE,0);
@@ -1255,7 +1255,7 @@ begin
    end
   else
    begin
-    QDash:=(BIDivide_U(TmpU,0) * BIGINT_COMP_RADIX + BIDivide_U(TmpU,1)) div BIDivide_V1(V);
+    QDash:=(TLongComponent(BIDivide_U(TmpU,0)) * BIGINT_COMP_RADIX + BIDivide_U(TmpU,1)) div BIDivide_V1(V);
 
     if (V.Size > 1) and (BIDivide_V2(V) > 0) then
     begin
@@ -1557,7 +1557,7 @@ var
 begin
  {}
  K:=BIM.Size;
- D:=BIGINT_COMP_RADIX div (BIM.Components[K - 1] + 1);
+ D:=BIGINT_COMP_RADIX div (TLongComponent(BIM.Components[K - 1]) + 1);
 
  Context.BIMod[ModOffset]:=BIM;
  BIPermanent(Context.BIMod[ModOffset]);

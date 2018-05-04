@@ -125,6 +125,8 @@ Cryptography
 
  Cipher Modes - https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 
+ Counter with CBC-MAC (CCM) - https://en.wikipedia.org/wiki/CCM_mode
+
  Galois/Counter Mode (GCM) - https://en.wikipedia.org/wiki/Galois/Counter_Mode
 
 }
@@ -175,8 +177,11 @@ const
  CRYPTO_HASH_ALG_SHA512      = 8;
  CRYPTO_HASH_ALG_HMAC_SHA384 = 9;
  CRYPTO_HASH_ALG_HMAC_SHA512 = 10;
+ CRYPTO_HASH_ALG_SHA224      = 11;
+ CRYPTO_HASH_ALG_HMAC_SHA224 = 12;
 
  {MD5 constants}
+ MD5_DIGEST_SIZE = 16;
 
  {AES constants}
  AES_BLOCK_SIZE = 16;  {128 bit blocks}
@@ -184,6 +189,8 @@ const
  AES_KEY_SIZE128 = 16; {128 bit keys}
  AES_KEY_SIZE192 = 24; {192 bit keys}
  AES_KEY_SIZE256 = 32; {256 bit keys}
+
+ AES_IV_SIZE = 16; {128 bit initialization vector}
 
  {Precomputed tables for AES}
  {Encrypting}
@@ -2380,12 +2387,16 @@ const
  {RC4 constants}
 
  {SHA1 constants}
+ SHA1_DIGEST_SIZE = 20;
+
  SHA1_K20 = $5A827999;
  SHA1_K40 = $6ED9EBA1;
  SHA1_K60 = $8F1BBCDC;
  SHA1_K80 = $CA62C1D6;
 
  {SHA256 constants}
+ SHA256_DIGEST_SIZE = 32;
+
  SHA256_K:array[0..63] of LongWord = (
   $428a2f98, $71374491, $b5c0fbcf, $e9b5dba5, $3956c25b, $59f111f1, $923f82a4, $ab1c5ed5,
   $d807aa98, $12835b01, $243185be, $550c7dc3, $72be5d74, $80deb1fe, $9bdc06a7, $c19bf174,
@@ -2397,7 +2408,12 @@ const
   $748f82ee, $78a5636f, $84c87814, $8cc70208, $90befffa, $a4506ceb, $bef9a3f7, $c67178f2);
   {This is the precalculated K array for the SHA256 algorithm}
 
+ {SHA384 constants}
+ SHA384_DIGEST_SIZE = 48;
+
  {SHA512 constants}
+ SHA512_DIGEST_SIZE = 64;
+
  SHA512_K:array[0..79] of QWord = (
   $428a2f98d728ae22, $7137449123ef65cd,
   $b5c0fbcfec4d3b2f, $e9b5dba58189dbbc,
@@ -2714,6 +2730,8 @@ procedure CryptoInit;
 function HashCreate(Algorithm:LongWord;Key:Pointer;KeySize:LongWord):PHashContext;
 function HashDestroy(Context:PHashContext):Boolean;
 
+function HashReset(Context:PHashContext):Boolean; overload;
+function HashReset(Context:PHashContext;Algorithm:LongWord;Key:Pointer;KeySize:LongWord):Boolean; overload;
 function HashUpdate(Context:PHashContext;Data:Pointer;Size:LongWord):Boolean;
 function HashFinish(Context:PHashContext;Digest:Pointer;Size:LongWord):Boolean;
 
@@ -2729,7 +2747,8 @@ function CipherDecrypt(Context:PCipherContext;Crypt,Plain:Pointer;Size:LongWord)
 function MD5DigestData(Data:PMD5Block;Digest:PMD5Digest):Boolean;
 function MD5DigestString(const Value:String;Digest:PMD5Digest):Boolean;
 
-function HMACMD5DigestData(const Key:String;Data:PMD5Block;Digest:PMD5Digest):Boolean;
+function HMACMD5DigestData(const Key:String;Data:PMD5Block;Digest:PMD5Digest):Boolean; overload;
+function HMACMD5DigestData(Key:Pointer;KeySize:LongWord;Data:PMD5Block;Digest:PMD5Digest):Boolean; overload;
 function HMACMD5DigestString(const Key,Value:String;Digest:PMD5Digest):Boolean;
 
 {==============================================================================}
@@ -2765,7 +2784,8 @@ function RC4DecryptData(Key:Pointer;KeySize:LongWord;Crypt,Plain:Pointer;Size,St
 function SHA1DigestData(Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
 function SHA1DigestString(const Value:String;Digest:PSHA1Digest):Boolean;
 
-function HMACSHA1DigestData(const Key:String;Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
+function HMACSHA1DigestData(const Key:String;Data:PSHA1Block;Digest:PSHA1Digest):Boolean; overload;
+function HMACSHA1DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA1Block;Digest:PSHA1Digest):Boolean; overload;
 function HMACSHA1DigestString(const Key,Value:String;Digest:PSHA1Digest):Boolean;
 
 {==============================================================================}
@@ -2773,7 +2793,8 @@ function HMACSHA1DigestString(const Key,Value:String;Digest:PSHA1Digest):Boolean
 function SHA256DigestData(Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
 function SHA256DigestString(const Value:String;Digest:PSHA256Digest):Boolean;
 
-function HMACSHA256DigestData(const Key:String;Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
+function HMACSHA256DigestData(const Key:String;Data:PSHA256Block;Digest:PSHA256Digest):Boolean; overload;
+function HMACSHA256DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA256Block;Digest:PSHA256Digest):Boolean; overload;
 function HMACSHA256DigestString(const Key,Value:String;Digest:PSHA256Digest):Boolean;
 
 {==============================================================================}
@@ -2781,7 +2802,8 @@ function HMACSHA256DigestString(const Key,Value:String;Digest:PSHA256Digest):Boo
 function SHA384DigestData(Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
 function SHA384DigestString(const Value:String;Digest:PSHA384Digest):Boolean;
 
-function HMACSHA384DigestData(const Key:String;Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
+function HMACSHA384DigestData(const Key:String;Data:PSHA384Block;Digest:PSHA384Digest):Boolean; overload;
+function HMACSHA384DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA384Block;Digest:PSHA384Digest):Boolean; overload;
 function HMACSHA384DigestString(const Key,Value:String;Digest:PSHA384Digest):Boolean;
 
 {==============================================================================}
@@ -2789,7 +2811,8 @@ function HMACSHA384DigestString(const Key,Value:String;Digest:PSHA384Digest):Boo
 function SHA512DigestData(Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
 function SHA512DigestString(const Value:String;Digest:PSHA512Digest):Boolean;
 
-function HMACSHA512DigestData(const Key:String;Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
+function HMACSHA512DigestData(const Key:String;Data:PSHA512Block;Digest:PSHA512Digest):Boolean; overload;
+function HMACSHA512DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA512Block;Digest:PSHA512Digest):Boolean; overload;
 function HMACSHA512DigestString(const Key,Value:String;Digest:PSHA512Digest):Boolean;
 
 {==============================================================================}
@@ -2798,7 +2821,7 @@ function RSAInitPrivateKey(Modulus,PublicExp,PrivateExp,P,Q,DP,DQ,QInv:PByte;Mod
 function RSAInitPublicKey(Modulus,PublicExp:PByte;ModulusLen,PublicExpLen:Integer):PRSAContext;
 function RSAFreeKey(Context:PRSAContext):Boolean;
 
-function RSAEncryptSign(Context:PRSAContext;const Input:PByte;Len:Word;Output:PByte;Sign:Boolean):Integer;
+function RSAEncryptSign(Context:PRSAContext;const Input:PByte;Len:Integer;Output:PByte;Sign:Boolean):Integer;
 function RSADecryptVerify(Context:PRSAContext;const Input:PByte;Output:PByte;Len:Integer;Verify:Boolean):Integer;
 
 {==============================================================================}
@@ -2941,260 +2964,24 @@ end;
 {==============================================================================}
 {Crypto Functions}
 function HashCreate(Algorithm:LongWord;Key:Pointer;KeySize:LongWord):PHashContext;
-{Initialize a hash context based on an algorithm and an optional key}
+{Initialize a hash context based on an algorithm and (if applicable) a key}
 var
- Count:LongWord;
  Context:PHashContext;
- MD5KeyDigest:TMD5Digest;
- MD5PadBuffer:TMD5ByteBuffer;
- SHA1KeyDigest:TSHA1Digest;
- SHA1PadBuffer:TSHA1ByteBuffer;
- SHA256KeyDigest:TSHA256Digest;
- SHA256PadBuffer:TSHA256ByteBuffer;
- SHA384KeyDigest:TSHA384Digest;
- SHA384PadBuffer:TSHA384ByteBuffer;
- SHA512KeyDigest:TSHA512Digest;
- SHA512PadBuffer:TSHA512ByteBuffer;
 begin
  {}
  Result:=nil;
 
  {Allocate context}
- Context:=AllocMem(SizeOf(THashContext));
+ Context:=GetMem(SizeOf(THashContext));
  if Context = nil then Exit;
 
- {Update context}
- Context.Algorithm:=Algorithm;
-
- {Check algorithm}
- case Algorithm of
-  CRYPTO_HASH_ALG_MD5:begin
-    {Init MD5}
-    MD5Init(Context.MD5);
-   end;
-  CRYPTO_HASH_ALG_SHA1:begin
-    {Init SHA1}
-    SHA1Init(Context.SHA1);
-   end;
-  CRYPTO_HASH_ALG_SHA256:begin
-    {Init SHA256}
-    SHA256Init(Context.SHA256);
-   end;
-  CRYPTO_HASH_ALG_SHA384:begin
-    {Init SHA384}
-    SHA384Init(Context.SHA384);
-   end;
-  CRYPTO_HASH_ALG_SHA512:begin
-    {Init SHA512}
-    SHA512Init(Context.SHA512);
-   end;
-  CRYPTO_HASH_ALG_HMAC_MD5:begin
-    {Get key length}
-    Context.KeySize:=KeySize;
-
-    {Check key length}
-    if Context.KeySize > 64 then
-     begin
-      {Init MD5}
-      MD5Init(Context.MD5);
-
-      {Update MD5 with Key}
-      MD5Update(Context.MD5,Key,KeySize);
-
-      {Finish MD5 with Key}
-      MD5Final(Context.MD5,MD5KeyDigest);
-
-      {Copy digest to key buffer}
-      System.Move(MD5KeyDigest[0],Context.Key[0],16);
-
-      {Update key length}
-      Context.KeySize:=16;
-     end
-    else
-     begin
-      {Copy key to key buffer}
-      System.Move(Key^,Context.Key,Context.KeySize);
-     end;
-
-    {XOR the key buffer with the iPad value}
-    for Count:=0 to 63 do
-     begin
-      MD5PadBuffer[Count]:=Context.Key[Count] xor $36;
-     end;
-
-    {Init MD5}
-    MD5Init(Context.MD5);
-
-    {Update MD5 with iPad Key}
-    MD5Update(Context.MD5,@MD5PadBuffer,SizeOf(TMD5ByteBuffer));
-   end;
-  CRYPTO_HASH_ALG_HMAC_SHA1:begin
-    {Get key length}
-    Context.KeySize:=KeySize;
-
-    {Check key length}
-    if Context.KeySize > 64 then
-     begin
-      {Init SHA1}
-      SHA1Init(Context.SHA1);
-
-      {Update SHA1 with Key}
-      SHA1Update(Context.SHA1,Key,KeySize);
-
-      {Finish SHA1 with Key}
-      SHA1Final(Context.SHA1,SHA1KeyDigest);
-
-      {Copy digest to key buffer}
-      System.Move(SHA1KeyDigest[0],Context.Key[0],20);
-
-      {Update key length}
-      Context.KeySize:=20;
-     end
-    else
-     begin
-      {Copy key to key buffer}
-      System.Move(Key^,Context.Key[0],Context.KeySize);
-     end;
-
-    {XOR the key buffer with the iPad value}
-    for Count:=0 to 63 do
-     begin
-      SHA1PadBuffer[Count]:=Context.Key[Count] xor $36;
-     end;
-
-    {Init SHA1}
-    SHA1Init(Context.SHA1);
-
-    {Update SHA1 with iPad Key}
-    SHA1Update(Context.SHA1,@SHA1PadBuffer,SizeOf(TSHA1ByteBuffer));
-   end;
-  CRYPTO_HASH_ALG_HMAC_SHA256:begin
-    {Get key length}
-    Context.KeySize:=KeySize;
-
-    {Check key length}
-    if Context.KeySize > 64 then
-     begin
-      {Init SHA256}
-      SHA256Init(Context.SHA256);
-
-      {Update SHA256 with Key}
-      SHA256Process(Context.SHA256,Key,KeySize);
-
-      {Finish SHA256 with Key}
-      SHA256Complete(Context.SHA256,SHA256KeyDigest);
-
-      {Copy digest to key buffer}
-      System.Move(SHA256KeyDigest[0],Context.Key[0],32);
-
-      {Update key length}
-      Context.KeySize:=32;
-     end
-    else
-     begin
-      {Copy key to key buffer}
-      System.Move(Key^,Context.Key[0],Context.KeySize);
-     end;
-
-    {XOR the key buffer with the iPad value}
-    for Count:=0 to 63 do
-     begin
-      SHA256PadBuffer[Count]:=Context.Key[Count] xor $36;
-     end;
-
-    {Init SHA256}
-    SHA256Init(Context.SHA256);
-
-    {Update SHA256 with iPad Key}
-    SHA256Process(Context.SHA256,@SHA256PadBuffer,SizeOf(TSHA256ByteBuffer));
-   end;
-  CRYPTO_HASH_ALG_HMAC_SHA384:begin
-    {Get key length}
-    Context.KeySize:=KeySize;
-
-    {Check key length}
-    if Context.KeySize > 128 then
-     begin
-      {Init SHA384}
-      SHA384Init(Context.SHA384);
-
-      {Update SHA384 with Key}
-      SHA384Process(Context.SHA384,Key,KeySize);
-
-      {Finish SHA384 with Key}
-      SHA384Complete(Context.SHA384,SHA384KeyDigest);
-
-      {Copy digest to key buffer}
-      System.Move(SHA384KeyDigest[0],Context.Key[0],48);
-
-      {Update key length}
-      Context.KeySize:=48;
-     end
-    else
-     begin
-      {Copy key to key buffer}
-      System.Move(Key^,Context.Key[0],Context.KeySize);
-     end;
-
-    {XOR the key buffer with the iPad value}
-    for Count:=0 to 127 do
-     begin
-      SHA384PadBuffer[Count]:=Context.Key[Count] xor $36;
-     end;
-
-    {Init SHA384}
-    SHA384Init(Context.SHA384);
-
-    {Update SHA384 with iPad Key}
-    SHA384Process(Context.SHA384,@SHA384PadBuffer,SizeOf(TSHA384ByteBuffer));
-   end;
-  CRYPTO_HASH_ALG_HMAC_SHA512:begin
-    {Get key length}
-    Context.KeySize:=KeySize;
-
-    {Check key length}
-    if Context.KeySize > 128 then
-     begin
-      {Init SHA512}
-      SHA512Init(Context.SHA512);
-
-      {Update SHA512 with Key}
-      SHA512Process(Context.SHA512,Key,KeySize);
-
-      {Finish SHA512 with Key}
-      SHA512Complete(Context.SHA512,SHA512KeyDigest);
-
-      {Copy digest to key buffer}
-      System.Move(SHA512KeyDigest[0],Context.Key[0],64);
-
-      {Update key length}
-      Context.KeySize:=64;
-     end
-    else
-     begin
-      {Copy key to key buffer}
-      System.Move(Key^,Context.Key[0],Context.KeySize);
-     end;
-
-    {XOR the key buffer with the iPad value}
-    for Count:=0 to 127 do
-     begin
-      SHA512PadBuffer[Count]:=Context.Key[Count] xor $36;
-     end;
-
-    {Init SHA512}
-    SHA512Init(Context.SHA512);
-
-    {Update SHA512 with iPad Key}
-    SHA512Process(Context.SHA512,@SHA512PadBuffer,SizeOf(TSHA512ByteBuffer));
-   end;
-  else
-   begin
-    {Invalid algorithm}
-    FreeMem(Context);
-    Exit;
-   end;
- end;
+ {Reset context}
+ if not HashReset(Context,Algorithm,Key,KeySize) then
+  begin
+   {Free context}
+   FreeMem(Context);
+   Exit;
+  end;
 
  Result:=Context;
 end;
@@ -3252,6 +3039,308 @@ begin
 
  {Free context}
  FreeMem(Context);
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HashReset(Context:PHashContext):Boolean;
+{Clear and reinitialize an existing hash context using the existing algorithm and key}
+var
+ Key:array[0..127] of Byte;
+begin
+ {}
+ Result:=False;
+
+ if Context = nil then Exit;
+
+ if Context.KeySize > 0 then
+  begin
+   {Save Key}
+   System.Move(Context.Key,Key,Context.KeySize);
+
+   {Reset Hash}
+   Result:=HashReset(Context,Context.Algorithm,@Key,Context.KeySize);
+  end
+ else
+  begin
+   {Reset Hash}
+   Result:=HashReset(Context,Context.Algorithm,nil,0);
+  end;
+end;
+
+{==============================================================================}
+
+function HashReset(Context:PHashContext;Algorithm:LongWord;Key:Pointer;KeySize:LongWord):Boolean;
+{Clear and reinitialize an existing hash context using a new algorithm and key}
+var
+ Count:LongWord;
+ MD5KeyDigest:TMD5Digest;
+ MD5PadBuffer:TMD5ByteBuffer;
+ SHA1KeyDigest:TSHA1Digest;
+ SHA1PadBuffer:TSHA1ByteBuffer;
+ SHA256KeyDigest:TSHA256Digest;
+ SHA256PadBuffer:TSHA256ByteBuffer;
+ SHA384KeyDigest:TSHA384Digest;
+ SHA384PadBuffer:TSHA384ByteBuffer;
+ SHA512KeyDigest:TSHA512Digest;
+ SHA512PadBuffer:TSHA512ByteBuffer;
+begin
+ {}
+ Result:=False;
+
+ if Context = nil then Exit;
+
+ {Zero context}
+ FillChar(Context^,SizeOf(THashContext),0);
+
+ {Update context}
+ Context.Algorithm:=Algorithm;
+
+ {Check algorithm}
+ case Algorithm of
+  CRYPTO_HASH_ALG_MD5:begin
+    {Init MD5}
+    MD5Init(Context.MD5);
+   end;
+  CRYPTO_HASH_ALG_SHA1:begin
+    {Init SHA1}
+    SHA1Init(Context.SHA1);
+   end;
+  CRYPTO_HASH_ALG_SHA256:begin
+    {Init SHA256}
+    SHA256Init(Context.SHA256);
+   end;
+  CRYPTO_HASH_ALG_SHA384:begin
+    {Init SHA384}
+    SHA384Init(Context.SHA384);
+   end;
+  CRYPTO_HASH_ALG_SHA512:begin
+    {Init SHA512}
+    SHA512Init(Context.SHA512);
+   end;
+  CRYPTO_HASH_ALG_HMAC_MD5:begin
+    {Check Key}
+    if Key = nil then Exit;
+
+    {Get key length}
+    Context.KeySize:=KeySize;
+
+    {Check key length}
+    if Context.KeySize > 64 then
+     begin
+      {Init MD5}
+      MD5Init(Context.MD5);
+
+      {Update MD5 with Key}
+      MD5Update(Context.MD5,Key,KeySize);
+
+      {Finish MD5 with Key}
+      MD5Final(Context.MD5,MD5KeyDigest);
+
+      {Copy digest to key buffer}
+      System.Move(MD5KeyDigest[0],Context.Key[0],16);
+
+      {Update key length}
+      Context.KeySize:=16;
+     end
+    else
+     begin
+      {Copy key to key buffer}
+      System.Move(Key^,Context.Key,Context.KeySize);
+     end;
+
+    {XOR the key buffer with the iPad value}
+    for Count:=0 to 63 do
+     begin
+      MD5PadBuffer[Count]:=Context.Key[Count] xor $36;
+     end;
+
+    {Init MD5}
+    MD5Init(Context.MD5);
+
+    {Update MD5 with iPad Key}
+    MD5Update(Context.MD5,@MD5PadBuffer,SizeOf(TMD5ByteBuffer));
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA1:begin
+    {Check Key}
+    if Key = nil then Exit;
+
+    {Get key length}
+    Context.KeySize:=KeySize;
+
+    {Check key length}
+    if Context.KeySize > 64 then
+     begin
+      {Init SHA1}
+      SHA1Init(Context.SHA1);
+
+      {Update SHA1 with Key}
+      SHA1Update(Context.SHA1,Key,KeySize);
+
+      {Finish SHA1 with Key}
+      SHA1Final(Context.SHA1,SHA1KeyDigest);
+
+      {Copy digest to key buffer}
+      System.Move(SHA1KeyDigest[0],Context.Key[0],20);
+
+      {Update key length}
+      Context.KeySize:=20;
+     end
+    else
+     begin
+      {Copy key to key buffer}
+      System.Move(Key^,Context.Key[0],Context.KeySize);
+     end;
+
+    {XOR the key buffer with the iPad value}
+    for Count:=0 to 63 do
+     begin
+      SHA1PadBuffer[Count]:=Context.Key[Count] xor $36;
+     end;
+
+    {Init SHA1}
+    SHA1Init(Context.SHA1);
+
+    {Update SHA1 with iPad Key}
+    SHA1Update(Context.SHA1,@SHA1PadBuffer,SizeOf(TSHA1ByteBuffer));
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA256:begin
+    {Check Key}
+    if Key = nil then Exit;
+
+    {Get key length}
+    Context.KeySize:=KeySize;
+
+    {Check key length}
+    if Context.KeySize > 64 then
+     begin
+      {Init SHA256}
+      SHA256Init(Context.SHA256);
+
+      {Update SHA256 with Key}
+      SHA256Process(Context.SHA256,Key,KeySize);
+
+      {Finish SHA256 with Key}
+      SHA256Complete(Context.SHA256,SHA256KeyDigest);
+
+      {Copy digest to key buffer}
+      System.Move(SHA256KeyDigest[0],Context.Key[0],32);
+
+      {Update key length}
+      Context.KeySize:=32;
+     end
+    else
+     begin
+      {Copy key to key buffer}
+      System.Move(Key^,Context.Key[0],Context.KeySize);
+     end;
+
+    {XOR the key buffer with the iPad value}
+    for Count:=0 to 63 do
+     begin
+      SHA256PadBuffer[Count]:=Context.Key[Count] xor $36;
+     end;
+
+    {Init SHA256}
+    SHA256Init(Context.SHA256);
+
+    {Update SHA256 with iPad Key}
+    SHA256Process(Context.SHA256,@SHA256PadBuffer,SizeOf(TSHA256ByteBuffer));
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA384:begin
+    {Check Key}
+    if Key = nil then Exit;
+
+    {Get key length}
+    Context.KeySize:=KeySize;
+
+    {Check key length}
+    if Context.KeySize > 128 then
+     begin
+      {Init SHA384}
+      SHA384Init(Context.SHA384);
+
+      {Update SHA384 with Key}
+      SHA384Process(Context.SHA384,Key,KeySize);
+
+      {Finish SHA384 with Key}
+      SHA384Complete(Context.SHA384,SHA384KeyDigest);
+
+      {Copy digest to key buffer}
+      System.Move(SHA384KeyDigest[0],Context.Key[0],48);
+
+      {Update key length}
+      Context.KeySize:=48;
+     end
+    else
+     begin
+      {Copy key to key buffer}
+      System.Move(Key^,Context.Key[0],Context.KeySize);
+     end;
+
+    {XOR the key buffer with the iPad value}
+    for Count:=0 to 127 do
+     begin
+      SHA384PadBuffer[Count]:=Context.Key[Count] xor $36;
+     end;
+
+    {Init SHA384}
+    SHA384Init(Context.SHA384);
+
+    {Update SHA384 with iPad Key}
+    SHA384Process(Context.SHA384,@SHA384PadBuffer,SizeOf(TSHA384ByteBuffer));
+   end;
+  CRYPTO_HASH_ALG_HMAC_SHA512:begin
+    {Check Key}
+    if Key = nil then Exit;
+
+    {Get key length}
+    Context.KeySize:=KeySize;
+
+    {Check key length}
+    if Context.KeySize > 128 then
+     begin
+      {Init SHA512}
+      SHA512Init(Context.SHA512);
+
+      {Update SHA512 with Key}
+      SHA512Process(Context.SHA512,Key,KeySize);
+
+      {Finish SHA512 with Key}
+      SHA512Complete(Context.SHA512,SHA512KeyDigest);
+
+      {Copy digest to key buffer}
+      System.Move(SHA512KeyDigest[0],Context.Key[0],64);
+
+      {Update key length}
+      Context.KeySize:=64;
+     end
+    else
+     begin
+      {Copy key to key buffer}
+      System.Move(Key^,Context.Key[0],Context.KeySize);
+     end;
+
+    {XOR the key buffer with the iPad value}
+    for Count:=0 to 127 do
+     begin
+      SHA512PadBuffer[Count]:=Context.Key[Count] xor $36;
+     end;
+
+    {Init SHA512}
+    SHA512Init(Context.SHA512);
+
+    {Update SHA512 with iPad Key}
+    SHA512Process(Context.SHA512,@SHA512PadBuffer,SizeOf(TSHA512ByteBuffer));
+   end;
+  else
+   begin
+    {Invalid algorithm}
+    Exit;
+   end;
+ end;
 
  Result:=True;
 end;
@@ -3982,6 +4071,15 @@ end;
 
 function HMACMD5DigestData(const Key:String;Data:PMD5Block;Digest:PMD5Digest):Boolean;
 {Generate an MD5 HMAC (Hashed Message Authentication Code) using the Key and Data}
+begin
+ {}
+ Result:=HMACMD5DigestData(PAnsiChar(Key),Length(Key),Data,Digest);
+end;
+
+{==============================================================================}
+
+function HMACMD5DigestData(Key:Pointer;KeySize:LongWord;Data:PMD5Block;Digest:PMD5Digest):Boolean;
+{Generate an MD5 HMAC (Hashed Message Authentication Code) using the Key and Data}
 {The MD5 HMAC algorithm is:
 
  MD5(Key xor oPad, MD5(Key xor iPad, Data))
@@ -3997,7 +4095,6 @@ var
  Count:LongWord;
  Block:TMD5Block;
  KeyBlock:TMD5Block;
- KeyLength:PtrUInt;
  KeyDigest:TMD5Digest;
  KeyBuffer:TMD5ByteBuffer;
  PadBuffer:TMD5ByteBuffer;
@@ -4006,17 +4103,19 @@ begin
  Result:=False;
 
  {Check Params}
+ if Key = nil then Exit;
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
- {Get key length}
- KeyLength:=Length(Key);
-
  {Check key length}
- if KeyLength > 64 then
+ if KeySize > 64 then
   begin
    {MD5 the key}
-   if not MD5DigestString(Key,@KeyDigest) then Exit;
+   KeyBlock.Data:=Key;
+   KeyBlock.Size:=KeySize;
+   KeyBlock.Next:=nil;
+
+   if not MD5DigestData(@KeyBlock,@KeyDigest) then Exit;
 
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TMD5ByteBuffer),0);
@@ -4025,7 +4124,7 @@ begin
    System.Move(KeyDigest[0],KeyBuffer[0],16);
 
    {Update key length}
-   KeyLength:=16;
+   KeySize:=16;
   end
  else
   begin
@@ -4033,7 +4132,7 @@ begin
    FillChar(KeyBuffer[0],SizeOf(TMD5ByteBuffer),0);
 
    {Copy key to key buffer}
-   System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
+   System.Move(Key^,KeyBuffer[0],KeySize);
   end;
 
  {XOR the key buffer with the iPad value}
@@ -5331,6 +5430,15 @@ end;
 
 function HMACSHA1DigestData(const Key:String;Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
 {Generate a SHA1 HMAC (Hashed Message Authentication Code) using the Key and Data}
+begin
+ {}
+ Result:=HMACSHA1DigestData(PAnsiChar(Key),Length(Key),Data,Digest);
+end;
+
+{==============================================================================}
+
+function HMACSHA1DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA1Block;Digest:PSHA1Digest):Boolean;
+{Generate a SHA1 HMAC (Hashed Message Authentication Code) using the Key and Data}
 {The SHA1 HMAC algorithm is:
 
  SHA1(Key xor oPad, SHA1(Key xor iPad, Data))
@@ -5346,7 +5454,6 @@ var
  Count:LongWord;
  Block:TSHA1Block;
  KeyBlock:TSHA1Block;
- KeyLength:PtrUInt;
  KeyDigest:TSHA1Digest;
  KeyBuffer:TSHA1ByteBuffer;
  PadBuffer:TSHA1ByteBuffer;
@@ -5355,17 +5462,19 @@ begin
  Result:=False;
 
  {Check Params}
+ if Key = nil then Exit;
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
- {Get key length}
- KeyLength:=Length(Key);
-
  {Check key length}
- if KeyLength > 64 then
+ if KeySize > 64 then
   begin
    {SHA1 the key}
-   if not SHA1DigestString(Key,@KeyDigest) then Exit;
+   KeyBlock.Data:=Key;
+   KeyBlock.Size:=KeySize;
+   KeyBlock.Next:=nil;
+
+   if not SHA1DigestData(@KeyBlock,@KeyDigest) then Exit;
 
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA1ByteBuffer),0);
@@ -5374,7 +5483,7 @@ begin
    System.Move(KeyDigest[0],KeyBuffer[0],20);
 
    {Update key length}
-   KeyLength:=20;
+   KeySize:=20;
   end
  else
   begin
@@ -5382,7 +5491,7 @@ begin
    FillChar(KeyBuffer[0],SizeOf(TSHA1ByteBuffer),0);
 
    {Copy key to key buffer}
-   System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
+   System.Move(Key^,KeyBuffer[0],KeySize);
   end;
 
  {XOR the key buffer with the iPad value}
@@ -5592,6 +5701,15 @@ end;
 
 function HMACSHA256DigestData(const Key:String;Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
 {Generate a SHA256 HMAC (Hashed Message Authentication Code) using the Key and Data}
+begin
+ {}
+ Result:=HMACSHA256DigestData(PAnsiChar(Key),Length(Key),Data,Digest);
+end;
+
+{==============================================================================}
+
+function HMACSHA256DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA256Block;Digest:PSHA256Digest):Boolean;
+{Generate a SHA256 HMAC (Hashed Message Authentication Code) using the Key and Data}
 {The SHA256 HMAC algorithm is:
 
  SHA256(Key xor oPad, SHA256(Key xor iPad, Data))
@@ -5607,7 +5725,6 @@ var
  Count:LongWord;
  Block:TSHA256Block;
  KeyBlock:TSHA256Block;
- KeyLength:PtrUInt;
  KeyDigest:TSHA256Digest;
  KeyBuffer:TSHA256ByteBuffer;
  PadBuffer:TSHA256ByteBuffer;
@@ -5616,17 +5733,19 @@ begin
  Result:=False;
 
  {Check Params}
+ if Key = nil then Exit;
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
- {Get key length}
- KeyLength:=Length(Key);
-
  {Check key length}
- if KeyLength > 64 then
+ if KeySize > 64 then
   begin
    {SHA256 the key}
-   if not SHA256DigestString(Key,@KeyDigest) then Exit;
+   KeyBlock.Data:=Key;
+   KeyBlock.Size:=KeySize;
+   KeyBlock.Next:=nil;
+
+   if not SHA256DigestData(@KeyBlock,@KeyDigest) then Exit;
 
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA256ByteBuffer),0);
@@ -5635,7 +5754,7 @@ begin
    System.Move(KeyDigest[0],KeyBuffer[0],32);
 
    {Update key length}
-   KeyLength:=32;
+   KeySize:=32;
   end
  else
   begin
@@ -5643,7 +5762,7 @@ begin
    FillChar(KeyBuffer[0],SizeOf(TSHA256ByteBuffer),0);
 
    {Copy key to key buffer}
-   System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
+   System.Move(Key^,KeyBuffer[0],KeySize);
   end;
 
  {XOR the key buffer with the iPad value}
@@ -5853,6 +5972,15 @@ end;
 
 function HMACSHA384DigestData(const Key:String;Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
 {Generate a SHA384 HMAC (Hashed Message Authentication Code) using the Key and Data}
+begin
+ {}
+ Result:=HMACSHA384DigestData(PAnsiChar(Key),Length(Key),Data,Digest);
+end;
+
+{==============================================================================}
+
+function HMACSHA384DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA384Block;Digest:PSHA384Digest):Boolean;
+{Generate a SHA384 HMAC (Hashed Message Authentication Code) using the Key and Data}
 {The SHA384 HMAC algorithm is:
 
  SHA384(Key xor oPad, SHA384(Key xor iPad, Data))
@@ -5868,7 +5996,6 @@ var
  Count:LongWord;
  Block:TSHA384Block;
  KeyBlock:TSHA384Block;
- KeyLength:PtrUInt;
  KeyDigest:TSHA384Digest;
  KeyBuffer:TSHA384ByteBuffer;
  PadBuffer:TSHA384ByteBuffer;
@@ -5877,17 +6004,19 @@ begin
  Result:=False;
 
  {Check Params}
+ if Key = nil then Exit;
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
- {Get key length}
- KeyLength:=Length(Key);
-
  {Check key length}
- if KeyLength > 128 then
+ if KeySize > 128 then
   begin
    {SHA384 the key}
-   if not SHA384DigestString(Key,@KeyDigest) then Exit;
+   KeyBlock.Data:=Key;
+   KeyBlock.Size:=KeySize;
+   KeyBlock.Next:=nil;
+
+   if not SHA384DigestData(@KeyBlock,@KeyDigest) then Exit;
 
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA384ByteBuffer),0);
@@ -5896,7 +6025,7 @@ begin
    System.Move(KeyDigest[0],KeyBuffer[0],48);
 
    {Update key length}
-   KeyLength:=48;
+   KeySize:=48;
   end
  else
   begin
@@ -5904,7 +6033,7 @@ begin
    FillChar(KeyBuffer[0],SizeOf(TSHA384ByteBuffer),0);
 
    {Copy key to key buffer}
-   System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
+   System.Move(Key^,KeyBuffer[0],KeySize);
   end;
 
  {XOR the key buffer with the iPad value}
@@ -6028,6 +6157,15 @@ end;
 
 function HMACSHA512DigestData(const Key:String;Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
 {Generate a SHA512 HMAC (Hashed Message Authentication Code) using the Key and Data}
+begin
+ {}
+ Result:=HMACSHA512DigestData(PAnsiChar(Key),Length(Key),Data,Digest);
+end;
+
+{==============================================================================}
+
+function HMACSHA512DigestData(Key:Pointer;KeySize:LongWord;Data:PSHA512Block;Digest:PSHA512Digest):Boolean;
+{Generate a SHA512 HMAC (Hashed Message Authentication Code) using the Key and Data}
 {The SHA512 HMAC algorithm is:
 
  SHA512(Key xor oPad, SHA512(Key xor iPad, Data))
@@ -6043,7 +6181,6 @@ var
  Count:LongWord;
  Block:TSHA512Block;
  KeyBlock:TSHA512Block;
- KeyLength:PtrUInt;
  KeyDigest:TSHA512Digest;
  KeyBuffer:TSHA512ByteBuffer;
  PadBuffer:TSHA512ByteBuffer;
@@ -6052,17 +6189,19 @@ begin
  Result:=False;
 
  {Check Params}
+ if Key = nil then Exit;
  if Data = nil then Exit;
  if Digest = nil then Exit;
 
- {Get key length}
- KeyLength:=Length(Key);
-
  {Check key length}
- if KeyLength > 128 then
+ if KeySize > 128 then
   begin
    {SHA512 the key}
-   if not SHA512DigestString(Key,@KeyDigest) then Exit;
+   KeyBlock.Data:=Key;
+   KeyBlock.Size:=KeySize;
+   KeyBlock.Next:=nil;
+
+   if not SHA512DigestData(@KeyBlock,@KeyDigest) then Exit;
 
    {Zero key buffer}
    FillChar(KeyBuffer[0],SizeOf(TSHA512ByteBuffer),0);
@@ -6071,7 +6210,7 @@ begin
    System.Move(KeyDigest[0],KeyBuffer[0],64);
 
    {Update key length}
-   KeyLength:=64;
+   KeySize:=64;
   end
  else
   begin
@@ -6079,7 +6218,7 @@ begin
    FillChar(KeyBuffer[0],SizeOf(TSHA512ByteBuffer),0);
 
    {Copy key to key buffer}
-   System.Move(PChar(Key)^,KeyBuffer[0],KeyLength);
+   System.Move(Key^,KeyBuffer[0],KeySize);
   end;
 
  {XOR the key buffer with the iPad value}
@@ -6253,7 +6392,7 @@ end;
 
 {==============================================================================}
 
-function RSAEncryptSign(Context:PRSAContext;const Input:PByte;Len:Word;Output:PByte;Sign:Boolean):Integer;
+function RSAEncryptSign(Context:PRSAContext;const Input:PByte;Len:Integer;Output:PByte;Sign:Boolean):Integer;
 {Perform PKCS1.5 Encryption or Signing}
 {Context: The RSA context containing Private and/or Public keys}
 {Input: The data to be encrypted}
@@ -6264,8 +6403,10 @@ function RSAEncryptSign(Context:PRSAContext;const Input:PByte;Len:Word;Output:PB
 var
  Size:Integer;
  Padding:Integer;
- Block:PBigInt;
+ Imported:PByte;
+ Decrypted:PBigInt;
  Encrypted:PBigInt;
+ Block:array[0..RSA_MODULUS_BYTES_MAX - 1] of Byte;
 begin
  {}
  Result:=-1;
@@ -6282,50 +6423,57 @@ begin
  Padding:=Size - Len - 3;
  if Len > Size - 11 then Exit;
 
- {Leading zero to ensure encryption block is less than modulus (when converted to an integer)}
- Output[0]:=0;
+ Imported:=@Block;
+ if Size > RSA_MODULUS_BYTES_MAX then Imported:=GetMem(Size);
+ if Imported = nil then Exit;
+ try
+  {Leading zero to ensure encryption block is less than modulus (when converted to an integer)}
+  Imported[0]:=0;
 
- {Check Sign}
- if Sign then
-  begin
-   {Block Type 1}
-   Output[1]:=1;
+  {Check Sign}
+  if Sign then
+   begin
+    {Block Type 1}
+    Imported[1]:=1;
 
-   {Pad with 0xff bytes}
-   FillChar(Output[2],Padding,$FF);
-  end
- else
-  begin
-   {Block Type 2}
-   Output[1]:=2;
+    {Pad with 0xff bytes}
+    FillChar(Imported[2],Padding,$FF);
+   end
+  else
+   begin
+    {Block Type 2}
+    Imported[1]:=2;
 
-   {Pad with random non-zero bytes}
-   if not GetRandomBytesNonZero(@Output[2],Padding) then Exit;
-  end;
+    {Pad with random non-zero bytes}
+    if not GetRandomBytesNonZero(@Imported[2],Padding) then Exit;
+   end;
 
- {Trailing zero after padding bytes}
- Output[2 + Padding]:=0;
+  {Trailing zero after padding bytes}
+  Imported[2 + Padding]:=0;
 
- {Copy Input to Output}
- System.Move(Input^,PByte(@Output[3 + Padding])^,Len);
+  {Copy Input to Block}
+  System.Move(Input^,PByte(@Imported[3 + Padding])^,Len);
 
- {Encrypt the Block}
- Block:=BIImport(Context.Context,Output,Size);
- if Sign then
-  begin
-   {Sign with Private Key}
-   Encrypted:=BICRT(Context.Context,Block,Context.DP,Context.DQ,Context.P,Context.Q,Context.QInv);
-  end
- else
-  begin
-   {Encrypt with Public Key}
-   Context.Context.ModOffset:=BIGINT_M_OFFSET;
-   Encrypted:=BIModPower(Context.Context,Block,Context.E);
-  end;
- BIExport(Context.Context,Encrypted,Output,Size);
+  {Encrypt the Block}
+  Decrypted:=BIImport(Context.Context,Imported,Size);
+  if Sign then
+   begin
+    {Sign with Private Key}
+    Encrypted:=BICRT(Context.Context,Decrypted,Context.DP,Context.DQ,Context.P,Context.Q,Context.QInv);
+   end
+  else
+   begin
+    {Encrypt with Public Key}
+    Context.Context.ModOffset:=BIGINT_M_OFFSET;
+    Encrypted:=BIModPower(Context.Context,Decrypted,Context.E);
+   end;
+  BIExport(Context.Context,Encrypted,Output,Size);
 
- {Return Result}
- Result:=Size;
+  {Return Result}
+  Result:=Size;
+ finally
+  if Size > RSA_MODULUS_BYTES_MAX then FreeMem(Imported);
+ end;
 end;
 
 {==============================================================================}
