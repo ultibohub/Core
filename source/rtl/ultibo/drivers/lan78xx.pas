@@ -64,9 +64,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,S
 
 {==============================================================================}
 {Global definitions}
-//{$INCLUDE GlobalDefines.inc}  //To Do
-
-//{$DEFINE LAN78XX_DEBUG}  //To Do
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
 const
@@ -2793,7 +2791,7 @@ begin
  {Close Network}
  LAN78XXNetworkClose(@Network.Network);
  
- {Destroy Lock}
+ {Destroy PHY Lock}
  if Network.PHYLock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Network.PHYLock);

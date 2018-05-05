@@ -437,7 +437,6 @@ ULTIBO_UNITS=globalconfig \
 	     dns \
 	     vpn \
 	     wifi \
-	     smsc95xx \
 	     sockets \
 	     winsock \
 	     winsock2 \
@@ -512,6 +511,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    pitft35 \
 		    smc91x \
 		    pl18x \
+		    smsc95xx \
 		    lan78xx \
 		    rpigpioexpander \
 		    rpisensehat

@@ -39,7 +39,7 @@ SMSC 91C9x/91C1xx Ethernet
  The SMSC 91C9x/91C1xx are a family of Non-PCI 10/100 Ethernet Single Chip MAC + PHY devices.
  
  This driver is primarily intended to support the LAN91C111 Ethernet device included in the QEMU
- Verstile PB emulation however the driver is based on the equivalent Linux driver and as such
+ Versatile PB emulation however the driver is based on the equivalent Linux driver and as such
  includes (untested) support for a number of chip variants (see SMC91X_CHIP_* constants below).
  
  The QEMU emulation does not include support for a number of the features provided in the real
