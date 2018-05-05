@@ -918,7 +918,7 @@ end;
 
 function ConsoleDeviceClear(Console:PConsoleDevice;Color:LongWord):LongWord;
 {Clear a console device using the specified color}
-{Console: The console device to close}
+{Console: The console device to clear}
 {Color: The color to use when clearing the console}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
@@ -1890,7 +1890,7 @@ function ConsoleDeviceUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:Long
 {X: The X position of the caret (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
 {Y: The Y position of the caret (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
 {Visible: If true then show the caret else hide it}
-{Blink: If then blink the caret at the default blink rate}
+{Blink: If true then blink the caret at the default blink rate}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
@@ -7018,7 +7018,7 @@ function ConsoleWindowScrollLeft(Handle:TWindowHandle;Row,Col,Lines,Chars:LongWo
 {Row: The starting row (Y) for the scroll left, all rows from Row down to Row + Lines will be scrolled left}
 {Lines: The number of rows to scroll left, all rows from Row down to Row + Lines will be scrolled left}
 {Col: The starting column (X) for the scroll left, all cols from left plus Chars to Col with be scrolled left}
-{Chars: The number of characters to scroll left, Chars number of columnss at the left will be discarded}
+{Chars: The number of characters to scroll left, Chars number of columns at the left will be discarded}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: The starting Col will be blanked with the background color}

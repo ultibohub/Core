@@ -46,7 +46,7 @@ Wiring
  
  Note that Ultibo has an extensive API already that provides most of the same functionality
  as WiringPi by using the GPIO unit and some of the other device units such as I2C, SPI and PWM.
- It is not neccessary to use this unit for GPIO access, it is simply provided as an alternative
+ It is not necessary to use this unit for GPIO access, it is simply provided as an alternative
  for those who have existing code or are familiar with the WiringPi API.
  
  This unit is specific to Ultibo, if you want to use the WiringPi library from FPC/Lazarus

@@ -45,7 +45,7 @@ References
 Raspberry Pi Sense Hat
 ======================
  
- The SenseHAT 8x8 LED matrix is presented in Ultibo as an 8x8 pixel framebuffer. This allows
+ The Sense HAT 8x8 LED matrix is presented in Ultibo as an 8x8 pixel framebuffer. This allows
  full access to the display at both the individual pixel level and also using the higher level
  console functions to display text and graphics on the matrix.
   
@@ -56,8 +56,8 @@ Raspberry Pi Sense Hat
  As per the official Python libraries, the default rotation (FRAMEBUFFER_ROTATION_0) gives
  correct viewing when the HDMI port is facing downwards.
  
- The SenseHAT joystick appears as a keyboard device and the pressed buttons are received as
- key presses the represent the Left, Right, Up, Down and Enter keys.
+ The Sense HAT joystick appears as a keyboard device and the pressed buttons are received as
+ key presses that represent the Left, Right, Up, Down and Enter keys.
   
 }
 
@@ -321,8 +321,8 @@ end;
 
 function RPiSenseStart(const I2CDevice,GPIODevice:String;Rotation,Width,Height:LongWord):THandle;
 {Start the RPiSenseHat driver and register the Framebuffer and Joystick devices}
-{I2C: The name of the I2C device that the SenseHat is connected to}
-{GPIO: The name of the GPIO device that the SenseHat is connected to}
+{I2C: The name of the I2C device that the Sense HAT is connected to}
+{GPIO: The name of the GPIO device that the Sense HAT is connected to}
 {Rotation: The rotation value of the framebuffer (eg FRAMEBUFFER_ROTATION_180)}
 {Width: The width of the framebuffer in pixels (Virtual width only, the Physical width is fixed at 8 pixels)}
 {Height: The height of the framebuffer in pixels (Virtual height only, the Physical height is fixed at 8 pixels)}
@@ -489,7 +489,7 @@ end;
 function RPiSenseFramebufferCreate(I2C:PI2CDevice;const Name:String;Rotation,Width,Height:LongWord):PFramebufferDevice;
 {Create, register and allocate a new RPiSenseHat Framebuffer device which can be accessed using the framebuffer API}
 {I2C: The I2C device that the RPiSenseHat is connected to}
-{Name: The text description of this device which will should in the device list (Optional)}
+{Name: The text description of this device which will show in the device list (Optional)}
 {Rotation: The rotation value of the framebuffer (eg FRAMEBUFFER_ROTATION_180)}
 {Width: The width of the framebuffer in pixels (Virtual width only, the Physical width is fixed at 8 pixels)}
 {Height: The height of the framebuffer in pixels (Virtual height only, the Physical height is fixed at 8 pixels)}

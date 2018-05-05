@@ -35,7 +35,7 @@ SPI Devices
  SPI (Serial Peripheral Interface) is a synchronous serial bus for communication with peripheral
  components.
  
- The SPI protocol is not defined by any actual standard but some psuedo standards exist with all
+ The SPI protocol is not defined by any actual standard but some pseudo standards exist with all
  of the available devices. SPI is a master-slave protocol where the master asserts the chip select
  line (CS) to select the slave device before sending data one byte at a time.
 

@@ -40,7 +40,7 @@ References
 PS2 Keyboard/Mouse Controller
 =============================
  
- This unit provides supporting functions and defintions for PS/2 keyboard and mouse 
+ This unit provides supporting functions and definitions for PS/2 keyboard and mouse 
  controller drivers. 
  
  The constants defined here are not a complete set but represent the most commonly

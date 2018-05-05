@@ -7669,7 +7669,7 @@ end;
 
 procedure USBHubBindDevices(Device:PUSBDevice;Callback:TUSBDeviceBind);
 {Enumerate each device in the USB tree and call a bind callback for each one}
-{Device: USB device at which to start the enueration}
+{Device: USB device at which to start the enumeration (Must be a hub device)}
 {Callback: Bind callback function to execute for each device}
 var
  Hub:PUSBHub;

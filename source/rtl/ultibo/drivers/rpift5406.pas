@@ -38,8 +38,8 @@ Raspberry Pi FT5406
 ===================
 
  This is the touchscreen driver for the Official Raspberry Pi 7" Touchscreen. While this device uses a
- FocalTech FT5406 10 point capactive touchscreen controller it is actually connected to the GPU and not
- directly accessable to the ARM processor.
+ FocalTech FT5406 10 point capacitive touchscreen controller it is actually connected to the GPU and not
+ directly accessible to the ARM processor.
  
  In order to make the touchscreen data available the GPU provides a memory based interface that can be
  read by polling an address returned from a mailbox call.

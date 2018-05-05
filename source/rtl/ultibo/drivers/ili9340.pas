@@ -180,7 +180,7 @@ function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:Stri
 {Create, register and allocate a new ILI9340 Framebuffer device which can be accessed using the framebuffer API}
 {SPI: The SPI device that this ILI9340 is connected to}
 {ChipSelect: The SPI chip select to use when communicating with this device}
-{Name: The text description of this device which will should in the device list (Optional)}
+{Name: The text description of this device which will show in the device list (Optional)}
 {Rotation: The rotation value for the framebuffer device (eg FRAMEBUFFER_ROTATION_180)}
 {Width: The width of the framebuffer in pixels}
 {Height: The height of the framebuffer in pixels}

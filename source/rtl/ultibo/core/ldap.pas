@@ -58,7 +58,7 @@ const
         
  {LDAP logging}
  LDAP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {LDAP debugging messages}
- LDAP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {LDAP informational messages,}
+ LDAP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {LDAP informational messages}
  LDAP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {LDAP warning messages}
  LDAP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {LDAP error messages}
  LDAP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No LDAP messages}

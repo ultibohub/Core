@@ -55,7 +55,7 @@ const
         
  {IMAP4 logging}
  IMAP4_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {IMAP4 debugging messages}
- IMAP4_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {IMAP4 informational messages,}
+ IMAP4_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {IMAP4 informational messages}
  IMAP4_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {IMAP4 warning messages}
  IMAP4_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {IMAP4 error messages}
  IMAP4_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No IMAP4 messages}

@@ -1236,7 +1236,7 @@ const
  
  BCM2837_BOARD_REV_MASK     = $00FFFFFF; {Mask off the warranty bit}
  
- {BCM2837 mailbox tag Get Board Revision bit fields (See: https://github.com/AndrewFromMelbourne/raspberry_pi_revision)}
+ {BCM2837 mailbox tag Get Board Revision bit fields (See: https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md)}
  BCM2837_BOARD_REVISION_PCB_MASK             = ($F shl 0);  {PCB Revision Number}
                                              
  BCM2837_BOARD_REVISION_MODEL_MASK           = ($FF shl 4); {Model Number}

@@ -38,7 +38,7 @@ QEMU VersatilePB
  that are specific to the VersatilePB and may or may not be included by anything else.
  
  The unit also provides a very simple clock device driver for the 24MHz clock included in the
- Verstile PB System Control registers. This clock is 32bit only, runs at a fixed rate of 24MHz
+ Versatile PB System Control registers. This clock is 32bit only, runs at a fixed rate of 24MHz
  and cannot be stopped or reset.
  
  Additional units can be included anywhere within a program and they will be linked during the

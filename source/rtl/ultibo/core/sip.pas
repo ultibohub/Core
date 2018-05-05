@@ -60,8 +60,8 @@ const
         
  {SIP logging}
  SIP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SIP debugging messages}
- SIP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SIP informational messages,}
- SIP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SIP warning messages,}
+ SIP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SIP informational messages}
+ SIP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {SIP warning messages}
  SIP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SIP error messages}
  SIP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SIP messages}
 

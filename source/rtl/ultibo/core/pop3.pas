@@ -108,8 +108,8 @@ const
  
  {POP3 logging}
  POP3_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {POP3 debugging messages}
- POP3_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {POP3 informational messages,}
- POP3_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {POP3 warning messages,}
+ POP3_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {POP3 informational messages}
+ POP3_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {POP3 warning messages}
  POP3_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {POP3 error messages}
  POP3_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No POP3 messages}
 

@@ -57,8 +57,8 @@ const
         
  {FTP logging}
  FTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {FTP debugging messages}
- FTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {FTP informational messages,}
- FTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {FTP warning messages,}
+ FTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {FTP informational messages}
+ FTP_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {FTP warning messages}
  FTP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {FTP error messages}
  FTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FTP messages}
 

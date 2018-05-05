@@ -51,7 +51,7 @@ Transmission Control Protocol
 
         TCP Sequence numbers are compared using modulo 2^32
         arithmetic. The following calculations provide the
-        neccessary handling of wraparound etc.
+        necessary handling of wraparound etc.
 
         LT   = (A - B) < 0
         LEQ  = (A - B) <= 0
