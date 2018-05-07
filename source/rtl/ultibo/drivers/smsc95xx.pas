@@ -1367,14 +1367,40 @@ begin
    try
     {Set Result}
     Result:=ERROR_OPERATION_FAILED;
+    Status:=USB_STATUS_SUCCESS;
     
     {Check Request}
-    Status:=USB_STATUS_SUCCESS;
     case Request of
      NETWORK_CONTROL_CLEAR_STATS:begin
        {Clear Statistics}
-       //To Do
+       {Network}
+       Network.ReceiveBytes:=0;
+       Network.ReceiveCount:=0;
+       Network.ReceiveErrors:=0;
+       Network.TransmitBytes:=0;
+       Network.TransmitCount:=0;
+       Network.TransmitErrors:=0;
+       Network.StatusCount:=0;
+       Network.StatusErrors:=0;
+       Network.BufferOverruns:=0;
+       Network.BufferUnavailable:=0;
       end; 
+     NETWORK_CONTROL_GET_STATS:begin
+       {Get Statistics}
+       if Argument2 < SizeOf(TNetworkStatistics) then Exit;
+       
+       {Network}
+       PNetworkStatistics(Argument1).ReceiveBytes:=Network.ReceiveBytes;
+       PNetworkStatistics(Argument1).ReceiveCount:=Network.ReceiveCount;
+       PNetworkStatistics(Argument1).ReceiveErrors:=Network.ReceiveErrors;
+       PNetworkStatistics(Argument1).TransmitBytes:=Network.TransmitBytes;
+       PNetworkStatistics(Argument1).TransmitCount:=Network.TransmitCount;
+       PNetworkStatistics(Argument1).TransmitErrors:=Network.TransmitErrors;
+       PNetworkStatistics(Argument1).StatusCount:=Network.StatusCount;
+       PNetworkStatistics(Argument1).StatusErrors:=Network.StatusErrors;
+       PNetworkStatistics(Argument1).BufferOverruns:=Network.BufferOverruns;
+       PNetworkStatistics(Argument1).BufferUnavailable:=Network.BufferUnavailable;
+      end;     
      NETWORK_CONTROL_SET_MAC:begin     
        {Set the MAC for this device}
        Status:=SMSC95XXSetMacAddress(Device,PHardwareAddress(Argument1));
@@ -2027,9 +2053,6 @@ begin
    if MutexLock(Network.Network.Lock) = ERROR_SUCCESS then
     begin
      try
-      {Update Statistics}
-      Inc(Network.Network.ReceiveCount); 
- 
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
@@ -2106,6 +2129,10 @@ begin
                   {$IF DEFINED(SMSC95XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
                   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Receiving packet (Length=' + IntToStr(Entry.Packets[Entry.Count - 1].Length) + ', Count=' + IntToStr(Entry.Count) + ')');
                   {$ENDIF}
+                  
+                  {Update Statistics}
+                  Inc(Network.Network.ReceiveCount); 
+                  Inc(Network.Network.ReceiveBytes,Entry.Packets[Entry.Count - 1].Length); 
                  end;
                 
                 {Update Data and Size}
@@ -2158,6 +2185,7 @@ begin
               BufferFree(Entry);
               
               {Update Statistics}
+              Inc(Network.Network.ReceiveErrors); 
               Inc(Network.Network.BufferOverruns); 
              end;
            end
@@ -2169,6 +2197,7 @@ begin
             Next:=Entry;
             
             {Update Statistics}
+            Inc(Network.Network.ReceiveErrors); 
             Inc(Network.Network.BufferUnavailable); 
            end;
          end
@@ -2321,9 +2350,6 @@ begin
    if MutexLock(Network.Network.Lock) = ERROR_SUCCESS then
     begin
      try
-      {Update Statistics}
-      Inc(Network.Network.TransmitCount); 
-
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
@@ -2341,6 +2367,10 @@ begin
         {$IF DEFINED(SMSC95XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'SMSC95XX: Transmit complete');
         {$ENDIF}
+        
+        {Update Statistics}
+        Inc(Network.Network.TransmitCount);
+        Inc(Network.Network.TransmitBytes,Entry.Packets[0].Length);
        end
       else 
        begin

@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '5 May 2018';
+ ULTIBO_RELEASE_DATE             = '7 May 2018';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.311';
+ ULTIBO_RELEASE_VERSION          = '2.0.313';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 311;
+ ULTIBO_RELEASE_VERSION_REVISION = 313;
  
 {==============================================================================}
 const

@@ -117,7 +117,7 @@ const
  BCM2837_MAILBOX0_REGS_BASE     = BCM2837_PERIPHERALS_BASE + $B880;
  
  {ARM Mailbox 1}
- {BCM2837_MAILBOX1_REGS_BASE} {Currently unknown} 
+ BCM2837_MAILBOX1_REGS_BASE     = BCM2837_PERIPHERALS_BASE + $B8A0;
 
  {Power Management, Reset controller and Watchdog}
  BCM2837_PM_REGS_BASE           = BCM2837_PERIPHERALS_BASE + $100000;
@@ -1081,6 +1081,9 @@ const
  BCM2837_MAILBOX_STATUS_FULL  = $80000000;
  BCM2837_MAILBOX_STATUS_EMPTY = $40000000;
  
+ {BCM2837 mailbox configuration flags}
+ BCM2837_MAILBOX_CONFIG_IRQENABLE = $00000001;
+ 
  {BCM2837 mailbox property tags (See https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface)(or \include\soc\bcm2835\raspberrypi-firmware.h)}
  {VideoCore}
  BCM2837_MBOX_TAG_GET_FIRMWARE_REV  = $00000001;
@@ -1149,6 +1152,11 @@ const
     
  BCM2837_MBOX_TAG_GET_GPIO_CONFIG   = $00030043; {Get the current configuration of a GPIO expander pin}
  BCM2837_MBOX_TAG_SET_GPIO_CONFIG   = $00038043; {Set the current configuration of a GPIO expander pin}
+
+ BCM2837_MBOX_TAG_GET_THROTTLED     = $00030046;
+
+ BCM2837_MBOX_TAG_GET_PERIPH_REG    = $00030045;
+ BCM2837_MBOX_TAG_SET_PERIPH_REG    = $00038045;
  {Frame Buffer}
  BCM2837_MBOX_TAG_ALLOCATE_BUFFER	= $00040001; {If the requested alignment is unsupported then the current base and size (which may be 0 if not allocated) is returned and no change occurs}
  BCM2837_MBOX_TAG_RELEASE_BUFFER	= $00048001; {Releases and disables the frame buffer}
@@ -2047,12 +2055,21 @@ type
   Peek:LongWord;      {Offset 0x10}{Read from the mailbox without removing data from it}
   Sender:LongWord;    {Offset 0x14}{Sender ID (bottom 2 bits only)}
   Status:LongWord;    {Offset 0x18}{The status register for mailbox 0}
-  Config:LongWord;    {Offset 0x1C}{The configuration register for mailbox 0 }
-  Write:LongWord;     {Offset 0x20}{The write register for mailbox 0 (This is actually the read register for Mailbox 1)}
+  Config:LongWord;    {Offset 0x1C}{The configuration register for mailbox 0}
  end;
  
  {Layout of the BCM2837 Mailbox1 registers (See https://github.com/raspberrypi/firmware/wiki/Mailboxes)}
-  {Currently Unknown}
+ PBCM2837Mailbox1Registers = ^TBCM2837Mailbox1Registers;
+ TBCM2837Mailbox1Registers = record
+  Write:LongWord;     {Offset 0x00}{The write register for mailbox 0 (Also the read register for mailbox 1)}
+  Reserved1:LongWord; {Offset 0x04}
+  Reserved2:LongWord; {Offset 0x08}
+  Reserved3:LongWord; {Offset 0x0C}
+  Reserved4:LongWord; {Offset 0x10}
+  Reserved5:LongWord; {Offset 0x14}
+  Status:LongWord;    {Offset 0x18}{The status register for mailbox 1}
+  Config:LongWord;    {Offset 0x1C}{The configuration register for mailbox 1}
+ end;
 
 type
  {Layout of the BCM2837 Mailbox Framebuffer request} {This structure must be 16 byte aligned when passed to the GPU}
@@ -2701,6 +2718,23 @@ type
   case Integer of
   0:(Request:TBCM2837MailboxTagSetGPIOConfigRequest);
   1:(Response:TBCM2837MailboxTagSetGPIOConfigResponse);
+ end;
+  
+ {Get Throttled}
+ TBCM2837MailboxTagGetThrottledRequest = record
+  Value:LongWord;
+ end;
+ 
+ TBCM2837MailboxTagGetThrottledResponse = record
+  Value:LongWord;
+ end;
+ 
+ PBCM2837MailboxTagGetThrottled = ^TBCM2837MailboxTagGetThrottled;
+ TBCM2837MailboxTagGetThrottled = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagGetThrottledRequest);
+  1:(Response:TBCM2837MailboxTagGetThrottledResponse);
  end;
   
  {Allocate Buffer}

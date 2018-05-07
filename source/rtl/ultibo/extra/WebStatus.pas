@@ -2136,7 +2136,11 @@ begin
  AddBlank(AResponse);
  AddItem(AResponse,'Temperature Maximum','');
  AddItemEx(AResponse,'TEMPERATURE_ID_SOC:',IntToStr(TemperatureGetMaximum(TEMPERATURE_ID_SOC)),3);
- 
+
+ {Add Firmware Throttling}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Firmware Throttling:','0x' + IntToHex(FirmwareGetThrottled,8));
+
  {Add DMA Channels}
  AddBlank(AResponse);
  AddItem(AResponse,'DMA Channels:','0x' + IntToHex(DMAGetChannels,8));
@@ -4688,6 +4692,7 @@ var
  
  IPAddress:TInAddr;
  HardwareAddress:THardwareAddress;
+ AdapterStatistics:TAdapterStatistics;
 begin
  {}
  Result:=False;
@@ -4749,8 +4754,12 @@ begin
      AddItem(AResponse,'State:',NetworkDeviceStateToString(NetworkDevice.NetworkState));
      AddItem(AResponse,'Status:',NetworkDeviceStatusToString(NetworkDevice.NetworkStatus));
      AddBlank(AResponse);
+     AddBold(AResponse,'Statistics','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Receive Bytes:',IntToStr(NetworkDevice.ReceiveBytes));
      AddItem(AResponse,'Receive Count:',IntToStr(NetworkDevice.ReceiveCount));
      AddItem(AResponse,'Receive Errors:',IntToStr(NetworkDevice.ReceiveErrors));
+     AddItem(AResponse,'Transmit Bytes:',IntToStr(NetworkDevice.TransmitBytes));
      AddItem(AResponse,'Transmit Count:',IntToStr(NetworkDevice.TransmitCount));
      AddItem(AResponse,'Transmit Errors:',IntToStr(NetworkDevice.TransmitErrors));
      AddItem(AResponse,'Buffer Overruns:',IntToStr(NetworkDevice.BufferOverruns));
@@ -4784,9 +4793,27 @@ begin
      AddItem(AResponse,'Media Type:',Network.MediaTypeToString(Adapter.MediaType));
      AddItem(AResponse,'Adapter Type:',AdapterTypeToString(Adapter.AdapterType));
      AddBlank(AResponse);
+     AddItem(AResponse,'Buffered Receive:',BooleanToString(Adapter.BufferedReceive));
+     AddItem(AResponse,'Buffered Transmit:',BooleanToString(Adapter.BufferedTransmit));
+     AddBlank(AResponse);
      AddItem(AResponse,'Last Error:',ErrorToString(Adapter.LastError));
      AddItem(AResponse,'Thread:',ThreadGetName(Adapter.ThreadID) + ' (0x' + IntToHex(Adapter.ThreadID,8) + ')');
-    
+     AddBlank(AResponse);
+     AddItem(AResponse,'Hardware Address:',HardwareAddressToString(Adapter.GetHardwareAddress(INVALID_HANDLE_VALUE)));
+     AddBlank(AResponse);
+     
+     {Get Statistics}
+     AdapterStatistics:=Adapter.GetStatistics(INVALID_HANDLE_VALUE);
+     AddBold(AResponse,'Statistics','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Packets In:',IntToStr(AdapterStatistics.PacketsIn));
+     AddItem(AResponse,'Packets Out:',IntToStr(AdapterStatistics.PacketsOut));
+     AddItem(AResponse,'Bytes In:',IntToStr(AdapterStatistics.BytesIn));
+     AddItem(AResponse,'Bytes Out:',IntToStr(AdapterStatistics.BytesOut));
+     AddItem(AResponse,'Errors In:',IntToStr(AdapterStatistics.ErrorsIn));
+     AddItem(AResponse,'Errors Out:',IntToStr(AdapterStatistics.ErrorsOut));
+     AddItem(AResponse,'Packets Lost:',IntToStr(AdapterStatistics.PacketsLost));
+     
      Adapter.ReaderUnlock;
     end
    else

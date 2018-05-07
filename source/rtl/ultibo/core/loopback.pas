@@ -1,7 +1,7 @@
 {
 Ultibo Loopback Network adapter unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -327,6 +327,10 @@ begin
   {Save the Size}
   Buffer.Size:=Size;
  
+  {Update Statistics}
+  Inc(FStatistics.PacketsOut);
+  Inc(FStatistics.BytesOut,Buffer.Size);
+  
   {Notify the Thread}
   Result:=FThread.SendHandle(AHandle);
  finally 
@@ -377,12 +381,12 @@ begin
   {Set State}
   FState:=ADAPTER_STATE_ENABLED;
   
-  {Set Status}
-  FStatus:=ADAPTER_STATUS_UP;
- 
   {Set Hardware Address}
   FHardwareAddress:=HARDWARE_LOOPBACK;
- 
+
+  {Set Status}
+  SetStatus(ADAPTER_STATUS_UP);
+  
   {Create Thread}
   FThread:=TAdapterThread.Create(Self);
   
@@ -443,15 +447,15 @@ begin
     RemoveTransport(THandle(Current),Current.PacketType);
    end;
  
-  {Reset State}
-  FState:=ADAPTER_STATE_DISABLED;
- 
   {Reset Status}
   FStatus:=ADAPTER_STATUS_DOWN;
   
   {Reset Hardware Address}
   FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
- 
+
+  {Reset State}
+  FState:=ADAPTER_STATE_DISABLED;
+
   {Return Result}
   Result:=True;
  finally 
@@ -496,6 +500,10 @@ begin
     Buffer:=PLoopbackBuffer(Transport.Buffer.ReadNext);
     if Buffer = nil then Exit;
 
+    {Update Statistics}
+    Inc(FStatistics.PacketsIn);
+    Inc(FStatistics.BytesIn,Buffer.Size);
+    
     {Call the Packet Handler}
     Transport.PacketHandler(THandle(Transport),@FHardwareAddress,@FHardwareAddress,@Buffer.Data,Buffer.Size,False); {No need to check for Broadcast}
           

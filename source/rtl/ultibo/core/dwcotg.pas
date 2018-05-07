@@ -1408,7 +1408,7 @@ begin
  {$ENDIF}
  
  {Send Request}
- Status:=MailslotSend(PDWCUSBHost(Host).SchedulerMailslot,Integer(Request));
+ Status:=MailslotSend(PDWCUSBHost(Host).SchedulerMailslot,PtrInt(Request));
  if Status <> ERROR_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'DWCOTG: Failed to submit request');
@@ -3782,7 +3782,7 @@ begin
    begin
     {Get Request}
     Request:=PUSBRequest(MailslotReceive(Host.SchedulerMailslot));
-    if LongWord(Request) <> LongWord(INVALID_HANDLE_VALUE) then
+    if PtrInt(Request) <> PtrInt(INVALID_HANDLE_VALUE) then
      begin
       {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
       if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Scheduler received message (Request=' + IntToHex(LongWord(Request),8) + ')');

@@ -1,5 +1,5 @@
 {
-Raspberry Pi SenstHat Driver.
+Raspberry Pi Sense HAT Driver.
 
 Copyright (C) 2018 - SoftOz Pty Ltd.
 

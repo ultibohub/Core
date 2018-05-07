@@ -120,6 +120,15 @@ const
  EXCEPTION_TYPE_PREFETCH_ABORT        = 2;
  EXCEPTION_TYPE_UNDEFINED_INSTRUCTION = 3;
  
+ {Firmware Throttling Flags}
+ FIRMWARE_THROTTLE_NONE                = (0 shl 0);
+ FIRMWARE_THROTTLE_UNDER_VOLTAGE       = (1 shl 0);  {Under voltage is occurring}
+ FIRMWARE_THROTTLE_FREQUENCY_LIMIT     = (1 shl 1);  {Frequency limiting is occurring}
+ FIRMWARE_THROTTLE_THROTTLED           = (1 shl 2);  {Throttling is occurring}
+ FIRMWARE_THROTTLE_WAS_UNDER_VOLTAGE   = (1 shl 16); {Under voltage has occurred}
+ FIRMWARE_THROTTLE_WAS_FREQUENCY_LIMIT = (1 shl 17); {Frequency limiting has occurred} 
+ FIRMWARE_THROTTLE_WAS_THROTTLED       = (1 shl 18); {Throttling has occurred} 
+ 
  {Platform logging}
  PLATFORM_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Platform debugging messages}
  PLATFORM_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Platform informational messages}
@@ -552,6 +561,7 @@ type
 type
  {Prototypes for Firmware Handlers}
  TFirmwareGetRevision = function:LongWord;
+ TFirmwareGetThrottled = function:LongWord;
  
 type
  {Prototypes for Machine Handlers}
@@ -985,9 +995,9 @@ type
  
 type
  {Prototypes for Symbol Handlers}
- TSymbolAdd = function(AHandle:THandle;const AName:String;AAddress:PtrUInt):Boolean; 
+ TSymbolAdd = function(AHandle:THandle;const AName:String;AAddress:PtrUInt):Boolean;
  TSymbolRemove = function(AHandle:THandle;const AName:String):Boolean; 
- TSymbolGetAddress = function(AHandle:THandle;const AName:String):PtrUInt; 
+ TSymbolGetAddress = function(AHandle:THandle;const AName:String):PtrUInt;
  
 type
  {Prototype for Logging Handlers}
@@ -1276,6 +1286,7 @@ var
 var
  {Firmware Handlers}
  FirmwareGetRevisionHandler:TFirmwareGetRevision;
+ FirmwareGetThrottledHandler:TFirmwareGetThrottled;
  
 var
  {Machine Handlers}
@@ -1902,6 +1913,7 @@ function BoardGetMACAddress:String; inline;
 {==============================================================================}
 {Firmware Functions}
 function FirmwareGetRevision:LongWord; inline;
+function FirmwareGetThrottled:LongWord; inline;
 
 {==============================================================================}
 {Machine Functions}
@@ -4596,6 +4608,23 @@ begin
  if Assigned(FirmwareGetRevisionHandler) then
   begin
    Result:=FirmwareGetRevisionHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function FirmwareGetThrottled:LongWord; inline;
+{Get the current throttling state from the firmware}
+{Return: A bit mask of FIRMWARE_THROTTLE_* values for the throttling state}
+begin
+ {}
+ if Assigned(FirmwareGetThrottledHandler) then
+  begin
+   Result:=FirmwareGetThrottledHandler;
   end
  else
   begin

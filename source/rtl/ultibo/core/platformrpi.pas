@@ -184,6 +184,7 @@ var
 var
  {Mailbox Variables}
  Mailbox0Registers:PBCM2835Mailbox0Registers;
+ Mailbox1Registers:PBCM2835Mailbox1Registers;
  
 var
  {Interrupt Variables}
@@ -265,6 +266,7 @@ function RPiBoardGetRevision:LongWord;
 function RPiBoardGetMACAddress:String;
 
 function RPiFirmwareGetRevision:LongWord;
+function RPiFirmwareGetThrottled:LongWord;
 
 function RPiPowerGetWait(PowerId:LongWord):LongWord;
 function RPiPowerGetState(PowerId:LongWord):LongWord;
@@ -658,6 +660,7 @@ begin
 
  {Register Platform Firmware Handlers}
  FirmwareGetRevisionHandler:=RPiFirmwareGetRevision;
+ FirmwareGetThrottledHandler:=RPiFirmwareGetThrottled;
 
  {Register Platform Power Handlers}
  PowerGetWaitHandler:=RPiPowerGetWait;
@@ -1100,8 +1103,9 @@ end;
 procedure RPiMailboxInit;
 begin
  {}
- {Setup Mailbox0 Registers}
+ {Setup Mailbox0/1 Registers}
  Mailbox0Registers:=PBCM2835Mailbox0Registers(BCM2835_MAILBOX0_REGS_BASE);
+ Mailbox1Registers:=PBCM2835Mailbox1Registers(BCM2835_MAILBOX1_REGS_BASE);
 end;
 
 {==============================================================================}
@@ -1947,7 +1951,7 @@ begin
     WriteData:=Channel or (Data and BCM2835_MAILBOX_DATA_MASK);
    
     {Check Status}
-    while (Mailbox0Registers.Status and BCM2835_MAILBOX_STATUS_FULL) = BCM2835_MAILBOX_STATUS_FULL do
+    while (Mailbox1Registers.Status and BCM2835_MAILBOX_STATUS_FULL) = BCM2835_MAILBOX_STATUS_FULL do
      begin
       {Memory Barrier}
       DataMemoryBarrier; {After the Last Read (MicrosecondDelay also Reads)}
@@ -1965,7 +1969,7 @@ begin
     DataMemoryBarrier; {After the Last Read / Before the First Write}
    
     {Write Data}
-    Mailbox0Registers.Write:=WriteData;
+    Mailbox1Registers.Write:=WriteData;
    finally
     {Release Lock}
     if MailboxLock.Lock <> INVALID_HANDLE_VALUE then MailboxLock.ReleaseLock(MailboxLock.Lock);
@@ -2010,10 +2014,10 @@ begin
     {Setup Timeout}
     Retries:=Timeout;
     
-    {Wait for Mailbox Empty} 
+    {Wait for Mailbox 0 Empty} 
     while (Mailbox0Registers.Status and BCM2835_MAILBOX_STATUS_EMPTY) <> BCM2835_MAILBOX_STATUS_EMPTY do
      begin
-      {Read Data from the Mailbox}
+      {Read Data from Mailbox 0}
       ResultCode:=Mailbox0Registers.Read;
       
       {Memory Barrier}
@@ -2035,8 +2039,8 @@ begin
     {Setup Timeout}
     Retries:=Timeout;
     
-    {Wait for Mailbox not Full}
-    while (Mailbox0Registers.Status and BCM2835_MAILBOX_STATUS_FULL) = BCM2835_MAILBOX_STATUS_FULL do
+    {Wait for Mailbox 1 not Full}
+    while (Mailbox1Registers.Status and BCM2835_MAILBOX_STATUS_FULL) = BCM2835_MAILBOX_STATUS_FULL do
      begin
       {Memory Barrier}
       DataMemoryBarrier; {After the Last Read (MicrosecondDelay also Reads)}
@@ -2054,14 +2058,14 @@ begin
     {Memory Barrier}
     DataMemoryBarrier; {After the Last Read / Before the First Write}
  
-    {Write Data to the Mailbox}
+    {Write Data to Mailbox 1}
     WriteData:=Channel or (Data and BCM2835_MAILBOX_DATA_MASK);
-    Mailbox0Registers.Write:=WriteData; 
+    Mailbox1Registers.Write:=WriteData; 
  
     {Setup Timeout}
     Retries:=Timeout;
     
-    {Wait for Mailbox not Empty}
+    {Wait for Mailbox 0 not Empty}
     while (Mailbox0Registers.Status and BCM2835_MAILBOX_STATUS_EMPTY) = BCM2835_MAILBOX_STATUS_EMPTY do
      begin
       {Memory Barrier}
@@ -2080,7 +2084,7 @@ begin
     {Memory Barrier}
     {DataMemoryBarrier;} {After the Last Read}
   
-    {Read Data from the Mailbox}
+    {Read Data from Mailbox 0}
     ResultCode:=Mailbox0Registers.Read;
    
     {Memory Barrier}
@@ -2170,7 +2174,7 @@ begin
        {$IFDEF PLATFORM_DEBUG}
        if PLATFORM_LOG_ENABLED then PlatformLogDebug('MailboxPropertyCallEx - Tag Response Code Incorrect (Length=' + IntToHex(Tag.Length,8) + ')');
        {$ENDIF}
-       {Result:=ERROR_FUNCTION_FAILED;} {Note: Recent firmware functions so not always set the response bit in the tag}
+       {Result:=ERROR_FUNCTION_FAILED;} {Note: Recent firmware functions do not always set the response bit in the tag}
        {Exit;}                          {      The Linux firmware driver does not check this bit in the response}
       end;
      {Clear the Response bit so callers can read the length field without extra processing}
@@ -3148,6 +3152,60 @@ begin
  
   {Get Firmware Revision}
   Result:=Tag.Response.Revision;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPiFirmwareGetThrottled:LongWord;
+{Get the Firmware Throttling state from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2835MailboxHeader;
+ Footer:PBCM2835MailboxFooter;
+ Tag:PBCM2835MailboxTagGetThrottled;
+begin
+ {}
+ Result:=0;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2835MailboxHeader) + SizeOf(TBCM2835MailboxTagGetThrottled) + SizeOf(TBCM2835MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2835_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2835MailboxTagGetThrottled(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2835MailboxHeader)));
+  Tag.Header.Tag:=BCM2835_MBOX_TAG_GET_THROTTLED;
+  Tag.Header.Size:=SizeOf(TBCM2835MailboxTagGetThrottled) - SizeOf(TBCM2835MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.Value:=$FFFF; {Clear sticky bits}
+  
+  {Setup Footer}
+  Footer:=PBCM2835MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2835MailboxTagGetThrottled)));
+  Footer.Tag:=BCM2835_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  if MailboxPropertyCall(BCM2835_MAILBOX_0,BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FirmwareGetThrottled - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+ 
+  {Get Firmware Throttling}
+  Result:=Tag.Response.Value;
  finally
   FreeMem(Header);
  end;

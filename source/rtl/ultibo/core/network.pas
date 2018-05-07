@@ -118,6 +118,7 @@ const
  NETWORK_CONTROL_GET_STATS     = 15; {Get statistics for this device}
  NETWORK_CONTROL_ADD_MULTICAST = 16; {Add a multicast address to this device}
  NETWORK_CONTROL_DEL_MULTICAST = 17; {Delete a multicast address from this device}
+ NETWORK_CONTROL_GET_MULTICAST = 18; {Get the list of multicast address for this device}
  
  //To Do //Broadcast/Multicast/Promiscuous/Speed/Duplex/Link etc
  //To Do //Get DeviceId/VendorId/Stats etc
@@ -524,6 +525,21 @@ type
   Entries:array of PNetworkEntry; {Array of 0 to Total - 1 entries in this queue (Allocated by driver that owns this queue)}
  end;
  
+ {Network Statistics (Returned by NETWORK_CONTROL_GET_STATS)}
+ PNetworkStatistics = ^TNetworkStatistics;
+ TNetworkStatistics = record
+  ReceiveBytes:UInt64;
+  ReceiveCount:UInt64;
+  ReceiveErrors:UInt64;
+  TransmitBytes:UInt64;
+  TransmitCount:UInt64;
+  TransmitErrors:UInt64;
+  StatusCount:UInt64;
+  StatusErrors:UInt64;
+  BufferOverruns:UInt64;
+  BufferUnavailable:UInt64;
+ end;
+ 
  {Network Device}
  PNetworkDevice = ^TNetworkDevice;
  
@@ -570,14 +586,16 @@ type
   ReceiveQueue:TNetworkQueue;            {Queue for receive packets}
   TransmitQueue:TNetworkQueue;           {Queue for transmit packets (If applicable)}
   {Statistics Properties}                
-  ReceiveCount:LongWord;                 
-  ReceiveErrors:LongWord;                
-  TransmitCount:LongWord;                
-  TransmitErrors:LongWord;               
-  StatusCount:LongWord;
-  StatusErrors:LongWord;
-  BufferOverruns:LongWord;               
-  BufferUnavailable:LongWord;               
+  ReceiveBytes:UInt64;
+  ReceiveCount:UInt64;                 
+  ReceiveErrors:UInt64;                
+  TransmitBytes:UInt64;
+  TransmitCount:UInt64;                
+  TransmitErrors:UInt64;               
+  StatusCount:UInt64;
+  StatusErrors:UInt64;
+  BufferOverruns:UInt64;               
+  BufferUnavailable:UInt64;               
   {Internal Properties}                                                                          
   Prev:PNetworkDevice;                   {Previous entry in Network table}
   Next:PNetworkDevice;                   {Next entry in Network table}
@@ -657,39 +675,16 @@ type
  end;
 
 type
- {Generic Adapter}
- PAdapterParams = ^TAdapterParams; //To Do //Adjust for new model //Remove ?
- TAdapterParams = packed record
-  Version:Word;       { Driver version   }
-  FrameType:Byte;     { Driver class  }
-  AdapterType:Word;   { Driver type   }
-  Number:Byte;        { Driver number }
-  Name:PChar;         { Driver name   }
-  Functionality:Byte; { How good is this driver }
- end;
-
- PNetworkParams = ^TNetworkParams; //To Do //Adjust for new model //Remove ?
- TNetworkParams = packed record
-  MajorRevision:Byte;      { Major revision ID of packet specs }
-  MinorRevision:Byte;      { Minor revision ID of packet specs }
-  ParamLength:Byte;        { Length of structure in Bytes      }
-  AddressLength:Byte;      { Length of a MAC address           }
-  MTU:Word;                { MTU, including MAC headers        }
-  MulticastAvailable:Word; { buffer size for multicast addr.   }
-  RxBuffers:Word;          { No of back-to-back MTU rcvs) - 1  }
-  TxBuffers:Word;          { No of successive xmits) - 1       }
-  IntNo:Word;              { Interrupt No to hook for post-EOI processing, 0 = none }
- end;
-
+ {Adapter Statistics}
  PAdapterStatistics = ^TAdapterStatistics; 
  TAdapterStatistics = record
-  PacketsIn:Int64;
-  PacketsOut:Int64;
-  BytesIn:Int64; 
-  BytesOut:Int64;
-  ErrorsIn:Int64;
-  ErrorsOut:Int64;
-  PacketsLost:Int64;
+  PacketsIn:UInt64;
+  PacketsOut:UInt64;
+  BytesIn:UInt64; 
+  BytesOut:UInt64;
+  ErrorsIn:UInt64;
+  ErrorsOut:UInt64;
+  PacketsLost:UInt64;
  end;
  
 {==============================================================================}
@@ -972,8 +967,7 @@ type
    function GetReceiveMode(AHandle:THandle):Word; virtual;
    function SetReceiveMode(AHandle:THandle;AMode:Word):Boolean; virtual;
 
-   function GetAdapterParams(AHandle:THandle):TAdapterParams; virtual;
-   function GetNetworkParams(AHandle:THandle):TNetworkParams; virtual;
+   function ClearStatistics(AHandle:THandle):Boolean; virtual;
    function GetStatistics(AHandle:THandle):TAdapterStatistics; virtual;
 
    function GetDefaultAddress(AHandle:THandle):THardwareAddress; virtual;
@@ -1059,7 +1053,7 @@ type
    function ProcessPacket(ABuffer:Pointer;ASize:Integer):Boolean;
   protected
    {Inherited Methods}
-
+   procedure SetStatus(AStatus:Integer); override;
   public
    {Public Methods}
    function AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle; override;
@@ -1069,6 +1063,9 @@ type
 
    function SendPacket(AHandle:THandle;ADest:Pointer;APacket:PPacketFragment;ASize:Integer):Boolean; override;
 
+   function ClearStatistics(AHandle:THandle):Boolean; override;
+   function GetStatistics(AHandle:THandle):TAdapterStatistics; override;
+   
    function GetDefaultAddress(AHandle:THandle):THardwareAddress; override;
    function GetHardwareAddress(AHandle:THandle):THardwareAddress; override;
    function SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
@@ -2234,20 +2231,25 @@ procedure TNetworkAdapter.SetStatus(AStatus:Integer);
 begin
  {}
  {Check State}
- if FState <> ADAPTER_STATE_ENABLED then Exit; {Check Status}
+ if FState <> ADAPTER_STATE_ENABLED then Exit;
  
  {Check Status}
  case AStatus of
   ADAPTER_STATUS_DOWN:begin
     {Set Status}
     FStatus:=AStatus;
+    
+    {$IFDEF NETWORK_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'NetworkAdapter: Status = ADAPTER_STATUS_DOWN');
+    {$ENDIF}
    end;
   ADAPTER_STATUS_UP:begin
-    {Check Device}
-    //To Do //Check Device status before allowing ADAPTER_STATUS_UP 
-    
     {Set Status}
     FStatus:=AStatus;
+    
+    {$IFDEF NETWORK_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'NetworkAdapter: Status = ADAPTER_STATUS_UP');
+    {$ENDIF}
    end;  
  end;
 end;
@@ -3009,18 +3011,10 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.GetAdapterParams(AHandle:THandle):TAdapterParams;
+function TNetworkAdapter.ClearStatistics(AHandle:THandle):Boolean; 
 begin
  {Virtual Base Method}
- FillChar(Result,SizeOf(TAdapterParams),0);
-end;
-
-{==============================================================================}
-
-function TNetworkAdapter.GetNetworkParams(AHandle:THandle):TNetworkParams;
-begin
- {Virtual Base Method}
- FillChar(Result,SizeOf(TNetworkParams),0);
+ FillChar(FStatistics,SizeOf(TAdapterStatistics),0);
 end;
 
 {==============================================================================}
@@ -3028,7 +3022,7 @@ end;
 function TNetworkAdapter.GetStatistics(AHandle:THandle):TAdapterStatistics;
 begin
  {Virtual Base Method}
- FillChar(Result,SizeOf(TAdapterStatistics),0);
+ Result:=FStatistics;
 end;
 
 {==============================================================================}
@@ -3558,6 +3552,46 @@ end;
 
 {==============================================================================}
 
+procedure TWiredAdapter.SetStatus(AStatus:Integer); 
+var
+ Value:PtrUInt;
+begin
+ {}
+ {Check State}
+ if FState <> ADAPTER_STATE_ENABLED then Exit;
+ 
+ {Check Status}
+ case AStatus of
+  ADAPTER_STATUS_DOWN:begin
+    {Set Status}
+    FStatus:=AStatus;
+    
+    {$IFDEF NETWORK_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: Status = ADAPTER_STATUS_DOWN');
+    {$ENDIF}
+   end;
+  ADAPTER_STATUS_UP:begin
+    {Check Device}
+    if FDevice = nil then Exit;
+    
+    {Get Link Status}
+    if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_LINK,0,Value) <> ERROR_SUCCESS then Exit;
+    
+    {Check Link Status}
+    if Value <> NETWORK_LINK_UP then Exit;
+    
+    {Set Status}
+    FStatus:=AStatus;
+    
+    {$IFDEF NETWORK_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: Status = ADAPTER_STATUS_UP');
+    {$ENDIF}
+   end;  
+ end;
+end;
+
+{==============================================================================}
+
 function TWiredAdapter.AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle;
 var
  Transport:TAdapterTransport;
@@ -3888,6 +3922,80 @@ end;
 
 {==============================================================================}
 
+function TWiredAdapter.ClearStatistics(AHandle:THandle):Boolean; 
+var
+ Value:PtrUInt;
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+
+  {$IFDEF NETWORK_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: ClearStatistics (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
+  {$ENDIF}
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
+
+  {Check Device}
+  if FDevice = nil then Exit;
+  
+  {Clear Statistics}
+  if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_CLEAR_STATS,0,Value) = ERROR_SUCCESS then
+   begin
+    FillChar(FStatistics,SizeOf(TAdapterStatistics),0);
+   
+    {Return Result}
+    Result:=True;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TWiredAdapter.GetStatistics(AHandle:THandle):TAdapterStatistics; 
+var
+ Value:PtrUInt;
+ Statistics:TNetworkStatistics;
+begin
+ {}
+ ReaderLock;
+ try
+  FillChar(Result,SizeOf(TAdapterStatistics),0);
+
+  {$IFDEF NETWORK_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetStatistics (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
+  {$ENDIF}
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
+
+  {Check Device}
+  if FDevice = nil then Exit;
+  
+  {Get Statistics}
+  if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_STATS,PtrUInt(@Statistics),Value) = ERROR_SUCCESS then
+   begin
+    Result.PacketsIn:=Statistics.ReceiveCount;
+    Result.PacketsOut:=Statistics.TransmitCount;
+    Result.BytesIn:=Statistics.ReceiveBytes; 
+    Result.BytesOut:=Statistics.TransmitBytes;
+    Result.ErrorsIn:=Statistics.ReceiveErrors;
+    Result.ErrorsOut:=Statistics.TransmitErrors;
+    Result.PacketsLost:=Statistics.BufferOverruns + Statistics.BufferUnavailable;
+   end;
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+  
+{==============================================================================}
+
 function TWiredAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress; 
 begin
  {}
@@ -4027,7 +4135,7 @@ begin
   {Check Device}
   if FDevice = nil then Exit;
   
-  //To Do
+  //To Do //NETWORK_CONTROL_GET_MULTICAST
  finally 
   ReaderUnlock;
  end; 
@@ -4054,7 +4162,7 @@ begin
   {Check Device}
   if FDevice = nil then Exit;
   
-  //To Do
+  //To Do //NETWORK_CONTROL_ADD_MULTICAST
  finally 
   WriterUnlock;
  end; 
@@ -4081,7 +4189,7 @@ begin
   {Check Device}
   if FDevice = nil then Exit;
   
-  //To Do
+  //To Do //NETWORK_CONTROL_DEL_MULTICAST
  finally 
   WriterUnlock;
  end; 
@@ -4123,14 +4231,14 @@ begin
     {Set State}
     FState:=ADAPTER_STATE_ENABLED;
     
-    {Get Status}
-    FStatus:=ADAPTER_STATUS_UP; //To Do //Get status from Device (DeviceControl)
-  
     {Get Properties}
     FDefaultAddress:=GetDefaultAddress(INVALID_HANDLE_VALUE);
     FHardwareAddress:=GetHardwareAddress(INVALID_HANDLE_VALUE);
     FBroadcastAddress:=GetBroadcastAddress(INVALID_HANDLE_VALUE); 
     FMulticastAddresses:=GetMulticastAddresses(INVALID_HANDLE_VALUE); 
+
+    {Set Status}
+    SetStatus(ADAPTER_STATUS_UP);
     
     {Create Thread}
     FThread:=TAdapterThread.Create(Self);
@@ -4199,17 +4307,17 @@ begin
       RemoveTransport(THandle(Current),Current.PacketType);
      end;
   
-    {Reset State}
-    FState:=ADAPTER_STATE_DISABLED;
-    
     {Reset Status}
     FStatus:=ADAPTER_STATUS_DOWN;
-    
+
     {Reset Properties}
     FillChar(FDefaultAddress,SizeOf(THardwareAddress),0);
     FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
     FillChar(FBroadcastAddress,SizeOf(THardwareAddress),0);
     FillChar(FMulticastAddresses,SizeOf(TMulticastAddresses),0);
+    
+    {Reset State}
+    FState:=ADAPTER_STATE_DISABLED;
     
     {Return Result}
     Result:=True;
@@ -5961,7 +6069,7 @@ begin
  Result.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
  
  {Create Lock} 
- Result.Lock:=MutexCreate;
+ Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to create lock for network');

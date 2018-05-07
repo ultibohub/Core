@@ -1594,7 +1594,7 @@ begin
          {Check for Adapter Thread}
          if GetCurrentThreadId = AAdapter.ThreadID then
           begin
-           if NETWORK_LOG_ENABLED then NetworkLogError(nil,'ARP:  Wait requested on adapter thread');
+           if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'ARP:  Wait requested on adapter thread');
            Exit;
           end; 
          
@@ -1715,7 +1715,7 @@ begin
          {Check for Adapter Thread}
          if GetCurrentThreadId = AAdapter.ThreadID then
           begin
-           if NETWORK_LOG_ENABLED then NetworkLogError(nil,'ARP:  Wait requested on adapter thread');
+           if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'ARP:  Wait requested on adapter thread');
            Exit;
           end; 
 
@@ -1833,7 +1833,7 @@ begin
        {Check for Adapter Thread}
        if GetCurrentThreadId = AAdapter.ThreadID then
         begin
-         if NETWORK_LOG_ENABLED then NetworkLogError(nil,'ARP:  Wait requested on adapter thread');
+         if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'ARP:  Wait requested on adapter thread');
          Exit;
         end; 
 

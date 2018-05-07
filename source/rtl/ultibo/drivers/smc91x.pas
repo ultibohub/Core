@@ -1,7 +1,7 @@
 {
 SMSC 91C9x/91C1xx Ethernet Driver.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -916,7 +916,23 @@ begin
      Network.NetworkState:=NETWORK_STATE_OPEN;
      
      {Notify the State}
-     NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_OPEN); 
+     NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_OPEN);
+     
+     {Check PHY Type}
+     if PSMC91XNetwork(Network).PHYType <> 0 then
+      begin
+       {Get Network Status}
+       //To Do //SMC91XPHYRead //Not supported in QEMU ?
+      end
+     else
+      begin
+       {QEMU does not implement MII or EPH}
+       {Set Status to Up}
+       Network.NetworkStatus:=NETWORK_STATUS_UP;
+       
+       {Notify the Status}
+       NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_UP);
+      end;
      
      {Return Result}
      Result:=ERROR_SUCCESS;
@@ -1247,25 +1263,46 @@ begin
   begin
    try
     {Set Result}
-    Status:=ERROR_OPERATION_FAILED;
+    Result:=ERROR_OPERATION_FAILED;
+    Status:=ERROR_SUCCESS;
  
     {Check Request}
     case Request of
      NETWORK_CONTROL_CLEAR_STATS:begin
        {Clear Statistics}
        {Network}
+       Network.ReceiveBytes:=0;
        Network.ReceiveCount:=0;
        Network.ReceiveErrors:=0;
+       Network.TransmitBytes:=0;
        Network.TransmitCount:=0;
        Network.TransmitErrors:=0;
+       Network.StatusCount:=0;
+       Network.StatusErrors:=0;
        Network.BufferOverruns:=0;
        Network.BufferUnavailable:=0;
        {SMC91X}
        PSMC91XNetwork(Network).InterruptCount:=0;
        PSMC91XNetwork(Network).CollisionCount:=0;
-       
-       Status:=ERROR_SUCCESS;
       end; 
+     NETWORK_CONTROL_GET_STATS:begin
+       {Get Statistics}
+       if Argument2 < SizeOf(TNetworkStatistics) then Exit;
+       
+       {Network}
+       PNetworkStatistics(Argument1).ReceiveBytes:=Network.ReceiveBytes;
+       PNetworkStatistics(Argument1).ReceiveCount:=Network.ReceiveCount;
+       PNetworkStatistics(Argument1).ReceiveErrors:=Network.ReceiveErrors;
+       PNetworkStatistics(Argument1).TransmitBytes:=Network.TransmitBytes;
+       PNetworkStatistics(Argument1).TransmitCount:=Network.TransmitCount;
+       PNetworkStatistics(Argument1).TransmitErrors:=Network.TransmitErrors;
+       PNetworkStatistics(Argument1).StatusCount:=Network.StatusCount;
+       PNetworkStatistics(Argument1).StatusErrors:=Network.StatusErrors;
+       PNetworkStatistics(Argument1).BufferOverruns:=Network.BufferOverruns;
+       PNetworkStatistics(Argument1).BufferUnavailable:=Network.BufferUnavailable;
+       {SMC91X}
+       {Nothing}
+      end;     
      NETWORK_CONTROL_SET_MAC:begin 
        {Acquire Lock}
        if SpinLockIRQ(PSMC91XNetwork(Network).Lock) = ERROR_SUCCESS then
@@ -1285,7 +1322,7 @@ begin
        if SpinLockIRQ(PSMC91XNetwork(Network).Lock) = ERROR_SUCCESS then
         begin
          {Get the MAC for this device}
-         Status:=SMC91XGetMACAddress(PSMC91XNetwork(Network),PHardwareAddress(Argument1));  //To Do //Change to Argument2 ?
+         Status:=SMC91XGetMACAddress(PSMC91XNetwork(Network),PHardwareAddress(Argument1));
          
          {Restore Bank 2}
          SMC91XSelectBank(PSMC91XNetwork(Network),SMC91X_BANK_SELECT_2);
@@ -1296,28 +1333,22 @@ begin
       end; 
      NETWORK_CONTROL_SET_LOOPBACK:begin  
        {Set Loopback Mode}          
-       //To Do //Supported ?
-       
-       Status:=ERROR_SUCCESS;
+       //To Do
       end; 
      NETWORK_CONTROL_RESET:begin       
        {Reset the device}  
-       //To Do //Supported ?
-       
-       Status:=ERROR_SUCCESS;
+       //To Do
       end; 
      NETWORK_CONTROL_DISABLE:begin     
        {Disable the device}
-       //To Do //Supported ?
-       
-       Status:=ERROR_SUCCESS;
+       //To Do
       end; 
      NETWORK_CONTROL_GET_HARDWARE:begin     
        {Acquire Lock}
        if SpinLockIRQ(PSMC91XNetwork(Network).Lock) = ERROR_SUCCESS then
         begin
          {Get Hardware address for this device}
-         Status:=SMC91XGetMACAddress(PSMC91XNetwork(Network),PHardwareAddress(Argument1));  //To do //Change to Argument2 ?
+         Status:=SMC91XGetMACAddress(PSMC91XNetwork(Network),PHardwareAddress(Argument1)); 
          
          {Restore Bank 2}
          SMC91XSelectBank(PSMC91XNetwork(Network),SMC91X_BANK_SELECT_2);
@@ -1328,23 +1359,39 @@ begin
       end; 
      NETWORK_CONTROL_GET_BROADCAST:begin     
        {Get Broadcast address for this device}
-       PHardwareAddress(Argument1)^:=ETHERNET_BROADCAST;  //To do //Change to Argument2 ?
-       
-       Status:=ERROR_SUCCESS;
+       PHardwareAddress(Argument1)^:=ETHERNET_BROADCAST; 
       end; 
      NETWORK_CONTROL_GET_MTU:begin     
        {Get MTU for this device}
        Argument2:=ETHERNET_MTU; 
-       
-       Status:=ERROR_SUCCESS;
       end; 
      NETWORK_CONTROL_GET_HEADERLEN:begin
        {Get Header length for this device}
        Argument2:=ETHERNET_HEADER_SIZE;
-       
-       Status:=ERROR_SUCCESS;
       end;  
+     NETWORK_CONTROL_GET_LINK:begin
+       {Get Link State for this device}
+       {Check PHY Type}
+       if PSMC91XNetwork(Network).PHYType <> 0 then
+        begin
+         {Get Network Status}
+         Argument2:=NETWORK_LINK_UP; //To Do //SMC91XPHYRead //Not supported in QEMU ?
+        end
+       else
+        begin
+         {QEMU does not implement MII or EPH}
+         {Link Up}
+         Argument2:=NETWORK_LINK_UP;
+        end;
+      end; 
+     else
+      begin
+       Exit;
+      end;
     end;
+    
+    {Check Status}
+    if Status <> ERROR_SUCCESS then Exit;
     
     {Return Result}
     Result:=Status;
@@ -1987,6 +2034,7 @@ begin
              begin
               {Update Statistics}
               Inc(Network.Network.ReceiveCount); 
+              Inc(Network.Network.ReceiveBytes,Entry.Packets[0].Length); 
               
               {Add Entry}
               Network.Network.ReceiveQueue.Entries[(Network.Network.ReceiveQueue.Start + Network.Network.ReceiveQueue.Count) mod SMC91X_MAX_RX_ENTRIES]:=Entry;
@@ -2309,6 +2357,7 @@ begin
  
  {Update Statistics}
  Inc(Network.Network.TransmitCount); 
+ Inc(Network.Network.TransmitBytes,Packet.Length); 
  
  {Update Start}
  Network.Network.TransmitQueue.Start:=(Network.Network.TransmitQueue.Start + 1) mod SMC91X_MAX_TX_ENTRIES;

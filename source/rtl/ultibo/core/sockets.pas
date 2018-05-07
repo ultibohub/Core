@@ -1,7 +1,7 @@
 {
 Ultibo Network Sockets interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -559,6 +559,8 @@ procedure SocketsProcessAdapter(Data:Pointer);
 
 procedure SocketsNetworkDeviceAdd(Event:PSocketsDeviceEvent);
 function SocketsNetworkDeviceRemove(Network:PNetworkDevice):LongWord;
+function SocketsNetworkDeviceUp(Network:PNetworkDevice):LongWord;
+function SocketsNetworkDeviceDown(Network:PNetworkDevice):LongWord;
 
 function SocketsNetworkDeviceEnum(Network:PNetworkDevice;Data:Pointer):LongWord;
 function SocketsNetworkDeviceNotify(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
@@ -698,7 +700,8 @@ begin
       SocketsStartupError:=ERROR_OPERATION_FAILED;
  
       {Register Notification}
-      NetworkDeviceNotification(nil,SocketsNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_CLOSING,NOTIFIER_FLAG_NONE);
+      NetworkDeviceNotification(nil,SocketsNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER 
+                                or DEVICE_NOTIFICATION_CLOSING or DEVICE_NOTIFICATION_UP or DEVICE_NOTIFICATION_DOWN,NOTIFIER_FLAG_NONE);
 
       {Enumerate Adapters}
       NetworkDeviceEnumerate(SocketsNetworkDeviceEnum,nil);
@@ -2794,6 +2797,118 @@ end;
 
 {==============================================================================}
 
+function SocketsNetworkDeviceUp(Network:PNetworkDevice):LongWord;
+var
+ Adapter:TNetworkAdapter;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IFDEF SOCKET_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Network device up');
+ {$ENDIF}
+ 
+ {Check Network}
+ if Network = nil then Exit;
+
+ {$IFDEF SOCKET_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets:  Device = ' + DeviceGetName(@Network.Device));
+ {$ENDIF}
+ 
+ {Check Manager}
+ if AdapterManager = nil then Exit;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Started and Ready}
+    if (SocketsStartupCount > 0) and (SocketsStartupError = ERROR_SUCCESS) then
+     begin
+      {Check Type}
+      case Network.Device.DeviceType of
+       NETWORK_TYPE_ETHERNET,NETWORK_TYPE_TOKENRING:begin
+         {Check Adapter}
+         Adapter:=AdapterManager.GetAdapterByDevice(Network,True,NETWORK_LOCK_READ);
+         if Adapter <> nil then
+          begin
+           {Update Status}
+           Adapter.Status:=ADAPTER_STATUS_UP;
+           
+           {Unlock Adapter}
+           Adapter.ReaderUnlock;
+          end; 
+        end;
+      end; 
+     end;  
+     
+    {Return Result}
+    Result:=ERROR_SUCCESS;    
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SocketsLock);
+   end;
+  end;
+end;
+ 
+{==============================================================================}
+
+function SocketsNetworkDeviceDown(Network:PNetworkDevice):LongWord;
+var
+ Adapter:TNetworkAdapter;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {$IFDEF SOCKET_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Network device down');
+ {$ENDIF}
+ 
+ {Check Network}
+ if Network = nil then Exit;
+
+ {$IFDEF SOCKET_DEBUG}
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets:  Device = ' + DeviceGetName(@Network.Device));
+ {$ENDIF}
+ 
+ {Check Manager}
+ if AdapterManager = nil then Exit;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Started and Ready}
+    if (SocketsStartupCount > 0) and (SocketsStartupError = ERROR_SUCCESS) then
+     begin
+      {Check Type}
+      case Network.Device.DeviceType of
+       NETWORK_TYPE_ETHERNET,NETWORK_TYPE_TOKENRING:begin
+         {Check Adapter}
+         Adapter:=AdapterManager.GetAdapterByDevice(Network,True,NETWORK_LOCK_READ);
+         if Adapter <> nil then
+          begin
+           {Update Status}
+           Adapter.Status:=ADAPTER_STATUS_DOWN;
+ 
+           {Unlock Adapter}
+           Adapter.ReaderUnlock;
+          end; 
+        end;
+      end; 
+     end;  
+     
+    {Return Result}
+    Result:=ERROR_SUCCESS;    
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SocketsLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
 function SocketsNetworkDeviceEnum(Network:PNetworkDevice;Data:Pointer):LongWord;
 var
  Adapter:TNetworkAdapter;
@@ -2868,15 +2983,15 @@ begin
  {Check Manager}
  if AdapterManager = nil then Exit;
  
- {Check Notification}
- if (Notification and DEVICE_NOTIFICATION_REGISTER) <> 0 then
+ {Acquire the Lock}
+ if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
   begin
-   {Acquire the Lock}
-   if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
-    begin
-     try
-      {Check Started}
-      if SocketsStartupCount > 0 then
+   try
+    {Check Started}
+    if SocketsStartupCount > 0 then
+     begin
+      {Check Notification}
+      if (Notification and DEVICE_NOTIFICATION_REGISTER) <> 0 then
        begin
         {Check Adapter}
         Adapter:=AdapterManager.GetAdapterByDevice(PNetworkDevice(Device),False,NETWORK_LOCK_NONE); {Do not lock}
@@ -2898,21 +3013,8 @@ begin
             FreeMem(Event);
            end;
          end;
-       end;
-     finally
-      {Release the Lock}
-      CriticalSectionUnlock(SocketsLock);
-     end;
-    end;
-  end
- else if (Notification and DEVICE_NOTIFICATION_CLOSING) <> 0 then
-  begin
-   {Acquire the Lock}
-   if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
-    begin
-     try
-      {Check Started}
-      if SocketsStartupCount > 0 then
+       end
+      else if (Notification and DEVICE_NOTIFICATION_CLOSING) <> 0 then
        begin
         {Check Adapter}
         Adapter:=AdapterManager.GetAdapterByDevice(PNetworkDevice(Device),False,NETWORK_LOCK_NONE); {Do not lock}
@@ -2921,21 +3023,8 @@ begin
           {Remove Adapter}
           SocketsNetworkDeviceRemove(PNetworkDevice(Device));
          end;
-       end;
-     finally
-      {Release the Lock}
-      CriticalSectionUnlock(SocketsLock);
-     end;
-    end;
-  end
- else if (Notification and DEVICE_NOTIFICATION_DEREGISTER) <> 0 then
-  begin
-   {Acquire the Lock}
-   if CriticalSectionLock(SocketsLock) = ERROR_SUCCESS then
-    begin
-     try
-      {Check Started}
-      if SocketsStartupCount > 0 then
+       end
+      else if (Notification and DEVICE_NOTIFICATION_DEREGISTER) <> 0 then
        begin
         {Check Adapter}
         Adapter:=AdapterManager.GetAdapterByDevice(PNetworkDevice(Device),False,NETWORK_LOCK_NONE); {Do not lock}
@@ -2944,12 +3033,32 @@ begin
           {Remove Adapter}
           SocketsNetworkDeviceRemove(PNetworkDevice(Device));
          end;
+       end
+      else if (Notification and DEVICE_NOTIFICATION_UP) <> 0 then
+       begin
+        {Check Adapter}
+        Adapter:=AdapterManager.GetAdapterByDevice(PNetworkDevice(Device),False,NETWORK_LOCK_NONE); {Do not lock}
+        if Adapter <> nil then
+         begin
+          {Update Status}
+          SocketsNetworkDeviceUp(PNetworkDevice(Device));
+         end;
+       end
+      else if (Notification and DEVICE_NOTIFICATION_DOWN) <> 0 then
+       begin
+        {Check Adapter}
+        Adapter:=AdapterManager.GetAdapterByDevice(PNetworkDevice(Device),False,NETWORK_LOCK_NONE); {Do not lock}
+        if Adapter <> nil then
+         begin
+          {Update Status}
+          SocketsNetworkDeviceDown(PNetworkDevice(Device));
+         end;
        end;
-     finally
-      {Release the Lock}
-      CriticalSectionUnlock(SocketsLock);
      end;
-    end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SocketsLock);
+   end;
   end;
 end;
 

@@ -1,7 +1,7 @@
 {
 Ultibo WiFi (IEEE 802.11 / WPA) interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2382,7 +2382,7 @@ type
    function DataReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
   protected
    {Inherited Methods}
-
+   procedure SetStatus(AStatus:Integer); override;
   public
    {Public Methods}
    function AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle; override;
@@ -2392,6 +2392,9 @@ type
 
    function SendPacket(AHandle:THandle;ADest:Pointer;APacket:PPacketFragment;ASize:Integer):Boolean; override;
 
+   function ClearStatistics(AHandle:THandle):Boolean; override;
+   function GetStatistics(AHandle:THandle):TAdapterStatistics; override;
+   
    function GetDefaultAddress(AHandle:THandle):THardwareAddress; override;
    function GetHardwareAddress(AHandle:THandle):THardwareAddress; override;
    function SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
@@ -2817,6 +2820,38 @@ end;
  
 {==============================================================================}
 
+procedure TWiFiAdapter.SetStatus(AStatus:Integer); 
+begin
+ {}
+ {Check State}
+ if FState <> ADAPTER_STATE_ENABLED then Exit;
+ 
+ {Check Status}
+ case AStatus of
+  ADAPTER_STATUS_DOWN:begin
+    {Set Status}
+    FStatus:=AStatus;
+    
+    {$IFDEF NETWORK_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: Status = ADAPTER_STATUS_DOWN');
+    {$ENDIF}
+   end;
+  ADAPTER_STATUS_UP:begin
+    {Check Device}
+    //To Do //Check Device status before allowing ADAPTER_STATUS_UP
+    
+    {Set Status}
+    FStatus:=AStatus;
+    
+    {$IFDEF NETWORK_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: Status = ADAPTER_STATUS_UP');
+    {$ENDIF}
+   end;  
+ end;
+end;
+ 
+{==============================================================================}
+
 function TWiFiAdapter.AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle;
 var
  Transport:TAdapterTransport;
@@ -3016,6 +3051,58 @@ end;
 
 {==============================================================================}
 
+function TWiFiAdapter.ClearStatistics(AHandle:THandle):Boolean; 
+begin
+ {}
+ ReaderLock;
+ try
+  Result:=False;
+
+  {$IFDEF NETWORK_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: ClearStatistics (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
+  {$ENDIF}
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
+
+  {Check Device}
+  if FDevice = nil then Exit;
+  
+  //To Do //NETWORK_CONTROL_CLEAR_STATS
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TWiFiAdapter.GetStatistics(AHandle:THandle):TAdapterStatistics; 
+begin
+ {}
+ ReaderLock;
+ try
+  FillChar(Result,SizeOf(TAdapterStatistics),0);
+
+  {$IFDEF NETWORK_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetStatistics (' + Name + ')');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
+  {$ENDIF}
+
+  {Check State}
+  if FState = ADAPTER_STATE_DISABLED then Exit;
+
+  {Check Device}
+  if FDevice = nil then Exit;
+  
+  //To Do //NETWORK_CONTROL_GET_STATS
+ finally 
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TWiFiAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress; 
 begin
  {}
@@ -3155,7 +3242,7 @@ begin
   {Check Device}
   if FDevice = nil then Exit;
   
-  //To Do
+  //To Do //NETWORK_CONTROL_GET_MULTICAST
  finally 
   ReaderUnlock;
  end; 
@@ -3182,7 +3269,7 @@ begin
   {Check Device}
   if FDevice = nil then Exit;
   
-  //To Do
+  //To Do //NETWORK_CONTROL_ADD_MULTICAST
  finally 
   WriterUnlock;
  end; 
@@ -3209,7 +3296,7 @@ begin
   {Check Device}
   if FDevice = nil then Exit;
   
-  //To Do
+  //To Do //NETWORK_CONTROL_DEL_MULTICAST
  finally 
   WriterUnlock;
  end; 
@@ -3276,14 +3363,14 @@ begin
     {Set State}
     FState:=ADAPTER_STATE_ENABLED;
     
-    {Set Status (Down until Associated)}
-    FStatus:=ADAPTER_STATUS_DOWN;
-
     {Get Properties}
     FDefaultAddress:=GetDefaultAddress(INVALID_HANDLE_VALUE);
     FHardwareAddress:=GetHardwareAddress(INVALID_HANDLE_VALUE);
     FBroadcastAddress:=GetBroadcastAddress(INVALID_HANDLE_VALUE); 
     FMulticastAddresses:=GetMulticastAddresses(INVALID_HANDLE_VALUE); 
+
+    {Set Status (Down until Associated)}
+    FStatus:=ADAPTER_STATUS_DOWN;
     
     {Create Thread}
     FThread:=TAdapterThread.Create(Self);
@@ -3354,9 +3441,6 @@ begin
       RemoveTransport(THandle(Current),Current.PacketType);
      end;
   
-    {Reset State}
-    FState:=ADAPTER_STATE_DISABLED;
-  
     {Reset Status}
     FStatus:=ADAPTER_STATUS_DOWN;
   
@@ -3365,6 +3449,9 @@ begin
     FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
     FillChar(FBroadcastAddress,SizeOf(THardwareAddress),0);
     FillChar(FMulticastAddresses,SizeOf(TMulticastAddresses),0);
+
+    {Reset State}
+    FState:=ADAPTER_STATE_DISABLED;
     
     {Return Result}
     Result:=True;

@@ -1003,7 +1003,7 @@ type
   Lock:TSpinHandle;           {Mailslot Lock}
   Sender:TSemaphoreHandle;    {Mailslot send Semaphore}
   Receiver:TSemaphoreHandle;  {Mailslot receive Semaphore}
-  Messages:PInteger;          {Mailslot message queue} //To Do //Use TMessageList/TMessage instead ? //Maybe use Pointer instead since Messageslot uses TMessage ? //No, maybe TMessageList ?
+  Messages:PPtrInt;           {Mailslot message queue} 
   {Internal Properties}
   Prev:PMailslotEntry;        {Previous entry in Mailslot table}
   Next:PMailslotEntry;        {Next entry in Mailslot table}
@@ -1259,10 +1259,10 @@ type
  
 type
  {Prototypes for Mailslot Send/Receive Handlers} 
- TMailslotSend = function(Mailslot:PMailslotEntry;Data:Integer):LongWord;
- TMailslotSendEx = function(Mailslot:PMailslotEntry;Data:Integer;Timeout:LongWord):LongWord;
- TMailslotReceive = function(Mailslot:PMailslotEntry):Integer;
- TMailslotReceiveEx = function(Mailslot:PMailslotEntry;Timeout:LongWord):Integer;
+ TMailslotSend = function(Mailslot:PMailslotEntry;Data:PtrInt):LongWord;
+ TMailslotSendEx = function(Mailslot:PMailslotEntry;Data:PtrInt;Timeout:LongWord):LongWord;
+ TMailslotReceive = function(Mailslot:PMailslotEntry):PtrInt;
+ TMailslotReceiveEx = function(Mailslot:PMailslotEntry;Timeout:LongWord):PtrInt;
  
 type
  {Prototypes for Buffer Get/GetEx/Free Handlers}
@@ -1970,10 +1970,10 @@ function MailslotDestroy(Mailslot:TMailslotHandle):LongWord;
 
 function MailslotCount(Mailslot:TMailslotHandle):LongWord;
 
-function MailslotSend(Mailslot:TMailslotHandle;Data:Integer):LongWord;
-function MailslotSendEx(Mailslot:TMailslotHandle;Data:Integer;Timeout:LongWord):LongWord;       {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
-function MailslotReceive(Mailslot:TMailslotHandle):Integer;
-function MailslotReceiveEx(Mailslot:TMailslotHandle;Timeout:LongWord):Integer;                  {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
+function MailslotSend(Mailslot:TMailslotHandle;Data:PtrInt):LongWord;
+function MailslotSendEx(Mailslot:TMailslotHandle;Data:PtrInt;Timeout:LongWord):LongWord;       {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
+function MailslotReceive(Mailslot:TMailslotHandle):PtrInt;
+function MailslotReceiveEx(Mailslot:TMailslotHandle;Timeout:LongWord):PtrInt;                  {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 
 {==============================================================================}
 {Buffer Functions}
@@ -19574,7 +19574,7 @@ begin
  MailslotEntry.Lock:=SpinCreate;
  MailslotEntry.Sender:=SemaphoreCreate(Maximum);
  MailslotEntry.Receiver:=SemaphoreCreate(0);
- MailslotEntry.Messages:=AllocMem(Maximum * SizeOf(Integer));
+ MailslotEntry.Messages:=AllocMem(Maximum * SizeOf(PtrInt));
  
  {Check Mailslot entry}
  if (MailslotEntry.Sender = INVALID_HANDLE_VALUE) or (MailslotEntry.Receiver = INVALID_HANDLE_VALUE) or (MailslotEntry.Messages = nil) then     
@@ -19777,7 +19777,7 @@ end;
 
 {==============================================================================}
 
-function MailslotSend(Mailslot:TMailslotHandle;Data:Integer):LongWord;
+function MailslotSend(Mailslot:TMailslotHandle;Data:PtrInt):LongWord;
 {Send a message to a Mailslot}
 {Mailslot: Mailslot to send to} 
 {Data: Message to send to mailslot}
@@ -19828,7 +19828,7 @@ end;
 
 {==============================================================================}
 
-function MailslotSendEx(Mailslot:TMailslotHandle;Data:Integer;Timeout:LongWord):LongWord; 
+function MailslotSendEx(Mailslot:TMailslotHandle;Data:PtrInt;Timeout:LongWord):LongWord; 
 {Send a message to a Mailslot}
 {Mailslot: Mailslot to send to} 
 {Data: Message to send to mailslot}
@@ -19887,7 +19887,7 @@ begin
         if MailslotEntry.Signature <> MAILSLOT_SIGNATURE then Exit;
         
         {Write the message to the Mailslot}
-        PInteger(PtrUInt(MailslotEntry.Messages) + (((MailslotEntry.Start + MailslotEntry.Count) mod MailslotEntry.Maximum) * SizeOf(Integer)))^:=Data;
+        PPtrInt(PtrUInt(MailslotEntry.Messages) + (((MailslotEntry.Start + MailslotEntry.Count) mod MailslotEntry.Maximum) * SizeOf(PtrInt)))^:=Data;
      
         {Update the Mailslot}
         Inc(MailslotEntry.Count);
@@ -19912,7 +19912,7 @@ end;
 
 {==============================================================================}
 
-function MailslotReceive(Mailslot:TMailslotHandle):Integer;
+function MailslotReceive(Mailslot:TMailslotHandle):PtrInt;
 {Receive a message from a Mailslot}
 {Mailslot: Mailslot to receive from} 
 {Return: Received message or INVALID_HANDLE_VALUE on error}
@@ -19962,7 +19962,7 @@ end;
 
 {==============================================================================}
 
-function MailslotReceiveEx(Mailslot:TMailslotHandle;Timeout:LongWord):Integer;
+function MailslotReceiveEx(Mailslot:TMailslotHandle;Timeout:LongWord):PtrInt;
 {Receive a message from a Mailslot}
 {Mailslot: Mailslot to receive from} 
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
@@ -20019,7 +20019,7 @@ begin
         if MailslotEntry.Signature <> MAILSLOT_SIGNATURE then Exit;
         
         {Receive the first message}
-        Result:=PInteger(PtrUInt(MailslotEntry.Messages) + (MailslotEntry.Start * SizeOf(Integer)))^;
+        Result:=PPtrInt(PtrUInt(MailslotEntry.Messages) + (MailslotEntry.Start * SizeOf(PtrInt)))^;
      
         {Update the Mailslot}
         MailslotEntry.Start:=(MailslotEntry.Start + 1) mod MailslotEntry.Maximum;
