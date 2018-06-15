@@ -1,7 +1,7 @@
 {
 Ultibo Mouse interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -110,6 +110,10 @@ const
  MOUSE_CONTROL_FLUSH_BUFFER     = 4;  {Flush Buffer}
  MOUSE_CONTROL_GET_SAMPLE_RATE  = 5;  {Get Sample Rate}
  MOUSE_CONTROL_SET_SAMPLE_RATE  = 6;  {Set Sample Rate}
+ MOUSE_CONTROL_GET_MAX_X        = 7;  {Get Maximum X value (Only applies to Absolute X values)}
+ MOUSE_CONTROL_GET_MAX_Y        = 8;  {Get Maximum Y value (Only applies to Absolute Y values)}
+ MOUSE_CONTROL_GET_MAX_WHEEL    = 9;  {Get Maximum Wheel value (Only applies to Absolute Wheel values)}
+ MOUSE_CONTROL_GET_MAX_BUTTONS  = 10; {Get Maximum Buttons mask (eg MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON etc)}
  //To Do //Acceleration etc
 
  {Mouse Buffer Size}
@@ -201,10 +205,14 @@ type
  {Mouse Data}
  PMouseData = ^TMouseData;
  TMouseData = record
-  Buttons:Word;
-  OffsetX:SmallInt;
-  OffsetY:SmallInt;
-  OffsetWheel:SmallInt;
+  Buttons:Word;          {The bitmap of current button values (eg MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON)}
+  OffsetX:SmallInt;      {The X offset of the mouse pointer (May be negative, read as absolute if Buttons includes MOUSE_ABSOLUTE_X)}
+  OffsetY:SmallInt;      {The Y offset of the mouse pointer (May be negative, read as absolute if Buttons includes MOUSE_ABSOLUTE_Y)}
+  OffsetWheel:SmallInt;  {The X offset of the mouse pointer (May be negative, read as absolute if Buttons includes MOUSE_ABSOLUTE_WHEEL)}
+  MaximumX:Word;         {The maximum X value of the mouse (Only applicable if Buttons includes MOUSE_ABSOLUTE_X, otherwise must be 0)}
+  MaximumY:Word;         {The maximum Y value of the mouse (Only applicable if Buttons includes MOUSE_ABSOLUTE_Y, otherwise must be 0)}
+  MaximumWheel:Word;     {The maximum Wheel value of the mouse (Only applicable if Buttons includes MOUSE_ABSOLUTE_WHEEL, otherwise must be 0)}
+  Reserved:Word;         {Reserved field (Round structure to 16 bytes)}
  end;
  
  {Mouse Buffer}
@@ -220,13 +228,13 @@ type
  PMouseDevice = ^TMouseDevice;
  
  {Mouse Enumeration Callback}
- TMouseEnumerate = function(Mouse:PMouseDevice;Data:Pointer):LongWord;
+ TMouseEnumerate = function(Mouse:PMouseDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Mouse Notification Callback}
- TMouseNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TMouseNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Mouse Device Methods}
- TMouseDeviceRead = function(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
- TMouseDeviceControl = function(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+ TMouseDeviceRead = function(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMouseDeviceControl = function(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TMouseDevice = record
   {Device Properties}
@@ -433,7 +441,7 @@ begin
      USBMouseDriver.DriverUnbind:=USBMouseDriverUnbind;
      
      {Register USB Mouse Driver}
-     Status:=USBDriverRegister(USBMouseDriver); 
+     Status:=USBDriverRegister(USBMouseDriver);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(nil,'Mouse: Failed to register USB mouse driver: ' + USBStatusToString(Status));
@@ -922,6 +930,34 @@ begin
        MOUSE_CONTROL_SET_SAMPLE_RATE:begin
          {Set Sample Rate}
          Mouse.MouseRate:=Argument1;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;       
+       MOUSE_CONTROL_GET_MAX_X:begin
+         {Get Maximum X}
+         Argument2:=0;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;       
+       MOUSE_CONTROL_GET_MAX_Y:begin
+         {Get Maximum Y}
+         Argument2:=0;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;       
+       MOUSE_CONTROL_GET_MAX_WHEEL:begin
+         {Get Maximum Wheel}
+         Argument2:=0;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;       
+       MOUSE_CONTROL_GET_MAX_BUTTONS:begin
+         {Get Maximum Buttons mask}
+         Argument2:=MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON;
          
          {Return Result}
          Result:=ERROR_SUCCESS;
@@ -1601,6 +1637,34 @@ begin
        {Return Result}
        Result:=ERROR_SUCCESS;
       end;       
+     MOUSE_CONTROL_GET_MAX_X:begin
+       {Get Maximum X}
+       Argument2:=0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;       
+     MOUSE_CONTROL_GET_MAX_Y:begin
+       {Get Maximum Y}
+       Argument2:=0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;       
+     MOUSE_CONTROL_GET_MAX_WHEEL:begin
+       {Get Maximum Wheel}
+       Argument2:=0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;       
+     MOUSE_CONTROL_GET_MAX_BUTTONS:begin
+       {Get Maximum Buttons mask}
+       Argument2:=MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON or MOUSE_MIDDLE_BUTTON;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;       
     end;
    finally
     {Release the Lock}
@@ -1997,6 +2061,11 @@ begin
                  {Byte 3 is the Mouse Wheel offset}
                  Data.OffsetWheel:=PShortInt(PtrUInt(Buffer) + 3)^;
             
+                 {Maximum X, Y and Wheel}
+                 Data.MaximumX:=0;
+                 Data.MaximumY:=0;
+                 Data.MaximumWheel:=0;
+                 
                  {Update Count}
                  Inc(MouseBuffer.Count);
             
@@ -2068,6 +2137,11 @@ begin
        
               {Byte 3 is the Mouse Wheel offset}
               Data.OffsetWheel:=PShortInt(PtrUInt(Buffer) + 3)^;
+            
+              {Maximum X, Y and Wheel}
+              Data.MaximumX:=0;
+              Data.MaximumY:=0;
+              Data.MaximumWheel:=0;
             
               {Update Count}
               Inc(Mouse.Mouse.Buffer.Count);

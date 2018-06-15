@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '7 May 2018';
+ ULTIBO_RELEASE_DATE             = '15 June 2018';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.313';
+ ULTIBO_RELEASE_VERSION          = '2.0.373';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 313;
+ ULTIBO_RELEASE_VERSION_REVISION = 373;
  
 {==============================================================================}
 const
@@ -223,9 +223,9 @@ const
  
  {File Access Constants} 
  GENERIC_READ    = DWORD($80000000);
- GENERIC_WRITE   = ($40000000);
- GENERIC_EXECUTE = ($20000000);
- GENERIC_ALL     = ($10000000);
+ GENERIC_WRITE   = $40000000;
+ GENERIC_EXECUTE = $20000000;
+ GENERIC_ALL     = $10000000;
  
  {File Share Constants} 
  FILE_SHARE_READ                    = $00000001;

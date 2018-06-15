@@ -1,7 +1,7 @@
 {
 ST Microelectronics STMPE Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3292,6 +3292,11 @@ begin
        MouseData.OffsetY:=0;
        MouseData.OffsetWheel:=0;
        
+       {Maximum X, Y and Wheel}
+       MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
+       MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
+       MouseData.MaximumWheel:=0;
+       
        {Write Mouse Data}
        if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
         begin
@@ -3445,6 +3450,11 @@ begin
        end;
        MouseData.OffsetWheel:=0;
        //To Do //Continuing //Calibration
+       
+       {Maximum X, Y and Wheel}
+       MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
+       MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
+       MouseData.MaximumWheel:=0;
        
        {Write Mouse Data}
        if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then

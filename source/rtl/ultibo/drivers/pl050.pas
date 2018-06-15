@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL050 PS2 Keyboard/Mouse Interface Driver.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1396,7 +1396,35 @@ begin
        
        {Return Result}
        Result:=ERROR_SUCCESS;
+      end;
+     MOUSE_CONTROL_GET_MAX_X:begin
+       {Get Maximum X}
+       Argument2:=0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
       end;       
+     MOUSE_CONTROL_GET_MAX_Y:begin
+       {Get Maximum Y}
+       Argument2:=0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;       
+     MOUSE_CONTROL_GET_MAX_WHEEL:begin
+       {Get Maximum Wheel}
+       Argument2:=0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;       
+     MOUSE_CONTROL_GET_MAX_BUTTONS:begin
+       {Get Maximum Buttons mask}
+       Argument2:=MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON or MOUSE_MIDDLE_BUTTON;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;   
     end;
    finally
     {Release the Lock}

@@ -1,7 +1,7 @@
 {
 PS2 Keyboard/Mouse Controller Support.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1556,6 +1556,11 @@ begin
  {Get Offset Wheel}
  MouseData.OffsetWheel:=0;
  //To Do //Intellimouse extensions (see http://www.computer-engineering.org/ps2mouse/)
+ 
+ {Maximum X, Y and Wheel}
+ MouseData.MaximumX:=0;
+ MouseData.MaximumY:=0;
+ MouseData.MaximumWheel:=0;
  
  Result:=ERROR_SUCCESS;
 end;

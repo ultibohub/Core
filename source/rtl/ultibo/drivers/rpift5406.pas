@@ -550,6 +550,11 @@ begin
                MouseData.OffsetWheel:=0;
                //To Do //Continuing //Calibration
                
+               {Maximum X, Y and Wheel}
+               MouseData.MaximumX:=Touch.Touch.Properties.MaxX; {Touch.Touch.Properties.Width}
+               MouseData.MaximumY:=Touch.Touch.Properties.MaxY; {Touch.Touch.Properties.Height}
+               MouseData.MaximumWheel:=0;
+               
                {Write Mouse Data}
                if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
                 begin
@@ -617,6 +622,11 @@ begin
                  MouseData.OffsetX:=0; {No Offset X, Y or Wheel}
                  MouseData.OffsetY:=0;
                  MouseData.OffsetWheel:=0;
+                 
+                 {Maximum X, Y and Wheel}
+                 MouseData.MaximumX:=Touch.Touch.Properties.MaxX; {Touch.Touch.Properties.Width}
+                 MouseData.MaximumY:=Touch.Touch.Properties.MaxY; {Touch.Touch.Properties.Height}
+                 MouseData.MaximumWheel:=0;
                  
                  {Write Mouse Data}
                  if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
