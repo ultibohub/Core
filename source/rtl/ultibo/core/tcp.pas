@@ -5757,7 +5757,7 @@ begin
         if Socket <> nil then
          begin
           {Check Socket State}
-          if Socket.SocketState.Connected then
+          if (Socket.SocketState.Connected) or (Socket.SocketState.Disconnecting) then
            begin
             {Remove from the Queue}
             if not APeek then AcceptQueue.Remove(Socket);
