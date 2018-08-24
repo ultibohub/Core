@@ -1,7 +1,7 @@
 {
 Ultibo Global Type Definitions.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -238,10 +238,10 @@ type
 type
  {Compatibility types} 
  {Boolean types}
- BOOL = LongBool;
+ BOOL = ByteBool; {LongBool;} {Compatible with built in GCC _Bool type}
 
  {Signed types}
- {INT = Integer;} {Declared in system unit}
+ INT = Integer;
  LONG = LongInt;
  
  {Unsigned types}
@@ -274,11 +274,12 @@ type
  
  {64bit types}
  LONGLONG = Int64;
- ULONGLONG = Int64;
+ ULONGLONG = UInt64;
  DWORDLONG = ULONGLONG;
  
  {Size types}
- SIZE_T = ULONG_PTR;
+ SIZE_T = SizeUInt; {ULONG_PTR;}
+ SSIZE_T = SizeInt; {LONG_PTR;}
  
  {String types}
  LPSTR = ^CHAR;
@@ -286,6 +287,7 @@ type
  
  {Wide String types}
  WCHAR = WideChar;
+ PWCHAR = ^WCHAR;
  LPWSTR = ^WCHAR;
  LPCWSTR = ^WCHAR;
  
