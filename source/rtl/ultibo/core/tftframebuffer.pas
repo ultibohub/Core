@@ -73,13 +73,13 @@ type
  PTFTFramebuffer = ^TTFTFramebuffer;
  
  {TFTFramebuffer Device Methods}
- TTFTFramebufferInitialize = function(Framebuffer:PTFTFramebuffer;Defaults:PFramebufferProperties):LongWord;
- TTFTFramebufferDeinitialize = function(Framebuffer:PTFTFramebuffer):LongWord;
+ TTFTFramebufferInitialize = function(Framebuffer:PTFTFramebuffer;Defaults:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTFTFramebufferDeinitialize = function(Framebuffer:PTFTFramebuffer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TTFTFramebufferGetDefaults = function(Framebuffer:PTFTFramebuffer;Properties,Defaults:PFramebufferProperties):LongWord;
- TTFTFramebufferSetWriteAddress = function(Framebuffer:PTFTFramebuffer;X1,Y1,X2,Y2:LongWord):LongWord;
+ TTFTFramebufferGetDefaults = function(Framebuffer:PTFTFramebuffer;Properties,Defaults:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTFTFramebufferSetWriteAddress = function(Framebuffer:PTFTFramebuffer;X1,Y1,X2,Y2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TTFTFramebufferWriteMemory = function(Framebuffer:PTFTFramebuffer;Address,Size:LongWord):LongWord;
+ TTFTFramebufferWriteMemory = function(Framebuffer:PTFTFramebuffer;Address,Size:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {TFTFramebuffer Device}
  TTFTFramebuffer = record

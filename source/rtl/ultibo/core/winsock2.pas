@@ -568,13 +568,13 @@ const
  SG_CONSTRAINED_GROUP = $02;
  
 const
-{ Flag bit definitions for dwProviderFlags */ }
+{ Flag bit definitions for dwProviderFlags }
  PFL_MULTIPLE_PROTO_ENTRIES = $00000001;
  PFL_RECOMMENDED_PROTO_ENTRY = $00000002;
  PFL_HIDDEN = $00000004;
  PFL_MATCHES_PROTOCOL_ZERO = $00000008;
 
-{ Flag bit definitions for dwServiceFlags1 */ }
+{ Flag bit definitions for dwServiceFlags1 }
  XP1_CONNECTIONLESS = $00000001;
  XP1_GUARANTEED_DELIVERY = $00000002;
  XP1_GUARANTEED_ORDER = $00000004;
@@ -1153,8 +1153,8 @@ type
 type
 { WinSock 2 extensions -- data types for the condition function in }
 { WSAAccept() and overlapped I/O completion routine. }
- LPCONDITIONPROC = function (lpCallerId: LPWSABUF; lpCallerData : LPWSABUF; lpSQOS,lpGQOS : LPQOS; lpCalleeId,lpCalleeData : LPWSABUF; g : GROUP; dwCallbackData : DWORD ) : Longint; 
- LPWSAOVERLAPPED_COMPLETION_ROUTINE = procedure ( const dwError, cbTransferred : DWORD; const lpOverlapped : LPWSAOVERLAPPED; const dwFlags : DWORD ); 
+ LPCONDITIONPROC = function (lpCallerId: LPWSABUF; lpCallerData : LPWSABUF; lpSQOS,lpGQOS : LPQOS; lpCalleeId,lpCalleeData : LPWSABUF; g : GROUP; dwCallbackData : DWORD ) : Longint;{$IFDEF i386} stdcall;{$ENDIF}
+ LPWSAOVERLAPPED_COMPLETION_ROUTINE = procedure ( const dwError, cbTransferred : DWORD; const lpOverlapped : LPWSAOVERLAPPED; const dwFlags : DWORD );{$IFDEF i386} stdcall;{$ENDIF}
  
 type
  {Structure used in getaddrinfo() call}

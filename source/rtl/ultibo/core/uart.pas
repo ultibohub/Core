@@ -169,24 +169,24 @@ type
  PUARTDevice = ^TUARTDevice;
  
  {UART Enumeration Callback}
- TUARTEnumerate = function(UART:PUARTDevice;Data:Pointer):LongWord;
+ TUARTEnumerate = function(UART:PUARTDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {UART Notification Callback}
- TUARTNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TUARTNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {UART Device Methods}
- TUARTDeviceOpen = function(UART:PUARTDevice;BaudRate,DataBits,StopBits,Parity,FlowControl:LongWord):LongWord;
- TUARTDeviceClose = function(UART:PUARTDevice):LongWord;
+ TUARTDeviceOpen = function(UART:PUARTDevice;BaudRate,DataBits,StopBits,Parity,FlowControl:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUARTDeviceClose = function(UART:PUARTDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TUARTDeviceRead = function(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
- TUARTDeviceWrite = function(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+ TUARTDeviceRead = function(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUARTDeviceWrite = function(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TUARTDeviceWait = function(UART:PUARTDevice;Direction,Timeout:LongWord):LongWord;
+ TUARTDeviceWait = function(UART:PUARTDevice;Direction,Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TUARTDeviceGetStatus = function(UART:PUARTDevice):LongWord;
- TUARTDeviceSetStatus = function(UART:PUARTDevice;Status:LongWord):LongWord;
+ TUARTDeviceGetStatus = function(UART:PUARTDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUARTDeviceSetStatus = function(UART:PUARTDevice;Status:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TUARTDeviceGetProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
- TUARTDeviceSetProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;
+ TUARTDeviceGetProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUARTDeviceSetProperties = function(UART:PUARTDevice;Properties:PUARTProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TUARTDevice = record
   {Device Properties}

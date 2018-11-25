@@ -96,17 +96,17 @@ type
  PLoggingDevice = ^TLoggingDevice;
  
  {Logging Enumeration Callback}
- TLoggingEnumerate = function(Logging:PLoggingDevice;Data:Pointer):LongWord;
+ TLoggingEnumerate = function(Logging:PLoggingDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Logging Notification Callback}
- TLoggingNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TLoggingNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Logging Device Methods}
- TLoggingDeviceStart = function(Logging:PLoggingDevice):LongWord;
- TLoggingDeviceStop = function(Logging:PLoggingDevice):LongWord;
- TLoggingDeviceOutput = function(Logging:PLoggingDevice;const Data:String):LongWord;
- TLoggingDeviceOutputEx = function(Logging:PLoggingDevice;Facility,Severity:LongWord;const Tag,Content:String):LongWord; {Syslog compatible output}
- TLoggingDeviceGetTarget = function(Logging:PLoggingDevice):String;
- TLoggingDeviceSetTarget = function(Logging:PLoggingDevice;const Target:String):LongWord;
+ TLoggingDeviceStart = function(Logging:PLoggingDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TLoggingDeviceStop = function(Logging:PLoggingDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TLoggingDeviceOutput = function(Logging:PLoggingDevice;const Data:String):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TLoggingDeviceOutputEx = function(Logging:PLoggingDevice;Facility,Severity:LongWord;const Tag,Content:String):LongWord;{$IFDEF i386} stdcall;{$ENDIF} {Syslog compatible output}
+ TLoggingDeviceGetTarget = function(Logging:PLoggingDevice):String;{$IFDEF i386} stdcall;{$ENDIF}
+ TLoggingDeviceSetTarget = function(Logging:PLoggingDevice;const Target:String):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Logging Device}
  TLoggingDevice = record

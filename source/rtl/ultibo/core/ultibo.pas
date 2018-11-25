@@ -1,7 +1,7 @@
 {
 Ultibo interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -288,8 +288,8 @@ const
 {Compatibility types}
 type
  {Signed types}
- {INT = GlobalTypes.INT;}
- BOOL = GlobalTypes.BOOL;
+ INT = GlobalTypes.INT;
+ BOOL = GlobalTypes.BOOL; {Note: Delcared in Windows as LongBool but declared here as ByteBool for GCC compatibility}
  LONG = GlobalTypes.LONG;
 
  {Unsigned types}
@@ -302,7 +302,7 @@ type
  PVOID = GlobalTypes.PVOID;
  LPVOID = GlobalTypes.LPVOID;
  LPCVOID = GlobalTypes.LPCVOID;
- LPBOOL = GlobalTypes.LPBOOL;
+ LPBOOL = GlobalTypes.LPBOOL; {See note above for BOOL declaration}
  PLONG = GlobalTypes.PLONG;
  LPLONG = GlobalTypes.LPLONG;
  LPDWORD = GlobalTypes.LPDWORD;
@@ -444,8 +444,8 @@ type
  LPSYSTEMTIME = Timezone.LPSYSTEMTIME;
  _SYSTEMTIME = Timezone._SYSTEMTIME;
  SYSTEMTIME = Timezone.SYSTEMTIME;
- TSystemTime = Timezone.TSystemTime;
- PSystemTime = Timezone.PSystemTime;
+ {TSystemTime = Timezone.TSystemTime;} {Conflicts with TSystemTime in SysUtils}
+ {PSystemTime = Timezone.PSystemTime;} {Conflicts with TSystemTime in SysUtils}
  
 type
  {File Time types}
@@ -1251,6 +1251,9 @@ function CompareFileTime(const lpFileTime1,lpFileTime2:FILETIME):LONG;
 function FileTimeToDosDateTime(const lpFileTime:FILETIME;var lpFatDate,lpFatTime:WORD):BOOL;
 function DosDateTimeToFileTime(wFatDate,wFatTime:WORD;var lpFileTime:FILETIME):BOOL;
 
+function QueryPerformanceCounter(var lpPerformanceCount: LARGE_INTEGER): BOOL;
+function QueryPerformanceFrequency(var lpFrequency: LARGE_INTEGER): BOOL;
+
 {==============================================================================}
 {Time Functions (Ultibo)}
 function GetCurrentTime:TFileTime;
@@ -1554,8 +1557,9 @@ function BufferSwap(ABuffer:Pointer;ASize:LongWord):Boolean;
 
 {==============================================================================}
 {Hash Functions (Ultibo)} 
-function GenerateNameHash(const Name:String;Size:Integer):LongWord;  //To Do //There is a Hash function in ObjPas, check if the implementation is better and useable
-function GeneratePasswordHash(const Password:String):LongWord;
+function GenerateNameHash(const Name:String;Size:Integer):LongWord;
+function GeneratePasswordHash(const Password:String):LongWord; deprecated;
+function GenerateStringHash(const Value:String;CaseSensitive:Boolean):LongWord;
 
 {==============================================================================}
 {Locale Functions (Compatibility)}
@@ -2740,8 +2744,8 @@ end;
 
 function FileTimeToDosDateTime(const lpFileTime:FILETIME;var lpFatDate,lpFatTime:WORD):BOOL;
 {Convert a FileTime value to a DOS date and time value}
-{Note: FileTime is assumed to be Local / DOS data and time is returned as Local}
-{Note: If FileTime is less than 1/1/1980 then DOS date and time will be zero}
+{Note: FileTime is assumed to be Local / DOS date and time is returned as Local}
+{Note: If FileTime is less than 1/1/1980 then DOS date and time will be 1/1/1980}
 var
  FileDate:LongInt;
  DateTime:TDateTime;
@@ -2749,7 +2753,7 @@ begin
  {}
  Result:=False;
 
- lpFatDate:=0;
+ lpFatDate:=(PASCAL_TIME_DOS_TIME_START shr 16);
  lpFatTime:=0;
   
  {Check FileTime}
@@ -2773,7 +2777,7 @@ end;
 function DosDateTimeToFileTime(wFatDate,wFatTime:WORD;var lpFileTime:FILETIME):BOOL;
 {Convert a DOS date and time value to a FileTime value}
 {Note: DOS date and time is assumed to be Local / FileTime is returned as Local}
-{Note: If DOS date and time is less than 1/1/1980 then FileTime will be zero}
+{Note: If DOS date and time is less than 1/1/1980 then FileTime will be 1/1/1980}
 var
  FileDate:LongInt;
  DateTime:TDateTime;
@@ -2781,7 +2785,7 @@ begin
  {}
  Result:=False;
  try
-  Int64(lpFileTime):=0;
+  Int64(lpFileTime):=TIME_TICKS_TO_1980;
   
   {Get File Date}
   FileDate:=(wFatDate shl 16) or wFatTime;
@@ -2797,6 +2801,32 @@ begin
  except
   {FileDateToDateTime can raise Exceptions}
  end; 
+end;
+
+{==============================================================================}
+
+function QueryPerformanceCounter(var lpPerformanceCount: LARGE_INTEGER): BOOL;
+{Retrieves the current value of the performance counter, which is a high
+ resolution (<1us) time stamp that can be used for time-interval measurements}
+begin
+ {}
+ Result:=True;
+ 
+ lpPerformanceCount.QuadPart:=ClockGetTotal;
+end;
+
+{==============================================================================}
+
+function QueryPerformanceFrequency(var lpFrequency: LARGE_INTEGER): BOOL;
+{Retrieves the frequency of the performance counter.
+ The frequency of the performance counter is fixed at system boot and is
+ consistent across all processors. Therefore, the frequency need only be
+ queried upon application initialization, and the result can be cached}
+begin
+ {}
+ Result:=True;
+ 
+ lpFrequency.QuadPart:=CLOCK_FREQUENCY;
 end;
 
 {==============================================================================}
@@ -4465,8 +4495,8 @@ begin
  {}
  if Assigned(UltiboGetFileSizeExHandler) then
   begin
-   Int64(lpFileSize):=UltiboGetFileSizeExHandler(hFile);
-   if Int64(lpFileSize) <> -1 then
+   lpFileSize.QuadPart:=UltiboGetFileSizeExHandler(hFile);
+   if lpFileSize.QuadPart <> -1 then
     begin
      Result:=True;
     end; 
@@ -4586,7 +4616,7 @@ begin
  {}
  if Assigned(UltiboSetFilePointerExHandler) then
   begin
-   Result:=UltiboSetFilePointerExHandler(hFile,Int64(liDistanceToMove),PInt64(lpNewFilePointer)^,dwMoveMethod);
+   Result:=UltiboSetFilePointerExHandler(hFile,liDistanceToMove.QuadPart,PInt64(lpNewFilePointer)^,dwMoveMethod);
   end
  else
   begin
@@ -5934,8 +5964,16 @@ end;
 {==============================================================================}
 
 function GeneratePasswordHash(const Password:String):LongWord;
+{Deprecated function, use GenerateStringHash instead}
+begin
+ {}
+ Result:=GenerateStringHash(Password,False);
+end;
+
+{==============================================================================}
+
+function GenerateStringHash(const Value:String;CaseSensitive:Boolean):LongWord;
 {Sum of (byte value + 1) * (position + 257) for all bytes in string}
-{Note: Case Sensitive Hash}
 var
  Count:Integer;
  WorkBuffer:String;
@@ -5943,7 +5981,8 @@ begin
  {}
  Result:=0;
  
- WorkBuffer:=Uppercase(Password);
+ if CaseSensitive then WorkBuffer:=Value else WorkBuffer:=Uppercase(Value);
+ 
  if Length(WorkBuffer) > 0 then
   begin
    for Count:=1 to Length(WorkBuffer) do

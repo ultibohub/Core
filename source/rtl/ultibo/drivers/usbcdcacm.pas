@@ -2173,6 +2173,10 @@ begin
               if Len >=5 then
                begin
                 CallIndex:=Buffer[4];
+                
+                {$IFDEF CDCACM_DEBUG}
+                if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM:  CallIndex=' + IntToStr(CallIndex));
+                {$ENDIF}
                end; 
              end;
             USB_CDC_ACM_TYPE:begin
@@ -2184,6 +2188,10 @@ begin
               if Len >= SizeOf(TUSBCDCACMDescriptor) then
                begin
                 Capabilities:=PUSBCDCACMDescriptor(Buffer).bmCapabilities;
+                
+                {$IFDEF CDCACM_DEBUG}
+                if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM:  Capabilities=' + IntToHex(Capabilities,2));
+                {$ENDIF}
                end;
              end;
             USB_CDC_UNION_TYPE:begin
@@ -2284,6 +2292,13 @@ begin
   end
  else
   begin
+   {$IFDEF CDCACM_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Using union descriptor (bSlaveInterface0=' + IntToStr(UnionDescriptor.bSlaveInterface0) + ' bMasterInterface0=' + IntToStr(UnionDescriptor.bMasterInterface0) + ')');
+   {$ENDIF}
+   
+   {Reset CallIndex}
+   CallIndex:=-1;
+   
    {Get Interfaces}
    DataInterface:=USBDeviceFindInterfaceByIndex(Device,UnionDescriptor.bSlaveInterface0);
    ControlInterface:=USBDeviceFindInterfaceByIndex(Device,UnionDescriptor.bMasterInterface0);

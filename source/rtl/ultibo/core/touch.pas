@@ -156,21 +156,21 @@ type
  PTouchDevice = ^TTouchDevice;
  
  {Touch Enumeration Callback}
- TTouchEnumerate = function(Touch:PTouchDevice;Data:Pointer):LongWord;
+ TTouchEnumerate = function(Touch:PTouchDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Touch Notification Callback}
- TTouchNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TTouchNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Touch Device Methods}
- TTouchDeviceStart = function(Touch:PTouchDevice):LongWord; 
- TTouchDeviceStop = function(Touch:PTouchDevice):LongWord; 
+ TTouchDeviceStart = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTouchDeviceStop = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TTouchDevicePeek = function(Touch:PTouchDevice):LongWord; 
- TTouchDeviceRead = function(Touch:PTouchDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord; 
- TTouchDeviceWrite = function(Touch:PTouchDevice;Buffer:Pointer;Size,Count:LongWord):LongWord; 
- TTouchDeviceFlush = function(Touch:PTouchDevice):LongWord; 
- TTouchDeviceControl = function(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+ TTouchDevicePeek = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+ TTouchDeviceRead = function(Touch:PTouchDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTouchDeviceWrite = function(Touch:PTouchDevice;Buffer:Pointer;Size,Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTouchDeviceFlush = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+ TTouchDeviceControl = function(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TTouchDeviceGetProperties = function(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
+ TTouchDeviceGetProperties = function(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TTouchDevice = record
   {Device Properties}

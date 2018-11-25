@@ -236,8 +236,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManage
 
 //To Do //lseek64 etc
 
-//To Do //select
-
 //To Do //statvfs / fstatvfs
 
 {==============================================================================}
@@ -754,7 +752,7 @@ const
 type
  {Syscalls specific types}
  
- {Basic Types} {Note: These may differ from GlobalTypes unit}
+ {Basic Types} {Note: These should match (Except for case) with those from GlobalTypes unit}
  int = Integer; {INT_MAX}
  Pint = ^int;
  long = PtrInt; {LONG_MAX}
@@ -1105,11 +1103,23 @@ type
  {From sys/_timeval.h}
  suseconds_t = __suseconds_t;
  
+{$IFNDEF SYSCALLS_EXPORT_SOCKETS} 
  Ptimeval = ^Ttimeval;
  Ttimeval = record
   tv_sec: time_t;       {seconds}
   tv_usec: suseconds_t; {and microseconds}
  end;
+{$ELSE}
+ Ptimeval = Sockets.PTimeVal;
+ Ttimeval = Sockets.TTimeVal;
+{$ENDIF}
+
+{$IFDEF SYSCALLS_EXPORT_SOCKETS} 
+type
+ {From sys/select.h}
+ Tfd_set = Sockets.TFDSet;
+ Pfd_set = Sockets.PFDSet;
+{$ENDIF}
  
 type
  {From sys/_timespec.h} 
@@ -1646,6 +1656,7 @@ function sem_wait(sem: Psem_t): int; cdecl; public name 'sem_wait';
      
 {==============================================================================}
 {Syscalls Functions (Sockets)}
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
 {From sys/socket.h}
 function socket_accept(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'accept';
 function socket_bind(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl; public name 'bind';
@@ -1664,6 +1675,9 @@ function socket_setsockopt(socket: int; level, option_name: int; option_value: P
 function socket_shutdown(socket: int; how: int): int; cdecl; public name 'shutdown';
 function socket_socket(domain, sockettype, protocol: int): int; cdecl; public name 'socket';
 function socket_socketpair(domain, sockettype, protocol: int; socket_vector: Pint): int; cdecl; public name 'socketpair';
+
+{From sys/select.h}
+function socket_select(nfds: int; readfds, writefds, exceptfds: Pfd_set; timeout: Ptimeval): int; cdecl; public name 'select';
 
 {From arpa/inet.h}
 function socket_htonl(hostlong: uint32_t): uint32_t; cdecl; public name 'htonl';
@@ -1694,6 +1708,11 @@ function socket_getprotobyname(name: PChar): PProtoEnt; cdecl; public name 'getp
 function socket_getaddrinfo(node: PChar; service: PChar; hints: PAddrInfo; var res: PAddrInfo): int; cdecl; public name 'getaddrinfo';   
 function socket_getnameinfo(addr: PSockAddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl; public name 'getnameinfo';   
 procedure socket_freeaddrinfo(res: PAddrInfo); cdecl; public name 'freeaddrinfo';   
+{$ENDIF}
+{==============================================================================}
+{Syscalls Functions (Setjmp)}
+function _setjmp(var env: jmp_buf): int; cdecl; public name '_setjmp';
+procedure _longjmp(var env: jmp_buf; val: int); cdecl; public name '_longjmp';
        
 {==============================================================================}
 {Syscalls Functions (Non Standard)}
@@ -7838,6 +7857,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Sockets)}
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
 function socket_get_error(error: int): int;
 {Map a Socket error to a POSIX error}
 
@@ -8256,6 +8276,29 @@ end;
 
 {==============================================================================}
 
+function socket_select(nfds: int; readfds, writefds, exceptfds: Pfd_set; timeout: Ptimeval): int; cdecl;
+{Perform synchronous I/O multiplexing on one or more sockets}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socket (nfds=' + IntToStr(nfds) + ')');
+ {$ENDIF}
+ 
+ Result:=fpselect(nfds,readfds,writefds,exceptfds,timeout);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+  end;
+end;
+
+{==============================================================================}
+
 function socket_htonl(hostlong: uint32_t): uint32_t; cdecl;
 {Convert values between host and network byte order}
 
@@ -8536,7 +8579,38 @@ begin
  
  FreeAddrInfo(res);
 end;
+{$ENDIF}
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Setjmp)}
+function _setjmp(var env: jmp_buf): int; cdecl;
+{Save information about the calling environment for later use by _longjmp}
 
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _setjmp');
+ {$ENDIF}
+ 
+ Result:=setjmp(env);
+end;
+
+{==============================================================================}
+
+procedure _longjmp(var env: jmp_buf; val: int); cdecl;
+{Uses the information saved in env to transfer control back to the point where _setjmp was called}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _longjmp');
+ {$ENDIF}
+ 
+ longjmp(env,val);
+end;
+       
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Non Standard)}

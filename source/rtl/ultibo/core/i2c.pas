@@ -123,26 +123,26 @@ type
  PI2CDevice = ^TI2CDevice;
  
  {I2C Enumeration Callback}
- TI2CEnumerate = function(I2C:PI2CDevice;Data:Pointer):LongWord;
+ TI2CEnumerate = function(I2C:PI2CDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {I2C Notification Callback}
- TI2CNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TI2CNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {I2C Device Methods}
- TI2CDeviceStart = function(I2C:PI2CDevice;Rate:LongWord):LongWord;
- TI2CDeviceStop = function(I2C:PI2CDevice):LongWord;
+ TI2CDeviceStart = function(I2C:PI2CDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceStop = function(I2C:PI2CDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TI2CDeviceRead = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
- TI2CDeviceWrite = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
- TI2CDeviceWriteRead = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
- TI2CDeviceWriteWrite = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+ TI2CDeviceRead = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceWrite = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceWriteRead = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceWriteWrite = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
   
- TI2CDeviceGetRate = function(I2C:PI2CDevice):LongWord;
- TI2CDeviceSetRate = function(I2C:PI2CDevice;Rate:LongWord):LongWord;
+ TI2CDeviceGetRate = function(I2C:PI2CDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceSetRate = function(I2C:PI2CDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TI2CDeviceGetAddress = function(I2C:PI2CDevice):Word;
- TI2CDeviceSetAddress = function(I2C:PI2CDevice;Address:Word):LongWord;
+ TI2CDeviceGetAddress = function(I2C:PI2CDevice):Word;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceSetAddress = function(I2C:PI2CDevice;Address:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TI2CDeviceGetProperties = function(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
+ TI2CDeviceGetProperties = function(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TI2CDevice = record
   {Device Properties}

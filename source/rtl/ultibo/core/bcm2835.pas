@@ -1147,7 +1147,7 @@ const
  BCM2835_MBOX_TAG_GET_GPIO_STATE    = $00030041; {Get the current state of a GPIO expander pin (Not applicable on BCM2835)}
  BCM2835_MBOX_TAG_SET_GPIO_STATE    = $00038041; {Set the current state of a GPIO expander pin (Not applicable on BCM2835)}
    
- BCM2835_MBOX_TAG_SET_SDHOST_CLOCK  = $00038042;
+ BCM2835_MBOX_TAG_SET_SDHOST_CLOCK  = $00038042; {Tell the firmware the SD Host clock setting so it will be adjusted for changes in core frequency}
     
  BCM2835_MBOX_TAG_GET_GPIO_CONFIG   = $00030043; {Get the current configuration of a GPIO expander pin (Not applicable on BCM2835)}
  BCM2835_MBOX_TAG_SET_GPIO_CONFIG   = $00038043; {Set the current configuration of a GPIO expander pin (Not applicable on BCM2835)}
@@ -1204,6 +1204,10 @@ const
 
  BCM2835_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
  BCM2835_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
+ 
+ BCM2835_MBOX_TAG_GET_NUM_DISPLAYS     = $00040012;
+ BCM2835_MBOX_TAG_GET_DISPLAY_SETTINGS = $00040013;
+ BCM2835_MBOX_TAG_SET_DISPLAY_NUM      = $00048012;
  
  BCM2835_MBOX_TAG_GET_LAYER         = $0004000c;
  BCM2835_MBOX_TAG_TST_LAYER         = $0004400c;
@@ -1274,6 +1278,7 @@ const
  BCM2835_BOARD_REVISION_MODEL_UNKNOWN_2      = (11 shl 4);  {Unknown}
  BCM2835_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W}
  BCM2835_BOARD_REVISION_MODEL_3BPLUS         = (13 shl 4);  {Model 3B+ (Cannot occur on BCM2835)}
+ BCM2835_BOARD_REVISION_MODEL_3APLUS         = (14 shl 4);  {Model 3A+ (Cannot occur on BCM2835)}
  
  BCM2835_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835}
@@ -2956,6 +2961,64 @@ type
   case Integer of
   0:(Request:TBCM2835MailboxTagSetVirtualGPIORequest);
   1:(Response:TBCM2835MailboxTagSetVirtualGPIOResponse);
+ end;
+ 
+ {Get Display Count}
+ TBCM2835MailboxTagGetDisplayCountRequest = record
+  Dummy:LongWord;
+ end;
+ 
+ TBCM2835MailboxTagGetDisplayCountResponse = record
+  DisplayCount:LongWord;
+ end;
+ 
+ PBCM2835MailboxTagGetDisplayCount = ^TBCM2835MailboxTagGetDisplayCount;
+ TBCM2835MailboxTagGetDisplayCount = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagGetDisplayCountRequest);
+  1:(Response:TBCM2835MailboxTagGetDisplayCountResponse);
+ end;
+ 
+ {Get Display Settings}
+ TBCM2835MailboxTagGetDisplaySettingsRequest = record
+  DisplayNumber:LongWord;
+  Width:LongWord;
+  Height:LongWord;
+  Pitch:LongWord;
+  Depth:LongWord;
+  VirtualWidth:LongWord;
+  VirtualHeight:LongWord;
+  VirtualOffsetX:LongWord;
+  VirtualOffsetY:LongWord;
+  Address:LongWord; {Framebuffer Bus Address}
+ end;
+ 
+ TBCM2835MailboxTagGetDisplaySettingsResponse = TBCM2835MailboxTagGetDisplaySettingsRequest;
+ 
+ PBCM2835MailboxTagGetDisplaySettings = ^TBCM2835MailboxTagGetDisplaySettings;
+ TBCM2835MailboxTagGetDisplaySettings = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagGetDisplaySettingsRequest);
+  1:(Response:TBCM2835MailboxTagGetDisplaySettingsResponse);
+ end;
+ 
+ {Set Display Number}
+ TBCM2835MailboxTagSetDisplayNumberRequest = record
+  DisplayNumber:LongWord;
+ end;
+ 
+ TBCM2835MailboxTagSetDisplayNumberResponse = record
+  Dummy:LongWord;
+ end;
+ 
+ PBCM2835MailboxTagSetDisplayNumber = ^TBCM2835MailboxTagSetDisplayNumber;
+ TBCM2835MailboxTagSetDisplayNumber = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagSetDisplayNumberRequest);
+  1:(Response:TBCM2835MailboxTagSetDisplayNumberResponse);
  end;
  
  {Test Vsync}

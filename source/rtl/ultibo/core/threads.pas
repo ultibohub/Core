@@ -1304,8 +1304,8 @@ type
  
 type
  {Prototypes for Thread Start/End Handlers}
- TThreadStart = function(Parameter:Pointer):PtrInt;
- TThreadEnd = procedure(ExitCode:LongWord);
+ TThreadStart = function(Parameter:Pointer):PtrInt;{$IFDEF i386} stdcall;{$ENDIF}
+ TThreadEnd = procedure(ExitCode:LongWord);{$IFDEF i386} stdcall;{$ENDIF}
  
 type
  {Prototypes for Scheduler Check/Wakeup/Expire/Select/Switch Handlers}
@@ -1796,9 +1796,9 @@ function ListAddLast(List:TListHandle;Element:PListElement):LongWord;
 
 function ListGetThread(List:TListHandle;Thread:TThreadHandle):PListElement;
 
-function ListGetFirst(List:TListHandle):PListElement;
+function ListGetFirst(List:TListHandle):PListElement; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 function ListGetFirstEx(List:TListHandle;Remove:Boolean):PListElement;
-function ListGetLast(List:TListHandle):PListElement;
+function ListGetLast(List:TListHandle):PListElement; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 function ListGetLastEx(List:TListHandle;Remove:Boolean):PListElement;
 
 function ListInsert(List:TListHandle;Previous,Element:PListElement):LongWord;
@@ -11581,7 +11581,7 @@ end;
 
 {==============================================================================}
 
-function ListGetFirst(List:TListHandle):PListElement;
+function ListGetFirst(List:TListHandle):PListElement; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 {Get the first element from the List}
 {List: Handle of List entry to get from}
 {Return: List element on success, nil on failure or list empty}
@@ -11657,7 +11657,7 @@ end;
 
 {==============================================================================}
 
-function ListGetLast(List:TListHandle):PListElement;
+function ListGetLast(List:TListHandle):PListElement; {$IFDEF LIST_INLINE}inline;{$ENDIF}
 {Get the last element from the List}
 {List: Handle of List entry to get from}
 {Return: List element on success, nil on failure or list empty}
@@ -24491,14 +24491,17 @@ end;
 
 {==============================================================================}
 
-function ThreadSetupStack(StackBase:Pointer;StartProc:TThreadStart;ReturnProc:TThreadEnd;Parameter:Pointer):Pointer; 
+function ThreadSetupStack(StackBase:Pointer;StartProc:TThreadStart;ReturnProc:TThreadEnd;Parameter:Pointer):Pointer;
 begin
  {}
- Result:=nil;
  if Assigned(ThreadSetupStackHandler) then
   begin
    Result:=ThreadSetupStackHandler(StackBase,StartProc,ReturnProc,Parameter);
-  end;
+  end
+ else
+  begin
+   Result:=nil;
+  end;  
 end;
 
 {==============================================================================}

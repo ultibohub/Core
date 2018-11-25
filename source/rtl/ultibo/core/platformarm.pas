@@ -16,7 +16,7 @@ Boards
  Raspberry Pi - Model A/B/A+/B+
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  BeagleBone Black
  Banana Pi
  Banana Pro

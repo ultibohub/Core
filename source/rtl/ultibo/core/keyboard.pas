@@ -538,14 +538,14 @@ type
  PKeyboardDevice = ^TKeyboardDevice;
  
  {Keyboard Enumeration Callback}
- TKeyboardEnumerate = function(Keyboard:PKeyboardDevice;Data:Pointer):LongWord;
+ TKeyboardEnumerate = function(Keyboard:PKeyboardDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Keyboard Notification Callback}
- TKeyboardNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TKeyboardNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Keyboard Device Methods}
- TKeyboardDeviceGet = function(Keyboard:PKeyboardDevice;var KeyCode:Word):LongWord;
- TKeyboardDeviceRead = function(Keyboard:PKeyboardDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
- TKeyboardDeviceControl = function(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+ TKeyboardDeviceGet = function(Keyboard:PKeyboardDevice;var KeyCode:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TKeyboardDeviceRead = function(Keyboard:PKeyboardDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TKeyboardDeviceControl = function(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TKeyboardDevice = record
   {Device Properties}
@@ -683,6 +683,8 @@ procedure KeyboardLogDebug(Keyboard:PKeyboardDevice;const AText:String); inline;
 
 {==============================================================================}
 {USB Helper Functions}
+function USBKeyboardCheckDevice(Device:PUSBDevice):Boolean;
+
 function USBKeyboardInsertData(Keyboard:PUSBKeyboardDevice;Data:PKeyboardData):LongWord;
 
 function USBKeyboardCheckPressed(Keyboard:PUSBKeyboardDevice;ScanCode:Byte):Boolean;
@@ -2456,8 +2458,8 @@ begin
    Exit;
   end;
 
- {Check for Keyboard (Must be interface specific)}
- if Device.Descriptor.bDeviceClass <> USB_CLASS_CODE_INTERFACE_SPECIFIC then
+ {Check Device}
+ if not USBKeyboardCheckDevice(Device) then
   begin
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -4590,6 +4592,27 @@ end;
 {==============================================================================}
 {==============================================================================}
 {USB Keyboard Helper Functions}
+function USBKeyboardCheckDevice(Device:PUSBDevice):Boolean;
+{Check if the supplied USB device is suitable for detection as a HID Keyboard Device}
+{Device: The USB device to check}
+{Return: True if the device is suitable or False if it is not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Class}
+ case Device.Descriptor.bDeviceClass of
+  USB_CLASS_CODE_HUB:Result:=False;
+ else
+  Result:=True;
+ end;
+end;
+
+{==============================================================================}
+
 function USBKeyboardInsertData(Keyboard:PUSBKeyboardDevice;Data:PKeyboardData):LongWord;
 {Insert a TKeyboardData entry into the keyboard buffer (Direct or Global)}
 {Keyboard: The USB keyboard device to insert data for}

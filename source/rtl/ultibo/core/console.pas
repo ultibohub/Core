@@ -186,42 +186,42 @@ type
  PConsoleDevice = ^TConsoleDevice;
  
  {Console Enumeration Callback}
- TConsoleEnumerate = function(Console:PConsoleDevice;Data:Pointer):LongWord;
+ TConsoleEnumerate = function(Console:PConsoleDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Console Notification Callback}
- TConsoleNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TConsoleNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Console Device Methods}
- TConsoleDeviceOpen = function(Console:PConsoleDevice):LongWord;
- TConsoleDeviceClose = function(Console:PConsoleDevice):LongWord;
- TConsoleDeviceClear = function(Console:PConsoleDevice;Color:LongWord):LongWord;
- TConsoleDeviceScroll = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord;
- TConsoleDeviceDrawBox = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
- TConsoleDeviceDrawLine = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
- TConsoleDevicePlotLine = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
- TConsoleDeviceDrawChar = function(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;
- TConsoleDeviceDrawText = function(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;
- TConsoleDeviceDrawPixel = function(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;
- TConsoleDeviceDrawBlock = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;
- TConsoleDeviceDrawCircle = function(Console:PConsoleDevice;X,Y,Color,Width,Radius:LongWord):LongWord;
- TConsoleDeviceDrawImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
- TConsoleDeviceDrawWindow = function(Console:PConsoleDevice;Handle:TWindowHandle;Flags:LongWord):LongWord;
+ TConsoleDeviceOpen = function(Console:PConsoleDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceClose = function(Console:PConsoleDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceClear = function(Console:PConsoleDevice;Color:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceScroll = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawBox = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawLine = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDevicePlotLine = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawChar = function(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawText = function(Console:PConsoleDevice;Handle:TFontHandle;const Text:String;X,Y,Forecolor,Backcolor,Len:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawPixel = function(Console:PConsoleDevice;X,Y,Color:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawBlock = function(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawCircle = function(Console:PConsoleDevice;X,Y,Color,Width,Radius:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDrawWindow = function(Console:PConsoleDevice;Handle:TWindowHandle;Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TConsoleDeviceGetPixel = function(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
- TConsoleDeviceGetImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
+ TConsoleDeviceGetPixel = function(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceGetImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TConsoleDevicePutText = function(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;
+ TConsoleDevicePutText = function(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TConsoleDeviceCopyImage = function(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;
+ TConsoleDeviceCopyImage = function(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
- TConsoleDeviceAddCaret = function(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;
- TConsoleDeviceDeleteCaret = function(Console:PConsoleDevice;Handle:THandle):LongWord;
- TConsoleDeviceUpdateCaret = function(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord;
+ TConsoleDeviceAddCaret = function(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceDeleteCaret = function(Console:PConsoleDevice;Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceUpdateCaret = function(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
- TConsoleDeviceSetCursor = function(Console:PConsoleDevice;Width,Height:LongWord;Chars:PChar):LongWord;
- TConsoleDeviceUpdateCursor = function(Console:PConsoleDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;
+ TConsoleDeviceSetCursor = function(Console:PConsoleDevice;Width,Height:LongWord;Chars:PChar):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceUpdateCursor = function(Console:PConsoleDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TConsoleDeviceGetPosition = function(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
- TConsoleDeviceGetProperties = function(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;
+ TConsoleDeviceGetPosition = function(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceGetProperties = function(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  PConsoleCaret = ^TConsoleCaret;
  PConsoleWindow = ^TConsoleWindow;
@@ -351,10 +351,10 @@ type
  end;
  
  {Console Window Enumeration Callback}
- TConsoleWindowEnumerate = function(Console:PConsoleDevice;Handle:TWindowHandle;Data:Pointer):LongWord;
+ TConsoleWindowEnumerate = function(Console:PConsoleDevice;Handle:TWindowHandle;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Console Window Completion Callback}
- TConsoleWindowCompletion = function(Handle:TWindowHandle;var Buffer:String;Data:Pointer):LongWord;
+ TConsoleWindowCompletion = function(Handle:TWindowHandle;var Buffer:String;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Console Window}
  TConsoleWindow = record

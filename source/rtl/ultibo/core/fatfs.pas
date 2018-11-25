@@ -187,6 +187,8 @@ const
 
  lfnAttributeMask = (faReadOnly or faHidden or faSysFile or faVolumeID); {Not Used - See faLongName}
 
+ fatBootSignature = $29;
+ 
  fat32LeadSignature   = $41615252; {RRaA}
  fat32StructSignature = $61417272; {rrAa}
  fat32TrailSignature  = $AA550000; {Standard Boot Sector signature}
@@ -960,11 +962,11 @@ begin
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.CheckBootSector - StartSector = ' + IntToStr(AStartSector) + ' SectorCount = ' + IntToStr(ASectorCount));
  {$ENDIF}
  
- {Check Boot Sector}
- if ABootSector.Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+ {Check Boot Sector (Accept 0 due to some faulty devices)}
+ if (ABootSector.Signature <> BOOT_SECTOR_SIGNATURE) and (ABootSector.Signature <> 0) then Exit;
  
  {Check for FAT}
- if ABootSector.BootSignature = $29 then
+ if ABootSector.BootSignature = fatBootSignature then
   begin
    {Check for FAT12/16}
    if ABootSector.BPB.BytesPerSector = 0 then Exit;
@@ -989,7 +991,7 @@ begin
  else
   begin
    {Check for FAT32}
-   if PExtBootSector(ABootSector).BootSignature <> $29 then Exit;
+   if PExtBootSector(ABootSector).BootSignature <> fatBootSignature then Exit;
    if PExtBootSector(ABootSector).BPB.BytesPerSector = 0 then Exit;
    if (PExtBootSector(ABootSector).BPB.BytesPerSector mod MIN_SECTOR_SIZE) <> 0 then Exit;
    if PExtBootSector(ABootSector).BPB.SectorsPerCluster = 0 then Exit;
@@ -1910,7 +1912,7 @@ begin
     ABootSector.BPB.TotalSectors32:=TotalSectors32;
     ABootSector.DriveNumber:=DriveNumber;
     ABootSector.Reserved1:=0;
-    ABootSector.BootSignature:=$29;
+    ABootSector.BootSignature:=fatBootSignature;
     ABootSector.VolumeSerial:=DateTimeToFileDate(Now);
     FillChar(ABootSector.VolumeName[0],11,fatEntryPadding);
     System.Move(fatDefaultName[1],ABootSector.VolumeName[0],Min(Length(fatDefaultName),11));
@@ -1950,7 +1952,7 @@ begin
     {PExtBootSector(ABootSector).BPB.Reserved}
     PExtBootSector(ABootSector).DriveNumber:=DriveNumber;
     PExtBootSector(ABootSector).Reserved1:=0;
-    PExtBootSector(ABootSector).BootSignature:=$29;
+    PExtBootSector(ABootSector).BootSignature:=fatBootSignature;
     PExtBootSector(ABootSector).VolumeSerial:=DateTimeToFileDate(Now);
     FillChar(PExtBootSector(ABootSector).VolumeName[0],11,fatEntryPadding);
     System.Move(fatDefaultName[1],PExtBootSector(ABootSector).VolumeName[0],Min(Length(fatDefaultName),11));
@@ -4701,12 +4703,14 @@ begin
  Int64(FileTime):=0;
  Ultibo.DosDateTimeToFileTime(FATDirectory.WriteDate,FATDirectory.WriteTime,LocalTime);
  if Int64(LocalTime) > 0 then Ultibo.LocalFileTimeToFileTime(LocalTime,FileTime) else Int64(FileTime):=TIME_TICKS_TO_1980;
+ if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980;
  AEntry.WriteTime:=FileTime;
  
  {Get Create Time}
  Int64(FileTime):=0;
  Ultibo.DosDateTimeToFileTime(FATDirectory.CreateDate,FATDirectory.CreateTime,LocalTime);
  if Int64(LocalTime) > 0 then Ultibo.LocalFileTimeToFileTime(LocalTime,FileTime) else Int64(FileTime):=TIME_TICKS_TO_1980;
+ if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980;
  Int64(FileTime):=Int64(FileTime) + (TIME_TICKS_PER_10MILLISECONDS * FATDirectory.CreateTimeMsecs);
  AEntry.CreateTime:=FileTime;
  
@@ -4714,6 +4718,7 @@ begin
  Int64(FileTime):=0;
  Ultibo.DosDateTimeToFileTime(FATDirectory.LastAccessDate,0,LocalTime);
  if Int64(LocalTime) > 0 then Ultibo.LocalFileTimeToFileTime(LocalTime,FileTime) else Int64(FileTime):=TIME_TICKS_TO_1980;
+ if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980; 
  AEntry.AccessTime:=FileTime;
  
  {Get Attributes}
@@ -4882,7 +4887,10 @@ begin
    ftFAT12,ftFAT16:begin
      {Get BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
      
      SetString(Result,PBootSector(FSectorBuffer).SystemName,8);
     
@@ -4891,7 +4899,10 @@ begin
    ftFAT32:begin
      {Get BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
     
      SetString(Result,PExtBootSector(FSectorBuffer).SystemName,8);
     
@@ -4922,7 +4933,10 @@ begin
    ftFAT12,ftFAT16:begin
      {Get BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
      
      SetString(Result,PBootSector(FSectorBuffer).VolumeName,11);
     
@@ -4931,7 +4945,10 @@ begin
    ftFAT32:begin
      {Get BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
     
      SetString(Result,PExtBootSector(FSectorBuffer).VolumeName,11);
     
@@ -4962,14 +4979,20 @@ begin
    ftFAT12,ftFAT16:begin
      {Get BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
     
      Result:=PBootSector(FSectorBuffer).VolumeSerial;
     end;
    ftFAT32:begin
      {Get BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
     
      Result:=PExtBootSector(FSectorBuffer).VolumeSerial;
     end;
@@ -5009,7 +5032,11 @@ begin
    ftFAT12,ftFAT16:begin
      {Get/Set BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
+     
      FillChar(PBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
      System.Move(AName[1],PBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
@@ -5018,11 +5045,16 @@ begin
      if FBootBackup <> FBootSector then
       begin
        if not ReadSectors(FBootBackup,1,FSectorBuffer^) then Exit;
-       if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+       if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+        begin
+         if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+        end; 
+       
        FillChar(PBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
        System.Move(AName[1],PBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
+      
      FVolumeName:=AName;
      UniqueString(FVolumeName);
      
@@ -5031,7 +5063,11 @@ begin
    ftFAT32:begin
      {Get/Set BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
+     
      FillChar(PExtBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
      System.Move(AName[1],PExtBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
@@ -5040,11 +5076,16 @@ begin
      if FBootBackup <> FBootSector then
       begin
        if not ReadSectors(FBootBackup,1,FSectorBuffer^) then Exit;
-       if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+       if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+        begin
+         if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+        end; 
+       
        FillChar(PExtBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
        System.Move(AName[1],PExtBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
+      
      FVolumeName:=AName;
      UniqueString(FVolumeName);
     
@@ -5078,7 +5119,11 @@ begin
    ftFAT12,ftFAT16:begin
      {Get/Set BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
+     
      PBootSector(FSectorBuffer).VolumeSerial:=ASerial;
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
     
@@ -5086,10 +5131,15 @@ begin
      if FBootBackup <> FBootSector then
       begin
        if not ReadSectors(FBootBackup,1,FSectorBuffer^) then Exit;
-       if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+       if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+        begin
+         if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+        end; 
+       
        PBootSector(FSectorBuffer).VolumeSerial:=ASerial;
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
+      
      FVolumeSerial:=ASerial;
     
      Result:=True;
@@ -5097,7 +5147,11 @@ begin
    ftFAT32:begin
      {Get/Set BootSector}
      if not ReadSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+     if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+      begin
+       if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+      end; 
+     
      PExtBootSector(FSectorBuffer).VolumeSerial:=ASerial;
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
      
@@ -5105,10 +5159,15 @@ begin
      if FBootBackup <> FBootSector then
       begin
        if not ReadSectors(FBootBackup,1,FSectorBuffer^) then Exit;
-       if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+       if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
+        begin
+         if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
+        end; 
+       
        PExtBootSector(FSectorBuffer).VolumeSerial:=ASerial;
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
+      
      FVolumeSerial:=ASerial;
     
      Result:=True;
@@ -7429,15 +7488,15 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                 PBootSector(FSectorBuffer).Signature=' + IntToHex(PBootSector(FSectorBuffer).Signature,4));
   {$ENDIF}
   
-  {Check Boot Sector}
-  if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then Exit;
+  {Check Boot Sector (Accept 0 due to some faulty devices)}
+  if (PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE) and (PBootSector(FSectorBuffer).Signature <> 0) then Exit;
   
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Boot Sector Checked');
   {$ENDIF}
   
   {Check for FAT}
-  if PBootSector(FSectorBuffer).BootSignature = $29 then
+  if PBootSector(FSectorBuffer).BootSignature = fatBootSignature then
    begin
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Check for FAT12/16');
@@ -7587,7 +7646,7 @@ begin
     {$ENDIF}
 
     {Check for FAT32}
-    if PExtBootSector(FSectorBuffer).BootSignature <> $29 then Exit;
+    if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
     if PExtBootSector(FSectorBuffer).BPB.BytesPerSector = 0 then Exit;
     if (PExtBootSector(FSectorBuffer).BPB.BytesPerSector mod MIN_SECTOR_SIZE) <> 0 then Exit;
     if (PExtBootSector(FSectorBuffer).BPB.SectorsPerCluster = 0) then Exit;

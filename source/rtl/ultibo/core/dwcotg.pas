@@ -13,7 +13,7 @@ Boards
 
  Raspberry Pi - Model A/B/A+/B+
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  
 Licence
 =======
@@ -1055,6 +1055,13 @@ begin
  if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Starting USB Host');
  {$ENDIF}
  
+ {Check Registers}
+ if DWCOTG_REGS_BASE = 0 then
+  begin
+   Result:=USB_STATUS_OPERATION_FAILED;
+   Exit;
+  end;
+  
  {Setup Registers}
  PDWCUSBHost(Host).Registers:=PDWCRegisters(DWCOTG_REGS_BASE);
  

@@ -124,45 +124,45 @@ type
  PFramebufferDevice = ^TFramebufferDevice;
  
  {Framebuffer Enumeration Callback}
- TFramebufferEnumerate = function(Framebuffer:PFramebufferDevice;Data:Pointer):LongWord;
+ TFramebufferEnumerate = function(Framebuffer:PFramebufferDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Framebuffer Notification Callback}
- TFramebufferNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TFramebufferNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Framebuffer Device Methods}
- TFramebufferDeviceAllocate = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
- TFramebufferDeviceRelease = function(Framebuffer:PFramebufferDevice):LongWord;
+ TFramebufferDeviceAllocate = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceRelease = function(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceBlank = function(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
+ TFramebufferDeviceBlank = function(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceRead = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
- TFramebufferDeviceWrite = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
+ TFramebufferDeviceRead = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceWrite = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
- TFramebufferDeviceMark = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
- TFramebufferDeviceCommit = function(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+ TFramebufferDeviceMark = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceCommit = function(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceGetRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
- TFramebufferDevicePutRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
- TFramebufferDeviceCopyRect = function(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Width,Height,Flags:LongWord):LongWord;
- TFramebufferDeviceFillRect = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;
+ TFramebufferDeviceGetRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDevicePutRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceCopyRect = function(Framebuffer:PFramebufferDevice;X1,Y1,X2,Y2,Width,Height,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceFillRect = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Color,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceGetLine = function(Framebuffer:PFramebufferDevice;Y:LongWord):Pointer;
- TFramebufferDeviceGetPoint = function(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;
+ TFramebufferDeviceGetLine = function(Framebuffer:PFramebufferDevice;Y:LongWord):Pointer;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceGetPoint = function(Framebuffer:PFramebufferDevice;X,Y:LongWord):Pointer;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceWaitSync = function(Framebuffer:PFramebufferDevice):LongWord;
+ TFramebufferDeviceWaitSync = function(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceGetOffset = function(Framebuffer:PFramebufferDevice;var X,Y:LongWord):LongWord;
- TFramebufferDeviceSetOffset = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+ TFramebufferDeviceGetOffset = function(Framebuffer:PFramebufferDevice;var X,Y:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceSetOffset = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceGetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
- TFramebufferDeviceSetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
+ TFramebufferDeviceGetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceSetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceSetBacklight = function(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
+ TFramebufferDeviceSetBacklight = function(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceSetCursor = function(Framebuffer:PFramebufferDevice;Width,Height,HotspotX,HotspotY:LongWord;Image:Pointer;Len:LongWord):LongWord;
- TFramebufferDeviceUpdateCursor = function(Framebuffer:PFramebufferDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;
+ TFramebufferDeviceSetCursor = function(Framebuffer:PFramebufferDevice;Width,Height,HotspotX,HotspotY:LongWord;Image:Pointer;Len:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceUpdateCursor = function(Framebuffer:PFramebufferDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TFramebufferDeviceGetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
- TFramebufferDeviceSetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
+ TFramebufferDeviceGetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceSetProperties = function(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Framebuffer Device}
  TFramebufferDevice = record

@@ -1,7 +1,7 @@
 {
 Ultibo Timezone interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -75,8 +75,8 @@ type
    wMilliseconds:Word;
  end;
  SYSTEMTIME = _SYSTEMTIME;
- TSystemTime = SYSTEMTIME;
- PSystemTime = LPSYSTEMTIME;
+ {TSystemTime = SYSTEMTIME;} {Conflicts with TSystemTime in SysUtils}
+ {PSystemTime = LPSYSTEMTIME;} {Conflicts with TSystemTime in SysUtils}
  
  {Timezone types}
  PTIME_ZONE_INFORMATION = ^TIME_ZONE_INFORMATION;
@@ -102,16 +102,16 @@ type
   Bias:LongInt;
   StandardName:String[32];
   StandardBias:LongInt;
-  StandardStart:TSystemTime;
+  StandardStart:SYSTEMTIME;
   DaylightName:String[32];
   DaylightBias:LongInt;
-  DaylightStart:TSystemTime;
+  DaylightStart:SYSTEMTIME;
  end;
  
  PTimezoneEntry = ^TTimezoneEntry;
  
  {Timezone Enumeration Callback}
- TTimezoneEnumerate = function(Timezone:PTimezoneEntry;Data:Pointer):LongWord;
+ TTimezoneEnumerate = function(Timezone:PTimezoneEntry;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Timezone Entry}
  TTimezoneEntry = record
@@ -122,10 +122,10 @@ type
   Bias:LongInt;
   StandardName:String;
   StandardBias:LongInt;
-  StandardStart:TSystemTime;
+  StandardStart:SYSTEMTIME;
   DaylightName:String;
   DaylightBias:LongInt;
-  DaylightStart:TSystemTime;
+  DaylightStart:SYSTEMTIME;
   {Internal Properties}
   Prev:PTimezoneEntry;           {Previous entry in Timezone table}
   Next:PTimezoneEntry;           {Next entry in Timezone table}
@@ -154,12 +154,12 @@ function TimezoneGetActiveBias(Timezone:PTimezoneEntry):LongInt;
 function TimezoneGetStandardName(Timezone:PTimezoneEntry):String;
 function TimezoneGetStandardBias(Timezone:PTimezoneEntry):LongInt;
 function TimezoneGetStandardDate(Timezone:PTimezoneEntry;Next:Boolean):TDateTime;
-function TimezoneGetStandardStart(Timezone:PTimezoneEntry):TSystemTime;
+function TimezoneGetStandardStart(Timezone:PTimezoneEntry):SYSTEMTIME;
 
 function TimezoneGetDaylightName(Timezone:PTimezoneEntry):String;
 function TimezoneGetDaylightBias(Timezone:PTimezoneEntry):LongInt;
 function TimezoneGetDaylightDate(Timezone:PTimezoneEntry;Next:Boolean):TDateTime;
-function TimezoneGetDaylightStart(Timezone:PTimezoneEntry):TSystemTime;
+function TimezoneGetDaylightStart(Timezone:PTimezoneEntry):SYSTEMTIME;
 
 function TimezoneFind(const Name:String):PTimezoneEntry;
 function TimezoneEnumerate(Callback:TTimezoneEnumerate;Data:Pointer):LongWord;
@@ -174,8 +174,8 @@ function TimezoneCheck(Timezone:PTimezoneEntry):PTimezoneEntry;
 
 function TimezoneUpdateOffset:LongWord;
 
-function TimezoneStartToDateTime(const AStart:TSystemTime;AYear:Word):TDateTime;
-function TimezoneStartToDescription(const AStart:TSystemTime):String;
+function TimezoneStartToDateTime(const AStart:SYSTEMTIME;AYear:Word):TDateTime;
+function TimezoneStartToDescription(const AStart:SYSTEMTIME):String;
 
 function TimezoneNameReplaceChar(const AName:String;AChar,AReplace:Char):String;
 
@@ -2372,10 +2372,10 @@ end;
 
 {==============================================================================}
 
-function TimezoneGetStandardStart(Timezone:PTimezoneEntry):TSystemTime;
+function TimezoneGetStandardStart(Timezone:PTimezoneEntry):SYSTEMTIME;
 begin
  {}
- FillChar(Result,SizeOf(TSystemTime),0);
+ FillChar(Result,SizeOf(SYSTEMTIME),0);
  
  {Check Timezone}
  if Timezone = nil then Exit;
@@ -2497,10 +2497,10 @@ end;
 
 {==============================================================================}
 
-function TimezoneGetDaylightStart(Timezone:PTimezoneEntry):TSystemTime;
+function TimezoneGetDaylightStart(Timezone:PTimezoneEntry):SYSTEMTIME;
 begin
  {}
- FillChar(Result,SizeOf(TSystemTime),0);
+ FillChar(Result,SizeOf(SYSTEMTIME),0);
  
  {Check Timezone}
  if Timezone = nil then Exit;
@@ -2761,7 +2761,7 @@ end;
 
 {==============================================================================}
 
-function TimezoneStartToDateTime(const AStart:TSystemTime;AYear:Word):TDateTime;
+function TimezoneStartToDateTime(const AStart:SYSTEMTIME;AYear:Word):TDateTime;
 {Calculate the start date and time from the start date of a timezone}
 const
  MonthDays:array[Boolean,1..12] of Byte =
@@ -2817,7 +2817,7 @@ end;
 
 {==============================================================================}
 
-function TimezoneStartToDescription(const AStart:TSystemTime):String;
+function TimezoneStartToDescription(const AStart:SYSTEMTIME):String;
 {Get the description of the start date of a timezone}
 var
  WorkBuffer:String;

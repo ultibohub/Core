@@ -57,7 +57,7 @@ Graphics Console
  versa the functions in the console unit cannot be used to draw on a graphics console window.
  
  Like the console unit, the graphics console supports setting a viewport for a specified window to allow
- masking the area to be written to. However the graphics console does not support a tracking a cursor X
+ masking the area to be written to. However the graphics console does not support tracking a cursor X
  and Y position. Setting a window as the default is also not supported since that functionality is purely
  intended to support the RTL functions for text output.
  
@@ -235,7 +235,7 @@ function GraphicsWindowImageToStream(Handle:TWindowHandle;X,Y:LongWord;Stream:TS
 {==============================================================================}
 {Graphics Console Helper Functions}
 function GraphicsWindowGetCount(Console:PConsoleDevice):LongWord; inline;
-function ConsoleWindowGetActive(Console:PConsoleDevice):TWindowHandle; inline;
+function GraphicsWindowGetActive(Console:PConsoleDevice):TWindowHandle; inline;
 
 function GraphicsWindowCheck(Console:PConsoleDevice;Window:PGraphicsWindow):PGraphicsWindow; inline;
 
@@ -3745,7 +3745,7 @@ end;
 
 {==============================================================================}
 
-function ConsoleWindowGetActive(Console:PConsoleDevice):TWindowHandle; inline;
+function GraphicsWindowGetActive(Console:PConsoleDevice):TWindowHandle; inline;
 {Get the current console active window}
 {Console: The console device to get the active window for}
 {Return: The window handle of the current active window or INVALID_HANDLE_VALUE on failure}

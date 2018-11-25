@@ -194,25 +194,25 @@ type
  PSerialDevice = ^TSerialDevice;
  
  {Serial Enumeration Callback}
- TSerialEnumerate = function(Serial:PSerialDevice;Data:Pointer):LongWord;
+ TSerialEnumerate = function(Serial:PSerialDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Serial Notification Callback}
- TSerialNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TSerialNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Serial Device Methods}
- TSerialDeviceOpen = function(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
- TSerialDeviceClose = function(Serial:PSerialDevice):LongWord;
+ TSerialDeviceOpen = function(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSerialDeviceClose = function(Serial:PSerialDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSerialDeviceRead = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
- TSerialDeviceWrite = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+ TSerialDeviceRead = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSerialDeviceWrite = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSerialDeviceWait = function(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;
- TSerialDeviceFlush = function(Serial:PSerialDevice;Flags:LongWord):LongWord;
+ TSerialDeviceWait = function(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSerialDeviceFlush = function(Serial:PSerialDevice;Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSerialDeviceGetStatus = function(Serial:PSerialDevice):LongWord;
- TSerialDeviceSetStatus = function(Serial:PSerialDevice;Status:LongWord):LongWord;
+ TSerialDeviceGetStatus = function(Serial:PSerialDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSerialDeviceSetStatus = function(Serial:PSerialDevice;Status:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSerialDeviceGetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
- TSerialDeviceSetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
+ TSerialDeviceGetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSerialDeviceSetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TSerialDevice = record
   {Device Properties}

@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1164,7 +1164,7 @@ type
   PartitionEntry:array[MIN_PARTITION..MAX_PARTITION] of TPartitionEntry;
  end;
 
- TMasterBootCode = packed array[0..445] of Byte;
+ TMasterBootCode = array[0..445] of Byte;
 
  PMasterBootRecord = ^TMasterBootRecord;
  TMasterBootRecord = packed record  {Standard Master Boot Record}
@@ -1173,7 +1173,7 @@ type
   Signature:Word;     {Magic Number $AA55}
  end;
  
- TExtMasterBootCode = packed array[0..439] of Byte;
+ TExtMasterBootCode = array[0..439] of Byte;
 
  PExtMasterBootRecord = ^TExtMasterBootRecord;
  TExtMasterBootRecord = packed record  {NT/2000/XP Master Boot Record}
@@ -1193,11 +1193,11 @@ type
  
 type
  {Sector types} 
- PSector = ^TSector;
- TSector = packed array[0..511] of Byte;
+ PDiskSector = ^TDiskSector;
+ TDiskSector = array[0..511] of Byte;
 
- TBootSectorJump = packed array[0..2] of Byte;
- TBootSectorCode = packed array[0..447] of Byte;
+ TBootSectorJump = array[0..2] of Byte;
+ TBootSectorCode = array[0..447] of Byte;
  
  PBootSector = ^TBootSector;
  TBootSector = packed record       {FAT12/FAT16 Boot Sector}
@@ -1214,8 +1214,8 @@ type
   Signature:Word;                  {Magic Number $AA55}
  end;
 
- TExtBootSectorJump = packed array[0..2] of Byte;
- TExtBootSectorCode = packed array[0..419] of Byte;
+ TExtBootSectorJump = array[0..2] of Byte;
+ TExtBootSectorCode = array[0..419] of Byte;
 
  PExtBootSector = ^TExtBootSector;
  TExtBootSector = packed record    {FAT32 Boot Sector}
@@ -1232,8 +1232,8 @@ type
   Signature:Word;                  {Magic Number $AA55}
  end;
 
- TNtfsBootSectorJump = packed array[0..2] of Byte;
- TNtfsBootSectorCode = packed array[0..425] of Byte;
+ TNtfsBootSectorJump = array[0..2] of Byte;
+ TNtfsBootSectorCode = array[0..425] of Byte;
 
  PNtfsBootSector = ^TNtfsBootSector;
  TNtfsBootSector = packed record   {NTFS Boot Sector}
@@ -10763,7 +10763,7 @@ end;
 
 function TFileSysDriver.DismountFindHandles(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean;
 {Update or Release all existing handles on the specified object}
-{Usually because the object is being dismonted and removed}
+{Usually because the object is being dismounted and removed}
 {Note: Both Drive and Volume can be specified but nothing currently passes Volume}
 var
  NextHandle:TFindHandle;
@@ -28397,7 +28397,7 @@ end;
 
 function TDiskPartitioner.GetEndCHS(ADevice:TDiskDevice;AStart,ACount:LongWord;var ACylinder,AHead,ASector:Word):Boolean;
 {Get the End CHS values or dummy values if larger than 8GB}
-{Start and Count must by Cylinder aligned when passed}
+{Start and Count must be Cylinder aligned when passed}
 {Note: Caller must hold the device lock}
 var
  Head:LongWord;
@@ -28458,7 +28458,7 @@ end;
 
 function TDiskPartitioner.GetStartCHS(ADevice:TDiskDevice;AStart,ACount:LongWord;var ACylinder,AHead,ASector:Word):Boolean;
 {Get the Start CHS values or dummy values if larger than 8GB}
-{Start and Count must by Cylinder aligned when passed}
+{Start and Count must be Cylinder aligned when passed}
 {Note: Caller must hold the device lock}
 var
  Head:LongWord;
@@ -28520,7 +28520,7 @@ end;
 function TDiskPartitioner.GetSectorCount(ADevice:TDiskDevice;AStart,ACount:LongWord):LongWord;
 {Determine the actual sector Count given an actual Start sector and nominal sector Count}
 {The actual result will be a Count that is aligned to a Cylinder boundary}
-{Start must by Cylinder aligned when passed}
+{Start must be Cylinder aligned when passed}
 {Note: Caller must hold the device lock}
 var
  Count:LongWord;
@@ -28660,7 +28660,7 @@ end;
 function TDiskPartitioner.GetSectorOffset(ADevice:TDiskDevice;AParent:TDiskPartition;AExtended:Boolean;AStart:LongWord):LongWord;
 {Determine the actual sector Offset given an actual Start sector}
 {Accounts for Offset behaviour of second level extended and logical partitions}
-{Start must by Cylinder aligned when passed}
+{Start must be Cylinder aligned when passed}
 {Note: Caller must hold the device and partition lock}
 begin
  {Base Implementation}

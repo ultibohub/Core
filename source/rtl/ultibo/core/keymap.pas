@@ -227,7 +227,7 @@ type
  PKeymapEntry = ^TKeymapEntry;
  
  {Keymap Enumeration Callback}
- TKeymapEnumerate = function(Handle:TKeymapHandle;Data:Pointer):LongWord;
+ TKeymapEnumerate = function(Handle:TKeymapHandle;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Keymap Entry}
  TKeymapEntry = record

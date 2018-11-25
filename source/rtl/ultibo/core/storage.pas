@@ -240,15 +240,15 @@ type
  PStorageDevice = ^TStorageDevice;
  
  {Storage Enumeration Callback}
- TStorageEnumerate = function(Storage:PStorageDevice;Data:Pointer):LongWord;
+ TStorageEnumerate = function(Storage:PStorageDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Storage Notification Callback}
- TStorageNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TStorageNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Storage Device Methods}
- TStorageDeviceRead = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord; 
- TStorageDeviceWrite = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
- TStorageDeviceErase = function(Storage:PStorageDevice;const Start,Count:Int64):LongWord;
- TStorageDeviceControl = function(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+ TStorageDeviceRead = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TStorageDeviceWrite = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TStorageDeviceErase = function(Storage:PStorageDevice;const Start,Count:Int64):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TStorageDeviceControl = function(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TStorageDevice = record
   {Device Properties}
@@ -441,6 +441,7 @@ procedure StorageStatusTimer(Storage:PStorageDevice);
 
 {==============================================================================}
 {USB Storage Helper Functions}
+function USBStorageCheckDevice(Device:PUSBDevice):Boolean;
 function USBStorageCheckSubclass(Subclass:Byte):Boolean;
 function USBStorageCheckProtocol(Protocol:Byte):Boolean;
 
@@ -1693,8 +1694,8 @@ begin
    Exit;
   end;
  
- {Check for Storage (Must be interface specific)}
- if Device.Descriptor.bDeviceClass <> USB_CLASS_CODE_INTERFACE_SPECIFIC then
+ {Check Device}
+ if not USBStorageCheckDevice(Device) then
   begin
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2675,6 +2676,27 @@ end;
 {==============================================================================}
 {==============================================================================}
 {USB Storage Helper Functions}
+function USBStorageCheckDevice(Device:PUSBDevice):Boolean;
+{Check if the supplied USB device is suitable for detection as a Mass Storage Device}
+{Device: The USB device to check}
+{Return: True if the device is suitable or False if it is not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Class}
+ case Device.Descriptor.bDeviceClass of
+  USB_CLASS_CODE_HUB:Result:=False;
+ else
+  Result:=True;
+ end;
+end;
+
+{==============================================================================}
+
 function USBStorageCheckSubclass(Subclass:Byte):Boolean;
 begin
  {}

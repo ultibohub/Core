@@ -31,6 +31,10 @@ References
 Network Sockets
 ===============
 
+ This unit incorporates the socketsh.inc header from rtl-extra and
+ adds Ultibo specific functionality. The unit can then be used in 
+ place of the sockets unit normally provided by the rtl-extra package.
+ 
  Notes: All BSD functions that accept an Address or Port expect
         them to be in Network order. All other functions that take
         an Address or Port expect them to be in Host order
@@ -51,7 +55,8 @@ unit Sockets;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Network,Transport,Protocol,Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS;
+uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Network,Transport,Protocol,
+     Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS,CTypes;
 
 {==============================================================================}
 {Global definitions}
@@ -385,6 +390,11 @@ const
  NoAddress6: in6_addr = (u6_addr16:(0,0,0,0,0,0,0,0));
  NoNet6    : in6_addr = (u6_addr16:(0,0,0,0,0,0,0,0));
   
+const
+ {FD set sizes for select (Socket only)}
+ FD_MAXFDSET = 1024;
+ BITSINWORD = 8 * SizeOf(culong);
+  
 {==============================================================================}
 type
  {Sockets specific types}
@@ -395,14 +405,8 @@ type
  end;
 
 type
- cushort = Word;
- cuint8 = Byte;
- cuint16 = Word;
- cuint32 = Cardinal;
- size_t = GlobalTypes.SIZE_T; {cuint32;}
- ssize_t = cuint16;
- cint = LongInt;
- pcint = ^cint;
+ size_t = GlobalTypes.SIZE_T;   {cuint32;}
+ ssize_t = GlobalTypes.SSIZE_T; {cint32;}
  tsocklen = cint;
  psocklen = ^tsocklen;
 
@@ -458,6 +462,21 @@ type
  end;
 
  {Tsocket = LongInt;}  {To ease porting code from Kylix libc unit to sockets unit.}
+
+type
+ {FD set type for select (Socket only)}
+ TFDSet = array[0..(FD_MAXFDSET div BITSINWORD) - 1] of culong;
+ PFDSet = ^TFDSet;
+ 
+ {TimeVal type for select (Socket only)}
+ time_t = PtrInt;
+ 
+ timeval = record
+  tv_sec:time_t;
+  tv_usec:clong;
+ end;
+ PTimeVal = ^timeval;
+ TTimeVal = timeval;
  
 type
  {Structure used in getaddrinfo() call}
@@ -536,6 +555,10 @@ function fpgetpeername(s:cint; name  : psockaddr; namelen : psocklen):cint;
 function fpgetsockopt(s:cint; level:cint; optname:cint; optval:pointer; optlen : psocklen):cint;
 function fpsetsockopt(s:cint; level:cint; optname:cint; optval:pointer; optlen :tsocklen):cint;
 function fpsocketpair(d:cint; xtype:cint; protocol:cint; sv:pcint):cint;
+
+{==============================================================================}
+{RTL Select Function (Sockets only)}
+function fpselect(n:cint; readfds, writefds, exceptfds: PFDSet; TimeOut: PTimeVal):cint;
 
 {==============================================================================}
 {RTL File/Text Sockets Functions}
@@ -2141,6 +2164,17 @@ begin
  {Not Implemented}
  Result:=SOCKET_ERROR;
  NetworkSetLastError(WSAEOPNOTSUPP);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{RTL Select Function (Sockets only)}
+function fpselect(n:cint; readfds, writefds, exceptfds: PFDSet; TimeOut: PTimeVal):cint;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ 
+ //To Do //Implement select as per POSIX with conversion of FDSet structure
 end;
 
 {==============================================================================}

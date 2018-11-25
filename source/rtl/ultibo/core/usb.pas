@@ -504,7 +504,7 @@ const
  USB_PACKETID_STALL             =  $1e;
  USB_PACKETID_UNDEF_F           =  $0f;
  
- {USB Class Codes (bDeviceClass / bInterfaceClass) (Note that only the hub class is defined in the USB 2.0 specification itself the other standard class codes are defined in additional specifications)}
+ {USB Class Codes (bDeviceClass / bInterfaceClass) (See: https://www.usb.org/defined-class-codes) (Note that only the hub class is defined in the USB 2.0 specification itself the other standard class codes are defined in additional specifications)}
  USB_CLASS_CODE_INTERFACE_SPECIFIC             = $00; {Use class code info from Interface Descriptors }
  USB_CLASS_CODE_AUDIO                          = $01; {Audio device}
  USB_CLASS_CODE_COMMUNICATIONS_AND_CDC_CONTROL = $02; {Communication device class}
@@ -527,7 +527,7 @@ const
  USB_CLASS_CODE_APPLICATION_SPECIFIC           = $fe; {Application Specific}
  USB_CLASS_CODE_VENDOR_SPECIFIC                = $ff; {Vendor Specific}
  
- {USB SubClass Codes (bDeviceSubClass/bInterfaceSubClass) (See: http://www.usb.org/developers/defined_class/)}
+ {USB SubClass Codes (bDeviceSubClass/bInterfaceSubClass) (See: https://www.usb.org/defined-class-codes)}
  {Communications Devices}
  USB_SUBCLASS_CDC_DLCM                         = $01; {Direct Line Control Model (USBPSTN1.2)}
  USB_SUBCLASS_CDC_ACM                          = $02; {Abstract Control Model (USBPSTN1.2)}
@@ -581,7 +581,7 @@ const
  {Vendor Specific}
  USB_SUBCLASS_VENDOR_SPECIFIC                  = $ff; {Vendor Specific}
  
- {USB Protocol Codes (bDeviceProtocol/bInterfaceProtocol) (See: http://www.usb.org/developers/defined_class/)}
+ {USB Protocol Codes (bDeviceProtocol/bInterfaceProtocol) (See: https://www.usb.org/defined-class-codes)}
  {Communications Devices}
  USB_PROTOCOL_CDC_ACM_NONE                     = 0;   {Abstract Control Model - No class specific protocol required}
  USB_PROTOCOL_CDC_ACM_AT_V25TER                = 1;   {Abstract Control Model - AT Commands: V.250 etc}
@@ -1105,13 +1105,13 @@ type
  PUSBDevice = ^TUSBDevice;
  
  {USB Device Bind Callback}
- TUSBDeviceBind = function(Device:PUSBDevice):LongWord;
+ TUSBDeviceBind = function(Device:PUSBDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {USB Device Unbind Callback}
- TUSBDeviceUnbind = function(Device:PUSBDevice;Driver:PUSBDriver):LongWord;
+ TUSBDeviceUnbind = function(Device:PUSBDevice;Driver:PUSBDriver):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {USB Device Enumeration Callback}
- TUSBDeviceEnumerate = function(Device:PUSBDevice;Data:Pointer):LongWord;
+ TUSBDeviceEnumerate = function(Device:PUSBDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {USB Device Notification Callback}
- TUSBDeviceNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TUSBDeviceNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  {USB Device Methods}
   {None}
@@ -1190,11 +1190,11 @@ type
  {PUSBDriver = ^TUSBDriver;} {Declared above for USBDevice}
  
  {USB Driver Enumeration Callback}
- TUSBDriverEnumerate = function(Driver:PUSBDriver;Data:Pointer):LongWord;
+ TUSBDriverEnumerate = function(Driver:PUSBDriver;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {USB Driver Methods}
- TUSBDriverBind = function(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
- TUSBDriverUnbind = function(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
+ TUSBDriverBind = function(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUSBDriverUnbind = function(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TUSBDriver = record
   {Driver Properties}
@@ -1214,16 +1214,16 @@ type
  PUSBRequest = ^TUSBRequest; {Forward declared to satisfy USBHost}
  
  {USB Host Enumeration Callback}
- TUSBHostEnumerate = function(Host:PUSBHost;Data:Pointer):LongWord;
+ TUSBHostEnumerate = function(Host:PUSBHost;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {USB Host Notification Callback}
- TUSBHostNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TUSBHostNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {USB Host Methods}
- TUSBHostStart = function(Host:PUSBHost):LongWord;
- TUSBHostStop = function(Host:PUSBHost):LongWord;
- TUSBHostReset = function(Host:PUSBHost):LongWord;
- TUSBHostSubmit = function(Host:PUSBHost;Request:PUSBRequest):LongWord;
- TUSBHostCancel = function(Host:PUSBHost;Request:PUSBRequest):LongWord;
+ TUSBHostStart = function(Host:PUSBHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUSBHostStop = function(Host:PUSBHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUSBHostReset = function(Host:PUSBHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUSBHostSubmit = function(Host:PUSBHost;Request:PUSBRequest):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TUSBHostCancel = function(Host:PUSBHost;Request:PUSBRequest):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TUSBHost = record
   {Device Properties}
@@ -1254,7 +1254,7 @@ type
  {PUSBRequest = ^TUSBRequest;} {Declared above for USBHost}
  
  {USB Request Methods}
- TUSBRequestCompleted = procedure(Request:PUSBRequest); 
+ TUSBRequestCompleted = procedure(Request:PUSBRequest);{$IFDEF i386} stdcall;{$ENDIF}
  
  TUSBRequest = record
   {Request Properties}
@@ -1357,9 +1357,9 @@ type
  {PUSBHub = ^TUSBHub;} {Declared above for USBPort}
  
  {USB Hub Enumeration Callback}
- TUSBHubEnumerate = function(Hub:PUSBHub;Data:Pointer):LongWord;
+ TUSBHubEnumerate = function(Hub:PUSBHub;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {USB Hub Notification Callback}
- TUSBHubNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TUSBHubNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  {USB Hub Methods}
   {None}
@@ -1446,7 +1446,8 @@ function USBDeviceGetPort(Device:PUSBDevice):PUSBPort;
 function USBDeviceGetInterface(Device:PUSBDevice;Index:Byte;var AlternateSetting:Byte):LongWord;
 function USBDeviceSetInterface(Device:PUSBDevice;Index,AlternateSetting:Byte):LongWord;
 function USBDeviceFindInterfaceByIndex(Device:PUSBDevice;Index:Byte):PUSBInterface;
-function USBDeviceFindInterfaceByClass(Device:PUSBDevice;InterfaceClass,InterfaceSubClass,InterfaceProtocol:Byte):PUSBInterface;
+function USBDeviceFindInterfaceByClass(Device:PUSBDevice;InterfaceClass:Byte):PUSBInterface; overload;
+function USBDeviceFindInterfaceByClass(Device:PUSBDevice;InterfaceClass,InterfaceSubClass,InterfaceProtocol:Byte):PUSBInterface; overload;
 
 function USBDeviceFindEndpointByIndex(Device:PUSBDevice;Interrface:PUSBInterface;Index:Byte):PUSBEndpointDescriptor;
 function USBDeviceFindEndpointByType(Device:PUSBDevice;Interrface:PUSBInterface;Direction,TransferType:Byte):PUSBEndpointDescriptor;
@@ -1475,6 +1476,7 @@ function USBDeviceAllocate(Host:PUSBHost;Parent:PUSBDevice):PUSBDevice;
 function USBDeviceRelease(Device:PUSBDevice):LongWord;
 
 function USBDeviceFind(USBId:LongWord):PUSBDevice;
+function USBDeviceFindById(VendorId,ProductId:Word):PUSBDevice;
 function USBDeviceFindByName(const Name:String):PUSBDevice; inline;
 function USBDeviceFindByDescription(const Description:String):PUSBDevice; inline;
 function USBDeviceEnumerate(Callback:TUSBDeviceEnumerate;Data:Pointer):LongWord;
@@ -3288,13 +3290,60 @@ end;
 
 {==============================================================================}
 
+function USBDeviceFindInterfaceByClass(Device:PUSBDevice;InterfaceClass:Byte):PUSBInterface; 
+{Find an interface of the specified class on the specified device}
+{Device: The USB device to find the interface from}
+{InterfaceClass: The interface class to match}
+{Return: The matching interface or nil if no interface matched}
+var
+ Count:LongWord;
+ Interrface:PUSBInterface;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Configuration}
+ if Device.Configuration = nil then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
+  begin
+   try 
+    {Find Interface}
+    for Count:=0 to Length(Device.Configuration.Interfaces) - 1 do
+     begin
+      {Check Interface}
+      Interrface:=Device.Configuration.Interfaces[Count];
+      if Interrface <> nil then
+       begin
+        {Check Interface Class}
+        if Interrface.Descriptor.bInterfaceClass = InterfaceClass then
+         begin
+          Result:=Interrface;
+          Exit;
+         end;
+       end;
+     end;
+   finally
+    {Release the Lock}
+    MutexUnlock(Device.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
 function USBDeviceFindInterfaceByClass(Device:PUSBDevice;InterfaceClass,InterfaceSubClass,InterfaceProtocol:Byte):PUSBInterface;
 {Find an interface of the specified class, subclass and protocol on the specified device}
 {Device: The USB device to find the interface from}
 {InterfaceClass: The interface class to match}
 {InterfaceSubClass: The interface subclass to match}
 {InterfaceProtocol: The interface protocol to match}
-{Return: The interface for the matching interface of nil if no interface matched}
+{Return: The matching interface or nil if no interface matched}
 var
  Count:LongWord;
  Interrface:PUSBInterface;
@@ -4800,6 +4849,44 @@ begin
        begin
         {Check Id}
         if Device.USBId = USBId then
+         begin
+          Result:=Device;
+          Exit;
+         end;
+       end;
+       
+      {Get Next}
+      Device:=Device.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(USBDeviceTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function USBDeviceFindById(VendorId,ProductId:Word):PUSBDevice;
+var
+ Device:PUSBDevice;
+begin
+ {}
+ Result:=nil;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(USBDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Device}
+    Device:=USBDeviceTable;
+    while Device <> nil do
+     begin
+      {Check State}
+      if (Device.Device.DeviceState = DEVICE_STATE_REGISTERED) and (Device.Descriptor <> nil) then
+       begin
+        {Check Vendor and Product Id}
+        if (Device.Descriptor.idVendor = VendorId) and (Device.Descriptor.idProduct = ProductId) then
          begin
           Result:=Device;
           Exit;

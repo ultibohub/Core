@@ -45,10 +45,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Network,Transport,Protocol,IP,Ultibo,UltiboClasses;
 
-//To Do //Look for:
-       
-//--
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}

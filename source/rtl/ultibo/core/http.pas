@@ -355,7 +355,7 @@ const
  HTTP_DOCUMENT_FLAG_EXTENSION = $00000008;
  
  {HTTP Mime Types (See: Apache mime.types file)}
- HTTP_MIME_TYPE_MAX = 28;
+ HTTP_MIME_TYPE_MAX = 29;
  HTTP_MIME_TYPES:array[0..HTTP_MIME_TYPE_MAX,0..1] of String = (
   ('avi','video/x-msvideo'),
   ('bat','application/x-msdownload'),
@@ -373,6 +373,7 @@ const
   ('iso','application/octet-stream'),
   ('jpeg','image/jpeg'),
   ('jpg','image/jpeg'),
+  ('js','application/javascript'),
   ('pdf','application/pdf'),
   ('png','image/png'),
   ('txt','text/plain'),

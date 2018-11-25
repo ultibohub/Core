@@ -201,6 +201,7 @@ var
  CPU_ARCH:LongWord;                   {The current CPU architecture for this board}
  CPU_TYPE:LongWord;                   {The current CPU model for this board}
  CPU_COUNT:LongWord;                  {The current CPU count for this board}
+ CPU_MAX_COUNT:LongWord;              {The maximum CPU count for this board}
  
  CPU_BOOT:LongWord;                   {Which CPU is used for the boot process}
  CPU_MASK:LongWord;                   {The mask of current CPUs for scheduling affinity}
@@ -1961,6 +1962,7 @@ begin
   BOARD_TYPE_RPI_COMPUTE3:Result:='BOARD_TYPE_RPI_COMPUTE3';
   BOARD_TYPE_RPI_ZERO_W:Result:='BOARD_TYPE_RPI_ZERO_W';
   BOARD_TYPE_RPI3B_PLUS:Result:='BOARD_TYPE_RPI3B_PLUS';
+  BOARD_TYPE_RPI3A_PLUS:Result:='BOARD_TYPE_RPI3A_PLUS';
  end;
 end;
 

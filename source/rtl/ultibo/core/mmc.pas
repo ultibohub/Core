@@ -1616,17 +1616,17 @@ type
  PMMCDevice = ^TMMCDevice;
   
  {MMC Enumeration Callback}
- TMMCEnumerate = function(MMC:PMMCDevice;Data:Pointer):LongWord;
+ TMMCEnumerate = function(MMC:PMMCDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {MMC Notification Callback}
- TMMCNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TMMCNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {MMC Device Methods}
- TMMCDeviceInitialize = function(MMC:PMMCDevice):LongWord;
- TMMCDeviceDeinitialize = function(MMC:PMMCDevice):LongWord;
- TMMCDeviceGetCardDetect = function(MMC:PMMCDevice):LongWord;
- TMMCDeviceGetWriteProtect = function(MMC:PMMCDevice):LongWord;
- TMMCDeviceSendCommand = function(MMC:PMMCDevice;Command:PMMCCommand):LongWord; 
- TMMCDeviceSetIOS = function(MMC:PMMCDevice):LongWord;
+ TMMCDeviceInitialize = function(MMC:PMMCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMMCDeviceDeinitialize = function(MMC:PMMCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMMCDeviceGetCardDetect = function(MMC:PMMCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMMCDeviceGetWriteProtect = function(MMC:PMMCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMMCDeviceSendCommand = function(MMC:PMMCDevice;Command:PMMCCommand):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMMCDeviceSetIOS = function(MMC:PMMCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TMMCDevice = record
   {Device Properties}
@@ -1690,21 +1690,21 @@ type
  PSDHCIHost = ^TSDHCIHost;
  
  {SDHCI Enumeration Callback}
- TSDHCIEnumerate = function(SDHCI:PSDHCIHost;Data:Pointer):LongWord;
+ TSDHCIEnumerate = function(SDHCI:PSDHCIHost;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {SDHCI Notification Callback}
- TSDHCINotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TSDHCINotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {SDHCI Host Methods}
- TSDHCIHostStart = function(SDHCI:PSDHCIHost):LongWord;
- TSDHCIHostStop = function(SDHCI:PSDHCIHost):LongWord;
- TSDHCIHostReadByte = function(SDHCI:PSDHCIHost;Reg:LongWord):Byte;
- TSDHCIHostReadWord = function(SDHCI:PSDHCIHost;Reg:LongWord):Word;
- TSDHCIHostReadLong = function(SDHCI:PSDHCIHost;Reg:LongWord):LongWord;
- TSDHCIHostWriteByte = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte);
- TSDHCIHostWriteWord = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word);
- TSDHCIHostWriteLong = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord);
- TSDHCIHostSetClockDivider = function(SDHCI:PSDHCIHost;Index:Integer;Divider:LongWord):LongWord;
- TSDHCIHostSetControlRegister = function(SDHCI:PSDHCIHost):LongWord;
+ TSDHCIHostStart = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostStop = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostReadByte = function(SDHCI:PSDHCIHost;Reg:LongWord):Byte;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostReadWord = function(SDHCI:PSDHCIHost;Reg:LongWord):Word;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostReadLong = function(SDHCI:PSDHCIHost;Reg:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostWriteByte = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte);{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostWriteWord = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word);{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostWriteLong = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord);{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSetClockDivider = function(SDHCI:PSDHCIHost;Index:Integer;Divider:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSetControlRegister = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TSDHCIHost = record
   {Device Properties}
@@ -4997,7 +4997,7 @@ begin
  {Check Command Class}
  if (MMC.CardSpecificData.CCC and MMC_CCC_SWITCH) = 0 then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'SD Switch Highspeed card does not support Switch Class');
+   if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Switch Highspeed card does not support Switch Class');
    Result:=MMC_STATUS_SUCCESS;
    Exit;
   end;
@@ -5005,7 +5005,7 @@ begin
  {Check Host Capability}
  if (SDHCI.Capabilities and MMC_MODE_HS) = 0 then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'SD Switch Highspeed host does not support Highspeed');
+   if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Switch Highspeed host does not support Highspeed');
    Result:=MMC_STATUS_SUCCESS;
    Exit;
   end;
@@ -5013,7 +5013,7 @@ begin
  {Check Card Support}
  if (MMC.SDSwitchData.Group1Support and SD_SWITCH_GROUP1_HS) = 0 then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'SD Switch Highspeed card does not support Highspeed');
+   if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Switch Highspeed card does not support Highspeed');
    Result:=MMC_STATUS_SUCCESS;
    Exit;
   end;
@@ -5838,7 +5838,7 @@ begin
  {Check Command Class}
  if (MMC.CardSpecificData.CCC and MMC_CCC_SWITCH) = 0 then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'SD Send Switch card does not support Switch Class');
+   if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Send Switch card does not support Switch Class');
    Result:=MMC_STATUS_SUCCESS;
    Exit;
   end;

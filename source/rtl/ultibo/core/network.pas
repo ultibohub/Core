@@ -284,20 +284,6 @@ const
  PACKET_TYPE_RAW   = $FFFF;  {IPX on 802.3}  //To Do //$00     //See: https://en.wikipedia.org/wiki/Ethernet_frame
  PACKET_TYPE_LLC   = $0001;  {IPX on 802.2}  //To Do //$E0 ??  //See: https://en.wikipedia.org/wiki/Ethernet_frame
  
- {Ethernet 802.3 Network} {FRAME_TYPE_ETHERNET_8022}
- LLC_HEADER_SIZE = 3;  {SizeOf(TLLCHeader);} {Optionally can be 4 if Control is 2 octets}
-
- {Ethernet SNAP Network} {FRAME_TYPE_ETHERNET_SNAP}
- SNAP_HEADER_SIZE = 5;  {SizeOf(TSNAPHeader);} 
-
- {Token Ring Network} //To Do //Move to Token Ring constants below
- MIN_TOKENRING_PACKET = 60;  //To Do //
- MAX_TOKENRING_PACKET = 1514; //To Do //
-
- TOKENRING_HEADER_SIZE = 14; {SizeOf(TTokenRingHeader);} //To Do //
- 
-//To Do ////////////////////////////////////////////////////////////////
- 
  {Generic MII registers (Management Interface)}
  MII_BMCR        = $00; {Basic mode control register}
  MII_BMSR        = $01; {Basic mode status register }
@@ -460,7 +446,7 @@ var
 const
  {Ethernet specific constants}
  ETHERNET_ADDRESS_SIZE = 6;   {SizeOf(TEthernetAddress)}
- ETHERNET_HEADER_SIZE  = 14;  {SizeOf(TEthernetHeader);}
+ ETHERNET_HEADER_SIZE  = 14;  {SizeOf(TEthernetHeader)}
  ETHERNET_VLAN_SIZE    = 4;   {Length of Ethernet VLAN tag}
  ETHERNET_CRC_SIZE     = 4;   {Length of Ethernet CRC (FCS)}
 
@@ -472,6 +458,12 @@ const
  
  //ETHERNET_RECEIVE_BUFFER_SIZE  = ETHERNET_MAX_PACKET_SIZE + ETHERNET_CRC_SIZE + ?? //To Do //See: ETH_RX_BUF_SIZE in ether.h
  ETHERNET_TRANSMIT_BUFFER_SIZE = ETHERNET_MAX_PACKET_SIZE;
+ 
+ {Ethernet 802.3 Network} {FRAME_TYPE_ETHERNET_8022}
+ LLC_HEADER_SIZE = 3;  {SizeOf(TLLCHeader)} {Optionally can be 4 if Control is 2 octets}
+
+ {Ethernet SNAP Network} {FRAME_TYPE_ETHERNET_SNAP}
+ SNAP_HEADER_SIZE = 5;  {SizeOf(TSNAPHeader)} 
  
 {==============================================================================}
 type
@@ -485,6 +477,25 @@ type
  PMulticastAddresses = ^TMulticastAddresses;
  TMulticastAddresses = array[0..MAX_MULTICAST_ADDRESS - 1] of THardwareAddress;
 
+ PPacketFragment = ^TPacketFragment;
+ TPacketFragment = record
+  Size:Integer;
+  Data:Pointer;
+  Next:PPacketFragment;
+ end;
+ 
+ {Adapter Statistics}
+ PAdapterStatistics = ^TAdapterStatistics; 
+ TAdapterStatistics = record
+  PacketsIn:UInt64;
+  PacketsOut:UInt64;
+  BytesIn:UInt64; 
+  BytesOut:UInt64;
+  ErrorsIn:UInt64;
+  ErrorsOut:UInt64;
+  PacketsLost:UInt64;
+ end;
+ 
  {Network Packet}
  PNetworkPacket = ^TNetworkPacket;
  TNetworkPacket = record
@@ -544,21 +555,21 @@ type
  PNetworkDevice = ^TNetworkDevice;
  
  {Network Enumeration Callback}
- TNetworkEnumerate = function(Network:PNetworkDevice;Data:Pointer):LongWord;
+ TNetworkEnumerate = function(Network:PNetworkDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Network Notification Callback}
- TNetworkNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TNetworkNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Network Device Methods}
- TNetworkDeviceOpen = function(Network:PNetworkDevice):LongWord;
- TNetworkDeviceClose = function(Network:PNetworkDevice):LongWord;
- TNetworkDeviceRead = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
- TNetworkDeviceWrite = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
- TNetworkDeviceControl = function(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
+ TNetworkDeviceOpen = function(Network:PNetworkDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TNetworkDeviceClose = function(Network:PNetworkDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TNetworkDeviceRead = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TNetworkDeviceWrite = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+ TNetworkDeviceControl = function(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TNetworkBufferAllocate = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
- TNetworkBufferRelease = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
- TNetworkBufferReceive = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
- TNetworkBufferTransmit = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
+ TNetworkBufferAllocate = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TNetworkBufferRelease = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TNetworkBufferReceive = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TNetworkBufferTransmit = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TNetworkDevice = record
   {Device Properties}
@@ -605,7 +616,7 @@ type
  PNetworkEvent = ^TNetworkEvent;
  
  {Network Event Callback}
- TNetworkEventCallback = function(Data:Pointer;Event:LongWord):LongWord;
+ TNetworkEventCallback = function(Data:Pointer;Event:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TNetworkEvent = record
   {Event Properties}
@@ -619,35 +630,30 @@ type
   Prev:PNetworkEvent;             {Previous entry in Event table}
   Next:PNetworkEvent;             {Next entry in Event table}
  end; 
-  
-//To Do ///////////////////////////////////////////////////////////////////////////
  
-type
+{==============================================================================}
+const
+ {Network specific constants}
  {Generic Network}
- //PHardwareAddress = ^THardwareAddress;
- //THardwareAddress = array[0..5] of Byte;
-
- //PMulticastAddresses = ^TMulticastAddresses;
- //TMulticastAddresses = array[0..MAX_MULTICAST_ADDRESS - 1] of THardwareAddress;
-
- PPacketFragment = ^TPacketFragment;
- TPacketFragment = packed record
-  Size:Integer;
-  Data:Pointer;
-  Next:PPacketFragment;
- end;
+ HARDWARE_DEFAULT:THardwareAddress = ($00,$00,$00,$00,$00,$00);
+ HARDWARE_LOOPBACK:THardwareAddress = ($00,$00,$00,$00,$00,$01);
+ HARDWARE_BROADCAST:THardwareAddress = ($FF,$FF,$FF,$FF,$FF,$FF);
+ 
+{==============================================================================}
+type
+ {Ethernet specific types}
+ PEthernetAddress = ^TEthernetAddress;
+ TEthernetAddress = array[0..ETHERNET_ADDRESS_SIZE - 1] of Byte;
 
  {Ethernet Network} {FRAME_TYPE_ETHERNET_II}
- //PEthernetAddress = ^TEthernetAddress;
- //TEthernetAddress = array[0..5] of Byte;
-
- //PEthernetHeader = ^TEthernetHeader;
- //TEthernetHeader = packed record {14 Bytes}
- // DestAddress:THardwareAddress;
- // SourceAddress:THardwareAddress;
- // TypeLength:Word;  {Length or Type (IEEE 802.3 or BlueBook/DIX Ethernet)}
- //end;
-
+ PEthernetHeader = ^TEthernetHeader;
+ TEthernetHeader = packed record
+  DestAddress:THardwareAddress;
+  SourceAddress:THardwareAddress;
+  TypeLength:Word;          {Length or Type (IEEE 802.3 or BlueBook/DIX Ethernet)}
+  Data:array[0..0] of Byte; {Not part of header, included to provide a pointer to the start of data}
+ end;  
+ 
  {Ethernet 802.3 Network} {FRAME_TYPE_ETHERNET_8022}
  PLLCHeader = ^TLLCHeader;
  TLLCHeader = packed record
@@ -664,52 +670,6 @@ type
   ProtocolID:Word;
   Data:array[0..0] of Byte;  {Not part of header, included to provide a pointer to the start of data}
  end;
-
- {Token Ring Network}
- PTokenRingAddress = ^TTokenRingAddress;
- TTokenRingAddress = array[0..5] of Byte;
-
- PTokenRingHeader = ^TTokenRingHeader;
- TTokenRingHeader = packed record
-  //To Do //More
- end;
-
-type
- {Adapter Statistics}
- PAdapterStatistics = ^TAdapterStatistics; 
- TAdapterStatistics = record
-  PacketsIn:UInt64;
-  PacketsOut:UInt64;
-  BytesIn:UInt64; 
-  BytesOut:UInt64;
-  ErrorsIn:UInt64;
-  ErrorsOut:UInt64;
-  PacketsLost:UInt64;
- end;
- 
-{==============================================================================}
-const
- {Network specific constants}
- {Generic Network}
- HARDWARE_DEFAULT:THardwareAddress = ($00,$00,$00,$00,$00,$00);
- HARDWARE_LOOPBACK:THardwareAddress = ($00,$00,$00,$00,$00,$01);
- HARDWARE_BROADCAST:THardwareAddress = ($FF,$FF,$FF,$FF,$FF,$FF);
- 
-{==============================================================================}
-type
- {Ethernet specific types}
- PEthernetAddress = ^TEthernetAddress;
- TEthernetAddress = array[0..ETHERNET_ADDRESS_SIZE - 1] of Byte;
-
- PEthernetHeader = ^TEthernetHeader;
- TEthernetHeader = packed record
-  DestAddress:THardwareAddress;
-  SourceAddress:THardwareAddress;
-  TypeLength:Word;          {Length or Type (IEEE 802.3 or BlueBook/DIX Ethernet)}
-  Data:array[0..0] of Byte; {Not part of header, included to provide a pointer to the start of data}
- end;  
- 
- //To Do //PEthernetPacket ?
  
 {==============================================================================}
 const

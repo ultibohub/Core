@@ -403,6 +403,7 @@ const
  
  BCM2708_SPI0_MODE_IRQ = 0;
  BCM2708_SPI0_MODE_DMA = 1;
+ BCM2708_SPI0_MODE_PIO = 2;
  
  {BCM2708 BSCI2C (BSC0/1/2) constants}
  BCM2708_BSCI2C_MAX_SIZE = $FFFF;
@@ -621,7 +622,7 @@ type
   Address:Pointer;                 {Device register base address}
   CoreClock:LongWord;              {Core clock rate}
   {Transfer Properties}
-  Mode:LongWord;                   {Mode of current transfer (BCM2708_SPI0_MODE_IRQ / BCM2708_SPI0_MODE_DMA)}
+  Mode:LongWord;                   {Mode of current transfer (BCM2708_SPI0_MODE_IRQ / BCM2708_SPI0_MODE_DMA / BCM2708_SPI0_MODE_PIO)}
   Source:Pointer;                  {Pointer to the source for current transfer (nil if reading only)}
   Dest:Pointer;                    {Pointer to the destination for current transfer (nil if writing only)}
   Count:LongWord;                  {Count of bytes for current transfer}
@@ -2324,12 +2325,76 @@ begin
        Result:=ERROR_OPERATION_FAILED;
       end;      
     end
+   else if (Flags and SPI_TRANSFER_PIO) <> 0 then
+    begin
+     {Update Data}
+     PBCM2708SPI0Device(SPI).Mode:=BCM2708_SPI0_MODE_PIO;
+     
+     {Set Data Length (See: https://www.raspberrypi.org/forums/viewtopic.php?f=44&t=181154)}
+     PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).DLEN:=Size;
+     
+     {Set Control (Active/Clear)}
+     Control:=Control or (BCM2835_SPI0_CS_TA or BCM2835_SPI0_CS_CLEAR_RX or BCM2835_SPI0_CS_CLEAR_TX);
+     
+     {Set Control and Status}
+     PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+     
+     {Loop until Completion}
+     while PBCM2708SPI0Device(SPI).DestRemain > 0 do
+      begin
+       {Read FIFO}
+       BCM2708SPI0ReadFIFO(PBCM2708SPI0Device(SPI));
+  
+       {Write FIFO}
+       BCM2708SPI0WriteFIFO(PBCM2708SPI0Device(SPI));
+  
+       {Get Control and Status}
+       Control:=PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS;
+    
+       {Check Done}
+       if ((Control and BCM2835_SPI0_CS_DONE) <> 0) and (PBCM2708SPI0Device(SPI).SourceRemain = 0) then
+        begin
+         {Read remaining FIFO}
+         BCM2708SPI0ReadFIFO(PBCM2708SPI0Device(SPI));
+  
+         {Reset Control (Active/Interrupt/Deassert/DMA/Clear)}
+         Control:=Control and not(BCM2835_SPI0_CS_INTR or BCM2835_SPI0_CS_INTD or BCM2835_SPI0_CS_ADCS or BCM2835_SPI0_CS_DMAEN or BCM2835_SPI0_CS_TA);
+         Control:=Control or (BCM2835_SPI0_CS_CLEAR_RX or BCM2835_SPI0_CS_CLEAR_TX);
+  
+         {Set Control and Status}
+         PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).CS:=Control;
+  
+         {Set Data Length}
+         PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).DLEN:=0;
+        end;
+      end;
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {After the Last Read} 
+     
+     {Get Count}
+     Count:=PBCM2708SPI0Device(SPI).Count;
+     
+     {Check Count}
+     if Count < Size then
+      begin
+       if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2708: Write failure or timeout');
+  
+       Result:=ERROR_OPERATION_FAILED;
+       
+       {Update Statistics}
+       Inc(SPI.TransferErrors);
+      end;
+    end
    else
     begin
      {Update Data}
      PBCM2708SPI0Device(SPI).Mode:=BCM2708_SPI0_MODE_IRQ;
       
      {Note: Cannot fill FIFO when TA bit is not set, interrupt handler will fill on first IRQ} 
+     
+     {Set Data Length (See: https://www.raspberrypi.org/forums/viewtopic.php?f=44&t=181154)}
+     PBCM2835SPI0Registers(PBCM2708SPI0Device(SPI).Address).DLEN:=Size;
      
      {Set Control (Active/Interrupt/Clear)}
      Control:=Control or (BCM2835_SPI0_CS_INTR or BCM2835_SPI0_CS_INTD or BCM2835_SPI0_CS_TA or BCM2835_SPI0_CS_CLEAR_RX or BCM2835_SPI0_CS_CLEAR_TX);
@@ -2350,6 +2415,8 @@ begin
        if Count < Size then
         begin
          if SPI_LOG_ENABLED then SPILogError(SPI,'BCM2708: Write failure or timeout'); 
+         
+         Result:=ERROR_OPERATION_FAILED;
          
          {Update Statistics}
          Inc(SPI.TransferErrors);
@@ -4985,7 +5052,7 @@ begin
      GPIO_PIN_45:begin
        {Check Board Type}
        case BoardType of
-        BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS:begin
+        BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI3A_PLUS:begin
           {Do Not Set}
           Exit;
          end;
@@ -5100,7 +5167,7 @@ begin
      GPIO_PIN_45:begin
        {Check Board Type}
        case BoardType of
-        BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS:begin
+        BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI3A_PLUS:begin
           {Do Not Reset}
          end;
         else 
@@ -6949,8 +7016,8 @@ begin
 
  {Enable GPIO Pins}
  case BoardGetType of
-  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS:begin
-    {On Raspberry Pi 3B/B+ UART0 may be connected to the Bluetooth on pins 32 and 33}
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI3A_PLUS:begin
+    {On Raspberry Pi 3B/B+/A+ UART0 may be connected to the Bluetooth on pins 32 and 33}
     GPIOFunctionSelect(GPIO_PIN_32,GPIO_FUNCTION_IN);
     GPIOFunctionSelect(GPIO_PIN_33,GPIO_FUNCTION_IN);
    end;

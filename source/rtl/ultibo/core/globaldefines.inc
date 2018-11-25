@@ -331,6 +331,8 @@ Global Defines
 {Syscalls definitions}
 {--$DEFINE SYSCALLS_LARGE64_FILES}   {Enable support for 64bit file access in Syscalls unit (Default: Off)} 
                                      {Note: Not currently supported by Newlib, need to modify \newlib\configure.host to enable stdio64 support for arm-none-eabi or aarch64-none-elf}
+{$DEFINE SYSCALLS_EXPORT_SOCKETS}    {Enable export of POSIX standard socket functions by the Syscalls unit (Default: On)}
+                                     {Note: Must be disabled in order to enable export of the Winsock or Winsock2 API below}
 {==============================================================================}
 {==============================================================================}
 {API definitions}
@@ -360,18 +362,21 @@ Global Defines
 {$DEFINE API_EXPORT_MOUSE}           {Enable the library API unit to export symbols for the Mouse unit (Default: On)}
 {$DEFINE API_EXPORT_TOUCH}           {Enable the library API unit to export symbols for the Touch unit (Default: On)}
 {$DEFINE API_EXPORT_STORAGE}         {Enable the library API unit to export symbols for the Storage unit (Default: On)}
+{$DEFINE API_EXPORT_NETWORK}         {Enable the library API unit to export symbols for the Network unit (Default: On)}
 {$DEFINE API_EXPORT_TIMEZONE}        {Enable the library API unit to export symbols for the Timezone unit (Default: On)}
 {$DEFINE API_EXPORT_LOCALE}          {Enable the library API unit to export symbols for the Locale unit (Default: On)}
 {$DEFINE API_EXPORT_UNICODE}         {Enable the library API unit to export symbols for the Unicode unit (Default: On)}
 {$DEFINE API_EXPORT_TFTFRAMEBUFFER}  {Enable the library API unit to export symbols for the TFTFramebuffer unit (Default: On)}
 
 {$DEFINE API_EXPORT_FILESYSTEM}      {Enable the library API unit to export symbols for the FileSystem unit (Default: On)}
-{--$DEFINE API_EXPORT_SOCKETS}       {Enable the library API unit to export symbols for the Sockets unit (Default: Off)}
 {--$DEFINE API_EXPORT_WINSOCK}       {Enable the library API unit to export symbols for the Winsock unit (Default: Off)}
 {--$DEFINE API_EXPORT_WINSOCK2}      {Enable the library API unit to export symbols for the Winsock2 unit (Default: Off)}
 {--$DEFINE API_EXPORT_IPHLPAPI}      {Enable the library API unit to export symbols for the Iphlpapi unit (Default: Off)}
 
 {$DEFINE API_EXPORT_ULTIBO}          {Enable the library API unit to export symbols for the Ultibo unit (Default: On)}
+
+{API dependencies}
+//To Do 
 
 {==============================================================================}
 {==============================================================================}

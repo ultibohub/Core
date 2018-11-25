@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '24 August 2018';
+ ULTIBO_RELEASE_DATE             = '25 November 2018';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.429';
+ ULTIBO_RELEASE_VERSION          = '2.0.511';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 429;
+ ULTIBO_RELEASE_VERSION_REVISION = 511;
  
 {==============================================================================}
 const
@@ -1048,6 +1048,7 @@ const
  BOARD_TYPE_RPI_COMPUTE3 = 26; {Raspberry Pi Compute Module 3}
  BOARD_TYPE_RPI_ZERO_W   = 27; {Raspberry Pi Model Zero W}
  BOARD_TYPE_RPI3B_PLUS   = 28; {Raspberry Pi 3 Model B+}
+ BOARD_TYPE_RPI3A_PLUS   = 29; {Raspberry Pi 3 Model A+}
  
 {==============================================================================}
 const 

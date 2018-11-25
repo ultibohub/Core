@@ -12,7 +12,7 @@ Boards
 ======
  
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3
  BeagleBone Black
  Banana Pi

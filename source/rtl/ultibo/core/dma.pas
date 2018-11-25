@@ -119,17 +119,17 @@ type
  PDMARequest = ^TDMARequest; {Forward declared to satisfy DMAHost}
  
  {DMA Enumeration Callback}
- TDMAEnumerate = function(DMA:PDMAHost;Data:Pointer):LongWord;
+ TDMAEnumerate = function(DMA:PDMAHost;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {DMA Notification Callback}
- TDMANotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TDMANotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  {DMA Host Methods}
- TDMAHostStart = function(DMA:PDMAHost):LongWord;
- TDMAHostStop = function(DMA:PDMAHost):LongWord;
- TDMAHostReset = function(DMA:PDMAHost):LongWord;
- TDMAHostSubmit = function(DMA:PDMAHost;Request:PDMARequest):LongWord;
- TDMAHostCancel = function(DMA:PDMAHost;Request:PDMARequest):LongWord;
- TDMAHostProperties = function(DMA:PDMAHost;Properties:PDMAProperties):LongWord;
+ TDMAHostStart = function(DMA:PDMAHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TDMAHostStop = function(DMA:PDMAHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TDMAHostReset = function(DMA:PDMAHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TDMAHostSubmit = function(DMA:PDMAHost;Request:PDMARequest):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TDMAHostCancel = function(DMA:PDMAHost;Request:PDMARequest):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TDMAHostProperties = function(DMA:PDMAHost;Properties:PDMAProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TDMAHost = record
   {Device Properties}
@@ -163,7 +163,7 @@ type
  {PDMARequest = ^TDMARequest;} {Declared above for DMAHost}
  
  {DMA Request Methods}
- TDMARequestCompleted = procedure(Request:PDMARequest); 
+ TDMARequestCompleted = procedure(Request:PDMARequest);{$IFDEF i386} stdcall;{$ENDIF}
  
  TDMARequest = record
   {Request Properties}

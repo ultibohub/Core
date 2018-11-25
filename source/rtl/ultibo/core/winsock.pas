@@ -48,8 +48,6 @@ interface
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,UltiboClasses,UltiboUtils,Network,Transport,Protocol,Sockets,
      Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS;
 
-//To Do //Crossport the classes from Winsock2 with appropriate changes
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -727,9 +725,8 @@ type
  PWSAFixedInfo = GlobalSock.PWSAFixedInfo;
  
 {==============================================================================}
-//type
+{type}
  {Winsock specific classes}
- //To Do
  
 {==============================================================================}
 {var}
@@ -818,7 +815,7 @@ function TransmitFile(hSocket: TSocket; hFile: THandle; nNumberOfBytesToWrite: D
 
 function AcceptEx(sListenSocket, sAcceptSocket: TSocket; lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var lpdwBytesReceived: DWORD; lpOverlapped: POverlapped): BOOL; 
 
-procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var LocalSockaddr: TSockAddr; var LocalSockaddrLength: Integer; var RemoteSockaddr: TSockAddr; var RemoteSockaddrLength: Integer); 
+procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var LocalSockaddr: PSockAddr; var LocalSockaddrLength: Integer; var RemoteSockaddr: PSockAddr; var RemoteSockaddrLength: Integer); 
 
 function WSAMakeSyncReply(Buflen,Error:Word):dword;
 function WSAMakeSelectReply(Event,Error:Word):dword;
@@ -2440,7 +2437,7 @@ end;
 
 {==============================================================================}
 
-procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var LocalSockaddr: TSockAddr; var LocalSockaddrLength: Integer; var RemoteSockaddr: TSockAddr; var RemoteSockaddrLength: Integer); 
+procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var LocalSockaddr: PSockAddr; var LocalSockaddrLength: Integer; var RemoteSockaddr: PSockAddr; var RemoteSockaddrLength: Integer); 
 begin
  {}
  {Not Implemented}
@@ -2578,7 +2575,7 @@ begin
   
   NetworkSetLastError(WSAEPROTONOSUPPORT);
   
-  //To Do //For those that are documented call WsControlEx with adjusted params
+  //To Do //For those that are documented call WsControlEx with adjusted params //See Winsock2
  except
   on E: Exception do
    begin
@@ -2688,6 +2685,8 @@ begin
    IPPROTO_IP:begin
      {Set Error}
      NetworkSetLastError(WSAEOPNOTSUPP);
+     
+     //To Do //See Winsock2
      
      {Check Action}
      case Action of

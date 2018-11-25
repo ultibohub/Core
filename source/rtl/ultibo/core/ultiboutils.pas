@@ -1761,11 +1761,11 @@ begin
    end;
    
   {Allocate Command Line}
-  Buffer:=AllocMem((AArgC * SizeOf(PChar)) + Size);
+  Buffer:=AllocMem(((AArgC + 1) * SizeOf(PChar)) + Size);
 
   {Copy Name}
   Index:=0;
-  Offset:=AArgC * SizeOf(PChar);
+  Offset:=(AArgC + 1) * SizeOf(PChar);
   Buffer[Index]:=PChar(Pointer(Buffer) + Offset);
   StrLCopy(Buffer[Index],PChar(Name),Length(Name));
   Inc(Offset,Length(Name) + SizeOf(Char));
@@ -1782,7 +1782,11 @@ begin
       Inc(Offset,Length(Param) + SizeOf(Char));
      end;
    end;
-   
+  
+  {Add Final Null}  
+  Inc(Index);
+  Buffer[Index]:=nil;
+  
   Result:=Buffer; 
  finally
   Params.Free;

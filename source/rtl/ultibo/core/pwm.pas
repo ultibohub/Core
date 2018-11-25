@@ -126,30 +126,30 @@ type
  PPWMDevice = ^TPWMDevice;
  
  {PWM Enumeration Callback}
- TPWMEnumerate = function(PWM:PPWMDevice;Data:Pointer):LongWord;
+ TPWMEnumerate = function(PWM:PPWMDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {PWM Notification Callback}
- TPWMNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TPWMNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {PWM Device Methods}
- TPWMDeviceStart = function(PWM:PPWMDevice):LongWord; 
- TPWMDeviceStop = function(PWM:PPWMDevice):LongWord; 
+ TPWMDeviceStart = function(PWM:PPWMDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceStop = function(PWM:PPWMDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
- TPWMDeviceWrite = function(PWM:PPWMDevice;Value:LongWord):LongWord; 
+ TPWMDeviceWrite = function(PWM:PPWMDevice;Value:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
  
- TPWMDeviceGetGPIO = function(PWM:PPWMDevice):LongWord;
- TPWMDeviceSetGPIO = function(PWM:PPWMDevice;GPIO:LongWord):LongWord;
- TPWMDeviceGetMode = function(PWM:PPWMDevice):LongWord;
- TPWMDeviceSetMode = function(PWM:PPWMDevice;Mode:LongWord):LongWord;
- TPWMDeviceGetRange = function(PWM:PPWMDevice):LongWord;
- TPWMDeviceSetRange = function(PWM:PPWMDevice;Range:LongWord):LongWord;
- TPWMDeviceGetFrequency = function(PWM:PPWMDevice):LongWord;
- TPWMDeviceSetFrequency = function(PWM:PPWMDevice;Frequency:LongWord):LongWord;
- TPWMDeviceGetPolarity = function(PWM:PPWMDevice):LongWord;
- TPWMDeviceSetPolarity = function(PWM:PPWMDevice;Polarity:LongWord):LongWord;
+ TPWMDeviceGetGPIO = function(PWM:PPWMDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceSetGPIO = function(PWM:PPWMDevice;GPIO:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceGetMode = function(PWM:PPWMDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceSetMode = function(PWM:PPWMDevice;Mode:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceGetRange = function(PWM:PPWMDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceSetRange = function(PWM:PPWMDevice;Range:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceGetFrequency = function(PWM:PPWMDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceSetFrequency = function(PWM:PPWMDevice;Frequency:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceGetPolarity = function(PWM:PPWMDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TPWMDeviceSetPolarity = function(PWM:PPWMDevice;Polarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
   
- TPWMDeviceConfigure = function(PWM:PPWMDevice;DutyNS,PeriodNS:LongWord):LongWord;
+ TPWMDeviceConfigure = function(PWM:PPWMDevice;DutyNS,PeriodNS:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TPWMDeviceGetProperties = function(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;
+ TPWMDeviceGetProperties = function(PWM:PPWMDevice;Properties:PPWMProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TPWMDevice = record
   {Device Properties}

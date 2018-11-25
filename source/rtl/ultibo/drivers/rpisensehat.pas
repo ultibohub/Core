@@ -14,7 +14,7 @@ Boards
  Raspberry Pi - Model A/B/A+/B+/CM1
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3
 
 Licence

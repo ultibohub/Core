@@ -95,6 +95,7 @@ const
  {SPI Transfer Flags}
  SPI_TRANSFER_NONE  = $00000000;
  SPI_TRANSFER_DMA   = $00000001; {Use DMA for transfer (Write/Read) (Note: Buffers must be DMA compatible)}
+ SPI_TRANSFER_PIO   = $00000002; {Use PIO (Polling) for transfer (Write/Read)}
  
  {SPI logging}
  SPI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SPI debugging messages}
@@ -145,34 +146,34 @@ type
  PSPIDevice = ^TSPIDevice;
  
  {SPI Enumeration Callback}
- TSPIEnumerate = function(SPI:PSPIDevice;Data:Pointer):LongWord;
+ TSPIEnumerate = function(SPI:PSPIDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {SPI Notification Callback}
- TSPINotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TSPINotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {SPI Device Methods}
- TSPIDeviceStart = function(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
- TSPIDeviceStop = function(SPI:PSPIDevice):LongWord;
+ TSPIDeviceStart = function(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceStop = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSPIDeviceRead = function(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
- TSPIDeviceWrite = function(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
- TSPIDeviceWriteRead = function(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+ TSPIDeviceRead = function(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceWrite = function(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceWriteRead = function(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
- TSPIDeviceGetMode = function(SPI:PSPIDevice):LongWord;
- TSPIDeviceSetMode = function(SPI:PSPIDevice;Mode:LongWord):LongWord;
+ TSPIDeviceGetMode = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceSetMode = function(SPI:PSPIDevice;Mode:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSPIDeviceGetClockRate = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;
- TSPIDeviceSetClockRate = function(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;
+ TSPIDeviceGetClockRate = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceSetClockRate = function(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
- TSPIDeviceGetClockPhase = function(SPI:PSPIDevice):LongWord;
- TSPIDeviceSetClockPhase = function(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
+ TSPIDeviceGetClockPhase = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceSetClockPhase = function(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
- TSPIDeviceGetClockPolarity = function(SPI:PSPIDevice):LongWord;
- TSPIDeviceSetClockPolarity = function(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
+ TSPIDeviceGetClockPolarity = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceSetClockPolarity = function(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSPIDeviceGetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;
- TSPIDeviceSetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+ TSPIDeviceGetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSPIDeviceSetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TSPIDeviceGetProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
+ TSPIDeviceGetProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TSPIDevice = record
   {Device Properties}

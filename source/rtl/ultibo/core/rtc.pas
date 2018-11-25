@@ -95,16 +95,16 @@ type
  PRTCDevice = ^TRTCDevice;
  
  {RTC Enumeration Callback}
- TRTCEnumerate = function(RTC:PRTCDevice;Data:Pointer):LongWord;
+ TRTCEnumerate = function(RTC:PRTCDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {RTC Notification Callback}
- TRTCNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TRTCNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {RTC Device Methods}
- TRTCDeviceStart = function(RTC:PRTCDevice):LongWord;
- TRTCDeviceStop = function(RTC:PRTCDevice):LongWord;
- TRTCDeviceGetTime = function(RTC:PRTCDevice):Int64;
- TRTCDeviceSetTime = function(RTC:PRTCDevice;const Time:Int64):Int64;
- TRTCDeviceGetProperties = function(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
+ TRTCDeviceStart = function(RTC:PRTCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TRTCDeviceStop = function(RTC:PRTCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TRTCDeviceGetTime = function(RTC:PRTCDevice):Int64;{$IFDEF i386} stdcall;{$ENDIF}
+ TRTCDeviceSetTime = function(RTC:PRTCDevice;const Time:Int64):Int64;{$IFDEF i386} stdcall;{$ENDIF}
+ TRTCDeviceGetProperties = function(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TRTCDevice = record
   {Device Properties}

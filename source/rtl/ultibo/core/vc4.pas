@@ -16,7 +16,7 @@ Boards
  Raspberry Pi - Model A/B/A+/B+/CM1
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3
  
 Licence
@@ -592,7 +592,7 @@ type
       
  Pvc_image_extra_rgba_s = ^vc_image_extra_rgba_s;
  vc_image_extra_rgba_s = record
-  value: LongWord; {component_order   : 24 (diagnostic use only)
+  value: LongWord; {component_order   : 24 (diagnostic use only)}
                    {normalised_alpha  : 1}
                    {transparent_colour: 1}
                    {unused_26_31      : 6}

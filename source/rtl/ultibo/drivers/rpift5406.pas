@@ -14,7 +14,7 @@ Boards
  Raspberry Pi - Model A/B/A+/B+/CM1
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3
 
 Licence
@@ -77,6 +77,10 @@ const
  
  RPIFT5406_SCREEN_WIDTH  = 800;
  RPIFT5406_SCREEN_HEIGHT = 480;
+ 
+ RPIFT5406_TOUCH_DOWN    = 0;
+ RPIFT5406_TOUCH_UP      = 1;
+ RPIFT5406_TOUCH_CONTACT = 2;
  
 {==============================================================================}
 type
@@ -296,6 +300,7 @@ var
  X:Word;
  Y:Word;
  TouchID:Word;
+ EventType:Word;
  Size:LongWord;
  Count:LongWord;
  Buffer:Pointer;
@@ -338,7 +343,7 @@ begin
         {Allocate Shared}
         Buffer:=AllocSharedAlignedMem(Size,DMA_ALIGNMENT);
        end;
-      BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
+      BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI3A_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
         {Allocate Non Cached}
         Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
        end;
@@ -455,118 +460,127 @@ begin
            X:=((Registers.Point[Count].xh and $F) shl 8) or Registers.Point[Count].xl;
            Y:=((Registers.Point[Count].yh and $F) shl 8) or Registers.Point[Count].yl;
            TouchID:=(Registers.Point[Count].yh shr 4) and $F;
+           EventType:=(Registers.Point[Count].yh shr 6) and $03;
            
            {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
-           if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Modified X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' TouchID=' + IntToStr(TouchID));
+           if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Modified X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' TouchID=' + IntToStr(TouchID) + ' EventType=' + IntToStr(EventType));
            {$ENDIF}
            
            {Store Point}
-           ModifiedPoints:=1 shl TouchID;
-           
-           {Check Flags}
-           if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
+           ModifiedPoints:=ModifiedPoints or (1 shl TouchID);
+          
+           {Check Event Type}
+           if (EventType = RPIFT5406_TOUCH_DOWN) or (EventType = RPIFT5406_TOUCH_CONTACT) then
             begin
-             {For touch report all points}
-             {Check Buffer}
-             if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
+             {Check Flags}
+             if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
               begin
-               TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
-               if TouchData <> nil then
+               {For touch report all points}
+               {Check Buffer}
+               if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
                 begin
-                 {Update Touch Data}
-                 TouchData.Info:=TOUCH_FINGER;
-                 TouchData.PointID:=TouchID + 1;
+                 TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
+                 if TouchData <> nil then
+                  begin
+                   {Update Touch Data}
+                   TouchData.Info:=TOUCH_FINGER;
+                   TouchData.PointID:=TouchID + 1;
+                   {Check Rotation}
+                   case Touch.Touch.Properties.Rotation of
+                    TOUCH_ROTATION_0:begin
+                      {No Change}
+                      TouchData.PositionX:=X;
+                      TouchData.PositionY:=Y;
+                     end;
+                    TOUCH_ROTATION_90:begin
+                      {Swap X and Y}
+                      TouchData.PositionX:=Y;
+                      TouchData.PositionY:=X;
+                     end;
+                    TOUCH_ROTATION_180:begin
+                      {Invert X and Y}
+                      TouchData.PositionX:=Touch.Touch.Properties.MaxX - X;
+                      TouchData.PositionY:=Touch.Touch.Properties.MaxY - Y;
+                     end;
+                    TOUCH_ROTATION_270:begin
+                      {Swap and Invert X and Y}
+                      TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
+                      TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
+                     end;
+                   end;
+                   TouchData.PositionZ:=0;
+                   //To Do //Continuing //Calibration
+                   
+                   {Update Count}
+                   Inc(Touch.Touch.Buffer.Count);
+                   
+                   {Signal Data Received}
+                   SemaphoreSignal(Touch.Touch.Buffer.Wait);
+                  end;
+                end
+               else
+                begin
+                 if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Buffer overflow, packet discarded'); 
+                   
+                 {Update Statistics}
+                 Inc(Touch.Touch.BufferOverruns); 
+                end;                           
+              end
+             else
+              begin
+               {For mouse report the first point}
+               if TouchID = 0 then
+                begin
+                 {Create Mouse Data}
+                 MouseData.Buttons:=MOUSE_TOUCH_BUTTON or MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Touch Button, Absolute X and Y}
                  {Check Rotation}
                  case Touch.Touch.Properties.Rotation of
                   TOUCH_ROTATION_0:begin
                     {No Change}
-                    TouchData.PositionX:=X;
-                    TouchData.PositionY:=Y;
+                    MouseData.OffsetX:=X;
+                    MouseData.OffsetY:=Y;
                    end;
                   TOUCH_ROTATION_90:begin
                     {Swap X and Y}
-                    TouchData.PositionX:=Y;
-                    TouchData.PositionY:=X;
+                    MouseData.OffsetX:=Y;
+                    MouseData.OffsetY:=X;
                    end;
                   TOUCH_ROTATION_180:begin
                     {Invert X and Y}
-                    TouchData.PositionX:=Touch.Touch.Properties.MaxX - X;
-                    TouchData.PositionY:=Touch.Touch.Properties.MaxY - Y;
+                    MouseData.OffsetX:=Touch.Touch.Properties.MaxX - X;
+                    MouseData.OffsetY:=Touch.Touch.Properties.MaxY - Y;
                    end;
                   TOUCH_ROTATION_270:begin
                     {Swap and Invert X and Y}
-                    TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
-                    TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
+                    MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
+                    MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
                    end;
                  end;
-                 TouchData.PositionZ:=0;
+                 MouseData.OffsetWheel:=0;
                  //To Do //Continuing //Calibration
                  
-                 {Update Count}
-                 Inc(Touch.Touch.Buffer.Count);
+                 {Maximum X, Y and Wheel}
+                 MouseData.MaximumX:=Touch.Touch.Properties.MaxX; {Touch.Touch.Properties.Width}
+                 MouseData.MaximumY:=Touch.Touch.Properties.MaxY; {Touch.Touch.Properties.Height}
+                 MouseData.MaximumWheel:=0;
                  
-                 {Signal Data Received}
-                 SemaphoreSignal(Touch.Touch.Buffer.Wait);
+                 {Write Mouse Data}
+                 if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
+                  begin
+                   if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Failed to write mouse data, packet discarded'); 
+                   
+                   {Update Statistics}
+                   Inc(Touch.Touch.ReceiveErrors); 
+                  end;
                 end;
-              end
-             else
-              begin
-               if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Buffer overflow, packet discarded'); 
-                 
-               {Update Statistics}
-               Inc(Touch.Touch.BufferOverruns); 
-              end;                           
-            end
-           else
-            begin
-             {For mouse report the first point}
-             if TouchID = 0 then
-              begin
-               {Create Mouse Data}
-               MouseData.Buttons:=MOUSE_TOUCH_BUTTON or MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Touch Button, Absolute X and Y}
-               {Check Rotation}
-               case Touch.Touch.Properties.Rotation of
-                TOUCH_ROTATION_0:begin
-                  {No Change}
-                  MouseData.OffsetX:=X;
-                  MouseData.OffsetY:=Y;
-                 end;
-                TOUCH_ROTATION_90:begin
-                  {Swap X and Y}
-                  MouseData.OffsetX:=Y;
-                  MouseData.OffsetY:=X;
-                 end;
-                TOUCH_ROTATION_180:begin
-                  {Invert X and Y}
-                  MouseData.OffsetX:=Touch.Touch.Properties.MaxX - X;
-                  MouseData.OffsetY:=Touch.Touch.Properties.MaxY - Y;
-                 end;
-                TOUCH_ROTATION_270:begin
-                  {Swap and Invert X and Y}
-                  MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
-                  MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
-                 end;
-               end;
-               MouseData.OffsetWheel:=0;
-               //To Do //Continuing //Calibration
-               
-               {Maximum X, Y and Wheel}
-               MouseData.MaximumX:=Touch.Touch.Properties.MaxX; {Touch.Touch.Properties.Width}
-               MouseData.MaximumY:=Touch.Touch.Properties.MaxY; {Touch.Touch.Properties.Height}
-               MouseData.MaximumWheel:=0;
-               
-               {Write Mouse Data}
-               if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
-                begin
-                 if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Failed to write mouse data, packet discarded'); 
-                 
-                 {Update Statistics}
-                 Inc(Touch.Touch.ReceiveErrors); 
-                end;
-              end;
-            end; 
+              end; 
+            end;
           end;
         end;
+        
+       {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
+       if TOUCH_LOG_ENABLED and (ModifiedPoints > 0) then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Modified Points=' + IntToHex(ModifiedPoints,8));
+       {$ENDIF}
         
        {Check Released Points}
        ReleasedPoints:=LastPoints and not(ModifiedPoints);
@@ -580,6 +594,8 @@ begin
              if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Released TouchID=' + IntToStr(Count));
              {$ENDIF}
   
+             //To Do //Do we need to update ModifiedPoints ? //See Linux driver //No ?
+             
              {Check Flags}
              if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
               begin

@@ -152,31 +152,31 @@ type
  end;
  
  {GPIO Enumeration Callback}
- TGPIOEnumerate = function(GPIO:PGPIODevice;Data:Pointer):LongWord;
+ TGPIOEnumerate = function(GPIO:PGPIODevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {GPIO Notification Callback}
- TGPIONotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TGPIONotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {GPIO Device Methods}
- TGPIODeviceStart = function(GPIO:PGPIODevice):LongWord; 
- TGPIODeviceStop = function(GPIO:PGPIODevice):LongWord; 
+ TGPIODeviceStart = function(GPIO:PGPIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TGPIODeviceStop = function(GPIO:PGPIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TGPIODeviceRead = function(GPIO:PGPIODevice;Reg:LongWord):LongWord; 
- TGPIODeviceWrite = procedure(GPIO:PGPIODevice;Reg,Value:LongWord);
+ TGPIODeviceRead = function(GPIO:PGPIODevice;Reg:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+ TGPIODeviceWrite = procedure(GPIO:PGPIODevice;Reg,Value:LongWord);{$IFDEF i386} stdcall;{$ENDIF}
  
- TGPIODeviceInputGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
- TGPIODeviceInputWait = function(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;
- TGPIODeviceInputEvent = function(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;
- TGPIODeviceInputCancel = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+ TGPIODeviceInputGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TGPIODeviceInputWait = function(GPIO:PGPIODevice;Pin,Trigger,Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TGPIODeviceInputEvent = function(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWord;Callback:TGPIOCallback;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TGPIODeviceInputCancel = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TGPIODeviceOutputSet = function(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+ TGPIODeviceOutputSet = function(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TGPIODevicePullGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
- TGPIODevicePullSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+ TGPIODevicePullGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TGPIODevicePullSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TGPIODeviceFunctionGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;
- TGPIODeviceFunctionSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
+ TGPIODeviceFunctionGet = function(GPIO:PGPIODevice;Pin:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TGPIODeviceFunctionSelect = function(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TGPIODeviceGetProperties = function(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;
+ TGPIODeviceGetProperties = function(GPIO:PGPIODevice;Properties:PGPIOProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TGPIODevice = record
   {Device Properties}

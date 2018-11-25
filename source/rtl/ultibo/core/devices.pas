@@ -618,9 +618,9 @@ type
  PDevice = ^TDevice;
 
  {Device Enumeration Callback}
- TDeviceEnumerate = function(Device:PDevice;Data:Pointer):LongWord;
+ TDeviceEnumerate = function(Device:PDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Device Notification Callback}
- TDeviceNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TDeviceNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  {Device Entry}
  TDevice = record
@@ -673,7 +673,7 @@ type
  PDriver = ^TDriver;
  
  {Driver Enumeration Callback}
- TDriverEnumerate = function(Driver:PDriver;Data:Pointer):LongWord;
+ TDriverEnumerate = function(Driver:PDriver;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Driver Entry}
  TDriver = record
@@ -694,7 +694,7 @@ type
  PHost = ^THost;
  
  {Host Enumeration Callback}
- THostEnumerate = function(Host:PHost;Data:Pointer):LongWord;
+ THostEnumerate = function(Host:PHost;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Host Entry}
  THost = record
@@ -725,19 +725,19 @@ type
  PClockDevice = ^TClockDevice;
  
  {Clock Enumeration Callback}
- TClockEnumerate = function(Clock:PClockDevice;Data:Pointer):LongWord;
+ TClockEnumerate = function(Clock:PClockDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Clock Notification Callback}
- TClockNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TClockNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Clock Device Methods}
- TClockDeviceStart = function(Clock:PClockDevice):LongWord;
- TClockDeviceStop = function(Clock:PClockDevice):LongWord;
- TClockDeviceRead = function(Clock:PClockDevice):LongWord;
- TClockDeviceRead64 = function(Clock:PClockDevice):Int64;
- TClockDeviceWrite64 = function(Clock:PClockDevice;const Value:Int64):LongWord;
- TClockDeviceGetRate = function(Clock:PClockDevice):LongWord;
- TClockDeviceSetRate = function(Clock:PClockDevice;Rate:LongWord):LongWord;
- TClockDeviceGetProperties = function(Clock:PClockDevice;Properties:PClockProperties):LongWord;
+ TClockDeviceStart = function(Clock:PClockDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TClockDeviceStop = function(Clock:PClockDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TClockDeviceRead = function(Clock:PClockDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TClockDeviceRead64 = function(Clock:PClockDevice):Int64;{$IFDEF i386} stdcall;{$ENDIF}
+ TClockDeviceWrite64 = function(Clock:PClockDevice;const Value:Int64):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TClockDeviceGetRate = function(Clock:PClockDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TClockDeviceSetRate = function(Clock:PClockDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TClockDeviceGetProperties = function(Clock:PClockDevice;Properties:PClockProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Clock Device}
  TClockDevice = record
@@ -797,23 +797,23 @@ type
  end;
  
  {Timer Enumeration Callback}
- TTimerEnumerate = function(Timer:PTimerDevice;Data:Pointer):LongWord;
+ TTimerEnumerate = function(Timer:PTimerDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Timer Notification Callback}
- TTimerNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TTimerNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Timer Device Methods}
- TTimerDeviceStart = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceStop = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceRead = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceRead64 = function(Timer:PTimerDevice):Int64;
- TTimerDeviceWait = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceEvent = function(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
- TTimerDeviceCancel = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceGetRate = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceSetRate = function(Timer:PTimerDevice;Rate:LongWord):LongWord;
- TTimerDeviceGetInterval = function(Timer:PTimerDevice):LongWord;
- TTimerDeviceSetInterval = function(Timer:PTimerDevice;Interval:LongWord):LongWord;
- TTimerDeviceGetProperties = function(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;
+ TTimerDeviceStart = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceStop = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceRead = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceRead64 = function(Timer:PTimerDevice):Int64;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceWait = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceEvent = function(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceCancel = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceGetRate = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceSetRate = function(Timer:PTimerDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceGetInterval = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceSetInterval = function(Timer:PTimerDevice;Interval:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTimerDeviceGetProperties = function(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TTimerDevice = record
   {Device Properties}
@@ -859,19 +859,19 @@ type
  PRandomDevice = ^TRandomDevice;
  
  {Random Enumeration Callback}
- TRandomEnumerate = function(Random:PRandomDevice;Data:Pointer):LongWord;
+ TRandomEnumerate = function(Random:PRandomDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Random Notification Callback}
- TRandomNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TRandomNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Random Device Methods}
- TRandomDeviceStart = function(Random:PRandomDevice):LongWord;
- TRandomDeviceStop = function(Random:PRandomDevice):LongWord;
- TRandomDeviceSeed = function(Random:PRandomDevice;Seed:LongWord):LongWord;
- TRandomDeviceReadByte = function(Random:PRandomDevice):Byte;
- TRandomDeviceReadWord = function(Random:PRandomDevice):Word;
- TRandomDeviceReadLongWord = function(Random:PRandomDevice):LongWord;
- TRandomDeviceReadQuadWord = function(Random:PRandomDevice):Int64;
- TRandomDeviceReadExtended = function(Random:PRandomDevice):Extended;
+ TRandomDeviceStart = function(Random:PRandomDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TRandomDeviceStop = function(Random:PRandomDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TRandomDeviceSeed = function(Random:PRandomDevice;Seed:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TRandomDeviceReadByte = function(Random:PRandomDevice):Byte;{$IFDEF i386} stdcall;{$ENDIF}
+ TRandomDeviceReadWord = function(Random:PRandomDevice):Word;{$IFDEF i386} stdcall;{$ENDIF}
+ TRandomDeviceReadLongWord = function(Random:PRandomDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TRandomDeviceReadQuadWord = function(Random:PRandomDevice):Int64;{$IFDEF i386} stdcall;{$ENDIF}
+ TRandomDeviceReadDouble = function(Random:PRandomDevice):Double;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Random Device}
  TRandomDevice = record
@@ -887,7 +887,7 @@ type
   DeviceReadWord:TRandomDeviceReadWord;          {A device specific DeviceReadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
   DeviceReadLongWord:TRandomDeviceReadLongWord;  {A device specific DeviceReadLongWord method implementing a standard random device interface (Mandatory)}  
   DeviceReadQuadWord:TRandomDeviceReadQuadWord;  {A device specific DeviceReadQuadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
-  DeviceReadExtended:TRandomDeviceReadExtended;  {A device specific DeviceReadExtended method implementing a standard random device interface (Or nil if the default method is suitable)}  
+  DeviceReadDouble:TRandomDeviceReadDouble;      {A device specific DeviceReadDouble method implementing a standard random device interface (Or nil if the default method is suitable)}  
   {Statistics Properties}
   SeedCount:LongWord;
   ReadCount:LongWord;
@@ -905,18 +905,18 @@ type
  PMailboxDevice = ^TMailboxDevice;
  
  {Mailbox Enumeration Callback}
- TMailboxEnumerate = function(Mailbox:PMailboxDevice;Data:Pointer):LongWord;
+ TMailboxEnumerate = function(Mailbox:PMailboxDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Mailbox Notification Callback}
- TMailboxNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TMailboxNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Mailbox Device Methods}
- TMailboxDeviceStart = function(Mailbox:PMailboxDevice):LongWord;
- TMailboxDeviceStop = function(Mailbox:PMailboxDevice):LongWord;
- TMailboxDeviceReceive = function(Mailbox:PMailboxDevice;Channel:LongWord):LongWord;
- TMailboxDeviceSend = function(Mailbox:PMailboxDevice;Channel,Data:LongWord):LongWord;
- TMailboxDeviceCall = function(Mailbox:PMailboxDevice;Channel,Data:LongWord;var Response:LongWord):LongWord;
- TMailboxDeviceGetTimeout = function(Mailbox:PMailboxDevice):LongWord;
- TMailboxDeviceSetTimeout = function(Mailbox:PMailboxDevice;Timeout:LongWord):LongWord;
+ TMailboxDeviceStart = function(Mailbox:PMailboxDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMailboxDeviceStop = function(Mailbox:PMailboxDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMailboxDeviceReceive = function(Mailbox:PMailboxDevice;Channel:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMailboxDeviceSend = function(Mailbox:PMailboxDevice;Channel,Data:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMailboxDeviceCall = function(Mailbox:PMailboxDevice;Channel,Data:LongWord;var Response:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMailboxDeviceGetTimeout = function(Mailbox:PMailboxDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMailboxDeviceSetTimeout = function(Mailbox:PMailboxDevice;Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Mailbox Device}
  TMailboxDevice = record
@@ -951,17 +951,17 @@ type
  PWatchdogDevice = ^TWatchdogDevice;
  
  {Watchdog Enumeration Callback}
- TWatchdogEnumerate = function(Watchdog:PWatchdogDevice;Data:Pointer):LongWord;
+ TWatchdogEnumerate = function(Watchdog:PWatchdogDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Watchdog Notification Callback}
- TWatchdogNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
+ TWatchdogNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Watchdog Device Methods}
- TWatchdogDeviceStart = function(Watchdog:PWatchdogDevice):LongWord;
- TWatchdogDeviceStop = function(Watchdog:PWatchdogDevice):LongWord;
- TWatchdogDeviceRefresh = function(Watchdog:PWatchdogDevice):LongWord;
- TWatchdogDeviceGetRemain = function(Watchdog:PWatchdogDevice):LongWord;
- TWatchdogDeviceGetTimeout = function(Watchdog:PWatchdogDevice):LongWord;
- TWatchdogDeviceSetTimeout = function(Watchdog:PWatchdogDevice;Timeout:LongWord):LongWord;
+ TWatchdogDeviceStart = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TWatchdogDeviceStop = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TWatchdogDeviceRefresh = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TWatchdogDeviceGetRemain = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TWatchdogDeviceGetTimeout = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TWatchdogDeviceSetTimeout = function(Watchdog:PWatchdogDevice;Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Watchdog Device}
  TWatchdogDevice = record
@@ -1134,7 +1134,8 @@ function RandomDeviceReadByte(Random:PRandomDevice):Byte;
 function RandomDeviceReadWord(Random:PRandomDevice):Word;
 function RandomDeviceReadLongWord(Random:PRandomDevice):LongWord;
 function RandomDeviceReadQuadWord(Random:PRandomDevice):Int64;
-function RandomDeviceReadExtended(Random:PRandomDevice):Extended;
+function RandomDeviceReadDouble(Random:PRandomDevice):Double;
+function RandomDeviceReadExtended(Random:PRandomDevice):Extended; inline;
 
 function RandomDeviceCreate:PRandomDevice;
 function RandomDeviceCreateEx(Size:LongWord):PRandomDevice;
@@ -1228,7 +1229,7 @@ procedure SysRandomSeed(Seed:LongWord);
 
 function SysRandomReadLongInt(Limit:LongInt):LongInt;
 function SysRandomReadInt64(Limit:Int64):Int64;
-function SysRandomReadExtended:Extended;
+function SysRandomReadDouble:Double;
 
 {==============================================================================}
 {RTL Mailbox Functions}
@@ -1526,7 +1527,7 @@ begin
    RandomSeedHandler:=SysRandomSeed;
    RandomReadLongIntHandler:=SysRandomReadLongInt;
    RandomReadInt64Handler:=SysRandomReadInt64;
-   RandomReadExtendedHandler:=SysRandomReadExtended;
+   RandomReadDoubleHandler:=SysRandomReadDouble;
   end; 
 
  {Register Platform Mailbox Handlers}
@@ -4897,7 +4898,7 @@ end;
 
 {==============================================================================}
 
-function RandomDeviceReadExtended(Random:PRandomDevice):Extended;
+function RandomDeviceReadDouble(Random:PRandomDevice):Double;
 begin
  {}
  Result:=0;
@@ -4907,20 +4908,29 @@ begin
  if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Read Extended');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Read Double');
  {$ENDIF}
  
  {Check Enabled}
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
  
- if Assigned(Random.DeviceReadExtended) then
+ if Assigned(Random.DeviceReadDouble) then
   begin
-   Result:=Random.DeviceReadExtended(Random);
+   Result:=Random.DeviceReadDouble(Random);
   end
  else
   begin
    Result:=Frac(RandomDeviceReadLongWord(Random) / 1000000);
   end;  
+end;
+
+{==============================================================================}
+
+function RandomDeviceReadExtended(Random:PRandomDevice):Extended; inline;
+{Note: Replaced by RandomDeviceReadDouble}
+begin
+ {}
+ Result:=RandomDeviceReadDouble(Random);
 end;
 
 {==============================================================================}
@@ -4966,7 +4976,7 @@ begin
  Result.DeviceReadWord:=nil;
  Result.DeviceReadLongWord:=nil;
  Result.DeviceReadQuadWord:=nil;
- Result.DeviceReadExtended:=nil;
+ Result.DeviceReadDouble:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
  
@@ -6655,14 +6665,14 @@ end;
 
 {==============================================================================}
 
-function SysRandomReadExtended:Extended;
+function SysRandomReadDouble:Double;
 begin
  {}
  Result:=0;
  
  if RandomDeviceDefault = nil then Exit;
 
- Result:=RandomDeviceReadExtended(RandomDeviceDefault);
+ Result:=RandomDeviceReadDouble(RandomDeviceDefault);
 end;
 
 {==============================================================================}

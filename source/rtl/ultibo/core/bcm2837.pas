@@ -11,7 +11,7 @@ Arch
 Boards
 ======
 
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3
  
 Licence
@@ -1148,7 +1148,7 @@ const
  BCM2837_MBOX_TAG_GET_GPIO_STATE    = $00030041; {Get the current state of a GPIO expander pin}
  BCM2837_MBOX_TAG_SET_GPIO_STATE    = $00038041; {Set the current state of a GPIO expander pin}
    
- BCM2837_MBOX_TAG_SET_SDHOST_CLOCK  = $00038042;
+ BCM2837_MBOX_TAG_SET_SDHOST_CLOCK  = $00038042; {Tell the firmware the SD Host clock setting so it will be adjusted for changes in core frequency}
     
  BCM2837_MBOX_TAG_GET_GPIO_CONFIG   = $00030043; {Get the current configuration of a GPIO expander pin}
  BCM2837_MBOX_TAG_SET_GPIO_CONFIG   = $00038043; {Set the current configuration of a GPIO expander pin}
@@ -1206,6 +1206,10 @@ const
  BCM2837_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
  BCM2837_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
  
+ BCM2837_MBOX_TAG_GET_NUM_DISPLAYS     = $00040012;
+ BCM2837_MBOX_TAG_GET_DISPLAY_SETTINGS = $00040013;
+ BCM2837_MBOX_TAG_SET_DISPLAY_NUM      = $00048012;
+ 
  BCM2837_MBOX_TAG_GET_LAYER         = $0004000c;
  BCM2837_MBOX_TAG_TST_LAYER         = $0004400c;
  BCM2837_MBOX_TAG_SET_LAYER         = $0004800c;
@@ -1262,6 +1266,7 @@ const
  BCM2837_BOARD_REVISION_MODEL_UNKNOWN_2      = (11 shl 4);  {Unknown}
  BCM2837_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W (Cannot occur on BCM2837)}
  BCM2837_BOARD_REVISION_MODEL_3BPLUS         = (13 shl 4);  {Model 3B+}
+ BCM2837_BOARD_REVISION_MODEL_3APLUS         = (14 shl 4);  {Model 3A+}
                                              
  BCM2837_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2837_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835 (Cannot occur on BCM2837)}
@@ -3150,6 +3155,64 @@ type
   case Integer of
   0:(Request:TBCM2837MailboxTagSetVirtualGPIORequest);
   1:(Response:TBCM2876MailboxTagSetVirtualGPIOResponse);
+ end;
+ 
+ {Get Display Count}
+ TBCM2837MailboxTagGetDisplayCountRequest = record
+  Dummy:LongWord;
+ end;
+ 
+ TBCM2837MailboxTagGetDisplayCountResponse = record
+  DisplayCount:LongWord;
+ end;
+ 
+ PBCM2837MailboxTagGetDisplayCount = ^TBCM2837MailboxTagGetDisplayCount;
+ TBCM2837MailboxTagGetDisplayCount = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagGetDisplayCountRequest);
+  1:(Response:TBCM2837MailboxTagGetDisplayCountResponse);
+ end;
+ 
+ {Get Display Settings}
+ TBCM2837MailboxTagGetDisplaySettingsRequest = record
+  DisplayNumber:LongWord;
+  Width:LongWord;
+  Height:LongWord;
+  Pitch:LongWord;
+  Depth:LongWord;
+  VirtualWidth:LongWord;
+  VirtualHeight:LongWord;
+  VirtualOffsetX:LongWord;
+  VirtualOffsetY:LongWord;
+  Address:LongWord; {Framebuffer Bus Address}
+ end;
+ 
+ TBCM2837MailboxTagGetDisplaySettingsResponse = TBCM2837MailboxTagGetDisplaySettingsRequest;
+ 
+ PBCM2837MailboxTagGetDisplaySettings = ^TBCM2837MailboxTagGetDisplaySettings;
+ TBCM2837MailboxTagGetDisplaySettings = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagGetDisplaySettingsRequest);
+  1:(Response:TBCM2837MailboxTagGetDisplaySettingsResponse);
+ end;
+ 
+ {Set Display Number}
+ TBCM2837MailboxTagSetDisplayNumberRequest = record
+  DisplayNumber:LongWord;
+ end;
+ 
+ TBCM2837MailboxTagSetDisplayNumberResponse = record
+  Dummy:LongWord;
+ end;
+ 
+ PBCM2837MailboxTagSetDisplayNumber = ^TBCM2837MailboxTagSetDisplayNumber;
+ TBCM2837MailboxTagSetDisplayNumber = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagSetDisplayNumberRequest);
+  1:(Response:TBCM2837MailboxTagSetDisplayNumberResponse);
  end;
  
  {Test Vsync}

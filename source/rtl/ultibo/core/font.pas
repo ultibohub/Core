@@ -248,7 +248,7 @@ type
  PFontEntry = ^TFontEntry;
  
  {Font Enumeration Callback}
- TFontEnumerate = function(Handle:TFontHandle;Data:Pointer):LongWord;
+ TFontEnumerate = function(Handle:TFontHandle;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Font Entry}
  TFontEntry = record

@@ -238,15 +238,15 @@ type
  
 type 
  {Prototypes for Handle methods}
- THandleClose = procedure(Data:THandle);
- THandleCloseEx = function(Data:THandle):LongWord;
- THandleDuplicate = function(Data:THandle):THandle;
+ THandleClose = procedure(Data:THandle);{$IFDEF i386} stdcall;{$ENDIF}
+ THandleCloseEx = function(Data:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ THandleDuplicate = function(Data:THandle):THandle;{$IFDEF i386} stdcall;{$ENDIF}
  
  {Handle Entry}
  PHandleEntry = ^THandleEntry;
  
  {Handle Enumeration Callback}
- THandleEnumerate = function(Handle:PHandleEntry;Data:Pointer):LongWord;
+ THandleEnumerate = function(Handle:PHandleEntry;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  THandleEntry = record
   {Handle Properties}
@@ -281,7 +281,7 @@ type
  TShutdownEntry = record
   {Shutdown Properties}
   Signature:LongWord;                    {Signature for entry validation}
-  Shutdown:procedure(Parameter:Pointer); {The procedure to call on Shutdown}
+  Shutdown:procedure(Parameter:Pointer);{$IFDEF i386} stdcall;{$ENDIF} {The procedure to call on Shutdown}
   Parameter:Pointer;                     {The parameter to pass to the Shutdown procedure (or nil)}
   {Internal Properties}
   Prev:PShutdownEntry;                   {Previous entry in Shutdown table}
@@ -294,8 +294,8 @@ type
  TInterruptEntry = record
   Number:LongWord;
   CPUID:LongWord;
-  Handler:procedure(Parameter:Pointer);
-  HandlerEx:function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;
+  Handler:procedure(Parameter:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
+  HandlerEx:function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
   Parameter:Pointer;
  end;
 
@@ -305,8 +305,8 @@ type
  TSystemCallEntry = record
   Number:LongWord;
   CPUID:LongWord;
-  Handler:procedure(Request:PSystemCallRequest);
-  HandlerEx:function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle;
+  Handler:procedure(Request:PSystemCallRequest);{$IFDEF i386} stdcall;{$ENDIF}
+  HandlerEx:function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
  end;
  
 type
@@ -324,8 +324,8 @@ type
  PPlatformLock = ^TPlatformLock;
  TPlatformLock = record
   Lock:THandle; 
-  AcquireLock:function(Handle:THandle):LongWord;
-  ReleaseLock:function(Handle:THandle):LongWord;
+  AcquireLock:function(Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+  ReleaseLock:function(Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  end;
  
 type
@@ -333,8 +333,8 @@ type
  PPlatformSemaphore = ^TPlatformSemaphore;
  TPlatformSemaphore = record
   Semaphore:THandle;
-  WaitSemaphore:function(Handle:THandle):LongWord;
-  SignalSemaphore:function(Handle:THandle):LongWord;
+  WaitSemaphore:function(Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+  SignalSemaphore:function(Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  end; 
  
 type
@@ -362,21 +362,21 @@ type
 
 type
  {Prototype for Interrupt (IRQ/FIQ) Handlers}
- TInterruptHandler = procedure(Parameter:Pointer);
- TInterruptExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle; 
+ TInterruptHandler = procedure(Parameter:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
+ TInterruptExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
 
 type
  {Prototype for System Call (SWI) Handlers}
- TSystemCallHandler = procedure(Request:PSystemCallRequest);
- TSystemCallExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
+ TSystemCallHandler = procedure(Request:PSystemCallRequest);{$IFDEF i386} stdcall;{$ENDIF}
+ TSystemCallExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
  
 type
  {Prototypes for Thread Yield/Wait/Release/Abandon Handlers}
- TThreadYield = function:LongWord;
- TThreadWait = function(List:TListHandle;Lock:TSpinHandle;Flags:LongWord):LongWord;
- TThreadWaitEx = function(List:TListHandle;Lock:TSpinHandle;Flags,Timeout:LongWord):LongWord;
- TThreadRelease = function(List:TListHandle):LongWord;
- TThreadAbandon = function(List:TListHandle):LongWord;
+ TThreadYield = function:LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TThreadWait = function(List:TListHandle;Lock:TSpinHandle;Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TThreadWaitEx = function(List:TListHandle;Lock:TSpinHandle;Flags,Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TThreadRelease = function(List:TListHandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TThreadAbandon = function(List:TListHandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
 type 
  {Prototypes for Thread Wake/Ready/Timeout Handlers}
@@ -386,20 +386,20 @@ type
  
 type
  {Prototype for Timer Event Handler}
- TTimerEvent = procedure(Data:Pointer);
+ TTimerEvent = procedure(Data:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
 
 type
  {Prototype for Worker Task/Callback Handlers}
- TWorkerTask = procedure(Data:Pointer); 
- TWorkerCallback = procedure(Data:Pointer); 
+ TWorkerTask = procedure(Data:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
+ TWorkerCallback = procedure(Data:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
 
 type
  {Prototype for Counter Callback Handlers}
- TCounterCallback = procedure(Data:Pointer);
+ TCounterCallback = procedure(Data:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
  
 type 
  {Prototype for GPIO Callback Handlers}
- TGPIOCallback = procedure(Data:Pointer;Pin,Trigger:LongWord);
+ TGPIOCallback = procedure(Data:Pointer;Pin,Trigger:LongWord);{$IFDEF i386} stdcall;{$ENDIF}
  
 type
  {Prototypes for Blink/Output Handlers}
@@ -450,7 +450,7 @@ type
 
  TRandomReadLongInt = function(Limit:LongInt):LongInt;
  TRandomReadInt64 = function(Limit:Int64):Int64;
- TRandomReadExtended = function:Extended;
+ TRandomReadDouble = function:Double;
 
 type
  {Prototypes for Watchdog Handlers}
@@ -1175,7 +1175,7 @@ var
 
  RandomReadLongIntHandler:TRandomReadLongInt;
  RandomReadInt64Handler:TRandomReadInt64;
- RandomReadExtendedHandler:TRandomReadExtended;
+ RandomReadDoubleHandler:TRandomReadDouble;
  
 var
  {Watchdog Handlers}
@@ -1800,6 +1800,7 @@ procedure RandomSeed(Seed:LongWord); inline;
 
 function RandomReadLongInt(Limit:LongInt):LongInt; inline;
 function RandomReadInt64(Limit:Int64):Int64; inline;
+function RandomReadDouble:Double; inline;
 function RandomReadExtended:Extended; inline;
 
 {==============================================================================}
@@ -1901,6 +1902,13 @@ function L1InstructionCacheGetLineSize:LongWord; inline;
 function L2CacheGetType:LongWord; inline; 
 function L2CacheGetSize:LongWord; inline; 
 function L2CacheGetLineSize:LongWord; inline; 
+
+{==============================================================================}
+{Version Functions}
+procedure VersionGetInfo(var Major,Minor,Revision:LongWord);
+function VersionGetDate:String;
+function VersionGetName:String;
+function VersionGetVersion:String;
 
 {==============================================================================}
 {Board Functions}
@@ -2966,6 +2974,7 @@ end;
 procedure ParseEnvironment;
 {Setup envp and process known environment options (Where Applicable)}
 var
+ Count:LongWord;
  WorkInt:LongWord;
 begin
  {}
@@ -2980,6 +2989,33 @@ begin
   end;
  
  {Perform default initialization}
+ {CPU_COUNT}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CPU_COUNT'),0);
+ if WorkInt > 0 then
+  begin
+   CPU_COUNT:=WorkInt;
+   
+   {Check Min and Max}
+   if CPU_COUNT < 1 then CPU_COUNT:=1;
+   if CPU_COUNT > CPU_MAX_COUNT then CPU_COUNT:=CPU_MAX_COUNT;
+   
+   {Check Boot}
+   if CPU_COUNT - 1 < CPU_BOOT then CPU_COUNT:=CPU_MAX_COUNT; 
+   
+   {Check Count}
+   if CPU_COUNT <> CPU_MAX_COUNT then
+    begin
+     {Clear Mask}
+     CPU_MASK:=0;
+     
+     {Recalculate Mask}
+     for Count:=0 to CPU_COUNT - 1 do
+      begin
+       CPU_MASK:=CPU_MASK or (1 shl Count);
+      end;
+    end;
+  end;
+ 
  {TIMER_THREAD_COUNT}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('TIMER_THREAD_COUNT'),0);
  if WorkInt > 0 then TIMER_THREAD_COUNT:=WorkInt;
@@ -3438,17 +3474,26 @@ end;
 
 {==============================================================================}
 
-function RandomReadExtended:Extended; inline;
+function RandomReadDouble:Double; inline;
 begin
  {}
- if Assigned(RandomReadExtendedHandler) then
+ if Assigned(RandomReadDoubleHandler) then
   begin
-   Result:=RandomReadExtendedHandler;
+   Result:=RandomReadDoubleHandler;
   end
  else
   begin
    Result:=0;
   end;
+end;
+
+{==============================================================================}
+
+function RandomReadExtended:Extended; inline;
+{Note: Replaced by RandomReadDouble}
+begin
+ {}
+ Result:=RandomReadDouble;
 end;
 
 {==============================================================================}
@@ -4515,6 +4560,45 @@ begin
   begin
    Result:=0;
   end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Version Functions}
+procedure VersionGetInfo(var Major,Minor,Revision:LongWord);
+{Get the version information of the currently running system}
+begin
+ {}
+ Major:=ULTIBO_RELEASE_VERSION_MAJOR;
+ Minor:=ULTIBO_RELEASE_VERSION_MINOR;
+ Revision:=ULTIBO_RELEASE_VERSION_REVISION;
+end;
+
+{==============================================================================}
+
+function VersionGetDate:String;
+{Get the version release date of the currently running system}
+begin
+ {}
+ Result:=ULTIBO_RELEASE_DATE;
+end;
+
+{==============================================================================}
+
+function VersionGetName:String;
+{Get the version release name of the currently running system}
+begin
+ {}
+ Result:=ULTIBO_RELEASE_NAME;
+end;
+
+{==============================================================================}
+
+function VersionGetVersion:String;
+{Get the version string of the currently running system}
+begin
+ {}
+ Result:=ULTIBO_RELEASE_VERSION;
 end;
 
 {==============================================================================}
@@ -7119,7 +7203,7 @@ end;
 
 function SPIWrite(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 {Write data to the default SPI device}
-{Because SPI writes and then reads for each byte, received data will be discarded for each by written}
+{Because SPI writes and then reads for each byte, received data will be discarded for each byte written}
 {ChipSelect: The chip select for the slave to write to (eg SPI_CS_0)}
 {Source: Pointer to a buffer of data to transmit}
 {Size: The size of the buffer}

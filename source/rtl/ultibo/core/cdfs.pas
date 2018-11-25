@@ -1,7 +1,7 @@
 {
 Ultibo CDFS interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2018 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -555,7 +555,7 @@ type
    FSwapSerial:Boolean;
 
    {Private Methods}
-   function CheckPrimaryDescriptor(ASector:PSector;const AStartSector:Int64;ASectorCount:LongWord):Boolean;
+   function CheckPrimaryDescriptor(ASector:PDiskSector;const AStartSector:Int64;ASectorCount:LongWord):Boolean;
   protected
    {Protected Variables}
 
@@ -1580,7 +1580,7 @@ end;
 
 {==============================================================================}
 
-function TCDFSRecognizer.CheckPrimaryDescriptor(ASector:PSector;const AStartSector:Int64;ASectorCount:LongWord):Boolean;
+function TCDFSRecognizer.CheckPrimaryDescriptor(ASector:PDiskSector;const AStartSector:Int64;ASectorCount:LongWord):Boolean;
 begin
  {}
  Result:=False;
@@ -1677,7 +1677,7 @@ end;
 function TCDFSRecognizer.RecognizeVolume(AVolume:TDiskVolume):Boolean;
 {Note: Caller must hold the volume writer lock}
 var
- Sector:PSector;
+ Sector:PDiskSector;
 begin
  {}
  Result:=False;
@@ -13458,7 +13458,7 @@ function CDFSTimeToFileTime(const ATime:TCDFSTime):TFileTime;
 var
  Offset:Integer;
  FileTime:TFileTime;
- SystemTime:TSystemTime;
+ SystemTime:_SYSTEMTIME;
 begin
  {}
  Int64(Result):=0;
@@ -13489,7 +13489,7 @@ function FileTimeToCDFSTime(const AFileTime:TFileTime;var ATime:TCDFSTime):Boole
 {Converts a File Time in UTC to a CDFS Time in Local}
 var
  Offset:Integer;
- SystemTime:TSystemTime;
+ SystemTime:_SYSTEMTIME;
  LocalFileTime:TFileTime;
 begin
  {}
@@ -13532,7 +13532,7 @@ function CDFSDateTimeToFileTime(const ADateTime:TCDFSDateTime):TFileTime;
 var
  Offset:Integer;
  FileTime:TFileTime;
- SystemTime:TSystemTime;
+ SystemTime:_SYSTEMTIME;
 begin
  {}
  Int64(Result):=0;
@@ -13562,7 +13562,7 @@ function FileTimeToCDFSDateTime(const AFileTime:TFileTime;var ADateTime:TCDFSDat
 {Converts a File Time in UTC to a CDFS Date Time in Local}
 var
  Offset:Integer;
- SystemTime:TSystemTime;
+ SystemTime:_SYSTEMTIME;
  LocalFileTime:TFileTime;
 begin
  {}

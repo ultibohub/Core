@@ -287,7 +287,7 @@ procedure MouseInit;
 {==============================================================================}
 {Mouse Functions}
 function MousePeek:LongWord;
-function MouseRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+function MouseRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 function MouseReadEx(Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord; 
 
 function MouseWrite(Buffer:Pointer;Size,Count:LongWord):LongWord; 
@@ -351,6 +351,8 @@ procedure MouseLogDebug(Mouse:PMouseDevice;const AText:String); inline;
 
 {==============================================================================}
 {USB Mouse Helper Functions}
+function USBMouseCheckDevice(Device:PUSBDevice):Boolean;
+
 function USBMouseDeviceSetProtocol(Mouse:PUSBMouseDevice;Protocol:Byte):LongWord;
 
 {==============================================================================}
@@ -477,7 +479,7 @@ end;
 
 {==============================================================================}
 
-function MouseRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+function MouseRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 {Read mouse data packets from the global mouse buffer}
 {Buffer: Pointer to a buffer to copy the mouse data packets to}
 {Size: The size of the buffer in bytes (Must be at least TMouseData or greater)}
@@ -1709,8 +1711,8 @@ begin
    Exit;
   end;
  
- {Check for Mouse (Must be interface specific)}
- if Device.Descriptor.bDeviceClass <> USB_CLASS_CODE_INTERFACE_SPECIFIC then
+ {Check Device}
+ if not USBMouseCheckDevice(Device) then
   begin
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
@@ -2510,6 +2512,27 @@ end;
 {==============================================================================}
 {==============================================================================}
 {USB Mouse Helper Functions}
+function USBMouseCheckDevice(Device:PUSBDevice):Boolean;
+{Check if the supplied USB device is suitable for detection as a HID Mouse Device}
+{Device: The USB device to check}
+{Return: True if the device is suitable or False if it is not}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Class}
+ case Device.Descriptor.bDeviceClass of
+  USB_CLASS_CODE_HUB:Result:=False;
+ else
+  Result:=True;
+ end;
+end;
+
+{==============================================================================}
+
 function USBMouseDeviceSetProtocol(Mouse:PUSBMouseDevice;Protocol:Byte):LongWord;
 {Set the report protocol for a USB mouse device}
 {Mouse: The USB mouse device to set the report protocol for}

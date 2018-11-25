@@ -11,7 +11,7 @@ Arch
 Boards
 ======
 
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3
 
 Licence
@@ -259,7 +259,7 @@ begin
  {Check Board Type}
  BoardType:=BoardGetType;
  case BoardType of
-  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
+  BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI3A_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
     {Create GPIO}
     RPiGPIOExpander:=PRPiGPIOExpander(GPIODeviceCreateEx(SizeOf(TRPiGPIOExpander)));
     if RPiGPIOExpander <> nil then
@@ -322,7 +322,7 @@ begin
              POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
              POWER_LED_ACTIVE_LOW:=False;
             end; 
-           BOARD_TYPE_RPI3B_PLUS:begin
+           BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI3A_PLUS:begin
              {Activity LED is on GPIO 29}
              {Setup Power LED}
              POWER_LED_PIN:=VIRTUAL_GPIO_PIN_2;

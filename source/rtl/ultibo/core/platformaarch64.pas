@@ -11,7 +11,7 @@ Arch
 Boards
 ======
 
- Raspberry Pi 3 - Model B/B+
+ Raspberry Pi 3 - Model B/B+/A+
  QEMU VersatilePB
  
 Licence
