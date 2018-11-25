@@ -75,8 +75,8 @@ type
    wMilliseconds:Word;
  end;
  SYSTEMTIME = _SYSTEMTIME;
- {TSystemTime = SYSTEMTIME;} {Conflicts with TSystemTime in SysUtils}
- {PSystemTime = LPSYSTEMTIME;} {Conflicts with TSystemTime in SysUtils}
+ TSystemTime = SYSTEMTIME; {Conflicts with TSystemTime in SysUtils}
+ PSystemTime = LPSYSTEMTIME; {Conflicts with TSystemTime in SysUtils}
  
  {Timezone types}
  PTIME_ZONE_INFORMATION = ^TIME_ZONE_INFORMATION;

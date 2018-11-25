@@ -444,8 +444,8 @@ type
  LPSYSTEMTIME = Timezone.LPSYSTEMTIME;
  _SYSTEMTIME = Timezone._SYSTEMTIME;
  SYSTEMTIME = Timezone.SYSTEMTIME;
- {TSystemTime = Timezone.TSystemTime;} {Conflicts with TSystemTime in SysUtils}
- {PSystemTime = Timezone.PSystemTime;} {Conflicts with TSystemTime in SysUtils}
+ TSystemTime = Timezone.TSystemTime; {Conflicts with TSystemTime in SysUtils}
+ PSystemTime = Timezone.PSystemTime; {Conflicts with TSystemTime in SysUtils}
  
 type
  {File Time types}
