@@ -133,7 +133,7 @@ var
 
 {==============================================================================}
 type
- {Shell specific clases}
+ {Shell specific classes}
  TShell = class;
  TShellCommand = class;
  TShellManager = class(TObject)
@@ -231,6 +231,8 @@ type
   property Flags:LongWord read FFlags write SetFlags;
   
   {Public Methods}
+  function DoReset(ASession:TShellSession):Boolean; virtual;
+  
   function DoClear(ASession:TShellSession):Boolean; virtual;
   
   function DoBanner(ASession:TShellSession):Boolean; virtual;
@@ -1289,6 +1291,14 @@ function TShell.ReleaseLock:Boolean;
 begin
  {}
  Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TShell.DoReset(ASession:TShellSession):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
 end;
 
 {==============================================================================}

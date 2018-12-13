@@ -67,7 +67,7 @@ const
  
 {==============================================================================}
 type
- {Console Shell specific clases}
+ {Console Shell specific classes}
  TConsoleSession = class;
  TConsoleShellThread = class;
  TConsoleShell = class(TShell)
@@ -115,6 +115,8 @@ type
   property DefaultSession:TShellSession read FDefaultSession;
   
   {Public Methods}
+  function DoReset(ASession:TShellSession):Boolean; override;
+  
   function DoClear(ASession:TShellSession):Boolean; override;
   
   function DoInput(ASession:TShellSession;var AInput:String):Boolean; override;
@@ -1023,6 +1025,22 @@ begin
  end; 
 end;
 
+{==============================================================================}
+
+function TConsoleShell.DoReset(ASession:TShellSession):Boolean; 
+begin
+ {}
+ Result:=False;
+ 
+ {Check Session}
+ if ASession = nil then Exit;
+
+ {Reset Session}
+ Reset(TConsoleSession(ASession));
+ 
+ Result:=True;
+end;
+ 
 {==============================================================================}
 
 function TConsoleShell.DoClear(ASession:TShellSession):Boolean; 
