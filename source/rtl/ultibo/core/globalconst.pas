@@ -1,7 +1,7 @@
 {
 Ultibo Global Constant Definitions.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '13 December 2018';
+ ULTIBO_RELEASE_DATE             = '9 February 2019';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.525';
+ ULTIBO_RELEASE_VERSION          = '2.0.569';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 525;
+ ULTIBO_RELEASE_VERSION_REVISION = 569;
  
 {==============================================================================}
 const
@@ -1019,36 +1019,37 @@ const
 {==============================================================================}
 const
  {Board Type constants}
- BOARD_TYPE_UNKNOWN      = 0;
- BOARD_TYPE_RPIA         = 1;  {Raspberry Pi Model A}
- BOARD_TYPE_RPIB         = 2;  {Raspberry Pi Model B}
- BOARD_TYPE_RPI_COMPUTE  = 3;  {Raspberry Pi Compute Module}
- BOARD_TYPE_RPIA_PLUS    = 4;  {Raspberry Pi Model A+}
- BOARD_TYPE_RPIB_PLUS    = 5;  {Raspberry Pi Model B+}
- BOARD_TYPE_RPI2B        = 6;  {Raspberry Pi 2 Model B}
- BOARD_TYPE_RPI_ZERO     = 7;  {Raspberry Pi Model Zero}
- BOARD_TYPE_BPI          = 8;  {Banana Pi}
- BOARD_TYPE_BPRO         = 9;  {Banana Pro}
- BOARD_TYPE_BBB_REVC     = 10; {Beagle Bone Black (Revision C)}
- BOARD_TYPE_CUBOX_I      = 11; {Cubox i1/i2/i2ex/i4pro/i4x4}
- BOARD_TYPE_HUMMINGBOARD = 12; {Hummingboard}
- BOARD_TYPE_CREATOR_CI20 = 13; {MIPS Creator CI20}
- BOARD_TYPE_PCDUINO1     = 14; {pcDuino V1}
- BOARD_TYPE_PCDUINO2     = 15; {pcDuino V2}
- BOARD_TYPE_PCDUINO3     = 16; {pcDuino V3}
- BOARD_TYPE_ODROID_C1    = 17; {Odroid C1/C1+}
- BOARD_TYPE_ODROID_U2    = 18; {Odroid U2}
- BOARD_TYPE_ODROID_U3    = 19; {Odroid U3}
- BOARD_TYPE_ODROID_XU3   = 20; {Odroid XU3}
- BOARD_TYPE_ODROID_XU4   = 21; {Odroid XU4}
- BOARD_TYPE_PC_X86       = 22; {PC x86}
- BOARD_TYPE_PC_X86_64    = 23; {PC x86 64bit}
- BOARD_TYPE_RPI3B        = 24; {Raspberry Pi 3 Model B}
- BOARD_TYPE_QEMUVPB      = 25; {QEMU Versatile PB}
- BOARD_TYPE_RPI_COMPUTE3 = 26; {Raspberry Pi Compute Module 3}
- BOARD_TYPE_RPI_ZERO_W   = 27; {Raspberry Pi Model Zero W}
- BOARD_TYPE_RPI3B_PLUS   = 28; {Raspberry Pi 3 Model B+}
- BOARD_TYPE_RPI3A_PLUS   = 29; {Raspberry Pi 3 Model A+}
+ BOARD_TYPE_UNKNOWN           = 0;
+ BOARD_TYPE_RPIA              = 1;  {Raspberry Pi Model A}
+ BOARD_TYPE_RPIB              = 2;  {Raspberry Pi Model B}
+ BOARD_TYPE_RPI_COMPUTE       = 3;  {Raspberry Pi Compute Module}
+ BOARD_TYPE_RPIA_PLUS         = 4;  {Raspberry Pi Model A+}
+ BOARD_TYPE_RPIB_PLUS         = 5;  {Raspberry Pi Model B+}
+ BOARD_TYPE_RPI2B             = 6;  {Raspberry Pi 2 Model B}
+ BOARD_TYPE_RPI_ZERO          = 7;  {Raspberry Pi Model Zero}
+{BOARD_TYPE_BPI               = 8;}  {Banana Pi} {Removed}
+{BOARD_TYPE_BPRO              = 9;}  {Banana Pro} {Removed}
+{BOARD_TYPE_BBB_REVC          = 10;} {Beagle Bone Black (Revision C)} {Removed}
+{BOARD_TYPE_CUBOX_I           = 11;} {Cubox i1/i2/i2ex/i4pro/i4x4} {Removed}
+{BOARD_TYPE_HUMMINGBOARD      = 12;} {Hummingboard} {Removed}
+{BOARD_TYPE_CREATOR_CI20      = 13;} {MIPS Creator CI20} {Removed}
+{BOARD_TYPE_PCDUINO1          = 14;} {pcDuino V1} {Removed}
+{BOARD_TYPE_PCDUINO2          = 15;} {pcDuino V2} {Removed}
+{BOARD_TYPE_PCDUINO3          = 16;} {pcDuino V3} {Removed}
+{BOARD_TYPE_ODROID_C1         = 17;} {Odroid C1/C1+} {Removed}
+{BOARD_TYPE_ODROID_U2         = 18;} {Odroid U2} {Removed}
+{BOARD_TYPE_ODROID_U3         = 19;} {Odroid U3} {Removed}
+{BOARD_TYPE_ODROID_XU3        = 20;} {Odroid XU3} {Removed}
+{BOARD_TYPE_ODROID_XU4        = 21;} {Odroid XU4} {Removed}
+ BOARD_TYPE_PC_X86            = 22; {PC x86}
+ BOARD_TYPE_PC_X86_64         = 23; {PC x86 64bit}
+ BOARD_TYPE_RPI3B             = 24; {Raspberry Pi 3 Model B}
+ BOARD_TYPE_QEMUVPB           = 25; {QEMU Versatile PB}
+ BOARD_TYPE_RPI_COMPUTE3      = 26; {Raspberry Pi Compute Module 3}
+ BOARD_TYPE_RPI_ZERO_W        = 27; {Raspberry Pi Model Zero W}
+ BOARD_TYPE_RPI3B_PLUS        = 28; {Raspberry Pi 3 Model B+}
+ BOARD_TYPE_RPI3A_PLUS        = 29; {Raspberry Pi 3 Model A+}
+ BOARD_TYPE_RPI_COMPUTE3_PLUS = 30; {Raspberry Pi Compute Module 3+}
  
 {==============================================================================}
 const 

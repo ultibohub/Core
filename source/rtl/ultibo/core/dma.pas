@@ -1,7 +1,7 @@
 {
 Ultibo DMA interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -73,6 +73,7 @@ const
  DMA_FLAG_NOWRITE     = $00000080; {Host supports no write to dest address (read from source address only) (Cache fill from the source)}
  DMA_FLAG_WIDE        = $00000100; {Host supports wide read and/or write}
  DMA_FLAG_BULK        = $00000200; {Host supports bulk transfer}
+ DMA_FLAG_LITE        = $00000400; {Host supports "lite" transfer}
 
  {DMA Data Flags}
  {See: Platform DMA_DATA_FLAG_*} 

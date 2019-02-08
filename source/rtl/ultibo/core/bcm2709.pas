@@ -1,7 +1,7 @@
 {
 Ultibo BCM2709 interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -323,11 +323,13 @@ unit BCM2709;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi2{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,Framebuffer,Audio,SysUtils; 
-
 {==============================================================================}
-{Global definitions}
+{Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
+{--$DEFINE BCM2709_SPI0_DMA_CS_DLEN} {Use DMA to load the CS and DLEN registers of SPI0 (See 10.6.3 DMA on Page 158 of BCM2835 ARM Peripherals)}
+                                     {Not used by the Linux driver, works on RPi 2/3, fails randomly on RPi A/B/Zero}
+
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi2{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,Framebuffer,Audio,SysUtils; 
 
 {==============================================================================}
 const
@@ -1183,7 +1185,7 @@ begin
      {Device}
      BCM2709DMAHost.DMA.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2709DMAHost.DMA.Device.DeviceType:=DMA_TYPE_NONE;
-     BCM2709DMAHost.DMA.Device.DeviceFlags:=DMA_FLAG_STRIDE or DMA_FLAG_DREQ or DMA_FLAG_NOINCREMENT or DMA_FLAG_NOREAD or DMA_FLAG_NOWRITE or DMA_FLAG_WIDE;
+     BCM2709DMAHost.DMA.Device.DeviceFlags:=DMA_FLAG_STRIDE or DMA_FLAG_DREQ or DMA_FLAG_NOINCREMENT or DMA_FLAG_NOREAD or DMA_FLAG_NOWRITE or DMA_FLAG_WIDE or DMA_FLAG_BULK or DMA_FLAG_LITE;
      BCM2709DMAHost.DMA.Device.DeviceData:=nil;
      BCM2709DMAHost.DMA.Device.DeviceDescription:=BCM2709_DMA_DESCRIPTION;
      if BCM2709DMA_SHARED_MEMORY then BCM2709DMAHost.DMA.Device.DeviceFlags:=BCM2709DMAHost.DMA.Device.DeviceFlags or DMA_FLAG_SHARED;
@@ -2131,7 +2133,9 @@ end;
 
 function BCM2709SPI0WriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 var
+ {$IFDEF BCM2709_SPI0_DMA_CS_DLEN}
  CSData:TDMAData;
+ {$ENDIF}
  TXData:TDMAData;
  RXData:TDMAData;
  Control:LongWord;
@@ -2221,6 +2225,7 @@ begin
        CleanDataCacheRange(LongWord(Dest),Size);
       end;
      
+     {$IFDEF BCM2709_SPI0_DMA_CS_DLEN}
      {Setup Control Data (CS/DLEN)}
      FillChar(CSData,SizeOf(TDMAData),0);
      CSData.Source:=@Control;
@@ -2231,6 +2236,7 @@ begin
      CSData.DestStride:=0;
      CSData.Size:=SizeOf(LongWord);
      CSData.Next:=@TXData;
+     {$ENDIF}
      
      {Setup TX Data}
      FillChar(TXData,SizeOf(TDMAData),0);
@@ -2254,6 +2260,7 @@ begin
      RXData.DestStride:=0;
      RXData.Size:=Size;
      
+     {$IFDEF BCM2709_SPI0_DMA_CS_DLEN}
      {Set Control (Deassert/DMA/Clear)}
      Control:=Control or (BCM2836_SPI0_CS_ADCS or BCM2836_SPI0_CS_DMAEN or BCM2836_SPI0_CS_CLEAR_RX or BCM2836_SPI0_CS_CLEAR_TX);
      
@@ -2265,12 +2272,26 @@ begin
      
      {Update Control (Active/Length)}
      Control:=(Size shl 16) or (Control and $FF) or BCM2836_SPI0_CS_TA;
+     {$ELSE}
+     {Set Length}
+     PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).DLEN:=Size;
+     
+     {Set Control (Deassert/DMA/Clear/Active)}
+     PBCM2836SPI0Registers(PBCM2709SPI0Device(SPI).Address).CS:=Control or (BCM2836_SPI0_CS_ADCS or BCM2836_SPI0_CS_DMAEN or BCM2836_SPI0_CS_CLEAR_RX or BCM2836_SPI0_CS_CLEAR_TX or BCM2836_SPI0_CS_TA);
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {After the Last Read} 
+     {$ENDIF}
      
      {Enable RX Transfer}
      if DMATransferRequestEx(DMAHostGetDefault,@RXData,BCM2709SPI0DMARequestCompleted,SPI,DMA_DIR_DEV_TO_MEM,DMA_DREQ_ID_SPI_RX,DMA_REQUEST_FLAG_NONE) = ERROR_SUCCESS then
       begin
        {Perform TX Transfer}
+       {$IFDEF BCM2709_SPI0_DMA_CS_DLEN}
        if DMATransferRequest(DMAHostGetDefault,@CSData,DMA_DIR_MEM_TO_DEV,DMA_DREQ_ID_SPI_TX,DMA_REQUEST_FLAG_NONE,INFINITE) = ERROR_SUCCESS then
+       {$ELSE}
+       if DMATransferRequest(DMAHostGetDefault,@TXData,DMA_DIR_MEM_TO_DEV,DMA_DREQ_ID_SPI_TX,DMA_REQUEST_FLAG_NONE,INFINITE) = ERROR_SUCCESS then
+       {$ENDIF}
         begin
          {Wait for RX Completion}
          if SemaphoreWait(SPI.Wait) = ERROR_SUCCESS then
@@ -4075,7 +4096,8 @@ begin
   begin
    Bulk:=True;
   end
- else
+ {Check for "Lite" channel request}
+ else if (Flags and DMA_DATA_FLAG_LITE) <> 0 then
   begin 
    {Check for "Lite" suitable request (No Stride, No Ignore, Size less then 64K)}
    if (Flags and (DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_NOREAD or DMA_DATA_FLAG_NOWRITE) = 0) and (Maximum <= BCM2709_DMA_MAX_LITE_TRANSFER) then

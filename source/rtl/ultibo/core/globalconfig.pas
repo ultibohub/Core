@@ -914,7 +914,7 @@ var
  {Filesystem configuration}
  FILESYS_AUTOSTART:LongBool = True;              {If True then auto start the filesystem on boot (Only if FileSystem unit included)}
  FILESYS_ASYNCSTART:LongBool = True;             {If True then auto start asynchronously using a worker thread instead of the main thread}
-
+ 
  FILESYS_REGISTER_LOGGING:LongBool = True;       {If True then register filesystem as a Logging device on boot (Only if FileSystem unit included)}
  FILESYS_LOGGING_DEFAULT:LongBool = False;       {If True then filesystem can be the default Logging device (Only if FileSystem unit included)}
  FILESYS_LOGGING_FILE:String;                    {The name of the file to log messages to}
@@ -950,6 +950,8 @@ var
  FILESYS_DIRTY_CHECK:LongBool = True;             {Enable support for dirty check on volume mount (Where Applicable)}
  FILESYS_QUICK_CHECK:LongBool = True;             {Enable support for quick volume checking (Where Applicable)}
  FILESYS_UPDATE_ACCESSTIME:LongBool = True;       {Enable support for updating last access time field (Where Applicable)}
+ 
+ FILESYS_GLOBAL_CURRENTDIR:LongBool = False;      {If True then make the current directory global instead of per thread (Default False)}
  
  {FAT configuration}
  FAT_DEFAULT:LongBool = True;                     {Enable default recognition of non partitioned media as FAT}
@@ -1941,20 +1943,20 @@ begin
   BOARD_TYPE_RPIB_PLUS:Result:='BOARD_TYPE_RPIB_PLUS';
   BOARD_TYPE_RPI2B:Result:='BOARD_TYPE_RPI2B';
   BOARD_TYPE_RPI_ZERO:Result:='BOARD_TYPE_RPI_ZERO';
-  BOARD_TYPE_BPI:Result:='BOARD_TYPE_BPI';
-  BOARD_TYPE_BPRO:Result:='BOARD_TYPE_BPRO';
-  BOARD_TYPE_BBB_REVC:Result:='BOARD_TYPE_BBB_REVC';
-  BOARD_TYPE_CUBOX_I:Result:='BOARD_TYPE_CUBOX_I';
-  BOARD_TYPE_HUMMINGBOARD:Result:='BOARD_TYPE_HUMMINGBOARD';
-  BOARD_TYPE_CREATOR_CI20:Result:='BOARD_TYPE_CREATOR_CI20';
-  BOARD_TYPE_PCDUINO1:Result:='BOARD_TYPE_PCDUINO1';
-  BOARD_TYPE_PCDUINO2:Result:='BOARD_TYPE_PCDUINO2';
-  BOARD_TYPE_PCDUINO3:Result:='BOARD_TYPE_PCDUINO3'; 
-  BOARD_TYPE_ODROID_C1:Result:='BOARD_TYPE_ODROID_C1';
-  BOARD_TYPE_ODROID_U2:Result:='BOARD_TYPE_ODROID_U2'; 
-  BOARD_TYPE_ODROID_U3:Result:='BOARD_TYPE_ODROID_U3';  
-  BOARD_TYPE_ODROID_XU3:Result:='BOARD_TYPE_ODROID_XU3'; 
-  BOARD_TYPE_ODROID_XU4:Result:='BOARD_TYPE_ODROID_XU4'; 
+ {BOARD_TYPE_BPI:Result:='BOARD_TYPE_BPI';} {Removed}
+ {BOARD_TYPE_BPRO:Result:='BOARD_TYPE_BPRO';} {Removed}
+ {BOARD_TYPE_BBB_REVC:Result:='BOARD_TYPE_BBB_REVC';} {Removed}
+ {BOARD_TYPE_CUBOX_I:Result:='BOARD_TYPE_CUBOX_I';} {Removed}
+ {BOARD_TYPE_HUMMINGBOARD:Result:='BOARD_TYPE_HUMMINGBOARD';} {Removed}
+ {BOARD_TYPE_CREATOR_CI20:Result:='BOARD_TYPE_CREATOR_CI20';} {Removed}
+ {BOARD_TYPE_PCDUINO1:Result:='BOARD_TYPE_PCDUINO1';} {Removed}
+ {BOARD_TYPE_PCDUINO2:Result:='BOARD_TYPE_PCDUINO2';} {Removed}
+ {BOARD_TYPE_PCDUINO3:Result:='BOARD_TYPE_PCDUINO3';}  {Removed}
+ {BOARD_TYPE_ODROID_C1:Result:='BOARD_TYPE_ODROID_C1';} {Removed}
+ {BOARD_TYPE_ODROID_U2:Result:='BOARD_TYPE_ODROID_U2';} {Removed}
+ {BOARD_TYPE_ODROID_U3:Result:='BOARD_TYPE_ODROID_U3';}  {Removed}
+ {BOARD_TYPE_ODROID_XU3:Result:='BOARD_TYPE_ODROID_XU3';} {Removed} 
+ {BOARD_TYPE_ODROID_XU4:Result:='BOARD_TYPE_ODROID_XU4';} {Removed}
   BOARD_TYPE_PC_X86:Result:='BOARD_TYPE_PC_X86'; 
   BOARD_TYPE_PC_X86_64:Result:='BOARD_TYPE_PC_X86_64'; 
   BOARD_TYPE_RPI3B:Result:='BOARD_TYPE_RPI3B';

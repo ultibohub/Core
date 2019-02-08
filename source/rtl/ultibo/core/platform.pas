@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -86,7 +86,8 @@ const
  DMA_DATA_FLAG_NOWRITE             = $00000100; {Ignore the dest address and cache fill from the source (If supported)}   
  DMA_DATA_FLAG_NOCLEAN             = $00000200; {Do not perform cache clean on the source address (If applicable)}
  DMA_DATA_FLAG_NOINVALIDATE        = $00000400; {Do not perform cache invalidate on the dest address (If applicable)}
- DMA_DATA_FLAG_BULK                = $00000800; {Perform a bulk transfer (If applicable)}
+ DMA_DATA_FLAG_BULK                = $00000800; {Perform a bulk transfer (Higher transfer throughput)(If applicable)}
+ DMA_DATA_FLAG_LITE                = $00001000; {Perform a "lite" transfer (Lower transfer throughput but less waiting for free channel) (If applicable)}
  
  {Page Table Flags}
  PAGE_TABLE_FLAG_NONE          = $00000000;
