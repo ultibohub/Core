@@ -3393,12 +3393,12 @@ begin
  
  if (KeyCode >= KEY_CODE_A) and (KeyCode <= KEY_CODE_Z) then
   begin
-   {Convert to Ctrl-A to Ctrl-Z (^A to ^A)}
+   {Convert to Ctrl-A to Ctrl-Z (^A to ^Z)}
    Result:=KeyCode - (KEY_CODE_A - 1); {Minus 0x60}
   end
- else if (KeyCode >= KEY_CODE_CAPITAL_A) and (KeyCode <= KEY_CODE_CAPITAL_A) then
+ else if (KeyCode >= KEY_CODE_CAPITAL_A) and (KeyCode <= KEY_CODE_CAPITAL_Z) then
   begin
-   {Convert to Ctrl-A to Ctrl-Z (^A to ^A)}
+   {Convert to Ctrl-A to Ctrl-Z (^A to ^Z)}
    Result:=KeyCode - (KEY_CODE_CAPITAL_A - 1);  {Minus 0x40}
   end
  else if (KeyCode = KEY_CODE_LEFT_SQUARE) then
