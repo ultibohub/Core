@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '18 February 2019';
+ ULTIBO_RELEASE_DATE             = '20 February 2019';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.575';
+ ULTIBO_RELEASE_VERSION          = '2.0.579';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 575;
+ ULTIBO_RELEASE_VERSION_REVISION = 579;
  
 {==============================================================================}
 const
@@ -1027,20 +1027,6 @@ const
  BOARD_TYPE_RPIB_PLUS         = 5;  {Raspberry Pi Model B+}
  BOARD_TYPE_RPI2B             = 6;  {Raspberry Pi 2 Model B}
  BOARD_TYPE_RPI_ZERO          = 7;  {Raspberry Pi Model Zero}
-{BOARD_TYPE_BPI               = 8;}  {Banana Pi} {Removed}
-{BOARD_TYPE_BPRO              = 9;}  {Banana Pro} {Removed}
-{BOARD_TYPE_BBB_REVC          = 10;} {Beagle Bone Black (Revision C)} {Removed}
-{BOARD_TYPE_CUBOX_I           = 11;} {Cubox i1/i2/i2ex/i4pro/i4x4} {Removed}
-{BOARD_TYPE_HUMMINGBOARD      = 12;} {Hummingboard} {Removed}
-{BOARD_TYPE_CREATOR_CI20      = 13;} {MIPS Creator CI20} {Removed}
-{BOARD_TYPE_PCDUINO1          = 14;} {pcDuino V1} {Removed}
-{BOARD_TYPE_PCDUINO2          = 15;} {pcDuino V2} {Removed}
-{BOARD_TYPE_PCDUINO3          = 16;} {pcDuino V3} {Removed}
-{BOARD_TYPE_ODROID_C1         = 17;} {Odroid C1/C1+} {Removed}
-{BOARD_TYPE_ODROID_U2         = 18;} {Odroid U2} {Removed}
-{BOARD_TYPE_ODROID_U3         = 19;} {Odroid U3} {Removed}
-{BOARD_TYPE_ODROID_XU3        = 20;} {Odroid XU3} {Removed}
-{BOARD_TYPE_ODROID_XU4        = 21;} {Odroid XU4} {Removed}
  BOARD_TYPE_PC_X86            = 22; {PC x86}
  BOARD_TYPE_PC_X86_64         = 23; {PC x86 64bit}
  BOARD_TYPE_RPI3B             = 24; {Raspberry Pi 3 Model B}

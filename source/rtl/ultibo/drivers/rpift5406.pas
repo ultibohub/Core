@@ -1,7 +1,7 @@
 {
 Raspberry Pi FT5406 Touch Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -15,7 +15,7 @@ Boards
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
 
 Licence
 =======
@@ -339,11 +339,22 @@ begin
     begin
      {Check Board Type}
      case BoardType of
-      BOARD_TYPE_RPIA,BOARD_TYPE_RPIB,BOARD_TYPE_RPIA_PLUS,BOARD_TYPE_RPIB_PLUS,BOARD_TYPE_RPI_COMPUTE,BOARD_TYPE_RPI_ZERO,BOARD_TYPE_RPI_ZERO_W:begin
+      BOARD_TYPE_RPIA,
+      BOARD_TYPE_RPIB,
+      BOARD_TYPE_RPIA_PLUS,
+      BOARD_TYPE_RPIB_PLUS,
+      BOARD_TYPE_RPI_COMPUTE,
+      BOARD_TYPE_RPI_ZERO,
+      BOARD_TYPE_RPI_ZERO_W:begin
         {Allocate Shared}
         Buffer:=AllocSharedAlignedMem(Size,DMA_ALIGNMENT);
        end;
-      BOARD_TYPE_RPI2B,BOARD_TYPE_RPI3B,BOARD_TYPE_RPI3B_PLUS,BOARD_TYPE_RPI3A_PLUS,BOARD_TYPE_RPI_COMPUTE3:begin
+      BOARD_TYPE_RPI2B,
+      BOARD_TYPE_RPI3B,
+      BOARD_TYPE_RPI3B_PLUS,
+      BOARD_TYPE_RPI3A_PLUS,
+      BOARD_TYPE_RPI_COMPUTE3,
+      BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
         {Allocate Non Cached}
         Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
        end;

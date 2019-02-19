@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the Broadcom 2836 System on chip.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -13,7 +13,7 @@ Boards
 
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
  
 Licence
 =======
@@ -1270,6 +1270,7 @@ const
  BCM2836_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W (Cannot occur on BCM2836)}
  BCM2836_BOARD_REVISION_MODEL_3BPLUS         = (13 shl 4);  {Model 3B+}
  BCM2836_BOARD_REVISION_MODEL_3APLUS         = (14 shl 4);  {Model 3A+}
+ BCM2836_BOARD_REVISION_MODEL_COMPUTE3PlUS   = (16 shl 4);  {Compute Module 3+}
  
  BCM2836_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2836_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835 (Cannot occur on BCM2836)}
