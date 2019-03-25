@@ -780,7 +780,7 @@ begin
  DMA_SHARED_MEMORY:=True;
  DMA_NOCACHE_MEMORY:=False;
  DMA_BUS_ADDRESSES:=False;
- DMA_CACHE_COHERENT:=True; 
+ DMA_CACHE_COHERENT:=False; {True;} {L1 Cache is not coherent for normal memory}
  if CacheLineSize > DMA_ALIGNMENT then DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > DMA_MULTIPLIER then DMA_MULTIPLIER:=CacheLineSize;
  

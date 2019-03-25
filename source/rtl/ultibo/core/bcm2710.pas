@@ -12,7 +12,7 @@ Boards
 ======
 
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
  
 Licence
 =======
@@ -4559,7 +4559,7 @@ begin
    {Flush Dest} 
    case Request.Direction of
     DMA_DIR_MEM_TO_MEM,DMA_DIR_DEV_TO_MEM:begin
-      if not(BCM2710DMA_CACHE_COHERENT) then
+      if not(BCM2710DMA_CACHE_COHERENT) or ((Request.Flags and DMA_REQUEST_FLAG_COMPATIBLE) = 0) then
        begin
         Data:=Request.Data;
         while Data <> nil do
@@ -4774,21 +4774,24 @@ begin
  {Flush Source} 
  case Request.Direction of
   DMA_DIR_MEM_TO_MEM,DMA_DIR_MEM_TO_DEV:begin
-    if not(BCM2710DMA_CACHE_COHERENT) and ((Data.Flags and DMA_DATA_FLAG_NOCLEAN) = 0) then
+    if not(BCM2710DMA_CACHE_COHERENT) or ((Request.Flags and DMA_REQUEST_FLAG_COMPATIBLE) = 0) then
      begin
-      if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.SourceStride = 0) then
+      if (Data.Flags and DMA_DATA_FLAG_NOCLEAN) = 0 then
        begin
-        CleanDataCacheRange(LongWord(Data.Source),Data.Size);
-       end
-      else
-       begin
-        Offset:=0;
-        while Offset < Data.Size do
+        if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.SourceStride = 0) then
          begin
-          CleanDataCacheRange(LongWord(Data.Source + Offset),Data.StrideLength);
-          
-          Inc(Offset,Data.SourceStride);
-         end; 
+          CleanDataCacheRange(LongWord(Data.Source),Data.Size);
+         end
+        else
+         begin
+          Offset:=0;
+          while Offset < Data.Size do
+           begin
+            CleanDataCacheRange(LongWord(Data.Source + Offset),Data.StrideLength);
+            
+            Inc(Offset,Data.SourceStride);
+           end; 
+         end;
        end;
      end;
    end;

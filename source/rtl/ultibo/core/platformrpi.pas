@@ -1213,7 +1213,7 @@ begin
  DMA_SHARED_MEMORY:=True;
  DMA_NOCACHE_MEMORY:=False;
  DMA_BUS_ADDRESSES:=True;
- DMA_CACHE_COHERENT:=True;
+ DMA_CACHE_COHERENT:=False; {True;} {L1 Cache is not coherent for normal memory}
  if CacheLineSize > DMA_ALIGNMENT then DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > DMA_MULTIPLIER then DMA_MULTIPLIER:=CacheLineSize;
   
@@ -1243,12 +1243,12 @@ begin
  BCM2708DMA_SHARED_MEMORY:=True;
  BCM2708DMA_NOCACHE_MEMORY:=False;
  BCM2708DMA_BUS_ADDRESSES:=True;
- BCM2708DMA_CACHE_COHERENT:=True;
+ BCM2708DMA_CACHE_COHERENT:=True; {Only if buffers are allocated from Shared memory}
  if CacheLineSize > BCM2708DMA_ALIGNMENT then BCM2708DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > BCM2708DMA_MULTIPLIER then BCM2708DMA_MULTIPLIER:=CacheLineSize;
  
  BCM2708FRAMEBUFFER_ALIGNMENT:=SIZE_256;
- BCM2708FRAMEBUFFER_CACHED:=False; {GPU_MEMORY_CACHED} {Always False on RPi}
+ BCM2708FRAMEBUFFER_CACHED:=False; {GPU_MEMORY_CACHED} {Always False on RPi as GPU memory is marked as Shared}
  
  BCM2708_REGISTER_I2C0:=False; {I2C0 is not available on the header except on original Revision 1 boards}
  

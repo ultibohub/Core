@@ -82,6 +82,7 @@ const
  DMA_REQUEST_FLAG_NONE       = $00000000;
  DMA_REQUEST_FLAG_RELEASE    = $00000001; {If set then release the request automatically after completion}
  DMA_REQUEST_FLAG_CYCLIC     = $00000002; {This is a cyclic request which loops around from tail to head}
+ DMA_REQUEST_FLAG_COMPATIBLE = $00000004; {If set then all buffers supplied are host configuration compatible (Sizing, Alignment, Flags)}
  
  {DMA logging}
  DMA_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {DMA debugging messages}

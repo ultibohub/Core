@@ -1372,6 +1372,7 @@ begin
      BCM2708SPI0.SPI.Properties.ClockPhase:=SPI_CLOCK_PHASE_UNKNOWN;
      BCM2708SPI0.SPI.Properties.ClockPolarity:=SPI_CLOCK_POLARITY_UNKNOWN;
      BCM2708SPI0.SPI.Properties.SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
+     BCM2708SPI0.SPI.Properties.ByteDelay:=0;
      {BCM2708}
      BCM2708SPI0.Address:=Pointer(BCM2835_SPI0_REGS_BASE);
      BCM2708SPI0.CoreClock:=BCM2708_SPI0_CORE_CLOCK;
@@ -4592,7 +4593,7 @@ begin
    {Flush Dest} 
    case Request.Direction of
     DMA_DIR_MEM_TO_MEM,DMA_DIR_DEV_TO_MEM:begin
-      if not(BCM2708DMA_CACHE_COHERENT) then
+      if not(BCM2708DMA_CACHE_COHERENT) or ((Request.Flags and DMA_REQUEST_FLAG_COMPATIBLE) = 0) then
        begin
         Data:=Request.Data;
         while Data <> nil do
@@ -4807,21 +4808,24 @@ begin
  {Flush Source} 
  case Request.Direction of
   DMA_DIR_MEM_TO_MEM,DMA_DIR_MEM_TO_DEV:begin
-    if not(BCM2708DMA_CACHE_COHERENT) and ((Data.Flags and DMA_DATA_FLAG_NOCLEAN) = 0) then
+    if not(BCM2708DMA_CACHE_COHERENT) or ((Request.Flags and DMA_REQUEST_FLAG_COMPATIBLE) = 0) then
      begin
-      if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.SourceStride = 0) then
+      if (Data.Flags and DMA_DATA_FLAG_NOCLEAN) = 0 then
        begin
-        CleanDataCacheRange(LongWord(Data.Source),Data.Size);
-       end
-      else
-       begin
-        Offset:=0;
-        while Offset < Data.Size do
+        if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.SourceStride = 0) then
          begin
-          CleanDataCacheRange(LongWord(Data.Source + Offset),Data.StrideLength);
+          CleanDataCacheRange(LongWord(Data.Source),Data.Size);
+         end
+        else
+         begin
+          Offset:=0;
+          while Offset < Data.Size do
+           begin
+            CleanDataCacheRange(LongWord(Data.Source + Offset),Data.StrideLength);
           
-          Inc(Offset,Data.SourceStride);
-         end; 
+            Inc(Offset,Data.SourceStride);
+           end; 
+         end;
        end;
      end;
    end;
