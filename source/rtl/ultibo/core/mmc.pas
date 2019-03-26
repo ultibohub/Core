@@ -1,7 +1,7 @@
 {
 Ultibo MMC/SD interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2911,7 +2911,7 @@ begin
   MMC_CSD_STRUCT_VER_1_0:begin
     {Not Supported}
    end;
-  MMC_CSD_STRUCT_VER_1_1,MMC_CSD_STRUCT_VER_1_2:begin
+  MMC_CSD_STRUCT_VER_1_1,MMC_CSD_STRUCT_VER_1_2,MMC_CSD_STRUCT_EXT_CSD:begin
     {Calculate Data Access Time}
     TAACUnit:=MMCGetCSDValue(MMC,MMC_CSD_TAAC_UNIT);
     TAACValue:=MMCGetCSDValue(MMC,MMC_CSD_TAAC_VALUE);
