@@ -1,7 +1,7 @@
 {
 Prolific PL2303 USB to Serial Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -123,6 +123,7 @@ const
  PL2303_QUIRK_NONE            = $00000000;
  PL2303_QUIRK_UART_STATE_IDX0 = $00000001;
  PL2303_QUIRK_LEGACY          = $00000002;
+ PL2303_QUIRK_ENDPOINT_HACK   = $00000004;
  
  {PL2303 supported baud rates}
  PL2303_SUPPORTED_BAUD_RATE_COUNT = 25; 
@@ -156,10 +157,12 @@ const
  {PL2303 Vendor and Product ID constants}
  PL2303_VENDOR_ID               = $067b;
  PL2303_PRODUCT_ID              = $2303;
+ PL2303_PRODUCT_ID_TB           = $2304;
  PL2303_PRODUCT_ID_RSAQ2        = $04bb;
  PL2303_PRODUCT_ID_DCU11        = $1234;
  PL2303_PRODUCT_ID_PHAROS       = $aaa0;
  PL2303_PRODUCT_ID_RSAQ3        = $aaa2;
+ PL2303_PRODUCT_ID_CHILITAG     = $aaa8;
  PL2303_PRODUCT_ID_ALDIGA       = $0611;
  PL2303_PRODUCT_ID_MMX          = $0612;
  PL2303_PRODUCT_ID_GPRS         = $0609;
@@ -170,6 +173,9 @@ const
  PL2303_ATEN_VENDOR_ID          = $0557;
  PL2303_ATEN_VENDOR_ID2         = $0547;
  PL2303_ATEN_PRODUCT_ID         = $2008;
+ PL2303_ATEN_PRODUCT_UC485      = $2021;
+ PL2303_ATEN_PRODUCT_UC232B     = $2022;
+ PL2303_ATEN_PRODUCT_ID2        = $2118;
                                 
  PL2303_BENQ_VENDOR_ID          = $04a5;
  PL2303_BENQ_PRODUCT_ID_S81     = $4027;
@@ -266,10 +272,15 @@ const
 
  {Hewlett-Packard POS Pole Displays}
  PL2303_HP_VENDOR_ID            = $03f0;
+ PL2303_HP_LM920_PRODUCT_ID     = $026b;
+ PL2303_HP_TD620_PRODUCT_ID     = $0956;
  PL2303_HP_LD960_PRODUCT_ID     = $0b39;
  PL2303_HP_LCM220_PRODUCT_ID    = $3139;
  PL2303_HP_LCM960_PRODUCT_ID    = $3239;
  PL2303_HP_LD220_PRODUCT_ID     = $3524;
+ PL2303_HP_LD220TA_PRODUCT_ID   = $4349;
+ PL2303_HP_LD960TA_PRODUCT_ID   = $4439;
+ PL2303_HP_LM940_PRODUCT_ID     = $5039;
 
  {Cressi Edy (diving computer) PC interface}
  PL2303_CRESSI_VENDOR_ID        = $04b8;
@@ -296,13 +307,14 @@ const
  PL2303_SMART_PRODUCT_ID        = $2303;
  
  {PL2303 Device ID constants}
- PL2303_DEVICE_ID_COUNT = 54; {Number of supported Device IDs}
+ PL2303_DEVICE_ID_COUNT = 64; {Number of supported Device IDs}
  
  PL2303_DEVICE_ID:array[0..PL2303_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_RSAQ2),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_DCU11),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_RSAQ3),
+  (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_CHILITAG),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_PHAROS),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_ALDIGA),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_MMX),
@@ -310,9 +322,13 @@ const
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_HCR331),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_MOTOROLA),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_ZTEK),
+  (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_TB),
   (idVendor:PL2303_IODATA_VENDOR_ID;idProduct:PL2303_IODATA_PRODUCT_ID),
   (idVendor:PL2303_IODATA_VENDOR_ID;idProduct:PL2303_IODATA_PRODUCT_ID_RSAQ5),
   (idVendor:PL2303_ATEN_VENDOR_ID;idProduct:PL2303_ATEN_PRODUCT_ID),
+  (idVendor:PL2303_ATEN_VENDOR_ID;idProduct:PL2303_ATEN_PRODUCT_UC485),
+  (idVendor:PL2303_ATEN_VENDOR_ID;idProduct:PL2303_ATEN_PRODUCT_UC232B),
+  (idVendor:PL2303_ATEN_VENDOR_ID;idProduct:PL2303_ATEN_PRODUCT_ID2),
   (idVendor:PL2303_ATEN_VENDOR_ID2;idProduct:PL2303_ATEN_PRODUCT_ID),
   (idVendor:PL2303_ELCOM_VENDOR_ID;idProduct:PL2303_ELCOM_PRODUCT_ID),
   (idVendor:PL2303_ELCOM_VENDOR_ID;idProduct:PL2303_ELCOM_PRODUCT_ID_UCSGT),
@@ -344,9 +360,14 @@ const
   (idVendor:PL2303_YCCABLE_VENDOR_ID;idProduct:PL2303_YCCABLE_PRODUCT_ID),
   (idVendor:PL2303_SUPERIAL_VENDOR_ID;idProduct:PL2303_SUPERIAL_PRODUCT_ID),
   (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LD220_PRODUCT_ID),
+  (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LD220TA_PRODUCT_ID),
   (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LD960_PRODUCT_ID),
+  (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LD960TA_PRODUCT_ID),
   (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LCM220_PRODUCT_ID),
   (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LCM960_PRODUCT_ID),
+  (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LM920_PRODUCT_ID),
+  (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_LM940_PRODUCT_ID),
+  (idVendor:PL2303_HP_VENDOR_ID;idProduct:PL2303_HP_TD620_PRODUCT_ID),
   (idVendor:PL2303_CRESSI_VENDOR_ID;idProduct:PL2303_CRESSI_EDY_PRODUCT_ID),
   (idVendor:PL2303_ZEAGLE_VENDOR_ID;idProduct:PL2303_ZEAGLE_N2ITION3_PRODUCT_ID),
   (idVendor:PL2303_SONY_VENDOR_ID;idProduct:PL2303_SONY_QN3USB_PRODUCT_ID),
@@ -365,6 +386,9 @@ type
   Model:LongWord;                           {Device model (eg PL2303_TYPE_01)}
   Quirks:LongWord;                          {Unusual behaviours of specific chip versions}
   Control:LongWord;                         {Status of the control lines RTS and DTR}
+  ReceiveSize:LongWord;                     {Maximum Receive size for Bulk IN Endpoint}
+  TransmitSize:LongWord;                    {Maximum Transmit size for Bulk OUT Endpoint}
+  ReceiveActive:LongBool;                   {True if a Receive request is currently in progress}
   TransmitActive:LongBool;                  {True if a Transmit request is currently in progress}
   ReceiveRequest:PUSBRequest;               {USB request Bulk IN Endpoint}
   ReceiveEndpoint:PUSBEndpointDescriptor;   {PL2303 Bulk IN Endpoint}
@@ -402,6 +426,7 @@ function PL2303SerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:
 function PL2303DriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function PL2303DriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 
+procedure PL2303ReceiveStart(Request:PUSBRequest);  
 procedure PL2303ReceiveWorker(Request:PUSBRequest); 
 procedure PL2303ReceiveComplete(Request:PUSBRequest); 
 
@@ -487,6 +512,8 @@ end;
 {==============================================================================}
 {PL2303 Serial Functions}
 function PL2303SerialDeviceOpen(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
+{Implementation of SerialDeviceOpen API for PL2303 Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceOpen instead}
 var
  Status:LongWord;
  Device:PUSBDevice;
@@ -734,7 +761,10 @@ begin
 
  {Update Pending}
  Inc(PPL2303SerialDevice(Serial).PendingCount);
-  
+
+ {Set Active}
+ PPL2303SerialDevice(Serial).ReceiveActive:=True;
+ 
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Submitting receive request');
  {$ENDIF}
@@ -744,6 +774,9 @@ begin
  if Status <> USB_STATUS_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'PL2303: Failed to submit receive request: ' + USBStatusToString(Status));
+        
+   {Reset Active}
+   PPL2303SerialDevice(Serial).ReceiveActive:=False;
         
    {Update Pending}
    Dec(PPL2303SerialDevice(Serial).PendingCount);
@@ -786,6 +819,8 @@ end;
 {==============================================================================}
 
 function PL2303SerialDeviceClose(Serial:PSerialDevice):LongWord;
+{Implementation of SerialDeviceClose API for PL2303 Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceClose instead}
 var 
  Message:TMessage;
 begin
@@ -864,6 +899,8 @@ end;
 {==============================================================================}
 
 function PL2303SerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceRead API for PL2303 Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceRead instead}
 var 
  Data:Pointer;
  Total:LongWord;
@@ -891,6 +928,13 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Check State}
+   if not(PPL2303SerialDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PPL2303SerialDevice(Serial).ReceiveSize) then
+    begin
+     {Start Receive}
+     PL2303ReceiveStart(PPL2303SerialDevice(Serial).ReceiveRequest);
+    end;
+   
    {Check Non Blocking}
    if ((Flags and SERIAL_READ_NON_BLOCK) <> 0) and (Serial.Receive.Count = 0) then
     begin
@@ -948,6 +992,13 @@ begin
          {Reset Event}
          EventReset(Serial.Receive.Wait);
         end;
+        
+       {Check State}
+       if (Size = 0) and not(PPL2303SerialDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PPL2303SerialDevice(Serial).ReceiveSize) then
+        begin
+         {Start Receive}
+         PL2303ReceiveStart(PPL2303SerialDevice(Serial).ReceiveRequest);
+        end;
       end
      else
       begin
@@ -973,6 +1024,8 @@ end;
 {==============================================================================}
 
 function PL2303SerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceWrite API for Pl2303 Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceWrite instead}
 var 
  Data:Pointer;
  Empty:Boolean;
@@ -1293,6 +1346,8 @@ begin
  {USB}
  Serial.Model:=Model;
  Serial.Quirks:=Quirks;
+ Serial.ReceiveSize:=ReceiveEndpoint.wMaxPacketSize;
+ Serial.TransmitSize:=TransmitEndpoint.wMaxPacketSize;
  Serial.ReceiveEndpoint:=ReceiveEndpoint;
  Serial.TransmitEndpoint:=TransmitEndpoint;
  Serial.InterruptEndpoint:=InterruptEndpoint;
@@ -1361,6 +1416,70 @@ begin
  SerialDeviceDestroy(@Serial.Serial);
  
  Result:=USB_STATUS_SUCCESS;
+end;
+
+{==============================================================================}
+
+procedure PL2303ReceiveStart(Request:PUSBRequest);  
+{Called to continue reception of data to the receive buffer}
+{Request: The USB receive request to use}
+
+{Note: Caller must hold the lock on the serial device}
+var
+ Count:LongWord;
+ Available:LongWord;
+ Status:LongWord;
+ Serial:PPL2303SerialDevice;
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ {Get Serial}
+ Serial:=PPL2303SerialDevice(Request.DriverData);
+ if Serial = nil then Exit;
+ 
+ {Setup Count}
+ Count:=0;
+ Available:=Serial.Serial.Receive.Size - Serial.Serial.Receive.Count;
+ if Available >= PL2303_BULK_IN_SIZE then
+  begin
+   Count:=PL2303_BULK_IN_SIZE;
+  end
+ else if Available >= Serial.ReceiveSize then 
+  begin
+   Count:=Serial.ReceiveSize;
+  end;
+  
+ {Check Count}
+ if Count > 0 then
+  begin
+   {Update Request}
+   Request.Size:=Count;
+   
+   {Update Pending}
+   Inc(Serial.PendingCount);
+
+   {Set Active}
+   Serial.ReceiveActive:=True;
+
+   {$IFDEF PL2303_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Resubmitting receive request');
+   {$ENDIF}
+
+   {Resubmit Request}
+   Status:=USBRequestSubmit(Request);
+   if Status <> USB_STATUS_SUCCESS then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed to resubmit receive request: ' + USBStatusToString(Status));
+
+     {Reset Active}
+     Serial.ReceiveActive:=False;
+     
+     {Update Pending}
+     Dec(Serial.PendingCount);
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -1469,6 +1588,9 @@ begin
         Inc(Serial.Serial.ReceiveErrors); 
        end;
  
+      {Reset Active}
+      Serial.ReceiveActive:=False;
+      
       {Update Pending}
       Dec(Serial.PendingCount); 
         
@@ -1494,22 +1616,8 @@ begin
        end
       else
        begin      
-        {Update Pending}
-        Inc(Serial.PendingCount);
- 
-        {$IFDEF PL2303_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Resubmitting receive request');
-        {$ENDIF}
-
-        {Resubmit Request}
-        Status:=USBRequestSubmit(Request);
-        if Status <> USB_STATUS_SUCCESS then
-         begin
-          if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed to resubmit receive request: ' + USBStatusToString(Status));
-   
-          {Update Pending}
-          Dec(Serial.PendingCount);
-         end;
+        {Start Receive}
+        PL2303ReceiveStart(Request);
        end;  
      finally
       {Release the Lock}
