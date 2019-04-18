@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL050 PS2 Keyboard/Mouse Interface Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1425,6 +1425,20 @@ begin
        {Return Result}
        Result:=ERROR_SUCCESS;
       end;   
+     MOUSE_CONTROL_GET_ROTATION:begin
+       {Get Rotation}
+       Argument2:=MOUSE_ROTATION_0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;
+     MOUSE_CONTROL_SET_ROTATION:begin
+       {Set Rotation}
+       {Not Supported}
+       
+       {Return Result}
+       Result:=ERROR_NOT_SUPPORTED;
+      end;
     end;
    finally
     {Release the Lock}

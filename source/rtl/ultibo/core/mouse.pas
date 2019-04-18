@@ -1,7 +1,7 @@
 {
 Ultibo Mouse interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -114,7 +114,9 @@ const
  MOUSE_CONTROL_GET_MAX_Y        = 8;  {Get Maximum Y value (Only applies to Absolute Y values)}
  MOUSE_CONTROL_GET_MAX_WHEEL    = 9;  {Get Maximum Wheel value (Only applies to Absolute Wheel values)}
  MOUSE_CONTROL_GET_MAX_BUTTONS  = 10; {Get Maximum Buttons mask (eg MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON etc)}
- //To Do //Acceleration etc
+ MOUSE_CONTROL_GET_ROTATION     = 11; {Get Rotation value (0, 90, 180, 270)(Only where supported by the driver)}
+ MOUSE_CONTROL_SET_ROTATION     = 12; {Set Rotation value (0, 90, 180, 270)(Only where supported by the driver)}
+ //To Do //Acceleration
 
  {Mouse Buffer Size}
  MOUSE_BUFFER_SIZE = 512; 
@@ -132,6 +134,12 @@ const
  MOUSE_ABSOLUTE_X     =  $0040; {The OffsetX value is absolute not relative}
  MOUSE_ABSOLUTE_Y     =  $0080; {The OffsetY value is absolute not relative}
  MOUSE_ABSOLUTE_WHEEL =  $0100; {The OffsetWheel value is absolute not relative}
+
+ {Mouse Rotation}
+ MOUSE_ROTATION_0   = FRAMEBUFFER_ROTATION_0;    {No rotation}
+ MOUSE_ROTATION_90  = FRAMEBUFFER_ROTATION_90;   {90 degree rotation}
+ MOUSE_ROTATION_180 = FRAMEBUFFER_ROTATION_180;  {180 degree rotation}
+ MOUSE_ROTATION_270 = FRAMEBUFFER_ROTATION_270;  {270 degree rotation}
  
  {Mouse logging}
  MOUSE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Mouse debugging messages}
@@ -260,6 +268,20 @@ type
 {==============================================================================}
 type
  {USB Mouse specific types}
+ {USB HID Descriptor}
+ PUSBHIDDescriptor = ^TUSBHIDDescriptor;
+ TUSBHIDDescriptor = packed record
+  bLength:Byte;
+  bDescriptorType:Byte;
+  bcdHID:Word;
+  bCountryCode:Byte;
+  bNumDescriptors:Byte;
+  bHIDDescriptorType:Byte;
+  wHIDDescriptorLength:Word;
+  {Note: Up to two optional bHIDDescriptorType/wHIDDescriptorLength pairs after the Report descriptor details}
+ end;
+ 
+ {USB Mouse Device}
  PUSBMouseDevice = ^TUSBMouseDevice;
  TUSBMouseDevice = record
   {Mouse Properties}
@@ -268,6 +290,8 @@ type
   HIDInterface:PUSBInterface;            {USB HID Mouse Interface}
   ReportRequest:PUSBRequest;             {USB request for mouse report data}
   ReportEndpoint:PUSBEndpointDescriptor; {USB Mouse Interrupt IN Endpoint}
+  HIDDescriptor:PUSBHIDDescriptor;       {USB HID Descriptor for mouse} 
+  ReportDescriptor:Pointer;              {USB HID Report Descriptor for mouse}
   PendingCount:LongWord;                 {Number of USB requests pending for this mouse}
   WaiterThread:TThreadId;                {Thread waiting for pending requests to complete (for mouse detachment)}
  end;
@@ -354,6 +378,9 @@ procedure MouseLogDebug(Mouse:PMouseDevice;const AText:String); inline;
 function USBMouseCheckDevice(Device:PUSBDevice):Boolean;
 
 function USBMouseDeviceSetProtocol(Mouse:PUSBMouseDevice;Protocol:Byte):LongWord;
+
+function USBMouseDeviceGetHIDDescriptor(Mouse:PUSBMouseDevice;Descriptor:PUSBHIDDescriptor):LongWord;
+function USBMouseDeviceGetReportDescriptor(Mouse:PUSBMouseDevice;Descriptor:Pointer;Size:LongWord):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -964,6 +991,20 @@ begin
          {Return Result}
          Result:=ERROR_SUCCESS;
         end;       
+       MOUSE_CONTROL_GET_ROTATION:begin
+         {Get Rotation}
+         Argument2:=MOUSE_ROTATION_0;
+         
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       MOUSE_CONTROL_SET_ROTATION:begin
+         {Set Rotation}
+         {Not Supported}
+         
+         {Return Result}
+         Result:=ERROR_NOT_SUPPORTED;
+        end;
       end;
      finally
       {Release the Lock}
@@ -1667,6 +1708,20 @@ begin
        {Return Result}
        Result:=ERROR_SUCCESS;
       end;       
+     MOUSE_CONTROL_GET_ROTATION:begin
+       {Get Rotation}
+       Argument2:=MOUSE_ROTATION_0;
+       
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;
+     MOUSE_CONTROL_SET_ROTATION:begin
+       {Set Rotation}
+       {Not Supported}
+       
+       {Return Result}
+       Result:=ERROR_NOT_SUPPORTED;
+      end;
     end;
    finally
     {Release the Lock}
@@ -1795,6 +1850,47 @@ begin
   end;
  
  {$IFDEF USB_DEBUG}
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Reading HID report descriptors');
+ {$ENDIF}
+ 
+ {Get HID Descriptor}
+ Mouse.HIDDescriptor:=USBBufferAllocate(Device,SizeOf(TUSBHIDDescriptor));
+ if Mouse.HIDDescriptor <> nil then
+  begin 
+   Status:=USBMouseDeviceGetHIDDescriptor(Mouse,Mouse.HIDDescriptor);
+   if Status <> USB_STATUS_SUCCESS then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Mouse: Failed to read HID descriptor: ' + USBStatusToString(Status));
+     
+     {Don't fail the bind}
+    end
+   else 
+    begin
+     if (Mouse.HIDDescriptor.bDescriptorType = USB_HID_DESCRIPTOR_TYPE_HID) and (Mouse.HIDDescriptor.bHIDDescriptorType = USB_HID_DESCRIPTOR_TYPE_REPORT) then
+      begin
+       {Get Report Descriptor}
+       Mouse.ReportDescriptor:=USBBufferAllocate(Device,Mouse.HIDDescriptor.wHIDDescriptorLength); 
+       if Mouse.ReportDescriptor <> nil then
+        begin
+         Status:=USBMouseDeviceGetReportDescriptor(Mouse,Mouse.ReportDescriptor,Mouse.HIDDescriptor.wHIDDescriptorLength);
+         if Status <> USB_STATUS_SUCCESS then
+          begin
+           if USB_LOG_ENABLED then USBLogError(Device,'Mouse: Failed to read HID report descriptor: ' + USBStatusToString(Status));
+           
+           {Don't fail the bind}
+         {$IFDEF USB_DEBUG}
+          end
+         else
+          begin
+           if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Read ' + IntToStr(Mouse.HIDDescriptor.wHIDDescriptorLength) + ' byte HID report descriptor');
+         {$ENDIF}  
+          end;
+        end;
+      end;
+    end;
+  end;  
+ 
+ {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Mouse: Enabling HID boot protocol');
  {$ENDIF}
 
@@ -1806,6 +1902,12 @@ begin
 
    {Release Report Request}
    USBRequestRelease(Mouse.ReportRequest);
+   
+   {Release HID Descriptor}
+   USBBufferRelease(Mouse.HIDDescriptor);
+ 
+   {Release Report Descriptor}
+   USBBufferRelease(Mouse.ReportDescriptor);
    
    {Deregister Mouse}
    MouseDeviceDeregister(@Mouse.Mouse);
@@ -1858,6 +1960,12 @@ begin
    
    {Release Report Request}
    USBRequestRelease(Mouse.ReportRequest);
+   
+   {Release HID Descriptor}
+   USBBufferRelease(Mouse.HIDDescriptor);
+ 
+   {Release Report Descriptor}
+   USBBufferRelease(Mouse.ReportDescriptor);
    
    {Deregister Mouse}
    MouseDeviceDeregister(@Mouse.Mouse);
@@ -1952,6 +2060,12 @@ begin
  {Release Report Request}
  USBRequestRelease(Mouse.ReportRequest);
 
+ {Release HID Descriptor}
+ USBBufferRelease(Mouse.HIDDescriptor);
+ 
+ {Release Report Descriptor}
+ USBBufferRelease(Mouse.ReportDescriptor);
+ 
  {Deregister Mouse}
  if MouseDeviceDeregister(@Mouse.Mouse) <> ERROR_SUCCESS then Exit;
  
@@ -2556,6 +2670,67 @@ begin
  
  {Set Protocol}
  Result:=USBControlRequest(Device,nil,USB_HID_REQUEST_SET_PROTOCOL,USB_BMREQUESTTYPE_TYPE_CLASS or USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,Protocol,Mouse.HIDInterface.Descriptor.bInterfaceNumber,nil,0);
+end;
+
+{==============================================================================}
+
+function USBMouseDeviceGetHIDDescriptor(Mouse:PUSBMouseDevice;Descriptor:PUSBHIDDescriptor):LongWord;
+{Get the HID Descriptor for a USB mouse device}
+{Mouse: The USB mouse device to get the descriptor for}
+{Descriptor: Pointer to a USB HID Descriptor structure for the returned data}
+{Return: USB_STATUS_SUCCESS if completed or another USB error code on failure}
+var
+ Device:PUSBDevice;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Mouse}
+ if Mouse = nil then Exit;
+ 
+ {Check Descriptor}
+ if Descriptor = nil then Exit;
+ 
+ {Check Interface}
+ if Mouse.HIDInterface = nil then Exit;
+ 
+ {Get Device}
+ Device:=PUSBDevice(Mouse.Mouse.Device.DeviceData);
+ if Device = nil then Exit;
+ 
+ {Get Descriptor}
+ Result:=USBControlRequest(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,(USB_HID_DESCRIPTOR_TYPE_HID shl 8),Mouse.HIDInterface.Descriptor.bInterfaceNumber,Descriptor,SizeOf(TUSBHIDDescriptor));
+end;
+
+{==============================================================================}
+
+function USBMouseDeviceGetReportDescriptor(Mouse:PUSBMouseDevice;Descriptor:Pointer;Size:LongWord):LongWord;
+{Get the Report Descriptor for a USB mouse device}
+{Mouse: The USB mouse device to get the descriptor for}
+{Descriptor: Pointer to a buffer to return the USB Report Descriptor}
+{Size: The size in bytes of the buffer pointed to by Descriptor}
+{Return: USB_STATUS_SUCCESS if completed or another USB error code on failure}
+var
+ Device:PUSBDevice;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Mouse}
+ if Mouse = nil then Exit;
+ 
+ {Check Descriptor}
+ if Descriptor = nil then Exit;
+ 
+ {Check Interface}
+ if Mouse.HIDInterface = nil then Exit;
+ 
+ {Get Device}
+ Device:=PUSBDevice(Mouse.Mouse.Device.DeviceData);
+ if Device = nil then Exit;
+ 
+ {Get Descriptor}
+ Result:=USBControlRequest(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,(USB_HID_DESCRIPTOR_TYPE_REPORT shl 8),Mouse.HIDInterface.Descriptor.bInterfaceNumber,Descriptor,Size);
 end;
 
 {==============================================================================}

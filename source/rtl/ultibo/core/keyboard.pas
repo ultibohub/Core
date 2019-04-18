@@ -1,7 +1,7 @@
 {
 Ultibo Keyboard interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -577,9 +577,24 @@ type
 {==============================================================================}
 type
  {USB Keyboard specific types}
+ {USB HID Descriptor}
+ PUSBHIDDescriptor = ^TUSBHIDDescriptor;
+ TUSBHIDDescriptor = packed record
+  bLength:Byte;
+  bDescriptorType:Byte;
+  bcdHID:Word;
+  bCountryCode:Byte;
+  bNumDescriptors:Byte;
+  bHIDDescriptorType:Byte;
+  wHIDDescriptorLength:Word;
+  {Note: Up to two optional bHIDDescriptorType/wHIDDescriptorLength pairs after the Report descriptor details}
+ end;
+  
+ {USB Boot Keyboard Report}
  PUSBKeyboardReport = ^TUSBKeyboardReport;
  TUSBKeyboardReport = array[0..7] of Byte;
  
+ {USB Keyboard Device}
  PUSBKeyboardDevice = ^TUSBKeyboardDevice;
  TUSBKeyboardDevice = record
   {Keyboard Properties}
@@ -588,6 +603,8 @@ type
   HIDInterface:PUSBInterface;            {USB HID Keyboard Interface}
   ReportRequest:PUSBRequest;             {USB request for keyboard report data}
   ReportEndpoint:PUSBEndpointDescriptor; {USB Keyboard Interrupt IN Endpoint}
+  HIDDescriptor:PUSBHIDDescriptor;       {USB HID Descriptor for keyboard} 
+  ReportDescriptor:Pointer;              {USB HID Report Descriptor for keyboard}
   LastCode:Word;                         {The scan code of the last key pressed}
   LastCount:LongWord;                    {The repeat count of the last key pressed}
   LastReport:TUSBKeyboardReport;         {The last keyboard report received}
@@ -694,6 +711,9 @@ function USBKeyboardCheckReleased(Keyboard:PUSBKeyboardDevice;Report:PUSBKeyboar
 function USBKeyboardDeviceSetLEDs(Keyboard:PUSBKeyboardDevice;LEDs:Byte):LongWord;
 function USBKeyboardDeviceSetIdle(Keyboard:PUSBKeyboardDevice;Duration,ReportId:Byte):LongWord;
 function USBKeyboardDeviceSetProtocol(Keyboard:PUSBKeyboardDevice;Protocol:Byte):LongWord;
+
+function USBKeyboardDeviceGetHIDDescriptor(Keyboard:PUSBKeyboardDevice;Descriptor:PUSBHIDDescriptor):LongWord;
+function USBKeyboardDeviceGetReportDescriptor(Keyboard:PUSBKeyboardDevice;Descriptor:Pointer;Size:LongWord):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -2542,6 +2562,46 @@ begin
   end;
  
  {$IFDEF USB_DEBUG}
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Reading HID report descriptors');
+ {$ENDIF}
+ 
+ {Get HID Descriptor}
+ Keyboard.HIDDescriptor:=USBBufferAllocate(Device,SizeOf(TUSBHIDDescriptor));
+ if Keyboard.HIDDescriptor <> nil then
+  begin 
+   Status:=USBKeyboardDeviceGetHIDDescriptor(Keyboard,Keyboard.HIDDescriptor);
+   if Status <> USB_STATUS_SUCCESS then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Failed to read HID descriptor: ' + USBStatusToString(Status));
+     
+     {Don't fail the bind}
+    end
+   else 
+    begin
+     if (Keyboard.HIDDescriptor.bDescriptorType = USB_HID_DESCRIPTOR_TYPE_HID) and (Keyboard.HIDDescriptor.bHIDDescriptorType = USB_HID_DESCRIPTOR_TYPE_REPORT) then
+      begin
+       {Get Report Descriptor}
+       Keyboard.ReportDescriptor:=USBBufferAllocate(Device,Keyboard.HIDDescriptor.wHIDDescriptorLength); 
+       if Keyboard.ReportDescriptor <> nil then
+        begin
+         Status:=USBKeyboardDeviceGetReportDescriptor(Keyboard,Keyboard.ReportDescriptor,Keyboard.HIDDescriptor.wHIDDescriptorLength);
+         if Status <> USB_STATUS_SUCCESS then
+          begin
+           if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Failed to read HID report descriptor: ' + USBStatusToString(Status));
+           
+           {Don't fail the bind}
+         {$IFDEF USB_DEBUG}
+         else
+          begin
+           if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Read ' + IntToStr(Keyboard.HIDDescriptor.wHIDDescriptorLength) + ' byte HID report descriptor');
+         {$ENDIF}  
+          end;
+        end;
+      end;
+    end;
+  end;  
+ 
+ {$IFDEF USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Enabling HID boot protocol');
  {$ENDIF}
  
@@ -2553,6 +2613,12 @@ begin
    
    {Release Report Request}
    USBRequestRelease(Keyboard.ReportRequest);
+   
+   {Release HID Descriptor}
+   USBBufferRelease(Keyboard.HIDDescriptor);
+ 
+   {Release Report Descriptor}
+   USBBufferRelease(Keyboard.ReportDescriptor);
    
    {Deregister Keyboard}
    KeyboardDeviceDeregister(@Keyboard.Keyboard);
@@ -2578,6 +2644,12 @@ begin
    {Release Report Request}
    USBRequestRelease(Keyboard.ReportRequest);
    
+   {Release HID Descriptor}
+   USBBufferRelease(Keyboard.HIDDescriptor);
+ 
+   {Release Report Descriptor}
+   USBBufferRelease(Keyboard.ReportDescriptor);
+   
    {Deregister Keyboard}
    KeyboardDeviceDeregister(@Keyboard.Keyboard);
    
@@ -2597,6 +2669,12 @@ begin
    
    {Release Report Request}
    USBRequestRelease(Keyboard.ReportRequest);
+   
+   {Release HID Descriptor}
+   USBBufferRelease(Keyboard.HIDDescriptor);
+ 
+   {Release Report Descriptor}
+   USBBufferRelease(Keyboard.ReportDescriptor);
    
    {Deregister Keyboard}
    KeyboardDeviceDeregister(@Keyboard.Keyboard);
@@ -2649,6 +2727,12 @@ begin
    
    {Release Report Request}
    USBRequestRelease(Keyboard.ReportRequest);
+   
+   {Release HID Descriptor}
+   USBBufferRelease(Keyboard.HIDDescriptor);
+ 
+   {Release Report Descriptor}
+   USBBufferRelease(Keyboard.ReportDescriptor);
    
    {Deregister Keyboard}
    KeyboardDeviceDeregister(@Keyboard.Keyboard);
@@ -2742,6 +2826,12 @@ begin
 
  {Release Report Request}
  USBRequestRelease(Keyboard.ReportRequest);
+ 
+ {Release HID Descriptor}
+ USBBufferRelease(Keyboard.HIDDescriptor);
+ 
+ {Release Report Descriptor}
+ USBBufferRelease(Keyboard.ReportDescriptor);
  
  {Deregister Keyboard}
  if KeyboardDeviceDeregister(@Keyboard.Keyboard) <> ERROR_SUCCESS then Exit;
@@ -4893,6 +4983,67 @@ begin
  
  {Set Protocol}
  Result:=USBControlRequest(Device,nil,USB_HID_REQUEST_SET_PROTOCOL,USB_BMREQUESTTYPE_TYPE_CLASS or USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,Protocol,Keyboard.HIDInterface.Descriptor.bInterfaceNumber,nil,0);
+end;
+
+{==============================================================================}
+
+function USBKeyboardDeviceGetHIDDescriptor(Keyboard:PUSBKeyboardDevice;Descriptor:PUSBHIDDescriptor):LongWord;
+{Get the HID Descriptor for a USB keyboard device}
+{Keyboard: The USB keyboard device to get the descriptor for}
+{Descriptor: Pointer to a USB HID Descriptor structure for the returned data}
+{Return: USB_STATUS_SUCCESS if completed or another USB error code on failure}
+var
+ Device:PUSBDevice;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Keyboard}
+ if Keyboard = nil then Exit;
+ 
+ {Check Descriptor}
+ if Descriptor = nil then Exit;
+ 
+ {Check Interface}
+ if Keyboard.HIDInterface = nil then Exit;
+ 
+ {Get Device}
+ Device:=PUSBDevice(Keyboard.Keyboard.Device.DeviceData);
+ if Device = nil then Exit;
+ 
+ {Get Descriptor}
+ Result:=USBControlRequest(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,(USB_HID_DESCRIPTOR_TYPE_HID shl 8),Keyboard.HIDInterface.Descriptor.bInterfaceNumber,Descriptor,SizeOf(TUSBHIDDescriptor));
+end;
+
+{==============================================================================}
+
+function USBKeyboardDeviceGetReportDescriptor(Keyboard:PUSBKeyboardDevice;Descriptor:Pointer;Size:LongWord):LongWord;
+{Get the Report Descriptor for a USB keyboard device}
+{Keyboard: The USB keyboard device to get the descriptor for}
+{Descriptor: Pointer to a buffer to return the USB Report Descriptor}
+{Size: The size in bytes of the buffer pointed to by Descriptor}
+{Return: USB_STATUS_SUCCESS if completed or another USB error code on failure}
+var
+ Device:PUSBDevice;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Keyboard}
+ if Keyboard = nil then Exit;
+ 
+ {Check Descriptor}
+ if Descriptor = nil then Exit;
+ 
+ {Check Interface}
+ if Keyboard.HIDInterface = nil then Exit;
+ 
+ {Get Device}
+ Device:=PUSBDevice(Keyboard.Keyboard.Device.DeviceData);
+ if Device = nil then Exit;
+ 
+ {Get Descriptor}
+ Result:=USBControlRequest(Device,nil,USB_DEVICE_REQUEST_GET_DESCRIPTOR,USB_BMREQUESTTYPE_TYPE_STANDARD or USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,(USB_HID_DESCRIPTOR_TYPE_REPORT shl 8),Keyboard.HIDInterface.Descriptor.bInterfaceNumber,Descriptor,Size);
 end;
 
 {==============================================================================}

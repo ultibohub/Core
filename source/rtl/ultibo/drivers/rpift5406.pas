@@ -515,8 +515,8 @@ begin
                      end;
                     TOUCH_ROTATION_270:begin
                       {Swap and Invert X and Y}
-                      TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
-                      TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
+                      TouchData.PositionX:=Touch.Touch.Properties.MaxY - Y;
+                      TouchData.PositionY:=Touch.Touch.Properties.MaxX - X;
                      end;
                    end;
                    TouchData.PositionZ:=0;
@@ -563,8 +563,8 @@ begin
                    end;
                   TOUCH_ROTATION_270:begin
                     {Swap and Invert X and Y}
-                    MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
-                    MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
+                    MouseData.OffsetX:=Touch.Touch.Properties.MaxY - Y;
+                    MouseData.OffsetY:=Touch.Touch.Properties.MaxX - X;
                    end;
                  end;
                  MouseData.OffsetWheel:=0;

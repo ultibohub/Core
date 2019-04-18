@@ -1,7 +1,7 @@
 {
 ST Microelectronics STMPE Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3399,8 +3399,8 @@ begin
              end;
             TOUCH_ROTATION_270:begin
               {Swap and Invert X and Y}
-              TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
-              TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
+              TouchData.PositionX:=Touch.Touch.Properties.MaxY - Y;
+              TouchData.PositionY:=Touch.Touch.Properties.MaxX - X;
              end;
            end;
            TouchData.PositionZ:=Z;
@@ -3444,8 +3444,8 @@ begin
          end;
         TOUCH_ROTATION_270:begin
           {Swap and Invert X and Y}
-          MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
-          MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
+          MouseData.OffsetX:=Touch.Touch.Properties.MaxY - Y;
+          MouseData.OffsetY:=Touch.Touch.Properties.MaxX - X;
          end;
        end;
        MouseData.OffsetWheel:=0;
