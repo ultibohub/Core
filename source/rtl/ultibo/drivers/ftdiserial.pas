@@ -1,7 +1,7 @@
 {
 FTDI USB to Serial Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -146,6 +146,7 @@ const
  FTDISERIAL_RESET_PURGE_TX = 2;              { 2 = Purge TX buffer}
  
  {FTDI Serial set modem control constants (ftdi_sio.h)}                                        {wValue: ControlValue}
+ FTDISERIAL_SET_MODEM_CTRL_NONE       = 0;
  FTDISERIAL_SET_MODEM_CTRL_DTR_ENABLE = 1;                                                     { B0    DTR state (0 = reset / 1 = set)}
  FTDISERIAL_SET_MODEM_CTRL_DTR_HIGH   = (1 or (FTDISERIAL_SET_MODEM_CTRL_DTR_ENABLE  shl 8));  { B1    RTS state (0 = reset / 1 = set)}
  FTDISERIAL_SET_MODEM_CTRL_DTR_LOW    = (0 or (FTDISERIAL_SET_MODEM_CTRL_DTR_ENABLE  shl 8));  { B2..7 Reserved}
@@ -517,6 +518,10 @@ const
  FTDI_4N_GALAXY_DE_2_PID = $F3C1;
  FTDI_4N_GALAXY_DE_3_PID = $F3C2;
 
+ {Ivium Technologies product IDs}
+ FTDI_PALMSENS_PID = $F440;
+ FTDI_IVIUM_XSTAT_PID = $F441;
+ 
  {Linx Technologies product ids}
  LINX_SDMUSBQSS_PID = $F448; {Linx SDM-USB-QS-S}
  LINX_MASTERDEVEL2_PID = $F449; {Linx Master Development 2.0}
@@ -626,6 +631,8 @@ const
 
  {NovaTech product ids (FTDI_VID)}
  FTDI_NT_ORIONLXM_PID = $7c90; {OrionLXm Substation Automation Platform}
+ FTDI_NT_ORIONLX_PLUS_PID = $7c91; {OrionLX+ Substation Automation Platform}
+ FTDI_NT_ORION_IO_PID = $7c92; {Orion I/O}
 
  {Synapse Wireless product ids (FTDI_VID) http://www.synapse-wireless.com}
  FTDI_SYNAPSE_SS200_PID = $9090; {SS200 - SNAP Stick 200}
@@ -641,11 +648,20 @@ const
  ATMEL_VID  = $03eb; {Vendor ID}
  STK541_PID  = $2109; {Zigbee Controller}
 
+ {Texas Instruments}
+ TI_VID = $0451;
+ TI_CC3200_LAUNCHPAD_PID = $C32A; {SimpleLink Wi-Fi CC3200 LaunchPad}
+ 
  {Blackfin gnICE JTAG http://docs.blackfin.uclinux.org/doku.php?id=hw:jtag:gnice}
  ADI_VID   = $0456;
  ADI_GNICE_PID  = $F000;
  ADI_GNICEPLUS_PID = $F001;
 
+ {Cypress WICED USB UART}
+ CYPRESS_VID = $04B4;
+ CYPRESS_WICED_BT_USB_PID = $009B;
+ CYPRESS_WICED_WL_USB_PID = $F900;
+ 
  {Microchip Technology, Inc}
  MICROCHIP_VID  = $04D8;
  MICROCHIP_USB_BOARD_PID = $000A; {CDC RS-232 Emulation Demo}
@@ -657,7 +673,8 @@ const
 
  {Infineon Technologies}
  INFINEON_VID  = $058b;
- INFINEON_TRIBOARD_PID = $0028; {DAS JTAG TriBoard TC1798 V1.0}
+ INFINEON_TRIBOARD_TC1798_PID = $0028; {DAS JTAG TriBoard TC1798 V1.0}
+ INFINEON_TRIBOARD_TC2X7_PID = $0043; {DAS JTAG TriBoard TC2X7 V1.0}
 
  {Acton Research Corp.}
  ACTON_VID  = $0647; {Vendor ID}
@@ -696,6 +713,10 @@ const
  INTREPID_VALUECAN_PID = $0601;
  INTREPID_NEOVI_PID = $0701;
 
+ {WICED USB UART}
+ WICED_VID = $0A5C;
+ WICED_USB20706V2_PID = $6422;
+ 
  {Definitions for ID TECH (www.idt-net.com) devices}
  IDTECH_VID  = $0ACD; {ID TECH Vendor ID}
  IDTECH_IDT1221U_PID = $0300; {IDT1221U USB to RS-232 adapter}
@@ -841,9 +862,15 @@ const
  FIC_VID   = $1457;
  FIC_NEO1973_DEBUG_PID = $5118;
 
+ {Actel / Microsemi}
+ ACTEL_VID = $1514;
+ MICROSEMI_ARROW_SF2PLUS_BOARD_PID = $2008;
+ 
  {Olimex}
  OLIMEX_VID   = $15BA;
  OLIMEX_ARM_USB_OCD_PID  = $0003;
+ OLIMEX_ARM_USB_TINY_PID = $0004;
+ OLIMEX_ARM_USB_TINY_H_PID = $002a;
  OLIMEX_ARM_USB_OCD_H_PID = $002b;
 
  {Telldus Technologies}
@@ -859,8 +886,15 @@ const
  ICPDAS_I7560U_PID  = $0103;
  ICPDAS_I7561U_PID  = $0104;
  ICPDAS_I7563U_PID  = $0105;
+ 
+ {Airbus Defence and Space}
+ AIRBUS_DS_VID = $1e8e; {Vendor ID}
+ AIRBUS_DS_P8GR = $6001; {Tetra P8GR}
 
  {RT Systems programming cables for various ham radios}
+ {This device uses the VID of FTDI}
+ RTSYSTEMS_USB_VX8_PID = $9e50; {USB-VX8 USB to 7 pin modular plug for Yaesu VX-8 radio}
+ 
  RTSYSTEMS_VID  = $2100; {Vendor ID}
  RTSYSTEMS_USB_S03_PID = $9001; {RTS-03 USB to Serial Adapter}
  RTSYSTEMS_USB_59_PID = $9e50; {USB-59 USB to 8 pin plug}
@@ -1226,6 +1260,10 @@ const
  IONICS_VID   = $1c0c;
  IONICS_PLUGCOMPUTER_PID  = $0102;
 
+ {EZPrototypes (PID reseller)}
+ EZPROTOTYPES_VID = $1c40;
+ HJELMSLUND_USB485_ISO_PID = $0477;
+ 
  {Dresden Elektronik Sensor Terminal Board}
  DE_VID   = $1cf1; {Vendor ID}
  STB_PID   = $0001; {Sensor Terminal Board}
@@ -1325,6 +1363,9 @@ const
  {Product: HCP HIT GPRS modem  Manufacturer: HCP d.o.o. ATI command output: Cinterion MC55i}
  FTDI_CINTERION_MC55I_PID = $A951;
 
+ {Product: FirmwareHubEmulator Manufacturer: Harman Becker Automotive Systems}
+ FTDI_FHE_PID = $A9A0;
+ 
  {Product: Comet Caller ID decoder Manufacturer: Crucible Technologies}
  FTDI_CT_COMET_PID = $8e08;
 
@@ -1395,7 +1436,7 @@ const
  CHETCO_SEASMART_ANALOG_PID = $A5AF; {SeaSmart Analog Adapter}
 
  {FTDI Serial Device ID constants}
- FTDISERIAL_DEVICE_ID_COUNT = 819; {Number of supported Device IDs}
+ FTDISERIAL_DEVICE_ID_COUNT = 828; {Number of supported Device IDs}
  
  FTDISERIAL_DEVICE_ID:array[0..FTDISERIAL_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:FTDI_VID;idProduct:FTDI_BRICK_PID),
@@ -1857,6 +1898,8 @@ const
   (idVendor:FTDI_VID;idProduct:FTDI_TAVIR_STK500_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_TIAO_UMPA_PID),  {FTDISERIAL_QUIRK_JTAG}
   (idVendor:FTDI_VID;idProduct:FTDI_NT_ORIONLXM_PID), {FTDISERIAL_QUIRK_JTAG}
+  (idVendor:FTDI_VID;idProduct:FTDI_NT_ORIONLX_PLUS_PID), 
+  (idVendor:FTDI_VID;idProduct:FTDI_NT_ORION_IO_PID), 
   (idVendor:FTDI_VID;idProduct:FTDI_SYNAPSE_SS200_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_CUSTOMWARE_MINIPLEX_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_CUSTOMWARE_MINIPLEX2_PID),
@@ -1899,6 +1942,8 @@ const
   (idVendor:FTDI_VID;idProduct:FTDI_ELV_TFD128_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_ELV_FM3RX_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_ELV_WS777_PID),
+  (idVendor:FTDI_VID;idProduct:FTDI_PALMSENS_PID),
+  (idVendor:FTDI_VID;idProduct:FTDI_IVIUM_XSTAT_PID),
   (idVendor:FTDI_VID;idProduct:LINX_SDMUSBQSS_PID),
   (idVendor:FTDI_VID;idProduct:LINX_MASTERDEVEL2_PID),
   (idVendor:FTDI_VID;idProduct:LINX_FUTURE_0_PID),
@@ -2017,6 +2062,7 @@ const
   (idVendor:FTDI_VID;idProduct:FTDI_NDI_AURORA_SCU_PID), {FTDISERIAL_QUIRK_NDI_DEVICE}
   (idVendor:TELLDUS_VID;idProduct:TELLDUS_TELLSTICK_PID),
   (idVendor:NOVITUS_VID;idProduct:NOVITUS_BONO_E_PID),
+  (idVendor:FTDI_VID;idProduct:RTSYSTEMS_USB_VX8_PID),
   (idVendor:RTSYSTEMS_VID;idProduct:RTSYSTEMS_USB_S03_PID),
   (idVendor:RTSYSTEMS_VID;idProduct:RTSYSTEMS_USB_59_PID),
   (idVendor:RTSYSTEMS_VID;idProduct:RTSYSTEMS_USB_57A_PID),
@@ -2052,8 +2098,10 @@ const
   (idVendor:FTDI_VID;idProduct:FTDI_PROPOX_JTAGCABLEII_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_PROPOX_ISPCABLEIII_PID),
   (idVendor:FTDI_VID;idProduct:CYBER_CORTEX_AV_PID), {FTDISERIAL_QUIRK_JTAG}
-  (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_OCD_PID), {FTDISERIAL_QUIRK_JTAG}
-  (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_OCD_H_PID), {FTDISERIAL_QUIRK_JTAG}
+  //(idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_OCD_PID), {FTDISERIAL_QUIRK_JTAG} // USB_DEVICE_INTERFACE_NUMBER(OLIMEX_VID, OLIMEX_ARM_USB_OCD_PID, 1)
+  //(idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_OCD_H_PID), {FTDISERIAL_QUIRK_JTAG} //USB_DEVICE_INTERFACE_NUMBER(OLIMEX_VID, OLIMEX_ARM_USB_OCD_H_PID, 1)
+  //(idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_TINY_PID), //USB_DEVICE_INTERFACE_NUMBER(OLIMEX_VID, OLIMEX_ARM_USB_TINY_PID, 1)
+  //(idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_TINY_H_PID), //USB_DEVICE_INTERFACE_NUMBER(OLIMEX_VID, OLIMEX_ARM_USB_TINY_H_PID, 1)
   (idVendor:FIC_VID;idProduct:FIC_NEO1973_DEBUG_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:FTDI_VID;idProduct:FTDI_OOCDLINK_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:FTDI_VID;idProduct:LMI_LM3S_DEVEL_BOARD_PID), {FTDISERIAL_QUIRK_JTAG}
@@ -2102,6 +2150,7 @@ const
   (idVendor:DE_VID;idProduct:WHT_PID),
   (idVendor:ADI_VID;idProduct:ADI_GNICE_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:ADI_VID;idProduct:ADI_GNICEPLUS_PID), {FTDISERIAL_QUIRK_JTAG}
+  //(idVendor:ACTEL_VID;idProduct:MICROSEMI_ARROW_SF2PLUS_BOARD_PID), //USB_DEVICE_INTERFACE_NUMBER(ACTEL_VID, MICROSEMI_ARROW_SF2PLUS_BOARD_PID, 2)
   (idVendor:JETI_VID;idProduct:JETI_SPC1201_PID),
   (idVendor:MARVELL_VID;idProduct:MARVELL_SHEEVAPLUG_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:LARSENBRUSGAARD_VID;idProduct:LB_ALTITRACK_PID),
@@ -2155,6 +2204,7 @@ const
   (idVendor:FTDI_VID;idProduct:FTDI_SCIENCESCOPE_LS_LOGBOOK_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_SCIENCESCOPE_HS_LOGBOOK_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_CINTERION_MC55I_PID),
+  (idVendor:FTDI_VID;idProduct:FTDI_FHE_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_DOTEC_PID),
   (idVendor:QIHARDWARE_VID;idProduct:MILKYMISTONE_JTAGSERIAL_PID), {FTDISERIAL_QUIRK_JTAG}
   (idVendor:ST_VID;idProduct:ST_STMCLT_2232_PID), {FTDISERIAL_QUIRK_JTAG}
@@ -2202,8 +2252,9 @@ const
   (idVendor:BRAINBOXES_VID;idProduct:BRAINBOXES_US_842_4_PID),
   {ekey Devices}
   (idVendor:FTDI_VID;idProduct:FTDI_EKEY_CONV_USB_PID),
-  {Infineon Devices}
-  (idVendor:INFINEON_VID;idProduct:INFINEON_TRIBOARD_PID),  //USB_DEVICE_INTERFACE_NUMBER(INFINEON_VID;idProduct:INFINEON_TRIBOARD_PID, 1
+  //{Infineon Devices}
+  //(idVendor:INFINEON_VID;idProduct:INFINEON_TRIBOARD_TC1798_PID), //USB_DEVICE_INTERFACE_NUMBER(INFINEON_VID;idProduct:INFINEON_TRIBOARD_TC1798_PID, 1
+  //(idVendor:INFINEON_VID;idProduct:INFINEON_TRIBOARD_TC2X7_PID), //USB_DEVICE_INTERFACE_NUMBER(INFINEON_VID;idProduct:INFINEON_TRIBOARD_TC2X7_PID, 1
   {GE Healthcare devices}
   (idVendor:GE_HEALTHCARE_VID;idProduct:GE_HEALTHCARE_NEMO_TRACKER_PID),
   {Active Research (Actisense) devices}
@@ -2226,7 +2277,19 @@ const
   {ICP DAS I-756xU devices}
   (idVendor:ICPDAS_VID;idProduct:ICPDAS_I7560U_PID),
   (idVendor:ICPDAS_VID;idProduct:ICPDAS_I7561U_PID),
-  (idVendor:ICPDAS_VID;idProduct:ICPDAS_I7563U_PID));
+  (idVendor:ICPDAS_VID;idProduct:ICPDAS_I7563U_PID),
+  {WICED USB UART}
+  (idVendor:WICED_VID;idProduct:WICED_USB20706V2_PID),
+  {Texas Instruments}
+  (idVendor:TI_VID;idProduct:TI_CC3200_LAUNCHPAD_PID), {FTDISERIAL_QUIRK_JTAG}
+  {Cypress WICED USB UART}
+  (idVendor:CYPRESS_VID;idProduct:CYPRESS_WICED_BT_USB_PID),
+  (idVendor:CYPRESS_VID;idProduct:CYPRESS_WICED_WL_USB_PID),
+  {Airbus Defence and Space}
+  (idVendor:AIRBUS_DS_VID;idProduct:AIRBUS_DS_P8GR),
+  {EZPrototypes devices}
+  (idVendor:EZPROTOTYPES_VID;idProduct:HJELMSLUND_USB485_ISO_PID)
+  );
 
  {FTDI Serial Device and Interface ID constants}
  FTDISERIAL_DEVICE_INTERFACE_ID_COUNT = 1; {Number of supported Device and Interface IDs}
@@ -2235,10 +2298,18 @@ const
   (idVendor:MICROCHIP_VID;idProduct:MICROCHIP_USB_BOARD_PID;bInterfaceClass:USB_CLASS_CODE_VENDOR_SPECIFIC;bInterfaceSubClass:USB_SUBCLASS_VENDOR_SPECIFIC;bInterfaceProtocol:0));
  
  {FTDI Serial Device and Interface No constants}
- FTDISERIAL_DEVICE_INTERFACE_NO_COUNT = 1; {Number of supported Device and Interface Nos}
+ FTDISERIAL_DEVICE_INTERFACE_NO_COUNT = 7; {Number of supported Device and Interface Nos}
  
  FTDISERIAL_DEVICE_INTERFACE_NO:array[0..FTDISERIAL_DEVICE_INTERFACE_NO_COUNT - 1] of TUSBDeviceAndInterfaceNo = (
-  (idVendor:INFINEON_VID;idProduct:INFINEON_TRIBOARD_PID;bInterfaceNumber:1));
+  {Infineon Devices}
+  (idVendor:INFINEON_VID;idProduct:INFINEON_TRIBOARD_TC1798_PID;bInterfaceNumber:1),
+  (idVendor:INFINEON_VID;idProduct:INFINEON_TRIBOARD_TC2X7_PID;bInterfaceNumber:1),
+  (idVendor:ACTEL_VID;idProduct:MICROSEMI_ARROW_SF2PLUS_BOARD_PID;bInterfaceNumber:2),
+  (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_OCD_PID;bInterfaceNumber:1),
+  (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_OCD_H_PID;bInterfaceNumber:1),
+  (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_TINY_PID;bInterfaceNumber:1),
+  (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_TINY_H_PID;bInterfaceNumber:1)
+  );
  
 {==============================================================================}
 type
@@ -2259,6 +2330,7 @@ type
   LastStatus:LongWord;                      {The modem status received with the last packet (eg FTDISERIAL_RECEIVE_STATUS0_CTS)}
   ReceiveSize:LongWord;                     {Maximum Receive size for Bulk IN Endpoint}
   TransmitSize:LongWord;                    {Maximum Transmit size for Bulk OUT Endpoint}
+  ReceiveActive:LongBool;                   {True if a Receive request is currently in progress}
   TransmitActive:LongBool;                  {True if a Transmit request is currently in progress}
   SerialInterface:PUSBInterface;            {USB interface for the serial device}
   ReceiveRequest:PUSBRequest;               {USB request Bulk IN Endpoint}
@@ -2292,7 +2364,8 @@ function FTDISerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:Lo
 {FTDI Serial USB Functions}
 function FTDISerialDriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function FTDISerialDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
-  
+
+procedure FTDISerialReceiveStart(Request:PUSBRequest);    
 procedure FTDISerialReceiveWorker(Request:PUSBRequest); 
 procedure FTDISerialReceiveComplete(Request:PUSBRequest); 
 
@@ -2391,9 +2464,12 @@ end;
 {==============================================================================}
 {FTDI Serial Functions}
 function FTDISerialDeviceOpen(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
+{Implementation of SerialDeviceOpen API for FTDI Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceOpen instead}
 var
  Data:Word;
  Flow:Word;
+ Modem:Word;
  Status:LongWord;
  Divisor:LongWord;
  Device:PUSBDevice;
@@ -2503,28 +2579,60 @@ begin
    Exit;
   end;
  
- {Setup Flow}
- Flow:=0;
+ {Setup Flow Control}
+ Flow:=FTDISERIAL_SET_FLOW_CTRL_NONE;
+ Modem:=FTDISERIAL_SET_MODEM_CTRL_NONE;
  {Check Force RTS-CTS}
  if PFTDISerialDevice(Serial).ForceRTSCTS then
   begin
    FlowControl:=SERIAL_FLOW_RTS_CTS;
   end;
- {Flow Control}
+ {Check Flow Control}
  case FlowControl of
-  SERIAL_FLOW_NONE:Flow:=Flow or FTDISERIAL_SET_FLOW_CTRL_NONE;
-  SERIAL_FLOW_RTS_CTS:Flow:=Flow or FTDISERIAL_SET_FLOW_CTRL_RTS_CTS;
-  SERIAL_FLOW_DSR_DTR:Flow:=Flow or FTDISERIAL_SET_FLOW_CTRL_DTR_DSR;
+  SERIAL_FLOW_RTS_CTS:begin
+    Flow:=FTDISERIAL_SET_FLOW_CTRL_RTS_CTS;
+    Modem:=FTDISERIAL_SET_MODEM_CTRL_RTS_HIGH;
+   end; 
+  SERIAL_FLOW_DSR_DTR:begin
+    Flow:=FTDISERIAL_SET_FLOW_CTRL_DTR_DSR;
+    Modem:=FTDISERIAL_SET_MODEM_CTRL_DTR_HIGH;
+   end; 
  end; 
  
- {Set Flow Control}
- if FTDISerialSetFlowControl(PFTDISerialDevice(Serial),Flow) <> ERROR_SUCCESS then
+ {Clear Hardware Flow Control}
+ if FTDISerialSetFlowControl(PFTDISerialDevice(Serial),FTDISERIAL_SET_FLOW_CTRL_NONE) <> ERROR_SUCCESS then
   begin
-   if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Set flow control failed');
+   if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Clear flow control failed');
    
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
+ 
+ {Check Modem Control}
+ if Modem <> FTDISERIAL_SET_MODEM_CTRL_NONE then
+  begin
+   {Set Modem Control (RTS/DTR)}
+   if FTDISerialSetModemControl(PFTDISerialDevice(Serial),Modem) <> ERROR_SUCCESS then
+    begin
+     if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Set modem control (RTS/DTR) failed');
+     
+     Result:=ERROR_OPERATION_FAILED;
+     Exit;
+    end;
+  end;
+  
+ {Check Flow Control}
+ if Flow <> FTDISERIAL_SET_FLOW_CTRL_NONE then
+  begin
+   {Set Hardware Flow Control}
+   if FTDISerialSetFlowControl(PFTDISerialDevice(Serial),Flow) <> ERROR_SUCCESS then
+    begin
+     if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Set flow control failed');
+     
+     Result:=ERROR_OPERATION_FAILED;
+     Exit;
+    end;
+  end;  
  
  {Check Max Transmit}
  if FTDISERIAL_MAX_TRANSMIT = 0 then FTDISERIAL_MAX_TRANSMIT:=FTDISERIAL_BULK_OUT_SIZE;
@@ -2596,6 +2704,9 @@ begin
  {Update Pending}
  Inc(PFTDISerialDevice(Serial).PendingCount);
   
+ {Set Active}
+ PFTDISerialDevice(Serial).ReceiveActive:=True;
+  
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial: Submitting receive request');
  {$ENDIF}
@@ -2605,6 +2716,9 @@ begin
  if Status <> USB_STATUS_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Failed to submit receive request: ' + USBStatusToString(Status));
+        
+   {Reset Active}
+   PFTDISerialDevice(Serial).ReceiveActive:=False;
         
    {Update Pending}
    Dec(PFTDISerialDevice(Serial).PendingCount);
@@ -2641,6 +2755,8 @@ end;
 {==============================================================================}
 
 function FTDISerialDeviceClose(Serial:PSerialDevice):LongWord;
+{Implementation of SerialDeviceClose API for FTDI Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceClose instead}
 var 
  Message:TMessage;
 begin
@@ -2713,6 +2829,8 @@ end;
 {==============================================================================}
 
 function FTDISerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceRead API for FTDI Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceRead instead}
 var 
  Data:Pointer;
  Total:LongWord;
@@ -2740,6 +2858,13 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Check State}
+   if not(PFTDISerialDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PFTDISerialDevice(Serial).ReceiveSize) then
+    begin
+     {Start Receive}
+     FTDISerialReceiveStart(PFTDISerialDevice(Serial).ReceiveRequest);
+    end;
+
    {Check Non Blocking}
    if ((Flags and SERIAL_READ_NON_BLOCK) <> 0) and (Serial.Receive.Count = 0) then
     begin
@@ -2797,6 +2922,13 @@ begin
          {Reset Event}
          EventReset(Serial.Receive.Wait);
         end;
+        
+       {Check State}
+       if (Size = 0) and not(PFTDISerialDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PFTDISerialDevice(Serial).ReceiveSize) then
+        begin
+         {Start Receive}
+         FTDISerialReceiveStart(PFTDISerialDevice(Serial).ReceiveRequest);
+        end;
       end
      else
       begin
@@ -2822,6 +2954,8 @@ end;
 {==============================================================================}
 
 function FTDISerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceWrite API for FTDI Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceWrite instead}
 var 
  Data:Pointer;
  Empty:Boolean;
@@ -3355,6 +3489,70 @@ begin
 end;
 
 {==============================================================================}
+
+procedure FTDISerialReceiveStart(Request:PUSBRequest);    
+{Called to continue reception of data to the receive buffer}
+{Request: The USB receive request to use}
+
+{Note: Caller must hold the lock on the serial device}
+var
+ Count:LongWord;
+ Available:LongWord;
+ Status:LongWord;
+ Serial:PFTDISerialDevice;
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ {Get Serial}
+ Serial:=PFTDISerialDevice(Request.DriverData);
+ if Serial = nil then Exit;
+ 
+ {Setup Count}
+ Count:=0;
+ Available:=Serial.Serial.Receive.Size - Serial.Serial.Receive.Count;
+ if Available >= FTDISERIAL_BULK_IN_SIZE then
+  begin
+   Count:=FTDISERIAL_BULK_IN_SIZE;
+  end
+ else if Available >= Serial.ReceiveSize then 
+  begin
+   Count:=Serial.ReceiveSize;
+  end;
+
+ {Check Count}
+ if Count > 0 then
+  begin
+   {Update Request}
+   Request.Size:=Count;
+   
+   {Update Pending}
+   Inc(Serial.PendingCount);
+
+   {Set Active}
+   Serial.ReceiveActive:=True;
+
+   {$IFDEF FTDISERIAL_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Resubmitting receive request');
+   {$ENDIF}
+
+   {Resubmit Request}
+   Status:=USBRequestSubmit(Request);
+   if Status <> USB_STATUS_SUCCESS then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Failed to resubmit receive request: ' + USBStatusToString(Status));
+
+     {Reset Active}
+     Serial.ReceiveActive:=False;
+     
+     {Update Pending}
+     Dec(Serial.PendingCount);
+    end;
+  end;
+end;
+
+{==============================================================================}
   
 procedure FTDISerialReceiveWorker(Request:PUSBRequest); 
 {Called (by a Worker thread) to process a completed USB request from the FTDI Serial bulk IN endpoint}
@@ -3573,6 +3771,9 @@ begin
         Inc(Serial.Serial.ReceiveErrors); 
        end;
  
+      {Reset Active}
+      Serial.ReceiveActive:=False;
+ 
       {Update Pending}
       Dec(Serial.PendingCount); 
         
@@ -3598,22 +3799,8 @@ begin
        end
       else
        begin      
-        {Update Pending}
-        Inc(Serial.PendingCount);
- 
-        {$IFDEF FTDISERIAL_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Resubmitting receive request');
-        {$ENDIF}
-
-        {Resubmit Request}
-        Status:=USBRequestSubmit(Request);
-        if Status <> USB_STATUS_SUCCESS then
-         begin
-          if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Failed to resubmit receive request: ' + USBStatusToString(Status));
-   
-          {Update Pending}
-          Dec(Serial.PendingCount);
-         end;
+        {Start Receive}
+        FTDISerialReceiveStart(Request);
        end;  
      finally
       {Release the Lock}
