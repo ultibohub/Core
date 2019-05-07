@@ -9898,11 +9898,19 @@ var
  Delay:LongWord;
 begin
  {}
- {Calculate Delay (Number of clock ticks to wait)}
- Delay:=CLOCK_CYCLES_PER_NANOSECOND * Nanoseconds; 
- 
- {Get Starting Clock Count}
+ {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
+ 
+ {Calculate Delay (Number of clock ticks to wait)}
+ if Nanoseconds >= 1000 then
+  begin
+   Delay:=CLOCK_CYCLES_PER_MICROSECOND * (Nanoseconds div 1000);
+   Delay:=Delay + CLOCK_CYCLES_PER_NANOSECOND * (Nanoseconds mod 1000);
+  end
+ else
+  begin
+   Delay:=CLOCK_CYCLES_PER_NANOSECOND * Nanoseconds;
+  end;
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -9928,11 +9936,19 @@ var
  Delay:LongWord;
 begin
  {}
- {Calculate Delay (Number of clock ticks to wait)}
- Delay:=CLOCK_CYCLES_PER_MICROSECOND * Microseconds; 
- 
- {Get Starting Clock Count}
+ {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
+ 
+ {Calculate Delay (Number of clock ticks to wait)}
+ if Microseconds >= 1000 then
+  begin
+   Delay:=CLOCK_CYCLES_PER_MILLISECOND * (Microseconds div 1000);
+   Delay:=Delay + CLOCK_CYCLES_PER_MICROSECOND * (Microseconds mod 1000);
+  end
+ else
+  begin
+   Delay:=CLOCK_CYCLES_PER_MICROSECOND * Microseconds;
+  end;
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -9958,11 +9974,11 @@ var
  Delay:LongWord;
 begin
  {}
+ {Get Starting Clock Count (First so calculation is included in timing)}
+ Start:=ClockGetTotal;
+ 
  {Calculate Delay (Number of clock ticks to wait)}
  Delay:=CLOCK_CYCLES_PER_MILLISECOND * Milliseconds; 
- 
- {Get Starting Clock Count}
- Start:=ClockGetTotal;
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -9990,11 +10006,19 @@ var
  Delay:LongWord;
 begin
  {}
- {Calculate Delay (Number of clock ticks to wait)}
- Delay:=CLOCK_CYCLES_PER_NANOSECOND * Nanoseconds; 
- 
- {Get Starting Clock Count}
+ {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
+ 
+ {Calculate Delay (Number of clock ticks to wait)}
+ if Nanoseconds >= 1000 then
+  begin
+   Delay:=CLOCK_CYCLES_PER_MICROSECOND * (Nanoseconds div 1000);
+   Delay:=Delay + CLOCK_CYCLES_PER_NANOSECOND * (Nanoseconds mod 1000);
+  end
+ else
+  begin
+   Delay:=CLOCK_CYCLES_PER_NANOSECOND * Nanoseconds;
+  end;
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -10025,11 +10049,19 @@ var
  Delay:LongWord;
 begin
  {}
- {Calculate Delay (Number of clock ticks to wait)}
- Delay:=CLOCK_CYCLES_PER_MICROSECOND * Microseconds; 
- 
- {Get Starting Clock Count}
+ {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
+ 
+ {Calculate Delay (Number of clock ticks to wait)}
+ if Microseconds >= 1000 then
+  begin
+   Delay:=CLOCK_CYCLES_PER_MILLISECOND * (Microseconds div 1000);
+   Delay:=Delay + CLOCK_CYCLES_PER_MICROSECOND * (Microseconds mod 1000);
+  end
+ else
+  begin
+   Delay:=CLOCK_CYCLES_PER_MICROSECOND * Microseconds;
+  end;
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -10060,11 +10092,11 @@ var
  Delay:LongWord;
 begin
  {}
+ {Get Starting Clock Count (First so calculation is included in timing)}
+ Start:=ClockGetTotal;
+ 
  {Calculate Delay (Number of clock ticks to wait)}
  Delay:=CLOCK_CYCLES_PER_MILLISECOND * Milliseconds; 
- 
- {Get Starting Clock Count}
- Start:=ClockGetTotal;
  
  {Get Ending Clock Count}
  Target:=Start + Delay;

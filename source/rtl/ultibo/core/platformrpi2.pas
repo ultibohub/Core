@@ -82,7 +82,6 @@ interface
 {==============================================================================}
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
-{--$DEFINE RPI2_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer}
 
 uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform,PlatformARM,PlatformARMv7,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
 
@@ -136,9 +135,15 @@ const
  
 const
  {Core Timer Prescaler}
+ {$IFNDEF RPI2_MAX_CLOCK_RATE}
  RPI2_CORE_TIMER_PRESCALER    = $06AAAAAB; {Divide the Crystal Clock by 19.2 to give a 1MHz Core Timer}
  RPI2_CORE_TIMER_FREQUENCY    = 1000000;   {The Core Timer frequency from the prescaler setting above}
  RPI2_GENERIC_TIMER_FREQUENCY = 1000000;   {The ARM Generic Timer frequency from the prescaler setting above}
+ {$ELSE}
+ RPI2_CORE_TIMER_PRESCALER    = $80000000; {Divide the Crystal Clock by 1 to give a 19.2MHz Core Timer}
+ RPI2_CORE_TIMER_FREQUENCY    = 19200000;  {The Core Timer frequency from the prescaler setting above}
+ RPI2_GENERIC_TIMER_FREQUENCY = 19200000;  {The ARM Generic Timer frequency from the prescaler setting above}
+ {$ENDIF}
  
 const
  {Kernel Image Name}
@@ -1233,7 +1238,7 @@ begin
       {Adjust Machine Type}
       MACHINE_TYPE:=MACHINE_TYPE_BCM2710;
      end; 
-    BCM2836_BOARD_REVISION_MODEL_COMPUTE3PlUS:begin
+    BCM2836_BOARD_REVISION_MODEL_COMPUTE3PLUS:begin
       BOARD_TYPE:=BOARD_TYPE_RPI_COMPUTE3_PLUS;
       
       {Adjust CPU Type}
@@ -1311,7 +1316,7 @@ begin
     BCM2836_BOARD_REVISION_MODEL_3B,
     BCM2836_BOARD_REVISION_MODEL_3BPLUS,
     BCM2836_BOARD_REVISION_MODEL_COMPUTE3,
-    BCM2836_BOARD_REVISION_MODEL_COMPUTE3PlUS:begin
+    BCM2836_BOARD_REVISION_MODEL_COMPUTE3PLUS:begin
       {Get Memory Base/Size}
       MEMORY_BASE:=$00000000;
       MEMORY_SIZE:=SIZE_1G;

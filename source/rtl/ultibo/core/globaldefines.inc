@@ -1,7 +1,7 @@
 {
 Ultibo Global Define Defaults.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -380,12 +380,19 @@ Global Defines
 
 {==============================================================================}
 {==============================================================================}
-{Device definitions}
+{Device and Platform definitions}
 {--$DEFINE USB_LEGACY_DEVICE_INIT}  {Enable old style USB device initialization (Default: Off)}
+
 {$DEFINE PL011_UART_RX_BUFFER}      {Enable receive buffering for PL011 UART (Default: On)}
 {$DEFINE BCM2708_UART0_RX_BUFFER}   {Enable receive buffering for BCM2708 UART0 (Default: On)}
 {$DEFINE BCM2709_UART0_RX_BUFFER}   {Enable receive buffering for BCM2709 UART0 (Default: On)}
 {$DEFINE BCM2710_UART0_RX_BUFFER}   {Enable receive buffering for BCM2710 UART0 (Default: On)}
+
+{--$DEFINE RPI2_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi2 (Default: Off)}
+{--$DEFINE RPI3_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi3 (Default: Off)}
+
+{--$DEFINE RPI2_MAX_CLOCK_RATE}     {Enable use of the maximum clock rate (19.2MHz) instead of the default rate (1MHz) on the RPi2 (Default: Off)}
+{--$DEFINE RPI3_MAX_CLOCK_RATE}     {Enable use of the maximum clock rate (19.2MHz) instead of the default rate (1MHz) on the RPi3 (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}
