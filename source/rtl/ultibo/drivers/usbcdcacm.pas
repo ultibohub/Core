@@ -1,7 +1,7 @@
 {
 USB CDC ACM Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -100,6 +100,7 @@ const
  CDCACM_QUIRK_CONTROL_LINE_STATE    = $00000020;
  CDCACM_QUIRK_CLEAR_HALT_CONDITIONS = $00000040;
  CDCACM_QUIRK_SEND_ZERO_PACKET      = $00000080;
+ CDCACM_QUIRK_DISABLE_ECHO          = $00000100;
  
 type
  {CDC ACM Device ID type}
@@ -112,26 +113,31 @@ type
 
 const 
  {CDC ACM Device ID constants}
- CDCACM_DEVICE_ID_COUNT = 39; {Number of supported Device IDs}
+ CDCACM_DEVICE_ID_COUNT = 49; {Number of supported Device IDs}
  
  CDCACM_DEVICE_ID:array[0..CDCACM_DEVICE_ID_COUNT - 1] of TCDCACMDeviceId = (
   (idVendor:$076d;idProduct:$0006;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Denso Cradle CU-321 (has no union descriptor)}
   (idVendor:$17ef;idProduct:$7000;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Lenovo USB modem (has no union descriptor)}
   (idVendor:$0870;idProduct:$0001;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Metricom GS Modem (has no union descriptor)}
   (idVendor:$0e8d;idProduct:$0003;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {FIREFLY, MediaTek Inc (has no union descriptor)}
+  (idVendor:$0e8d;idProduct:$2000;Quirks:CDCACM_QUIRK_DISABLE_ECHO),          {MediaTek Inc Preloader}
   (idVendor:$0e8d;idProduct:$3329;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {MediaTek Inc GPS (has no union descriptor)}
   (idVendor:$0482;idProduct:$0203;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {KYOCERA AH-K3001V (has no union descriptor)}
   (idVendor:$079b;idProduct:$000f;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {BT On-Air USB MODEM (has no union descriptor)}
   (idVendor:$0ace;idProduct:$1602;Quirks:CDCACM_QUIRK_SINGLE_RX_URB),         {ZyDAS 56K USB MODEM}
   (idVendor:$0ace;idProduct:$1608;Quirks:CDCACM_QUIRK_SINGLE_RX_URB),         {ZyDAS 56K USB MODEM (firmware bug)}
   (idVendor:$0ace;idProduct:$1611;Quirks:CDCACM_QUIRK_SINGLE_RX_URB),         {ZyDAS 56K USB MODEM - new version (firmware bug)}
+  (idVendor:$11ca;idProduct:$0201;Quirks:CDCACM_QUIRK_SINGLE_RX_URB),         {VeriFone Mx870 Gadget Serial}
+  (idVendor:$1965;idProduct:$0018;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Uniden UBC125XLT}
   (idVendor:$22b8;idProduct:$7000;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Motorola Q Phone (has no union descriptor)}
   (idVendor:$0803;idProduct:$3095;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Zoom Telephonics Model 3095F USB MODEM (has no union descriptor)}
   (idVendor:$0572;idProduct:$1321;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Conexant USB MODEM CX93010 (has no union descriptor)}
   (idVendor:$0572;idProduct:$1324;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Conexant USB MODEM RD02-D400 (has no union descriptor)}
   (idVendor:$0572;idProduct:$1328;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Shiro / Aztech USB MODEM UM-3100 (has no union descriptor)}
+  (idVendor:$0572;idProduct:$1349;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Hiro (Conexant) USB MODEM H50228}
   (idVendor:$20df;idProduct:$0001;Quirks:CDCACM_QUIRK_CONTROL_LINE_STATE),    {Simtec Electronics Entropy Key}
   (idVendor:$2184;idProduct:$001c;Quirks:CDCACM_QUIRK_NONE),                  {GW Instek AFG-2225}
+  (idVendor:$2184;idProduct:$0036;Quirks:CDCACM_QUIRK_NONE),                  {GW Instek AFG-125}
   (idVendor:$22b8;idProduct:$6425;Quirks:CDCACM_QUIRK_NONE),                  {Motorola MOTOMAGX phones}
   {Motorola H24 HSPA module:}                                                 
   (idVendor:$22b8;idProduct:$2d91;Quirks:CDCACM_QUIRK_NONE),                  {modem}
@@ -147,6 +153,9 @@ const
   (idVendor:$05f9;idProduct:$4002;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {PSC Scanning, Magellan 800i}
   (idVendor:$1bbb;idProduct:$0003;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Alcatel OT-I650 (reports zero length descriptor)}
   (idVendor:$1576;idProduct:$03b1;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Maretron USB100 (reports zero length descriptor)}
+  (idVendor:$fff0;idProduct:$0100;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {DATECS FP-2000}
+  (idVendor:$09d8;idProduct:$0320;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Elatec GmbH TWN3}
+  (idVendor:$0ca6;idProduct:$a050;Quirks:CDCACM_QUIRK_NO_UNION_NORMAL),       {Castles VEGA3000}
   (idVendor:$2912;idProduct:$0001;Quirks:CDCACM_QUIRK_CLEAR_HALT_CONDITIONS), {ATOL FPrint}
   {Support for Owen devices}
   (idVendor:$03eb;idProduct:$0030;Quirks:CDCACM_QUIRK_NONE), {Owen SI30}
@@ -158,6 +167,8 @@ const
   (idVendor:$04e8;idProduct:$685d;Quirks:CDCACM_QUIRK_IGNORE_DEVICE),
   {Exclude Infineon Flash Loader utility}
   (idVendor:$058b;idProduct:$0041;Quirks:CDCACM_QUIRK_IGNORE_DEVICE),
+  (idVendor:$1bc7;idProduct:$0021;Quirks:CDCACM_QUIRK_SEND_ZERO_PACKET),       {Telit 3G ACM only composition}
+  (idVendor:$1bc7;idProduct:$0023;Quirks:CDCACM_QUIRK_SEND_ZERO_PACKET),       {Telit 3G ACM + ECM composition}
   (idVendor:$1519;idProduct:$0452;Quirks:CDCACM_QUIRK_SEND_ZERO_PACKET));      {Intel 7260 modem}
  
  {CDC ACM Interface ID constants}
@@ -250,6 +261,7 @@ type
   Quirks:LongWord;                          {Unusual behaviours of specific chip versions}
   ReceiveSize:LongWord;                     {Maximum Receive size for Bulk IN Endpoint}
   TransmitSize:LongWord;                    {Maximum Transmit size for Bulk OUT Endpoint}
+  ReceiveActive:LongBool;                   {True if a Receive request is currently in progress}
   TransmitActive:LongBool;                  {True if a Transmit request is currently in progress}
   DataInterface:PUSBInterface;              {USB interface for data requests}
   ControlInterface:PUSBInterface;           {USB interface for control requests}
@@ -289,6 +301,7 @@ function CDCACMSerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:
 function CDCACMDriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function CDCACMDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
   
+procedure CDCACMReceiveStart(Request:PUSBRequest);  
 procedure CDCACMReceiveWorker(Request:PUSBRequest); 
 procedure CDCACMReceiveComplete(Request:PUSBRequest); 
 
@@ -374,6 +387,8 @@ end;
 {==============================================================================}
 {CDC ACM Serial Functions}
 function CDCACMSerialDeviceOpen(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
+{Implementation of SerialDeviceOpen API for CDCACM Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceOpen instead}
 var
  Control:Word;
  Status:LongWord;
@@ -596,6 +611,9 @@ begin
  {Update Pending}
  Inc(PCDCACMDevice(Serial).PendingCount);
   
+ {Set Active}
+ PCDCACMDevice(Serial).ReceiveActive:=True;
+  
  {$IF DEFINED(CDCACM_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'CDC ACM: Submitting receive request');
  {$ENDIF}
@@ -605,6 +623,9 @@ begin
  if Status <> USB_STATUS_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'CDC ACM: Failed to submit receive request: ' + USBStatusToString(Status));
+        
+   {Reset Active}
+   PCDCACMDevice(Serial).ReceiveActive:=False;
         
    {Update Pending}
    Dec(PCDCACMDevice(Serial).PendingCount);
@@ -647,6 +668,8 @@ end;
 {==============================================================================}
 
 function CDCACMSerialDeviceClose(Serial:PSerialDevice):LongWord;
+{Implementation of SerialDeviceClose API for CDCACM Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceClose instead}
 var 
  Message:TMessage;
 begin
@@ -725,6 +748,8 @@ end;
 {==============================================================================}
 
 function CDCACMSerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceRead API for CDCACM Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceRead instead}
 var 
  Data:Pointer;
  Total:LongWord;
@@ -752,6 +777,13 @@ begin
  Total:=Size;
  while Size > 0 do
   begin
+   {Check State}
+   if not(PCDCACMDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PCDCACMDevice(Serial).ReceiveSize) then
+    begin
+     {Start Receive}
+     CDCACMReceiveStart(PCDCACMDevice(Serial).ReceiveRequest);
+    end;
+    
    {Check Non Blocking}
    if ((Flags and SERIAL_READ_NON_BLOCK) <> 0) and (Serial.Receive.Count = 0) then
     begin
@@ -809,6 +841,13 @@ begin
          {Reset Event}
          EventReset(Serial.Receive.Wait);
         end;
+        
+       {Check State}
+       if (Size = 0) and not(PCDCACMDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PCDCACMDevice(Serial).ReceiveSize) then
+        begin
+         {Start Receive}
+         CDCACMReceiveStart(PCDCACMDevice(Serial).ReceiveRequest);
+        end;
       end
      else
       begin
@@ -834,6 +873,8 @@ end;
 {==============================================================================}
 
 function CDCACMSerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Implementation of SerialDeviceWrite API for CDCACM Serial}
+{Note: Not intended to be called directly by applications, use SerialDeviceWrite instead}
 var 
  Data:Pointer;
  Empty:Boolean;
@@ -1377,6 +1418,66 @@ begin
  
  Result:=USB_STATUS_SUCCESS;
 end;
+
+{==============================================================================}
+  
+procedure CDCACMReceiveStart(Request:PUSBRequest);    
+{Called to continue reception of data to the receive buffer}
+{Request: The USB receive request to use}
+
+{Note: Caller must hold the lock on the serial device}
+var
+ Count:LongWord;
+ Available:LongWord;
+ Status:LongWord;
+ Serial:PCDCACMDevice;
+begin
+ {}
+ {Check Request}
+ if Request = nil then Exit;
+ 
+ {Get Serial}
+ Serial:=PCDCACMDevice(Request.DriverData);
+ if Serial = nil then Exit;
+ 
+ {Setup Count}
+ Count:=0;
+ Available:=Serial.Serial.Receive.Size - Serial.Serial.Receive.Count;
+ if Available >= Serial.ReceiveSize then 
+  begin
+   Count:=Serial.ReceiveSize;
+  end;
+
+ {Check Count}
+ if Count > 0 then
+  begin
+   {Update Request}
+   Request.Size:=Count;
+   
+   {Update Pending}
+   Inc(Serial.PendingCount);
+
+   {Set Active}
+   Serial.ReceiveActive:=True;
+
+   {$IFDEF CDCACM_DEBUG}
+   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'CDC ACM: Resubmitting receive request');
+   {$ENDIF}
+
+   {Resubmit Request}
+   Status:=USBRequestSubmit(Request);
+   if Status <> USB_STATUS_SUCCESS then
+    begin
+     if USB_LOG_ENABLED then USBLogError(Request.Device,'CDC ACM: Failed to resubmit receive request: ' + USBStatusToString(Status));
+
+     {Reset Active}
+     Serial.ReceiveActive:=False;
+     
+     {Update Pending}
+     Dec(Serial.PendingCount);
+    end;
+  end;
+end;
   
 {==============================================================================}
   
@@ -1484,6 +1585,9 @@ begin
         Inc(Serial.Serial.ReceiveErrors); 
        end;
  
+      {Reset Active}
+      Serial.ReceiveActive:=False;
+ 
       {Update Pending}
       Dec(Serial.PendingCount); 
         
@@ -1509,22 +1613,8 @@ begin
        end
       else
        begin      
-        {Update Pending}
-        Inc(Serial.PendingCount);
- 
-        {$IFDEF CDCACM_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Request.Device,'CDC ACM: Resubmitting receive request');
-        {$ENDIF}
-
-        {Resubmit Request}
-        Status:=USBRequestSubmit(Request);
-        if Status <> USB_STATUS_SUCCESS then
-         begin
-          if USB_LOG_ENABLED then USBLogError(Request.Device,'CDC ACM: Failed to resubmit receive request: ' + USBStatusToString(Status));
-   
-          {Update Pending}
-          Dec(Serial.PendingCount);
-         end;
+        {Start Receive}
+        CDCACMReceiveStart(Request);
        end;  
      finally
       {Release the Lock}
