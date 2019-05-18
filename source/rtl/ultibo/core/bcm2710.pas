@@ -1089,6 +1089,9 @@ begin
  {Check Initialized}
  if BCM2710Initialized then Exit;
  
+ {Initialize BCM2710GPIO_FIQ_ENABLED}
+ if not(FIQ_ENABLED) then BCM2710GPIO_FIQ_ENABLED:=False;
+ 
  {Initialize BCM2710SDHCI_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2710SDHCI_FIQ_ENABLED:=False;
 
@@ -5743,11 +5746,36 @@ begin
    GPIO.Pins[Count].Events:=nil;
   end;
   
- {Request Bank0 IRQ}
- RequestIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
-
- {Request Bank1 IRQ}
- RequestIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+ {Request IRQ/FIQ}
+ if BCM2710GPIO_FIQ_ENABLED then
+  begin
+   {Bank0}
+   if BCM2710GPIO_FIQ_BANK_NO = 0 then
+    begin
+     RequestFIQ(FIQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
+    end
+   else
+    begin
+     RequestIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
+    end; 
+   
+   {Bank1}
+   if BCM2710GPIO_FIQ_BANK_NO = 1 then
+    begin
+     RequestFIQ(FIQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+    end
+   else
+    begin
+     RequestIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+    end; 
+  end
+ else
+  begin 
+   {Bank0}
+   RequestIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
+   {Bank1}
+   RequestIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+  end; 
 
  Result:=ERROR_SUCCESS;  
 end;
@@ -5769,11 +5797,36 @@ begin
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2710: GPIO Stop');
  {$ENDIF}
  
- {Release Bank0 IRQ}
- ReleaseIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
-
- {Release Bank1 IRQ}
- ReleaseIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+ {Release IRQ/FIQ}
+ if BCM2710GPIO_FIQ_ENABLED then
+  begin
+   {Bank0}
+   if BCM2710GPIO_FIQ_BANK_NO = 0 then
+    begin
+     ReleaseFIQ(FIQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
+    end
+   else
+    begin
+     ReleaseIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
+    end; 
+   
+   {Bank1}
+   if BCM2710GPIO_FIQ_BANK_NO = 1 then
+    begin
+     ReleaseFIQ(FIQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+    end
+   else
+    begin
+     ReleaseIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+    end; 
+  end
+ else
+  begin
+   {Bank0}
+   ReleaseIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_0,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[0]);
+   {Bank1}
+   ReleaseIRQ(IRQ_ROUTING,BCM2837_IRQ_GPIO_1,TInterruptHandler(BCM2710GPIOInterruptHandler),@PBCM2710GPIODevice(GPIO).Banks[1]);
+  end; 
  
  {Release Pins}
  for Count:=0 to BCM2837_GPIO_PIN_COUNT - 1 do
@@ -5949,7 +6002,14 @@ begin
    GPIO.Pins[Pin].Trigger:=Trigger;
    
    {Acquire the Lock}
-   if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+   if BCM2710GPIO_FIQ_ENABLED then
+    begin
+     if SpinLockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+    end
+   else
+    begin
+     if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+    end; 
    
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -5982,7 +6042,14 @@ begin
    DataMemoryBarrier; {After the Last Read} 
    
    {Release the Lock}
-   SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+   if BCM2710GPIO_FIQ_ENABLED then
+    begin
+     SpinUnlockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock);
+    end
+   else
+    begin
+     SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+    end; 
   end;
   
  {Increment Count}
@@ -6021,7 +6088,14 @@ begin
        Shift:=Pin mod 32;
       
        {Acquire the Lock}
-       if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+       if BCM2710GPIO_FIQ_ENABLED then
+        begin
+         if SpinLockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+        end
+       else
+        begin
+         if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+        end; 
        
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
@@ -6054,7 +6128,14 @@ begin
        DataMemoryBarrier; {After the Last Read} 
        
        {Release the Lock}
-       SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+       if BCM2710GPIO_FIQ_ENABLED then
+        begin
+         SpinUnlockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock);
+        end
+       else
+        begin
+         SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+        end; 
       
        {Reset the Flags}
        GPIO.Pins[Pin].Flags:=GPIO_EVENT_FLAG_NONE;
@@ -6140,7 +6221,14 @@ begin
    GPIO.Pins[Pin].Trigger:=Trigger;
 
    {Acquire the Lock}
-   if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+   if BCM2710GPIO_FIQ_ENABLED then
+    begin
+     if SpinLockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+    end
+   else
+    begin   
+     if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+    end; 
    
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -6173,7 +6261,14 @@ begin
    DataMemoryBarrier; {After the Last Read} 
    
    {Release the Lock}
-   SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+   if BCM2710GPIO_FIQ_ENABLED then
+    begin
+     SpinUnlockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock);
+    end
+   else
+    begin
+     SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+    end; 
   end; 
  
  {Increment Count}
@@ -6256,7 +6351,14 @@ begin
        Shift:=Pin mod 32;
       
        {Acquire the Lock}
-       if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+       if BCM2710GPIO_FIQ_ENABLED then
+        begin
+         if SpinLockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+        end
+       else
+        begin
+         if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+        end; 
        
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
@@ -6289,7 +6391,14 @@ begin
        DataMemoryBarrier; {After the Last Read} 
        
        {Release the Lock}
-       SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+       if BCM2710GPIO_FIQ_ENABLED then
+        begin
+         SpinUnlockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock);
+        end
+       else
+        begin       
+         SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+        end; 
       
        {Reset the Flags}
        GPIO.Pins[Pin].Flags:=GPIO_EVENT_FLAG_NONE;
@@ -6530,6 +6639,7 @@ var
  Trigger:LongWord;
  GPIO:PGPIODevice;
  Event:PGPIOEvent;
+ ResultCode:LongWord; 
 begin
  {}
  {Check Bank}
@@ -6540,7 +6650,15 @@ begin
  if GPIO = nil then Exit;
  
  {Acquire the Lock}
- if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) = ERROR_SUCCESS then
+ if BCM2710GPIO_FIQ_ENABLED then
+  begin
+   ResultCode:=SpinLockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock);
+  end
+ else
+  begin
+   ResultCode:=SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+  end;
+ if ResultCode = ERROR_SUCCESS then
   begin
    try
     {Update Statistics}
@@ -6611,7 +6729,14 @@ begin
       if ((Flags and GPIO_EVENT_FLAG_INTERRUPT) = 0) or ((Flags and GPIO_EVENT_FLAG_REPEAT) = 0) then
        begin
         {Send Event}
-        WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2710GPIOEventTrigger),@GPIO.Pins[Bank.PinStart + Bit],nil);
+        if BCM2710GPIO_FIQ_ENABLED then
+         begin
+          WorkerScheduleFIQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2710GPIOEventTrigger),@GPIO.Pins[Bank.PinStart + Bit],nil);
+         end
+        else
+         begin
+          WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2710GPIOEventTrigger),@GPIO.Pins[Bank.PinStart + Bit],nil);
+         end; 
        end
       else
        begin
@@ -6631,7 +6756,14 @@ begin
     DataMemoryBarrier; {After the Last Read} 
    finally
     {Release the Lock}
-    SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+    if BCM2710GPIO_FIQ_ENABLED then
+     begin
+      SpinUnlockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock);
+     end
+    else
+     begin    
+      SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+     end; 
    end;   
   end; 
 end;
@@ -6902,7 +7034,14 @@ begin
           Shift:=Pin.Pin mod 32;
          
           {Acquire the Lock}
-          if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+          if BCM2710GPIO_FIQ_ENABLED then
+           begin
+            if SpinLockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+           end
+          else
+           begin
+            if SpinLockIRQ(PBCM2710GPIODevice(GPIO).Lock) <> ERROR_SUCCESS then Exit;
+           end; 
           
           {Memory Barrier}
           DataMemoryBarrier; {Before the First Write}
@@ -6935,7 +7074,14 @@ begin
           DataMemoryBarrier; {After the Last Read} 
           
           {Release the Lock}
-          SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+          if BCM2710GPIO_FIQ_ENABLED then
+           begin
+            SpinUnlockIRQFIQ(PBCM2710GPIODevice(GPIO).Lock);
+           end
+          else
+           begin
+            SpinUnlockIRQ(PBCM2710GPIODevice(GPIO).Lock);
+           end; 
          
           {Reset the Flags}
           Pin.Flags:=GPIO_EVENT_FLAG_NONE;

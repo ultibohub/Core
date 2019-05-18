@@ -758,6 +758,10 @@ var
  
  BCM2708I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2708 I2C driver can do combined Write/Read transactions}
  
+ {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
+ BCM2708GPIO_FIQ_ENABLED:LongBool;          {The BCM2708 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2708GPIO_FIQ_BANK_NO:LongWord;          {The BCM2708 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
+ 
  BCM2708SDHCI_FIQ_ENABLED:LongBool;         {The BCM2708 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2708ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2708 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
@@ -798,6 +802,10 @@ var
  BCM2709DMA_CACHE_COHERENT:LongBool;        {BCM2709 DMA control blocks and DMA buffers are considered cache coherent if True}
 
  BCM2709I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2709 I2C driver can do combined Write/Read transactions}
+ 
+ {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
+ BCM2709GPIO_FIQ_ENABLED:LongBool;          {The BCM2709 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2709GPIO_FIQ_BANK_NO:LongWord;          {The BCM2709 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
  
  BCM2709SDHCI_FIQ_ENABLED:LongBool;         {The BCM2709 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
@@ -842,6 +850,10 @@ var
  BCM2710DMA_CACHE_COHERENT:LongBool;        {BCM2710 DMA control blocks and DMA buffers are considered cache coherent if True}
 
  BCM2710I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2710 I2C driver can do combined Write/Read transactions}
+ 
+ {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
+ BCM2710GPIO_FIQ_ENABLED:LongBool;          {The BCM2710 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2710GPIO_FIQ_BANK_NO:LongWord;          {The BCM2710 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
  
  BCM2710SDHCI_FIQ_ENABLED:LongBool;         {The BCM2710 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
