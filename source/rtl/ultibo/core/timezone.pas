@@ -1,7 +1,7 @@
 {
 Ultibo Timezone interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -62,9 +62,10 @@ const
 type
  {Timezone specific types}
 
- {SystemTime types}
- LPSYSTEMTIME = ^SYSTEMTIME;
- _SYSTEMTIME = record
+ {System Time types}
+ LPSYSTEMTIME = SysUtils.LPSYSTEMTIME;
+ _SYSTEMTIME = SysUtils.SYSTEMTIME;
+ {_SYSTEMTIME = record
    wYear:Word;
    wMonth:Word;
    wDayOfWeek:Word;
@@ -73,10 +74,10 @@ type
    wMinute:Word;
    wSecond:Word;
    wMilliseconds:Word;
- end;
- SYSTEMTIME = _SYSTEMTIME;
- TSystemTime = SYSTEMTIME; {Conflicts with TSystemTime in SysUtils}
- PSystemTime = LPSYSTEMTIME; {Conflicts with TSystemTime in SysUtils}
+ end;} {SYSTEMTIME is now defined in SysUtils}
+ SYSTEMTIME = SysUtils.SYSTEMTIME;
+ TSystemTime = SysUtils.TSystemTime;
+ PSystemTime = SysUtils.PSystemTime;
  
  {Timezone types}
  PTIME_ZONE_INFORMATION = ^TIME_ZONE_INFORMATION;

@@ -1,7 +1,7 @@
 {
 Ultibo interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -289,7 +289,7 @@ const
 type
  {Signed types}
  INT = GlobalTypes.INT;
- BOOL = GlobalTypes.BOOL; {Note: Delcared in Windows as LongBool but declared here as ByteBool for GCC compatibility}
+ BOOL = GlobalTypes.BOOL; {Note: Declared in Windows as LongBool but declared here as ByteBool for GCC compatibility}
  LONG = GlobalTypes.LONG;
 
  {Unsigned types}
@@ -441,11 +441,21 @@ type
  
 type
  {System Time types}
- LPSYSTEMTIME = Timezone.LPSYSTEMTIME;
- _SYSTEMTIME = Timezone._SYSTEMTIME;
- SYSTEMTIME = Timezone.SYSTEMTIME;
- TSystemTime = Timezone.TSystemTime; {Conflicts with TSystemTime in SysUtils}
- PSystemTime = Timezone.PSystemTime; {Conflicts with TSystemTime in SysUtils}
+ LPSYSTEMTIME = SysUtils.LPSYSTEMTIME;
+ _SYSTEMTIME = SysUtils.SYSTEMTIME;
+ {_SYSTEMTIME = record
+   wYear:Word;
+   wMonth:Word;
+   wDayOfWeek:Word;
+   wDay:Word;
+   wHour:Word;
+   wMinute:Word;
+   wSecond:Word;
+   wMilliseconds:Word;
+ end;} {SYSTEMTIME is now defined in SysUtils}
+ SYSTEMTIME = SysUtils.SYSTEMTIME;
+ TSystemTime = SysUtils.TSystemTime;
+ PSystemTime = SysUtils.PSystemTime;
  
 type
  {File Time types}

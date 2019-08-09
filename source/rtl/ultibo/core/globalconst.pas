@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '18 May 2019';
+ ULTIBO_RELEASE_DATE             = '9 August 2019';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.667';
+ ULTIBO_RELEASE_VERSION          = '2.0.715';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 667;
+ ULTIBO_RELEASE_VERSION_REVISION = 715;
  
 {==============================================================================}
 const
@@ -1015,6 +1015,7 @@ const
  MACHINE_TYPE_BCM2709     = 2;  {Broadcom BCM2709 (Raspberry Pi 2)}
  MACHINE_TYPE_BCM2710     = 3;  {Broadcom BCM2710 (Raspberry Pi 3)}
  MACHINE_TYPE_VERSATILEPB = 4;  {ARM Versatile PB (QEMU)}
+ MACHINE_TYPE_BCM2711     = 5;  {Broadcom BCM2711 (Raspberry Pi 4)}
  
 {==============================================================================}
 const
@@ -1036,6 +1037,7 @@ const
  BOARD_TYPE_RPI3B_PLUS        = 28; {Raspberry Pi 3 Model B+}
  BOARD_TYPE_RPI3A_PLUS        = 29; {Raspberry Pi 3 Model A+}
  BOARD_TYPE_RPI_COMPUTE3_PLUS = 30; {Raspberry Pi Compute Module 3+}
+ BOARD_TYPE_RPI4B             = 31; {Raspberry Pi 4 Model B}
  
 {==============================================================================}
 const 
@@ -1224,6 +1226,7 @@ const
  GPU_TYPE_MALI450  = 3; {ARM Mali 450}
  GPU_TYPE_GC880    = 4; {Vivante GC880}
  GPU_TYPE_GC2000   = 5; {Vivante GC2000}
+ GPU_TYPE_VC6      = 6; {Broadcom VideoCore VI} 
  
 const 
  {GPU State constants}
@@ -1664,6 +1667,7 @@ const
  LOGGING_FACILITY_CODEC      = 35; {Codec log messages}
  LOGGING_FACILITY_NFS        = 36; {NFS log messages}
  LOGGING_FACILITY_RPC        = 37; {RPC log messages}
+ LOGGING_FACILITY_PCI        = 38; {PCI log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 

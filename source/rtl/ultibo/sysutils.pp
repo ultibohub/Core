@@ -22,6 +22,7 @@ interface
 
 {$DEFINE HAS_SLEEP}
 {$DEFINE HAS_OSERROR}
+{$DEFINE HAS_SYSTEMTIME}
 {$DEFINE HAS_GETTICKCOUNT}
 {$DEFINE HAS_GETTICKCOUNT64}
 {$DEFINE HAS_LOCALTIMEZONEOFFSET}
@@ -58,6 +59,37 @@ type
    cFileName:array[0..({System.}MaxPathLen) - 1] of AnsiCHAR;
    cAlternateFileName:array[0..13] of AnsiCHAR;
   end;
+
+type
+  {System Time (Equivalent to Win32 with FPC compatability}
+  SYSTEMTIME = record
+   case Integer of
+    1:(
+     wYear:Word;
+     wMonth:Word;
+     wDayOfWeek:Word;
+     wDay:Word;
+     wHour:Word;
+     wMinute:Word;
+     wSecond:Word;
+     wMilliseconds:Word;
+     );
+    {FPC compatibility}
+    2:(
+     Year:WORD;
+     Month:WORD;
+     DayOfWeek:WORD;
+     Day:WORD;
+     Hour:WORD;
+     Minute:WORD;
+     Second:WORD;
+     Millisecond:WORD;
+     );
+  end;
+  LPSYSTEMTIME = ^SYSTEMTIME;
+  _SYSTEMTIME = SYSTEMTIME;
+  TSystemTime = SYSTEMTIME;
+  PSystemTime = ^SYSTEMTIME;
 
   { Include platform independent interface part }
   {$i sysutilh.inc}
