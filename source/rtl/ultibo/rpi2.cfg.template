@@ -5,6 +5,7 @@
 -CIARM
 -CaEABIHF
 -OoFASTMATH
+-dRPI2
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/packages
 -Fl%INSTALLDIRECTORY%/units/armv7-ultibo/lib
