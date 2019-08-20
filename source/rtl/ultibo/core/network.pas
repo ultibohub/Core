@@ -1,7 +1,7 @@
 {
 Ultibo Network interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -882,8 +882,10 @@ type
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
+   function ReaderConvert:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
+   function WriterConvert:Boolean;
    
    function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAdapterTransport;
    function GetTransportByType(APacketType,AFrameType:Word;ALock:Boolean;AState:LongWord):TAdapterTransport;
@@ -2248,6 +2250,15 @@ end;
 
 {==============================================================================}
 
+function TNetworkAdapter.ReaderConvert:Boolean; 
+{Convert a Reader lock to a Writer lock}
+begin
+ {}
+ Result:=(SynchronizerReaderConvert(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
 function TNetworkAdapter.WriterLock:Boolean;
 begin
  {}
@@ -2260,6 +2271,15 @@ function TNetworkAdapter.WriterUnlock:Boolean;
 begin
  {}
  Result:=(SynchronizerWriterUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkAdapter.WriterConvert:Boolean;
+{Convert a Writer lock to a Reader lock}
+begin
+ {}
+ Result:=(SynchronizerWriterConvert(FLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -4158,6 +4178,9 @@ end;
 {==============================================================================}
 
 function TWiredAdapter.StartAdapter:Boolean;
+var
+ Value:String;
+ Address:THardwareAddress;
 begin
  {}
  ReaderLock;
@@ -4190,6 +4213,26 @@ begin
    begin
     {Set State}
     FState:=ADAPTER_STATE_ENABLED;
+    
+    {Get Address}
+    Value:=Uppercase(Manager.Settings.GetString(Name + '_HARDWARE_ADDRESS'));
+    if Length(Value) <> 0 then
+     begin
+      Address:=StringToHardwareAddress(Value);
+      if ValidHardwareAddress(Address) then
+       begin
+         if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'WiredAdapter: Setting hardware address for adapter ' + Name + '  to ' + Value);
+         
+         {Convert Lock (Reader to Writer)}
+         ReaderConvert;
+         
+         {Set Address}
+         SetHardwareAddress(INVALID_HANDLE_VALUE,Address);
+         
+         {Convert Lock (Writer to Reader)}
+         WriterConvert;
+       end;
+     end;
     
     {Get Properties}
     FDefaultAddress:=GetDefaultAddress(INVALID_HANDLE_VALUE);
