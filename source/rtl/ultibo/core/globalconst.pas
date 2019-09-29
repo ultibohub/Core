@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '20 August 2019';
+ ULTIBO_RELEASE_DATE             = '29 September 2019';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.723';
+ ULTIBO_RELEASE_VERSION          = '2.0.745';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 723;
+ ULTIBO_RELEASE_VERSION_REVISION = 745;
  
 {==============================================================================}
 const
@@ -1164,6 +1164,44 @@ const
  CPU_ID_31  = 31;
  
  CPU_ID_ALL =  $FFFFFFFF;
+ 
+const
+ {CPU Mask constants}
+ CPU_MASK_0  = (1 shl CPU_ID_0);
+ CPU_MASK_1  = (1 shl CPU_ID_1);
+ CPU_MASK_2  = (1 shl CPU_ID_2);
+ CPU_MASK_3  = (1 shl CPU_ID_3);
+ CPU_MASK_4  = (1 shl CPU_ID_4);
+ CPU_MASK_5  = (1 shl CPU_ID_5);
+ CPU_MASK_6  = (1 shl CPU_ID_6);
+ CPU_MASK_7  = (1 shl CPU_ID_7);
+ CPU_MASK_8  = (1 shl CPU_ID_8);
+ CPU_MASK_9  = (1 shl CPU_ID_9);
+ CPU_MASK_10 = (1 shl CPU_ID_10);
+ CPU_MASK_11 = (1 shl CPU_ID_11);
+ CPU_MASK_12 = (1 shl CPU_ID_12);
+ CPU_MASK_13 = (1 shl CPU_ID_13);
+ CPU_MASK_14 = (1 shl CPU_ID_14);
+ CPU_MASK_15 = (1 shl CPU_ID_15);
+ CPU_MASK_16 = (1 shl CPU_ID_16);
+ CPU_MASK_17 = (1 shl CPU_ID_17);
+ CPU_MASK_18 = (1 shl CPU_ID_18);
+ CPU_MASK_19 = (1 shl CPU_ID_19);
+ CPU_MASK_20 = (1 shl CPU_ID_20);
+ CPU_MASK_21 = (1 shl CPU_ID_21);
+ CPU_MASK_22 = (1 shl CPU_ID_22);
+ CPU_MASK_23 = (1 shl CPU_ID_23);
+ CPU_MASK_24 = (1 shl CPU_ID_24);
+ CPU_MASK_25 = (1 shl CPU_ID_25);
+ CPU_MASK_26 = (1 shl CPU_ID_26);
+ CPU_MASK_27 = (1 shl CPU_ID_27);
+ CPU_MASK_28 = (1 shl CPU_ID_28);
+ CPU_MASK_29 = (1 shl CPU_ID_29);
+ CPU_MASK_30 = (1 shl CPU_ID_30);
+ CPU_MASK_31 = (1 shl CPU_ID_31);
+ 
+ CPU_MASK_NONE = $00000000;
+ CPU_MASK_ALL  = $FFFFFFFF;
  
 const
  {CPU Affinity constants}
