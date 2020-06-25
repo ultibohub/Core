@@ -2591,6 +2591,7 @@ begin
            
            {Don't fail the bind}
          {$IFDEF USB_DEBUG}
+          end
          else
           begin
            if USB_LOG_ENABLED then USBLogDebug(Device,'Keyboard: Read ' + IntToStr(Keyboard.HIDDescriptor.wHIDDescriptorLength) + ' byte HID report descriptor');
