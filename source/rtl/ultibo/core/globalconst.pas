@@ -1,7 +1,7 @@
 {
 Ultibo Global Constant Definitions.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '29 September 2019';
+ ULTIBO_RELEASE_DATE             = '25 June 2020';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.745';
+ ULTIBO_RELEASE_VERSION          = '2.0.783';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 745;
+ ULTIBO_RELEASE_VERSION_REVISION = 783;
  
 {==============================================================================}
 const
