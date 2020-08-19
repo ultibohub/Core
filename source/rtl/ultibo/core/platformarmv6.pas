@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv6.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1494,7 +1494,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6CleanDataCacheRange(Address,Size:LongWord); assembler; nostackframe; 
+procedure ARMv6CleanDataCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe; 
 {Perform a clean data cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1510,7 +1510,35 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6InvalidateDataCacheRange(Address,Size:LongWord); assembler; nostackframe; 
+procedure ARMv6CleanDataCacheRange(Address,Size:LongWord);
+{Perform a clean data cache range, limiting the size for each operation to
+ 4MB because some processors fail to correctly operate with larger ranges}
+const
+ BLOCK_SIZE = $00400000; {4MB block size}
+var
+ Offset:LongWord;
+ Remain:LongWord;
+begin
+ {}
+ Offset:=0;
+ Remain:=Size;
+ while Remain > BLOCK_SIZE do
+  begin
+   {Clean block}
+   ARMv6CleanDataCacheRangeInternal(Address + Offset,BLOCK_SIZE);
+   
+   Inc(Offset,BLOCK_SIZE);
+   Dec(Remain,BLOCK_SIZE);
+  end;
+ if Remain = 0 then Exit;
+ 
+ {Clean last block}
+ ARMv6CleanDataCacheRangeInternal(Address + Offset,Remain);
+end;
+
+{==============================================================================}
+
+procedure ARMv6InvalidateDataCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe; 
 {Perform an invalidate data cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1526,7 +1554,35 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6CleanAndInvalidateDataCacheRange(Address,Size:LongWord); assembler; nostackframe; 
+procedure ARMv6InvalidateDataCacheRange(Address,Size:LongWord);
+{Perform a invalidate data cache range, limiting the size for each operation
+ to 4MB because some processors fail to correctly operate with larger ranges}
+const
+ BLOCK_SIZE = $00400000; {4MB block size}
+var
+ Offset:LongWord;
+ Remain:LongWord;
+begin
+ {}
+ Offset:=0;
+ Remain:=Size;
+ while Remain > BLOCK_SIZE do
+  begin
+   {Clean block}
+   ARMv6InvalidateDataCacheRangeInternal(Address + Offset,BLOCK_SIZE);
+   
+   Inc(Offset,BLOCK_SIZE);
+   Dec(Remain,BLOCK_SIZE);
+  end;
+ if Remain = 0 then Exit;
+ 
+ {Clean last block}
+ ARMv6InvalidateDataCacheRangeInternal(Address + Offset,Remain);
+end;
+
+{==============================================================================}
+
+procedure ARMv6CleanAndInvalidateDataCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe; 
 {Perform a clean and invalidate data cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1542,7 +1598,35 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6InvalidateInstructionCacheRange(Address,Size:LongWord); assembler; nostackframe;  
+procedure ARMv6CleanAndInvalidateDataCacheRange(Address,Size:LongWord);
+{Perform a clean and invalidate data cache range, limiting the size for each operation
+ to 4MB because some processors fail to correctly operate with larger ranges}
+const
+ BLOCK_SIZE = $00400000; {4MB block size}
+var
+ Offset:LongWord;
+ Remain:LongWord;
+begin
+ {}
+ Offset:=0;
+ Remain:=Size;
+ while Remain > BLOCK_SIZE do
+  begin
+   {Clean block}
+   ARMv6CleanAndInvalidateDataCacheRangeInternal(Address + Offset,BLOCK_SIZE);
+   
+   Inc(Offset,BLOCK_SIZE);
+   Dec(Remain,BLOCK_SIZE);
+  end;
+ if Remain = 0 then Exit;
+ 
+ {Clean last block}
+ ARMv6CleanAndInvalidateDataCacheRangeInternal(Address + Offset,Remain);
+end;
+
+{==============================================================================}
+
+procedure ARMv6InvalidateInstructionCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe;  
 {Perform an invalidate instruction cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1554,6 +1638,34 @@ asm
  //See page 3-74 of the ARM1176JZF-S Technical Reference Manual
  mov r12, #0
  mcr p15, #0, r12, cr7, cr10, #4
+end;
+
+{==============================================================================}
+
+procedure ARMv6InvalidateInstructionCacheRange(Address,Size:LongWord);
+{Perform an invalidate instruction cache range operation, limiting the size for each
+ operation to 4MB because some processors fail to correctly operate with larger ranges}
+const
+ BLOCK_SIZE = $00400000; {4MB block size}
+var
+ Offset:LongWord;
+ Remain:LongWord;
+begin
+ {}
+ Offset:=0;
+ Remain:=Size;
+ while Remain > BLOCK_SIZE do
+  begin
+   {Clean block}
+   ARMv6InvalidateInstructionCacheRangeInternal(Address + Offset,BLOCK_SIZE);
+   
+   Inc(Offset,BLOCK_SIZE);
+   Dec(Remain,BLOCK_SIZE);
+  end;
+ if Remain = 0 then Exit;
+ 
+ {Clean last block}
+ ARMv6InvalidateInstructionCacheRangeInternal(Address + Offset,Remain);
 end;
 
 {==============================================================================}
