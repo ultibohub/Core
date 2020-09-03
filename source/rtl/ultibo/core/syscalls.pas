@@ -2,7 +2,7 @@
 Ultibo Newlib C Library Syscalls interface unit.
 
 Copyright (C) 2016 - Paul Jervois.
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -231,8 +231,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManage
         //See: http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html
         
 //To Do //statfs / fstatfs / statfs64 / fstatfs64      
-
-//To Do //opendir / readdir / closedir and dirent
 
 //To Do //lseek64 etc
 
@@ -477,22 +475,31 @@ const
  O_APPEND          = $0008;    {append (writes guaranteed at the end)}
  O_CREAT           = $0200;    {If set, the file will be created if it doesn’t already exist}
  O_EXCL            = $0800;    {If both O_CREAT and O_EXCL are set, then open fails if the specified file already exists. This is guaranteed to never clobber an existing file}
+
+ O_SYNC            = $2000;
  O_NONBLOCK        = $4000;    {This prevents open from blocking for a “long time” to open the file. This is only meaningful for some kinds of files, usually devices such as serial ports; when it is not meaningful, it is harmless and ignored. Often opening a port to a modem blocks until the modem reports carrier detection; if O_NONBLOCK is specified, open will return immediately without a carrier}
-                               {Note that the O_NONBLOCK flag is overloaded as both an I/O operating mode and a file name translation flag. This means that specifying O_NONBLOCK in open also sets nonblocking I/O mode; see Operating Modes. To open the file without blocking but do normal I/O that blocks, you must call open with O_NONBLOCK set and then call fcntl to turn the bit off}
  O_NOCTTY          = $8000;    {If the named file is a terminal device, don’t make it the controlling terminal for the process. See Job Control, for information about what it means to be the controlling terminal}
                                {On GNU/Hurd systems and 4.4 BSD, opening a file never makes it the controlling terminal and O_NOCTTY is zero. However, GNU/Linux systems and some other systems use a nonzero value for O_NOCTTY and set the controlling terminal when you open a file that is a terminal device; so to be portable, use O_NOCTTY when it is important to avoid this}
 
  {The open-time action flags tell open to do additional operations which are not really related to opening the file. The reason to do them as part of open instead of in separate calls is that open can do them atomically}
- O_TRUNC          = $0400;     {Truncate the file to zero length. This option is only useful for regular files, not special files such as directories or FIFOs. POSIX.1 requires that you open the file for writing to use O_TRUNC. In BSD and GNU you must have permission to write the file to truncate it, but you need not open for write access}
+ O_TRUNC           = $0400;    {Truncate the file to zero length. This option is only useful for regular files, not special files such as directories or FIFOs. POSIX.1 requires that you open the file for writing to use O_TRUNC. In BSD and GNU you must have permission to write the file to truncate it, but you need not open for write access}
                                {This is the only open-time action flag specified by POSIX.1. There is no good reason for truncation to be done by open, instead of by calling ftruncate afterwards. The O_TRUNC flag existed in Unix before ftruncate was invented, and is retained for backward compatibility}
 
  {The remaining operating modes are BSD extensions. They exist only on some systems. On other systems, these macros are not defined}
- O_SHLOCK         = $0080;     {Acquire a shared lock on the file, as with flock. See File Locks}
+ O_SHLOCK          = $0080;    {Acquire a shared lock on the file, as with flock. See File Locks}
                                {If O_CREAT is specified, the locking is done atomically when creating the file. You are guaranteed that no other process will get the lock on the new file first}
- O_EXLOCK         = $0100;     {Acquire an exclusive lock on the file, as with flock. See File Locks. This is atomic like O_SHLOCK}
+ O_EXLOCK          = $0100;    {Acquire an exclusive lock on the file, as with flock. See File Locks. This is atomic like O_SHLOCK}
 
- O_BINARY         = $0001000;
- O_TEXT           = $0002000;
+ O_BINARY          = $0001000;
+ O_TEXT            = $0002000;
+ O_CLOEXEC         = $0040000;
+ O_DIRECT          = $0080000;
+ O_NOFOLLOW        = $0100000;
+ O_DSYNC           = $0002000;
+ O_RSYNC           = $0002000;
+ O_DIRECTORY       = $0200000;
+ O_EXEC            = $0400000;
+ O_SEARCH          = $0400000;
  
 const 
  {Handle constants from sys/unistd.h}
@@ -664,13 +671,24 @@ const
 const
  {Scheduler constants from sched.h}
  {Scheduling Policies}
-  SCHED_OTHER    = 0;
-  SCHED_FIFO     = 1;
-  SCHED_RR       = 2;
-  {$IFDEF _POSIX_THREAD_SPORADIC_SERVER}
-  SCHED_SPORADIC = 4;
-  {$ENDIF}
+ SCHED_OTHER    = 0;
+ SCHED_FIFO     = 1;
+ SCHED_RR       = 2;
+ {$IFDEF _POSIX_THREAD_SPORADIC_SERVER}
+ SCHED_SPORADIC = 4;
+ {$ENDIF}
  
+const
+ {Directory constants from dirent.h} 
+ DT_UNKNOWN     = 0;  {The file type could not be determined} 
+ DT_FIFO        = 1;  {A named pipe (FIFO)}
+ DT_CHR         = 2;  {A character device}
+ DT_DIR         = 4;  {A directory}
+ DT_BLK         = 6;  {A block device} 
+ DT_REG         = 8;  {A regular file}  
+ DT_LNK         = 10; {A symbolic link} 
+ DT_SOCK        = 12; {A UNIX domain socket} 
+  
 const
  {Pthread constants from sys/types.h}
  {Values for contention scope}
@@ -1546,6 +1564,11 @@ function closedir(dirp: PDIR): int; cdecl; public name 'closedir';
 function readdir64(dirp: PDIR): Pdirent64; cdecl; public name 'readdir64'; 
 function readdir64_r(dirp: PDIR; entry: Pdirent64; _result: PPdirent64): int; cdecl; public name 'readdir64_r'; 
 {$ENDIF}
+
+procedure seekdir(dirp: PDIR; loc: long); cdecl; public name 'seekdir'; 
+procedure rewinddir(dirp: PDIR); cdecl; public name 'rewinddir'; 
+function telldir(dirp: PDIR): long; cdecl; public name 'telldir'; 
+
 {==============================================================================}
 {Syscalls Functions (Pthread) (http://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread.h.html)}
 function pthread_attr_init(attr: Ppthread_attr_t): int; cdecl; public name 'pthread_attr_init';
@@ -1816,6 +1839,8 @@ type
  TSyscallsFini = procedure; cdecl;
  TSyscallsCtor = procedure; cdecl;
  TSyscallsDtor = procedure; cdecl;
+ 
+ PFileSearchRec = ^TFileSearchRec;
  
 {==============================================================================}
 {==============================================================================}
@@ -2676,6 +2701,14 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _open_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' name=' + StrPas(name) + ' flags=' + IntToStr(flags) + ' mode=' + IntToStr(mode) + ')');
  {$ENDIF}
 
+ {Check Flags}
+ if (flags and O_DIRECTORY) = O_DIRECTORY then
+  begin
+   {Return Error}
+   ptr^._errno:=EINVAL;
+   Exit;
+  end;
+  
  {Get Access Mode} 
  if (flags and (O_RDONLY or O_WRONLY or O_RDWR)) = O_RDONLY then
   begin
@@ -3305,7 +3338,6 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls realpath (path=' + StrPas(path) + ' resolved_path=' + StrPas(resolved_path) + ')');
  {$ENDIF}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls realpath (path=' + StrPas(path) + ' resolved_path=' + StrPas(resolved_path) + ')'); //TestingMicroPython
 
  {Get resolved path}
  Buffer:=resolved_path;
@@ -4214,6 +4246,10 @@ function opendir(name: PChar): PDIR; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Path:String;
+ Buffer:PDIR;
+ NameBuffer:PChar;
+ SearchRec:PFileSearchRec;
 begin
  {}
  Result:=nil;
@@ -4230,9 +4266,87 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls opendir (name=' + StrPas(name) + ')');
  {$ENDIF}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls opendir (name=' + StrPas(name) + ')'); //TestingMicroPython
  
- //To Do
+ {Get name}
+ Path:=StrPas(name);
+
+ {Check Path} 
+ if Length(Path) = 0 then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   Exit;
+  end;
+ if FSFileExists(Path) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOTDIR;
+   Exit;
+  end;
+ if not FSDirectoryExists(Path) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   Exit;
+  end;
+ 
+ {Allocate Buffer}
+ Buffer:=AllocMem(SizeOf(DIR) + SizeOf(Tdirent){$IFDEF SYSCALLS_LARGE64_FILES} + SizeOf(Tdirent64){$ENDIF} + ((Length(Path) + 1) * SizeOf(Char)));
+ if Buffer = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+   Exit;
+  end;
+ 
+ {Allocate Search Record} 
+ SearchRec:=AllocMem(SizeOf(TFileSearchRec));
+ if SearchRec = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+   Exit;
+  end;
+  
+ {Save Path}
+ NameBuffer:=PChar(PtrUInt(Buffer) + SizeOf(DIR) + SizeOf(Tdirent){$IFDEF SYSCALLS_LARGE64_FILES} + SizeOf(Tdirent64){$ENDIF});
+ StrLCopy(NameBuffer,PChar(Path),Length(Path));
+ 
+ {Check Path}
+ if Path[Length(Path)] <> '\' then 
+  begin
+   Path:=Path + '\'; //To Do //Add a new FSAddSlash function to provide the correct delimiter
+  end;
+  
+ {Find First File} 
+ if FSFindFirstEx(Path + '*.*',SearchRec^) <> 0 then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   
+   {Close Find}
+   FSFindCloseEx(SearchRec^);
+   
+   {Free Search Record}
+   FreeMem(SearchRec);
+   
+   {Free Buffer}
+   FreeMem(Buffer);
+   Exit;
+  end;
+ 
+ {Update Buffer}
+ Buffer^.dd_loc:=-1;
+ Buffer^.dd_buf:=PByte(SearchRec);
+ 
+ {Return Buffer}
+ Result:=Buffer;
 end;
 
 {==============================================================================}
@@ -4243,6 +4357,8 @@ function readdir(dirp: PDIR): Pdirent; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ dirent:Pdirent;
+ SearchRec:PFileSearchRec;
 begin
  {}
  Result:=nil;
@@ -4250,7 +4366,6 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
  {$ENDIF}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')'); //TestingMicroPython
 
  {Check dirp}
  if dirp = nil then
@@ -4261,7 +4376,53 @@ begin
    Exit;
   end;
  
- //To Do
+ {Get Search Record}
+ SearchRec:=PFileSearchRec(dirp^.dd_buf);
+ if SearchRec = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+ 
+ {Check Location}
+ if dirp^.dd_loc = -1 then
+  begin
+   {Get First File}
+   dirp^.dd_loc:=0;
+  end
+ else 
+  begin
+   {Find Next File}
+   if FSFindNextEx(SearchRec^) <> 0 then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOENT;
+     Exit;
+    end;
+   
+   Inc(dirp^.dd_loc);
+  end; 
+  
+ {Update dirent} 
+ dirent:=Pdirent(PtrUInt(dirp) + SizeOf(DIR));
+ dirent^.d_ino:=1;
+ dirent^.d_off:=dirp^.dd_loc;
+ dirent^.d_reclen:=SizeOf(Tdirent);
+ if (SearchRec^.FindData.dwFileAttributes and faDirectory) = faDirectory then
+  begin
+   dirent^.d_type:=DT_DIR;
+  end
+ else
+  begin
+   dirent^.d_type:=DT_REG;
+  end;
+ StrLCopy(dirent^.d_name,SearchRec^.FindData.cFileName,NAME_MAX);
+ 
+ {Return dirent}
+ Result:=dirent;
 end;
 
 {==============================================================================}
@@ -4270,6 +4431,8 @@ function readdir_r(dirp: PDIR; entry: Pdirent; _result: PPdirent): int; cdecl;
 {Read a directory}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ SearchRec:PFileSearchRec;
 begin
  {}
  Result:=EBADF;
@@ -4277,41 +4440,72 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')');
  {$ENDIF}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')'); //TestingMicroPython
  
  {Check dirp}
- if dirp = nil then
-  begin
-   {Return Error}
-   Exit;
-  end;
+ if dirp = nil then Exit;
  
  {Check entry}
- if entry = nil then
-  begin
-   {Return Error}
-   Exit;
-  end;
+ if entry = nil then Exit;
 
  {Check _result}  
- if _result = nil then
+ if _result = nil then Exit;
+ 
+ {Clear _result}
+ _result^:=nil;
+ 
+ {Get Search Record}
+ SearchRec:=PFileSearchRec(dirp^.dd_buf);
+ if SearchRec = nil then Exit;
+ 
+ {Check Location}
+ if dirp^.dd_loc = -1 then
   begin
-   {Return Error}
-   Exit;
+   {Get First File}
+   dirp^.dd_loc:=0;
+  end
+ else 
+  begin
+   {Find Next File}
+   if FSFindNextEx(SearchRec^) <> 0 then
+    begin
+     {Return Error}
+     Result:=ENOENT;
+     Exit;
+    end;
+   
+   Inc(dirp^.dd_loc);
+  end; 
+  
+ {Update entry} 
+ entry^.d_ino:=1;
+ entry^.d_off:=dirp^.dd_loc;
+ entry^.d_reclen:=SizeOf(Tdirent);
+ if (SearchRec^.FindData.dwFileAttributes and faDirectory) = faDirectory then
+  begin
+   entry^.d_type:=DT_DIR;
+  end
+ else
+  begin
+   entry^.d_type:=DT_REG;
   end;
+ StrLCopy(entry^.d_name,SearchRec^.FindData.cFileName,NAME_MAX);
  
+ {Update _result}
+ _result^:=@entry;
  
- //To Do
+ {Return success}
+ Result:=0;
 end;
 
 {==============================================================================}
 
 function closedir(dirp: PDIR): int; cdecl;
-{Close a directory }
+{Close a directory}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ SearchRec:PFileSearchRec;
 begin
  {}
  Result:=-1;
@@ -4319,7 +4513,6 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls closedir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
  {$ENDIF}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls closedir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')'); //TestingMicroPython
  
  {Check dirp}
  if dirp = nil then
@@ -4330,7 +4523,27 @@ begin
    Exit;
   end;
  
- //To Do
+ {Get Search Record}
+ SearchRec:=PFileSearchRec(dirp^.dd_buf);
+ if SearchRec = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+ 
+ {Close Find}
+ FSFindCloseEx(SearchRec^);
+ 
+ {Free Search Record}
+ FreeMem(SearchRec);
+ 
+ {Free Buffer}
+ FreeMem(dirp);
+ 
+ {Return success}
+ Result:=0;
 end;
 
 {==============================================================================}
@@ -4341,6 +4554,8 @@ function readdir64(dirp: PDIR): Pdirent64; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ dirent:Pdirent64;
+ SearchRec:PFileSearchRec;
 begin
  {}
  Result:=nil;
@@ -4348,7 +4563,219 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64 (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
  {$ENDIF}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64 (dirp=' + IntToHex(PtrUInt(dirp),8) + ')'); //TestingMicroPython
+ 
+ {Check dirp}
+ if dirp = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+  
+ {Get Search Record}
+ SearchRec:=PFileSearchRec(dirp^.dd_buf);
+ if SearchRec = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+ 
+ {Check Location}
+ if dirp^.dd_loc = -1 then
+  begin
+   {Get First File}
+   dirp^.dd_loc:=0;
+  end
+ else 
+  begin
+   {Find Next File}
+   if FSFindNextEx(SearchRec^) <> 0 then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOENT;
+     Exit;
+    end;
+   
+   Inc(dirp^.dd_loc);
+  end; 
+  
+ {Update dirent} 
+ dirent:=Pdirent64(PtrUInt(dirp) + SizeOf(DIR) + SizeOf(Tdirent));
+ dirent^.d_ino:=1;
+ dirent^.d_off:=dirp^.dd_loc;
+ dirent^.d_reclen:=SizeOf(Tdirent64);
+ if (SearchRec^.FindData.dwFileAttributes and faDirectory) = faDirectory then
+  begin
+   dirent^.d_type:=DT_DIR;
+  end
+ else
+  begin
+   dirent^.d_type:=DT_REG;
+  end;
+ StrLCopy(dirent^.d_name,SearchRec^.FindData.cFileName,NAME_MAX);
+ 
+ {Return dirent}
+ Result:=dirent;
+end;
+
+{==============================================================================}
+
+function readdir64_r(dirp: PDIR; entry: Pdirent64; _result: PPdirent64): int; cdecl;
+{Read a directory}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ SearchRec:PFileSearchRec;
+begin
+ {}
+ Result:=EBADF;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')');
+ {$ENDIF}
+
+ {Check dirp}
+ if dirp = nil then Exit;
+ 
+ {Check entry}
+ if entry = nil then Exit;
+
+ {Check _result}  
+ if _result = nil then Exit;
+ 
+ {Clear _result}
+ _result^:=nil;
+ 
+ {Get Search Record}
+ SearchRec:=PFileSearchRec(dirp^.dd_buf);
+ if SearchRec = nil then Exit;
+ 
+ {Check Location}
+ if dirp^.dd_loc = -1 then
+  begin
+   {Get First File}
+   dirp^.dd_loc:=0;
+  end
+ else 
+  begin
+   {Find Next File}
+   if FSFindNextEx(SearchRec^) <> 0 then
+    begin
+     {Return Error}
+     Result:=ENOENT;
+     Exit;
+    end;
+   
+   Inc(dirp^.dd_loc);
+  end;
+
+ {Update entry} 
+ entry^.d_ino:=1;
+ entry^.d_off:=dirp^.dd_loc;
+ entry^.d_reclen:=SizeOf(Tdirent64);
+ if (SearchRec^.FindData.dwFileAttributes and faDirectory) = faDirectory then
+  begin
+   entry^.d_type:=DT_DIR;
+  end
+ else
+  begin
+   entry^.d_type:=DT_REG;
+  end;
+ StrLCopy(entry^.d_name,SearchRec^.FindData.cFileName,NAME_MAX);
+ 
+ {Update _result}
+ _result^:=@entry;
+ 
+ {Return success}
+ Result:=0;
+end;
+{$ENDIF}
+{==============================================================================}
+
+procedure seekdir(dirp: PDIR; loc: long); cdecl;
+{Set the position of the next readdir call in the directory stream}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Path:String;
+ NameBuffer:PChar;
+ SearchRec:PFileSearchRec;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls seekdir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ {$ENDIF}
+ 
+ {Check dirp}
+ if dirp = nil then Exit;
+ 
+ {Get Search Record}
+ SearchRec:=PFileSearchRec(dirp^.dd_buf);
+ if SearchRec = nil then Exit;
+ 
+ {Close Find}
+ FSFindCloseEx(SearchRec^);
+ 
+ {Reset Buffer}
+ dirp^.dd_loc:=-1;
+ 
+ {Get Path}
+ NameBuffer:=PChar(PtrUInt(dirp) + SizeOf(DIR) + SizeOf(Tdirent){$IFDEF SYSCALLS_LARGE64_FILES} + SizeOf(Tdirent64){$ENDIF});
+ Path:=StrPas(NameBuffer);
+ 
+ {Check Path}
+ if Path[Length(Path)] <> '\' then 
+  begin
+   Path:=Path + '\'; //To Do //Add a new FSAddSlash function to provide the correct delimiter
+  end;
+  
+ {Find First File} 
+ if FSFindFirstEx(Path + '*.*',SearchRec^) <> 0 then Exit;
+
+ {Find location}
+ while dirp^.dd_loc + 1 < loc do
+  begin
+   if FSFindNextEx(SearchRec^) <> 0 then Exit;
+    
+   Inc(dirp^.dd_loc);
+  end;
+end;
+
+{==============================================================================}
+
+procedure rewinddir(dirp: PDIR); cdecl;
+{Reset directory stream}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin 
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls rewinddir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ {$ENDIF}
+ 
+ {Seek to location zero}
+ seekdir(dirp,0);
+end;
+
+{==============================================================================}
+
+function telldir(dirp: PDIR): long; cdecl;
+{Return current location in directory stream}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+  
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls telldir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ {$ENDIF}
  
  {Check dirp}
  if dirp = nil then
@@ -4359,48 +4786,17 @@ begin
    Exit;
   end;
  
- //To Do
+ {Get location}
+ if dirp^.dd_loc = -1 then
+  begin
+   Result:=0;
+  end
+ else
+  begin
+   Result:=dirp^.dd_loc;
+  end;  
 end;
 
-{==============================================================================}
-
-function readdir64_r(dirp: PDIR; entry: Pdirent64; _result: PPdirent64): int; cdecl;
-{Read a directory}
-
-{Note: Exported function for use by C libraries, not intended to be called by applications}
-begin
- {}
- Result:=EBADF;
- 
- {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')');
- {$ENDIF}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')'); //TestingMicroPython
-
- {Check dirp}
- if dirp = nil then
-  begin
-   {Return Error}
-   Exit;
-  end;
- 
- {Check entry}
- if entry = nil then
-  begin
-   {Return Error}
-   Exit;
-  end;
-
- {Check _result}  
- if _result = nil then
-  begin
-   {Return Error}
-   Exit;
-  end;
- 
- //To Do
-end;
-{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Pthread)}

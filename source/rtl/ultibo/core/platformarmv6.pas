@@ -1555,7 +1555,7 @@ end;
 {==============================================================================}
 
 procedure ARMv6InvalidateDataCacheRange(Address,Size:LongWord);
-{Perform a invalidate data cache range, limiting the size for each operation
+{Perform an invalidate data cache range, limiting the size for each operation
  to 4MB because some processors fail to correctly operate with larger ranges}
 const
  BLOCK_SIZE = $00400000; {4MB block size}
