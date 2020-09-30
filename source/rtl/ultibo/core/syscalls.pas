@@ -3881,16 +3881,21 @@ begin
       res^.tv_sec:=0;
       if CLOCK_CYCLES_PER_NANOSECOND > 0 then
        begin
-        res^.tv_nsec:=CLOCK_CYCLES_PER_NANOSECOND; 
+        res^.tv_nsec:=1; 
        end
       else if CLOCK_CYCLES_PER_MICROSECOND > 0 then
        begin
-        res^.tv_nsec:=CLOCK_CYCLES_PER_MICROSECOND * 1000; 
+        res^.tv_nsec:=1000; 
        end
       else if CLOCK_CYCLES_PER_MILLISECOND > 0 then       
        begin
-        res^.tv_nsec:=CLOCK_CYCLES_PER_MILLISECOND * 1000000; 
-       end;
+        res^.tv_nsec:=1000000; 
+       end
+      else
+       begin
+        res^.tv_sec:=1;
+        res^.tv_nsec:=0;
+       end;       
      end;
   
     Result:=0;
@@ -3969,15 +3974,15 @@ begin
       tp^.tv_sec:=Value div CLOCK_FREQUENCY;
       if CLOCK_CYCLES_PER_NANOSECOND > 0 then
        begin
-        tp^.tv_nsec:=Value mod CLOCK_FREQUENCY;
+        tp^.tv_nsec:=(Value mod CLOCK_FREQUENCY) div CLOCK_CYCLES_PER_NANOSECOND;
        end
       else if CLOCK_CYCLES_PER_MICROSECOND > 0 then
        begin
-        tp^.tv_nsec:=(Value mod CLOCK_FREQUENCY) * 1000;
+        tp^.tv_nsec:=((Value mod CLOCK_FREQUENCY) div CLOCK_CYCLES_PER_MICROSECOND) * 1000;
        end
       else if CLOCK_CYCLES_PER_MILLISECOND > 0 then       
        begin
-        tp^.tv_nsec:=(Value mod CLOCK_FREQUENCY) * 1000000;
+        tp^.tv_nsec:=((Value mod CLOCK_FREQUENCY) div CLOCK_CYCLES_PER_MILLISECOND) * 1000000;
        end;
      end;
      
