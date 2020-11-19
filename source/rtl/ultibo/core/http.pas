@@ -1475,7 +1475,7 @@ procedure HTTPInit;
 {==============================================================================}
 {HTTP Helper Functions}
 function HTTPEncode(const AValue:String;AReserved:THTTPReservedChars):String;
-function HTTPDecode(const AValue:String):String;
+function HTTPDecode(const AValue:String;AQuery:Boolean = False):String;
 
 function HTTPParseURI(const AURI:String;var AProtocol,AHost,APort,APath,AQuery:String):Boolean;
 function HTTPBuildURI(const AProtocol,AHost,APort,APath,AQuery:String;var AURI:String):Boolean;
@@ -9991,7 +9991,7 @@ end;
 
 {==============================================================================}
 
-function HTTPDecode(const AValue:String):String;
+function HTTPDecode(const AValue:String;AQuery:Boolean):String;
 var
  Next:Char;
  Code:String;
@@ -10021,6 +10021,11 @@ begin
    {Check Next}
    if Next <> '%' then
     begin
+     if AQuery and (Next = '+') then
+      begin
+       Next:=' ';
+      end;
+      
      {Write Next}
      Buffer^:=Next;
      
@@ -10310,11 +10315,11 @@ begin
      WorkBuffer:=GetFirstWord(QueryBuffer,HTTP_PARAM_DELIMITER);
      
      {$IFDEF HTTP_DEBUG}
-     if HTTP_LOG_ENABLED then HTTPLogDebug('ParseQuery: Param = ' + HTTPDecode(WorkBuffer));
+     if HTTP_LOG_ENABLED then HTTPLogDebug('ParseQuery: Param = ' + HTTPDecode(WorkBuffer,True));
      {$ENDIF}
     
      {Parse Param}
-     if HTTPParseParam(HTTPDecode(WorkBuffer),Name,Value) then
+     if HTTPParseParam(HTTPDecode(WorkBuffer,True),Name,Value) then
       begin
        {Check Param}
        if (Length(Name) <> 0) and (AParams.FindParam(Name) = nil) then
