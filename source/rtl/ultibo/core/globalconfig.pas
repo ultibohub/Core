@@ -1,7 +1,7 @@
 {
 Ultibo Global Configuration Defaults.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -43,13 +43,7 @@ unit GlobalConfig;
 
 interface
 
-uses GlobalConst,GlobalTypes,GlobalStrings;
-
-//To Do //LongWord values in here that refer to an address (eg MEMORY_BASE / IRQ_STACK_BASE) need to be made PtrUInt for 64 bit compatibility
-
-//To Do //Look for:
-
-//
+uses GlobalConst,GlobalTypes,GlobalStrings,SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -124,11 +118,14 @@ var
 {==============================================================================}
 var 
  {Memory Base Mapping} 
- MEMORY_BASE:PtrUInt;              {The base (Physical) address for useable board memory}
- MEMORY_SIZE:LongWord;             {The size of the useable board address space}
+ MEMORY_BASE:PtrUInt;               {The base (Physical) address for useable board memory}
+ MEMORY_SIZE:UInt64;                {The size of the useable board address space} {LongWord}
+  
+ MEMORY_PAGE_SIZE:LongWord;         {The size of a memory page}
+ MEMORY_LARGEPAGE_SIZE:LongWord;    {The size of a large memory page (Where applicable)}
  
- MEMORY_PAGE_SIZE:LongWord;        {The size of a memory page}
- MEMORY_LARGEPAGE_SIZE:LongWord;   {The size of a large memory page}
+ MEMORY_SECTION_SIZE:LongWord;      {The size of a memory section (Where applicable)}
+ MEMORY_LARGESECTION_SIZE:LongWord; {The size of a large memory section (Where applicable)}
  
 {==============================================================================}
 var 
@@ -145,36 +142,43 @@ var
 var 
  {Peripheral Base Mapping}
  PERIPHERALS_BASE:PtrUInt;         {The base (Physical) address for accessing Peripherals}
- PERIPHERALS_SIZE:LongWord;        {The size of the Peripheral address space}
+ PERIPHERALS_SIZE:UInt64;          {The size of the Peripheral address space} {LongWord}
 
  {Local Peripheral Base Mapping}
  LOCAL_PERIPHERALS_BASE:PtrUInt;   {The base (Physical) address for accessing Local Peripherals (Peripherals local to each CPU)}
- LOCAL_PERIPHERALS_SIZE:LongWord;  {The size of the Local Peripheral address space}
+ LOCAL_PERIPHERALS_SIZE:UInt64;    {The size of the Local Peripheral address space} {LongWord}
  
 {==============================================================================}
 var
- {Page Table Base Mapping}
- PAGE_TABLE_BASE:PtrUInt;          {The base (Physical) address of the first level Page Table}
- PAGE_TABLE_SIZE:LongWord;         {The size of the first level Page Table address space}
+ {Page Table Levels}
+ PAGE_TABLE_LEVELS:LongWord = 2;   {The number of Page Table levels for the current platform (Default 2)}
 
- {Second Level Page Tables}
- PAGE_TABLES_ADDRESS:PtrUInt;      {The base (Physical) address of the second level Page Tables}
- PAGE_TABLES_LENGTH:LongWord;      {The size of the second level Page Table address space (Rounded to Page Size)}
- PAGE_TABLES_COUNT:LongWord;       {How many second level Page Tables allocated at this address}
+ {Page Directory Base Mapping}
+ PAGE_DIRECTORY_BASE:PtrUInt;      {The base (Physical) address of the first level Page Directory (Where applicable)}
+ PAGE_DIRECTORY_SIZE:LongWord;     {The size of the first level Page Directory address space (Where applicable)}
+
+ {Page Table Base Mapping}
+ PAGE_TABLE_BASE:PtrUInt;          {The base (Physical) address of the first or second level Page Table}
+ PAGE_TABLE_SIZE:LongWord;         {The size of the first or second level Page Table address space}
+
+ {Second or Third Level Page Tables (As determined by architecture)}
+ PAGE_TABLES_ADDRESS:PtrUInt;      {The base (Physical) address of the second or third level Page Tables}
+ PAGE_TABLES_LENGTH:LongWord;      {The size of the second or third level Page Table address space (Rounded to Page Size)}
+ PAGE_TABLES_COUNT:LongWord;       {How many second or third level Page Tables allocated at this address}
  PAGE_TABLES_SHIFT:LongWord;       {The multiplier (left shift) to convert count to size (PAGE_TABLES_COUNT shl PAGE_TABLES_SHIFT = Actual Size)}
  
- PAGE_TABLES_NEXT:PtrUInt;         {The base (Physical) address of the next available second level Page Table}
- PAGE_TABLES_USED:LongWord;        {How many second level Page Tables are in use (During boot this will be set to the number required to cover the code and data plus initial stack, heap and overhead)}
- PAGE_TABLES_FREE:LongWord = 1024; {How many second level Page Tables are available (The initial value here will be added to the number calculated during boot to provide extras for page allocation)}
+ PAGE_TABLES_NEXT:PtrUInt;         {The base (Physical) address of the next available second or third level Page Table}
+ PAGE_TABLES_USED:LongWord;        {How many second or third level Page Tables are in use (During boot this will be set to the number required to cover the code and data plus initial stack, heap and overhead)}
+ PAGE_TABLES_FREE:LongWord = 1024; {How many second or third level Page Tables are available (The initial value here will be added to the number calculated during boot to provide extras for page allocation)}
  
 {==============================================================================}
-var
- {Page Table Sizes}
- PAGE_MIN_SIZE:LongWord          = SIZE_4K;  {The minimum size of a memory page in the page tables (Default 4K)}
- PAGE_SMALL_SIZE:LongWord        = SIZE_4K;  {The size of a small memory page in the page tables (Default 4K)}
- PAGE_LARGE_SIZE:LongWord        = SIZE_64K; {The size of a large memory page in the page tables (Default 64K)}
- PAGE_SECTION_SIZE:LongWord      = SIZE_1M;  {The size of a memory section in the page tables (Default 1M)}
- PAGE_SUPERSECTION_SIZE:LongWord = SIZE_16M; {The size of a memory super section in the page tables (Default 16M)}
+{var}
+ {Page Table Sizes} {Not used}
+ {PAGE_MIN_SIZE:LongWord          = SIZE_4K;}  {The minimum size of a memory page in the page tables (Default 4K)}
+ {PAGE_SMALL_SIZE:LongWord        = SIZE_4K;}  {The size of a small memory page in the page tables (Default 4K)}
+ {PAGE_LARGE_SIZE:LongWord        = SIZE_64K;} {The size of a large memory page in the page tables (Default 64K)}
+ {PAGE_SECTION_SIZE:LongWord      = SIZE_1M;}  {The size of a memory section in the page tables (Default 1M)}
+ {PAGE_SUPERSECTION_SIZE:LongWord = SIZE_16M;} {The size of a memory super section in the page tables (Default 16M)}
   
 {==============================================================================}
 var
@@ -207,7 +211,7 @@ var
  CPU_MASK:LongWord;                   {The mask of current CPUs for scheduling affinity}
  
  CPU_MEMORY_BASE:PtrUInt;             {The base (Physical) address for CPU memory}
- CPU_MEMORY_SIZE:LongWord;            {The size of the CPU address space}
+ CPU_MEMORY_SIZE:UInt64;              {The size of the CPU address space} {LongWord}
  
  CPU_MEMORY_RESTRICTED:LongBool;      {Any areas of CPU address space with no physical memory are marked as no access}
  
@@ -222,7 +226,7 @@ var
  GPU_TYPE:LongWord;                   {The current GPU type for this board}
 
  GPU_MEMORY_BASE:PtrUInt;             {The base (Physical) address for GPU memory}
- GPU_MEMORY_SIZE:LongWord;            {The size of the GPU address space}
+ GPU_MEMORY_SIZE:UInt64;              {The size of the GPU address space} {LongWord}
 
  GPU_MEMORY_CACHED:LongBool;          {The GPU memory is cached when accessed by the CPU}
  
@@ -241,6 +245,11 @@ var
  FIQ_LOCAL_COUNT:LongWord;            {The number of local (Per CPU) FIQs supported for this board (Where Applicable)}
  
  IRQ_LOCAL_START:LongWord;            {The starting number for local (Per CPU) IRQs/FIQs (Where Applicable)}
+
+ IRQ_SOFTWARE_COUNT:LongWord;         {The number of software (Per CPU) IRQs supported for this board (Where Applicable)}
+ FIQ_SOFTWARE_COUNT:LongWord;         {The number of software (Per CPU) FIQs supported for this board (Where Applicable)}
+ 
+ IRQ_SOFTWARE_START:LongWord;         {The starting number for software (Per CPU) IRQs/FIQs (Where Applicable)}
  
  SWI_COUNT:LongWord;                  {The total number of SWIs supported for this board (Where Applicable)}
  
@@ -249,6 +258,7 @@ var
 var
  IRQ_ENABLED:LongBool;                      {The current CPU supports Interrupt Requests (IRQ)}
  FIQ_ENABLED:LongBool;                      {The current CPU supports Fast Interrupt Requests (FIQ)}
+ IPI_ENABLED:LongBool;                      {The current CPU supports Inter Processor Interrupts (IPI)}              
  SWI_ENABLED:LongBool;                      {The current CPU supports Software Interrupt Handlers (SWI)}
  ABORT_ENABLED:LongBool;                    {The current CPU supports Data and/or Prefetch Abort Handlers}
  UNDEFINED_ENABLED:LongBool;                {The current CPU supports Undefined Instruction Handlers}
@@ -441,6 +451,7 @@ var
  SCHEDULER_CPU_COUNT:LongWord;                      {The current CPU count used by the scheduler (Requested from CPUGetCount) (Set by threads initialization)}
  SCHEDULER_CPU_MASK:LongWord;                       {The current CPU mask used by the scheduler (Requested from CPUGetMask) (Set by threads initialization)}
  SCHEDULER_CPU_BOOT:LongWord;                       {The current boot CPU id used by the scheduler (Requested from CPUGetBoot) (Set by threads initialization)}
+ SCHEDULER_CPU_RESERVE:LongWord;                    {The reserved CPU mask used by the scheduler, reserved CPUs will be marked as allocation disabled during boot (Default: 0)}
  
  SCHEDULER_THREAD_QUANTUM:LongWord = 6;             {How many scheduler interrupts for the base thread quantum (Actual quantum is adjusted by priority)}
  SCHEDULER_PRIORITY_QUANTUM:array of LongWord;      {How many scheduler interrupts to adjust the base thread quantum for each priority level (One per priority level, allocated by threads initialization)}
@@ -469,22 +480,16 @@ var
 {Peripheral configuration (Set by PeripheralInit)}
 var
  {Peripheral addresses}
- INTERRUPT_REGS_BASE:LongWord;    {The base address of the Interrupt Controller registers (If Applicable)}
- SYSTEMTIMER_REGS_BASE:LongWord;  {The base address of the System Timer registers (If Applicable)}
- TIMER_REGS_BASE:LongWord;        {The base address of the Timer registers (If Applicable)}
- GPIO_REGS_BASE:LongWord;         {The base address of the GPIO registers (If Applicable)}
- UART_REGS_BASE:LongWord;         {The base address of the primary UART registers (If Applicable)}
- SPI_REGS_BASE:LongWord;          {The base address of the primary SPI registers (If Applicable)}
- I2C_REGS_BASE:LongWord;          {The base address of the primary I2C registers (If Applicable)}
- I2S_REGS_BASE:LongWord;          {The base address of the primary I2S registers (If Applicable)}
- PWM_REGS_BASE:LongWord;          {The base address of the primary PWM registers (If Applicable)}
- 
-{==============================================================================}
-{Interrupt configuration (Set by PeripheralInit)}
-//var
- {Interrupt assignments}
- //To Do //IRQ numbers for generic usage ? (Various devices - Set by PeripheralInit)
- 
+ INTERRUPT_REGS_BASE:PtrUInt;    {The base address of the Interrupt Controller registers (If Applicable)}
+ SYSTEMTIMER_REGS_BASE:PtrUInt;  {The base address of the System Timer registers (If Applicable)}
+ TIMER_REGS_BASE:PtrUInt;        {The base address of the Timer registers (If Applicable)}
+ GPIO_REGS_BASE:PtrUInt;         {The base address of the GPIO registers (If Applicable)}
+ UART_REGS_BASE:PtrUInt;         {The base address of the primary UART registers (If Applicable)}
+ SPI_REGS_BASE:PtrUInt;          {The base address of the primary SPI registers (If Applicable)}
+ I2C_REGS_BASE:PtrUInt;          {The base address of the primary I2C registers (If Applicable)}
+ I2S_REGS_BASE:PtrUInt;          {The base address of the primary I2S registers (If Applicable)}
+ PWM_REGS_BASE:PtrUInt;          {The base address of the primary PWM registers (If Applicable)}
+
 {==============================================================================}
 {LED configuration (Set by specific PlatformInit)}
 var
@@ -653,7 +658,7 @@ var
 var
  SYSCALLS_HEAP_BASE:PtrUInt = $C0000000;         {The starting address for the dynamic C library heap space (Only if Syscalls unit included)(0 equals use static heap space only)}
  SYSCALLS_HEAP_MIN:LongWord = SIZE_2M;           {The minimum size of the dynamic C library heap space (Only if Syscalls unit included)(Or the total size if using static heap space)}
- SYSCALLS_HEAP_MAX:LongWord = SIZE_1G;           {The maximum size of the dynamic C library heap space (Only if Syscalls unit included)(Ignored if using static heap space only)}
+ SYSCALLS_HEAP_MAX:UInt64 = SIZE_1G;             {The maximum size of the dynamic C library heap space (Only if Syscalls unit included)(Ignored if using static heap space only)}
  SYSCALLS_HEAP_BLOCKSIZE:LongWord = SIZE_1M;     {The block size to request from the heap manager on each expansion of the dynamic C library heap space (Only if Syscalls unit included)}
  
 {==============================================================================}
@@ -678,6 +683,10 @@ var
  
  {Touch}
  TOUCH_MOUSE_DATA_DEFAULT:LongBool = True; {If True then set all touch devices to add mouse data events for compatibility (Default: True)}
+ 
+ {PCI}
+ PCI_AUTOSTART:LongBool = True;        {If True then auto start the PCI subsystem on boot (Only if PCI unit included)}
+ PCI_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
  
  {USB}
  USB_AUTOSTART:LongBool = True;        {If True then auto start the USB subsystem on boot (Only if USB unit included)}
@@ -729,24 +738,29 @@ var
  {AHCI}
  
  {DWCOTG (Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller)}
- DWCOTG_IRQ:LongWord;                 {The IRQ number of the DWCOTG device}
- DWCOTG_POWER_ID:LongWord;            {The power id of the DWCOTG device}
- DWCOTG_REGS_BASE:LongWord;           {The base address of the DWCOTG registers}
- DWCOTG_FIQ_ENABLED:LongBool;         {The DWCOTG device uses Fast Interrupt Requests (FIQ) instead of IRQ}
- DWCOTG_DMA_ALIGNMENT:LongWord;       {The default alignment for DWCOTG DMA memory allocations}
- DWCOTG_DMA_MULTIPLIER:LongWord;      {The default multiplier for DWCOTG DMA memory allocations}
- DWCOTG_DMA_SHARED_MEMORY:LongBool;   {DWCOTG DMA buffers are allocated from Shared memory regions if True}
- DWCOTG_DMA_NOCACHE_MEMORY:LongBool;  {DWCOTG DMA buffers are allocated from Non Cached memory regions if True}
- DWCOTG_DMA_BUS_ADDRESSES:LongBool;   {DWCOTG DMA buffers are referenced by Bus addresses if True}
- DWCOTG_DMA_CACHE_COHERENT:LongBool;  {DWCOTG DMA buffers are considered cache coherent if True}
- DWCOTG_HOST_FRAME_INTERVAL:LongBool; {Update the host frame interval register on root port enable if True}
- //To Do //Number of Channels ?
+ DWCOTG_IRQ:LongWord;                       {The IRQ number of the DWCOTG device}
+ DWCOTG_POWER_ID:LongWord;                  {The power id of the DWCOTG device}
+ DWCOTG_REGS_BASE:PtrUInt;                  {The base address of the DWCOTG registers}
+ DWCOTG_FIQ_ENABLED:LongBool;               {The DWCOTG device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ DWCOTG_DMA_ALIGNMENT:LongWord;             {The default alignment for DWCOTG DMA memory allocations}
+ DWCOTG_DMA_MULTIPLIER:LongWord;            {The default multiplier for DWCOTG DMA memory allocations}
+ DWCOTG_DMA_SHARED_MEMORY:LongBool;         {DWCOTG DMA buffers are allocated from Shared memory regions if True}
+ DWCOTG_DMA_NOCACHE_MEMORY:LongBool;        {DWCOTG DMA buffers are allocated from Non Cached memory regions if True}
+ DWCOTG_DMA_BUS_ADDRESSES:LongBool;         {DWCOTG DMA buffers are referenced by Bus addresses if True}
+ DWCOTG_DMA_CACHE_COHERENT:LongBool;        {DWCOTG DMA buffers are considered cache coherent if True}
+ DWCOTG_HOST_FRAME_INTERVAL:LongBool;       {Update the host frame interval register on root port enable if True}
+ DWCOTG_FULL_SPEED_ONLY:LongBool;           {Enable Full Speed and Low Speed device support only if True}
+ DWCOTG_FS_LS_LOW_POWER_CLOCK:LongBool;     {Enable Low Power Clock Select for Full Speed / Low Speed devices if True}
+ DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ:LongBool; {Enable 6MHz Low Power PHY Clock for Low Speed devices if True}
  
  {LAN78XX (Microchip LAN78XX USB Gigabit Ethernet)}
- LAN78XX_MAC_ADDRESS:String;          {The preconfigured MAC address for a LAN78XX device}
+ LAN78XX_MAC_ADDRESS:String;                {The preconfigured MAC address for a LAN78XX device}
  
  {SMSC95XX (SMSC LAN95xx USB Ethernet Driver)}
- SMSC95XX_MAC_ADDRESS:String;         {The preconfigured MAC address for a SMSC95XX device}
+ SMSC95XX_MAC_ADDRESS:String;               {The preconfigured MAC address for a SMSC95XX device}
+ 
+ {GENET (Broadcom Gigabit Ethernet controller)}
+ GENET_MAC_ADDRESS:String;                  {The preconfigured MAC address for a GENET device}
   
  {BCM2708}
  BCM2708DMA_ALIGNMENT:LongWord;             {The default alignment for BCM2708 DMA memory allocations}
@@ -763,6 +777,7 @@ var
  BCM2708GPIO_FIQ_BANK_NO:LongWord;          {The BCM2708 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
  
  BCM2708SDHCI_FIQ_ENABLED:LongBool;         {The BCM2708 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2708SDHOST_FIQ_ENABLED:LongBool;        {The BCM2708 SDHOST device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2708ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2708 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  
@@ -781,6 +796,7 @@ var
  BCM2708_REGISTER_UART0:LongBool = True;    {If True then register the BCM2708 UART0 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_UART1:LongBool = True;    {If True then register the BCM2708 UART1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2708 SDHOST host during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2708 SPI slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2708 I2C slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2708 PWM Audio device during boot (Only if BCM2708 unit included)}
@@ -808,6 +824,7 @@ var
  BCM2709GPIO_FIQ_BANK_NO:LongWord;          {The BCM2709 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
  
  BCM2709SDHCI_FIQ_ENABLED:LongBool;         {The BCM2709 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2709SDHOST_FIQ_ENABLED:LongBool;        {The BCM2709 SDHOST device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2709ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2709 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2709LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2709 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
@@ -827,6 +844,7 @@ var
  BCM2709_REGISTER_UART0:LongBool = True;    {If True then register the BCM2709 UART0 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_UART1:LongBool = True;    {If True then register the BCM2709 UART1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2709 SDHOST host during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2709 SPI slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2709 I2C slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2709 PWM Audio device during boot (Only if BCM2709 unit included)}
@@ -856,6 +874,7 @@ var
  BCM2710GPIO_FIQ_BANK_NO:LongWord;          {The BCM2710 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
  
  BCM2710SDHCI_FIQ_ENABLED:LongBool;         {The BCM2710 SDHCI device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2710SDHOST_FIQ_ENABLED:LongBool;        {The BCM2710 SDHOST device uses Fast Interrupt Requests (FIQ) instead of IRQ}
 
  BCM2710ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2710 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2710LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2710 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
@@ -875,6 +894,7 @@ var
  BCM2710_REGISTER_UART0:LongBool = True;    {If True then register the BCM2710 UART0 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_UART1:LongBool = True;    {If True then register the BCM2710 UART1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2710 SDHOST host during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2710 SPI slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2710 I2C slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2710 PWM Audio device during boot (Only if BCM2710 unit included)}
@@ -888,6 +908,79 @@ var
  BCM2710_REGISTER_MAILBOX:LongBool = True;  {If True then register the BCM2710 Mailbox device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_WATCHDOG:LongBool = True; {If True then register the BCM2710 Watchdog device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2710 Framebuffer device during boot (Only if BCM2710 unit included)}
+ 
+ {BCM2711}
+ BCM2711DMA_ALIGNMENT:LongWord;             {The default alignment for BCM2711 DMA memory allocations}
+ BCM2711DMA_MULTIPLIER:LongWord;            {The default multiplier for BCM2711 DMA memory allocations}
+ BCM2711DMA_SHARED_MEMORY:LongBool;         {BCM2711 DMA control blocks and DMA buffers are allocated from Shared memory regions if True}
+ BCM2711DMA_NOCACHE_MEMORY:LongBool;        {BCM2711 DMA control blocks and DMA buffers are allocated from Non Cached memory regions if True}
+ BCM2711DMA_BUS_ADDRESSES:LongBool;         {BCM2711 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
+ BCM2711DMA_CACHE_COHERENT:LongBool;        {BCM2711 DMA control blocks and DMA buffers are considered cache coherent if True}
+
+ BCM2711I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2711 I2C driver can do combined Write/Read transactions}
+ 
+ {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
+ BCM2711GPIO_FIQ_ENABLED:LongBool;          {The BCM2711 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2711GPIO_FIQ_BANK_NO:LongWord;          {The BCM2711 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
+ 
+ BCM2711EMMC0_FIQ_ENABLED:LongBool;         {The BCM2711 EMMC0 (SDHCI) device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2711EMMC1_FIQ_ENABLED:LongBool;         {The BCM2711 EMMC1 (SDHOST) device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2711EMMC2_FIQ_ENABLED:LongBool;         {The BCM2711 EMMC2 (SDHCI) device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+
+ BCM2711ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2711 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ BCM2711LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2711 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
+ 
+ BCM2711FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2711 Framebuffer device}
+ BCM2711FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2711 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
+ 
+ BCM2711_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2711 SPI0 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2711 SPI1 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2711 SPI2 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SPI3:LongBool = True;     {If True then register the BCM2711 SPI3 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SPI4:LongBool = True;     {If True then register the BCM2711 SPI4 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SPI5:LongBool = True;     {If True then register the BCM2711 SPI5 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SPI6:LongBool = True;     {If True then register the BCM2711 SPI6 device during boot (Only if BCM2711 unit included)}
+
+ BCM2711_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2711 I2C0 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2711 I2C1 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C3:LongBool = True;     {If True then register the BCM2711 I2C3 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C4:LongBool = True;     {If True then register the BCM2711 I2C4 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C5:LongBool = True;     {If True then register the BCM2711 I2C5 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C6:LongBool = True;     {If True then register the BCM2711 I2C6 device during boot (Only if BCM2711 unit included)}
+
+ BCM2711_REGISTER_PWM0:LongBool = True;     {If True then register the BCM2711 PWM0 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_PWM1:LongBool = True;     {If True then register the BCM2711 PWM1 device during boot (Only if BCM2711 unit included)}
+ 
+ BCM2711_REGISTER_UART0:LongBool = True;    {If True then register the BCM2711 UART0 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_UART1:LongBool = True;    {If True then register the BCM2711 UART1 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_UART2:LongBool = True;    {If True then register the BCM2711 UART2 device during boot (Only if BCM2711 unit included)} 
+ BCM2711_REGISTER_UART3:LongBool = True;    {If True then register the BCM2711 UART3 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_UART4:LongBool = True;    {If True then register the BCM2711 UART4 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_UART5:LongBool = True;    {If True then register the BCM2711 UART5 device during boot (Only if BCM2711 unit included)} 
+ 
+ BCM2711_REGISTER_EMMC0:LongBool = False;   {If True then register the BCM2711 EMMC0 (SDHCI) host during boot (Disables EMMC2)(Only if BCM2711 unit included)}
+ BCM2711_REGISTER_EMMC1:LongBool = False;   {If True then register the BCM2711 EMMC1 (SDHOST) host during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_EMMC2:LongBool = True;    {If True then register the BCM2711 EMMC2 (SDHCI) host during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2711 EMMC0 (SDHCI) as an SDIO controller for WiFi support (Disables EMMC0)(Only if BCM2711 unit included)}
+ 
+ BCM2711_REGISTER_DMA:LongBool = True;      {If True then register the BCM2711 DMA host during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_PCM:LongBool = True;      {If True then register the BCM2711 PCM device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2711 GPIO device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2711 SPI slave device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2711 I2C slave device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2711 PWM Audio device during boot (Only if BCM2711 unit included)}
+
+ BCM2711_REGISTER_SYS_CLOCK:LongBool = True;   {If True then register the BCM2711 System Timer Clock device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_ARM_CLOCK:LongBool = True;   {If True then register the BCM2711 ARM Timer Clock device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_LOCAL_CLOCK:LongBool = True; {If True then register the BCM2711 Local Timer Clock device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_ARM_TIMER:LongBool = True;   {If True then register the BCM2711 ARM Timer device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_LOCAL_TIMER:LongBool = True; {If True then register the BCM2711 Local Timer device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_RANDOM:LongBool = True;      {If True then register the BCM2711 Random device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_MAILBOX:LongBool = True;     {If True then register the BCM2711 Mailbox device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_WATCHDOG:LongBool = True;    {If True then register the BCM2711 Watchdog device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2711 Framebuffer device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_NETWORK:LongBool = True;     {If True then register the BCM2711 GENET Network device during boot (Only if RaspberryPi4 unit included)}
+ BCM2711_REGISTER_PCI:LongBool = True;         {If True then register the BCM2711 BRCNSTB PCIe host during boot (Only if RaspberryPi4 unit included)}
  
  {QEMUVPB}
  QEMUVPB_REGISTER_DMA:LongBool = True;         {If True then register the QEMU VersatilePB DMA device during boot (Only if QEMUVersatilePB unit included)}
@@ -973,26 +1066,28 @@ var
  FAT_NUMERIC_TAIL:LongBool = True;                {Enable support for numeric tail on generated FAT short file names}
  FAT_DIRTY_CHECK:LongBool = True;                 {Enable support for dirty check on FAT volume mount}
  FAT_QUICK_CHECK:LongBool = True;                 {Enable support for quick FAT volume checking}
+ FAT_INFO_SECTOR_ENABLE:LongBool = True;          {Enable support for the FAT32 info sector to store free cluster count and next free cluster}
+ FAT_INFO_IMMEDIATE_UPDATE:LongBool = False;      {Enable immediate update of the FA32 info sector after cluster allocation or deallocation (Default False)}
  
  {NTFS configuration}
- NTFS_DEFAULT:LongBool = False;                   {Enable default recognition of non partitioned media as NTFS}
+ NTFS_DEFAULT:LongBool = False;                   {Enable default recognition of non partitioned media as NTFS (Default False)}
  NTFS_RESET_LOG:LongBool = True;                  {Reset the NTFS Log File if it was dirty on mount}
  NTFS_FIXED_ZONE:LongBool = True;                 {Use the Windows Vista/2008/7 Fixed MFT Zone values (not the Windows NT/2000/XP percentages)}
- NTFS_ALT_LAYOUT:LongBool = False;                {Use the Windows Vista/2008/7 Volume Layout values (not the Windows NT/2000/XP layout)}
- NTFS_LENIENT:LongBool = False;                   {Allow certain non fatal errors to be ignored}
- NTFS_DEFENSIVE:LongBool = False;                 {Perform more defensive checking of structures and values}
- NTFS_AGGRESSIVE:LongBool = False;                {Attempt to correct certain errors during operation}
- NTFS_NO_SHORT_NAMES:LongBool = False;            {Do not create alternate short file names}
- NTFS_NULL_SECURITY:LongBool = False;             {Do not apply security when creating files and folders (only apply security when SetSecurity called)}
- NTFS_DEFAULT_SECURITY:LongBool = False;          {Apply default permissions (Everyone, Full Control) when creating files and folders}
+ NTFS_ALT_LAYOUT:LongBool = False;                {Use the Windows Vista/2008/7 Volume Layout values (not the Windows NT/2000/XP layout) (Default False)}
+ NTFS_LENIENT:LongBool = False;                   {Allow certain non fatal errors to be ignored (Default False)}
+ NTFS_DEFENSIVE:LongBool = False;                 {Perform more defensive checking of structures and values (Default False)}
+ NTFS_AGGRESSIVE:LongBool = False;                {Attempt to correct certain errors during operation (Default False)}
+ NTFS_NO_SHORT_NAMES:LongBool = False;            {Do not create alternate short file names (Default False)}
+ NTFS_NULL_SECURITY:LongBool = False;             {Do not apply security when creating files and folders (only apply security when SetSecurity called) (Default False)}
+ NTFS_DEFAULT_SECURITY:LongBool = False;          {Apply default permissions (Everyone, Full Control) when creating files and folders (Default False)}
  
  {EXTFS configuration}
- EXTFS_DEFAULT:LongBool = False;                  {Enable default recognition of non partitioned media as EXTFS}
+ EXTFS_DEFAULT:LongBool = False;                  {Enable default recognition of non partitioned media as EXTFS (Default False)}
  
  {CDFS configuration}
- CDFS_DEFAULT:LongBool = False;                   {Enable default recognition of non partitioned media as CDFS}
+ CDFS_DEFAULT:LongBool = False;                   {Enable default recognition of non partitioned media as CDFS (Default False)}
  CDFS_LONG_NAMES:LongBool = True;                 {Enable support for CDFS long file names (greater than 8.3)}
- CDFS_SWAP_SERIAL:LongBool = False;               {Swap the byte order of the CDFS serial number (Set to True for Windows 9x compatibility)}
+ CDFS_SWAP_SERIAL:LongBool = False;               {Swap the byte order of the CDFS serial number (Set to True for Windows 9x compatibility) (Default False)}
  
 {==============================================================================}
 {Network, Transport, Protocol and Sockets configuration}
@@ -1196,6 +1291,8 @@ function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 
 function IsPowerOf2(Value:LongWord):Boolean;
 
+function BIT(Number:LongWord):LongWord; inline;
+
 function HIWORD(L:LongInt):Word; inline;
 function LOWORD(L:LongInt):Word; inline;
 
@@ -1225,6 +1322,12 @@ function Int64BEtoN(const Value:Int64):Int64; inline;
 function Int64NtoLE(const Value:Int64):Int64; inline;
 function Int64LEtoN(const Value:Int64):Int64; inline;
 
+function PtrLow(Value:Pointer):LongWord; inline;
+function PtrHigh(Value:Pointer):LongWord; inline;
+
+function AddrLow(Value:PtrUInt):LongWord; inline;
+function AddrHigh(Value:PtrUInt):LongWord; inline;
+
 function BCDtoBin(Value:Byte):Byte; inline;
 function BintoBCD(Value:Byte):Byte; inline;
 
@@ -1232,6 +1335,10 @@ function GetLastError:LongWord; inline;
 procedure SetLastError(LastError:LongWord); inline;
 
 function StringHash(const Text:String):LongWord;
+
+function PtrToHex(Value:Pointer):String; inline;
+function AddrToHex(Value:PtrUInt):String; inline;
+function HandleToHex(Value:THandle):String; inline;
 
 {==============================================================================}
 {Conversion functions}
@@ -1244,6 +1351,9 @@ function CPUArchToString(CPUArch:LongWord):String;
 function CPUTypeToString(CPUType:LongWord):String;
 function CPUModelToString(CPUModel:LongWord):String;
 function CPUIDToString(CPUID:LongWord):String;
+function CPUIDToMask(CPUID:LongWord):LongWord;
+function CPUMaskToID(CPUMask:LongWord):LongWord;
+function CPUMaskCount(CPUMask:LongWord):LongWord;
 function CPUGroupToString(CPUGroup:LongWord):String;
 
 function FPUTypeToString(FPUType:LongWord):String;
@@ -1389,6 +1499,13 @@ function IsPowerOf2(Value:LongWord):Boolean;
 begin
  {}
  Result:=(Value <> 0) and ((Value and (Value - 1)) = 0);
+end;
+
+{==============================================================================}
+
+function BIT(Number:LongWord):LongWord; inline;
+begin
+ Result:=1 shl Number;
 end;
 
 {==============================================================================}
@@ -1558,6 +1675,58 @@ end;
 
 {==============================================================================}
 
+function PtrLow(Value:Pointer):LongWord; inline;
+{Return the low 32-bits of a pointer}
+begin
+ {}
+ {$IFDEF CPU64}
+ Result:=PtrUInt(Value) and $FFFFFFFF;
+ {$ELSE CPU64}
+ Result:=PtrUInt(Value);
+ {$ENDIF CPU64}
+end;
+
+{==============================================================================}
+
+function PtrHigh(Value:Pointer):LongWord; inline;
+{Return the high 32-bits of a pointer (Or 0 for 32-bit platforms)}
+begin
+ {}
+ {$IFDEF CPU64}
+ Result:=(PtrUInt(Value) shr 32) and $FFFFFFFF;
+ {$ELSE CPU64}
+ Result:=0;
+ {$ENDIF CPU64}
+end;
+
+{==============================================================================}
+
+function AddrLow(Value:PtrUInt):LongWord; inline;
+{Return the low 32-bits of an address}
+begin
+ {}
+ {$IFDEF CPU64}
+ Result:=Value and $FFFFFFFF;
+ {$ELSE CPU64}
+ Result:=Value;
+ {$ENDIF CPU64}
+end;
+
+{==============================================================================}
+
+function AddrHigh(Value:PtrUInt):LongWord; inline;
+{Return the high 32-bits of an address (Or 0 for 32-bit platforms)}
+begin
+ {}
+ {$IFDEF CPU64}
+ Result:=(Value shr 32) and $FFFFFFFF;
+ {$ELSE CPU64}
+ Result:=0;
+ {$ENDIF CPU64}
+end;
+
+{==============================================================================}
+
 function BCDtoBin(Value:Byte):Byte; inline;
 begin
  {}
@@ -1625,6 +1794,30 @@ begin
      Result:=Result + ((Value + 1) * (LongWord(Count) + 257));
     end;
   end;
+end;
+
+{==============================================================================}
+
+function PtrToHex(Value:Pointer):String; inline;
+begin
+ {}
+ Result:=IntToHex(PtrUInt(Value),SizeOf(Pointer) shl 1);
+end;
+
+{==============================================================================}
+
+function AddrToHex(Value:PtrUInt):String; inline;
+begin
+ {}
+ Result:=IntToHex(Value,SizeOf(PtrUInt) shl 1);
+end;
+
+{==============================================================================}
+
+function HandleToHex(Value:THandle):String; 
+begin
+ {}
+ Result:=IntToHex(Value,SizeOf(THandle) shl 1);
 end;
 
 {==============================================================================}
@@ -1851,6 +2044,69 @@ end;
 
 {==============================================================================}
 
+function CPUIDToMask(CPUID:LongWord):LongWord;
+begin
+ {}
+ {Check for All}
+ if CPUID = CPU_ID_ALL then
+  begin
+   Result:=CPU_MASK_ALL;
+  end
+ else
+  begin 
+   Result:=CPU_MASK_NONE;
+   
+   if CPUID > CPU_ID_MAX then Exit;
+ 
+   Result:=1 shl CPUID;
+  end; 
+end;
+
+{==============================================================================}
+
+function CPUMaskToID(CPUMask:LongWord):LongWord;
+{Note: If Mask includes more than one CPU the result will be the
+       first matched. Use CPUMaskCount to determine the CPU count}
+var
+ Count:LongWord;
+begin
+ {}
+ {Default to All}
+ Result:=CPU_ID_ALL;
+ 
+ {Check for All}
+ if CPUMask = CPU_MASK_ALL then Exit;
+ 
+ for Count:=CPU_ID_0 to CPU_ID_MAX do
+  begin
+   if (CPUMask and (1 shl Count)) <> 0 then
+    begin
+     Result:=Count;
+     Exit;     
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function CPUMaskCount(CPUMask:LongWord):LongWord;
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ for Count:=CPU_ID_0 to CPU_ID_MAX do
+  begin
+   if (CPUMask and (1 shl Count)) <> 0 then
+    begin
+     Inc(Result);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
 function CPUGroupToString(CPUGroup:LongWord):String;
 begin
  {}
@@ -1922,6 +2178,7 @@ begin
   GPU_TYPE_MALI450:Result:='GPU_TYPE_MALI450';
   GPU_TYPE_GC880:Result:='GPU_TYPE_GC880';
   GPU_TYPE_GC2000:Result:='GPU_TYPE_GC2000';
+  GPU_TYPE_VC6:Result:='GPU_TYPE_VC6';
  end;
 end;
 
@@ -1964,6 +2221,9 @@ begin
   BOARD_TYPE_RPI3B_PLUS:Result:='BOARD_TYPE_RPI3B_PLUS';
   BOARD_TYPE_RPI3A_PLUS:Result:='BOARD_TYPE_RPI3A_PLUS';
   BOARD_TYPE_RPI_COMPUTE3_PLUS:Result:='BOARD_TYPE_RPI_COMPUTE3_PLUS';
+  BOARD_TYPE_RPI4B:Result:='BOARD_TYPE_RPI4B';
+  BOARD_TYPE_RPI400:Result:='BOARD_TYPE_RPI400';
+  BOARD_TYPE_RPI_COMPUTE4:Result:='BOARD_TYPE_RPI_COMPUTE4';
  end;
 end;
 
@@ -1979,6 +2239,7 @@ begin
   MACHINE_TYPE_BCM2709:Result:='MACHINE_TYPE_BCM2709';
   MACHINE_TYPE_BCM2710:Result:='MACHINE_TYPE_BCM2710';
   MACHINE_TYPE_VERSATILEPB:Result:='MACHINE_TYPE_VERSATILEPB';
+  MACHINE_TYPE_BCM2711:Result:='MACHINE_TYPE_BCM2711';
  end;
 end;
 
@@ -2011,6 +2272,25 @@ begin
   POWER_ID_SPI2:Result:='POWER_ID_SPI2';
   POWER_ID_SPI3:Result:='POWER_ID_SPI3';
   POWER_ID_CCP2TX:Result:='POWER_ID_CCP2TX';
+  {Additional constants (Where applicable)}
+  POWER_ID_UART4:Result:='POWER_ID_UART4';
+  POWER_ID_UART5:Result:='POWER_ID_UART5';
+  POWER_ID_UART6:Result:='POWER_ID_UART6';
+  POWER_ID_UART7:Result:='POWER_ID_UART7';
+  POWER_ID_UART8:Result:='POWER_ID_UART8';
+  POWER_ID_UART9:Result:='POWER_ID_UART9';
+  POWER_ID_I2C4:Result:='POWER_ID_I2C4';
+  POWER_ID_I2C5:Result:='POWER_ID_I2C5';
+  POWER_ID_I2C6:Result:='POWER_ID_I2C6';
+  POWER_ID_I2C7:Result:='POWER_ID_I2C7';
+  POWER_ID_I2C8:Result:='POWER_ID_I2C8';
+  POWER_ID_I2C9:Result:='POWER_ID_I2C9';
+  POWER_ID_SPI4:Result:='POWER_ID_SPI4';
+  POWER_ID_SPI5:Result:='POWER_ID_SPI5';
+  POWER_ID_SPI6:Result:='POWER_ID_SPI6';
+  POWER_ID_SPI7:Result:='POWER_ID_SPI7';
+  POWER_ID_SPI8:Result:='POWER_ID_SPI8';
+  POWER_ID_SPI9:Result:='POWER_ID_SPI9';
  end;
 end;
 
@@ -2061,6 +2341,25 @@ begin
   CLOCK_ID_SPI1:Result:='CLOCK_ID_SPI1';
   CLOCK_ID_SPI2:Result:='CLOCK_ID_SPI2';
   CLOCK_ID_SPI3:Result:='CLOCK_ID_SPI3';
+  {Additional constants (Where applicable)}
+  CLOCK_ID_UART4:Result:='CLOCK_ID_UART4';
+  CLOCK_ID_UART5:Result:='CLOCK_ID_UART5';
+  CLOCK_ID_UART6:Result:='CLOCK_ID_UART6';
+  CLOCK_ID_UART7:Result:='CLOCK_ID_UART7';
+  CLOCK_ID_UART8:Result:='CLOCK_ID_UART8';
+  CLOCK_ID_UART9:Result:='CLOCK_ID_UART9';
+  CLOCK_ID_I2C4:Result:='CLOCK_ID_I2C4';
+  CLOCK_ID_I2C5:Result:='CLOCK_ID_I2C5';
+  CLOCK_ID_I2C6:Result:='CLOCK_ID_I2C6';
+  CLOCK_ID_I2C7:Result:='CLOCK_ID_I2C7';
+  CLOCK_ID_I2C8:Result:='CLOCK_ID_I2C8';
+  CLOCK_ID_I2C9:Result:='CLOCK_ID_I2C9';
+  CLOCK_ID_SPI4:Result:='CLOCK_ID_SPI4';
+  CLOCK_ID_SPI5:Result:='CLOCK_ID_SPI5';
+  CLOCK_ID_SPI6:Result:='CLOCK_ID_SPI6';
+  CLOCK_ID_SPI7:Result:='CLOCK_ID_SPI7';
+  CLOCK_ID_SPI8:Result:='CLOCK_ID_SPI8';
+  CLOCK_ID_SPI9:Result:='CLOCK_ID_SPI9';
  end;
 end;
 

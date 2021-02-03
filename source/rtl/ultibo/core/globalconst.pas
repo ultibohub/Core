@@ -1,7 +1,7 @@
 {
 Ultibo Global Constant Definitions.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '20 November 2020';
+ ULTIBO_RELEASE_DATE             = '3 February 2021';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.0.841';
+ ULTIBO_RELEASE_VERSION          = '2.0.895';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 0;
- ULTIBO_RELEASE_VERSION_REVISION = 841;
+ ULTIBO_RELEASE_VERSION_REVISION = 895;
  
 {==============================================================================}
 const
@@ -963,6 +963,9 @@ const
  SIZE_1G    = $40000000;
  SIZE_2G    = $80000000;
  
+ SIZE_4G    = $100000000;
+ SIZE_8G    = $200000000;
+ 
 {==============================================================================}
 const
  {Universal time constants}
@@ -1038,6 +1041,8 @@ const
  BOARD_TYPE_RPI3A_PLUS        = 29; {Raspberry Pi 3 Model A+}
  BOARD_TYPE_RPI_COMPUTE3_PLUS = 30; {Raspberry Pi Compute Module 3+}
  BOARD_TYPE_RPI4B             = 31; {Raspberry Pi 4 Model B}
+ BOARD_TYPE_RPI400            = 32; {Raspberry Pi 400}
+ BOARD_TYPE_RPI_COMPUTE4      = 33; {Raspberry Pi Compute Module 4}
  
 {==============================================================================}
 const 
@@ -1126,7 +1131,9 @@ const
  CPU_GROUP_30  = 30;
  CPU_GROUP_31  = 31;
  
- CPU_GROUP_ALL =  $FFFFFFFF;
+ CPU_GROUP_ALL = $FFFFFFFF;
+ 
+ CPU_GROUP_MAX = CPU_GROUP_31;
  
 const
  {CPU ID constants}
@@ -1163,7 +1170,9 @@ const
  CPU_ID_30  = 30;
  CPU_ID_31  = 31;
  
- CPU_ID_ALL =  $FFFFFFFF;
+ CPU_ID_ALL = $FFFFFFFF;
+ 
+ CPU_ID_MAX = CPU_ID_31;
  
 const
  {CPU Mask constants}
@@ -1289,19 +1298,53 @@ const
  DMA_DIR_DEV_TO_MEM = 3;
  DMA_DIR_DEV_TO_DEV = 4;
  
- {DMA DREQ ID constants}
- DMA_DREQ_ID_NONE          =  0;  {No peripheral gating (memory to memory transfer)}
- DMA_DREQ_ID_UART_TX       =  1;
- DMA_DREQ_ID_UART_RX       =  2;
- DMA_DREQ_ID_SPI_TX        =  3;
- DMA_DREQ_ID_SPI_RX        =  4;
- DMA_DREQ_ID_SPI_SLAVE_TX  =  5;
- DMA_DREQ_ID_SPI_SLAVE_RX  =  6;
- DMA_DREQ_ID_PCM_TX        =  7;
- DMA_DREQ_ID_PCM_RX        =  8;
- DMA_DREQ_ID_PWM           =  9;
- DMA_DREQ_ID_MMC           =  10;
- DMA_DREQ_ID_SDHOST        =  11;
+ {DMA DREQ ID constants (Where applicable)}
+ DMA_DREQ_ID_NONE         = 0;  {No peripheral gating (memory to memory transfer)}
+ DMA_DREQ_ID_UART_TX      = 1;
+ DMA_DREQ_ID_UART_RX      = 2;
+ DMA_DREQ_ID_SPI_TX       = 3;
+ DMA_DREQ_ID_SPI_RX       = 4;
+ DMA_DREQ_ID_SPI_SLAVE_TX = 5;
+ DMA_DREQ_ID_SPI_SLAVE_RX = 6;
+ DMA_DREQ_ID_PCM_TX       = 7;
+ DMA_DREQ_ID_PCM_RX       = 8;
+ DMA_DREQ_ID_PWM          = 9;
+ DMA_DREQ_ID_MMC          = 10;
+ DMA_DREQ_ID_SDHOST       = 11;
+ {Additional and aliased constants (Where applicable)}
+ DMA_DREQ_ID_UART0_TX     = DMA_DREQ_ID_UART_TX;
+ DMA_DREQ_ID_UART0_RX     = DMA_DREQ_ID_UART_RX;
+ DMA_DREQ_ID_UART1_TX     = 12;
+ DMA_DREQ_ID_UART1_RX     = 13;
+ DMA_DREQ_ID_UART2_TX     = 14;
+ DMA_DREQ_ID_UART2_RX     = 15;
+ DMA_DREQ_ID_UART3_TX     = 16;
+ DMA_DREQ_ID_UART3_RX     = 17;
+ DMA_DREQ_ID_UART4_TX     = 18;
+ DMA_DREQ_ID_UART4_RX     = 19;
+ DMA_DREQ_ID_UART5_TX     = 20;
+ DMA_DREQ_ID_UART5_RX     = 21;
+ DMA_DREQ_ID_SPI0_TX      = DMA_DREQ_ID_SPI_TX;
+ DMA_DREQ_ID_SPI0_RX      = DMA_DREQ_ID_SPI_RX;
+ DMA_DREQ_ID_SPI1_TX      = 22;
+ DMA_DREQ_ID_SPI1_RX      = 23;
+ DMA_DREQ_ID_SPI2_TX      = 24;
+ DMA_DREQ_ID_SPI2_RX      = 25;
+ DMA_DREQ_ID_SPI3_TX      = 26;
+ DMA_DREQ_ID_SPI3_RX      = 27;
+ DMA_DREQ_ID_SPI4_TX      = 28;
+ DMA_DREQ_ID_SPI4_RX      = 29;
+ DMA_DREQ_ID_SPI5_TX      = 30;
+ DMA_DREQ_ID_SPI5_RX      = 31;
+ DMA_DREQ_ID_SPI6_TX      = 32;
+ DMA_DREQ_ID_SPI6_RX      = 33;
+ DMA_DREQ_ID_PCM0_TX      = DMA_DREQ_ID_PCM_TX;
+ DMA_DREQ_ID_PCM0_RX      = DMA_DREQ_ID_PCM_RX;
+ DMA_DREQ_ID_PWM0         = DMA_DREQ_ID_PWM;
+ DMA_DREQ_ID_PWM1         = 34;
+ DMA_DREQ_ID_EMMC0        = DMA_DREQ_ID_MMC;
+ DMA_DREQ_ID_EMMC1        = DMA_DREQ_ID_SDHOST;
+ DMA_DREQ_ID_EMMC2        = 35;
  
 {==============================================================================}
 const
@@ -1542,6 +1585,25 @@ const
  POWER_ID_SPI2   = 18;
  POWER_ID_SPI3   = 19;
  POWER_ID_CCP2TX = 20;
+ {Additional constants (Where applicable)}
+ POWER_ID_UART4  = 21;
+ POWER_ID_UART5  = 22;
+ POWER_ID_UART6  = 23;
+ POWER_ID_UART7  = 24;
+ POWER_ID_UART8  = 25;
+ POWER_ID_UART9  = 26;
+ POWER_ID_I2C4   = 27;
+ POWER_ID_I2C5   = 28;
+ POWER_ID_I2C6   = 29;
+ POWER_ID_I2C7   = 30;
+ POWER_ID_I2C8   = 31;
+ POWER_ID_I2C9   = 32;
+ POWER_ID_SPI4   = 33;
+ POWER_ID_SPI5   = 34;
+ POWER_ID_SPI6   = 35;
+ POWER_ID_SPI7   = 36;
+ POWER_ID_SPI8   = 37;
+ POWER_ID_SPI9   = 38;
  
 const
  {Power State constants}
@@ -1577,6 +1639,25 @@ const
  CLOCK_ID_SPI1    = 23;
  CLOCK_ID_SPI2    = 24;
  CLOCK_ID_SPI3    = 25;
+ {Additional constants (Where applicable)}
+ CLOCK_ID_UART4   = 26;
+ CLOCK_ID_UART5   = 27;
+ CLOCK_ID_UART6   = 28;
+ CLOCK_ID_UART7   = 29;
+ CLOCK_ID_UART8   = 30;
+ CLOCK_ID_UART9   = 31;
+ CLOCK_ID_I2C4    = 32;
+ CLOCK_ID_I2C5    = 33;
+ CLOCK_ID_I2C6    = 34;
+ CLOCK_ID_I2C7    = 35;
+ CLOCK_ID_I2C8    = 36;
+ CLOCK_ID_I2C9    = 37;
+ CLOCK_ID_SPI4    = 38;
+ CLOCK_ID_SPI5    = 39;
+ CLOCK_ID_SPI6    = 40;
+ CLOCK_ID_SPI7    = 41;
+ CLOCK_ID_SPI8    = 42;
+ CLOCK_ID_SPI9    = 43;
  
 const
  {Clock State constants}

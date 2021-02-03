@@ -1,7 +1,7 @@
 {
 Ultibo FAT12/16/32/exFAT interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -66,6 +66,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,C
 //To Do //What should SetEntry/SetLong use ? (FDirectoryBuffer and DirectoryLock/Unlock ?) (FEntryBuffer and EntryLock/Unlock ?)
 
 //To Do //Look for:
+
+//LongWord(Pointer()^) -> PLongWord()^
+//Word(Pointer()^) -> PWord()^
 
 //Critical
 
@@ -293,7 +296,10 @@ type
    FLongNames:Boolean;
    FOemConvert:Boolean;
    FNumericTail:Boolean;
-
+   
+   FInfoSectorEnable:Boolean;
+   FInfoImmediateUpdate:Boolean;
+   
    {Private Methods}
    function CheckLBA:Boolean;
    function CheckFAT32:Boolean;
@@ -309,6 +315,9 @@ type
    property LongNames:Boolean read FLongNames write FLongNames;
    property OemConvert:Boolean read FOemConvert write FOemConvert;
    property NumericTail:Boolean read FNumericTail write FNumericTail;
+   
+   property InfoSectorEnable:Boolean read FInfoSectorEnable write FInfoSectorEnable;
+   property InfoImmediateUpdate:Boolean read FInfoImmediateUpdate write FInfoImmediateUpdate;
 
    {Public Methods}
    function RecognizePartitionId(APartitionId:Byte):Boolean; override;
@@ -408,6 +417,9 @@ type
    FCaseFlags:Boolean;       {Allow writing entries with the Lowercase Flags set (Reading is always supported)}
    FVolumeFlags:LongWord;    {Volume Dirty/Error flags}
 
+   FInfoSectorEnable:Boolean;    {Enable use of FAT32 info sector for free cluster count and next free cluster}
+   FInfoImmediateUpdate:Boolean; {Enable immediate update of FAT32 info sector on allocate or release of clusters}
+
    {FAT Markers}
    FEndOfFile:LongWord;
    FEndOfCluster:LongWord;
@@ -462,6 +474,9 @@ type
 
    FClusterSize:LongWord;        {Size of a Cluster in Bytes (Max 65536 > Word)}
 
+   FInfoBuffer:Pointer;          {Buffer for info sector handling (Sector size)}
+   FInfoLock:TMutexHandle;       {Lock for info buffer}
+   
    FNameBuffer:Pointer;          {Buffer for long name handling}
    FNameLock:TMutexHandle;       {Lock for name buffer}
    
@@ -475,6 +490,9 @@ type
    FClusterLock:TMutexHandle;    {Lock for cluster buffer}
 
    {Private Methods}
+   function InfoLock:Boolean;
+   function InfoUnlock:Boolean;
+   
    function NameLock:Boolean;
    function NameUnlock:Boolean;
 
@@ -487,6 +505,8 @@ type
    function ClusterLock:Boolean;
    function ClusterUnlock:Boolean;
    
+   function IsRemovable:Boolean;
+   
    {Flag Methods}
    function GetHardError:Boolean;
    procedure SetHardError(AValue:Boolean);
@@ -497,6 +517,9 @@ type
    function GetVolumeFlags:LongWord;
    function SetVolumeFlags(AFlags:LongWord):Boolean;
 
+   {Sector Methods}
+   function UpdateInfoSector:Boolean;
+   
    {Cluster Methods}
    function FillCluster(ACluster:LongWord;AValue:Byte):Boolean;
 
@@ -626,6 +649,9 @@ type
    property LongNames:Boolean read FLongNames write FLongNames;
    property CasePreserved:Boolean read FCasePreserved write FCasePreserved;
    property UnicodeNames:Boolean read FUnicodeNames write FUnicodeNames;
+
+   property InfoSectorEnable:Boolean read FInfoSectorEnable write FInfoSectorEnable;
+   property InfoImmediateUpdate:Boolean read FInfoImmediateUpdate write FInfoImmediateUpdate;
 
    property HardError:Boolean read GetHardError write SetHardError;
    property CleanShutdown:Boolean read GetCleanShutdown write SetCleanShutdown;
@@ -915,6 +941,9 @@ begin
  FLongNames:=True;
  FOemConvert:=True;
  FNumericTail:=True;
+ 
+ FInfoSectorEnable:=True;
+ FInfoImmediateUpdate:=False;
 
  FAllowDrive:=True;
  FAllowDefault:=True;
@@ -1315,6 +1344,8 @@ begin
   FileSystem.LongNames:=FLongNames;
   FileSystem.CasePreserved:=FLongNames; {Enabled only if LongNames Enabled}
   FileSystem.UnicodeNames:=FLongNames;  {Enabled only if LongNames Enabled}
+  FileSystem.InfoSectorEnable:=FInfoSectorEnable;
+  FileSystem.InfoImmediateUpdate:=FInfoImmediateUpdate;
   FileSystem.FileSystemInit;
   FileSystem.MountFileSystem;
   
@@ -2415,6 +2446,9 @@ begin
  FOemConvert:=True;
  FNumericTail:=True;
 
+ FInfoSectorEnable:=True;
+ FInfoImmediateUpdate:=False;
+
  FReadOnly:=False;
  FLongNames:=True;
  FDataStreams:=False;
@@ -2438,6 +2472,9 @@ begin
 
  FLastFreeCluster:=fatUnknownCluster;
  FFreeClusterCount:=fatUnknownCluster;
+ 
+ FInfoBuffer:=nil;
+ FInfoLock:=MutexCreate;
  
  FNameBuffer:=nil;
  FNameLock:=MutexCreate;
@@ -2474,10 +2511,30 @@ begin
   if FNameBuffer <> nil then FreeMem(FNameBuffer);
   FNameBuffer:=nil;
   MutexDestroy(FNameLock);
+  
+  if FInfoBuffer <> nil then FreeMem(FInfoBuffer);
+  FInfoBuffer:=nil;
+  MutexDestroy(FInfoLock);
  finally 
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
  end; 
+end;
+
+{==============================================================================}
+
+function TFATFileSystem.InfoLock:Boolean;
+begin
+ {}
+ Result:=(MutexLock(FInfoLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TFATFileSystem.InfoUnlock:Boolean;
+begin
+ {}
+ Result:=(MutexUnlock(FInfoLock) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -2542,6 +2599,20 @@ function TFATFileSystem.ClusterUnlock:Boolean;
 begin
  {}
  Result:=(MutexUnlock(FClusterLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TFATFileSystem.IsRemovable:Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ if FDriver = nil then Exit;
+ 
+ if FVolume = nil then Exit;
+ 
+ Result:=FVolume.Removable;
 end;
 
 {==============================================================================}
@@ -2670,6 +2741,90 @@ end;
 
 {==============================================================================}
 
+function TFATFileSystem.UpdateInfoSector:Boolean;
+{Update the FAT32 Info Sector with current values}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Buffer}
+ if FInfoBuffer = nil then Exit;
+ 
+ {Check ReadOnly}
+ if FReadOnly then Exit;
+ 
+ {Check Type}
+ case FFATType of
+  ftFAT12,ftFAT16:begin
+    Result:=True;
+   end;
+  ftFAT32:begin
+    if not InfoLock then Exit;
+    try
+     {Check Buffer}
+     if (PFATInfoSector(FInfoBuffer).LeadSignature <> fat32LeadSignature) or
+        (PFATInfoSector(FInfoBuffer).StructureSignature <> fat32StructSignature) or
+        (PFATInfoSector(FInfoBuffer).TrailSignature <> fat32TrailSignature) then
+      begin
+       {$IFDEF FAT_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Reading Info Sector');
+       {$ENDIF}
+       
+       {Read Info Sector}
+       if not ReadSectors(FInfoSector,1,FInfoBuffer^) then Exit;
+      end;
+    
+     {Check Enable}
+     if InfoSectorEnable then
+      begin
+       {Update Free Count and Last Free}
+       if FFreeClusterCount <> fatUnknownCluster then PFATInfoSector(FInfoBuffer).FreeClusterCount:=FFreeClusterCount;
+       if FLastFreeCluster <> fatUnknownCluster then PFATInfoSector(FInfoBuffer).LastFreeCluster:=FLastFreeCluster;
+       
+       {$IFDEF FAT_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Writing Info Sector');
+       {$ENDIF}
+       
+       {Write Info Sector}
+       if not WriteSectors(FInfoSector,1,FInfoBuffer^) then Exit;         
+       
+       {$IFDEF FAT_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Info Sector Updated (Free = ' + IntToHex(PFATInfoSector(FInfoBuffer).FreeClusterCount,8) + ' Last = ' + IntToHex(PFATInfoSector(FInfoBuffer).LastFreeCluster,8) + ')');
+       {$ENDIF}
+      end
+     else
+      begin
+       {Check for Unknown Cluster}
+       if (PFATInfoSector(FInfoBuffer).FreeClusterCount <> fatUnknownCluster) or
+          (PFATInfoSector(FInfoBuffer).LastFreeCluster <> fatUnknownCluster) then
+        begin
+         {Resut Free Count and Last Free}
+         PFATInfoSector(FInfoBuffer).FreeClusterCount:=fatUnknownCluster;
+         PFATInfoSector(FInfoBuffer).LastFreeCluster:=fatUnknownCluster;
+
+         {$IFDEF FAT_DEBUG}
+         if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Writing Info Sector');
+         {$ENDIF}
+         
+         {Write Info Sector}
+         if not WriteSectors(FInfoSector,1,FInfoBuffer^) then Exit;         
+         
+         {$IFDEF FAT_DEBUG}
+         if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Info Sector Reset');
+         {$ENDIF}
+        end;
+      end;
+      
+     Result:=True; 
+    finally
+     InfoUnlock;
+    end;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
 function TFATFileSystem.FillCluster(ACluster:LongWord;AValue:Byte):Boolean;
 {Fill one cluster with the supplied value}
 begin
@@ -2779,23 +2934,31 @@ begin
     {Check Info Sector}
     if FFATType = ftFAT32 then
      begin
-      if not SectorLock then Exit;
-      try
-       if FSectorBuffer = nil then Exit;
-      
-       {Get Info Sector}
-       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-       if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).LastFreeCluster <> fatUnknownCluster then
-        begin
-         {Get Last Free Cluster}
-         FLastFreeCluster:=PFATInfoSector(FSectorBuffer).LastFreeCluster;
+      if InfoSectorEnable then
+       begin
+        if not SectorLock then Exit;
+        try
+         if FSectorBuffer = nil then Exit;
+        
+         {Get Info Sector}
+         if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
+         if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
+         if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
+         if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
+         if PFATInfoSector(FSectorBuffer).LastFreeCluster <> fatUnknownCluster then
+          begin
+           {Get Last Free Cluster}
+           FLastFreeCluster:=PFATInfoSector(FSectorBuffer).LastFreeCluster;
+          end;
+        finally
+         SectorUnlock;
         end;
-      finally
-       SectorUnlock;
-      end; 
+       end
+      else
+       begin
+        {Update Info Sector}
+        UpdateInfoSector;
+       end;
      end;
    end;
   
@@ -2830,7 +2993,7 @@ begin
            if (Cluster and fatUnevenCluster) = 0 then
             begin
              {Entry is Even}
-             if (Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and $0FFF) and not(FReservedBits) = FFreeCluster then
+             if (Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and $0FFF) and not(FReservedBits) = FFreeCluster then
               begin
                FLastFreeCluster:=Cluster;
                Result:=FLastFreeCluster;
@@ -2840,7 +3003,7 @@ begin
            else
             begin
              {Entry is Odd}
-             if (Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) shr 4) and not(FReservedBits) = FFreeCluster then
+             if (Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) shr 4) and not(FReservedBits) = FFreeCluster then
               begin
                FLastFreeCluster:=Cluster;
                Result:=FLastFreeCluster;
@@ -2851,7 +3014,7 @@ begin
          ftFAT16:begin
            {Get Offset}
            ClusterOffset:=((Cluster - DiskBlock.BlockNo) shl 1); {Multiply by SizeOf(Word)}
-           if Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
+           if Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
             begin
              FLastFreeCluster:=Cluster;
              Result:=FLastFreeCluster;
@@ -2861,7 +3024,7 @@ begin
          ftFAT32:begin
            {Get Offset}
            ClusterOffset:=((Cluster - DiskBlock.BlockNo) shl 2); {Multiply by SizeOf(LongWord)}
-           if LongWord(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
+           if LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
             begin
              FLastFreeCluster:=Cluster;
              Result:=FLastFreeCluster;
@@ -2927,25 +3090,34 @@ begin
     {Check Info Sector}
     if FFATType = ftFAT32 then
      begin
-      if not SectorLock then Exit;
-      try
-       if FSectorBuffer = nil then Exit;
-      
-       {Get Info Sector}
-       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-       if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
-       if PFATInfoSector(FSectorBuffer).FreeClusterCount <> fatUnknownCluster then
-        begin
-         {Get Free Cluster Count}
-         FFreeClusterCount:=PFATInfoSector(FSectorBuffer).FreeClusterCount;
-         Result:=FFreeClusterCount;
-         Exit;
-        end;
-      finally
-       SectorUnlock;
-      end; 
+      if InfoSectorEnable then
+       begin
+        if not SectorLock then Exit;
+        try
+         if FSectorBuffer = nil then Exit;
+        
+         {Get Info Sector}
+         if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
+         if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
+         if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
+         if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
+         if PFATInfoSector(FSectorBuffer).FreeClusterCount <> fatUnknownCluster then
+          begin
+           {Get Free Cluster Count}
+           FFreeClusterCount:=PFATInfoSector(FSectorBuffer).FreeClusterCount;
+           Result:=FFreeClusterCount;
+           
+           Exit;
+          end;
+        finally
+         SectorUnlock;
+        end; 
+       end
+      else
+       begin
+        {Update Info Sector}
+        UpdateInfoSector;
+       end;
      end;
     
     {Get Start}
@@ -2978,7 +3150,7 @@ begin
              if (Cluster and fatUnevenCluster) = 0 then
               begin
                {Entry is Even}
-               if (Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and $0FFF) and not(FReservedBits) = FFreeCluster then
+               if (Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and $0FFF) and not(FReservedBits) = FFreeCluster then
                 begin
                  Inc(FFreeClusterCount);
                 end;
@@ -2986,7 +3158,7 @@ begin
              else
               begin
                {Entry is Odd}
-               if (Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) shr 4) and not(FReservedBits) = FFreeCluster then
+               if (Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) shr 4) and not(FReservedBits) = FFreeCluster then
                 begin
                  Inc(FFreeClusterCount);
                 end;
@@ -2995,7 +3167,7 @@ begin
            ftFAT16:begin
              {Get Offset}
              ClusterOffset:=((Cluster - DiskBlock.BlockNo) shl 1); {Multiply by SizeOf(Word)}
-             if Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
+             if Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
               begin
                Inc(FFreeClusterCount);
               end;
@@ -3003,7 +3175,7 @@ begin
            ftFAT32:begin
              {Get Offset}
              ClusterOffset:=((Cluster - DiskBlock.BlockNo) shl 2); {Multiply by SizeOf(LongWord)}
-             if LongWord(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
+             if LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
               begin
                Inc(FFreeClusterCount);
               end;
@@ -3343,23 +3515,23 @@ begin
      if (ACluster and fatUnevenCluster) = 0 then
       begin
        {Entry is Even}
-       Result:=(Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and $0FFF) and not(FReservedBits);
+       Result:=(Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and $0FFF) and not(FReservedBits);
       end
      else
       begin
        {Entry is Odd}
-       Result:=(Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) shr 4) and not(FReservedBits);
+       Result:=(Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) shr 4) and not(FReservedBits);
       end;
     end;
    ftFAT16:begin
      {Get Offset}
      ClusterOffset:=((ACluster - DiskBlock.BlockNo) shl 1); {Multiply by SizeOf(Word)}
-     Result:=Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits);
+     Result:=Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits);
     end;
    ftFAT32:begin
      {Get Offset}
      ClusterOffset:=((ACluster - DiskBlock.BlockNo) shl 2); {Multiply by SizeOf(LongWord)}
-     Result:=LongWord(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits);
+     Result:=LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits);
     end;
   end;
   
@@ -3418,28 +3590,28 @@ begin
       begin
        {Entry is Even}
        AValue:=AValue and $0FFF;
-       Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and $F000;
+       Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and $F000;
       end
      else
       begin
        {Entry is Odd}
        AValue:=AValue shl 4;
-       Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and $000F;
+       Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and $000F;
       end;
       
-     Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) or AValue;
+     Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) or AValue;
     end;
    ftFAT16:begin
      {Get Offset}
      ClusterOffset:=((ACluster - DiskBlock.BlockNo) shl 1); {Multiply by 2}
-     Word(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^):=AValue;
+     Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=AValue;
     end;
    ftFAT32:begin
      {Get Offset}
      ClusterOffset:=((ACluster - DiskBlock.BlockNo) shl 2); {Multiply by 4}
      AValue:=AValue and not(FReservedBits);
-     LongWord(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^):=LongWord(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) and FReservedBits;
-     LongWord(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^):=LongWord(Pointer(LongWord(DiskBlock.BlockBuffer) + ClusterOffset)^) or AValue;
+     LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and FReservedBits;
+     LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) or AValue;
     end;
   end;
   
@@ -3475,6 +3647,9 @@ begin
   
   {Check ReadOnly}
   if FReadOnly then Exit;
+  
+  {Check Free}
+  if FFreeClusterCount = fatUnknownCluster then GetFreeClusterCount;
   
   {Set Count}
   AllocCount:=0; //To Do //Could use Result if Result was a Count of allocated
@@ -3553,7 +3728,10 @@ begin
     {Update Chain}
     if not SetCluster(AParent,ACluster,True) then Exit;
    end;
-   
+  
+  {Update Info Sector}
+  if (InfoSectorEnable and InfoImmediateUpdate) then UpdateInfoSector;
+  
   Result:=True;
  finally
   FBlocks.WriterUnlock;
@@ -3575,6 +3753,9 @@ begin
  try
   {Check ReadOnly}
   if FReadOnly then Exit;
+  
+  {Check Free}
+  if FFreeClusterCount = fatUnknownCluster then GetFreeClusterCount;
   
   {Check Cluster} {Allows for zero length files}
   if ACluster >= FStartCluster then
@@ -3613,6 +3794,9 @@ begin
       Current:=ACluster;
      end;
    end;
+   
+  {Update Info Sector}
+  if (InfoSectorEnable and InfoImmediateUpdate) then UpdateInfoSector;
    
   Result:=True;
  finally
@@ -3876,7 +4060,7 @@ begin
       while EntryOffset < FSectorSize do
        begin
         {Get Directory}
-        Directory:=PLFNDirectory(LongWord(FClusterBuffer) + BlockOffset + EntryOffset);
+        Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + BlockOffset + EntryOffset);
         
         {Check for Free}
         if (Directory.Order = fatEntryFreeAll) or (Directory.Order = fatEntryFree) then
@@ -4009,7 +4193,7 @@ begin
        {$ENDIF}
       
        {Modify Directory}
-       Directory:=PLFNDirectory(LongWord(FClusterBuffer) + EntryOffset);
+       Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + EntryOffset);
        Directory.Order:=fatEntryFree;
        Dec(EntryCount);
        if EntryCount = 0 then Break; {Break to allow completion}
@@ -4530,7 +4714,7 @@ begin
  if Size > 0 then
   begin
    {Set Length}
-   PWord(LongWord(ABuffer) + LongWord((Size - 1) shl 1))^:=0; {Set null on end} {Returned size includes null terminator}
+   PWord(PtrUInt(ABuffer) + LongWord((Size - 1) shl 1))^:=0; {Set null on end} {Returned size includes null terminator}
    
    Result:=True;
   end;
@@ -4585,7 +4769,7 @@ begin
    end;
    
    {Copy Char}
-   PWideChar(LongWord(ABuffer) + Offset)^:=Next;
+   PWideChar(PtrUInt(ABuffer) + Offset)^:=Next;
    
    {Check Null}
    if Word(Next) = lfnEntryPadding then Break;
@@ -4646,7 +4830,7 @@ begin
  while Count < lfnEntryChars do
   begin
    {Get Next}
-   Next:=PWideChar(LongWord(ABuffer) + Offset)^;
+   Next:=PWideChar(PtrUInt(ABuffer) + Offset)^;
    {Copy Char}
    case Count of
     0..4:Directory.Name1[Count]:=Next;
@@ -5261,7 +5445,7 @@ begin
        if not ReadCluster(StartCluster,FReadBuffer^) then Exit;
      
        {Read Buffer}
-       System.Move(Pointer(LongWord(FReadBuffer) + Start)^,Pointer(LongWord(@ABuffer) + Offset)^,Count);
+       System.Move(Pointer(PtrUInt(FReadBuffer) + Start)^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
       finally  
        ReadUnlock;
       end; 
@@ -5269,7 +5453,7 @@ begin
     else
      begin
       {Read Cluster}
-      if not ReadCluster(StartCluster,Pointer(LongWord(@ABuffer) + Offset)^) then Exit;
+      if not ReadCluster(StartCluster,Pointer(PtrUInt(@ABuffer) + Offset)^) then Exit;
      end;
     
     {Get Cluster}
@@ -5380,7 +5564,7 @@ begin
        if not ReadCluster(StartCluster,FWriteBuffer^) then Exit;
      
        {Write Buffer}
-       System.Move(Pointer(LongWord(@ABuffer) + Offset)^,Pointer(LongWord(FWriteBuffer) + Start)^,Count);
+       System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,Pointer(PtrUInt(FWriteBuffer) + Start)^,Count);
      
        {Write Cluster}
        if not WriteCluster(StartCluster,FWriteBuffer^) then Exit;
@@ -5391,7 +5575,7 @@ begin
     else
      begin
       {Write Cluster}
-      if not WriteCluster(StartCluster,Pointer(LongWord(@ABuffer) + Offset)^) then Exit;
+      if not WriteCluster(StartCluster,Pointer(PtrUInt(@ABuffer) + Offset)^) then Exit;
      end;
     
     {Get Cluster}
@@ -5547,7 +5731,7 @@ begin
             while EntryOffset < FSectorSize do
              begin
               {Get Directory}
-              Directory:=PLFNDirectory(LongWord(FClusterBuffer) + BlockOffset + EntryOffset);
+              Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + BlockOffset + EntryOffset);
            
               {Check all Free}
               if Directory.Order = fatEntryFreeAll then Break; {Break to allow next Sector}
@@ -5726,7 +5910,7 @@ begin
  if ABuffer = nil then Exit;
 
  {Get Directory}
- Directory:=PLFNDirectory(LongWord(ABuffer) + ABlockOffset + AEntryOffset);
+ Directory:=PLFNDirectory(PtrUInt(ABuffer) + ABlockOffset + AEntryOffset);
  
  {Check for Long}
  if Directory.Attribute = faLongName then
@@ -5810,7 +5994,7 @@ begin
  {$ENDIF}
  
  {Get Directory}
- Directory:=PLFNDirectory(LongWord(ABuffer) + ABlockOffset + AEntryOffset);
+ Directory:=PLFNDirectory(PtrUInt(ABuffer) + ABlockOffset + AEntryOffset);
  
  {Check for Last}
  if (Directory.Order and lfnEntryLast) <> lfnEntryLast then Exit;
@@ -5849,7 +6033,7 @@ begin
        while AEntryOffset < FSectorSize do
         begin
          {Get Directory}
-         Directory:=PLFNDirectory(LongWord(ABuffer) + ABlockOffset + AEntryOffset);
+         Directory:=PLFNDirectory(PtrUInt(ABuffer) + ABlockOffset + AEntryOffset);
          
          {Check All Free}
          if Directory.Order = fatEntryFreeAll then Exit; {Exit to return to LoadEntries for next entry}
@@ -6735,7 +6919,7 @@ begin
      if not ReadSectors(SectorOffset + EntrySector,SectorCount,FClusterBuffer^) then Exit; {Note: SectorCount will never be more than SectorPerCluster}
    
      {Get Directory}
-     Directory:=PLFNDirectory(LongWord(FClusterBuffer) + EntryOffset);
+     Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + EntryOffset);
    
      {Set Entry} {No AltName}
      if not EntryToDirectory(TFATDiskEntry(AEntry),Directory,False) then Exit;
@@ -6829,7 +7013,7 @@ begin
        while EntryOffset < FSectorSize do
         begin
          {Get Directory}
-         Directory:=PLFNDirectory(LongWord(FClusterBuffer) + EntryOffset);
+         Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + EntryOffset);
         
          {Check Count}
          if EntryCount > 1 then
@@ -7138,12 +7322,12 @@ begin
      if (Result and $01) = 0 then
       begin
        {Even number}
-       Result:=(Result shr 1) + PByte(LongWord(@Name) + Count)^;
+       Result:=(Result shr 1) + PByte(PtrUInt(@Name) + Count)^;
       end
      else
       begin
        {Odd number}
-       Result:=($80 or (Result shr 1)) + PByte(LongWord(@Name) + Count)^;
+       Result:=($80 or (Result shr 1)) + PByte(PtrUInt(@Name) + Count)^;
       end;
     end;
   end;
@@ -7428,6 +7612,9 @@ begin
   
   if FNameBuffer <> nil then FreeMem(FNameBuffer);
   FNameBuffer:=nil;
+
+  if FInfoBuffer <> nil then FreeMem(FInfoBuffer);
+  FInfoBuffer:=nil;
   
   FInfoSector:=0;
   FInfoBackup:=0;
@@ -7569,6 +7756,8 @@ begin
     FTotalClusterCount:=FDataClusterCount + 2;
 
     FClusterSize:=(FSectorSize * FSectorsPerCluster);
+    FInfoBuffer:=GetMem(FSectorSize);
+    if FInfoBuffer = nil then Exit;
     FNameBuffer:=GetMem(lfnMaxName);
     if FNameBuffer = nil then Exit;
     FReadBuffer:=GetMem(FClusterSize);
@@ -7577,6 +7766,11 @@ begin
     if FWriteBuffer = nil then Exit;
     FClusterBuffer:=GetMem(FClusterSize);
     if FClusterBuffer = nil then Exit;
+    
+    {Reset Info Buffer}
+    PFATInfoSector(FInfoBuffer).LeadSignature:=0;
+    PFATInfoSector(FInfoBuffer).StructureSignature:=0;
+    PFATInfoSector(FInfoBuffer).TrailSignature:=0;
     
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Parameters Calculated');
@@ -7708,6 +7902,8 @@ begin
     FTotalClusterCount:=FDataClusterCount + 2;
 
     FClusterSize:=(FSectorSize * FSectorsPerCluster);
+    FInfoBuffer:=GetMem(FSectorSize);
+    if FInfoBuffer = nil then Exit;
     FNameBuffer:=GetMem(lfnMaxName);
     if FNameBuffer = nil then Exit;
     FReadBuffer:=GetMem(FClusterSize);
@@ -7716,6 +7912,11 @@ begin
     if FWriteBuffer = nil then Exit;
     FClusterBuffer:=GetMem(FClusterSize);
     if FClusterBuffer = nil then Exit;
+    
+    {Reset Info Buffer}
+    PFATInfoSector(FInfoBuffer).LeadSignature:=0;
+    PFATInfoSector(FInfoBuffer).StructureSignature:=0;
+    PFATInfoSector(FInfoBuffer).TrailSignature:=0;
     
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Parameters Calculated');
@@ -7865,6 +8066,9 @@ begin
   //To do - Allows for Mount/Dismount by formatter without dismounting Drive/Volume
   //Also allows updating the InfoSector and VolumeFlags (Clean on Dismount) on FAT32
   //See NTFS
+  
+  {Update Info Sector}
+  UpdateInfoSector;
   
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.DismountFileSystem Completed');
@@ -8186,6 +8390,8 @@ begin
    Recognizer.NumericTail:=FAT_NUMERIC_TAIL;
    Recognizer.DirtyCheck:=FAT_DIRTY_CHECK;
    Recognizer.QuickCheck:=FAT_QUICK_CHECK;
+   Recognizer.InfoSectorEnable:=FAT_INFO_SECTOR_ENABLE;
+   Recognizer.InfoImmediateUpdate:=FAT_INFO_IMMEDIATE_UPDATE;
   end; 
 
  FATFSInitialized:=True;
