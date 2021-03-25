@@ -29,16 +29,19 @@ make rtl_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPCF
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress4
 
 make rtl OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress8
 
 make rtl_install CROSSINSTALL=1 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPC=%myfpc%/fpc.exe INSTALL_BASEDIR=%mypath% INSTALL_UNITDIR=%mypath%/units/armv6-ultibo/rtl
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress12
 
 
 echo .
@@ -50,21 +53,25 @@ make rtl_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPCF
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress16
 
 make packages_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress20
 
 make packages OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH -Fu%mypath%\units\armv6-ultibo\rtl" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress24
 
 make packages_install CROSSINSTALL=1 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPC=%myfpc%/fpc.exe INSTALL_BASEDIR=%mypath% INSTALL_UNITDIR=%mypath%/units/armv6-ultibo/packages
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress28
 
 
 echo .
@@ -76,16 +83,19 @@ make rtl_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress32
 
 make rtl OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress36
 
 make rtl_install CROSSINSTALL=1 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC=%myfpc%/fpc.exe INSTALL_BASEDIR=%mypath% INSTALL_UNITDIR=%mypath%/units/armv7-ultibo/rtl
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress40
 
 
 echo .
@@ -97,21 +107,25 @@ make rtl_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress44
 
 make packages_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress48
 
 make packages OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH -Fu%mypath%\units\armv7-ultibo\rtl" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress52
 
 make packages_install CROSSINSTALL=1 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC=%myfpc%/fpc.exe INSTALL_BASEDIR=%mypath% INSTALL_UNITDIR=%mypath%/units/armv7-ultibo/packages
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress56
 
 
 echo .
@@ -123,16 +137,19 @@ make rtl_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=aarch64 SUBARCH=armv8 
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress60
 
 make rtl OS_TARGET=ultibo CPU_TARGET=aarch64 SUBARCH=armv8 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV8 -CfVFP -OoFASTMATH" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress64
 
 make rtl_install CROSSINSTALL=1 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV8 -CfVFP -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=aarch64 SUBARCH=armv8 FPC=%myfpc%/fpc.exe INSTALL_BASEDIR=%mypath% INSTALL_UNITDIR=%mypath%/units/armv8-ultibo/rtl
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress68
 
 
 echo .
@@ -144,22 +161,27 @@ make rtl_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=aarch64 SUBARCH=armv8 
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress72
 
 make packages_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=aarch64 SUBARCH=armv8 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV8 -CfVFP -OoFASTMATH" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress76
 
 make packages OS_TARGET=ultibo CPU_TARGET=aarch64 SUBARCH=armv8 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV8 -CfVFP -OoFASTMATH -Fu%mypath%\units\armv8-ultibo\rtl" FPC=%myfpc%/fpc.exe
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress80
 
 make packages_install CROSSINSTALL=1 FPCFPMAKE=%myfpc%/fpc.exe CROSSOPT="-CpARMV8 -CfVFP -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=aarch64 SUBARCH=armv8 FPC=%myfpc%/fpc.exe INSTALL_BASEDIR=%mypath% INSTALL_UNITDIR=%mypath%/units/armv8-ultibo/packages
 
 IF %errorlevel% NEQ 0 GOTO Error
 echo .
+echo !!!Progress84
 
+echo !!!Progress100
 
 echo .
 echo Build RTL completed successfully
