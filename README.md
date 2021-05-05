@@ -1,10 +1,8 @@
-Ultibo core
+## Ultibo core
 
-This is the source for the Ultibo core project, a full featured embedded
-(no OS) development environment for Raspberry Pi written in Free Pascal.
+This is the source for the Ultibo core project, a full featured embedded (no OS) development environment for Raspberry Pi written in Free Pascal.
 
-For all information on developing with Ultibo, building the source and
-getting started please see the Ultibo.org website at
+For all information on developing with Ultibo, building the source and getting started please see the Ultibo.org website at
 
  https://ultibo.org
 
