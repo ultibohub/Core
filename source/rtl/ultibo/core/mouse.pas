@@ -1,7 +1,7 @@
 {
 Ultibo Mouse interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====

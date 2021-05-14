@@ -1,7 +1,7 @@
 {
 Ultibo Storage interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1244,12 +1244,18 @@ begin
            Status:=USBStorageDeviceRead10(Device,PUSBStorageDevice(Storage),(Start + ReadOffset),BlockCount,Pointer(PtrUInt(Buffer) + (ReadOffset shl Storage.BlockShift))); 
            if Status <> USB_STATUS_SUCCESS then
             begin
+             {Update Statistics}
+             Inc(Storage.ReadErrors);
+             
              Exit;
             end;
        
            Inc(ReadOffset,BlockCount);
            Dec(ReadRemain,BlockCount);
           end;
+      
+         {Update Statistics}
+         Inc(Storage.ReadCount,Count shl Storage.BlockShift);
       
          Result:=ERROR_SUCCESS; 
         end
@@ -1259,9 +1265,15 @@ begin
          Status:=USBStorageDeviceRead16(Device,PUSBStorageDevice(Storage),Start,Count,Buffer);
          if Status <> USB_STATUS_SUCCESS then
           begin
+           {Update Statistics}
+           Inc(Storage.ReadErrors);
+           
            Exit;
           end;
 
+         {Update Statistics}
+         Inc(Storage.ReadCount,Count shl Storage.BlockShift);
+         
          Result:=ERROR_SUCCESS; 
         end;
       end;
@@ -1347,12 +1359,18 @@ begin
            Status:=USBStorageDeviceWrite10(Device,PUSBStorageDevice(Storage),(Start + WriteOffset),BlockCount,Pointer(PtrUInt(Buffer) + (WriteOffset shl Storage.BlockShift))); 
            if Status <> USB_STATUS_SUCCESS then
             begin
+             {Update Statistics}
+             Inc(Storage.WriteErrors);
+             
              Exit;
             end;
        
            Inc(WriteOffset,BlockCount);
            Dec(WriteRemain,BlockCount);
           end;
+      
+         {Update Statistics}
+         Inc(Storage.WriteCount,Count shl Storage.BlockShift);
       
          Result:=ERROR_SUCCESS; 
         end
@@ -1362,8 +1380,14 @@ begin
          Status:=USBStorageDeviceWrite16(Device,PUSBStorageDevice(Storage),Start,Count,Buffer);
          if Status <> USB_STATUS_SUCCESS then
           begin
+           {Update Statistics}
+           Inc(Storage.WriteErrors);
+           
            Exit;
           end;
+
+         {Update Statistics}
+         Inc(Storage.WriteCount,Count shl Storage.BlockShift);
 
          Result:=ERROR_SUCCESS; 
         end;

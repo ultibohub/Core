@@ -2136,7 +2136,7 @@ begin
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Network Control');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Network Control (Request=' + IntToStr(Request) + ')');
  {$ENDIF}
  
  {Get Device}
@@ -2546,9 +2546,11 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Failed to submit transmit request: ' + USBStatusToString(Status));
 
+   {Update Entry}
+   Entry.DriverData:=nil;
+   
    {Update Pending}
    Dec(Network.PendingCount);
-   Exit;
   end;
 end;
  
@@ -2764,6 +2766,9 @@ begin
  if NetworkDeviceRegister(@Network.Network) <> ERROR_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to register new network device');
+   
+   {Destroy PHY Lock}
+   MutexDestroy(Network.PHYLock);
    
    {Destroy Network}
    NetworkDeviceDestroy(@Network.Network);
@@ -3960,6 +3965,9 @@ begin
  {Check Device}
  if Device = nil then Exit;
  
+ {Check Address}
+ if Address = nil then Exit;
+ 
  {Read Address Low}
  Status:=LAN78XXReadRegister(Device,LAN78XX_RX_ADDRL,AddressLow);
  if Status <> USB_STATUS_SUCCESS then
@@ -4005,6 +4013,9 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
+ 
+ {Check Address}
+ if Address = nil then Exit;
     
  {Encode Address} 
  AddressLow:=Address[0] or (Address[1] shl 8) or (Address[2] shl 16) or (Address[3] shl 24);

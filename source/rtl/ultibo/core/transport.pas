@@ -1,7 +1,7 @@
 {
 Ultibo Network Transport interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -350,7 +350,7 @@ type
   public
    {Status Variables}
    Name:String;                 //To Do //Does this need lock protection and UniqueString ?
-   Index:LongWord;
+   Index:THandle;
    Handle:THandle;              //To Do //Do these need lock protection ?
    PacketType:Word;
    Adapter:TNetworkAdapter;
@@ -383,7 +383,7 @@ type
   public
    {Status Variables}
    Name:String;                      //To Do //Does this need lock protection and UniqueString ?
-   Index:LongWord;
+   Index:THandle;
    Adapter:TTransportAdapter;        //To Do //Do these need lock protection ?
 
    ConfigType:Word;     {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
@@ -2701,7 +2701,7 @@ begin
  FLock:=SynchronizerCreate;
  
  Name:='';
- Index:=LongWord(Self);
+ Index:=THandle(Self);
  Handle:=INVALID_HANDLE_VALUE;
  PacketType:=PACKET_TYPE_RAW;
  Adapter:=nil;
@@ -2790,7 +2790,7 @@ begin
  FLock:=SynchronizerCreate;
  
  Name:='';
- Index:=LongWord(Self);
+ Index:=THandle(Self);
  Adapter:=nil;
 
  ConfigType:=CONFIG_TYPE_AUTO;

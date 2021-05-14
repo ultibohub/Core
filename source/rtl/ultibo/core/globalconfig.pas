@@ -787,7 +787,7 @@ var
  BCM2708_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2708 SPI0 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2708 SPI1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2708 SPI2 device during boot (Only if BCM2708 unit included)}
- BCM2708_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2708 I2C0 device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2708 I2C0 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2708 I2C1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_DMA:LongBool = True;      {If True then register the BCM2708 DMA host during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PWM:LongBool = True;      {If True then register the BCM2708 PWM device during boot (Only if BCM2708 unit included)}
@@ -797,6 +797,7 @@ var
  BCM2708_REGISTER_UART1:LongBool = True;    {If True then register the BCM2708 UART1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2708 SDHOST host during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2708 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2708 SPI slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2708 I2C slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2708 PWM Audio device during boot (Only if BCM2708 unit included)}
@@ -835,7 +836,7 @@ var
  BCM2709_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2709 SPI0 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2709 SPI1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2709 SPI2 device during boot (Only if BCM2709 unit included)}
- BCM2709_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2709 I2C0 device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2709 I2C0 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2709 I2C1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_DMA:LongBool = True;      {If True then register the BCM2709 DMA host during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PWM:LongBool = True;      {If True then register the BCM2709 PWM device during boot (Only if BCM2709 unit included)}
@@ -845,6 +846,7 @@ var
  BCM2709_REGISTER_UART1:LongBool = True;    {If True then register the BCM2709 UART1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2709 SDHOST host during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2709 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2709 SPI slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2709 I2C slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2709 PWM Audio device during boot (Only if BCM2709 unit included)}
@@ -885,7 +887,7 @@ var
  BCM2710_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2710 SPI0 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2710 SPI1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2710 SPI2 device during boot (Only if BCM2710 unit included)}
- BCM2710_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2710 I2C0 device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2710 I2C0 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2710 I2C1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_DMA:LongBool = True;      {If True then register the BCM2710 DMA host during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PWM:LongBool = True;      {If True then register the BCM2710 PWM device during boot (Only if BCM2710 unit included)}
@@ -895,6 +897,7 @@ var
  BCM2710_REGISTER_UART1:LongBool = True;    {If True then register the BCM2710 UART1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2710 SDHOST host during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2710 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2710 SPI slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2710 I2C slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2710 PWM Audio device during boot (Only if BCM2710 unit included)}
@@ -941,7 +944,7 @@ var
  BCM2711_REGISTER_SPI5:LongBool = True;     {If True then register the BCM2711 SPI5 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_SPI6:LongBool = True;     {If True then register the BCM2711 SPI6 device during boot (Only if BCM2711 unit included)}
 
- BCM2711_REGISTER_I2C0:LongBool = True;     {If True then register the BCM2711 I2C0 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2711 I2C0 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2711 I2C1 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C3:LongBool = True;     {If True then register the BCM2711 I2C3 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C4:LongBool = True;     {If True then register the BCM2711 I2C4 device during boot (Only if BCM2711 unit included)}
@@ -953,10 +956,10 @@ var
  
  BCM2711_REGISTER_UART0:LongBool = True;    {If True then register the BCM2711 UART0 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_UART1:LongBool = True;    {If True then register the BCM2711 UART1 device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_UART2:LongBool = True;    {If True then register the BCM2711 UART2 device during boot (Only if BCM2711 unit included)} 
+ BCM2711_REGISTER_UART2:LongBool = True;    {If True then register the BCM2711 UART2 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_UART3:LongBool = True;    {If True then register the BCM2711 UART3 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_UART4:LongBool = True;    {If True then register the BCM2711 UART4 device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_UART5:LongBool = True;    {If True then register the BCM2711 UART5 device during boot (Only if BCM2711 unit included)} 
+ BCM2711_REGISTER_UART5:LongBool = True;    {If True then register the BCM2711 UART5 device during boot (Only if BCM2711 unit included)}
  
  BCM2711_REGISTER_EMMC0:LongBool = False;   {If True then register the BCM2711 EMMC0 (SDHCI) host during boot (Disables EMMC2)(Only if BCM2711 unit included)}
  BCM2711_REGISTER_EMMC1:LongBool = False;   {If True then register the BCM2711 EMMC1 (SDHOST) host during boot (Only if BCM2711 unit included)}
@@ -970,17 +973,20 @@ var
  BCM2711_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2711 I2C slave device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2711 PWM Audio device during boot (Only if BCM2711 unit included)}
 
- BCM2711_REGISTER_SYS_CLOCK:LongBool = True;   {If True then register the BCM2711 System Timer Clock device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_ARM_CLOCK:LongBool = True;   {If True then register the BCM2711 ARM Timer Clock device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_LOCAL_CLOCK:LongBool = True; {If True then register the BCM2711 Local Timer Clock device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_ARM_TIMER:LongBool = True;   {If True then register the BCM2711 ARM Timer device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_LOCAL_TIMER:LongBool = True; {If True then register the BCM2711 Local Timer device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_RANDOM:LongBool = True;      {If True then register the BCM2711 Random device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_MAILBOX:LongBool = True;     {If True then register the BCM2711 Mailbox device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_WATCHDOG:LongBool = True;    {If True then register the BCM2711 Watchdog device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_FRAMEBUFFER:LongBool = True; {If True then register the BCM2711 Framebuffer device during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_NETWORK:LongBool = True;     {If True then register the BCM2711 GENET Network device during boot (Only if RaspberryPi4 unit included)}
- BCM2711_REGISTER_PCI:LongBool = True;         {If True then register the BCM2711 BRCNSTB PCIe host during boot (Only if RaspberryPi4 unit included)}
+ BCM2711_REGISTER_SYS_CLOCK:LongBool = True;      {If True then register the BCM2711 System Timer Clock device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_ARM_CLOCK:LongBool = True;      {If True then register the BCM2711 ARM Timer Clock device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_LOCAL_CLOCK:LongBool = True;    {If True then register the BCM2711 Local Timer Clock device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_ARM_TIMER:LongBool = True;      {If True then register the BCM2711 ARM Timer device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_LOCAL_TIMER:LongBool = True;    {If True then register the BCM2711 Local Timer device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_RANDOM:LongBool = True;         {If True then register the BCM2711 Random device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_MAILBOX:LongBool = True;        {If True then register the BCM2711 Mailbox device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_WATCHDOG:LongBool = True;       {If True then register the BCM2711 Watchdog device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_FRAMEBUFFER:LongBool = True;    {If True then register the BCM2711 Framebuffer device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_RTC:LongBool = True;            {If True then register the BCM2711 RTC device during boot (CM4 only) (Only if RaspberryPi4 unit included)}
+ BCM2711_REGISTER_NETWORK:LongBool = True;        {If True then register the BCM2711 GENET Network device during boot (Only if RaspberryPi4 unit included)}
+ BCM2711_REGISTER_PCI:LongBool = True;            {If True then register the BCM2711 BRCMSTB PCIe host during boot (Only if RaspberryPi4 unit included)}
+ BCM2711_REGISTER_PCI_XHCI:LongBool = True;       {If True then register the BCM2711 VL805 PCIe XHCI host during boot (Only if RaspberryPi4 unit included)}
+ BCM2711_REGISTER_INTERNAL_XHCI:LongBool = False; {If True then register the BCM2711 internal XHCI host during boot (Only if RaspberryPi4 unit included)}
  
  {QEMUVPB}
  QEMUVPB_REGISTER_DMA:LongBool = True;         {If True then register the QEMU VersatilePB DMA device during boot (Only if QEMUVersatilePB unit included)}

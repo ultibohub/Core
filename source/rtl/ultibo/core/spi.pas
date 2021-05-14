@@ -1,7 +1,7 @@
 {
 Ultibo SPI interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -76,9 +76,22 @@ const
  {SPI Device Types}
  SPI_TYPE_NONE      = 0;
  
+ SPI_TYPE_MAX       = 0;
+  
+ {SPI Type Names}
+ SPI_TYPE_NAMES:array[SPI_TYPE_NONE..SPI_TYPE_MAX] of String = (
+  'SPI_TYPE_NONE');
+ 
  {SPI Device States}
  SPI_STATE_DISABLED = 0;
  SPI_STATE_ENABLED  = 1;
+ 
+ SPI_STATE_MAX      = 1;
+ 
+ {SPI State Names}
+ SPI_STATE_NAMES:array[SPI_STATE_DISABLED..SPI_STATE_MAX] of String = (
+  'SPI_STATE_DISABLED',
+  'SPI_STATE_ENABLED');
  
  {SPI Device Flags}
  SPI_FLAG_NONE          = $00000000;
@@ -96,6 +109,7 @@ const
  SPI_TRANSFER_NONE  = $00000000;
  SPI_TRANSFER_DMA   = $00000001; {Use DMA for transfer (Write/Read) (Note: Buffers must be DMA compatible)}
  SPI_TRANSFER_PIO   = $00000002; {Use PIO (Polling) for transfer (Write/Read)}
+ SPI_TRANSFER_DELAY = $00000004; {Add a delay after each byte written (Write/Read) (Note: Only available with PIO transfer unless provided directly by hardware)}
  
  {SPI logging}
  SPI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SPI debugging messages}
@@ -128,6 +142,7 @@ type
   ClockPhase:LongWord;     {Current clock phase (CPHA) (eg SPI_CLOCK_PHASE_LOW)}
   ClockPolarity:LongWord;  {Current clock polarity (CPOL) (eg SPI_CLOCK_POLARITY_LOW)}
   SelectPolarity:LongWord; {Default chip select polarity (eg SPI_CS_POLARITY_LOW)}
+  ByteDelay:LongWord;      {Delay between bytes written (Microseconds)}
  end;
  
  {SPI Chip Select}
@@ -140,6 +155,7 @@ type
   ClockPhase:LongWord;     {The clock phase (CPHA) for this chip select (eg SPI_CLOCK_PHASE_LOW)}
   ClockPolarity:LongWord;  {The clock polarity (CPOL) for this chip select (eg SPI_CLOCK_POLARITY_LOW)}
   SelectPolarity:LongWord; {The chip select polarity for this chip select (eg SPI_CS_POLARITY_LOW)}
+  ByteDelay:LongWord;      {Delay between bytes written for this chip select (Microseconds)}
  end;
  
  {SPI Device}
@@ -173,6 +189,9 @@ type
  TSPIDeviceGetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceSetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
+ TSPIDeviceGetByteDelay = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+ TSPIDeviceSetByteDelay = function(SPI:PSPIDevice;Delay:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+
  TSPIDeviceGetProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TSPIDevice = record
@@ -197,6 +216,8 @@ type
   DeviceSetClockPolarity:TSPIDeviceSetClockPolarity;   {A Device specific DeviceSetClockPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   DeviceGetSelectPolarity:TSPIDeviceGetSelectPolarity; {A Device specific DeviceGetSelectPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   DeviceSetSelectPolarity:TSPIDeviceSetSelectPolarity; {A Device specific DeviceSetSelectPolarity method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceGetByteDelay:TSPIDeviceGetByteDelay;           {A Device specific DeviceGetByteDelay method implementing the standard SPI device interface (Or nil if the default method is suitable)}
+  DeviceSetByteDelay:TSPIDeviceSetByteDelay;           {A Device specific DeviceSetByteDelay method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   DeviceGetProperties:TSPIDeviceGetProperties;         {A Device specific DeviceGetProperties method implementing the standard SPI device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   TransferCount:LongWord;
@@ -209,6 +230,7 @@ type
   ClockPhase:LongWord;                                 {Clock Phase (eg SPI_CLOCK_PHASE_LOW)}
   ClockPolarity:LongWord;                              {Clock Polarity (eg SPI_CLOCK_POLARITY_LOW)}
   SelectPolarity:LongWord;                             {Default Chip Select Polarity (eg SPI_CS_POLARITY_LOW)}
+  ByteDelay:LongWord;                                  {Delay between bytes written (Microseconds)}
   Properties:TSPIProperties;                           {Device properties}
   ChipSelects:array[0..SPI_CS_MAX] of TSPIChipSelect;  {Chip selects}
   {Internal Properties}                                                                             
@@ -247,6 +269,9 @@ function SPIDeviceSetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWo
  
 function SPIDeviceGetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 function SPIDeviceSetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
+ 
+function SPIDeviceGetByteDelay(SPI:PSPIDevice):LongWord;
+function SPIDeviceSetByteDelay(SPI:PSPIDevice;Delay:LongWord):LongWord;
  
 function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord; inline;
 function SPIDeviceGetProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
@@ -298,6 +323,9 @@ function SPIDeviceGetDefault:PSPIDevice; inline;
 function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord; 
 
 function SPIDeviceCheck(SPI:PSPIDevice):PSPIDevice;
+
+function SPITypeToString(SPIType:LongWord):String;
+function SPIStateToString(SPIState:LongWord):String;
 
 procedure SPILog(Level:LongWord;SPI:PSPIDevice;const AText:String);
 procedure SPILogInfo(SPI:PSPIDevice;const AText:String); inline;
@@ -1168,6 +1196,27 @@ begin
 end;
 
 {==============================================================================}
+
+function SPIDeviceGetByteDelay(SPI:PSPIDevice):LongWord;
+{Get the delay between bytes written for the specified SPI device}
+{SPI: The SPI device to get the byte delay from}
+{Return: The byte delay in microseconds, 0 if not set or on failure}
+begin
+ //To Do //Should be per device plus per ChipSelect ? - Yes
+end;
+
+{==============================================================================}
+
+function SPIDeviceSetByteDelay(SPI:PSPIDevice;Delay:LongWord):LongWord;
+{Set the delay between bytes written for the specified SPI device}
+{SPI: The SPI device to set byte delay for}
+{Delay: The byte delay to set in microseconds}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ //To Do //Should be per device plus per ChipSelect ? - Yes
+end;
+
+{==============================================================================}
  
 function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord; inline;
 {Get the properties for the specified SPI device}
@@ -1285,6 +1334,8 @@ begin
  Result.DeviceSetClockPolarity:=nil;
  Result.DeviceGetSelectPolarity:=nil;
  Result.DeviceSetSelectPolarity:=nil;
+ Result.DeviceGetByteDelay:=nil;
+ Result.DeviceSetByteDelay:=nil;
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Wait:=INVALID_HANDLE_VALUE;
@@ -1293,6 +1344,7 @@ begin
  Result.ClockPhase:=SPI_CLOCK_PHASE_UNKNOWN;
  Result.ClockPolarity:=SPI_CLOCK_POLARITY_UNKNOWN;
  Result.SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
+ Result.ByteDelay:=0;
  for Count:=0 to SPI_CS_MAX do
   begin
    Result.ChipSelects[Count].Mode:=SPI_MODE_UNKNOWN;
@@ -1301,6 +1353,7 @@ begin
    Result.ChipSelects[Count].ClockPhase:=SPI_CLOCK_PHASE_UNKNOWN;
    Result.ChipSelects[Count].ClockPolarity:=SPI_CLOCK_POLARITY_UNKNOWN;
    Result.ChipSelects[Count].SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
+   Result.ChipSelects[Count].ByteDelay:=0;
   end;
  
  {Create Lock}
@@ -1968,6 +2021,34 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(SPIDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function SPITypeToString(SPIType:LongWord):String;
+{Convert an SPI type value to a string}
+begin
+ {}
+ Result:='SPI_TYPE_UNKNOWN';
+ 
+ if SPIType <= SPI_TYPE_MAX then
+  begin
+   Result:=SPI_TYPE_NAMES[SPIType];
+  end;
+end;
+
+{==============================================================================}
+
+function SPIStateToString(SPIState:LongWord):String;
+{Convert an SPI state value to a string}
+begin
+ {}
+ Result:='SPI_STATE_UNKNOWN';
+ 
+ if SPIState <= SPI_STATE_MAX then
+  begin
+   Result:=SPI_STATE_NAMES[SPIState];
   end;
 end;
 

@@ -1,7 +1,7 @@
 {
 Ultibo Threads interface unit.
            
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -895,9 +895,9 @@ type
  
  {Message}
  TMessage = record
-  Msg:LongWord;
-  wParam:LongInt;
-  lParam:LongInt;
+  Msg:PtrUInt;
+  wParam:PtrUInt;
+  lParam:PtrInt;
   Time:LongWord;
  end;
  
@@ -1926,6 +1926,7 @@ function ThreadWaitMessage:LongWord;
 function ThreadSendMessage(Thread:TThreadHandle;const Message:TMessage):LongWord;
 //To Do //ThreadSendMessageEx //Wait for response/space with Timeout ?            {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 //To Do //Could also be ThreadPostMessage/Ex (Send with no response wait or not)
+//To Do //ThreadReplyMessage //Reply to a received message to release a thread waiting for a reply
 function ThreadReceiveMessage(var Message:TMessage):LongWord;                     
 function ThreadReceiveMessageEx(var Message:TMessage;Timeout:LongWord;Remove:Boolean):LongWord; {Timeout = 0 then no Wait, Timeout = INFINITE then Wait forever}
 function ThreadAbandonMessage(Thread:TThreadHandle):LongWord;
@@ -2265,7 +2266,7 @@ const
 {==============================================================================}
 
 implementation
- 
+
 {==============================================================================}
 {==============================================================================}
 var
@@ -2854,7 +2855,7 @@ begin
    
    Halt;
   end; 
-  
+
  {Initialize Thread}
  InitThread(INITIAL_STACK_SIZE);
  
@@ -3378,13 +3379,15 @@ begin
  SetLength(SchedulerSecondaryWaitCounter,SCHEDULER_CPU_COUNT);
  {$ENDIF}
  
- {$IFDEF INTERRUPT_DEBUG}
+ {$IF DEFINED(IRQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  {Setup DispatchInterruptCounter}
  SetLength(DispatchInterruptCounter,SCHEDULER_CPU_COUNT);
-
+ {$ENDIF}
+ {$IF DEFINED(FIQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  {Setup DispatchFastInterruptCounter}
  SetLength(DispatchFastInterruptCounter,SCHEDULER_CPU_COUNT);
- 
+ {$ENDIF}
+ {$IF DEFINED(SWI_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  {Setup DispatchSystemCallCounter}
  SetLength(DispatchSystemCallCounter,SCHEDULER_CPU_COUNT);
  {$ENDIF}
@@ -3449,6 +3452,7 @@ begin
    
    {Initialize SchedulerThreadAllocation}
    SchedulerThreadAllocation[Count]:=SCHEDULER_ALLOCATION_ENABLED; 
+   if ((1 shl Count) and SCHEDULER_CPU_RESERVE) <> 0 then SchedulerThreadAllocation[Count]:=SCHEDULER_ALLOCATION_DISABLED;
    if (Count <> SCHEDULER_CPU_BOOT) and (SCHEDULER_SECONDARY_DISABLED) then SchedulerThreadAllocation[Count]:=SCHEDULER_ALLOCATION_DISABLED;
    
    {Initialize SchedulerPriorityMask}
@@ -3987,7 +3991,7 @@ begin
  if not(SCHEDULER_FIQ_ENABLED) then EnableAbort;
  
  {Enable IRQ}
- EnableIRQ; 
+ EnableIRQ;
  
  {Set Priority}
  ThreadSetPriority(ThreadGetCurrent,THREAD_PRIORITY_NONE);
@@ -4161,7 +4165,7 @@ begin
  except
   on E: Exception do
    begin
-    if THREAD_LOG_ENABLED then ThreadLogError('MainThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if THREAD_LOG_ENABLED then ThreadLogError('MainThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -4274,7 +4278,7 @@ begin
                begin
                 {Submit Worker Request}
                 FillChar(Message,SizeOf(TMessage),0);
-                Message.Msg:=LongWord(WorkerRequest);
+                Message.Msg:=PtrUInt(WorkerRequest);
                 
                 {Check the Flags}
                 if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
@@ -4297,7 +4301,7 @@ begin
  except
   on E: Exception do
    begin
-    if THREAD_LOG_ENABLED then ThreadLogError('TimerThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if THREAD_LOG_ENABLED then ThreadLogError('TimerThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -4416,7 +4420,7 @@ begin
  except
   on E: Exception do
    begin
-    if THREAD_LOG_ENABLED then ThreadLogError('WorkerThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if THREAD_LOG_ENABLED then ThreadLogError('WorkerThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -4514,7 +4518,7 @@ begin
                begin
                 {Submit Worker Request}
                 FillChar(Message,SizeOf(TMessage),0);
-                Message.Msg:=LongWord(WorkerRequest);
+                Message.Msg:=PtrUInt(WorkerRequest);
                 
                 {Check the Flags}
                 if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
@@ -4537,7 +4541,7 @@ begin
  except
   on E: Exception do
    begin
-    if THREAD_LOG_ENABLED then ThreadLogError('TimerPriorityThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if THREAD_LOG_ENABLED then ThreadLogError('TimerPriorityThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -4647,7 +4651,7 @@ begin
  except
   on E: Exception do
    begin
-    if THREAD_LOG_ENABLED then ThreadLogError('WorkerPriorityThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if THREAD_LOG_ENABLED then ThreadLogError('WorkerPriorityThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -13272,7 +13276,7 @@ function ThreadCreateEx(StartProc:TThreadStart;StackSize,Priority,Affinity,CPU:L
 {StackSize: Stack size in bytes}
 {Priority: Thread priority (eg THREAD_PRIORITY_NORMAL)}
 {Affinity: Thread affinity (eg CPU_AFFINITY_ALL)}
-{CPU: The CPU to assign new thread to (eg )}
+{CPU: The CPU to assign new thread to (eg CPU_ID_0)}
 {Name: Name of the thread}
 {Parameter: Parameter passed to StartProc of new thread}
 {Return: Handle of new thread or INVALID_HANDLE_VALUE if a new thread could not be created}
@@ -13501,7 +13505,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Destroy (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Destroy (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -13574,8 +13578,12 @@ begin
          {Release Thread Stack} 
          ThreadReleaseStack(ThreadEntry.StackBase,ThreadEntry.StackSize);
          
-         {Clear Stack Base}
+         {Clear Stack Base and Size}
          ThreadEntry.StackBase:=nil;
+         ThreadEntry.StackSize:=0;
+         
+         {Clear Stack Pointer}
+         ThreadEntry.StackPointer:=nil;
         end
        else 
         begin
@@ -13728,7 +13736,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Current (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Current (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -13776,7 +13784,7 @@ begin
  Result:='';
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Name (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Name (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -13847,7 +13855,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Name (Handle=' + IntToHex(LongWord(Thread),8) + ' Name=' + Name + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Name (Handle=' + HandleToHex(Thread) + ' Name=' + Name + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -13909,7 +13917,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get CPU (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get CPU (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -13942,7 +13950,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set CPU (Handle=' + IntToHex(LongWord(Thread),8) + ' CPU=' + CPUIDToString(CPU) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set CPU (Handle=' + HandleToHex(Thread) + ' CPU=' + CPUIDToString(CPU) + ')');
  {$ENDIF}
  
  {Check CPU}
@@ -14013,7 +14021,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get State (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get State (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14039,7 +14047,7 @@ var
 begin
  {}
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Flags (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Flags (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14069,7 +14077,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Flags (Handle=' + IntToHex(LongWord(Thread),8) + ' Flags=' + IntToHex(Flags,8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Flags (Handle=' + HandleToHex(Thread) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Flags}
@@ -14136,7 +14144,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Add Flags (Handle=' + IntToHex(LongWord(Thread),8) + ' Flags=' + IntToHex(Flags,8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Add Flags (Handle=' + HandleToHex(Thread) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Flags}
@@ -14203,7 +14211,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Remove Flags (Handle=' + IntToHex(LongWord(Thread),8) + ' Flags=' + IntToHex(Flags,8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Remove Flags (Handle=' + HandleToHex(Thread) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Flags}
@@ -14268,7 +14276,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Locale (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Locale (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14298,7 +14306,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Locale (Handle=' + IntToHex(LongWord(Thread),8) + ' Locale=' + IntToHex(Locale,8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Locale (Handle=' + HandleToHex(Thread) + ' Locale=' + IntToHex(Locale,8) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14364,7 +14372,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Times (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Times (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14430,7 +14438,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Switch Count (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Switch Count (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14528,7 +14536,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Size (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Size (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14556,7 +14564,7 @@ begin
  Result:=PtrUInt(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Base (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Base (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14586,7 +14594,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Stack Base (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Stack Base (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
 
  {Check Thread}
@@ -14627,7 +14635,7 @@ begin
  Result:=PtrUInt(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Pointer (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Pointer (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14655,7 +14663,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Exit Code (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Exit Code (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14688,7 +14696,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Affinity (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Affinity (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14721,7 +14729,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Affinity (Handle=' + IntToHex(LongWord(Thread),8) + ' Affinity=' + IntToHex(Affinity,8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Affinity (Handle=' + HandleToHex(Thread) + ' Affinity=' + IntToHex(Affinity,8) + ')');
  {$ENDIF}
  
  {Check Affinity}
@@ -14792,7 +14800,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Priority (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Priority (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -14825,7 +14833,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Priority (Handle=' + IntToHex(LongWord(Thread),8) + ' Priority=' + IntToStr(Priority) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Priority (Handle=' + HandleToHex(Thread) + ' Priority=' + IntToStr(Priority) + ')');
  {$ENDIF}
  
  {Check Priority}
@@ -15212,7 +15220,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Tls Value (Index=' + IntToStr(TlsIndex) + ' Value=' + IntToHex(LongWord(TlsValue),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Tls Value (Index=' + IntToStr(TlsIndex) + ' Value=' + PtrToHex(TlsValue) + ')');
  {$ENDIF}
  
  {Get Thread}
@@ -15247,7 +15255,7 @@ begin
  Result:=nil;
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Tls Pointer (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Tls Pointer (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -15277,7 +15285,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Tls Pointer (Handle=' + IntToHex(LongWord(Thread),8) + ' TlsPointer=' + IntToHex(TlsPointer,8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Tls Pointer (Handle=' + HandleToHex(Thread) + ' TlsPointer=' + PtrToHex(TlsPointer) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -15343,7 +15351,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Ready (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Ready (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -15472,7 +15480,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Timeout (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Timeout (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -15620,7 +15628,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wake (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wake (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -15924,7 +15932,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Terminate (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Terminate (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -16212,7 +16220,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wait (List=' + IntToHex(LongWord(List),8) + ' Lock=' + IntToHex(LongWord(Lock),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wait (List=' + HandleToHex(List) + ' Lock=' + HandleToHex(Lock) + ')');
  {$ENDIF}
  
  {Check List}
@@ -16407,7 +16415,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Release (List=' + IntToHex(LongWord(List),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Release (List=' + HandleToHex(List) + ')');
  {$ENDIF}
  
  {Check List}
@@ -16566,7 +16574,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Abandon (List=' + IntToHex(LongWord(List),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Abandon (List=' + HandleToHex(List) + ')');
  {$ENDIF}
  
  {Check List}
@@ -16725,7 +16733,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wait Terminate (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wait Terminate (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -16877,7 +16885,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Suspend (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Suspend (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -16985,7 +16993,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Resume (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Resume (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -17126,7 +17134,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Send Message (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Send Message (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -17519,7 +17527,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Abandon Message (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Abandon Message (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -17720,7 +17728,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Lock (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Lock (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -17757,7 +17765,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Unlock (Handle=' + IntToHex(LongWord(Thread),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Unlock (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
  
  {Check Thread}
@@ -18969,7 +18977,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Destroy (Handle=' + IntToHex(LongWord(Messageslot),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Destroy (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
  
  {Check Messageslot}
@@ -19121,7 +19129,7 @@ begin
  Result:=LongWord(INVALID_HANDLE_VALUE);
  
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Count (Handle=' + IntToHex(LongWord(Messageslot),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Count (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
  
  {Check Messageslot}
@@ -19195,7 +19203,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Send Message (Handle=' + IntToHex(LongWord(Messageslot),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Send Message (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
  
  {Check Messageslot}
@@ -19357,7 +19365,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
 
  {$IFDEF THREAD_DEBUG}
- if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Receive Message (Handle=' + IntToHex(LongWord(Messageslot),8) + ')');
+ if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Receive Message (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
  
  {Check Messageslot}
@@ -22527,7 +22535,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
-
+ 
  {Check the Handler}
  if Assigned(TimerTriggerHandler) then
   begin
@@ -22549,7 +22557,7 @@ begin
        TimerEntry:=PTimerEntry(Timer);
        if (TimerEntry <> nil) and (TimerEntry.Signature = TIMER_SIGNATURE) then
         begin
-         Message.Msg:=LongWord(TimerEntry);
+         Message.Msg:=PtrUInt(TimerEntry);
       
          {Check the Flags}
          if (TimerEntry.Flags and TIMER_FLAG_PRIORITY) = 0 then
@@ -22668,7 +22676,7 @@ begin
   begin
    {Submit Worker Request}
    FillChar(Message,SizeOf(TMessage),0);
-   Message.Msg:=LongWord(WorkerRequest);
+   Message.Msg:=PtrUInt(WorkerRequest);
    {Check Flags}
    if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
     begin
@@ -22725,7 +22733,7 @@ begin
         begin
          {Submit Initial Request}
          FillChar(Message,SizeOf(TMessage),0);
-         Message.Msg:=LongWord(InitialRequest);
+         Message.Msg:=PtrUInt(InitialRequest);
          {Check Flags}
          if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
           begin
@@ -22885,12 +22893,12 @@ begin
  {Flush Worker Request}
  if not(HEAP_IRQ_CACHE_COHERENT) then
   begin
-   CleanDataCacheRange(LongWord(WorkerRequest),SizeOf(TWorkerRequest));
+   CleanDataCacheRange(PtrUInt(WorkerRequest),SizeOf(TWorkerRequest));
   end;
   
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
- Message.Msg:=LongWord(WorkerRequest);
+ Message.Msg:=PtrUInt(WorkerRequest);
  {Check Flags}
  if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
   begin
@@ -22965,7 +22973,7 @@ begin
  {if not Assigned(Callback) then Exit;}  {May be nil}
  
  {Check Flags (Excluded)}
- if (Flags and WORKER_FLAG_EXCLUDED_IRQ) <> 0 then Exit;
+ if (Flags and WORKER_FLAG_EXCLUDED_FIQ) <> 0 then Exit;
  
  {Check Flags (Internal)}
  if (Flags and WORKER_FLAG_INTERNAL) <> 0 then Exit;
@@ -22991,12 +22999,12 @@ begin
  {Flush Worker Request}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
-   CleanDataCacheRange(LongWord(WorkerRequest),SizeOf(TWorkerRequest));
+   CleanDataCacheRange(PtrUInt(WorkerRequest),SizeOf(TWorkerRequest));
   end;
  
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
- Message.Msg:=LongWord(WorkerRequest);
+ Message.Msg:=PtrUInt(WorkerRequest);
  {Check Flags}
  if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
   begin
@@ -23206,7 +23214,7 @@ begin
      
         {Submit Worker Request}
         FillChar(Message,SizeOf(TMessage),0);
-        Message.Msg:=LongWord(WorkerRequest);
+        Message.Msg:=PtrUInt(WorkerRequest);
         if MessageslotSend(WorkerMessageslot,Message) <> ERROR_SUCCESS then
          begin
           {Free Worker Request}
@@ -23260,7 +23268,7 @@ begin
      
         {Submit Worker Request}
         FillChar(Message,SizeOf(TMessage),0);
-        Message.Msg:=LongWord(WorkerRequest);
+        Message.Msg:=PtrUInt(WorkerRequest);
         if MessageslotSend(WorkerPriorityMessageslot,Message) <> ERROR_SUCCESS then
          begin
           {Free Worker Request}
@@ -23313,7 +23321,7 @@ begin
     
    {Submit Worker Request}
    FillChar(Message,SizeOf(TMessage),0);
-   Message.Msg:=LongWord(WorkerRequest);
+   Message.Msg:=PtrUInt(WorkerRequest);
    {Check Flags}
    if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
     begin
@@ -23385,7 +23393,7 @@ begin
          begin
           {Submit Repeat Request}
           FillChar(Message,SizeOf(TMessage),0);
-          Message.Msg:=LongWord(RepeatRequest);
+          Message.Msg:=PtrUInt(RepeatRequest);
           {Check Flags}
           if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
            begin
@@ -23433,7 +23441,7 @@ begin
  {Flush Task}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
-   CleanDataCacheRange(LongWord(Task),SizeOf(TTaskerThreadSendMessage));
+   CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerThreadSendMessage));
   end;
   
  {Enqueue}
@@ -23472,7 +23480,7 @@ begin
  {Flush Task}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
-   CleanDataCacheRange(LongWord(Task),SizeOf(TTaskerMessageslotSend));
+   CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerMessageslotSend));
   end;
   
  {Enqueue}
@@ -23511,7 +23519,7 @@ begin
  {Flush Task}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
-   CleanDataCacheRange(LongWord(Task),SizeOf(TTaskerSemaphoreSignal));
+   CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerSemaphoreSignal));
   end;
   
  {Enqueue}
@@ -24560,7 +24568,7 @@ begin
       {Add Next}
       if Previous <> nil then Previous.Next:=Current;
       Previous:=Current;
-      Current:=PThreadSnapshot(LongWord(Previous) + SizeOf(TThreadSnapshot));
+      Current:=PThreadSnapshot(PtrUInt(Previous) + SizeOf(TThreadSnapshot));
       
       {Get Next Thread}
       ThreadEntry:=ThreadEntry.Next;

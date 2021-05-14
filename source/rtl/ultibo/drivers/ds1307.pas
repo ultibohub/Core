@@ -1,7 +1,7 @@
 {
 Maxim DS1307 Real Time Clock Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -91,7 +91,7 @@ const
  DS1307_REG_MONTH   = $05; {01-12}
  DS1307_REG_YEAR    = $06; {00-99}
  
- {DS1307 Control and Sttaus registers}
+ {DS1307 Control and Status registers}
  DS1307_REG_CONTROL        = $07; {Also DS1338}
  DS1337_REG_CONTROL        = $0e;
  DS1340_REG_CONTROL        = $07;

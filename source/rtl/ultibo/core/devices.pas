@@ -1,7 +1,7 @@
 {
 Ultibo Device interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1034,8 +1034,10 @@ function DeviceDeregister(Device:PDevice):LongWord;
 
 function DeviceFind(DeviceClass,DeviceId:LongWord):PDevice;
 function DeviceFindByDeviceData(DeviceData:Pointer):PDevice;
-function DeviceFindByName(const Name:String):PDevice;
-function DeviceFindByDescription(const Description:String):PDevice;
+function DeviceFindByName(const Name:String):PDevice; inline;
+function DeviceFindByNameEx(DeviceClass:LongWord;const Name:String):PDevice;
+function DeviceFindByDescription(const Description:String):PDevice; inline;
+function DeviceFindByDescriptionEx(DeviceClass:LongWord;const Description:String):PDevice;
 function DeviceEnumerate(DeviceClass:LongWord;Callback:TDeviceEnumerate;Data:Pointer):LongWord;
 
 function DeviceNotification(Device:PDevice;DeviceClass:LongWord;Callback:TDeviceNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
@@ -1594,7 +1596,7 @@ begin
  Device.DeviceDescription:='';
 
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Created device (Handle=' + IntToHex(LongWord(Device),8) + ' Size=' + IntToStr(Size) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Created device (Handle=' + PtrToHex(Device) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Return Result}
@@ -1635,7 +1637,7 @@ begin
  FreeMem(Device);
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed device (Handle=' + IntToHex(LongWord(Device),8) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed device (Handle=' + PtrToHex(Device) + ')');
  {$ENDIF}
  
  {Return Result}
@@ -1832,7 +1834,7 @@ begin
     Result:=NotifierNotify(Device,DEVICE_NOTIFICATION_REGISTER);
     if Result <> ERROR_SUCCESS then Exit;
    
-    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Registered device (Handle=' + IntToHex(LongWord(Device),8) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Name=' + DeviceGetName(Device) + ')');
+    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Registered device (Handle=' + PtrToHex(Device) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Name=' + DeviceGetName(Device) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1908,7 +1910,7 @@ begin
     {Update Device}
     Device.DeviceId:=DEVICE_ID_ANY;
  
-    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Deregistered device (Handle=' + IntToHex(LongWord(Device),8) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Name=' + DeviceGetName(Device) + ')');
+    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Deregistered device (Handle=' + PtrToHex(Device) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Name=' + DeviceGetName(Device) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1926,7 +1928,7 @@ end;
 function DeviceFind(DeviceClass,DeviceId:LongWord):PDevice;
 {Find a device by ID in the device table}
 {DeviceClass: The class of the device to find (DEVICE_CLASS_ANY for all classes)}
-{DeviceId: The ID number of the device to find}
+{DeviceId: The ID number of the device to find (DEVICE_ID_ANY for all devices)}
 {Return: Pointer to device entry or nil if not found}
 var
  Device:PDevice;
@@ -2026,9 +2028,21 @@ end;
 
 {==============================================================================}
 
-function DeviceFindByName(const Name:String):PDevice;
+function DeviceFindByName(const Name:String):PDevice; inline;
 {Find a device by name in the device table}
 {Name: The name of the device to find (eg Timer0)}
+{Return: Pointer to device entry or nil if not found}
+begin
+ {}
+ Result:=DeviceFindByNameEx(DEVICE_CLASS_ANY,Name);
+end;
+       
+{==============================================================================}
+       
+function DeviceFindByNameEx(DeviceClass:LongWord;const Name:String):PDevice;
+{Find a device by class and name in the device table}
+{DeviceClass: The class of the device to find (eg DEVICE_CLASS_USB) (DEVICE_CLASS_ANY for all classes)}
+{Name: The name of the device to find (eg USB0)}
 {Return: Pointer to device entry or nil if not found}
 var
  Device:PDevice;
@@ -2047,11 +2061,15 @@ begin
       {Check State}
       if Device.DeviceState = DEVICE_STATE_REGISTERED then
        begin
-        {Check Name}
-        if Uppercase(Device.DeviceName) = Uppercase(Name) then
+        {Check Class}
+        if (DeviceClass = DEVICE_CLASS_ANY) or (Device.DeviceClass = DeviceClass) then
          begin
-          Result:=Device;
-          Exit;
+          {Check Name}
+          if Uppercase(Device.DeviceName) = Uppercase(Name) then
+           begin
+            Result:=Device;
+            Exit;
+           end;
          end;
        end;
        
@@ -2067,8 +2085,20 @@ end;
        
 {==============================================================================}
 
-function DeviceFindByDescription(const Description:String):PDevice;
+function DeviceFindByDescription(const Description:String):PDevice; inline;
 {Find a device by description in the device table}
+{Description: The description of the device to find (eg BCM2836 ARM Timer)}
+{Return: Pointer to device entry or nil if not found}
+begin
+ {}
+ Result:=DeviceFindByDescriptionEx(DEVICE_CLASS_ANY,Description);
+end;
+
+{==============================================================================}
+
+function DeviceFindByDescriptionEx(DeviceClass:LongWord;const Description:String):PDevice;
+{Find a device by class and description in the device table}
+{DeviceClass: The class of the device to find (eg DEVICE_CLASS_USB) (DEVICE_CLASS_ANY for all classes)}
 {Description: The description of the device to find (eg BCM2836 ARM Timer)}
 {Return: Pointer to device entry or nil if not found}
 var
@@ -2088,13 +2118,17 @@ begin
       {Check State}
       if Device.DeviceState = DEVICE_STATE_REGISTERED then
        begin
-        {Check Description}
-        if Uppercase(Device.DeviceDescription) = Uppercase(Description) then
+        {Check Class}
+        if (DeviceClass = DEVICE_CLASS_ANY) or (Device.DeviceClass = DeviceClass) then
          begin
-          Result:=Device;
-          Exit;
+          {Check Description}
+          if Uppercase(Device.DeviceDescription) = Uppercase(Description) then
+           begin
+            Result:=Device;
+            Exit;
+           end;
          end;
-       end;
+       end;  
        
       {Get Next}
       Device:=Device.Next;
@@ -2288,7 +2322,7 @@ begin
     {Increment Count}
     Inc(NotifierTableCount);
  
-    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Allocated device notification (Handle=' + IntToHex(LongWord(Notifier),8) + ' Device=' + IntToHex(LongWord(Notifier.Device),8) + ' Class=' + DeviceClassToString(Notifier.DeviceClass) + ' Notification=' + NotificationToString(Notifier.Notification) + ')');
+    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Allocated device notification (Handle=' + PtrToHex(Notifier) + ' Device=' + PtrToHex(Notifier.Device) + ' Class=' + DeviceClassToString(Notifier.DeviceClass) + ' Notification=' + NotificationToString(Notifier.Notification) + ')');
     {Return Result}
     Result:=Notifier;
    finally
@@ -2351,7 +2385,7 @@ begin
     {Free Notifier}
     FreeMem(Notifier);
     
-    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Released device notification (Handle=' + IntToHex(LongWord(Notifier),8) + ')');
+    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Released device notification (Handle=' + PtrToHex(Notifier) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2646,7 +2680,7 @@ begin
  Driver.DriverClass:=DRIVER_CLASS_ANY;
 
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Created driver (Driver=' + IntToHex(LongWord(Driver),8) + ' Size=' + IntToStr(Size) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Created driver (Driver=' + PtrToHex(Driver) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Return Result}
@@ -2684,7 +2718,7 @@ begin
  FreeMem(Driver);
  
  {$IFDEF DEVICE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed driver (Driver=' + IntToHex(LongWord(Driver),8) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed driver (Driver=' + PtrToHex(Driver) + ')');
  {$ENDIF}
  
  {Return Result}
@@ -2812,7 +2846,7 @@ begin
     {Register Driver}
     Driver.DriverState:=DRIVER_STATE_REGISTERED;
   
-    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Registered driver (Driver=' + IntToHex(LongWord(Driver),8) + ' Class=' + DriverClassToString(Driver.DriverClass) + ' Name=' + DriverGetName(Driver) + ')');
+    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Registered driver (Driver=' + PtrToHex(Driver) + ' Class=' + DriverClassToString(Driver.DriverClass) + ' Name=' + DriverGetName(Driver) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2884,7 +2918,7 @@ begin
     {Update Driver}
     Driver.DriverId:=DRIVER_ID_ANY;
  
-    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Deregistered driver (Driver=' + IntToHex(LongWord(Driver),8) + ' Class=' + DriverClassToString(Driver.DriverClass) + ' Name=' + DriverGetName(Driver) + ')');
+    if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Deregistered driver (Driver=' + PtrToHex(Driver) + ' Class=' + DriverClassToString(Driver.DriverClass) + ' Name=' + DriverGetName(Driver) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -3978,8 +4012,9 @@ end;
 function TimerDeviceEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallback;Data:Pointer):LongWord;
 {Schedule a function to be called when the current interval expires on the specified Timer device}
 {Timer: The Timer device to schedule the callback for}
+{Flags: The flags to control the event (eg TIMER_EVENT_FLAG_REPEAT)}
 {Callback: The function to be called when the interval expires}
-{Data: A pointer to be pass to the function when the interval expires (Optional)}
+{Data: A pointer to be passed to the function when the interval expires (Optional)}
 {Return: ERROR_SUCCESS if the callback was scheduled successfully or another error code on failure}
 begin
  {}

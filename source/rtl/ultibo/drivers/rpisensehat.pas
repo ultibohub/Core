@@ -1,7 +1,7 @@
 {
 Raspberry Pi Sense HAT Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -15,7 +15,10 @@ Boards
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
 
 Licence
 =======
@@ -229,7 +232,7 @@ function RPiSenseFramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 function RPiSenseFramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
 function RPiSenseFramebufferMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
-function RPiSenseFramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function RPiSenseFramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function RPiSenseFramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
 
@@ -808,11 +811,11 @@ begin
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
-      CleanDataCacheRange(LongWord(Buffer),Defaults.Size);
+      CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
  
     {Update Framebuffer}
-    Framebuffer.Address:=LongWord(Buffer);
+    Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
     Framebuffer.Pitch:=Defaults.Pitch;
     Framebuffer.Depth:=Defaults.Depth;
@@ -1054,7 +1057,7 @@ end;
 
 {==============================================================================}
 
-function RPiSenseFramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function RPiSenseFramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 {Implementation of FramebufferDeviceCommit API for RPiSenseHat Framebuffer}
 {Note: Not intended to be called directly by applications, use FramebufferDeviceCommit instead}
 begin

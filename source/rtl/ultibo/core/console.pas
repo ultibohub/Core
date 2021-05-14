@@ -1,7 +1,7 @@
 {
 Ultibo Console interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -65,9 +65,26 @@ const
  CONSOLE_TYPE_REMOTE      = 3;
  CONSOLE_TYPE_LCD         = 4;
  
+ CONSOLE_TYPE_MAX         = 4;
+  
+ {Console Type Names}
+ CONSOLE_TYPE_NAMES:array[CONSOLE_TYPE_NONE..CONSOLE_TYPE_MAX] of String = (
+  'CONSOLE_TYPE_NONE',
+  'CONSOLE_TYPE_FRAMEBUFFER',
+  'CONSOLE_TYPE_SERIAL',
+  'CONSOLE_TYPE_REMOTE',
+  'CONSOLE_TYPE_LCD');
+ 
  {Console Device States}
  CONSOLE_STATE_CLOSED   = 0;
  CONSOLE_STATE_OPEN     = 1;
+ 
+ CONSOLE_STATE_MAX      = 1;
+ 
+ {Console State Names}
+ CONSOLE_STATE_NAMES:array[CONSOLE_STATE_CLOSED..CONSOLE_STATE_MAX] of String = (
+  'CONSOLE_STATE_CLOSED',
+  'CONSOLE_STATE_OPEN');
  
  {Console Device Flags}
  CONSOLE_FLAG_NONE            = $00000000;
@@ -113,10 +130,25 @@ const
  WINDOW_STATE_INVISIBLE = 0;
  WINDOW_STATE_VISIBLE   = 1;
  
+ WINDOW_STATE_MAX       = 1;
+ 
+ {Window State Names}
+ WINDOW_STATE_NAMES:array[WINDOW_STATE_INVISIBLE..WINDOW_STATE_MAX] of String = (
+  'WINDOW_STATE_INVISIBLE',
+  'WINDOW_STATE_VISIBLE');
+ 
  {Console Window Modes}
  WINDOW_MODE_NONE       = 0;
  WINDOW_MODE_TEXT       = 1;
  WINDOW_MODE_GRAPHICS   = 2;
+ 
+ WINDOW_MODE_MAX        = 2;
+ 
+ {Window Mode Names}
+ WINDOW_MODE_NAMES:array[WINDOW_MODE_NONE..WINDOW_MODE_MAX] of String = (
+  'WINDOW_MODE_NONE',
+  'WINDOW_MODE_TEXT',
+  'WINDOW_MODE_GRAPHICS');
  
  {Console Window Flags}
  WINDOW_FLAG_NONE          = $00000000;
@@ -712,7 +744,12 @@ function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord;
 function ConsoleDeviceCheck(Console:PConsoleDevice):PConsoleDevice;
 function ConsoleDeviceCaretCheck(Console:PConsoleDevice;Caret:PConsoleCaret):PConsoleCaret;
 
+function ConsoleTypeToString(ConsoleType:LongWord):String;
+function ConsoleStateToString(ConsoleState:LongWord):String;
+
 function ConsoleDeviceGetDefaultFont:TFontHandle;
+
+function ConsolePositiontoString(Position:LongWord):String;
 
 function ConsoleFramebufferDeviceAdd(Framebuffer:PFramebufferDevice):LongWord;
 function ConsoleFramebufferDeviceRemove(Framebuffer:PFramebufferDevice):LongWord;
@@ -728,6 +765,9 @@ function ConsoleWindowGetDefault(Console:PConsoleDevice):TWindowHandle; inline;
 function ConsoleWindowSetDefault(Console:PConsoleDevice;Handle:TWindowHandle):LongWord;
 
 function ConsoleWindowCheck(Console:PConsoleDevice;Window:PConsoleWindow):PConsoleWindow;
+
+function ConsoleWindowStateToString(WindowState:LongWord):String;
+function ConsoleWindowModeToString(WindowMode:LongWord):String;
 
 function ConsoleWindowGetDefaultFont:TFontHandle;
 
@@ -1112,7 +1152,7 @@ begin
    if Console.ConsoleMode <> CONSOLE_MODE_PIXEL then Exit;
    
    {Check Color}
-   if Color = COLOR_NONE then Exit;
+   {if Color = COLOR_NONE then Exit;}
  
    {Check Width}
    if Width < 1 then Exit;
@@ -1474,7 +1514,7 @@ begin
    if Console.ConsoleMode <> CONSOLE_MODE_PIXEL then Exit;
    
    {Check Color}
-   if Color = COLOR_NONE then Exit;
+   {if Color = COLOR_NONE then Exit;}
  
    {Check Width}
    if Width < 1 then Exit;
@@ -5207,7 +5247,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -5279,7 +5319,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -7554,8 +7594,8 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Colors}
- if Forecolor = COLOR_NONE then Exit;
- if Backcolor = COLOR_NONE then Exit;
+ {if Forecolor = COLOR_NONE then Exit;}
+ {if Backcolor = COLOR_NONE then Exit;}
  
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -7808,8 +7848,8 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Colors}
- if Forecolor = COLOR_NONE then Exit;
- if Backcolor = COLOR_NONE then Exit;
+ {if Forecolor = COLOR_NONE then Exit;}
+ {if Backcolor = COLOR_NONE then Exit;}
  
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -8086,8 +8126,8 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Colors}
- if Forecolor = COLOR_NONE then Exit;
- if Backcolor = COLOR_NONE then Exit;
+ {if Forecolor = COLOR_NONE then Exit;}
+ {if Backcolor = COLOR_NONE then Exit;}
  
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -9906,7 +9946,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Console}
  if Console = nil then Exit;
@@ -10076,7 +10116,7 @@ begin
  if Y1 >= Y2 then Exit;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Width}
  if Width < 1 then Exit;
@@ -10174,7 +10214,7 @@ begin
  if (X1 <> X2) and (Y1 <> Y2) then Exit; {This would be a box or a diagonal line (See: ConsoleDevicePlotLine)}
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Width}
  if Width < 1 then Exit;
@@ -10267,8 +10307,8 @@ begin
  if Handle = INVALID_HANDLE_VALUE then Exit;
  
  {Check Colors}
- if Forecolor = COLOR_NONE then Exit;
- if Backcolor = COLOR_NONE then Exit;
+ {if Forecolor = COLOR_NONE then Exit;}
+ {if Backcolor = COLOR_NONE then Exit;}
  
  {Check Console}
  if Console = nil then Exit;
@@ -10437,8 +10477,8 @@ begin
  if Length(Text) = 0 then Exit;
  
  {Check Colors}
- if Forecolor = COLOR_NONE then Exit;
- if Backcolor = COLOR_NONE then Exit;
+ {if Forecolor = COLOR_NONE then Exit;}
+ {if Backcolor = COLOR_NONE then Exit;}
  
  {Check Length}
  if Len < 1 then Exit;
@@ -10601,7 +10641,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Console}
  if Console = nil then Exit;
@@ -10650,7 +10690,7 @@ begin
       {Check Commit}
       if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
        begin
-        Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),ColorFormatToBytes(Console.Format),FRAMEBUFFER_TRANSFER_NONE);
+        Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),ColorFormatToBytes(Console.Format),FRAMEBUFFER_TRANSFER_NONE);
        end;
       
       {Check Mark}
@@ -10705,7 +10745,7 @@ begin
  if Y1 > Y2 then Exit;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Console}
  if Console = nil then Exit;
@@ -10856,7 +10896,7 @@ begin
             {Check Commit}
             if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
              begin
-              Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
+              Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
              end;
              
             {Check Mark}
@@ -10893,7 +10933,7 @@ begin
             {Check Commit}
             if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
              begin
-              Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
+              Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
              end;
              
             {Check Mark}
@@ -10937,7 +10977,7 @@ begin
               {Check Commit}
               if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
                begin
-                Framebuffer.DeviceCommit(Framebuffer,LongWord(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
+                Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
                end;
                
               {Check Mark}
@@ -12472,6 +12512,34 @@ end;
 
 {==============================================================================}
 
+function ConsoleTypeToString(ConsoleType:LongWord):String;
+{Convert a Console type value to a string}
+begin
+ {}
+ Result:='CONSOLE_TYPE_UNKNOWN';
+ 
+ if ConsoleType <= CONSOLE_TYPE_MAX then
+  begin
+   Result:=CONSOLE_TYPE_NAMES[ConsoleType];
+  end;
+end;
+
+{==============================================================================}
+
+function ConsoleStateToString(ConsoleState:LongWord):String;
+{Convert a Console state value to a string}
+begin
+ {}
+ Result:='CONSOLE_STATE_UNKNOWN';
+ 
+ if ConsoleState <= CONSOLE_STATE_MAX then
+  begin
+   Result:=CONSOLE_STATE_NAMES[ConsoleState];
+  end;
+end;
+
+{==============================================================================}
+
 function ConsoleDeviceGetDefaultFont:TFontHandle;
 {Get the default console font}
 begin
@@ -12486,6 +12554,27 @@ begin
   end;
   
  Result:=CONSOLE_DEFAULT_FONT;
+end;
+
+{==============================================================================}
+
+function ConsolePositiontoString(Position:LongWord):String;
+begin
+ {}
+ Result:='CONSOLE_POSITION_UNKNOWN';
+
+ case Position of
+  CONSOLE_POSITION_FULL:Result:='CONSOLE_POSITION_FULL';
+  CONSOLE_POSITION_TOP:Result:='CONSOLE_POSITION_TOP';
+  CONSOLE_POSITION_BOTTOM:Result:='CONSOLE_POSITION_BOTTOM';
+  CONSOLE_POSITION_LEFT:Result:='CONSOLE_POSITION_LEFT';
+  CONSOLE_POSITION_RIGHT:Result:='CONSOLE_POSITION_RIGHT';
+  CONSOLE_POSITION_TOPLEFT:Result:='CONSOLE_POSITION_TOPLEFT';
+  CONSOLE_POSITION_TOPRIGHT:Result:='CONSOLE_POSITION_TOPRIGHT';
+  CONSOLE_POSITION_BOTTOMLEFT:Result:='CONSOLE_POSITION_BOTTOMLEFT';
+  CONSOLE_POSITION_BOTTOMRIGHT:Result:='CONSOLE_POSITION_BOTTOMRIGHT';
+  CONSOLE_POSITION_FULLSCREEN:Result:='CONSOLE_POSITION_FULLSCREEN';
+ end; 
 end;
 
 {==============================================================================}
@@ -12844,6 +12933,34 @@ begin
     CriticalSectionUnlock(Console.WindowLock);
    end;
   end; 
+end;
+
+{==============================================================================}
+
+function ConsoleWindowStateToString(WindowState:LongWord):String;
+{Convert a Console Window state value to a string}
+begin
+ {}
+ Result:='WINDOW_STATE_UNKNOWN';
+ 
+ if WindowState <= WINDOW_STATE_MAX then
+  begin
+   Result:=WINDOW_STATE_NAMES[WindowState];
+  end;
+end;
+
+{==============================================================================}
+
+function ConsoleWindowModeToString(WindowMode:LongWord):String;
+{Convert a Console Window mode value to a string}
+begin
+ {}
+ Result:='WINDOW_MODE_UNKNOWN';
+ 
+ if WindowMode <= WINDOW_MODE_MAX then
+  begin
+   Result:=WINDOW_MODE_NAMES[WindowMode];
+  end;
 end;
 
 {==============================================================================}

@@ -1,7 +1,7 @@
 {
 Ultibo DHCP/BOOTP Protocol client unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1129,7 +1129,7 @@ begin
             Offset:=0;
             while (Offset + SizeOf(TInAddr)) <= LongWord(Length) do
              begin
-              TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(LongWord(Option) + Offset)^));
+              TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(PtrUInt(Option) + Offset)^));
               
               Inc(Offset,SizeOf(TInAddr));
              end;
@@ -1236,7 +1236,7 @@ begin
             Offset:=0;
             while (Offset + SizeOf(TInAddr)) <= LongWord(Length) do
              begin
-              TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(LongWord(Option) + Offset)^));
+              TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(PtrUInt(Option) + Offset)^));
               
               Inc(Offset,SizeOf(TInAddr));
              end;
@@ -1365,7 +1365,7 @@ begin
             Offset:=0;
             while (Offset + SizeOf(TInAddr)) <= LongWord(Length) do
              begin
-              TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(LongWord(Option) + Offset)^));
+              TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(PtrUInt(Option) + Offset)^));
               
               Inc(Offset,SizeOf(TInAddr));
              end;
@@ -1452,12 +1452,12 @@ begin
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
-    PByte(LongWord(Option) + 1)^:=ROUTERS_ON_SNET;
-    PByte(LongWord(Option) + 2)^:=DNS_SRV;
-    PByte(LongWord(Option) + 3)^:=DOMAIN_NAME;
-    PByte(LongWord(Option) + 4)^:=DHCP_IP_ADDR_LEASE_TIME;
-    PByte(LongWord(Option) + 5)^:=DHCP_T1_VALUE;
-    PByte(LongWord(Option) + 6)^:=DHCP_T2_VALUE;
+    PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
+    PByte(PtrUInt(Option) + 2)^:=DNS_SRV;
+    PByte(PtrUInt(Option) + 3)^:=DOMAIN_NAME;
+    PByte(PtrUInt(Option) + 4)^:=DHCP_IP_ADDR_LEASE_TIME;
+    PByte(PtrUInt(Option) + 5)^:=DHCP_T1_VALUE;
+    PByte(PtrUInt(Option) + 6)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,7) then Exit;
     
     {Max Message Size}
@@ -1533,12 +1533,12 @@ begin
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
-    PByte(LongWord(Option) + 1)^:=ROUTERS_ON_SNET;
-    PByte(LongWord(Option) + 2)^:=DNS_SRV;
-    PByte(LongWord(Option) + 3)^:=DOMAIN_NAME;
-    PByte(LongWord(Option) + 4)^:=DHCP_IP_ADDR_LEASE_TIME;
-    PByte(LongWord(Option) + 5)^:=DHCP_T1_VALUE;
-    PByte(LongWord(Option) + 6)^:=DHCP_T2_VALUE;
+    PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
+    PByte(PtrUInt(Option) + 2)^:=DNS_SRV;
+    PByte(PtrUInt(Option) + 3)^:=DOMAIN_NAME;
+    PByte(PtrUInt(Option) + 4)^:=DHCP_IP_ADDR_LEASE_TIME;
+    PByte(PtrUInt(Option) + 5)^:=DHCP_T1_VALUE;
+    PByte(PtrUInt(Option) + 6)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,7) then Exit;
     
     {Server Identifier}
@@ -1758,11 +1758,11 @@ begin
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
-    PByte(LongWord(Option) + 1)^:=ROUTERS_ON_SNET;
-    PByte(LongWord(Option) + 2)^:=DNS_SRV;
-    PByte(LongWord(Option) + 3)^:=DOMAIN_NAME;
-    PByte(LongWord(Option) + 4)^:=DHCP_T1_VALUE;
-    PByte(LongWord(Option) + 5)^:=DHCP_T2_VALUE;
+    PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
+    PByte(PtrUInt(Option) + 2)^:=DNS_SRV;
+    PByte(PtrUInt(Option) + 3)^:=DOMAIN_NAME;
+    PByte(PtrUInt(Option) + 4)^:=DHCP_T1_VALUE;
+    PByte(PtrUInt(Option) + 5)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,6) then Exit;
     
     {Max Message Size}
@@ -1978,12 +1978,12 @@ begin
     
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
-    PByte(LongWord(Option) + 1)^:=ROUTERS_ON_SNET;
-    PByte(LongWord(Option) + 2)^:=DNS_SRV;
-    PByte(LongWord(Option) + 3)^:=DOMAIN_NAME;
-    PByte(LongWord(Option) + 4)^:=DHCP_IP_ADDR_LEASE_TIME;
-    PByte(LongWord(Option) + 5)^:=DHCP_T1_VALUE;
-    PByte(LongWord(Option) + 6)^:=DHCP_T2_VALUE;
+    PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
+    PByte(PtrUInt(Option) + 2)^:=DNS_SRV;
+    PByte(PtrUInt(Option) + 3)^:=DOMAIN_NAME;
+    PByte(PtrUInt(Option) + 4)^:=DHCP_IP_ADDR_LEASE_TIME;
+    PByte(PtrUInt(Option) + 5)^:=DHCP_T1_VALUE;
+    PByte(PtrUInt(Option) + 6)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,7) then Exit;
     
     {Requested Address}
@@ -2826,7 +2826,7 @@ begin
          Offset:=0;
          while (Offset + SizeOf(TInAddr)) <= LongWord(Length) do
           begin
-           TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(LongWord(Option) + Offset)^));
+           TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(PtrUInt(Option) + Offset)^));
            Inc(Offset,SizeOf(TInAddr));
           end;
         end;

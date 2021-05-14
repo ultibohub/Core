@@ -1,7 +1,7 @@
 {
 Raspberry Pi Firmware GPIO Expander Driver.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -13,6 +13,9 @@ Boards
 
  Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
 
 Licence
 =======
@@ -36,7 +39,7 @@ Raspberry Pi GPIO Expander
 ==========================
  
  As of February 2017 the Raspberry Pi firmware contains a mailbox interface to allow 
- control of the GPIO expander on the Raspberry Pi 3 and Compute Module 3.
+ control of the GPIO expander on the Raspberry Pi 3/4 and Compute Module 3/4.
   
  Unlike the earlier virtual GPIO interface this mailbox service now supports most GPIO
  functionality including getting and setting a pin value, getting and changing the pin
@@ -47,7 +50,7 @@ Raspberry Pi GPIO Expander
  to any additional options not covered by the GPIO device API.
  
  When included in a project this driver replaces the Virtual GPIO functions provided by
- the PlatformRPi2 and PlatformRPi3 units.
+ the PlatformRPi2, PlatformRPi3, PlatformRPi4 units.
   
  According to /arch/arm/boot/dts/bcm2710-rpi-3-b.dts the following pin assignments are known:
  
@@ -55,14 +58,28 @@ Raspberry Pi GPIO Expander
   GPIO_PIN_4 = HDMI Detect (Input / Active Low)
   GPIO_PIN_7 = Power LED (Input / Active Low)
 
- For the Raspberry Pi 3B+ the assignments show in /arch/arm/boot/dts/bcm2710-rpi-3-b.dts have
+ For the Raspberry Pi 3B+ the assignments shown in /arch/arm/boot/dts/bcm2710-rpi-3-b.dts have
  changed as follows:
  
   GPIO_PIN_2 = Power LED (Active Low)
   GPIO_PIN_4 = HDMI Detect (Input / Active Low)
   
- Note that this driver requires the most recent firmware (later than February 2017)
- and has been tested successfully with the firmware release from 17 March 2018.
+ For the Raspberry Pi 4B the assignments shown in /arch/arm/boot/dts/bcm2711-rpi-4-b.dts are:
+ 
+  GPIO_PIN_0 = Bluetooth Power (Active High) (BT_ON)
+  GPIO_PIN_1 = WiFi Power Sequencer (Active Low) (WL_ON)
+  GPIO_PIN_2 = Power LED (Active Low) (PWR_LED_OFF)
+  GPIO_PIN_3 = (GLOBAL_RESET) (ANT1 on CM4)
+  GPIO_PIN_4 = SDIO 1.8V regulator (Active High) (VDD_SD_IO_SEL)
+  GPIO_PIN_5 = CAM1 regulator (Active High) (CAM_GPIO)
+  GPIO_PIN_6 = SD VCC regulator (Active High) (SD_PWR_ON)
+  GPIO_PIN_7 = (SD_OC_N) (ANT2 on CM4)
+  
+ The Pi 400 and CM4 files at bcm2711-rpi-400.dts and bcm2711-rpi-cm4.dts show identical assignments
+ as the Pi 4B.
+  
+ Note that this driver requires recent firmware (later than February 2017) and has been tested
+ successfully with the firmware release from 8 October 2020.
  
  The latest version of the firmware is available from https://github.com/raspberrypi/firmware
  
@@ -263,7 +280,10 @@ begin
   BOARD_TYPE_RPI3B_PLUS,
   BOARD_TYPE_RPI3A_PLUS,
   BOARD_TYPE_RPI_COMPUTE3,
-  BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+  BOARD_TYPE_RPI_COMPUTE3_PLUS,
+  BOARD_TYPE_RPI4B,
+  BOARD_TYPE_RPI400,
+  BOARD_TYPE_RPI_COMPUTE4:begin
     {Create GPIO}
     RPiGPIOExpander:=PRPiGPIOExpander(GPIODeviceCreateEx(SizeOf(TRPiGPIOExpander)));
     if RPiGPIOExpander <> nil then
@@ -331,6 +351,15 @@ begin
            BOARD_TYPE_RPI3A_PLUS,
            BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
              {Activity LED is on GPIO 29}
+             {Setup Power LED}
+             POWER_LED_PIN:=VIRTUAL_GPIO_PIN_2;
+             POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
+             POWER_LED_ACTIVE_LOW:=True;
+            end;
+           BOARD_TYPE_RPI4B,
+           BOARD_TYPE_RPI400,
+           BOARD_TYPE_RPI_COMPUTE4:begin
+             {Activity LED is on GPIO 42}
              {Setup Power LED}
              POWER_LED_PIN:=VIRTUAL_GPIO_PIN_2;
              POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;

@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1301,6 +1301,7 @@ type
    FFindHandles:TFileSysList;
 
    FCurrentIndex:LongWord;   {TLS Index for storing current drive}
+   FCurrentDrive:TDiskDrive; {Current drive when global current directory is enabled}
   
    FAllowFloppy:Boolean;     {Allow Scanning of Floppy Devices}
    FAllowDrives:Boolean;     {Allow Disk Drives to represent Volumes by drive letter}
@@ -1697,6 +1698,7 @@ type
    function GetCurrentDir:String;
    function GetCurrentDirEx(ADrive:Byte):String;
    function SetCurrentDir(const ADirName:String):Boolean;
+   function SetCurrentDirEx(ADrive:Byte;const ADirName:String):Boolean;
    function DirectoryExists(const ADirName:String):Boolean;
    procedure ForceDirectories(ADirName:String);
    procedure DeleteTree(const ADirName:String);
@@ -3436,6 +3438,7 @@ type
    FRoot:TDiskEntry;
    
    FCurrentIndex:LongWord;   {TLS Index for storing current directory}
+   FCurrentEntry:TDiskEntry; {Current directory when global current directory is enabled}
    
    FChunks:TFileSysList;
    FTables:TFileSysList;
@@ -5505,7 +5508,8 @@ begin
  FFindHandles:=TFileSysList.Create;
 
  FCurrentIndex:=TlsAlloc;
-
+ FCurrentDrive:=nil;
+ 
  {Set Defaults}
  FAllowFloppy:=True;
  FAllowDrives:=True;
@@ -5591,7 +5595,14 @@ end;
 function TFileSysDriver.GetCurrent:TDiskDrive; 
 begin
  {}
- Result:=TlsGetValue(FCurrentIndex);
+ if FILESYS_GLOBAL_CURRENTDIR then
+  begin
+   Result:=FCurrentDrive;
+  end
+ else
+  begin 
+   Result:=TlsGetValue(FCurrentIndex);
+  end; 
 end;
 
 {==============================================================================}
@@ -5599,7 +5610,16 @@ end;
 function TFileSysDriver.SetCurrent(ACurrent:TDiskDrive):Boolean; 
 begin
  {}
- Result:=TlsSetValue(FCurrentIndex,ACurrent)
+ if FILESYS_GLOBAL_CURRENTDIR then
+  begin
+   FCurrentDrive:=ACurrent;
+   
+   Result:=(FCurrentDrive <> nil);
+  end
+ else
+  begin
+   Result:=TlsSetValue(FCurrentIndex,ACurrent)
+  end; 
 end;
 
 {==============================================================================}
@@ -16264,7 +16284,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetCurrentDirEx');
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetCurrentDirEx Drive=' + DRIVE_NAMES[ADrive]);
   {$ENDIF}
   
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
@@ -16336,6 +16356,44 @@ begin
  end; 
 end;
 
+{==============================================================================}
+
+function TFileSysDriver.SetCurrentDirEx(ADrive:Byte;const ADirName:String):Boolean;
+{Set the current directory on the specified drive}
+{Note: Does not update the current drive}
+{Note: No Volume Support}
+var
+ Drive:TDiskDrive;
+begin
+ {}
+ Result:=False;
+ 
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetCurrentDirEx Drive=' + DRIVE_NAMES[ADrive] + ' DirName = ' + ADirName);
+  {$ENDIF}
+
+  if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
+  
+  Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
+  if Drive = nil then Exit;
+  try
+   if Drive.FileSystem = nil then Exit;
+   
+   {Check Path}
+   if GetDriveFromPath(ADirName,False,FILESYS_LOCK_NONE) <> Drive then Exit;
+   
+   Result:=Drive.FileSystem.SetCurrentDir(ADirName);
+  finally
+   {Unlock Drive}
+   Drive.ReaderUnlock;
+  end;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+  
 {==============================================================================}
 
 function TFileSysDriver.DirectoryExists(const ADirName:String):Boolean;
@@ -30606,6 +30664,7 @@ begin
  FRoot:=nil;
  
  FCurrentIndex:=TlsAlloc;
+ FCurrentEntry:=nil;
  
  FChunks:=TFileSysList.Create;
  FTables:=TFileSysList.Create;
@@ -31260,14 +31319,28 @@ end;
 function TFileSystem.GetCurrent:TDiskEntry; 
 begin
  {}
- Result:=TlsGetValue(FCurrentIndex);
- if Result = nil then
+ if FILESYS_GLOBAL_CURRENTDIR then
   begin
-   if not TlsSetValue(FCurrentIndex,FRoot) then Exit;
-   
+   Result:=FCurrentEntry;
+   if Result = nil then
+    begin
+     FCurrentEntry:=FRoot;
+     
+     Result:=FCurrentEntry;
+     if Result <> nil then Result.AddReference;
+    end;
+  end
+ else
+  begin 
    Result:=TlsGetValue(FCurrentIndex);
-   if Result <> nil then Result.AddReference;
-  end;
+   if Result = nil then
+    begin
+     if not TlsSetValue(FCurrentIndex,FRoot) then Exit;
+     
+     Result:=TlsGetValue(FCurrentIndex);
+     if Result <> nil then Result.AddReference;
+    end;
+  end;  
 end;
 
 {==============================================================================}
@@ -31275,7 +31348,16 @@ end;
 function TFileSystem.SetCurrent(ACurrent:TDiskEntry):Boolean;
 begin
  {}
- Result:=TlsSetValue(FCurrentIndex,ACurrent)
+ if FILESYS_GLOBAL_CURRENTDIR then
+  begin
+   FCurrentEntry:=ACurrent;
+   
+   Result:=(FCurrentEntry <> nil);
+  end
+ else
+  begin 
+   Result:=TlsSetValue(FCurrentIndex,ACurrent)
+  end; 
 end;
 
 {==============================================================================}
@@ -39439,7 +39521,7 @@ begin
     for Count:=0 to PageCount - 1 do
      begin
       Page:=TCachePage.Create;
-      Page.Data:=Pointer(LongWord(FBuffer) + PageOffset);
+      Page.Data:=Pointer(PtrUInt(FBuffer) + PageOffset);
       AddPage(Page);
       Inc(PageOffset,PageSize);
      end;
@@ -39592,7 +39674,7 @@ begin
         if ReadCount > ACount then ReadCount:=ACount;
         
         {Read from Page to Buffer}
-        System.Move(Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
+        System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
         
         {Update Page}
         Page.PageTime:=GetTickCount64;
@@ -39631,7 +39713,7 @@ begin
           if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
           
           {Read from Page to Buffer}
-          System.Move(Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
+          System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
           
           {PageTime updated by AllocDevicePage}
          end
@@ -39726,7 +39808,7 @@ begin
           if WriteCount > ACount then WriteCount:=ACount;
           
           {Write to Page from Buffer}
-          System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+          System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
           
           {Update Page}
           Page.PageTime:=GetTickCount64;
@@ -39773,7 +39855,7 @@ begin
              end;
             
             {Write to Page from Buffer}
-            System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+            System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
             
             {PageTime and WriteTime updated by AllocDevicePage}
             
@@ -39824,10 +39906,10 @@ begin
           if WriteCount > ACount then WriteCount:=ACount;
           
           {Write to Page from Buffer}
-          System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+          System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
           
           {Write from Page to Device}
-          if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
+          if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
           
           {Update Page}
           Page.PageTime:=GetTickCount64;
@@ -39870,10 +39952,10 @@ begin
              end;
             
             {Write to Page from Buffer}
-            System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+            System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
             
             {Write from Page to Device}
-            if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
+            if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
   
             {PageTime updated by AllocDevicePage}
            end
@@ -40427,7 +40509,7 @@ begin
  Result:=False;
 
  {$IFDEF CACHE_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx (Page=' + IntToHex(LongWord(APage),8) + ' FirstDirty=' + IntToHex(LongWord(FFirstDirty),8) + ')');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx (Page=' + PtrToHex(APage) + ' FirstDirty=' + PtrToHex(FFirstDirty) + ')');
  {$ENDIF}
  
  if not AcquireLock then Exit;
@@ -40509,11 +40591,11 @@ begin
    begin
     if APage <> Page then
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx - Non Dirty Page (Page=' + IntToHex(LongWord(APage),8) + ' Dirty=' + IntToHex(LongWord(Page),8) + ')');
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx - Non Dirty Page (Page=' + PtrToHex(APage) + ' Dirty=' + PtrToHex(Page) + ')');
      end
     else
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx - Not Ready Page (Page=' + IntToHex(LongWord(APage),8) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
      end;
   {$ENDIF}   
    end;   
@@ -41312,13 +41394,13 @@ begin
  Offset:=(APage.KeyHash and FKeyMask) shl 2;
  
  {Get First Key}
- FirstKey:=THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ FirstKey:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
   begin
    {Is First Object}
    APage.KeyPrev:=nil;
    APage.KeyNext:=nil;
-   THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=APage;
+   THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=APage;
   end
  else
   begin
@@ -41326,7 +41408,7 @@ begin
    FirstKey.KeyPrev:=APage;
    APage.KeyPrev:=nil;
    APage.KeyNext:=FirstKey;
-   THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=APage;
+   THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=APage;
   end;
   
  Result:=True;
@@ -41375,12 +41457,12 @@ begin
      {Not Last Object}
      NextKey:=APage.KeyNext;
      NextKey.KeyPrev:=nil;
-     THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=NextKey;
+     THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=NextKey;
     end
    else
     begin
      {Is Last Object}
-     THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=nil;
+     THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
     end;
   end;
   
@@ -41406,7 +41488,7 @@ begin
  Offset:=(AKeyHash and FKeyMask) shl 2;
  
  {Get First Key}
- Result:=THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ Result:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
 
 {==============================================================================}
@@ -41982,7 +42064,7 @@ begin
     for Count:=0 to PageCount - 1 do
      begin
       Page:=THashCachePage.Create;
-      Page.Data:=Pointer(LongWord(FBuffer) + PageOffset);
+      Page.Data:=Pointer(PtrUInt(FBuffer) + PageOffset);
       AddPage(Page);
       Inc(PageOffset,PageSize);
      end;
@@ -42145,7 +42227,7 @@ begin
         if ReadCount > ACount then ReadCount:=ACount;
         
         {Read from Page to Buffer}
-        System.Move(Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
+        System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
         
         {Update Page}
         Page.PageTime:=GetTickCount64;
@@ -42184,7 +42266,7 @@ begin
           if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
           
           {Read from Page to Buffer}
-          System.Move(Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
+          System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
           
           {PageTime updated by AllocDevicePage}
          end
@@ -42279,7 +42361,7 @@ begin
           if WriteCount > ACount then WriteCount:=ACount;
           
           {Write to Page from Buffer}
-          System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+          System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
           
           {Update Page}
           Page.PageTime:=GetTickCount64;
@@ -42326,7 +42408,7 @@ begin
              end;
             
             {Write to Page from Buffer}
-            System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+            System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
             
             {PageTime and WriteTime updated by AllocDevicePage}
             
@@ -42377,10 +42459,10 @@ begin
           if WriteCount > ACount then WriteCount:=ACount;
           
           {Write to Page from Buffer}
-          System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+          System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
           
           {Write from Page to Device}
-          if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
+          if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
           
           {Update Page}
           Page.PageTime:=GetTickCount64;
@@ -42423,10 +42505,10 @@ begin
              end;
             
             {Write to Page from Buffer}
-            System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+            System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
             
             {Write from Page to Device}
-            if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
+            if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
   
             {PageTime updated by AllocDevicePage}
            end
@@ -43012,7 +43094,7 @@ begin
  Result:=False;
 
  {$IFDEF CACHE_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx (Page=' + IntToHex(LongWord(APage),8) + ' FirstDirty=' + IntToHex(LongWord(FFirstDirty),8) + ')');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx (Page=' + PtrToHex(APage) + ' FirstDirty=' + PtrToHex(FFirstDirty) + ')');
  {$ENDIF}
  
  if not AcquireLock then Exit;
@@ -43094,11 +43176,11 @@ begin
    begin
     if APage <> Page then
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx - Non Dirty Page (Page=' + IntToHex(LongWord(APage),8) + ' Dirty=' + IntToHex(LongWord(Page),8) + ')');
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx - Non Dirty Page (Page=' + PtrToHex(APage) + ' Dirty=' + PtrToHex(Page) + ')');
      end
     else
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx - Not Ready Page (Page=' + IntToHex(LongWord(APage),8) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
      end;
   {$ENDIF}
    end;
@@ -43812,13 +43894,13 @@ begin
  Offset:=(APage.KeyHash and FKeyMask) shl 2;
  
  {Get First Key}
- FirstKey:=THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ FirstKey:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
   begin
    {Is First Object}
    APage.KeyPrev:=nil;
    APage.KeyNext:=nil;
-   THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=APage;
+   THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=APage;
   end
  else
   begin
@@ -43826,7 +43908,7 @@ begin
    FirstKey.KeyPrev:=APage;
    APage.KeyPrev:=nil;
    APage.KeyNext:=FirstKey;
-   THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=APage;
+   THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=APage;
   end;
   
  Result:=True;
@@ -43875,12 +43957,12 @@ begin
      {Not Last Object}
      NextKey:=APage.KeyNext;
      NextKey.KeyPrev:=nil;
-     THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=NextKey;
+     THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=NextKey;
     end
    else
     begin
      {Is Last Object}
-     THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^):=nil;
+     THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
     end;
   end;
   
@@ -43906,7 +43988,7 @@ begin
  Offset:=(AKeyHash and FKeyMask) shl 2;
  
  {Get First Key}
- Result:=THashCachePage(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ Result:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
 
 {==============================================================================}
@@ -44566,7 +44648,7 @@ begin
     for Count:=0 to PageCount - 1 do
      begin
       Page:=TIncrementalCachePage.Create;
-      Page.Data:=Pointer(LongWord(FBuffer) + PageOffset);
+      Page.Data:=Pointer(PtrUInt(FBuffer) + PageOffset);
       AddPage(Page);
       Inc(PageOffset,PageSize);
      end;
@@ -44731,7 +44813,7 @@ begin
         //To Do //PrepareDeviceRead
         
         {Read from Page to Buffer}
-        System.Move(Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
+        System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
         
         {Update Page}
         Page.PageTime:=GetTickCount64;
@@ -44772,7 +44854,7 @@ begin
           if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
           
           {Read from Page to Buffer}
-          System.Move(Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
+          System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
           
           {PageTime updated by AllocDevicePage}
          end
@@ -44869,7 +44951,7 @@ begin
           //To Do //PrepareDeviceWrite
           
           {Write to Page from Buffer}
-          System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+          System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
           
           //To Do //CompleteDeviceWrite
           
@@ -44918,7 +45000,7 @@ begin
              end;
             
             {Write to Page from Buffer}
-            System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+            System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
             
             //To Do //CompleteDeviceWrite
             
@@ -44973,12 +45055,12 @@ begin
           //To Do //PrepareDeviceWrite
           
           {Write to Page from Buffer}
-          System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+          System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
           
           //To Do //CompleteDeviceWrite
           
           {Write from Page to Device}
-          if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
+          if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
           
           {Update Page}
           Page.PageTime:=GetTickCount64;
@@ -45021,12 +45103,12 @@ begin
              end;
             
             {Write to Page from Buffer}
-            System.Move(Buffer^,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
+            System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
             
             //To Do //CompleteDeviceWrite
             
             {Write from Page to Device}
-            if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(LongWord(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
+            if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
   
             {PageTime updated by AllocDevicePage}
            end
@@ -45643,7 +45725,7 @@ begin
  Result:=False;
 
  {$IFDEF CACHE_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx (Page=' + IntToHex(LongWord(APage),8) + ' FirstDirty=' + IntToHex(LongWord(FFirstDirty),8) + ')');
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx (Page=' + PtrToHex(APage) + ' FirstDirty=' + PtrToHex(FFirstDirty) + ')');
  {$ENDIF}
  
  if not AcquireLock then Exit;
@@ -45733,11 +45815,11 @@ begin
    begin
     if APage <> Page then
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx - Non Dirty Page (Page=' + IntToHex(LongWord(APage),8) + ' Dirty=' + IntToHex(LongWord(Page),8) + ')');
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx - Non Dirty Page (Page=' + PtrToHex(APage) + ' Dirty=' + PtrToHex(Page) + ')');
      end
     else
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx - Not Ready Page (Page=' + IntToHex(LongWord(APage),8) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
      end;
   {$ENDIF}   
    end;
@@ -47462,7 +47544,7 @@ begin
  except
   on E: Exception do
    begin
-    if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -47509,7 +47591,7 @@ begin
  except
   on E: Exception do
    begin
-    if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -47556,7 +47638,7 @@ begin
  except
   on E: Exception do
    begin
-    if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;

@@ -1,7 +1,7 @@
 {
 Ultibo Web Status unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -43,8 +43,8 @@ unit WebStatus;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
-     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Console,Framebuffer,Font,Logging,Timezone,Locale,Unicode,
-     Iphlpapi;
+     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,Timezone,Locale,
+     Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA;
 
 //To Do //Look for:
 
@@ -76,7 +76,7 @@ type
  
 {==============================================================================}
 type
- {Web Status specific clases}
+ {Web Status specific classes}
  TWebStatusSub = class;
  TWebStatusMain = class(THTTPDocument)
  public
@@ -107,7 +107,10 @@ type
 
   function AddItem(AResponse:THTTPServerResponse;const AName,AValue:String):Boolean;
   function AddItemEx(AResponse:THTTPServerResponse;const AName,AValue:String;AIndent:LongWord):Boolean;
-
+  
+  function AddItemSpan(AResponse:THTTPServerResponse;const AValue:String;AColumns:LongWord;ABreak:Boolean = True):Boolean;
+  function AddItemSpanEx(AResponse:THTTPServerResponse;const AValue:String;AColumns,AIndent:LongWord;ABreak:Boolean = True):Boolean;
+  
   function AddItem3Column(AResponse:THTTPServerResponse;const AName,AValue1,AValue2:String):Boolean;
   function AddItem4Column(AResponse:THTTPServerResponse;const AName,AValue1,AValue2,AValue3:String):Boolean;
   function AddItem5Column(AResponse:THTTPServerResponse;const AName,AValue1,AValue2,AValue3,AValue4:String):Boolean;
@@ -165,6 +168,9 @@ type
   
   function AddItem(AResponse:THTTPServerResponse;const AName,AValue:String):Boolean;
   function AddItemEx(AResponse:THTTPServerResponse;const AName,AValue:String;AIndent:LongWord):Boolean;
+
+  function AddItemSpan(AResponse:THTTPServerResponse;const AValue:String;AColumns:LongWord;ABreak:Boolean = True):Boolean;
+  function AddItemSpanEx(AResponse:THTTPServerResponse;const AValue:String;AColumns,AIndent:LongWord;ABreak:Boolean = True):Boolean;
 
   function AddItem3Column(AResponse:THTTPServerResponse;const AName,AValue1,AValue2:String):Boolean;
   function AddItem4Column(AResponse:THTTPServerResponse;const AName,AValue1,AValue2,AValue3:String):Boolean;
@@ -450,12 +456,30 @@ type
   {Internal Variables}
   
   {Internal Methods}
-  
+  function DMAFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function I2CFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function SPIFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function PWMFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function GPIOFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function UARTFlagsToFlagNames(AFlags:LongWord):TStringList;
   function ClockFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function MouseFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function TouchFlagsToFlagNames(AFlags:LongWord):TStringList;
   function TimerFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function SerialFlagsToFlagNames(AFlags:LongWord):TStringList;
   function RandomFlagsToFlagNames(AFlags:LongWord):TStringList;
   function MailboxFlagsToFlagNames(AFlags:LongWord):TStringList;
   function WatchdogFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function NetworkFlagsToFlagNames(AFlags:LongWord):TStringList; 
+  function LoggingFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function StorageFlagsToFlagNames(AFlags:LongWord):TStringList; 
+  function KeyboardFlagsToFlagNames(AFlags:LongWord):TStringList; 
+  function ConsoleFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function FramebufferFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function ConsoleWindowFlagsToFlagNames(AFlags:LongWord):TStringList;
+  
+  function UARTStatusToStatusNames(AStatus:LongWord):TStringList;
+  function SerialStatusToStatusNames(AStatus:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -518,10 +542,12 @@ type
   constructor Create(AMain:TWebStatusMain);
  private
   {Internal Variables}
+  function USBFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function USBHostFlagsToFlagNames(AFlags:LongWord):TStringList;
   
  protected
   {Internal Variables}
- 
+  
   {Internal Methods}
  
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
@@ -675,6 +701,26 @@ type
   
  end;
 
+ TWebStatusTouch = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  
+ protected
+  {Internal Variables}
+ 
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
+
  TWebStatusFramebuffer = class(TWebStatusSub)
  public
   {}
@@ -783,6 +829,26 @@ type
   {Public Methods}
   
  end;
+
+ TWebStatusGPIO = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  
+ protected
+  {Internal Variables}
+ 
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
  
  TWebStatusConfiguration = class(TWebStatusSub)
  public
@@ -865,6 +931,7 @@ type
   Host:THTTPHost;
   Request:THTTPServerRequest;
   Response:THTTPServerResponse;
+  Data:Pointer;
  end;
  
 {==============================================================================}
@@ -890,12 +957,18 @@ function WebStatusHandleEnumerate(Handle:PHandleEntry;Data:Pointer):LongWord;
 function WebStatusUSBDeviceEnumerate(Device:PUSBDevice;Data:Pointer):LongWord;
 function WebStatusUSBHostEnumerate(Host:PUSBHost;Data:Pointer):LongWord;
 function WebStatusUSBDriverEnumerate(Driver:PUSBDriver;Data:Pointer):LongWord;
+procedure WebStatusUSBLogOutput(const AText:String;Data:Pointer); 
+function WebStatusUSBLogDeviceCallback(Device:PUSBDevice;Data:Pointer):LongWord;
+function WebStatusUSBLogTreeCallback(Device:PUSBDevice;Data:Pointer):LongWord;
 function WebStatusMMCEnumerate(MMC:PMMCDevice;Data:Pointer):LongWord;
 function WebStatusSDHCIEnumerate(SDHCI:PSDHCIHost;Data:Pointer):LongWord;
 function WebStatusNetworkEnumerate(Network:PNetworkDevice;Data:Pointer):LongWord;
 function WebStatusStorageEnumerate(Storage:PStorageDevice;Data:Pointer):LongWord;
 function WebStatusMouseEnumerate(Mouse:PMouseDevice;Data:Pointer):LongWord;
+function WebStatusTouchEnumerate(Touch:PTouchDevice;Data:Pointer):LongWord;
 function WebStatusKeyboardEnumerate(Keyboard:PKeyboardDevice;Data:Pointer):LongWord;
+
+function WebStatusConsoleWindowEnumerate(Console:PConsoleDevice;Handle:TWindowHandle;Data:Pointer):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -930,11 +1003,13 @@ var
  WebStatusCache:TWebStatusCache;
  WebStatusKeyboard:TWebStatusKeyboard;
  WebStatusMouse:TWebStatusMouse;
+ WebStatusTouch:TWebStatusTouch;
  WebStatusFramebuffer:TWebStatusFramebuffer;
  WebStatusEnvironment:TWebStatusEnvironment;
  WebStatusPageTables:TWebStatusPageTables;
  WebStatusVectorTables:TWebStatusVectorTables;
  WebStatusIRQFIQSWI:TWebStatusIRQFIQSWI;
+ WebStatusGPIO:TWebStatusGPIO;
  WebStatusConfiguration:TWebStatusConfiguration;
  {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG) or DEFINED(EXCEPTION_DEBUG)}
  WebStatusDebug:TWebStatusDebug;
@@ -1139,6 +1214,89 @@ begin
    AddContent(AResponse,'                 </td>');
    AddContent(AResponse,'               </tr>');
 
+   {Return Result}
+   Result:=True;
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.AddItemSpan(AResponse:THTTPServerResponse;const AValue:String;AColumns:LongWord;ABreak:Boolean):Boolean;
+var
+ WorkBuffer:String;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Columns}
+ if AColumns < 2 then AColumns:=2;
+ if AColumns > 5 then AColumns:=5;
+
+ {Check Break}
+ WorkBuffer:=AValue;
+ if ABreak then
+  begin
+   WorkBuffer:=WorkBuffer + '<br>';
+  end;
+  
+ {Add Content}
+ AddContent(AResponse,'               <tr>');
+ AddContent(AResponse,'                 <td colspan="' + IntToStr(AColumns) + '" style="text-align: left; width: 100%;">' + WorkBuffer);
+ AddContent(AResponse,'                 </td>');
+ AddContent(AResponse,'               </tr>');
+ 
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.AddItemSpanEx(AResponse:THTTPServerResponse;const AValue:String;AColumns,AIndent:LongWord;ABreak:Boolean):Boolean;
+var
+ Count:LongWord;
+ 
+ WorkBuffer:String;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Columns}
+ if AColumns < 2 then AColumns:=2;
+ if AColumns > 5 then AColumns:=5;
+
+ {Check Indent}
+ if AIndent < 1 then
+  begin
+   Result:=AddItemSpan(AResponse,AValue,AColumns,ABreak);
+  end
+ else
+  begin 
+   {Get Indent}
+   WorkBuffer:='';
+   for Count:=1 to AIndent do
+    begin
+     WorkBuffer:=WorkBuffer + '&nbsp;';
+    end;
+ 
+   {Check Break}
+   WorkBuffer:=WorkBuffer + AValue;
+   if ABreak then
+    begin
+     WorkBuffer:=WorkBuffer + '<br>';
+    end;
+ 
+   {Add Content}
+   AddContent(AResponse,'               <tr>');
+   AddContent(AResponse,'                 <td colspan="' + IntToStr(AColumns) + '" style="text-align: left; width: 100%;">' + WorkBuffer);
+   AddContent(AResponse,'                 </td>');
+   AddContent(AResponse,'               </tr>');
+   
    {Return Result}
    Result:=True;
   end; 
@@ -1574,6 +1732,7 @@ end;
 
 function TWebStatusMain.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; 
 var
+ WorkTemp:Double;
  WorkTime:TDateTime;
 begin
  {}
@@ -1620,6 +1779,11 @@ begin
  //To Do //Locale
  
  //To Do //Codepage
+ 
+ {Add Temperature}
+ WorkTemp:=TemperatureGetCurrent(TEMPERATURE_ID_SOC);
+ AddBlank(AResponse);
+ AddItem(AResponse,'Temperature (SoC):',FloatToStr(WorkTemp / 1000) + ' degrees Celcius');
  
  {Add Uptime}
  WorkTime:=SystemFileTimeToDateTime(Uptime); {No Conversion}
@@ -1820,6 +1984,30 @@ begin
  if FMain = nil then Exit;
  
  Result:=FMain.AddItemEx(AResponse,AName,AValue,AIndent);
+end;
+
+{==============================================================================}
+
+function TWebStatusSub.AddItemSpan(AResponse:THTTPServerResponse;const AValue:String;AColumns:LongWord;ABreak:Boolean):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ if FMain = nil then Exit;
+ 
+ Result:=FMain.AddItemSpan(AResponse,AValue,AColumns,ABreak);
+end;
+
+{==============================================================================}
+
+function TWebStatusSub.AddItemSpanEx(AResponse:THTTPServerResponse;const AValue:String;AColumns,AIndent:LongWord;ABreak:Boolean):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ if FMain = nil then Exit;
+ 
+ Result:=FMain.AddItemSpanEx(AResponse,AValue,AColumns,AIndent,ABreak);
 end;
 
 {==============================================================================}
@@ -2025,7 +2213,7 @@ end;
 function TWebStatusPlatform.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
  Count:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  Result:=False;
@@ -2064,7 +2252,7 @@ begin
 
  {Add Memory Base}
  AddBlank(AResponse);
- AddItem(AResponse,'Memory Base:','0x' + IntToHex(MemoryGetBase,8));
+ AddItem(AResponse,'Memory Base:','0x' + AddrToHex(MemoryGetBase));
 
  {Add Memory Size}
  AddItem(AResponse,'Memory Size:',IntToStr(MemoryGetSize));
@@ -2072,7 +2260,12 @@ begin
  {Add Page Size}
  AddBlank(AResponse);
  AddItem(AResponse,'Page Size:',IntToStr(MemoryGetPageSize));
- AddItem(AResponse,'Large Page Size:',IntToStr(MemoryGetLargePageSize));
+ if MemoryGetLargePageSize > 0 then AddItem(AResponse,'Large Page Size:',IntToStr(MemoryGetLargePageSize));
+
+ {Add Section Size}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Section Size:',IntToStr(MemoryGetSectionSize));
+ if MemoryGetLargeSectionSize > 0 then AddItem(AResponse,'Large Section Size:',IntToStr(MemoryGetLargeSectionSize));
 
  {Add Power States}
  AddBlank(AResponse);
@@ -2147,15 +2340,15 @@ begin
 
  {Add IO Base}
  AddBlank(AResponse);
- AddItem(AResponse,'IO Base:','0x' + IntToHex(IO_BASE,8));
+ AddItem(AResponse,'IO Base:','0x' + AddrToHex(IO_BASE));
  
  {Add IO Alias}
  AddBlank(AResponse);
- AddItem(AResponse,'IO Alias:','0x' + IntToHex(IO_ALIAS,8));
+ AddItem(AResponse,'IO Alias:','0x' + AddrToHex(IO_ALIAS));
 
  {Add Bus Alias}
  AddBlank(AResponse);
- AddItem(AResponse,'Bus Alias:','0x' + IntToHex(BUS_ALIAS,8));
+ AddItem(AResponse,'Bus Alias:','0x' + AddrToHex(BUS_ALIAS));
  
  {Add Secure Boot}
  AddBlank(AResponse);
@@ -2163,55 +2356,104 @@ begin
  
  {Add Startup Address}
  AddBlank(AResponse);
- AddItem(AResponse,'Startup Address:','0x' + IntToHex(STARTUP_ADDRESS,8));
+ AddItem(AResponse,'Startup Address:','0x' + AddrToHex(STARTUP_ADDRESS));
  
  {Add Peripheral Base}
  AddBlank(AResponse);
- AddItem(AResponse,'Peripheral Base:','0x' + IntToHex(PeripheralGetBase,8));
+ AddItem(AResponse,'Peripheral Base:','0x' + AddrToHex(PeripheralGetBase));
 
  {Add Peripheral Size}
  AddItem(AResponse,'Peripheral Size:',IntToStr(PeripheralGetSize));
 
  {Add Local Peripheral Base}
  AddBlank(AResponse);
- AddItem(AResponse,'Local Peripheral Base:','0x' + IntToHex(LocalPeripheralGetBase,8));
+ AddItem(AResponse,'Local Peripheral Base:','0x' + AddrToHex(LocalPeripheralGetBase));
 
  {Add Local Peripheral Size}
  AddItem(AResponse,'Local Peripheral Size:',IntToStr(LocalPeripheralGetSize));
  
- {Add Page Table Base}
+ {Add Page Table Levels}
  AddBlank(AResponse);
- AddItem(AResponse,'Level 1 Page Table Base:','0x' + IntToHex(PageTableGetBase,8));
+ AddItem(AResponse,'Page Table Levels:',IntToStr(PageTableGetLevels));
 
- {Add Page Table Size}
- AddItem(AResponse,'Level 1 Page Table Size:',IntToStr(PageTableGetSize));
+ {Check Levels}
+ case PageTableGetLevels of
+  2:begin
+    {2 level page table}
+    {Add Page Table Base}
+    AddBlank(AResponse);
+    AddItem(AResponse,'Level 1 Page Table Base:','0x' + AddrToHex(PageTableGetBase));
+    
+    {Add Page Table Size}
+    AddItem(AResponse,'Level 1 Page Table Size:',IntToStr(PageTableGetSize));
 
- {Add Page Tables Address}
- AddBlank(AResponse);
- AddItem(AResponse,'Level 2 Page Tables Address:','0x' + IntToHex(PageTablesGetAddress,8));
- 
- {Add Page Tables Length}
- AddItem(AResponse,'Level 2 Page Tables Length:',IntToStr(PageTablesGetLength));
+    {Add Page Tables Address}
+    AddBlank(AResponse);
+    AddItem(AResponse,'Level 2 Page Tables Address:','0x' + AddrToHex(PageTablesGetAddress));
+    
+    {Add Page Tables Length}
+    AddItem(AResponse,'Level 2 Page Tables Length:',IntToStr(PageTablesGetLength));
+   
+    {Add Page Tables Count}
+    AddItem(AResponse,'Level 2 Page Tables Count:',IntToStr(PageTablesGetCount));
+    
+    {Add Page Tables Shift}
+    AddItem(AResponse,'Level 2 Page Tables Shift:',IntToStr(PageTablesGetShift));
+    
+    {Add Page Tables Next}
+    AddBlank(AResponse);
+    AddItem(AResponse,'Level 2 Page Tables Next:','0x' + AddrToHex(PageTablesGetNext));
+    
+    {Add Page Tables Used}
+    AddItem(AResponse,'Level 2 Page Tables Used:',IntToStr(PageTablesGetUsed));
+   
+    {Add Page Tables Free}
+    AddItem(AResponse,'Level 2 Page Tables Free:',IntToStr(PageTablesGetFree));
+   end;
+  3:begin
+    {3 level page table}
+    {Add Page Directory Base}
+    AddBlank(AResponse);
+    AddItem(AResponse,'Level 1 Page Directory Base:','0x' + AddrToHex(PageDirectoryGetBase));
 
- {Add Page Tables Count}
- AddItem(AResponse,'Level 2 Page Tables Count:',IntToStr(PageTablesGetCount));
- 
- {Add Page Tables Shift}
- AddItem(AResponse,'Level 2 Page Tables Shift:',IntToStr(PageTablesGetShift));
- 
- {Add Page Tables Next}
- AddBlank(AResponse);
- AddItem(AResponse,'Level 2 Page Tables Next:','0x' + IntToHex(PageTablesGetNext,8));
- 
- {Add Page Tables Used}
- AddItem(AResponse,'Level 2 Page Tables Used:',IntToStr(PageTablesGetUsed));
+    {Add Page Directory Size}
+    AddItem(AResponse,'Level 1 Page Directory Size:',IntToStr(PageDirectoryGetSize));
 
- {Add Page Tables Free}
- AddItem(AResponse,'Level 2 Page Tables Free:',IntToStr(PageTablesGetFree));
- 
+    {Add Page Table Base}
+    AddBlank(AResponse);
+    AddItem(AResponse,'Level 2 Page Table Base:','0x' + AddrToHex(PageTableGetBase));
+   
+    {Add Page Table Size}
+    AddItem(AResponse,'Level 2 Page Table Size:',IntToStr(PageTableGetSize));
+
+    {Add Page Tables Address}
+    AddBlank(AResponse);
+    AddItem(AResponse,'Level 3 Page Tables Address:','0x' + AddrToHex(PageTablesGetAddress));
+    
+    {Add Page Tables Length}
+    AddItem(AResponse,'Level 3 Page Tables Length:',IntToStr(PageTablesGetLength));
+   
+    {Add Page Tables Count}
+    AddItem(AResponse,'Level 3 Page Tables Count:',IntToStr(PageTablesGetCount));
+    
+    {Add Page Tables Shift}
+    AddItem(AResponse,'Level 3 Page Tables Shift:',IntToStr(PageTablesGetShift));
+    
+    {Add Page Tables Next}
+    AddBlank(AResponse);
+    AddItem(AResponse,'Level 3 Page Tables Next:','0x' + AddrToHex(PageTablesGetNext));
+    
+    {Add Page Tables Used}
+    AddItem(AResponse,'Level 3 Page Tables Used:',IntToStr(PageTablesGetUsed));
+   
+    {Add Page Tables Free}
+    AddItem(AResponse,'Level 3 Page Tables Free:',IntToStr(PageTablesGetFree));
+   end;
+ end;
+
  {Add Vector Table Base}
  AddBlank(AResponse);
- AddItem(AResponse,'Vector Table Base:','0x' + IntToHex(VectorTableGetBase,8));
+ AddItem(AResponse,'Vector Table Base:','0x' + AddrToHex(VectorTableGetBase));
 
  {Add Vector Table Size}
  AddItem(AResponse,'Vector Table Size:',IntToStr(VectorTableGetSize));
@@ -2233,6 +2475,13 @@ begin
  {Add Local Interrupt Start}
  AddItem(AResponse,'Local Interrupt Start:',IntToStr(GetLocalInterruptStart));
 
+ {Add Software Interrupt Count}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Software Interrupt Count:',IntToStr(GetSoftwareInterruptCount));
+
+ {Add Software Interrupt Start}
+ AddItem(AResponse,'Software Interrupt Start:',IntToStr(GetSoftwareInterruptStart));
+
  {Add System Call Count}
  AddBlank(AResponse);
  AddItem(AResponse,'System Call Count:',IntToStr(GetSystemCallCount));
@@ -2247,6 +2496,7 @@ begin
  AddItem(AResponse,'Clock Cycles per Microsecond:',IntToStr(CLOCK_CYCLES_PER_MICROSECOND));
  AddItem(AResponse,'Clock Cycles per Nanosecond:',IntToStr(CLOCK_CYCLES_PER_NANOSECOND));
  AddItem(AResponse,'Clock Cycles Tolerance:',IntToStr(CLOCK_CYCLES_TOLERANCE));
+ AddItem(AResponse,'Time Ticks per Interrupt:',IntToStr(TIME_TICKS_PER_CLOCK_INTERRUPT));
  
  {Add Timer Thread Count}
  AddBlank(AResponse);
@@ -2269,7 +2519,7 @@ begin
  {Add Touch Buffer Address}
  TouchGetBuffer(Address);
  AddBlank(AResponse);
- AddItem(AResponse,'Touch Buffer Address:','0x' + IntToHex(Address,8));
+ AddItem(AResponse,'Touch Buffer Address:','0x' + AddrToHex(Address));
  
  {Add Footer}
  AddFooter(AResponse); 
@@ -2624,7 +2874,7 @@ begin
    while Current <> nil do
     begin
      {Add Item}
-     AddItem5Column(AResponse,'0x' + IntToHex(Current.Adddress,8),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
+     AddItem5Column(AResponse,'0x' + AddrToHex(Current.Adddress),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
    
      {Update Count}
      Inc(Count);
@@ -2658,7 +2908,7 @@ begin
    while Current <> nil do
     begin
      {Add Item}
-     AddItem5Column(AResponse,'0x' + IntToHex(Current.Adddress,8),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
+     AddItem5Column(AResponse,'0x' + AddrToHex(Current.Adddress),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
 
      {Update Count}
      Inc(Count);
@@ -2702,7 +2952,7 @@ function TWebStatusCPU.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
 var
  Count:LongWord;
  Address:PtrUInt;
- Length:LongWord;
+ Length:UInt64;
 begin
  {}
  Result:=False;
@@ -2742,6 +2992,9 @@ begin
  
  {Add CPU Count}
  AddItem(AResponse,'CPU Count:',IntToStr(CPUGetCount));
+
+ {Add CPU Max Count}
+ AddItem(AResponse,'CPU Max Count:',IntToStr(CPU_MAX_COUNT));
  
  {Add CPU Mode}
  AddItem(AResponse,'CPU Mode:','0x' + IntToHex(CPUGetMode,8));
@@ -2756,7 +3009,7 @@ begin
 
  {Add CPU Memory}
  CPUGetMemory(Address,Length);
- AddItem(AResponse,'CPU Memory:','Address: ' + '0x' + IntToHex(Address,8));
+ AddItem(AResponse,'CPU Memory:','Address: ' + '0x' + AddrToHex(Address));
  AddItem(AResponse,'','Size: ' + IntToStr(Length));
  
  {Add CPU Utilization}
@@ -2861,7 +3114,7 @@ end;
 function TWebStatusGPU.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
  Address:PtrUInt;
- Length:LongWord;
+ Length:UInt64;
 begin
  {}
  Result:=False;
@@ -2885,7 +3138,7 @@ begin
 
  {Add GPU Memory}
  GPUGetMemory(Address,Length);
- AddItem(AResponse,'GPU Memory :','Address: ' + '0x' + IntToHex(Address,8));
+ AddItem(AResponse,'GPU Memory :','Address: ' + '0x' + AddrToHex(Address));
  AddItem(AResponse,'','Size: ' + IntToStr(Length));
  
  {Add Footer}
@@ -2934,34 +3187,34 @@ begin
  AddHeader(AResponse,GetTitle,Self); 
 
  {Add TEXT Start}
- AddItem(AResponse,'TEXT Start:','0x' + IntToHex(PtrUInt(@_text_start),8));
+ AddItem(AResponse,'TEXT Start:','0x' + PtrToHex(@_text_start));
 
  {Add ETEXT}
- AddItem(AResponse,'ETEXT:','0x' + IntToHex(PtrUInt(@_etext),8));
+ AddItem(AResponse,'ETEXT:','0x' + PtrToHex(@_etext));
 
  {Add DATA}
- AddItem(AResponse,'DATA:','0x' + IntToHex(PtrUInt(@_data),8));
+ AddItem(AResponse,'DATA:','0x' + PtrToHex(@_data));
 
  {Add EDATA}
- AddItem(AResponse,'EDATA:','0x' + IntToHex(PtrUInt(@_edata),8));
+ AddItem(AResponse,'EDATA:','0x' + PtrToHex(@_edata));
 
  {Add BSS Start}
- AddItem(AResponse,'BSS Start:','0x' + IntToHex(PtrUInt(@_bss_start),8));
+ AddItem(AResponse,'BSS Start:','0x' + PtrToHex(@_bss_start));
 
  {Add BSS End}
- AddItem(AResponse,'BSS End:','0x' + IntToHex(PtrUInt(@_bss_end),8));
+ AddItem(AResponse,'BSS End:','0x' + PtrToHex(@_bss_end));
 
  {Add Preinit Array Start / Preinit Array End}
  TableStart:=@__preinit_array_start;
  TableEnd:=@__preinit_array_end;
  AddBlank(AResponse);
- AddItem(AResponse,'Preinit Array Start:','0x' + IntToHex(PtrUInt(@__preinit_array_start),8));
- AddItem(AResponse,'Preinit Array End:','0x' + IntToHex(PtrUInt(@__preinit_array_end),8));
+ AddItem(AResponse,'Preinit Array Start:','0x' + PtrToHex(@__preinit_array_start));
+ AddItem(AResponse,'Preinit Array End:','0x' + PtrToHex(@__preinit_array_end));
  while TableStart < TableEnd do
   begin
    {Get Proc}
    TableProc:=TableStart^;
-   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   AddItemEx(AResponse,'TableProc:','0x' + PtrToHex(TableProc),2);
    
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
@@ -2971,13 +3224,13 @@ begin
  TableStart:=@__init_array_start;
  TableEnd:=@__init_array_end;
  AddBlank(AResponse);
- AddItem(AResponse,'Init Array Start:','0x' + IntToHex(PtrUInt(@__init_array_start),8));
- AddItem(AResponse,'Init Array End:','0x' + IntToHex(PtrUInt(@__init_array_end),8));
+ AddItem(AResponse,'Init Array Start:','0x' + PtrToHex(@__init_array_start));
+ AddItem(AResponse,'Init Array End:','0x' + PtrToHex(@__init_array_end));
  while TableStart < TableEnd do
   begin
    {Get Proc}
    TableProc:=TableStart^;
-   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   AddItemEx(AResponse,'TableProc:','0x' + PtrToHex(TableProc),2);
    
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
@@ -2987,13 +3240,13 @@ begin
  TableStart:=@__ctors_start;
  TableEnd:=@__ctors_end;
  AddBlank(AResponse);
- AddItem(AResponse,'Ctors Start:','0x' + IntToHex(PtrUInt(@__ctors_start),8));
- AddItem(AResponse,'Ctors End:','0x' + IntToHex(PtrUInt(@__ctors_end),8));
+ AddItem(AResponse,'Ctors Start:','0x' + PtrToHex(@__ctors_start));
+ AddItem(AResponse,'Ctors End:','0x' + PtrToHex(@__ctors_end));
  while TableStart < TableEnd do
   begin
    {Get Proc}
    TableProc:=TableStart^;
-   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   AddItemEx(AResponse,'TableProc:','0x' + PtrToHex(TableProc),2);
    
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
@@ -3003,13 +3256,13 @@ begin
  TableStart:=@__fini_array_start;
  TableEnd:=@__fini_array_end;
  AddBlank(AResponse);
- AddItem(AResponse,'Fini Array Start:','0x' + IntToHex(PtrUInt(@__fini_array_start),8));
- AddItem(AResponse,'Fini Array End:','0x' + IntToHex(PtrUInt(@__fini_array_end),8));
+ AddItem(AResponse,'Fini Array Start:','0x' + PtrToHex(@__fini_array_start));
+ AddItem(AResponse,'Fini Array End:','0x' + PtrToHex(@__fini_array_end));
  while TableStart < TableEnd do
   begin
    {Get Proc}
    TableProc:=TableStart^;
-   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   AddItemEx(AResponse,'TableProc:','0x' + PtrToHex(TableProc),2);
    
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
@@ -3019,13 +3272,13 @@ begin
  TableStart:=@__dtors_start;
  TableEnd:=@__dtors_end;
  AddBlank(AResponse);
- AddItem(AResponse,'Dtors Start:','0x' + IntToHex(PtrUInt(@__dtors_start),8));
- AddItem(AResponse,'Dtors End:','0x' + IntToHex(PtrUInt(@__dtors_end),8));
+ AddItem(AResponse,'Dtors Start:','0x' + PtrToHex(@__dtors_start));
+ AddItem(AResponse,'Dtors End:','0x' + PtrToHex(@__dtors_end));
  while TableStart < TableEnd do
   begin
    {Get Proc}
    TableProc:=TableStart^;
-   AddItemEx(AResponse,'TableProc:','0x' + IntToHex(PtrUInt(TableProc),8),2);
+   AddItemEx(AResponse,'TableProc:','0x' + PtrToHex(TableProc),2);
    
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
@@ -3037,13 +3290,13 @@ begin
 
  {Add InitProc/ExitProc}
  AddBlank(AResponse); 
- AddItem(AResponse,'InitProc:','0x' + IntToHex(PtrUInt(InitProc),8));
- AddItem(AResponse,'ExitProc:','0x' + IntToHex(PtrUInt(ExitProc),8));
+ AddItem(AResponse,'InitProc:','0x' + PtrToHex(InitProc));
+ AddItem(AResponse,'ExitProc:','0x' + PtrToHex(ExitProc));
  
  {Add ErrorBase/ErrorAddr/ErrorCode}
  AddBlank(AResponse); 
- AddItem(AResponse,'ErrorBase:','0x' + IntToHex(PtrUInt(RtlErrorBase),8));
- AddItem(AResponse,'ErrorAddr:','0x' + IntToHex(PtrUInt(ErrorAddr),8));
+ AddItem(AResponse,'ErrorBase:','0x' + PtrToHex(RtlErrorBase));
+ AddItem(AResponse,'ErrorAddr:','0x' + PtrToHex(ErrorAddr));
  AddItem(AResponse,'ErrorCode:','0x' + IntToHex(ErrorCode,4));
  
  {Add InitFinalTable}
@@ -3056,8 +3309,8 @@ begin
    AddItemEx(AResponse,'InitCount:',IntToStr(Table.InitCount),2);
    for Count:=1 to Table.InitCount do
     begin
-     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].InitProc:','0x' + IntToHex(PtrUInt(@Table.Procs[Count].InitProc),8),2);
-     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].FinalProc:','0x' + IntToHex(PtrUInt(@Table.Procs[Count].FinalProc),8),2);
+     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].InitProc:','0x' + PtrToHex(@Table.Procs[Count].InitProc),2);
+     AddItemEx(AResponse,'Procs[' + IntToStr(Count) + '].FinalProc:','0x' + PtrToHex(@Table.Procs[Count].FinalProc),2);
     end;
   end;
   
@@ -3185,6 +3438,29 @@ begin
 
  {Add Clock Seconds}
  AddItem(AResponse,'Clock Seconds:',IntToStr(ClockSeconds));
+
+ {Add Clock Milliseconds}
+ AddItem(AResponse,'Clock Milliseconds:',IntToStr(ClockMilliseconds));
+
+ {Add Clock Microseconds}
+ AddItem(AResponse,'Clock Microseconds:',IntToStr(ClockMicroseconds));
+
+ {Add Clock Nanoseconds}
+ AddItem(AResponse,'Clock Nanoseconds:',IntToStr(ClockNanoseconds));
+
+ {Add Tick Count}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Tick Count:',IntToStr(GetTickCount));
+
+ {Add Tick Count 64}
+ AddItem(AResponse,'Tick Count 64:',IntToStr(GetTickCount64));
+
+ {Add Clock Base}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Clock Base (100ns ticks):',IntToStr(ClockBase));
+ 
+ {Add Clock Time}
+ AddItem(AResponse,'Clock Time (100ns ticks):',IntToStr(ClockGetTime));
  
  {Add Current Time}
  AddBlank(AResponse);
@@ -3356,7 +3632,7 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'INITIAL_TLS_SIZE',IntToStr(INITIAL_TLS_SIZE),3);
  AddItemEx(AResponse,'INITIAL_STACK_SIZE',IntToStr(INITIAL_STACK_SIZE),3);
- AddItemEx(AResponse,'INITIAL_STACK_BASE','0x' + IntToHex(INITIAL_STACK_BASE,8),3);
+ AddItemEx(AResponse,'INITIAL_STACK_BASE','0x' + AddrToHex(INITIAL_STACK_BASE),3);
  
  {Add Boot Stack}
  AddBlank(AResponse);
@@ -3368,11 +3644,11 @@ begin
   begin
    if Count = CPU_ID_0 then
     begin
-     AddItemEx(AResponse,'BOOT_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(BOOT_STACK_BASE[Count],8),3);
+     AddItemEx(AResponse,'BOOT_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(BOOT_STACK_BASE[Count]),3);
     end
    else
     begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(BOOT_STACK_BASE[Count],8),3);
+     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(BOOT_STACK_BASE[Count]),3);
     end; 
   end;
  AddBlank(AResponse);
@@ -3380,11 +3656,11 @@ begin
   begin
    if Count = CPU_ID_0 then
     begin
-     AddItemEx(AResponse,'BOOT_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(BOOT_THREAD_HANDLE[Count],8),3);
+     AddItemEx(AResponse,'BOOT_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(BOOT_THREAD_HANDLE[Count]),3);
     end
    else
     begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(BOOT_THREAD_HANDLE[Count],8),3);
+     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(BOOT_THREAD_HANDLE[Count]),3);
     end; 
   end;
 
@@ -3398,138 +3674,153 @@ begin
   begin
    if Count = CPU_ID_0 then
     begin
-     AddItemEx(AResponse,'IDLE_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(IDLE_THREAD_HANDLE[Count],8),3);
+     AddItemEx(AResponse,'IDLE_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(IDLE_THREAD_HANDLE[Count]),3);
     end
    else
     begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(IDLE_THREAD_HANDLE[Count],8),3);
+     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(IDLE_THREAD_HANDLE[Count]),3);
     end; 
   end;
 
  {Add IRQ Thread}
- AddBlank(AResponse);
- AddBold(AResponse,'IRQ Thread','');
- AddBlank(AResponse);
- AddItemEx(AResponse,'IRQ_STACK_SIZE',IntToStr(IRQ_STACK_SIZE),3);
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
+ if IRQ_ENABLED then
   begin
-   if Count = CPU_ID_0 then
+   AddBlank(AResponse);
+   AddBold(AResponse,'IRQ Thread','');
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'IRQ_STACK_SIZE',IntToStr(IRQ_STACK_SIZE),3);
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'IRQ_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(IRQ_STACK_BASE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(IRQ_STACK_BASE[Count],8),3);
-    end; 
-  end;
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
-  begin
-   if Count = CPU_ID_0 then
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'IRQ_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(IRQ_STACK_BASE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(IRQ_STACK_BASE[Count]),3);
+      end; 
+    end;
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'IRQ_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(IRQ_THREAD_HANDLE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(IRQ_THREAD_HANDLE[Count],8),3);
-    end; 
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'IRQ_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(IRQ_THREAD_HANDLE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(IRQ_THREAD_HANDLE[Count]),3);
+      end; 
+    end;
   end;
 
  {Add FIQ Thread}
- AddBlank(AResponse);
- AddBold(AResponse,'FIQ Thread','');
- AddBlank(AResponse);
- AddItemEx(AResponse,'FIQ_STACK_SIZE',IntToStr(FIQ_STACK_SIZE),3);
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
+ if FIQ_ENABLED then
   begin
-   if Count = CPU_ID_0 then
+   AddBlank(AResponse);
+   AddBold(AResponse,'FIQ Thread','');
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'FIQ_STACK_SIZE',IntToStr(FIQ_STACK_SIZE),3);
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'FIQ_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(FIQ_STACK_BASE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(FIQ_STACK_BASE[Count],8),3);
-    end; 
-  end;
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
-  begin
-   if Count = CPU_ID_0 then
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'FIQ_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(FIQ_STACK_BASE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(FIQ_STACK_BASE[Count]),3);
+      end; 
+    end;
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'FIQ_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(FIQ_THREAD_HANDLE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(FIQ_THREAD_HANDLE[Count],8),3);
-    end; 
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'FIQ_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(FIQ_THREAD_HANDLE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(FIQ_THREAD_HANDLE[Count]),3);
+      end; 
+    end;
   end;
   
  {Add SWI Thread}
- AddBlank(AResponse);
- AddBold(AResponse,'SWI Thread','');
- AddBlank(AResponse);
- AddItemEx(AResponse,'SWI_STACK_SIZE',IntToStr(SWI_STACK_SIZE),3);
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
+ if SWI_ENABLED then
   begin
-   if Count = CPU_ID_0 then
+   AddBlank(AResponse);
+   AddBold(AResponse,'SWI Thread','');
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'SWI_STACK_SIZE',IntToStr(SWI_STACK_SIZE),3);
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'SWI_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(SWI_STACK_BASE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(SWI_STACK_BASE[Count],8),3);
-    end; 
-  end;
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
-  begin
-   if Count = CPU_ID_0 then
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'SWI_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(SWI_STACK_BASE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(SWI_STACK_BASE[Count]),3);
+      end; 
+    end;
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'SWI_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(SWI_THREAD_HANDLE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(SWI_THREAD_HANDLE[Count],8),3);
-    end; 
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'SWI_THREAD_HANDLE',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(SWI_THREAD_HANDLE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(SWI_THREAD_HANDLE[Count]),3);
+      end; 
+    end;
   end;
 
  {Add ABORT Stack}
- AddBlank(AResponse);
- AddBold(AResponse,'ABORT Stack','');
- AddBlank(AResponse);
- AddItemEx(AResponse,'ABORT_STACK_SIZE',IntToStr(ABORT_STACK_SIZE),3);
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
+ if ABORT_ENABLED then
   begin
-   if Count = CPU_ID_0 then
+   AddBlank(AResponse);
+   AddBold(AResponse,'ABORT Stack','');
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'ABORT_STACK_SIZE',IntToStr(ABORT_STACK_SIZE),3);
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'ABORT_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(ABORT_STACK_BASE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(ABORT_STACK_BASE[Count],8),3);
-    end; 
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'ABORT_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(ABORT_STACK_BASE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(ABORT_STACK_BASE[Count]),3);
+      end; 
+    end;
   end;
 
  {Add UNDEFINED Stack}
- AddBlank(AResponse);
- AddBold(AResponse,'UNDEFINED Stack','');
- AddBlank(AResponse);
- AddItemEx(AResponse,'UNDEFINED_STACK_SIZE',IntToStr(UNDEFINED_STACK_SIZE),3);
- AddBlank(AResponse);
- for Count:=0 to CPUGetCount - 1 do
+ if UNDEFINED_ENABLED then
   begin
-   if Count = CPU_ID_0 then
+   AddBlank(AResponse);
+   AddBold(AResponse,'UNDEFINED Stack','');
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'UNDEFINED_STACK_SIZE',IntToStr(UNDEFINED_STACK_SIZE),3);
+   AddBlank(AResponse);
+   for Count:=0 to CPUGetCount - 1 do
     begin
-     AddItemEx(AResponse,'UNDEFINED_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + IntToHex(UNDEFINED_STACK_BASE[Count],8),3);
-    end
-   else
-    begin   
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(UNDEFINED_STACK_BASE[Count],8),3);
-    end; 
+     if Count = CPU_ID_0 then
+      begin
+       AddItemEx(AResponse,'UNDEFINED_STACK_BASE',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(UNDEFINED_STACK_BASE[Count]),3);
+      end
+     else
+      begin   
+       AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + AddrToHex(UNDEFINED_STACK_BASE[Count]),3);
+      end; 
+    end;
   end;
  
  {Add Footer}
@@ -3666,7 +3957,7 @@ begin
          AffinityNames:=AffinityToAffinityNames(Current.Affinity);
          
          {Add Thread Information}
-         AddItem(AResponse,'Handle:','0x' + IntToHex(Current.Handle,8));
+         AddItem(AResponse,'Handle:','0x' + HandleToHex(Current.Handle));
          AddBlank(AResponse);
          AddItem(AResponse,'Name:',Current.Name);
          AddBlank(AResponse);
@@ -3698,12 +3989,12 @@ begin
           end;
          
          AddBlank(AResponse);
-         AddItem(AResponse,'StackBase:','0x' + IntToHex(PtrUInt(Current.StackBase),8));
+         AddItem(AResponse,'StackBase:','0x' + PtrToHex(Current.StackBase));
          AddItem(AResponse,'StackSize:',IntToStr(Current.StackSize));
          AddItem(AResponse,'StackFree:',IntToStr(PtrUInt(Current.StackPointer) - (PtrUInt(Current.StackBase) - Current.StackSize)));
-         AddItem(AResponse,'StackPointer:','0x' + IntToHex(PtrUInt(Current.StackPointer),8));
+         AddItem(AResponse,'StackPointer:','0x' + PtrToHex(Current.StackPointer));
          AddBlank(AResponse);
-         AddItem(AResponse,'Parent:',ThreadGetName(Current.Parent) + ' (0x' + IntToHex(Current.Parent,8) + ')');
+         AddItem(AResponse,'Parent:',ThreadGetName(Current.Parent) + ' (0x' + HandleToHex(Current.Parent) + ')');
          AddItem(AResponse,'ExitCode:',IntToStr(Current.ExitCode));
          AddItem(AResponse,'LastError:',ErrorToString(Current.LastError));
          AddItem(AResponse,'Locale:',IntToStr(Current.Locale));
@@ -3763,7 +4054,7 @@ begin
      while Current <> nil do
       begin
        {Add Item}
-       AddItem5Column(AResponse,MakeLink('0x' + IntToHex(Current.Handle,8),Name + '?action=thread&handle=' + IntToHex(Current.Handle,8)),Current.Name,ThreadStateToString(Current.State),ThreadPriorityToString(Current.Priority),CPUIDToString(Current.CPU));
+       AddItem5Column(AResponse,MakeLink('0x' + HandleToHex(Current.Handle),Name + '?action=thread&handle=' + IntToHex(Current.Handle,8)),Current.Name,ThreadStateToString(Current.State),ThreadPriorityToString(Current.Priority),CPUIDToString(Current.CPU));
      
        {Get Next}
        Current:=Current.Next;
@@ -3824,12 +4115,20 @@ begin
  AddItemEx(AResponse,'Interrupts per Millisecond:',IntToStr(SCHEDULER_INTERRUPTS_PER_MILLISECOND),2);
  AddItemEx(AResponse,'Clocks per Interrupt:',IntToStr(SCHEDULER_CLOCKS_PER_INTERRUPT),2);
  AddItemEx(AResponse,'Clocks Tolerance:',IntToStr(SCHEDULER_CLOCKS_TOLERANCE),2);
+ AddItemEx(AResponse,'Time Ticks per Interrupt:',IntToStr(TIME_TICKS_PER_SCHEDULER_INTERRUPT),2);
 
  {Add CPU Count/Mask/Boot}
  AddBlank(AResponse);
  AddItemEx(AResponse,'CPU Count:',IntToStr(SCHEDULER_CPU_COUNT),2);
  AddItemEx(AResponse,'CPU Mask:','0x' + IntToHex(SCHEDULER_CPU_MASK,8),2);
  AddItemEx(AResponse,'CPU Boot:',CPUIDToString(SCHEDULER_CPU_BOOT),2);
+ AddItemEx(AResponse,'CPU Reserve:',IntToHex(SCHEDULER_CPU_RESERVE,8),2);
+ 
+ {Add Scheduler Idle/Wait/Offset}
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'Idle Wait:',BooleanToString(SCHEDULER_IDLE_WAIT),2);
+ AddItemEx(AResponse,'Idle Offset:',IntToStr(SCHEDULER_IDLE_OFFSET),2);
+ AddItemEx(AResponse,'Idle per Second:',IntToStr(SCHEDULER_IDLE_PER_SECOND),2);
  
  {Add Scheduler Queue Counts}
  AddBlank(AResponse);
@@ -3954,6 +4253,310 @@ end;
 
 {==============================================================================}
 
+function TWebStatusDevices.DMAFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and DMA_FLAG_SHARED) = DMA_FLAG_SHARED then
+  begin
+   Result.Add('DMA_FLAG_SHARED');
+  end;
+ if (AFlags and DMA_FLAG_NOCACHE) = DMA_FLAG_NOCACHE then
+  begin
+   Result.Add('DMA_FLAG_NOCACHE');
+  end;
+ if (AFlags and DMA_FLAG_COHERENT) = DMA_FLAG_COHERENT then
+  begin
+   Result.Add('DMA_FLAG_COHERENT');
+  end;
+ if (AFlags and DMA_FLAG_STRIDE) = DMA_FLAG_STRIDE then
+  begin
+   Result.Add('DMA_FLAG_STRIDE');
+  end;
+ if (AFlags and DMA_FLAG_DREQ) = DMA_FLAG_DREQ then
+  begin
+   Result.Add('DMA_FLAG_DREQ');
+  end;
+ if (AFlags and DMA_FLAG_NOINCREMENT) = DMA_FLAG_NOINCREMENT then
+  begin
+   Result.Add('DMA_FLAG_NOINCREMENT');
+  end;
+ if (AFlags and DMA_FLAG_NOREAD) = DMA_FLAG_NOREAD then
+  begin
+   Result.Add('DMA_FLAG_NOREAD');
+  end;
+ if (AFlags and DMA_FLAG_NOWRITE) = DMA_FLAG_NOWRITE then
+  begin
+   Result.Add('DMA_FLAG_NOWRITE');
+  end;
+ if (AFlags and DMA_FLAG_WIDE) = DMA_FLAG_WIDE then
+  begin
+   Result.Add('DMA_FLAG_WIDE');
+  end;
+ if (AFlags and DMA_FLAG_BULK) = DMA_FLAG_BULK then
+  begin
+   Result.Add('DMA_FLAG_BULK');
+  end;
+ if (AFlags and DMA_FLAG_LITE) = DMA_FLAG_LITE then
+  begin
+   Result.Add('DMA_FLAG_LITE');
+  end;
+ if (AFlags and DMA_FLAG_40BIT) = DMA_FLAG_40BIT then
+  begin
+   Result.Add('DMA_FLAG_40BIT');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('DMA_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.I2CFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and I2C_FLAG_SLAVE) = I2C_FLAG_SLAVE then
+  begin
+   Result.Add('I2C_FLAG_SLAVE');
+  end;
+ if (AFlags and I2C_FLAG_10BIT) = I2C_FLAG_10BIT then
+  begin
+   Result.Add('I2C_FLAG_10BIT');
+  end;
+ if (AFlags and I2C_FLAG_16BIT) = I2C_FLAG_16BIT then
+  begin
+   Result.Add('I2C_FLAG_16BIT');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('I2C_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.SPIFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and SPI_FLAG_SLAVE) = SPI_FLAG_SLAVE then
+  begin
+   Result.Add('SPI_FLAG_SLAVE');
+  end;
+ if (AFlags and SPI_FLAG_4WIRE) = SPI_FLAG_4WIRE then
+  begin
+   Result.Add('SPI_FLAG_4WIRE');
+  end;
+ if (AFlags and SPI_FLAG_3WIRE) = SPI_FLAG_3WIRE then
+  begin
+   Result.Add('SPI_FLAG_3WIRE');
+  end;
+ if (AFlags and SPI_FLAG_LOSSI) = SPI_FLAG_LOSSI then
+  begin
+   Result.Add('SPI_FLAG_LOSSI');
+  end;
+ if (AFlags and SPI_FLAG_CPOL) = SPI_FLAG_CPOL then
+  begin
+   Result.Add('SPI_FLAG_CPOL');
+  end;
+ if (AFlags and SPI_FLAG_CPHA) = SPI_FLAG_CPHA then
+  begin
+   Result.Add('SPI_FLAG_CPHA');
+  end;
+ if (AFlags and SPI_FLAG_CSPOL) = SPI_FLAG_CSPOL then
+  begin
+   Result.Add('SPI_FLAG_CSPOL');
+  end;
+ if (AFlags and SPI_FLAG_NO_CS) = SPI_FLAG_NO_CS then
+  begin
+   Result.Add('SPI_FLAG_NO_CS');
+  end;
+ if (AFlags and SPI_FLAG_DMA) = SPI_FLAG_DMA then
+  begin
+   Result.Add('SPI_FLAG_DMA');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SPI_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.PWMFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and PWM_FLAG_GPIO) = PWM_FLAG_GPIO then
+  begin
+   Result.Add('PWM_FLAG_GPIO');
+  end;
+ if (AFlags and PWM_FLAG_MODE) = PWM_FLAG_MODE then
+  begin
+   Result.Add('PWM_FLAG_MODE');
+  end;
+ if (AFlags and PWM_FLAG_RANGE) = PWM_FLAG_RANGE then
+  begin
+   Result.Add('PWM_FLAG_RANGE');
+  end;
+ if (AFlags and PWM_FLAG_FREQUENCY) = PWM_FLAG_FREQUENCY then
+  begin
+   Result.Add('PWM_FLAG_FREQUENCY');
+  end;
+ if (AFlags and PWM_FLAG_POLARITY) = PWM_FLAG_POLARITY then
+  begin
+   Result.Add('PWM_FLAG_POLARITY');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('PWM_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.GPIOFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and GPIO_FLAG_PULL_UP) = GPIO_FLAG_PULL_UP then
+  begin
+   Result.Add('GPIO_FLAG_PULL_UP');
+  end;
+ if (AFlags and GPIO_FLAG_PULL_DOWN) = GPIO_FLAG_PULL_DOWN then
+  begin
+   Result.Add('GPIO_FLAG_PULL_DOWN');
+  end;
+ if (AFlags and GPIO_FLAG_TRIGGER_LOW) = GPIO_FLAG_TRIGGER_LOW then
+  begin
+   Result.Add('GPIO_FLAG_TRIGGER_LOW');
+  end;
+ if (AFlags and GPIO_FLAG_TRIGGER_HIGH) = GPIO_FLAG_TRIGGER_HIGH then
+  begin
+   Result.Add('GPIO_FLAG_TRIGGER_HIGH');
+  end;
+ if (AFlags and GPIO_FLAG_TRIGGER_RISING) = GPIO_FLAG_TRIGGER_RISING then
+  begin
+   Result.Add('GPIO_FLAG_TRIGGER_RISING');
+  end;
+ if (AFlags and GPIO_FLAG_TRIGGER_FALLING) = GPIO_FLAG_TRIGGER_FALLING then
+  begin
+   Result.Add('GPIO_FLAG_TRIGGER_FALLING');
+  end;
+ if (AFlags and GPIO_FLAG_TRIGGER_EDGE) = GPIO_FLAG_TRIGGER_EDGE then
+  begin
+   Result.Add('GPIO_FLAG_TRIGGER_EDGE');
+  end;
+ if (AFlags and GPIO_FLAG_TRIGGER_ASYNC) = GPIO_FLAG_TRIGGER_ASYNC then
+  begin
+   Result.Add('GPIO_FLAG_TRIGGER_ASYNC');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('GPIO_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.UARTFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and UART_FLAG_DATA_8BIT) = UART_FLAG_DATA_8BIT then
+  begin
+   Result.Add('UART_FLAG_DATA_8BIT');
+  end;
+ if (AFlags and UART_FLAG_DATA_7BIT) = UART_FLAG_DATA_7BIT then
+  begin
+   Result.Add('UART_FLAG_DATA_7BIT');
+  end;
+ if (AFlags and UART_FLAG_DATA_6BIT) = UART_FLAG_DATA_6BIT then
+  begin
+   Result.Add('UART_FLAG_DATA_6BIT');
+  end;
+ if (AFlags and UART_FLAG_DATA_5BIT) = UART_FLAG_DATA_5BIT then
+  begin
+   Result.Add('UART_FLAG_DATA_5BIT');
+  end;
+ if (AFlags and UART_FLAG_STOP_1BIT) = UART_FLAG_STOP_1BIT then
+  begin
+   Result.Add('UART_FLAG_STOP_1BIT');
+  end;
+ if (AFlags and UART_FLAG_STOP_2BIT) = UART_FLAG_STOP_2BIT then
+  begin
+   Result.Add('UART_FLAG_STOP_2BIT');
+  end;
+ if (AFlags and UART_FLAG_STOP_1BIT5) = UART_FLAG_STOP_1BIT5 then
+  begin
+   Result.Add('UART_FLAG_STOP_1BIT5');
+  end;
+ if (AFlags and UART_FLAG_PARITY_ODD) = UART_FLAG_PARITY_ODD then
+  begin
+   Result.Add('UART_FLAG_PARITY_ODD');
+  end;
+ if (AFlags and UART_FLAG_PARITY_EVEN) = UART_FLAG_PARITY_EVEN then
+  begin
+   Result.Add('UART_FLAG_PARITY_EVEN');
+  end;
+ if (AFlags and UART_FLAG_PARITY_MARK) = UART_FLAG_PARITY_MARK then
+  begin
+   Result.Add('UART_FLAG_PARITY_MARK');
+  end;
+ if (AFlags and UART_FLAG_PARITY_SPACE) = UART_FLAG_PARITY_SPACE then
+  begin
+   Result.Add('UART_FLAG_PARITY_SPACE');
+  end;
+ if (AFlags and UART_FLAG_FLOW_RTS_CTS) = UART_FLAG_FLOW_RTS_CTS then
+  begin
+   Result.Add('UART_FLAG_FLOW_RTS_CTS');
+  end;
+ if (AFlags and UART_FLAG_FLOW_DSR_DTR) = UART_FLAG_FLOW_DSR_DTR then
+  begin
+   Result.Add('UART_FLAG_FLOW_DSR_DTR');
+  end;
+ if (AFlags and UART_FLAG_PUSH_RX) = UART_FLAG_PUSH_RX then
+  begin
+   Result.Add('UART_FLAG_PUSH_RX');
+  end;
+ if (AFlags and UART_FLAG_PUSH_TX) = UART_FLAG_PUSH_TX then
+  begin
+   Result.Add('UART_FLAG_PUSH_TX');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('UART_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusDevices.ClockFlagsToFlagNames(AFlags:LongWord):TStringList;
 begin
  {}
@@ -3973,6 +4576,74 @@ begin
  if Result.Count = 0 then
   begin
    Result.Add('CLOCK_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.MouseFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and MOUSE_FLAG_NON_BLOCK) = MOUSE_FLAG_NON_BLOCK then
+  begin
+   Result.Add('MOUSE_FLAG_NON_BLOCK');
+  end;
+ if (AFlags and MOUSE_FLAG_DIRECT_READ) = MOUSE_FLAG_DIRECT_READ then
+  begin
+   Result.Add('MOUSE_FLAG_DIRECT_READ');
+  end;
+ if (AFlags and MOUSE_FLAG_SWAP_BUTTONS) = MOUSE_FLAG_SWAP_BUTTONS then
+  begin
+   Result.Add('MOUSE_FLAG_SWAP_BUTTONS');
+  end;
+ if (AFlags and MOUSE_FLAG_PEEK_BUFFER) = MOUSE_FLAG_PEEK_BUFFER then
+  begin
+   Result.Add('MOUSE_FLAG_PEEK_BUFFER');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('MOUSE_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.TouchFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and TOUCH_FLAG_NON_BLOCK) = TOUCH_FLAG_NON_BLOCK then
+  begin
+   Result.Add('TOUCH_FLAG_NON_BLOCK');
+  end;
+ if (AFlags and TOUCH_FLAG_PEEK_BUFFER) = TOUCH_FLAG_PEEK_BUFFER then
+  begin
+   Result.Add('TOUCH_FLAG_PEEK_BUFFER');
+  end;
+ if (AFlags and TOUCH_FLAG_MOUSE_DATA) = TOUCH_FLAG_MOUSE_DATA then
+  begin
+   Result.Add('TOUCH_FLAG_MOUSE_DATA');
+  end;
+ if (AFlags and TOUCH_FLAG_MULTI_POINT) = TOUCH_FLAG_MULTI_POINT then
+  begin
+   Result.Add('TOUCH_FLAG_MULTI_POINT');
+  end;
+ if (AFlags and TOUCH_FLAG_PRESSURE) = TOUCH_FLAG_PRESSURE then
+  begin
+   Result.Add('TOUCH_FLAG_PRESSURE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('TOUCH_FLAG_NONE');
   end; 
 end;
 
@@ -4001,6 +4672,82 @@ begin
  if Result.Count = 0 then
   begin
    Result.Add('TIMER_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.SerialFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and SERIAL_FLAG_DATA_8BIT) = SERIAL_FLAG_DATA_8BIT then
+  begin
+   Result.Add('SERIAL_FLAG_DATA_8BIT');
+  end;
+ if (AFlags and SERIAL_FLAG_DATA_7BIT) = SERIAL_FLAG_DATA_7BIT then
+  begin
+   Result.Add('SERIAL_FLAG_DATA_7BIT');
+  end;
+ if (AFlags and SERIAL_FLAG_DATA_6BIT) = SERIAL_FLAG_DATA_6BIT then
+  begin
+   Result.Add('SERIAL_FLAG_DATA_6BIT');
+  end;
+ if (AFlags and SERIAL_FLAG_DATA_5BIT) = SERIAL_FLAG_DATA_5BIT then
+  begin
+   Result.Add('SERIAL_FLAG_DATA_5BIT');
+  end;
+ if (AFlags and SERIAL_FLAG_STOP_1BIT) = SERIAL_FLAG_STOP_1BIT then
+  begin
+   Result.Add('SERIAL_FLAG_STOP_1BIT');
+  end;
+ if (AFlags and SERIAL_FLAG_STOP_2BIT) = SERIAL_FLAG_STOP_2BIT then
+  begin
+   Result.Add('SERIAL_FLAG_STOP_2BIT');
+  end;
+ if (AFlags and SERIAL_FLAG_STOP_1BIT5) = SERIAL_FLAG_STOP_1BIT5 then
+  begin
+   Result.Add('SERIAL_FLAG_STOP_1BIT5');
+  end;
+ if (AFlags and SERIAL_FLAG_PARITY_ODD) = SERIAL_FLAG_PARITY_ODD then
+  begin
+   Result.Add('SERIAL_FLAG_PARITY_ODD');
+  end;
+ if (AFlags and SERIAL_FLAG_PARITY_EVEN) = SERIAL_FLAG_PARITY_EVEN then
+  begin
+   Result.Add('SERIAL_FLAG_PARITY_EVEN');
+  end;
+ if (AFlags and SERIAL_FLAG_PARITY_MARK) = SERIAL_FLAG_PARITY_MARK then
+  begin
+   Result.Add('SERIAL_FLAG_PARITY_MARK');
+  end;
+ if (AFlags and SERIAL_FLAG_PARITY_SPACE) = SERIAL_FLAG_PARITY_SPACE then
+  begin
+   Result.Add('SERIAL_FLAG_PARITY_SPACE');
+  end;
+ if (AFlags and SERIAL_FLAG_FLOW_RTS_CTS) = SERIAL_FLAG_FLOW_RTS_CTS then
+  begin
+   Result.Add('SERIAL_FLAG_FLOW_RTS_CTS');
+  end;
+ if (AFlags and SERIAL_FLAG_FLOW_DSR_DTR) = SERIAL_FLAG_FLOW_DSR_DTR then
+  begin
+   Result.Add('SERIAL_FLAG_FLOW_DSR_DTR');
+  end;
+ if (AFlags and SERIAL_FLAG_PUSH_RX) = SERIAL_FLAG_PUSH_RX then
+  begin
+   Result.Add('SERIAL_FLAG_PUSH_RX');
+  end;
+ if (AFlags and SERIAL_FLAG_PUSH_TX) = SERIAL_FLAG_PUSH_TX then
+  begin
+   Result.Add('SERIAL_FLAG_PUSH_TX');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SERIAL_FLAG_NONE');
   end; 
 end;
 
@@ -4057,6 +4804,500 @@ end;
 
 {==============================================================================}
 
+function TWebStatusDevices.NetworkFlagsToFlagNames(AFlags:LongWord):TStringList; 
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and NETWORK_FLAG_RX_BUFFER) = NETWORK_FLAG_RX_BUFFER then
+  begin
+   Result.Add('NETWORK_FLAG_RX_BUFFER');
+  end;
+ if (AFlags and NETWORK_FLAG_TX_BUFFER) = NETWORK_FLAG_TX_BUFFER then
+  begin
+   Result.Add('NETWORK_FLAG_TX_BUFFER');
+  end;
+ if (AFlags and NETWORK_FLAG_RX_MULTIPACKET) = NETWORK_FLAG_RX_MULTIPACKET then
+  begin
+   Result.Add('NETWORK_FLAG_RX_MULTIPACKET');
+  end;
+ if (AFlags and NETWORK_FLAG_TX_MULTIPACKET) = NETWORK_FLAG_TX_MULTIPACKET then
+  begin
+   Result.Add('NETWORK_FLAG_TX_MULTIPACKET');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('NETWORK_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.LoggingFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('LOGGING_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.StorageFlagsToFlagNames(AFlags:LongWord):TStringList; 
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and STORAGE_FLAG_REMOVABLE) = STORAGE_FLAG_REMOVABLE then
+  begin
+   Result.Add('STORAGE_FLAG_REMOVABLE');
+  end;
+ if (AFlags and STORAGE_FLAG_LBA48) = STORAGE_FLAG_LBA48 then
+  begin
+   Result.Add('STORAGE_FLAG_LBA48');
+  end;
+ if (AFlags and STORAGE_FLAG_NOT_READY) = STORAGE_FLAG_NOT_READY then
+  begin
+   Result.Add('STORAGE_FLAG_NOT_READY');
+  end;
+ if (AFlags and STORAGE_FLAG_NO_MEDIA) = STORAGE_FLAG_NO_MEDIA then
+  begin
+   Result.Add('STORAGE_FLAG_NO_MEDIA');
+  end;
+ if (AFlags and STORAGE_FLAG_READ_ONLY) = STORAGE_FLAG_READ_ONLY then
+  begin
+   Result.Add('STORAGE_FLAG_READ_ONLY');
+  end;
+ if (AFlags and STORAGE_FLAG_WRITE_ONLY) = STORAGE_FLAG_WRITE_ONLY then
+  begin
+   Result.Add('STORAGE_FLAG_WRITE_ONLY');
+  end;
+ if (AFlags and STORAGE_FLAG_ERASEABLE) = STORAGE_FLAG_ERASEABLE then
+  begin
+   Result.Add('STORAGE_FLAG_ERASEABLE');
+  end;
+ if (AFlags and STORAGE_FLAG_LOCKABLE) = STORAGE_FLAG_LOCKABLE then
+  begin
+   Result.Add('STORAGE_FLAG_LOCKABLE');
+  end;
+ if (AFlags and STORAGE_FLAG_LOCKED) = STORAGE_FLAG_LOCKED then
+  begin
+   Result.Add('STORAGE_FLAG_LOCKED');
+  end;
+ if (AFlags and STORAGE_FLAG_EJECTABLE) = STORAGE_FLAG_EJECTABLE then
+  begin
+   Result.Add('STORAGE_FLAG_EJECTABLE');
+  end;
+ if (AFlags and STORAGE_FLAG_CHANGABLE) = STORAGE_FLAG_CHANGABLE then
+  begin
+   Result.Add('STORAGE_FLAG_CHANGABLE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('STORAGE_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+
+function TWebStatusDevices.KeyboardFlagsToFlagNames(AFlags:LongWord):TStringList; 
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and KEYBOARD_FLAG_NON_BLOCK) = KEYBOARD_FLAG_NON_BLOCK then
+  begin
+   Result.Add('KEYBOARD_FLAG_NON_BLOCK');
+  end;
+ if (AFlags and KEYBOARD_FLAG_DIRECT_READ) = KEYBOARD_FLAG_DIRECT_READ then
+  begin
+   Result.Add('KEYBOARD_FLAG_DIRECT_READ');
+  end;
+ if (AFlags and KEYBOARD_FLAG_PEEK_BUFFER) = KEYBOARD_FLAG_PEEK_BUFFER then
+  begin
+   Result.Add('KEYBOARD_FLAG_PEEK_BUFFER');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('KEYBOARD_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.ConsoleFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and CONSOLE_FLAG_LINE_WRAP) = CONSOLE_FLAG_LINE_WRAP then
+  begin
+   Result.Add('CONSOLE_FLAG_LINE_WRAP');
+  end;
+ if (AFlags and CONSOLE_FLAG_DMA_BOX) = CONSOLE_FLAG_DMA_BOX then
+  begin
+   Result.Add('CONSOLE_FLAG_DMA_BOX');
+  end;
+ if (AFlags and CONSOLE_FLAG_DMA_LINE) = CONSOLE_FLAG_DMA_LINE then
+  begin
+   Result.Add('CONSOLE_FLAG_DMA_LINE');
+  end;
+ if (AFlags and CONSOLE_FLAG_DMA_FILL) = CONSOLE_FLAG_DMA_FILL then
+  begin
+   Result.Add('CONSOLE_FLAG_DMA_FILL');
+  end;
+ if (AFlags and CONSOLE_FLAG_DMA_CLEAR) = CONSOLE_FLAG_DMA_CLEAR then
+  begin
+   Result.Add('CONSOLE_FLAG_DMA_CLEAR');
+  end;
+ if (AFlags and CONSOLE_FLAG_DMA_SCROLL) = CONSOLE_FLAG_DMA_SCROLL then
+  begin
+   Result.Add('CONSOLE_FLAG_DMA_SCROLL');
+  end;
+ if (AFlags and CONSOLE_FLAG_SINGLE_WINDOW) = CONSOLE_FLAG_SINGLE_WINDOW then
+  begin
+   Result.Add('CONSOLE_FLAG_SINGLE_WINDOW');
+  end;
+ if (AFlags and CONSOLE_FLAG_HARDWARE_CURSOR) = CONSOLE_FLAG_HARDWARE_CURSOR then
+  begin
+   Result.Add('CONSOLE_FLAG_HARDWARE_CURSOR');
+  end;
+ if (AFlags and CONSOLE_FLAG_HARDWARE_CARET) = CONSOLE_FLAG_HARDWARE_CARET then
+  begin
+   Result.Add('CONSOLE_FLAG_HARDWARE_CARET');
+  end;
+ if (AFlags and CONSOLE_FLAG_BLINK_CARET) = CONSOLE_FLAG_BLINK_CARET then
+  begin
+   Result.Add('CONSOLE_FLAG_BLINK_CARET');
+  end;
+ if (AFlags and CONSOLE_FLAG_TEXT_MODE) = CONSOLE_FLAG_TEXT_MODE then
+  begin
+   Result.Add('CONSOLE_FLAG_TEXT_MODE');
+  end;
+ if (AFlags and CONSOLE_FLAG_TEXT_BLINK) = CONSOLE_FLAG_TEXT_BLINK then
+  begin
+   Result.Add('CONSOLE_FLAG_TEXT_BLINK');
+  end;
+ if (AFlags and CONSOLE_FLAG_COLOR) = CONSOLE_FLAG_COLOR then
+  begin
+   Result.Add('CONSOLE_FLAG_COLOR');
+  end;
+ if (AFlags and CONSOLE_FLAG_FONT) = CONSOLE_FLAG_FONT then
+  begin
+   Result.Add('CONSOLE_FLAG_FONT');
+  end;
+ if (AFlags and CONSOLE_FLAG_FULLSCREEN) = CONSOLE_FLAG_FULLSCREEN then
+  begin
+   Result.Add('CONSOLE_FLAG_FULLSCREEN');
+  end;
+ if (AFlags and CONSOLE_FLAG_AUTO_SCROLL) = CONSOLE_FLAG_AUTO_SCROLL then
+  begin
+   Result.Add('CONSOLE_FLAG_AUTO_SCROLL');
+  end;
+ if (AFlags and CONSOLE_FLAG_DMA_TEXT) = CONSOLE_FLAG_DMA_TEXT then
+  begin
+   Result.Add('CONSOLE_FLAG_DMA_TEXT');
+  end;
+ if (AFlags and CONSOLE_FLAG_COLOR_REVERSE) = CONSOLE_FLAG_COLOR_REVERSE then
+  begin
+   Result.Add('CONSOLE_FLAG_COLOR_REVERSE');
+  end;
+ if (AFlags and CONSOLE_FLAG_TEXT_CARET) = CONSOLE_FLAG_TEXT_CARET then
+  begin
+   Result.Add('CONSOLE_FLAG_TEXT_CARET');
+  end;
+ if (AFlags and CONSOLE_FLAG_FOCUS_CARET) = CONSOLE_FLAG_FOCUS_CARET then
+  begin
+   Result.Add('CONSOLE_FLAG_FOCUS_CARET');
+  end;
+  
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('CONSOLE_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.FramebufferFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and FRAMEBUFFER_FLAG_DMA) = FRAMEBUFFER_FLAG_DMA then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_DMA');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_MARK) = FRAMEBUFFER_FLAG_MARK then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_MARK');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_COMMIT) = FRAMEBUFFER_FLAG_COMMIT then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_COMMIT');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_BLANK) = FRAMEBUFFER_FLAG_BLANK then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_BLANK');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_CACHED) = FRAMEBUFFER_FLAG_CACHED then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_CACHED');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_SWAP) = FRAMEBUFFER_FLAG_SWAP then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_SWAP');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_BACKLIGHT) = FRAMEBUFFER_FLAG_BACKLIGHT then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_BACKLIGHT');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_VIRTUAL) = FRAMEBUFFER_FLAG_VIRTUAL then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_VIRTUAL');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_OFFSETX) = FRAMEBUFFER_FLAG_OFFSETX then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_OFFSETX');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_OFFSETY) = FRAMEBUFFER_FLAG_OFFSETY then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_OFFSETY');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_SYNC) = FRAMEBUFFER_FLAG_SYNC then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_SYNC');
+  end;
+ if (AFlags and FRAMEBUFFER_FLAG_CURSOR) = FRAMEBUFFER_FLAG_CURSOR then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_CURSOR');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('FRAMEBUFFER_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.ConsoleWindowFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and WINDOW_FLAG_LINE_WRAP) = WINDOW_FLAG_LINE_WRAP then
+  begin
+   Result.Add('WINDOW_FLAG_LINE_WRAP');
+  end;
+ if (AFlags and WINDOW_FLAG_BUFFERED) = WINDOW_FLAG_BUFFERED then
+  begin
+   Result.Add('WINDOW_FLAG_BUFFERED');
+  end;
+ if (AFlags and WINDOW_FLAG_FULLSCREEN) = WINDOW_FLAG_FULLSCREEN then
+  begin
+   Result.Add('WINDOW_FLAG_FULLSCREEN');
+  end;
+ if (AFlags and WINDOW_FLAG_AUTO_SCROLL) = WINDOW_FLAG_AUTO_SCROLL then
+  begin
+   Result.Add('WINDOW_FLAG_AUTO_SCROLL');
+  end;
+ if (AFlags and WINDOW_FLAG_CHARACTER) = WINDOW_FLAG_CHARACTER then
+  begin
+   Result.Add('WINDOW_FLAG_CHARACTER');
+  end;
+ if (AFlags and WINDOW_FLAG_AUTO_UPDATE) = WINDOW_FLAG_AUTO_UPDATE then
+  begin
+   Result.Add('WINDOW_FLAG_AUTO_UPDATE');
+  end;
+ if (AFlags and WINDOW_FLAG_FOCUS_CURSOR) = WINDOW_FLAG_FOCUS_CURSOR then
+  begin
+   Result.Add('WINDOW_FLAG_FOCUS_CURSOR');
+  end;
+  
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('WINDOW_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.UARTStatusToStatusNames(AStatus:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Status}
+ if (AStatus and UART_STATUS_RTS) = UART_STATUS_RTS then
+  begin
+   Result.Add('UART_STATUS_RTS');
+  end;
+ if (AStatus and UART_STATUS_CTS) = UART_STATUS_CTS then
+  begin
+   Result.Add('UART_STATUS_CTS');
+  end;
+ if (AStatus and UART_STATUS_DSR) = UART_STATUS_DSR then
+  begin
+   Result.Add('UART_STATUS_DSR');
+  end;
+ if (AStatus and UART_STATUS_DTR) = UART_STATUS_DTR then
+  begin
+   Result.Add('UART_STATUS_DTR');
+  end;
+ if (AStatus and UART_STATUS_RX_FULL) = UART_STATUS_RX_FULL then
+  begin
+   Result.Add('UART_STATUS_RX_FULL');
+  end;
+ if (AStatus and UART_STATUS_RX_EMPTY) = UART_STATUS_RX_EMPTY then
+  begin
+   Result.Add('UART_STATUS_RX_EMPTY');
+  end;
+ if (AStatus and UART_STATUS_TX_FULL) = UART_STATUS_TX_FULL then
+  begin
+   Result.Add('UART_STATUS_TX_FULL');
+  end;
+ if (AStatus and UART_STATUS_TX_EMPTY) = UART_STATUS_TX_EMPTY then
+  begin
+   Result.Add('UART_STATUS_TX_EMPTY');
+  end;
+ if (AStatus and UART_STATUS_BUSY) = UART_STATUS_BUSY then
+  begin
+   Result.Add('UART_STATUS_BUSY');
+  end;
+ if (AStatus and UART_STATUS_BREAK_ERROR) = UART_STATUS_BREAK_ERROR then
+  begin
+   Result.Add('UART_STATUS_BREAK_ERROR');
+  end;
+ if (AStatus and UART_STATUS_PARITY_ERROR) = UART_STATUS_PARITY_ERROR then
+  begin
+   Result.Add('UART_STATUS_PARITY_ERROR');
+  end;
+ if (AStatus and UART_STATUS_FRAMING_ERROR) = UART_STATUS_FRAMING_ERROR then
+  begin
+   Result.Add('UART_STATUS_FRAMING_ERROR');
+  end;
+ if (AStatus and UART_STATUS_OVERRUN_ERROR) = UART_STATUS_OVERRUN_ERROR then
+  begin
+   Result.Add('UART_STATUS_OVERRUN_ERROR');
+  end;
+ if (AStatus and UART_STATUS_DCD) = UART_STATUS_DCD then
+  begin
+   Result.Add('UART_STATUS_DCD');
+  end;
+ if (AStatus and UART_STATUS_RI) = UART_STATUS_RI then
+  begin
+   Result.Add('UART_STATUS_RI');
+  end;
+
+ {Check Status}
+ if Result.Count = 0 then
+  begin
+   Result.Add('UART_STATUS_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.SerialStatusToStatusNames(AStatus:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Status}
+ if (AStatus and SERIAL_STATUS_RTS) = SERIAL_STATUS_RTS then
+  begin
+   Result.Add('SERIAL_STATUS_RTS');
+  end;
+ if (AStatus and SERIAL_STATUS_CTS) = SERIAL_STATUS_CTS then
+  begin
+   Result.Add('SERIAL_STATUS_CTS');
+  end;
+ if (AStatus and SERIAL_STATUS_DSR) = SERIAL_STATUS_DSR then
+  begin
+   Result.Add('SERIAL_STATUS_DSR');
+  end;
+ if (AStatus and SERIAL_STATUS_DTR) = SERIAL_STATUS_DTR then
+  begin
+   Result.Add('SERIAL_STATUS_DTR');
+  end;
+ if (AStatus and SERIAL_STATUS_RX_FULL) = SERIAL_STATUS_RX_FULL then
+  begin
+   Result.Add('SERIAL_STATUS_RX_FULL');
+  end;
+ if (AStatus and SERIAL_STATUS_RX_EMPTY) = SERIAL_STATUS_RX_EMPTY then
+  begin
+   Result.Add('SERIAL_STATUS_RX_EMPTY');
+  end;
+ if (AStatus and SERIAL_STATUS_TX_FULL) = SERIAL_STATUS_TX_FULL then
+  begin
+   Result.Add('SERIAL_STATUS_TX_FULL');
+  end;
+ if (AStatus and SERIAL_STATUS_TX_EMPTY) = SERIAL_STATUS_TX_EMPTY then
+  begin
+   Result.Add('SERIAL_STATUS_TX_EMPTY');
+  end;
+ if (AStatus and SERIAL_STATUS_BUSY) = SERIAL_STATUS_BUSY then
+  begin
+   Result.Add('SERIAL_STATUS_BUSY');
+  end;
+ if (AStatus and SERIAL_STATUS_BREAK_ERROR) = SERIAL_STATUS_BREAK_ERROR then
+  begin
+   Result.Add('SERIAL_STATUS_BREAK_ERROR');
+  end;
+ if (AStatus and SERIAL_STATUS_PARITY_ERROR) = SERIAL_STATUS_PARITY_ERROR then
+  begin
+   Result.Add('SERIAL_STATUS_PARITY_ERROR');
+  end;
+ if (AStatus and SERIAL_STATUS_FRAMING_ERROR) = SERIAL_STATUS_FRAMING_ERROR then
+  begin
+   Result.Add('SERIAL_STATUS_FRAMING_ERROR');
+  end;
+ if (AStatus and SERIAL_STATUS_OVERRUN_ERROR) = SERIAL_STATUS_OVERRUN_ERROR then
+  begin
+   Result.Add('SERIAL_STATUS_OVERRUN_ERROR');
+  end;
+ if (AStatus and SERIAL_STATUS_DCD) = SERIAL_STATUS_DCD then
+  begin
+   Result.Add('SERIAL_STATUS_DCD');
+  end;
+ if (AStatus and SERIAL_STATUS_RI) = SERIAL_STATUS_RI then
+  begin
+   Result.Add('SERIAL_STATUS_RI');
+  end;
+ 
+ {Check Status}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SERIAL_STATUS_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusDevices.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
  Id:LongWord;
@@ -4066,11 +5307,37 @@ var
  WorkBuffer:String;
  Data:TWebStatusData;
  FlagNames:TStringList;
+ StatusNames:TStringList;
+ 
+ DMAHost:PDMAHost;
+ I2CDevice:PI2CDevice;
+ SPIDevice:PSPIDevice;
+ PWMDevice:PPWMDevice;
+ GPIODevice:PGPIODevice;
+ UARTDevice:PUARTDevice;
  ClockDevice:PClockDevice;
+ MouseDevice:PMouseDevice;
+ TouchDevice:PTouchDevice;
  TimerDevice:PTimerDevice;
+ SerialDevice:PSerialDevice;
  RandomDevice:PRandomDevice;
  MailboxDevice:PMailboxDevice;
  WatchdogDevice:PWatchdogDevice;
+ LoggingDevice:PLoggingDevice;
+ NetworkDevice:PNetworkDevice;
+ StorageDevice:PStorageDevice;
+ KeyboardDevice:PKeyboardDevice;
+ ConsoleDevice:PConsoleDevice;
+ FramebufferDevice:PFramebufferDevice;
+ 
+ DMAProperties:TDMAProperties;
+ I2CProperties:TI2CProperties;
+ SPIProperties:TSPIProperties;
+ PWMProperties:TPWMProperties;
+ GPIOProperties:TGPIOProperties;
+ UARTProperties:TUARTProperties;
+ SerialProperties:TSerialProperties;
+ FramebufferProperties:TFramebufferProperties;
 begin
  {}
  Result:=False;
@@ -4291,8 +5558,727 @@ begin
         
         FlagNames.Free;
        end;
+      DEVICE_CLASS_GPIO:begin      
+        {Get Flags Names}
+        FlagNames:=GPIOFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get GPIO}
+        GPIODevice:=PGPIODevice(Device);
        
-      //To Do //More //Console, Framebuffer, Logging etc
+        AddBold(AResponse,'GPIO','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+       
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(GPIODevice.GPIOId));
+        AddItem(AResponse,'State:',GPIOStateToString(GPIODevice.GPIOState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Get Count:',IntToStr(GPIODevice.GetCount));
+        AddItem(AResponse,'Set Count:',IntToStr(GPIODevice.SetCount));
+        AddItem(AResponse,'Wait Count:',IntToStr(GPIODevice.WaitCount));
+        AddItem(AResponse,'Event Count:',IntToStr(GPIODevice.EventCount));
+        AddBlank(AResponse);
+       
+        {Get Properties}
+        if GPIODeviceGetProperties(GPIODevice,@GPIOProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'Pin Min:',IntToStr(GPIOProperties.PinMin));
+          AddItem(AResponse,'Pin Max:',IntToStr(GPIOProperties.PinMax));
+          AddItem(AResponse,'Pin Count:',IntToStr(GPIOProperties.PinCount));
+          AddItem(AResponse,'Function Min:',IntToStr(GPIOProperties.FunctionMin));
+          AddItem(AResponse,'Function Max:',IntToStr(GPIOProperties.FunctionMax));
+          AddItem(AResponse,'Function Count:',IntToStr(GPIOProperties.FunctionCount));
+         end;
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_FRAMEBUFFER:begin      
+        {Get Flags Names}
+        FlagNames:=FramebufferFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Framebuffer}
+        FramebufferDevice:=PFramebufferDevice(Device);
+       
+        AddBold(AResponse,'Framebuffer','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',FramebufferTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+       
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(FramebufferDevice.FramebufferId));
+        AddItem(AResponse,'State:',FramebufferStateToString(FramebufferDevice.FramebufferState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Allocate Count:',IntToStr(FramebufferDevice.AllocateCount));
+        AddItem(AResponse,'Release Count:',IntToStr(FramebufferDevice.ReleaseCount));
+        AddItem(AResponse,'Read Count:',IntToStr(FramebufferDevice.ReadCount));
+        AddItem(AResponse,'Write Count:',IntToStr(FramebufferDevice.WriteCount));
+        AddItem(AResponse,'Get Count:',IntToStr(FramebufferDevice.GetCount));
+        AddItem(AResponse,'Put Count:',IntToStr(FramebufferDevice.PutCount));
+        AddItem(AResponse,'Copy Count:',IntToStr(FramebufferDevice.CopyCount));
+        AddItem(AResponse,'Fill Count:',IntToStr(FramebufferDevice.FillCount));
+        AddBlank(AResponse);
+      
+        {Get Properties}
+        if FramebufferDeviceGetProperties(FramebufferDevice,@FramebufferProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'Address:',AddrToHex(FramebufferProperties.Address));
+          AddItem(AResponse,'Size:',IntToStr(FramebufferProperties.Size));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Pitch (Bytes per Line):',IntToStr(FramebufferProperties.Pitch));
+          AddItem(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(FramebufferProperties.Depth));
+          AddItem(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(FramebufferProperties.Order));
+          AddItem(AResponse,'Alpha Mode:',FramebufferModeToString(FramebufferProperties.Mode));
+          AddItem(AResponse,'Color Format:',ColorFormatToString(FramebufferProperties.Format));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Physical Width (Pixels):',IntToStr(FramebufferProperties.PhysicalWidth));
+          AddItem(AResponse,'Physical Height (Pixels):',IntToStr(FramebufferProperties.PhysicalHeight));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth));
+          AddItem(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight));
+          AddItem(AResponse,'Virtual Offset X (Pixels):',IntToStr(FramebufferProperties.OffsetX));
+          AddItem(AResponse,'Virtual Offset Y (Pixels):',IntToStr(FramebufferProperties.OffsetY));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop));
+          AddItem(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom));
+          AddItem(AResponse,'Overscan Left (Pixels):',IntToStr(FramebufferProperties.OverscanLeft));
+          AddItem(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Cursor X (Pixels):',IntToStr(FramebufferProperties.CursorX));
+          AddItem(AResponse,'Cursor Y (Pixels):',IntToStr(FramebufferProperties.CursorY));
+          AddItem(AResponse,'Cursor State:',FramebufferCursorToString(FramebufferProperties.CursorState));
+         end;
+         
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_CONSOLE:begin      
+        {Get Flags Names}
+        FlagNames:=ConsoleFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Console}
+        ConsoleDevice:=PConsoleDevice(Device);
+       
+        AddBold(AResponse,'Console','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',ConsoleTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+       
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(ConsoleDevice.ConsoleId));
+        AddItem(AResponse,'State:',ConsoleStateToString(ConsoleDevice.ConsoleState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Open Count:',IntToStr(ConsoleDevice.OpenCount));
+        AddItem(AResponse,'Close Count:',IntToStr(ConsoleDevice.CloseCount));
+        AddItem(AResponse,'Clear Count:',IntToStr(ConsoleDevice.ClearCount));
+        AddItem(AResponse,'Scroll Count:',IntToStr(ConsoleDevice.ScrollCount));
+        AddItem(AResponse,'Draw Count:',IntToStr(ConsoleDevice.DrawCount));
+        AddItem(AResponse,'Get Count:',IntToStr(ConsoleDevice.GetCount));
+        AddItem(AResponse,'Put Count:',IntToStr(ConsoleDevice.PutCount));
+        AddItem(AResponse,'Copy Count:',IntToStr(ConsoleDevice.CopyCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Width:',IntToStr(ConsoleDevice.Width));
+        AddItem(AResponse,'Height:',IntToStr(ConsoleDevice.Height));
+        AddItem(AResponse,'Color Format:',ColorFormatToString(ConsoleDevice.Format));
+        AddItem(AResponse,'Forecolor:','0x' + IntToHex(ConsoleDevice.Forecolor,8));
+        AddItem(AResponse,'Backcolor:','0x' + IntToHex(ConsoleDevice.Backcolor,8));
+        AddItem(AResponse,'Borderwidth:',IntToStr(ConsoleDevice.Borderwidth));
+        AddItem(AResponse,'Bordercolor:','0x' + IntToHex(ConsoleDevice.Bordercolor,8));
+        AddBlank(AResponse);
+        AddItem(AResponse,'FontRatio:',IntToStr(ConsoleDevice.FontRatio));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Cursor Update:',BooleanToString(ConsoleDevice.CursorUpdate));
+        AddItem(AResponse,'Cursor X:',IntToStr(ConsoleDevice.CursorX));
+        AddItem(AResponse,'Cursor Y:',IntToStr(ConsoleDevice.CursorY));
+        AddItem(AResponse,'Cursor Width:',IntToStr(ConsoleDevice.CursorWidth));
+        AddItem(AResponse,'Cursor Height:',IntToStr(ConsoleDevice.CursorHeight));
+        AddItem(AResponse,'Cursor Visible:',BooleanToString(ConsoleDevice.CursorVisible));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Caret Count:',IntToStr(ConsoleDevice.CaretCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Window Count:',IntToStr(ConsoleDevice.WindowCount));
+        AddBlank(AResponse);
+       
+        {Add Windows}
+        AddBold(AResponse,'Windows','');
+        AddBlank(AResponse);
+       
+        {Setup Data}
+        Data.Document:=Self;
+        Data.Host:=AHost;
+        Data.Request:=ARequest;
+        Data.Response:=AResponse;
+        Data.Data:=nil;
+        
+        {Enumerate Windows}
+        ConsoleWindowEnumerate(ConsoleDevice,WebStatusConsoleWindowEnumerate,@Data);
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_LOGGING:begin      
+        {Get Flags Names}
+        FlagNames:=LoggingFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Logging}
+        LoggingDevice:=PLoggingDevice(Device);
+       
+        AddBold(AResponse,'Logging','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',LoggingTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+       
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(LoggingDevice.LoggingId));
+        AddItem(AResponse,'State:',LoggingStateToString(LoggingDevice.LoggingState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Output Count:',IntToStr(LoggingDevice.OutputCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Target:',LoggingDevice.Target);
+        AddItem(AResponse,'Default:',BooleanToString(LoggingDevice.Default));
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_UART:begin      
+        {Get Flags Names}
+        FlagNames:=UARTFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get UART}
+        UARTDevice:=PUARTDevice(Device);
+       
+        AddBold(AResponse,'UART','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',UARTTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(UARTDevice.UARTId));
+        AddItem(AResponse,'Mode:',UARTModeToString(UARTDevice.UARTMode));
+        AddItem(AResponse,'State:',UARTStateToString(UARTDevice.UARTState));
+        {Get Status Names}
+        StatusNames:=UARTStatusToStatusNames(UARTDevice.UARTStatus);
+        AddItem(AResponse,'Status:',StatusNames.Strings[0]);
+        
+        {Check Status Count}
+        if StatusNames.Count > 1 then
+         begin
+          for Count:=1 to StatusNames.Count - 1 do
+           begin
+            {Add Status Name}
+            AddItem(AResponse,'',StatusNames.Strings[Count]);
+           end;
+         end;
+        AddBlank(AResponse);
+        AddItem(AResponse,'Receive Count:',IntToStr(UARTDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(UARTDevice.ReceiveErrors));
+        AddItem(AResponse,'Transmit Count:',IntToStr(UARTDevice.TransmitCount));
+        AddItem(AResponse,'Transmit Errors:',IntToStr(UARTDevice.TransmitErrors));
+        AddBlank(AResponse);
+        
+        {Get Properties}
+        if UARTDeviceGetProperties(UARTDevice,@UARTProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'Min Rate:',IntToStr(UARTProperties.MinRate) + ' Baud');
+          AddItem(AResponse,'Max Rate:',IntToStr(UARTProperties.MaxRate) + ' Baud');
+          AddBlank(AResponse);
+          AddItem(AResponse,'Baud Rate:',IntToStr(UARTProperties.BaudRate));
+          AddItem(AResponse,'Data Bits:',SerialDataBitsToString(UARTProperties.DataBits)); 
+          AddItem(AResponse,'Stop Bits:',SerialStopBitsToString(UARTProperties.StopBits));
+          AddItem(AResponse,'Parity:',SerialParityToString(UARTProperties.Parity));
+          AddItem(AResponse,'Flow Control:',SerialFlowControlToString(UARTProperties.FlowControl));
+         end;
+        
+        StatusNames.Free;
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_SERIAL:begin      
+        {Get Flags Names}
+        FlagNames:=SerialFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Serial}
+        SerialDevice:=PSerialDevice(Device);
+       
+        AddBold(AResponse,'Serial','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',SerialTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(SerialDevice.SerialId));
+        AddItem(AResponse,'State:',SerialStateToString(SerialDevice.SerialState));
+        {Get Status Names}
+        StatusNames:=SerialStatusToStatusNames(SerialDevice.SerialStatus);
+        AddItem(AResponse,'Status:',StatusNames.Strings[0]);
+        
+        {Check Status Count}
+        if StatusNames.Count > 1 then
+         begin
+          for Count:=1 to StatusNames.Count - 1 do
+           begin
+            {Add Status Name}
+            AddItem(AResponse,'',StatusNames.Strings[Count]);
+           end;
+         end;
+        AddBlank(AResponse);
+        AddItem(AResponse,'Receive Count:',IntToStr(SerialDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(SerialDevice.ReceiveErrors));
+        AddItem(AResponse,'ReceiveOverruns:',IntToStr(SerialDevice.ReceiveOverruns));
+        AddItem(AResponse,'Transmit Count:',IntToStr(SerialDevice.TransmitCount));
+        AddItem(AResponse,'Transmit Errors:',IntToStr(SerialDevice.TransmitErrors));
+        AddItem(AResponse,'TransmitOverruns:',IntToStr(SerialDevice.TransmitOverruns));
+        AddBlank(AResponse);
+      
+        {Get Properties}
+        if SerialDeviceGetProperties(SerialDevice,@SerialProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'Min Rate:',IntToStr(SerialProperties.MinRate) + ' Baud');
+          AddItem(AResponse,'Max Rate:',IntToStr(SerialProperties.MaxRate) + ' Baud');
+          AddBlank(AResponse);
+          AddItem(AResponse,'Baud Rate:',IntToStr(SerialProperties.BaudRate));
+          AddItem(AResponse,'Data Bits:',SerialDataBitsToString(SerialProperties.DataBits)); 
+          AddItem(AResponse,'Stop Bits:',SerialStopBitsToString(SerialProperties.StopBits));
+          AddItem(AResponse,'Parity:',SerialParityToString(SerialProperties.Parity));
+          AddItem(AResponse,'Flow Control:',SerialFlowControlToString(SerialProperties.FlowControl));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Receive Depth:',IntToStr(SerialProperties.ReceiveDepth) + ' Bytes');
+          AddItem(AResponse,'Transmit Depth:',IntToStr(SerialProperties.TransmitDepth) + ' Bytes');
+         end;
+         
+        StatusNames.Free;
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_I2C:begin      
+        {Get Flags Names}
+        FlagNames:=I2CFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get I2C}
+        I2CDevice:=PI2CDevice(Device);
+       
+        AddBold(AResponse,'I2C','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',I2CTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(I2CDevice.I2CId));
+        AddItem(AResponse,'State:',I2CStateToString(I2CDevice.I2CState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Read Count:',IntToStr(I2CDevice.ReadCount));
+        AddItem(AResponse,'Write Count:',IntToStr(I2CDevice.WriteCount));
+        AddItem(AResponse,'Read Errors:',IntToStr(I2CDevice.ReadErrors));
+        AddItem(AResponse,'Write Errors:',IntToStr(I2CDevice.WriteErrors));
+        AddBlank(AResponse);
+      
+        {Get Properties}
+        if I2CDeviceGetProperties(I2CDevice,@I2CProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'Max Size:',IntToStr(I2CProperties.MaxSize) + ' Bytes');
+          AddItem(AResponse,'Min Clock:',IntToStr(I2CProperties.MinClock) + ' Hz');
+          AddItem(AResponse,'Max Clock:',IntToStr(I2CProperties.MaxClock) + ' Hz');
+          AddBlank(AResponse);
+          AddItem(AResponse,'Clock Rate:',IntToStr(I2CProperties.ClockRate) + ' Hz');
+          AddItem(AResponse,'Slave Address:','0x' + IntToHex(I2CProperties.SlaveAddress,4));
+         end;
+      
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_SPI:begin      
+        {Get Flags Names}
+        FlagNames:=SPIFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get SPI}
+        SPIDevice:=PSPIDevice(Device);
+       
+        AddBold(AResponse,'SPI','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',SPITypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(SPIDevice.SPIId));
+        AddItem(AResponse,'State:',SPIStateToString(SPIDevice.SPIState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Transfer Count:',IntToStr(SPIDevice.TransferCount));
+        AddItem(AResponse,'Transfer Errors:',IntToStr(SPIDevice.TransferErrors));
+        AddBlank(AResponse);
+      
+        {Get Properties}
+        if SPIDeviceGetProperties(SPIDevice,@SPIProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'Max Size:',IntToStr(SPIProperties.MaxSize) + ' Bytes');
+          AddItem(AResponse,'Min Clock:',IntToStr(SPIProperties.MinClock) + ' Hz');
+          AddItem(AResponse,'Max Clock:',IntToStr(SPIProperties.MaxClock) + ' Hz');
+          AddItem(AResponse,'Select Count:',IntToStr(SPIProperties.SelectCount));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Mode:',SPIModeToString(SPIProperties.Mode));
+          AddItem(AResponse,'Clock Rate:',IntToStr(SPIProperties.ClockRate) + ' Hz');
+          AddItem(AResponse,'Clock Phase:',SPIClockPhaseToString(SPIProperties.ClockPhase));
+          AddItem(AResponse,'Clock Polarity:',SPIClockPolarityToString(SPIProperties.ClockPolarity));
+          AddItem(AResponse,'Select Polarity:',SPISelectPolarityToString(SPIProperties.SelectPolarity));
+          AddItem(AResponse,'Byte Delay:',IntToStr(SPIProperties.ByteDelay) + ' uS');
+         end;
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_PWM:begin      
+        {Get Flags Names}
+        FlagNames:=PWMFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get PWM}
+        PWMDevice:=PPWMDevice(Device);
+       
+        AddBold(AResponse,'PWM','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',PWMTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(PWMDevice.PWMId));
+        AddItem(AResponse,'State:',PWMStateToString(PWMDevice.PWMState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Get Count:',IntToStr(PWMDevice.GetCount));
+        AddItem(AResponse,'Set Count:',IntToStr(PWMDevice.SetCount));
+        AddItem(AResponse,'Write Count:',IntToStr(PWMDevice.WriteCount));
+        AddItem(AResponse,'Config Count:',IntToStr(PWMDevice.ConfigCount));
+        AddBlank(AResponse);
+      
+        {Get Properties}
+        if PWMDeviceGetProperties(PWMDevice,@PWMProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'GPIO:',GPIOPinToString(PWMProperties.GPIO));
+          AddBlank(AResponse);
+          AddItem(AResponse,'Mode:',PWMModeToString(PWMProperties.Mode));
+          AddItem(AResponse,'Range:',IntToStr(PWMProperties.Range));
+          AddItem(AResponse,'Frequency:',IntToStr(PWMProperties.Frequency) + ' Hz');
+          AddItem(AResponse,'Polarity:',PWMPolarityToString(PWMProperties.Polarity));
+          AddItem(AResponse,'Duty:',IntToStr(PWMProperties.DutyNS) + ' ns');
+          AddItem(AResponse,'Period:',IntToStr(PWMProperties.PeriodNS) + ' ns');
+          AddBlank(AResponse);
+          AddItem(AResponse,'MinPeriod:',IntToStr(PWMProperties.MinPeriod) + ' ns');
+         end;
+
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_DMA:begin      
+        {Get Flags Names}
+        FlagNames:=DMAFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get DMA}
+        DMAHost:=PDMAHost(Device);
+       
+        AddBold(AResponse,'DMA','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',DMATypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(DMAHost.DMAId));
+        AddItem(AResponse,'State:',DMAStateToString(DMAHost.DMAState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Request Count:',IntToStr(DMAHost.RequestCount));
+        AddItem(AResponse,'Request Errors:',IntToStr(DMAHost.RequestErrors));
+        AddBlank(AResponse);
+      
+        {Get Properties}
+        if DMAHostProperties(DMAHost,@DMAProperties) = ERROR_SUCCESS then
+         begin
+          AddItem(AResponse,'Alignment:',IntToStr(DMAProperties.Alignment) + ' Bytes');
+          AddItem(AResponse,'Multiplier:',IntToStr(DMAProperties.Multiplier) + ' Bytes');
+          AddBlank(AResponse);
+          AddItem(AResponse,'Channels:',IntToStr(DMAProperties.Channels));
+          AddItem(AResponse,'MaxSize:',IntToStr(DMAProperties.MaxSize) + ' Bytes');
+          AddItem(AResponse,'MaxCount:',IntToStr(DMAProperties.MaxCount));
+          AddItem(AResponse,'MaxLength:',IntToStr(DMAProperties.MaxLength) + ' Bytes');
+          AddItem(AResponse,'MinStride:',IntToStr(DMAProperties.MinStride) + ' Bytes');
+          AddItem(AResponse,'MaxStride:',IntToStr(DMAProperties.MaxStride) + ' Bytes');
+         end;
+       
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_NETWORK:begin      
+        {Get Flags Names}
+        FlagNames:=NetworkFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Network}
+        NetworkDevice:=PNetworkDevice(Device);
+       
+        AddBold(AResponse,'Network','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',NetworkDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(NetworkDevice.NetworkId));
+        AddItem(AResponse,'State:',NetworkDeviceStateToString(NetworkDevice.NetworkState));
+        AddItem(AResponse,'Status:',NetworkDeviceStatusToString(NetworkDevice.NetworkStatus));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Receive Bytes:',IntToStr(NetworkDevice.ReceiveBytes));
+        AddItem(AResponse,'Receive Count:',IntToStr(NetworkDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(NetworkDevice.ReceiveErrors));
+        AddItem(AResponse,'Transmit Bytes:',IntToStr(NetworkDevice.TransmitBytes));
+        AddItem(AResponse,'Transmit Count:',IntToStr(NetworkDevice.TransmitCount));
+        AddItem(AResponse,'Transmit Errors:',IntToStr(NetworkDevice.TransmitErrors));
+        AddItem(AResponse,'Status Count:',IntToStr(NetworkDevice.StatusCount));
+        AddItem(AResponse,'Status Errors:',IntToStr(NetworkDevice.StatusErrors));
+        AddItem(AResponse,'Buffer Overruns:',IntToStr(NetworkDevice.BufferOverruns));
+        AddItem(AResponse,'Buffer Unavailable:',IntToStr(NetworkDevice.BufferUnavailable));
+        AddBlank(AResponse);
+       
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_STORAGE:begin      
+        {Get Flags Names}
+        FlagNames:=StorageFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Storage}
+        StorageDevice:=PStorageDevice(Device);
+       
+        AddBold(AResponse,'Storage','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',StorageDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(StorageDevice.StorageId));
+        AddItem(AResponse,'State:',StorageDeviceStateToString(StorageDevice.StorageState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Read Count:',IntToStr(StorageDevice.ReadCount));
+        AddItem(AResponse,'Read Errors:',IntToStr(StorageDevice.ReadErrors));
+        AddItem(AResponse,'Write Count:',IntToStr(StorageDevice.WriteCount));
+        AddItem(AResponse,'Write Errors:',IntToStr(StorageDevice.WriteErrors));
+        AddItem(AResponse,'Erase Count:',IntToStr(StorageDevice.EraseCount));
+        AddItem(AResponse,'Erase Errors:',IntToStr(StorageDevice.EraseErrors));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Target ID:',IntToStr(StorageDevice.TargetID));
+        AddItem(AResponse,'Target LUN:',IntToStr(StorageDevice.TargetLUN));
+        AddItem(AResponse,'Block Size:',IntToStr(StorageDevice.BlockSize) + ' Bytes');
+        AddItem(AResponse,'Block Count:',IntToStr(StorageDevice.BlockCount));
+        AddItem(AResponse,'Block Shift:',IntToStr(StorageDevice.BlockShift));
+        AddItem(AResponse,'Vendor:',String(StorageDevice.Vendor));
+        AddItem(AResponse,'Product:',String(StorageDevice.Product));
+        AddItem(AResponse,'Revision:',String(StorageDevice.Revision));
+        AddBlank(AResponse);
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_KEYBOARD:begin      
+        {Get Flags Names}
+        FlagNames:=KeyboardFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Keyboard}
+        KeyboardDevice:=PKeyboardDevice(Device);
+       
+        AddBold(AResponse,'Keyboard','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',KeyboardDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(KeyboardDevice.KeyboardId));
+        AddItem(AResponse,'State:',KeyboardDeviceStateToString(KeyboardDevice.KeyboardState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Receive Count:',IntToStr(KeyboardDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(KeyboardDevice.ReceiveErrors));
+        AddItem(AResponse,'Buffer Overruns:',IntToStr(KeyboardDevice.BufferOverruns));
+        AddBlank(AResponse);
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_MOUSE:begin
+        {Get Flags Names}
+        FlagNames:=MouseFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Mouse}
+        MouseDevice:=PMouseDevice(Device);
+       
+        AddBold(AResponse,'Mouse','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',MouseDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(MouseDevice.MouseId));
+        AddItem(AResponse,'State:',MouseDeviceStateToString(MouseDevice.MouseState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Receive Count:',IntToStr(MouseDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(MouseDevice.ReceiveErrors));
+        AddItem(AResponse,'Buffer Overruns:',IntToStr(MouseDevice.BufferOverruns));
+        AddBlank(AResponse);
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_TOUCH:begin
+        {Get Flags Names}
+        FlagNames:=TouchFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get Touch}
+        TouchDevice:=PTouchDevice(Device);
+       
+        AddBold(AResponse,'Touch','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',TouchDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(TouchDevice.TouchId));
+        AddItem(AResponse,'State:',TouchDeviceStateToString(TouchDevice.TouchState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Receive Count:',IntToStr(TouchDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(TouchDevice.ReceiveErrors));
+        AddItem(AResponse,'Buffer Overruns:',IntToStr(TouchDevice.BufferOverruns));
+        AddBlank(AResponse);
+        
+        FlagNames.Free;
+       end;
      end;
     end
    else
@@ -4317,6 +6303,7 @@ begin
    Data.Host:=AHost;
    Data.Request:=ARequest;
    Data.Response:=AResponse;
+   Data.Data:=nil;
    
    {Enumerate Devices}
    DeviceEnumerate(DEVICE_CLASS_ANY,WebStatusDeviceEnumerate,@Data);
@@ -4372,6 +6359,7 @@ begin
  Data.Host:=AHost;
  Data.Request:=ARequest;
  Data.Response:=AResponse;
+ Data.Data:=nil;
  
  {Enumerate Drivers}
  DriverEnumerate(DRIVER_CLASS_ANY,WebStatusDriverEnumerate,@Data);
@@ -4450,6 +6438,7 @@ begin
  Data.Host:=AHost;
  Data.Request:=ARequest;
  Data.Response:=AResponse;
+ Data.Data:=nil;
  
  {Enumerate Handles}
  HandleEnumerate(WebStatusHandleEnumerate,@Data);
@@ -4476,9 +6465,58 @@ end;
 
 {==============================================================================}
 
+function TWebStatusUSB.USBFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('USB_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusUSB.USBHostFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and USBHOST_FLAG_SHARED) = USBHOST_FLAG_SHARED then
+  begin
+   Result.Add('USBHOST_FLAG_SHARED');
+  end;
+ if (AFlags and USBHOST_FLAG_NOCACHE) = USBHOST_FLAG_NOCACHE then
+  begin
+   Result.Add('USBHOST_FLAG_NOCACHE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('USBHOST_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusUSB.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
+ Id:LongWord;
+ Action:String;
+ Count:LongWord;
+ WorkBuffer:String;
  Data:TWebStatusData;
+ FlagNames:TStringList;
+ 
+ USBHost:PUSBHost;
+ USBDevice:PUSBDevice;
 begin
  {}
  Result:=False;
@@ -4492,58 +6530,222 @@ begin
  {Check Response}
  if AResponse = nil then Exit;
 
- {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
 
- {Add USB Device List} 
- AddBold4Column(AResponse,'Devices','','','');
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'USB Id','Name','Class','Status');
- AddBlankEx(AResponse,4);
+ {Get Id}
+ WorkBuffer:=Uppercase(ARequest.GetParam('ID'));
+ 
+ if (Action = 'USBDEVICE') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'USB Device Information',Self,2);
 
- {Setup Data}
- Data.Document:=Self;
- Data.Host:=AHost;
- Data.Request:=ARequest;
- Data.Response:=AResponse;
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
  
- {Enumerate USB Devices}
- USBDeviceEnumerate(WebStatusUSBDeviceEnumerate,@Data);
- 
- {Add USB Host List} 
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'Hosts','','','');
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'Host Id','Name','State','Type');
- AddBlankEx(AResponse,4);
- 
- {Setup Data}
- Data.Document:=Self;
- Data.Host:=AHost;
- Data.Request:=ARequest;
- Data.Response:=AResponse;
- 
- {Enumerate USB Hosts}
- USBHostEnumerate(WebStatusUSBHostEnumerate,@Data);
+   {Get USB Device}
+   USBDevice:=USBDeviceFind(Id);
+   if USBDevice <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=USBFlagsToFlagNames(USBDevice.Device.DeviceFlags);
+     
+     AddBold(AResponse,'Device','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@USBDevice.Device));
+     AddItem(AResponse,'Type:',USBDeviceTypeToString(USBDevice.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
 
- {Add USB Driver List} 
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'Drivers','','','');
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'Driver Id','Name','State','');
- AddBlankEx(AResponse,4);
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(USBDevice.USBId));
+     AddItem(AResponse,'State:',USBDeviceStateToString(USBDevice.USBState));
+     AddItem(AResponse,'Status:',USBDeviceStatusToString(USBDevice.USBStatus));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Address:',IntToStr(USBDevice.Address));
+     AddItem(AResponse,'Speed:',USBSpeedToStringAlt(USBDevice.Speed));
+     AddItem(AResponse,'Depth:',IntToStr(USBDevice.Depth));
+     AddItem(AResponse,'Port Number:',IntToStr(USBDevice.PortNumber));
+     AddItem(AResponse,'Configuration Value:',IntToStr(USBDevice.ConfigurationValue));
+     AddBlank(AResponse);
+     
+     WorkBuffer:='';
+     if USBDevice.Parent <> nil then WorkBuffer:=DeviceGetName(@USBDevice.Parent.Device);
+     AddItem(AResponse,'Parent:',WorkBuffer);
+
+     WorkBuffer:='';
+     if USBDevice.Driver <> nil then WorkBuffer:=DriverGetName(@USBDevice.Driver.Driver);
+     AddItem(AResponse,'Driver:',WorkBuffer);
+
+     AddBlank(AResponse);
+     AddItem(AResponse,'Product:',USBDevice.Product);
+     AddItem(AResponse,'Manufacturer:',USBDevice.Manufacturer);
+     AddItem(AResponse,'SerialNumber:',USBDevice.SerialNumber);
+     AddBlank(AResponse);
+     AddItem(AResponse,'Request Count:',IntToStr(USBDevice.RequestCount));
+     AddItem(AResponse,'Request Errors:',IntToStr(USBDevice.RequestErrors));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Class:',USBClassCodeToString(USBDevice.Descriptor.bDeviceClass));
+     AddItem(AResponse,'VID/PID:',IntToHex(USBDevice.Descriptor.idVendor,4) + ':' + IntToHex(USBDevice.Descriptor.idProduct,4));
+     AddBlank(AResponse);
+    
+     AddBold(AResponse,'Device Descriptors','');
+     AddBlank(AResponse);
+     
+     {Setup Data}
+     Data.Document:=Self;
+     Data.Host:=AHost;
+     Data.Request:=ARequest;
+     Data.Response:=AResponse;
+     Data.Data:=nil;
+     
+     {Display Device}
+     USBLogDevicesEx(USBDevice,WebStatusUSBLogOutput,WebStatusUSBLogDeviceCallback,nil,@Data);
+     
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+   
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else if (Action = 'USBHOST') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'USB Host Information',Self,2);
+  
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
  
- {Setup Data}
- Data.Document:=Self;
- Data.Host:=AHost;
- Data.Request:=ARequest;
- Data.Response:=AResponse;
- 
- {Enumerate USB Drivers}
- USBDriverEnumerate(WebStatusUSBDriverEnumerate,@Data);
- 
- {Add Footer (4 column)}
- AddFooterEx(AResponse,4); 
+   {Get USB Host}
+   USBHost:=USBHostFind(Id);
+   if USBHost <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=USBHostFlagsToFlagNames(USBHost.Device.DeviceFlags);
+     
+     AddBold(AResponse,'Host','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@USBHost.Device));
+     AddItem(AResponse,'Type:',USBHostTypeToString(USBHost.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(USBHost.HostId));
+     AddItem(AResponse,'State:',USBHostStateToString(USBHost.HostState));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Alignment:',IntToStr(USBHost.Alignment));
+     AddItem(AResponse,'Multiplier:',IntToStr(USBHost.Multiplier));
+     AddItem(AResponse,'Max Transfer:',IntToStr(USBHost.MaxTransfer));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Request Count:',IntToStr(USBHost.RequestCount));
+     AddItem(AResponse,'Request Errors:',IntToStr(USBHost.RequestErrors));
+     AddBlank(AResponse);
+     
+     AddBold(AResponse,'Device Tree','');
+     AddBlank(AResponse);
+     
+     {Setup Data}
+     Data.Document:=Self;
+     Data.Host:=AHost;
+     Data.Request:=ARequest;
+     Data.Response:=AResponse;
+     Data.Data:=USBHost;
+     
+     {Display Tree}
+     USBLogDevicesEx(nil,WebStatusUSBLogOutput,nil,WebStatusUSBLogTreeCallback,@Data);
+
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+   
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else
+  begin 
+   {Add Header (4 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+  
+   {Add USB Device List} 
+   AddBold4Column(AResponse,'Devices','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'USB Id','Name','Class','Status');
+   AddBlankEx(AResponse,4);
+  
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate USB Devices}
+   USBDeviceEnumerate(WebStatusUSBDeviceEnumerate,@Data);
+   
+   {Add USB Host List} 
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Hosts','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Host Id','Name','State','Type');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate USB Hosts}
+   USBHostEnumerate(WebStatusUSBHostEnumerate,@Data);
+  
+   {Add USB Driver List} 
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Drivers','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Driver Id','Name','State','');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate USB Drivers}
+   USBDriverEnumerate(WebStatusUSBDriverEnumerate,@Data);
+   
+   {Add Footer (4 column)}
+   AddFooterEx(AResponse,4); 
+  end; 
  
  {Return Result}
  Result:=True;
@@ -4594,6 +6796,7 @@ begin
  Data.Host:=AHost;
  Data.Request:=ARequest;
  Data.Response:=AResponse;
+ Data.Data:=nil;
  
  {Enumerate MMCs}
  MMCDeviceEnumerate(WebStatusMMCEnumerate,@Data);
@@ -4610,6 +6813,7 @@ begin
  Data.Host:=AHost;
  Data.Request:=ARequest;
  Data.Response:=AResponse;
+ Data.Data:=nil;
  
  {Enumerate SDHCIs}
  SDHCIHostEnumerate(WebStatusSDHCIEnumerate,@Data);
@@ -5124,6 +7328,7 @@ begin
    Data.Host:=AHost;
    Data.Request:=ARequest;
    Data.Response:=AResponse;
+   Data.Data:=nil;
    
    {Enumerate Networks}
    NetworkDeviceEnumerate(WebStatusNetworkEnumerate,@Data);
@@ -5227,6 +7432,7 @@ begin
  Data.Host:=AHost;
  Data.Request:=ARequest;
  Data.Response:=AResponse;
+ Data.Data:=nil;
  
  {Enumerate Storage}
  StorageDeviceEnumerate(WebStatusStorageEnumerate,@Data);
@@ -5607,6 +7813,7 @@ begin
  Data.Host:=AHost;
  Data.Request:=ARequest;
  Data.Response:=AResponse;
+ Data.Data:=nil;
  
  {Enumerate Keyboards}
  KeyboardDeviceEnumerate(WebStatusKeyboardEnumerate,@Data);
@@ -5661,9 +7868,65 @@ begin
  Data.Host:=AHost;
  Data.Request:=ARequest;
  Data.Response:=AResponse;
+ Data.Data:=nil;
  
  {Enumerate Mice}
  MouseDeviceEnumerate(WebStatusMouseEnumerate,@Data);
+ 
+ {Add Footer (4 column)}
+ AddFooterEx(AResponse,4); 
+ 
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusTouch}
+constructor TWebStatusTouch.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='Touch'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/touch';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusTouch.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Data:TWebStatusData;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Add Header (4 column)}
+ AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+
+ {Add Touch List} 
+ AddBold4Column(AResponse,'Touch Id','Name','State','Type');
+ AddBlankEx(AResponse,4);
+ 
+ {Setup Data}
+ Data.Document:=Self;
+ Data.Host:=AHost;
+ Data.Request:=ARequest;
+ Data.Response:=AResponse;
+ Data.Data:=nil;
+ 
+ {Enumerate Touch}
+ TouchDeviceEnumerate(WebStatusTouchEnumerate,@Data);
  
  {Add Footer (4 column)}
  AddFooterEx(AResponse,4); 
@@ -5701,6 +7964,8 @@ var
  Width:LongWord;
  Height:LongWord;
  Bottom:LongWord;
+ DisplayCount:LongWord;
+ FramebufferCount:LongWord;
  FramebufferDevice:PFramebufferDevice;
  FramebufferProperties:TFramebufferProperties;
 begin
@@ -5719,7 +7984,7 @@ begin
  {Add Header}
  AddHeader(AResponse,GetTitle,Self); 
 
- AddBold(AResponse,'Settings','');
+ AddBold(AResponse,'Default Settings','');
  
  {Add Framebuffer Physical Width/Height}
  if FramebufferGetPhysical(Width,Height) = ERROR_SUCCESS then
@@ -5784,96 +8049,111 @@ begin
    AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(Right),2);
   end;
  
- AddBlank(AResponse);
- AddBold(AResponse,'Default Device','');
- 
- {Get Default Device}
- if FramebufferDeviceGetProperties(FramebufferDeviceGetDefault,@FramebufferProperties) = ERROR_SUCCESS then
+ {Add Multiple Displays}
+ if FramebufferGetNumDisplays(DisplayCount) = ERROR_SUCCESS then
   begin
    AddBlank(AResponse);
-   AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Address:','0x' + IntToHex(FramebufferProperties.Address,8),2);
-   AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Pitch (Bytes per Line):',IntToStr(FramebufferProperties.Pitch),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(FramebufferProperties.Depth),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(FramebufferProperties.Order),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Alpha Mode:',FramebufferModeToString(FramebufferProperties.Mode),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Color Format:',ColorFormatToString(FramebufferProperties.Format),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Physical Width (Pixels):',IntToStr(FramebufferProperties.PhysicalWidth),2);
-   AddItemEx(AResponse,'Physical Height (Pixels):',IntToStr(FramebufferProperties.PhysicalHeight),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
-   AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Virtual Offset X (Pixels):',IntToStr(FramebufferProperties.OffsetX),2);
-   AddItemEx(AResponse,'Virtual Offset Y (Pixels):',IntToStr(FramebufferProperties.OffsetY),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
-   AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
-   AddItemEx(AResponse,'Overscan Left (Pixels):',IntToStr(FramebufferProperties.OverscanLeft),2);
-   AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
-   AddBlank(AResponse);
-   AddItemEx(AResponse,'Cursor X (Pixels):',IntToStr(FramebufferProperties.CursorX),2);
-   AddItemEx(AResponse,'Cursor Y (Pixels):',IntToStr(FramebufferProperties.CursorY),2);
-   AddItemEx(AResponse,'Cursor State:',FramebufferCursorToString(FramebufferProperties.CursorState),2);
+   AddItemEx(AResponse,'Display Count:',IntToStr(DisplayCount),2);
   end;
  
+ {Get Default Device}
+ if FramebufferDeviceGetDefault <> nil then
+  begin
+   AddBlank(AResponse);
+   AddBold(AResponse,FramebufferDeviceGetDefault.Device.DeviceName + ' Properties (Default)','');
+   
+   {Get Default Device Properties}
+   if FramebufferDeviceGetProperties(FramebufferDeviceGetDefault,@FramebufferProperties) = ERROR_SUCCESS then
+    begin
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Address:','0x' + AddrToHex(FramebufferProperties.Address),2);
+     AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Pitch (Bytes per Line):',IntToStr(FramebufferProperties.Pitch),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(FramebufferProperties.Depth),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(FramebufferProperties.Order),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Alpha Mode:',FramebufferModeToString(FramebufferProperties.Mode),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Color Format:',ColorFormatToString(FramebufferProperties.Format),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Physical Width (Pixels):',IntToStr(FramebufferProperties.PhysicalWidth),2);
+     AddItemEx(AResponse,'Physical Height (Pixels):',IntToStr(FramebufferProperties.PhysicalHeight),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
+     AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Virtual Offset X (Pixels):',IntToStr(FramebufferProperties.OffsetX),2);
+     AddItemEx(AResponse,'Virtual Offset Y (Pixels):',IntToStr(FramebufferProperties.OffsetY),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
+     AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
+     AddItemEx(AResponse,'Overscan Left (Pixels):',IntToStr(FramebufferProperties.OverscanLeft),2);
+     AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
+     AddBlank(AResponse);
+     AddItemEx(AResponse,'Cursor X (Pixels):',IntToStr(FramebufferProperties.CursorX),2);
+     AddItemEx(AResponse,'Cursor Y (Pixels):',IntToStr(FramebufferProperties.CursorY),2);
+     AddItemEx(AResponse,'Cursor State:',FramebufferCursorToString(FramebufferProperties.CursorState),2);
+    end;
+  end;
+  
  {Check Device Count}
  if FramebufferDeviceGetCount > 1 then
   begin
-   AddBlank(AResponse);
-   AddBold(AResponse,'Secondary Device','');
-   
-   {Get Secondary Device}
-   FramebufferDevice:=FramebufferDeviceFind(1);
-   if FramebufferDevice <> nil then
+   for FramebufferCount:=1 to FramebufferDeviceGetCount - 1 do
     begin
-     if FramebufferDeviceGetProperties(FramebufferDevice,@FramebufferProperties) = ERROR_SUCCESS then
+     {Get Framebuffer Device}
+     FramebufferDevice:=FramebufferDeviceFind(FramebufferCount);
+     if FramebufferDevice <> nil then
       begin
        AddBlank(AResponse);
-       AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Address:','0x' + IntToHex(FramebufferProperties.Address,8),2);
-       AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Pitch (Bytes per Line):',IntToStr(FramebufferProperties.Pitch),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(FramebufferProperties.Depth),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(FramebufferProperties.Order),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Alpha Mode:',FramebufferModeToString(FramebufferProperties.Mode),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Color Format:',ColorFormatToString(FramebufferProperties.Format),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Physical Width (Pixels):',IntToStr(FramebufferProperties.PhysicalWidth),2);
-       AddItemEx(AResponse,'Physical Height (Pixels):',IntToStr(FramebufferProperties.PhysicalHeight),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
-       AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Virtual Offset X (Pixels):',IntToStr(FramebufferProperties.OffsetX),2);
-       AddItemEx(AResponse,'Virtual Offset Y (Pixels):',IntToStr(FramebufferProperties.OffsetY),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
-       AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
-       AddItemEx(AResponse,'Overscan Left (Pixels):',IntToStr(FramebufferProperties.OverscanLeft),2);
-       AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
-       AddBlank(AResponse);
-       AddItemEx(AResponse,'Cursor X (Pixels):',IntToStr(FramebufferProperties.CursorX),2);
-       AddItemEx(AResponse,'Cursor Y (Pixels):',IntToStr(FramebufferProperties.CursorY),2);
-       AddItemEx(AResponse,'Cursor State:',FramebufferCursorToString(FramebufferProperties.CursorState),2);
+       AddBold(AResponse,FramebufferDevice.Device.DeviceName + ' Properties','');
+     
+       {Get Framebuffer Device Properties}
+       if FramebufferDeviceGetProperties(FramebufferDevice,@FramebufferProperties) = ERROR_SUCCESS then
+        begin
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Address:','0x' + AddrToHex(FramebufferProperties.Address),2);
+         AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Pitch (Bytes per Line):',IntToStr(FramebufferProperties.Pitch),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Colour Depth (Bits per Pixel):',FramebufferDepthToString(FramebufferProperties.Depth),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Pixel Order (BGR/RGB):',FramebufferOrderToString(FramebufferProperties.Order),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Alpha Mode:',FramebufferModeToString(FramebufferProperties.Mode),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Color Format:',ColorFormatToString(FramebufferProperties.Format),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Physical Width (Pixels):',IntToStr(FramebufferProperties.PhysicalWidth),2);
+         AddItemEx(AResponse,'Physical Height (Pixels):',IntToStr(FramebufferProperties.PhysicalHeight),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Virtual Width (Pixels):',IntToStr(FramebufferProperties.VirtualWidth),2);
+         AddItemEx(AResponse,'Virtual Height (Pixels):',IntToStr(FramebufferProperties.VirtualHeight),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Virtual Offset X (Pixels):',IntToStr(FramebufferProperties.OffsetX),2);
+         AddItemEx(AResponse,'Virtual Offset Y (Pixels):',IntToStr(FramebufferProperties.OffsetY),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Overscan Top (Pixels):',IntToStr(FramebufferProperties.OverscanTop),2);
+         AddItemEx(AResponse,'Overscan Bottom (Pixels):',IntToStr(FramebufferProperties.OverscanBottom),2);
+         AddItemEx(AResponse,'Overscan Left (Pixels):',IntToStr(FramebufferProperties.OverscanLeft),2);
+         AddItemEx(AResponse,'Overscan Right (Pixels):',IntToStr(FramebufferProperties.OverscanRight),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Rotation:',FramebufferRotationToString(FramebufferProperties.Rotation),2);
+         AddBlank(AResponse);
+         AddItemEx(AResponse,'Cursor X (Pixels):',IntToStr(FramebufferProperties.CursorX),2);
+         AddItemEx(AResponse,'Cursor Y (Pixels):',IntToStr(FramebufferProperties.CursorY),2);
+         AddItemEx(AResponse,'Cursor State:',FramebufferCursorToString(FramebufferProperties.CursorState),2);
+        end;
       end;
     end;
   end; 
@@ -5959,10 +8239,14 @@ begin
  AddItemEx(AResponse,'ARM Machine Type:','0x' + IntToHex(ARMMachineType,8),2);
  AddBlank(AResponse);
  
+ {Add ARM Secure Boot}
+ AddItemEx(AResponse,'ARM Secure Boot:',IntToStr(ARMSecureBoot),2);
+ AddBlank(AResponse);
+ 
  {Add ARM Boot Tags}
  AddBold(AResponse,'ARM Boot Tags','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'Tags Address:','0x' + IntToHex(ARMTagsAddress,8),2);
+ AddItemEx(AResponse,'Tags Address:','0x' + AddrToHex(ARMTagsAddress),2);
  AddBlank(AResponse);
  
  AddItemEx(AResponse,'Tag None Count:',IntToStr(TagNoneCount),2);
@@ -5978,7 +8262,7 @@ begin
  AddItemEx(AResponse,'Memory Size:','0x' + IntToHex(TagMemorySize,8),4);
  AddItemEx(AResponse,'Memory Start:','0x' + IntToHex(TagMemoryStart,8),4);
  AddItemEx(AResponse,'Memory Length:','0x' + IntToHex(TagMemoryLength,8),4);
- AddItemEx(AResponse,'Memory Address:','0x' + IntToHex(TagMemoryAddress,8),4);
+ AddItemEx(AResponse,'Memory Address:','0x' + AddrToHex(TagMemoryAddress),4);
  AddBlank(AResponse);
  
  AddItemEx(AResponse,'Tag Video Text Count:',IntToStr(TagVideoTextCount),2);
@@ -6005,7 +8289,7 @@ begin
  AddItemEx(AResponse,'Tag Command Count:',IntToStr(TagCmdCount),2);
  AddItemEx(AResponse,'Command Size:',IntToStr(TagCommandSize),4);
  AddItemEx(AResponse,'Command Count:',IntToStr(TagCommandCount),4);
- AddItemEx(AResponse,'Command Address:','0x' + IntToHex(LongWord(TagCommandAddress),8),4);
+ AddItemEx(AResponse,'Command Address:','0x' + PtrToHex(TagCommandAddress),4);
  AddBlank(AResponse);
  {$ENDIF}
  
@@ -6094,7 +8378,7 @@ end;
 function TWebStatusPageTables.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
  Count:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
  Repeated:LongWord;
  FlagNames:TStringList;
  NextEntry:TPageTableEntry;
@@ -6126,7 +8410,7 @@ begin
  PageTableGetEntry(Address,NextEntry);
  while NextEntry.Size > 0 do
   begin
-   if (NextEntry.Size <> CurrentEntry.Size) or (NextEntry.Flags <> CurrentEntry.Flags) then
+   if (NextEntry.Size <> CurrentEntry.Size) or (NextEntry.Flags <> CurrentEntry.Flags){$IFDEF CPUARM} or (NextEntry.PhysicalRange <> CurrentEntry.PhysicalRange){$ENDIF CPUARM} then
     begin
      {Check Repeat}
      if (Address <> $00000000) and ((CurrentEntry.VirtualAddress + CurrentEntry.Size) < NextEntry.VirtualAddress) then
@@ -6143,7 +8427,7 @@ begin
      FlagNames:=FlagsToFlagNames(NextEntry.Flags);
      
      {Add Item}
-     AddItem4Column(AResponse,'0x' + IntToHex(NextEntry.VirtualAddress,8),'0x' + IntToHex(NextEntry.PhysicalAddress,8),'0x' + IntToHex(NextEntry.Size,8),FlagNames.Strings[0]);
+     AddItem4Column(AResponse,'0x' + AddrToHex(NextEntry.VirtualAddress),'0x' + {$IFDEF CPUARM}IntToHex(NextEntry.PhysicalRange,8) + ':' + {$ENDIF CPUARM}AddrToHex(NextEntry.PhysicalAddress),'0x' + IntToHex(NextEntry.Size,8),FlagNames.Strings[0]);
      
      {Check Flag Count}
      if FlagNames.Count > 1 then
@@ -6244,7 +8528,7 @@ begin
      Address:=VectorTableGetEntry(Number);
      
      {Add Entry}
-     AddItem(AResponse,IntToStr(Number),'0x' + IntToHex(Address,8));
+     AddItem(AResponse,IntToStr(Number),'0x' + AddrToHex(Address));
     end; 
     
    {Add Blank}
@@ -6264,7 +8548,11 @@ end;
 constructor TWebStatusIRQFIQSWI.Create(AMain:TWebStatusMain);
 begin
  {}
- FCaption:='IRQ / FIQ / SWI'; {Must be before create for register}
+ FCaption:='IRQ';
+ if FIQ_ENABLED then FCaption:=FCaption + ' / FIQ';
+ if IPI_ENABLED then FCaption:=FCaption + ' / IPI';
+ if SWI_ENABLED then FCaption:=FCaption + ' / SWI';
+ 
  inherited Create(AMain);
  Name:='/irqfiqswi';
  
@@ -6278,9 +8566,306 @@ var
  Start:LongWord;
  Count:LongWord;
  Number:LongWord;
+ Instance:LongWord;
  CPUCount:LongWord;
+ CPUString:String;
  InterruptEntry:TInterruptEntry;
  SystemCallEntry:TSystemCallEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Add Header (5 column)}
+ AddHeaderEx(AResponse,GetTitle,'',Self,5); 
+
+ {Get Count}
+ Count:=GetInterruptCount;
+ if Count > 0 then
+  begin
+   {Add Interrupt Entries}
+   AddBold5Column(AResponse,'Interrupts','','','','');
+   AddBlankEx(AResponse,5);
+   if IRQ_ENABLED then AddItem5Column(AResponse,'IRQ_ROUTING',CPUIDToString(IRQ_ROUTING),'','','');
+   if FIQ_ENABLED then AddItem5Column(AResponse,'FIQ_ROUTING',CPUIDToString(FIQ_ROUTING),'','','');
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Number','CPUID','Handler','Extended Handler','Shared Handler');
+   AddBlankEx(AResponse,5);
+   
+   {Get Start}
+   Start:=GetInterruptStart;
+   
+   {Add Entries}
+   for Number:=Start to (Start + Count) - 1 do
+    begin
+     Instance:=0;
+     {Get Entry}
+     while GetInterruptEntry(Number,Instance,InterruptEntry) = ERROR_SUCCESS do
+      begin
+       if Assigned(InterruptEntry.Handler) or Assigned(InterruptEntry.HandlerEx) or Assigned(InterruptEntry.SharedHandler) then
+        begin
+         {Get CPUID}
+         if InterruptEntry.CPUMask = CPUGetMask then
+          begin
+           CPUString:=CPUIDToString(CPU_ID_ALL) + ' (' + IntToStr(CPUMaskCount(InterruptEntry.CPUMask)) + ')';
+          end
+         else
+          begin
+           CPUString:=CPUIDToString(InterruptEntry.CPUID);
+          end;
+         
+         if Instance = 0 then
+          begin
+           {Add Entry}
+           AddItem5Column(AResponse,IntToStr(InterruptEntry.Number),CPUString,'0x' + PtrToHex(@InterruptEntry.Handler),'0x' + PtrToHex(@InterruptEntry.HandlerEx),'0x' + PtrToHex(@InterruptEntry.SharedHandler));
+          end
+         else
+          begin
+           {Add Instance}
+           AddItem5Column(AResponse,'',CPUString,'0x' + PtrToHex(@InterruptEntry.Handler),'0x' + PtrToHex(@InterruptEntry.HandlerEx),'0x' + PtrToHex(@InterruptEntry.SharedHandler));
+          end;
+        end; 
+      
+       Inc(Instance);
+      end;
+    end;
+
+   {Add Blank}
+   AddBlankEx(AResponse,5);
+  end; 
+ 
+ {Get Count}
+ Count:=GetLocalInterruptCount;
+ if Count > 0 then
+  begin
+   {Add Local Interrupt Entries}
+   AddBold5Column(AResponse,'Local Interrupts','','','','');
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Number','CPUID','Handler','Extended Handler','Shared Handler');
+   AddBlankEx(AResponse,5);
+   
+   {Get Start}
+   Start:=GetLocalInterruptStart;
+   
+   {Add Entries}
+   for Number:=Start to (Start + Count) - 1 do
+    begin
+     for CPUCount:=0 to CPUGetCount - 1 do
+      begin
+       Instance:=0;
+       {Get Entry}
+       while GetLocalInterruptEntry(CPUCount,Number,Instance,InterruptEntry) = ERROR_SUCCESS do
+        begin
+         if Assigned(InterruptEntry.Handler) or Assigned(InterruptEntry.HandlerEx) or Assigned(InterruptEntry.SharedHandler) then
+          begin
+           {Get CPUID}
+           if InterruptEntry.CPUMask = CPUGetMask then
+            begin
+             CPUString:=CPUIDToString(CPU_ID_ALL) + ' (' + IntToStr(CPUMaskCount(InterruptEntry.CPUMask)) + ')';
+            end
+           else
+            begin
+             CPUString:=CPUIDToString(InterruptEntry.CPUID);
+            end;
+           
+           if Instance = 0 then
+            begin
+             {Add Entry}
+             AddItem5Column(AResponse,IntToStr(InterruptEntry.Number),CPUString,'0x' + PtrToHex(@InterruptEntry.Handler),'0x' + PtrToHex(@InterruptEntry.HandlerEx),'0x' + PtrToHex(@InterruptEntry.SharedHandler));
+            end
+           else
+            begin
+             {Add Instance}
+             AddItem5Column(AResponse,'',CPUString,'0x' + PtrToHex(@InterruptEntry.Handler),'0x' + PtrToHex(@InterruptEntry.HandlerEx),'0x' + PtrToHex(@InterruptEntry.SharedHandler));
+            end; 
+          end; 
+        
+         Inc(Instance);
+        end;
+      end;  
+    end; 
+    
+   {Add Blank}
+   AddBlankEx(AResponse,5);
+  end; 
+ 
+ {Get Count}
+ Count:=GetSoftwareInterruptCount;
+ if Count > 0 then
+  begin
+   {Add Software Interrupt Entries}
+   AddBold5Column(AResponse,'Software Interrupts','','','','');
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Number','CPUID','Handler','Extended Handler','Shared Handler');
+   AddBlankEx(AResponse,5);
+   
+   {Get Start}
+   Start:=GetSoftwareInterruptStart;
+   
+   {Add Entries}
+   for Number:=Start to (Start + Count) - 1 do
+    begin
+     for CPUCount:=0 to CPUGetCount - 1 do
+      begin
+       Instance:=0;
+       {Get Entry}
+       while GetSoftwareInterruptEntry(CPUCount,Number,Instance,InterruptEntry) = ERROR_SUCCESS do
+        begin
+         if Assigned(InterruptEntry.Handler) or Assigned(InterruptEntry.HandlerEx) or Assigned(InterruptEntry.SharedHandler) then
+          begin
+           {Get CPUID}
+           if InterruptEntry.CPUMask = CPUGetMask then
+            begin
+             CPUString:=CPUIDToString(CPU_ID_ALL) + ' (' + IntToStr(CPUMaskCount(InterruptEntry.CPUMask)) + ')';
+            end
+           else
+            begin
+             CPUString:=CPUIDToString(InterruptEntry.CPUID);
+            end;
+           
+           if Instance = 0 then
+            begin
+             {Add Entry}
+             AddItem5Column(AResponse,IntToStr(InterruptEntry.Number),CPUString,'0x' + PtrToHex(@InterruptEntry.Handler),'0x' + PtrToHex(@InterruptEntry.HandlerEx),'0x' + PtrToHex(@InterruptEntry.SharedHandler));
+            end
+           else
+            begin
+             {Add Instance}
+             AddItem5Column(AResponse,'',CPUString,'0x' + PtrToHex(@InterruptEntry.Handler),'0x' + PtrToHex(@InterruptEntry.HandlerEx),'0x' + PtrToHex(@InterruptEntry.SharedHandler));
+            end; 
+          end; 
+        
+         Inc(Instance);
+        end;
+      end;  
+    end; 
+   
+   {Add Blank}
+   AddBlankEx(AResponse,5);
+  end; 
+ 
+ {Get Count}
+ Count:=GetSystemCallCount;
+ if Count > 0 then
+  begin
+   {Add System Call Entries}
+   AddBold5Column(AResponse,'System Calls','','','','');
+   AddBlankEx(AResponse,5);
+   AddBold5Column(AResponse,'Number','CPUID','Handler','Extended Handler','');
+   AddBlankEx(AResponse,5);
+
+   {Add Entries}
+   for Number:=0 to Count - 1 do
+    begin
+     {Get Entry}
+     SystemCallEntry:=GetSystemCallEntry(Number);
+     if Assigned(SystemCallEntry.Handler) or Assigned(SystemCallEntry.HandlerEx) then
+      begin
+       {Get CPUID}
+       if SystemCallEntry.CPUID = CPU_ID_ALL then
+        begin
+         CPUString:=CPUIDToString(CPU_ID_ALL) + ' (' + IntToStr(CPUMaskCount(CPUGetMask)) + ')';
+        end
+       else
+        begin
+         CPUString:=CPUIDToString(SystemCallEntry.CPUID);
+        end;
+       
+       {Add Entry}
+       AddItem5Column(AResponse,IntToStr(SystemCallEntry.Number),CPUString,'0x' + PtrToHex(@SystemCallEntry.Handler),'0x' + PtrToHex(@SystemCallEntry.HandlerEx),'');
+      end; 
+    end; 
+    
+   {Add Blank}
+   AddBlankEx(AResponse,5);
+  end; 
+ 
+ {$IF DEFINED(IRQ_STATISTICS) or DEFINED(FIQ_STATISTICS) or DEFINED(SWI_STATISTICS)}
+ {Add Interrupt Debug}
+ AddBold5Column(AResponse,'Interrupt Statistics','','','','');
+ AddBlankEx(AResponse,5);
+ AddBold5Column(AResponse,'Type','CPUID','Count','','');
+ AddBlankEx(AResponse,5);
+ {$IFDEF IRQ_STATISTICS}
+ for Count:=0 to CPUGetCount - 1 do
+  begin
+   if Count = CPU_ID_0 then
+    begin
+     AddItem5Column(AResponse,'IRQ',CPUIDToString(Count),IntToStr(DispatchInterruptCounter[Count]),'','');
+    end
+   else
+    begin
+     AddItem5Column(AResponse,'',CPUIDToString(Count),IntToStr(DispatchInterruptCounter[Count]),'','');
+    end;    
+  end; 
+ AddBlankEx(AResponse,5);
+ {$ENDIF}
+ {$IFDEF FIQ_STATISTICS}
+ for Count:=0 to CPUGetCount - 1 do
+  begin
+   if Count = CPU_ID_0 then
+    begin
+     AddItem5Column(AResponse,'FIQ',CPUIDToString(Count),IntToStr(DispatchFastInterruptCounter[Count]),'','');
+    end
+   else
+    begin
+     AddItem5Column(AResponse,'',CPUIDToString(Count),IntToStr(DispatchFastInterruptCounter[Count]),'','');
+    end;    
+  end; 
+ AddBlankEx(AResponse,5);
+ {$ENDIF}
+ {$IFDEF SWI_STATISTICS}
+ for Count:=0 to CPUGetCount - 1 do
+  begin
+   if Count = CPU_ID_0 then
+    begin
+     AddItem5Column(AResponse,'SWI',CPUIDToString(Count),IntToStr(DispatchSystemCallCounter[Count]),'','');
+    end
+   else
+    begin
+     AddItem5Column(AResponse,'',CPUIDToString(Count),IntToStr(DispatchSystemCallCounter[Count]),'','');
+    end;    
+  end; 
+ AddBlankEx(AResponse,5);
+ {$ENDIF}
+ {$ENDIF}
+ 
+ {Add Footer (5 column)}
+ AddFooterEx(AResponse,5); 
+ 
+ {Return Result}
+ Result:=True;
+end;
+ 
+{==============================================================================}
+{==============================================================================}
+{TWebStatusGPIO}
+constructor TWebStatusGPIO.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='GPIO'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/gpio';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusGPIO.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; 
+var
+ Count:LongWord;
+ GPIOCount:LongWord;
+ GPIODevice:PGPIODevice;
+ GPIOProperties:TGPIOProperties;
 begin
  {}
  Result:=False;
@@ -6297,100 +8882,67 @@ begin
  {Add Header (4 column)}
  AddHeaderEx(AResponse,GetTitle,'',Self,4); 
 
- {Get Count}
- Count:=GetInterruptCount;
- if Count > 0 then
+ {Add GPIO Pin Counts}
+ AddItem4Column(AResponse,'GPIO Pin Count:',IntToStr(GPIO_PIN_COUNT),'','');
+ AddItem4Column(AResponse,'Virtual GPIO Pin Count:',IntToStr(VIRTUAL_GPIO_PIN_COUNT),'','');
+ AddBlankEx(AResponse,4);
+
+ {Check Default Device} 
+ GPIODevice:=GPIODeviceGetDefault;
+ if GPIODevice <> nil then
   begin
-   {Add Interrupt Entries}
-   AddBold4Column(AResponse,'Interrupts','','','');
+   AddBold4Column(AResponse,GPIODevice.Device.DeviceName + ' (Default)','','','');
    AddBlankEx(AResponse,4);
-   AddBold4Column(AResponse,'Number','CPUID','Handler','Extended Handler');
+   AddBold4Column(AResponse,'Pin','Function','Pull','Value');
    AddBlankEx(AResponse,4);
-   
-   {Get Start}
-   Start:=GetInterruptStart;
-   
-   {Add Entries}
-   for Number:=Start to (Start + Count) - 1 do
+
+   {Get Default Device Properties} 
+   if GPIODeviceGetProperties(GPIODevice,@GPIOProperties) = ERROR_SUCCESS then
     begin
-     {Get Entry}
-     InterruptEntry:=GetInterruptEntry(Number);
-     if Assigned(InterruptEntry.Handler) or Assigned(InterruptEntry.HandlerEx) then
+     for Count:=GPIOProperties.PinMin to GPIOProperties.PinMax do
       begin
-       {Add Entry}
-       AddItem4Column(AResponse,IntToStr(InterruptEntry.Number),CPUIDToString(InterruptEntry.CPUID),'0x' + IntToHex(LongWord(@InterruptEntry.Handler),8),'0x' + IntToHex(LongWord(@InterruptEntry.HandlerEx),8));
-      end; 
+       AddItem4Column(AResponse,GPIOPinToString(Count),GPIOFunctionToString(GPIODeviceFunctionGet(GPIODevice,Count)),GPIOPullToString(GPIODevicePullGet(GPIODevice,Count)),GPIOLevelToString(GPIODeviceInputGet(GPIODevice,Count)));
+      end;
     end;
-
-   {Add Blank}
-   AddBlankEx(AResponse,4);
-  end; 
- 
- {Get Count}
- Count:=GetLocalInterruptCount;
- if Count > 0 then
+   
+   AddBlankEx(AResponse,4); 
+  end;
+  
+ {Check Device Count}
+ if GPIOGetCount > 1 then
   begin
-   {Add Local Interrupt Entries}
-   AddBold4Column(AResponse,'Local Interrupts','','','');
-   AddBlankEx(AResponse,4);
-   AddBold4Column(AResponse,'Number','CPUID','Handler','Extended Handler');
-   AddBlankEx(AResponse,4);
-   
-   {Get Start}
-   Start:=GetLocalInterruptStart;
-   
-   {Add Entries}
-   for Number:=Start to (Start + Count) - 1 do
+   for GPIOCount:=1 to GPIOGetCount - 1 do
     begin
-     for CPUCount:=0 to CPUGetCount - 1 do
+     {Get GPIO Device}
+     GPIODevice:=GPIODeviceFind(GPIOCount);
+     if GPIODevice <> nil then
       begin
-       {Get Entry}
-       InterruptEntry:=GetLocalInterruptEntry(CPUCount,Number);
-       if Assigned(InterruptEntry.Handler) or Assigned(InterruptEntry.HandlerEx) then
+       AddBold4Column(AResponse,GPIODevice.Device.DeviceName,'','','');
+       AddBlankEx(AResponse,4);
+       AddBold4Column(AResponse,'Pin','Function','Pull','Value');
+       AddBlankEx(AResponse,4);
+       
+       {Get GPIO Device Properties} 
+       if GPIODeviceGetProperties(GPIODevice,@GPIOProperties) = ERROR_SUCCESS then
         begin
-         {Add Entry}
-         AddItem4Column(AResponse,IntToStr(InterruptEntry.Number),CPUIDToString(InterruptEntry.CPUID),'0x' + IntToHex(LongWord(@InterruptEntry.Handler),8),'0x' + IntToHex(LongWord(@InterruptEntry.HandlerEx),8));
+         for Count:=GPIOProperties.PinMin to GPIOProperties.PinMax do
+          begin
+           AddItem4Column(AResponse,GPIOPinToString(Count),GPIOFunctionToString(GPIODeviceFunctionGet(GPIODevice,Count)),GPIOPullToString(GPIODevicePullGet(GPIODevice,Count)),GPIOLevelToString(GPIODeviceInputGet(GPIODevice,Count)));
+          end;
         end; 
-      end;  
-    end; 
-    
-   {Add Blank}
-   AddBlankEx(AResponse,4);
-  end; 
- 
- {Get Count}
- Count:=GetSystemCallCount;
- if Count > 0 then
-  begin
-   {Add System Call Entries}
-   AddBold4Column(AResponse,'System Calls','','','');
-   AddBlankEx(AResponse,4);
-   AddBold4Column(AResponse,'Number','CPUID','Handler','Extended Handler');
-   AddBlankEx(AResponse,4);
-
-   {Add Entries}
-   for Number:=0 to Count - 1 do
-    begin
-     {Get Entry}
-     SystemCallEntry:=GetSystemCallEntry(Number);
-     if Assigned(SystemCallEntry.Handler) or Assigned(SystemCallEntry.HandlerEx) then
-      begin
-       {Add Entry}
-       AddItem4Column(AResponse,IntToStr(SystemCallEntry.Number),CPUIDToString(SystemCallEntry.CPUID),'0x' + IntToHex(LongWord(@SystemCallEntry.Handler),8),'0x' + IntToHex(LongWord(@SystemCallEntry.HandlerEx),8));
-      end; 
-    end; 
-    
-   {Add Blank}
-   AddBlankEx(AResponse,4);
-  end; 
- 
+       
+       AddBlankEx(AResponse,4);  
+      end;
+    end;  
+  end;
+  
  {Add Footer (4 column)}
  AddFooterEx(AResponse,4); 
  
  {Return Result}
  Result:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TWebStatusConfiguration}
@@ -6426,39 +8978,56 @@ begin
  {Add Kernel Image Sections}
  AddBold(AResponse,'Kernel Image Sections','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'_text_start:','0x' + IntToHex(LongWord(@_text_start),8),2);
- AddItemEx(AResponse,'_etext:','0x' + IntToHex(LongWord(@_etext),8),2);
- AddItemEx(AResponse,'_data:','0x' + IntToHex(LongWord(@_data),8),2);
- AddItemEx(AResponse,'_edata:','0x' + IntToHex(LongWord(@_edata),8),2);
- AddItemEx(AResponse,'_bss_start:','0x' + IntToHex(LongWord(@_bss_start),8),2);
- AddItemEx(AResponse,'_bss_end:','0x' + IntToHex(LongWord(@_bss_end),8),2);
+ AddItemEx(AResponse,'_text_start:','0x' + PtrToHex(@_text_start),2);
+ AddItemEx(AResponse,'_etext:','0x' + PtrToHex(@_etext),2);
+ AddItemEx(AResponse,'_data:','0x' + PtrToHex(@_data),2);
+ AddItemEx(AResponse,'_edata:','0x' + PtrToHex(@_edata),2);
+ AddItemEx(AResponse,'_bss_start:','0x' + PtrToHex(@_bss_start),2);
+ AddItemEx(AResponse,'_bss_end:','0x' + PtrToHex(@_bss_end),2);
  AddBlank(AResponse);
 
  {Add RTL Initial Heap Allocation} 
  AddBold(AResponse,'RTL Initial Heap Allocation','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'RtlHeapAddr:','0x' + IntToHex(LongWord(@RtlHeapAddr),8),2);
+ AddItemEx(AResponse,'RtlHeapAddr:','0x' + PtrToHex(@RtlHeapAddr),2);
  AddItemEx(AResponse,'RtlHeapSize:','0x' + IntToHex(RtlHeapSize,8),2);
  AddBlank(AResponse);
  
  {Add RTL Error Handling}
  AddBold(AResponse,'RTL Error Handling','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'RtlErrorBase:','0x' + IntToHex(LongWord(RtlErrorBase),8),2);
+ AddItemEx(AResponse,'RtlErrorBase:','0x' + PtrToHex(RtlErrorBase),2);
  AddBlank(AResponse);
  
  {Add RTL Initialization}
  AddBold(AResponse,'RTL Initialization','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'RtlInitFinalTable:','0x' + IntToHex(LongWord(@RtlInitFinalTable),8),2);
+ AddItemEx(AResponse,'RtlInitFinalTable:','0x' + PtrToHex(@RtlInitFinalTable),2);
+ AddBlank(AResponse);
+ 
+ {Add Interrupt and Exception Handling}
+ AddBold(AResponse,'Interrupt and Exception Handling','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'IRQ_ENABLED:',BooleanToString(IRQ_ENABLED),2);
+ AddItemEx(AResponse,'FIQ_ENABLED:',BooleanToString(FIQ_ENABLED),2);
+ AddItemEx(AResponse,'IPI_ENABLED:',BooleanToString(IPI_ENABLED),2);
+ AddItemEx(AResponse,'SWI_ENABLED:',BooleanToString(SWI_ENABLED),2);
+ AddItemEx(AResponse,'ABORT_ENABLED:',BooleanToString(ABORT_ENABLED),2);
+ AddItemEx(AResponse,'UNDEFINED_ENABLED:',BooleanToString(UNDEFINED_ENABLED),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'IRQ_STACK_ENABLED:',BooleanToString(IRQ_STACK_ENABLED),2);
+ AddItemEx(AResponse,'FIQ_STACK_ENABLED:',BooleanToString(FIQ_STACK_ENABLED),2);
+ AddItemEx(AResponse,'SWI_STACK_ENABLED:',BooleanToString(SWI_STACK_ENABLED),2);
+ AddItemEx(AResponse,'ABORT_STACK_ENABLED:',BooleanToString(ABORT_STACK_ENABLED),2);
+ AddItemEx(AResponse,'UNDEFINED_STACK_ENABLED:',BooleanToString(UNDEFINED_STACK_ENABLED),2);
  AddBlank(AResponse);
  
  {Add Memory and Peripheral Mapping}
  AddBold(AResponse,'Memory and Peripheral Mapping','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'IO_BASE:','0x' + IntToHex(IO_BASE,8),2);
- AddItemEx(AResponse,'IO_ALIAS:','0x' + IntToHex(IO_ALIAS,8),2);
- AddItemEx(AResponse,'BUS_ALIAS:','0x' + IntToHex(BUS_ALIAS,8),2);
+ AddItemEx(AResponse,'IO_BASE:','0x' + AddrToHex(IO_BASE),2);
+ AddItemEx(AResponse,'IO_ALIAS:','0x' + AddrToHex(IO_ALIAS),2);
+ AddItemEx(AResponse,'BUS_ALIAS:','0x' + AddrToHex(BUS_ALIAS),2);
  AddBlank(AResponse);
 
  {Add Secure Boot}
@@ -6470,13 +9039,13 @@ begin
  {Add Startup Handler Address}
  AddBold(AResponse,'Startup Handler Address','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'STARTUP_ADDRESS:','0x' + IntToHex(STARTUP_ADDRESS,8),2);
+ AddItemEx(AResponse,'STARTUP_ADDRESS:','0x' + AddrToHex(STARTUP_ADDRESS),2);
  AddBlank(AResponse);
 
  {Add Memory Base Mapping}
  AddBold(AResponse,'Memory Base Mapping','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'MEMORY_BASE:','0x' + IntToHex(MEMORY_BASE,8),2);
+ AddItemEx(AResponse,'MEMORY_BASE:','0x' + AddrToHex(MEMORY_BASE),2);
  AddItemEx(AResponse,'MEMORY_SIZE:','0x' + IntToHex(MEMORY_SIZE,8),2);
  AddBlank(AResponse);
 
@@ -6497,7 +9066,124 @@ begin
  AddBlank(AResponse);
  //To Do
  AddBlank(AResponse);
+ 
+ {Add DMA configuration}
+ AddBold(AResponse,'DMA configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'DMA_ALIGNMENT:',IntToStr(DMA_ALIGNMENT),2);
+ AddItemEx(AResponse,'DMA_MULTIPLIER:',IntToStr(DMA_MULTIPLIER),2);
+ AddItemEx(AResponse,'DMA_SHARED_MEMORY:',BooleanToString(DMA_SHARED_MEMORY),2);
+ AddItemEx(AResponse,'DMA_NOCACHE_MEMORY:',BooleanToString(DMA_NOCACHE_MEMORY),2);
+ AddItemEx(AResponse,'DMA_BUS_ADDRESSES:',BooleanToString(DMA_BUS_ADDRESSES),2);
+ AddItemEx(AResponse,'DMA_CACHE_COHERENT:',BooleanToString(DMA_CACHE_COHERENT),2);
+ AddBlank(AResponse);
+ 
+ {Add USB configuration}
+ AddBold(AResponse,'USB configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'USB_AUTOSTART:',BooleanToString(USB_AUTOSTART),2);
+ AddItemEx(AResponse,'USB_ASYNCSTART:',BooleanToString(USB_ASYNCSTART),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'USB_DMA_ALIGNMENT:',IntToStr(USB_DMA_ALIGNMENT),2);
+ AddItemEx(AResponse,'USB_DMA_MULTIPLIER:',IntToStr(USB_DMA_MULTIPLIER),2);
+ AddItemEx(AResponse,'USB_DMA_SHARED_MEMORY:',BooleanToString(USB_DMA_SHARED_MEMORY),2);
+ AddItemEx(AResponse,'USB_DMA_NOCACHE_MEMORY:',BooleanToString(USB_DMA_NOCACHE_MEMORY),2);
+ AddItemEx(AResponse,'USB_DMA_BUS_ADDRESSES:',BooleanToString(USB_DMA_BUS_ADDRESSES),2);
+ AddItemEx(AResponse,'USB_DMA_CACHE_COHERENT:',BooleanToString(USB_DMA_CACHE_COHERENT),2);
+ AddBlank(AResponse);
 
+ {Add MMC configuration}
+ AddBold(AResponse,'MMC configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'MMC_AUTOSTART:',BooleanToString(MMC_AUTOSTART),2);
+ AddItemEx(AResponse,'MMC_ASYNCSTART:',BooleanToString(MMC_ASYNCSTART),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'MMC_DMA_ALIGNMENT:',IntToStr(MMC_DMA_ALIGNMENT),2);
+ AddItemEx(AResponse,'MMC_DMA_MULTIPLIER:',IntToStr(MMC_DMA_MULTIPLIER),2);
+ AddItemEx(AResponse,'MMC_DMA_SHARED_MEMORY:',BooleanToString(MMC_DMA_SHARED_MEMORY),2);
+ AddItemEx(AResponse,'MMC_DMA_NOCACHE_MEMORY:',BooleanToString(MMC_DMA_NOCACHE_MEMORY),2);
+ AddItemEx(AResponse,'MMC_DMA_BUS_ADDRESSES:',BooleanToString(MMC_DMA_BUS_ADDRESSES),2);
+ AddItemEx(AResponse,'MMC_DMA_CACHE_COHERENT:',BooleanToString(MMC_DMA_CACHE_COHERENT),2);
+ AddBlank(AResponse);
+ 
+ {Add DWCOTG configuration}
+ AddBold(AResponse,'DWCOTG configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'DWCOTG_IRQ:',IntToStr(DWCOTG_IRQ),2);
+ AddItemEx(AResponse,'DWCOTG_POWER_ID:',IntToStr(DWCOTG_POWER_ID),2);
+ AddItemEx(AResponse,'DWCOTG_REGS_BASE:','0x' + AddrToHex(DWCOTG_REGS_BASE),2);
+ AddItemEx(AResponse,'DWCOTG_FIQ_ENABLED:',BooleanToString(DWCOTG_FIQ_ENABLED),2);
+ AddItemEx(AResponse,'DWCOTG_DMA_ALIGNMENT:',IntToStr(DWCOTG_DMA_ALIGNMENT),2);
+ AddItemEx(AResponse,'DWCOTG_DMA_MULTIPLIER:',IntToStr(DWCOTG_DMA_MULTIPLIER),2);
+ AddItemEx(AResponse,'DWCOTG_DMA_SHARED_MEMORY:',BooleanToString(DWCOTG_DMA_SHARED_MEMORY),2);
+ AddItemEx(AResponse,'DWCOTG_DMA_NOCACHE_MEMORY:',BooleanToString(DWCOTG_DMA_NOCACHE_MEMORY),2);
+ AddItemEx(AResponse,'DWCOTG_DMA_BUS_ADDRESSES:',BooleanToString(DWCOTG_DMA_BUS_ADDRESSES),2);
+ AddItemEx(AResponse,'DWCOTG_DMA_CACHE_COHERENT:',BooleanToString(DWCOTG_DMA_CACHE_COHERENT),2);
+ AddItemEx(AResponse,'DWCOTG_HOST_FRAME_INTERVAL:',BooleanToString(DWCOTG_HOST_FRAME_INTERVAL),2);
+ AddBlank(AResponse);
+
+ case MachineGetType of
+  MACHINE_TYPE_BCM2708:begin
+    {Add BCM2708 configuration}
+    AddBold(AResponse,'BCM2708 configuration','');
+    AddBlank(AResponse);
+    AddItemEx(AResponse,'BCM2708DMA_ALIGNMENT:',IntToStr(BCM2708DMA_ALIGNMENT),2);
+    AddItemEx(AResponse,'BCM2708DMA_MULTIPLIER:',IntToStr(BCM2708DMA_MULTIPLIER),2);
+    AddItemEx(AResponse,'BCM2708DMA_SHARED_MEMORY:',BooleanToString(BCM2708DMA_SHARED_MEMORY),2);
+    AddItemEx(AResponse,'BCM2708DMA_NOCACHE_MEMORY:',BooleanToString(BCM2708DMA_NOCACHE_MEMORY),2);
+    AddItemEx(AResponse,'BCM2708DMA_BUS_ADDRESSES:',BooleanToString(BCM2708DMA_BUS_ADDRESSES),2);
+    AddItemEx(AResponse,'BCM2708DMA_CACHE_COHERENT:',BooleanToString(BCM2708DMA_CACHE_COHERENT),2);
+    AddBlank(AResponse);
+    //To Do
+   end; 
+  MACHINE_TYPE_BCM2709:begin
+    {Add BCM2709 configuration}
+    AddBold(AResponse,'BCM2709 configuration','');
+    AddBlank(AResponse);
+    AddItemEx(AResponse,'BCM2709DMA_ALIGNMENT:',IntToStr(BCM2709DMA_ALIGNMENT),2);
+    AddItemEx(AResponse,'BCM2709DMA_MULTIPLIER:',IntToStr(BCM2709DMA_MULTIPLIER),2);
+    AddItemEx(AResponse,'BCM2709DMA_SHARED_MEMORY:',BooleanToString(BCM2709DMA_SHARED_MEMORY),2);
+    AddItemEx(AResponse,'BCM2709DMA_NOCACHE_MEMORY:',BooleanToString(BCM2709DMA_NOCACHE_MEMORY),2);
+    AddItemEx(AResponse,'BCM2709DMA_BUS_ADDRESSES:',BooleanToString(BCM2709DMA_BUS_ADDRESSES),2);
+    AddItemEx(AResponse,'BCM2709DMA_CACHE_COHERENT:',BooleanToString(BCM2709DMA_CACHE_COHERENT),2);
+    AddBlank(AResponse);
+    //To Do
+   end;
+  MACHINE_TYPE_BCM2710:begin
+    //To Do //What if this is a Pi3 running Pi2 code ?
+    {Add BCM2710 configuration}
+    AddBold(AResponse,'BCM2710 configuration','');
+    AddBlank(AResponse);
+    AddItemEx(AResponse,'BCM2710DMA_ALIGNMENT:',IntToStr(BCM2710DMA_ALIGNMENT),2);
+    AddItemEx(AResponse,'BCM2710DMA_MULTIPLIER:',IntToStr(BCM2710DMA_MULTIPLIER),2);
+    AddItemEx(AResponse,'BCM2710DMA_SHARED_MEMORY:',BooleanToString(BCM2710DMA_SHARED_MEMORY),2);
+    AddItemEx(AResponse,'BCM2710DMA_NOCACHE_MEMORY:',BooleanToString(BCM2710DMA_NOCACHE_MEMORY),2);
+    AddItemEx(AResponse,'BCM2710DMA_BUS_ADDRESSES:',BooleanToString(BCM2710DMA_BUS_ADDRESSES),2);
+    AddItemEx(AResponse,'BCM2710DMA_CACHE_COHERENT:',BooleanToString(BCM2710DMA_CACHE_COHERENT),2);
+    AddBlank(AResponse);
+    //To Do
+   end; 
+  MACHINE_TYPE_BCM2711:begin
+    {Add BCM2711 configuration}
+    AddBold(AResponse,'BCM2711 configuration','');
+    AddBlank(AResponse);
+    AddItemEx(AResponse,'BCM2711DMA_ALIGNMENT:',IntToStr(BCM2711DMA_ALIGNMENT),2);
+    AddItemEx(AResponse,'BCM2711DMA_MULTIPLIER:',IntToStr(BCM2711DMA_MULTIPLIER),2);
+    AddItemEx(AResponse,'BCM2711DMA_SHARED_MEMORY:',BooleanToString(BCM2711DMA_SHARED_MEMORY),2);
+    AddItemEx(AResponse,'BCM2711DMA_NOCACHE_MEMORY:',BooleanToString(BCM2711DMA_NOCACHE_MEMORY),2);
+    AddItemEx(AResponse,'BCM2711DMA_BUS_ADDRESSES:',BooleanToString(BCM2711DMA_BUS_ADDRESSES),2);
+    AddItemEx(AResponse,'BCM2711DMA_CACHE_COHERENT:',BooleanToString(BCM2711DMA_CACHE_COHERENT),2);
+    AddBlank(AResponse);
+    //To Do
+   end; 
+ end;
+ 
+ {Add }
+ AddBold(AResponse,'','');
+ AddBlank(AResponse);
+ //To Do
+ AddBlank(AResponse);
+ 
  {Add Country, CodePage, Locale and Language}
  AddBold(AResponse,'Country, CodePage, Locale and Language','');
  AddBlank(AResponse);
@@ -6565,14 +9251,14 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'SpinDeadlockCounter:',IntToStr(SpinDeadlockCounter),2);
  AddItemEx(AResponse,'SpinRecursionCounter:',IntToStr(SpinRecursionCounter),2);
- AddItemEx(AResponse,'SpinRecursionThread:','0x' + IntToHex(LongWord(SpinRecursionThread),8),2);
+ AddItemEx(AResponse,'SpinRecursionThread:','0x' + HandleToHex(SpinRecursionThread),2);
  AddItemEx(AResponse,'SpinIRQThreadCounter:',IntToStr(SpinIRQThreadCounter),2);
  AddItemEx(AResponse,'SpinFIQThreadCounter:',IntToStr(SpinFIQThreadCounter),2);
  AddItemEx(AResponse,'SpinSWIThreadCounter:',IntToStr(SpinSWIThreadCounter),2);
  AddItemEx(AResponse,'SpinIdleThreadCounter:',IntToStr(SpinIdleThreadCounter),2);
  AddItemEx(AResponse,'MutexDeadlockCounter:',IntToStr(MutexDeadlockCounter),2);
  AddItemEx(AResponse,'MutexRecursionCounter:',IntToStr(MutexRecursionCounter),2);
- AddItemEx(AResponse,'MutexRecursionThread:','0x' + IntToHex(LongWord(MutexRecursionThread),8),2);
+ AddItemEx(AResponse,'MutexRecursionThread:','0x' + HandleToHex(MutexRecursionThread),2);
  AddItemEx(AResponse,'MutexIRQThreadCounter:',IntToStr(MutexIRQThreadCounter),2);
  AddItemEx(AResponse,'MutexFIQThreadCounter:',IntToStr(MutexFIQThreadCounter),2);
  AddItemEx(AResponse,'MutexSWIThreadCounter:',IntToStr(MutexSWIThreadCounter),2);
@@ -6901,12 +9587,12 @@ begin
    if Count = CPU_ID_0 then
     begin
      Thread:=SchedulerSwitchThread[Count];
-     AddItemEx(AResponse,'SchedulerSwitchThread:',CPUIDToString(Count) + ': ' + '0x' + IntToHex(Thread,8) + ' (' + ThreadGetName(Thread) + ')',2);
+     AddItemEx(AResponse,'SchedulerSwitchThread:',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(Thread) + ' (' + ThreadGetName(Thread) + ')',2);
     end
    else
     begin
      Thread:=SchedulerSwitchThread[Count];
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(Thread,8) + ' (' + ThreadGetName(Thread) + ')',2);
+     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(Thread) + ' (' + ThreadGetName(Thread) + ')',2);
     end;    
   end; 
  AddBlank(AResponse);
@@ -6964,12 +9650,12 @@ begin
    if Count = CPU_ID_0 then
     begin
      Thread:=SchedulerRescheduleThread[Count];
-     AddItemEx(AResponse,'SchedulerRescheduleThread:',CPUIDToString(Count) + ': ' + '0x' + IntToHex(Thread,8) + ' (' + ThreadGetName(Thread) + ')',2);
+     AddItemEx(AResponse,'SchedulerRescheduleThread:',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(Thread) + ' (' + ThreadGetName(Thread) + ')',2);
     end
    else
     begin
      Thread:=SchedulerRescheduleThread[Count];
-     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + IntToHex(Thread,8) + ' (' + ThreadGetName(Thread) + ')',2);
+     AddItemEx(AResponse,'',CPUIDToString(Count) + ': ' + '0x' + HandleToHex(Thread) + ' (' + ThreadGetName(Thread) + ')',2);
     end;    
   end; 
  AddBlank(AResponse);
@@ -7076,7 +9762,7 @@ begin
  AddItemEx(AResponse,'HardwareExceptionCounter:',IntToStr(HardwareExceptionCounter),2);
  AddItemEx(AResponse,'UnhandledExceptionCounter:',IntToStr(UnhandledExceptionCounter),2);
  AddBlank(AResponse);
- AddItemEx(AResponse,'HardwareExceptionAddress:','0x' + IntToHex(HardwareExceptionAddress,8),2);
+ AddItemEx(AResponse,'HardwareExceptionAddress:','0x' + AddrToHex(HardwareExceptionAddress),2);
  AddBlank(AResponse);
  {$ENDIF}
  
@@ -7270,6 +9956,10 @@ begin
  WebStatusMouse:=TWebStatusMouse.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusMouse);
 
+ {Register Touch Page}
+ WebStatusTouch:=TWebStatusTouch.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusTouch);
+
  {Register Framebuffer Page}
  WebStatusFramebuffer:=TWebStatusFramebuffer.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusFramebuffer);
@@ -7289,6 +9979,10 @@ begin
  {Register IRQFIQSWI Page}
  WebStatusIRQFIQSWI:=TWebStatusIRQFIQSWI.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusIRQFIQSWI);
+
+ {Register GPIO Page}
+ WebStatusGPIO:=TWebStatusGPIO.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusGPIO);
  
  {Register Configuration Page}
  WebStatusConfiguration:=TWebStatusConfiguration.Create(WebStatusMain);
@@ -7373,6 +10067,10 @@ begin
  {Deregister Mouse Page}
  AListener.DeregisterDocument(AHost,WebStatusMouse);
  WebStatusMouse.Free;
+
+ {Deregister Touch Page}
+ AListener.DeregisterDocument(AHost,WebStatusTouch);
+ WebStatusTouch.Free;
  
  {Deregister Keyboard Page}
  AListener.DeregisterDocument(AHost,WebStatusKeyboard);
@@ -7628,7 +10326,7 @@ begin
  if Response = nil then Exit;
  
  {Add Host}
- Document.AddItem4Column(Response,IntToStr(Host.HostId),DeviceGetName(@Host.Device),USBHostStateToString(Host.HostState),USBHostTypeToString(Host.Device.DeviceType));
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Host.HostId),Document.Name + '?action=usbhost&id=' + IntToStr(Host.HostId)),DeviceGetName(@Host.Device),USBHostStateToString(Host.HostState),USBHostTypeToString(Host.Device.DeviceType));
  
  Result:=ERROR_SUCCESS;
 end;
@@ -7661,6 +10359,101 @@ begin
  Document.AddItem4Column(Response,IntToStr(Driver.Driver.DriverId),DriverGetName(@Driver.Driver),DriverStateToString(Driver.Driver.DriverState),'');
  
  Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+procedure WebStatusUSBLogOutput(const AText:String;Data:Pointer); 
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ {Check Data}
+ if Data = nil then Exit;
+
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+
+ {Add Output}
+ Document.AddItemSpan(Response,'<pre>' + AText + '</pre>',2,False);
+end;
+
+{==============================================================================}
+
+function WebStatusUSBLogDeviceCallback(Device:PUSBDevice;Data:Pointer):LongWord;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ WebStatusUSBLogOutput('[USB Device Id: ' + IntToStr(Device.USBId) + ' Address: ' + IntToStr(Device.Address) + ']',Data);
+ 
+ USBLogDeviceDescriptor(Device,Device.Descriptor,WebStatusUSBLogOutput,Data);
+ USBLogDeviceConfiguration(Device,WebStatusUSBLogOutput,Data);
+
+ WebStatusUSBLogOutput('',Data);
+ 
+ Result:=USB_STATUS_SUCCESS;
+end;
+
+{==============================================================================}
+
+function WebStatusUSBLogTreeCallback(Device:PUSBDevice;Data:Pointer):LongWord;
+const
+ WEBSTATUS_USB_TREE_SPACES_PER_LEVEL = 2;
+ WEBSTATUS_USB_TREE_LINES_PER_PORT = 2;
+ 
+var
+ Count:Integer;
+ WorkBuffer:String;
+ LinesCount:Integer;
+ SpacesCount:Integer;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Host}
+ if Device.Host = PWebStatusData(Data).Data then
+  begin
+   {Output Diagram}
+   WorkBuffer:='';
+   if Device.Depth <> 0 then
+    begin
+     SpacesCount:=(Device.Depth - 1) * (WEBSTATUS_USB_TREE_SPACES_PER_LEVEL + WEBSTATUS_USB_TREE_SPACES_PER_LEVEL - 1);
+     
+     if WEBSTATUS_USB_TREE_LINES_PER_PORT > 1 then
+      begin
+       for LinesCount:=0 to WEBSTATUS_USB_TREE_LINES_PER_PORT - 2 do
+        begin
+         WorkBuffer:=StringOfChar(' ',SpacesCount) + '|';
+         
+         WebStatusUSBLogOutput(WorkBuffer,Data);
+        end;
+      end;  
+     
+     WorkBuffer:=StringOfChar(' ',SpacesCount) + '|' + StringOfChar('_',WEBSTATUS_USB_TREE_SPACES_PER_LEVEL);
+    end;
+  
+   {Output Device}
+   WorkBuffer:=WorkBuffer + 'Id: ' + IntToStr(Device.USBId) + ' / Addr: ' + IntToStr(Device.Address) + ' [' + USBDeviceToString(Device) + ']';
+   WebStatusUSBLogOutput(WorkBuffer,Data);
+  end;
+  
+ Result:=USB_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
@@ -7815,6 +10608,36 @@ end;
 
 {==============================================================================}
 
+function WebStatusTouchEnumerate(Touch:PTouchDevice;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Touch}
+ if Touch = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Add Touch}
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Touch.TouchId),Document.Name + '?action=touch&id=' + IntToStr(Touch.TouchId)),DeviceGetName(@Touch.Device),TouchDeviceStateToString(Touch.TouchState),TouchDeviceTypeToString(Touch.Device.DeviceType));
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
 function WebStatusKeyboardEnumerate(Keyboard:PKeyboardDevice;Data:Pointer):LongWord;
 var
  Document:TWebStatusSub;
@@ -7843,6 +10666,95 @@ begin
  Result:=ERROR_SUCCESS;
 end;
  
+{==============================================================================}
+ 
+function WebStatusConsoleWindowEnumerate(Console:PConsoleDevice;Handle:TWindowHandle;Data:Pointer):LongWord;
+var
+ Window:PConsoleWindow;
+ FlagNames:TStringList;
+ Document:TWebStatusDevices;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Console}
+ if Console = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=TWebStatusDevices(PWebStatusData(Data).Document);
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Get Window}
+ Window:=ConsoleWindowCheck(Console,PConsoleWindow(Handle));
+ if Window <> nil then
+  begin
+   {Lock Window}
+   if MutexLock(Window.Lock) = ERROR_SUCCESS then
+    begin
+     try
+      {Get Flags Names}
+      FlagNames:=Document.ConsoleWindowFlagsToFlagNames(Window.WindowFlags);
+      
+      Document.AddItem(Response,'Handle:',HandleToHex(Handle));
+      Document.AddItem(Response,'Position:',ConsolePositionToString(Window.Position));
+      Document.AddItem(Response,'State:',ConsoleWindowStateToString(Window.WindowState));
+      Document.AddItem(Response,'Mode:',ConsoleWindowModeToString(Window.WindowMode));
+      Document.AddBlank(Response);
+      Document.AddItem(Response,'X1:',IntToStr(Window.X1));
+      Document.AddItem(Response,'Y1:',IntToStr(Window.Y1));
+      Document.AddItem(Response,'X2:',IntToStr(Window.X2));
+      Document.AddItem(Response,'Y2:',IntToStr(Window.Y2));
+      Document.AddItem(Response,'Width:',IntToStr(Window.Width));
+      Document.AddItem(Response,'Height:',IntToStr(Window.Height));
+      Document.AddItem(Response,'Offset X:',IntToStr(Window.OffsetX));
+      Document.AddItem(Response,'Offset Y:',IntToStr(Window.OffsetY));
+      Document.AddItem(Response,'Min X:',IntToStr(Window.MinX));
+      Document.AddItem(Response,'Min Y:',IntToStr(Window.MinY));
+      Document.AddItem(Response,'Max X:',IntToStr(Window.MaxX));
+      Document.AddItem(Response,'Max Y:',IntToStr(Window.MaxY));
+      Document.AddItem(Response,'X:',IntToStr(Window.X));
+      Document.AddItem(Response,'Y:',IntToStr(Window.Y));
+      Document.AddItem(Response,'Cols:',IntToStr(Window.Cols));
+      Document.AddItem(Response,'Rows:',IntToStr(Window.Rows));
+      Document.AddBlank(Response);
+      Document.AddItem(Response,'Format:',ColorFormatToString(Window.Format));
+      Document.AddItem(Response,'Forecolor:','0x' + IntToHex(Window.Forecolor,8));
+      Document.AddItem(Response,'Backcolor:','0x' + IntToHex(Window.Backcolor,8));
+      Document.AddItem(Response,'Borderwidth:',IntToStr(Window.Borderwidth));
+      Document.AddItem(Response,'Bordercolor:','0x' + IntToHex(Window.Bordercolor,8));
+      Document.AddBlank(Response);
+      Document.AddItem(Response,'Font Width:',IntToStr(Window.FontWidth));
+      Document.AddItem(Response,'Font Height:',IntToStr(Window.FontHeight));
+      Document.AddBlank(Response);
+      Document.AddItem(Response,'Cursor X:',IntToStr(Window.CursorX));
+      Document.AddItem(Response,'Cursor Y:',IntToStr(Window.CursorY));
+      Document.AddBlank(Response);
+      Document.AddItem(Response,'Caret X:',IntToStr(Window.CaretX));
+      Document.AddItem(Response,'Caret Y:',IntToStr(Window.CaretY));
+      Document.AddBlank(Response);
+      Document.AddItem(Response,'History Count:',IntToStr(Window.HistoryCount));
+      Document.AddBlank(Response);
+      Document.AddBlank(Response);
+    
+      FlagNames.Free;
+     finally
+      {Unlock Window}
+      MutexUnlock(Window.Lock);
+     end; 
+    end; 
+  end;
+
+ Result:=ERROR_SUCCESS;
+end; 
+
 {==============================================================================}
 {==============================================================================}
 

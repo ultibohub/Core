@@ -149,7 +149,7 @@ function ILI9340TFTFramebufferGetDefaults(Framebuffer:PTFTFramebuffer;Properties
 
 function ILI9340TFTFramebufferSetWriteAddress(Framebuffer:PTFTFramebuffer;X1,Y1,X2,Y2:LongWord):LongWord;
 
-function ILI9340TFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address,Size:LongWord):LongWord;
+function ILI9340TFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address:PtrUInt;Size:LongWord):LongWord;
 
 {==============================================================================}
 {ILI9340 Helper Functions}
@@ -755,7 +755,7 @@ end;
   
 {==============================================================================}
   
-function ILI9340TFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address,Size:LongWord):LongWord;
+function ILI9340TFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address:PtrUInt;Size:LongWord):LongWord;
 {Implementation of TFTFramebufferWriteMemory API for ILI9340}
 {Note: Not intended to be called directly by applications}
 var
@@ -770,7 +770,7 @@ begin
  if Framebuffer = nil then Exit;
 
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Write Memory (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Write Memory (Address=' + AddrToHex(Address) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
 
  {Check Size}

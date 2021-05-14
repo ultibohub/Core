@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for QEMU VersatilePB.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -59,14 +59,14 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,VersatilePB,Platform,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,VersatilePB,Platform,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
 
 {==============================================================================}
-const
+{const}
  {QEMUVPB specific constants}
  
  {Address of StartupHandler on Reset}
- QEMUVPB_STARTUP_ADDRESS = $00010000;
+ {QEMUVPB_STARTUP_ADDRESS = $00010000;} {Obtain from linker}
 
 const
  {Page Table Address and Size}
@@ -264,7 +264,7 @@ var
  PrimaryInterruptRegisters:PPL190InterruptRegisters;
  SecondaryInterruptRegisters:PVersatilePBInterruptRegisters;
  
- InterruptEntries:array[0..(VERSATILEPB_IRQ_COUNT - 1)] of TInterruptEntry;
+ InterruptEntries:array[0..(VERSATILEPB_IRQ_COUNT - 1)] of PInterruptEntry;
 
 var
  {System Call Variables}
@@ -298,10 +298,13 @@ function QEMUVPBReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Han
 function QEMUVPBRequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 function QEMUVPBReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 
+function QEMUVPBRegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+function QEMUVPBDeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+
 function QEMUVPBRegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 function QEMUVPBDeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 
-function QEMUVPBGetInterruptEntry(Number:LongWord):TInterruptEntry; 
+function QEMUVPBGetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
 function QEMUVPBGetSystemCallEntry(Number:LongWord):TSystemCallEntry; 
 
 function QEMUVPBSystemRestart(Delay:LongWord):LongWord; 
@@ -314,18 +317,6 @@ procedure QEMUVPBClockGetTimer(Data:Pointer);
 {==============================================================================}
 {QEMUVPB Thread Functions}
 procedure QEMUVPBSchedulerInit;
-
-{==============================================================================}
-{QEMUVPB IRQ Functions}
-function QEMUVPBDispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-function QEMUVPBHandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-{==============================================================================}
-{QEMUVPB FIQ Functions}
-function QEMUVPBDispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-function QEMUVPBHandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 
 {==============================================================================}
 {QEMUVPB SWI Functions}
@@ -351,19 +342,57 @@ function QEMUVPBFramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWor
 
 function QEMUVPBFramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
-function QEMUVPBFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function QEMUVPBFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function QEMUVPBFramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {$ENDIF}
 {==============================================================================}
 {QEMUVPB Helper Functions}
 procedure QEMUVPBBootBlink;
+
 procedure QEMUVPBBootOutput(Value:LongWord);
 
+{$IFDEF CONSOLE_EARLY_INIT}
+procedure QEMUVPBBootConsoleStart;
+procedure QEMUVPBBootConsoleWrite(const Value:String);
+procedure QEMUVPBBootConsoleWriteEx(const Value:String;X,Y:LongWord);
+function QEMUVPBBootConsoleGetX:LongWord;
+function QEMUVPBBootConsoleGetY:LongWord;
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 
 implementation
+
+{==============================================================================}
+{==============================================================================}
+{QEMUVPB Forward Declarations}
+function QEMUVPBInterruptIsValid(Number:LongWord):Boolean; forward;
+function QEMUVPBInterruptIsGlobal(Number:LongWord):Boolean; forward;
+
+function QEMUVPBInterruptCheckValid(const Entry:TInterruptEntry):Boolean; forward;
+function QEMUVPBInterruptCheckHandlers(const Entry:TInterruptEntry):Boolean; forward;
+function QEMUVPBInterruptCompareHandlers(const Entry,Current:TInterruptEntry):Boolean; forward;
+
+function QEMUVPBInterruptEnable(const Entry:TInterruptEntry):Boolean; forward;
+function QEMUVPBInterruptDisable(const Entry:TInterruptEntry):Boolean; forward;
+
+function QEMUVPBInterruptGetCurrentCount(CPUID,Number:LongWord):LongWord; forward;
+function QEMUVPBInterruptGetCurrentEntry(CPUID,Number:LongWord;Index:LongWord):PInterruptEntry; forward;
+
+function QEMUVPBInterruptAddCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean; forward;
+function QEMUVPBInterruptDeleteCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean; forward;
+
+function QEMUVPBInterruptFindMatchingEntry(const Entry:TInterruptEntry):PInterruptEntry; forward;
+
+function QEMUVPBInterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord; forward;
+function QEMUVPBInterruptRegisterEntry(const Entry:TInterruptEntry):LongWord; forward;
+function QEMUVPBInterruptDeregisterEntry(const Entry:TInterruptEntry):LongWord; forward;
+
+function QEMUVPBDispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+function QEMUVPBDispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+
+function QEMUVPBHandleInterrupt(Number,Source,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
 
 {==============================================================================}
 {==============================================================================}
@@ -403,6 +432,9 @@ begin
  {Setup MEMORY_PAGE_SIZE}
  MEMORY_PAGE_SIZE:=SIZE_4K;
  MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+ 
+ {Setup MEMORY_SECTION_SIZE}
+ MEMORY_SECTION_SIZE:=SIZE_1M;
  
  {Setup MEMORY_IRQ/FIQ/LOCAL/SHARED/DEVICE/NOCACHE/NONSHARED_SIZE}
  MEMORY_IRQ_SIZE:=SIZE_2M;
@@ -481,9 +513,10 @@ begin
  
  SWI_COUNT:=QEMUVPB_SWI_COUNT;
  
- {Setup IRQ/FIQ/SWI/UNDEF/ABORT_ENABLED}
+ {Setup IRQ/FIQ/IPI/SWI/UNDEF/ABORT_ENABLED}
  IRQ_ENABLED:=True;
  FIQ_ENABLED:=True;
+ IPI_ENABLED:=False;
  SWI_ENABLED:=True;
  ABORT_ENABLED:=True;
  UNDEFINED_ENABLED:=True;
@@ -559,9 +592,18 @@ begin
  ARMv8PageTableInitHandler:=QEMUVPBPageTableInit;
  {$ENDIF CPUAARCH64}
  
- {Register Platform Blink/Output Handlers}
+ {Register Platform Boot Blink/Output Handlers}
  BootBlinkHandler:=QEMUVPBBootBlink;
  BootOutputHandler:=QEMUVPBBootOutput;
+ 
+ {Register Platform Boot Console Handlers}
+ {$IFDEF CONSOLE_EARLY_INIT}
+ BootConsoleStartHandler:=QEMUVPBBootConsoleStart;
+ BootConsoleWriteHandler:=QEMUVPBBootConsoleWrite;
+ BootConsoleWriteExHandler:=QEMUVPBBootConsoleWriteEx;
+ BootConsoleGetXHandler:=QEMUVPBBootConsoleGetX;
+ BootConsoleGetYHandler:=QEMUVPBBootConsoleGetY;
+ {$ENDIF}
  
  {Register Platform IRQ Handlers}
  RequestExIRQHandler:=QEMUVPBRequestExIRQ;
@@ -570,6 +612,10 @@ begin
  {Register Platform FIQ Handlers}
  RequestExFIQHandler:=QEMUVPBRequestExFIQ;
  ReleaseExFIQHandler:=QEMUVPBReleaseExFIQ;
+
+ {Register Platform Interrupt Handlers}
+ RegisterInterruptHandler:=QEMUVPBRegisterInterrupt;
+ DeregisterInterruptHandler:=QEMUVPBDeregisterInterrupt;
 
  {Register Platform System Call Handlers}
  RegisterSystemCallExHandler:=QEMUVPBRegisterSystemCallEx;
@@ -711,10 +757,7 @@ begin
  {Setup Interrupt Entries}
  for Count:=0 to VERSATILEPB_IRQ_COUNT - 1 do
   begin
-   FillChar(InterruptEntries[Count],SizeOf(TInterruptEntry),0);
-   
-   InterruptEntries[Count].Number:=Count;
-   InterruptEntries[Count].CPUID:=CPU_ID_ALL;
+   InterruptEntries[Count]:=nil;
   end; 
  
  {Setup System Call Entries}
@@ -765,14 +808,11 @@ begin
  GPIO_REGS_BASE:=VERSATILEPB_GPIO0_REGS_BASE;
  UART_REGS_BASE:=VERSATILEPB_UART0_REGS_BASE;
  
- {Setup Interrupts}
- //To Do 
- 
  {Setup GPIO}
- //To Do //Continuing
+ {Not applicable}
  
  {Setup LEDs}
- //To Do //Continuing
+ {Not applicable}
  
  {Setup DMA}
  DMA_ALIGNMENT:=SizeOf(LongWord); 
@@ -785,13 +825,13 @@ begin
  if CacheLineSize > DMA_MULTIPLIER then DMA_MULTIPLIER:=CacheLineSize;
  
  {Setup USB}
- //To Do //Continuing
+ {Nothing}
  
  {Setup MMC}
- //To Do //Continuing
+ {Nothing}
  
  {Setup VersatilePB}
- //To Do //Continuing //Done by QEMUVersatilePBInit
+ {Done by QEMUVersatilePBInit}
 end;
 
 {==============================================================================}
@@ -867,8 +907,7 @@ end;
 {==============================================================================}
 
 procedure QEMUVPBPageTableInit;
-{Initialize the Hardware Page Tables before enabling the MMU
- See ??????}
+{Initialize the Hardware Page Tables before enabling the MMU}
 var
  Count:Integer;
  Table:PtrUInt;
@@ -878,13 +917,13 @@ var
 begin
  {}
  {Parse Boot Tags (Register all memory with Heap manager)}
- if not(ParseBootTagsCompleted) then {$IFDEF CPUARM}ARMParseBootTags{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseBootTags{$ENDIF CPUAARCH64};
+ if not(ParseBootTagsCompleted) then ParseBootTags;
 
  {Parse Command Line (Copy command line from zero page)}
- if not(ParseCommandLineCompleted) then {$IFDEF CPUARM}ARMParseCommandLine{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseCommandLine{$ENDIF CPUAARCH64};
+ if not(ParseCommandLineCompleted) then ParseCommandLine;
 
  {Parse Environment (Copy environment from zero page)}
- if not(ParseEnvironmentCompleted) then {$IFDEF CPUARM}ARMParseEnvironment{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseEnvironment{$ENDIF CPUAARCH64};
+ if not(ParseEnvironmentCompleted) then ParseEnvironment;
  
  {$IFDEF CPUARM}
  {Create the first level page table}
@@ -979,24 +1018,24 @@ begin
   end;
  
  {Set the 4KB pages containing the TEXT (Code) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
- Address:=(LongWord(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_data)) do
+ Address:=(PtrUInt(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_data)) do
   begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);
    Inc(Address,SIZE_4K);
   end;
 
  {Set the 4KB pages containing the DATA (Initialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_bss_start)) do
+ Address:=(PtrUInt(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_bss_start)) do
   begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE); 
    Inc(Address,SIZE_4K);
   end;
 
  {Set the 4KB pages containing the BSS (Uninitialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_bss_start) and ARMV7_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_bss_end)) do
+ Address:=(PtrUInt(@_bss_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_bss_end)) do
   begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
@@ -1189,311 +1228,230 @@ end;
 
 function QEMUVPBRequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request registration of the supplied handler to the specified IRQ number}
-{CPUID: CPU to route IRQ to}
-{Number: IRQ number to register}
-{Handler: Interrupt handler function to register}
-{HandlerEx: Extended Interrupt handler function to register}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  Result:=ERROR_ALREADY_ASSIGNED;
-  if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-  if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
  
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
  
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable IRQ}
-    PrimaryInterruptRegisters.INTENABLE:=(1 shl Number);
-    IRQEnabled[0]:=IRQEnabled[0] or (1 shl Number);
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else if Number < 64 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
  
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable IRQ}
-    SecondaryInterruptRegisters.SIC_ENSET:=(1 shl (Number - 32));
-    IRQEnabled[1]:=IRQEnabled[1] or (1 shl (Number - 32));
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else 
-   begin
-    {Nothing under QEMU}
-    Exit;
-   end;
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Register Entry}
+ Result:=QEMUVPBInterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
 
 {==============================================================================}
 
 function QEMUVPBReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request deregistration of the supplied handler from the specified IRQ number}
-{CPUID: CPU to route IRQ to}
-{Number: IRQ number to deregister}
-{Handler: Interrupt handler function to deregister}
-{HandlerEx: Extended Interrupt handler function to deregister}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:TInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  Result:=ERROR_NOT_ASSIGNED;
-  if not(Assigned(InterruptEntries[Number].Handler)) and not(Assigned(InterruptEntries[Number].HandlerEx)) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
  
-  {Check Handlers}
-  Result:=ERROR_ALREADY_ASSIGNED;
-  if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-  if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
- 
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    PrimaryInterruptRegisters.INTENCLEAR:=(1 shl Number);
-    IRQEnabled[0]:=IRQEnabled[0] and not(1 shl Number); 
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else if Number < 64 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
 
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    SecondaryInterruptRegisters.SIC_ENCLR:=(1 shl (Number - 32));
-    IRQEnabled[1]:=IRQEnabled[1] and not(1 shl (Number - 32));
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else 
-   begin
-    {Nothing under QEMU}
-    Exit;
-   end;
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE;
+ 
+ {Deregister Entry}
+ Result:=QEMUVPBInterruptDeregisterEntry(Entry);
 end;
 
 {==============================================================================}
 
 function QEMUVPBRequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request registration of the supplied handler to the specified FIQ number}
-{CPUID: CPU to route FIQ to}
-{Number: FIQ number to register}
-{Handler: Interrupt handler function to register}
-{HandlerEx: Extended Interrupt handler function to register}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit; {IRQ Count not FIQ Count}
-
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  Result:=ERROR_ALREADY_ASSIGNED;
-  if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-  if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
  
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable FIQ}
-    PrimaryInterruptRegisters.INTENABLE:=(1 shl Number);
-    PrimaryInterruptRegisters.INTSELECT:=PrimaryInterruptRegisters.INTSELECT or (1 shl Number);
-    FIQEnabled:=Number;
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else if Number < 64 then
-   begin
-    {Not supported on Secondary Interrupt Controller}
-    Exit;
-   end
-  else 
-   begin
-    {Nothing under QEMU}
-    Exit;
-   end;
-    
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
+ 
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
+ 
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
+ 
+ {Register Entry}
+ Result:=QEMUVPBInterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
 
 {==============================================================================}
 
 function QEMUVPBReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request deregistration of the supplied handler from the specified FIQ number}
-{CPUID: CPU to route FIQ to}
-{Number: FIQ number to deregister}
-{Handler: Interrupt handler function to deregister}
-{HandlerEx: Extended Interrupt handler function to deregister}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:TInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
  
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit; {IRQ Count not FIQ Count}
-
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  Result:=ERROR_NOT_ASSIGNED;
-  if not(Assigned(InterruptEntries[Number].Handler)) and not(Assigned(InterruptEntries[Number].HandlerEx)) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
  
-  {Check Handlers}
-  Result:=ERROR_ALREADY_ASSIGNED;
-  if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-  if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
  
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled <> Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable FIQ}
-    PrimaryInterruptRegisters.INTENCLEAR:=(1 shl Number);
-    PrimaryInterruptRegisters.INTSELECT:=PrimaryInterruptRegisters.INTSELECT and not(1 shl Number);
-    FIQEnabled:=LongWord(-1);
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else if Number < 64 then
-   begin
-    {Not supported on Secondary Interrupt Controller}
-    Exit;
-   end
-  else 
-   begin
-    {Nothing under QEMU}
-    Exit;
-   end;
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
+
+ {Deregister Entry}
+ Result:=QEMUVPBInterruptDeregisterEntry(Entry);
+end;
+
+{==============================================================================}
+
+function QEMUVPBRegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+{Request registration of the supplied handler to the specified interrupt number (Where Applicable)}
+var
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handler}
+ if not Assigned(Handler) then Exit;
+ 
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
   
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
+   
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
+ 
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Priority:=Priority;
+ Entry.Flags:=Flags;
+ Entry.SharedHandler:=Handler;
+ Entry.Parameter:=Parameter;
+   
+ {Register Entry}
+ Result:=QEMUVPBInterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
+end;
+
+{==============================================================================}
+
+function QEMUVPBDeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+{Request deregistration of the supplied handler from the specified interrupt number (Where Applicable)}
+var
+ Entry:TInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handler}
+ if not Assigned(Handler) then Exit;
+ 
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
+ 
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+ 
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Priority:=Priority;
+ Entry.Flags:=Flags;
+ Entry.SharedHandler:=Handler;
+ Entry.Parameter:=Parameter;
+   
+ {Deregister Entry}
+ Result:=QEMUVPBInterruptDeregisterEntry(Entry);
 end;
 
 {==============================================================================}
 
 function QEMUVPBRegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 {Request registration of the supplied extended handler to the specified System Call number}
-{CPUID: The CPU ID to register the System Call against (Ignored on QEMUVPB)}
-{Number: The System Call number to be registered}
-{Handler: The handler function to be registered}
-{HandlerEx: The extended handler function to be registered}
-{Note: Only one of Handler or HandlerEx can be specified}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1530,11 +1488,6 @@ end;
 
 function QEMUVPBDeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 {Request deregistration of the supplied extended handler from the specified System Call number}
-{CPUID: The CPU ID to deregister the System Call from (Ignored on QEMUVPB)}
-{Number: The System Call number to be deregistered}
-{Handler: The handler function to be deregistered}
-{HandlerEx: The extended handler function to be deregistered}
-{Note: Only one of Handler or HandlerEx can be specified}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1573,24 +1526,11 @@ end;
 
 {==============================================================================}
 
-function QEMUVPBGetInterruptEntry(Number:LongWord):TInterruptEntry; 
-{Get the interrupt entry for the specified interrupt number}
+function QEMUVPBGetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+{Get the interrupt entry for the specified interrupt number and instance}
 begin
  {}
- FillChar(Result,SizeOf(TInterruptEntry),0);
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit;
- 
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Return Entry}
-  Result:=InterruptEntries[Number];
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=QEMUVPBInterruptGetEntry(CPU_ID_ALL,Number,INTERRUPT_FLAG_NONE,Interrupt,Instance);
 end;
 
 {==============================================================================}
@@ -1786,146 +1726,6 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{QEMUVPB IRQ Functions}
-function QEMUVPBDispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Process any pending IRQ requests}
-{Called by ARMv7/8IRQHandler in PlatformARMv7/8}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
-var
- Group:LongWord;
- IRQBit:LongWord;
- IRQMatch:LongWord;
-begin
- {}
- Result:=Thread;
- 
- {$IFDEF INTERRUPT_DEBUG}
- Inc(DispatchInterruptCounter[CPUID]);
- {$ENDIF}
- 
- {Check IRQ Groups}
- for Group:=0 to 1 do
-  begin
-   {Check IRQ Enabled}
-   if IRQEnabled[Group] <> 0 then
-    begin
-     case Group of
-      {Check Primary Controller IRQ}
-      0:IRQMatch:=(IRQEnabled[Group] and PrimaryInterruptRegisters.IRQSTATUS);
-      {Check Secondary Controller IRQ}
-      1:IRQMatch:=(IRQEnabled[Group] and SecondaryInterruptRegisters.SIC_STATUS);
-     end; 
-     {Check IRQ Match}
-     while IRQMatch <> 0 do
-      begin
-       {Find first set bit}
-       IRQBit:=FirstBitSet(IRQMatch); 
-         
-       {Clear set bit}
-       IRQMatch:=IRQMatch xor (1 shl IRQBit);
-         
-       {Call IRQ Handler}
-       Result:=QEMUVPBHandleIRQ(IRQBit + (Group shl 5),CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-      end; 
-    end;
-  end;  
-end;
-
-{==============================================================================}
-
-function QEMUVPBHandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Call the handler function for an IRQ that was received, or halt if it doesn't exist}
-var
- Entry:PInterruptEntry;
-begin
- {}
- Result:=Thread;
- 
- {Get Entry}
- Entry:=@InterruptEntries[Number];
- 
- {Check Interrupt Handler}
- if Assigned(Entry.Handler) then
-  begin
-   Entry.Handler(Entry.Parameter); 
-  end
- else
-  begin
-   if Assigned(Entry.HandlerEx) then
-    begin
-     Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-    end
-   else
-    begin 
-     {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}    
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number));
-     {$ENDIF} 
-     
-     Halt;   
-    end; 
-  end;  
-end;
-
-{==============================================================================}
-{==============================================================================}
-{QEMUVPB FIQ Functions}
-function QEMUVPBDispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Process any pending FIQ requests}
-{Called by ARMv7/8FIQHandler in PlatformARMv7/8}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
-begin
- {}
- Result:=Thread;
- 
- {$IFDEF INTERRUPT_DEBUG}
- Inc(DispatchFastInterruptCounter[CPUID]);
- {$ENDIF}
- 
- {Check FIQ Enabled}
- if FIQEnabled <> LongWord(-1) then
-  begin
-   {Call FIQ Handler}
-   Result:=QEMUVPBHandleFIQ(FIQEnabled,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-  end;
-end;
-
-{==============================================================================}
-
-function QEMUVPBHandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Call the handler function for an FIQ that was received, or halt if it doesn't exist}
-var
- Entry:PInterruptEntry;
-begin
- {}
- Result:=Thread;
- 
- {Get Entry}
- Entry:=@InterruptEntries[Number];
- 
- {Check Interrupt Handler}
- if Assigned(Entry.Handler) then
-  begin
-   Entry.Handler(Entry.Parameter); 
-  end
- else
-  begin
-   if Assigned(Entry.HandlerEx) then
-    begin
-     Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-    end
-   else
-    begin 
-     {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}    
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number));
-     {$ENDIF} 
-     
-     Halt;   
-    end; 
-  end;  
-end;
-
-{==============================================================================}
-{==============================================================================}
 {QEMUVPB SWI Functions}
 function QEMUVPBDispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
 {Process an SWI request}
@@ -1937,7 +1737,7 @@ begin
  {}
  Result:=Thread;
  
- {$IFDEF INTERRUPT_DEBUG}
+ {$IF DEFINED(SWI_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  Inc(DispatchSystemCallCounter[CPUID]);
  {$ENDIF}
 
@@ -2142,7 +1942,7 @@ begin
  ARMv7ContextSwitchSWI(Pointer(Request.Param1),Pointer(Request.Param2),Request.Param3);
  {$ENDIF CPUARM}
  {$IFDEF CPUAARCH64}
- //To Do
+ ARMv8ContextSwitchSWI(Pointer(Request.Param1),Pointer(Request.Param2),Request.Param3);
  {$ENDIF CPUAARCH64}
 end;
 
@@ -2272,11 +2072,11 @@ begin
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
-      CleanDataCacheRange(LongWord(Buffer),Defaults.Size);
+      CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
  
     {Update Framebuffer}
-    Framebuffer.Address:=LongWord(Buffer);
+    Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
     Framebuffer.Pitch:=Defaults.Pitch;
     Framebuffer.Depth:=Defaults.Depth;
@@ -2308,8 +2108,8 @@ begin
     PPL110Framebuffer(Framebuffer).Registers.TIMING1:=(PPL110Framebuffer(Framebuffer).Timing1 and not(PL110_CLCD_TIMING1_LPP)) or (Framebuffer.PhysicalHeight - 1);
     PPL110Framebuffer(Framebuffer).Registers.TIMING2:=PPL110Framebuffer(Framebuffer).Timing2;
     PPL110Framebuffer(Framebuffer).Registers.TIMING3:=PPL110Framebuffer(Framebuffer).Timing3;
-    PPL110Framebuffer(Framebuffer).Registers.UPBASE:=LongWord(Buffer);
-    PPL110Framebuffer(Framebuffer).Registers.LPBASE:=LongWord(Buffer) + ((Framebuffer.PhysicalHeight * Framebuffer.Pitch) div 2);
+    PPL110Framebuffer(Framebuffer).Registers.UPBASE:=PtrUInt(Buffer);
+    PPL110Framebuffer(Framebuffer).Registers.LPBASE:=PtrUInt(Buffer) + ((Framebuffer.PhysicalHeight * Framebuffer.Pitch) div 2);
     
     {Enable PL110}
     Value:=PPL110Framebuffer(Framebuffer).Registers.CONTROL;
@@ -2490,7 +2290,7 @@ end;
 
 {==============================================================================}
 
-function QEMUVPBFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function QEMUVPBFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 {Implementation of FramebufferDeviceCommit API for PL110 Framebuffer}
 {Note: Not intended to be called directly by applications, use FramebufferDeviceCommit instead}
 begin
@@ -2502,7 +2302,7 @@ begin
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'QEMUVPB: Framebuffer Commit (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'QEMUVPB: Framebuffer Commit (Address=' + AddrToHex(Address) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Check Flags}
@@ -2577,7 +2377,6 @@ asm
  //To Do
 end;
 {$ENDIF CPUAARCH64}
-
 {==============================================================================}
 
 procedure QEMUVPBBootOutput(Value:LongWord);
@@ -2612,6 +2411,871 @@ begin
  PLongWord(VERSATILEPB_UART0_REGS_BASE)^:=$0D;
  PLongWord(VERSATILEPB_UART0_REGS_BASE)^:=$0A;
 end;
+
+{==============================================================================}
+{$IFDEF CONSOLE_EARLY_INIT}
+procedure QEMUVPBBootConsoleStart;
+begin
+ ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL,True);
+end;
+
+{==============================================================================}
+
+procedure QEMUVPBBootConsoleWrite(const Value:String);
+begin
+ ConsoleWindowWriteLn(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),Value);
+end;
+
+{==============================================================================}
+
+procedure QEMUVPBBootConsoleWriteEx(const Value:String;X,Y:LongWord);
+begin
+ ConsoleWindowSetXY(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),X,Y);
+ ConsoleWindowWriteLn(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),Value);
+end;
+
+{==============================================================================}
+
+function QEMUVPBBootConsoleGetX:LongWord;
+begin
+ Result:=ConsoleWindowGetX(ConsoleWindowGetDefault(ConsoleDeviceGetDefault));
+end;
+
+{==============================================================================}
+
+function QEMUVPBBootConsoleGetY:LongWord;
+begin
+ Result:=ConsoleWindowGetY(ConsoleWindowGetDefault(ConsoleDeviceGetDefault));
+end;
+{$ENDIF}
+{==============================================================================}
+{==============================================================================}
+{QEMUVPB Internal Functions}
+function QEMUVPBInterruptIsValid(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number < IRQ_COUNT);
+end;
+
+{==============================================================================}
+
+function QEMUVPBInterruptIsGlobal(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number < IRQ_LOCAL_START);
+end;
+
+{==============================================================================}
+
+function QEMUVPBInterruptCheckValid(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Flags}
+ if Entry.IsLocal then
+  begin
+   {Local}
+   Exit;
+  end
+ else if Entry.IsIPI then
+  begin
+   {Software}
+   Exit;
+  end
+ else 
+  begin
+   {Check Number (Global)}
+   if not QEMUVPBInterruptIsGlobal(Entry.Number) then Exit;
+   
+   {Check Mask Count}
+   if CPUMaskCount(Entry.CPUMask) <> 1 then Exit;
+ 
+   {Check Mask CPU (Single CPU only)} 
+   if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUMaskToID(Entry.CPUMask)) then Exit;
+  end;  
+ 
+ {Check Handlers}
+ if not QEMUVPBInterruptCheckHandlers(Entry) then Exit;
+  
+ {Check Priority}
+ {Not applicable}
+ 
+ {Check FIQ}
+ if Entry.IsFIQ then
+  begin
+   if not FIQ_ENABLED then Exit;
+  end;
+ 
+ {Check IPI}
+ {Not applicable}
+ 
+ {Check Shared}
+ if Entry.IsShared then
+  begin
+   if not Assigned(Entry.SharedHandler) then Exit;
+  end;
+  
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptCheckHandlers(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handlers}
+ if Assigned(Entry.Handler) then
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.HandlerEx) then Exit;
+   if Assigned(Entry.SharedHandler) then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.HandlerEx) then 
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.Handler) then Exit;
+   if Assigned(Entry.SharedHandler) then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.SharedHandler) then
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.Handler) then Exit;
+   if Assigned(Entry.HandlerEx) then Exit;
+   
+   Result:=True;
+  end;  
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptCompareHandlers(const Entry,Current:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handlers}
+ if Assigned(Entry.Handler) then
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.Handler) then Exit;
+   if @Entry.Handler <> @Current.Handler then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.HandlerEx) then 
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.HandlerEx) then Exit;
+   if @Entry.HandlerEx <> @Current.HandlerEx then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.SharedHandler) then
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.SharedHandler) then Exit;
+   if @Entry.SharedHandler <> @Current.SharedHandler then Exit;
+   
+   Result:=True;
+  end;  
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptEnable(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+
+ {Find Group}
+ if Entry.Number < 32 then
+  begin
+   if Entry.IsFIQ then
+    begin
+     {Check FIQ}
+     if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
+     
+     {Check IRQ}
+     if (IRQEnabled[0] and (1 shl Entry.Number)) <> 0 then Exit;
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Enable FIQ}
+     PrimaryInterruptRegisters.INTENABLE:=(1 shl Entry.Number);
+     PrimaryInterruptRegisters.INTSELECT:=PrimaryInterruptRegisters.INTSELECT or (1 shl Entry.Number);
+     FIQEnabled:=Entry.Number;
+    end
+   else 
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+  
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Enable IRQ}
+     PrimaryInterruptRegisters.INTENABLE:=(1 shl Entry.Number);
+     IRQEnabled[0]:=IRQEnabled[0] or (1 shl Entry.Number); 
+    end; 
+  end
+ else if Entry.Number < 64 then
+  begin
+   if Entry.IsFIQ then
+    begin
+     {Not supported on Secondary Interrupt Controller}
+     Exit;
+    end
+   else 
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+  
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Enable IRQ}
+     SecondaryInterruptRegisters.SIC_ENSET:=(1 shl (Entry.Number - 32));
+     IRQEnabled[1]:=IRQEnabled[1] or (1 shl (Entry.Number - 32)); 
+    end; 
+  end
+ else 
+  begin
+   {Nothing under QEMU}
+   Exit;
+  end;
+
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptDisable(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+ 
+ {Find Group}
+ if Entry.Number < 32 then
+  begin
+   if Entry.IsFIQ then
+    begin
+     {Check FIQ}
+     if FIQEnabled <> Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+     
+     {Check IRQ}
+     if (IRQEnabled[0] and (1 shl Entry.Number)) <> 0 then Exit;
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Disable FIQ}
+     PrimaryInterruptRegisters.INTENCLEAR:=(1 shl Entry.Number);
+     PrimaryInterruptRegisters.INTSELECT:=PrimaryInterruptRegisters.INTSELECT and not(1 shl Entry.Number);
+     FIQEnabled:=LongWord(-1);
+    end
+   else
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+     
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Disable IRQ}
+     PrimaryInterruptRegisters.INTENCLEAR:=(1 shl Entry.Number);
+     IRQEnabled[0]:=IRQEnabled[0] and not(1 shl Entry.Number); 
+    end;
+  end
+ else if Entry.Number < 64 then
+  begin
+   if Entry.IsFIQ then
+    begin
+     {Not supported on Secondary Interrupt Controller}
+     Exit;
+    end
+   else
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+  
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Disable IRQ}
+     SecondaryInterruptRegisters.SIC_ENCLR:=(1 shl (Entry.Number - 32));
+     IRQEnabled[1]:=IRQEnabled[1] and not(1 shl (Entry.Number - 32));
+    end; 
+  end
+ else 
+  begin
+   {Nothing under QEMU}
+   Exit;
+  end;
+
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptGetCurrentCount(CPUID,Number:LongWord):LongWord;
+{Note: Caller must hold the interrupt lock}
+var
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Setup Defaults}
+ Entry:=nil;
+
+ {Check Number}
+ if QEMUVPBInterruptIsGlobal(Number) then
+  begin
+   {Count Global}
+   Entry:=InterruptEntries[Number];
+  end;
+  
+ {Count Entries}
+ while Entry <> nil do
+  begin
+   Inc(Result);
+   
+   {Get Next}
+   Entry:=Entry.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptGetCurrentEntry(CPUID,Number:LongWord;Index:LongWord):PInterruptEntry;
+{Note: Caller must hold the interrupt lock (or be within an interrupt handler)}
+var
+ Count:LongWord;
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Setup Defaults}
+ Entry:=nil;
+
+ {Check Number}
+ if QEMUVPBInterruptIsGlobal(Number) then
+  begin
+   {Count Global}
+   Entry:=InterruptEntries[Number];
+  end;
+  
+ {Get Entry} 
+ Count:=0;
+ while Entry <> nil do
+  begin
+   {Check Count}
+   if Count = Index then
+    begin
+     Result:=Entry; 
+     Exit;       
+    end;
+
+   Inc(Count);
+   
+   {Get Next}
+   Entry:=Entry.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptAddCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Entry}
+ if Entry = nil then Exit;
+
+ {Check Number}
+ if QEMUVPBInterruptIsGlobal(Number) then
+  begin
+   {Add Global}
+   Current:=InterruptEntries[Number];
+   if Current = nil then
+    begin
+     {Set Global}
+     InterruptEntries[Number]:=Entry;
+     
+     Result:=True;
+    end;
+  end;
+ 
+ {Check Current}
+ if Current <> nil then
+  begin
+   {Find last}
+   while Current.Next <> nil do
+    begin
+     {Get Next}
+     Current:=Current.Next;
+    end;
+    
+   {Add to end of list}
+   Current.Next:=Entry;
+   Entry.Prev:=Current;
+   Entry.Next:=nil;
+   
+   Result:=True;
+  end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptDeleteCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Entry}
+ if Entry = nil then Exit;
+
+ {Check Number}
+ if QEMUVPBInterruptIsGlobal(Number) then
+  begin
+   {Delete Global}
+   Current:=InterruptEntries[Number];
+   if Current = Entry then
+    begin
+     InterruptEntries[Number]:=nil;
+    end;
+  end;
+  
+ {Check Current}
+ if Current <> nil then
+  begin
+   {Find Entry}
+   while Current <> nil do
+    begin
+     if Current = Entry then
+      begin
+       Break;
+      end;
+      
+     {Get Next}
+     Current:=Current.Next;
+    end;
+ 
+   {Check Current}
+   if Current <> nil then
+    begin
+     {Remove from list}
+     if Current.Prev <> nil then
+      begin
+       Current.Prev.Next:=Current.Next;
+      end;
+     if Current.Next <> nil then
+      begin
+       Current.Next.Prev:=Current.Prev;
+      end;
+     Current.Prev:=nil;
+     Current.Next:=nil;
+     
+     {Free Entry}
+     FreeMem(Current);
+     
+     Result:=True;
+    end;
+  end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptFindMatchingEntry(const Entry:TInterruptEntry):PInterruptEntry;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Get Current}
+ Current:=QEMUVPBInterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
+ 
+ {Find Match}
+ while Current <> nil do
+  begin
+   if QEMUVPBInterruptCompareHandlers(Entry,Current^) then
+    begin
+     Result:=Current;
+     Exit;
+    end;
+    
+   {Get Next}
+   Current:=Current.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord; 
+{Note: The returned Entry is a copy of the registered value. Caller should free Entry if required}
+{      For shared entries the Index parameter indicates which entry in the chain to return (0 equals first etc)}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Setup Defaults}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Flags}
+  if (Flags and INTERRUPT_FLAG_IPI) <> 0 then
+   begin
+    {Software Entry}
+    Exit;
+   end
+  else if (Flags and INTERRUPT_FLAG_LOCAL) <> 0 then
+   begin
+    {Local Entry}
+    Exit;
+   end
+  else
+   begin
+    {Global Entry}
+    if not QEMUVPBInterruptIsGlobal(Number) then Exit;
+   end;   
+   
+  Result:=ERROR_NOT_FOUND;  
+  
+  {Get Current}
+  Current:=QEMUVPBInterruptGetCurrentEntry(CPUID,Number,Index);
+  if Current <> nil then
+   begin
+    {Copy Entry}
+    Entry.Number:=Current.Number;
+    Entry.Flags:=Current.Flags;
+    Entry.CPUMask:=Current.CPUMask;
+    Entry.Priority:=Current.Priority;    
+    Entry.Handler:=Current.Handler;
+    Entry.HandlerEx:=Current.HandlerEx;
+    Entry.SharedHandler:=Current.SharedHandler;
+    Entry.Parameter:=Current.Parameter;
+    
+    {Return Result}    
+    Result:=ERROR_SUCCESS;
+   end;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptRegisterEntry(const Entry:TInterruptEntry):LongWord;
+{Note: Entry must be allocated from heap as a pointer to it will be retained while 
+       the interrupt remains registered. Entry must not be freed by the caller}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Entry}
+  if not QEMUVPBInterruptCheckValid(Entry) then Exit;
+  
+  Result:=ERROR_ALREADY_ASSIGNED;
+  
+  {Check Count}
+  if QEMUVPBInterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 0 then
+   begin
+    {Single Entry}
+    Result:=ERROR_OPERATION_FAILED;
+    
+    {Enable IRQ/FIQ}
+    if not QEMUVPBInterruptEnable(Entry) then Exit;
+    
+    {Add Entry}
+    if not QEMUVPBInterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
+   end
+  else
+   begin
+    {Shared Entry}
+    Result:=ERROR_ALREADY_ASSIGNED;
+    
+    {Check Shared}
+    if not Entry.IsShared then Exit;
+    
+    {Get Match}
+    Current:=QEMUVPBInterruptFindMatchingEntry(Entry);
+    if Current <> nil then Exit;
+    
+    {Get Current}
+    Current:=QEMUVPBInterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
+    if Current = nil then Exit;
+    
+    {Check Shared}
+    if not Current.IsShared then Exit;
+    
+    {Check FIQ}
+    if Entry.IsFIQ <> Current.IsFIQ then Exit;
+    
+    Result:=ERROR_OPERATION_FAILED;
+    
+    {Add Entry}
+    if not QEMUVPBInterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
+   end;
+  
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBInterruptDeregisterEntry(const Entry:TInterruptEntry):LongWord;
+{Note: The Entry can be a local temporary copy allocated either from the stack or on
+       the heap, this routine will free the original Entry passed to Register once it
+       is successfully deregistered. Caller should free Entry if required}
+var       
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Entry}
+  if not QEMUVPBInterruptCheckValid(Entry) then Exit;
+ 
+  Result:=ERROR_NOT_ASSIGNED;
+ 
+  {Get Match}
+  Current:=QEMUVPBInterruptFindMatchingEntry(Entry);
+  if Current = nil then Exit;
+  
+  Result:=ERROR_OPERATION_FAILED;
+  
+  {Check Count}
+  if QEMUVPBInterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 1 then
+   begin
+    {Single Entry}
+    {Disable IRQ/FIQ}
+    if not QEMUVPBInterruptDisable(Entry) then Exit;
+   end;
+
+  {Delete Entry}
+  if not QEMUVPBInterruptDeleteCurrentEntry(Entry.CPUID,Entry.Number,Current) then Exit;
+   
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function QEMUVPBDispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Process any pending IRQ requests}
+{Called by ARMv7/8IRQHandler in PlatformARMv7/8}
+{Note: A DataMemoryBarrier is executed before and after calling this function} 
+var
+ Group:LongWord;
+ IRQBit:LongWord;
+ IRQMatch:LongWord;
+begin
+ {}
+ Result:=Thread;
+ 
+ {$IF DEFINED(IRQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
+ Inc(DispatchInterruptCounter[CPUID]);
+ {$ENDIF}
+ 
+ {Check IRQ Groups}
+ for Group:=0 to 1 do
+  begin
+   {Check IRQ Enabled}
+   if IRQEnabled[Group] <> 0 then
+    begin
+     case Group of
+      {Check Primary Controller IRQ}
+      0:IRQMatch:=(IRQEnabled[Group] and PrimaryInterruptRegisters.IRQSTATUS);
+      {Check Secondary Controller IRQ}
+      1:IRQMatch:=(IRQEnabled[Group] and SecondaryInterruptRegisters.SIC_STATUS);
+     end; 
+     {Check IRQ Match}
+     while IRQMatch <> 0 do
+      begin
+       {Find first set bit}
+       IRQBit:=FirstBitSet(IRQMatch); 
+         
+       {Clear set bit}
+       IRQMatch:=IRQMatch xor (1 shl IRQBit);
+         
+       {Call IRQ Handler}
+       Result:=QEMUVPBHandleInterrupt(IRQBit + (Group shl 5),CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+      end; 
+    end;
+  end;  
+end;
+
+{==============================================================================}
+
+function QEMUVPBDispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Process any pending FIQ requests}
+{Called by ARMv7/8FIQHandler in PlatformARMv7/8}
+{Note: A DataMemoryBarrier is executed before and after calling this function} 
+begin
+ {}
+ Result:=Thread;
+ 
+ {$IF DEFINED(FIQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
+ Inc(DispatchFastInterruptCounter[CPUID]);
+ {$ENDIF}
+ 
+ {Check FIQ Enabled}
+ if FIQEnabled <> LongWord(-1) then
+  begin
+   {Call FIQ Handler}
+   Result:=QEMUVPBHandleInterrupt(FIQEnabled,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+  end;
+end;
+
+{==============================================================================}
+
+
+function QEMUVPBHandleInterrupt(Number,Source,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Call the handler function for an IRQ/FIQ that was received, or halt if it doesn't exist}
+var
+ Status:LongWord;
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=Thread;
+
+ {Get Entry}
+ Entry:=QEMUVPBInterruptGetCurrentEntry(CPUID,Number,0);
+ if Entry = nil then
+  begin
+   {Halt}
+   {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('No entry registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+   {$ENDIF} 
+     
+   Halt;   
+  end;
+  
+ {Check Entry}
+ if not Entry.IsIPI then
+  begin
+   {Global or Local}
+   if Entry.IsShared then
+    begin
+     {Shared}
+     if not Assigned(Entry.SharedHandler) then
+      begin
+       {Halt}
+       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+       {$ENDIF} 
+       
+       Halt;
+      end;
+      
+     {Call Handler}
+     Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+     while Status <> INTERRUPT_RETURN_HANDLED do
+      begin
+       {Get Next}
+       Entry:=Entry.Next;
+       if Entry = nil then
+        begin
+         {Halt}
+         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+         if PLATFORM_LOG_ENABLED then PlatformLogDebug('Unhandled interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+         {$ENDIF} 
+         
+         Halt;
+        end;
+       
+       if not Assigned(Entry.SharedHandler) then
+        begin
+         {Halt}
+         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+         if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+         {$ENDIF} 
+         
+         Halt;
+        end;
+       
+       {Call Handler}
+       Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+      end;
+    end
+   else
+    begin
+     {Single}
+     if Assigned(Entry.Handler) then
+      begin
+       {Call Handler}
+       Entry.Handler(Entry.Parameter); 
+      end
+     else if Assigned(Entry.HandlerEx) then
+      begin
+       {Call Handler}
+       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
+      end
+     else if Assigned(Entry.SharedHandler) then
+      begin
+       {Call Handler}
+       Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+      end
+     else
+      begin
+       {Halt}
+       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+       {$ENDIF} 
+       
+       Halt;
+      end;        
+    end;
+  end;
+end;  
 
 {==============================================================================}
 {==============================================================================}

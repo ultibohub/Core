@@ -79,6 +79,13 @@ const
  GPIO_STATE_DISABLED = 0;
  GPIO_STATE_ENABLED  = 1;
  
+ GPIO_STATE_MAX      = 1;
+ 
+ {GPIO State Names}
+ GPIO_STATE_NAMES:array[GPIO_STATE_DISABLED..GPIO_STATE_MAX] of String = (
+  'GPIO_STATE_DISABLED',
+  'GPIO_STATE_ENABLED');
+ 
  {GPIO Device Flags}
  GPIO_FLAG_NONE            = $00000000;
  GPIO_FLAG_PULL_UP         = $00000001; {Device supports Pull Up on a pin}
@@ -302,6 +309,8 @@ function GPIODeviceGetDefault:PGPIODevice; inline;
 function GPIODeviceSetDefault(GPIO:PGPIODevice):LongWord; 
 
 function GPIODeviceCheck(GPIO:PGPIODevice):PGPIODevice;
+
+function GPIOStateToString(GPIOState:LongWord):String;
 
 function GPIODeviceCreateEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Callback:TGPIOCallback;Data:Pointer;Timeout:LongWord):PGPIOEvent;
 function GPIODeviceDestroyEvent(GPIO:PGPIODevice;Event:PGPIOEvent):LongWord;
@@ -633,6 +642,7 @@ function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWor
 {GPIO: The GPIO device to schedule the callback for}
 {Pin: The pin to schedule the state change for (eg GPIO_PIN_1)}
 {Trigger: The trigger event which will cause the function to be called (eg GPIO_TRIGGER_HIGH)}
+{Flags: The flags to control the event (eg GPIO_EVENT_FLAG_REPEAT)}
 {Timeout: The number of milliseconds before the scheduled trigger expires (INFINITE to never expire)}
 {Callback: The function to be called when the trigger occurs}
 {Data: A pointer to be pass to the function when the trigger occurs (Optional)}
@@ -1596,6 +1606,20 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(GPIODeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function GPIOStateToString(GPIOState:LongWord):String;
+{Convert a GPIO state value to a string}
+begin
+ {}
+ Result:='GPIO_STATE_UNKNOWN';
+ 
+ if GPIOState <= GPIO_STATE_MAX then
+  begin
+   Result:=GPIO_STATE_NAMES[GPIOState];
   end;
 end;
 

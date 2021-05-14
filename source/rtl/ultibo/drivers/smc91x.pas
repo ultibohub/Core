@@ -1,7 +1,7 @@
 {
 SMSC 91C9x/91C1xx Ethernet Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -439,7 +439,7 @@ var
  
 {==============================================================================}
 {SMC91X Functions}
-function SMC91XNetworkCreate(Address:LongWord;const Name:String;IRQ:LongWord):PNetworkDevice;
+function SMC91XNetworkCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PNetworkDevice;
 
 function SMC91XNetworkDestroy(Network:PNetworkDevice):LongWord;
 
@@ -517,7 +517,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {SMC91X Functions}
-function SMC91XNetworkCreate(Address:LongWord;const Name:String;IRQ:LongWord):PNetworkDevice;
+function SMC91XNetworkCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PNetworkDevice;
 {Create and register a new SMC91X Network device which can be accessed using the Network API}
 {Address: The address of the SMC91X registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -531,7 +531,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(SMC91X_DEBUG) or DEFINED(NETWORK_DEBUG)}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'SMC91X: Network Create (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'SMC91X: Network Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
  {$ENDIF}
 
  {Check Address}
@@ -694,7 +694,7 @@ begin
     {$IF DEFINED(SMC91X_DEBUG) or DEFINED(NETWORK_DEBUG)}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMC91X:  Base Address Register = ' + IntToHex(Value,4));
     {$ENDIF}
-    if LongWord(PSMC91XNetwork(Network).Registers) and $3e0 <> Value then
+    if PtrUInt(PSMC91XNetwork(Network).Registers) and $3e0 <> Value then
      begin
       //To Do //Error ?
      end;
@@ -944,7 +944,7 @@ begin
        if PSMC91XNetwork(Network).Thread <> INVALID_HANDLE_VALUE then 
         begin
          {Terminate Thread}
-         Message.Msg:=LongWord(nil);
+         Message.Msg:=PtrUInt(nil);
          Message.wParam:=SMC91X_COMPLETION_TERMINATE;
          ThreadSendMessage(PSMC91XNetwork(Network).Thread,Message);
          
@@ -1115,7 +1115,7 @@ begin
     if PSMC91XNetwork(Network).Thread <> INVALID_HANDLE_VALUE then 
      begin
       {Terminate Thread}
-      Message.Msg:=LongWord(nil);
+      Message.Msg:=PtrUInt(nil);
       Message.wParam:=SMC91X_COMPLETION_TERMINATE;
       ThreadSendMessage(PSMC91XNetwork(Network).Thread,Message);
 
@@ -1255,7 +1255,7 @@ begin
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IF DEFINED(SMC91X_DEBUG) or DEFINED(NETWORK_DEBUG)}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMC91X: Network Control');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMC91X: Network Control (Request=' + IntToStr(Request) + ')');
  {$ENDIF}
  
  {Acquire the Lock}
@@ -1694,7 +1694,7 @@ begin
      {Network.Registers.Bank2.INT:=SMC91X_IM_ALLOC_INT;} {Cleared Automatically} 
      
      {Send Message}
-     Message.Msg:=LongWord(nil);
+     Message.Msg:=PtrUInt(nil);
      Message.wParam:=SMC91X_COMPLETION_ALLOCATE;
      ThreadSendMessage(Network.Thread,Message);
     end
@@ -1882,7 +1882,7 @@ begin
           end;
 
          {Send Message}
-         Message.Msg:=LongWord(Entry);
+         Message.Msg:=PtrUInt(Entry);
          Message.wParam:=SMC91X_COMPLETION_RECEIVE;
          ThreadSendMessage(Network.Thread,Message);
         end;
@@ -1965,7 +1965,7 @@ begin
  if SMC91X_THROTTLE_TRANSMIT then
   begin
    {Send Message}
-   Message.Msg:=LongWord(nil);
+   Message.Msg:=PtrUInt(nil);
    Message.wParam:=SMC91X_COMPLETION_TRANSMIT;
    ThreadSendMessage(Network.Thread,Message);
   end;
@@ -2104,7 +2104,7 @@ begin
  except
   on E: Exception do
    begin
-    if NETWORK_LOG_ENABLED then NetworkLogError(@Network.Network,'SMC91X: Completion Thread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if NETWORK_LOG_ENABLED then NetworkLogError(@Network.Network,'SMC91X: Completion Thread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -2799,6 +2799,9 @@ begin
  {$IF DEFINED(SMC91X_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(@Network.Network,'SMC91X: Set MAC Address (Address=' + HardwareAddressToString(Address^) + ')');
  {$ENDIF}
+ 
+ {Select Bank 1}
+ SMC91XSelectBank(Network,SMC91X_BANK_SELECT_1);
  
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}

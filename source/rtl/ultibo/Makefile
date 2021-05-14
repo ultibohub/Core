@@ -376,6 +376,7 @@ ULTIBO_UNITS=globalconfig \
 	     pwm \
 	     w1 \
 	     rtc \
+	     pci \
 	     usb \
 	     usbcdc \
 	     mmc \
@@ -405,10 +406,6 @@ ULTIBO_UNITS=globalconfig \
 	     tftframebuffer \
 	     vc4v3d \
 	     vc4vchiq \
-	     gc880 \
-	     gc2000 \
-	     mali400 \
-	     mali450 \
 	     bigint \
 	     crypto \
 	     asn1 \
@@ -479,6 +476,7 @@ ULTIBO_EXTRAS=ConsoleShell \
 	      RemoteShell \
 	      ShellFilesystem \
 	      ShellUpdate \
+	      ShellUSB \
 	      WebStatus \
 	      WiringI2C \
 	      WiringSerial \
@@ -499,9 +497,11 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    ds1307 \
 		    pl031 \
 		    mcp230xx \
+		    pcf857x \
 		    pl050 \
 		    hd44780 \
 		    af16x2lcd \
+		    i2clcd \
 		    ili9340 \
 		    hx8357d \
 		    pl110 \
@@ -513,6 +513,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    pl18x \
 		    smsc95xx \
 		    lan78xx \
+		    genet \
 		    rpigpioexpander \
 		    rpisensehat
 ULTIBO_KEYMAP_UNITS=keymap_us \
@@ -555,51 +556,28 @@ CPU_UNITS=
 CPU_UNITS_DEFINED=1
 override ULTIBO_UNITS+=bcm2836 \
 		       bcm2837 \
+		       bcm2838 \
 		       bcm2709 \
 		       bcm2710 \
-		       allwinnera20 \
-		       allwinnerh3 \
-		       freescaleimx6 \
+		       bcm2711 \
+		       armgic \
 		       versatilepb \
 		       platformarmv7 \
+		       platformarmv7l \
 		       platformarmv8 \
 		       platformrpi2 \
 		       platformrpi3 \
-		       platformbpi \
-		       platformbpro \
-		       platformbbb \
-		       platformcuboxi \
-		       platformodroidc1 \
-		       platformodroidu3 \
-		       platformodroidxu3 \
-		       platformpcduino \
+		       platformrpi4 \
 		       platformqemuvpb
 ULTIBO_CPU_UNITS=bootrpi2 \
 		 bootrpi3 \
-		 bootbpi \
-		 bootbpro \
-		 bootbbb \
-		 bootcuboxi \
-		 bootodroidc1 \
-		 bootodroidu3 \
-		 bootodroidxu3 \
-		 bootpcduino \
+		 bootrpi4 \
 		 bootqemuvpb
 ULTIBO_CPU_EXTRAS=RaspberryPi2 \
 		  RaspberryPi3 \
+		  RaspberryPi4 \
 		  QEMUVersatilePB
 endif
-ifeq ($(CPU_UNITS_DEFINED),)
-$(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
-endif
-endif
-ifeq ($(ARCH),mips)
-override ULTIBO_UNITS+=platformmips \
-		       platformmips32 \
-		       platformci20
-CPU_UNITS=
-CPU_UNITS_DEFINED=1
-ULTIBO_CPU_UNITS=bootci20
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
 endif
@@ -630,14 +608,20 @@ ifeq ($(SUBARCH),armv8)
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
 override ULTIBO_UNITS+=bcm2837 \
+		       bcm2838 \
 		       bcm2710 \
+		       bcm2711 \
+		       armgic \
 		       versatilepb \
 		       platformarmv8 \
 		       platformrpi3 \
+		       platformrpi4 \
 		       platformqemuvpb
 ULTIBO_CPU_UNITS=bootrpi3 \
+		 bootrpi4 \
 		 bootqemuvpb
 ULTIBO_CPU_EXTRAS=RaspberryPi3 \
+		  RaspberryPi4 \
 		  QEMUVersatilePB
 endif
 endif

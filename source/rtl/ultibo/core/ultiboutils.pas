@@ -1,7 +1,7 @@
 {
 Ultibo utils unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1826,7 +1826,7 @@ begin
    begin
     while Offset < ASize do
      begin
-      WorkBuffer:=PChar(LongWord(ABuffer) + LongWord(Offset));
+      WorkBuffer:=PChar(PtrUInt(ABuffer) + LongWord(Offset));
       if Length(WorkBuffer) <> 0 then {Dont Trim, space is allowed}
        begin
         AStrings.Add(WorkBuffer);
@@ -1864,11 +1864,11 @@ begin
       WorkBuffer:=AStrings.Strings[Count];
       ASize:=ASize + Length(WorkBuffer) + 1;
       ReallocMem(ABuffer,ASize);
-      System.Move(PChar(WorkBuffer)^,Pointer(LongWord(ABuffer) + LongWord(Offset))^,Length(WorkBuffer) + 1);
+      System.Move(PChar(WorkBuffer)^,Pointer(PtrUInt(ABuffer) + LongWord(Offset))^,Length(WorkBuffer) + 1);
       Offset:=Offset + Length(WorkBuffer) + 1;
      end;
    end;
-  FillChar(Pointer(LongWord(ABuffer) + LongWord(Offset))^,1,#0);
+  FillChar(Pointer(PtrUInt(ABuffer) + LongWord(Offset))^,1,#0);
   Result:=True;
  except
   {}
@@ -1891,9 +1891,9 @@ begin
 
   {Calculate Size}
   Size:=0;
-  if Byte(Pointer(LongWord(ABuffer))^) <> 0 then
+  if Byte(Pointer(PtrUInt(ABuffer))^) <> 0 then
    begin
-    while Word(Pointer(LongWord(ABuffer) + LongWord(Size))^) <> 0 do
+    while Word(Pointer(PtrUInt(ABuffer) + LongWord(Size))^) <> 0 do
      begin
       Inc(Size,SizeOf(Byte));
      end;
@@ -1905,7 +1905,7 @@ begin
    begin
     while Offset < Size do
      begin
-      WorkBuffer:=PChar(LongWord(ABuffer) + LongWord(Offset));
+      WorkBuffer:=PChar(PtrUInt(ABuffer) + LongWord(Offset));
       if Length(WorkBuffer) <> 0 then {Dont Trim, space is allowed}
        begin
         if Length(Result) = 0 then
@@ -1952,13 +1952,13 @@ begin
      begin
       Size:=Size + Length(Current) + 1;
       ReallocMem(Result,Size);
-      System.Move(PChar(Current)^,Pointer(LongWord(Result) + LongWord(Offset))^,Length(Current) + 1);
+      System.Move(PChar(Current)^,Pointer(PtrUInt(Result) + LongWord(Offset))^,Length(Current) + 1);
       Offset:=Offset + Length(Current) + 1;
      end;
     Delete(WorkBuffer,1,PosIdx);
     PosIdx:=Pos(ADelimiter,WorkBuffer);
    end;
-  FillChar(Pointer(LongWord(Result) + LongWord(Offset))^,1,#0);
+  FillChar(Pointer(PtrUInt(Result) + LongWord(Offset))^,1,#0);
  except
   {}
  end;
@@ -2017,9 +2017,9 @@ begin
 
  {Calculate Size}
  Size:=0;
- if Byte(Pointer(LongWord(AString))^) <> 0 then
+ if Byte(Pointer(PtrUInt(AString))^) <> 0 then
   begin
-   while Word(Pointer(LongWord(AString) + Size)^) <> 0 do
+   while Word(Pointer(PtrUInt(AString) + Size)^) <> 0 do
     begin
      Inc(Size,SizeOf(Byte));
     end;
@@ -2047,9 +2047,9 @@ begin
 
  {Calculate Size}
  Size:=0;
- if Word(Pointer(LongWord(AString))^) <> 0 then
+ if Word(Pointer(PtrUInt(AString))^) <> 0 then
   begin
-   while LongWord(Pointer(LongWord(AString) + Size)^) <> 0 do
+   while LongWord(Pointer(PtrUInt(AString) + Size)^) <> 0 do
     begin
      Inc(Size,SizeOf(Word));
     end;
@@ -3553,7 +3553,7 @@ begin
   Count:=0;
   while Count < ASize do
    begin
-    Hash:=LongWord(Pointer(LongWord(ASid) + Count)^) + Rol32(Hash,3);
+    Hash:=LongWord(Pointer(PtrUInt(ASid) + Count)^) + Rol32(Hash,3);
     Inc(Count,4);
    end;
   
@@ -3590,7 +3590,7 @@ begin
     Count:=0;
     while Count < ASize do
      begin
-      Hash:=LongWord(Pointer(LongWord(ADescriptor) + Count)^) + Rol32(Hash,3);
+      Hash:=LongWord(Pointer(PtrUInt(ADescriptor) + Count)^) + Rol32(Hash,3);
       Inc(Count,4);
      end;
      
@@ -3608,7 +3608,7 @@ begin
        Count:=0;
        while Count < Size do
         begin
-         Hash:=LongWord(Pointer(LongWord(Descriptor) + Count)^) + Rol32(Hash,3);
+         Hash:=LongWord(Pointer(PtrUInt(Descriptor) + Count)^) + Rol32(Hash,3);
          Inc(Count,4);
         end;
         

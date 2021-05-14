@@ -1,7 +1,7 @@
 {
 Ultibo Touch interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -57,9 +57,24 @@ const
  TOUCH_TYPE_RESISTIVE  = 1;
  TOUCH_TYPE_CAPACITIVE = 2;
  
+ TOUCH_TYPE_MAX        = 2;
+ 
+ {Touch Type Names}
+ TOUCH_TYPE_NAMES:array[TOUCH_TYPE_NONE..TOUCH_TYPE_MAX] of String = (
+  'TOUCH_TYPE_NONE',
+  'TOUCH_TYPE_RESISTIVE',
+  'TOUCH_TYPE_CAPACITIVE');
+ 
  {Touch Device States}
  TOUCH_STATE_DISABLED = 0;
  TOUCH_STATE_ENABLED  = 1;
+ 
+ TOUCH_STATE_MAX      = 1;
+ 
+ {Touch State Names}
+ TOUCH_STATE_NAMES:array[TOUCH_STATE_DISABLED..TOUCH_STATE_MAX] of String = (
+  'TOUCH_STATE_DISABLED',
+  'TOUCH_STATE_ENABLED');
  
  {Touch Device Flags}
  TOUCH_FLAG_NONE         = $00000000;
@@ -248,6 +263,9 @@ function TouchDeviceGetDefault:PTouchDevice; inline;
 function TouchDeviceSetDefault(Touch:PTouchDevice):LongWord; 
 
 function TouchDeviceCheck(Touch:PTouchDevice):PTouchDevice;
+
+function TouchDeviceTypeToString(TouchType:LongWord):String;
+function TouchDeviceStateToString(TouchState:LongWord):String;
 
 function TouchInsertData(Touch:PTouchDevice;Data:PTouchData;Signal:Boolean):LongWord;
 
@@ -1401,6 +1419,32 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(TouchDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function TouchDeviceTypeToString(TouchType:LongWord):String;
+begin
+ {}
+ Result:='TOUCH_TYPE_UNKNOWN';
+ 
+ if TouchType <= TOUCH_TYPE_MAX then
+  begin
+   Result:=TOUCH_TYPE_NAMES[TouchType];
+  end;
+end;
+
+{==============================================================================}
+
+function TouchDeviceStateToString(TouchState:LongWord):String;
+begin
+ {}
+ Result:='TOUCH_STATE_UNKNOWN';
+ 
+ if TouchState <= TOUCH_STATE_MAX then
+  begin
+   Result:=TOUCH_STATE_NAMES[TouchState];
   end;
 end;
 

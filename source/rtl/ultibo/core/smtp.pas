@@ -1,7 +1,7 @@
 {
 Ultibo SMTP interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -268,7 +268,7 @@ type
   {Internal Variables}
   FLock:TCriticalSectionHandle;
   
-  FHandle:LongWord;
+  FHandle:THandle;
   FRxByteCount:Int64;         {Bytes Recv Count from Connection}
   FTxByteCount:Int64;         {Bytes Sent Count to Connection}
   FRequestCount:Int64;        {Requests Recv Count from Connection}
@@ -289,7 +289,7 @@ type
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
   
-  procedure SetHandle(AHandle:LongWord);
+  procedure SetHandle(AHandle:THandle);
   function GetRxByteCount:Int64;
   procedure SetRxByteCount(const ARxByteCount:Int64);
   function GetTxByteCount:Int64;
@@ -315,7 +315,7 @@ type
   procedure SetThread(AThread:TThread);
  public
   {Public Properties}
-  property Handle:LongWord read FHandle write SetHandle;
+  property Handle:THandle read FHandle write SetHandle;
   property RxByteCount:Int64 read GetRxByteCount write SetRxByteCount;
   property TxByteCount:Int64 read GetTxByteCount write SetTxByteCount;
   property RequestCount:Int64 read GetRequestCount write SetRequestCount;
@@ -1798,7 +1798,7 @@ begin
  inherited Create;
  FLock:=CriticalSectionCreate;
  
- FHandle:=LongWord(Self);
+ FHandle:=THandle(Self);
  FRxByteCount:=0;
  FTxByteCount:=0;
  FRequestCount:=0;
@@ -1850,7 +1850,7 @@ end;
 
 {==============================================================================}
 
-procedure TSMTPConnection.SetHandle(AHandle:LongWord);
+procedure TSMTPConnection.SetHandle(AHandle:THandle);
 begin
  {}
  if not AcquireLock then Exit;

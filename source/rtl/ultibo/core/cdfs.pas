@@ -1,7 +1,7 @@
 {
 Ultibo CDFS interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -54,17 +54,15 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,C
 //To Do //Change Descriptor functions to use FDescriptorBuffer and DescriptorLock/Unlock ?
 //To Do //Change Entry functions to use FEntryBuffer and EntryLock/Unlock ?
                       //Who else uses the ClusterBuffer ?
-                      
 
 //To Do //Locks around FHeaders, FExtensions (partially tied in with FCatalogs) (LoadCatalogs/SetCatalogs etc ?)
 
 //To Do //Look for:
 
-//Pointer( where it is already inside a typecast to a structure pointer
-//eg PCDFSDirectoryRecord(Pointer(
-  //Other units as well
-
-//LongWord(Buffer
+//Int64(Pointer()^) -> PInt64()^
+//LongWord(Pointer()^) -> PLongWord()^
+//Word(Pointer()^) -> PWord()^
+//Byte(Pointer()^) -> PByte()^
 
 //Critical
 
@@ -2198,38 +2196,38 @@ begin
      {Set Offset}
      Offset:=0;
      {Create Root Directory} {Dot Record}
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
-     if not CDFSFileNameToIdentifier(cdfsDotName,PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,False) then Exit;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
+     if not CDFSFileNameToIdentifier(cdfsDotName,PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,False) then Exit;
 
      {Set Offset}
-     Offset:=PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).RecordSize;
+     Offset:=PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize;
      {Create Root Directory} {DotDot Record}
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
-     if not CDFSFileNameToIdentifier(cdfsDotDotName,PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,False) then Exit;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
+     if not CDFSFileNameToIdentifier(cdfsDotDotName,PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,False) then Exit;
 
      {Write Root Directory} {Whole Cluster}
      if not WriteSectors(AVolume,ADrive,Cluster,1,DirectoryRecord^) then Exit;
@@ -2491,39 +2489,39 @@ begin
      Offset:=0;
      
      {Create Root Directory} {Dot Record}
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
-     if not CDFSFileNameToIdentifier(cdfsDotName,PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,True) then Exit;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
+     if not CDFSFileNameToIdentifier(cdfsDotName,PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,True) then Exit;
 
      {Set Offset}
-     Offset:=PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).RecordSize;
+     Offset:=PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize;
      
      {Create Root Directory} {DotDot Record}
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
-     PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
-     if not CDFSFileNameToIdentifier(cdfsDotDotName,PCDFSDirectoryRecord(LongWord(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,True) then Exit;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlock:=ADescriptor.RootDirectory.FirstBlock;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FirstBlockM:=ADescriptor.RootDirectory.FirstBlockM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSize:=ADescriptor.RootDirectory.DataSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).DataSizeM:=ADescriptor.RootDirectory.DataSizeM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).CreateTime:=ADescriptor.RootDirectory.CreateTime;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileFlags:=ADescriptor.RootDirectory.FileFlags;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).UnitSize:=ADescriptor.RootDirectory.UnitSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).InterleaveSize:=ADescriptor.RootDirectory.InterleaveSize;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumber:=ADescriptor.RootDirectory.SequenceNumber;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).SequenceNumberM:=ADescriptor.RootDirectory.SequenceNumberM;
+     PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifierSize:=ADescriptor.RootDirectory.FileIdentifierSize;
+     if not CDFSFileNameToIdentifier(cdfsDotDotName,PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).FileIdentifier[0],ADescriptor.RootDirectory.FileIdentifierSize,True) then Exit;
 
      {Write Root Directory} {Whole Cluster}
      if not WriteSectors(AVolume,ADrive,Cluster,1,DirectoryRecord^) then Exit;
@@ -4322,7 +4320,7 @@ begin
    for Current:=Bit to (Bit + (Bits - 1)) do
     begin
      {Test Free}
-     if And64(Int64(Pointer(LongWord(ABuffer) + Offset)^),cdfsBitmapMasks[Current]) = cdfsBitmapMasks[Current] then Exit;
+     if And64(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),cdfsBitmapMasks[Current]) = cdfsBitmapMasks[Current] then Exit;
      //To Do //Replace these with inbuilt routines which handle Int64 without problems.
     end;
    
@@ -4396,13 +4394,13 @@ begin
      if AUsed then
       begin
        {Mark Used}
-       Int64(Pointer(LongWord(ABuffer) + Offset)^):=Or64(Int64(Pointer(LongWord(ABuffer) + Offset)^),cdfsBitmapMasks[Current]);
+       Int64(Pointer(PtrUInt(ABuffer) + Offset)^):=Or64(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),cdfsBitmapMasks[Current]);
        //To Do //Replace these with inbuilt routines which handle Int64 without problems.
       end
      else
       begin
        {Mark Free}
-       Int64(Pointer(LongWord(ABuffer) + Offset)^):=And64(Int64(Pointer(LongWord(ABuffer) + Offset)^),Not64(cdfsBitmapMasks[Current]));
+       Int64(Pointer(PtrUInt(ABuffer) + Offset)^):=And64(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),Not64(cdfsBitmapMasks[Current]));
        //To Do //Replace these with inbuilt routines which handle Int64 without problems.
       end;
     end;
@@ -4487,13 +4485,13 @@ begin
    {$ENDIF}
    
    {Mark Bits}
-   if (Bit = 0) and (Int64(Pointer(LongWord(ABuffer) + Offset)^) = cdfsBitmapMaskNone) then
+   if (Bit = 0) and (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = cdfsBitmapMaskNone) then
     begin
      {All Free}
      Result:=(Block shl 6); {Multiply by 64}
      Exit;
     end
-   else if (Bit = 0) and (Int64(Pointer(LongWord(ABuffer) + Offset)^) = cdfsBitmapMaskAll) then
+   else if (Bit = 0) and (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = cdfsBitmapMaskAll) then
     begin
      {All Used}
      {Nothing}
@@ -4503,10 +4501,10 @@ begin
      {Used and Free}
      for Current:=Bit to (Bit + (Bits - 1)) do
       begin
-       if And64(Int64(Pointer(LongWord(ABuffer) + Offset)^),cdfsBitmapMasks[Current]) = cdfsBitmapMaskNone then
+       if And64(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),cdfsBitmapMasks[Current]) = cdfsBitmapMaskNone then
         begin
          {$IFDEF CDFS_DEBUG}
-         if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBitmapNextFree - Block = ' + IntToStr(Block) + ' Current = ' + IntToStr(Current) + ' Bits = ' + IntToHex(Int64(Pointer(LongWord(ABuffer) + Offset)^),16));
+         if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBitmapNextFree - Block = ' + IntToStr(Block) + ' Current = ' + IntToStr(Current) + ' Bits = ' + IntToHex(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),16));
          {$ENDIF}
          Result:=(Block shl 6) + Current; {Multiply by 64 / Add Current Bit}
          Exit;
@@ -4567,12 +4565,12 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBitmapFreeCount - Bits = ' + IntToStr(Bits) + ' cdfsBitmapOverlays = ' + IntToHex(cdfsBitmapOverlays[Bits - 1],16) + ' Hi = ' + IntToHex(Int64Rec(cdfsBitmapOverlays[Bits - 1]).Hi,8) + ' Lo = ' + IntToHex(Int64Rec(cdfsBitmapOverlays[Bits - 1]).Lo,8));
    {$ENDIF}
    
-   if Int64(Pointer(LongWord(ABuffer) + Offset)^) = cdfsBitmapMaskNone then
+   if Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = cdfsBitmapMaskNone then
     begin
      {All Free}
      Inc(Result,Bits);
     end
-   else if Int64(Pointer(LongWord(ABuffer) + Offset)^) = cdfsBitmapMaskAll then
+   else if Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = cdfsBitmapMaskAll then
     begin
      {All Used}
      {Nothing}
@@ -4580,13 +4578,13 @@ begin
    else
     begin
      {Used and Free}
-     Value:=(not(LongWord(Pointer(LongWord(ABuffer) + Offset)^))) and (Int64Rec(cdfsBitmapOverlays[Bits - 1]).Hi);  //To Do //Lo/Hi to be confirmed
+     Value:=(not(LongWord(Pointer(PtrUInt(ABuffer) + Offset)^))) and (Int64Rec(cdfsBitmapOverlays[Bits - 1]).Hi);  //To Do //Lo/Hi to be confirmed
      while Value > 0 do
       begin
        Inc(Result);
        Value:=(Value and (Value - 1));
       end;
-     Value:=(not(LongWord(Pointer(LongWord(ABuffer) + Offset + 4)^))) and (Int64Rec(cdfsBitmapOverlays[Bits - 1]).Lo); //To Do //Lo/Hi to be confirmed
+     Value:=(not(LongWord(Pointer(PtrUInt(ABuffer) + Offset + 4)^))) and (Int64Rec(cdfsBitmapOverlays[Bits - 1]).Lo); //To Do //Lo/Hi to be confirmed
      while Value > 0 do
       begin
        Inc(Result);
@@ -5184,7 +5182,7 @@ begin
  
  while Offset < SizeOf(TELTORITOValidationRecord) do
   begin
-   Inc(Checksum,Word(Pointer(LongWord(AValidation) + Offset)^));
+   Inc(Checksum,Word(Pointer(PtrUInt(AValidation) + Offset)^));
    Inc(Offset,SizeOf(Word));
   end;
   
@@ -5712,7 +5710,7 @@ begin
        if not ReadClusters(Cluster,1,FReadBuffer^) then Break;
       
        {Read Buffer}
-       System.Move(Pointer(LongWord(FReadBuffer) + Start)^,Pointer(LongWord(@ABuffer) + Offset)^,Count);
+       System.Move(Pointer(PtrUInt(FReadBuffer) + Start)^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
       
        {Update Cluster}
        Inc(Cluster);
@@ -5735,7 +5733,7 @@ begin
        begin
         {Full Clusters}
         {Read Clusters}
-        if not ReadClusters(Cluster,Length,Pointer(LongWord(@ABuffer) + Offset)^) then Break;
+        if not ReadClusters(Cluster,Length,Pointer(PtrUInt(@ABuffer) + Offset)^) then Break;
         
         {Update Cluster}
         Inc(Cluster,Length);
@@ -5761,7 +5759,7 @@ begin
          if not ReadClusters(Cluster,1,FReadBuffer^) then Break;
         
          {Read Buffer}
-         System.Move(FReadBuffer^,Pointer(LongWord(@ABuffer) + Offset)^,Count);
+         System.Move(FReadBuffer^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
         
          {Update Cluster}
          {Inc(Cluster);} {Must be last Read}
@@ -5853,7 +5851,7 @@ begin
        if not ReadClusters(Cluster,1,FWriteBuffer^) then Break;
       
        {Write Buffer}
-       System.Move(Pointer(LongWord(@ABuffer) + Offset)^,Pointer(LongWord(FWriteBuffer) + Start)^,Count);
+       System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,Pointer(PtrUInt(FWriteBuffer) + Start)^,Count);
       
        {Write Clusters}
        if not WriteClusters(Cluster,1,FWriteBuffer^) then Break;
@@ -5879,7 +5877,7 @@ begin
        begin
         {Full Clusters}
         {Write Clusters}
-        if not WriteClusters(Cluster,Length,Pointer(LongWord(@ABuffer) + Offset)^) then Break;
+        if not WriteClusters(Cluster,Length,Pointer(PtrUInt(@ABuffer) + Offset)^) then Break;
         
         {Update Cluster}
         Inc(Cluster,Length);
@@ -5905,7 +5903,7 @@ begin
          if not ReadClusters(Cluster,1,FWriteBuffer^) then Break;
         
          {Write Buffer}
-         System.Move(Pointer(LongWord(@ABuffer) + Offset)^,FWriteBuffer^,Count);
+         System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,FWriteBuffer^,Count);
         
          {Write Clusters}
          if not WriteClusters(Cluster,1,FWriteBuffer^) then Break;
@@ -6398,14 +6396,14 @@ begin
        while Offset < Size do
         begin
          {Check Record}
-         if PCDFSPathRecord(Pointer(LongWord(Buffer) + Offset)).PathIdentifierSize < cdfsPathIdentifierSize then Break;
+         if PCDFSPathRecord(PtrUInt(Buffer) + Offset).PathIdentifierSize < cdfsPathIdentifierSize then Break;
          
          {Load Path}
          if not LoadPath(ATable,Buffer,Offset,Number) then Exit;
          
          {Update Offset}
-         Uneven:=((PCDFSPathRecord(Pointer(LongWord(Buffer) + Offset)).PathIdentifierSize and cdfsUnevenSize) = cdfsUnevenSize);
-         Inc(Offset,PCDFSPathRecord(Pointer(LongWord(Buffer) + Offset)).PathIdentifierSize + (cdfsPathRecordSize - 1));
+         Uneven:=((PCDFSPathRecord(PtrUInt(Buffer) + Offset).PathIdentifierSize and cdfsUnevenSize) = cdfsUnevenSize);
+         Inc(Offset,PCDFSPathRecord(PtrUInt(Buffer) + Offset).PathIdentifierSize + (cdfsPathRecordSize - 1));
          if Uneven then Inc(Offset);
          Inc(Number);
         end;
@@ -6472,13 +6470,13 @@ begin
           while (Offset < FClusterSize) and (Offset < TCDFSDiskEntry(AParent).DataSize) do
            begin
             {Check Record}
-            if PCDFSDirectoryRecord(Pointer(LongWord(FClusterBuffer) + Offset)).RecordSize < cdfsDirectoryRecordSize then Break;
+            if PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + Offset).RecordSize < cdfsDirectoryRecordSize then Break;
             
             {Load Entry}
             if not LoadEntry(TCDFSDiskEntry(AParent),FClusterBuffer,Offset,Cluster) then Exit;
             
             {Update Offset}
-            Inc(Offset,PCDFSDirectoryRecord(Pointer(LongWord(FClusterBuffer) + Offset)).RecordSize);
+            Inc(Offset,PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + Offset).RecordSize);
            end;
           
           {Update Cluster}
@@ -6580,7 +6578,7 @@ begin
                  if Validation = nil then
                   begin
                    {Check Validation}
-                   if PELTORITOValidationRecord(Pointer(LongWord(FClusterBuffer) + Offset)).HeaderId <> cdfsElToritoHeaderId then Completed:=True;
+                   if PELTORITOValidationRecord(PtrUInt(FClusterBuffer) + Offset).HeaderId <> cdfsElToritoHeaderId then Completed:=True;
                    if Completed then Break;
                  
                    {Load Header}
@@ -6598,7 +6596,7 @@ begin
                    if Initial = nil then
                     begin
                      {Check Initial}
-                     if (PELTORITODefaultRecord(Pointer(LongWord(FClusterBuffer) + Offset)).BootIndicator <> cdfsElToritoBootIndicator) and (PELTORITODefaultRecord(Pointer(LongWord(FClusterBuffer) + Offset)).BootIndicator <> cdfsElToritoNoBootIndicator) then Completed:=True;
+                     if (PELTORITODefaultRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator <> cdfsElToritoBootIndicator) and (PELTORITODefaultRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator <> cdfsElToritoNoBootIndicator) then Completed:=True;
                      if Completed then Break;
                      
                      {Load Catalog}
@@ -6615,7 +6613,7 @@ begin
                    else
                     begin
                      {Check Header/Catalog/Extension}
-                     if (PELTORITOSectionHeader(Pointer(LongWord(FClusterBuffer) + Offset)).HeaderIndicator = cdfsElToritoHeaderIndicator) or (PELTORITOSectionHeader(Pointer(LongWord(FClusterBuffer) + Offset)).HeaderIndicator = cdfsElToritoHeaderTerminator) then
+                     if (PELTORITOSectionHeader(PtrUInt(FClusterBuffer) + Offset).HeaderIndicator = cdfsElToritoHeaderIndicator) or (PELTORITOSectionHeader(PtrUInt(FClusterBuffer) + Offset).HeaderIndicator = cdfsElToritoHeaderTerminator) then
                       begin
                        {Check Header}
                        if Count > 0 then Completed:=True;
@@ -6635,7 +6633,7 @@ begin
                      
                        Inc(HeaderNo);
                       end
-                     else if (PELTORITOSectionRecord(Pointer(LongWord(FClusterBuffer) + Offset)).BootIndicator = cdfsElToritoBootIndicator) or (PELTORITOSectionRecord(Pointer(LongWord(FClusterBuffer) + Offset)).BootIndicator = cdfsElToritoNoBootIndicator) then
+                     else if (PELTORITOSectionRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator = cdfsElToritoBootIndicator) or (PELTORITOSectionRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator = cdfsElToritoNoBootIndicator) then
                       begin
                        {Check Catalog}
                        if Count = 0 then Completed:=True;
@@ -6655,7 +6653,7 @@ begin
                        Dec(Count);
                        Inc(CatalogNo);
                       end
-                     else if PELTORITOSectionExtension(Pointer(LongWord(FClusterBuffer) + Offset)).ExtensionIndicator = cdfsElToritoExtensionIndicator then
+                     else if PELTORITOSectionExtension(PtrUInt(FClusterBuffer) + Offset).ExtensionIndicator = cdfsElToritoExtensionIndicator then
                       begin
                        {Check Extension}
                        if Extension <> nil then if (Extension.ExtensionFlag and cdfsElToritoExtensionFlagExtension) <> cdfsElToritoExtensionFlagExtension then Completed:=True;
@@ -7430,7 +7428,7 @@ begin
   Path.PathOffset:=AOffset;
  
   {Load Path}
-  if RecordToPath(Pointer(LongWord(ABuffer) + AOffset),Path,ATable.Unicode,ATable.Endian) then
+  if RecordToPath(Pointer(PtrUInt(ABuffer) + AOffset),Path,ATable.Unicode,ATable.Endian) then
    begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadPath - Name = ' + Path.Name + ' Number = ' + IntToStr(Path.PathNumber) + ' Parent = ' + IntToStr(Path.ParentNumber));
@@ -7484,7 +7482,7 @@ begin
   Entry.EntryCluster:=ACluster;
   
   {Load Entry}
-  if RecordToEntry(Pointer(LongWord(ABuffer) + AOffset),Entry,Entry.Unicode) then
+  if RecordToEntry(Pointer(PtrUInt(ABuffer) + AOffset),Entry,Entry.Unicode) then
    begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadEntry - Name = ' + Entry.Name + ' Start = ' + IntToStr(Entry.StartCluster) + ' Count = ' + IntToStr(Entry.ClusterCount));
@@ -7555,7 +7553,7 @@ begin
   {$ENDIF}
   
   {Check Header}
-  SectionHeader:=PELTORITOSectionHeader(Pointer(LongWord(ABuffer) + AOffset));
+  SectionHeader:=PELTORITOSectionHeader(PtrUInt(ABuffer) + AOffset);
   if (SectionHeader.HeaderIndicator = cdfsElToritoHeaderIndicator) or (SectionHeader.HeaderIndicator = cdfsElToritoHeaderTerminator) then
    begin
     {Create Header}
@@ -7578,7 +7576,7 @@ begin
   else
    begin
     {Check Validation}
-    ValidationRecord:=PELTORITOValidationRecord(Pointer(LongWord(ABuffer) + AOffset));
+    ValidationRecord:=PELTORITOValidationRecord(PtrUInt(ABuffer) + AOffset);
     if ValidationRecord.HeaderId = cdfsElToritoHeaderId then
      begin
       {Create Validation}
@@ -7637,7 +7635,7 @@ begin
   if AInitial then
    begin
     {Check Initial}
-    DefaultRecord:=PELTORITODefaultRecord(Pointer(LongWord(ABuffer) + AOffset));
+    DefaultRecord:=PELTORITODefaultRecord(PtrUInt(ABuffer) + AOffset);
     if (DefaultRecord.BootIndicator = cdfsElToritoBootIndicator) or (DefaultRecord.BootIndicator = cdfsElToritoNoBootIndicator) then
      begin
       {Create Initial}
@@ -7668,7 +7666,7 @@ begin
   else
    begin
     {Check Catalog}
-    SectionRecord:=PELTORITOSectionRecord(Pointer(LongWord(ABuffer) + AOffset));
+    SectionRecord:=PELTORITOSectionRecord(PtrUInt(ABuffer) + AOffset);
     if (SectionRecord.BootIndicator = cdfsElToritoBootIndicator) or (SectionRecord.BootIndicator = cdfsElToritoNoBootIndicator) then
      begin
       {Create Catalog}
@@ -7724,7 +7722,7 @@ begin
   {$ENDIF}
   
   {Check Extension}
-  SectionExtension:=PELTORITOSectionExtension(Pointer(LongWord(ABuffer) + AOffset));
+  SectionExtension:=PELTORITOSectionExtension(PtrUInt(ABuffer) + AOffset);
   if SectionExtension.ExtensionIndicator = cdfsElToritoExtensionIndicator then
    begin
     {Create Extension}
@@ -10320,7 +10318,7 @@ begin
   if not FBlockWrite then if not ReadClusters(TCDFSDiskEntry(ARoot).EntryCluster,1,FClusterBuffer^) then Exit;
   
   {Get Root}
-  Directory:=PCDFSDirectoryRecord(Pointer(LongWord(FClusterBuffer) + TCDFSDiskEntry(ARoot).EntryOffset));
+  Directory:=PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + TCDFSDiskEntry(ARoot).EntryOffset);
   
   {Set Root}
   if EntryToRecord(TCDFSDiskEntry(ARoot),Directory,TCDFSDiskEntry(ARoot).Unicode) then
@@ -10361,7 +10359,7 @@ begin
   if FReadOnly then Exit;
   
   {Get Path}
-  Path:=PCDFSPathRecord(Pointer(LongWord(ABuffer) + APath.PathOffset));
+  Path:=PCDFSPathRecord(PtrUInt(ABuffer) + APath.PathOffset);
   
   {Set Path}
   if PathToRecord(APath,Path,TCDFSDiskTable(ATable).Unicode,TCDFSDiskTable(ATable).Endian) then
@@ -10400,7 +10398,7 @@ begin
   if not FBlockWrite then if not ReadClusters(TCDFSDiskEntry(AEntry).EntryCluster,1,FClusterBuffer^) then Exit;
   
   {Get Entry}
-  Directory:=PCDFSDirectoryRecord(Pointer(LongWord(FClusterBuffer) + TCDFSDiskEntry(AEntry).EntryOffset));
+  Directory:=PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + TCDFSDiskEntry(AEntry).EntryOffset);
   
   {Set Entry}
   if EntryToRecord(TCDFSDiskEntry(AEntry),Directory,TCDFSDiskEntry(AEntry).Unicode) then
@@ -10445,7 +10443,7 @@ begin
   if (AHeader.HeaderIndicator = cdfsElToritoHeaderIndicator) or (AHeader.HeaderIndicator = cdfsElToritoHeaderTerminator) then
    begin
     {Get Header}
-    SectionHeader:=PELTORITOSectionHeader(Pointer(LongWord(FClusterBuffer) + AHeader.HeaderOffset));
+    SectionHeader:=PELTORITOSectionHeader(PtrUInt(FClusterBuffer) + AHeader.HeaderOffset);
     
     {Set Header}
     SectionHeader.HeaderIndicator:=AHeader.HeaderIndicator;
@@ -10464,7 +10462,7 @@ begin
     if AHeader.HeaderId = cdfsElToritoHeaderId then
      begin
       {Get Validation}
-      ValidationRecord:=PELTORITOValidationRecord(Pointer(LongWord(FClusterBuffer) + AHeader.HeaderOffset));
+      ValidationRecord:=PELTORITOValidationRecord(PtrUInt(FClusterBuffer) + AHeader.HeaderOffset);
       
       {Set Validation}
       ValidationRecord.HeaderId:=AHeader.HeaderId;
@@ -10518,7 +10516,7 @@ begin
   if TCDFSDiskCatalog(ACatalog).Initial then
    begin
     {Get Initial}
-    DefaultRecord:=PELTORITODefaultRecord(Pointer(LongWord(FClusterBuffer) + TCDFSDiskCatalog(ACatalog).CatalogOffset));
+    DefaultRecord:=PELTORITODefaultRecord(PtrUInt(FClusterBuffer) + TCDFSDiskCatalog(ACatalog).CatalogOffset);
     
     {Set Initial}
     DefaultRecord.BootIndicator:=TCDFSDiskCatalog(ACatalog).BootIndicator;
@@ -10536,7 +10534,7 @@ begin
   else
    begin
     {Get Catalog}
-    SectionRecord:=PELTORITOSectionRecord(Pointer(LongWord(FClusterBuffer) + TCDFSDiskCatalog(ACatalog).CatalogOffset));
+    SectionRecord:=PELTORITOSectionRecord(PtrUInt(FClusterBuffer) + TCDFSDiskCatalog(ACatalog).CatalogOffset);
     
     {Set Catalog}
     SectionRecord.BootIndicator:=TCDFSDiskCatalog(ACatalog).BootIndicator;
@@ -10584,7 +10582,7 @@ begin
   if not FBlockWrite then if not ReadClusters(AExtension.ExtensionCluster,1,FClusterBuffer^) then Exit;
   
   {Get Extension}
-  SectionExtension:=PELTORITOSectionExtension(Pointer(LongWord(FClusterBuffer) + AExtension.ExtensionOffset));
+  SectionExtension:=PELTORITOSectionExtension(PtrUInt(FClusterBuffer) + AExtension.ExtensionOffset);
   
   {Set Extension}
   SectionExtension.ExtensionIndicator:=AExtension.ExtensionIndicator;
@@ -11293,10 +11291,10 @@ begin
  while (Count + 3) < ASize do
   begin
    {Sum all Bytes}
-   Byte1:=Byte1 + Byte(Pointer(LongWord(ABuffer) + LongWord(Count))^);
-   Byte2:=Byte2 + Byte(Pointer(LongWord(ABuffer) + LongWord(Count + 1))^);
-   Byte3:=Byte3 + Byte(Pointer(LongWord(ABuffer) + LongWord(Count + 2))^);
-   Byte4:=Byte4 + Byte(Pointer(LongWord(ABuffer) + LongWord(Count + 3))^);
+   Byte1:=Byte1 + Byte(Pointer(PtrUInt(ABuffer) + LongWord(Count))^);
+   Byte2:=Byte2 + Byte(Pointer(PtrUInt(ABuffer) + LongWord(Count + 1))^);
+   Byte3:=Byte3 + Byte(Pointer(PtrUInt(ABuffer) + LongWord(Count + 2))^);
+   Byte4:=Byte4 + Byte(Pointer(PtrUInt(ABuffer) + LongWord(Count + 3))^);
    Inc(Count,4); {SizeOf(LongWord)}
   end;
   
@@ -13203,7 +13201,7 @@ begin
      Count:=0;
      while (Count + 1) < ASize do  {Account for odd size}
       begin
-       PWord(LongWord(Result) + LongWord(Count))^:=SwapEndian(PWord(LongWord(Result) + LongWord(Count))^);
+       PWord(PtrUInt(Result) + LongWord(Count))^:=SwapEndian(PWord(PtrUInt(Result) + LongWord(Count))^);
        Inc(Count,2); {SizeOf(Word)}
       end;
     end;
@@ -13234,7 +13232,7 @@ begin
      Count:=0;
      while (Count + 1) < ASize do  {Account for odd size}
       begin
-       PWord(LongWord(@AData) + LongWord(Count))^:=SwapEndian(PWord(LongWord(@AData) + LongWord(Count))^);
+       PWord(PtrUInt(@AData) + LongWord(Count))^:=SwapEndian(PWord(PtrUInt(@AData) + LongWord(Count))^);
        Inc(Count,2); {SizeOf(Word)}
       end;
     end;

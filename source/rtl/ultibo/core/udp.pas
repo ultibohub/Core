@@ -1,7 +1,7 @@
 {
 Ultibo UDP (User Datagram Protocol) unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -369,7 +369,7 @@ begin
         if CheckUDP(AF_INET,IP) then
          begin
           {Get Header}
-          UDP:=PUDPHeader(LongWord(IP) + GetUDPHeaderOffset(AF_INET,IP));
+          UDP:=PUDPHeader(PtrUInt(IP) + GetUDPHeaderOffset(AF_INET,IP));
          
           {Set the Ports to Host order}
           UDP.DestPort:=WordBEtoN(UDP.DestPort);
@@ -398,7 +398,7 @@ begin
             {$ENDIF}
             
             {Write the Data into the Receive Buffer}
-            Socket.RecvData.WriteBuffer(Pointer(LongWord(IP) + Offset)^,Length,@IP.SourceIP,@UDP.SourcePort);
+            Socket.RecvData.WriteBuffer(Pointer(PtrUInt(IP) + Offset)^,Length,@IP.SourceIP,@UDP.SourcePort);
             
             {Signal the Event}
             Socket.SignalChange;
@@ -434,7 +434,7 @@ begin
         if CheckICMP(AF_INET,IP) then
          begin
           {Get Header}
-          ICMP:=PICMPHeader(LongWord(IP) + GetICMPHeaderOffset(AF_INET,IP));
+          ICMP:=PICMPHeader(PtrUInt(IP) + GetICMPHeaderOffset(AF_INET,IP));
           
           {Check for a Type that we handle}
           case ICMP.Unused.ICMPType of
@@ -632,7 +632,7 @@ begin
         if CheckUDP(AF_INET6,IP6) then
          begin
           {Get Header}
-          UDP:=PUDPHeader(LongWord(IP6) + GetUDPHeaderOffset(AF_INET6,IP6));
+          UDP:=PUDPHeader(PtrUInt(IP6) + GetUDPHeaderOffset(AF_INET6,IP6));
          
           {Set the Ports to Host order}
           UDP.DestPort:=WordBEtoN(UDP.DestPort);
@@ -656,7 +656,7 @@ begin
             {$ENDIF}
             
             {Write the Data into the Receive Buffer}
-            Socket.RecvData.WriteBuffer(Pointer(LongWord(IP6) + Offset)^,Length,@IP6.SourceIP,@UDP.SourcePort);
+            Socket.RecvData.WriteBuffer(Pointer(PtrUInt(IP6) + Offset)^,Length,@IP6.SourceIP,@UDP.SourcePort);
             
             {Signal the Event}
             Socket.SignalChange;
@@ -692,7 +692,7 @@ begin
         if CheckICMP(AF_INET6,IP6) then
          begin
           {Get Header}
-          ICMP6:=PICMP6Header(LongWord(IP6) + GetICMP6HeaderOffset(AF_INET6,IP6));
+          ICMP6:=PICMP6Header(PtrUInt(IP6) + GetICMP6HeaderOffset(AF_INET6,IP6));
         
           {Check for a Type that we handle}
           
@@ -3871,7 +3871,7 @@ begin
   FStart:=FBuffer.Memory;
   
   {End actually points to byte beyond last for simpler calculations}
-  FEnd:=Pointer(LongWord(FStart) + FSize);
+  FEnd:=Pointer(PtrUInt(FStart) + FSize);
   
   {Set the Data Values}
   FUsed:=0;
@@ -3942,8 +3942,8 @@ begin
   ReadNext:=FRead;
   ReadSize:=FFirst.Size;
   {$IFDEF UDP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: FStart = ' + IntToHex(LongWord(FStart),8) + ' FEnd = ' + IntToHex(LongWord(FEnd),8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: ReadNext = ' + IntToStr(LongWord(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
   
   {Get the Return Size}
@@ -3952,7 +3952,7 @@ begin
   
   {Since we Guarantee ReadNext to be at least 1 byte from the End of the Buffer, we can start reading}
   {Check for Single or Double Read}
-  if (LongWord(ReadNext) + ReadSize) <= LongWord(FEnd) then
+  if (PtrUInt(ReadNext) + ReadSize) <= PtrUInt(FEnd) then
    begin
     {Single Read with no wrap around}
     {Read the Data}
@@ -3978,7 +3978,7 @@ begin
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: Double Read');
     {$ENDIF}
     {Read the First Block of the Data}
-    BlockSize:=(LongWord(FEnd) - LongWord(ReadNext));
+    BlockSize:=(PtrUInt(FEnd) - PtrUInt(ReadNext));
     if BufferSize < BlockSize then
      begin
       {$IFDEF UDP_DEBUG}
@@ -4007,11 +4007,11 @@ begin
         {$IFDEF UDP_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: Short Second Read');
         {$ENDIF}
-        System.Move(ReadNext^,Pointer(LongWord(@ABuffer) + BlockSize)^,BufferSize);
+        System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,BufferSize);
        end
       else
        begin
-        System.Move(ReadNext^,Pointer(LongWord(@ABuffer) + BlockSize)^,ReadSize);
+        System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,ReadSize);
        end;
      end;
     
@@ -4020,15 +4020,15 @@ begin
    end;
   
   {Check for Wrap around}
-  if LongWord(ReadNext) = LongWord(FEnd) then ReadNext:=FStart;
+  if PtrUInt(ReadNext) = PtrUInt(FEnd) then ReadNext:=FStart;
   {$IFDEF UDP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: ReadNext = ' + IntToStr(LongWord(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
   
   {Get the Remote Address}
   if ARemoteAddress <> nil then
    begin
-    System.Move(Pointer(LongWord(FFirst) + FOffset)^,ARemoteAddress^,FLength);
+    System.Move(Pointer(PtrUInt(FFirst) + FOffset)^,ARemoteAddress^,FLength);
    end;
   
   {Get the Remote Port}
@@ -4083,12 +4083,12 @@ begin
   WriteNext:=FWrite;
   WriteSize:=ASize;
   {$IFDEF UDP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: FStart = ' + IntToHex(LongWord(FStart),8) + ' FEnd = ' + IntToHex(LongWord(FEnd),8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: WriteNext = ' + IntToStr(LongWord(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
   
   {Since we guarantee WriteNext to be at least 1 byte from the End of the Buffer, we can start writing}
-  if (LongWord(WriteNext) + WriteSize) <= LongWord(FEnd) then
+  if (PtrUInt(WriteNext) + WriteSize) <= PtrUInt(FEnd) then
    begin
     {Single Write with no wrap around}
     {Write the Packet Data}
@@ -4104,7 +4104,7 @@ begin
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: Double Write');
     {$ENDIF}
     {Write the First Block of the Packet Data}
-    BlockSize:=(LongWord(FEnd) - LongWord(WriteNext));
+    BlockSize:=(PtrUInt(FEnd) - PtrUInt(WriteNext));
     System.Move(ABuffer,WriteNext^,BlockSize);
     
     {Wrap to Start of Buffer}
@@ -4112,22 +4112,22 @@ begin
     Dec(WriteSize,BlockSize);
     
     {Write the Second Block of the Packet Data}
-    System.Move(Pointer(LongWord(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
+    System.Move(Pointer(PtrUInt(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
     
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end;
   
   {Check for Wrap around}
-  if LongWord(WriteNext) = LongWord(FEnd) then WriteNext:=FStart;
+  if PtrUInt(WriteNext) = PtrUInt(FEnd) then WriteNext:=FStart;
   {$IFDEF UDP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: WriteNext = ' + IntToStr(LongWord(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
   
   {Set the Remote Address}
   if ARemoteAddress <> nil then
    begin
-    System.Move(ARemoteAddress^,Pointer(LongWord(FLast) + FOffset)^,FLength);
+    System.Move(ARemoteAddress^,Pointer(PtrUInt(FLast) + FOffset)^,FLength);
    end;
   
   {Set the Remote Port}
@@ -4236,7 +4236,7 @@ begin
     IP:=PIPHeader(ABuffer);        {GetIPHeaderLength}
     
     {Get Header}
-    UDP:=PUDPHeader(LongWord(IP) + GetUDPHeaderOffset(AF_INET,ABuffer));
+    UDP:=PUDPHeader(PtrUInt(IP) + GetUDPHeaderOffset(AF_INET,ABuffer));
     
     {Check Header Length}
     Length:=GetUDPHeaderLength(AF_INET,ABuffer); {GetIPDataLength} //To Do //Same for ICMP/IGMP/TCP etc ?
@@ -4276,7 +4276,7 @@ begin
     IP6:=PIP6Header(ABuffer);        {GetIP6HeaderLength}
     
     {Get Header}
-    UDP:=PUDPHeader(LongWord(IP6) + GetUDPHeaderOffset(AF_INET6,ABuffer));
+    UDP:=PUDPHeader(PtrUInt(IP6) + GetUDPHeaderOffset(AF_INET6,ABuffer));
     
     //To Do
     
@@ -4366,7 +4366,7 @@ begin
     {Get Start of UDP Header (Length of IP Header)}
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
     {Return UDP Length Field - Size of UDP Header}
-    Result:=WordBEtoN(PUDPHeader(LongWord(ABuffer) + Offset).Length) - UDP_HEADER_SIZE;
+    Result:=WordBEtoN(PUDPHeader(PtrUInt(ABuffer) + Offset).Length) - UDP_HEADER_SIZE;
    end;
   AF_INET6:begin
     
@@ -4391,7 +4391,7 @@ begin
  case AFamily of
   AF_INET:begin
     {Get Header}
-    UDP:=PUDPHeader(LongWord(ABuffer) + AOffset);
+    UDP:=PUDPHeader(PtrUInt(ABuffer) + AOffset);
     
     {Save Checksum}
     Original:=UDP.Checksum;

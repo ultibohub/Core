@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV V3D interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,7 +17,10 @@ Boards
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
  
 Licence
 =======

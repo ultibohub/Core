@@ -1,7 +1,7 @@
 {
 Ultibo Virtual Disk interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5492,7 +5492,7 @@ begin
   
   while Offset < SizeOf(TVpcHardDiskFooter) do
    begin
-    Inc(Checksum,Byte(Pointer(LongWord(AFooter) + Offset)^));
+    Inc(Checksum,Byte(Pointer(PtrUInt(AFooter) + Offset)^));
     Inc(Offset,SizeOf(Byte));
    end;
    
@@ -5520,7 +5520,7 @@ begin
   
   while Offset < SizeOf(TVpcDynamicDiskHeader) do
    begin
-    Inc(Checksum,Byte(Pointer(LongWord(ASparse) + Offset)^));
+    Inc(Checksum,Byte(Pointer(PtrUInt(ASparse) + Offset)^));
     Inc(Offset,SizeOf(Byte));
    end;
    
@@ -5677,7 +5677,7 @@ begin
     {Get Block}
     BlockNo:=(ASector shr AExtent.BlockShiftCount);                                {Get the Block No}
     TableOffset:=(BlockNo shl 2);                                                  {Get the Table Offset (Multiply BlockNo by 4)}
-    TableValue:=LongWordBEtoN(LongWord(Pointer(LongWord(Table.Data) + TableOffset)^));  {Get the Table Value}
+    TableValue:=LongWordBEtoN(LongWord(Pointer(PtrUInt(Table.Data) + TableOffset)^));  {Get the Table Value}
     
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockNo = ' + IntToHex(BlockNo,8));
@@ -5832,7 +5832,7 @@ begin
     {Get Block}
     BlockNo:=(ASector shr AExtent.BlockShiftCount);                                {Get the Block No}
     TableOffset:=(BlockNo shl 2);                                                  {Get the Table Offset (Multiply BlockNo by 4)}
-    TableValue:=LongWordBEtoN(LongWord(Pointer(LongWord(Table.Data) + TableOffset)^));  {Get the Table Value}
+    TableValue:=LongWordBEtoN(LongWord(Pointer(PtrUInt(Table.Data) + TableOffset)^));  {Get the Table Value}
     
     {$IFDEF VIRTUAL_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   BlockNo = ' + IntToHex(BlockNo,8));
@@ -5867,7 +5867,7 @@ begin
        Block.DataOffset:=Block.BlockOffset + RoundToSector(Block.BlockSize,vpcSectorSize);
        
        {Update Table}
-       LongWord(Pointer(LongWord(Table.Data) + TableOffset)^):=LongWordNtoBE(TableValue);
+       LongWord(Pointer(PtrUInt(Table.Data) + TableOffset)^):=LongWordNtoBE(TableValue);
        if not SetTable(Table) then Exit;
        
        {Update Extent}
@@ -6491,7 +6491,7 @@ begin
           TableOffset:=(BlockNo shl 2);
           
           {Check Block (Block is Allocated)}
-          if LongWordBEtoN(LongWord(Pointer(LongWord(TVirtualDiskVpcExtent(Extent).Table.Data) + TableOffset)^)) <> vpcUnallocatedBlock then
+          if LongWordBEtoN(LongWord(Pointer(PtrUInt(TVirtualDiskVpcExtent(Extent).Table.Data) + TableOffset)^)) <> vpcUnallocatedBlock then
            begin
             Block:=GetBlock(TVirtualDiskVpcExtent(Extent).Table,ASector,AWrite);
             if Block = nil then Exit;
@@ -6785,10 +6785,10 @@ begin
      Block.BlockNo:=ABlockNo;
      
      {Check Block (Block is Allocated)}
-     if LongWordBEtoN(LongWord(Pointer(LongWord(TVirtualDiskVpcTable(ATable).Data) + TableOffset)^)) <> vpcUnallocatedBlock then
+     if LongWordBEtoN(LongWord(Pointer(PtrUInt(TVirtualDiskVpcTable(ATable).Data) + TableOffset)^)) <> vpcUnallocatedBlock then
       begin
        {Update Block}
-       Block.BlockOffset:=LongWordBEtoN(LongWord(Pointer(LongWord(TVirtualDiskVpcTable(ATable).Data) + TableOffset)^)) shl FSectorShiftCount;
+       Block.BlockOffset:=LongWordBEtoN(LongWord(Pointer(PtrUInt(TVirtualDiskVpcTable(ATable).Data) + TableOffset)^)) shl FSectorShiftCount;
        Block.BlockSize:=(LongWordBEtoN(TVirtualDiskVpcExtent(ATable.Extent).Sparse.BlockSize) shr FSectorShiftCount) shr 3; {BlockSize div SectorSize div 8 (Bits per Byte = 8)}
        Block.DataOffset:=Block.BlockOffset + RoundToSector(Block.BlockSize,vpcSectorSize);
       end
@@ -7100,13 +7100,13 @@ begin
    {$ENDIF}
    
    {Test Bits}
-   if (Bit = 0) and (LongWord(Pointer(LongWord(ABuffer) + Offset)^) = vpcBitmapMaskNone) then
+   if (Bit = 0) and (LongWord(Pointer(PtrUInt(ABuffer) + Offset)^) = vpcBitmapMaskNone) then
     begin
      {All Free}
      if AUsed then Exit;
      Inc(Result,32);
     end
-   else if (Bit = 0) and (LongWord(Pointer(LongWord(ABuffer) + Offset)^) = vpcBitmapMaskAll) then
+   else if (Bit = 0) and (LongWord(Pointer(PtrUInt(ABuffer) + Offset)^) = vpcBitmapMaskAll) then
     begin
      {All Used}
      if not AUsed then Exit;
@@ -7120,13 +7120,13 @@ begin
        if AUsed then
         begin
          {Test Used}
-         if (LongWord(Pointer(LongWord(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMaskNone then Exit;
+         if (LongWord(Pointer(PtrUInt(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMaskNone then Exit;
          Inc(Result);
         end
        else
         begin
          {Test Free}
-         if (LongWord(Pointer(LongWord(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMasks[Current] then Exit;
+         if (LongWord(Pointer(PtrUInt(ABuffer) + Offset)^) and vpcBitmapMasks[Current]) = vpcBitmapMasks[Current] then Exit;
          Inc(Result);
         end;
       end;
@@ -7200,12 +7200,12 @@ begin
      if AUsed then
       begin
        {Mark Used}
-       LongWord(Pointer(LongWord(ABuffer) + Offset)^):=vpcBitmapMaskAll;
+       LongWord(Pointer(PtrUInt(ABuffer) + Offset)^):=vpcBitmapMaskAll;
       end
      else
       begin
        {Mark Free}
-       LongWord(Pointer(LongWord(ABuffer) + Offset)^):=vpcBitmapMaskNone;
+       LongWord(Pointer(PtrUInt(ABuffer) + Offset)^):=vpcBitmapMaskNone;
       end;
     end
    else
@@ -7216,12 +7216,12 @@ begin
        if AUsed then
         begin
          {Mark Used}
-         LongWord(Pointer(LongWord(ABuffer) + Offset)^):=LongWord(Pointer(LongWord(ABuffer) + Offset)^) or vpcBitmapMasks[Current];
+         LongWord(Pointer(PtrUInt(ABuffer) + Offset)^):=LongWord(Pointer(PtrUInt(ABuffer) + Offset)^) or vpcBitmapMasks[Current];
         end
        else
         begin
          {Mark Free}
-         LongWord(Pointer(LongWord(ABuffer) + Offset)^):=LongWord(Pointer(LongWord(ABuffer) + Offset)^) and not(vpcBitmapMasks[Current]);
+         LongWord(Pointer(PtrUInt(ABuffer) + Offset)^):=LongWord(Pointer(PtrUInt(ABuffer) + Offset)^) and not(vpcBitmapMasks[Current]);
         end;
       end;
     end;
@@ -7485,7 +7485,7 @@ begin
    if Extent = nil then Exit;
 
    {Read Extent}
-   Length:=ReadExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Length:=ReadExtent(Extent,Start,Remain,Pointer(PtrUInt(@ABuffer) + Offset)^);
    Extent.ReleaseLock;
    if Length = 0 then Exit;
     
@@ -7534,7 +7534,7 @@ begin
    if Extent = nil then Exit;
    
    {Write Extent}
-   Length:=WriteExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Length:=WriteExtent(Extent,Start,Remain,Pointer(PtrUInt(@ABuffer) + Offset)^);
    Extent.ReleaseLock;
    if Length = 0 then Exit;
    
@@ -7888,7 +7888,7 @@ begin
   {Get Block}
   BlockNo:=(ASector shr AExtent.BlockShiftCount);                  {Get the Block No}
   TableOffset:=(BlockNo shl 2);                                    {Get the Table Offset (Multiply BlockNo by 4)}
-  TableValue:=LongWord(Pointer(LongWord(Table.Data) + TableOffset)^);  {Get the Table Value}
+  TableValue:=LongWord(Pointer(PtrUInt(Table.Data) + TableOffset)^);  {Get the Table Value}
   BlockStart:=(BlockNo shl AExtent.BlockShiftCount);               {Get the Block Start Sector (Multiply BlockNo by BlockShift)}
   BlockCount:=(AExtent.BlockSize shr FSectorShiftCount);           {Get the Block Sector Count (Divide BlockSize by SectorSize)}
   
@@ -7982,7 +7982,7 @@ begin
   {Get Block}
   BlockNo:=(ASector shr AExtent.BlockShiftCount);                  {Get the Block No}
   TableOffset:=(BlockNo shl 2);                                    {Get the Table Offset (Multiply BlockNo by 4)}
-  TableValue:=LongWord(Pointer(LongWord(Table.Data) + TableOffset)^);  {Get the Table Value}
+  TableValue:=LongWord(Pointer(PtrUInt(Table.Data) + TableOffset)^);  {Get the Table Value}
   BlockStart:=(BlockNo shl AExtent.BlockShiftCount);               {Get the Block Start Sector (Multiply BlockNo by BlockShift)}
   BlockCount:=(AExtent.BlockSize shr FSectorShiftCount);           {Get the Block Sector Count (Divide BlockSize by SectorSize)}
   
@@ -8028,7 +8028,7 @@ begin
         end;
         
        {Update Table}
-       LongWord(Pointer(LongWord(Table.Data) + TableOffset)^):=TableValue;
+       LongWord(Pointer(PtrUInt(Table.Data) + TableOffset)^):=TableValue;
        if not SetTable(Table) then Exit;
        
        {Update Extent}
@@ -8441,7 +8441,7 @@ begin
         TableOffset:=(BlockNo shl 2);
         
         {Check Block (Block is Allocated or Extent is Base)}
-        if (LongWord(Pointer(LongWord(TVirtualDiskVboxExtent(Extent).Table.Data) + TableOffset)^) <> vboxUnallocatedBlock) or (Extent.IsBase) then
+        if (LongWord(Pointer(PtrUInt(TVirtualDiskVboxExtent(Extent).Table.Data) + TableOffset)^) <> vboxUnallocatedBlock) or (Extent.IsBase) then
          begin
           if ALock then Extent.AcquireLock;
           
@@ -8905,7 +8905,7 @@ begin
    if Extent = nil then Exit;
    
    {Read Extent}
-   Length:=ReadExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Length:=ReadExtent(Extent,Start,Remain,Pointer(PtrUInt(@ABuffer) + Offset)^);
    Extent.ReleaseLock;
    if Length = 0 then Exit;
    
@@ -8954,7 +8954,7 @@ begin
    if Extent = nil then Exit;
    
    {Write Extent}
-   Length:=WriteExtent(Extent,Start,Remain,Pointer(LongWord(@ABuffer) + Offset)^);
+   Length:=WriteExtent(Extent,Start,Remain,Pointer(PtrUInt(@ABuffer) + Offset)^);
    Extent.ReleaseLock;
    if Length = 0 then Exit;
    
@@ -10376,7 +10376,7 @@ begin
      Count:=0;
      while (Count + 1) < ASize do  {Account for odd size}
       begin
-       PWord(LongWord(Result) + LongWord(Count))^:=SwapEndian(PWord(LongWord(Result) + LongWord(Count))^);
+       PWord(PtrUInt(Result) + LongWord(Count))^:=SwapEndian(PWord(PtrUInt(Result) + LongWord(Count))^);
        Inc(Count,2); {SizeOf(Word)}
       end;
     end;
@@ -10407,7 +10407,7 @@ begin
      Count:=0;
      while (Count + 1) < ASize do  {Account for odd size}
       begin
-       PWord(LongWord(@AData) + LongWord(Count))^:=SwapEndian(PWord(LongWord(@AData) + LongWord(Count))^);
+       PWord(PtrUInt(@AData) + LongWord(Count))^:=SwapEndian(PWord(PtrUInt(@AData) + LongWord(Count))^);
        Inc(Count,2); {SizeOf(Word)}
       end;
     end;

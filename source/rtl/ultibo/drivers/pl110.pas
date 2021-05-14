@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL110 Color LCD Controller Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -217,8 +217,8 @@ type
  
 {==============================================================================}
 {PL110 Functions}
-function PL110FramebufferCreateVGA(Address:LongWord;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
-function PL110FramebufferCreateSVGA(Address:LongWord;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
+function PL110FramebufferCreateVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
+function PL110FramebufferCreateSVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
 
 function PL110FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
 
@@ -229,7 +229,7 @@ function PL110FramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 
 function PL110FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
-function PL110FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function PL110FramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function PL110FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
 
@@ -255,7 +255,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL110 Functions}
-function PL110FramebufferCreateVGA(Address:LongWord;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
+function PL110FramebufferCreateVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
 {Create, register and allocate a new PL110 Framebuffer device which can be accessed using the framebuffer API}
 {Address: The address of the PL110 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -272,7 +272,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Create VGA (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Create VGA (Address=' + AddrToHex(Address) + ' Name=' + Name + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
 
  {Check Address}
@@ -360,7 +360,7 @@ end;
 
 {==============================================================================}
 
-function PL110FramebufferCreateSVGA(Address:LongWord;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
+function PL110FramebufferCreateSVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
 {Create, register and allocate a new PL110 Framebuffer device which can be accessed using the framebuffer API}
 {Address: The address of the PL110 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -377,7 +377,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Create SVGA (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Create SVGA (Address=' + AddrToHex(Address) + ' Name=' + Name + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
 
  {Check Address}
@@ -711,11 +711,11 @@ begin
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
-      CleanDataCacheRange(LongWord(Buffer),Defaults.Size);
+      CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
  
     {Update Framebuffer}
-    Framebuffer.Address:=LongWord(Buffer);
+    Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
     Framebuffer.Pitch:=Defaults.Pitch;
     Framebuffer.Depth:=Defaults.Depth;
@@ -931,7 +931,7 @@ end;
 
 {==============================================================================}
 
-function PL110FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function PL110FramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 {Implementation of FramebufferDeviceCommit API for PL110 Framebuffer}
 {Note: Not intended to be called directly by applications, use FramebufferDeviceCommit instead}
 begin

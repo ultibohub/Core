@@ -1,7 +1,7 @@
 {
 Ultibo Initialization code for Raspberry Pi 2.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -13,7 +13,7 @@ Boards
 
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
  
 Licence
 =======
@@ -126,7 +126,7 @@ Boot RPi2
  If the processor is in Hypervisor mode (Firmware behaviour after 2/10/2015) then Ultibo switches
  it to Supervisor mode during initial boot.
  
- If the configuration option RPI2_SECURE_BOOT is set to 1 then Ultibo switches the processor back
+ If the configuration option ARMSecureBoot is set to 1 then Ultibo switches the processor back
  to Secure world during initial boot (see note below).
  
  Ultibo then switches the processor to System mode for all operations and remains in either the
@@ -165,11 +165,20 @@ Boot RPi2
  Secondary cores also switch back to the Secure world using the same technique however they do not
  need to install the new SMC vector and instead use the one installed by the primary core.
  
- Future changes to the firmware will hopefully not invalidate this technique, however there is also
- the option to use the config.txt parameter kernel_old=1 which would load Ultibo at 0x00000000 and
- allow us to setup the boot state independent of the firmware. This would require changes to both
- Ultibo (this boot module) and to the FPC compiler to change the linker start location.
+ Firmware changes from October 2020 disable the ability to perform the SMC instruction from non
+ secure mode which means this technique will no longer work with the default firmware. To allow
+ continued support for returning to the Secure world a custom ARM boot stub is now included with
+ Ultibo that allows the SMC instruction to be performed. 
  
+ This custom stub contains a marker that allows the boot process to detect it and disable the 
+ attempt to switch back to the Secure world if the default boot stub is used instead.
+ 
+ As the default boot stub continues to evolve in response to demands from the Linux community this
+ technique will allow Ultibo to continue to provide the features we want without having to make
+ frequent changes to combat items that are beyond our control.
+ 
+ Thanks to the Circle project for introducing the custom boot stub technique to work around these
+ changes.
  
 }
 
@@ -236,6 +245,20 @@ asm
  mrc p15, #0, r0, cr12, cr0, #0
  str r0, [r3] 
  
+ //Check ARM stub for Secure Boot support
+ mov r0, #RPI2_SECURE_BOOT_OFFSET
+ ldr r0, [r0]
+ 
+ //Check for "RPIX" marker
+ ldr r3, =RPI2_SECURE_BOOT_MARKER
+ cmp r0, r3
+ beq StartupHandler 
+ 
+ //Disable Secure Boot
+ ldr r3, .LARMSecureBoot
+ mov r0, #0
+ str r0, [r3] 
+ 
  //Continue execution at the StartupHandler
  b StartupHandler
   
@@ -247,6 +270,8 @@ asm
   .long ARMTagsAddress  
 .LARMMachineType:
   .long ARMMachineType
+.LARMSecureBoot:
+  .long ARMSecureBoot
 end;
 
 {==============================================================================}
@@ -372,11 +397,12 @@ end;
 
 {==============================================================================}
 
-procedure StartupSecure; assembler; nostackframe; 
+procedure StartupSecure; assembler; nostackframe;
 {Startup handler routine to switch to secure mode}
 asm
  //Check the secure boot configuration
- mov r0, #RPI2_SECURE_BOOT
+ ldr r0, .LARMSecureBoot
+ ldr r0, [r0]
  cmp r0, #0
  beq .LNoSecure
   
@@ -422,6 +448,8 @@ asm
  //Return to startup
  bx lr
  
+.LARMSecureBoot:
+  .long ARMSecureBoot
 .LSecureVectors:
   .long SecureVectors
 end;
@@ -597,16 +625,22 @@ asm
   
  {$IFDEF CONSOLE_EARLY_INIT}
  //Initialize the Ultibo Locking primitives
- bl LocksInit;
+ bl LocksInit
   
  //Initialize the Ultibo Device manager
- bl DevicesInit;
+ bl DevicesInit
   
+ //Initialize the Peripheral settings
+ bl PeripheralInit
+ 
  //Initialize the Framebuffer device
- bl FramebufferInit;
+ bl FramebufferInit
   
  //Initialize the Console device
- bl ConsoleInit;
+ bl ConsoleInit
+ 
+ //Start the Boot Console device
+ bl BootConsoleStart
  {$ENDIF}
   
  //Initialize the Ultibo Threading which will create the IRQ, FIQ and Idle Threads

@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL031 Real Time Clock Driver.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -123,7 +123,7 @@ type
  
 {==============================================================================}
 {PL031 Functions}
-function PL031RTCCreate(Address:LongWord;const Name:String;IRQ:LongWord):PRTCDevice;
+function PL031RTCCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PRTCDevice;
 
 function PL031RTCDestroy(RTC:PRTCDevice):LongWord;
 
@@ -157,7 +157,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL031 Functions}
-function PL031RTCCreate(Address:LongWord;const Name:String;IRQ:LongWord):PRTCDevice;
+function PL031RTCCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PRTCDevice;
 {Create, register and start a new PL031 RTC device which can be accessed using the RTC API}
 {Address: The address of the PL031 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -171,7 +171,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL031_DEBUG) or DEFINED(RTC_DEBUG)}
- if RTC_LOG_ENABLED then RTCLogDebug(nil,'PL031: RTC Create (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
+ if RTC_LOG_ENABLED then RTCLogDebug(nil,'PL031: RTC Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
  {$ENDIF}
 
  {Check Address}

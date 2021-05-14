@@ -1,7 +1,7 @@
 {
 Ultibo PWM interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -69,9 +69,22 @@ const
  {PWM Device Types}
  PWM_TYPE_NONE      = 0;
  
+ PWM_TYPE_MAX       = 0;
+  
+ {PWM Type Names}
+ PWM_TYPE_NAMES:array[PWM_TYPE_NONE..PWM_TYPE_MAX] of String = (
+  'PWM_TYPE_NONE');
+ 
  {PWM Device States}
  PWM_STATE_DISABLED = 0;
  PWM_STATE_ENABLED  = 1;
+ 
+ PWM_STATE_MAX      = 1;
+ 
+ {PWM State Names}
+ PWM_STATE_NAMES:array[PWM_STATE_DISABLED..PWM_STATE_MAX] of String = (
+  'PWM_STATE_DISABLED',
+  'PWM_STATE_ENABLED');
  
  {PWM Device Flags}
  PWM_FLAG_NONE          = $00000000;
@@ -86,9 +99,24 @@ const
  PWM_MODE_BALANCED   = 1; {Balanced mode (Device specific)}
  PWM_MODE_SERIALIZED = 2; {Serialized mode (Device specific)}
  
+ PWM_MODE_MAX        = 2;
+ 
+ {PWM Mode Names}
+ PWM_MODE_NAMES:array[PWM_MODE_MARKSPACE..PWM_MODE_MAX] of String = (
+  'PWM_MODE_MARKSPACE',
+  'PWM_MODE_BALANCED',
+  'PWM_MODE_SERIALIZED');
+ 
  {PWM Polarity Values}
  PWM_POLARITY_NORMAL  = 0;
  PWM_POLARITY_INVERSE = 1;
+ 
+ PWM_POLARITY_MAX     = 1;
+  
+ {PWM Polarity Names}
+ PWM_POLARITY_NAMES:array[PWM_POLARITY_NORMAL..PWM_POLARITY_MAX] of String = (
+  'PWM_POLARITY_NORMAL',
+  'PWM_POLARITY_INVERSE');
  
  {PWM logging}
  PWM_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {PWM debugging messages}
@@ -259,6 +287,11 @@ function PWMDeviceGetDefault:PPWMDevice; inline;
 function PWMDeviceSetDefault(PWM:PPWMDevice):LongWord; 
 
 function PWMDeviceCheck(PWM:PPWMDevice):PPWMDevice;
+
+function PWMTypeToString(PWMType:LongWord):String;
+function PWMStateToString(PWMState:LongWord):String;
+function PWMModeToString(PWMMode:LongWord):String;
+function PWMPolarityToString(PWMPolarity:LongWord):String;
 
 procedure PWMLog(Level:LongWord;PWM:PPWMDevice;const AText:String);
 procedure PWMLogInfo(PWM:PPWMDevice;const AText:String); inline;
@@ -1575,6 +1608,62 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(PWMDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function PWMTypeToString(PWMType:LongWord):String;
+{Convert a PWM type value to a string}
+begin
+ {}
+ Result:='PWM_TYPE_UNKNOWN';
+ 
+ if PWMType <= PWM_TYPE_MAX then
+  begin
+   Result:=PWM_TYPE_NAMES[PWMType];
+  end;
+end;
+
+{==============================================================================}
+
+function PWMStateToString(PWMState:LongWord):String;
+{Convert a PWM state value to a string}
+begin
+ {}
+ Result:='PWM_STATE_UNKNOWN';
+ 
+ if PWMState <= PWM_STATE_MAX then
+  begin
+   Result:=PWM_STATE_NAMES[PWMState];
+  end;
+end;
+
+{==============================================================================}
+
+function PWMModeToString(PWMMode:LongWord):String;
+{Convert a PWM mode value to a string}
+begin
+ {}
+ Result:='PWM_MODE_UNKNOWN';
+ 
+ if PWMMode <= PWM_MODE_MAX then
+  begin
+   Result:=PWM_MODE_NAMES[PWMMode];
+  end;
+end;
+
+{==============================================================================}
+
+function PWMPolarityToString(PWMPolarity:LongWord):String;
+{Convert a PWM polarity value to a string}
+begin
+ {}
+ Result:='PWM_POLARITY_UNKNOWN';
+ 
+ if PWMPolarity <= PWM_POLARITY_MAX then
+  begin
+   Result:=PWM_POLARITY_NAMES[PWMPolarity];
   end;
 end;
 

@@ -490,9 +490,9 @@ procedure SMSC95XXInit;
  
 {==============================================================================}
 {SMSC95XX Network Functions}
-function SMSC95XXDeviceOpen(Network:PNetworkDevice):LongWord;
-function SMSC95XXDeviceClose(Network:PNetworkDevice):LongWord;
-function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
+function SMSC95XXNetworkOpen(Network:PNetworkDevice):LongWord;
+function SMSC95XXNetworkClose(Network:PNetworkDevice):LongWord;
+function SMSC95XXNetworkControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function SMSC95XXBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 function SMSC95XXBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
@@ -594,7 +594,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {SMSC95XX Network Functions}
-function SMSC95XXDeviceOpen(Network:PNetworkDevice):LongWord;
+function SMSC95XXNetworkOpen(Network:PNetworkDevice):LongWord;
 {Implementation of NetworkDeviceOpen for the SMSC95XX device}
 {Note: Not intended to be called directly by applications, use NetworkDeviceOpen instead}
 var
@@ -1151,7 +1151,7 @@ end;
  
 {==============================================================================}
 
-function SMSC95XXDeviceClose(Network:PNetworkDevice):LongWord;
+function SMSC95XXNetworkClose(Network:PNetworkDevice):LongWord;
 {Implementation of NetworkDeviceClose for the SMSC95XX device}
 {Note: Not intended to be called directly by applications, use NetworkDeviceClose instead}
 var
@@ -1338,7 +1338,7 @@ end;
 
 {==============================================================================}
 
-function SMSC95XXDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
+function SMSC95XXNetworkControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of NetworkDeviceControl for the SMSC95XX device}
 {Note: Not intended to be called directly by applications, use NetworkDeviceControl instead}
 var
@@ -1358,7 +1358,7 @@ begin
  if Device = nil then Exit;
  
  {$IF DEFINED(SMSC95XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMSC95XX: Device Control');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'SMSC95XX: Network Control (Request=' + IntToStr(Request) + ')');
  {$ENDIF}
  
  {Acquire the Lock}
@@ -1765,9 +1765,11 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'SMSC95XX: Failed to submit transmit request: ' + USBStatusToString(Status));
 
+   {Update Entry}
+   Entry.DriverData:=nil;
+   
    {Update Pending}
    Dec(Network.PendingCount);
-   Exit;
   end;
 end;
  
@@ -1920,9 +1922,9 @@ begin
  {Network}
  Network.Network.NetworkState:=NETWORK_STATE_CLOSED;
  Network.Network.NetworkStatus:=NETWORK_STATUS_DOWN;
- Network.Network.DeviceOpen:=SMSC95XXDeviceOpen;
- Network.Network.DeviceClose:=SMSC95XXDeviceClose;
- Network.Network.DeviceControl:=SMSC95XXDeviceControl;
+ Network.Network.DeviceOpen:=SMSC95XXNetworkOpen;
+ Network.Network.DeviceClose:=SMSC95XXNetworkClose;
+ Network.Network.DeviceControl:=SMSC95XXNetworkControl;
  Network.Network.BufferAllocate:=SMSC95XXBufferAllocate;
  Network.Network.BufferRelease:=SMSC95XXBufferRelease;
  Network.Network.BufferReceive:=SMSC95XXBufferReceive;
@@ -1953,6 +1955,9 @@ begin
  if NetworkDeviceRegister(@Network.Network) <> ERROR_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'SMSC95XX: Failed to register new network device');
+   
+   {Destroy PHY Lock}
+   MutexDestroy(Network.PHYLock);
    
    {Destroy Network}
    NetworkDeviceDestroy(@Network.Network);
@@ -2000,7 +2005,7 @@ begin
  if Network = nil then Exit;
  
  {Close Network}
- SMSC95XXDeviceClose(@Network.Network);
+ SMSC95XXNetworkClose(@Network.Network);
  
  {Destroy PHY Lock}
  if Network.PHYLock <> INVALID_HANDLE_VALUE then
@@ -3078,6 +3083,9 @@ begin
  {Check Device}
  if Device = nil then Exit;
  
+ {Check Address}
+ if Address = nil then Exit;
+ 
  {Encode Address} 
  AddressLow:=Address[0] or (Address[1] shl 8) or (Address[2] shl 16) or (Address[3] shl 24);
  AddressHigh:=Address[4] or (Address[5] shl 8);
@@ -3111,6 +3119,9 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
+ 
+ {Check Address}
+ if Address = nil then Exit;
  
  {Read Address Low}
  Status:=SMSC95XXReadRegister(Device,SMSC95XX_MAC_ADDRESS_LOW,AddressLow);

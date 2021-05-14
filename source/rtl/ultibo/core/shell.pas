@@ -4275,7 +4275,13 @@ begin
  AShell.DoOutput(ASession,'Current Heap Free: ' + IntToStr(FPCStatus.CurrHeapFree));
  AShell.DoOutput(ASession,'');
  
- //To Do //Add additional options for more or less detail
+ //To Do //Make this Action = Status
+ //To Do //Add Free and Used Heap Blocks
+ //To Do //Add Heap Statistics (Optional)
+ 
+ //To Do //Add Heap Blocks (Action = Blocks)
+ //To Do //Add Page Tables (Action = Pages)
+ 
  
  {Return Result}
  Result:=True;

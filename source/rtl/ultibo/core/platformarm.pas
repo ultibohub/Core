@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARM.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,6 +17,10 @@ Boards
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
+ Raspberry Pi CM3/CM3+ 
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
  QEMU VersatilePB
  
 Licence
@@ -243,6 +247,7 @@ var
  ARMBootVectors:LongWord = 0;               {The Vector Base Address that was current at boot time (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
  ARMTagsAddress:PtrUInt = ARMTAGS_INITIAL;  {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
  ARMMachineType:LongWord = 0;               {ARM Machine Type provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
+ ARMSecureBoot:LongWord = 1;                {If 1 then startup will attempt to switch back to secure world during boot process (If supported by the ARM boot stub)}
  
 var
  {ARM Tags Variables}

@@ -1,7 +1,7 @@
 {
 Ultibo NTFS utilities unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -53,6 +53,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,FileSystem,SysUtils,Classes,Unicode,Se
      NTFSConst,NTFSTypes;
     
 //To Do //Look for:
+
+//LongWord(Pointer()^) -> PLongWord()^
+//Word(Pointer()^) -> PWord()^
+//Byte(Pointer()^) -> PByte()^
 
 //Lock
      
@@ -188,7 +192,7 @@ begin
     Offset:=0;
     while Offset < ntfsFileSizeUpCase do
      begin
-      PWord(LongWord(UpCase) + Offset)^:=Count;
+      PWord(PtrUInt(UpCase) + Offset)^:=Count;
       Inc(Count);
       Inc(Offset,2);
      end;
@@ -197,7 +201,7 @@ begin
     for Count:=0 to ntfsMaxUpcaseConvert do
      begin
       Offset:=(ntfsUpcaseConverts[Count].Count shl 1);
-      PWord(LongWord(UpCase) + Offset)^:=ntfsUpcaseConverts[Count].Value;
+      PWord(PtrUInt(UpCase) + Offset)^:=ntfsUpcaseConverts[Count].Value;
      end;
      
     Result:=True;
@@ -249,14 +253,14 @@ begin
  {Get Offset}
  Offset:=0;
  {Get Length}
- Length:=Word(Pointer(LongWord(ABuffer) + Offset)^);
+ Length:=Word(Pointer(PtrUInt(ABuffer) + Offset)^);
  while Length <> 0 do
   begin
    Inc(Offset,(Length and ntfsCompressionLengthMask) + 3);
    Inc(Result,(Length and ntfsCompressionLengthMask) + 3);
    if Offset >= Size then Break;
    {Get Length}
-   Length:=Word(Pointer(LongWord(ABuffer) + Offset)^);
+   Length:=Word(Pointer(PtrUInt(ABuffer) + Offset)^);
   end;
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSGetUnitUsed - Size = ' + IntToStr(Size) + ' Used = ' + IntToStr(Result));
@@ -340,9 +344,9 @@ begin
    if (Block >= Start) and (Block < (Start + Count)) then
     begin
      {Compress Block}
-     if not NTFSCompressBlock(Pointer(LongWord(ASource) + Source),Pointer(LongWord(ADest) + Dest),Size - Dest,MinEx(ntfsCompressionBlockSize,Available)) then Exit;
+     if not NTFSCompressBlock(Pointer(PtrUInt(ASource) + Source),Pointer(PtrUInt(ADest) + Dest),Size - Dest,MinEx(ntfsCompressionBlockSize,Available)) then Exit;
      {Get Length}
-     Length:=Word(Pointer(LongWord(ADest) + Dest)^);
+     Length:=Word(Pointer(PtrUInt(ADest) + Dest)^);
      if Length = 0 then Exit;
      {Update Position}
      Inc(Source,ntfsCompressionBlockSize);
@@ -354,7 +358,7 @@ begin
    else
     begin
      {Get Length}
-     Length:=Word(Pointer(LongWord(ADest) + Dest)^);
+     Length:=Word(Pointer(PtrUInt(ADest) + Dest)^);
      if Length = 0 then Exit;
      {Update Position}
      Inc(Source,ntfsCompressionBlockSize);
@@ -371,7 +375,7 @@ begin
  {Check Used}
  if (Size - Dest) < ASize then Exit; {Does not save at least one cluster, store as uncompressed}
  {Zero Remaining}
- FillChar(Pointer(LongWord(ADest) + Dest)^,(Size - Dest),0);
+ FillChar(Pointer(PtrUInt(ADest) + Dest)^,(Size - Dest),0);
  Result:=True;
 end;
 
@@ -442,13 +446,13 @@ begin
    if Dest >= Size then Exit;
    if Source >= Size then Exit;
    {Get Length}
-   Length:=Word(Pointer(LongWord(ASource) + Source)^);
+   Length:=Word(Pointer(PtrUInt(ASource) + Source)^);
    if Length = 0 then Exit;
    {Check Block}
    if (Block >= Start) and (Block < (Start + Count)) then
     begin
      {Decompress Block}
-     if not NTFSDecompressBlock(Pointer(LongWord(ASource) + Source),Pointer(LongWord(ADest) + Dest),Size - Source) then Exit;
+     if not NTFSDecompressBlock(Pointer(PtrUInt(ASource) + Source),Pointer(PtrUInt(ADest) + Dest),Size - Source) then Exit;
      {Update Position}
      Inc(Dest,ntfsCompressionBlockSize);
      Inc(Source,(Length and ntfsCompressionLengthMask) + 3);
@@ -578,7 +582,7 @@ begin
    while Count <= 8 do
     begin
      {Get Value}
-     Value:=Byte(Pointer(LongWord(ASource) + Source)^);
+     Value:=Byte(Pointer(PtrUInt(ASource) + Source)^);
      {Get Current}
      Current:=Source;
      {Get Previous}
@@ -587,7 +591,7 @@ begin
       begin
        {Seen Before}
        {Check Next Values}
-       if ((Current + 2) < MinEx(ntfsCompressionBlockSize,ATotal)) and (Byte(Pointer(LongWord(ASource) + Current + 1)^) = Byte(Pointer(LongWord(ASource) + Previous + 1)^)) and (Byte(Pointer(LongWord(ASource) + Current + 2)^) = Byte(Pointer(LongWord(ASource) + Previous + 2)^)) then
+       if ((Current + 2) < MinEx(ntfsCompressionBlockSize,ATotal)) and (Byte(Pointer(PtrUInt(ASource) + Current + 1)^) = Byte(Pointer(PtrUInt(ASource) + Previous + 1)^)) and (Byte(Pointer(PtrUInt(ASource) + Current + 2)^) = Byte(Pointer(PtrUInt(ASource) + Previous + 2)^)) then
         begin
          {Matched}
          {Get Mask and Shift}
@@ -604,9 +608,9 @@ begin
            while (Size < MaxSize) and (Source < MinEx(ntfsCompressionBlockSize,ATotal)) do
             begin
              {Get Next Value}
-             Next:=Byte(Pointer(LongWord(ASource) + Current + Size)^);
+             Next:=Byte(Pointer(PtrUInt(ASource) + Current + Size)^);
              {Check Next Value}
-             if Next = Byte(Pointer(LongWord(ASource) + Previous + Size)^) then
+             if Next = Byte(Pointer(PtrUInt(ASource) + Previous + Size)^) then
               begin
                {Update Table}
                Table[Next]:=Current + Size;
@@ -622,7 +626,7 @@ begin
             end;
            {Set Tag}
            Tag:=((Offset - 1) shl Shift) or ((Size - 3) and Mask);
-           Word(Pointer(LongWord(ADest) + Dest)^):=Tag;
+           Word(Pointer(PtrUInt(ADest) + Dest)^):=Tag;
            {$IFDEF NTFS_DEBUG}
            if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCompressBlock - Current = ' + IntToHex(Current,8) + ' Previous = ' + IntToHex(Previous,8));
            if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCompressBlock - Tag = ' + IntToHex(Tag,4) + ' Mask = ' + IntToHex(Mask,4) + ' Shift = ' + IntToStr(Shift));
@@ -639,7 +643,7 @@ begin
           begin
            {Above Maximum}
            {Copy Byte}
-           Byte(Pointer(LongWord(ADest) + Dest)^):=Value;
+           Byte(Pointer(PtrUInt(ADest) + Dest)^):=Value;
            {Update Table}
            Table[Value]:=Current;
            {Update Position}
@@ -653,7 +657,7 @@ begin
         begin
          {Not Matched}
          {Copy Byte}
-         Byte(Pointer(LongWord(ADest) + Dest)^):=Value;
+         Byte(Pointer(PtrUInt(ADest) + Dest)^):=Value;
          {Update Table}
          Table[Value]:=Current;
          {Update Position}
@@ -667,7 +671,7 @@ begin
       begin
        {Never Seen}
        {Copy Byte}
-       Byte(Pointer(LongWord(ADest) + Dest)^):=Value;
+       Byte(Pointer(PtrUInt(ADest) + Dest)^):=Value;
        {Update Table}
        Table[Value]:=Current;
        {Update Position}
@@ -681,7 +685,7 @@ begin
      if Source >= MinEx(ntfsCompressionBlockSize,ATotal) then Break;
     end;
    {Set Tags}
-   Byte(Pointer(LongWord(ADest) + Origin)^):=Tags;
+   Byte(Pointer(PtrUInt(ADest) + Origin)^):=Tags;
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCompressBlock - Dest = ' + IntToHex(Dest,8) + ' Origin = ' + IntToHex(Origin,8) + ' Tags = ' + IntToHex(Tags,2));
    {$ENDIF}
@@ -744,7 +748,7 @@ begin
  Dest:=0;
  Source:=0;
  {Get Length}
- Length:=Word(Pointer(LongWord(ASource) + Source)^);
+ Length:=Word(Pointer(PtrUInt(ASource) + Source)^);
  if Length = 0 then Exit;
  Inc(Source,2); {SizeOf(Word)}
  {Check Length}
@@ -758,7 +762,7 @@ begin
      {Check Offset}
      if Source >= ASize then Exit;
      {Get Tags}
-     Tags:=Byte(Pointer(LongWord(ASource) + Source)^);
+     Tags:=Byte(Pointer(PtrUInt(ASource) + Source)^);
      Inc(Source); {SizeOf(Byte)}
      if Tags <> 0 then
       begin
@@ -772,7 +776,7 @@ begin
           begin
            {Encoded Tag}
            {Get Tag}
-           Tag:=Word(Pointer(LongWord(ASource) + Source)^);
+           Tag:=Word(Pointer(PtrUInt(ASource) + Source)^);
            {Get Mask and Shift}
            NTFSGetTagShiftMask(Dest,Mask,Shift);
            {$IFDEF NTFS_DEBUG}
@@ -789,7 +793,6 @@ begin
            while Size > 0 do
             begin
              Byte(Pointer(PtrUInt(ADest) + Dest)^):=Byte(Pointer(PtrUInt(ADest) + PtrUInt(Dest - Offset))^);
-             {Byte(Pointer(LongWord(ADest) + Dest)^):=Byte(Pointer(LongWord(ADest) + LongWord(LongInt(Dest) + Offset))^);}
              Dec(Size);   {SizeOf(Byte)}
              Inc(Dest);   {SizeOf(Byte)}
             end;
@@ -802,7 +805,7 @@ begin
           begin
            {Normal Tag}
            {Copy Byte}
-           Byte(Pointer(LongWord(ADest) + Dest)^):=Byte(Pointer(LongWord(ASource) + Source)^);
+           Byte(Pointer(PtrUInt(ADest) + Dest)^):=Byte(Pointer(PtrUInt(ASource) + Source)^);
            {Update Position}
            Inc(Dest);   {SizeOf(Byte)}
            Inc(Source); {SizeOf(Byte)}
@@ -818,7 +821,7 @@ begin
        if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSDecompressBlock - Source = ' + IntToHex(Source,8) + ' (Uncompressed Group)');
        {$ENDIF}
        {Copy Group}
-       System.Move(Pointer(LongWord(ASource) + Source)^,Pointer(LongWord(ADest) + Dest)^,8);
+       System.Move(Pointer(PtrUInt(ASource) + Source)^,Pointer(PtrUInt(ADest) + Dest)^,8);
        {Update Position}
        Inc(Dest,8);    {SizeOf(Byte) * 8}
        Inc(Source,8);  {SizeOf(Byte) * 8}
@@ -834,7 +837,7 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSDecompressBlock - Length = ' + IntToStr(Length) + ' (Uncompressed Block)');
    {$ENDIF}
    {Copy Block}
-   System.Move(Pointer(LongWord(ASource) + Source)^,Pointer(LongWord(ADest) + Dest)^,Length);
+   System.Move(Pointer(PtrUInt(ASource) + Source)^,Pointer(PtrUInt(ADest) + Dest)^,Length);
   end;
  Result:=True;
 end;
@@ -882,7 +885,7 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSBufferToString - Length = ' + IntToStr(ALength));
    {$ENDIF}
    SetString(Result,nil,ALength); {Length does not include null terminator}
-   Unicode.OemToCharBuff(PChar(LongWord(ABuffer) + AOffset),PChar(Result),ALength);
+   Unicode.OemToCharBuff(PChar(PtrUInt(ABuffer) + AOffset),PChar(Result),ALength);
   end;
 end;
 
@@ -899,10 +902,10 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSStringToBuffer - Length = ' + IntToStr(ALength));
    {$ENDIF}
-   FillChar(Pointer(LongWord(ABuffer) + AOffset)^,ALength,0);
+   FillChar(Pointer(PtrUInt(ABuffer) + AOffset)^,ALength,0);
    if Length(AString) > 0 then
     begin
-     Unicode.CharToOemBuff(PChar(AString),PChar(LongWord(ABuffer) + AOffset),ALength);
+     Unicode.CharToOemBuff(PChar(AString),PChar(PtrUInt(ABuffer) + AOffset),ALength);
     end;
    {Result:=True;} {Modified 29/4/2009 to support 0 length names}
   end;
@@ -922,14 +925,14 @@ begin
  if ALength > 0 then
   begin
    {Check Count}
-   Count:=Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(LongWord(ABuffer) + AOffset),ALength,nil,0,nil,nil);
+   Count:=Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(PtrUInt(ABuffer) + AOffset),ALength,nil,0,nil,nil);
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSWideBufferToString - Length = ' + IntToStr(ALength) + ' Count = ' + IntToStr(Count));
    {$ENDIF}
    if Count <= ALength then
     begin
      SetString(Result,nil,Count); {Count does not include null terminator}
-     Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(LongWord(ABuffer) + AOffset),ALength,PChar(Result),Count,nil,nil);
+     Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(PtrUInt(ABuffer) + AOffset),ALength,PChar(Result),Count,nil,nil);
     end;
   end;
 end;
@@ -949,7 +952,7 @@ begin
   begin
    {Get Size}
    Size:=(ALength shl 1);
-   FillChar(Pointer(LongWord(ABuffer) + AOffset)^,Size,0);
+   FillChar(Pointer(PtrUInt(ABuffer) + AOffset)^,Size,0);
    if Length(AString) > 0 then
     begin
      {Check Count}
@@ -958,7 +961,7 @@ begin
      if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSStringToWideBuffer - Size = ' + IntToStr(Size) + ' Length = ' + IntToStr(ALength) + ' Count = ' + IntToStr(Count));
      {$ENDIF}
      if Count > ALength then Exit;
-     if Unicode.MultiByteToWideChar(CP_ACP,0,PChar(AString),Length(AString),PWideChar(LongWord(ABuffer) + AOffset),ALength) = 0 then Exit;
+     if Unicode.MultiByteToWideChar(CP_ACP,0,PChar(AString),Length(AString),PWideChar(PtrUInt(ABuffer) + AOffset),ALength) = 0 then Exit;
     end;
    {Result:=True;} {Modified 29/4/2009 to support 0 length names}
   end;
@@ -998,7 +1001,7 @@ begin
    Offset:=0;
    for Count:=1 to ASize do
     begin
-     Value:=AUpCase.Data[Word(Pointer(LongWord(AName) + Offset)^)];
+     Value:=AUpCase.Data[Word(Pointer(PtrUInt(AName) + Offset)^)];
      Result:=Result + ((Value + 1) * (LongWord(Count) + 257));
      Inc(Offset,2);
     end;
@@ -1032,7 +1035,7 @@ begin
     Count:=0;
     while Count < ASize do
      begin
-      Hash:=LongWord(Pointer(LongWord(ADescriptor) + Count)^) + Rol32(Hash,3);
+      Hash:=LongWord(Pointer(PtrUInt(ADescriptor) + Count)^) + Rol32(Hash,3);
       Inc(Count,4);
      end;
      
@@ -1051,7 +1054,7 @@ begin
        Count:=0;
        while Count < Size do
         begin
-         Hash:=LongWord(Pointer(LongWord(Descriptor) + Count)^) + Rol32(Hash,3);
+         Hash:=LongWord(Pointer(PtrUInt(Descriptor) + Count)^) + Rol32(Hash,3);
          Inc(Count,4);
         end;
        
@@ -1254,7 +1257,7 @@ begin
     {$ENDIF}
     
     {Get Sid}
-    Sid:=PSID(LongWord(Descriptor) + DefaultDescriptor.OwnerOffset);
+    Sid:=PSID(PtrUInt(Descriptor) + DefaultDescriptor.OwnerOffset);
     SidSize:=SECURITY_MAX_SID_SIZE;
     if not Security.CreateWellKnownSid(DefaultDescriptor.Owner,nil,Sid,SidSize) then
      begin
@@ -1274,7 +1277,7 @@ begin
     {$ENDIF}
     
     {Get Sid}
-    Sid:=PSID(LongWord(Descriptor) + DefaultDescriptor.GroupOffset);
+    Sid:=PSID(PtrUInt(Descriptor) + DefaultDescriptor.GroupOffset);
     SidSize:=SECURITY_MAX_SID_SIZE;
     if not Security.CreateWellKnownSid(DefaultDescriptor.Group,nil,Sid,SidSize) then
      begin
@@ -1294,7 +1297,7 @@ begin
     {$ENDIF}
     
     {Get Acl}
-    Acl:=PACL(LongWord(Descriptor) + DefaultDescriptor.SaclOffset);
+    Acl:=PACL(PtrUInt(Descriptor) + DefaultDescriptor.SaclOffset);
     Acl.AclRevision:=DefaultDescriptor.Sacl.AclRevision;
     Acl.AclSize:=DefaultDescriptor.Sacl.AclSize;
     Acl.AceCount:=DefaultDescriptor.Sacl.AceCount;
@@ -1313,14 +1316,14 @@ begin
       if Count > 0 then Inc(Offset,DefaultDescriptor.Sacl.Aces[Count - 1].AceSize);
       
       {Get Ace}
-      Ace:=PAceHeader(LongWord(Acl) + Offset);
+      Ace:=PAceHeader(PtrUInt(Acl) + Offset);
       Ace.AceType:=DefaultDescriptor.Sacl.Aces[Count].AceType;
       Ace.AceFlags:=DefaultDescriptor.Sacl.Aces[Count].AceFlags;
       Ace.AceSize:=DefaultDescriptor.Sacl.Aces[Count].AceSize;
       PAccessAllowedAce(Ace).Mask:=DefaultDescriptor.Sacl.Aces[Count].Mask;
       
       {Get Sid}
-      Sid:=PSID(LongWord(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
+      Sid:=PSID(PtrUInt(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
       SidSize:=SECURITY_MAX_SID_SIZE;
       if not Security.CreateWellKnownSid(DefaultDescriptor.Sacl.Aces[Count].Sid,nil,Sid,SidSize) then
        begin
@@ -1341,7 +1344,7 @@ begin
     {$ENDIF}
     
     {Get Acl}
-    Acl:=PACL(LongWord(Descriptor) + DefaultDescriptor.DaclOffset);
+    Acl:=PACL(PtrUInt(Descriptor) + DefaultDescriptor.DaclOffset);
     Acl.AclRevision:=DefaultDescriptor.Dacl.AclRevision;
     Acl.AclSize:=DefaultDescriptor.Dacl.AclSize;
     Acl.AceCount:=DefaultDescriptor.Dacl.AceCount;
@@ -1360,14 +1363,14 @@ begin
       if Count > 0 then Inc(Offset,DefaultDescriptor.Dacl.Aces[Count - 1].AceSize);
       
       {Get Ace}
-      Ace:=PAceHeader(LongWord(Acl) + Offset);
+      Ace:=PAceHeader(PtrUInt(Acl) + Offset);
       Ace.AceType:=DefaultDescriptor.Dacl.Aces[Count].AceType;
       Ace.AceFlags:=DefaultDescriptor.Dacl.Aces[Count].AceFlags;
       Ace.AceSize:=DefaultDescriptor.Dacl.Aces[Count].AceSize;
       PAccessAllowedAce(Ace).Mask:=DefaultDescriptor.Dacl.Aces[Count].Mask;
       
       {Get Sid}
-      Sid:=PSID(LongWord(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
+      Sid:=PSID(PtrUInt(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
       SidSize:=SECURITY_MAX_SID_SIZE;
       if not Security.CreateWellKnownSid(DefaultDescriptor.Dacl.Aces[Count].Sid,nil,Sid,SidSize) then
        begin

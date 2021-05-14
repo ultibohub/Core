@@ -1,7 +1,7 @@
 {
 Ultibo MMC/SD interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -146,6 +146,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,S
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
+
+//{$DEFINE MMC_DEBUG} //To Do //TestingEMMC
 
 {==============================================================================}
 const
@@ -628,70 +630,182 @@ const
  MMC_SWITCH_MODE_CLEAR_BITS	 = $02; {Clear bits in EXT_CSD byte	addressed by index, which are 1 in value field}
  MMC_SWITCH_MODE_WRITE_BYTE	 = $03; {Set target byte to value}
 
- {MMC EXT_CSD fields} //To Do
- EXT_CSD_ENH_START_ADDR		  = 136; {R/W}
- EXT_CSD_ENH_SIZE_MULT		  = 140; {R/W}
- EXT_CSD_GP_SIZE_MULT		  = 143; {R/W}
- EXT_CSD_PARTITION_SETTING	  = 155; {R/W}
- EXT_CSD_PARTITIONS_ATTRIBUTE =	156; {R/W}
- EXT_CSD_MAX_ENH_SIZE_MULT	  = 157; {R}
- EXT_CSD_PARTITIONING_SUPPORT =	160; {RO}
- EXT_CSD_RST_N_FUNCTION		  = 162; {R/W}
- EXT_CSD_WR_REL_PARAM		  = 166; {R}
- EXT_CSD_WR_REL_SET		      = 167; {R/W}
- EXT_CSD_RPMB_MULT		      = 168; {RO}
- EXT_CSD_ERASE_GROUP_DEF	  = 175; {R/W}
- EXT_CSD_BOOT_BUS_WIDTH		  = 177;
- EXT_CSD_PART_CONF		      = 179; {R/W}
- EXT_CSD_BUS_WIDTH		      = 183; {R/W}
- EXT_CSD_HS_TIMING		      = 185; {R/W}
- EXT_CSD_REV			      = 192; {RO}
- EXT_CSD_CARD_TYPE		      = 196; {RO}
- EXT_CSD_SEC_CNT			  = 212; {RO, 4 bytes}
- EXT_CSD_HC_WP_GRP_SIZE		  = 221; {RO}
- EXT_CSD_HC_ERASE_GRP_SIZE	  = 224; {RO}
- EXT_CSD_BOOT_MULT		      = 226; {RO}
+ {MMC EXT_CSD fields}
+ EXT_CSD_CMDQ_MODE_EN = 15; {R/W}
+ EXT_CSD_FLUSH_CACHE = 32; {W}
+ EXT_CSD_CACHE_CTRL = 33; {R/W}
+ EXT_CSD_POWER_OFF_NOTIFICATION = 34; {R/W}
+ EXT_CSD_PACKED_FAILURE_INDEX = 35; {RO}
+ EXT_CSD_PACKED_CMD_STATUS = 36; {RO}
+ EXT_CSD_EXP_EVENTS_STATUS = 54; {RO, 2 bytes}
+ EXT_CSD_EXP_EVENTS_CTRL = 56; {R/W, 2 bytes}
+ EXT_CSD_DATA_SECTOR_SIZE = 61; {R}
+ EXT_CSD_ENH_START_ADDR = 136; {R/W}
+ EXT_CSD_ENH_SIZE_MULT = 140; {R/W}
+ EXT_CSD_GP_SIZE_MULT = 143; {R/W}
+ EXT_CSD_PARTITION_SETTING_COMPLETED = 155; {R/W}
+ EXT_CSD_PARTITION_ATTRIBUTE = 156; {R/W}
+ EXT_CSD_MAX_ENH_SIZE_MULT = 157; {R}
+ EXT_CSD_PARTITION_SUPPORT = 160; {RO}
+ EXT_CSD_HPI_MGMT = 161; {R/W}
+ EXT_CSD_RST_N_FUNCTION = 162; {R/W}
+ EXT_CSD_BKOPS_EN = 163; {R/W}
+ EXT_CSD_BKOPS_START = 164; {W}
+ EXT_CSD_SANITIZE_START = 165; {W}
+ EXT_CSD_WR_REL_PARAM = 166; {RO}
+ EXT_CSD_WR_REL_SET	= 167; {R/W}
+ EXT_CSD_RPMB_MULT = 168; {RO}
+ EXT_CSD_FW_CONFIG = 169; {R/W}
+ EXT_CSD_BOOT_WP = 173; {R/W}
+ EXT_CSD_ERASE_GROUP_DEF = 175; {R/W}
+ EXT_CSD_BOOT_BUS_CONDITIONS = 177; {R/W/E}
+ EXT_CSD_PART_CONFIG = 179; {R/W}
+ EXT_CSD_ERASED_MEM_CONT = 181; {RO}
+ EXT_CSD_BUS_WIDTH = 183; {R/W}
+ EXT_CSD_STROBE_SUPPORT = 184; {RO}
+ EXT_CSD_HS_TIMING = 185; {R/W}
+ EXT_CSD_POWER_CLASS = 187; {R/W}
+ EXT_CSD_REV = 192; {RO}
+ EXT_CSD_STRUCTURE = 194; {RO}
+ EXT_CSD_CARD_TYPE = 196; {RO}
+ EXT_CSD_DRIVER_STRENGTH = 197; {RO}
+ EXT_CSD_OUT_OF_INTERRUPT_TIME = 198; {RO}
+ EXT_CSD_PART_SWITCH_TIME = 199; {RO}
+ EXT_CSD_PWR_CL_52_195 = 200; {RO}
+ EXT_CSD_PWR_CL_26_195 = 201; {RO}
+ EXT_CSD_PWR_CL_52_360 = 202; {RO}
+ EXT_CSD_PWR_CL_26_360 = 203; {RO}
+ EXT_CSD_SEC_CNT = 212; {RO, 4 bytes}
+ EXT_CSD_S_A_TIMEOUT = 217; {RO}
+ EXT_CSD_REL_WR_SEC_C = 222; {RO}
+ EXT_CSD_HC_WP_GRP_SIZE = 221; {RO}
+ EXT_CSD_ERASE_TIMEOUT_MULT = 223; {RO}
+ EXT_CSD_HC_ERASE_GRP_SIZE = 224; {RO}
+ EXT_CSD_BOOT_SIZE_MULT = 226; {RO}
+ EXT_CSD_SEC_TRIM_MULT = 229; {RO}
+ EXT_CSD_SEC_ERASE_MULT = 230; {RO}
+ EXT_CSD_SEC_FEATURE_SUPPORT = 231; {RO}
+ EXT_CSD_TRIM_MULT = 232; {RO}
+ EXT_CSD_PWR_CL_200_195 = 236; {RO}
+ EXT_CSD_PWR_CL_200_360 = 237; {RO}
+ EXT_CSD_PWR_CL_DDR_52_195 = 238; {RO}
+ EXT_CSD_PWR_CL_DDR_52_360 = 239; {RO}
+ EXT_CSD_BKOPS_STATUS = 246; {RO}
+ EXT_CSD_POWER_OFF_LONG_TIME = 247; {RO}
+ EXT_CSD_GENERIC_CMD6_TIME = 248; {RO}
+ EXT_CSD_CACHE_SIZE = 249; {RO, 4 bytes}
+ EXT_CSD_PWR_CL_DDR_200_360 = 253; {RO}
+ EXT_CSD_FIRMWARE_VERSION = 254; {RO, 8 bytes}
+ EXT_CSD_PRE_EOL_INFO = 267; {RO}
+ EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A = 268; {RO}
+ EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B = 269; {RO}
+ EXT_CSD_CMDQ_DEPTH = 307; {RO}
+ EXT_CSD_CMDQ_SUPPORT = 308; {RO}
+ EXT_CSD_SUPPORTED_MODE = 493; {RO}
+ EXT_CSD_TAG_UNIT_SIZE = 498; {RO}
+ EXT_CSD_DATA_TAG_SUPPORT = 499; {RO}
+ EXT_CSD_MAX_PACKED_WRITES = 500; {RO}
+ EXT_CSD_MAX_PACKED_READS = 501; {RO}
+ EXT_CSD_BKOPS_SUPPORT = 502; {RO}
+ EXT_CSD_HPI_FEATURES = 503; {RO}
  
  {MMC EXT_CSD field definitions}
- EXT_CSD_CMD_SET_NORMAL		= (1 shl 0);
- EXT_CSD_CMD_SET_SECURE		= (1 shl 1);
- EXT_CSD_CMD_SET_CPSECURE	= (1 shl 2);
+ EXT_CSD_WR_REL_PARAM_EN = (1 shl 2);
 
- EXT_CSD_CARD_TYPE_26	    = (1 shl 0); {Card can run at 26MHz}
- EXT_CSD_CARD_TYPE_52	    = (1 shl 1); {Card can run at 52MHz}
- EXT_CSD_CARD_TYPE_DDR_1_8V	= (1 shl 2);
- EXT_CSD_CARD_TYPE_DDR_1_2V	= (1 shl 3);
- EXT_CSD_CARD_TYPE_DDR_52	= (EXT_CSD_CARD_TYPE_DDR_1_8V or EXT_CSD_CARD_TYPE_DDR_1_2V);
+ EXT_CSD_BOOT_WP_B_PWR_WP_DIS = $40;
+ EXT_CSD_BOOT_WP_B_PERM_WP_DIS = $10;
+ EXT_CSD_BOOT_WP_B_PERM_WP_EN = $04;
+ EXT_CSD_BOOT_WP_B_PWR_WP_EN = $01;
 
- EXT_CSD_BUS_WIDTH_1	    = 0; {Card is in 1 bit mode}
- EXT_CSD_BUS_WIDTH_4	    = 1; {Card is in 4 bit mode}
- EXT_CSD_BUS_WIDTH_8	    = 2; {Card is in 8 bit mode}
- EXT_CSD_DDR_BUS_WIDTH_4	= 5; {Card is in 4 bit DDR mode}
- EXT_CSD_DDR_BUS_WIDTH_8	= 6; {Card is in 8 bit DDR mode}
+ EXT_CSD_PART_CONFIG_ACC_MASK = $07;
+ EXT_CSD_PART_CONFIG_ACC_BOOT0 = $01;
+ EXT_CSD_PART_CONFIG_ACC_RPMB = $03;
+ EXT_CSD_PART_CONFIG_ACC_GP0 = $04;
 
- EXT_CSD_BOOT_ACK_ENABLE			= (1 shl 6);
- EXT_CSD_BOOT_PARTITION_ENABLE		= (1 shl 3);
- EXT_CSD_PARTITION_ACCESS_ENABLE	= (1 shl 0);
- EXT_CSD_PARTITION_ACCESS_DISABLE	= (0 shl 0);
+ EXT_CSD_PART_SETTING_COMPLETED = $01;
+ EXT_CSD_PART_SUPPORT_PART_EN = $01;
 
- //EXT_CSD_BOOT_ACK(x)		    = (x shl 6);
- //EXT_CSD_BOOT_PART_NUM(x)	    = (x shl 3);
- //EXT_CSD_PARTITION_ACCESS(x)	= (x shl 0);
+ EXT_CSD_CMD_SET_NORMAL = (1 shl 0);
+ EXT_CSD_CMD_SET_SECURE = (1 shl 1);
+ EXT_CSD_CMD_SET_CPSECURE = (1 shl 2);
 
- //EXT_CSD_BOOT_BUS_WIDTH_MODE(x)  	= (x shl 3);
- //EXT_CSD_BOOT_BUS_WIDTH_RESET(x)	= (x shl 2);
- //EXT_CSD_BOOT_BUS_WIDTH_WIDTH(x)	= (x);
+ EXT_CSD_CARD_TYPE_HS_26 = (1 shl 0); {Card can run at 26MHz}
+ EXT_CSD_CARD_TYPE_HS_52 = (1 shl 1); {Card can run at 52MHz}
+ EXT_CSD_CARD_TYPE_HS = (EXT_CSD_CARD_TYPE_HS_26 or EXT_CSD_CARD_TYPE_HS_52);
+ EXT_CSD_CARD_TYPE_DDR_1_8V = (1 shl 2); {Card can run at 52MHz / DDR mode @1.8V or 3V I/O}
+ EXT_CSD_CARD_TYPE_DDR_1_2V = (1 shl 3); {Card can run at 52MHz / DDR mode @1.2V I/O}
+ EXT_CSD_CARD_TYPE_DDR_52 = (EXT_CSD_CARD_TYPE_DDR_1_8V or EXT_CSD_CARD_TYPE_DDR_1_2V);
+ EXT_CSD_CARD_TYPE_HS200_1_8V = (1 shl 4); {Card can run at 200MHz}
+ EXT_CSD_CARD_TYPE_HS200_1_2V = (1 shl 5); {Card can run at 200MHz / SDR mode @1.2V I/O}
+ EXT_CSD_CARD_TYPE_HS200 = (EXT_CSD_CARD_TYPE_HS200_1_8V or EXT_CSD_CARD_TYPE_HS200_1_2V);
+ EXT_CSD_CARD_TYPE_HS400_1_8V = (1 shl 6); {Card can run at 200MHz DDR, 1.8V}
+ EXT_CSD_CARD_TYPE_HS400_1_2V = (1 shl 7); {Card can run at 200MHz DDR, 1.2V}
+ EXT_CSD_CARD_TYPE_HS400 = (EXT_CSD_CARD_TYPE_HS400_1_8V or EXT_CSD_CARD_TYPE_HS400_1_2V);
+ EXT_CSD_CARD_TYPE_HS400ES = (1 shl 8); {Card can run at HS400ES}
 
- EXT_CSD_PARTITION_SETTING_COMPLETED = (1 shl 0);
+ EXT_CSD_BUS_WIDTH_1 = 0; {Card is in 1 bit mode}
+ EXT_CSD_BUS_WIDTH_4 = 1; {Card is in 4 bit mode}
+ EXT_CSD_BUS_WIDTH_8 = 2; {Card is in 8 bit mode}
+ EXT_CSD_DDR_BUS_WIDTH_4 = 5; {Card is in 4 bit DDR mode}
+ EXT_CSD_DDR_BUS_WIDTH_8 = 6; {Card is in 8 bit DDR mode}
+ EXT_CSD_BUS_WIDTH_STROBE = 1 shl 7; {Enhanced strobe mode}
 
- EXT_CSD_ENH_USR	    = (1 shl 0); {user data area is enhanced}
- //EXT_CSD_ENH_GP(x)      = (1 shl ((x) + 1)); {GP part (x + 1) is enhanced}
+ EXT_CSD_TIMING_BC = 0; {Backwards compatility}
+ EXT_CSD_TIMING_HS = 1; {High speed}
+ EXT_CSD_TIMING_HS200 = 2; {HS200}
+ EXT_CSD_TIMING_HS400 = 3; {HS400}
+ EXT_CSD_DRV_STR_SHIFT = 4; {Driver Strength shift}
 
- EXT_CSD_HS_CTRL_REL	= (1 shl 0); {host controlled WR_REL_SET}
+ EXT_CSD_SEC_ER_EN = 1 shl 0;
+ EXT_CSD_SEC_BD_BLK_EN = 1 shl 2;
+ EXT_CSD_SEC_GB_CL_EN = 1 shl 4;
+ EXT_CSD_SEC_SANITIZE = 1 shl 6; {v4.5 only}
 
- EXT_CSD_WR_DATA_REL_USR	= (1 shl 0); {user data area WR_REL}
- //EXT_CSD_WR_DATA_REL_GP(x)  = (1 shl ((x) + 1)); {GP part (x + 1) WR_REL}
+ EXT_CSD_RST_N_EN_MASK = $03;
+ EXT_CSD_RST_N_ENABLED = 1; {RST_n is enabled on card}
+
+ EXT_CSD_NO_POWER_NOTIFICATION = 0;
+ EXT_CSD_POWER_ON = 1;
+ EXT_CSD_POWER_OFF_SHORT = 2;
+ EXT_CSD_POWER_OFF_LONG = 3;
+
+ EXT_CSD_PWR_CL_8BIT_MASK = $F0; {8 bit PWR CLS}
+ EXT_CSD_PWR_CL_4BIT_MASK = $0F; {8 bit PWR CLS}
+ EXT_CSD_PWR_CL_8BIT_SHIFT = 4;
+ EXT_CSD_PWR_CL_4BIT_SHIFT = 0;
+
+ EXT_CSD_PACKED_EVENT_EN = 1 shl 3;
+
+ {EXCEPTION_EVENT_STATUS field}
+ EXT_CSD_URGENT_BKOPS = 1 shl 0;
+ EXT_CSD_DYNCAP_NEEDED = 1 shl 1;
+ EXT_CSD_SYSPOOL_EXHAUSTED = 1 shl 2;
+ EXT_CSD_PACKED_FAILURE = 1 shl 3;
+
+ EXT_CSD_PACKED_GENERIC_ERROR = 1 shl 0;
+ EXT_CSD_PACKED_INDEXED_ERROR = 1 shl 1;
+
+ {BKOPS status level}
+ EXT_CSD_BKOPS_LEVEL_2 = $02;
+
+ {BKOPS modes}
+ EXT_CSD_MANUAL_BKOPS_MASK = $01;
+ EXT_CSD_AUTO_BKOPS_MASK = $02;
+
+ {Command Queue}
+ EXT_CSD_CMDQ_MODE_ENABLED = 1 shl 0;
+ EXT_CSD_CMDQ_DEPTH_MASK = $1F;
+ EXT_CSD_CMDQ_SUPPORTED = 1 shl 0;
  
+ {High Speed Max}
+ MMC_HIGH_26_MAX_DTR = 26000000;
+ MMC_HIGH_52_MAX_DTR = 52000000;
+ MMC_HIGH_DDR_MAX_DTR = 52000000;
+ MMC_HS200_MAX_DTR = 200000000;
+ 
+ {Minimum partition switch timeout}
+ MMC_MIN_PART_SWITCH_TIME = 300; {Milliseconds}
+
  {MMC ?????}
  MMCPART_NOAVAILABLE = ($ff);
  PART_ACCESS_MASK	 = ($07);
@@ -1361,18 +1475,6 @@ const
  SDHCI_MAX_CLOCK_DIV_SPEC_300	 = 2046;
  
  {SDHCI Quirks/Bugs}
- {From: U-Boot sdhci.h}
- (*SDHCI_QUIRK_32BIT_DMA_ADDR	          = (1 shl 0); {See: SDHCI_QUIRK_32BIT_DMA_ADDR below}
- SDHCI_QUIRK_REG32_RW		          = (1 shl 1);
- SDHCI_QUIRK_BROKEN_R1B		          = (1 shl 2);
- SDHCI_QUIRK_NO_HISPD_BIT	          = (1 shl 3); {See: SDHCI_QUIRK_NO_HISPD_BIT below}
- SDHCI_QUIRK_BROKEN_VOLTAGE	          = (1 shl 4); {Use  SDHCI_QUIRK_MISSING_CAPS instead}
- SDHCI_QUIRK_NO_CD		              = (1 shl 5); {See: SDHCI_QUIRK_BROKEN_CARD_DETECTION below}
- SDHCI_QUIRK_WAIT_SEND_CMD	          = (1 shl 6);
- SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER  = (1 shl 7); {See: SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER below}
- SDHCI_QUIRK_USE_WIDE8		          = (1 shl 8);
- SDHCI_QUIRK_MISSING_CAPS             = (1 shl 9); {See: SDHCI_QUIRK_MISSING_CAPS below}*)
- 
  {From Linux /include/linux/mmc/sdhci.h}
  SDHCI_QUIRK_CLOCK_BEFORE_RESET			= (1 shl 0); {Controller doesn't honor resets unless we touch the clock register}
  SDHCI_QUIRK_FORCE_DMA				    = (1 shl 1); {Controller has bad caps bits, but really supports DMA}
@@ -1418,9 +1520,9 @@ const
  SDHCI_QUIRK2_STOP_WITH_TC			    = (1 shl 8); {Stop command(CMD12) can set Transfer Complete when not using MMC_RSP_BUSY}
  
  {Additions from U-Boot}
- SDHCI_QUIRK2_REG32_RW                  = (1 shl 28); {Controller requires all register reads and writes as 32bit} //To Do //Not Required ?
- SDHCI_QUIRK2_BROKEN_R1B                = (1 shl 29); {Response type R1B is broken}                                //To Do //Not Required ?
- SDHCI_QUIRK2_WAIT_SEND_CMD             = (1 shl 30); {Controller requires a delay between each command write}     //To Do //Not Required ?
+ SDHCI_QUIRK2_REG32_RW                  = (1 shl 28); {Controller requires all register reads and writes as 32bit}
+ SDHCI_QUIRK2_BROKEN_R1B                = (1 shl 29); {Response type R1B is broken}                               
+ SDHCI_QUIRK2_WAIT_SEND_CMD             = (1 shl 30); {Controller requires a delay between each command write}    
  SDHCI_QUIRK2_USE_WIDE8                 = (1 shl 31); {????????}
  
  {SDHCI Host SDMA buffer boundary (Valid values from 4K to 512K in powers of 2)}
@@ -1550,6 +1652,129 @@ type
   BlockShift:LongWord;              {"Normalized" Block Shift}
  end;
  
+ PMMCExtendedCardSpecificData = ^TMMCExtendedCardSpecificData;
+ TMMCExtendedCardSpecificData = record
+  {Card Values}
+  Revision:Byte; {Extended CSD revision (192)}
+  
+  PartitionSupport:Byte; {Partitioning Support (160)}
+  EraseGroupDef:Byte; {High-density erase group definition (175)}
+  PartConfig:Byte; {Partition configuration (179)}
+  StrobeSupport:Byte; {Strobe Support (184)}
+  CSDStructure:Byte; {CSD STRUCTURE (194)}
+  CardType:Byte; {Device type (196)}
+  DriverStrength:Byte; {I/O Driver Strength (197)}
+  
+  SectorCount:array[0..3] of Byte; {Sector Count (212 - 4 bytes)}
+  SATimeout:Byte; {Sleep/awake timeout (217)}
+  HCEraseGapSize:Byte; {High-capacity write protect group size (221)}
+  ReliableSectors:Byte; {Reliable write sector count (222)}
+  EraseTimeoutMult:Byte; {High-capacity erase timeout (223)}
+  HCEraseGrpSize:Byte; {High-capacity erase unit size (224)}
+  SecTRIMMult:Byte; {Secure TRIM Multiplier (229)}
+  SecEraseMult:Byte; {Secure Erase Multiplier (230)}
+  SecFeatureSupport:Byte; {Secure Feature support (231)}
+  TRIMMult:Byte; {TRIM Multiplier (232)}
+  
+  
+  
+  
+  //To Do //Continuing
+  
+  {Calculated Values}
+  Sectors:LongWord;
+  SleepAwakeTime:LongWord; {100ns}
+  PartitionSwitchTime:LongWord; {ms}
+  HCEraseSize:LongWord;  {Sectors}
+  HCEraseTimeout:LongWord; {Milliseconds}
+  DataSectorSize:LongWord; {512 bytes or 4KB}
+  
+  //To Do //Continuing
+  
+ (*u8   rev;
+ 
+ u8   sec_feature_support;
+ u8   rel_sectors;
+ u8   rel_param;
+ u8   part_config;
+ u8   cache_ctrl;
+ u8   rst_n_function;
+ u8   max_packed_writes;
+ u8   max_packed_reads;
+ u8   packed_event_en;
+ unsigned int  part_time;  /* Units: ms */
+ unsigned int  sa_timeout;  /* Units: 100ns */
+ unsigned int  generic_cmd6_time; /* Units: 10ms */
+ unsigned int            power_off_longtime;     /* Units: ms */
+ u8   power_off_notification; /* state */
+ unsigned int  hs_max_dtr;
+ unsigned int  hs200_max_dtr;
+    
+ unsigned int  sectors;
+ unsigned int  hc_erase_size;  /* In sectors */
+ unsigned int  hc_erase_timeout; /* In milliseconds */
+ unsigned int  sec_trim_mult; /* Secure trim multiplier  */
+ unsigned int  sec_erase_mult; /* Secure erase multiplier */
+ unsigned int  trim_timeout;  /* In milliseconds */
+ bool   partition_setting_completed; /* enable bit */
+ unsigned long long enhanced_area_offset; /* Units: Byte */
+ unsigned int  enhanced_area_size; /* Units: KB */
+ unsigned int  cache_size;  /* Units: KB */
+ bool   hpi_en;   /* HPI enablebit */
+ bool   hpi;   /* HPI support bit */
+ unsigned int  hpi_cmd;  /* cmd used as HPI */
+ bool   bkops;  /* background support bit */
+ bool   man_bkops_en; /* manual bkops enable bit */
+ bool   auto_bkops_en; /* auto bkops enable bit */
+ unsigned int            data_sector_size;       /* 512 bytes or 4KB */
+ unsigned int            data_tag_unit_size;     /* DATA TAG UNIT size */
+ unsigned int  boot_ro_lock;  /* ro lock support */
+ bool   boot_ro_lockable;
+ bool   ffu_capable; /* Firmware upgrade support */
+ bool   cmdq_en; /* Command Queue enabled */
+ bool   cmdq_support; /* Command Queue supported */
+ unsigned int  cmdq_depth; /* Command Queue depth */
+    
+ u8   fwrev[MMC_FIRMWARE_LEN];  /* FW version */
+ u8   raw_exception_status; /* 54 */
+ u8   raw_partition_support; /* 160 */
+ u8   raw_rpmb_size_mult; /* 168 */
+ u8   raw_erased_mem_count; /* 181 */
+ u8   strobe_support;  /* 184 */
+ u8   raw_ext_csd_structure; /* 194 */
+ u8   raw_card_type;  /* 196 */
+ u8   raw_driver_strength; /* 197 */
+ u8   out_of_int_time; /* 198 */
+ u8   raw_pwr_cl_52_195; /* 200 */
+ u8   raw_pwr_cl_26_195; /* 201 */
+ u8   raw_pwr_cl_52_360; /* 202 */
+ u8   raw_pwr_cl_26_360; /* 203 */
+ u8   raw_s_a_timeout; /* 217 */
+ u8   raw_hc_erase_gap_size; /* 221 */
+ u8   raw_erase_timeout_mult; /* 223 */
+ u8   raw_hc_erase_grp_size; /* 224 */
+ u8   raw_sec_trim_mult; /* 229 */
+ u8   raw_sec_erase_mult; /* 230 */
+ u8   raw_sec_feature_support;/* 231 */
+ u8   raw_trim_mult;  /* 232 */
+ u8   raw_pwr_cl_200_195; /* 236 */
+ u8   raw_pwr_cl_200_360; /* 237 */
+ u8   raw_pwr_cl_ddr_52_195; /* 238 */
+ u8   raw_pwr_cl_ddr_52_360; /* 239 */
+ u8   raw_pwr_cl_ddr_200_360; /* 253 */
+ u8   raw_bkops_status; /* 246 */
+ u8   raw_sectors[4];  /* 212 - 4 bytes */
+ u8   pre_eol_info;  /* 267 */
+ u8   device_life_time_est_typ_a; /* 268 */
+ u8   device_life_time_est_typ_b; /* 269 */
+
+ unsigned int            feature_support;
+    
+    *)
+ 
+  //To Do //Continuing
+ end;
+ 
  {SD Status Data (SSR)} {See: Section 4.10.2 of SD Physical Layer Simplified Specification Version 4.10} {Defined here for MMC Device}
  PSDStatusData = ^TSDStatusData;
  TSDStatusData = record
@@ -1657,6 +1882,7 @@ type
   RelativeCardAddress:LongWord;                    {Relative Card Address (RCA) (Word)} {See: Section 5.4 of SD Physical Layer Simplified Specification Version 4.10}
   CardSpecific:array[0..3] of LongWord;            {Card Specific Data (CSD)}           {See: Section 5.3 of SD Physical Layer Simplified Specification Version 4.10}
   CardIdentification:array[0..3] of LongWord;      {Card Identification Data (CID)}     {See: Section 5.2 of SD Physical Layer Simplified Specification Version 4.10}
+  ExtendedCardSpecific:PByte;                      {Extended Card Specific Data (EXTCSD)}{See: Section 7.4 of Embedded Multi-Media Card (eMMC) Electrical Standard 5.1}
   CardStatus:LongWord;                             {Card Status Register (CSR)}         {See: Section 4.10.1 of SD Physical Layer Simplified Specification Version 4.10}
   DriverStage:LongWord;                            {Driver Stage Register (DSR) (Word)} {See: Section 5.5 of SD Physical Layer Simplified Specification Version 4.10}
   SDStatus:array[0..15] of LongWord;               {SD Status Register (SSR)}           {See: Section 4.10.2 of SD Physical Layer Simplified Specification Version 4.10}
@@ -1665,6 +1891,7 @@ type
   {Configuration Properties}
   CardSpecificData:TMMCCardSpecificData;
   CardIdentificationData:TMMCCardIdentificationData;
+  ExtendedCardSpecificData:TMMCExtendedCardSpecificData;
   SDStatusData:TSDStatusData;
   SDSwitchData:TSDSwitchData;
   SDConfigurationData:TSDConfigurationData;
@@ -1836,7 +2063,7 @@ function MMCDeviceSPIReadOperationCondition(MMC:PMMCDevice;HighCapacity:Boolean)
 
 //To Do //
               //mmc_select_hwpart / mmc_switch_part / *mmc_set_clock / *mmc_set_bus_width
-              // 
+              //mmc_set_bus_mode
               
               //mmc_startup / mmc_start_init / mmc_complete_init / mmc_init
 
@@ -3237,17 +3464,34 @@ begin
  {$IFDEF MMC_DEBUG}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Extended Card Specific');
  {$ENDIF}
-
- //To Do
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Extended Card Specific'); //TestingEMMC
+ 
+ {Get Extended Card Specific}
+ Result:=MMCDeviceSendExtendedCardSpecific(MMC);
+ if Result <> MMC_STATUS_SUCCESS then
+  begin
+   Exit;
+  end;
+ 
+ {Decode Extended Card Specific}
+ Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
+ if Result <> MMC_STATUS_SUCCESS then
+  begin
+   Exit;
+  end;
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_get_ext_csd in \linux-rpi-3.18.y\drivers\mmc\core\mmc.c
+ //See: mmc_read_ext_csd in \drivers\mmc\core\mmc.c
 end;
 
 {==============================================================================}
 
 function MMCDeviceSendExtendedCardSpecific(MMC:PMMCDevice):LongWord;
+var
+ Status:LongWord;
+ Data:TMMCData;
+ Command:TMMCCommand;
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
@@ -3258,13 +3502,44 @@ begin
  {$IFDEF MMC_DEBUG}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Extended Card Specific');
  {$ENDIF}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Extended Card Specific'); //TestingEMMC
 
- //To Do
+ {Allocate Extended Card Specific}
+ if MMC.ExtendedCardSpecific = nil then
+  begin
+   MMC.ExtendedCardSpecific:=AllocMem(512);
+   if MMC.ExtendedCardSpecific = nil then
+    begin
+     Result:=MMC_STATUS_OUT_OF_MEMORY;
+     Exit;
+    end;
+  end;
+  
+ {Setup Command}
+ FillChar(Command,SizeOf(TMMCCommand),0);
+ Command.Command:=MMC_CMD_SEND_EXT_CSD;
+ Command.Argument:=0;
+ Command.ResponseType:=MMC_RSP_SPI_R1 or MMC_RSP_R1;
+ Command.Data:=@Data;
+ 
+ {Setup Data}
+ FillChar(Data,SizeOf(TMMCData),0);
+ Data.Data:=MMC.ExtendedCardSpecific;
+ Data.Flags:=MMC_DATA_READ;
+ Data.BlockSize:=512;
+ Data.BlockCount:=1;
+ 
+ {Send Command}
+ Status:=MMCDeviceSendCommand(MMC,@Command);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Command.Status;
+   Exit;
+  end;
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_send_ext_csd in U-Boot mmc.c
- //See: mmc_send_ext_csd in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: mmc_get_ext_csd in \drivers\mmc\core\mmc_ops.c
 end;
 
 {==============================================================================}
@@ -3280,15 +3555,158 @@ begin
  {$IFDEF MMC_DEBUG}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Decode Extended Card Specific');
  {$ENDIF}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Decode Extended Card Specific'); //TestingEMMC
 
- //To Do
+ {Check Extended Card Specific}
+ if MMC.ExtendedCardSpecific = nil then Exit;
  
- //To Do //Set MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_BLOCK_ADDRESSED);
-         //based on capacity > 2GB (Sectors > (2 * 1024 * 1024 * 1025) div 512
+ {Decode Extended Card Specific}
+ MMC.ExtendedCardSpecificData.CSDStructure:=MMC.ExtendedCardSpecific[EXT_CSD_STRUCTURE];
  
- Result:=MMC_STATUS_SUCCESS;
+ {Check Version}
+ case MMC.ExtendedCardSpecificData.CSDStructure of
+  MMC_CSD_STRUCT_VER_1_0:begin
+    {Not Supported}
+   end;
+  MMC_CSD_STRUCT_VER_1_1,MMC_CSD_STRUCT_VER_1_2:begin
+    {Get Card Data}
+    MMC.ExtendedCardSpecificData.Revision:=MMC.ExtendedCardSpecific[EXT_CSD_REV];
+    
+    MMC.ExtendedCardSpecificData.SectorCount[0]:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 0];
+    MMC.ExtendedCardSpecificData.SectorCount[1]:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 1];
+    MMC.ExtendedCardSpecificData.SectorCount[2]:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 2];
+    MMC.ExtendedCardSpecificData.SectorCount[3]:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 3];
+    
+    if MMC.ExtendedCardSpecificData.Revision >= 2 then
+     begin
+      MMC.ExtendedCardSpecificData.Sectors:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 0] shl 0
+                                         or MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 1] shl 8
+                                         or MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 2] shl 16
+                                         or MMC.ExtendedCardSpecific[EXT_CSD_SEC_CNT + 3] shl 24;
+                                        
+      {Cards with density > 2GB are sector addressed}
+      if MMC.ExtendedCardSpecificData.Sectors > ((2 * 1024 * 1024 * 1024) div 512) then
+       begin
+        MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_BLOCK_ADDRESSED);
+        
+        {$IFDEF MMC_DEBUG}
+        if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Decode Extended Card Specific (Flags=MMC_FLAG_BLOCK_ADDRESSED)');
+        {$ENDIF}
+       end; 
+     end;
+    
+    MMC.ExtendedCardSpecificData.StrobeSupport:=MMC.ExtendedCardSpecific[EXT_CSD_STROBE_SUPPORT];
+    MMC.ExtendedCardSpecificData.CardType:=MMC.ExtendedCardSpecific[EXT_CSD_CARD_TYPE];
+    
+    //mmc_select_card_type(card); //https://elixir.bootlin.com/linux/latest/source/drivers/mmc/core/mmc.c#L188
+    //EXT_CSD_CARD_TYPE_HS_52 etc
+    
+    MMC.ExtendedCardSpecificData.SATimeout:=MMC.ExtendedCardSpecific[EXT_CSD_S_A_TIMEOUT];
+    MMC.ExtendedCardSpecificData.EraseTimeoutMult:=MMC.ExtendedCardSpecific[EXT_CSD_ERASE_TIMEOUT_MULT];
+    MMC.ExtendedCardSpecificData.HCEraseGrpSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_ERASE_GRP_SIZE];
+    
+    if MMC.ExtendedCardSpecificData.Revision >= 3 then
+     begin
+      MMC.ExtendedCardSpecificData.PartConfig:=MMC.ExtendedCardSpecific[EXT_CSD_PART_CONFIG];
+    
+      {Partition Switch Time value is in units of 10ms, store as ms}
+      MMC.ExtendedCardSpecificData.PartitionSwitchTime:=10 * MMC.ExtendedCardSpecific[EXT_CSD_PART_SWITCH_TIME];
+      {Check the Partition Switch Time}
+      if (MMC.ExtendedCardSpecificData.PartitionSwitchTime > 0) and (MMC.ExtendedCardSpecificData.PartitionSwitchTime < MMC_MIN_PART_SWITCH_TIME) then
+       begin
+        MMC.ExtendedCardSpecificData.PartitionSwitchTime:=MMC_MIN_PART_SWITCH_TIME;
+       end;
+      
+      {Sleep / Awake timeout}
+      if (MMC.ExtendedCardSpecificData.SATimeout > 0) and (MMC.ExtendedCardSpecificData.SATimeout < $17) then
+       begin
+        MMC.ExtendedCardSpecificData.SleepAwakeTime:=1 shl MMC.ExtendedCardSpecificData.SATimeout;
+       end;
+
+      MMC.ExtendedCardSpecificData.EraseGroupDef:=MMC.ExtendedCardSpecific[EXT_CSD_ERASE_GROUP_DEF];
+      MMC.ExtendedCardSpecificData.HCEraseTimeout:=300 * MMC.ExtendedCardSpecific[EXT_CSD_ERASE_TIMEOUT_MULT];
+      MMC.ExtendedCardSpecificData.HCEraseSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_ERASE_GRP_SIZE] shl 10;
+      MMC.ExtendedCardSpecificData.ReliableSectors:=MMC.ExtendedCardSpecific[EXT_CSD_REL_WR_SEC_C];
+
+      {Boot Partitions}
+      if MMC.ExtendedCardSpecific[EXT_CSD_BOOT_SIZE_MULT] > 0 then
+       begin
+        //To Do //Boot Partitions 
+       end; 
+     end;
+     
+    MMC.ExtendedCardSpecificData.HCEraseGapSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_WP_GRP_SIZE];
+    MMC.ExtendedCardSpecificData.SecTRIMMult:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_TRIM_MULT];
+    MMC.ExtendedCardSpecificData.SecEraseMult:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_ERASE_MULT];
+    MMC.ExtendedCardSpecificData.SecFeatureSupport:=MMC.ExtendedCardSpecific[EXT_CSD_SEC_FEATURE_SUPPORT];
+    MMC.ExtendedCardSpecificData.TRIMMult:=MMC.ExtendedCardSpecific[EXT_CSD_TRIM_MULT];
+    MMC.ExtendedCardSpecificData.PartitionSupport:=MMC.ExtendedCardSpecific[EXT_CSD_PARTITION_SUPPORT];
+    MMC.ExtendedCardSpecificData.DriverStrength:=MMC.ExtendedCardSpecific[EXT_CSD_DRIVER_STRENGTH];
+    
+    if MMC.ExtendedCardSpecificData.Revision >= 4 then
+     begin
+      //To Do
+      //To Do
+      //mmc.c 475
+      
+     end;
+     
+    if MMC.ExtendedCardSpecificData.Revision >= 5 then
+     begin
+      //To Do
+     end;
+     
+    //To Do
+    
+    {eMMC v4.5 or later}
+    if MMC.ExtendedCardSpecificData.Revision >= 6 then
+     begin
+      //To Do
+     end
+    else
+     begin
+      MMC.ExtendedCardSpecificData.DataSectorSize:=512;
+     end;
+     
+    {eMMC v5 or later}
+    if MMC.ExtendedCardSpecificData.Revision >= 7 then
+     begin
+      //To Do
+     end;
+    
+    {eMMC v5.1 or later}
+    if MMC.ExtendedCardSpecificData.Revision >= 8 then
+     begin
+      //To Do
+     end;
+    
+    Result:=MMC_STATUS_SUCCESS;
+   end;
+ end;  
  
- //See: mmc_read_ext_csd in \linux-rpi-3.18.y\drivers\mmc\core\mmc.c
+ {Log Extended Card Specific}
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then
+  begin
+   MMCLogDebug(nil,' MMC Extended Card Specific:');
+   MMCLogDebug(nil,'  CSDStructure = ' + IntToStr(MMC.ExtendedCardSpecificData.CSDStructure));
+   if Result = MMC_STATUS_SUCCESS then
+    begin
+     {Card Data}
+     MMCLogDebug(nil,'  Revision = ' + IntToStr(MMC.ExtendedCardSpecificData.Revision));
+
+     //To Do
+     
+     {Calculated Values}
+     MMCLogDebug(nil,'  Sectors = ' + IntToStr(MMC.ExtendedCardSpecificData.Sectors));
+
+     //To Do
+ 
+    end; 
+  end; 
+ {$ENDIF}
+ 
+ //See: mmc_decode_ext_csd in \drivers\mmc\core\mmc.c
 end;
 
 {==============================================================================}
@@ -3870,7 +4288,7 @@ begin
       end; 
      
      {Get Extended Card Specific}
-     Result:=MMCDeviceGetExtendedCardSpecific(MMC);
+     Result:=MMCDeviceSendExtendedCardSpecific(MMC);
      if Result <> MMC_STATUS_SUCCESS then
       begin
        Exit;
@@ -3883,17 +4301,61 @@ begin
        Exit;
       end;
      
-     //Setup Byte/Sector(Block) addressing
+     {Check for Block Addressing}
+     if (MMC.OperationCondition and MMC_OCR_HCS) <> 0 then
+      begin
+       MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_BLOCK_ADDRESSED);
+      end;
      
-     //Setup Erase Size
+     {Set Erase Size}
+     if (MMC.ExtendedCardSpecificData.EraseGroupDef and $01) <> 0 then
+      begin
+       //MMC.EraseSize:=MMC.ExtendedCardSpecificData.HCEraseSize; //To Do//mmc.c 
+      end
+     else
+      begin
+       //MMC.EraseSize:=MMC.CardSpecificData.EraseSize; //To Do//mmc.c 
+      end;
+     
+     {Enable ERASE_GRP_DEF}
+     if MMC.ExtendedCardSpecificData.Revision >= 3 then
+      begin
+       //To Do //mmc.c 1685
+      end;
+      
+     {Ensure eMMC user default partition is enabled} 
+     if (MMC.ExtendedCardSpecificData.PartConfig and EXT_CSD_PART_CONFIG_ACC_MASK) <> 0 then
+      begin
+       //To Do //mmc.c 1715
+      end;
+     
+     {Enable power_off_notification byte}
+     if MMC.ExtendedCardSpecificData.Revision >= 6 then
+      begin
+       //To Do //mmc.c 1728
+      end;
+      
+     {Select timing interface}
+     //To Do //mmc_select_timing
+     //To Do //mmc.c 1746
+     
+     //To Do //mmc_set_bus_speed
      
      //To Do //See: mmc_init_card etc
 
      //SetClock/SetBusWidth etc
+     Exit;
      
      {Update Storage}
      MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
-     //To Do
+     MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags and not(STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA);
+     if (MMC.Device.DeviceFlags and MMC_FLAG_WRITE_PROTECT) <> 0 then MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags or STORAGE_FLAG_READ_ONLY;
+     {Storage}
+     {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
+     {Driver}
+     MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
+     MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
+     MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
      
      Result:=MMC_STATUS_SUCCESS;
      Exit;
@@ -4579,6 +5041,12 @@ begin
    MutexDestroy(MMC.Lock);
   end;
  
+ {Free Extended Card Specific}
+ if MMC.ExtendedCardSpecific <> nil then
+  begin
+   FreeMem(MMC.ExtendedCardSpecific);
+  end;
+  
  {Destroy MMC} 
  Result:=DeviceDestroy(@MMC.Device);
 end;
@@ -8210,11 +8678,9 @@ begin
  {Get Shift}
  Shift:=(Start and 31);
 
- //Result:=PLongWord(PtrUInt(Buffer) + PtrUInt(Offset * SizeOf(LongWord)))^ shr Shift;  //To Do //Remove //Should the multiply be a shift ? //Yes
  Result:=PLongWord(PtrUInt(Buffer) + PtrUInt(Offset shl 2))^ shr Shift;
  if (Size + Shift) > 32 then
   begin
-   //Result:=Result or (PLongWord(PtrUInt(Buffer) + PtrUInt((Offset - 1) * SizeOf(LongWord)))^ shl ((32 - Shift) mod (Length - 1)));  //To Do //Remove //Should the multiply be a shift ? //Yes
    Result:=Result or (PLongWord(PtrUInt(Buffer) + PtrUInt((Offset - 1) shl 2))^ shl ((32 - Shift) mod (Length - 1))); 
   end;
 
@@ -8778,6 +9244,9 @@ begin
          Status:=MMCDeviceSetBlockLength(MMC,Storage.BlockSize);
          if Status <> MMC_STATUS_SUCCESS then
           begin
+           {Update Statistics}
+           Inc(Storage.ReadErrors);
+           
            Result:=ERROR_OPERATION_FAILED;
            Exit;
           end;
@@ -8798,6 +9267,9 @@ begin
            Status:=MMCDeviceSetBlockCount(MMC,BlockCount,False);
            if Status <> MMC_STATUS_SUCCESS then
             begin
+             {Update Statistics}
+             Inc(Storage.ReadErrors);
+             
              Result:=ERROR_OPERATION_FAILED;
              Exit;
             end;
@@ -8810,6 +9282,9 @@ begin
            {Stop Transmission}
            MMCDeviceStopTransmission(MMC);
            
+           {Update Statistics}
+           Inc(Storage.ReadErrors);
+           
            Result:=ERROR_OPERATION_FAILED;
            Exit;
           end;
@@ -8820,6 +9295,9 @@ begin
            Status:=MMCDeviceStopTransmission(MMC);
            if Status <> MMC_STATUS_SUCCESS then
             begin
+             {Update Statistics}
+             Inc(Storage.ReadErrors);
+             
              Result:=ERROR_OPERATION_FAILED;
              Exit;
             end;
@@ -8828,6 +9306,9 @@ begin
          Inc(ReadOffset,BlockCount);
          Dec(ReadRemain,BlockCount);
         end;
+            
+       {Update Statistics}
+       Inc(Storage.ReadCount,Count shl Storage.BlockShift);
             
        Result:=ERROR_SUCCESS; 
       finally
@@ -8904,6 +9385,9 @@ begin
          Status:=MMCDeviceSetBlockLength(MMC,Storage.BlockSize);
          if Status <> MMC_STATUS_SUCCESS then
           begin
+           {Update Statistics}
+           Inc(Storage.WriteErrors);
+           
            Result:=ERROR_OPERATION_FAILED;
            Exit;
           end;
@@ -8924,6 +9408,9 @@ begin
            Status:=MMCDeviceSetBlockCount(MMC,BlockCount,False);
            if Status <> MMC_STATUS_SUCCESS then
             begin
+             {Update Statistics}
+             Inc(Storage.WriteErrors);
+             
              Result:=ERROR_OPERATION_FAILED;
              Exit;
             end;
@@ -8936,6 +9423,9 @@ begin
            {Stop Transmission}
            MMCDeviceStopTransmission(MMC);
            
+           {Update Statistics}
+           Inc(Storage.WriteErrors);
+           
            Result:=ERROR_OPERATION_FAILED;
            Exit;
           end;
@@ -8946,6 +9436,9 @@ begin
            Status:=MMCDeviceStopTransmission(MMC);
            if Status <> MMC_STATUS_SUCCESS then
             begin
+             {Update Statistics}
+             Inc(Storage.WriteErrors);
+             
              Result:=ERROR_OPERATION_FAILED;
              Exit;
             end;
@@ -8954,6 +9447,9 @@ begin
          Inc(WriteOffset,BlockCount);
          Dec(WriteRemain,BlockCount);
         end;
+            
+       {Update Statistics}
+       Inc(Storage.WriteCount,Count shl Storage.BlockShift);
             
        Result:=ERROR_SUCCESS; 
       finally
@@ -9024,6 +9520,9 @@ begin
 
        //To Do //See USBStorageDeviceWrite and above
 
+       //{Update Statistics}
+       //Inc(Storage.EraseCount,Count);
+       
        //See: mmc_berase in mmc_write.c
       finally
        {Release the Lock}

@@ -1,7 +1,7 @@
 {
 Ultibo I2C interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -80,9 +80,22 @@ const
  {I2C Device Types}
  I2C_TYPE_NONE      = 0;
  
+ I2C_TYPE_MAX       = 0;
+  
+ {I2C Type Names}
+ I2C_TYPE_NAMES:array[I2C_TYPE_NONE..I2C_TYPE_MAX] of String = (
+  'I2C_TYPE_NONE');
+ 
  {I2C Device States}
  I2C_STATE_DISABLED = 0;
  I2C_STATE_ENABLED  = 1;
+ 
+ I2C_STATE_MAX      = 1;
+ 
+ {I2C State Names}
+ I2C_STATE_NAMES:array[I2C_STATE_DISABLED..I2C_STATE_MAX] of String = (
+  'I2C_STATE_DISABLED',
+  'I2C_STATE_ENABLED');
  
  {I2C Device Flags}
  I2C_FLAG_NONE          = $00000000;
@@ -243,6 +256,9 @@ function I2CDeviceGetDefault:PI2CDevice; inline;
 function I2CDeviceSetDefault(I2C:PI2CDevice):LongWord; 
 
 function I2CDeviceCheck(I2C:PI2CDevice):PI2CDevice;
+
+function I2CTypeToString(I2CType:LongWord):String;
+function I2CStateToString(I2CState:LongWord):String;
 
 procedure I2CLog(Level:LongWord;I2C:PI2CDevice;const AText:String);
 procedure I2CLogInfo(I2C:PI2CDevice;const AText:String); inline;
@@ -1536,6 +1552,34 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(I2CDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CTypeToString(I2CType:LongWord):String;
+{Convert an I2C type value to a string}
+begin
+ {}
+ Result:='I2C_TYPE_UNKNOWN';
+ 
+ if I2CType <= I2C_TYPE_MAX then
+  begin
+   Result:=I2C_TYPE_NAMES[I2CType];
+  end;
+end;
+
+{==============================================================================}
+
+function I2CStateToString(I2CState:LongWord):String;
+{Convert an I2C state value to a string}
+begin
+ {}
+ Result:='I2C_STATE_UNKNOWN';
+ 
+ if I2CState <= I2C_STATE_MAX then
+  begin
+   Result:=I2C_STATE_NAMES[I2CState];
   end;
 end;
 

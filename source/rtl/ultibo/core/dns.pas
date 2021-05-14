@@ -1,7 +1,7 @@
 {
 Ultibo DNS client unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -754,7 +754,7 @@ begin
  Offset:=0;
  
  {Get the Name}
- Name:=PDNSName(LongWord(AMessage) + AOffset);
+ Name:=PDNSName(PtrUInt(AMessage) + AOffset);
  
  {Check for Last Label}
  while Byte(Name[Offset]) <> 0 do
@@ -812,7 +812,7 @@ begin
  Result:=GetDNSNameSize(AMessage,AOffset);
  
  {Get the Resource size}
- Resource:=PDNSResource(LongWord(AMessage) + AOffset + Result);
+ Resource:=PDNSResource(PtrUInt(AMessage) + AOffset + Result);
  
  {Return Result}
  Result:=Result + DNS_RESOURCE_SIZE + WordBEtoN(Resource.DataLength);
@@ -1273,7 +1273,7 @@ begin
  Data:=PChar(AName);
  
  {Get the Name}
- Name:=PDNSName(LongWord(AMessage) + AOffset);
+ Name:=PDNSName(PtrUInt(AMessage) + AOffset);
  
  {Set the Offsets}
  Start:=0;
@@ -1335,7 +1335,7 @@ begin
  Data:=PChar(AName);
 
  {Get the Name}
- Name:=PDNSName(LongWord(AMessage) + AOffset);
+ Name:=PDNSName(PtrUInt(AMessage) + AOffset);
 
  {Setup the Offsets}
  Offset:=0;
@@ -1407,7 +1407,7 @@ begin
  if AMessage = nil then Exit;
  
  {Get the Resource}
- Resource:=PDNSResource(LongWord(AMessage) + AOffset);
+ Resource:=PDNSResource(PtrUInt(AMessage) + AOffset);
  
  {Check the Class}
  case AClass of
@@ -1494,7 +1494,7 @@ begin
  
  {Set the Question}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
- Question:=PDNSQuestion(LongWord(AMessage) + Offset);
+ Question:=PDNSQuestion(PtrUInt(AMessage) + Offset);
  Question.QuestionType:=WordNtoBE(AType);
  Question.QuestionClass:=WordNtoBE(AClass);
  
@@ -1532,7 +1532,7 @@ begin
  
  {Get the Resource}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
- Resource:=PDNSResource(LongWord(AMessage) + Offset);
+ Resource:=PDNSResource(PtrUInt(AMessage) + Offset);
  AType:=WordBEtoN(Resource.RecordType);
  AClass:=WordBEtoN(Resource.RecordClass);
  ATtl:=LongWordBEtoN(Resource.Ttl);
@@ -1592,7 +1592,7 @@ begin
  
  {Get the Resource}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
- Resource:=PDNSResource(LongWord(AMessage) + Offset);
+ Resource:=PDNSResource(PtrUInt(AMessage) + Offset);
  AType:=WordBEtoN(Resource.RecordType);
  AClass:=WordBEtoN(Resource.RecordClass);
  ATtl:=LongWordBEtoN(Resource.Ttl);
@@ -1630,7 +1630,7 @@ begin
  
  {Get the Resource}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
- Resource:=PDNSResource(LongWord(AMessage) + Offset);
+ Resource:=PDNSResource(PtrUInt(AMessage) + Offset);
  AType:=WordBEtoN(Resource.RecordType);
  AClass:=WordBEtoN(Resource.RecordClass);
  ATtl:=LongWordBEtoN(Resource.Ttl);

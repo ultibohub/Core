@@ -1,7 +1,7 @@
 {
 Ultibo implementation of the Wiring Serial API.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -45,7 +45,8 @@ Wiring Serial
  
   For Raspberry Pi A/B/A+/B+/Zero add BCM2708
   For Raspberry Pi 2B add BCM2709
-  For Raspberry Pi 3B add BCM2710
+  For Raspberry Pi 3B/3A+/3B+ add BCM2710
+  For Raspberry Pi 4B/400 add BCM2711
  
  Note: Currently the serialPrintf function is not implemented due to the variable parameter list.
  

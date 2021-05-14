@@ -797,7 +797,11 @@ type
  nlink_t = Word;    {unsigned short}           
  gid_t = Word;      {unsigned short}             
  uid_t = Word;      {unsigned short}
+ {$IFDEF SYSCALLS_USE_LONG_TIME_T}
  time_t = PtrInt;   {long}       
+ {$ELSE}
+ time_t = Int64;    {int64_t}
+ {$ENDIF}
  off_t = PtrInt;    {long}
  off64_t = Int64;   {long long} 
  clock_t = PtrUInt; {_CLOCK_T_ in machine/types.h}{unsigned long}
@@ -1860,7 +1864,7 @@ var
  SyscallsHeapFirst:PSyscallsHeapBlock;
  SyscallsHeapLast:PSyscallsHeapBlock;
  SyscallsHeapEnd:Pointer;
- SyscallsHeapSize:LongWord;
+ SyscallsHeapSize:UInt64;
  SyscallsHeapLock:TMutexHandle = INVALID_HANDLE_VALUE;
  
  SyscallsPthreadSize:LongWord;
@@ -2107,7 +2111,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _close_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _close_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ')');
  {$ENDIF}
  
  {Check descriptor}
@@ -2158,7 +2162,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _execve_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _execve_r (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
  
  {Return Error}
@@ -2184,7 +2188,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fork_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fork_r (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
  
  {Return Error}
@@ -2210,7 +2214,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _wait_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _wait_r (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
  
  {Return Error}
@@ -2238,7 +2242,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fcntl_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' cmd=' + IntToStr(cmd) + ' arg=' + IntToStr(arg) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fcntl_r (ptr=' + PtrToHex(ptr) + ' cmd=' + IntToStr(cmd) + ' arg=' + IntToStr(arg) + ')');
  {$ENDIF}
  
  {Get Entry}
@@ -2279,7 +2283,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fstat64_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fstat64_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ')');
  {$ENDIF}
  
  {Check stat}
@@ -2334,7 +2338,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fstat_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fstat_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ')');
  {$ENDIF}
  
  {Check stat}
@@ -2398,7 +2402,7 @@ begin
    if reent = nil then Exit;
 
    {$IFDEF SYSCALLS_DEBUG}
-   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __getreent (Allocated reent=' + IntToHex(PtrUInt(reent),8) + ')');
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __getreent (Allocated reent=' + PtrToHex(reent) + ')');
    {$ENDIF}
    
    {Set TLS Value}
@@ -2424,7 +2428,7 @@ begin
  Result:=reent;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __getreent (Result=' + IntToHex(PtrUInt(Result),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __getreent (Result=' + PtrToHex(Result) + ')');
  {$ENDIF}
 end;
 
@@ -2445,7 +2449,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _gettimeofday_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' timeval=' + IntToHex(PtrUInt(timeval),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _gettimeofday_r (ptr=' + PtrToHex(ptr) + ' timeval=' + PtrToHex(timeval) + ')');
  {$ENDIF}
  
  {Check timeval}
@@ -2488,7 +2492,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _isatty_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _isatty_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ')');
  {$ENDIF}
  
  {Check descriptor}
@@ -2518,7 +2522,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _link_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' old=' + StrPas(old) + ' new=' + StrPas(new) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _link_r (ptr=' + PtrToHex(ptr) + ' old=' + StrPas(old) + ' new=' + StrPas(new) + ')');
  {$ENDIF}
  
  if FSCreateSymbolicLink(new,old,FSDirectoryExists(old)) then
@@ -2554,7 +2558,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _lseek64_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ' pos=' + IntToStr(pos) + ' whence=' + IntToStr(whence) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _lseek64_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ' pos=' + IntToStr(pos) + ' whence=' + IntToStr(whence) + ')');
  {$ENDIF}
  
  {Get Entry}
@@ -2592,7 +2596,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _lseek_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ' pos=' + IntToStr(pos) + ' whence=' + IntToStr(whence) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _lseek_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ' pos=' + IntToStr(pos) + ' whence=' + IntToStr(whence) + ')');
  {$ENDIF}
  
  {Get Entry}
@@ -2628,7 +2632,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _mkdir_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' path=' + StrPas(path) + ' mode=' + IntToStr(mode) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _mkdir_r (ptr=' + PtrToHex(ptr) + ' path=' + StrPas(path) + ' mode=' + IntToStr(mode) + ')');
  {$ENDIF}
  
  {Create Directory}
@@ -2666,7 +2670,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _open64_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' name=' + StrPas(name) + ' flags=' + IntToStr(flags) + ' mode=' + IntToStr(mode) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _open64_r (ptr=' + PtrToHex(ptr) + ' name=' + StrPas(name) + ' flags=' + IntToStr(flags) + ' mode=' + IntToStr(mode) + ')');
  {$ENDIF}
  
  {Call Open}
@@ -2698,7 +2702,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _open_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' name=' + StrPas(name) + ' flags=' + IntToStr(flags) + ' mode=' + IntToStr(mode) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _open_r (ptr=' + PtrToHex(ptr) + ' name=' + StrPas(name) + ' flags=' + IntToStr(flags) + ' mode=' + IntToStr(mode) + ')');
  {$ENDIF}
 
  {Check Flags}
@@ -2803,7 +2807,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _read_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ' buf=' + IntToHex(PtrUInt(buf),8) + ' cnt=' + IntToStr(cnt) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _read_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ' cnt=' + IntToStr(cnt) + ')');
  {$ENDIF}
  
  {Check descriptor}
@@ -2872,7 +2876,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _rename_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' old=' + StrPas(old) + ' new=' + StrPas(new) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _rename_r (ptr=' + PtrToHex(ptr) + ' old=' + StrPas(old) + ' new=' + StrPas(new) + ')');
  {$ENDIF}
  
  {Rename File}
@@ -2909,7 +2913,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _sbrk_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' incr=' + IntToStr(incr) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _sbrk_r (ptr=' + PtrToHex(ptr) + ' incr=' + IntToStr(incr) + ')');
  {$ENDIF}
  
  {Check incr}
@@ -2937,7 +2941,7 @@ begin
   end;  
   
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _sbrk_r (Result=' + IntToHex(PtrUInt(Result),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _sbrk_r (Result=' + PtrToHex(Result) + ')');
  {$ENDIF}
 end;
 
@@ -2956,7 +2960,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _kill_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' pid=' + IntToStr(pid) + ' sig=' + IntToStr(sig) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _kill_r (ptr=' + PtrToHex(ptr) + ' pid=' + IntToStr(pid) + ' sig=' + IntToStr(sig) + ')');
  {$ENDIF}
  
  {Return Error}
@@ -2982,7 +2986,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _getpid_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _getpid_r (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
  
  {Get Current Thread}
@@ -3010,7 +3014,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _stat64_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' name=' + StrPas(name) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _stat64_r (ptr=' + PtrToHex(ptr) + ' name=' + StrPas(name) + ')');
  {$ENDIF}
  
  {Check stat}
@@ -3062,7 +3066,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _stat_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' name=' + StrPas(name) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _stat_r (ptr=' + PtrToHex(ptr) + ' name=' + StrPas(name) + ')');
  {$ENDIF}
  
  {Check stat}
@@ -3117,7 +3121,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _times_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _times_r (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
  
  {Check tms}
@@ -3176,7 +3180,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _unlink_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' name=' + StrPas(name) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _unlink_r (ptr=' + PtrToHex(ptr) + ' name=' + StrPas(name) + ')');
  {$ENDIF}
  
  {Delete File}
@@ -3213,7 +3217,7 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _write_r (ptr=' + IntToHex(PtrUInt(ptr),8) + ' fd=' + IntToStr(fd) + ' buf=' + IntToHex(PtrUInt(buf),8) + ' cnt=' + IntToStr(cnt) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _write_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ' cnt=' + IntToStr(cnt) + ')');
  {$ENDIF}
  
  {Check descriptor}
@@ -3781,7 +3785,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls mmap (addr=' + IntToHex(PtrUInt(addr),8) + ' length=' + IntToStr(length) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls mmap (addr=' + PtrToHex(addr) + ' length=' + IntToStr(length) + ')');
  {$ENDIF}
  
  {Return Error}
@@ -3801,7 +3805,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls munmap (addr=' + IntToHex(PtrUInt(addr),8) + ' length=' + IntToStr(length) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls munmap (addr=' + PtrToHex(addr) + ' length=' + IntToStr(length) + ')');
  {$ENDIF}
  
  {Return Error}
@@ -3823,7 +3827,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls settimeofday (tv=' + IntToHex(PtrUInt(tv),8) + ' tz=' + IntToHex(PtrUInt(tz),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls settimeofday (tv=' + PtrToHex(tv) + ' tz=' + PtrToHex(tz) + ')');
  {$ENDIF}
 
  {Check tv}
@@ -4369,7 +4373,7 @@ begin
  Result:=nil;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir (dirp=' + PtrToHex(dirp) + ')');
  {$ENDIF}
 
  {Check dirp}
@@ -4443,7 +4447,7 @@ begin
  Result:=EBADF;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir_r (dirp=' + PtrToHex(dirp) + ' entry=' + PtrToHex(entry) + ' _result=' + PtrToHex(_result) + ')');
  {$ENDIF}
  
  {Check dirp}
@@ -4516,7 +4520,7 @@ begin
  Result:=-1;
   
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls closedir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls closedir (dirp=' + PtrToHex(dirp) + ')');
  {$ENDIF}
  
  {Check dirp}
@@ -4566,7 +4570,7 @@ begin
  Result:=nil;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64 (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64 (dirp=' + PtrToHex(dirp) + ')');
  {$ENDIF}
  
  {Check dirp}
@@ -4640,7 +4644,7 @@ begin
  Result:=EBADF;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64_r (dirp=' + IntToHex(PtrUInt(dirp),8) + ' entry=' + IntToHex(PtrUInt(entry),8) + ' _result=' + IntToHex(PtrUInt(_result),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readdir64_r (dirp=' + PtrToHex(dirp) + ' entry=' + PtrToHex(entry) + ' _result=' + PtrToHex(_result) + ')');
  {$ENDIF}
 
  {Check dirp}
@@ -4712,7 +4716,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls seekdir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls seekdir (dirp=' + PtrToHex(dirp) + ')');
  {$ENDIF}
  
  {Check dirp}
@@ -4759,7 +4763,7 @@ procedure rewinddir(dirp: PDIR); cdecl;
 begin 
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls rewinddir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls rewinddir (dirp=' + PtrToHex(dirp) + ')');
  {$ENDIF}
  
  {Seek to location zero}
@@ -4779,7 +4783,7 @@ begin
  Result:=-1;
   
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls telldir (dirp=' + IntToHex(PtrUInt(dirp),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls telldir (dirp=' + PtrToHex(dirp) + ')');
  {$ENDIF}
  
  {Check dirp}
@@ -4817,7 +4821,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_init (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Init attr}
@@ -4853,7 +4857,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_destroy (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Destroy attr}
@@ -4876,7 +4880,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getdetachstate (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getdetachstate (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check detachstate}
@@ -4902,7 +4906,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setdetachstate (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setdetachstate (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check detachstate}
@@ -4928,7 +4932,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getguardsize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getguardsize (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {$IFDEF _POSIX_THREAD_GUARDSIZE}
@@ -4959,7 +4963,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setguardsize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setguardsize (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {$IFDEF _POSIX_THREAD_GUARDSIZE}
@@ -4990,7 +4994,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getinheritsched (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getinheritsched (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
 
  {Check inheritsched}
@@ -5016,7 +5020,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setinheritsched (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setinheritsched (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check inheritsched}
@@ -5042,7 +5046,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getschedparam (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getschedparam (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check param}
@@ -5071,7 +5075,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setschedparam (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setschedparam (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check param}
@@ -5104,7 +5108,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getschedpolicy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getschedpolicy (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check policy}
@@ -5130,7 +5134,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setschedpolicy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setschedpolicy (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check policy}
@@ -5156,7 +5160,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getscope (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getscope (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check contentionscope}
@@ -5182,7 +5186,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setscope (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setscope (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
 
  {Check contentionscope}
@@ -5213,7 +5217,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getstackaddr (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getstackaddr (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check stackaddr}
@@ -5239,7 +5243,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setstackaddr (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setstackaddr (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
 
  {Set stackaddr}
@@ -5262,7 +5266,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getstacksize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_getstacksize (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check stacksize}
@@ -5288,7 +5292,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setstacksize (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_attr_setstacksize (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check stacksize}
@@ -5313,7 +5317,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cleanup_push (routine=' + IntToHex(PtrUInt(routine),8) + ' arg=' + IntToHex(PtrUInt(arg),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cleanup_push (routine=' + PtrToHex(routine) + ' arg=' + PtrToHex(arg) + ')');
  {$ENDIF}
  
  {Get Pthread}
@@ -5688,7 +5692,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_init (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Init attr}
@@ -5715,7 +5719,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_destroy (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Destroy attr}
@@ -5738,7 +5742,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_getpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_getpshared (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check pshared}
@@ -5769,7 +5773,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_setpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_condattr_setpshared (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check pshared}
@@ -5806,7 +5810,7 @@ begin
  if thread = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (thread=' + IntToHex(PtrUInt(thread^),8) + ' attr=' + IntToHex(PtrUInt(attr),8) + ' start_routine=' + IntToHex(PtrUInt(start_routine),8) + ' arg=' + IntToHex(PtrUInt(arg),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (thread=' + IntToHex(thread^,8) + ' attr=' + PtrToHex(attr) + ' start_routine=' + PtrToHex(start_routine) + ' arg=' + PtrToHex(arg) + ')');
  {$ENDIF}
  
  {Check attr}
@@ -5958,7 +5962,7 @@ procedure pthread_exit(value_ptr: Pointer); cdecl;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_exit (value_ptr=' + IntToHex(PtrUInt(value_ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_exit (value_ptr=' + PtrToHex(value_ptr) + ')');
  {$ENDIF}
   
  {Call Thread End}
@@ -6201,7 +6205,7 @@ begin
  if key = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (key=' + IntToHex(PtrUInt(key^),8) + ' destructor_routine=' + IntToHex(PtrUInt(destructor_routine),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (key=' + IntToHex(key^,8) + ' destructor_routine=' + PtrToHex(destructor_routine) + ')');
  {$ENDIF}
  
  Result:=EAGAIN;
@@ -6282,7 +6286,7 @@ begin
  Result:=EINVAL;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setspecific (key=' + IntToHex(key,8) + ' value=' + IntToHex(PtrUInt(value),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setspecific (key=' + IntToHex(key,8) + ' value=' + PtrToHex(value) + ')');
  {$ENDIF}
  
  {Set TLS Value}
@@ -6662,7 +6666,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_init (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Init attr}
@@ -6696,7 +6700,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_destroy (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Destroy attr}
@@ -6719,7 +6723,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getprioceiling (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getprioceiling (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check prioceiling}
@@ -6750,7 +6754,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setprioceiling (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setprioceiling (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
@@ -6778,7 +6782,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getprotocol (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getprotocol (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check protocol}
@@ -6809,7 +6813,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setprotocol (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setprotocol (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
@@ -6837,7 +6841,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getpshared (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check pshared}
@@ -6868,7 +6872,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setpshared (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check pshared}
@@ -6899,7 +6903,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_gettype (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_gettype (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check _type}
@@ -6930,7 +6934,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_settype (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_settype (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check _type}
@@ -6970,7 +6974,7 @@ begin
   end;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_once (once_control=' + IntToHex(PtrUInt(once_control),8) + ' init_routine=' + IntToHex(PtrUInt(init_routine),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_once (once_control=' + PtrToHex(once_control) + ' init_routine=' + PtrToHex(init_routine) + ')');
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_once (is_initialized=' + IntToStr(once_control^.is_initialized) + ' init_executed=' + IntToStr(once_control^.init_executed) + ')');
  {$ENDIF}
  
@@ -7396,7 +7400,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlockattr_init (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlockattr_init (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Init attr}
@@ -7422,7 +7426,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlockattr_destroy (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlockattr_destroy (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Destroy attr}
@@ -7445,7 +7449,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_getpshared (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check pshared}
@@ -7476,7 +7480,7 @@ begin
  if attr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setpshared (attr=' + IntToHex(PtrUInt(attr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutexattr_setpshared (attr=' + PtrToHex(attr) + ')');
  {$ENDIF}
  
  {Check pshared}
@@ -8341,7 +8345,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls accept (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls accept (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
  
  Result:=fpaccept(socket,address,psocklen(address_len));
@@ -8364,7 +8368,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls bind (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToStr(address_len) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls bind (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + IntToStr(address_len) + ')');
  {$ENDIF}
  
  Result:=fpbind(socket,address,address_len);
@@ -8387,7 +8391,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls connect (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToStr(address_len) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls connect (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + IntToStr(address_len) + ')');
  {$ENDIF}
  
  Result:=fpconnect(socket,address,address_len);
@@ -8410,7 +8414,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getpeername (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getpeername (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
  
  Result:=fpgetpeername(socket,address,psocklen(address_len));
@@ -8433,7 +8437,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockname (socket=' + IntToHex(socket,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockname (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
  
  Result:=fpgetsockname(socket,address,psocklen(address_len));
@@ -8456,7 +8460,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + IntToHex(PtrUInt(option_value),8) + ' option_len=' + IntToHex(PtrUInt(option_len),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + PtrToHex(option_value) + ' option_len=' + PtrToHex(option_len) + ')');
  {$ENDIF}
  
  Result:=fpgetsockopt(socket,level,option_name,option_value,psocklen(option_len));
@@ -8502,7 +8506,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
  
  Result:=fprecv(socket,buffer,len,flags);
@@ -8525,7 +8529,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' address=' + IntToHex(PtrUInt(address),8) + ' address_len=' + IntToHex(PtrUInt(address_len),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
  
  Result:=fprecvfrom(socket,buffer,len,flags,address,psocklen(address_len));
@@ -8548,7 +8552,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls send (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls send (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
  
  Result:=fpsend(socket,buffer,len,flags);
@@ -8571,7 +8575,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendto (socket=' + IntToHex(socket,8) + ' buffer=' + IntToHex(PtrUInt(buffer),8) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' dest_addr=' + IntToHex(PtrUInt(dest_addr),8) + ' dest_len=' + IntToStr(dest_len) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendto (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' dest_addr=' + PtrToHex(dest_addr) + ' dest_len=' + IntToStr(dest_len) + ')');
  {$ENDIF}
  
  Result:=fpsendto(socket,buffer,len,flags,dest_addr,dest_len);
@@ -8594,7 +8598,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls setsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + IntToHex(PtrUInt(option_value),8) + ' option_len=' + IntToStr(option_len) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls setsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + PtrToHex(option_value) + ' option_len=' + IntToStr(option_len) + ')');
  {$ENDIF}
  
  Result:=fpsetsockopt(socket,level,option_name,option_value,option_len);
@@ -8663,7 +8667,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socketpair (domain=' + IntToStr(domain) + ' type=' + IntToStr(sockettype) + ' protocol=' + IntToStr(protocol) + ' socket_vector=' + IntToHex(PtrUInt(socket_vector),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socketpair (domain=' + IntToStr(domain) + ' type=' + IntToStr(sockettype) + ' protocol=' + IntToStr(protocol) + ' socket_vector=' + PtrToHex(socket_vector) + ')');
  {$ENDIF}
  
  Result:=fpsocketpair(domain,sockettype,protocol,socket_vector);
@@ -8807,7 +8811,7 @@ begin
  //To Do //Resolve the discrepency in field sizes between PHostEnt from Winsock and hostent from POSIX (short versus int)
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (addr=' + IntToHex(PtrUInt(addr),8) + ' len=' + IntToStr(len) + ' family=' + IntToStr(family) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (addr=' + PtrToHex(addr) + ' len=' + IntToStr(len) + ' family=' + IntToStr(family) + ')');
  {$ENDIF}
  
  Result:=GetHostByAddr(addr,len,family);
@@ -9040,7 +9044,7 @@ begin
  if ptr = nil then Exit;
 
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __malloc_lock (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __malloc_lock (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
  
  {Lock Mutex}
@@ -9057,7 +9061,7 @@ begin
  if ptr = nil then Exit;
 
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __malloc_unlock (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __malloc_unlock (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
 
  {Unlock Mutex}
@@ -9074,7 +9078,7 @@ begin
  if ptr = nil then Exit;
 
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __env_lock (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __env_lock (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
 
  {Lock Mutex}
@@ -9091,7 +9095,7 @@ begin
  if ptr = nil then Exit;
 
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __env_unlock (ptr=' + IntToHex(PtrUInt(ptr),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __env_unlock (ptr=' + PtrToHex(ptr) + ')');
  {$ENDIF}
 
  {Unlock Mutex}
@@ -9188,7 +9192,7 @@ begin
  if Handle = INVALID_HANDLE_VALUE then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Stat (Handle=' + IntToHex(Handle,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Stat (Handle=' + HandleToHex(Handle) + ')');
  {$ENDIF}
  
  {Check stat}
@@ -9231,7 +9235,7 @@ begin
  if Handle = INVALID_HANDLE_VALUE then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Stat64 (Handle=' + IntToHex(Handle,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Stat64 (Handle=' + HandleToHex(Handle) + ')');
  {$ENDIF}
  
  {Check stat64}
@@ -9300,7 +9304,7 @@ begin
  MutexUnlock(SyscallsTableLock);
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Entry (Result=' + IntToHex(PtrUInt(Result),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Entry (Result=' + PtrToHex(Result) + ')');
  {$ENDIF}
 end;
 
@@ -9338,7 +9342,7 @@ begin
  if Handle = INVALID_HANDLE_VALUE then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry (Handle=' + IntToHex(Handle,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry (Handle=' + HandleToHex(Handle) + ')');
  {$ENDIF}
  
  {Lock Table}
@@ -9400,7 +9404,7 @@ begin
  MutexUnlock(SyscallsTableLock);
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry (Result=' + IntToHex(PtrUInt(Result),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry (Result=' + PtrToHex(Result) + ')');
  {$ENDIF}
 end;
 
@@ -9418,7 +9422,7 @@ begin
  if Entry = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Remove Entry (Entry=' + IntToHex(PtrUInt(Entry),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Remove Entry (Entry=' + PtrToHex(Entry) + ')');
  {$ENDIF}
  
  {Lock Table}
@@ -9630,7 +9634,7 @@ begin
    if Block <> nil then
     begin
      {$IFDEF SYSCALLS_DEBUG}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.PhysicalAddress=' + IntToHex(Block^.PhysicalAddress,8));
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.PhysicalAddress=' + AddrToHex(Block^.PhysicalAddress));
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.Size=' + IntToStr(Block^.Size));
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.Used=' + IntToStr(Block^.Used));
      {$ENDIF}
@@ -9649,7 +9653,7 @@ begin
       end; 
       
      {$IFDEF SYSCALLS_DEBUG}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + IntToHex(PtrUInt(SyscallsHeapEnd),8));
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + PtrToHex(SyscallsHeapEnd));
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapSize=' + IntToStr(SyscallsHeapSize));
      {$ENDIF}
     end;  
@@ -9664,8 +9668,8 @@ begin
    while Block <> nil do
     begin
      {$IFDEF SYSCALLS_DEBUG}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.PhysicalAddress=' + IntToHex(Block^.PhysicalAddress,8));
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.VirtualAddress=' + IntToHex(Block^.VirtualAddress,8));
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.PhysicalAddress=' + AddrToHex(Block^.PhysicalAddress));
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.VirtualAddress=' + AddrToHex(Block^.VirtualAddress));
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.Size=' + IntToStr(Block^.Size));
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  Block.Used=' + IntToStr(Block^.Used));
      {$ENDIF}
@@ -9693,7 +9697,7 @@ begin
        Inc(SyscallsHeapEnd,Remain);
        
        {$IFDEF SYSCALLS_DEBUG}
-       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + IntToHex(PtrUInt(SyscallsHeapEnd),8));
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + PtrToHex(SyscallsHeapEnd));
        if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapSize=' + IntToStr(SyscallsHeapSize));
        {$ENDIF}
        
@@ -9787,7 +9791,7 @@ begin
        Inc(SyscallsHeapSize,SYSCALLS_HEAP_BLOCKSIZE);
        
        {$IFDEF SYSCALLS_DEBUG}
-       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + IntToHex(PtrUInt(SyscallsHeapEnd),8));
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + PtrToHex(SyscallsHeapEnd));
        if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapSize=' + IntToStr(SyscallsHeapSize));
        {$ENDIF}
       end;
@@ -9839,7 +9843,7 @@ begin
       end; 
       
      {$IFDEF SYSCALLS_DEBUG}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + IntToHex(PtrUInt(SyscallsHeapEnd),8));
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + PtrToHex(SyscallsHeapEnd));
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapSize=' + IntToStr(SyscallsHeapSize));
      {$ENDIF}
     end;  
@@ -9866,7 +9870,7 @@ begin
      {Do not allow decrease beyond the last block} 
      
      {$IFDEF SYSCALLS_DEBUG}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + IntToHex(PtrUInt(SyscallsHeapEnd),8));
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapEnd=' + PtrToHex(SyscallsHeapEnd));
      if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls  HeapSize=' + IntToStr(SyscallsHeapSize));
      {$ENDIF}
     end;  
@@ -9886,7 +9890,7 @@ begin
  Result:=nil;
 
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Thread=' + IntToHex(ThreadGetCurrent,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Thread=' + HandleToHex(ThreadGetCurrent) + ')');
  {$ENDIF}
  
  {Get TLS Value}
@@ -9898,7 +9902,7 @@ begin
    if Pthread = nil then Exit;
    
    {$IFDEF SYSCALLS_DEBUG}
-   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Allocated Pthread=' + IntToHex(PtrUInt(Pthread),8) + ')');
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Allocated Pthread=' + PtrToHex(Pthread) + ')');
    {$ENDIF}
    
    {Set TLS Value}
@@ -9912,7 +9916,7 @@ begin
  Result:=Pthread;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Result=' + IntToHex(PtrUInt(Result),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Pthread (Result=' + PtrToHex(Result) + ')');
  {$ENDIF}
 end;
 
@@ -9928,7 +9932,7 @@ begin
  Result:=0;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread Start (Thread=' + IntToHex(ThreadGetCurrent,8) + ' Data=' + IntToHex(PtrUInt(Data),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread Start (Thread=' + HandleToHex(ThreadGetCurrent) + ' Data=' + PtrToHex(Data) + ')');
  {$ENDIF}
  
  {Save the Parameters}
@@ -9959,7 +9963,7 @@ var
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Thread=' + IntToHex(ThreadGetCurrent,8) + ' Value=' + IntToHex(PtrUInt(Value),8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Thread=' + HandleToHex(ThreadGetCurrent) + ' Value=' + PtrToHex(Value) + ')');
  {$ENDIF}
 
  {Call Key Destructors}
@@ -9976,7 +9980,7 @@ begin
        ThreadSetTlsValue(Count,nil);
       
        {$IFDEF SYSCALLS_DEBUG}
-       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Key=' + IntToHex(Count,8) + ' Destructor=' + IntToHex(PtrUInt(SyscallsKeyDestructor[Count]),8) + ' Data=' + IntToHex(PtrUInt(Data),8) + ')');
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Key=' + IntToHex(Count,8) + ' Destructor=' + PtrToHex(SyscallsKeyDestructor[Count]) + ' Data=' + PtrToHex(Data) + ')');
        {$ENDIF}
       
        {Call Key Destructor}
@@ -9994,7 +9998,7 @@ begin
    while Cleanup <> nil do
     begin
      {$IFDEF SYSCALLS_DEBUG}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Cleanup=' + IntToHex(PtrUInt(Cleanup),8) + ' Routine=' + IntToHex(PtrUInt(Cleanup^.Routine),8) + ' Arg=' + IntToHex(PtrUInt(Cleanup^.Arg),8) + ')');
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Pthread End (Cleanup=' + PtrToHex(Cleanup) + ' Routine=' + PtrToHex(Cleanup^.Routine) + ' Arg=' + PtrToHex(Cleanup^.Arg) + ')');
      {$ENDIF}
 
      {Check Routine}

@@ -1,7 +1,7 @@
 {
 Ultibo Security interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -131,6 +131,10 @@ unit Security;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,SysUtils,Classes; //To Do //Can we remove Classes ? //Required for TStringList
+
+//To Do //Look for:
+
+//LongWord(Pointer()^) -> PLongWord()^
 
 {==============================================================================}
 {Global definitions}
@@ -1401,7 +1405,7 @@ begin
  Count:=0;
  while Count < Sid1.SubAuthorityCount do
   begin
-   if LongWord(Pointer(LongWord(@Sid1.SubAuthority[0]) + LongWord(Count * SizeOf(DWORD)))^) <> LongWord(Pointer(LongWord(@Sid2.SubAuthority[0]) + LongWord(Count * SizeOf(DWORD)))^) then Exit;
+   if LongWord(Pointer(PtrUInt(@Sid1.SubAuthority[0]) + LongWord(Count * SizeOf(DWORD)))^) <> LongWord(Pointer(PtrUInt(@Sid2.SubAuthority[0]) + LongWord(Count * SizeOf(DWORD)))^) then Exit;
   end;
 
   SetLastError(ERROR_SUCCESS);
@@ -1500,7 +1504,7 @@ begin
  {Do not check for null SID}
  
  SetLastError(ERROR_SUCCESS);
- Result:=PDWORD(LongWord(@Sid.SubAuthority[0]) + LongWord((nSubAuthority) * SizeOf(DWORD))); {Sub Authority is zero based index}
+ Result:=PDWORD(PtrUInt(@Sid.SubAuthority[0]) + LongWord((nSubAuthority) * SizeOf(DWORD))); {Sub Authority is zero based index}
 end;
 
 {==============================================================================}
@@ -1756,12 +1760,12 @@ begin
  
  Index:=0;
  Offset:=SizeOf(TACL);
- AceHeader:=PAceHeader(LongWord(@pAcl) + Offset);
+ AceHeader:=PAceHeader(PtrUInt(@pAcl) + Offset);
  while Index < dwAceIndex do
   begin
    Inc(Index);
    Inc(Offset,AceHeader.AceSize);
-   AceHeader:=PAceHeader(LongWord(@pAcl) + Offset);
+   AceHeader:=PAceHeader(PtrUInt(@pAcl) + Offset);
    if Index = dwAceIndex then Break;
   end;
  pAce:=AceHeader;
@@ -1913,28 +1917,28 @@ begin
    {Check Owner}
    if PSecurityDescriptorRelative(pSecurityDescriptor).Owner > 0 then
     begin
-     Sid:=PSID(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Owner);
+     Sid:=PSID(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Owner);
      if not IsValidSid(Sid) then Exit;
     end;
    
    {Check Group}
    if PSecurityDescriptorRelative(pSecurityDescriptor).Group > 0 then
     begin
-     Sid:=PSID(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Group);
+     Sid:=PSID(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Group);
      if not IsValidSid(Sid) then Exit;
     end;
    
    {Check DACL}
    if PSecurityDescriptorRelative(pSecurityDescriptor).Dacl > 0 then
     begin
-     Acl:=PACL(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Dacl);
+     Acl:=PACL(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Dacl);
      if not IsValidAcl(Acl^) then Exit;
     end;
    
    {Check SACL}
    if PSecurityDescriptorRelative(pSecurityDescriptor).Sacl > 0 then
     begin
-     Acl:=PACL(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Sacl);
+     Acl:=PACL(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Sacl);
      if not IsValidAcl(Acl^) then Exit;
     end;
   end
@@ -2077,7 +2081,7 @@ begin
    pDacl:=nil;
    if PSecurityDescriptorRelative(pSecurityDescriptor).Dacl > 0 then
     begin
-     pDacl:=PACL(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Dacl);
+     pDacl:=PACL(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Dacl);
     end;
   end
  else
@@ -2123,7 +2127,7 @@ begin
    pSacl:=nil;
    if PSecurityDescriptorRelative(pSecurityDescriptor).Sacl > 0 then
     begin
-     pSacl:=PACL(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Sacl);
+     pSacl:=PACL(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Sacl);
     end;
   end
  else
@@ -2166,7 +2170,7 @@ begin
    pOwner:=nil;
    if PSecurityDescriptorRelative(pSecurityDescriptor).Owner > 0 then
     begin
-     pOwner:=PSID(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Owner);
+     pOwner:=PSID(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Owner);
     end;
   end
  else
@@ -2209,7 +2213,7 @@ begin
    pGroup:=nil;
    if PSecurityDescriptorRelative(pSecurityDescriptor).Group > 0 then
     begin
-     pGroup:=PSID(LongWord(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Group);
+     pGroup:=PSID(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Group);
     end;
   end
  else
@@ -2291,7 +2295,7 @@ begin
     begin
      PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner:=Offset;
      Size:=GetLengthSid(pAbsoluteSecurityDescriptor.Owner);
-     System.Move(pAbsoluteSecurityDescriptor.Owner^,Pointer(LongWord(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner)^,Size);
+     System.Move(pAbsoluteSecurityDescriptor.Owner^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner)^,Size);
      Inc(Offset,Size);
     end;
    
@@ -2300,7 +2304,7 @@ begin
     begin
      PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group:=Offset;
      Size:=GetLengthSid(pAbsoluteSecurityDescriptor.Group);
-     System.Move(pAbsoluteSecurityDescriptor.Group^,Pointer(LongWord(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group)^,Size);
+     System.Move(pAbsoluteSecurityDescriptor.Group^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group)^,Size);
      Inc(Offset,Size);
     end;
     
@@ -2309,7 +2313,7 @@ begin
     begin
      PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Dacl:=Offset;
      Size:=pAbsoluteSecurityDescriptor.Dacl.AclSize;
-     System.Move(pAbsoluteSecurityDescriptor.Dacl^,Pointer(LongWord(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Dacl)^,Size);
+     System.Move(pAbsoluteSecurityDescriptor.Dacl^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Dacl)^,Size);
      Inc(Offset,Size);
     end;
    
@@ -2318,7 +2322,7 @@ begin
     begin
      PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Sacl:=Offset;
      Size:=pAbsoluteSecurityDescriptor.Sacl.AclSize;
-     System.Move(pAbsoluteSecurityDescriptor.Sacl^,Pointer(LongWord(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Sacl)^,Size);
+     System.Move(pAbsoluteSecurityDescriptor.Sacl^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Sacl)^,Size);
      {Inc(Offset,Size);} {Not Required}
     end;
    
@@ -2367,7 +2371,7 @@ begin
    if PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner > 0 then
     begin
      SetLastError(ERROR_INSUFFICIENT_BUFFER); {Also could be STATUS_BUFFER_TOO_SMALL}
-     Size:=GetLengthSid(PSID(LongWord(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner));
+     Size:=GetLengthSid(PSID(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner));
      if lpdwOwnerSize < Size then
       begin
        lpdwOwnerSize:=Size;
@@ -2386,7 +2390,7 @@ begin
    if PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group > 0 then
     begin
      SetLastError(ERROR_INSUFFICIENT_BUFFER); {Also could be STATUS_BUFFER_TOO_SMALL}
-     Size:=GetLengthSid(PSID(LongWord(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group));
+     Size:=GetLengthSid(PSID(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group));
      if lpdwPrimaryGroupSize < Size then
       begin
        lpdwPrimaryGroupSize:=Size;
@@ -2649,7 +2653,7 @@ begin
   if WellKnownDescriptor.OwnerOffset <> 0 then
    begin
     {Get Sid}
-    Sid:=PSID(LongWord(Descriptor) + WellKnownDescriptor.OwnerOffset);
+    Sid:=PSID(PtrUInt(Descriptor) + WellKnownDescriptor.OwnerOffset);
     SidSize:=SECURITY_MAX_SID_SIZE;
     if not CreateWellKnownSid(WellKnownDescriptor.Owner,nil,Sid,SidSize) then Exit;
    end;
@@ -2657,7 +2661,7 @@ begin
   if WellKnownDescriptor.GroupOffset <> 0 then
    begin
     {Get Sid}
-    Sid:=PSID(LongWord(Descriptor) + WellKnownDescriptor.GroupOffset);
+    Sid:=PSID(PtrUInt(Descriptor) + WellKnownDescriptor.GroupOffset);
     SidSize:=SECURITY_MAX_SID_SIZE;
     if not CreateWellKnownSid(WellKnownDescriptor.Group,nil,Sid,SidSize) then Exit;
    end;
@@ -2665,7 +2669,7 @@ begin
   if WellKnownDescriptor.SaclOffset <> 0 then
    begin
     {Get Acl}
-    Acl:=PACL(LongWord(Descriptor) + WellKnownDescriptor.SaclOffset);
+    Acl:=PACL(PtrUInt(Descriptor) + WellKnownDescriptor.SaclOffset);
     Acl.AclRevision:=WellKnownDescriptor.Sacl.AclRevision;
     Acl.AclSize:=WellKnownDescriptor.Sacl.AclSize;
     Acl.AceCount:=WellKnownDescriptor.Sacl.AceCount;
@@ -2677,13 +2681,13 @@ begin
       {Get Offset}
       if Count > 0 then Inc(Offset,WellKnownDescriptor.Sacl.Aces[Count - 1].AceSize);
       {Get Ace}
-      Ace:=PAceHeader(LongWord(Acl) + Offset);
+      Ace:=PAceHeader(PtrUInt(Acl) + Offset);
       Ace.AceType:=WellKnownDescriptor.Sacl.Aces[Count].AceType;
       Ace.AceFlags:=WellKnownDescriptor.Sacl.Aces[Count].AceFlags;
       Ace.AceSize:=WellKnownDescriptor.Sacl.Aces[Count].AceSize;
       PAccessAllowedAce(Ace).Mask:=WellKnownDescriptor.Sacl.Aces[Count].Mask;
       {Get Sid}
-      Sid:=PSID(LongWord(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
+      Sid:=PSID(PtrUInt(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
       SidSize:=SECURITY_MAX_SID_SIZE;
       if not CreateWellKnownSid(WellKnownDescriptor.Sacl.Aces[Count].Sid,nil,Sid,SidSize) then Exit;
      end;
@@ -2692,7 +2696,7 @@ begin
   if WellKnownDescriptor.DaclOffset <> 0 then
    begin
     {Get Acl}
-    Acl:=PACL(LongWord(Descriptor) + WellKnownDescriptor.DaclOffset);
+    Acl:=PACL(PtrUInt(Descriptor) + WellKnownDescriptor.DaclOffset);
     Acl.AclRevision:=WellKnownDescriptor.Dacl.AclRevision;
     Acl.AclSize:=WellKnownDescriptor.Dacl.AclSize;
     Acl.AceCount:=WellKnownDescriptor.Dacl.AceCount;
@@ -2704,13 +2708,13 @@ begin
       {Get Offset}
       if Count > 0 then Inc(Offset,WellKnownDescriptor.Dacl.Aces[Count - 1].AceSize);
       {Get Ace}
-      Ace:=PAceHeader(LongWord(Acl) + Offset);
+      Ace:=PAceHeader(PtrUInt(Acl) + Offset);
       Ace.AceType:=WellKnownDescriptor.Dacl.Aces[Count].AceType;
       Ace.AceFlags:=WellKnownDescriptor.Dacl.Aces[Count].AceFlags;
       Ace.AceSize:=WellKnownDescriptor.Dacl.Aces[Count].AceSize;
       PAccessAllowedAce(Ace).Mask:=WellKnownDescriptor.Dacl.Aces[Count].Mask;
       {Get Sid}
-      Sid:=PSID(LongWord(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
+      Sid:=PSID(PtrUInt(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
       SidSize:=SECURITY_MAX_SID_SIZE;
       if not CreateWellKnownSid(WellKnownDescriptor.Dacl.Aces[Count].Sid,nil,Sid,SidSize) then Exit;
      end;
@@ -2789,7 +2793,7 @@ begin
     begin
      PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Owner:=Offset;
      Size:=GetLengthSid(pParentSecurityDescriptor.Owner);
-     System.Move(pParentSecurityDescriptor.Owner^,Pointer(LongWord(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Owner)^,Size);
+     System.Move(pParentSecurityDescriptor.Owner^,Pointer(PtrUInt(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Owner)^,Size);
      Inc(Offset,Size);
     end;
    {Convert Group}
@@ -2797,7 +2801,7 @@ begin
     begin
      PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Group:=Offset;
      Size:=GetLengthSid(pParentSecurityDescriptor.Group);
-     System.Move(pParentSecurityDescriptor.Group^,Pointer(LongWord(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Group)^,Size);
+     System.Move(pParentSecurityDescriptor.Group^,Pointer(PtrUInt(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Group)^,Size);
      Inc(Offset,Size);
     end;
    {Convert Dacl}
@@ -2805,7 +2809,7 @@ begin
     begin
      PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Dacl:=Offset;
      Size:=pParentSecurityDescriptor.Dacl.AclSize;
-     System.Move(pParentSecurityDescriptor.Dacl^,Pointer(LongWord(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Dacl)^,Size);
+     System.Move(pParentSecurityDescriptor.Dacl^,Pointer(PtrUInt(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Dacl)^,Size);
      Inc(Offset,Size);
     end;
    {Convert Sacl}
@@ -2813,7 +2817,7 @@ begin
     begin
      PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Sacl:=Offset;
      Size:=pParentSecurityDescriptor.Sacl.AclSize;
-     System.Move(pParentSecurityDescriptor.Sacl^,Pointer(LongWord(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Sacl)^,Size);
+     System.Move(pParentSecurityDescriptor.Sacl^,Pointer(PtrUInt(pCreatedSecurityDescriptor) + PSecurityDescriptorRelative(pCreatedSecurityDescriptor).Sacl)^,Size);
      {Inc(Offset,Size);} {Not Required}
     end;
    SetLastError(ERROR_SUCCESS);

@@ -1,7 +1,7 @@
 {
 Ultibo DMA interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -57,9 +57,22 @@ const
  {DMA Host Types}
  DMA_TYPE_NONE = 0;
  
+ DMA_TYPE_MAX  = 0;
+  
+ {DMA Type Names}
+ DMA_TYPE_NAMES:array[DMA_TYPE_NONE..DMA_TYPE_MAX] of String = (
+  'DMA_TYPE_NONE');
+ 
  {DMA Host States}
  DMA_STATE_DISABLED = 0;
  DMA_STATE_ENABLED  = 1;
+ 
+ DMA_STATE_MAX      = 1;
+ 
+ {DMA State Names}
+ DMA_STATE_NAMES:array[DMA_STATE_DISABLED..DMA_STATE_MAX] of String = (
+  'DMA_STATE_DISABLED',
+  'DMA_STATE_ENABLED');
  
  {DMA Host Flags}
  DMA_FLAG_NONE        = $00000000;
@@ -74,6 +87,7 @@ const
  DMA_FLAG_WIDE        = $00000100; {Host supports wide read and/or write}
  DMA_FLAG_BULK        = $00000200; {Host supports bulk transfer}
  DMA_FLAG_LITE        = $00000400; {Host supports "lite" transfer}
+ DMA_FLAG_40BIT       = $00000800; {Host supports 40-bit address transfer}
 
  {DMA Data Flags}
  {See: Platform DMA_DATA_FLAG_*} 
@@ -260,6 +274,9 @@ function DMAHostGetDefault:PDMAHost; inline;
 function DMAHostSetDefault(DMA:PDMAHost):LongWord; 
 
 function DMAHostCheck(DMA:PDMAHost):PDMAHost;
+
+function DMATypeToString(DMAType:LongWord):String;
+function DMAStateToString(DMAState:LongWord):String;
 
 procedure DMALog(Level:Integer;DMA:PDMAHost;const AText:String);
 procedure DMALogInfo(DMA:PDMAHost;const AText:String); inline;
@@ -1258,7 +1275,7 @@ begin
  if Request.Host = nil then Exit;
 
  {$IFDEF DMA_DEBUG}
- if DMA_LOG_ENABLED then DMALogDebug(Request.Host,'DMA Request Complete (Request=' + IntToHex(LongWord(Request),8) + ' Status=' + ErrorToString(Request.Status) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(Request.Host,'DMA Request Complete (Request=' + PtrToHex(Request) + ' Status=' + ErrorToString(Request.Status) + ')');
  {$ENDIF}
  
  {Get Host}
@@ -1606,14 +1623,14 @@ begin
       {Flush Cache}
       if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_COHERENT) = 0 then
        begin
-        CleanDataCacheRange(LongWord(Source),Len);
+        CleanDataCacheRange(PtrUInt(Source),Len);
        end; 
      end;
     
     {Check Wide}
     if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_WIDE) <> 0 then
      begin
-      Data.Flags:=Data.Flags or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE;
+      Data.Flags:=Data.Flags or DMA_DATA_FLAG_DEST_WIDE;
      end;
     
     {Perform Transfer}
@@ -1911,6 +1928,34 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(DMAHostTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function DMATypeToString(DMAType:LongWord):String;
+{Convert a DMA type value to a string}
+begin
+ {}
+ Result:='DMA_TYPE_UNKNOWN';
+ 
+ if DMAType <= DMA_TYPE_MAX then
+  begin
+   Result:=DMA_TYPE_NAMES[DMAType];
+  end;
+end;
+
+{==============================================================================}
+
+function DMAStateToString(DMAState:LongWord):String;
+{Convert a DMA state value to a string}
+begin
+ {}
+ Result:='DMA_STATE_UNKNOWN';
+ 
+ if DMAState <= DMA_STATE_MAX then
+  begin
+   Result:=DMA_STATE_NAMES[DMAState];
   end;
 end;
 

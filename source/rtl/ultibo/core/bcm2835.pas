@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the Broadcom 2835 System on chip.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -866,6 +866,18 @@ const
  {PL011 UART Test Data register bits (See 13.4)}
 
 const
+ {ARM Interrupt Controller registers (See 7.5)}
+ BCM2835_ARM_INTERRUPT_BASIC_PENDING = $00000000; {IRQ basic pending}
+ BCM2835_ARM_INTERRUPT_IRQ_PENDING1  = $00000004; {IRQ pending 1} 
+ BCM2835_ARM_INTERRUPT_IRQ_PENDING2  = $00000008; {IRQ pending 2} 
+ BCM2835_ARM_INTERRUPT_FIQ_CONTROL   = $0000000C; {FIQ control} 
+ BCM2835_ARM_INTERRUPT_IRQ_ENABLE1   = $00000010; {Enable IRQs 1} 
+ BCM2835_ARM_INTERRUPT_IRQ_ENABLE2   = $00000014; {Enable IRQs 2} 
+ BCM2835_ARM_INTERRUPT_BASIC_ENABLE  = $00000018; {Enable Basic IRQs} 
+ BCM2835_ARM_INTERRUPT_IRQ_DISABLE1  = $0000001C; {Disable IRQs 1} 
+ BCM2835_ARM_INTERRUPT_IRQ_DISABLE2  = $00000020; {Disable IRQs 2} 
+ BCM2835_ARM_INTERRUPT_BASIC_DISABLE = $00000024; {Disable Basic IRQs} 
+ 
  {ARM Interrupt Controller register bits (See 7.5)}
  BCM2835_ARM_INTERRUPT_FIQ_ENABLE = (1 shl 7);   {FIQ enable (Set this bit to 1 to enable FIQ generation. If set to 0 bits 6:0 are don't care)}
  BCM2835_ARM_INTERRUPT_FIQ_SOURCE = ($7F shl 0); {Select FIQ Source (0..127)}
@@ -1205,10 +1217,6 @@ const
  BCM2835_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
  BCM2835_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
  
- BCM2835_MBOX_TAG_GET_NUM_DISPLAYS     = $00040012;
- BCM2835_MBOX_TAG_GET_DISPLAY_SETTINGS = $00040013;
- BCM2835_MBOX_TAG_SET_DISPLAY_NUM      = $00048012;
- 
  BCM2835_MBOX_TAG_GET_LAYER         = $0004000c;
  BCM2835_MBOX_TAG_TST_LAYER         = $0004400c;
  BCM2835_MBOX_TAG_SET_LAYER         = $0004800c;
@@ -1221,6 +1229,17 @@ const
  BCM2835_MBOX_TAG_SET_VSYNC         = $0004800e;
  
  BCM2835_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
+ 
+ BCM2835_MBOX_TAG_GET_DISPLAY_ID       = $00040016;
+ BCM2835_MBOX_TAG_SET_DISPLAY_NUM      = $00048013;
+ BCM2835_MBOX_TAG_GET_NUM_DISPLAYS     = $00040013;
+ BCM2835_MBOX_TAG_GET_DISPLAY_SETTINGS = $00040014;
+ 
+ BCM2835_MBOX_TAG_SET_PLANE          = $00048015;
+ BCM2835_MBOX_TAG_GET_DISPLAY_TIMING = $00040017;
+ BCM2835_MBOX_TAG_SET_TIMING         = $00048017;
+ BCM2835_MBOX_TAG_GET_DISPLAY_CFG    = $00040018;
+ BCM2835_MBOX_TAG_SET_DISPLAY_POWER  = $00048019;
  
  BCM2835_MBOX_TAG_SET_CURSOR_INFO   = $00008010; {00008011} {These were reversed in the documentation, see Linux \include\soc\bcm2835\raspberrypi-firmware.h}
  BCM2835_MBOX_TAG_SET_CURSOR_STATE  = $00008011; {00008010}
@@ -1279,12 +1298,14 @@ const
  BCM2835_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W}
  BCM2835_BOARD_REVISION_MODEL_3BPLUS         = (13 shl 4);  {Model 3B+ (Cannot occur on BCM2835)}
  BCM2835_BOARD_REVISION_MODEL_3APLUS         = (14 shl 4);  {Model 3A+ (Cannot occur on BCM2835)}
- BCM2835_BOARD_REVISION_MODEL_COMPUTE3PlUS   = (16 shl 4);  {Compute Module 3+ (Cannot occur on BCM2835)}
+ BCM2835_BOARD_REVISION_MODEL_COMPUTE3PLUS   = (16 shl 4);  {Compute Module 3+ (Cannot occur on BCM2835)}
+ BCM2835_BOARD_REVISION_MODEL_4B             = (17 shl 4);  {Model 4B (Cannot occur on BCM2835)}
  
  BCM2835_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2836    = (1 shl 12);  {BCM2836 (Cannot occur on BCM2835)}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2837    = (2 shl 12);  {BCM2837 (Cannot occur on BCM2835)}
+ BCM2835_BOARD_REVISION_PROCESSOR_BCM2838    = (3 shl 12);  {BCM2838 (Cannot occur on BCM2835)}
  
  BCM2835_BOARD_REVISION_MANUFACTURER_MASK       = ($F shl 16); {Manufacturer}
  BCM2835_BOARD_REVISION_MANUFACTURER_SONY       = (0 shl 16);  {Sony}
@@ -1292,12 +1313,16 @@ const
  BCM2835_BOARD_REVISION_MANUFACTURER_EMBEST     = (2 shl 16);  {Embest}
  BCM2835_BOARD_REVISION_MANUFACTURER_SONY_JAPAN = (3 shl 16);  {Sony (Japan)} 
  BCM2835_BOARD_REVISION_MANUFACTURER_EMBEST2    = (4 shl 16);  {Embest}
+ BCM2835_BOARD_REVISION_MANUFACTURER_STADIUM    = (5 shl 16);  {Stadium}
  
  BCM2835_BOARD_REVISION_MEMORY_MASK          = ($7 shl 20); {Memory Size}
  BCM2835_BOARD_REVISION_MEMORY_256M          = (0 shl 20);  {256M}
  BCM2835_BOARD_REVISION_MEMORY_512M          = (1 shl 20);  {512M}
  BCM2835_BOARD_REVISION_MEMORY_1024M         = (2 shl 20);  {1024M}
-                                             
+ BCM2835_BOARD_REVISION_MEMORY_2048M         = (3 shl 20);  {2048M}
+ BCM2835_BOARD_REVISION_MEMORY_4096M         = (4 shl 20);  {4096M}
+ BCM2835_BOARD_REVISION_MEMORY_8192M         = (5 shl 20);  {8192M}
+ 
  BCM2835_BOARD_REVISION_ENCODED_FLAG         = (1 shl 23);  {Encoded Flag, if set then revision uses this encoding}
                                              
  BCM2835_BOARD_REVISION_MASK                 = $00FFFFFF;   {Mask off the warranty bits}
@@ -1365,6 +1390,17 @@ const
  
  {BCM2835 mailbox tag Temperature ids}
  BCM2835_MBOX_TEMP_ID_SOC = 0;
+ 
+ {BCM2835 mailbox Display ids (These are compatible with the DISPMANX_ID_* values)}
+ BCM2835_MBOX_DISPLAY_ID_MAIN_LCD    = 0;
+ BCM2835_MBOX_DISPLAY_ID_AUX_LCD     = 1;
+ BCM2835_MBOX_DISPLAY_ID_HDMI0       = 2;
+ BCM2835_MBOX_DISPLAY_ID_SDTV        = 3;
+ BCM2835_MBOX_DISPLAY_ID_FORCE_LCD   = 4;
+ BCM2835_MBOX_DISPLAY_ID_FORCE_TV    = 5;
+ BCM2835_MBOX_DISPLAY_ID_FORCE_OTHER = 6; {Non-default display}
+ BCM2835_MBOX_DISPLAY_ID_HDMI1       = 7; {Not applicable on BCM2835}
+ BCM2835_MBOX_DISPLAY_ID_FORCE_TV2   = 8; {Not applicable on BCM2835}
  
  {BCM2835 mailbox tag Memory flags}
  BCM2835_MBOX_MEM_FLAG_DISCARDABLE      = (1 shl 0); {Can be resized to 0 at any time. Use for cached data}
@@ -2964,64 +3000,6 @@ type
   1:(Response:TBCM2835MailboxTagSetVirtualGPIOResponse);
  end;
  
- {Get Display Count}
- TBCM2835MailboxTagGetDisplayCountRequest = record
-  Dummy:LongWord;
- end;
- 
- TBCM2835MailboxTagGetDisplayCountResponse = record
-  DisplayCount:LongWord;
- end;
- 
- PBCM2835MailboxTagGetDisplayCount = ^TBCM2835MailboxTagGetDisplayCount;
- TBCM2835MailboxTagGetDisplayCount = record
-  Header:TBCM2835MailboxTagHeader;
-  case Integer of
-  0:(Request:TBCM2835MailboxTagGetDisplayCountRequest);
-  1:(Response:TBCM2835MailboxTagGetDisplayCountResponse);
- end;
- 
- {Get Display Settings}
- TBCM2835MailboxTagGetDisplaySettingsRequest = record
-  DisplayNumber:LongWord;
-  Width:LongWord;
-  Height:LongWord;
-  Pitch:LongWord;
-  Depth:LongWord;
-  VirtualWidth:LongWord;
-  VirtualHeight:LongWord;
-  VirtualOffsetX:LongWord;
-  VirtualOffsetY:LongWord;
-  Address:LongWord; {Framebuffer Bus Address}
- end;
- 
- TBCM2835MailboxTagGetDisplaySettingsResponse = TBCM2835MailboxTagGetDisplaySettingsRequest;
- 
- PBCM2835MailboxTagGetDisplaySettings = ^TBCM2835MailboxTagGetDisplaySettings;
- TBCM2835MailboxTagGetDisplaySettings = record
-  Header:TBCM2835MailboxTagHeader;
-  case Integer of
-  0:(Request:TBCM2835MailboxTagGetDisplaySettingsRequest);
-  1:(Response:TBCM2835MailboxTagGetDisplaySettingsResponse);
- end;
- 
- {Set Display Number}
- TBCM2835MailboxTagSetDisplayNumberRequest = record
-  DisplayNumber:LongWord;
- end;
- 
- TBCM2835MailboxTagSetDisplayNumberResponse = record
-  Dummy:LongWord;
- end;
- 
- PBCM2835MailboxTagSetDisplayNumber = ^TBCM2835MailboxTagSetDisplayNumber;
- TBCM2835MailboxTagSetDisplayNumber = record
-  Header:TBCM2835MailboxTagHeader;
-  case Integer of
-  0:(Request:TBCM2835MailboxTagSetDisplayNumberRequest);
-  1:(Response:TBCM2835MailboxTagSetDisplayNumberResponse);
- end;
- 
  {Test Vsync}
  PBCM2835MailboxTagTestVsync = ^TBCM2835MailboxTagTestVsync;
  TBCM2835MailboxTagTestVsync = record
@@ -3055,6 +3033,92 @@ type
   case Integer of
   0:(Request:TBCM2835MailboxTagSetBacklightRequest);
   1:(Response:TBCM2835MailboxTagSetBacklightResponse);
+ end;
+ 
+ {Get Display Id}
+ TBCM2835MailboxTagGetDisplayIdRequest = record
+  DisplayNum:LongWord;
+ end;
+
+ TBCM2835MailboxTagGetDisplayIdResponse = record
+  DisplayId:LongWord; 
+ end;
+
+ PBCM2835MailboxTagGetDisplayId = ^TBCM2835MailboxTagGetDisplayId;
+ TBCM2835MailboxTagGetDisplayId = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagGetDisplayIdRequest);
+  1:(Response:TBCM2835MailboxTagGetDisplayIdResponse);
+ end;
+ 
+ {Set Display Num}
+ TBCM2835MailboxTagSetDisplayNumRequest = record
+  DisplayNum:LongWord;
+ end;
+ 
+ TBCM2835MailboxTagSetDisplayNumResponse = record
+  DisplayNum:LongWord; 
+ end;
+
+ PBCM2835MailboxTagSetDisplayNum = ^TBCM2835MailboxTagSetDisplayNum;
+ TBCM2835MailboxTagSetDisplayNum = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagSetDisplayNumRequest);
+  1:(Response:TBCM2835MailboxTagSetDisplayNumResponse);
+ end;
+ 
+ {Get Num Displays}
+ TBCM2835MailboxTagGetNumDisplaysRequest = record
+  NumDisplays:LongWord;
+ end;
+ 
+ TBCM2835MailboxTagGetNumDisplaysResponse = record
+  NumDisplays:LongWord; 
+ end;
+
+ PBCM2835MailboxTagGetNumDisplays = ^TBCM2835MailboxTagGetNumDisplays;
+ TBCM2835MailboxTagGetNumDisplays = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagGetNumDisplaysRequest);
+  1:(Response:TBCM2835MailboxTagGetNumDisplaysResponse);
+ end;
+
+ {Get Display Settings}
+ TBCM2835MailboxTagGetDisplaySettingsRequest = record
+  DisplayNum:LongWord; 
+  Width:LongWord; 
+  Height:LongWord; 
+  Depth:LongWord; 
+  Pitch:LongWord; 
+  VirtualWidth:LongWord; 
+  VirtualHeight:LongWord; 
+  VirtualWidthOffset:LongWord; 
+  VirtualHeightOffset:LongWord;
+  BusAddress:LongWord;
+ end;
+
+ TBCM2835MailboxTagGetDisplaySettingsResponse = record
+  DisplayNum:LongWord; 
+  Width:LongWord; 
+  Height:LongWord; 
+  Depth:LongWord; 
+  Pitch:LongWord; 
+  VirtualWidth:LongWord; 
+  VirtualHeight:LongWord; 
+  VirtualWidthOffset:LongWord; 
+  VirtualHeightOffset:LongWord; 
+  BusAddress:LongWord;
+ end;
+ 
+ PBCM2835MailboxTagGetDisplaySettings = ^TBCM2835MailboxTagGetDisplaySettings;
+ TBCM2835MailboxTagGetDisplaySettings = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagGetDisplaySettingsRequest);
+  1:(Response:TBCM2835MailboxTagGetDisplaySettingsResponse);
  end;
  
  {Set Cursor Info}

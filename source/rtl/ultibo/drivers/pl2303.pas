@@ -1,7 +1,7 @@
 {
 Prolific PL2303 USB to Serial Driver.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -526,7 +526,7 @@ begin
  if Serial = nil then Exit;
  
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
- if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + IntToStr(DataBits) + ' StopBits=' + IntToStr(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + SerialDataBitsToString(DataBits) + ' StopBits=' + SerialStopBitsToString(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
  {$ENDIF}
  
  {Get Device}

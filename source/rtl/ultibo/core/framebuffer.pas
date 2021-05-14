@@ -1,7 +1,7 @@
 {
 Ultibo Framebuffer interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -58,9 +58,24 @@ const
  FRAMEBUFFER_TYPE_HARDWARE    = 1;
  FRAMEBUFFER_TYPE_VIRTUAL     = 2;
  
+ FRAMEBUFFER_TYPE_MAX         = 2;
+  
+ {Framebuffer Type Names}
+ FRAMEBUFFER_TYPE_NAMES:array[FRAMEBUFFER_TYPE_NONE..FRAMEBUFFER_TYPE_MAX] of String = (
+  'FRAMEBUFFER_TYPE_NONE',
+  'FRAMEBUFFER_TYPE_HARDWARE',
+  'FRAMEBUFFER_TYPE_VIRTUAL');
+ 
  {Framebuffer Device States}
  FRAMEBUFFER_STATE_DISABLED   = 0;
  FRAMEBUFFER_STATE_ENABLED    = 1;
+
+ FRAMEBUFFER_STATE_MAX        = 1;
+ 
+ {Framebuffer State Names}
+ FRAMEBUFFER_STATE_NAMES:array[FRAMEBUFFER_STATE_DISABLED..FRAMEBUFFER_STATE_MAX] of String = (
+  'FRAMEBUFFER_STATE_DISABLED',
+  'FRAMEBUFFER_STATE_ENABLED');
 
  {Framebuffer Cursor States}
  FRAMEBUFFER_CURSOR_DISABLED  = 0;
@@ -98,7 +113,7 @@ type
  PFramebufferProperties = ^TFramebufferProperties;
  TFramebufferProperties = record
   Flags:LongWord;                                {Framebuffer device flags (eg FRAMEBUFFER_FLAG_COMMIT) (Ignored for Allocate / SetProperties)}
-  Address:LongWord;                              {Framebuffer address (Ignored for Allocate / SetProperties)}
+  Address:PtrUInt;                               {Framebuffer address (Ignored for Allocate / SetProperties)}
   Size:LongWord;                                 {Framebuffer size (Bytes) (Ignored for Allocate / SetProperties)}
   Pitch:LongWord;                                {Framebuffer pitch (Bytes per Line) (Ignored for Allocate / SetProperties)}
   Depth:LongWord;                                {Framebuffer depth (Bits per Pixel)(8/16/24/32)}
@@ -138,7 +153,7 @@ type
  TFramebufferDeviceWrite = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  TFramebufferDeviceMark = function(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TFramebufferDeviceCommit = function(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceCommit = function(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TFramebufferDeviceGetRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TFramebufferDevicePutRect = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -205,7 +220,7 @@ type
   FillCount:LongWord;
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
-  Address:LongWord;                              {Framebuffer address}
+  Address:PtrUInt;                               {Framebuffer address}
   Size:LongWord;                                 {Framebuffer size (Bytes)}
   Pitch:LongWord;                                {Framebuffer pitch (Bytes per Line)}
   Depth:LongWord;                                {Framebuffer depth (Bits per Pixel)(8/16/24/32)}
@@ -269,7 +284,7 @@ function FramebufferDeviceRead(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffe
 function FramebufferDeviceWrite(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Len,Flags:LongWord):LongWord;
 
 function FramebufferDeviceMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
-function FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
  
 function FramebufferDeviceGetRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
 function FramebufferDevicePutRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
@@ -326,6 +341,9 @@ function FramebufferDeviceSetDefault(Framebuffer:PFramebufferDevice):LongWord;
 function FramebufferDeviceCheck(Framebuffer:PFramebufferDevice):PFramebufferDevice;
 
 function FramebufferDeviceSwap(Value:LongWord):LongWord; inline;
+
+function FramebufferTypeToString(FramebufferType:LongWord):String;
+function FramebufferStateToString(FramebufferState:LongWord):String;
 
 procedure FramebufferDeviceHideCursor(Framebuffer:PFramebufferDevice);
 procedure FramebufferDeviceShowCursor(Framebuffer:PFramebufferDevice);
@@ -670,11 +688,15 @@ begin
       if not(DMA_CACHE_COHERENT) then
        begin
         {Clean Cache (Dest)}
-        CleanDataCacheRange(LongWord(Buffer),Size);
+        CleanDataCacheRange(PtrUInt(Buffer),Size);
        end;
 
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
+      {$IFDEF CPUARM}
+      Data.SourceRange:=0;
+      Data.DestRange:=0;
+      {$ENDIF CPUARM}
       Data.Source:=Pointer(Address);
       Data.Dest:=Buffer;
       Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_BULK;
@@ -800,6 +822,10 @@ begin
      begin
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
+      {$IFDEF CPUARM}
+      Data.SourceRange:=0;
+      Data.DestRange:=0;
+      {$ENDIF CPUARM}
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
       Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -899,7 +925,7 @@ end;
 
 {==============================================================================}
 
-function FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 {Commit a region written to the framebuffer and signal the device to take any neccessary actions}
 {Framebuffer: The framebuffer device to commit}
 {Address: The starting address of the commit}
@@ -918,7 +944,7 @@ begin
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {$IFDEF FRAMEBUFFER_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Commit (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Framebuffer Device Commit (Address=' + AddrToHex(Address) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
 
  {Check Enabled}
@@ -1030,11 +1056,15 @@ begin
       if not(DMA_CACHE_COHERENT) then
        begin
         {Clean Cache (Dest)}
-        CleanDataCacheRange(LongWord(Buffer),(Size + Skip) * Height);
+        CleanDataCacheRange(PtrUInt(Buffer),(Size + Skip) * Height);
        end;
 
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
+      {$IFDEF CPUARM}
+      Data.SourceRange:=0;
+      Data.DestRange:=0;
+      {$ENDIF CPUARM}
       Data.Source:=Pointer(Address);
       Data.Dest:=Buffer;
       Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_BULK;
@@ -1179,6 +1209,10 @@ begin
      begin
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
+      {$IFDEF CPUARM}
+      Data.SourceRange:=0;
+      Data.DestRange:=0;
+      {$ENDIF CPUARM}
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
       Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1371,7 +1405,7 @@ begin
         if not(DMA_CACHE_COHERENT) then
          begin
           {Clean Cache}
-          CleanDataCacheRange(LongWord(Buffer),SIZE_64K);
+          CleanDataCacheRange(PtrUInt(Buffer),SIZE_64K);
          end;
          
         {Get Lines}
@@ -1390,6 +1424,10 @@ begin
           
           {Create Data (To Buffer)}
           {FillChar(Next^,SizeOf(TDMAData),0);} {Not required}
+          {$IFDEF CPUARM}
+          Next.SourceRange:=0;
+          Next.DestRange:=0;
+          {$ENDIF CPUARM}
           Next.Source:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Count) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X1) * (Framebuffer.Depth shr 3)));
           Next.Dest:=Buffer;
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1397,13 +1435,17 @@ begin
           Next.SourceStride:=Stride;
           Next.DestStride:=0; {No stride on Buffer}
           Next.Size:=Size * Lines;
-          Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
+          Next.Next:=PDMAData(PtrUInt(Next) + SizeOf(TDMAData));
          
           {Get Next}
           Next:=Next.Next;
           
           {Create Data (From Buffer)}
           {FillChar(Next^,SizeOf(TDMAData),0);} {Not required}
+          {$IFDEF CPUARM}
+          Next.SourceRange:=0;
+          Next.DestRange:=0;
+          {$ENDIF CPUARM}
           Next.Source:=Buffer;
           Next.Dest:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Count) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1411,7 +1453,7 @@ begin
           Next.SourceStride:=0; {No stride on Buffer}
           Next.DestStride:=Stride;
           Next.Size:=Size * Lines;
-          Next.Next:=PDMAData(LongWord(Next) + SizeOf(TDMAData));
+          Next.Next:=PDMAData(PtrUInt(Next) + SizeOf(TDMAData));
           
           Inc(Count,Lines);
          
@@ -1479,6 +1521,10 @@ begin
          begin
           {Create Data}
           {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
+          {$IFDEF CPUARM}
+          Data.SourceRange:=0;
+          Data.DestRange:=0;
+          {$ENDIF CPUARM}
           Data.Source:=Pointer(Source);
           Data.Dest:=Pointer(Address);
           Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1533,6 +1579,10 @@ begin
          begin
           {Create Data}
           {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
+          {$IFDEF CPUARM}
+          Data.SourceRange:=0;
+          Data.DestRange:=0;
+          {$ENDIF CPUARM}
           Data.Source:=Pointer(Source);
           Data.Dest:=Pointer(Address);
           Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1757,11 +1807,15 @@ begin
       if not(DMA_CACHE_COHERENT) then
        begin
         {Clean Cache}
-        CleanDataCacheRange(LongWord(Buffer),Size);
+        CleanDataCacheRange(PtrUInt(Buffer),Size);
        end;
       
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
+      {$IFDEF CPUARM}
+      Data.SourceRange:=0;
+      Data.DestRange:=0;
+      {$ENDIF CPUARM}
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
       Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -3109,6 +3163,34 @@ function FramebufferDeviceSwap(Value:LongWord):LongWord; inline;
 begin
  {}
  Result:=(Value and $FF00FF00) or ((Value and $00FF0000) shr 16) or ((Value and $000000FF) shl 16);
+end;
+
+{==============================================================================}
+
+function FramebufferTypeToString(FramebufferType:LongWord):String;
+{Convert a Framebuffer type value to a string}
+begin
+ {}
+ Result:='FRAMEBUFFER_TYPE_UNKNOWN';
+ 
+ if FramebufferType <= FRAMEBUFFER_TYPE_MAX then
+  begin
+   Result:=FRAMEBUFFER_TYPE_NAMES[FramebufferType];
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferStateToString(FramebufferState:LongWord):String;
+{Convert a Framebuffer state value to a string}
+begin
+ {}
+ Result:='FRAMEBUFFER_STATE_UNKNOWN';
+ 
+ if FramebufferState <= FRAMEBUFFER_STATE_MAX then
+  begin
+   Result:=FRAMEBUFFER_STATE_NAMES[FramebufferState];
+  end;
 end;
 
 {==============================================================================}

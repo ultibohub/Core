@@ -87,6 +87,8 @@ const
  MIB_IF_TYPE_PPP                    = 23;
  MIB_IF_TYPE_LOOPBACK               = 24;
  MIB_IF_TYPE_SLIP                   = 28;
+ MIB_IF_TYPE_IEEE80211              = 71;
+ IF_TYPE_IEEE80211                  = MIB_IF_TYPE_IEEE80211;
 
  MIB_IF_ADMIN_STATUS_UP             = 1;
  MIB_IF_ADMIN_STATUS_DOWN           = 2;

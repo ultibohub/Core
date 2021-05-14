@@ -1,7 +1,7 @@
 {
 Ultibo NTFS interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -75,6 +75,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,C
      NTFSConst,NTFSTypes,NTFSClass,NTFSUtils;
     
 //To Do //Look for:
+
+//Int64(Pointer()^) -> PInt64()^
+//Word(Pointer()^) -> PWord()^
 
 //Testing      
 
@@ -2239,18 +2242,18 @@ begin
       if not ReadFileRecord(RecordNumber,FFileBuffer^,VCN,Max(FClustersPerFile,1)) then Exit;
       
       {Get Record}
-      FileRecord:=PNTFS12FileRecord(LongWord(FFileBuffer) + Offset);
+      FileRecord:=PNTFS12FileRecord(PtrUInt(FFileBuffer) + Offset);
       if FileRecord.MagicNumber <> ntfsFileSignature then Exit;
       
       {Get Update}
-      UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(LongWord(FFileBuffer) + Offset + FileRecord.UpdateSequenceOffset);
+      UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(FFileBuffer) + Offset + FileRecord.UpdateSequenceOffset);
       if not ReadFixup(FFileBuffer,Offset,UpdateSequenceRecord.UpdateSequenceNumber,FileRecord.UpdateSequenceOffset,FileRecord.UpdateSequenceLength,False) then Exit;
       
       {Get Offset}
       Inc(Offset,FileRecord.AttributeOffset);
       
       {Get Header}
-      ResidentAttributeHeader:=PNTFSResidentAttributeHeader(LongWord(FFileBuffer) + Offset);
+      ResidentAttributeHeader:=PNTFSResidentAttributeHeader(PtrUInt(FFileBuffer) + Offset);
       while ResidentAttributeHeader.AttributeType <> ntfsAttrTypeEnd do
        begin
         {Check Resident}
@@ -2261,7 +2264,7 @@ begin
            begin
             
             {Get Attribute}
-            VolumeInformation:=PNTFSVolumeInformation(LongWord(FFileBuffer) + Offset + ResidentAttributeHeader.DataOffset);
+            VolumeInformation:=PNTFSVolumeInformation(PtrUInt(FFileBuffer) + Offset + ResidentAttributeHeader.DataOffset);
             Version:=(VolumeInformation.MajorVersion shl 4) or (VolumeInformation.MinorVersion);
             
             Break;
@@ -2272,7 +2275,7 @@ begin
         Inc(Offset,ResidentAttributeHeader.AttributeSize);
         
         {Get Header}
-        ResidentAttributeHeader:=PNTFSResidentAttributeHeader(LongWord(FFileBuffer) + Offset);
+        ResidentAttributeHeader:=PNTFSResidentAttributeHeader(PtrUInt(FFileBuffer) + Offset);
        end;
      finally
       FileUnlock;
@@ -4822,15 +4825,15 @@ begin
    {$ENDIF}
    
    {Check Bits}
-   if (Bit = 0) and (Bits = ntfsBitmapMaskBits) and (Int64(Pointer(LongWord(ABuffer) + Offset)^) = ntfsBitmapMaskNone) then
+   if (Bit = 0) and (Bits = ntfsBitmapMaskBits) and (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = ntfsBitmapMaskNone) then
     begin
      {All Free}
      {Allocate All}
-     Int64(Pointer(LongWord(ABuffer) + Offset)^):=ntfsBitmapMaskAll;
+     Int64(Pointer(PtrUInt(ABuffer) + Offset)^):=ntfsBitmapMaskAll;
      Inc(ACount,ntfsBitmapMaskBits);
      Dec(Remain,ntfsBitmapMaskBits);
     end
-   else if (Bit = 0) and (Bits = ntfsBitmapMaskBits) and (Int64(Pointer(LongWord(ABuffer) + Offset)^) = ntfsBitmapMaskAll) then
+   else if (Bit = 0) and (Bits = ntfsBitmapMaskBits) and (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = ntfsBitmapMaskAll) then
     begin
      {All Used}
      if Block = Start then Exit; {Start Bit was not Free}
@@ -4843,13 +4846,13 @@ begin
      {Allocate Some}
      for Current:=Bit to (Bit + (Bits - 1)) do
       begin
-       if (Int64(Pointer(LongWord(ABuffer) + Offset)^) and ntfsBitmapMasks[Current]) = ntfsBitmapMaskNone then
+       if (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) and ntfsBitmapMasks[Current]) = ntfsBitmapMaskNone then
         begin
          {$IFDEF NTFS_DEBUG}
-         if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.AllocBitmap - Block = ' + IntToStr(Block) + ' Current = ' + IntToStr(Current) + ' Bits = ' + IntToHex(Int64(Pointer(LongWord(ABuffer) + Offset)^),16));
+         if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.AllocBitmap - Block = ' + IntToStr(Block) + ' Current = ' + IntToStr(Current) + ' Bits = ' + IntToHex(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),16));
          {$ENDIF}
          
-         Int64(Pointer(LongWord(ABuffer) + Offset)^):=Int64(Pointer(LongWord(ABuffer) + Offset)^) or ntfsBitmapMasks[Current];
+         Int64(Pointer(PtrUInt(ABuffer) + Offset)^):=Int64(Pointer(PtrUInt(ABuffer) + Offset)^) or ntfsBitmapMasks[Current];
          Inc(ACount);
          Dec(Remain);
          if Remain = 0 then Break;
@@ -4931,14 +4934,14 @@ begin
    if (Bit = 0) and (Bits = ntfsBitmapMaskBits) then
     begin
      {Deallocate All}
-     Int64(Pointer(LongWord(ABuffer) + Offset)^):=ntfsBitmapMaskNone;
+     Int64(Pointer(PtrUInt(ABuffer) + Offset)^):=ntfsBitmapMaskNone;
     end
    else
     begin
      {Deallocate Some}
      for Current:=Bit to (Bit + (Bits - 1)) do
       begin
-       Int64(Pointer(LongWord(ABuffer) + Offset)^):=Int64(Pointer(LongWord(ABuffer) + Offset)^) and not(ntfsBitmapMasks[Current]);
+       Int64(Pointer(PtrUInt(ABuffer) + Offset)^):=Int64(Pointer(PtrUInt(ABuffer) + Offset)^) and not(ntfsBitmapMasks[Current]);
       end;
     end;
     
@@ -5006,13 +5009,13 @@ begin
    {$ENDIF}
    
    {Check Bits}
-   if (Bit = 0) and (Int64(Pointer(LongWord(ABuffer) + Offset)^) = ntfsBitmapMaskNone) then
+   if (Bit = 0) and (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = ntfsBitmapMaskNone) then
     begin
      {All Free}
      Result:=(Block shl 6); {Multiply by 64}
      Exit;
     end
-   else if (Bit = 0) and (Int64(Pointer(LongWord(ABuffer) + Offset)^) = ntfsBitmapMaskAll) then
+   else if (Bit = 0) and (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = ntfsBitmapMaskAll) then
     begin
      {All Used}
      {Nothing}
@@ -5022,10 +5025,10 @@ begin
      {Used and Free}
      for Current:=Bit to (Bit + (Bits - 1)) do
       begin
-       if (Int64(Pointer(LongWord(ABuffer) + Offset)^) and ntfsBitmapMasks[Current]) = ntfsBitmapMaskNone then
+       if (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) and ntfsBitmapMasks[Current]) = ntfsBitmapMaskNone then
         begin
          {$IFDEF NTFS_DEBUG}
-         if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.GetBitmapNextFree - Block = ' + IntToStr(Block) + ' Current = ' + IntToStr(Current) + ' Bits = ' + IntToHex(Int64(Pointer(LongWord(ABuffer) + Offset)^),16));
+         if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.GetBitmapNextFree - Block = ' + IntToStr(Block) + ' Current = ' + IntToStr(Current) + ' Bits = ' + IntToHex(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),16));
          {$ENDIF}
          
          Result:=(Block shl 6) + Current; {Multiply by 64 / Add Current Bit}
@@ -5085,15 +5088,15 @@ begin
    Bits:=Min(Remain,ntfsBitmapMaskBits);
    
    {$IFDEF NTFS_DEBUG}
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.GetBitmapFreeCount - Bits = ' + IntToStr(Bits) + ' Value = ' + IntToHex(Int64(Pointer(LongWord(ABuffer) + Offset)^),16) + ' Mask = ' + IntToHex(ntfsBitmapOverlays[Bits - 1],16));
+   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.GetBitmapFreeCount - Bits = ' + IntToStr(Bits) + ' Value = ' + IntToHex(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),16) + ' Mask = ' + IntToHex(ntfsBitmapOverlays[Bits - 1],16));
    {$ENDIF}
    
-   if Int64(Pointer(LongWord(ABuffer) + Offset)^) = ntfsBitmapMaskNone then
+   if Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = ntfsBitmapMaskNone then
     begin
      {All Free}
      Inc(Result,Bits);
     end
-   else if Int64(Pointer(LongWord(ABuffer) + Offset)^) = ntfsBitmapMaskAll then
+   else if Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = ntfsBitmapMaskAll then
     begin
      {All Used}
      {Nothing}
@@ -5101,7 +5104,7 @@ begin
    else
     begin
      {Used and Free}
-     Value:=(not(Int64(Pointer(LongWord(ABuffer) + Offset)^))) and (ntfsBitmapOverlays[Bits - 1]);
+     Value:=(not(Int64(Pointer(PtrUInt(ABuffer) + Offset)^))) and (ntfsBitmapOverlays[Bits - 1]);
      while Value <> 0 do
       begin
        Inc(Result);
@@ -5137,7 +5140,7 @@ begin
  if (ASequenceOffset = 0) and not(AFree) then Exit; {Can be zero on a free record}
 
  {Get Record}
- Update:=PNTFSUpdateSequenceRecord(LongWord(ABuffer) + AOffset + ASequenceOffset);
+ Update:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset + ASequenceOffset);
  
  {Check Record}
  if Update.UpdateSequenceNumber <> ASequenceNumber then Exit;
@@ -5150,8 +5153,8 @@ begin
  Offset:=AOffset + ntfsUpdateSequenceSize - 2; {SizeOf(Word);} {Previously FSectorSize however always 512}
  for Count:=1 to ASequenceLength - 1 do
   begin
-   if Word(Pointer(LongWord(ABuffer) + Offset)^) <> Update.UpdateSequenceNumber then Exit;
-   Word(Pointer(LongWord(ABuffer) + Offset)^):=Update.UpdateSequenceArray[Count - 1];
+   if Word(Pointer(PtrUInt(ABuffer) + Offset)^) <> Update.UpdateSequenceNumber then Exit;
+   Word(Pointer(PtrUInt(ABuffer) + Offset)^):=Update.UpdateSequenceArray[Count - 1];
    Inc(Offset,ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
   end;
   
@@ -5182,7 +5185,7 @@ begin
  if FReadOnly then Exit;
  
  {Get Record}
- Update:=PNTFSUpdateSequenceRecord(LongWord(ABuffer) + AOffset + ASequenceOffset);
+ Update:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset + ASequenceOffset);
  
  {Set Record}
  Update.UpdateSequenceNumber:=ASequenceNumber;
@@ -5191,8 +5194,8 @@ begin
  Offset:=AOffset + ntfsUpdateSequenceSize - 2; {SizeOf(Word);} {Previously FSectorSize however always 512}
  for Count:=1 to ASequenceLength - 1 do
   begin
-   Update.UpdateSequenceArray[Count - 1]:=Word(Pointer(LongWord(ABuffer) + Offset)^);
-   Word(Pointer(LongWord(ABuffer) + Offset)^):=Update.UpdateSequenceNumber;
+   Update.UpdateSequenceArray[Count - 1]:=Word(Pointer(PtrUInt(ABuffer) + Offset)^);
+   Word(Pointer(PtrUInt(ABuffer) + Offset)^):=Update.UpdateSequenceNumber;
    Inc(Offset,ntfsUpdateSequenceSize); {Previously FSectorSize however always 512}
   end;
   
@@ -9766,12 +9769,12 @@ begin
         if SecondRestartRecord.UpdateSequenceOffset >= ntfsRestartPageSize then Exit;
  
         {Get Update Sequence Record}
-        UpdateSeqeunceRecord:=PNTFSUpdateSequenceRecord(LongWord(FirstRestartRecord) + FirstRestartRecord.UpdateSequenceOffset);
+        UpdateSeqeunceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(FirstRestartRecord) + FirstRestartRecord.UpdateSequenceOffset);
         {Decode Fixup}
         if not ReadFixup(FirstRestartRecord,0,UpdateSeqeunceRecord.UpdateSequenceNumber,FirstRestartRecord.UpdateSequenceOffset,FirstRestartRecord.UpdateSequenceLength,False) then Exit;
  
         {Get Update Sequence Record}
-        UpdateSeqeunceRecord:=PNTFSUpdateSequenceRecord(LongWord(SecondRestartRecord) + SecondRestartRecord.UpdateSequenceOffset);
+        UpdateSeqeunceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(SecondRestartRecord) + SecondRestartRecord.UpdateSequenceOffset);
         
         {Decode Fixup}
         if not ReadFixup(SecondRestartRecord,0,UpdateSeqeunceRecord.UpdateSequenceNumber,SecondRestartRecord.UpdateSequenceOffset,SecondRestartRecord.UpdateSequenceLength,False) then Exit;
@@ -9787,10 +9790,10 @@ begin
         if SecondRestartRecord.RestartAreaOffset >= ntfsRestartPageSize then Exit;
  
         {Get First Restart Area}
-        FirstRestartArea:=PNTFSRestartArea(LongWord(FirstRestartRecord) + FirstRestartRecord.RestartAreaOffset);
+        FirstRestartArea:=PNTFSRestartArea(PtrUInt(FirstRestartRecord) + FirstRestartRecord.RestartAreaOffset);
         
         {Get Second Restart Area}
-        SecondRestartArea:=PNTFSRestartArea(LongWord(SecondRestartRecord) + SecondRestartRecord.RestartAreaOffset);
+        SecondRestartArea:=PNTFSRestartArea(PtrUInt(SecondRestartRecord) + SecondRestartRecord.RestartAreaOffset);
  
         {Check Restart Area}
         if FirstRestartArea.CurrentSequenceNumber <> SecondRestartArea.CurrentSequenceNumber then Exit;
@@ -9808,10 +9811,10 @@ begin
         if FirstRestartArea.LogFileOpenCount <> SecondRestartArea.LogFileOpenCount then Exit;
  
         {Get First Log Client}
-        FirstLogClient:=PNTFSLogClient(LongWord(FirstRestartArea) + FirstRestartArea.ClientArrayOffset);
+        FirstLogClient:=PNTFSLogClient(PtrUInt(FirstRestartArea) + FirstRestartArea.ClientArrayOffset);
         
         {Get Second Log Client}
-        SecondLogClient:=PNTFSLogClient(LongWord(SecondRestartArea) + SecondRestartArea.ClientArrayOffset);
+        SecondLogClient:=PNTFSLogClient(PtrUInt(SecondRestartArea) + SecondRestartArea.ClientArrayOffset);
  
         {Check Log Client}
         if FirstLogClient.OldestSequenceNumber <> SecondLogClient.OldestSequenceNumber then Exit;
@@ -9915,7 +9918,7 @@ begin
        if RestartRecord.UpdateSequenceOffset >= ntfsRestartPageSize then Exit;
  
        {Get Update Sequence Record}
-       UpdateSeqeunceRecord:=PNTFSUpdateSequenceRecord(LongWord(RestartRecord) + RestartRecord.UpdateSequenceOffset);
+       UpdateSeqeunceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(RestartRecord) + RestartRecord.UpdateSequenceOffset);
        {Decode Fixup}
        if not ReadFixup(RestartRecord,0,UpdateSeqeunceRecord.UpdateSequenceNumber,RestartRecord.UpdateSequenceOffset,RestartRecord.UpdateSequenceLength,False) then Exit;
  
@@ -9923,10 +9926,10 @@ begin
        if RestartRecord.RestartAreaOffset >= ntfsRestartPageSize then Exit;
  
        {Get Restart Area}
-       RestartArea:=PNTFSRestartArea(LongWord(RestartRecord) + RestartRecord.RestartAreaOffset);
+       RestartArea:=PNTFSRestartArea(PtrUInt(RestartRecord) + RestartRecord.RestartAreaOffset);
  
        {Get Log Client}
-       LogClient:=PNTFSLogClient(LongWord(RestartArea) + RestartArea.ClientArrayOffset);
+       LogClient:=PNTFSLogClient(PtrUInt(RestartArea) + RestartArea.ClientArrayOffset);
  
        {Reset Restart Record}
         {Nothing}
@@ -10717,7 +10720,7 @@ begin
          if ReadRun(ARecord,AAttribute,FReadBuffer^,VCN,1,AInstance,False,AWrite) <> 1 then Break;
          
          {Read Data}
-         System.Move(Pointer(LongWord(FReadBuffer) + Start)^,Pointer(LongWord(@ABuffer) + Offset)^,Count);
+         System.Move(Pointer(PtrUInt(FReadBuffer) + Start)^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
          
          {Update VCN}
          Inc(VCN);
@@ -10740,7 +10743,7 @@ begin
          begin
           {Full Clusters}
           {Read Run}
-          if ReadRun(ARecord,AAttribute,Pointer(LongWord(@ABuffer) + Offset)^,VCN,Length,AInstance,False,AWrite) <> Length then Break;
+          if ReadRun(ARecord,AAttribute,Pointer(PtrUInt(@ABuffer) + Offset)^,VCN,Length,AInstance,False,AWrite) <> Length then Break;
           
           {Update VCN}
           Inc(VCN,Length);
@@ -10766,7 +10769,7 @@ begin
            if ReadRun(ARecord,AAttribute,FReadBuffer^,VCN,1,AInstance,False,AWrite) <> 1 then Break;
            
            {Read Data}
-           System.Move(FReadBuffer^,Pointer(LongWord(@ABuffer) + Offset)^,Count);
+           System.Move(FReadBuffer^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
            
            {Update VCN}
            {Inc(VCN);} {Must be last Read}
@@ -10894,7 +10897,7 @@ begin
          if ReadRun(ARecord,AAttribute,FWriteBuffer^,VCN,1,AInstance,False,True) <> 1 then Break;
          
          {Write Data}
-         System.Move(Pointer(LongWord(@ABuffer) + Offset)^,Pointer(LongWord(FWriteBuffer) + Start)^,Count);
+         System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,Pointer(PtrUInt(FWriteBuffer) + Start)^,Count);
          
          {Write Run}
          if WriteRun(ARecord,AAttribute,FWriteBuffer^,VCN,1,AInstance,False,AUpdate) <> 1 then Break;
@@ -10920,7 +10923,7 @@ begin
          begin
           {Full Clusters}
           {Write Run}
-          if WriteRun(ARecord,AAttribute,Pointer(LongWord(@ABuffer) + Offset)^,VCN,Length,AInstance,False,AUpdate) <> Length then Break;
+          if WriteRun(ARecord,AAttribute,Pointer(PtrUInt(@ABuffer) + Offset)^,VCN,Length,AInstance,False,AUpdate) <> Length then Break;
           
           {Update VCN}
           Inc(VCN,Length);
@@ -10946,7 +10949,7 @@ begin
            if ReadRun(ARecord,AAttribute,FWriteBuffer^,VCN,1,AInstance,False,True) <> 1 then Break;
            
            {Write Data}
-           System.Move(Pointer(LongWord(@ABuffer) + Offset)^,FWriteBuffer^,Count);
+           System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,FWriteBuffer^,Count);
            
            {Write Run}
            if WriteRun(ARecord,AAttribute,FWriteBuffer^,VCN,1,AInstance,False,AUpdate) <> 1 then Break;
@@ -11084,13 +11087,13 @@ begin
             
             {Read Data}
             UnitOffset:=((VCN - UnitVCN) shl FClusterShiftCount);
-            System.Move(Pointer(LongWord(DecompressBuffer) + UnitOffset)^,Pointer(LongWord(@ABuffer) + Offset)^,(Count shl FClusterShiftCount));
+            System.Move(Pointer(PtrUInt(DecompressBuffer) + UnitOffset)^,Pointer(PtrUInt(@ABuffer) + Offset)^,(Count shl FClusterShiftCount));
            end
           else
            begin
             {Uncompressed Unit}
             {Read Run}
-            if ReadRun(ARecord,AAttribute,Pointer(LongWord(@ABuffer) + Offset)^,VCN,Count,AInstance,True,AWrite) <> Count then Break;
+            if ReadRun(ARecord,AAttribute,Pointer(PtrUInt(@ABuffer) + Offset)^,VCN,Count,AInstance,True,AWrite) <> Count then Break;
            end;
            
           {Update Position}
@@ -11140,13 +11143,13 @@ begin
          begin
           {Sparse Run}
           {Fill Buffer}
-          FillChar(Pointer(LongWord(@ABuffer) + Offset)^,(Count shl FClusterShiftCount),0);
+          FillChar(Pointer(PtrUInt(@ABuffer) + Offset)^,(Count shl FClusterShiftCount),0);
          end
         else
          begin
           {Normal Run}
           {Read Clusters}
-          if not ReadClusters(Cluster,Count,Pointer(LongWord(@ABuffer) + Offset)^) then Break;
+          if not ReadClusters(Cluster,Count,Pointer(PtrUInt(@ABuffer) + Offset)^) then Break;
          end;
         
         {Update Position}
@@ -11287,7 +11290,7 @@ begin
              
             {Write Data}
             UnitOffset:=((VCN - UnitVCN) shl FClusterShiftCount);
-            System.Move(Pointer(LongWord(@ABuffer) + Offset)^,Pointer(LongWord(DecompressBuffer) + UnitOffset)^,(Count shl FClusterShiftCount));
+            System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,Pointer(PtrUInt(DecompressBuffer) + UnitOffset)^,(Count shl FClusterShiftCount));
             
             {Compress Run} {Compress from required VCN to end of buffer}
             if NTFSCompressUnit(DecompressBuffer,CompressBuffer,FClusterSize,AAttribute.CompressionUnit,(VCN - UnitVCN),UnitCount,UnitRemain) then
@@ -11319,14 +11322,14 @@ begin
               if not DecompressRun(ARecord,AAttribute,VCN,Count) then Break;
               
               {Write Run}
-              if WriteRun(ARecord,AAttribute,Pointer(LongWord(@ABuffer) + Offset)^,VCN,Count,AInstance,True,False) <> Count then Break;
+              if WriteRun(ARecord,AAttribute,Pointer(PtrUInt(@ABuffer) + Offset)^,VCN,Count,AInstance,True,False) <> Count then Break;
              end;
            end
           else
            begin
             {Uncompressed Unit} {Write Data and Compress Run}
             {Write Run}
-            if WriteRun(ARecord,AAttribute,Pointer(LongWord(@ABuffer) + Offset)^,VCN,Count,AInstance,True,False) <> Count then Break;
+            if WriteRun(ARecord,AAttribute,Pointer(PtrUInt(@ABuffer) + Offset)^,VCN,Count,AInstance,True,False) <> Count then Break;
             
             {Compress Run}
             if not CompressRun(ARecord,AAttribute,VCN,Count) then Break;
@@ -11393,7 +11396,7 @@ begin
          begin
           {Normal Run}
           {Write Clusters}
-          if not WriteClusters(Cluster,Count,Pointer(LongWord(@ABuffer) + Offset)^) then Break;
+          if not WriteClusters(Cluster,Count,Pointer(PtrUInt(@ABuffer) + Offset)^) then Break;
           
           {Update Position}
           Inc(VCN,Count);
@@ -14358,7 +14361,7 @@ begin
            while Key <> nil do
             begin
              {$IFDEF NTFS_DEBUG}
-             if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.LoadEntries - Key = ' + IntToHex(LongWord(Key),8));
+             if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.LoadEntries - Key = ' + PtrToHex(Key));
              if FILESYS_LOG_ENABLED then if Key.Node <> nil then FileSysLogDebug('TNTFSFileSystem.LoadEntries - Node = ' + IntToHex(Key.Node.RecordNumber,16));
              {$ENDIF}
        
@@ -14654,7 +14657,7 @@ begin
            while Key <> nil do
             begin
              {$IFDEF NTFS_DEBUG}
-             if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.LoadEntries - Key = ' + IntToHex(LongWord(Key),8));
+             if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.LoadEntries - Key = ' + PtrToHex(Key));
              if FILESYS_LOG_ENABLED then if Key.Node <> nil then FileSysLogDebug('TNTFSFileSystem.LoadEntries - Node = ' + IntToHex(Key.Node.RecordNumber,16));
              {$ENDIF}
              
@@ -20855,7 +20858,7 @@ begin
    Size:=FFileRecordSize;
    
    {Zero Buffer}
-   ZeroMemory(Pointer(LongWord(FFileBuffer) + Offset),Size);
+   ZeroMemory(Pointer(PtrUInt(FFileBuffer) + Offset),Size);
    
    {Increment Sequence}
    ARecord.UpdateSequenceNumber:=ARecord.UpdateSequenceNumber + 1;
@@ -21346,7 +21349,7 @@ begin
   Size:=AIndex.IndexRecordSize;
   
   {Zero Buffer}
-  ZeroMemory(Pointer(LongWord(FIndexBuffer) + Offset),Size);
+  ZeroMemory(Pointer(PtrUInt(FIndexBuffer) + Offset),Size);
   
   {Increment Sequence}
   ANode.UpdateSequenceNumber:=ANode.UpdateSequenceNumber + 1;

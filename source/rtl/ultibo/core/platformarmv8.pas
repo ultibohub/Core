@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv8.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -12,7 +12,10 @@ Boards
 ======
  
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
  QEMU - VersatilePB 
  
 Licence
@@ -74,12 +77,10 @@ unit PlatformARMv8;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF CPUAARCH64}HeapManager,Threads,SysUtils;
-              
+
 //To Do //Look for:
 
 //Critical
-
-//TestingRpi3
 
 {==============================================================================}
 {Global definitions}
@@ -813,10 +814,6 @@ type
  
 {==============================================================================}
 var
- {ARMv8 specific variables}
- ARMv8Initialized:Boolean;
- 
-var
  {Page Table Handlers}
  ARMv8PageTableInitHandler:TARMv8PageTableInit;
  
@@ -894,10 +891,10 @@ procedure ARMv8InvalidateL1DataCache;
 procedure ARMv8CleanAndInvalidateDataCache;
 procedure ARMv8InvalidateInstructionCache;
 
-procedure ARMv8CleanDataCacheRange(Address,Size:LongWord); 
-procedure ARMv8InvalidateDataCacheRange(Address,Size:LongWord);
-procedure ARMv8CleanAndInvalidateDataCacheRange(Address,Size:LongWord);
-procedure ARMv8InvalidateInstructionCacheRange(Address,Size:LongWord); 
+procedure ARMv8CleanDataCacheRange(Address:PtrUInt;Size:LongWord); 
+procedure ARMv8InvalidateDataCacheRange(Address:PtrUInt;Size:LongWord);
+procedure ARMv8CleanAndInvalidateDataCacheRange(Address:PtrUInt;Size:LongWord);
+procedure ARMv8InvalidateInstructionCacheRange(Address:PtrUInt;Size:LongWord); 
 
 procedure ARMv8CleanDataCacheSetWay(SetWay:LongWord);
 procedure ARMv8InvalidateDataCacheSetWay(SetWay:LongWord);
@@ -1022,6 +1019,12 @@ function ARMv8SetPageTableSupersection(Address,PhysicalAddress:PtrUInt;Flags:Lon
 {==============================================================================}
 
 implementation
+
+{==============================================================================}
+{==============================================================================}
+var
+ {ARMv8 specific variables}
+ ARMv8Initialized:Boolean;
 
 {==============================================================================}
 {==============================================================================}
@@ -1661,7 +1664,7 @@ end;
 function ARMv8L1DataCacheGetSize:LongWord; assembler; nostackframe; 
 {$IFDEF CPUARM}
 asm
- //Preserve LR
+ //Preserve LR (ARMv8L1CacheGetType doesn't use r12)
  mov r12, lr
 
  //Get the L1 Cache Type (Returned in R0)
@@ -1729,7 +1732,7 @@ end;
 function ARMv8L1DataCacheGetLineSize:LongWord; assembler; nostackframe;  
 {$IFDEF CPUARM}
 asm
- //Preserve LR
+ //Preserve LR (ARMv8L1CacheGetType doesn't use r12)
  mov r12, lr
 
  //Get the L1 Cache Type (Returned in R0)
@@ -1782,7 +1785,7 @@ end;
 function ARMv8L1InstructionCacheGetSize:LongWord; assembler; nostackframe;
 {$IFDEF CPUARM}
 asm
- //Preserve LR
+ //Preserve LR (ARMv8L1CacheGetType doesn't use r12)
  mov r12, lr
 
  //Get L1 Cache Type (Returned in R0)
@@ -1856,7 +1859,7 @@ end;
 function ARMv8L1InstructionCacheGetLineSize:LongWord; assembler; nostackframe;  
 {$IFDEF CPUARM}
 asm
- //Preserve LR
+ //Preserve LR (ARMv8L1CacheGetType doesn't use r12)
  mov r12, lr
 
  //Get L1 Cache Type (Returned in R0)
@@ -1956,7 +1959,7 @@ end;
 function ARMv8L2CacheGetSize:LongWord; assembler; nostackframe;
 {$IFDEF CPUARM}
 asm
- //Preserve LR
+ //Preserve LR (ARMv8L2CacheGetType doesn't use r12)
  mov r12, lr
 
  //Get L2 Cache Type (Returned in R0)
@@ -2026,7 +2029,7 @@ end;
 function ARMv8L2CacheGetLineSize:LongWord; assembler; nostackframe;
 {$IFDEF CPUARM}
 asm
- //Preserve LR
+ //Preserve LR (ARMv8L2CacheGetType doesn't use r12)
  mov r12, lr
 
  //Get L2 Cache Type (Returned in R0)
@@ -2694,7 +2697,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv8CleanDataCacheRange(Address,Size:LongWord); assembler; nostackframe;
+procedure ARMv8CleanDataCacheRange(Address:PtrUInt;Size:LongWord); assembler; nostackframe;
 {Perform a clean data cache by MVA to PoC operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 {$IFDEF CPUARM}
@@ -2727,7 +2730,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv8InvalidateDataCacheRange(Address,Size:LongWord); assembler; nostackframe;
+procedure ARMv8InvalidateDataCacheRange(Address:PtrUInt;Size:LongWord); assembler; nostackframe;
 {Perform an invalidate data cache by MVA to PoC operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 {$IFDEF CPUARM}
@@ -2760,7 +2763,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv8CleanAndInvalidateDataCacheRange(Address,Size:LongWord); assembler; nostackframe;
+procedure ARMv8CleanAndInvalidateDataCacheRange(Address:PtrUInt;Size:LongWord); assembler; nostackframe;
 {Perform a clean and invalidate data cache by MVA to PoC operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 {$IFDEF CPUARM}
@@ -2793,7 +2796,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv8InvalidateInstructionCacheRange(Address,Size:LongWord); assembler; nostackframe; 
+procedure ARMv8InvalidateInstructionCacheRange(Address:PtrUInt;Size:LongWord); assembler; nostackframe; 
 {Perform an invalidate instruction caches by MVA to PoU operation
  See page B3-127 of the ARMv7 Architecture Reference Manual}
 {$IFDEF CPUARM}
@@ -4176,10 +4179,15 @@ begin
  if Number >= VECTOR_TABLE_COUNT then Exit;
  
  {Calculate Offset}
+ {$IFDEF CPUARM}
  Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
+ //To Do
+ {$ENDIF CPUAARCH64}
  
  {Get Page Table Entry}
- ARMv8PageTableGetEntry(Offset,Entry);
+ PageTableGetEntry(Offset,Entry);
  
  {Check for Read Only or Read Write}
  if (Entry.Flags and (PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE)) <> 0 then
@@ -4211,10 +4219,15 @@ begin
  if VectorTableLock.Lock <> INVALID_HANDLE_VALUE then VectorTableLock.AcquireLock(VectorTableLock.Lock);
  try 
   {Calculate Offset}
+  {$IFDEF CPUARM}
   Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
+  {$ENDIF CPUARM}
+  {$IFDEF CPUAARCH64}
+  //To Do
+  {$ENDIF CPUAARCH64}
  
   {Get Page Table Entry}
-  ARMv8PageTableGetEntry(Offset,Entry);
+  PageTableGetEntry(Offset,Entry);
   
   {Check for Read Only}
   if (Entry.Flags and PAGE_TABLE_FLAG_READONLY) <> 0 then
@@ -4224,7 +4237,7 @@ begin
     Entry.Flags:=Entry.Flags and not(PAGE_TABLE_FLAG_READONLY);
     Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READWRITE;
     
-    if ARMv8PageTableSetEntry(Entry) = ERROR_SUCCESS then
+    if PageTableSetEntry(Entry) = ERROR_SUCCESS then
      begin
       {Set Entry}
       PPtrUInt(Offset)^:=Address;
@@ -4251,7 +4264,7 @@ begin
       Entry.Flags:=Flags;
       
       {Return Result}
-      Result:=ARMv8PageTableSetEntry(Entry);
+      Result:=PageTableSetEntry(Entry);
      end; 
    end
   else
@@ -6623,6 +6636,8 @@ procedure ARMv8StartMMU; assembler; nostackframe;
 {$IFDEF CPUARM}
 asm
  //Preseve LR for return (None of the following uses R4)
+ //Note: This function is only called by ARMv8MMUInit and RPi3/4SecondaryHandler
+ //      which also do not use R4 so it does not need to be preserved on the stack
  mov r4, lr
 
  //Disable the L1 Data and Instruction Cache before enabling the MMU by clearing the I and C bits in the C1 control register.
@@ -6647,11 +6662,11 @@ asm
  
  //Invalidate the L1 Instruction Cache before enabling the MMU
  //See page B3-138 of the ARMv7 Architecture Reference Manual
- //bl ARMv8InvalidateInstructionCache //TestingRpi3
+ //bl ARMv8InvalidateInstructionCache
  
  //Invalidate the L1 Data Cache before enabling the MMU
  //See page B3-138 of the ARMv7 Architecture Reference Manual
- //bl ARMv8InvalidateL1DataCache  //TestingRpi3
+ //bl ARMv8InvalidateL1DataCache
  
  //Invalidate the Transaction Lookaside Buffers (TLB) before enabling the MMU
  //See page B3-138 of the ARMv7 Architecture Reference Manual
@@ -6702,7 +6717,8 @@ asm
  //ARMv8 "instruction synchronization barrier" instruction.
  isb 
  
- //Enable the Memory Management Unit and L1 Data and Instruction Cache by setting the TRE, I, C, M and XP bits in the C1 control register.
+ //Enable the Memory Management Unit and L1 Data and Instruction Cache
+ //by setting the TRE, I, C, M and XP bits in the C1 control register.
  //See page ???
  mrc p15, #0, r12, cr1, cr0, #0;
  orr r12, r12, #ARMV8_CP15_C1_TRE_BIT
@@ -7241,6 +7257,8 @@ begin
    {Current entry is a Coarse Page Table}
    CurrentBase:=(CurrentEntry and ARMV8_L1D_COARSE_BASE_MASK);
    CurrentOffset:=0;
+   
+   {Compare existing base with new base}
    if CurrentBase <> CoarseBase then
     begin
      {Copy existing table to new table}

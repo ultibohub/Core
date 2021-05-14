@@ -1,7 +1,7 @@
 {
 Ultibo classes unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1116,7 +1116,7 @@ begin
  except
   on E: Exception do
    begin
-    if THREAD_LOG_ENABLED then ThreadLogError('ThreadEx: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if THREAD_LOG_ENABLED then ThreadLogError('ThreadEx: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end;
 end;
@@ -5660,13 +5660,13 @@ begin
  {Get Offset}
  Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
  {Get First Key}
- FirstKey:=THashListObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ FirstKey:=THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
   begin
    {Is First Object}
    AValue.KeyPrev:=nil;
    AValue.KeyNext:=nil;
-   THashListObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+   THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
   end
  else
   begin
@@ -5674,7 +5674,7 @@ begin
    FirstKey.KeyPrev:=AValue;
    AValue.KeyPrev:=nil;
    AValue.KeyNext:=FirstKey;
-   THashListObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+   THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
   end;
  Result:=True;
 end;
@@ -5717,12 +5717,12 @@ begin
      {Not Last Object}
      NextKey:=AValue.KeyNext;
      NextKey.KeyPrev:=nil;
-     THashListObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=NextKey;
+     THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=NextKey;
     end
    else
     begin
      {Is Last Object}
-     THashListObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=nil;
+     THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
     end;
   end;
  AValue.KeyList:=nil;
@@ -5743,7 +5743,7 @@ begin
  {Get Offset}
  Offset:=(AKeyHash and FKeyMask) shl 2;
  {Get First Key}
- Result:=THashListObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ Result:=THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
 
 {==============================================================================}
@@ -5914,13 +5914,13 @@ begin
  {Get Offset}
  Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
  {Get First Key}
- FirstKey:=THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ FirstKey:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
   begin
    {Is First Object}
    AValue.KeyPrev:=nil;
    AValue.KeyNext:=nil;
-   THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+   THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
   end
  else
   begin
@@ -5928,7 +5928,7 @@ begin
    FirstKey.KeyPrev:=AValue;
    AValue.KeyPrev:=nil;
    AValue.KeyNext:=FirstKey;
-   THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+   THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
   end;
  Result:=True;
 end;
@@ -5971,12 +5971,12 @@ begin
      {Not Last Object}
      NextKey:=AValue.KeyNext;
      NextKey.KeyPrev:=nil;
-     THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=NextKey;
+     THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=NextKey;
     end
    else
     begin
      {Is Last Object}
-     THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=nil;
+     THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
     end;
   end;
  AValue.KeyTree:=nil;
@@ -5997,7 +5997,7 @@ begin
  {Get Offset}
  Offset:=(AKeyHash and FKeyMask) shl 2;
  {Get First Key}
- Result:=THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ Result:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
 
 {==============================================================================}
@@ -6045,13 +6045,13 @@ begin
    {Get Offset}
    Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
    {Get First Key}
-   FirstKey:=THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+   FirstKey:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
    if FirstKey = nil then
     begin
      {Is First Object}
      AValue.KeyPrev:=nil;
      AValue.KeyNext:=nil;
-     THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+     THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
     end
    else
     begin
@@ -6059,7 +6059,7 @@ begin
      FirstKey.KeyPrev:=AValue;
      AValue.KeyPrev:=nil;
      AValue.KeyNext:=FirstKey;
-     THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+     THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
     end;
    Result:=True;
   end;
@@ -6109,12 +6109,12 @@ begin
        {Not Last Object}
        NextKey:=AValue.KeyNext;
        NextKey.KeyPrev:=nil;
-       THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=NextKey;
+       THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=NextKey;
       end
      else
       begin
        {Is Last Object}
-       THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=nil;
+       THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
       end;
     end;
    AValue.KeyTree:=nil;
@@ -6142,7 +6142,7 @@ begin
    {Get Offset}
    Offset:=(AKeyHash and FKeyMask) shl 2;
    {Get First Key}
-   Result:=THashTreeObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+   Result:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
   end;
 end;
 
@@ -6967,7 +6967,7 @@ begin
   {Get Offset}
   Offset:=(LongWord(Index) - Block.Start) shl 2; {Multiply by SizeOf(LongWord)}
   {Get Item}
-  Result:=TStringObjectEx(Pointer(LongWord(Block.Data) + Offset)^);
+  Result:=TStringObjectEx(Pointer(PtrUInt(Block.Data) + Offset)^);
  except
   {}
  end;
@@ -7003,10 +7003,10 @@ begin
   if LongWord(Index) < (Current.Start + Current.Count) then
    begin
     {Move Items}
-    System.Move(Pointer(LongWord(Current.Data) + Offset)^,Pointer(LongWord(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl 2);
+    System.Move(Pointer(PtrUInt(Current.Data) + Offset)^,Pointer(PtrUInt(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl 2);
    end;
   {Add Item}
-  TStringObjectEx(Pointer(LongWord(Current.Data) + Offset)^):=Item;
+  TStringObjectEx(Pointer(PtrUInt(Current.Data) + Offset)^):=Item;
   Item.Block:=Current;
   {Update Block}
   Inc(Current.Count);
@@ -7047,7 +7047,7 @@ begin
     if LongWord(Index) < (Block.Start + Block.Count) then
      begin
       {Move Items}
-      System.Move(Pointer(LongWord(Block.Data) + Offset + 4)^,Pointer(LongWord(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl 2);
+      System.Move(Pointer(PtrUInt(Block.Data) + Offset + 4)^,Pointer(PtrUInt(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl 2);
      end;
     {Delete Item}
     Item.Block:=nil;
@@ -7078,7 +7078,7 @@ begin
   Offset:=0;
   while Count < Block.Count do
    begin
-    if TStringObjectEx(Pointer(LongWord(Block.Data) + Offset)^) = Item then
+    if TStringObjectEx(Pointer(PtrUInt(Block.Data) + Offset)^) = Item then
      begin
       Result:=Index;
       Exit;
@@ -7402,13 +7402,13 @@ begin
  {Get Offset}
  Offset:=(AValue.Hash and FKeyMask) shl 2;
  {Get First Key}
- FirstKey:=THashStringObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ FirstKey:=THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
   begin
    {Is First Object}
    AValue.KeyPrev:=nil;
    AValue.KeyNext:=nil;
-   THashStringObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+   THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
   end
  else
   begin
@@ -7416,7 +7416,7 @@ begin
    FirstKey.KeyPrev:=AValue;
    AValue.KeyPrev:=nil;
    AValue.KeyNext:=FirstKey;
-   THashStringObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=AValue;
+   THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=AValue;
   end;
  Result:=True;
 end;
@@ -7459,12 +7459,12 @@ begin
      {Not Last Object}
      NextKey:=AValue.KeyNext;
      NextKey.KeyPrev:=nil;
-     THashStringObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=NextKey;
+     THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=NextKey;
     end
    else
     begin
      {Is Last Object}
-     THashStringObject(Pointer(LongWord(FKeyBuckets) + Offset)^):=nil;
+     THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
     end;
   end;
  AValue.List:=nil;
@@ -7494,7 +7494,7 @@ begin
  {Get Offset}
  Offset:=(AKeyHash and FKeyMask) shl 2;
  {Get First Key}
- Result:=THashStringObject(Pointer(LongWord(FKeyBuckets) + Offset)^);
+ Result:=THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
 
 {==============================================================================}
@@ -7891,7 +7891,7 @@ begin
   Offset:=(AOffset - ABlock.Start);
   Count:=Min(ACount,(ABlock.Size - (AOffset - ABlock.Start)));
   {Read Block}
-  System.Move(Pointer(LongWord(ABlock.Memory) + Offset)^,ABuffer^,Count);
+  System.Move(Pointer(PtrUInt(ABlock.Memory) + Offset)^,ABuffer^,Count);
   Result:=Count;
  except
   {}
@@ -7915,7 +7915,7 @@ begin
   Offset:=(AOffset - ABlock.Start);
   Count:=Min(ACount,(ABlock.Size - (AOffset - ABlock.Start)));
   {Write Block}
-  System.Move(ABuffer^,Pointer(LongWord(ABlock.Memory) + Offset)^,Count);
+  System.Move(ABuffer^,Pointer(PtrUInt(ABlock.Memory) + Offset)^,Count);
   Result:=Count;
  except
   {}
@@ -8034,7 +8034,7 @@ begin
    if Block = nil then Exit;
    FRecent:=Block;
    {Read Block}
-   Length:=ReadBlock(Block,Pointer(LongWord(@ABuffer) + Offset),Start,Remain);
+   Length:=ReadBlock(Block,Pointer(PtrUInt(@ABuffer) + Offset),Start,Remain);
    if Length = 0 then Exit;
    Inc(Start,Length);
    Dec(Remain,Length);
@@ -8075,7 +8075,7 @@ begin
    if Block = nil then Exit;
    FRecent:=Block;
    {Write Block}
-   Length:=WriteBlock(Block,Pointer(LongWord(@ABuffer) + Offset),Start,Remain);
+   Length:=WriteBlock(Block,Pointer(PtrUInt(@ABuffer) + Offset),Start,Remain);
    if Length = 0 then Exit;
    Inc(Start,Length);
    Dec(Remain,Length);
@@ -8539,7 +8539,7 @@ begin
   {Get Offset}
   Offset:=(LongWord(Index) - Block.Start) shl 2; {Multiply by SizeOf(LongWord)}
   {Get Item}
-  Result:=TStringItemEx(Pointer(LongWord(Block.Data) + Offset)^);
+  Result:=TStringItemEx(Pointer(PtrUInt(Block.Data) + Offset)^);
  except
   {}
  end;
@@ -8575,10 +8575,10 @@ begin
   if LongWord(Index) < (Current.Start + Current.Count) then
    begin
     {Move Items}
-    System.Move(Pointer(LongWord(Current.Data) + Offset)^,Pointer(LongWord(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl 2);
+    System.Move(Pointer(PtrUInt(Current.Data) + Offset)^,Pointer(PtrUInt(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl 2);
    end;
   {Add Item}
-  TStringItemEx(Pointer(LongWord(Current.Data) + Offset)^):=Item;
+  TStringItemEx(Pointer(PtrUInt(Current.Data) + Offset)^):=Item;
   {Update Block}
   Inc(Current.Count);
   {Update Blocks}
@@ -8616,7 +8616,7 @@ begin
     if LongWord(Index) < (Block.Start + Block.Count) then
      begin
       {Move Items}
-      System.Move(Pointer(LongWord(Block.Data) + Offset + 4)^,Pointer(LongWord(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl 2);
+      System.Move(Pointer(PtrUInt(Block.Data) + Offset + 4)^,Pointer(PtrUInt(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl 2);
      end;
     {Update Blocks}
     Result:=UpdateBlocks(Block);
@@ -8645,7 +8645,7 @@ begin
     Offset:=0;
     while Count < Block.Count do
      begin
-      Item:=TStringItemEx(Pointer(LongWord(Block.Data) + Offset)^);
+      Item:=TStringItemEx(Pointer(PtrUInt(Block.Data) + Offset)^);
       Item.Free;
       Inc(Count);
       Inc(Offset,4);
@@ -8894,7 +8894,7 @@ begin
    Offset:=0;
    while Count < Block.Count do
     begin
-     Item:=TStringItemEx(Pointer(LongWord(Block.Data) + Offset)^);
+     Item:=TStringItemEx(Pointer(PtrUInt(Block.Data) + Offset)^);
      if Item.Hash = Hash then
       begin
        if Uppercase(Item.Value) = Uppercase(S) then

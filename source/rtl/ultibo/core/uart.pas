@@ -1,7 +1,7 @@
 {
 Ultibo UART interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -76,15 +76,39 @@ const
  UART_TYPE_16550     = 2; {16550 UART and similar variants (eg 16550A) (Differences are handled by driver)}
  UART_TYPE_16650     = 3; {16650 UART and similar variants (eg 16C650) (Differences are handled by driver)}
  
+ UART_TYPE_MAX       = 3;
+  
+ {UART Type Names}
+ UART_TYPE_NAMES:array[UART_TYPE_NONE..UART_TYPE_MAX] of String = (
+  'UART_TYPE_NONE',
+  'UART_TYPE_8250',
+  'UART_TYPE_16550',
+  'UART_TYPE_16650');
+ 
  {UART Device Modes}
  UART_MODE_NONE      = 0;
  UART_MODE_UART      = 1; {The UART was opened as a UART device and all reads and writes are direct}
  UART_MODE_SERIAL    = 2; {The UART was opened as a Serial device so reads and writes are being buffered}
  
+ UART_MODE_MAX       = 2;
+ 
+ {UART Mode Names}
+ UART_MODE_NAMES:array[UART_MODE_NONE..UART_MODE_MAX] of String = (
+  'UART_MODE_NONE',
+  'UART_MODE_UART',
+  'UART_MODE_SERIAL');
+ 
  {UART Device States}
  UART_STATE_DISABLED = 0;
  UART_STATE_ENABLED  = 1;
+
+ UART_STATE_MAX      = 1;
  
+ {UART State Names}
+ UART_STATE_NAMES:array[UART_STATE_DISABLED..UART_STATE_MAX] of String = (
+  'UART_STATE_DISABLED',
+  'UART_STATE_ENABLED');
+
  {UART Device Flags}
  UART_FLAG_NONE         = SERIAL_FLAG_NONE;
  UART_FLAG_DATA_8BIT    = SERIAL_FLAG_DATA_8BIT;    {Device supports 8 data bits}
@@ -286,6 +310,10 @@ function UARTDeviceSetDefault(UART:PUARTDevice):LongWord;
 
 function UARTDeviceCheck(UART:PUARTDevice):PUARTDevice;
 
+function UARTTypeToString(UARTType:LongWord):String;
+function UARTModeToString(UARTMode:LongWord):String;
+function UARTStateToString(UARTState:LongWord):String;
+
 procedure UARTLog(Level:LongWord;UART:PUARTDevice;const AText:String);
 procedure UARTLogInfo(UART:PUARTDevice;const AText:String); inline;
 procedure UARTLogWarn(UART:PUARTDevice;const AText:String); inline;
@@ -363,7 +391,7 @@ begin
  if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF UART_DEBUG}
- if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + IntToStr(DataBits) + ' StopBits=' + IntToStr(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
+ if UART_LOG_ENABLED then UARTLogDebug(UART,'UART Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + SerialDataBitsToString(DataBits) + ' StopBits=' + SerialStopBitsToString(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
  {$ENDIF}
  
  {Check Mode}
@@ -1373,7 +1401,7 @@ begin
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {$IFDEF SERIAL_DEBUG}
- if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + IntToStr(DataBits) + ' StopBits=' + IntToStr(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'UART: Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + SerialDataBitsToString(DataBits) + ' StopBits=' + SerialStopBitsToString(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
  {$ENDIF}
 
  {Get UART}
@@ -2347,6 +2375,48 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(UARTDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function UARTTypeToString(UARTType:LongWord):String;
+{Convert a UART type value to a string}
+begin
+ {}
+ Result:='UART_TYPE_UNKNOWN';
+ 
+ if UARTType <= UART_TYPE_MAX then
+  begin
+   Result:=UART_TYPE_NAMES[UARTType];
+  end;
+end;
+
+{==============================================================================}
+
+function UARTModeToString(UARTMode:LongWord):String;
+{Convert a UART mode to a string}
+begin
+ {}
+ Result:='UART_MODE_UNKNOWN';
+ 
+ if UARTMode <= UART_MODE_MAX then
+  begin
+   Result:=UART_MODE_NAMES[UARTMode];
+  end;
+end;
+
+{==============================================================================}
+
+function UARTStateToString(UARTState:LongWord):String;
+{Convert a UART state value to a string}
+begin
+ {}
+ Result:='UART_STATE_UNKNOWN';
+ 
+ if UARTState <= UART_STATE_MAX then
+  begin
+   Result:=UART_STATE_NAMES[UARTState];
   end;
 end;
 

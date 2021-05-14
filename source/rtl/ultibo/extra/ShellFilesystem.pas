@@ -154,7 +154,7 @@ const
  
 {==============================================================================}
 type
- {Shell FileSystem specific clases}
+ {Shell FileSystem specific classes}
  TShellFileSysFileSystem = class(TShellCommand)
  public
   {}
@@ -3637,6 +3637,7 @@ end;
 function TShellFileSysChdir.DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; 
 var
  Name:String;
+ Drive:TDiskDrive;
 begin
  {}
  Result:=False;
@@ -3705,11 +3706,33 @@ begin
        Name:=AShell.ParameterIndex(0,AParameters);
        if (Name <> '') and (Name[1] <> '/') and (Name[1] <> '-') then
         begin
-         {Check Name}
-         if Name = '\' then Name:=DRIVE_NAMES[FileSysDriver.GetCurrentDrive];
+         if (Length(Name) = 2) and (Name[2] = ':') then
+          begin
+           {Check Name}
+           Drive:=FileSysDriver.GetDriveByName(AddTrailingSlash(Name),True,FILESYS_LOCK_READ);
+           if Drive <> nil then
+            begin
+             {Get Current}
+             AShell.DoOutput(ASession,FileSysDriver.GetCurrentDirEx(Drive.DriveNo));
+             
+             Drive.ReaderUnlock;
+            end
+           else
+            begin
+             AShell.DoOutput(ASession,'Unable to find the specified drive');
+            end;
+          end
+         else
+          begin
+           {Check Name}
+           if Name = '\' then Name:=DRIVE_NAMES[FileSysDriver.GetCurrentDrive];
          
-         {Set Current}
-         FileSysDriver.SetCurrentDir(Name);
+           {Set Current}
+           if not FileSysDriver.SetCurrentDir(Name) then
+            begin
+             AShell.DoOutput(ASession,'Unable to find the specified directory');
+            end;
+          end;  
         end
        else
         begin

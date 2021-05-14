@@ -63,7 +63,7 @@ const
 
 {==============================================================================}
 type
- {Authentication specific clases}
+ {Authentication specific classes}
  TAuthenticator = class(TObject)
  public
   {}

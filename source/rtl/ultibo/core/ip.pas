@@ -1,7 +1,7 @@
 {
 Ultibo IP (Internet Protocol) unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1128,7 +1128,7 @@ begin
     Inc(APacket.Received,ASize);
     
     {Copy Fragment}
-    System.Move(ABuffer^,Pointer(LongWord(APacket.Data) + APacket.Length + AOffset)^,ASize);
+    System.Move(ABuffer^,Pointer(PtrUInt(APacket.Data) + APacket.Length + AOffset)^,ASize);
     
     {Check Flags}
     if (AFlags and IP_MF) = 0 then
@@ -1317,6 +1317,7 @@ begin
      
        {$IFDEF IP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + ProtocolToString(IP.Protocol));
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  ID = ' + IntToStr(WordBEtoN(IP.Id)));
        {$ENDIF}
      
        {Set the Addresses to Host order}
@@ -1481,7 +1482,7 @@ begin
   Size:=WordBEtoN(IP.TotalLength) - Length;
   Flags:=WordBEtoN(IP.FragOffset) and not(IP_OFFMASK);
   Offset:=(WordBEtoN(IP.FragOffset) and IP_OFFMASK) shl 3;
-  if not FFragments.PutFragment(Packet,Pointer(LongWord(IP) + Length),Offset,Size,Flags) then Exit;
+  if not FFragments.PutFragment(Packet,Pointer(PtrUInt(IP) + Length),Offset,Size,Flags) then Exit;
 
   {Check for Completed}
   if Packet.Received = Packet.Total then

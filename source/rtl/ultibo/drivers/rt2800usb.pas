@@ -1,7 +1,7 @@
 {
 Ralink RT2800 USB Wireless Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2632,7 +2632,7 @@ begin
     Exit;
    end;
   {$IFDEF RT2800USB_DEBUG}
-  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (Chipset Data=' + IntToHex(LongWord(RT2800USB.RT2X00.Data),8) + ')');
+  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (Chipset Data=' + PtrToHex(RT2800USB.RT2X00.Data) + ')');
   {$ENDIF}
   
   {Create RF}
@@ -2646,7 +2646,7 @@ begin
     Exit;
    end;
   {$IFDEF RT2800USB_DEBUG}
-  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (RF Data=' + IntToHex(LongWord(RT2800USB.RT2X00.RFData),8) + ')');
+  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (RF Data=' + PtrToHex(RT2800USB.RT2X00.RFData) + ')');
   {$ENDIF}
    
   {Create Eeprom}
@@ -2660,7 +2660,7 @@ begin
     Exit;
    end;
   {$IFDEF RT2800USB_DEBUG}
-  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (EEPROM Data=' + IntToHex(LongWord(RT2800USB.RT2X00.EepromData),8) + ')');
+  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (EEPROM Data=' + PtrToHex(RT2800USB.RT2X00.EepromData) + ')');
   {$ENDIF}
   
   {Create Lock} 
@@ -3679,7 +3679,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Write firmware (Data=' + IntToHex(LongWord(Data),8) + ' Size=' + IntToStr(Size) + ')');
+ if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Write firmware (Data=' + PtrToHex(Data) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Check Firmware}

@@ -1,7 +1,7 @@
 {
 Ultibo Graphics Console interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1575,7 +1575,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -1643,7 +1643,7 @@ begin
  Result:=ERROR_INVALID_PARAMETER;
  
  {Check Color}
- if Color = COLOR_NONE then Exit;
+ {if Color = COLOR_NONE then Exit;}
  
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;

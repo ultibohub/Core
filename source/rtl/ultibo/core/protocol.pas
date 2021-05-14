@@ -1,7 +1,7 @@
 {
 Ultibo Network Protocol interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3958,7 +3958,7 @@ begin
  except
   on E: Exception do
    begin
-    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'SocketThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'SocketThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;

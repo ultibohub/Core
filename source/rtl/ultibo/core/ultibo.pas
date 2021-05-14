@@ -1,7 +1,7 @@
 {
 Ultibo interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2017,6 +2017,9 @@ begin
  lpSystemInfo.dwPageSize:=Platform.MemoryGetPageSize;
  lpSystemInfo.lpMinimumApplicationAddress:=Pointer(Platform.MemoryGetBase);
  lpSystemInfo.lpMaximumApplicationAddress:=Pointer(Platform.MemoryGetSize);
+ {$IFDEF CPU32}
+ if Platform.MemoryGetSize >= SIZE_4G then lpSystemInfo.lpMaximumApplicationAddress:=Pointer($FFFFFFFF);
+ {$ENDIF CPU32}
  lpSystemInfo.dwActiveProcessorMask:=Platform.CPUGetMask;
  lpSystemInfo.dwNumberOfProcessors:=Platform.CPUGetCount;
  lpSystemInfo.dwProcessorType:=0;
@@ -5618,7 +5621,7 @@ begin
 
  for Count:=0 to SizeOf(TGUID) - 1 do
   begin
-   Byte(Pointer(LongWord(@Result) + LongWord(Count))^):=Random(256);
+   Byte(Pointer(PtrUInt(@Result) + LongWord(Count))^):=Random(256);
   end;
 end;
 
@@ -5678,7 +5681,7 @@ begin
  {Get D1} {DWORD (Swapped)}
  for Count:=0 to 3 do
   begin
-   Byte(Pointer(LongWord(@Result.D1) + LongWord(3 - Count))^):=HexByte(Source);
+   Byte(Pointer(PtrUInt(@Result.D1) + LongWord(3 - Count))^):=HexByte(Source);
    Inc(Offset);
    Inc(Source,2);
   end;
@@ -5688,7 +5691,7 @@ begin
  {Get D2} {WORD (Swapped)}
  for Count:=0 to 1 do
   begin
-   Byte(Pointer(LongWord(@Result.D2) + LongWord(1 - Count))^):=HexByte(Source);
+   Byte(Pointer(PtrUInt(@Result.D2) + LongWord(1 - Count))^):=HexByte(Source);
    Inc(Offset);
    Inc(Source,2);
   end;
@@ -5698,7 +5701,7 @@ begin
  {Get D3} {WORD (Swapped)}
  for Count:=0 to 1 do
   begin
-   Byte(Pointer(LongWord(@Result.D3) + LongWord(1 - Count))^):=HexByte(Source);
+   Byte(Pointer(PtrUInt(@Result.D3) + LongWord(1 - Count))^):=HexByte(Source);
    Inc(Offset);
    Inc(Source,2);
   end;
@@ -5708,7 +5711,7 @@ begin
  {Get D4} {WORD-WORDDWORD (Not Swapped)}
  for Count:=0 to 1 do
   begin
-   Byte(Pointer(LongWord(@Result.D4) + LongWord(Count))^):=HexByte(Source);
+   Byte(Pointer(PtrUInt(@Result.D4) + LongWord(Count))^):=HexByte(Source);
    Inc(Offset);
    Inc(Source,2);
   end;
@@ -5716,7 +5719,7 @@ begin
  Inc(Source);
  for Count:=0 to 5 do
   begin
-   Byte(Pointer(LongWord(@Result.D4) + LongWord(Count + 2))^):=HexByte(Source);
+   Byte(Pointer(PtrUInt(@Result.D4) + LongWord(Count + 2))^):=HexByte(Source);
    Inc(Offset);
    Inc(Source,2);
   end;
@@ -5932,7 +5935,7 @@ begin
  Offset:=0;
  while Count < (ASize - 1) do
   begin
-   Word(Pointer(LongWord(ABuffer) + Offset)^):=SwapEndian(Word(Pointer(LongWord(ABuffer) + Offset)^));
+   Word(Pointer(PtrUInt(ABuffer) + Offset)^):=SwapEndian(Word(Pointer(PtrUInt(ABuffer) + Offset)^));
    
    Inc(Count,2);  {SizeOf(Word)}
    Inc(Offset,2); {SizeOf(Word)}
@@ -6131,7 +6134,7 @@ begin
    if Size > 0 then
     begin
      {Set Length}
-     PWord(LongWord(ABuffer) + LongWord((Size - 1) shl 1))^:=0; {Set null on end} {Returned size includes null terminator because length was specified}
+     PWord(PtrUInt(ABuffer) + LongWord((Size - 1) shl 1))^:=0; {Set null on end} {Returned size includes null terminator because length was specified}
      
      Result:=True;
     end;
@@ -6748,6 +6751,9 @@ begin
  lpBuffer.dwLength:=SizeOf(MEMORYSTATUS);
  lpBuffer.dwMemoryLoad:=Trunc(MemoryLoad);
  lpBuffer.dwTotalPhys:=Platform.MemoryGetSize;
+ {$IFDEF CPU32}
+ if Platform.MemoryGetSize >= SIZE_4G then lpBuffer.dwTotalPhys:=$FFFFFFFF;
+ {$ENDIF CPU32}
  lpBuffer.dwAvailPhys:=FPCStatus.CurrHeapFree;
  lpBuffer.dwTotalPageFile:=FPCStatus.CurrHeapSize;
  lpBuffer.dwAvailPageFile:=FPCStatus.CurrHeapFree;
@@ -7016,7 +7022,7 @@ begin
   end
  else
   begin
-   Platform.InvalidateInstructionCacheRange(LongWord(lpBaseAddress),dwSize);
+   Platform.InvalidateInstructionCacheRange(PtrUInt(lpBaseAddress),dwSize);
   end;  
   
  Result:=True;

@@ -1,7 +1,7 @@
 {
 Ultibo Serial interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -80,11 +80,28 @@ const
  SERIAL_TYPE_UART      = 1;
  SERIAL_TYPE_USB       = 2;
  
+ SERIAL_TYPE_MAX       = 2;
+  
+ {Serial Type Names}
+ SERIAL_TYPE_NAMES:array[SERIAL_TYPE_NONE..SERIAL_TYPE_MAX] of String = (
+  'SERIAL_TYPE_NONE',
+  'SERIAL_TYPE_UART',
+  'SERIAL_TYPE_USB');
+ 
  {Serial Device States}
  SERIAL_STATE_CLOSED  = 0;
  SERIAL_STATE_CLOSING = 1;
  SERIAL_STATE_OPENING = 2;
  SERIAL_STATE_OPEN    = 3;
+ 
+ SERIAL_STATE_MAX     = 3;
+ 
+ {Serial State Names}
+ SERIAL_STATE_NAMES:array[SERIAL_STATE_CLOSED..SERIAL_STATE_MAX] of String = (
+  'SERIAL_STATE_CLOSED',
+  'SERIAL_STATE_CLOSING',
+  'SERIAL_STATE_OPENING',
+  'SERIAL_STATE_OPEN');
  
  {Serial Device Flags}
  SERIAL_FLAG_NONE         = $00000000;
@@ -339,6 +356,9 @@ function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord;
 
 function SerialDeviceCheck(Serial:PSerialDevice):PSerialDevice;
 
+function SerialTypeToString(SerialType:LongWord):String;
+function SerialStateToString(SerialState:LongWord):String;
+
 function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean; 
 function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean; 
 
@@ -354,6 +374,8 @@ procedure SerialLogWarn(Serial:PSerialDevice;const AText:String); inline;
 procedure SerialLogError(Serial:PSerialDevice;const AText:String); inline;
 procedure SerialLogDebug(Serial:PSerialDevice;const AText:String); inline;
 
+function SerialDataBitsToString(Parity:LongWord):String;
+function SerialStopBitsToString(Parity:LongWord):String;
 function SerialParityToString(Parity:LongWord):String;
 function SerialFlowControlToString(Flow:LongWord):String;
 
@@ -471,7 +493,7 @@ begin
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF SERIAL_DEBUG}
- if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + IntToStr(DataBits) + ' StopBits=' + IntToStr(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
+ if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + SerialDataBitsToString(DataBits) + ' StopBits=' + SerialStopBitsToString(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
  {$ENDIF}
  
  {Check State}
@@ -1836,6 +1858,34 @@ end;
 
 {==============================================================================}
 
+function SerialTypeToString(SerialType:LongWord):String;
+{Convert a Serial type value to a string}
+begin
+ {}
+ Result:='SERIAL_TYPE_UNKNOWN';
+ 
+ if SerialType <= SERIAL_TYPE_MAX then
+  begin
+   Result:=SERIAL_TYPE_NAMES[SerialType];
+  end;
+end;
+
+{==============================================================================}
+
+function SerialStateToString(SerialState:LongWord):String;
+{Convert a Serial state value to a string}
+begin
+ {}
+ Result:='SERIAL_STATE_UNKNOWN';
+ 
+ if SerialState <= SERIAL_STATE_MAX then
+  begin
+   Result:=SERIAL_STATE_NAMES[SerialState];
+  end;
+end;
+
+{==============================================================================}
+
 function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean; 
 {Redirect standard input to the serial device specified by Serial}
 {Serial: The serial device to redirect input to (or nil to stop redirection)}
@@ -2093,6 +2143,35 @@ procedure SerialLogDebug(Serial:PSerialDevice;const AText:String); inline;
 begin
  {}
  SerialLog(SERIAL_LOG_LEVEL_DEBUG,Serial,AText);
+end;
+
+{==============================================================================}
+
+function SerialDataBitsToString(Parity:LongWord):String;
+begin
+ {}
+ Result:='SERIAL_DATA_UNKNOWN';
+ 
+ case Parity of
+  SERIAL_DATA_8BIT:Result:='SERIAL_DATA_8BIT';
+  SERIAL_DATA_7BIT:Result:='SERIAL_DATA_7BIT';
+  SERIAL_DATA_6BIT:Result:='SERIAL_DATA_6BIT';
+  SERIAL_DATA_5BIT:Result:='SERIAL_DATA_5BIT';
+ end;
+end;
+
+{==============================================================================}
+
+function SerialStopBitsToString(Parity:LongWord):String;
+begin
+ {}
+ Result:='SERIAL_STOP_UNKNOWN';
+ 
+ case Parity of
+  SERIAL_STOP_1BIT:Result:='SERIAL_STOP_1BIT';
+  SERIAL_STOP_2BIT:Result:='SERIAL_STOP_2BIT';
+  SERIAL_STOP_1BIT5:Result:='SERIAL_STOP_1BIT5';
+ end;
 end;
 
 {==============================================================================}

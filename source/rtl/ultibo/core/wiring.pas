@@ -1,7 +1,7 @@
 {
 Ultibo implementation of the Wiring API.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -64,7 +64,8 @@ Wiring
  
   For Raspberry Pi A/B/A+/B+/Zero add BCM2708
   For Raspberry Pi 2B add BCM2709
-  For Raspberry Pi 3B add BCM2710
+  For Raspberry Pi 3B/3A+/3B+ add BCM2710
+  For Raspberry Pi 4B/400 add BCM2711
  
  Note that this unit implements the WiringPi version 2 API and not the old version 1 API.
  Since version 2 was released in 2013 most code should now be updated to use the new functions.
@@ -221,7 +222,7 @@ const
 {==============================================================================}
 const
  {Raspberry Pi (BCM2835) specific constants}
- {Note that these values are identical for Raspberry Pi 2 (BCM2836) and 3 (BCM2837)}
+ {Note that these values are identical for Raspberry Pi 2 (BCM2836), 3 (BCM2837) and 4 (BCM2838)}
  
  {BCM2835 mailbox tag Get Board Revision values (See: http://elinux.org/RPi_HardwareHistory)}
  BCM2835_BOARD_REV_B_I2C0_2	= $00000002;
@@ -244,7 +245,7 @@ const
 
  BCM2835_BOARD_REV_MASK     = $00FFFFFF; {Mask off the warranty bit}
  
- {BCM2835 mailbox tag Get Board Revision bit fields (See: https://github.com/AndrewFromMelbourne/raspberry_pi_revision)}
+ {BCM2835 mailbox tag Get Board Revision bit fields (See: https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md)}
  BCM2835_BOARD_REVISION_PCB_MASK             = ($F shl 0);  {PCB Revision Number}
  BCM2835_BOARD_REVISION_MODEL_MASK           = ($FF shl 4); {Model Number}
  BCM2835_BOARD_REVISION_MANUFACTURER_MASK    = ($F shl 16); {Manufacturer}
@@ -694,14 +695,17 @@ begin
  epochMicro:=Total div CLOCK_CYCLES_PER_MICROSECOND;
  
  {Check for Compute}
- if BoardGetType = BOARD_TYPE_RPI_COMPUTE then
-  begin
-   wiringPiMode:=WPI_MODE_GPIO;
-  end
- else
-  begin 
-   wiringPiMode:=WPI_MODE_PINS;
-  end; 
+ case BoardGetType of
+  BOARD_TYPE_RPI_COMPUTE, 
+  BOARD_TYPE_RPI_COMPUTE3,
+  BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+    wiringPiMode:=WPI_MODE_GPIO;
+   end
+  else
+   begin 
+    wiringPiMode:=WPI_MODE_PINS;
+   end; 
+ end;   
  
  Result:=0;
 end;
@@ -1486,7 +1490,7 @@ begin
  except
   on E: Exception do
    begin
-    if THREAD_LOG_ENABLED then ThreadLogError('wiringPiThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if THREAD_LOG_ENABLED then ThreadLogError('wiringPiThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -1591,7 +1595,7 @@ begin
       end;      
     end;
    end;
-  MACHINE_TYPE_BCM2709,MACHINE_TYPE_BCM2710:begin
+  MACHINE_TYPE_BCM2709,MACHINE_TYPE_BCM2710,MACHINE_TYPE_BCM2711:begin
     {Pi 2/3}
     {Revision 2}
     boardRev:=2;

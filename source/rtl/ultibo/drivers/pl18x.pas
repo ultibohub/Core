@@ -382,8 +382,8 @@ procedure PL18XInit;
  
 {==============================================================================}
 {PL18X Functions}
-function PL180SDHCICreate(Address:LongWord;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;
-function PL181SDHCICreate(Address:LongWord;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;
+function PL180SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;
+function PL181SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;
 
 function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;
 
@@ -599,7 +599,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {PL18X Functions}
-function PL180SDHCICreate(Address:LongWord;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;
+function PL180SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;
 {Create and register a new PL180 SDHCI device which can be accessed using the SDHCI API}
 {Address: The address of the PL180 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -616,7 +616,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL180: SDHCI Create (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL180: SDHCI Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
  {$ENDIF}
  
  {Check Address}
@@ -691,7 +691,7 @@ end;
 
 {==============================================================================}
 
-function PL181SDHCICreate(Address:LongWord;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;
+function PL181SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;
 {Create and register a new PL181 SDHCI device which can be accessed using the SDHCI API}
 {Address: The address of the PL181 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -708,7 +708,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL181: SDHCI Create (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL181: SDHCI Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
  {$ENDIF}
  
  {Check Address}

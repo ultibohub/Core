@@ -77,7 +77,7 @@ const
 
 {==============================================================================}
 type
- {Remote Shell specific clases}
+ {Remote Shell specific classes}
  TTelnetSession = class;
  TTelnetShell = class(TShell)
  public

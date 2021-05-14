@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL011 UART Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -286,7 +286,7 @@ var
  
 {==============================================================================}
 {PL011 Functions}
-function PL011UARTCreate(Address:LongWord;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;
+function PL011UARTCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;
 
 function PL011UARTDestroy(UART:PUARTDevice):LongWord;
 
@@ -329,7 +329,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL011 Functions}
-function PL011UARTCreate(Address:LongWord;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;
+function PL011UARTCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;
 {Create and register a new PL011 UART device which can be accessed using the UART API}
 {Address: The address of the PL011 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -344,7 +344,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
- if UART_LOG_ENABLED then UARTLogDebug(nil,'PL011: UART Create (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ' ClockRate=' + IntToStr(ClockRate) + ')');
+ if UART_LOG_ENABLED then UARTLogDebug(nil,'PL011: UART Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ' ClockRate=' + IntToStr(ClockRate) + ')');
  {$ENDIF}
  
  {Check Address}

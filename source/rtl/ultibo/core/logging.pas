@@ -1,7 +1,7 @@
 {
 Ultibo Logging interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -62,9 +62,26 @@ const
  LOGGING_TYPE_SYSLOG    = 3;
  LOGGING_TYPE_SERIAL    = 4;
  
+ LOGGING_TYPE_MAX       = 4;
+  
+ {Logging Type Names}
+ LOGGING_TYPE_NAMES:array[LOGGING_TYPE_NONE..LOGGING_TYPE_MAX] of String = (
+  'LOGGING_TYPE_NONE',
+  'LOGGING_TYPE_CONSOLE',
+  'LOGGING_TYPE_FILE',
+  'LOGGING_TYPE_SYSLOG',
+  'LOGGING_TYPE_SERIAL');
+ 
  {Logging Device States}
  LOGGING_STATE_DISABLED   = 0;
  LOGGING_STATE_ENABLED    = 1;
+ 
+ LOGGING_STATE_MAX        = 1;
+ 
+ {Logging State Names}
+ LOGGING_STATE_NAMES:array[LOGGING_STATE_DISABLED..LOGGING_STATE_ENABLED] of String = (
+  'LOGGING_STATE_DISABLED',
+  'LOGGING_STATE_ENABLED');
  
  {Logging Device Flags}
  LOGGING_FLAG_NONE      = $00000000;
@@ -79,17 +96,17 @@ type
  {Logging specific types}
  PLoggingEntry = ^TLoggingEntry;
  TLoggingEntry = record {Note: Overlaid on TMessage to avoid memory allocation on each output}
-  Data:String;          {TMessage.Msg:LongWord}
-  Reserved1:LongInt;    {TMessage.wParam:LongInt}
-  Reserved2:LongInt;    {TMessage.lParam:LongInt}
+  Data:String;          {TMessage.Msg:PtrUInt}
+  Reserved1:PtrUInt;    {TMessage.wParam:PtrUInt}
+  Reserved2:PtrInt;     {TMessage.lParam:PtrInt}
   Reserved3:LongWord;   {TMessage.Time:LongWord}
  end;
 
  PLoggingEntryEx = ^TLoggingEntryEx;
  TLoggingEntryEx = record {Note: Overlaid on TMessage to avoid memory allocation on each output}
-  Content:String;         {TMessage.Msg:LongWord}
-  Tag:String;             {TMessage.wParam:LongInt}
-  Severity:LongInt;       {TMessage.lParam:LongInt}
+  Content:String;         {TMessage.Msg:PtrUInt}
+  Tag:String;             {TMessage.wParam:PtrUInt}
+  Severity:PtrInt;        {TMessage.lParam:PtrInt}
   Facility:LongWord;      {TMessage.Time:LongWord}
  end;
  
@@ -210,6 +227,9 @@ function LoggingDeviceGetDefault:PLoggingDevice; inline;
 function LoggingDeviceSetDefault(Logging:PLoggingDevice):LongWord; 
 
 function LoggingDeviceCheck(Logging:PLoggingDevice):PLoggingDevice;
+
+function LoggingTypeToString(LoggingType:LongWord):String;
+function LoggingStateToString(LoggingState:LongWord):String;
 
 function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean; 
 
@@ -414,7 +434,7 @@ begin
  except
   on E: Exception do
    begin
-    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'LoggingThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'LoggingThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -1537,6 +1557,34 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(LoggingDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function LoggingTypeToString(LoggingType:LongWord):String;
+{Convert a Logging type value to a string}
+begin
+ {}
+ Result:='LOGGING_TYPE_UNKNOWN';
+ 
+ if LoggingType <= LOGGING_TYPE_MAX then
+  begin
+   Result:=LOGGING_TYPE_NAMES[LoggingType];
+  end;
+end;
+
+{==============================================================================}
+
+function LoggingStateToString(LoggingState:LongWord):String;
+{Convert a Logging state value to a string}
+begin
+ {}
+ Result:='LOGGING_STATE_UNKNOWN';
+ 
+ if LoggingState <= LOGGING_STATE_MAX then
+  begin
+   Result:=LOGGING_STATE_NAMES[LoggingState];
   end;
 end;
 

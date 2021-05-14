@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi 2.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -83,7 +83,7 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform,PlatformARM,PlatformARMv7,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform,PlatformARM,PlatformARMv7,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
 
 {==============================================================================}
 const
@@ -97,11 +97,13 @@ const
 
 const
  {Secure World Boot} 
- RPI2_SECURE_BOOT = $00000001;         {If 1 then startup will attempt to switch back to secure world during boot process}
+ {RPI2_SECURE_BOOT = $00000001;}           {If 1 then startup will attempt to switch back to secure world during boot process} {Moved to ARMSecureBoot}
+ RPI2_SECURE_BOOT_OFFSET = $000000D4;      {The address of the Secure Boot marker in the ARM boot stub}
+ RPI2_SECURE_BOOT_MARKER = $58495052;      {The Secure Boot marker (ASCII "RPIX")}
  
-const 
+{const}
  {Address of StartupHandler on Reset}
- RPI2_STARTUP_ADDRESS = $00008000;
+ {RPI2_STARTUP_ADDRESS = $00008000;} {Obtain from linker}
  
 const
  {Page Table Address and Size}
@@ -150,7 +152,7 @@ const
  RPI2_KERNEL_NAME = 'kernel7.img';
  RPI2_KERNEL_CONFIG = 'config.txt';
  RPI2_KERNEL_COMMAND = 'cmdline.txt';
- RPI2_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat';
+ RPI2_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat,armstub32-rpi3.bin';
  
 const
  {GPIO Power LED constants (GPIO Pin 35)} 
@@ -198,14 +200,24 @@ const
  RPI2_FRAMEBUFFER_DESCRIPTION = 'BCM2836 Framebuffer';
  
 {==============================================================================}
-{type}
+{$IFDEF CONSOLE_EARLY_INIT}
+type
  {RPi2 specific types}
- 
+ PRPi2Framebuffer = ^TRPi2Framebuffer;
+ TRPi2Framebuffer = record
+  {Framebuffer Properties}
+  Framebuffer:TFramebufferDevice;
+  {RPi2 Properties}
+  MultiDisplay:LongBool;
+  DisplayNum:LongWord;
+  DisplaySettings:TDisplaySettings;
+ end;  
+{$ENDIF} 
 {==============================================================================}
 var
  {RPi2 specific Ultibo variables}
  RPi2Initialized:Boolean;
-
+ 
  RPi2CNTVOFFLow:LongWord = 0;               {The low 32 bits of the Virtual Counter Offset register at boot time (CPU0 only) (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
  RPi2CNTVOFFHigh:LongWord = 0;              {The high 32 bits of the Virtual Counter Offset register at boot time (CPU0 only) (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
  
@@ -222,8 +234,8 @@ var
  {Interrupt Variables}
  InterruptRegisters:PBCM2836InterruptRegisters;
  
- InterruptEntries:array[0..(BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1)] of TInterruptEntry;
- LocalInterruptEntries:array[RPI2_IRQ_LOCAL_START..(BCM2836_IRQ_COUNT - 1),0..(RPI2_CPU_COUNT - 1)] of TInterruptEntry;
+ InterruptEntries:array[0..(BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1)] of PInterruptEntry;
+ LocalInterruptEntries:array[RPI2_IRQ_LOCAL_START..(BCM2836_IRQ_COUNT - 1),0..(RPI2_CPU_COUNT - 1)] of PInterruptEntry;
 
 var
  {System Call Variables}
@@ -234,8 +246,8 @@ var
  IRQEnabled:array[0..2] of LongWord; {3 groups of IRQs to Enable/Disable (See: TBCM2836InterruptRegisters)}
  FIQEnabled:LongWord;                {The single IRQ number to Enable as FIQ instead (See: TBCM2836InterruptRegisters)}
  
- IRQLocalEnabled:array[0..(RPI2_CPU_COUNT - 1)] of LongWord; {1 group of local IRQs to Enable/Disable per CPU (See: TBCM2836ARMLocalRegisters)}
- FIQLocalEnabled:array[0..(RPI2_CPU_COUNT - 1)] of LongWord; {1 group of local FIQs to Enable/Disable per CPU (See: TBCM2836ARMLocalRegisters)}
+ LocalIRQEnabled:array[0..(RPI2_CPU_COUNT - 1)] of LongWord; {1 group of local IRQs to Enable/Disable per CPU (See: TBCM2836ARMLocalRegisters)}
+ LocalFIQEnabled:array[0..(RPI2_CPU_COUNT - 1)] of LongWord; {1 group of local FIQs to Enable/Disable per CPU (See: TBCM2836ARMLocalRegisters)}
  
 var
  {Watchdog Variables}
@@ -294,21 +306,24 @@ function RPi2ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Handle
 function RPi2RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 function RPi2ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 
+function RPi2RegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+function RPi2DeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+
 function RPi2RegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 function RPi2DeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 
-function RPi2GetInterruptEntry(Number:LongWord):TInterruptEntry; 
-function RPi2GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; 
+function RPi2GetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+function RPi2GetLocalInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
 function RPi2GetSystemCallEntry(Number:LongWord):TSystemCallEntry; 
 
 function RPi2SystemRestart(Delay:LongWord):LongWord; 
 function RPi2SystemShutdown(Delay:LongWord):LongWord;
 function RPi2SystemGetCommandLine:String;
 
-function RPi2CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi2CPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 
 function RPi2GPUGetState:LongWord;
-function RPi2GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi2GPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 
 function RPi2BoardGetModel:LongWord;
 function RPi2BoardGetSerial:Int64;
@@ -401,10 +416,16 @@ function RPi2FramebufferSetVsync:LongWord;
 
 function RPi2FramebufferSetBacklight(Brightness:LongWord):LongWord;
 
-function RPi2TouchGetBuffer(var Address:LongWord):LongWord;
+function RPi2FramebufferGetNumDisplays(var NumDisplays:LongWord):LongWord;
+function RPi2FramebufferGetDisplayId(DisplayNum:LongWord):LongWord;
+function RPi2FramebufferSetDisplayNum(DisplayNum:LongWord):LongWord;
+function RPi2FramebufferGetDisplaySettings(DisplayNum:LongWord;var DisplaySettings:TDisplaySettings):LongWord;
+function RPi2FramebufferDisplayIdToName(DisplayId:LongWord):String;
+
+function RPi2TouchGetBuffer(var Address:PtrUInt):LongWord;
 function RPi2TouchSetBuffer(Address:PtrUInt):LongWord;
 
-function RPi2VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
+function RPi2VirtualGPIOGetBuffer(var Address:PtrUInt):LongWord;
 function RPi2VirtualGPIOSetBuffer(Address:PtrUInt):LongWord;
 
 function RPi2CursorSetDefault:LongWord;
@@ -423,18 +444,6 @@ procedure RPi2SchedulerInit;
 procedure RPi2SchedulerStart(CPUID:LongWord);
 
 procedure RPi2SecondaryBoot(CPUID:LongWord);
-
-{==============================================================================}
-{RPi2 IRQ Functions}
-function RPi2DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-function RPi2HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-{==============================================================================}
-{RPi2 FIQ Functions}
-function RPi2DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-function RPi2HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 
 {==============================================================================}
 {RPi2 SWI Functions}
@@ -461,7 +470,7 @@ function RPi2FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
 
 function RPi2FramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
-function RPi2FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function RPi2FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function RPi2FramebufferDeviceSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
 
@@ -477,6 +486,14 @@ procedure RPi2SlowBlink;
 procedure RPi2FastBlink;
 
 procedure RPi2BootBlink;
+
+{$IFDEF CONSOLE_EARLY_INIT}
+procedure RPi2BootConsoleStart;
+procedure RPi2BootConsoleWrite(const Value:String);
+procedure RPi2BootConsoleWriteEx(const Value:String;X,Y:LongWord);
+function RPi2BootConsoleGetX:LongWord;
+function RPi2BootConsoleGetY:LongWord;
+{$ENDIF}
 
 function RPi2ConvertPowerIdRequest(PowerId:LongWord):LongWord;
 function RPi2ConvertPowerStateRequest(PowerState:LongWord):LongWord;
@@ -497,6 +514,37 @@ implementation
 
 {==============================================================================}
 {==============================================================================}
+{RPi2 Forward Declarations}
+function RPi2InterruptIsValid(Number:LongWord):Boolean; forward;
+function RPi2InterruptIsLocal(Number:LongWord):Boolean; forward;
+function RPi2InterruptIsGlobal(Number:LongWord):Boolean; forward;
+
+function RPi2InterruptCheckValid(const Entry:TInterruptEntry):Boolean; forward;
+function RPi2InterruptCheckHandlers(const Entry:TInterruptEntry):Boolean; forward;
+function RPi2InterruptCompareHandlers(const Entry,Current:TInterruptEntry):Boolean; forward;
+
+function RPi2InterruptEnable(const Entry:TInterruptEntry):Boolean; forward;
+function RPi2InterruptDisable(const Entry:TInterruptEntry):Boolean; forward;
+
+function RPi2InterruptGetCurrentCount(CPUID,Number:LongWord):LongWord; forward;
+function RPi2InterruptGetCurrentEntry(CPUID,Number:LongWord;Index:LongWord):PInterruptEntry; forward;
+
+function RPi2InterruptAddCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean; forward;
+function RPi2InterruptDeleteCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean; forward;
+
+function RPi2InterruptFindMatchingEntry(const Entry:TInterruptEntry):PInterruptEntry; forward;
+
+function RPi2InterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord; forward;
+function RPi2InterruptRegisterEntry(const Entry:TInterruptEntry):LongWord; forward;
+function RPi2InterruptDeregisterEntry(const Entry:TInterruptEntry):LongWord; forward;
+
+function RPi2DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+function RPi2DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+
+function RPi2HandleInterrupt(Number,Source,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+
+{==============================================================================}
+{==============================================================================}
 {Initialization Functions}
 procedure RPi2Init;
 begin
@@ -511,7 +559,7 @@ begin
  BUS_ALIAS:=RPI2_VCBUS_ALIAS;
  
  {Setup SECURE_BOOT}
- SECURE_BOOT:=(RPI2_SECURE_BOOT <> 0);
+ SECURE_BOOT:=(ARMSecureBoot <> 0);
  
  {Setup STARTUP_ADDRESS}
  STARTUP_ADDRESS:=PtrUInt(@_text_start); {RPI2_STARTUP_ADDRESS} {Obtain from linker}
@@ -590,9 +638,10 @@ begin
  
  SWI_COUNT:=RPI2_SWI_COUNT;
  
- {Setup IRQ/FIQ/SWI/UNDEF/ABORT_ENABLED}
+ {Setup IRQ/FIQ/IPI/SWI/UNDEF/ABORT_ENABLED}
  IRQ_ENABLED:=True;
  FIQ_ENABLED:=True;
+ IPI_ENABLED:=False;
  SWI_ENABLED:=True;
  ABORT_ENABLED:=True;
  UNDEFINED_ENABLED:=True;
@@ -669,8 +718,17 @@ begin
  {Register PlatformARMv7 PageTableInit Handler}
  ARMv7PageTableInitHandler:=RPi2PageTableInit;
 
- {Register Platform Blink Handlers}
+ {Register Platform Boot Blink Handlers}
  BootBlinkHandler:=RPi2BootBlink;
+ 
+ {Register Platform Boot Console Handlers}
+ {$IFDEF CONSOLE_EARLY_INIT}
+ BootConsoleStartHandler:=RPi2BootConsoleStart;
+ BootConsoleWriteHandler:=RPi2BootConsoleWrite;
+ BootConsoleWriteExHandler:=RPi2BootConsoleWriteEx;
+ BootConsoleGetXHandler:=RPi2BootConsoleGetX;
+ BootConsoleGetYHandler:=RPi2BootConsoleGetY;
+ {$ENDIF}
  
  {Register Platform LED Handlers}
  PowerLEDEnableHandler:=RPi2PowerLEDEnable;
@@ -695,6 +753,10 @@ begin
  {Register Platform FIQ Handlers}
  RequestExFIQHandler:=RPi2RequestExFIQ;
  ReleaseExFIQHandler:=RPi2ReleaseExFIQ;
+
+ {Register Platform Interrupt Handlers}
+ RegisterInterruptHandler:=RPi2RegisterInterrupt;
+ DeregisterInterruptHandler:=RPi2DeregisterInterrupt;
 
  {Register Platform System Call Handlers}
  RegisterSystemCallExHandler:=RPi2RegisterSystemCallEx;
@@ -820,6 +882,12 @@ begin
  
  FramebufferSetBacklightHandler:=RPi2FramebufferSetBacklight;
  
+ FramebufferGetNumDisplaysHandler:=RPi2FramebufferGetNumDisplays;
+ FramebufferGetDisplayIdHandler:=RPi2FramebufferGetDisplayId;
+ FramebufferSetDisplayNumHandler:=RPi2FramebufferSetDisplayNum;
+ FramebufferGetDisplaySettingsHandler:=RPi2FramebufferGetDisplaySettings;
+ FramebufferDisplayIdToNameHandler:=RPi2FramebufferDisplayIdToName;
+ 
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPi2TouchGetBuffer;
  TouchSetBufferHandler:=RPi2TouchSetBuffer;
@@ -906,7 +974,8 @@ procedure RPi2SecondarySecure; assembler; nostackframe;
 {Secondary CPU switch to secure mode handler}
 asm
  //Check the secure boot configuration
- mov r0, #RPI2_SECURE_BOOT
+ ldr r0, .LARMSecureBoot
+ ldr r0, [r0]
  cmp r0, #0
  beq .LNoSecure
   
@@ -941,6 +1010,9 @@ asm
 .LNoSecure:
  //Return to startup
  bx lr
+ 
+.LARMSecureBoot:
+  .long ARMSecureBoot
 end;
 
 {==============================================================================}
@@ -1057,7 +1129,8 @@ asm
  bl ARMv7CacheInit
  
  //Check the secure boot configuration
- mov r0, #RPI2_SECURE_BOOT
+ ldr r0, .LARMSecureBoot
+ ldr r0, [r0]
  cmp r0, #0
  beq .LNoTimer
  
@@ -1119,6 +1192,9 @@ asm
   .long ABORT_STACK_BASE  
 .LUNDEFINED_STACK_BASE:
   .long UNDEFINED_STACK_BASE  
+  
+.LARMSecureBoot:
+  .long ARMSecureBoot
 end;
 
 {==============================================================================}
@@ -1168,17 +1244,19 @@ end;
 procedure RPi2BoardInit;
 var
  Revision:LongWord;
- ClockCPUMax:LongWord;
+ ClockRateMax:LongWord;
 begin
  {}
+ {$IFDEF RPI2_CLOCK_SYSTEM_TIMER}
  {Initialize Interrupts (Used by ClockInit}
- if not(InterruptsInitialized) then RPi2InterruptInit;
+ if not(InterruptsInitialized) then InterruptInit;
  
  {Initialize Clock (Used by BoardGetRevision)}
- if not(ClockInitialized) then RPi2ClockInit;
+ if not(ClockInitialized) then ClockInit;
+ {$ENDIF}
  
  {Initialize Mailbox (Used by BoardGetRevision)}
- if not(MailboxInitialized) then RPi2MailboxInit;
+ if not(MailboxInitialized) then MailboxInit;
  
  {Get Board Revision}
  Revision:=RPi2BoardGetRevision;
@@ -1278,11 +1356,53 @@ begin
   end; 
  
  {Get CPU Clock Maximum}
- ClockCPUMax:=RPi2ClockGetMaxRate(CLOCK_ID_CPU);
- if ClockCPUMax > 0 then
+ ClockRateMax:=RPi2ClockGetMaxRate(CLOCK_ID_CPU);
+ if ClockRateMax > 0 then
   begin
    {Set CPU Clock}
-   RPi2ClockSetRate(CLOCK_ID_CPU,ClockCPUMax,True); 
+   RPi2ClockSetRate(CLOCK_ID_CPU,ClockRateMax,True); 
+  end;
+  
+ {Note: As of firmware dated 19 March 2021 the clock rates reported by the
+        firmware may not be accurate unless the ARM has set the rate first} 
+ {Get Core Clock Maximum}
+ ClockRateMax:=RPi2ClockGetMaxRate(CLOCK_ID_CORE);
+ if ClockRateMax > 0 then
+  begin
+   {Set Core Clock}
+   RPi2ClockSetRate(CLOCK_ID_CORE,ClockRateMax,True); 
+  end;
+  
+ {Get V3D Clock Maximum}
+ ClockRateMax:=RPi2ClockGetMaxRate(CLOCK_ID_V3D);
+ if ClockRateMax > 0 then
+  begin
+   {Set V3D Clock}
+   RPi2ClockSetRate(CLOCK_ID_V3D,ClockRateMax,True); 
+  end;
+  
+ {Get H264 Clock Maximum}
+ ClockRateMax:=RPi2ClockGetMaxRate(CLOCK_ID_H264);
+ if ClockRateMax > 0 then
+  begin
+   {Set V3D Clock}
+   RPi2ClockSetRate(CLOCK_ID_H264,ClockRateMax,True); 
+  end;
+  
+ {Get ISP Clock Maximum}
+ ClockRateMax:=RPi2ClockGetMaxRate(CLOCK_ID_ISP);
+ if ClockRateMax > 0 then
+  begin
+   {Set V3D Clock}
+   RPi2ClockSetRate(CLOCK_ID_ISP,ClockRateMax,True); 
+  end;
+  
+ {Get SDRAM Clock Maximum}
+ ClockRateMax:=RPi2ClockGetMaxRate(CLOCK_ID_SDRAM);
+ if ClockRateMax > 0 then
+  begin
+   {Set SDRAM Clock}
+   RPi2ClockSetRate(CLOCK_ID_SDRAM,ClockRateMax,True); 
   end;
 end;
 
@@ -1291,18 +1411,20 @@ end;
 procedure RPi2MemoryInit;
 var
  Address:PtrUInt;
- Length:LongWord;
+ Length:UInt64;
  Revision:LongWord;
 begin
  {}
+ {$IFDEF RPI2_CLOCK_SYSTEM_TIMER}
  {Initialize Interrupts (Used by ClockInit}
- if not(InterruptsInitialized) then RPi2InterruptInit;
+ if not(InterruptsInitialized) then InterruptInit;
  
  {Initialize Clock (Used by BoardGetRevision)}
- if not(ClockInitialized) then RPi2ClockInit;
+ if not(ClockInitialized) then ClockInit;
+ {$ENDIF}
  
  {Initialize Mailbox (Used by BoardGetRevision)}
- if not(MailboxInitialized) then RPi2MailboxInit;
+ if not(MailboxInitialized) then MailboxInit;
  
  {Get Board Revision}
  Revision:=RPi2BoardGetRevision;
@@ -1323,6 +1445,8 @@ begin
       {Get Memory Page Size}
       MEMORY_PAGE_SIZE:=SIZE_4K;
       MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+      {Get Memory Section Size}
+      MEMORY_SECTION_SIZE:=SIZE_1M;
       {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
       MEMORY_IRQ_SIZE:=SIZE_8M;
       MEMORY_FIQ_SIZE:=SIZE_8M;
@@ -1339,6 +1463,8 @@ begin
       {Get Memory Page Size}
       MEMORY_PAGE_SIZE:=SIZE_4K;
       MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+      {Get Memory Section Size}
+      MEMORY_SECTION_SIZE:=SIZE_1M;
       {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
       MEMORY_IRQ_SIZE:=SIZE_8M;
       MEMORY_FIQ_SIZE:=SIZE_8M;
@@ -1363,6 +1489,8 @@ begin
       {Get Memory Page Size}
       MEMORY_PAGE_SIZE:=SIZE_4K;
       MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+      {Get Memory Section Size}
+      MEMORY_SECTION_SIZE:=SIZE_1M;
       {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
       MEMORY_IRQ_SIZE:=SIZE_8M;
       MEMORY_FIQ_SIZE:=SIZE_8M;
@@ -1390,6 +1518,8 @@ begin
      {Get Memory Page Size}
      MEMORY_PAGE_SIZE:=SIZE_4K;
      MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+     {Get Memory Section Size}
+     MEMORY_SECTION_SIZE:=SIZE_1M;
      {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
      MEMORY_IRQ_SIZE:=SIZE_2M;
      MEMORY_FIQ_SIZE:=SIZE_2M;
@@ -1492,10 +1622,7 @@ begin
  {Setup Interrupt Entries}
  for Count:=0 to BCM2836_GPU_IRQ_COUNT + BCM2836_ARM_IRQ_COUNT - 1 do
   begin
-   FillChar(InterruptEntries[Count],SizeOf(TInterruptEntry),0);
-   
-   InterruptEntries[Count].Number:=Count;
-   InterruptEntries[Count].CPUID:=CPU_ID_ALL;
+   InterruptEntries[Count]:=nil;
   end; 
  
  {Setup Local Interrupt Entries}
@@ -1503,10 +1630,7 @@ begin
   begin
    for Counter:=0 to RPI2_CPU_COUNT - 1 do
     begin
-     FillChar(LocalInterruptEntries[Count,Counter],SizeOf(TInterruptEntry),0);
-     
-     LocalInterruptEntries[Count,Counter].Number:=Count;
-     LocalInterruptEntries[Count,Counter].CPUID:=Counter;
+     LocalInterruptEntries[Count,Counter]:=nil;
     end; 
   end; 
  
@@ -1531,14 +1655,17 @@ begin
  {Setup Local Enabled IRQs}
  for Count:=0 to RPI2_CPU_COUNT - 1 do
   begin
-   IRQLocalEnabled[Count]:=0;
+   LocalIRQEnabled[Count]:=0;
   end;
   
  {Setup Local Enabled FIQs}
  for Count:=0 to RPI2_CPU_COUNT - 1 do
   begin
-   FIQLocalEnabled[Count]:=0;
+   LocalFIQEnabled[Count]:=0;
   end;
+  
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
   
  {Clear Interrupt Enabled}
  InterruptRegisters.FIQ_control:=0;
@@ -1564,9 +1691,6 @@ begin
  GPIO_REGS_BASE:=BCM2836_GPIO_REGS_BASE;
  UART_REGS_BASE:=BCM2836_PL011_REGS_BASE;
 
- {Setup Interrupts}
- //To Do 
- 
  {Setup GPIO}
  GPIO_PIN_COUNT:=BCM2836_GPIO_PIN_COUNT;
  
@@ -1657,8 +1781,6 @@ begin
  BCM2709FRAMEBUFFER_ALIGNMENT:=SIZE_256;
  BCM2709FRAMEBUFFER_CACHED:=GPU_MEMORY_CACHED;
  
- BCM2709_REGISTER_I2C0:=False; {I2C0 is not available on the header except on original Revision 1 boards}
- 
  {Setup DWCOTG}
  DWCOTG_IRQ:=BCM2836_IRQ_USB;
  DWCOTG_POWER_ID:=POWER_ID_USB0;
@@ -1673,7 +1795,7 @@ begin
  if CacheLineSize > DWCOTG_DMA_ALIGNMENT then DWCOTG_DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > DWCOTG_DMA_MULTIPLIER then DWCOTG_DMA_MULTIPLIER:=CacheLineSize;
  
- {Setup SMSC95XX}
+ {Setup LAN}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B,
   BOARD_TYPE_RPI3B,
@@ -1694,61 +1816,89 @@ procedure RPi2FramebufferInit;
 var
  Status:LongWord;
  
- RPi2Framebuffer:PFramebufferDevice;
+ DisplayId:LongWord;
+ DisplayNum:LongWord;
+ DisplayCount:LongWord;
+ MultiDisplay:Boolean;
+ 
+ RPi2Framebuffer:PRPi2Framebuffer;
 begin
  {}
- {Create Framebuffer}
- RPi2Framebuffer:=PFramebufferDevice(FramebufferDeviceCreateEx(SizeOf(TFramebufferDevice)));
- if RPi2Framebuffer <> nil then
+ {Get Display Count and Check Multi-Display support}
+ if FramebufferGetNumDisplays(DisplayCount) = ERROR_SUCCESS then
   begin
-   {Device}
-   RPi2Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-   RPi2Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-   RPi2Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
-   RPi2Framebuffer.Device.DeviceData:=nil;
-   RPi2Framebuffer.Device.DeviceDescription:=RPI2_FRAMEBUFFER_DESCRIPTION;
-   {Framebuffer}
-   RPi2Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
-   RPi2Framebuffer.DeviceAllocate:=RPi2FramebufferDeviceAllocate;
-   RPi2Framebuffer.DeviceRelease:=RPi2FramebufferDeviceRelease;
-   RPi2Framebuffer.DeviceBlank:=RPi2FramebufferDeviceBlank;
-   RPi2Framebuffer.DeviceCommit:=RPi2FramebufferDeviceCommit;
-   RPi2Framebuffer.DeviceSetBacklight:=RPi2FramebufferDeviceSetBacklight;   
-   RPi2Framebuffer.DeviceSetProperties:=RPi2FramebufferDeviceSetProperties;
-   {Driver}
- 
-   {Setup Flags}
-   if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
-   if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-   {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi2Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+   MultiDisplay:=(DisplayCount > 0);
+  end
+ else
+  begin
+   MultiDisplay:=False;
+   DisplayCount:=1;
+  end;
+  
+ {Create Framebuffer for first Display}
+ if DisplayCount > 0 then
+  begin
+   {Set Display Num}
+   DisplayNum:=0;
    
-   {Register Framebuffer}
-   Status:=FramebufferDeviceRegister(RPi2Framebuffer);
-   if Status = ERROR_SUCCESS then
+   {Get Display Id}
+   DisplayId:=FramebufferGetDisplayId(DisplayNum);
+
+   {Create Framebuffer}
+   RPi2Framebuffer:=PRPi2Framebuffer(FramebufferDeviceCreateEx(SizeOf(TRPi2Framebuffer)));
+   if RPi2Framebuffer <> nil then
     begin
-     {Allocate Framebuffer}
-     Status:=FramebufferDeviceAllocate(RPi2Framebuffer,nil);
-     if Status <> ERROR_SUCCESS then
+     {Device}
+     RPi2Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     RPi2Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
+     RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
+     RPi2Framebuffer.Framebuffer.Device.DeviceData:=nil;
+     RPi2Framebuffer.Framebuffer.Device.DeviceDescription:=RPI2_FRAMEBUFFER_DESCRIPTION + ' (' + FramebufferDisplayIdToName(DisplayId) + ')';
+     {Framebuffer}
+     RPi2Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
+     RPi2Framebuffer.Framebuffer.DeviceAllocate:=RPi2FramebufferDeviceAllocate;
+     RPi2Framebuffer.Framebuffer.DeviceRelease:=RPi2FramebufferDeviceRelease;
+     RPi2Framebuffer.Framebuffer.DeviceBlank:=RPi2FramebufferDeviceBlank;
+     RPi2Framebuffer.Framebuffer.DeviceCommit:=RPi2FramebufferDeviceCommit;
+     RPi2Framebuffer.Framebuffer.DeviceSetBacklight:=RPi2FramebufferDeviceSetBacklight;   
+     RPi2Framebuffer.Framebuffer.DeviceSetProperties:=RPi2FramebufferDeviceSetProperties;
+     {Driver}
+     RPi2Framebuffer.MultiDisplay:=MultiDisplay;
+     RPi2Framebuffer.DisplayNum:=DisplayNum;
+     FramebufferGetDisplaySettings(DisplayNum,RPi2Framebuffer.DisplaySettings);
+   
+     {Setup Flags}
+     if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
+     if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
+     {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+     
+     {Register Framebuffer}
+     Status:=FramebufferDeviceRegister(@RPi2Framebuffer.Framebuffer);
+     if Status = ERROR_SUCCESS then
       begin
-       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+       {Allocate Framebuffer}
+       Status:=FramebufferDeviceAllocate(@RPi2Framebuffer.Framebuffer,nil);
+       if Status <> ERROR_SUCCESS then
+        begin
+         if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+        end;
+      end
+     else
+      begin     
+       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to register new framebuffer device: ' + ErrorToString(Status));
       end;
     end
-   else
-    begin     
-     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to register new framebuffer device: ' + ErrorToString(Status));
+   else 
+    begin
+     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to create new framebuffer device');
     end;
-  end
- else 
-  begin
-   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to create new framebuffer device');
   end;
 end;
 {$ENDIF}
 {==============================================================================}
 
 procedure RPi2PageTableInit;
-{Initialize the Hardware Page Tables before enabling the MMU
- See ??????}
+{Initialize the Hardware Page Tables before enabling the MMU}
 var
  Count:Integer;
  Table:PtrUInt;
@@ -1758,16 +1908,16 @@ var
 begin
  {}
  {Initialize Memory (Get values for CPU_MEMORY_BASE/SIZE)}
- if not(MemoryInitialized) then RPi2MemoryInit;
+ if not(MemoryInitialized) then MemoryInit;
  
  {Parse Boot Tags (Register all memory with Heap manager)}
- if not(ParseBootTagsCompleted) then ARMParseBootTags;
+ if not(ParseBootTagsCompleted) then ParseBootTags;
 
  {Parse Command Line (Copy command line from zero page)}
- if not(ParseCommandLineCompleted) then ARMParseCommandLine;
+ if not(ParseCommandLineCompleted) then ParseCommandLine;
 
  {Parse Environment (Copy environment from zero page)}
- if not(ParseEnvironmentCompleted) then ARMParseEnvironment;
+ if not(ParseEnvironmentCompleted) then ParseEnvironment;
  
  {Create the first level page table}
  {Setup 1MB sections covering the entire 4GB address space with a default layout}
@@ -1829,7 +1979,7 @@ begin
     end;
   end;  
 
- {Create the second level (Coarse) page tables}
+ {Create the currently used second level (Coarse) page tables}
  Table:=(PAGE_TABLES_ADDRESS and ARMV7_L1D_COARSE_BASE_MASK);
  Address:=$00000000;
  for Count:=0 to PAGE_TABLES_USED - 1 do
@@ -1866,8 +2016,8 @@ begin
  {Set the 4KB pages containing the TEXT (Code) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
  {Changed to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK (Shared)(Executable)(Read Only) due to no write through support for data caching on ARMv7}
  {See 5.2.1 Memory types and attributes in the Cortex A7 Technical Reference Manual (http://infocenter.arm.com/help/topic/com.arm.doc.ddi0464f/CIHJCAAG.html)}
- Address:=(LongWord(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_data)) do
+ Address:=(PtrUInt(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_data)) do
   begin
    {ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);}
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_ACCESS_READONLY);
@@ -1875,16 +2025,16 @@ begin
   end;
 
  {Set the 4KB pages containing the DATA (Initialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_bss_start)) do
+ Address:=(PtrUInt(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_bss_start)) do
   begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
 
  {Set the 4KB pages containing the BSS (Uninitialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_bss_start) and ARMV7_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_bss_end)) do
+ Address:=(PtrUInt(@_bss_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_bss_end)) do
   begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
@@ -2597,889 +2747,318 @@ end;
 
 function RPi2RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request registration of the supplied handler to the specified IRQ number}
-{CPUID: CPU to route IRQ to}
-{Number: IRQ number to register}
-{Handler: Interrupt handler function to register}
-{HandlerEx: Extended Interrupt handler function to register}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
-  
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit;
-
- {Check Routing}
- if Number < IRQ_LOCAL_START then
-  begin
-   if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;   
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-  
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable IRQ}
-    InterruptRegisters.Enable_IRQs_1:=(1 shl Number);
-    IRQEnabled[0]:=IRQEnabled[0] or (1 shl Number);
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else if Number < 64 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
 
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
+ {Check Local}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
     
-    {Enable IRQ}
-    InterruptRegisters.Enable_IRQs_2:=(1 shl (Number - 32));
-    IRQEnabled[1]:=IRQEnabled[1] or (1 shl (Number - 32));
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else if Number < 96 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable IRQ}
-    InterruptRegisters.Enable_Basic_IRQs:=(1 shl (Number - 64));
-    IRQEnabled[2]:=IRQEnabled[2] or (1 shl (Number - 64));
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) <> 0 then Exit;
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-
-    {Check Number}
-    case Number of
-     BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Enable Physical Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Enable Physical Non Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Enable Hypervisor Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Enable Virtual Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Enable Mailbox0 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Enable Mailbox1 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Enable Mailbox2 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Enable Mailbox3 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PMU:begin
-       {Enable Performance Monitors IRQ}
-       ARMLocalRegisters.PMInterruptRoutingSet:=(1 shl CPUID);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_AXI:begin
-       {Enable AXI Outstanding Writes IRQ}
-       if CPUID <> CPU_ID_0 then Exit;
-       ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ or BCM2836_ARM_LOCAL_AXI_IRQ_ENABLE;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_TIMER:begin
-       {Enable Local Timer IRQ}
-       ARMLocalRegisters.LocalIntRouting0:=(ARMLocalRegisters.LocalIntRouting0 and not(7)) or CPUID;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Enable Local IRQ}
-    IRQLocalEnabled[CPUID]:=IRQLocalEnabled[CPUID] or (1 shl (Number - 96));
-   
-    {Register Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=Handler;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=HandlerEx;
-    LocalInterruptEntries[Number,CPUID].Parameter:=Parameter;
-   end;   
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
+ 
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
+ 
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE;
+ if RPi2InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL;
+ 
+ {Register Entry}
+ Result:=RPi2InterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
 
 {==============================================================================}
 
 function RPi2ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request deregistration of the supplied handler from the specified IRQ number}
-{CPUID: CPU to route IRQ to}
-{Number: IRQ number to deregister}
-{Handler: Interrupt handler function to deregister}
-{HandlerEx: Extended Interrupt handler function to deregister}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:TInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit;
- 
- {Check Routing}
- if Number < IRQ_LOCAL_START then
-  begin
-   if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  Result:=ERROR_NOT_ASSIGNED;
-  if not(Assigned(InterruptEntries[Number].Handler)) and not(Assigned(InterruptEntries[Number].HandlerEx)) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
  
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Local}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
     
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    InterruptRegisters.Disable_IRQs_1:=(1 shl Number);
-    IRQEnabled[0]:=IRQEnabled[0] and not(1 shl Number); 
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else if Number < 64 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    InterruptRegisters.Disable_IRQs_2:=(1 shl (Number - 32));
-    IRQEnabled[1]:=IRQEnabled[1] and not(1 shl (Number - 32));
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else if Number < 96 then 
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    InterruptRegisters.Disable_Basic_IRQs:=(1 shl (Number - 64));
-    IRQEnabled[2]:=IRQEnabled[2] and not(1 shl (Number - 64));
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) <> 0 then Exit;
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-
-    {Check Number}
-    case Number of
-     BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Disable Physical Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Disable Physical Non Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Disable Hypervisor Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Disable Virtual Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Disable Mailbox0 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Disable Mailbox1 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Disable Mailbox2 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Disable Mailbox3 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PMU:begin
-       {Disable Performance Monitors IRQ}
-       ARMLocalRegisters.PMInterruptRoutingClear:=(1 shl CPUID);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_AXI:begin
-       {Disable AXI Outstanding Writes IRQ}
-       if CPUID <> CPU_ID_0 then Exit;
-       ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ and not(BCM2836_ARM_LOCAL_AXI_IRQ_ENABLE);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_TIMER:begin
-       {Disable Local Timer IRQ}
-       ARMLocalRegisters.LocalIntRouting0:=ARMLocalRegisters.LocalIntRouting0 and not(7);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Disable Local IRQ}
-    IRQLocalEnabled[CPUID]:=IRQLocalEnabled[CPUID] and not(1 shl (Number - 96));
-    
-    {Deregister Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=nil;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=nil;
-    LocalInterruptEntries[Number,CPUID].Parameter:=nil;
-   end;   
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
+ 
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE;
+ if RPi2InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL;
+ 
+ {Deregister Entry}
+ Result:=RPi2InterruptDeregisterEntry(Entry);
 end;
 
 {==============================================================================}
 
 function RPi2RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request registration of the supplied handler to the specified FIQ number}
-{CPUID: CPU to route FIQ to}
-{Number: FIQ number to register}
-{Handler: Interrupt handler function to register}
-{HandlerEx: Extended Interrupt handler function to register}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit; {IRQ Count not FIQ Count}
-
- {Check Routing}
- if Number < IRQ_LOCAL_START then {IRQ Local Start}
-  begin
-   if (FIQ_ROUTING <> CPU_ID_ALL) and (FIQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;   
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Find Group}
-  if Number < 96 then
-   begin
-    {Check FIQ}
-    if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
+ 
+ {Check Local}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
     
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable FIQ}
-    InterruptRegisters.FIQ_control:=BCM2836_ARM_INTERRUPT_FIQ_ENABLE or (Number and BCM2836_ARM_INTERRUPT_FIQ_SOURCE);
-    FIQEnabled:=Number;
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) <> 0 then Exit;
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+ 
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
+ 
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
 
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Check Number}
-    case Number of
-     BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Enable Physical Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Enable Physical Non Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Enable Hypervisor Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Enable Virtual Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Enable Mailbox0 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Enable Mailbox1 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Enable Mailbox2 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Enable Mailbox3 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PMU:begin
-       {Enable Performance Monitors FIQ}
-       ARMLocalRegisters.PMInterruptRoutingSet:=(1 shl (CPUID + 4));
-      end;
-     BCM2836_IRQ_LOCAL_ARM_AXI:begin
-       {Nothing}
-       if CPUID <> CPU_ID_0 then Exit;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_TIMER:begin
-       {Enable Local Timer FIQ}
-       ARMLocalRegisters.LocalIntRouting0:=(ARMLocalRegisters.LocalIntRouting0 and not(7)) or (CPUID + 4);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Enable Local FIQ}
-    FIQLocalEnabled[CPUID]:=FIQLocalEnabled[CPUID] or (1 shl (Number - 96));
-    
-    {Register Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=Handler;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=HandlerEx;
-    LocalInterruptEntries[Number,CPUID].Parameter:=Parameter;
-   end;
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
+ if RPi2InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL or INTERRUPT_FLAG_FIQ;
+ 
+ {Register Entry}
+ Result:=RPi2InterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
 
 {==============================================================================}
 
 function RPi2ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request deregistration of the supplied handler from the specified FIQ number}
-{CPUID: CPU to route FIQ to}
-{Number: FIQ number to deregister}
-{Handler: Interrupt handler function to deregister}
-{HandlerEx: Extended Interrupt handler function to deregister}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:TInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit; {IRQ Count not FIQ Count}
-
- {Check Routing}
- if Number < IRQ_LOCAL_START then {IRQ Local Start}
-  begin
-   if (FIQ_ROUTING <> CPU_ID_ALL) and (FIQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  Result:=ERROR_NOT_ASSIGNED;
-  if not(Assigned(InterruptEntries[Number].Handler)) and not(Assigned(InterruptEntries[Number].HandlerEx)) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;
- 
-  {Find Group}
-  if Number < 96 then 
-   begin
-    {Check FIQ}
-    if FIQEnabled <> Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
 
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
+ {Check Local}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
+    
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
+ 
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
+ if RPi2InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL or INTERRUPT_FLAG_FIQ;
+
+ {Deregister Entry}
+ Result:=RPi2InterruptDeregisterEntry(Entry);
+end;
+
+{==============================================================================}
+
+function RPi2RegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+{Request registration of the supplied handler to the specified interrupt number (Where Applicable)}
+var
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handler}
+ if not Assigned(Handler) then Exit;
+ 
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
+ 
+ {Check Local}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
+    
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+  
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
    
-    {Disable FIQ}
-    InterruptRegisters.FIQ_control:=0;
-    FIQEnabled:=LongWord(-1);
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) = 0 then Exit;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-
-    {Check Number}
-    case Number of
-     BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Disable Physical Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Disable Physical Non Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Disable Hypervisor Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Disable Virtual Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Disable Mailbox0 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Disable Mailbox1 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Disable Mailbox2 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Disable Mailbox3 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PMU:begin
-       {Disable Performance Monitors FIQ}
-       ARMLocalRegisters.PMInterruptRoutingClear:=(1 shl (CPUID + 4));
-      end;
-     BCM2836_IRQ_LOCAL_ARM_AXI:begin
-       {Nothing}
-       if CPUID <> CPU_ID_0 then Exit;
-      end;
-     BCM2836_IRQ_LOCAL_ARM_TIMER:begin
-       {Disable Local Timer FIQ}
-       ARMLocalRegisters.LocalIntRouting0:=ARMLocalRegisters.LocalIntRouting0 and not(7);
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Disable Local FIQ}
-    FIQLocalEnabled[CPUID]:=FIQLocalEnabled[CPUID] and not(1 shl (Number - 96));
-    
-    {Deregister Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=nil;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=nil;
-    LocalInterruptEntries[Number,CPUID].Parameter:=nil;
-   end;   
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Priority:=Priority;
+ Entry.Flags:=Flags;
+ Entry.SharedHandler:=Handler;
+ Entry.Parameter:=Parameter;
+   
+ {Update Flags}
+ if RPi2InterruptIsLocal(Number) then Entry.IsLocal:=True;
+   
+ {Register Entry}
+ Result:=RPi2InterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
+end;
+ 
+{==============================================================================}
+
+function RPi2DeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+{Request deregistration of the supplied handler from the specified interrupt number (Where Applicable)}
+var
+ Entry:TInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handler}
+ if not Assigned(Handler) then Exit;
+ 
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
+ 
+ {Check Local}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
+    
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+ 
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+ 
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Priority:=Priority;
+ Entry.Flags:=Flags;
+ Entry.SharedHandler:=Handler;
+ Entry.Parameter:=Parameter;
+   
+ {Update Flags}
+ if RPi2InterruptIsLocal(Number) then Entry.IsLocal:=True;
+
+ {Deregister Entry}
+ Result:=RPi2InterruptDeregisterEntry(Entry);
 end;
 
 {==============================================================================}
 
 function RPi2RegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 {Request registration of the supplied extended handler to the specified System Call number}
-{CPUID: The CPU ID to register the System Call against (or CPU_ID_ALL)}
-{Number: The System Call number to be registered}
-{Handler: The handler function to be registered}
-{HandlerEx: The extended handler function to be registered}
-{Note: Only one of Handler or HandlerEx can be specified}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3525,11 +3104,6 @@ end;
 
 function RPi2DeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 {Request deregistration of the supplied extended handler from the specified System Call number}
-{CPUID: The CPU ID to deregister the System Call from (or CPU_ID_ALL)}
-{Number: The System Call number to be deregistered}
-{Handler: The handler function to be deregistered}
-{HandlerEx: The extended handler function to be deregistered}
-{Note: Only one of Handler or HandlerEx can be specified}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3577,56 +3151,20 @@ end;
 
 {==============================================================================}
 
-function RPi2GetInterruptEntry(Number:LongWord):TInterruptEntry; 
-{Get the interrupt entry for the specified interrupt number}
+function RPi2GetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+{Get the interrupt entry for the specified interrupt number and instance}
 begin
  {}
- FillChar(Result,SizeOf(TInterruptEntry),0);
- 
- {Check Number}
- if Number >= IRQ_LOCAL_START then Exit;
- 
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Return Entry}
-  Result:=InterruptEntries[Number];
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=RPi2InterruptGetEntry(CPU_ID_ALL,Number,INTERRUPT_FLAG_NONE,Interrupt,Instance);
 end;
 
 {==============================================================================}
 
-function RPi2GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; 
-{Get the local interrupt entry for the specified interrupt number}
+function RPi2GetLocalInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+{Get the local interrupt entry for the specified interrupt number and instance}
 begin
  {}
- FillChar(Result,SizeOf(TInterruptEntry),0);
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number < IRQ_LOCAL_START then Exit;
- if Number > (IRQ_COUNT - 1) then Exit;
- 
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Return Entry}
-  Result:=LocalInterruptEntries[Number,CPUID];
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=RPi2InterruptGetEntry(CPUID,Number,INTERRUPT_FLAG_LOCAL,Interrupt,Instance);
 end;
 
 {==============================================================================}
@@ -3800,7 +3338,7 @@ end;
 
 {==============================================================================}
 
-function RPi2CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi2CPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 {Get the CPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
@@ -3867,7 +3405,7 @@ end;
 
 {==============================================================================}
 
-function RPi2GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi2GPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 {Get the GPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
@@ -7496,7 +7034,264 @@ end;
 
 {==============================================================================}
 
-function RPi2TouchGetBuffer(var Address:LongWord):LongWord;
+function RPi2FramebufferGetNumDisplays(var NumDisplays:LongWord):LongWord;
+{Get the number of displays from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2836MailboxHeader;
+ Footer:PBCM2836MailboxFooter;
+ Tag:PBCM2836MailboxTagGetNumDisplays;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ NumDisplays:=0;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetNumDisplays) + SizeOf(TBCM2836MailboxFooter);
+
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2836MailboxTagGetNumDisplays(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
+  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_NUM_DISPLAYS;
+  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetNumDisplays) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+ 
+  {Setup Footer}
+  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetNumDisplays)));
+  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetNumDisplays - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  NumDisplays:=Tag.Response.NumDisplays;
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi2FramebufferGetDisplayId(DisplayNum:LongWord):LongWord;
+{Get the display id for the specified display number from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2836MailboxHeader;
+ Footer:PBCM2836MailboxFooter;
+ Tag:PBCM2836MailboxTagGetDisplayId;
+begin
+ {}
+ Result:=0;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetDisplayId) + SizeOf(TBCM2836MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2836MailboxTagGetDisplayId(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
+  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_DISPLAY_ID;
+  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetDisplayId) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.DisplayNum:=DisplayNum;
+ 
+  {Setup Footer}
+  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetDisplayId)));
+  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  if MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetDisplayId - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+
+  {Get Display Id}
+  Result:=Tag.Response.DisplayId;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi2FramebufferSetDisplayNum(DisplayNum:LongWord):LongWord;
+{Get the display number that all framebuffer requests will refer to using the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2836MailboxHeader;
+ Footer:PBCM2836MailboxFooter;
+ Tag:PBCM2836MailboxTagSetDisplayNum;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagSetDisplayNum) + SizeOf(TBCM2836MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2836MailboxTagSetDisplayNum(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
+  Tag.Header.Tag:=BCM2836_MBOX_TAG_SET_DISPLAY_NUM;
+  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagSetDisplayNum) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.DisplayNum:=DisplayNum;
+  
+  {Setup Footer}
+  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagSetDisplayNum)));
+  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetDisplayNum - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+ 
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi2FramebufferGetDisplaySettings(DisplayNum:LongWord;var DisplaySettings:TDisplaySettings):LongWord;
+{Get the display settings for the specified display number from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2836MailboxHeader;
+ Footer:PBCM2836MailboxFooter;
+ Tag:PBCM2836MailboxTagGetDisplaySettings;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ FillChar(DisplaySettings,SizeOf(TDisplaySettings),0);
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagGetDisplaySettings) + SizeOf(TBCM2836MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2836_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2836MailboxTagGetDisplaySettings(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2836MailboxHeader)));
+  Tag.Header.Tag:=BCM2836_MBOX_TAG_GET_DISPLAY_SETTINGS;
+  Tag.Header.Size:=SizeOf(TBCM2836MailboxTagGetDisplaySettings) - SizeOf(TBCM2836MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.DisplayNum:=DisplayNum;
+ 
+  {Setup Footer}
+  Footer:=PBCM2836MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2836MailboxTagGetDisplaySettings)));
+  Footer.Tag:=BCM2836_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2836_MAILBOX_0,BCM2836_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetDisplaySettings - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  DisplaySettings.DisplayNumber:=Tag.Response.DisplayNum;
+  DisplaySettings.Width:=Tag.Response.Width;
+  DisplaySettings.Height:=Tag.Response.Height;
+  DisplaySettings.Depth:=Tag.Response.Depth;
+  DisplaySettings.Pitch:=Tag.Response.Pitch;
+  DisplaySettings.VirtualWidth:=Tag.Response.VirtualWidth;
+  DisplaySettings.VirtualHeight:=Tag.Response.VirtualHeight;
+  DisplaySettings.VirtualWidthOffset:=Tag.Response.VirtualWidthOffset;
+  DisplaySettings.VirtualHeightOffset:=Tag.Response.VirtualHeightOffset;
+  DisplaySettings.FramebufferAddress:=Tag.Response.BusAddress;
+ 
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi2FramebufferDisplayIdToName(DisplayId:LongWord):String;
+{Get the name for the specified display id}
+begin
+ {}
+ case DisplayId of
+  BCM2836_MBOX_DISPLAY_ID_MAIN_LCD:Result:='Main LCD';
+  BCM2836_MBOX_DISPLAY_ID_AUX_LCD:Result:='Aux LCD';
+  BCM2836_MBOX_DISPLAY_ID_HDMI0:Result:='HDMI0';
+  BCM2836_MBOX_DISPLAY_ID_SDTV:Result:='SDTV';
+  BCM2836_MBOX_DISPLAY_ID_FORCE_LCD:Result:='Force LCD';
+  BCM2836_MBOX_DISPLAY_ID_FORCE_TV:Result:='Force TV';
+  BCM2836_MBOX_DISPLAY_ID_FORCE_OTHER:Result:='Force Other';
+  BCM2836_MBOX_DISPLAY_ID_HDMI1:Result:='HDMI1';
+  BCM2836_MBOX_DISPLAY_ID_FORCE_TV2:Result:='Force TV2';
+ else
+  begin
+   Result:='Unknown';
+  end;  
+ end;
+end;
+
+{==============================================================================}
+
+function RPi2TouchGetBuffer(var Address:PtrUInt):LongWord;
 {Get the Touchscreen buffer from the Mailbox property tags channel}
 
 {Note: On current firmware versions calling TouchGetBuffer will allocate a buffer
@@ -7613,7 +7408,7 @@ end;
 
 {==============================================================================}
 
-function RPi2VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
+function RPi2VirtualGPIOGetBuffer(var Address:PtrUInt):LongWord;
 {Get the Virtual GPIO buffer from the Mailbox property tags channel}
 var
  Size:LongWord;
@@ -7952,7 +7747,7 @@ function RPi2VirtualGPIOAllocate:Boolean;
 {Allocate the Virtual GPIO buffer either from memory or from the firmware}
 var
  Size:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  {Check Address}
@@ -7989,7 +7784,7 @@ begin
       if (VirtualGPIOBuffer.Buffer <> nil) and (RPi2VirtualGPIOSetBuffer(Address) = ERROR_SUCCESS) then
        begin
         {Update Address}
-        VirtualGPIOBuffer.Address:=LongWord(VirtualGPIOBuffer.Buffer);
+        VirtualGPIOBuffer.Address:=PtrUInt(VirtualGPIOBuffer.Buffer);
        end
       else
        begin      
@@ -8308,281 +8103,6 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi2 IRQ Functions}
-function RPi2DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Process any pending IRQ requests}
-{Called by ARMv7IRQHandler in PlatformARMv7}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
-var
- Group:LongWord;
- IRQBit:LongWord;
- IRQMatch:LongWord;
-begin
- {}
- Result:=Thread;
-
- {$IFDEF INTERRUPT_DEBUG}
- Inc(DispatchInterruptCounter[CPUID]);
- {$ENDIF}
- 
- {Check Local IRQ Enabled}
- if IRQLocalEnabled[CPUID] <> 0 then
-  begin
-   {Check Local IRQ Pending}
-   IRQMatch:=(IRQLocalEnabled[CPUID] and ARMLocalRegisters.IRQPending[CPUID]);
-   {Check IRQ Match}
-   while IRQMatch <> 0 do
-    begin
-     {Find first set bit}
-     IRQBit:=FirstBitSet(IRQMatch);  
-       
-     {Clear set bit}
-     IRQMatch:=IRQMatch xor (1 shl IRQBit);
-   
-     {Call IRQ Handler}
-     Result:=RPi2HandleIRQ(IRQBit + IRQ_LOCAL_START,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-    end; 
-  end;
- 
- {Check IRQ Routing}
- if (IRQ_ROUTING = CPUID) or (IRQ_ROUTING = CPU_ID_ALL) then
-  begin
-   {Check IRQ Groups}
-   for Group:=0 to 2 do
-    begin
-     {Check IRQ Enabled}
-     if IRQEnabled[Group] <> 0 then
-      begin
-       case Group of
-        {Check IRQ Pending 1}
-        0:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_1);
-        {Check IRQ Pending 2}
-        1:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_2);
-        {Check IRQ Basic Pending}
-        2:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_basic_pending);
-       end; 
-       {Check IRQ Match}
-       while IRQMatch <> 0 do
-        begin
-         {Find first set bit}
-         IRQBit:=FirstBitSet(IRQMatch); 
-           
-         {Clear set bit}
-         IRQMatch:=IRQMatch xor (1 shl IRQBit);
-           
-         {Call IRQ Handler}
-         Result:=RPi2HandleIRQ(IRQBit + (Group shl 5),CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-        end; 
-      end;
-    end;  
-  end;
-end;
-
-{==============================================================================}
-
-function RPi2HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Call the handler function for an IRQ that was received, or halt if it doesn't exist}
-var
- Entry:PInterruptEntry;
-begin
- {}
- Result:=Thread;
- 
- {Check Number}
- if Number < IRQ_LOCAL_START then
-  begin
-   {Get Entry}
-   Entry:=@InterruptEntries[Number];
-   
-   {Check CPUID}
-   if Entry.CPUID = CPUID then
-    begin
-     {Check Interrupt Handler}
-     if Assigned(Entry.Handler) then
-      begin
-       Entry.Handler(Entry.Parameter); 
-      end
-     else
-      begin
-       if Assigned(Entry.HandlerEx) then
-        begin
-         Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-        end
-       else
-        begin   
-         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-         if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number));
-         {$ENDIF} 
-         
-         Halt;   
-        end; 
-      end;  
-    end
-   else
-    begin
-     {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Incorrect CPUID registered for interrupt ' + IntToStr(Number));
-     {$ENDIF} 
-     
-     Halt;   
-    end;
-  end
- else
-  begin
-   {Get Entry}
-   Entry:=@LocalInterruptEntries[Number,CPUID];
-   
-   {Check Local Interrupt Handler}
-   if Assigned(Entry.Handler) then
-    begin
-     Entry.Handler(Entry.Parameter); 
-    end
-   else
-    begin
-     if Assigned(Entry.HandlerEx) then
-      begin
-       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-      end
-     else
-      begin
-       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}      
-       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for local interrupt ' + IntToStr(Number));
-       {$ENDIF} 
-       
-       Halt;   
-      end; 
-    end;  
-  end;  
-end;
-
-{==============================================================================}
-{==============================================================================}
-{RPi2 FIQ Functions}
-function RPi2DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Process any pending FIQ requests}
-{Called by ARMv7FIQHandler in PlatformARMv7}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
-var
- FIQBit:LongWord;
- FIQMatch:LongWord;
-begin
- {}
- Result:=Thread;
- 
- {$IFDEF INTERRUPT_DEBUG}
- Inc(DispatchFastInterruptCounter[CPUID]);
- {$ENDIF}
- 
- {Check Local FIQ Enabled}
- if FIQLocalEnabled[CPUID] <> 0 then
-  begin
-   {Check Local FIQ Pending}
-   FIQMatch:=(FIQLocalEnabled[CPUID] and ARMLocalRegisters.FIQPending[CPUID]);
-   {Check FIQ Match}
-   while FIQMatch <> 0 do
-    begin
-     {Find first set bit}
-     FIQBit:=FirstBitSet(FIQMatch);  
-       
-     {Clear set bit}
-     FIQMatch:=FIQMatch xor (1 shl FIQBit);
-   
-     {Call FIQ Handler}
-     Result:=RPi2HandleFIQ(FIQBit + IRQ_LOCAL_START,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-    end; 
-  end;
-  
- {Check FIQ Routing}
- if (FIQ_ROUTING = CPUID) or (FIQ_ROUTING = CPU_ID_ALL) then
-  begin
-   {Check FIQ Enabled}
-   if FIQEnabled <> LongWord(-1) then
-    begin
-     {Call FIQ Handler}
-     Result:=RPi2HandleFIQ(FIQEnabled,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-    end;
-  end;
-end;
-
-{==============================================================================}
-
-function RPi2HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Call the handler function for an FIQ that was received, or halt if it doesn't exist}
-var
- Entry:PInterruptEntry;
-begin
- {}
- Result:=Thread;
- 
- {Check Number}
- if Number < IRQ_LOCAL_START then
-  begin
-   {Get Entry}
-   Entry:=@InterruptEntries[Number];
-
-   {Check CPUID}
-   if Entry.CPUID = CPUID then
-    begin
-     {Check Interrupt Handler}
-     if Assigned(Entry.Handler) then
-      begin
-       Entry.Handler(Entry.Parameter); 
-      end
-     else
-      begin
-       if Assigned(Entry.HandlerEx) then
-        begin
-         Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-        end
-       else
-        begin   
-         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-         if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for fast interrupt ' + IntToStr(Number));
-         {$ENDIF} 
-         
-         Halt;   
-        end; 
-      end; 
-    end
-   else
-    begin
-     {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Incorrect CPUID registered for fast interrupt ' + IntToStr(Number));
-     {$ENDIF} 
-     
-     Halt;   
-    end;
-  end
- else
-  begin
-   {Get Entry}
-   Entry:=@LocalInterruptEntries[Number,CPUID];
-   
-   {Check Local Interrupt Handler}
-   if Assigned(Entry.Handler) then
-    begin
-     Entry.Handler(Entry.Parameter); 
-    end
-   else
-    begin
-     if Assigned(Entry.HandlerEx) then
-      begin
-       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-      end
-     else
-      begin
-       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}      
-       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for local fast interrupt ' + IntToStr(Number));
-       {$ENDIF} 
-       
-       Halt;   
-      end; 
-    end;  
-  end;  
-end;
-
-{==============================================================================}
-{==============================================================================}
 {RPi2 SWI Functions}
 function RPi2DispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
 {Process an SWI request}
@@ -8594,7 +8114,7 @@ begin
  {}
  Result:=Thread;
  
- {$IFDEF INTERRUPT_DEBUG}
+ {$IF DEFINED(SWI_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  Inc(DispatchSystemCallCounter[CPUID]);
  {$ENDIF}
 
@@ -8871,6 +8391,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi2Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Properties}
     if Properties = nil then
@@ -9110,6 +8635,12 @@ begin
      FreeMem(Header);
     end;
    finally
+    {Set Default Display}
+    if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9137,6 +8668,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi2Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Properties}
     if Properties = nil then
@@ -9245,6 +8781,12 @@ begin
      FreeMem(MailboxFramebuffer);
     end;    
    finally
+    {Set Default Display}
+    if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9267,6 +8809,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi2Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Release Framebuffer}
     Result:=RPi2FramebufferRelease;
@@ -9278,6 +8825,12 @@ begin
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
+    {Set Default Display}
+    if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9298,20 +8851,33 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
- {Check Blank}
- if Blank then
+ {Set Current Display}
+ if PRPi2Framebuffer(Framebuffer).MultiDisplay then
   begin
-   Result:=RPi2FramebufferSetState(0);
-  end
- else
-  begin
-   Result:=RPi2FramebufferSetState(1);
+   FramebufferSetDisplayNum(PRPi2Framebuffer(Framebuffer).DisplayNum);
   end;
+ try
+  {Check Blank}
+  if Blank then
+   begin
+    Result:=RPi2FramebufferSetState(0);
+   end
+  else
+   begin
+    Result:=RPi2FramebufferSetState(1);
+   end;
+ finally
+  {Set Default Display}
+  if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+   begin
+    FramebufferSetDisplayNum(0);
+   end;
+ end; 
 end;
 
 {==============================================================================}
 
-function RPi2FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function RPi2FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -9321,7 +8887,7 @@ begin
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {Check Flags}
- if ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0) and BCM2709FRAMEBUFFER_CACHED then
+ if (not(BCM2709DMA_CACHE_COHERENT) or ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0)) and BCM2709FRAMEBUFFER_CACHED then
   begin
    {Clean Cache}
    CleanAndInvalidateDataCacheRange(Address,Size);
@@ -9341,8 +8907,21 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
- {Set Backlight}
- Result:=FramebufferSetBacklight(Brightness);
+ {Set Current Display}
+ if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+  begin
+   FramebufferSetDisplayNum(PRPi2Framebuffer(Framebuffer).DisplayNum);
+  end;
+ try
+  {Set Backlight}
+  Result:=FramebufferSetBacklight(Brightness);
+ finally
+  {Set Default Display}
+  if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+   begin
+    FramebufferSetDisplayNum(0);
+   end;
+ end; 
 end; 
    
 {==============================================================================}
@@ -9361,10 +8940,21 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi2Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Not Supported}
     Result:=ERROR_NOT_SUPPORTED;
    finally
+    {Set Default Display}
+    if PRPi2Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9499,6 +9089,42 @@ asm
  b .LLoop
 end;
 
+{==============================================================================}
+{$IFDEF CONSOLE_EARLY_INIT}
+procedure RPi2BootConsoleStart;
+begin
+ ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL,True);
+end;
+
+{==============================================================================}
+
+procedure RPi2BootConsoleWrite(const Value:String);
+begin
+ ConsoleWindowWriteLn(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),Value);
+end;
+
+{==============================================================================}
+
+procedure RPi2BootConsoleWriteEx(const Value:String;X,Y:LongWord);
+begin
+ ConsoleWindowSetXY(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),X,Y);
+ ConsoleWindowWriteLn(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),Value);
+end;
+
+{==============================================================================}
+
+function RPi2BootConsoleGetX:LongWord;
+begin
+ Result:=ConsoleWindowGetX(ConsoleWindowGetDefault(ConsoleDeviceGetDefault));
+end;
+
+{==============================================================================}
+
+function RPi2BootConsoleGetY:LongWord;
+begin
+ Result:=ConsoleWindowGetY(ConsoleWindowGetDefault(ConsoleDeviceGetDefault));
+end;
+{$ENDIF}
 {==============================================================================}
 
 function RPi2ConvertPowerIdRequest(PowerId:LongWord):LongWord;
@@ -9635,6 +9261,1264 @@ begin
   TEMPERATURE_ID_SOC:Result:=BCM2836_MBOX_TEMP_ID_SOC;
  end;
 end;
+
+{==============================================================================}
+{==============================================================================}
+{RPi2 Internal Functions}
+function RPi2InterruptIsValid(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number < IRQ_COUNT);
+end;
+
+{==============================================================================}
+
+function RPi2InterruptIsLocal(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number >= IRQ_LOCAL_START) and (Number < IRQ_COUNT);
+end;
+
+{==============================================================================}
+
+function RPi2InterruptIsGlobal(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number < IRQ_LOCAL_START);
+end;
+
+{==============================================================================}
+
+function RPi2InterruptCheckValid(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Flags}
+ if Entry.IsLocal then
+  begin
+   {Check Number (Local)}
+   if not RPi2InterruptIsLocal(Entry.Number) then Exit;
+   
+   {Check Mask Count}
+   if CPUMaskCount(Entry.CPUMask) <> 1 then Exit;
+   
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Entry.CPUMask) <> CPUGetCurrent then Exit;
+  end
+ else if Entry.IsIPI then
+  begin
+   {Software}
+   Exit;
+  end
+ else 
+  begin
+   {Check Number (Global)}
+   if not RPi2InterruptIsGlobal(Entry.Number) then Exit;
+   
+   {Check Mask Count}
+   if CPUMaskCount(Entry.CPUMask) <> 1 then Exit;
+ 
+   {Check Mask CPU (Single CPU only)} 
+   if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUMaskToID(Entry.CPUMask)) then Exit;
+  end;  
+ 
+ {Check Handlers}
+ if not RPi2InterruptCheckHandlers(Entry) then Exit;
+  
+ {Check Priority}
+ {Not applicable}
+ 
+ {Check FIQ}
+ if Entry.IsFIQ then
+  begin
+   if not FIQ_ENABLED then Exit;
+  end;
+ 
+ {Check IPI}
+ {Not applicable}
+ 
+ {Check Shared}
+ if Entry.IsShared then
+  begin
+   if not Assigned(Entry.SharedHandler) then Exit;
+  end;
+  
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptCheckHandlers(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handlers}
+ if Assigned(Entry.Handler) then
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.HandlerEx) then Exit;
+   if Assigned(Entry.SharedHandler) then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.HandlerEx) then 
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.Handler) then Exit;
+   if Assigned(Entry.SharedHandler) then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.SharedHandler) then
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.Handler) then Exit;
+   if Assigned(Entry.HandlerEx) then Exit;
+   
+   Result:=True;
+  end;  
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptCompareHandlers(const Entry,Current:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handlers}
+ if Assigned(Entry.Handler) then
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.Handler) then Exit;
+   if @Entry.Handler <> @Current.Handler then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.HandlerEx) then 
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.HandlerEx) then Exit;
+   if @Entry.HandlerEx <> @Current.HandlerEx then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.SharedHandler) then
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.SharedHandler) then Exit;
+   if @Entry.SharedHandler <> @Current.SharedHandler then Exit;
+   
+   Result:=True;
+  end;  
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptEnable(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Group:LongWord;
+ Offset:LongWord;
+ Address:LongWord;
+ Enable:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Get Group and Offset}
+ if Entry.Number < 32 then
+  begin
+   Group:=0;
+   Offset:=0;
+   Address:=BCM2836_ARM_INTERRUPT_IRQ_ENABLE1;
+  end
+ else if Entry.Number < 64 then
+  begin
+   Group:=1;
+   Offset:=32;
+   Address:=BCM2836_ARM_INTERRUPT_IRQ_ENABLE2;
+  end
+ else if Entry.Number < 96 then
+  begin
+   Group:=2;
+   Offset:=64;
+   Address:=BCM2836_ARM_INTERRUPT_BASIC_ENABLE;
+  end
+ else
+  begin
+   Group:=LongWord(-1);
+   Offset:=96;
+   Address:=0;
+  end;
+ 
+ {Check Source}
+ if Entry.Number < 96 then 
+  begin
+   {Global}
+   if Entry.IsFIQ then
+    begin
+     {Check FIQ}
+     if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
+     
+     {Check IRQ}
+     if (IRQEnabled[Group] and (1 shl Entry.Number - Offset)) <> 0 then Exit;
+
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Enable FIQ}
+     InterruptRegisters.FIQ_control:=BCM2836_ARM_INTERRUPT_FIQ_ENABLE or (Entry.Number and BCM2836_ARM_INTERRUPT_FIQ_SOURCE);
+     FIQEnabled:=Entry.Number;
+    end
+   else
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+  
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+    
+     {Enable IRQ}
+     PLongWord(BCM2836_INTERRUPT_REGS_BASE + Address)^:=(1 shl (Entry.Number - Offset));
+     IRQEnabled[Group]:=IRQEnabled[Group] or (1 shl (Entry.Number - Offset));
+    end;
+  end
+ else
+  begin
+   {Local}
+   if Entry.IsFIQ then
+    begin
+     {Check Local IRQ}
+     if (LocalIRQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end
+   else
+    begin
+     {Check Local FIQ}
+     if (LocalFIQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+
+   {Check Number}
+   case Entry.Number of
+    BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
+      {Enable Physical Secure Timer}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ else Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
+      {Enable Physical Non Secure Timer}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ else Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
+      {Enable Hypervisor Timer}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ else Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
+      {Enable Virtual Timer}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ else Enable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
+      {Enable Mailbox0}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ else Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
+      {Enable Mailbox1}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ else Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
+      {Enable Mailbox2}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ else Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
+      {Enable Mailbox3}
+      if Entry.IsFIQ then Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ else Enable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_GPU:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PMU:begin
+      {Enable Performance Monitors}
+      if Entry.IsFIQ then Enable:=(Entry.CPUID + 4) else Enable:=Entry.CPUID;
+      
+      ARMLocalRegisters.PMInterruptRoutingSet:=(1 shl Enable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_AXI:begin
+      {Enable AXI Outstanding Writes (CPU0 IRQ Only)}
+      if Entry.IsFIQ then Exit;
+      if Entry.CPUID <> CPU_ID_0 then Exit;
+      
+      ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ or BCM2836_ARM_LOCAL_AXI_IRQ_ENABLE;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_TIMER:begin
+      {Enable Local Timer}
+      if Entry.IsFIQ then Enable:=(Entry.CPUID + 4) else Enable:=Entry.CPUID;
+      
+      ARMLocalRegisters.LocalIntRouting0:=(ARMLocalRegisters.LocalIntRouting0 and not(7)) or Enable;
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
+      {Nothing}
+     end;
+   else
+    begin
+     Exit;
+    end;
+   end;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read}
+    
+   if Entry.IsFIQ then
+    begin
+     {Enable Local FIQ}
+     LocalFIQEnabled[Entry.CPUID]:=LocalFIQEnabled[Entry.CPUID] or (1 shl (Entry.Number - Offset));
+    end
+   else
+    begin
+     {Enable Local IRQ}
+     LocalIRQEnabled[Entry.CPUID]:=LocalIRQEnabled[Entry.CPUID] or (1 shl (Entry.Number - Offset));
+    end; 
+  end;
+
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptDisable(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Group:LongWord;
+ Offset:LongWord;
+ Address:LongWord;
+ Disable:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Get Group and Offset}
+ if Entry.Number < 32 then
+  begin
+   Group:=0;
+   Offset:=0;
+   Address:=BCM2836_ARM_INTERRUPT_IRQ_DISABLE1;
+  end
+ else if Entry.Number < 64 then
+  begin
+   Group:=1;
+   Offset:=32;
+   Address:=BCM2836_ARM_INTERRUPT_IRQ_DISABLE2;
+  end
+ else if Entry.Number < 96 then
+  begin
+   Group:=2;
+   Offset:=64;
+   Address:=BCM2836_ARM_INTERRUPT_BASIC_DISABLE;
+  end
+ else
+  begin
+   Group:=LongWord(-1);
+   Offset:=96;
+   Address:=0;
+  end;
+ 
+ {Check Source}
+ if Entry.Number < 96 then 
+  begin
+   {Global}
+   if Entry.IsFIQ then
+    begin
+     {Check FIQ}
+     if FIQEnabled <> Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+     
+     {Check IRQ}
+     if (IRQEnabled[Group] and (1 shl Entry.Number - Offset)) <> 0 then Exit;
+
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Disable FIQ}
+     InterruptRegisters.FIQ_control:=0;
+     FIQEnabled:=LongWord(-1);
+    end
+   else
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+    
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Disable IRQ}
+     PLongWord(BCM2836_INTERRUPT_REGS_BASE + Address)^:=(1 shl (Entry.Number - Offset));
+     IRQEnabled[Group]:=IRQEnabled[Group] and not(1 shl (Entry.Number - Offset));
+    end;
+  end
+ else
+  begin
+   {Local}
+   if Entry.IsFIQ then
+    begin
+     {Check Local IRQ}
+     if (LocalIRQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end
+   else
+    begin
+     {Check Local FIQ}
+     if (LocalFIQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end;
+    
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Check Number}
+   case Entry.Number of
+    BCM2836_IRQ_LOCAL_ARM_CNTPSIRQ:begin
+      {Disable Physical Secure Timer}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ else Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
+      {Disable Physical Non Secure Timer}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ else Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_CNTHPIRQ:begin
+      {Disable Hypervisor Timer}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ else Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_CNTVIRQ:begin
+      {Disable Virtual Timer}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ else Disable:=BCM2836_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX0:begin
+      {Disable Mailbox0}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ else Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX1:begin
+      {Disable Mailbox1}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ else Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX2:begin
+      {Disable Mailbox2}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ else Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_MAILBOX3:begin
+      {Disable Mailbox3}
+      if Entry.IsFIQ then Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ else Disable:=BCM2836_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_GPU:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PMU:begin
+      {Disable Performance Monitors}
+      if Entry.IsFIQ then Disable:=(Entry.CPUID + 4) else Disable:=Entry.CPUID;
+      
+      ARMLocalRegisters.PMInterruptRoutingClear:=(1 shl Disable);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_AXI:begin
+      {Disable AXI Outstanding Writes (CPU0 IRQ Only)}
+      if Entry.IsFIQ then Exit;
+      if Entry.CPUID <> CPU_ID_0 then Exit;
+      
+      ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ and not(BCM2836_ARM_LOCAL_AXI_IRQ_ENABLE);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_TIMER:begin
+      {Disable Local Timer}
+      ARMLocalRegisters.LocalIntRouting0:=ARMLocalRegisters.LocalIntRouting0 and not(7);
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL1:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL2:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL3:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL4:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL5:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL6:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL7:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL8:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL9:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL10:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL11:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL12:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL13:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL14:begin
+      {Nothing}
+     end;
+    BCM2836_IRQ_LOCAL_ARM_PERIPHERAL15:begin
+      {Nothing}
+     end;
+   else
+    begin
+     Exit;
+    end;
+   end;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read}
+    
+   if Entry.IsFIQ then
+    begin
+     {Disable Local FIQ}
+     LocalFIQEnabled[Entry.CPUID]:=LocalFIQEnabled[Entry.CPUID] and not(1 shl (Entry.Number - Offset));
+    end
+   else
+    begin
+     {Disable Local IRQ}
+     LocalIRQEnabled[Entry.CPUID]:=LocalIRQEnabled[Entry.CPUID] and not(1 shl (Entry.Number - Offset));
+    end; 
+  end;
+
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptGetCurrentCount(CPUID,Number:LongWord):LongWord;
+{Note: Caller must hold the interrupt lock}
+var
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Setup Defaults}
+ Entry:=nil;
+
+ {Check Number}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI2_CPU_COUNT - 1 then Exit;
+   
+   {Count Local}
+   Entry:=LocalInterruptEntries[Number,CPUID];
+  end
+ else if RPi2InterruptIsGlobal(Number) then
+  begin
+   {Count Global}
+   Entry:=InterruptEntries[Number];
+  end;
+  
+ {Count Entries}
+ while Entry <> nil do
+  begin
+   Inc(Result);
+   
+   {Get Next}
+   Entry:=Entry.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptGetCurrentEntry(CPUID,Number:LongWord;Index:LongWord):PInterruptEntry;
+{Note: Caller must hold the interrupt lock (or be within an interrupt handler)}
+var
+ Count:LongWord;
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Setup Defaults}
+ Entry:=nil;
+
+ {Check Number}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI2_CPU_COUNT - 1 then Exit;
+   
+   {Count Local}
+   Entry:=LocalInterruptEntries[Number,CPUID];
+  end
+ else if RPi2InterruptIsGlobal(Number) then
+  begin
+   {Count Global}
+   Entry:=InterruptEntries[Number];
+  end;
+  
+ {Get Entry} 
+ Count:=0;
+ while Entry <> nil do
+  begin
+   {Check Count}
+   if Count = Index then
+    begin
+     Result:=Entry; 
+     Exit;       
+    end;
+
+   Inc(Count);
+   
+   {Get Next}
+   Entry:=Entry.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptAddCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Entry}
+ if Entry = nil then Exit;
+
+ {Check Number}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI2_CPU_COUNT - 1 then Exit;
+   
+   {Add Local}
+   Current:=LocalInterruptEntries[Number,CPUID];
+   if Current = nil then
+    begin
+      {Set Local}
+      LocalInterruptEntries[Number,CPUID]:=Entry;
+      
+      Result:=True;
+    end;  
+  end
+ else if RPi2InterruptIsGlobal(Number) then
+  begin
+   {Add Global}
+   Current:=InterruptEntries[Number];
+   if Current = nil then
+    begin
+     {Set Global}
+     InterruptEntries[Number]:=Entry;
+     
+     Result:=True;
+    end;
+  end;
+ 
+ {Check Current}
+ if Current <> nil then
+  begin
+   {Find last}
+   while Current.Next <> nil do
+    begin
+     {Get Next}
+     Current:=Current.Next;
+    end;
+    
+   {Add to end of list}
+   Current.Next:=Entry;
+   Entry.Prev:=Current;
+   Entry.Next:=nil;
+   
+   Result:=True;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptDeleteCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Entry}
+ if Entry = nil then Exit;
+
+ {Check Number}
+ if RPi2InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI2_CPU_COUNT - 1 then Exit;
+   
+   {Delete Local}
+   Current:=LocalInterruptEntries[Number,CPUID];
+   if Current = Entry then
+    begin
+     LocalInterruptEntries[Number,CPUID]:=nil;
+    end;
+  end
+ else if RPi2InterruptIsGlobal(Number) then
+  begin
+   {Delete Global}
+   Current:=InterruptEntries[Number];
+   if Current = Entry then
+    begin
+     InterruptEntries[Number]:=nil;
+    end;
+  end;
+  
+ {Check Current}
+ if Current <> nil then
+  begin
+   {Find Entry}
+   while Current <> nil do
+    begin
+     if Current = Entry then
+      begin
+       Break;
+      end;
+      
+     {Get Next}
+     Current:=Current.Next;
+    end;
+ 
+   {Check Current}
+   if Current <> nil then
+    begin
+     {Remove from list}
+     if Current.Prev <> nil then
+      begin
+       Current.Prev.Next:=Current.Next;
+      end;
+     if Current.Next <> nil then
+      begin
+       Current.Next.Prev:=Current.Prev;
+      end;
+     Current.Prev:=nil;
+     Current.Next:=nil;
+     
+     {Free Entry}
+     FreeMem(Current);
+     
+     Result:=True;
+    end;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptFindMatchingEntry(const Entry:TInterruptEntry):PInterruptEntry;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Get Current}
+ Current:=RPi2InterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
+ 
+ {Find Match}
+ while Current <> nil do
+  begin
+   if RPi2InterruptCompareHandlers(Entry,Current^) then
+    begin
+     Result:=Current;
+     Exit;
+    end;
+    
+   {Get Next}
+   Current:=Current.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord; 
+{Note: The returned Entry is a copy of the registered value. Caller should free Entry if required}
+{      For shared entries the Index parameter indicates which entry in the chain to return (0 equals first etc)}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Setup Defaults}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Flags}
+  if (Flags and INTERRUPT_FLAG_IPI) <> 0 then
+   begin
+    {Software Entry}
+    Exit;
+   end
+  else if (Flags and INTERRUPT_FLAG_LOCAL) <> 0 then
+   begin
+    {Local Entry}
+    if not RPi2InterruptIsLocal(Number) then Exit;
+    
+    {Check CPU}
+    if CPUID > RPI2_CPU_COUNT - 1 then Exit;
+   end
+  else
+   begin
+    {Global Entry}
+    if not RPi2InterruptIsGlobal(Number) then Exit;
+   end;   
+   
+  Result:=ERROR_NOT_FOUND;  
+  
+  {Get Current}
+  Current:=RPi2InterruptGetCurrentEntry(CPUID,Number,Index);
+  if Current <> nil then
+   begin
+    {Copy Entry}
+    Entry.Number:=Current.Number;
+    Entry.Flags:=Current.Flags;
+    Entry.CPUMask:=Current.CPUMask;
+    Entry.Priority:=Current.Priority;    
+    Entry.Handler:=Current.Handler;
+    Entry.HandlerEx:=Current.HandlerEx;
+    Entry.SharedHandler:=Current.SharedHandler;
+    Entry.Parameter:=Current.Parameter;
+    
+    {Return Result}    
+    Result:=ERROR_SUCCESS;
+   end;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptRegisterEntry(const Entry:TInterruptEntry):LongWord;
+{Note: Entry must be allocated from heap as a pointer to it will be retained while 
+       the interrupt remains registered. Entry must not be freed by the caller}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Entry}
+  if not RPi2InterruptCheckValid(Entry) then Exit;
+  
+  Result:=ERROR_ALREADY_ASSIGNED;
+  
+  {Check Count}
+  if RPi2InterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 0 then
+   begin
+    {Single Entry}
+    Result:=ERROR_OPERATION_FAILED;
+    
+    {Enable IRQ/FIQ}
+    if not RPi2InterruptEnable(Entry) then Exit;
+    
+    {Add Entry}
+    if not RPi2InterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
+   end
+  else
+   begin
+    {Shared Entry}
+    Result:=ERROR_ALREADY_ASSIGNED;
+    
+    {Check Shared}
+    if not Entry.IsShared then Exit;
+    
+    {Get Match}
+    Current:=RPi2InterruptFindMatchingEntry(Entry);
+    if Current <> nil then Exit;
+    
+    {Get Current}
+    Current:=RPi2InterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
+    if Current = nil then Exit;
+    
+    {Check Shared}
+    if not Current.IsShared then Exit;
+    
+    {Check FIQ}
+    if Entry.IsFIQ <> Current.IsFIQ then Exit;
+    
+    Result:=ERROR_OPERATION_FAILED;
+    
+    {Add Entry}
+    if not RPi2InterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
+   end;
+  
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function RPi2InterruptDeregisterEntry(const Entry:TInterruptEntry):LongWord;
+{Note: The Entry can be a local temporary copy allocated either from the stack or on
+       the heap, this routine will free the original Entry passed to Register once it
+       is successfully deregistered. Caller should free Entry if required}
+var       
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Entry}
+  if not RPi2InterruptCheckValid(Entry) then Exit;
+ 
+  Result:=ERROR_NOT_ASSIGNED;
+ 
+  {Get Match}
+  Current:=RPi2InterruptFindMatchingEntry(Entry);
+  if Current = nil then Exit;
+  
+  Result:=ERROR_OPERATION_FAILED;
+  
+  {Check Count}
+  if RPi2InterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 1 then
+   begin
+    {Single Entry}
+    {Disable IRQ/FIQ}
+    if not RPi2InterruptDisable(Entry) then Exit;
+   end;
+
+  {Delete Entry}
+  if not RPi2InterruptDeleteCurrentEntry(Entry.CPUID,Entry.Number,Current) then Exit;
+   
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function RPi2DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Process any pending IRQ requests}
+{Called by ARMv7IRQHandler in PlatformARMv7}
+{Note: A DataMemoryBarrier is executed before and after calling this function} 
+var
+ Group:LongWord;
+ IRQBit:LongWord;
+ IRQMatch:LongWord;
+begin
+ {}
+ Result:=Thread;
+
+ {$IF DEFINED(IRQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
+ Inc(DispatchInterruptCounter[CPUID]);
+ {$ENDIF}
+ 
+ {Check Local IRQ Enabled}
+ if LocalIRQEnabled[CPUID] <> 0 then
+  begin
+   {Check Local IRQ Pending}
+   IRQMatch:=(LocalIRQEnabled[CPUID] and ARMLocalRegisters.IRQPending[CPUID]);
+   {Check IRQ Match}
+   while IRQMatch <> 0 do
+    begin
+     {Find first set bit}
+     IRQBit:=FirstBitSet(IRQMatch);  
+       
+     {Clear set bit}
+     IRQMatch:=IRQMatch xor (1 shl IRQBit);
+   
+     {Call IRQ Handler}
+     Result:=RPi2HandleInterrupt(IRQBit + IRQ_LOCAL_START,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+    end; 
+  end;
+ 
+ {Check IRQ Routing}
+ if (IRQ_ROUTING = CPUID) or (IRQ_ROUTING = CPU_ID_ALL) then
+  begin
+   {Check IRQ Groups}
+   for Group:=0 to 2 do
+    begin
+     {Check IRQ Enabled}
+     if IRQEnabled[Group] <> 0 then
+      begin
+       case Group of
+        {Check IRQ Pending 1}
+        0:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_1);
+        {Check IRQ Pending 2}
+        1:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_2);
+        {Check IRQ Basic Pending}
+        2:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_basic_pending);
+       end; 
+       {Check IRQ Match}
+       while IRQMatch <> 0 do
+        begin
+         {Find first set bit}
+         IRQBit:=FirstBitSet(IRQMatch); 
+           
+         {Clear set bit}
+         IRQMatch:=IRQMatch xor (1 shl IRQBit);
+           
+         {Call IRQ Handler}
+         Result:=RPi2HandleInterrupt(IRQBit + (Group shl 5),CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+        end; 
+      end;
+    end;  
+  end;
+end;
+
+{==============================================================================}
+
+function RPi2DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Process any pending FIQ requests}
+{Called by ARMv7FIQHandler in PlatformARMv7}
+{Note: A DataMemoryBarrier is executed before and after calling this function} 
+var
+ FIQBit:LongWord;
+ FIQMatch:LongWord;
+begin
+ {}
+ Result:=Thread;
+ 
+ {$IF DEFINED(FIQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
+ Inc(DispatchFastInterruptCounter[CPUID]);
+ {$ENDIF}
+ 
+ {Check Local FIQ Enabled}
+ if LocalFIQEnabled[CPUID] <> 0 then
+  begin
+   {Check Local FIQ Pending}
+   FIQMatch:=(LocalFIQEnabled[CPUID] and ARMLocalRegisters.FIQPending[CPUID]);
+   {Check FIQ Match}
+   while FIQMatch <> 0 do
+    begin
+     {Find first set bit}
+     FIQBit:=FirstBitSet(FIQMatch);  
+       
+     {Clear set bit}
+     FIQMatch:=FIQMatch xor (1 shl FIQBit);
+   
+     {Call FIQ Handler}
+     Result:=RPi2HandleInterrupt(FIQBit + IRQ_LOCAL_START,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+    end; 
+  end;
+  
+ {Check FIQ Routing}
+ if (FIQ_ROUTING = CPUID) or (FIQ_ROUTING = CPU_ID_ALL) then
+  begin
+   {Check FIQ Enabled}
+   if FIQEnabled <> LongWord(-1) then
+    begin
+     {Call FIQ Handler}
+     Result:=RPi2HandleInterrupt(FIQEnabled,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function RPi2HandleInterrupt(Number,Source,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Call the handler function for an IRQ/FIQ that was received, or halt if it doesn't exist}
+var
+ Status:LongWord;
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=Thread;
+
+ {Get Entry}
+ Entry:=RPi2InterruptGetCurrentEntry(CPUID,Number,0);
+ if Entry = nil then
+  begin
+   {Halt}
+   {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('No entry registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+   {$ENDIF} 
+     
+   Halt;   
+  end;
+  
+ {Check Entry}
+ if not Entry.IsIPI then
+  begin
+   {Global or Local}
+   if Entry.IsShared then
+    begin
+     {Shared}
+     if not Assigned(Entry.SharedHandler) then
+      begin
+       {Halt}
+       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+       {$ENDIF} 
+       
+       Halt;
+      end;
+      
+     {Call Handler}
+     Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+     while Status <> INTERRUPT_RETURN_HANDLED do
+      begin
+       {Get Next}
+       Entry:=Entry.Next;
+       if Entry = nil then
+        begin
+         {Halt}
+         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+         if PLATFORM_LOG_ENABLED then PlatformLogDebug('Unhandled interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+         {$ENDIF} 
+         
+         Halt;
+        end;
+       
+       if not Assigned(Entry.SharedHandler) then
+        begin
+         {Halt}
+         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+         if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+         {$ENDIF} 
+         
+         Halt;
+        end;
+       
+       {Call Handler}
+       Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+      end;
+    end
+   else
+    begin
+     {Single}
+     if Assigned(Entry.Handler) then
+      begin
+       {Call Handler}
+       Entry.Handler(Entry.Parameter); 
+      end
+     else if Assigned(Entry.HandlerEx) then
+      begin
+       {Call Handler}
+       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
+      end
+     else if Assigned(Entry.SharedHandler) then
+      begin
+       {Call Handler}
+       Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+      end
+     else
+      begin
+       {Halt}
+       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+       {$ENDIF} 
+       
+       Halt;
+      end;        
+    end;
+  end;
+end;  
 
 {==============================================================================}
 {==============================================================================}

@@ -99,7 +99,7 @@ const
  
 {==============================================================================}
 type
- {Shell Update specific clases}
+ {Shell Update specific classes}
  TShellUpdate = class(TShellCommand)
  public
   {}
@@ -538,10 +538,10 @@ begin
  if AShell = nil then Exit;
  
  {Do Help}
- AShell.DoOutput(ASession,'Get or display available file updates from a http server');
+ AShell.DoOutput(ASession,'Get or display available file updates from an HTTP server');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' CHECK <ITEM>      (Display available updates and information)');
- AShell.DoOutput(ASession,' ' + Name + ' GET <ITEM>        (Get an update from a http server)');
+ AShell.DoOutput(ASession,' ' + Name + ' GET <ITEM>        (Get an update from an HTTP server)');
  AShell.DoOutput(ASession,' ' + Name + ' SET <PARAMETER>   (Set update parameters)');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Check/Get Items:');
@@ -553,9 +553,9 @@ begin
  AShell.DoOutput(ASession,'    FILE <FILE> - Get or check any named file');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Set Parameters:');
- AShell.DoOutput(ASession,'    SERVER   - Set the name or IP of the http URL');
- AShell.DoOutput(ASession,'    PROXY    - Set the name or IP and port of the http proxy');
- AShell.DoOutput(ASession,'    REMOTE   - Set the remote path of the http URL');
+ AShell.DoOutput(ASession,'    SERVER   - Set the name or IP of the HTTP URL');
+ AShell.DoOutput(ASession,'    PROXY    - Set the name or IP and port of the HTTP proxy');
+ AShell.DoOutput(ASession,'    REMOTE   - Set the remote path of the HTTP URL');
  AShell.DoOutput(ASession,'    LOCAL    - Set the local path for updates');
  AShell.DoOutput(ASession,'    IMAGE    - Set the name of the kernel image file');
  AShell.DoOutput(ASession,'    CONFIG   - Set the name of the kernel config file');
@@ -595,7 +595,7 @@ begin
  if AShell = nil then Exit;
  
  {Do Info}
- Result:=AShell.DoOutput(ASession,'Get or display available kernel updates from a http server');
+ Result:=AShell.DoOutput(ASession,'Get or display available file updates from an HTTP server');
 end;
 
 {==============================================================================}
@@ -1044,7 +1044,7 @@ begin
  {Check Initialized}
  if ShellUpdateInitialized then Exit;
  
- {Register FileSystem Commands}
+ {Register Update Commands}
  ShellRegisterCommand(TShellUpdate.Create);
  
  {Setup Defaults}

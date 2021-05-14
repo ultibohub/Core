@@ -1,7 +1,7 @@
 {
 Raspberry Pi FT5406 Touch Driver.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -16,6 +16,9 @@ Boards
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
 
 Licence
 =======
@@ -305,7 +308,7 @@ var
  Count:LongWord;
  Buffer:Pointer;
  Status:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
  BoardType:LongWord;
  CachedBuffer:Boolean;
  TouchData:PTouchData;
@@ -354,7 +357,10 @@ begin
       BOARD_TYPE_RPI3B_PLUS,
       BOARD_TYPE_RPI3A_PLUS,
       BOARD_TYPE_RPI_COMPUTE3,
-      BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+      BOARD_TYPE_RPI_COMPUTE3_PLUS,
+      BOARD_TYPE_RPI4B,
+      BOARD_TYPE_RPI400,
+      BOARD_TYPE_RPI_COMPUTE4:begin
         {Allocate Non Cached}
         Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
        end;
@@ -426,7 +432,7 @@ begin
   end;
 
  {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
- if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: Touch Execute (Registers=' + IntToHex(LongWord(Touch.Registers),8) + ' Caching=' + BoolToStr(CachedBuffer) + ')');
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: Touch Execute (Registers=' + PtrToHex(Touch.Registers) + ' Caching=' + BoolToStr(CachedBuffer) + ')');
  {$ENDIF}
  
  {Setup Defaults}
@@ -438,7 +444,7 @@ begin
    ThreadSleep(17); {17ms equals approx 60 times per second}
    
    {Invalidate Cache}
-   if CachedBuffer then InvalidateDataCacheRange(LongWord(Touch.Registers),SizeOf(TRPiFT5406Registers));
+   if CachedBuffer then InvalidateDataCacheRange(PtrUInt(Touch.Registers),SizeOf(TRPiFT5406Registers));
    
    {Copy Registers}
    System.Move(Touch.Registers^,Registers,SizeOf(TRPiFT5406Registers));
@@ -447,7 +453,7 @@ begin
    Touch.Registers.NumPoints:=99;
    
    {Clean Cache}
-   if CachedBuffer then CleanDataCacheRange(LongWord(Touch.Registers),SizeOf(TRPiFT5406Registers));
+   if CachedBuffer then CleanDataCacheRange(PtrUInt(Touch.Registers),SizeOf(TRPiFT5406Registers));
    
    {Check if anything changed}
    if (Registers.NumPoints <> 99) and ((Registers.NumPoints <> 0) or (LastPoints <> 0)) then

@@ -2407,6 +2407,11 @@ type
    function StartAdapter:Boolean; override;
    function StopAdapter:Boolean; override;
    function ProcessAdapter:Boolean; override;
+   
+   function CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
+   function CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
+   function CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
+   function CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
  end;
  
  TEAPOLTransportAdapter = class(TTransportAdapter)
@@ -3341,7 +3346,7 @@ begin
     {Default Flags (Configure all)}
     ConfigurationFlags:=LongWord(not(0));
     
-    {Copy Permanent Address} //To Do //Check for Address is zero (Default) (To allow specifying from config)
+    {Copy Permanent Address} //To Do //Check for Address is zero (Default) (To allow specifying from config or Manager.Settings as per WiredAdapter)
     System.Move(PWiFiDevice(FDevice).PermanentAddress,PWiFiDevice(FDevice).Interrface.Address,SizeOf(THardwareAddress));
    
     {Configure Interface}
@@ -3582,6 +3587,44 @@ begin
   end; 
 end;
  
+ {==============================================================================}
+
+function TWiFiAdapter.CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=CompareAddress(AAddress,FDefaultAddress);
+end;
+
+{==============================================================================}
+
+function TWiFiAdapter.CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=CompareAddress(AAddress,FHardwareAddress);
+end;
+
+{==============================================================================}
+
+function TWiFiAdapter.CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=CompareAddress(AAddress,FBroadcastAddress);
+end;
+
+{==============================================================================}
+
+function TWiFiAdapter.CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+var
+ Count:Integer;
+begin
+ {}
+ for Count:=0 to MAX_MULTICAST_ADDRESS - 1 do
+  begin
+   Result:=CompareAddress(AAddress,FMulticastAddresses[Count]);
+   if Result then Exit;
+  end;
+end;
+
 {==============================================================================}
 {==============================================================================}
 {TEAPOLTransportAdapter}

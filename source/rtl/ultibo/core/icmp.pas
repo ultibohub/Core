@@ -1,7 +1,7 @@
 {
 Ultibo ICMP (Internet Control Message Protocol) unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -492,7 +492,7 @@ begin
         if CheckICMP(AF_INET,IP) then
          begin
           {Get Header}
-          ICMP:=PICMPHeader(LongWord(IP) + GetICMPHeaderOffset(AF_INET,IP));
+          ICMP:=PICMPHeader(PtrUInt(IP) + GetICMPHeaderOffset(AF_INET,IP));
          
           {Check for a Type that we handle}
           case ICMP.Unused.ICMPType of
@@ -638,7 +638,7 @@ begin
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Offset = ' + IntToStr(Offset) + ' Length = ' + IntToStr(Length));
              {$ENDIF}
-             Socket.RecvData.WriteBuffer(Pointer(LongWord(IP) + Offset)^,Length,@IP.SourceIP);
+             Socket.RecvData.WriteBuffer(Pointer(PtrUInt(IP) + Offset)^,Length,@IP.SourceIP);
              
              {Signal the Event}
              Socket.SignalChange;
@@ -962,7 +962,7 @@ begin
     
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Unreach.IP,SizeOf(TIPHeader));
-    System.Move(Pointer(LongWord(AData) + Offset)^,Unreach.Data,8);
+    System.Move(Pointer(PtrUInt(AData) + Offset)^,Unreach.Data,8);
     
     {Set the Addresses to Network order}
     Unreach.IP.DestIP:=InAddrToNetwork(Unreach.IP.DestIP);
@@ -1040,7 +1040,7 @@ begin
     
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Redirect.IP,SizeOf(TIPHeader));
-    System.Move(Pointer(LongWord(AData) + Offset)^,Redirect.Data,8);
+    System.Move(Pointer(PtrUInt(AData) + Offset)^,Redirect.Data,8);
     
     {Set the Addresses to Network order}
     Redirect.IP.DestIP:=InAddrToNetwork(Redirect.IP.DestIP);
@@ -1112,7 +1112,7 @@ begin
     
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Expire.IP,SizeOf(TIPHeader));
-    System.Move(Pointer(LongWord(AData) + Offset)^,Expire.Data,8);
+    System.Move(Pointer(PtrUInt(AData) + Offset)^,Expire.Data,8);
     
     {Set the Addresses to Network order}
     Expire.IP.DestIP:=InAddrToNetwork(Expire.IP.DestIP);
@@ -1183,7 +1183,7 @@ begin
     
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Quench.IP,SizeOf(TIPHeader));
-    System.Move(Pointer(LongWord(AData) + Offset)^,Quench.Data,8);
+    System.Move(Pointer(PtrUInt(AData) + Offset)^,Quench.Data,8);
     
     {Set the Addresses to Network order}
     Quench.IP.DestIP:=InAddrToNetwork(Quench.IP.DestIP);
@@ -1256,7 +1256,7 @@ begin
     
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Param.IP,SizeOf(TIPHeader));
-    System.Move(Pointer(LongWord(AData) + Offset)^,Param.Data,8);
+    System.Move(Pointer(PtrUInt(AData) + Offset)^,Param.Data,8);
     
     {Set the Addresses to Network order}
     Param.IP.DestIP:=InAddrToNetwork(Param.IP.DestIP);
@@ -1579,7 +1579,7 @@ begin
   {Create the Data}
   if ASize > 0 then
    begin
-    FillChar(Pointer(LongWord(Echo) + Length)^,ASize,#65);
+    FillChar(Pointer(PtrUInt(Echo) + Length)^,ASize,#65);
    end; 
    
   {Check Address Family} 
@@ -1831,7 +1831,7 @@ begin
   case ASocket.Family of
    AF_INET:begin
      {Fill in the ICMP fields}
-     Router:=PICMPRouterAddress(LongWord(Advert) + Length);
+     Router:=PICMPRouterAddress(PtrUInt(Advert) + Length);
      Router.Address:=PInAddr(AAddress)^;
      Router.Level:=LongInt($80000000);
      
@@ -3940,7 +3940,7 @@ begin
   FStart:=FBuffer.Memory;
   
   {End actually points to byte beyond last for simpler calculations}
-  FEnd:=Pointer(LongWord(FStart) + FSize);
+  FEnd:=Pointer(PtrUInt(FStart) + FSize);
   
   {Set the Data Values}
   FUsed:=0;
@@ -4011,8 +4011,8 @@ begin
   ReadNext:=FRead;
   ReadSize:=FFirst.Size;
   {$IFDEF ICMP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: FStart = ' + IntToHex(LongWord(FStart),8) + ' FEnd = ' + IntToHex(LongWord(FEnd),8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(LongWord(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
   
   {Get the Return Size}
@@ -4021,7 +4021,7 @@ begin
   
   {Since we Guarantee ReadNext to be at least 1 byte from the End of the Buffer, we can start reading}
   {Check for Single or Double Read}
-  if (LongWord(ReadNext) + ReadSize) <= LongWord(FEnd) then
+  if (PtrUInt(ReadNext) + ReadSize) <= PtrUInt(FEnd) then
    begin
     {Single Read with no wrap around}
     {Read the Data}
@@ -4048,7 +4048,7 @@ begin
     {$ENDIF}
     
     {Read the First Block of the Data}
-    BlockSize:=(LongWord(FEnd) - LongWord(ReadNext));
+    BlockSize:=(PtrUInt(FEnd) - PtrUInt(ReadNext));
     if BufferSize < BlockSize then
      begin
       {$IFDEF ICMP_DEBUG}
@@ -4077,11 +4077,11 @@ begin
         {$IFDEF ICMP_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: Short Second Read');
         {$ENDIF}
-        System.Move(ReadNext^,Pointer(LongWord(@ABuffer) + BlockSize)^,BufferSize);
+        System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,BufferSize);
        end
       else
        begin
-        System.Move(ReadNext^,Pointer(LongWord(@ABuffer) + BlockSize)^,ReadSize);
+        System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,ReadSize);
        end;
      end;
     
@@ -4090,15 +4090,15 @@ begin
    end;
   
   {Check for Wrap around}
-  if LongWord(ReadNext) = LongWord(FEnd) then ReadNext:=FStart;
+  if PtrUInt(ReadNext) = PtrUInt(FEnd) then ReadNext:=FStart;
   {$IFDEF ICMP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(LongWord(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
   
   {Get the Remote Address}
   if ARemoteAddress <> nil then
    begin
-    System.Move(Pointer(LongWord(FFirst) + FOffset)^,ARemoteAddress^,FLength);
+    System.Move(Pointer(PtrUInt(FFirst) + FOffset)^,ARemoteAddress^,FLength);
    end;
   
   {Check for Peek Flag}
@@ -4147,12 +4147,12 @@ begin
   WriteNext:=FWrite;
   WriteSize:=ASize;
   {$IFDEF ICMP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: FStart = ' + IntToHex(LongWord(FStart),8) + ' FEnd = ' + IntToHex(LongWord(FEnd),8));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(LongWord(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
   
   {Since we guarantee WriteNext to be at least 1 byte from the End of the Buffer, we can start writing}
-  if (LongWord(WriteNext) + WriteSize) <= LongWord(FEnd) then
+  if (PtrUInt(WriteNext) + WriteSize) <= PtrUInt(FEnd) then
    begin
     {Single Write with no wrap around}
     {Write the Packet Data}
@@ -4169,7 +4169,7 @@ begin
     {$ENDIF}
     
     {Write the First Block of the Packet Data}
-    BlockSize:=(LongWord(FEnd) - LongWord(WriteNext));
+    BlockSize:=(PtrUInt(FEnd) - PtrUInt(WriteNext));
     System.Move(ABuffer,WriteNext^,BlockSize);
     
     {Wrap to Start of Buffer}
@@ -4177,22 +4177,22 @@ begin
     Dec(WriteSize,BlockSize);
     
     {Write the Second Block of the Packet Data}
-    System.Move(Pointer(LongWord(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
+    System.Move(Pointer(PtrUInt(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
     
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end;
   
   {Check for Wrap around}
-  if LongWord(WriteNext) = LongWord(FEnd) then WriteNext:=FStart;
+  if PtrUInt(WriteNext) = PtrUInt(FEnd) then WriteNext:=FStart;
   {$IFDEF ICMP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(LongWord(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
   
   {Set the RemoteAddress}
   if ARemoteAddress <> nil then
    begin
-    System.Move(ARemoteAddress^,Pointer(LongWord(FLast) + FOffset)^,FLength);
+    System.Move(ARemoteAddress^,Pointer(PtrUInt(FLast) + FOffset)^,FLength);
    end;
   
   {Update the Next Write}
@@ -4251,7 +4251,7 @@ begin
  case AFamily of
   AF_INET:begin
     {Get Header}
-    ICMP:=PICMPHeader(LongWord(ABuffer) + GetICMPHeaderOffset(AF_INET,ABuffer));
+    ICMP:=PICMPHeader(PtrUInt(ABuffer) + GetICMPHeaderOffset(AF_INET,ABuffer));
         
     {Check Data Length}
     Length:=GetIPDataLength(ABuffer);
@@ -4307,7 +4307,7 @@ begin
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
     
     {Return Size of ICMP Header based on ICMPType Field}
-    case PICMPHeader(LongWord(ABuffer) + Offset).Unused.ICMPType of
+    case PICMPHeader(PtrUInt(ABuffer) + Offset).Unused.ICMPType of
      ICMP_UNREACH,ICMP_TIMXCEED,ICMP_SOURCEQUENCH:begin
        Result:=SizeOf(TICMPUnusedHeader);
       end;
@@ -4390,7 +4390,7 @@ begin
  case AFamily of
   AF_INET:begin
     {Get Header}
-    ICMP:=PICMPHeader(LongWord(ABuffer) + AOffset);
+    ICMP:=PICMPHeader(PtrUInt(ABuffer) + AOffset);
     
     {Save Checksum}
     Original:=ICMP.Unused.Checksum;

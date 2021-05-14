@@ -1,7 +1,7 @@
 {
 Ultibo Heap Manager interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4825,7 +4825,7 @@ begin
          {Add Next}
          if Previous <> nil then Previous.Next:=Current;
          Previous:=Current;
-         Current:=PHeapSnapshot(LongWord(Previous) + SizeOf(THeapSnapshot));
+         Current:=PHeapSnapshot(PtrUInt(Previous) + SizeOf(THeapSnapshot));
 
          {Update Count}
          Inc(Count);
@@ -4846,7 +4846,7 @@ begin
          {Add Next}
          if Previous <> nil then Previous.Next:=Current;
          Previous:=Current;
-         Current:=PHeapSnapshot(LongWord(Previous) + SizeOf(THeapSnapshot));
+         Current:=PHeapSnapshot(PtrUInt(Previous) + SizeOf(THeapSnapshot));
 
          {Update Count}
          Inc(Count);
@@ -4867,7 +4867,7 @@ begin
          {Add Next}
          if Previous <> nil then Previous.Next:=Current;
          Previous:=Current;
-         Current:=PHeapSnapshot(LongWord(Previous) + SizeOf(THeapSnapshot));
+         Current:=PHeapSnapshot(PtrUInt(Previous) + SizeOf(THeapSnapshot));
          
          {Update Count}
          Inc(Count);

@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,7 +17,10 @@ Boards
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
  
 Licence
 =======
@@ -52,7 +55,10 @@ VideoCore IV
 ============
  
  The VideoCore IV (VC4) is the graphics processor (GPU) contained in the Broadcom BCM2835, 2836 and 2837
- SoC used in all models of the Raspberry Pi.
+ SoC used in the Raspberry Pi A/B/A+/B+/CM/2B/3B/3A+/3B+/CM3/CM3+. The Broadcom BCM2838 SoC used in the
+ Raspberry Pi 4B/400 uses a new VideoCore VI (VC6) graphics processor however some of the core functionality
+ of this unit such as VCHIQ and DispmanX is still compatible and the functionality provided here for thoses
+ subsystems still works.
  
  The VC4 is made up of many subsystems that perform functions ranging from 2D and 3D graphics acceleration
  to hardware audio, video and image encoding and decoding as well as display and camera interfaces.
@@ -85,7 +91,7 @@ VideoCore IV
     -mfpu=vfp
     -mfloat-abi=hard
    
-   Raspberry Pi2/3 and QEMU VersatilePB (32-bit)
+   Raspberry Pi2/3/4 and QEMU VersatilePB (32-bit)
 
     -mabi=aapcs
     -marm
@@ -93,7 +99,7 @@ VideoCore IV
     -mfpu=vfpv3-d16
     -mfloat-abi=hard
    
-   Raspberry Pi3 and QEMU VersatilePB (64-bit)
+   Raspberry Pi3/4 and QEMU VersatilePB (64-bit)
    
     -mabi=lp64 (Note: Supported only by later versions of GCC)
     -march=armv8-a

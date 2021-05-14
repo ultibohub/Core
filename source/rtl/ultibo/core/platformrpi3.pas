@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi 3.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -81,7 +81,7 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF CPUAARCH64}PlatformARMv8,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2837,Platform,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
 
 {==============================================================================}
 const
@@ -95,11 +95,13 @@ const
 
 const
  {Secure World Boot} 
- RPI3_SECURE_BOOT = $00000001;         {If 1 then startup will attempt to switch back to secure world during boot process}
+ {RPI3_SECURE_BOOT = $00000001;}           {If 1 then startup will attempt to switch back to secure world during boot process} {Moved to ARMSecureBoot}
+ RPI3_SECURE_BOOT_OFFSET = $000000D4;      {The address of the Secure Boot marker in the ARM boot stub}
+ RPI3_SECURE_BOOT_MARKER = $58495052;      {The Secure Boot marker (ASCII "RPIX")}
  
-const 
+{const}
  {Address of StartupHandler on Reset}
- RPI3_STARTUP_ADDRESS = $00008000;
+ {RPI3_STARTUP_ADDRESS = $00008000;} {Obtain from linker}
  
 const
  {Page Table Address and Size}
@@ -153,7 +155,7 @@ const
  {$ENDIF CPUAARCH64}
  RPI3_KERNEL_CONFIG = 'config.txt';
  RPI3_KERNEL_COMMAND = 'cmdline.txt';
- RPI3_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat';
+ RPI3_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat'{$IFDEF CPUARM} + ',armstub32-rpi3.bin'{$ENDIF CPUARM}{$IFDEF CPUAARCH64} + ',armstub64-rpi3.bin'{$ENDIF CPUAARCH64};
  
 const
  {Mailbox constants}
@@ -169,9 +171,19 @@ const
  RPI3_FRAMEBUFFER_DESCRIPTION = 'BCM2837 Framebuffer';
  
 {==============================================================================}
-{type}
+{$IFDEF CONSOLE_EARLY_INIT}
+type
  {RPi3 specific types}
- 
+ PRPi3Framebuffer = ^TRPi3Framebuffer;
+ TRPi3Framebuffer = record
+  {Framebuffer Properties}
+  Framebuffer:TFramebufferDevice;
+  {RPi3 Properties}
+  MultiDisplay:LongBool;
+  DisplayNum:LongWord;
+  DisplaySettings:TDisplaySettings;
+ end;  
+{$ENDIF} 
 {==============================================================================}
 var
  {RPi3 specific Ultibo variables}
@@ -193,8 +205,8 @@ var
  {Interrupt Variables}
  InterruptRegisters:PBCM2837InterruptRegisters;
  
- InterruptEntries:array[0..(BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1)] of TInterruptEntry;
- LocalInterruptEntries:array[RPI3_IRQ_LOCAL_START..(BCM2837_IRQ_COUNT - 1),0..(RPI3_CPU_COUNT - 1)] of TInterruptEntry;
+ InterruptEntries:array[0..(BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1)] of PInterruptEntry;
+ LocalInterruptEntries:array[RPI3_IRQ_LOCAL_START..(BCM2837_IRQ_COUNT - 1),0..(RPI3_CPU_COUNT - 1)] of PInterruptEntry;
  
 var
  {System Call Variables}
@@ -205,8 +217,8 @@ var
  IRQEnabled:array[0..2] of LongWord; {3 groups of IRQs to Enable/Disable (See: TBCM2837InterruptRegisters)}
  FIQEnabled:LongWord;                {The single IRQ number to Enable as FIQ instead (See: TBCM2837InterruptRegisters)}
  
- IRQLocalEnabled:array[0..(RPI3_CPU_COUNT - 1)] of LongWord; {1 group of local IRQs to Enable/Disable per CPU (See: TBCM2837ARMLocalRegisters)}
- FIQLocalEnabled:array[0..(RPI3_CPU_COUNT - 1)] of LongWord; {1 group of local FIQs to Enable/Disable per CPU (See: TBCM2837ARMLocalRegisters)}
+ LocalIRQEnabled:array[0..(RPI3_CPU_COUNT - 1)] of LongWord; {1 group of local IRQs to Enable/Disable per CPU (See: TBCM2837ARMLocalRegisters)}
+ LocalFIQEnabled:array[0..(RPI3_CPU_COUNT - 1)] of LongWord; {1 group of local FIQs to Enable/Disable per CPU (See: TBCM2837ARMLocalRegisters)}
  
 var
  {Watchdog Variables}
@@ -262,24 +274,27 @@ function RPi3MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Res
 function RPi3RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 function RPi3ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 
-function RPi3RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
-function RPi3ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function RPi3RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
+function RPi3ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
+
+function RPi3RegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+function RPi3DeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
 
 function RPi3RegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 function RPi3DeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 
-function RPi3GetInterruptEntry(Number:LongWord):TInterruptEntry; 
-function RPi3GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; 
+function RPi3GetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+function RPi3GetLocalInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
 function RPi3GetSystemCallEntry(Number:LongWord):TSystemCallEntry; 
 
 function RPi3SystemRestart(Delay:LongWord):LongWord; 
 function RPi3SystemShutdown(Delay:LongWord):LongWord;
 function RPi3SystemGetCommandLine:String;
 
-function RPi3CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3CPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 
 function RPi3GPUGetState:LongWord;
-function RPi3GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3GPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 
 function RPi3BoardGetModel:LongWord;
 function RPi3BoardGetSerial:Int64;
@@ -372,10 +387,16 @@ function RPi3FramebufferSetVsync:LongWord;
 
 function RPi3FramebufferSetBacklight(Brightness:LongWord):LongWord;
 
-function RPi3TouchGetBuffer(var Address:LongWord):LongWord;
+function RPi3FramebufferGetNumDisplays(var NumDisplays:LongWord):LongWord;
+function RPi3FramebufferGetDisplayId(DisplayNum:LongWord):LongWord;
+function RPi3FramebufferSetDisplayNum(DisplayNum:LongWord):LongWord;
+function RPi3FramebufferGetDisplaySettings(DisplayNum:LongWord;var DisplaySettings:TDisplaySettings):LongWord;
+function RPi3FramebufferDisplayIdToName(DisplayId:LongWord):String;
+
+function RPi3TouchGetBuffer(var Address:PtrUInt):LongWord;
 function RPi3TouchSetBuffer(Address:PtrUInt):LongWord;
 
-function RPi3VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
+function RPi3VirtualGPIOGetBuffer(var Address:PtrUInt):LongWord;
 function RPi3VirtualGPIOSetBuffer(Address:PtrUInt):LongWord;
 
 function RPi3CursorSetDefault:LongWord;
@@ -394,18 +415,6 @@ procedure RPi3SchedulerInit;
 procedure RPi3SchedulerStart(CPUID:LongWord);
 
 procedure RPi3SecondaryBoot(CPUID:LongWord);
-
-{==============================================================================}
-{RPi3 IRQ Functions}
-function RPi3DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-function RPi3HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-{==============================================================================}
-{RPi3 FIQ Functions}
-function RPi3DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-
-function RPi3HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 
 {==============================================================================}
 {RPi3 SWI Functions}
@@ -432,7 +441,7 @@ function RPi3FramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWord;
 
 function RPi3FramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
-function RPi3FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function RPi3FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function RPi3FramebufferDeviceSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
 
@@ -448,6 +457,14 @@ procedure RPi3SlowBlink;
 procedure RPi3FastBlink;
 
 procedure RPi3BootBlink;
+
+{$IFDEF CONSOLE_EARLY_INIT}
+procedure RPi3BootConsoleStart;
+procedure RPi3BootConsoleWrite(const Value:String);
+procedure RPi3BootConsoleWriteEx(const Value:String;X,Y:LongWord);
+function RPi3BootConsoleGetX:LongWord;
+function RPi3BootConsoleGetY:LongWord;
+{$ENDIF}
 
 function RPi3ConvertPowerIdRequest(PowerId:LongWord):LongWord;
 function RPi3ConvertPowerStateRequest(PowerState:LongWord):LongWord;
@@ -468,6 +485,37 @@ implementation
 
 {==============================================================================}
 {==============================================================================}
+{RPi3 Forward Declarations}
+function RPi3InterruptIsValid(Number:LongWord):Boolean; forward;
+function RPi3InterruptIsLocal(Number:LongWord):Boolean; forward;
+function RPi3InterruptIsGlobal(Number:LongWord):Boolean; forward;
+
+function RPi3InterruptCheckValid(const Entry:TInterruptEntry):Boolean; forward;
+function RPi3InterruptCheckHandlers(const Entry:TInterruptEntry):Boolean; forward;
+function RPi3InterruptCompareHandlers(const Entry,Current:TInterruptEntry):Boolean; forward;
+
+function RPi3InterruptEnable(const Entry:TInterruptEntry):Boolean; forward;
+function RPi3InterruptDisable(const Entry:TInterruptEntry):Boolean; forward;
+
+function RPi3InterruptGetCurrentCount(CPUID,Number:LongWord):LongWord; forward;
+function RPi3InterruptGetCurrentEntry(CPUID,Number:LongWord;Index:LongWord):PInterruptEntry; forward;
+
+function RPi3InterruptAddCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean; forward;
+function RPi3InterruptDeleteCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean; forward;
+
+function RPi3InterruptFindMatchingEntry(const Entry:TInterruptEntry):PInterruptEntry; forward;
+
+function RPi3InterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord; forward;
+function RPi3InterruptRegisterEntry(const Entry:TInterruptEntry):LongWord; forward;
+function RPi3InterruptDeregisterEntry(const Entry:TInterruptEntry):LongWord; forward;
+
+function RPi3DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+function RPi3DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+
+function RPi3HandleInterrupt(Number,Source,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle; forward;
+
+{==============================================================================}
+{==============================================================================}
 {Initialization Functions}
 procedure RPi3Init;
 begin
@@ -482,7 +530,7 @@ begin
  BUS_ALIAS:=RPI3_VCBUS_ALIAS;
  
  {Setup SECURE_BOOT}
- SECURE_BOOT:=(RPI3_SECURE_BOOT <> 0);
+ SECURE_BOOT:={$IFDEF CPUARM}(ARMSecureBoot <> 0){$ENDIF CPUARM}{$IFDEF CPUAARCH64}(AARCH64SecureBoot <> 0){$ENDIF CPUAARCH64};
  
  {Setup STARTUP_ADDRESS}
  STARTUP_ADDRESS:=PtrUInt(@_text_start); {RPI3_STARTUP_ADDRESS} {Obtain from linker}
@@ -561,9 +609,10 @@ begin
  
  SWI_COUNT:=RPI3_SWI_COUNT;
  
- {Setup IRQ/FIQ/SWI/UNDEF/ABORT_ENABLED}
+ {Setup IRQ/FIQ/IPI/SWI/UNDEF/ABORT_ENABLED}
  IRQ_ENABLED:=True;
  FIQ_ENABLED:=True;
+ IPI_ENABLED:=False;
  SWI_ENABLED:=True;
  ABORT_ENABLED:=True;
  UNDEFINED_ENABLED:=True;
@@ -637,11 +686,27 @@ begin
  {Register Framebuffer FramebufferInit Handler}
  FramebufferInitHandler:=RPi3FramebufferInit;
  {$ENDIF}
+ 
+ {$IFDEF CPUARM}
+ {Register PlatformARMv7 PageTableInit Handler}
+ ARMv7PageTableInitHandler:=RPi3PageTableInit;
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  {Register PlatformARMv8 PageTableInit Handler}
  ARMv8PageTableInitHandler:=RPi3PageTableInit;
+ {$ENDIF CPUAARCH64}
 
- {Register Platform Blink Handlers}
+ {Register Platform Boot Blink Handlers}
  BootBlinkHandler:=RPi3BootBlink;
+ 
+ {Register Platform Boot Console Handlers}
+ {$IFDEF CONSOLE_EARLY_INIT}
+ BootConsoleStartHandler:=RPi3BootConsoleStart;
+ BootConsoleWriteHandler:=RPi3BootConsoleWrite;
+ BootConsoleWriteExHandler:=RPi3BootConsoleWriteEx;
+ BootConsoleGetXHandler:=RPi3BootConsoleGetX;
+ BootConsoleGetYHandler:=RPi3BootConsoleGetY;
+ {$ENDIF}
  
  {Register Platform LED Handlers}
  PowerLEDEnableHandler:=RPi3PowerLEDEnable;
@@ -666,6 +731,10 @@ begin
  {Register Platform FIQ Handlers}
  RequestExFIQHandler:=RPi3RequestExFIQ;
  ReleaseExFIQHandler:=RPi3ReleaseExFIQ;
+
+ {Register Platform Interrupt Handlers}
+ RegisterInterruptHandler:=RPi3RegisterInterrupt;
+ DeregisterInterruptHandler:=RPi3DeregisterInterrupt;
 
  {Register Platform System Call Handlers}
  RegisterSystemCallExHandler:=RPi3RegisterSystemCallEx;
@@ -791,6 +860,12 @@ begin
  
  FramebufferSetBacklightHandler:=RPi3FramebufferSetBacklight;
  
+ FramebufferGetNumDisplaysHandler:=RPi3FramebufferGetNumDisplays;
+ FramebufferGetDisplayIdHandler:=RPi3FramebufferGetDisplayId;
+ FramebufferSetDisplayNumHandler:=RPi3FramebufferSetDisplayNum;
+ FramebufferGetDisplaySettingsHandler:=RPi3FramebufferGetDisplaySettings;
+ FramebufferDisplayIdToNameHandler:=RPi3FramebufferDisplayIdToName;
+ 
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPi3TouchGetBuffer;
  TouchSetBufferHandler:=RPi3TouchSetBuffer;
@@ -815,6 +890,17 @@ begin
  {Register Threads SecondaryBoot Handler}
  SecondaryBootHandler:=RPi3SecondaryBoot;
  
+ {$IFDEF CPUARM}
+ {Register PlatformARMv7 IRQ Handlers}
+ ARMv7DispatchIRQHandler:=RPi3DispatchIRQ;
+
+ {Register PlatformARMv7 FIQ Handlers}
+ ARMv7DispatchFIQHandler:=RPi3DispatchFIQ;
+ 
+ {Register PlatformARMv7 SWI Handlers}
+ ARMv7DispatchSWIHandler:=RPi3DispatchSWI;
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  {Register PlatformARMv8 IRQ Handlers}
  ARMv8DispatchIRQHandler:=RPi3DispatchIRQ;
 
@@ -823,6 +909,7 @@ begin
  
  {Register PlatformARMv8 SWI Handlers}
  ARMv8DispatchSWIHandler:=RPi3DispatchSWI;
+ {$ENDIF CPUAARCH64}
  
  {$IFDEF CPUARM}
  {Register PlatformARM Helper Handlers}
@@ -895,7 +982,8 @@ procedure RPi3SecondarySecure; assembler; nostackframe;
 {$IFDEF CPUARM}
 asm
  //Check the secure boot configuration
- mov r0, #RPI3_SECURE_BOOT
+ ldr r0, .LARMSecureBoot
+ ldr r0, [r0]
  cmp r0, #0
  beq .LNoSecure
   
@@ -930,6 +1018,9 @@ asm
 .LNoSecure:
  //Return to startup
  bx lr
+ 
+.LARMSecureBoot:
+  .long ARMSecureBoot
 end;
 {$ENDIF CPUARM}
 {$IFDEF CPUAARCH64}
@@ -951,13 +1042,13 @@ asm
  bl RPi3SecondarySecure
  
  //Invalidate Instruction Cache before starting the boot process
- bl ARMv8InvalidateInstructionCache
+ bl ARMv7InvalidateInstructionCache
  
  //Invalidate L1 Data Cache before starting the boot process
- bl ARMv8InvalidateL1DataCache
+ bl ARMv7InvalidateL1DataCache
  
  //Invalidate the TLB before starting the boot process
- bl ARMv8InvalidateTLB
+ bl ARMv7InvalidateTLB
  
  //Change to SYS mode and ensure all interrupts are disabled
  //so the ARM processor is in a known state.
@@ -972,16 +1063,16 @@ asm
  //Register to simplify memory access routines from Pascal code.
  //
  //This would normally occur in CPUInit but is done here to allow
- //calls to Pascal code during initialization. (Always enabled in ARMv8)
+ //calls to Pascal code during initialization. (Always enabled in ARMv7)
  //mrc p15, #0, r0, cr1, cr0, #0
- //orr r0, #ARMV8_CP15_C1_U_BIT
+ //orr r0, #ARMV7_CP15_C1_U_BIT
  //mcr p15, #0, r0, cr1, cr0, #0
  
  //Get the current CPU
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
  mrc p15, #0, r1, cr0, cr0, #5;
  //Mask off the CPUID value
- and r1, #ARMV8_CP15_C0_MPID_CPUID_MASK
+ and r1, #ARMV7_CP15_C0_MPID_CPUID_MASK
  //Multiply by 4 to get the offset in the array
  lsl r1, #2
  
@@ -1041,25 +1132,26 @@ asm
  cpsid if, #ARM_MODE_SYS
  
  //Initialize the CPU
- bl ARMv8CPUInit
+ bl ARMv7CPUInit
  
  //Initialize the FPU
- bl ARMv8FPUInit
+ bl ARMv7FPUInit
  
  //Start the MMU
- bl ARMv8StartMMU
+ bl ARMv7StartMMU
  
  //Initialize the Caches
- bl ARMv8CacheInit
+ bl ARMv7CacheInit
  
  //Check the secure boot configuration
- mov r0, #RPI3_SECURE_BOOT
+ ldr r0, .LARMSecureBoot
+ ldr r0, [r0]
  cmp r0, #0
  beq .LNoTimer
  
  //Set the ARM Generic Timer Frequency
  ldr r0, =RPI3_GENERIC_TIMER_FREQUENCY
- bl ARMv8TimerInit
+ bl ARMv7TimerInit
  
 .LNoTimer:
  
@@ -1067,7 +1159,7 @@ asm
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15 CP15
  mrc p15, #0, r1, cr0, cr0, #5;
  //Mask off the CPUID value
- and r1, #ARMV8_CP15_C0_MPID_CPUID_MASK
+ and r1, #ARMV7_CP15_C0_MPID_CPUID_MASK
  //Multiply by 4 to get the offset in the array
  lsl r1, #2
  
@@ -1090,13 +1182,13 @@ asm
  //Read the Multiprocessor Affinity (MPIDR) register from the system control coprocessor CP15
  mrc p15, #0, r0, cr0, cr0, #5;
  //Mask off the CPUID value
- and r0, #ARMV8_CP15_C0_MPID_CPUID_MASK
+ and r0, #ARMV7_CP15_C0_MPID_CPUID_MASK
 
  //Branch to the CPU Start function (Current CPU in R0)
  bl SecondaryStart
  
  //If startup fails halt the CPU
- b ARMv8Halt
+ b ARMv7Halt
  
 .LBOOT_STACK_SIZE:
   .long BOOT_STACK_SIZE 
@@ -1115,6 +1207,9 @@ asm
   .long ABORT_STACK_BASE  
 .LUNDEFINED_STACK_BASE:
   .long UNDEFINED_STACK_BASE  
+  
+.LARMSecureBoot:
+  .long ARMSecureBoot
 end;
 {$ENDIF CPUARM}
 {$IFDEF CPUAARCH64}
@@ -1162,7 +1257,12 @@ begin
  ARMLocalRegisters.GPUInterruptRouting:=GPUInterruptRouting;
  
  {Setup ARM Generic Timer}
+ {$IFDEF CPUARM}
+ if SECURE_BOOT then ARMv7TimerInit(RPI3_GENERIC_TIMER_FREQUENCY);
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  if SECURE_BOOT then ARMv8TimerInit(RPI3_GENERIC_TIMER_FREQUENCY);
+ {$ENDIF CPUAARCH64}
 end;
 
 {==============================================================================}
@@ -1170,17 +1270,19 @@ end;
 procedure RPi3BoardInit;
 var
  Revision:LongWord;
- ClockCPUMax:LongWord;
+ ClockRateMax:LongWord;
 begin
  {}
+ {$IFDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Initialize Interrupts (Used by ClockInit}
- if not(InterruptsInitialized) then RPi3InterruptInit;
+ if not(InterruptsInitialized) then InterruptInit;
  
  {Initialize Clock (Used by BoardGetRevision)}
- if not(ClockInitialized) then RPi3ClockInit;
+ if not(ClockInitialized) then ClockInit;
+ {$ENDIF}
  
  {Initialize Mailbox (Used by BoardGetRevision)}
- if not(MailboxInitialized) then RPi3MailboxInit;
+ if not(MailboxInitialized) then MailboxInit;
  
  {Get Board Revision}
  Revision:=RPi3BoardGetRevision;
@@ -1235,11 +1337,53 @@ begin
   end; 
  
  {Get CPU Clock Maximum}
- ClockCPUMax:=RPi3ClockGetMaxRate(CLOCK_ID_CPU);
- if ClockCPUMax > 0 then
+ ClockRateMax:=RPi3ClockGetMaxRate(CLOCK_ID_CPU);
+ if ClockRateMax > 0 then
   begin
    {Set CPU Clock}
-   RPi3ClockSetRate(CLOCK_ID_CPU,ClockCPUMax,True); 
+   RPi3ClockSetRate(CLOCK_ID_CPU,ClockRateMax,True); 
+  end;
+  
+ {Note: As of firmware dated 19 March 2021 the clock rates reported by the
+        firmware may not be accurate unless the ARM has set the rate first} 
+ {Get Core Clock Maximum}
+ ClockRateMax:=RPi3ClockGetMaxRate(CLOCK_ID_CORE);
+ if ClockRateMax > 0 then
+  begin
+   {Set Core Clock}
+   RPi3ClockSetRate(CLOCK_ID_CORE,ClockRateMax,True); 
+  end;
+  
+ {Get V3D Clock Maximum}
+ ClockRateMax:=RPi3ClockGetMaxRate(CLOCK_ID_V3D);
+ if ClockRateMax > 0 then
+  begin
+   {Set V3D Clock}
+   RPi3ClockSetRate(CLOCK_ID_V3D,ClockRateMax,True); 
+  end;
+  
+ {Get H264 Clock Maximum}
+ ClockRateMax:=RPi3ClockGetMaxRate(CLOCK_ID_H264);
+ if ClockRateMax > 0 then
+  begin
+   {Set V3D Clock}
+   RPi3ClockSetRate(CLOCK_ID_H264,ClockRateMax,True); 
+  end;
+  
+ {Get ISP Clock Maximum}
+ ClockRateMax:=RPi3ClockGetMaxRate(CLOCK_ID_ISP);
+ if ClockRateMax > 0 then
+  begin
+   {Set V3D Clock}
+   RPi3ClockSetRate(CLOCK_ID_ISP,ClockRateMax,True); 
+  end;
+  
+ {Get SDRAM Clock Maximum}
+ ClockRateMax:=RPi3ClockGetMaxRate(CLOCK_ID_SDRAM);
+ if ClockRateMax > 0 then
+  begin
+   {Set SDRAM Clock}
+   RPi3ClockSetRate(CLOCK_ID_SDRAM,ClockRateMax,True); 
   end;
 end;
 
@@ -1248,18 +1392,20 @@ end;
 procedure RPi3MemoryInit;
 var
  Address:PtrUInt;
- Length:LongWord;
+ Length:UInt64;
  Revision:LongWord;
 begin
  {}
+ {$IFDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Initialize Interrupts (Used by ClockInit}
- if not(InterruptsInitialized) then RPi3InterruptInit;
+ if not(InterruptsInitialized) then InterruptInit;
  
  {Initialize Clock (Used by BoardGetRevision)}
- if not(ClockInitialized) then RPi3ClockInit;
+ if not(ClockInitialized) then ClockInit;
+ {$ENDIF}
  
  {Initialize Mailbox (Used by BoardGetRevision)}
- if not(MailboxInitialized) then RPi3MailboxInit;
+ if not(MailboxInitialized) then MailboxInit;
  
  {Get Board Revision}
  Revision:=RPi3BoardGetRevision;
@@ -1280,6 +1426,8 @@ begin
       {Get Memory Page Size}
       MEMORY_PAGE_SIZE:=SIZE_4K;
       MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+      {Get Memory Section Size}
+      MEMORY_SECTION_SIZE:=SIZE_1M;
       {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
       MEMORY_IRQ_SIZE:=SIZE_8M;
       MEMORY_FIQ_SIZE:=SIZE_8M;
@@ -1296,6 +1444,8 @@ begin
       {Get Memory Page Size}
       MEMORY_PAGE_SIZE:=SIZE_4K;
       MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+      {Get Memory Section Size}
+      MEMORY_SECTION_SIZE:=SIZE_1M;
       {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
       MEMORY_IRQ_SIZE:=SIZE_8M;
       MEMORY_FIQ_SIZE:=SIZE_8M;
@@ -1319,6 +1469,8 @@ begin
       {Get Memory Page Size}
       MEMORY_PAGE_SIZE:=SIZE_4K;
       MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+      {Get Memory Section Size}
+      MEMORY_SECTION_SIZE:=SIZE_1M;
       {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
       MEMORY_IRQ_SIZE:=SIZE_8M;
       MEMORY_FIQ_SIZE:=SIZE_8M;
@@ -1346,6 +1498,8 @@ begin
      {Get Memory Page Size}
      MEMORY_PAGE_SIZE:=SIZE_4K;
      MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
+     {Get Memory Section Size}
+     MEMORY_SECTION_SIZE:=SIZE_1M;
      {Get IRQ/FIQ/Local/Shared/Device/NoCache/NonShared Sizes}
      MEMORY_IRQ_SIZE:=SIZE_2M;
      MEMORY_FIQ_SIZE:=SIZE_2M;
@@ -1405,10 +1559,18 @@ begin
 
  {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Setup the Generic Timer}
+ {$IFDEF CPUARM}
+ State:=ARMv7GetTimerState(ARMV7_CP15_C14_CNTV);
+ State:=State and not(ARMV7_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
+ State:=State or ARMV7_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
+ ARMv7SetTimerState(ARMV7_CP15_C14_CNTV,State); 
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  State:=ARMv8GetTimerState(ARMV8_CP15_C14_CNTV);
  State:=State and not(ARMV8_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
  State:=State or ARMV8_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
  ARMv8SetTimerState(ARMV8_CP15_C14_CNTV,State); 
+ {$ENDIF CPUAARCH64}
  {$ENDIF}
  
  {Setup the first Clock Interrupt}
@@ -1448,10 +1610,7 @@ begin
  {Setup Interrupt Entries}
  for Count:=0 to BCM2837_GPU_IRQ_COUNT + BCM2837_ARM_IRQ_COUNT - 1 do
   begin
-   FillChar(InterruptEntries[Count],SizeOf(TInterruptEntry),0);
-   
-   InterruptEntries[Count].Number:=Count;
-   InterruptEntries[Count].CPUID:=CPU_ID_ALL;
+   InterruptEntries[Count]:=nil;
   end; 
  
  {Setup Local Interrupt Entries}
@@ -1459,10 +1618,7 @@ begin
   begin
    for Counter:=0 to RPI3_CPU_COUNT - 1 do
     begin
-     FillChar(LocalInterruptEntries[Count,Counter],SizeOf(TInterruptEntry),0);
-     
-     LocalInterruptEntries[Count,Counter].Number:=Count;
-     LocalInterruptEntries[Count,Counter].CPUID:=Counter;
+     LocalInterruptEntries[Count,Counter]:=nil;
     end; 
   end; 
  
@@ -1487,14 +1643,17 @@ begin
  {Setup Local Enabled IRQs}
  for Count:=0 to RPI3_CPU_COUNT - 1 do
   begin
-   IRQLocalEnabled[Count]:=0;
+   LocalIRQEnabled[Count]:=0;
   end;
   
  {Setup Local Enabled FIQs}
  for Count:=0 to RPI3_CPU_COUNT - 1 do
   begin
-   FIQLocalEnabled[Count]:=0;
+   LocalFIQEnabled[Count]:=0;
   end;
+  
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
   
  {Clear Interrupt Enabled}
  InterruptRegisters.FIQ_control:=0;
@@ -1520,9 +1679,6 @@ begin
  GPIO_REGS_BASE:=BCM2837_GPIO_REGS_BASE;
  UART_REGS_BASE:=BCM2837_PL011_REGS_BASE;
 
- {Setup Interrupts}
- //To Do 
- 
  {Setup GPIO}
  GPIO_PIN_COUNT:=BCM2837_GPIO_PIN_COUNT;
  
@@ -1613,8 +1769,6 @@ begin
  BCM2710FRAMEBUFFER_ALIGNMENT:=SIZE_256;
  BCM2710FRAMEBUFFER_CACHED:=GPU_MEMORY_CACHED;
  
- BCM2710_REGISTER_I2C0:=False; {I2C0 is not available on the header except on original Revision 1 boards}
- 
  {Setup DWCOTG}
  DWCOTG_IRQ:=BCM2837_IRQ_USB;
  DWCOTG_POWER_ID:=POWER_ID_USB0;
@@ -1629,7 +1783,7 @@ begin
  if CacheLineSize > DWCOTG_DMA_ALIGNMENT then DWCOTG_DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > DWCOTG_DMA_MULTIPLIER then DWCOTG_DMA_MULTIPLIER:=CacheLineSize;
  
- {Setup SMSC95XX}
+ {Setup LAN}
  case BOARD_TYPE of
   BOARD_TYPE_RPI2B,
   BOARD_TYPE_RPI3B,
@@ -1650,61 +1804,89 @@ procedure RPi3FramebufferInit;
 var
  Status:LongWord;
  
- RPi3Framebuffer:PFramebufferDevice;
+ DisplayId:LongWord;
+ DisplayNum:LongWord;
+ DisplayCount:LongWord;
+ MultiDisplay:Boolean;
+ 
+ RPi3Framebuffer:PRPi3Framebuffer;
 begin
  {}
- {Create Framebuffer}
- RPi3Framebuffer:=PFramebufferDevice(FramebufferDeviceCreateEx(SizeOf(TFramebufferDevice)));
- if RPi3Framebuffer <> nil then
+ {Get Display Count and Check Multi-Display support}
+ if FramebufferGetNumDisplays(DisplayCount) = ERROR_SUCCESS then
   begin
-   {Device}
-   RPi3Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-   RPi3Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-   RPi3Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
-   RPi3Framebuffer.Device.DeviceData:=nil;
-   RPi3Framebuffer.Device.DeviceDescription:=RPI3_FRAMEBUFFER_DESCRIPTION;
-   {Framebuffer}
-   RPi3Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
-   RPi3Framebuffer.DeviceAllocate:=RPi3FramebufferDeviceAllocate;
-   RPi3Framebuffer.DeviceRelease:=RPi3FramebufferDeviceRelease;
-   RPi3Framebuffer.DeviceBlank:=RPi3FramebufferDeviceBlank;
-   RPi3Framebuffer.DeviceCommit:=RPi3FramebufferDeviceCommit;
-   RPi3Framebuffer.DeviceSetBacklight:=RPi3FramebufferDeviceSetBacklight;
-   RPi3Framebuffer.DeviceSetProperties:=RPi3FramebufferDeviceSetProperties;
-   {Driver}
- 
-   {Setup Flags}
-   if BCM2710FRAMEBUFFER_CACHED then RPi3Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
-   if BCM2710FRAMEBUFFER_CACHED then RPi3Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-   {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi3Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+   MultiDisplay:=(DisplayCount > 0);
+  end
+ else
+  begin
+   MultiDisplay:=False;
+   DisplayCount:=1;
+  end;
+  
+ {Create Framebuffer for first Display}
+ if DisplayCount > 0 then
+  begin
+   {Set Display Num}
+   DisplayNum:=0;
    
-   {Register Framebuffer}
-   Status:=FramebufferDeviceRegister(RPi3Framebuffer);
-   if Status = ERROR_SUCCESS then
+   {Get Display Id}
+   DisplayId:=FramebufferGetDisplayId(DisplayNum);
+   
+   {Create Framebuffer}
+   RPi3Framebuffer:=PRPi3Framebuffer(FramebufferDeviceCreateEx(SizeOf(TRPi3Framebuffer)));
+   if RPi3Framebuffer <> nil then
     begin
-     {Allocate Framebuffer}
-     Status:=FramebufferDeviceAllocate(RPi3Framebuffer,nil);
-     if Status <> ERROR_SUCCESS then
+     {Device}
+     RPi3Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     RPi3Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
+     RPi3Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT;
+     RPi3Framebuffer.Framebuffer.Device.DeviceData:=nil;
+     RPi3Framebuffer.Framebuffer.Device.DeviceDescription:=RPI3_FRAMEBUFFER_DESCRIPTION + ' (' + FramebufferDisplayIdToName(DisplayId) + ')';
+     {Framebuffer}
+     RPi3Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
+     RPi3Framebuffer.Framebuffer.DeviceAllocate:=RPi3FramebufferDeviceAllocate;
+     RPi3Framebuffer.Framebuffer.DeviceRelease:=RPi3FramebufferDeviceRelease;
+     RPi3Framebuffer.Framebuffer.DeviceBlank:=RPi3FramebufferDeviceBlank;
+     RPi3Framebuffer.Framebuffer.DeviceCommit:=RPi3FramebufferDeviceCommit;
+     RPi3Framebuffer.Framebuffer.DeviceSetBacklight:=RPi3FramebufferDeviceSetBacklight;
+     RPi3Framebuffer.Framebuffer.DeviceSetProperties:=RPi3FramebufferDeviceSetProperties;
+     {Driver}
+     RPi3Framebuffer.MultiDisplay:=MultiDisplay;
+     RPi3Framebuffer.DisplayNum:=DisplayNum;
+     FramebufferGetDisplaySettings(DisplayNum,RPi3Framebuffer.DisplaySettings);
+   
+     {Setup Flags}
+     if BCM2710FRAMEBUFFER_CACHED then RPi3Framebuffer.Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
+     if BCM2710FRAMEBUFFER_CACHED then RPi3Framebuffer.Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
+     {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi3Framebuffer.Framebuffer.Device.DeviceFlags:=RPi3Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+     
+     {Register Framebuffer}
+     Status:=FramebufferDeviceRegister(@RPi3Framebuffer.Framebuffer);
+     if Status = ERROR_SUCCESS then
       begin
-       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+       {Allocate Framebuffer}
+       Status:=FramebufferDeviceAllocate(@RPi3Framebuffer.Framebuffer,nil);
+       if Status <> ERROR_SUCCESS then
+        begin
+         if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+        end;
+      end
+     else
+      begin     
+       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to register new framebuffer device: ' + ErrorToString(Status));
       end;
     end
-   else
-    begin     
-     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to register new framebuffer device: ' + ErrorToString(Status));
+   else 
+    begin
+     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to create new framebuffer device');
     end;
-  end
- else 
-  begin
-   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to create new framebuffer device');
   end;
 end;
 {$ENDIF}
 {==============================================================================}
 
 procedure RPi3PageTableInit;
-{Initialize the Hardware Page Tables before enabling the MMU
- See ??????}
+{Initialize the Hardware Page Tables before enabling the MMU}
 var
  Count:Integer;
  Table:PtrUInt;
@@ -1714,159 +1896,160 @@ var
 begin
  {}
  {Initialize Memory (Get values for CPU_MEMORY_BASE/SIZE)}
- if not(MemoryInitialized) then RPi3MemoryInit;
+ if not(MemoryInitialized) then MemoryInit;
  
  {Parse Boot Tags (Register all memory with Heap manager)}
- if not(ParseBootTagsCompleted) then {$IFDEF CPUARM}ARMParseBootTags{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseBootTags{$ENDIF CPUAARCH64};
+ if not(ParseBootTagsCompleted) then ParseBootTags;
  
  {Parse Command Line (Copy command line from zero page)}
- if not(ParseCommandLineCompleted) then {$IFDEF CPUARM}ARMParseCommandLine{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseCommandLine{$ENDIF CPUAARCH64};
+ if not(ParseCommandLineCompleted) then ParseCommandLine;
 
  {Parse Environment (Copy environment from zero page)}
- if not(ParseEnvironmentCompleted) then {$IFDEF CPUARM}ARMParseEnvironment{$ENDIF CPUARM}{$IFDEF CPUAARCH64}AARCH64ParseEnvironment{$ENDIF CPUAARCH64};
+ if not(ParseEnvironmentCompleted) then ParseEnvironment;
  
+ {$IFDEF CPUARM}
  {Create the first level page table}
  {Setup 1MB sections covering the entire 4GB address space with a default layout}
- {Set the 1MB sections in the first 1GB as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections in the first 1GB as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
  Address:=$00000000;
  for Count:=0 to 1023 do
   begin
-   ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+   ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
    Inc(Address,SIZE_1M);
   end;
 
- {Set the 1MB sections in the second 1GB as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections in the second 1GB as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH (Shared)(Non Executable)(Read Write)}
  for Count:=1024 to 2047 do
   begin
    if CPU_MEMORY_RESTRICTED then
     begin
-     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_NONE);
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_NONE);
     end 
    else
     begin
-     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
     end; 
    Inc(Address,SIZE_1M);
   end;
   
- {Set the 1MB sections in the remaining 2GB as ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections in the remaining 2GB as ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(Read Write)}
  for Count:=2048 to 4095 do
   begin
    if CPU_MEMORY_RESTRICTED then
     begin
-     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_NONE);
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_NONE);
     end 
    else
     begin
-     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
     end; 
    Inc(Address,SIZE_1M);
   end;
    
- {Set the 1MB sections containing the PERIPHERALS_BASE to ARMV8_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
+ {Set the 1MB sections containing the PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
  if PERIPHERALS_SIZE > 0 then
   begin
-   Address:=(PERIPHERALS_BASE and ARMV8_L1D_SECTION_BASE_MASK);
+   Address:=(PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK);
    while Address < (PERIPHERALS_BASE + PERIPHERALS_SIZE) do
     begin
-     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_DEVICE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
      Inc(Address,SIZE_1M);
     end;
   end;  
  
- {Set the 1MB sections containing the LOCAL_PERIPHERALS_BASE to ARMV8_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
+ {Set the 1MB sections containing the LOCAL_PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Shared)(Non Executable)(Read Write)} 
  if LOCAL_PERIPHERALS_SIZE > 0 then
   begin
-   Address:=(LOCAL_PERIPHERALS_BASE and ARMV8_L1D_SECTION_BASE_MASK);
+   Address:=(LOCAL_PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK);
    while Address < (LOCAL_PERIPHERALS_BASE + LOCAL_PERIPHERALS_SIZE) do
     begin
-     ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_DEVICE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE); 
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE); 
      Inc(Address,SIZE_1M);
     end;
   end;  
 
- {Create the second level (Coarse) page tables}
- Table:=(PAGE_TABLES_ADDRESS and ARMV8_L1D_COARSE_BASE_MASK);
+ {Create the currently used second level (Coarse) page tables}
+ Table:=(PAGE_TABLES_ADDRESS and ARMV7_L1D_COARSE_BASE_MASK);
  Address:=$00000000;
  for Count:=0 to PAGE_TABLES_USED - 1 do
   begin
-   ARMv8SetPageTableCoarse(Address,Table,0);
+   ARMv7SetPageTableCoarse(Address,Table,0);
    Inc(Table,SIZE_1K);
    Inc(Address,SIZE_1M);
   end;
  PAGE_TABLES_NEXT:=Table;
  
- {Set the 4KB zero page to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(No Access)}
+ {Set the 4KB zero page to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED (Shared)(Non Executable)(No Access)}
  Address:=$00000000;
- ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_NONE); 
+ ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_NONE); 
  
- {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
- {Changed to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK (Shared)(Executable)(Read Only) due to no write through support for data caching on ARMv7 or later}
+ {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+ {Changed to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK (Shared)(Executable)(Read Only) due to no write through support for data caching on ARMv7 or later}
  {See 5.2.1 Memory types and attributes in the Cortex A7 Technical Reference Manual (http://infocenter.arm.com/help/topic/com.arm.doc.ddi0464f/CIHJCAAG.html)}
- Address:=(VECTOR_TABLE_BASE and ARMV8_L2D_SMALL_BASE_MASK);
+ Address:=(VECTOR_TABLE_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (VECTOR_TABLE_BASE + VECTOR_TABLE_SIZE) do
   begin
-   {ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV8_L2D_ACCESS_READONLY);}
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_ACCESS_READONLY);
+   {ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);}
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_ACCESS_READONLY);
    Inc(Address,SIZE_4K);
   end; 
  
- {Set the 4KB pages containing the first level page table to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)} 
- Address:=(PAGE_TABLE_BASE and ARMV8_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the first level page table to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)} 
+ Address:=(PAGE_TABLE_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (PAGE_TABLE_BASE + PAGE_TABLE_SIZE) do
   begin
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
  
- {Set the 4KB pages containing the TEXT (Code) section to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
- {Changed to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK (Shared)(Executable)(Read Only) due to no write through support for data caching on ARMv7 or later}
+ {Set the 4KB pages containing the TEXT (Code) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+ {Changed to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK (Shared)(Executable)(Read Only) due to no write through support for data caching on ARMv7 or later}
  {See 5.2.1 Memory types and attributes in the Cortex A7 Technical Reference Manual (http://infocenter.arm.com/help/topic/com.arm.doc.ddi0464f/CIHJCAAG.html)}
- Address:=(LongWord(@_text_start) and ARMV8_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_data)) do
+ Address:=(PtrUInt(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_data)) do
   begin
-   {ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV8_L2D_ACCESS_READONLY);}
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_ACCESS_READONLY);
+   {ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);}
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_BACK or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_ACCESS_READONLY);
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the DATA (Initialized) section to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_data) and ARMV8_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_bss_start)) do
+ {Set the 4KB pages containing the DATA (Initialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(PtrUInt(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_bss_start)) do
   begin
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE); 
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE); 
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the BSS (Uninitialized) section to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(LongWord(@_bss_start) and ARMV8_L2D_SMALL_BASE_MASK);
- while Address < (LongWord(@_bss_end)) do
+ {Set the 4KB pages containing the BSS (Uninitialized) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(PtrUInt(@_bss_start) and ARMV7_L2D_SMALL_BASE_MASK);
+ while Address < (PtrUInt(@_bss_end)) do
   begin
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the second level page tables to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(PAGE_TABLES_ADDRESS and ARMV8_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the second level page tables to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(PAGE_TABLES_ADDRESS and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (PAGE_TABLES_ADDRESS + PAGE_TABLES_LENGTH) do
   begin
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
  
- {Set the 4KB pages containing the initial stack to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(INITIAL_STACK_BASE and ARMV8_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the initial stack to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(INITIAL_STACK_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (INITIAL_STACK_BASE + INITIAL_STACK_SIZE) do
   begin
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
 
- {Set the 4KB pages containing the initial heap to ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
- Address:=(INITIAL_HEAP_BASE and ARMV8_L2D_SMALL_BASE_MASK);
+ {Set the 4KB pages containing the initial heap to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ Address:=(INITIAL_HEAP_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) do
   begin
-   ARMv8SetPageTableSmall(Address,Address,ARMV8_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L2D_FLAG_SHARED or ARMV8_L2D_FLAG_SMALL_XN or ARMV8_L2D_ACCESS_READWRITE);
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SHARED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
  
@@ -1898,7 +2081,7 @@ begin
      if IRQ_ENABLED then Dec(RequestAddress,MEMORY_IRQ_SIZE * RPI3_CPU_COUNT); {IRQ memory is per CPU}
      if FIQ_ENABLED then Dec(RequestAddress,MEMORY_FIQ_SIZE * RPI3_CPU_COUNT); {FIQ memory is per CPU}
      
-     {Register 1MB Non Shared Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Non Shared Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_NONSHARED_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestNonSharedHeapBlock(Pointer(RequestAddress),MEMORY_NONSHARED_SIZE));
@@ -1907,14 +2090,14 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_NONSHARED_SIZE) do
           begin
-           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_NONSHARED_SIZE);
         end;
       end;
      
-     {Register 1MB Non Cached Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Non Cached Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_NOCACHE_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestNoCacheHeapBlock(Pointer(RequestAddress),MEMORY_NOCACHE_SIZE));
@@ -1923,14 +2106,14 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_NOCACHE_SIZE) do
           begin
-           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_NOCACHE_SIZE);
         end;
       end;
   
-     {Register 1MB Device Memory Blocks as ARMV8_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Device Memory Blocks as ARMV7_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_DEVICE_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestDeviceHeapBlock(Pointer(RequestAddress),MEMORY_DEVICE_SIZE));
@@ -1939,14 +2122,14 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_DEVICE_SIZE) do
           begin
-           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_DEVICE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_DEVICE_SIZE);
         end;
       end;
      
-     {Register 1MB Shared Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+     {Register 1MB Shared Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
      if MEMORY_SHARED_SIZE > 0 then
       begin
        ActualAddress:=PtrUInt(RequestSharedHeapBlock(Pointer(RequestAddress),MEMORY_SHARED_SIZE));
@@ -1955,14 +2138,14 @@ begin
          Address:=ActualAddress;
          while Address < (ActualAddress + MEMORY_SHARED_SIZE) do
           begin
-           ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+           ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
            Inc(Address,SIZE_1M);
           end;
          Inc(RequestAddress,MEMORY_SHARED_SIZE);
         end;
       end;
    
-     {Register 1MB Local Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB Local Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_LOCAL_SIZE > 0 then
       begin
        for Count:=0 to (RPI3_CPU_COUNT - 1) do
@@ -1973,7 +2156,7 @@ begin
            Address:=ActualAddress;
            while Address < (ActualAddress + MEMORY_LOCAL_SIZE) do
             begin
-             ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+             ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
              Inc(Address,SIZE_1M);
             end;
            Inc(RequestAddress,MEMORY_LOCAL_SIZE);
@@ -1981,7 +2164,7 @@ begin
         end;
       end;
    
-     {Register 1MB IRQ Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB IRQ Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if IRQ_ENABLED and (MEMORY_IRQ_SIZE > 0) then
       begin
        for Count:=0 to (RPI3_CPU_COUNT - 1) do
@@ -1992,7 +2175,7 @@ begin
            Address:=ActualAddress;
            while Address < (ActualAddress + MEMORY_IRQ_SIZE) do
             begin
-             ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+             ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
              Inc(Address,SIZE_1M);
             end;
            Inc(RequestAddress,MEMORY_IRQ_SIZE);
@@ -2000,7 +2183,7 @@ begin
         end;  
       end; 
    
-     {Register 1MB FIQ Memory Blocks as ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
+     {Register 1MB FIQ Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if FIQ_ENABLED and (MEMORY_FIQ_SIZE > 0) then
       begin
        for Count:=0 to (RPI3_CPU_COUNT - 1) do
@@ -2011,7 +2194,7 @@ begin
            Address:=ActualAddress;
            while Address < (ActualAddress + MEMORY_FIQ_SIZE) do
             begin
-             ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+             ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
              Inc(Address,SIZE_1M);
             end;
            Inc(RequestAddress,MEMORY_FIQ_SIZE);
@@ -2021,23 +2204,27 @@ begin
     end; 
   end;
   
- {Set the 1MB sections containing the GPU_MEMORY to ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
+ {Set the 1MB sections containing the GPU_MEMORY to ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
  if GPU_MEMORY_SIZE > 0 then
   begin
-   Address:=(GPU_MEMORY_BASE and ARMV8_L1D_SECTION_BASE_MASK);
-   while (Address < (GPU_MEMORY_BASE + GPU_MEMORY_SIZE)) and (Address < (PERIPHERALS_BASE and ARMV8_L1D_SECTION_BASE_MASK)) do
+   Address:=(GPU_MEMORY_BASE and ARMV7_L1D_SECTION_BASE_MASK);
+   while (Address < (GPU_MEMORY_BASE + GPU_MEMORY_SIZE)) and (Address < (PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK)) do
     begin
      if GPU_MEMORY_CACHED then
       begin
-       ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+       ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
       end
      else
       begin
-       ARMv8SetPageTableSection(Address,Address,ARMV8_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV8_L1D_FLAG_SHARED or ARMV8_L1D_FLAG_XN or ARMV8_L1D_ACCESS_READWRITE);
+       ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L1D_FLAG_SHARED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
       end;
      Inc(Address,SIZE_1M);
     end;
   end;  
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
+ //To Do
+ {$ENDIF CPUAARCH64} 
   
  {Synchronization Barrier}
  DataSynchronizationBarrier;
@@ -2520,890 +2707,318 @@ end;
 
 function RPi3RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request registration of the supplied handler to the specified IRQ number}
-{CPUID: CPU to route IRQ to}
-{Number: IRQ number to register}
-{Handler: Interrupt handler function to register}
-{HandlerEx: Extended Interrupt handler function to register}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
-  
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit;
-
- {Check Routing}
- if Number < IRQ_LOCAL_START then
-  begin
-   if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;   
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable IRQ}
-    InterruptRegisters.Enable_IRQs_1:=(1 shl Number);
-    IRQEnabled[0]:=IRQEnabled[0] or (1 shl Number);
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else if Number < 64 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
 
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
+ {Check Local}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
     
-    {Enable IRQ}
-    InterruptRegisters.Enable_IRQs_2:=(1 shl (Number - 32));
-    IRQEnabled[1]:=IRQEnabled[1] or (1 shl (Number - 32));
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else if Number < 96 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable IRQ}
-    InterruptRegisters.Enable_Basic_IRQs:=(1 shl (Number - 64));
-    IRQEnabled[2]:=IRQEnabled[2] or (1 shl (Number - 64));
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) <> 0 then Exit;
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-
-    {Check Number}
-    case Number of
-     BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Enable Physical Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Enable Physical Non Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Enable Hypervisor Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Enable Virtual Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Enable Mailbox0 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Enable Mailbox1 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Enable Mailbox2 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Enable Mailbox3 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PMU:begin
-       {Enable Performance Monitors IRQ}
-       ARMLocalRegisters.PMInterruptRoutingSet:=(1 shl CPUID);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_AXI:begin
-       {Enable AXI Outstanding Writes IRQ}
-       if CPUID <> CPU_ID_0 then Exit;
-       ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ or BCM2837_ARM_LOCAL_AXI_IRQ_ENABLE;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_TIMER:begin
-       {Enable Local Timer IRQ}
-       ARMLocalRegisters.LocalIntRouting0:=(ARMLocalRegisters.LocalIntRouting0 and not(7)) or CPUID;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Enable Local IRQ}
-    IRQLocalEnabled[CPUID]:=IRQLocalEnabled[CPUID] or (1 shl (Number - 96));
-   
-    {Register Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=Handler;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=HandlerEx;
-    LocalInterruptEntries[Number,CPUID].Parameter:=Parameter;
-   end;   
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
+ 
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
+ 
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE;
+ if RPi3InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL;
+ 
+ {Register Entry}
+ Result:=RPi3InterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
 
 {==============================================================================}
 
 function RPi3ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request deregistration of the supplied handler from the specified IRQ number}
-{CPUID: CPU to route IRQ to}
-{Number: IRQ number to deregister}
-{Handler: Interrupt handler function to deregister}
-{HandlerEx: Extended Interrupt handler function to deregister}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:TInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit;
- 
- {Check Routing}
- if Number < IRQ_LOCAL_START then
-  begin
-   if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  Result:=ERROR_NOT_ASSIGNED;
-  if not(Assigned(InterruptEntries[Number].Handler)) and not(Assigned(InterruptEntries[Number].HandlerEx)) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
  
-  {Find Group}
-  if Number < 32 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Local}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
     
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    InterruptRegisters.Disable_IRQs_1:=(1 shl Number);
-    IRQEnabled[0]:=IRQEnabled[0] and not(1 shl Number); 
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else if Number < 64 then
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    InterruptRegisters.Disable_IRQs_2:=(1 shl (Number - 32));
-    IRQEnabled[1]:=IRQEnabled[1] and not(1 shl (Number - 32));
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else if Number < 96 then 
-   begin
-    {Check FIQ}
-    if FIQEnabled = Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Disable IRQ}
-    InterruptRegisters.Disable_Basic_IRQs:=(1 shl (Number - 64));
-    IRQEnabled[2]:=IRQEnabled[2] and not(1 shl (Number - 64));
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) <> 0 then Exit;
-
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-
-    {Check Number}
-    case Number of
-     BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Disable Physical Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Disable Physical Non Secure Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Disable Hypervisor Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Disable Virtual Timer IRQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Disable Mailbox0 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Disable Mailbox1 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Disable Mailbox2 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Disable Mailbox3 IRQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PMU:begin
-       {Disable Performance Monitors IRQ}
-       ARMLocalRegisters.PMInterruptRoutingClear:=(1 shl CPUID);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_AXI:begin
-       {Disable AXI Outstanding Writes IRQ}
-       if CPUID <> CPU_ID_0 then Exit;
-       ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ and not(BCM2837_ARM_LOCAL_AXI_IRQ_ENABLE);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_TIMER:begin
-       {Disable Local Timer IRQ}
-       ARMLocalRegisters.LocalIntRouting0:=ARMLocalRegisters.LocalIntRouting0 and not(7);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Disable Local IRQ}
-    IRQLocalEnabled[CPUID]:=IRQLocalEnabled[CPUID] and not(1 shl (Number - 96));
-    
-    {Deregister Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=nil;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=nil;
-    LocalInterruptEntries[Number,CPUID].Parameter:=nil;
-   end;   
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
+ 
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE;
+ if RPi3InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL;
+ 
+ {Deregister Entry}
+ Result:=RPi3InterruptDeregisterEntry(Entry);
 end;
 
 {==============================================================================}
 
 function RPi3RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request registration of the supplied handler to the specified FIQ number}
-{CPUID: CPU to route FIQ to}
-{Number: FIQ number to register}
-{Handler: Interrupt handler function to register}
-{HandlerEx: Extended Interrupt handler function to register}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit; {IRQ Count not FIQ Count}
-
- {Check Routing}
- if Number < IRQ_LOCAL_START then {IRQ Local Start}
-  begin
-   if (FIQ_ROUTING <> CPU_ID_ALL) and (FIQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;   
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Find Group}
-  if Number < 96 then
-   begin
-    {Check FIQ}
-    if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
+ 
+ {Check Local}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
     
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Enable FIQ}
-    InterruptRegisters.FIQ_control:=BCM2837_ARM_INTERRUPT_FIQ_ENABLE or (Number and BCM2837_ARM_INTERRUPT_FIQ_SOURCE);
-    FIQEnabled:=Number;
-    
-    {Register Entry}
-    InterruptEntries[Number].CPUID:=CPUID;
-    InterruptEntries[Number].Handler:=Handler;
-    InterruptEntries[Number].HandlerEx:=HandlerEx;
-    InterruptEntries[Number].Parameter:=Parameter;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) <> 0 then Exit;
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+ 
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
+ 
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
 
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-    
-    {Check Number}
-    case Number of
-     BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Enable Physical Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Enable Physical Non Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Enable Hypervisor Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Enable Virtual Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] or BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Enable Mailbox0 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Enable Mailbox1 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Enable Mailbox2 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Enable Mailbox3 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] or BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PMU:begin
-       {Enable Performance Monitors FIQ}
-       ARMLocalRegisters.PMInterruptRoutingSet:=(1 shl (CPUID + 4));
-      end;
-     BCM2837_IRQ_LOCAL_ARM_AXI:begin
-       {Nothing}
-       if CPUID <> CPU_ID_0 then Exit;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_TIMER:begin
-       {Enable Local Timer FIQ}
-       ARMLocalRegisters.LocalIntRouting0:=(ARMLocalRegisters.LocalIntRouting0 and not(7)) or (CPUID + 4);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Enable Local FIQ}
-    FIQLocalEnabled[CPUID]:=FIQLocalEnabled[CPUID] or (1 shl (Number - 96));
-    
-    {Register Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=Handler;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=HandlerEx;
-    LocalInterruptEntries[Number,CPUID].Parameter:=Parameter;
-   end;
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
+ if RPi3InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL or INTERRUPT_FLAG_FIQ;
+ 
+ {Register Entry}
+ Result:=RPi3InterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
 
 {==============================================================================}
 
 function RPi3ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
 {Request deregistration of the supplied handler from the specified FIQ number}
-{CPUID: CPU to route FIQ to}
-{Number: FIQ number to deregister}
-{Handler: Interrupt handler function to deregister}
-{HandlerEx: Extended Interrupt handler function to deregister}
-{Note: Only one of Handler or HandlerEx can be specified}
+var
+ Mask:LongWord;
+ Entry:TInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number > (IRQ_COUNT - 1) then Exit; {IRQ Count not FIQ Count}
-
- {Check Routing}
- if Number < IRQ_LOCAL_START then {IRQ Local Start}
-  begin
-   if (FIQ_ROUTING <> CPU_ID_ALL) and (FIQ_ROUTING <> CPUID) then Exit;
-  end;
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
  
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Check Handlers}
-  {Check Handlers}
-  Result:=ERROR_NOT_ASSIGNED;
-  if not(Assigned(InterruptEntries[Number].Handler)) and not(Assigned(InterruptEntries[Number].HandlerEx)) then Exit;
+ {Get Mask}
+ Mask:=CPUIDToMask(CPUID);
  
-  {Check Handlers}
-  if Number < IRQ_LOCAL_START then
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(InterruptEntries[Number].Handler) and (@InterruptEntries[Number].Handler <> @Handler) then Exit;
-    if Assigned(InterruptEntries[Number].HandlerEx) and (@InterruptEntries[Number].HandlerEx <> @HandlerEx) then Exit;
-   end
-  else
-   begin
-    Result:=ERROR_ALREADY_ASSIGNED;
-    if Assigned(LocalInterruptEntries[Number,CPUID].Handler) and (@LocalInterruptEntries[Number,CPUID].Handler <> @Handler) then Exit;
-    if Assigned(LocalInterruptEntries[Number,CPUID].HandlerEx) and (@LocalInterruptEntries[Number,CPUID].HandlerEx <> @HandlerEx) then Exit;
-   end;
- 
-  {Find Group}
-  if Number < 96 then 
-   begin
-    {Check FIQ}
-    if FIQEnabled <> Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
 
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
+ {Check Local}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
+    
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Handler:=Handler;
+ Entry.HandlerEx:=HandlerEx;
+ Entry.Parameter:=Parameter;
+ Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
+ 
+ {Get Flags}
+ Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
+ if RPi3InterruptIsLocal(Number) then Entry.Flags:=INTERRUPT_FLAG_LOCAL or INTERRUPT_FLAG_FIQ;
+
+ {Deregister Entry}
+ Result:=RPi3InterruptDeregisterEntry(Entry);
+end;
+
+{==============================================================================}
+
+function RPi3RegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+{Request registration of the supplied handler to the specified interrupt number (Where Applicable)}
+var
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Handler}
+ if not Assigned(Handler) then Exit;
+ 
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
+ 
+ {Check Local}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
+    
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+  
+ Result:=ERROR_NOT_ENOUGH_MEMORY;
    
-    {Disable FIQ}
-    InterruptRegisters.FIQ_control:=0;
-    FIQEnabled:=LongWord(-1);
-    
-    {Deregister Entry}
-    InterruptEntries[Number].CPUID:=CPU_ID_ALL;
-    InterruptEntries[Number].Handler:=nil;
-    InterruptEntries[Number].HandlerEx:=nil;
-    InterruptEntries[Number].Parameter:=nil;
-   end
-  else
-   begin
-    {Check FIQ}
-    if (FIQLocalEnabled[CPUID] and (1 shl (Number - 96))) = 0 then Exit;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {Before the First Write}
-
-    {Check Number}
-    case Number of
-     BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
-       {Disable Physical Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
-       {Disable Physical Non Secure Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
-       {Disable Hypervisor Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
-       {Disable Virtual Timer FIQ}
-       ARMLocalRegisters.TimersIntControl[CPUID]:=ARMLocalRegisters.TimersIntControl[CPUID] and not(BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
-       {Disable Mailbox0 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
-       {Disable Mailbox1 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
-       {Disable Mailbox2 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
-       {Disable Mailbox3 FIQ}
-       ARMLocalRegisters.MailboxIntControl[CPUID]:=ARMLocalRegisters.MailboxIntControl[CPUID] and not(BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_GPU:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PMU:begin
-       {Disable Performance Monitors FIQ}
-       ARMLocalRegisters.PMInterruptRoutingClear:=(1 shl (CPUID + 4));
-      end;
-     BCM2837_IRQ_LOCAL_ARM_AXI:begin
-       {Nothing}
-       if CPUID <> CPU_ID_0 then Exit;
-      end;
-     BCM2837_IRQ_LOCAL_ARM_TIMER:begin
-       {Disable Local Timer FIQ}
-       ARMLocalRegisters.LocalIntRouting0:=ARMLocalRegisters.LocalIntRouting0 and not(7);
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
-       {Nothing}
-      end;
-     BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
-       {Nothing}
-      end;
-    else
-     begin
-      Exit;
-     end;
-    end;
-    
-    {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read}
-    
-    {Disable Local FIQ}
-    FIQLocalEnabled[CPUID]:=FIQLocalEnabled[CPUID] and not(1 shl (Number - 96));
-    
-    {Deregister Entry}
-    LocalInterruptEntries[Number,CPUID].Handler:=nil;
-    LocalInterruptEntries[Number,CPUID].HandlerEx:=nil;
-    LocalInterruptEntries[Number,CPUID].Parameter:=nil;
-   end;   
+ {Allocate Entry}
+ Entry:=AllocMem(SizeOf(TInterruptEntry));
+ if Entry = nil then Exit;
  
-  {Return Result}
-  Result:=ERROR_SUCCESS;
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Priority:=Priority;
+ Entry.Flags:=Flags;
+ Entry.SharedHandler:=Handler;
+ Entry.Parameter:=Parameter;
+   
+ {Update Flags}
+ if RPi3InterruptIsLocal(Number) then Entry.IsLocal:=True;
+   
+ {Register Entry}
+ Result:=RPi3InterruptRegisterEntry(Entry^);
+ 
+ {Release Entry on failure}
+ if Result <> ERROR_SUCCESS then FreeMem(Entry);
+end;
+ 
+{==============================================================================}
+
+function RPi3DeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+{Request deregistration of the supplied handler from the specified interrupt number (Where Applicable)}
+var
+ Entry:TInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handler}
+ if not Assigned(Handler) then Exit;
+ 
+ {Check Mask}
+ if Mask = CPU_MASK_NONE then Exit;
+ if Mask = CPU_MASK_ALL then Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
+ 
+ {Check Local}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check Mask Count}
+   if CPUMaskCount(Mask) <> 1 then Exit;
+    
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Mask) <> CPUGetCurrent then Exit;
+  end;
+ 
+ {Clear Entry}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+ 
+ {Update Entry}
+ Entry.CPUMask:=Mask;
+ Entry.Number:=Number;
+ Entry.Priority:=Priority;
+ Entry.Flags:=Flags;
+ Entry.SharedHandler:=Handler;
+ Entry.Parameter:=Parameter;
+   
+ {Update Flags}
+ if RPi3InterruptIsLocal(Number) then Entry.IsLocal:=True;
+
+ {Deregister Entry}
+ Result:=RPi3InterruptDeregisterEntry(Entry);
 end;
 
 {==============================================================================}
 
 function RPi3RegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 {Request registration of the supplied extended handler to the specified System Call number}
-{CPUID: The CPU ID to register the System Call against (or CPU_ID_ALL)}
-{Number: The System Call number to be registered}
-{Handler: The handler function to be registered}
-{HandlerEx: The extended handler function to be registered}
-{Note: Only one of Handler or HandlerEx can be specified}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3449,11 +3064,6 @@ end;
 
 function RPi3DeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 {Request deregistration of the supplied extended handler from the specified System Call number}
-{CPUID: The CPU ID to deregister the System Call from (or CPU_ID_ALL)}
-{Number: The System Call number to be deregistered}
-{Handler: The handler function to be deregistered}
-{HandlerEx: The extended handler function to be deregistered}
-{Note: Only one of Handler or HandlerEx can be specified}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3501,56 +3111,20 @@ end;
 
 {==============================================================================}
 
-function RPi3GetInterruptEntry(Number:LongWord):TInterruptEntry; 
-{Get the interrupt entry for the specified interrupt number}
+function RPi3GetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+{Get the interrupt entry for the specified interrupt number and instance}
 begin
  {}
- FillChar(Result,SizeOf(TInterruptEntry),0);
- 
- {Check Number}
- if Number >= IRQ_LOCAL_START then Exit;
- 
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Return Entry}
-  Result:=InterruptEntries[Number];
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=RPi3InterruptGetEntry(CPU_ID_ALL,Number,INTERRUPT_FLAG_NONE,Interrupt,Instance);
 end;
 
 {==============================================================================}
 
-function RPi3GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; 
-{Get the local interrupt entry for the specified interrupt number}
+function RPi3GetLocalInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+{Get the local interrupt entry for the specified interrupt number and instance}
 begin
  {}
- FillChar(Result,SizeOf(TInterruptEntry),0);
- 
- {Check CPU}
- if (CPUID <> CPU_ID_ALL) and (CPUID > (CPUGetCount - 1)) then Exit;
- 
- {Check CPU}
- if CPUID = CPU_ID_ALL then 
-  begin
-   CPUID:=CPUGetCurrent;
-  end;
- 
- {Check Number}
- if Number < IRQ_LOCAL_START then Exit;
- if Number > (IRQ_COUNT - 1) then Exit;
- 
- {Acquire Lock}
- if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
-  {Return Entry}
-  Result:=LocalInterruptEntries[Number,CPUID];
- finally
-  {Release Lock}
-  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
- end;
+ Result:=RPi3InterruptGetEntry(CPUID,Number,INTERRUPT_FLAG_LOCAL,Interrupt,Instance);
 end;
 
 {==============================================================================}
@@ -3718,7 +3292,7 @@ end;
 
 {==============================================================================}
 
-function RPi3CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3CPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 {Get the CPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
@@ -3785,7 +3359,7 @@ end;
 
 {==============================================================================}
 
-function RPi3GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; 
+function RPi3GPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; 
 {Get the GPU Memory from the Mailbox property tags channel}
 var
  Size:LongWord;
@@ -4364,7 +3938,12 @@ begin
  {}
  {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Get Value}
+ {$IFDEF CPUARM}
+ Result:=ARMv7GetTimerCount(ARMV7_CP15_C14_CNTV);
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  Result:=ARMv8GetTimerCount(ARMV8_CP15_C14_CNTV);
+ {$ENDIF CPUAARCH64}
  {$ELSE}
  {Get Value}
  Result:=TimerRegisters.CLO;
@@ -4389,7 +3968,12 @@ begin
  {}
  {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Get Value}
+ {$IFDEF CPUARM}
+ Result:=ARMv7GetTimerCount(ARMV7_CP15_C14_CNTV);
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  Result:=ARMv8GetTimerCount(ARMV8_CP15_C14_CNTV);
+ {$ENDIF CPUAARCH64}
  {$ELSE}
  {Get High Value}
  Int64Rec(Result).Hi:=TimerRegisters.CHI;
@@ -7414,7 +6998,264 @@ end;
 
 {==============================================================================}
 
-function RPi3TouchGetBuffer(var Address:LongWord):LongWord;
+function RPi3FramebufferGetNumDisplays(var NumDisplays:LongWord):LongWord;
+{Get the number of displays from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetNumDisplays;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ NumDisplays:=0;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetNumDisplays) + SizeOf(TBCM2837MailboxFooter);
+
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagGetNumDisplays(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_NUM_DISPLAYS;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetNumDisplays) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+ 
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetNumDisplays)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetNumDisplays - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  NumDisplays:=Tag.Response.NumDisplays;
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3FramebufferGetDisplayId(DisplayNum:LongWord):LongWord;
+{Get the display id for the specified display number from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetDisplayId;
+begin
+ {}
+ Result:=0;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetDisplayId) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagGetDisplayId(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_DISPLAY_ID;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetDisplayId) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.DisplayNum:=DisplayNum;
+ 
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetDisplayId)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetDisplayId - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+
+  {Get Display Id}
+  Result:=Tag.Response.DisplayId;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3FramebufferSetDisplayNum(DisplayNum:LongWord):LongWord;
+{Get the display number that all framebuffer requests will refer to using the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetDisplayNum;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetDisplayNum) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagSetDisplayNum(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_DISPLAY_NUM;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetDisplayNum) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.DisplayNum:=DisplayNum;
+  
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetDisplayNum)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetDisplayNum - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+ 
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3FramebufferGetDisplaySettings(DisplayNum:LongWord;var DisplaySettings:TDisplaySettings):LongWord;
+{Get the display settings for the specified display number from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetDisplaySettings;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ FillChar(DisplaySettings,SizeOf(TDisplaySettings),0);
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetDisplaySettings) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagGetDisplaySettings(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_DISPLAY_SETTINGS;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetDisplaySettings) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.DisplayNum:=DisplayNum;
+ 
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetDisplaySettings)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetDisplaySettings - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  DisplaySettings.DisplayNumber:=Tag.Response.DisplayNum;
+  DisplaySettings.Width:=Tag.Response.Width;
+  DisplaySettings.Height:=Tag.Response.Height;
+  DisplaySettings.Depth:=Tag.Response.Depth;
+  DisplaySettings.Pitch:=Tag.Response.Pitch;
+  DisplaySettings.VirtualWidth:=Tag.Response.VirtualWidth;
+  DisplaySettings.VirtualHeight:=Tag.Response.VirtualHeight;
+  DisplaySettings.VirtualWidthOffset:=Tag.Response.VirtualWidthOffset;
+  DisplaySettings.VirtualHeightOffset:=Tag.Response.VirtualHeightOffset;
+  DisplaySettings.FramebufferAddress:=Tag.Response.BusAddress;
+ 
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3FramebufferDisplayIdToName(DisplayId:LongWord):String;
+{Get the name for the specified display id}
+begin
+ {}
+ case DisplayId of
+  BCM2837_MBOX_DISPLAY_ID_MAIN_LCD:Result:='Main LCD';
+  BCM2837_MBOX_DISPLAY_ID_AUX_LCD:Result:='Aux LCD';
+  BCM2837_MBOX_DISPLAY_ID_HDMI0:Result:='HDMI0';
+  BCM2837_MBOX_DISPLAY_ID_SDTV:Result:='SDTV';
+  BCM2837_MBOX_DISPLAY_ID_FORCE_LCD:Result:='Force LCD';
+  BCM2837_MBOX_DISPLAY_ID_FORCE_TV:Result:='Force TV';
+  BCM2837_MBOX_DISPLAY_ID_FORCE_OTHER:Result:='Force Other';
+  BCM2837_MBOX_DISPLAY_ID_HDMI1:Result:='HDMI1';
+  BCM2837_MBOX_DISPLAY_ID_FORCE_TV2:Result:='Force TV2';
+ else
+  begin
+   Result:='Unknown';
+  end;  
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3TouchGetBuffer(var Address:PtrUInt):LongWord;
 {Get the Touchscreen buffer from the Mailbox property tags channel}
 
 {Note: On current firmware versions calling TouchGetBuffer will allocate a buffer
@@ -7531,7 +7372,7 @@ end;
 
 {==============================================================================}
 
-function RPi3VirtualGPIOGetBuffer(var Address:LongWord):LongWord;
+function RPi3VirtualGPIOGetBuffer(var Address:PtrUInt):LongWord;
 {Get the Virtual GPIO buffer from the Mailbox property tags channel}
 var
  Size:LongWord;
@@ -7907,7 +7748,7 @@ begin
       if (VirtualGPIOBuffer.Buffer <> nil) and (RPi3VirtualGPIOSetBuffer(Address) = ERROR_SUCCESS) then
        begin
         {Update Address}
-        VirtualGPIOBuffer.Address:=LongWord(VirtualGPIOBuffer.Buffer);
+        VirtualGPIOBuffer.Address:=PtrUInt(VirtualGPIOBuffer.Buffer);
        end
       else
        begin      
@@ -8095,10 +7936,18 @@ begin
  RegisterSystemCall(SYSTEM_CALL_CONTEXT_SWITCH,RPi3SchedulerSystemCall);
   
  {Setup the Generic Timer}
+ {$IFDEF CPUARM}
+ State:=ARMv7GetTimerState(ARMV7_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
+ State:=State and not(ARMV7_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
+ State:=State or ARMV7_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
+ ARMv7SetTimerState(ARMV7_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  State:=ARMv8GetTimerState(ARMV8_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
  State:=State and not(ARMV8_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
  State:=State or ARMV8_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
  ARMv8SetTimerState(ARMV8_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
+ {$ENDIF CPUAARCH64}
   
  {Setup the first Scheduler Interrupt}
  RPi3SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[RPI3_CPU_BOOT]);
@@ -8147,10 +7996,18 @@ begin
   end;
  
  {Setup the Generic Timer}
+ {$IFDEF CPUARM}
+ State:=ARMv7GetTimerState(ARMV7_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
+ State:=State and not(ARMV7_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
+ State:=State or ARMV7_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
+ ARMv7SetTimerState(ARMV7_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  State:=ARMv8GetTimerState(ARMV8_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode}
  State:=State and not(ARMV8_CP15_C14_CNT_CTL_IMASK); {Clear the mask bit}
  State:=State or ARMV8_CP15_C14_CNT_CTL_ENABLE;      {Set the enable bit}
  ARMv8SetTimerState(ARMV8_CP15_C14_CNTP,State); {Will set Secure or Non Secure depending on current mode}
+ {$ENDIF CPUAARCH64}
  
  {Setup the first Scheduler Interrupt}
  RPi3SchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[CPUID]);
@@ -8222,285 +8079,10 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{RPi3 IRQ Functions}
-function RPi3DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Process any pending IRQ requests}
-{Called by ARMv8IRQHandler in PlatformARMv8}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
-var
- Group:LongWord;
- IRQBit:LongWord;
- IRQMatch:LongWord;
-begin
- {}
- Result:=Thread;
-
- {$IFDEF INTERRUPT_DEBUG}
- Inc(DispatchInterruptCounter[CPUID]);
- {$ENDIF}
- 
- {Check Local IRQ Enabled}
- if IRQLocalEnabled[CPUID] <> 0 then
-  begin
-   {Check Local IRQ Pending}
-   IRQMatch:=(IRQLocalEnabled[CPUID] and ARMLocalRegisters.IRQPending[CPUID]);
-   {Check IRQ Match}
-   while IRQMatch <> 0 do
-    begin
-     {Find first set bit}
-     IRQBit:=FirstBitSet(IRQMatch);  
-       
-     {Clear set bit}
-     IRQMatch:=IRQMatch xor (1 shl IRQBit);
-   
-     {Call IRQ Handler}
-     Result:=RPi3HandleIRQ(IRQBit + IRQ_LOCAL_START,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-    end; 
-  end;
- 
- {Check IRQ Routing}
- if (IRQ_ROUTING = CPUID) or (IRQ_ROUTING = CPU_ID_ALL) then
-  begin
-   {Check IRQ Groups}
-   for Group:=0 to 2 do
-    begin
-     {Check IRQ Enabled}
-     if IRQEnabled[Group] <> 0 then
-      begin
-       case Group of
-        {Check IRQ Pending 1}
-        0:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_1);
-        {Check IRQ Pending 2}
-        1:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_2);
-        {Check IRQ Basic Pending}
-        2:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_basic_pending);
-       end; 
-       {Check IRQ Match}
-       while IRQMatch <> 0 do
-        begin
-         {Find first set bit}
-         IRQBit:=FirstBitSet(IRQMatch); 
-           
-         {Clear set bit}
-         IRQMatch:=IRQMatch xor (1 shl IRQBit);
-           
-         {Call IRQ Handler}
-         Result:=RPi3HandleIRQ(IRQBit + (Group shl 5),CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-        end; 
-      end;
-    end;  
-  end;
-end;
-
-{==============================================================================}
-
-function RPi3HandleIRQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Call the handler function for an IRQ that was received, or halt if it doesn't exist}
-var
- Entry:PInterruptEntry;
-begin
- {}
- Result:=Thread;
- 
- {Check Number}
- if Number < IRQ_LOCAL_START then
-  begin
-   {Get Entry}
-   Entry:=@InterruptEntries[Number];
-   
-   {Check CPUID}
-   if Entry.CPUID = CPUID then
-    begin
-     {Check Interrupt Handler}
-     if Assigned(Entry.Handler) then
-      begin
-       Entry.Handler(Entry.Parameter); 
-      end
-     else
-      begin
-       if Assigned(Entry.HandlerEx) then
-        begin
-         Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-        end
-       else
-        begin   
-         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-         if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number));
-         {$ENDIF} 
-         
-         Halt;   
-        end; 
-      end;  
-    end
-   else
-    begin
-     {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Incorrect CPUID registered for interrupt ' + IntToStr(Number));
-     {$ENDIF} 
-     
-     Halt;   
-    end;
-  end
- else
-  begin
-   {Get Entry}
-   Entry:=@LocalInterruptEntries[Number,CPUID];
-   
-   {Check Local Interrupt Handler}
-   if Assigned(Entry.Handler) then
-    begin
-     Entry.Handler(Entry.Parameter); 
-    end
-   else
-    begin
-     if Assigned(Entry.HandlerEx) then
-      begin
-       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-      end
-     else
-      begin
-       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}      
-       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for local interrupt ' + IntToStr(Number));
-       {$ENDIF} 
-       
-       Halt;   
-      end; 
-    end;  
-  end;  
-end;
-
-{==============================================================================}
-{==============================================================================}
-{RPi3 FIQ Functions}
-function RPi3DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Process any pending FIQ requests}
-{Called by ARMv8FIQHandler in PlatformARMv8}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
-var
- FIQBit:LongWord;
- FIQMatch:LongWord;
-begin
- {}
- Result:=Thread;
- 
- {$IFDEF INTERRUPT_DEBUG}
- Inc(DispatchFastInterruptCounter[CPUID]);
- {$ENDIF}
- 
- {Check Local FIQ Enabled}
- if FIQLocalEnabled[CPUID] <> 0 then
-  begin
-   {Check Local FIQ Pending}
-   FIQMatch:=(FIQLocalEnabled[CPUID] and ARMLocalRegisters.FIQPending[CPUID]);
-   {Check FIQ Match}
-   while FIQMatch <> 0 do
-    begin
-     {Find first set bit}
-     FIQBit:=FirstBitSet(FIQMatch);  
-       
-     {Clear set bit}
-     FIQMatch:=FIQMatch xor (1 shl FIQBit);
-   
-     {Call FIQ Handler}
-     Result:=RPi3HandleFIQ(FIQBit + IRQ_LOCAL_START,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-    end; 
-  end;
- 
- {Check FIQ Routing}
- if (FIQ_ROUTING = CPUID) or (FIQ_ROUTING = CPU_ID_ALL) then
-  begin
-   {Check FIQ Enabled}
-   if FIQEnabled <> LongWord(-1) then
-    begin
-     {Call FIQ Handler}
-     Result:=RPi3HandleFIQ(FIQEnabled,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-    end;
-  end;
-end;
-
-{==============================================================================}
-
-function RPi3HandleFIQ(Number,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
-{Call the handler function for an FIQ that was received, or halt if it doesn't exist}
-var
- Entry:PInterruptEntry;
-begin
- {}
- Result:=Thread;
- 
- {Check Number}
- if Number < IRQ_LOCAL_START then
-  begin
-   {Get Entry}
-   Entry:=@InterruptEntries[Number];
-
-   {Check CPUID}
-   if Entry.CPUID = CPUID then
-    begin
-     {Check Interrupt Handler}
-     if Assigned(Entry.Handler) then
-      begin
-       Entry.Handler(Entry.Parameter); 
-      end
-     else
-      begin
-       if Assigned(Entry.HandlerEx) then
-        begin
-         Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-        end
-       else
-        begin   
-         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-         if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for fast interrupt ' + IntToStr(Number));
-         {$ENDIF} 
-         
-         Halt;   
-        end; 
-      end; 
-    end
-   else
-    begin
-     {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Incorrect CPUID registered for fast interrupt ' + IntToStr(Number));
-     {$ENDIF} 
-     
-     Halt;   
-    end;
-  end
- else
-  begin
-   {Get Entry}
-   Entry:=@LocalInterruptEntries[Number,CPUID];
-   
-   {Check Local Interrupt Handler}
-   if Assigned(Entry.Handler) then
-    begin
-     Entry.Handler(Entry.Parameter); 
-    end
-   else
-    begin
-     if Assigned(Entry.HandlerEx) then
-      begin
-       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
-      end
-     else
-      begin
-       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}      
-       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for local fast interrupt ' + IntToStr(Number));
-       {$ENDIF} 
-       
-       Halt;   
-      end; 
-    end;  
-  end;  
-end;
-
-{==============================================================================}
-{==============================================================================}
 {RPi3 SWI Functions}
 function RPi3DispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
 {Process an SWI request}
-{Called by ARMv8SoftwareInterruptHandler in PlatformARMv8}
+{Called by ARMv7/8SoftwareInterruptHandler in PlatformARMv7/8}
 {Note: A DataMemoryBarrier is executed before and after calling this function} 
 var
  Entry:PSystemCallEntry;
@@ -8508,7 +8090,7 @@ begin
  {}
  Result:=Thread;
  
- {$IFDEF INTERRUPT_DEBUG}
+ {$IF DEFINED(SWI_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  Inc(DispatchSystemCallCounter[CPUID]);
  {$ENDIF}
  
@@ -8591,7 +8173,12 @@ begin
  {}
  {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
  {Get Timer Value}
+ {$IFDEF CPUARM}
+ Current:=ARMv7GetTimerValue(ARMV7_CP15_C14_CNTV); 
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  Current:=ARMv8GetTimerValue(ARMV8_CP15_C14_CNTV); 
+ {$ENDIF CPUAARCH64}
  
  {Set Last}
  if Current < 0 then
@@ -8605,7 +8192,12 @@ begin
   end;  
  
  {Set Timer Value}
+ {$IFDEF CPUARM}
+ ARMv7SetTimerValue(ARMV7_CP15_C14_CNTV,Last);
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  ARMv8SetTimerValue(ARMV8_CP15_C14_CNTV,Last);
+ {$ENDIF CPUAARCH64}
 
  {$IFDEF CLOCK_DEBUG}
  ClockInterruptOffset:=Last;
@@ -8725,7 +8317,12 @@ var
 begin
  {}
  {Get Timer Value} 
+ {$IFDEF CPUARM}
+ Current:=ARMv7GetTimerValue(ARMV7_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode} 
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  Current:=ARMv8GetTimerValue(ARMV8_CP15_C14_CNTP); {Will get Secure or Non Secure depending on current mode} 
+ {$ENDIF CPUAARCH64}
   
  {Set Last}
  if Current < 0 then
@@ -8739,7 +8336,12 @@ begin
   end;  
  
  {Set Timer Value}
+ {$IFDEF CPUARM}
+ ARMv7SetTimerValue(ARMV7_CP15_C14_CNTP,Last); {Will set Secure or Non Secure depending on current mode}
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  ARMv8SetTimerValue(ARMV8_CP15_C14_CNTP,Last); {Will set Secure or Non Secure depending on current mode}
+ {$ENDIF CPUAARCH64}
   
  {$IFDEF SCHEDULER_DEBUG}
  CurrentCPU:=CPUGetCurrent;
@@ -8757,7 +8359,12 @@ procedure RPi3SchedulerSystemCall(Request:PSystemCallRequest);
  the SYSTEM_CALL_CONTEXT_SWITCH and will perform a context switch from within an SWI}
 begin
  {}
+ {$IFDEF CPUARM}
+ ARMv7ContextSwitchSWI(Pointer(Request.Param1),Pointer(Request.Param2),Request.Param3);
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
  ARMv8ContextSwitchSWI(Pointer(Request.Param1),Pointer(Request.Param2),Request.Param3);
+ {$ENDIF CPUAARCH64}
 end;
 
 {==============================================================================}
@@ -8785,6 +8392,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi3Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Properties}
     if Properties = nil then
@@ -9024,6 +8636,12 @@ begin
      FreeMem(Header);
     end;
    finally
+    {Set Default Display}
+    if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9051,6 +8669,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi3Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Properties}
     if Properties = nil then
@@ -9159,6 +8782,12 @@ begin
      FreeMem(MailboxFramebuffer);
     end;    
    finally
+    {Set Default Display}
+    if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9181,6 +8810,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi3Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Release Framebuffer}
     Result:=RPi3FramebufferRelease;
@@ -9192,6 +8826,12 @@ begin
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
+    {Set Default Display}
+    if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9212,20 +8852,33 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
- {Check Blank}
- if Blank then
+ {Set Current Display}
+ if PRPi3Framebuffer(Framebuffer).MultiDisplay then
   begin
-   Result:=RPi3FramebufferSetState(0);
-  end
- else
-  begin
-   Result:=RPi3FramebufferSetState(1);
+   FramebufferSetDisplayNum(PRPi3Framebuffer(Framebuffer).DisplayNum);
   end;
+ try
+  {Check Blank}
+  if Blank then
+   begin
+    Result:=RPi3FramebufferSetState(0);
+   end
+  else
+   begin
+    Result:=RPi3FramebufferSetState(1);
+   end;
+ finally
+  {Set Default Display}
+  if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+   begin
+    FramebufferSetDisplayNum(0);
+   end;
+ end; 
 end;
 
 {==============================================================================}
 
-function RPi3FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function RPi3FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -9235,7 +8888,7 @@ begin
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {Check Flags}
- if ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0) and BCM2710FRAMEBUFFER_CACHED then
+ if (not(BCM2710DMA_CACHE_COHERENT) or ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0)) and BCM2710FRAMEBUFFER_CACHED then
   begin
    {Clean Cache}
    CleanAndInvalidateDataCacheRange(Address,Size);
@@ -9255,8 +8908,21 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
- {Set Backlight}
- Result:=FramebufferSetBacklight(Brightness);
+ {Set Current Display}
+ if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+  begin
+   FramebufferSetDisplayNum(PRPi3Framebuffer(Framebuffer).DisplayNum);
+  end;
+ try
+  {Set Backlight}
+  Result:=FramebufferSetBacklight(Brightness);
+ finally
+  {Set Default Display}
+  if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+   begin
+    FramebufferSetDisplayNum(0);
+   end;
+ end; 
 end; 
    
 {==============================================================================}
@@ -9275,10 +8941,21 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PRPi3Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Not Supported}
     Result:=ERROR_NOT_SUPPORTED;
    finally
+    {Set Default Display}
+    if PRPi3Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -9422,7 +9099,42 @@ asm
  //To Do
 end;
 {$ENDIF CPUAARCH64}
+{==============================================================================}
+{$IFDEF CONSOLE_EARLY_INIT}
+procedure RPi3BootConsoleStart;
+begin
+ ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL,True);
+end;
 
+{==============================================================================}
+
+procedure RPi3BootConsoleWrite(const Value:String);
+begin
+ ConsoleWindowWriteLn(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),Value);
+end;
+
+{==============================================================================}
+
+procedure RPi3BootConsoleWriteEx(const Value:String;X,Y:LongWord);
+begin
+ ConsoleWindowSetXY(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),X,Y);
+ ConsoleWindowWriteLn(ConsoleWindowGetDefault(ConsoleDeviceGetDefault),Value);
+end;
+
+{==============================================================================}
+
+function RPi3BootConsoleGetX:LongWord;
+begin
+ Result:=ConsoleWindowGetX(ConsoleWindowGetDefault(ConsoleDeviceGetDefault));
+end;
+
+{==============================================================================}
+
+function RPi3BootConsoleGetY:LongWord;
+begin
+ Result:=ConsoleWindowGetY(ConsoleWindowGetDefault(ConsoleDeviceGetDefault));
+end;
+{$ENDIF}
 {==============================================================================}
 
 function RPi3ConvertPowerIdRequest(PowerId:LongWord):LongWord;
@@ -9559,6 +9271,1264 @@ begin
   TEMPERATURE_ID_SOC:Result:=BCM2837_MBOX_TEMP_ID_SOC;
  end;
 end;
+
+{==============================================================================}
+{==============================================================================}
+{RPi3 Internal Functions}
+function RPi3InterruptIsValid(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number < IRQ_COUNT);
+end;
+
+{==============================================================================}
+
+function RPi3InterruptIsLocal(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number >= IRQ_LOCAL_START) and (Number < IRQ_COUNT);
+end;
+
+{==============================================================================}
+
+function RPi3InterruptIsGlobal(Number:LongWord):Boolean;
+begin
+ {}
+ {Check Number}
+ Result:=(Number < IRQ_LOCAL_START);
+end;
+
+{==============================================================================}
+
+function RPi3InterruptCheckValid(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Flags}
+ if Entry.IsLocal then
+  begin
+   {Check Number (Local)}
+   if not RPi3InterruptIsLocal(Entry.Number) then Exit;
+   
+   {Check Mask Count}
+   if CPUMaskCount(Entry.CPUMask) <> 1 then Exit;
+   
+   {Check Mask CPU (Only current CPU)}
+   if CPUMaskToID(Entry.CPUMask) <> CPUGetCurrent then Exit;
+  end
+ else if Entry.IsIPI then
+  begin
+   {Software}
+   Exit;
+  end
+ else 
+  begin
+   {Check Number (Global)}
+   if not RPi3InterruptIsGlobal(Entry.Number) then Exit;
+   
+   {Check Mask Count}
+   if CPUMaskCount(Entry.CPUMask) <> 1 then Exit;
+ 
+   {Check Mask CPU (Single CPU only)} 
+   if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUMaskToID(Entry.CPUMask)) then Exit;
+  end;  
+ 
+ {Check Handlers}
+ if not RPi3InterruptCheckHandlers(Entry) then Exit;
+  
+ {Check Priority}
+ {Not applicable}
+ 
+ {Check FIQ}
+ if Entry.IsFIQ then
+  begin
+   if not FIQ_ENABLED then Exit;
+  end;
+ 
+ {Check IPI}
+ {Not applicable}
+ 
+ {Check Shared}
+ if Entry.IsShared then
+  begin
+   if not Assigned(Entry.SharedHandler) then Exit;
+  end;
+  
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptCheckHandlers(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handlers}
+ if Assigned(Entry.Handler) then
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.HandlerEx) then Exit;
+   if Assigned(Entry.SharedHandler) then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.HandlerEx) then 
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.Handler) then Exit;
+   if Assigned(Entry.SharedHandler) then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.SharedHandler) then
+  begin
+   {Check Other Handlers}
+   if Assigned(Entry.Handler) then Exit;
+   if Assigned(Entry.HandlerEx) then Exit;
+   
+   Result:=True;
+  end;  
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptCompareHandlers(const Entry,Current:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+begin
+ {}
+ Result:=False;
+ 
+ {Check Handlers}
+ if Assigned(Entry.Handler) then
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.Handler) then Exit;
+   if @Entry.Handler <> @Current.Handler then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.HandlerEx) then 
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.HandlerEx) then Exit;
+   if @Entry.HandlerEx <> @Current.HandlerEx then Exit;
+   
+   Result:=True;
+  end
+ else if Assigned(Entry.SharedHandler) then
+  begin
+   {Check Current Handlers}
+   if not Assigned(Current.SharedHandler) then Exit;
+   if @Entry.SharedHandler <> @Current.SharedHandler then Exit;
+   
+   Result:=True;
+  end;  
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptEnable(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Group:LongWord;
+ Offset:LongWord;
+ Address:LongWord;
+ Enable:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Get Group and Offset}
+ if Entry.Number < 32 then
+  begin
+   Group:=0;
+   Offset:=0;
+   Address:=BCM2837_ARM_INTERRUPT_IRQ_ENABLE1;
+  end
+ else if Entry.Number < 64 then
+  begin
+   Group:=1;
+   Offset:=32;
+   Address:=BCM2837_ARM_INTERRUPT_IRQ_ENABLE2;
+  end
+ else if Entry.Number < 96 then
+  begin
+   Group:=2;
+   Offset:=64;
+   Address:=BCM2837_ARM_INTERRUPT_BASIC_ENABLE;
+  end
+ else
+  begin
+   Group:=LongWord(-1);
+   Offset:=96;
+   Address:=0;
+  end;
+ 
+ {Check Source}
+ if Entry.Number < 96 then 
+  begin
+   {Global}
+   if Entry.IsFIQ then
+    begin
+     {Check FIQ}
+     if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
+     
+     {Check IRQ}
+     if (IRQEnabled[Group] and (1 shl Entry.Number - Offset)) <> 0 then Exit;
+
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Enable FIQ}
+     InterruptRegisters.FIQ_control:=BCM2837_ARM_INTERRUPT_FIQ_ENABLE or (Entry.Number and BCM2837_ARM_INTERRUPT_FIQ_SOURCE);
+     FIQEnabled:=Entry.Number;
+    end
+   else
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+  
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+    
+     {Enable IRQ}
+     PLongWord(BCM2837_INTERRUPT_REGS_BASE + Address)^:=(1 shl (Entry.Number - Offset));
+     IRQEnabled[Group]:=IRQEnabled[Group] or (1 shl (Entry.Number - Offset));
+    end;
+  end
+ else
+  begin
+   {Local}
+   if Entry.IsFIQ then
+    begin
+     {Check Local IRQ}
+     if (LocalIRQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end
+   else
+    begin
+     {Check Local FIQ}
+     if (LocalFIQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+
+   {Check Number}
+   case Entry.Number of
+    BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
+      {Enable Physical Secure Timer}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ else Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
+      {Enable Physical Non Secure Timer}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ else Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
+      {Enable Hypervisor Timer}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ else Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
+      {Enable Virtual Timer}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ else Enable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
+      {Enable Mailbox0}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ else Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
+      {Enable Mailbox1}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ else Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
+      {Enable Mailbox2}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ else Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
+      {Enable Mailbox3}
+      if Entry.IsFIQ then Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ else Enable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_GPU:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PMU:begin
+      {Enable Performance Monitors}
+      if Entry.IsFIQ then Enable:=(Entry.CPUID + 4) else Enable:=Entry.CPUID;
+      
+      ARMLocalRegisters.PMInterruptRoutingSet:=(1 shl Enable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_AXI:begin
+      {Enable AXI Outstanding Writes (CPU0 IRQ Only)}
+      if Entry.IsFIQ then Exit;
+      if Entry.CPUID <> CPU_ID_0 then Exit;
+      
+      ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ or BCM2837_ARM_LOCAL_AXI_IRQ_ENABLE;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_TIMER:begin
+      {Enable Local Timer}
+      if Entry.IsFIQ then Enable:=(Entry.CPUID + 4) else Enable:=Entry.CPUID;
+      
+      ARMLocalRegisters.LocalIntRouting0:=(ARMLocalRegisters.LocalIntRouting0 and not(7)) or Enable;
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
+      {Nothing}
+     end;
+   else
+    begin
+     Exit;
+    end;
+   end;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read}
+    
+   if Entry.IsFIQ then
+    begin
+     {Enable Local FIQ}
+     LocalFIQEnabled[Entry.CPUID]:=LocalFIQEnabled[Entry.CPUID] or (1 shl (Entry.Number - Offset));
+    end
+   else
+    begin
+     {Enable Local IRQ}
+     LocalIRQEnabled[Entry.CPUID]:=LocalIRQEnabled[Entry.CPUID] or (1 shl (Entry.Number - Offset));
+    end; 
+  end;
+
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptDisable(const Entry:TInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Group:LongWord;
+ Offset:LongWord;
+ Address:LongWord;
+ Disable:LongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Get Group and Offset}
+ if Entry.Number < 32 then
+  begin
+   Group:=0;
+   Offset:=0;
+   Address:=BCM2837_ARM_INTERRUPT_IRQ_DISABLE1;
+  end
+ else if Entry.Number < 64 then
+  begin
+   Group:=1;
+   Offset:=32;
+   Address:=BCM2837_ARM_INTERRUPT_IRQ_DISABLE2;
+  end
+ else if Entry.Number < 96 then
+  begin
+   Group:=2;
+   Offset:=64;
+   Address:=BCM2837_ARM_INTERRUPT_BASIC_DISABLE;
+  end
+ else
+  begin
+   Group:=LongWord(-1);
+   Offset:=96;
+   Address:=0;
+  end;
+ 
+ {Check Source}
+ if Entry.Number < 96 then 
+  begin
+   {Global}
+   if Entry.IsFIQ then
+    begin
+     {Check FIQ}
+     if FIQEnabled <> Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+     
+     {Check IRQ}
+     if (IRQEnabled[Group] and (1 shl Entry.Number - Offset)) <> 0 then Exit;
+
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Disable FIQ}
+     InterruptRegisters.FIQ_control:=0;
+     FIQEnabled:=LongWord(-1);
+    end
+   else
+    begin
+     {Check FIQ}
+     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
+    
+     {Memory Barrier}
+     DataMemoryBarrier; {Before the First Write}
+     
+     {Disable IRQ}
+     PLongWord(BCM2837_INTERRUPT_REGS_BASE + Address)^:=(1 shl (Entry.Number - Offset));
+     IRQEnabled[Group]:=IRQEnabled[Group] and not(1 shl (Entry.Number - Offset));
+    end;
+  end
+ else
+  begin
+   {Local}
+   if Entry.IsFIQ then
+    begin
+     {Check Local IRQ}
+     if (LocalIRQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end
+   else
+    begin
+     {Check Local FIQ}
+     if (LocalFIQEnabled[Entry.CPUID] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
+    end;
+    
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+   
+   {Check Number}
+   case Entry.Number of
+    BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ:begin
+      {Disable Physical Secure Timer}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSFIQ else Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ:begin
+      {Disable Physical Non Secure Timer}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSFIQ else Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTPNSIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ:begin
+      {Disable Hypervisor Timer}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPFIQ else Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTHPIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_CNTVIRQ:begin
+      {Disable Virtual Timer}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVFIQ else Disable:=BCM2837_ARM_LOCAL_TIMER_INT_CONTROL_CNTVIRQ;
+      
+      ARMLocalRegisters.TimersIntControl[Entry.CPUID]:=ARMLocalRegisters.TimersIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX0:begin
+      {Disable Mailbox0}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0FIQ else Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX0IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX1:begin
+      {Disable Mailbox1}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1FIQ else Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX1IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX2:begin
+      {Disable Mailbox2}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2FIQ else Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX2IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_MAILBOX3:begin
+      {Disable Mailbox3}
+      if Entry.IsFIQ then Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3FIQ else Disable:=BCM2837_ARM_LOCAL_MAILBOX_INT_CONTROL_MAILBOX3IRQ;
+      
+      ARMLocalRegisters.MailboxIntControl[Entry.CPUID]:=ARMLocalRegisters.MailboxIntControl[Entry.CPUID] and not(Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_GPU:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PMU:begin
+      {Disable Performance Monitors}
+      if Entry.IsFIQ then Disable:=(Entry.CPUID + 4) else Disable:=Entry.CPUID;
+      
+      ARMLocalRegisters.PMInterruptRoutingClear:=(1 shl Disable);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_AXI:begin
+      {Disable AXI Outstanding Writes (CPU0 IRQ Only)}
+      if Entry.IsFIQ then Exit;
+      if Entry.CPUID <> CPU_ID_0 then Exit;
+      
+      ARMLocalRegisters.AXIOutstandingIRQ:=ARMLocalRegisters.AXIOutstandingIRQ and not(BCM2837_ARM_LOCAL_AXI_IRQ_ENABLE);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_TIMER:begin
+      {Disable Local Timer}
+      ARMLocalRegisters.LocalIntRouting0:=ARMLocalRegisters.LocalIntRouting0 and not(7);
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL1:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL2:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL3:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL4:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL5:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL6:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL7:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL8:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL9:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL10:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL11:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL12:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL13:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL14:begin
+      {Nothing}
+     end;
+    BCM2837_IRQ_LOCAL_ARM_PERIPHERAL15:begin
+      {Nothing}
+     end;
+   else
+    begin
+     Exit;
+    end;
+   end;
+   
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read}
+    
+   if Entry.IsFIQ then
+    begin
+     {Disable Local FIQ}
+     LocalFIQEnabled[Entry.CPUID]:=LocalFIQEnabled[Entry.CPUID] and not(1 shl (Entry.Number - Offset));
+    end
+   else
+    begin
+     {Disable Local IRQ}
+     LocalIRQEnabled[Entry.CPUID]:=LocalIRQEnabled[Entry.CPUID] and not(1 shl (Entry.Number - Offset));
+    end; 
+  end;
+
+ Result:=True;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptGetCurrentCount(CPUID,Number:LongWord):LongWord;
+{Note: Caller must hold the interrupt lock}
+var
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=0;
+ 
+ {Setup Defaults}
+ Entry:=nil;
+
+ {Check Number}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI3_CPU_COUNT - 1 then Exit;
+   
+   {Count Local}
+   Entry:=LocalInterruptEntries[Number,CPUID];
+  end
+ else if RPi3InterruptIsGlobal(Number) then
+  begin
+   {Count Global}
+   Entry:=InterruptEntries[Number];
+  end;
+  
+ {Count Entries}
+ while Entry <> nil do
+  begin
+   Inc(Result);
+   
+   {Get Next}
+   Entry:=Entry.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptGetCurrentEntry(CPUID,Number:LongWord;Index:LongWord):PInterruptEntry;
+{Note: Caller must hold the interrupt lock (or be within an interrupt handler)}
+var
+ Count:LongWord;
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Setup Defaults}
+ Entry:=nil;
+
+ {Check Number}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI3_CPU_COUNT - 1 then Exit;
+   
+   {Count Local}
+   Entry:=LocalInterruptEntries[Number,CPUID];
+  end
+ else if RPi3InterruptIsGlobal(Number) then
+  begin
+   {Count Global}
+   Entry:=InterruptEntries[Number];
+  end;
+  
+ {Get Entry} 
+ Count:=0;
+ while Entry <> nil do
+  begin
+   {Check Count}
+   if Count = Index then
+    begin
+     Result:=Entry; 
+     Exit;       
+    end;
+
+   Inc(Count);
+   
+   {Get Next}
+   Entry:=Entry.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptAddCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Entry}
+ if Entry = nil then Exit;
+
+ {Check Number}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI3_CPU_COUNT - 1 then Exit;
+   
+   {Add Local}
+   Current:=LocalInterruptEntries[Number,CPUID];
+   if Current = nil then
+    begin
+      {Set Local}
+      LocalInterruptEntries[Number,CPUID]:=Entry;
+      
+      Result:=True;
+    end;  
+  end
+ else if RPi3InterruptIsGlobal(Number) then
+  begin
+   {Add Global}
+   Current:=InterruptEntries[Number];
+   if Current = nil then
+    begin
+     {Set Global}
+     InterruptEntries[Number]:=Entry;
+     
+     Result:=True;
+    end;
+  end;
+ 
+ {Check Current}
+ if Current <> nil then
+  begin
+   {Find last}
+   while Current.Next <> nil do
+    begin
+     {Get Next}
+     Current:=Current.Next;
+    end;
+    
+   {Add to end of list}
+   Current.Next:=Entry;
+   Entry.Prev:=Current;
+   Entry.Next:=nil;
+   
+   Result:=True;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptDeleteCurrentEntry(CPUID,Number:LongWord;Entry:PInterruptEntry):Boolean;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Entry}
+ if Entry = nil then Exit;
+
+ {Check Number}
+ if RPi3InterruptIsLocal(Number) then
+  begin
+   {Check CPU}
+   if CPUID > RPI3_CPU_COUNT - 1 then Exit;
+   
+   {Delete Local}
+   Current:=LocalInterruptEntries[Number,CPUID];
+   if Current = Entry then
+    begin
+     LocalInterruptEntries[Number,CPUID]:=nil;
+    end;
+  end
+ else if RPi3InterruptIsGlobal(Number) then
+  begin
+   {Delete Global}
+   Current:=InterruptEntries[Number];
+   if Current = Entry then
+    begin
+     InterruptEntries[Number]:=nil;
+    end;
+  end;
+  
+ {Check Current}
+ if Current <> nil then
+  begin
+   {Find Entry}
+   while Current <> nil do
+    begin
+     if Current = Entry then
+      begin
+       Break;
+      end;
+      
+     {Get Next}
+     Current:=Current.Next;
+    end;
+ 
+   {Check Current}
+   if Current <> nil then
+    begin
+     {Remove from list}
+     if Current.Prev <> nil then
+      begin
+       Current.Prev.Next:=Current.Next;
+      end;
+     if Current.Next <> nil then
+      begin
+       Current.Next.Prev:=Current.Prev;
+      end;
+     Current.Prev:=nil;
+     Current.Next:=nil;
+     
+     {Free Entry}
+     FreeMem(Current);
+     
+     Result:=True;
+    end;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptFindMatchingEntry(const Entry:TInterruptEntry):PInterruptEntry;
+{Note: Caller must hold the interrupt lock}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Get Current}
+ Current:=RPi3InterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
+ 
+ {Find Match}
+ while Current <> nil do
+  begin
+   if RPi3InterruptCompareHandlers(Entry,Current^) then
+    begin
+     Result:=Current;
+     Exit;
+    end;
+    
+   {Get Next}
+   Current:=Current.Next;
+  end;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord; 
+{Note: The returned Entry is a copy of the registered value. Caller should free Entry if required}
+{      For shared entries the Index parameter indicates which entry in the chain to return (0 equals first etc)}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Setup Defaults}
+ FillChar(Entry,SizeOf(TInterruptEntry),0);
+
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Flags}
+  if (Flags and INTERRUPT_FLAG_IPI) <> 0 then
+   begin
+    {Software Entry}
+    Exit;
+   end
+  else if (Flags and INTERRUPT_FLAG_LOCAL) <> 0 then
+   begin
+    {Local Entry}
+    if not RPi3InterruptIsLocal(Number) then Exit;
+    
+    {Check CPU}
+    if CPUID > RPI3_CPU_COUNT - 1 then Exit;
+   end
+  else
+   begin
+    {Global Entry}
+    if not RPi3InterruptIsGlobal(Number) then Exit;
+   end;   
+   
+  Result:=ERROR_NOT_FOUND;  
+  
+  {Get Current}
+  Current:=RPi3InterruptGetCurrentEntry(CPUID,Number,Index);
+  if Current <> nil then
+   begin
+    {Copy Entry}
+    Entry.Number:=Current.Number;
+    Entry.Flags:=Current.Flags;
+    Entry.CPUMask:=Current.CPUMask;
+    Entry.Priority:=Current.Priority;    
+    Entry.Handler:=Current.Handler;
+    Entry.HandlerEx:=Current.HandlerEx;
+    Entry.SharedHandler:=Current.SharedHandler;
+    Entry.Parameter:=Current.Parameter;
+    
+    {Return Result}    
+    Result:=ERROR_SUCCESS;
+   end;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptRegisterEntry(const Entry:TInterruptEntry):LongWord;
+{Note: Entry must be allocated from heap as a pointer to it will be retained while 
+       the interrupt remains registered. Entry must not be freed by the caller}
+var
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Entry}
+  if not RPi3InterruptCheckValid(Entry) then Exit;
+  
+  Result:=ERROR_ALREADY_ASSIGNED;
+  
+  {Check Count}
+  if RPi3InterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 0 then
+   begin
+    {Single Entry}
+    Result:=ERROR_OPERATION_FAILED;
+    
+    {Enable IRQ/FIQ}
+    if not RPi3InterruptEnable(Entry) then Exit;
+    
+    {Add Entry}
+    if not RPi3InterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
+   end
+  else
+   begin
+    {Shared Entry}
+    Result:=ERROR_ALREADY_ASSIGNED;
+    
+    {Check Shared}
+    if not Entry.IsShared then Exit;
+    
+    {Get Match}
+    Current:=RPi3InterruptFindMatchingEntry(Entry);
+    if Current <> nil then Exit;
+    
+    {Get Current}
+    Current:=RPi3InterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
+    if Current = nil then Exit;
+    
+    {Check Shared}
+    if not Current.IsShared then Exit;
+    
+    {Check FIQ}
+    if Entry.IsFIQ <> Current.IsFIQ then Exit;
+    
+    Result:=ERROR_OPERATION_FAILED;
+    
+    {Add Entry}
+    if not RPi3InterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
+   end;
+  
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function RPi3InterruptDeregisterEntry(const Entry:TInterruptEntry):LongWord;
+{Note: The Entry can be a local temporary copy allocated either from the stack or on
+       the heap, this routine will free the original Entry passed to Register once it
+       is successfully deregistered. Caller should free Entry if required}
+var       
+ Current:PInterruptEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Acquire Lock}
+ if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
+ try
+  {Check Entry}
+  if not RPi3InterruptCheckValid(Entry) then Exit;
+ 
+  Result:=ERROR_NOT_ASSIGNED;
+ 
+  {Get Match}
+  Current:=RPi3InterruptFindMatchingEntry(Entry);
+  if Current = nil then Exit;
+  
+  Result:=ERROR_OPERATION_FAILED;
+  
+  {Check Count}
+  if RPi3InterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 1 then
+   begin
+    {Single Entry}
+    {Disable IRQ/FIQ}
+    if not RPi3InterruptDisable(Entry) then Exit;
+   end;
+
+  {Delete Entry}
+  if not RPi3InterruptDeleteCurrentEntry(Entry.CPUID,Entry.Number,Current) then Exit;
+   
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Lock}
+  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
+ end;
+end;  
+
+{==============================================================================}
+
+function RPi3DispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Process any pending IRQ requests}
+{Called by ARMv7/8IRQHandler in PlatformARMv7/8}
+{Note: A DataMemoryBarrier is executed before and after calling this function} 
+var
+ Group:LongWord;
+ IRQBit:LongWord;
+ IRQMatch:LongWord;
+begin
+ {}
+ Result:=Thread;
+
+ {$IF DEFINED(IRQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
+ Inc(DispatchInterruptCounter[CPUID]);
+ {$ENDIF}
+ 
+ {Check Local IRQ Enabled}
+ if LocalIRQEnabled[CPUID] <> 0 then
+  begin
+   {Check Local IRQ Pending}
+   IRQMatch:=(LocalIRQEnabled[CPUID] and ARMLocalRegisters.IRQPending[CPUID]);
+   {Check IRQ Match}
+   while IRQMatch <> 0 do
+    begin
+     {Find first set bit}
+     IRQBit:=FirstBitSet(IRQMatch);  
+       
+     {Clear set bit}
+     IRQMatch:=IRQMatch xor (1 shl IRQBit);
+   
+     {Call Interrupt Handler}
+     Result:=RPi3HandleInterrupt(IRQBit + IRQ_LOCAL_START,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+    end; 
+  end;
+ 
+ {Check IRQ Routing}
+ if (IRQ_ROUTING = CPUID) or (IRQ_ROUTING = CPU_ID_ALL) then
+  begin
+   {Check IRQ Groups}
+   for Group:=0 to 2 do
+    begin
+     {Check IRQ Enabled}
+     if IRQEnabled[Group] <> 0 then
+      begin
+       case Group of
+        {Check IRQ Pending 1}
+        0:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_1);
+        {Check IRQ Pending 2}
+        1:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_pending_2);
+        {Check IRQ Basic Pending}
+        2:IRQMatch:=(IRQEnabled[Group] and InterruptRegisters.IRQ_basic_pending);
+       end; 
+       {Check IRQ Match}
+       while IRQMatch <> 0 do
+        begin
+         {Find first set bit}
+         IRQBit:=FirstBitSet(IRQMatch); 
+           
+         {Clear set bit}
+         IRQMatch:=IRQMatch xor (1 shl IRQBit);
+           
+         {Call Interrupt Handler}
+         Result:=RPi3HandleInterrupt(IRQBit + (Group shl 5),CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+        end; 
+      end;
+    end;  
+  end;
+end;
+
+{==============================================================================}
+
+function RPi3DispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Process any pending FIQ requests}
+{Called by ARMv7/8FIQHandler in PlatformARMv7/8}
+{Note: A DataMemoryBarrier is executed before and after calling this function} 
+var
+ FIQBit:LongWord;
+ FIQMatch:LongWord;
+begin
+ {}
+ Result:=Thread;
+ 
+ {$IF DEFINED(FIQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
+ Inc(DispatchFastInterruptCounter[CPUID]);
+ {$ENDIF}
+ 
+ {Check Local FIQ Enabled}
+ if LocalFIQEnabled[CPUID] <> 0 then
+  begin
+   {Check Local FIQ Pending}
+   FIQMatch:=(LocalFIQEnabled[CPUID] and ARMLocalRegisters.FIQPending[CPUID]);
+   {Check FIQ Match}
+   while FIQMatch <> 0 do
+    begin
+     {Find first set bit}
+     FIQBit:=FirstBitSet(FIQMatch);  
+       
+     {Clear set bit}
+     FIQMatch:=FIQMatch xor (1 shl FIQBit);
+   
+     {Call Interrupt Handler}
+     Result:=RPi3HandleInterrupt(FIQBit + IRQ_LOCAL_START,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+    end; 
+  end;
+ 
+ {Check FIQ Routing}
+ if (FIQ_ROUTING = CPUID) or (FIQ_ROUTING = CPU_ID_ALL) then
+  begin
+   {Check FIQ Enabled}
+   if FIQEnabled <> LongWord(-1) then
+    begin
+     {Call Interrupt Handler}
+     Result:=RPi3HandleInterrupt(FIQEnabled,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function RPi3HandleInterrupt(Number,Source,CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
+{Call the handler function for an IRQ/FIQ that was received, or halt if it doesn't exist}
+var
+ Status:LongWord;
+ Entry:PInterruptEntry;
+begin
+ {}
+ Result:=Thread;
+
+ {Get Entry}
+ Entry:=RPi3InterruptGetCurrentEntry(CPUID,Number,0);
+ if Entry = nil then
+  begin
+   {Halt}
+   {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('No entry registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+   {$ENDIF} 
+     
+   Halt;   
+  end;
+  
+ {Check Entry}
+ if not Entry.IsIPI then
+  begin
+   {Global or Local}
+   if Entry.IsShared then
+    begin
+     {Shared}
+     if not Assigned(Entry.SharedHandler) then
+      begin
+       {Halt}
+       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+       {$ENDIF} 
+       
+       Halt;
+      end;
+      
+     {Call Handler}
+     Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+     while Status <> INTERRUPT_RETURN_HANDLED do
+      begin
+       {Get Next}
+       Entry:=Entry.Next;
+       if Entry = nil then
+        begin
+         {Halt}
+         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+         if PLATFORM_LOG_ENABLED then PlatformLogDebug('Unhandled interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+         {$ENDIF} 
+         
+         Halt;
+        end;
+       
+       if not Assigned(Entry.SharedHandler) then
+        begin
+         {Halt}
+         {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+         if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+         {$ENDIF} 
+         
+         Halt;
+        end;
+       
+       {Call Handler}
+       Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+      end;
+    end
+   else
+    begin
+     {Single}
+     if Assigned(Entry.Handler) then
+      begin
+       {Call Handler}
+       Entry.Handler(Entry.Parameter); 
+      end
+     else if Assigned(Entry.HandlerEx) then
+      begin
+       {Call Handler}
+       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
+      end
+     else if Assigned(Entry.SharedHandler) then
+      begin
+       {Call Handler}
+       Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
+      end
+     else
+      begin
+       {Halt}
+       {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
+       {$ENDIF} 
+       
+       Halt;
+      end;        
+    end;
+  end;
+end;  
 
 {==============================================================================}
 {==============================================================================}

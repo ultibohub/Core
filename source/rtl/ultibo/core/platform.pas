@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -88,6 +88,7 @@ const
  DMA_DATA_FLAG_NOINVALIDATE        = $00000400; {Do not perform cache invalidate on the dest address (If applicable)}
  DMA_DATA_FLAG_BULK                = $00000800; {Perform a bulk transfer (Higher transfer throughput)(If applicable)}
  DMA_DATA_FLAG_LITE                = $00001000; {Perform a "lite" transfer (Lower transfer throughput but less waiting for free channel) (If applicable)}
+ DMA_DATA_FLAG_40BIT               = $00002000; {Perform a 40-bit address transfer (Address to memory above 1GB or 4GB depending on SoC) (If applicable)}
  
  {Page Table Flags}
  PAGE_TABLE_FLAG_NONE          = $00000000;
@@ -103,6 +104,26 @@ const
  PAGE_TABLE_FLAG_WRITEBACK     = $00000200; {Page Table Entry is Writeback Cacheable memory}
  PAGE_TABLE_FLAG_WRITETHROUGH  = $00000400; {Page Table Entry is Writethrough Cacheable memory}
  PAGE_TABLE_FLAG_WRITEALLOCATE = $00000800; {Page Table Entry is Writeallocate Cacheable memory}
+ {$IFDEF CPUARM}
+ PAGE_TABLE_FLAG_LARGEADDRESS  = $00001000; {Page Table Entry is mapped to Large Physical Address range}
+ {$ENDIF CPUARM}
+ 
+ {Interrupt Entry Flags}
+ INTERRUPT_FLAG_NONE     = $00000000;
+ INTERRUPT_FLAG_SHARED   = $00000001;
+ INTERRUPT_FLAG_LOCAL    = $00000002;
+ INTERRUPT_FLAG_IPI      = $00000004;
+ INTERRUPT_FLAG_FIQ      = $00000008;
+ 
+ {Interrupt Priority Values}
+ INTERRUPT_PRIORITY_MAXIMUM = $00;
+ INTERRUPT_PRIORITY_FIQ     = $40;
+ INTERRUPT_PRIORITY_DEFAULT = $A0;
+ INTERRUPT_PRIORITY_MINIMUM = $F0;
+ 
+ {Interrupt Return Values}
+ INTERRUPT_RETURN_NONE    = 0; {Interrupt not handled or not for this device}
+ INTERRUPT_RETURN_HANDLED = 1; {Interrupt handled, no further processing}
  
  {Vector Table Entries}
  {ARM}
@@ -216,7 +237,13 @@ type
  TDMAData = record
   {Data Properties}
   Source:Pointer;         {Source address for DMA (May need to be allocated in accordance with DMA host configuration)}
+  {$IFDEF CPUARM}
+  SourceRange:LongWord;   {Source address range for DMA (Only applicable when performing a 40-bit transfer)}
+  {$ENDIF CPUARM}
   Dest:Pointer;           {Dest address for DMA (May need to be allocated in accordance with DMA host configuration)}
+  {$IFDEF CPUARM}
+  DestRange:LongWord;     {Dest address range for DMA (Only applicable when performing a 40-bit transfer)}
+  {$ENDIF CPUARM}
   Size:LongWord;          {Size for DMA transfer (For 2D stride the length of a row multiplied by the count of rows)}
   Flags:LongWord;         {Flags for DMA transfer (See DMA_DATA_FLAG_* above)}
   {Stride Properties}
@@ -290,14 +317,78 @@ type
  end; 
  
 type 
+ {Prototypes for Interrupt (IRQ/FIQ) Handlers}
+ TInterruptHandler = procedure(Parameter:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
+ TInterruptExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
+ TSharedInterruptHandler = function(Number,CPUID,Flags:LongWord;Parameter:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ 
  {Interrupt Entry (IRQ/FIQ}
  PInterruptEntry = ^TInterruptEntry;
  TInterruptEntry = record
-  Number:LongWord;
-  CPUID:LongWord;
-  Handler:procedure(Parameter:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
-  HandlerEx:function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
-  Parameter:Pointer;
+ private
+  {Interrupt Properties}
+  FNumber:LongWord;
+  FFlags:LongWord;
+  FCPUMask:LongWord;
+  FPriority:LongWord;
+  FHandler:TInterruptHandler;
+  FHandlerEx:TInterruptExHandler;
+  FSharedHandler:TSharedInterruptHandler;
+  FParameter:Pointer;
+  
+  {Internal Properties}
+  FPrev:PInterruptEntry;
+  FNext:PInterruptEntry;
+  
+  function GetCPUID:LongWord;
+  procedure SetCPUID(ACPUID:LongWord);
+  
+  procedure SetPriority(APriority:LongWord);
+  
+  function GetIsShared:Boolean;
+  procedure SetIsShared(AValue:Boolean);
+  function GetIsLocal:Boolean;
+  procedure SetIsLocal(AValue:Boolean);
+  function GetIsIPI:Boolean;
+  procedure SetIsIPI(AValue:Boolean);
+  function GetIsFIQ:Boolean;
+  procedure SetIsFIQ(AValue:Boolean);
+
+  function GetPriorityDefault:Boolean;
+  procedure SetPriorityDefault(AValue:Boolean);
+  function GetPriorityMinimum:Boolean;
+  procedure SetPriorityMinimum(AValue:Boolean);
+  function GetPriorityMaximum:Boolean;
+  procedure SetPriorityMaximum(AValue:Boolean);
+  function GetPriorityFIQ:Boolean;
+  procedure SetPriorityFIQ(AValue:Boolean);
+ public
+  {Interrupt Properties}
+  property Number:LongWord read FNumber write FNumber;
+  property Flags:LongWord read FFlags write FFlags;
+  property CPUMask:LongWord read FCPUMask write FCPUMask;
+  property Handler:TInterruptHandler read FHandler write FHandler;
+  property HandlerEx:TInterruptExHandler read FHandlerEx write FHandlerEx;
+  property SharedHandler:TSharedInterruptHandler read FSharedHandler write FSharedHandler;
+  property Parameter:Pointer read FParameter write FParameter;
+  
+  {Internal Properties}
+  property Prev:PInterruptEntry read FPrev write FPrev;
+  property Next:PInterruptEntry read FNext write FNext;
+  
+  {Additional Properties}
+  property CPUID:LongWord read GetCPUID write SetCPUID;
+  property Priority:LongWord read FPriority write SetPriority;
+  
+  property IsShared:Boolean read GetIsShared write SetIsShared;
+  property IsLocal:Boolean read GetIsLocal write SetIsLocal;
+  property IsIPI:Boolean read GetIsIPI write SetIsIPI;
+  property IsFIQ:Boolean read GetIsFIQ write SetIsFIQ;
+  
+  property PriorityDefault:Boolean read GetPriorityDefault write SetPriorityDefault;
+  property PriorityMinimum:Boolean read GetPriorityMinimum write SetPriorityMinimum;
+  property PriorityMaximum:Boolean read GetPriorityMaximum write SetPriorityMaximum;
+  property PriorityFIQ:Boolean read GetPriorityFIQ write SetPriorityFIQ;
  end;
 
 type 
@@ -314,10 +405,25 @@ type
  {Page Table Entry}
  PPageTableEntry = ^TPageTableEntry;
  TPageTableEntry = record
+ private
+  {Page Table Properties}
+  {$IFDEF CPUARM}
+  function GetLargePhysicalAddress:UInt64;
+  procedure SetLargePhysicalAddress(Address:UInt64);
+  {$ENDIF CPUARM}
+ public
+  {Page Table Properties}
   VirtualAddress:PtrUInt;
-  PhysicalAddress:PtrUInt;
+  {$IFDEF CPUARM}
+  PhysicalRange:LongWord;   {Physical Address Range referenced by entry when using Large Physical Address Extensions (LPAE)}
+  {$ENDIF CPUARM}
+  PhysicalAddress:PtrUInt; 
   Size:LongWord;
   Flags:LongWord;
+  
+  {$IFDEF CPUARM}
+  property LargePhysicalAddress:UInt64 read GetLargePhysicalAddress write SetLargePhysicalAddress;
+  {$ENDIF CPUARM}
  end;
 
 type
@@ -360,14 +466,20 @@ type
  TParseBootTags = procedure;
  TParseCommandLine = procedure;
  TParseEnvironment = procedure;
+ 
+ TOptionsInit = procedure;
 
+{type}
+ {Prototypes for Interrupt (IRQ/FIQ) Handlers} 
+ {Moved to TInterruptEntry above}
+ 
 type
- {Prototype for Interrupt (IRQ/FIQ) Handlers}
- TInterruptHandler = procedure(Parameter:Pointer);{$IFDEF i386} stdcall;{$ENDIF}
- TInterruptExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
-
+ {Prototype for Inter Processor Interrupt (IPI) Handlers}
+ {Note: When used for IPI the CPUID parameter will be the sending CPU}
+ TIPIHandler = TSharedInterruptHandler;
+ 
 type
- {Prototype for System Call (SWI) Handlers}
+ {Prototypes for System Call (SWI) Handlers}
  TSystemCallHandler = procedure(Request:PSystemCallRequest);{$IFDEF i386} stdcall;{$ENDIF}
  TSystemCallExHandler = function(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle;{$IFDEF i386} stdcall;{$ENDIF}
  
@@ -406,6 +518,11 @@ type
  {Prototypes for Blink/Output Handlers}
  TBootBlink = procedure;
  TBootOutput = procedure(Value:LongWord);
+ TBootConsoleStart = procedure;
+ TBootConsoleWrite = procedure(const Value:String);
+ TBootConsoleWriteEx = procedure(const Value:String;X,Y:LongWord);
+ TBootConsoleGetX = function:LongWord;
+ TBootConsoleGetY = function:LongWord;
  
 type
  {Prototypes for LED Handlers}
@@ -475,8 +592,18 @@ type
  TRequestExFIQ = function(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
  TReleaseExFIQ = function(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
  
+type 
+ {Prototypes for Inter Processor Interrupt (IPI) Handlers}
+ TRequestIPI = function(CPUID,Number:LongWord;Handler:TIPIHandler;Parameter:Pointer):LongWord;
+ TReleaseIPI = function(CPUID,Number:LongWord;Handler:TIPIHandler;Parameter:Pointer):LongWord;
+ 
 type
- {Prototypes for System Call (Software Interrupt or SWI) Handlers}
+ {Prototypes for Interrupt Register/Deregister Handlers} 
+ TRegisterInterrupt = function(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+ TDeregisterInterrupt = function(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
+ 
+type
+ {Prototypes for System Call (SWI) Handlers}
  TSystemCall = procedure(Number:LongWord;Param1,Param2,Param3:PtrUInt);
 
  TRegisterSystemCall = function(Number:LongWord;Handler:TSystemCallHandler):LongWord;
@@ -488,16 +615,22 @@ type
  {Prototypes for Interrupt Entry Handlers}
  TGetInterruptCount = function:LongWord;
  TGetInterruptStart = function:LongWord;
- TGetInterruptEntry = function(Number:LongWord):TInterruptEntry;
+ TGetInterruptEntry = function(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
 
 type 
  {Prototypes for Local Interrupt Entry Handlers}
  TGetLocalInterruptCount = function:LongWord;
  TGetLocalInterruptStart = function:LongWord;
- TGetLocalInterruptEntry = function(CPUID,Number:LongWord):TInterruptEntry;
+ TGetLocalInterruptEntry = function(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
 
 type 
- {Prototypes for System Call Entry Handlers}
+ {Prototypes for Software Interrupt Entry (IPI) Handlers}
+ TGetSoftwareInterruptCount = function:LongWord;
+ TGetSoftwareInterruptStart = function:LongWord;
+ TGetSoftwareInterruptEntry = function(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
+
+type 
+ {Prototypes for System Call Entry (SWI) Handlers}
  TGetSystemCallCount = function:LongWord;
  TGetSystemCallEntry = function(Number:LongWord):TSystemCallEntry;
  
@@ -520,7 +653,7 @@ type
  TCPUGetState = function:LongWord;
  TCPUGetGroup = function:LongWord;
  TCPUGetCurrent = function:LongWord;
- TCPUGetMemory = function(var Address:PtrUInt;var Length:LongWord):LongWord;
+ TCPUGetMemory = function(var Address:PtrUInt;var Length:UInt64):LongWord;
  TCPUGetPercentage = function(CPUID:LongWord):Double;
  TCPUGetUtilization = function(CPUID:LongWord):LongWord;
  
@@ -537,7 +670,7 @@ type
  {Prototypes for GPU Handlers}
  TGPUGetType = function:LongWord;
  TGPUGetState = function:LongWord;
- TGPUGetMemory = function(var Address:PtrUInt;var Length:LongWord):LongWord;
+ TGPUGetMemory = function(var Address:PtrUInt;var Length:UInt64):LongWord;
  
 type
  {Prototypes for Cache Handlers}
@@ -571,10 +704,13 @@ type
 type
  {Prototypes for Memory Handlers}
  TMemoryGetBase = function:PtrUInt;
- TMemoryGetSize = function:LongWord;
+ TMemoryGetSize = function:UInt64;
 
  TMemoryGetPageSize = function:LongWord;
  TMemoryGetLargePageSize = function:LongWord;
+
+ TMemoryGetSectionSize = function:LongWord;
+ TMemoryGetLargeSectionSize = function:LongWord;
  
 type
  {Prototypes for Power Handlers}
@@ -676,9 +812,15 @@ type
  
  TFramebufferSetBacklight = function(Brightness:LongWord):LongWord;
  
+ TFramebufferGetNumDisplays = function(var NumDisplays:LongWord):LongWord;
+ TFramebufferGetDisplayId = function(DisplayNum:LongWord):LongWord;
+ TFramebufferSetDisplayNum = function(DisplayNum:LongWord):LongWord;
+ TFramebufferGetDisplaySettings = function(DisplayNum:LongWord;var DisplaySettings:TDisplaySettings):LongWord;
+ TFramebufferDisplayIdToName = function(DisplayId:LongWord):String;
+ 
 type 
  {Prototypes for Touch Handlers}
- TTouchGetBuffer = function(var Address:LongWord):LongWord;
+ TTouchGetBuffer = function(var Address:PtrUInt):LongWord;
  TTouchSetBuffer = function(Address:PtrUInt):LongWord;
  
 type
@@ -885,10 +1027,10 @@ type
  TCleanAndInvalidateDataCache = procedure;
  TInvalidateInstructionCache = procedure;
  
- TCleanDataCacheRange = procedure(Address,Size:LongWord);
- TInvalidateDataCacheRange = procedure(Address,Size:LongWord);
- TCleanAndInvalidateDataCacheRange = procedure(Address,Size:LongWord);
- TInvalidateInstructionCacheRange = procedure(Address,Size:LongWord);
+ TCleanDataCacheRange = procedure(Address:PtrUInt;Size:LongWord);
+ TInvalidateDataCacheRange = procedure(Address:PtrUInt;Size:LongWord);
+ TCleanAndInvalidateDataCacheRange = procedure(Address:PtrUInt;Size:LongWord);
+ TInvalidateInstructionCacheRange = procedure(Address:PtrUInt;Size:LongWord);
  
 type
  {Prototypes for Prefetch Buffer Handlers} 
@@ -919,6 +1061,11 @@ type
  
 type
  {Prototypes for PageTable Handlers}
+ TPageTableGetLevels = function:LongWord;
+
+ TPageDirectoryGetBase = function:PtrUInt;
+ TPageDirectoryGetSize = function:LongWord;
+
  TPageTableGetBase = function:PtrUInt;
  TPageTableGetSize = function:LongWord;
  
@@ -927,6 +1074,9 @@ type
 
  TPageTableGetPageSize = function(Address:PtrUInt):LongWord;
  TPageTableGetPageFlags = function(Address:PtrUInt):LongWord;
+ {$IFDEF CPUARM}
+ TPageTableGetPageRange = function(Address:PtrUInt):LongWord;
+ {$ENDIF CPUARM}
  TPageTableGetPagePhysical = function(Address:PtrUInt):PtrUInt;
  
  type
@@ -1053,6 +1203,8 @@ var
  ParseCommandLineCompleted:Boolean;
  ParseEnvironmentCompleted:Boolean;
  
+ OptionsInitCompleted:Boolean;
+ 
 var
  {Lock Variables}
  ClockLock:TPlatformLock;
@@ -1088,10 +1240,14 @@ var
  ClockInterruptMaxOffset:LongWord;
  ClockInterruptRollover:LongWord;
  {$ENDIF}
-
- {$IFDEF INTERRUPT_DEBUG}
+ 
+ {$IF DEFINED(IRQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  DispatchInterruptCounter:array of Int64; 
+ {$ENDIF}
+ {$IF DEFINED(FIQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  DispatchFastInterruptCounter:array of Int64; 
+ {$ENDIF}
+ {$IF DEFINED(SWI_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  DispatchSystemCallCounter:array of Int64; 
  {$ENDIF}
  
@@ -1099,7 +1255,7 @@ var
  HardwareExceptionCounter:Int64;
  UnhandledExceptionCounter:Int64;
  
- HardwareExceptionAddress:LongWord;
+ HardwareExceptionAddress:PtrUInt;
  {$ENDIF}
  
 var
@@ -1126,11 +1282,18 @@ var
  ParseBootTagsHandler:TParseBootTags;
  ParseCommandLineHandler:TParseCommandLine;
  ParseEnvironmentHandler:TParseEnvironment;
+ 
+ OptionsInitHandler:TOptionsInit;
 
 var
  {Blink/Output Handlers}
  BootBlinkHandler:TBootBlink;
  BootOutputHandler:TBootOutput;
+ BootConsoleStartHandler:TBootConsoleStart;
+ BootConsoleWriteHandler:TBootConsoleWrite;
+ BootConsoleWriteExHandler:TBootConsoleWriteEx;
+ BootConsoleGetXHandler:TBootConsoleGetX;
+ BootConsoleGetYHandler:TBootConsoleGetY;
  
 var
  {LED Handlers}
@@ -1201,7 +1364,17 @@ var
  ReleaseExFIQHandler:TReleaseExFIQ;
  
 var
- {System Call (Software Interrupt or SWI) Handlers}
+ {Inter Processor Interrupt (IPI) Handlers}
+ RequestIPIHandler:TRequestIPI;
+ ReleaseIPIHandler:TReleaseIPI;
+ 
+var
+ {Interrupt Register/Deregister Handlers}
+ RegisterInterruptHandler:TRegisterInterrupt;
+ DeregisterInterruptHandler:TDeregisterInterrupt;
+ 
+var
+ {System Call (SWI) Handlers}
  SystemCallHandler:TSystemCall;
  
  RegisterSystemCallHandler:TRegisterSystemCall;
@@ -1222,7 +1395,13 @@ var
  GetLocalInterruptEntryHandler:TGetLocalInterruptEntry;
 
 var 
- {System Call Entry Handlers}
+ {Software Interrupt Entry (IPI) Handlers}
+ GetSoftwareInterruptCountHandler:TGetSoftwareInterruptCount;
+ GetSoftwareInterruptStartHandler:TGetSoftwareInterruptStart;
+ GetSoftwareInterruptEntryHandler:TGetSoftwareInterruptEntry;
+
+var 
+ {System Call Entry (SWI) Handlers}
  GetSystemCallCountHandler:TGetSystemCallCount;
  GetSystemCallEntryHandler:TGetSystemCallEntry;
  
@@ -1300,6 +1479,9 @@ var
  
  MemoryGetPageSizeHandler:TMemoryGetPageSize;
  MemoryGetLargePageSizeHandler:TMemoryGetLargePageSize;
+
+ MemoryGetSectionSizeHandler:TMemoryGetSectionSize;
+ MemoryGetLargeSectionSizeHandler:TMemoryGetLargeSectionSize;
 
 var
  {Power Handlers}
@@ -1400,6 +1582,12 @@ var
  FramebufferSetVsyncHandler:TFramebufferSetVsync;
  
  FramebufferSetBacklightHandler:TFramebufferSetBacklight;
+ 
+ FramebufferGetNumDisplaysHandler:TFramebufferGetNumDisplays;
+ FramebufferGetDisplayIdHandler:TFramebufferGetDisplayId;
+ FramebufferSetDisplayNumHandler:TFramebufferSetDisplayNum;
+ FramebufferGetDisplaySettingsHandler:TFramebufferGetDisplaySettings;
+ FramebufferDisplayIdToNameHandler:TFramebufferDisplayIdToName;
  
 var
  {Cursor Handlers}
@@ -1643,6 +1831,11 @@ var
  
 var
  {PageTable Handlers}
+ PageTableGetLevelsHandler:TPageTableGetLevels;
+
+ PageDirectoryGetBaseHandler:TPageDirectoryGetBase;
+ PageDirectoryGetSizeHandler:TPageDirectoryGetSize;
+
  PageTableGetBaseHandler:TPageTableGetBase;
  PageTableGetSizeHandler:TPageTableGetSize;
  
@@ -1651,6 +1844,9 @@ var
  
  PageTableGetPageSizeHandler:TPageTableGetPageSize;
  PageTableGetPageFlagsHandler:TPageTableGetPageFlags;
+ {$IFDEF CPUARM}
+ PageTableGetPageRangeHandler:TPageTableGetPageRange;
+ {$ENDIF CPUARM}
  PageTableGetPagePhysicalHandler:TPageTableGetPagePhysical;
  
 var
@@ -1752,10 +1948,17 @@ procedure ParseBootTags;
 procedure ParseCommandLine;
 procedure ParseEnvironment;
 
+procedure OptionsInit;
+
 {==============================================================================}
 {Boot Functions}
 procedure BootBlink; inline;
 procedure BootOutput(Value:LongWord); inline;
+procedure BootConsoleStart; inline;
+procedure BootConsoleWrite(const Value:String); inline;
+procedure BootConsoleWriteEx(const Value:String;X,Y:LongWord); inline;
+function BootConsoleGetX:LongWord; inline;
+function BootConsoleGetY:LongWord; inline;
 
 {==============================================================================}
 {LED Functions}
@@ -1827,7 +2030,17 @@ function RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:
 function ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
 
 {==============================================================================}
-{System Call (Software Interrupt or SWI) Functions}
+{Inter Processor Interrupt (IPI) Functions}
+function RequestIPI(CPUID,Number:LongWord;Handler:TIPIHandler;Parameter:Pointer):LongWord; inline;
+function ReleaseIPI(CPUID,Number:LongWord;Handler:TIPIHandler;Parameter:Pointer):LongWord; inline;
+
+{==============================================================================}
+{Interrupt Register/Deregister Functions}
+function RegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord; inline;
+function DeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord; inline;
+
+{==============================================================================}
+{System Call (SWI) Functions}
 procedure SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); inline;
 
 function RegisterSystemCall(Number:LongWord;Handler:TSystemCallHandler):LongWord; inline;
@@ -1839,16 +2052,25 @@ function DeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler
 {Interrupt Entry Functions}
 function GetInterruptCount:LongWord; inline;
 function GetInterruptStart:LongWord; inline;
-function GetInterruptEntry(Number:LongWord):TInterruptEntry; inline;
+function GetInterruptEntry(Number:LongWord):TInterruptEntry; overload;
+function GetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord; inline; overload;
 
 {==============================================================================}
 {Local Interrupt Entry Functions}
 function GetLocalInterruptCount:LongWord; inline;
 function GetLocalInterruptStart:LongWord; inline;
-function GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; inline;
+function GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; overload;
+function GetLocalInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord; inline; overload;
 
 {==============================================================================}
-{System Call Entry Functions}
+{Software Interrupt Entry (IPI) Functions}
+function GetSoftwareInterruptCount:LongWord; inline;
+function GetSoftwareInterruptStart:LongWord; inline;
+function GetSoftwareInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; overload;
+function GetSoftwareInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord; inline; overload;
+
+{==============================================================================}
+{System Call Entry (SWI) Functions}
 function GetSystemCallCount:LongWord; inline;
 function GetSystemCallEntry(Number:LongWord):TSystemCallEntry; inline;
 
@@ -1873,7 +2095,7 @@ function CPUGetMode:LongWord; inline;
 function CPUGetState:LongWord; inline;
 function CPUGetGroup:LongWord; inline;
 function CPUGetCurrent:LongWord; inline;
-function CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; inline; 
+function CPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; inline; 
 function CPUGetPercentage(CPUID:LongWord):Double; inline;
 function CPUGetUtilization(CPUID:LongWord):LongWord; inline;
 
@@ -1890,7 +2112,7 @@ function FPUGetState:LongWord; inline;
 {GPU Functions}
 function GPUGetType:LongWord; inline;
 function GPUGetState:LongWord; inline;
-function GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; inline; 
+function GPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; inline; 
 
 {==============================================================================}
 {Cache Functions}
@@ -1931,10 +2153,13 @@ function MachineGetType:LongWord; inline;
 {==============================================================================}
 {Memory Functions}
 function MemoryGetBase:PtrUInt; inline;
-function MemoryGetSize:LongWord; inline;
+function MemoryGetSize:UInt64; inline;
 
 function MemoryGetPageSize:LongWord; inline;
 function MemoryGetLargePageSize:LongWord; inline;
+
+function MemoryGetSectionSize:LongWord; inline;
+function MemoryGetLargeSectionSize:LongWord; inline;
 
 {==============================================================================}
 {Power Functions}
@@ -1951,6 +2176,10 @@ function PowerSetState(PowerId,State:LongWord;Wait:Boolean):LongWord; inline;
 function ClockTicks:LongWord;
 function ClockSeconds:LongWord;
 {$ENDIF}
+function ClockMilliseconds:Int64;
+function ClockMicroseconds:Int64;
+function ClockNanoseconds:Int64;
+
 function ClockGetTime:Int64;
 function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
 
@@ -2049,9 +2278,15 @@ function FramebufferSetVsync:LongWord; inline;
 
 function FramebufferSetBacklight(Brightness:LongWord):LongWord; inline;
 
+function FramebufferGetNumDisplays(var NumDisplays:LongWord):LongWord; inline;
+function FramebufferGetDisplayId(DisplayNum:LongWord):LongWord; inline;
+function FramebufferSetDisplayNum(DisplayNum:LongWord):LongWord; inline;
+function FramebufferGetDisplaySettings(DisplayNum:LongWord;var DisplaySettings:TDisplaySettings):LongWord; inline;
+function FramebufferDisplayIdToName(DisplayId:LongWord):String; inline;
+
 {==============================================================================}
 {Touch Functions}
-function TouchGetBuffer(var Address:LongWord):LongWord; inline;
+function TouchGetBuffer(var Address:PtrUInt):LongWord; inline;
 function TouchSetBuffer(Address:PtrUInt):LongWord; inline;
 
 {==============================================================================}
@@ -2259,10 +2494,10 @@ procedure InvalidateDataCache; inline;
 procedure CleanAndInvalidateDataCache; inline;
 procedure InvalidateInstructionCache; inline;
 
-procedure CleanDataCacheRange(Address,Size:LongWord); inline;
-procedure InvalidateDataCacheRange(Address,Size:LongWord); inline;
-procedure CleanAndInvalidateDataCacheRange(Address,Size:LongWord); inline;
-procedure InvalidateInstructionCacheRange(Address,Size:LongWord); inline;
+procedure CleanDataCacheRange(Address:PtrUInt;Size:LongWord); inline;
+procedure InvalidateDataCacheRange(Address:PtrUInt;Size:LongWord); inline;
+procedure CleanAndInvalidateDataCacheRange(Address:PtrUInt;Size:LongWord); inline;
+procedure InvalidateInstructionCacheRange(Address:PtrUInt;Size:LongWord); inline;
 
 procedure FlushPrefetchBuffer; inline;
 
@@ -2283,6 +2518,11 @@ function InterlockedExchange(var Target:LongInt;Source:LongInt):LongInt; inline;
 function InterlockedAddExchange(var Target:LongInt;Source:LongInt):LongInt; inline;
 function InterlockedCompareExchange(var Target:LongInt;Source,Compare:LongInt):LongInt; inline;
 
+function PageTableGetLevels:LongWord; inline;
+
+function PageDirectoryGetBase:PtrUInt; inline;
+function PageDirectoryGetSize:LongWord; inline;
+
 function PageTableGetBase:PtrUInt; inline;
 function PageTableGetSize:LongWord; inline;
 
@@ -2292,6 +2532,9 @@ function PageTableSetEntry(const Entry:TPageTableEntry):LongWord; inline;
 
 function PageTableGetPageSize(Address:PtrUInt):LongWord; inline;
 function PageTableGetPageFlags(Address:PtrUInt):LongWord; inline;
+{$IFDEF CPUARM}
+function PageTableGetPageRange(Address:PtrUInt):LongWord; inline;
+{$ENDIF CPUARM}
 function PageTableGetPagePhysical(Address:PtrUInt):PtrUInt; inline;
 
 function PageTablesGetAddress:PtrUInt; inline;
@@ -2575,7 +2818,7 @@ begin
  
  {Initialize Board}
  BoardInit;
- 
+
  {Initialize Memory}
  MemoryInit;
  
@@ -2602,6 +2845,9 @@ begin
 
  {Initialize Peripheral Access}
  PeripheralInit;
+ 
+ {Initialize Options}
+ OptionsInit;
  
  {Initialize Handle Table}
  HandleTable.Next:=HANDLE_TABLE_MIN;
@@ -2635,7 +2881,7 @@ begin
      THREAD_STACK_MINIMUM_SIZE:=MEMORY_PAGE_SIZE;
     end;
   end;
-  
+ 
  PlatformInitialized:=True; 
 end;
 
@@ -2974,9 +3220,6 @@ end;
 
 procedure ParseEnvironment;
 {Setup envp and process known environment options (Where Applicable)}
-var
- Count:LongWord;
- WorkInt:LongWord;
 begin
  {}
  {Check Completed}
@@ -2990,6 +3233,27 @@ begin
   end;
  
  {Perform default initialization}
+  {Nothing} 
+ 
+ ParseEnvironmentCompleted:=True; 
+end;
+
+{==============================================================================}
+
+procedure OptionsInit;
+{Process known command line and environment options (Where Applicable)}
+var
+ Count:LongWord;
+ WorkInt:LongWord;
+begin
+ {}
+ {Check Completed}
+ if OptionsInitCompleted then Exit;
+ 
+ {Default Command Line Options}
+  {Nothing} 
+ 
+ {Default Environment Options}
  {CPU_COUNT}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CPU_COUNT'),0);
  if WorkInt > 0 then
@@ -3017,6 +3281,17 @@ begin
     end;
   end;
  
+ {SCHEDULER_CPU_RESERVE}
+ WorkInt:=StrToIntDef('0x' + SysUtils.GetEnvironmentVariable('SCHEDULER_CPU_RESERVE'),0);
+ if WorkInt > 0 then
+  begin
+   {Set Mask}
+   SCHEDULER_CPU_RESERVE:=(WorkInt and CPU_MASK);
+   
+   {Check Mask}
+   if SCHEDULER_CPU_RESERVE = CPU_MASK then SCHEDULER_CPU_RESERVE:=0;
+  end;
+ 
  {TIMER_THREAD_COUNT}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('TIMER_THREAD_COUNT'),0);
  if WorkInt > 0 then TIMER_THREAD_COUNT:=WorkInt;
@@ -3030,10 +3305,227 @@ begin
  {WORKER_PRIORITY_THREAD_COUNT}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WORKER_PRIORITY_THREAD_COUNT'),0);
  if WorkInt > 0 then WORKER_PRIORITY_THREAD_COUNT:=WorkInt;
- 
- ParseEnvironmentCompleted:=True; 
+
+ {Check the Handler}
+ if Assigned(OptionsInitHandler) then
+  begin
+   {Call the Handler}
+   OptionsInitHandler;
+  end;
+
+ OptionsInitCompleted:=True; 
 end;
 
+{==============================================================================}
+{==============================================================================}
+{TInterruptEntry}
+function TInterruptEntry.GetCPUID:LongWord;
+begin
+ {}
+ Result:=CPUMaskToID(CPUMask);
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetCPUID(ACPUID:LongWord);
+begin
+ {}
+ CPUMask:=CPUIDToMask(ACPUID);
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetPriority(APriority:LongWord);
+begin
+ {}
+ case APriority of
+  INTERRUPT_PRIORITY_MAXIMUM,
+  INTERRUPT_PRIORITY_FIQ,
+  INTERRUPT_PRIORITY_DEFAULT,
+  INTERRUPT_PRIORITY_MINIMUM:begin
+    FPriority:=APriority;
+   end; 
+  else
+   FPriority:=INTERRUPT_PRIORITY_DEFAULT;
+ end
+end;
+
+{==============================================================================}
+  
+function TInterruptEntry.GetIsShared:Boolean;
+begin
+ {}
+ Result:=(FFlags and INTERRUPT_FLAG_SHARED) <> 0;
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetIsShared(AValue:Boolean);
+begin
+ {}
+ if AValue then
+  begin
+   FFlags:=FFlags or INTERRUPT_FLAG_SHARED;
+  end
+ else
+  begin
+   FFlags:=FFlags and not INTERRUPT_FLAG_SHARED;
+  end;  
+end;
+
+{==============================================================================}
+
+function TInterruptEntry.GetIsLocal:Boolean;
+begin
+ {}
+ Result:=(FFlags and INTERRUPT_FLAG_LOCAL) <> 0;
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetIsLocal(AValue:Boolean);
+begin
+ {}
+ if AValue then
+  begin
+   FFlags:=FFlags or INTERRUPT_FLAG_LOCAL;
+  end
+ else
+  begin
+   FFlags:=FFlags and not INTERRUPT_FLAG_LOCAL;
+  end;  
+end;
+
+{==============================================================================}
+
+function TInterruptEntry.GetIsIPI:Boolean;
+begin
+ {}
+ Result:=(FFlags and INTERRUPT_FLAG_IPI) <> 0;
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetIsIPI(AValue:Boolean);
+begin
+ {}
+ if AValue then
+  begin
+   FFlags:=FFlags or INTERRUPT_FLAG_IPI;
+  end
+ else
+  begin
+   FFlags:=FFlags and not INTERRUPT_FLAG_IPI;
+  end;  
+end;
+
+{==============================================================================}
+
+function TInterruptEntry.GetIsFIQ:Boolean;
+begin
+ {}
+ Result:=(FFlags and INTERRUPT_FLAG_FIQ) <> 0;
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetIsFIQ(AValue:Boolean);
+begin
+ {}
+ if AValue then
+  begin
+   FFlags:=FFlags or INTERRUPT_FLAG_FIQ;
+  end
+ else
+  begin
+   FFlags:=FFlags and not INTERRUPT_FLAG_FIQ;
+  end;  
+end;
+
+{==============================================================================}
+
+function TInterruptEntry.GetPriorityDefault:Boolean;
+begin
+ {}
+ Result:=(FPriority = INTERRUPT_PRIORITY_DEFAULT);
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetPriorityDefault(AValue:Boolean);
+begin
+ {}
+ FPriority:=INTERRUPT_PRIORITY_DEFAULT;
+end;
+
+{==============================================================================}
+
+function TInterruptEntry.GetPriorityMinimum:Boolean;
+begin
+ {}
+ Result:=(FPriority = INTERRUPT_PRIORITY_MINIMUM);
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetPriorityMinimum(AValue:Boolean);
+begin
+ {}
+ FPriority:=INTERRUPT_PRIORITY_MINIMUM;
+end;
+
+{==============================================================================}
+
+function TInterruptEntry.GetPriorityMaximum:Boolean;
+begin
+ {}
+ Result:=(FPriority = INTERRUPT_PRIORITY_MAXIMUM);
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetPriorityMaximum(AValue:Boolean);
+begin
+ {}
+ FPriority:=INTERRUPT_PRIORITY_MAXIMUM;
+end;
+
+{==============================================================================}
+
+function TInterruptEntry.GetPriorityFIQ:Boolean;
+begin
+ {}
+ Result:=(FPriority = INTERRUPT_PRIORITY_FIQ);
+end;
+
+{==============================================================================}
+
+procedure TInterruptEntry.SetPriorityFIQ(AValue:Boolean);
+begin
+ {}
+ FPriority:=INTERRUPT_PRIORITY_FIQ;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TPageTableEntry}
+{$IFDEF CPUARM}
+function TPageTableEntry.GetLargePhysicalAddress:UInt64;
+begin
+ {}
+ Int64Rec(Result).Hi:=PhysicalRange;
+ Int64Rec(Result).Lo:=PhysicalAddress;
+end;
+
+{==============================================================================}
+
+procedure TPageTableEntry.SetLargePhysicalAddress(Address:UInt64);
+begin
+ {}
+ PhysicalRange:=Int64Rec(Address).Hi;
+ PhysicalAddress:=Int64Rec(Address).Lo;
+end;
+{$ENDIF CPUARM}
 {==============================================================================}
 {==============================================================================}
 {EHardwareException}
@@ -3067,6 +3559,79 @@ begin
  if Assigned(BootOutputHandler) then
   begin
    BootOutputHandler(Value);
+  end;
+end;
+
+{==============================================================================}
+
+procedure BootConsoleStart; inline;
+{Start the boot time console display (Where Applicable)}
+{Note: Intended for startup diagnostics when bootstrapping a new board}
+begin
+ {}
+ if Assigned(BootConsoleStartHandler) then
+  begin
+   BootConsoleStartHandler;
+  end;
+end;
+
+{==============================================================================}
+
+procedure BootConsoleWrite(const Value:String); inline;
+{Output text to the boot time console display (Where Applicable)}
+{Note: Intended for startup diagnostics when bootstrapping a new board}
+begin
+ {}
+ if Assigned(BootConsoleWriteHandler) then
+  begin
+   BootConsoleWriteHandler(Value);
+  end;
+end;
+
+{==============================================================================}
+
+procedure BootConsoleWriteEx(const Value:String;X,Y:LongWord); inline;
+{Output text to the boot time console display at the specifited X and Y position (Where Applicable)}
+{Note: Intended for startup diagnostics when bootstrapping a new board}
+begin
+ {}
+ if Assigned(BootConsoleWriteExHandler) then
+  begin
+   BootConsoleWriteExHandler(Value,X,Y);
+  end;
+end;
+
+{==============================================================================}
+
+function BootConsoleGetX:LongWord; inline;
+{Get the current X position of the boot time console display (Where Applicable)}
+{Note: Intended for startup diagnostics when bootstrapping a new board}
+begin
+ {}
+ if Assigned(BootConsoleGetXHandler) then
+  begin
+   Result:=BootConsoleGetXHandler;
+  end
+ else
+  begin
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function BootConsoleGetY:LongWord; inline;
+{Get the current Y position of the boot time console display (Where Applicable)}
+{Note: Intended for startup diagnostics when bootstrapping a new board}
+begin
+ {}
+ if Assigned(BootConsoleGetYHandler) then
+  begin
+   Result:=BootConsoleGetYHandler;
+  end
+ else
+  begin
+   Result:=0;
   end;
 end;
 
@@ -3564,6 +4129,10 @@ end;
 {Interrupt Request (IRQ) Functions}
 function RequestIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; inline;
 {Request registration of the supplied handler to the specified IRQ number}
+{CPUID: CPU to route IRQ to}
+{Number: IRQ number to register}
+{Handler: Interrupt handler function to register}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
 {Note: If the IRQ number is already registered then the request will fail}
 begin
  {}
@@ -3581,6 +4150,10 @@ end;
 
 function ReleaseIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; inline;
 {Request deregistration of the supplied handler from the specified IRQ number}
+{CPUID: CPU to unroute IRQ from}
+{Number: IRQ number to deregister}
+{Handler: Interrupt handler function to deregister}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
 {Note: If the IRQ number is not currently registered then the request will fail}
 begin
  {}
@@ -3598,6 +4171,12 @@ end;
 
 function RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
 {Request registration of the supplied extended handler to the specified IRQ number}
+{CPUID: CPU to route IRQ to}
+{Number: IRQ number to register}
+{Handler: Interrupt handler function to register}
+{HandlerEx: Extended Interrupt handler function to register}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Note: Only one of Handler or HandlerEx can be specified}
 {Note: If the IRQ number is already registered then the request will fail}
 begin
  {}
@@ -3615,6 +4194,12 @@ end;
 
 function ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
 {Request deregistration of the supplied extended handler from the specified IRQ number}
+{CPUID: CPU to unroute IRQ from}
+{Number: IRQ number to deregister}
+{Handler: Interrupt handler function to deregister}
+{HandlerEx: Extended Interrupt handler function to deregister}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Note: Only one of Handler or HandlerEx can be specified}
 {Note: If the IRQ number is not currently registered then the request will fail}
 begin
  {}
@@ -3633,6 +4218,10 @@ end;
 {Fast Interrupt Request (FIQ) Functions}
 function RequestFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; inline;
 {Request registration of the supplied handler to the specified FIQ number (Where Applicable)}
+{CPUID: CPU to route FIQ to}
+{Number: FIQ number to register}
+{Handler: Interrupt handler function to register}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
 {Note: If the FIQ number is already registered then the request will fail}
 begin
  {}
@@ -3650,6 +4239,10 @@ end;
 
 function ReleaseFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;Parameter:Pointer):LongWord; inline;
 {Request deregistration of the supplied handler from the specified FIQ number (Where Applicable)}
+{CPUID: CPU to unroute FIQ from}
+{Number: FIQ number to deregister}
+{Handler: Interrupt handler function to deregister}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
 {Note: If the FIQ number is not currently registered then the request will fail}
 begin
  {}
@@ -3667,6 +4260,12 @@ end;
 
 function RequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
 {Request registration of the supplied extended handler to the specified FIQ number (Where Applicable)}
+{CPUID: CPU to route FIQ to}
+{Number: FIQ number to register}
+{Handler: Interrupt handler function to register}
+{HandlerEx: Extended Interrupt handler function to register}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Note: Only one of Handler or HandlerEx can be specified}
 {Note: If the FIQ number is already registered then the request will fail}
 begin
  {}
@@ -3684,6 +4283,12 @@ end;
 
 function ReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; inline;
 {Request deregistration of the supplied extended handler from the specified FIQ number (Where Applicable)}
+{CPUID: CPU to unroute FIQ from}
+{Number: FIQ number to deregister}
+{Handler: Interrupt handler function to deregister}
+{HandlerEx: Extended Interrupt handler function to deregister}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Note: Only one of Handler or HandlerEx can be specified}
 {Note: If the FIQ number is not currently registered then the request will fail}
 begin
  {}
@@ -3699,7 +4304,96 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{System Call (Software Interrupt or SWI) Functions}
+{Inter Processor Interrupt (IPI) Functions}
+function RequestIPI(CPUID,Number:LongWord;Handler:TIPIHandler;Parameter:Pointer):LongWord; inline;
+{Request registration of the supplied handler to the specified IPI (Inter-processor interrupt) number (Where Applicable)}
+{CPUID: CPU to route IPI to}
+{Number: IPI number to register}
+{Handler: Interrupt handler function to register}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Note: If the IPI number is already registered then the request will fail}
+begin
+ {}
+ if Assigned(RequestIPIHandler) then
+  begin
+   Result:=RequestIPIHandler(CPUID,Number,Handler,Parameter);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function ReleaseIPI(CPUID,Number:LongWord;Handler:TIPIHandler;Parameter:Pointer):LongWord; inline;
+{Request deregistration of the supplied handler from the specified IPI (Inter-processor interrupt) number (Where Applicable)}
+{CPUID: CPU to unroute IPI from}
+{Number: IPI number to deregister}
+{Handler: Interrupt handler function to deregister}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Note: If the IPI number is not currently registered then the request will fail}
+begin
+ {}
+ if Assigned(ReleaseIPIHandler) then
+  begin
+   Result:=ReleaseIPIHandler(CPUID,Number,Handler,Parameter);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+{Interrupt Register/Deregister Functions}
+function RegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord; inline;
+{Request registration of the supplied handler to the specified interrupt number (Where Applicable)}
+{Number: The interrupt number to register the hanlder for}
+{Mask: The mask of CPUs to register the handler for (eg CPU_MASK_0, CPU_MASK_1) (Where Applicable)}
+{Priority: The priroty level of the interrupt to be registered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
+{Flags: The flags to control the registration of the interrupt (eg INTERRUPT_FLAG_SHARED) (Where Applicable)}
+{Handler: The shared interrupt handler to be called when the interrupt occurs}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Return: ERROR_SUCCESS if the callback was scheduled successfully or another error code on failure}
+begin
+ {}
+ if Assigned(RegisterInterruptHandler) then
+  begin
+   Result:=RegisterInterruptHandler(Number,Mask,Priority,Flags,Handler,Parameter);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function DeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord; inline;
+{Request deregistration of the supplied handler from the specified interrupt number (Where Applicable)}
+{Number: The interrupt number to deregister the hanlder for}
+{Mask: The mask of CPUs to deregister the handler for (eg CPU_MASK_0, CPU_MASK_1) (Where Applicable)}
+{Priority: The priroty level of the interrupt to be deregistered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
+{Flags: The flags to control the deregistration of the interrupt (eg INTERRUPT_FLAG_SHARED, INTERRUPT_FLAG_LOCAL, INTERRUPT_FLAG_FIQ) (Where Applicable)}
+{Handler: The shared interrupt handler to be called when the interrupt occurs}
+{Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
+{Return: ERROR_SUCCESS if the callback was scheduled successfully or another error code on failure}
+begin
+ {}
+ if Assigned(DeregisterInterruptHandler) then
+  begin
+   Result:=DeregisterInterruptHandler(Number,Mask,Priority,Flags,Handler,Parameter);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{System Call (SWI) Functions}
 procedure SystemCall(Number:LongWord;Param1,Param2,Param3:PtrUInt); inline;
 {Perform a System Call function with the supplied parameters (Where Applicable)}
 {Number: The System Call number to be called}
@@ -3829,17 +4523,28 @@ end;
 
 {==============================================================================}
 
-function GetInterruptEntry(Number:LongWord):TInterruptEntry; inline;
+function GetInterruptEntry(Number:LongWord):TInterruptEntry;
 {Get the interrupt entry for the specified interrupt number}
+begin
+ {}
+ GetInterruptEntry(Number,0,Result);
+end;
+
+{==============================================================================}
+
+function GetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord; inline;
+{Get the interrupt entry for the specified interrupt number and instance}
 begin
  {}
  if Assigned(GetInterruptEntryHandler) then
   begin
-   Result:=GetInterruptEntryHandler(Number);
+   Result:=GetInterruptEntryHandler(Number,Instance,Interrupt);
   end
  else
   begin
    FillChar(Result,SizeOf(TInterruptEntry),0);
+   
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 
@@ -3878,17 +4583,88 @@ end;
 
 {==============================================================================}
 
-function GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry; inline;
+function GetLocalInterruptEntry(CPUID,Number:LongWord):TInterruptEntry;
 {Get the local interrupt entry for the specified interrupt number (Where Applicable)}
+begin
+ {}
+ GetLocalInterruptEntry(CPUID,Number,0,Result);
+end;
+
+{==============================================================================}
+
+function GetLocalInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord; inline;
+{Get the local interrupt entry for the specified interrupt number and instance (Where Applicable)}
 begin
  {}
  if Assigned(GetLocalInterruptEntryHandler) then
   begin
-   Result:=GetLocalInterruptEntryHandler(CPUID,Number);
+   Result:=GetLocalInterruptEntryHandler(CPUID,Number,Instance,Interrupt);
   end
  else
   begin
    FillChar(Result,SizeOf(TInterruptEntry),0);
+   
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Software Interrupt Entry (SWI) Functions}
+function GetSoftwareInterruptCount:LongWord; inline;
+{Get the number of software interrupt entries for the current platform (Where Applicable)}
+begin
+ {}
+ if Assigned(GetSoftwareInterruptCountHandler) then
+  begin
+   Result:=GetSoftwareInterruptCountHandler;
+  end
+ else
+  begin
+   Result:=IRQ_SOFTWARE_COUNT;
+  end;
+end;
+
+{==============================================================================}
+
+function GetSoftwareInterruptStart:LongWord; inline;
+{Get the starting number of software interrupt entries for the current platform (Where Applicable)}
+begin
+ {}
+ if Assigned(GetSoftwareInterruptStartHandler) then
+  begin
+   Result:=GetSoftwareInterruptStartHandler;
+  end
+ else
+  begin
+   Result:=IRQ_SOFTWARE_START;
+  end;
+end;
+
+{==============================================================================}
+
+function GetSoftwareInterruptEntry(CPUID,Number:LongWord):TInterruptEntry;
+{Get the software interrupt entry for the specified interrupt number and instance (Where Applicable)}
+begin
+ {}
+ GetSoftwareInterruptEntry(CPUID,Number,0,Result);
+end;
+
+{==============================================================================}
+
+function GetSoftwareInterruptEntry(CPUID,Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord; inline;
+{Get the software interrupt entry for the specified interrupt number and instance (Where Applicable)}
+begin
+ {}
+ if Assigned(GetSoftwareInterruptEntryHandler) then
+  begin
+   Result:=GetSoftwareInterruptEntryHandler(CPUID,Number,Instance,Interrupt);
+  end
+ else
+  begin
+   FillChar(Result,SizeOf(TInterruptEntry),0);
+   
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 
@@ -3987,10 +4763,24 @@ begin
   end
  else
   begin
-   {Get Current Seconds}
-   Result:=ClockSeconds; {Avoid 32 bit overflow}
-   {Get Current Up Time}
-   Result:=TIME_TICKS_TO_1899 + (Result * TIME_TICKS_PER_SECOND);
+   if CLOCK_CYCLES_PER_MICROSECOND > 0 then
+    begin
+     {Get Current Up Time}
+     Result:=TIME_TICKS_TO_1899 + (ClockMicroseconds * TIME_TICKS_PER_MICROSECOND);
+    end
+   else if CLOCK_CYCLES_PER_MILLISECOND > 0 then  
+    begin
+     {Get Current Up Time}
+     Result:=TIME_TICKS_TO_1899 + (ClockMilliseconds * TIME_TICKS_PER_MILLISECOND);
+    end
+   else
+    begin 
+     {Get Current Seconds}
+     Result:=ClockSeconds; {Avoid 32 bit overflow}
+   
+     {Get Current Up Time}
+     Result:=TIME_TICKS_TO_1899 + (Result * TIME_TICKS_PER_SECOND);
+    end; 
   end;  
 end;
 
@@ -4174,7 +4964,7 @@ end;
 
 {==============================================================================}
 
-function CPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; inline; 
+function CPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; inline; 
 {Get the memory start and size available to the CPU}
 begin
  {}
@@ -4407,7 +5197,7 @@ end;
 
 {==============================================================================}
 
-function GPUGetMemory(var Address:PtrUInt;var Length:LongWord):LongWord; inline; 
+function GPUGetMemory(var Address:PtrUInt;var Length:UInt64):LongWord; inline; 
 {Get the memory start and size available to the GPU}
 begin
  {}
@@ -4753,7 +5543,7 @@ end;
 
 {==============================================================================}
 
-function MemoryGetSize:LongWord; inline;
+function MemoryGetSize:UInt64; inline;
 {Get the total size of system memory}
 begin
  {}
@@ -4796,6 +5586,38 @@ begin
  else
   begin
    Result:=MEMORY_LARGEPAGE_SIZE;
+  end;
+end;
+
+{==============================================================================}
+
+function MemoryGetSectionSize:LongWord; inline;
+{Get the section size of system memory (Where Applicable)}
+begin
+ {}
+ if Assigned(MemoryGetSectionSizeHandler) then
+  begin
+   Result:=MemoryGetSectionSizeHandler;
+  end
+ else
+  begin
+   Result:=MEMORY_SECTION_SIZE;
+  end;
+end;
+
+{==============================================================================}
+
+function MemoryGetLargeSectionSize:LongWord; inline;
+{Get the large section size of system memory (Where Applicable)}
+begin
+ {}
+ if Assigned(MemoryGetLargeSectionSizeHandler) then
+  begin
+   Result:=MemoryGetLargeSectionSizeHandler;
+  end
+ else
+  begin
+   Result:=MEMORY_LARGESECTION_SIZE;
   end;
 end;
 
@@ -4919,6 +5741,66 @@ end;
 {$ENDIF}
 {==============================================================================}
 
+function ClockMilliseconds:Int64;
+{Get the number of clock milliseconds since the system was started}
+{Return: The current number of clock milliseconds}
+begin
+ {}
+ {$IFDEF CLOCK_TICK_MANUAL}
+ Result:=ClockSeconds; {Avoid 32 bit overflow}
+ 
+ Result:=Result * MILLISECONDS_PER_SECOND;
+ {$ELSE}
+ Result:=0;
+ 
+ if CLOCK_CYCLES_PER_MILLISECOND = 0 then Exit;
+ 
+ Result:=ClockGetTotal div CLOCK_CYCLES_PER_MILLISECOND;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function ClockMicroseconds:Int64;
+{Get the number of clock microseconds since the system was started}
+{Return: The current number of clock microseconds}
+begin
+ {}
+ {$IFDEF CLOCK_TICK_MANUAL}
+ Result:=ClockSeconds; {Avoid 32 bit overflow}
+ 
+ Result:=Result * MICROSECONDS_PER_SECOND;
+ {$ELSE}
+ Result:=0;
+ 
+ if CLOCK_CYCLES_PER_MICROSECOND = 0 then Exit;
+ 
+ Result:=ClockGetTotal div CLOCK_CYCLES_PER_MICROSECOND;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function ClockNanoseconds:Int64;
+{Get the number of clock nanoseconds since the system was started}
+{Return: The current number of clock nanoseconds}
+begin
+ {}
+ {$IFDEF CLOCK_TICK_MANUAL}
+ Result:=ClockSeconds; {Avoid 32 bit overflow}
+ 
+ Result:=Result * NANOSECONDS_PER_SECOND;
+ {$ELSE}
+ Result:=0;
+ 
+ if CLOCK_CYCLES_PER_NANOSECOND = 0 then Exit;
+ 
+ Result:=ClockGetTotal div CLOCK_CYCLES_PER_NANOSECOND;
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
 function ClockGetTime:Int64;
 {Get the current system time in 100 nanosecond ticks since 1/1/1601}
 {Return: The current system time}
@@ -4928,11 +5810,24 @@ function ClockGetTime:Int64;
  the actual conversion between UTC and local time is handled at a higher level}
 begin
  {}
- {Get Current Seconds}
- Result:=ClockSeconds; {Avoid 32 bit overflow}
+ if CLOCK_CYCLES_PER_MICROSECOND > 0 then
+  begin
+   {Get Current Time}
+   Result:=ClockBase + (ClockMicroseconds * TIME_TICKS_PER_MICROSECOND);
+  end
+ else if CLOCK_CYCLES_PER_MILLISECOND > 0 then  
+  begin
+   {Get Current Time}
+   Result:=ClockBase + (ClockMilliseconds * TIME_TICKS_PER_MILLISECOND);
+  end
+ else
+  begin 
+   {Get Current Seconds}
+   Result:=ClockSeconds; {Avoid 32 bit overflow}
  
- {Get Current Time}
- Result:=ClockBase + (Result * TIME_TICKS_PER_SECOND);
+   {Get Current Time}
+   Result:=ClockBase + (Result * TIME_TICKS_PER_SECOND);
+  end; 
  
  {Check Current Time}
  if (Result < TIME_TICKS_TO_2001) and RTCAvailable and not(ClockRTCInvalid) then
@@ -4967,34 +5862,47 @@ function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
 {Note: By default the time passed to this function is considered to be UTC but
  the actual conversion between UTC and local time is handled at a higher level}
 var
- CurrentSeconds:Int64;
+ CurrentTicks:Int64;
 begin
  {}
  {Acquire Lock}
  if ClockLock.Lock <> INVALID_HANDLE_VALUE then ClockLock.AcquireLock(ClockLock.Lock);
  
- {Get Current Seconds}
- CurrentSeconds:=ClockSeconds; {Avoid 32 bit overflow}
+ if CLOCK_CYCLES_PER_MICROSECOND > 0 then
+  begin
+   {Get Current Ticks}
+   CurrentTicks:=(ClockMicroseconds * TIME_TICKS_PER_MICROSECOND);
+  end
+ else if CLOCK_CYCLES_PER_MILLISECOND > 0 then  
+  begin
+   {Get Current Ticks}
+   CurrentTicks:=(ClockMilliseconds * TIME_TICKS_PER_MILLISECOND);
+  end
+ else
+  begin 
+   {Get Current Seconds}
+   CurrentTicks:=ClockSeconds; {Avoid 32 bit overflow}
  
- {Get Current Time}
- CurrentSeconds:=(CurrentSeconds * TIME_TICKS_PER_SECOND);
+   {Get Current Ticks}
+   CurrentTicks:=(CurrentTicks * TIME_TICKS_PER_SECOND);
+  end; 
  
  {Check Time}
- if Time < CurrentSeconds then
+ if Time < CurrentTicks then
   begin
    {Set Current Time}
    ClockBase:=0;
    
    {Get Current Time}
-   Result:=ClockBase + CurrentSeconds;
+   Result:=ClockBase + CurrentTicks;
   end
  else
   begin 
    {Set Current Time}
-   ClockBase:=(Time - CurrentSeconds); 
+   ClockBase:=(Time - CurrentTicks); 
    
    {Get Current Time}
-   Result:=ClockBase + CurrentSeconds;
+   Result:=ClockBase + CurrentTicks;
   end; 
   
  {Release Lock}
@@ -5434,6 +6342,9 @@ begin
   end
  else
   begin
+   Address:=0;
+   Length:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5482,6 +6393,13 @@ begin
   end
  else
   begin
+   Width:=0;
+   Height:=0;
+   Top:=0;
+   Bottom:=0;
+   Left:=0;
+   Right:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5500,6 +6418,9 @@ begin
   end
  else
   begin
+   Width:=0;
+   Height:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5516,6 +6437,9 @@ begin
   end
  else
   begin
+   Width:=0;
+   Height:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5532,6 +6456,9 @@ begin
   end
  else
   begin
+   Width:=0;
+   Height:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5551,6 +6478,9 @@ begin
   end
  else
   begin
+   Width:=0;
+   Height:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5567,6 +6497,9 @@ begin
   end
  else
   begin
+   Width:=0;
+   Height:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5583,6 +6516,9 @@ begin
   end
  else
   begin
+   Width:=0;
+   Height:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5599,6 +6535,8 @@ begin
   end
  else
   begin
+   Depth:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5615,6 +6553,8 @@ begin
   end
  else
   begin
+   Depth:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5631,6 +6571,8 @@ begin
   end
  else
   begin
+   Depth:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5647,6 +6589,8 @@ begin
   end
  else
   begin
+   Order:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5663,6 +6607,8 @@ begin
   end
  else
   begin
+   Order:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5679,6 +6625,8 @@ begin
   end
  else
   begin
+   Order:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5695,6 +6643,8 @@ begin
   end
  else
   begin
+   Mode:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5711,6 +6661,8 @@ begin
   end
  else
   begin
+   Mode:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5727,6 +6679,8 @@ begin
   end
  else
   begin
+   Mode:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5759,6 +6713,9 @@ begin
   end
  else
   begin
+   X:=0;
+   Y:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5775,6 +6732,9 @@ begin
   end
  else
   begin
+   X:=0;
+   Y:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5791,6 +6751,9 @@ begin
   end
  else
   begin
+   X:=0;
+   Y:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5807,6 +6770,11 @@ begin
   end
  else
   begin
+   Top:=0;
+   Bottom:=0;
+   Left:=0;
+   Right:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5823,6 +6791,11 @@ begin
   end
  else
   begin
+   Top:=0;
+   Bottom:=0;
+   Left:=0;
+   Right:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5839,6 +6812,11 @@ begin
   end
  else
   begin
+   Top:=0;
+   Bottom:=0;
+   Left:=0;
+   Right:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -5940,8 +6918,92 @@ begin
 end;
 
 {==============================================================================}
+
+function FramebufferGetNumDisplays(var NumDisplays:LongWord):LongWord; inline;
+{Get the number of framebuffer displays (Where Applicable)} 
+begin
+ {}
+ if Assigned(FramebufferGetNumDisplaysHandler) then
+  begin
+   Result:=FramebufferGetNumDisplaysHandler(NumDisplays);
+  end
+ else
+  begin
+   NumDisplays:=0;
+   
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferGetDisplayId(DisplayNum:LongWord):LongWord; inline;
+{Get the display id for the specified display number (Where Applicable)} 
+begin
+ {}
+ if Assigned(FramebufferGetDisplayIdHandler) then
+  begin
+   Result:=FramebufferGetDisplayIdHandler(DisplayNum);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferSetDisplayNum(DisplayNum:LongWord):LongWord; inline;
+{Set the current framebuffer display number (Where Applicable)} 
+begin
+ {}
+ if Assigned(FramebufferSetDisplayNumHandler) then
+  begin
+   Result:=FramebufferSetDisplayNumHandler(DisplayNum);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferGetDisplaySettings(DisplayNum:LongWord;var DisplaySettings:TDisplaySettings):LongWord; inline;
+{Get the display settings for the specified display number (Where Applicable)} 
+begin
+ {}
+ if Assigned(FramebufferGetDisplaySettingsHandler) then
+  begin
+   Result:=FramebufferGetDisplaySettingsHandler(DisplayNum,DisplaySettings);
+  end
+ else
+  begin
+   FillChar(DisplaySettings,SizeOf(TDisplaySettings),0);
+   
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function FramebufferDisplayIdToName(DisplayId:LongWord):String; inline;
+{Get the name for the specified display id (Where Applicable)} 
+begin
+ {}
+ if Assigned(FramebufferDisplayIdToNameHandler) then
+  begin
+   Result:=FramebufferDisplayIdToNameHandler(DisplayId);
+  end
+ else
+  begin
+   Result:='Unknown';
+  end;
+end;
+
+{==============================================================================}
 {Touch Functions}
-function TouchGetBuffer(var Address:LongWord):LongWord; inline;
+function TouchGetBuffer(var Address:PtrUInt):LongWord; inline;
 {Get the Touchscreen memory buffer (Where Applicable)}  
 begin
  {}
@@ -5951,6 +7013,8 @@ begin
   end
  else
   begin
+   Address:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7196,6 +8260,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7218,6 +8284,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7241,6 +8309,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7494,6 +8564,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7515,6 +8587,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7539,6 +8613,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7563,6 +8639,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7913,6 +8991,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -7932,6 +9012,8 @@ begin
   end
  else
   begin
+   Count:=0;
+   
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
@@ -8595,7 +9677,7 @@ end;
 
 {==============================================================================}
 
-procedure CleanDataCacheRange(Address,Size:LongWord); inline;
+procedure CleanDataCacheRange(Address:PtrUInt;Size:LongWord); inline;
 {Perform a Clean Data Cache Range operation (Where Applicable)}
 begin
  {}
@@ -8607,7 +9689,7 @@ end;
 
 {==============================================================================}
 
-procedure InvalidateDataCacheRange(Address,Size:LongWord); inline;
+procedure InvalidateDataCacheRange(Address:PtrUInt;Size:LongWord); inline;
 {Perform an Invalidate Data Cache Range operation (Where Applicable)}
 begin
  {}
@@ -8619,7 +9701,7 @@ end;
 
 {==============================================================================}
 
-procedure CleanAndInvalidateDataCacheRange(Address,Size:LongWord); inline;
+procedure CleanAndInvalidateDataCacheRange(Address:PtrUInt;Size:LongWord); inline;
 {Perform a Clean and Invalidate Data Cache Range operation (Where Applicable)}
 begin
  {}
@@ -8631,7 +9713,7 @@ end;
 
 {==============================================================================}
 
-procedure InvalidateInstructionCacheRange(Address,Size:LongWord); inline;
+procedure InvalidateInstructionCacheRange(Address:PtrUInt;Size:LongWord); inline;
 {Perform an Invalidate Instruction Cache Range operation (Where Applicable)}
 begin
  {}
@@ -8843,8 +9925,56 @@ end;
 
 {==============================================================================}
 
+function PageTableGetLevels:LongWord; inline;
+{Get the number of page table levels for the current platform}
+begin
+ {}
+ if Assigned(PageTableGetLevelsHandler) then
+  begin
+   Result:=PageTableGetLevelsHandler;
+  end
+ else
+  begin
+   Result:=PAGE_TABLE_LEVELS;
+  end;
+end;
+
+{==============================================================================}
+
+function PageDirectoryGetBase:PtrUInt; inline;
+{Get the base address of the first level page directory (Where applicable)}
+begin
+ {}
+ if Assigned(PageDirectoryGetBaseHandler) then
+  begin
+   Result:=PageDirectoryGetBaseHandler;
+  end
+ else
+  begin
+   Result:=PAGE_DIRECTORY_BASE;
+  end;
+end;
+
+{==============================================================================}
+
+function PageDirectoryGetSize:LongWord; inline;
+{Get the size of the first level page directory (Where applicable)}
+begin
+ {}
+ if Assigned(PageDirectoryGetSizeHandler) then
+  begin
+   Result:=PageDirectoryGetSizeHandler;
+  end
+ else
+  begin
+   Result:=PAGE_DIRECTORY_SIZE;
+  end;
+end;
+
+{==============================================================================}
+
 function PageTableGetBase:PtrUInt; inline;
-{Get the base address of the first level page table}
+{Get the base address of the first or second level page table}
 begin
  {}
  if Assigned(PageTableGetBaseHandler) then
@@ -8860,7 +9990,7 @@ end;
 {==============================================================================}
 
 function PageTableGetSize:LongWord; inline;
-{Get the size of the first level page table}
+{Get the size of the first or second level page table}
 begin
  {}
  if Assigned(PageTableGetSizeHandler) then
@@ -8959,6 +10089,28 @@ begin
 end;
 
 {==============================================================================}
+{$IFDEF CPUARM}
+function PageTableGetPageRange(Address:PtrUInt):LongWord; inline;
+{Get the Physical Range from the Page Table page that corresponds to the supplied virtual address}
+var
+ Entry:TPageTableEntry;
+begin
+ {}
+ if Assigned(PageTableGetPageRangeHandler) then
+  begin
+   Result:=PageTableGetPageRangeHandler(Address);
+  end
+ else
+  begin
+   {Default Method}
+   PageTableGetEntry(Address,Entry);
+   
+   {Get Page Physical Range}
+   Result:=Entry.PhysicalRange;
+  end;  
+end;
+{$ENDIF CPUARM}
+{==============================================================================}
 
 function PageTableGetPagePhysical(Address:PtrUInt):PtrUInt; inline;
 {Get the Physical Address from the Page Table page that corresponds to the supplied virtual address}
@@ -8983,7 +10135,7 @@ end;
 {==============================================================================}
 
 function PageTablesGetAddress:PtrUInt; inline;
-{Get the address of the second level page tables}
+{Get the address of the second or third level page tables}
 begin
  {}
  if Assigned(PageTablesGetAddressHandler) then
@@ -8999,7 +10151,7 @@ end;
 {==============================================================================}
 
 function PageTablesGetLength:LongWord; inline;
-{Get the size of the second level page tables}
+{Get the size of the second or third level page tables}
 begin
  {}
  if Assigned(PageTablesGetLengthHandler) then
@@ -9015,7 +10167,7 @@ end;
 {==============================================================================}
 
 function PageTablesGetCount:LongWord; inline;
-{Get the number of second level page tables}
+{Get the number of second or third level page tables}
 begin
  {}
  if Assigned(PageTablesGetCountHandler) then
@@ -9031,7 +10183,7 @@ end;
 {==============================================================================}
 
 function PageTablesGetShift:LongWord; inline;
-{Get the multiplier to convert count to actual size of the second level page tables}
+{Get the multiplier to convert count to actual size of the second or third level page tables}
 begin
  {}
  if Assigned(PageTablesGetShiftHandler) then
@@ -9047,7 +10199,7 @@ end;
 {==============================================================================}
 
 function PageTablesGetNext:PtrUInt; inline;
-{Get the address of the next available second level page table}
+{Get the address of the next available second or third level page table}
 begin
  {}
  if Assigned(PageTablesGetNextHandler) then
@@ -9063,7 +10215,7 @@ end;
 {==============================================================================}
 
 function PageTablesGetUsed:LongWord; inline;
-{Get the number of used second level page tables}
+{Get the number of used second or third level page tables}
 begin
  {}
  if Assigned(PageTablesGetUsedHandler) then
@@ -9079,7 +10231,7 @@ end;
 {==============================================================================}
 
 function PageTablesGetFree:LongWord; inline;
-{Get the number of available second level page tables}
+{Get the number of available second or third level page tables}
 begin
  {}
  if Assigned(PageTablesGetFreeHandler) then
@@ -9182,7 +10334,7 @@ begin
  {}
  {$IFDEF EXCEPTION_DEBUG}
  Inc(HardwareExceptionCounter);
- HardwareExceptionAddress:=LongWord(Address);
+ HardwareExceptionAddress:=PtrUInt(Address);
  {$ENDIF}
  
  E:=nil;

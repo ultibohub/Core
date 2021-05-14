@@ -61,10 +61,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,SysUtils;
          
-//To Do //Look for:
-            
-//TestingRpi1
-
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -507,8 +503,6 @@ type
 {==============================================================================}
 var
  {ARMv6 specific variables}
- ARMv6Initialized:Boolean;
- 
  ARMv6DummySTREX:LongWord;               {Variable to allow a dummy STREX operation to be performed after each context switch as required by ARM documentation}
  
 var
@@ -579,10 +573,10 @@ procedure ARMv6InvalidateDataCache;
 procedure ARMv6CleanAndInvalidateDataCache;
 procedure ARMv6InvalidateInstructionCache;
 
-procedure ARMv6CleanDataCacheRange(Address,Size:LongWord); 
-procedure ARMv6InvalidateDataCacheRange(Address,Size:LongWord);
-procedure ARMv6CleanAndInvalidateDataCacheRange(Address,Size:LongWord);
-procedure ARMv6InvalidateInstructionCacheRange(Address,Size:LongWord); 
+procedure ARMv6CleanDataCacheRange(Address:PtrUInt;Size:LongWord); 
+procedure ARMv6InvalidateDataCacheRange(Address:PtrUInt;Size:LongWord);
+procedure ARMv6CleanAndInvalidateDataCacheRange(Address:PtrUInt;Size:LongWord);
+procedure ARMv6InvalidateInstructionCacheRange(Address:PtrUInt;Size:LongWord); 
 
 procedure ARMv6FlushPrefetchBuffer;
 
@@ -690,6 +684,12 @@ function ARMv6SetPageTableSupersection(Address,PhysicalAddress:PtrUInt;Flags:Lon
 {==============================================================================}
 
 implementation
+
+{==============================================================================}
+{==============================================================================}
+var
+ {ARMv6 specific variables}
+ ARMv6Initialized:Boolean;
 
 {==============================================================================}
 {==============================================================================}
@@ -1494,7 +1494,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6CleanDataCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe; 
+procedure ARMv6CleanDataCacheRangeInternal(Address:PtrUInt;Size:LongWord); assembler; nostackframe; 
 {Perform a clean data cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1510,7 +1510,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6CleanDataCacheRange(Address,Size:LongWord);
+procedure ARMv6CleanDataCacheRange(Address:PtrUInt;Size:LongWord);
 {Perform a clean data cache range, limiting the size for each operation to
  4MB because some processors fail to correctly operate with larger ranges}
 const
@@ -1538,7 +1538,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6InvalidateDataCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe; 
+procedure ARMv6InvalidateDataCacheRangeInternal(Address:PtrUInt;Size:LongWord); assembler; nostackframe; 
 {Perform an invalidate data cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1554,7 +1554,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6InvalidateDataCacheRange(Address,Size:LongWord);
+procedure ARMv6InvalidateDataCacheRange(Address:PtrUInt;Size:LongWord);
 {Perform an invalidate data cache range, limiting the size for each operation
  to 4MB because some processors fail to correctly operate with larger ranges}
 const
@@ -1582,7 +1582,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6CleanAndInvalidateDataCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe; 
+procedure ARMv6CleanAndInvalidateDataCacheRangeInternal(Address:PtrUInt;Size:LongWord); assembler; nostackframe; 
 {Perform a clean and invalidate data cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1598,7 +1598,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6CleanAndInvalidateDataCacheRange(Address,Size:LongWord);
+procedure ARMv6CleanAndInvalidateDataCacheRange(Address:PtrUInt;Size:LongWord);
 {Perform a clean and invalidate data cache range, limiting the size for each operation
  to 4MB because some processors fail to correctly operate with larger ranges}
 const
@@ -1626,7 +1626,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6InvalidateInstructionCacheRangeInternal(Address,Size:LongWord); assembler; nostackframe;  
+procedure ARMv6InvalidateInstructionCacheRangeInternal(Address:PtrUInt;Size:LongWord); assembler; nostackframe;  
 {Perform an invalidate instruction cache range operation
  See page 3-71 / 3-76 of the ARM1176JZF-S Technical Reference Manual}
 asm
@@ -1642,7 +1642,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6InvalidateInstructionCacheRange(Address,Size:LongWord);
+procedure ARMv6InvalidateInstructionCacheRange(Address:PtrUInt;Size:LongWord);
 {Perform an invalidate instruction cache range operation, limiting the size for each
  operation to 4MB because some processors fail to correctly operate with larger ranges}
 const
@@ -2893,7 +2893,7 @@ begin
  Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
  
  {Get Page Table Entry}
- ARMv6PageTableGetEntry(Offset,Entry);
+ PageTableGetEntry(Offset,Entry);
  
  {Check for Read Only or Read Write}
  if (Entry.Flags and (PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE)) <> 0 then
@@ -2928,7 +2928,7 @@ begin
   Offset:=VECTOR_TABLE_BASE + (Number shl 2) + 32; {Vector entries use "ldr pc, [pc, #24]" for each entry}
  
   {Get Page Table Entry}
-  ARMv6PageTableGetEntry(Offset,Entry);
+  PageTableGetEntry(Offset,Entry);
   
   {Check for Read Only}
   if (Entry.Flags and PAGE_TABLE_FLAG_READONLY) <> 0 then
@@ -2938,7 +2938,7 @@ begin
     Entry.Flags:=Entry.Flags and not(PAGE_TABLE_FLAG_READONLY);
     Entry.Flags:=Entry.Flags or PAGE_TABLE_FLAG_READWRITE;
     
-    if ARMv6PageTableSetEntry(Entry) = ERROR_SUCCESS then
+    if PageTableSetEntry(Entry) = ERROR_SUCCESS then
      begin
       {Set Entry}
       PPtrUInt(Offset)^:=Address;
@@ -2965,7 +2965,7 @@ begin
       Entry.Flags:=Flags;
       
       {Return Result}
-      Result:=ARMv6PageTableSetEntry(Entry);
+      Result:=PageTableSetEntry(Entry);
      end; 
    end
   else
@@ -5060,7 +5060,7 @@ asm
  //Invalidate the L1 Data and Instruction Caches before enabling the MMU
  //See page 3-74 and 6-9 of the ARM1176JZF-S Technical Reference Manual.
  //mov r12, #0
- //mcr p15, #0, r12, cr7, cr7, #0 //TestingRpi2/TestingRpi1
+ //mcr p15, #0, r12, cr7, cr7, #0
  
  //Invalidate the Transaction Lookaside Buffers (TLB) before enabling the MMU
  //See page 3-86 and 6-9 of the ARM1176JZF-S Technical Reference Manual.
@@ -5208,6 +5208,8 @@ begin
    {Current entry is a Coarse Page Table}
    CurrentBase:=(CurrentEntry and ARMV6_L1D_COARSE_BASE_MASK);
    CurrentOffset:=0;
+   
+   {Compare existing base with new base}
    if CurrentBase <> CoarseBase then
     begin
      {Copy existing table to new table}

@@ -1,7 +1,7 @@
 {
 Ultibo TCP (Transmission Control Protocol) unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -765,7 +765,7 @@ begin
         if CheckTCP(AF_INET,IP) then
          begin
           {Get Header}
-          TCP:=PTCPHeader(LongWord(IP) + GetTCPHeaderOffset(AF_INET,IP));
+          TCP:=PTCPHeader(PtrUInt(IP) + GetTCPHeaderOffset(AF_INET,IP));
           
           {Set the Ports to Host order}
           TCP.DestPort:=WordBEtoN(TCP.DestPort);
@@ -834,7 +834,7 @@ begin
         if CheckICMP(AF_INET,IP) then
          begin
           {Get Header}
-          ICMP:=PICMPHeader(LongWord(IP) + GetICMPHeaderOffset(AF_INET,IP));
+          ICMP:=PICMPHeader(PtrUInt(IP) + GetICMPHeaderOffset(AF_INET,IP));
           
           {Check for a Type that we handle}
           case ICMP.Unused.ICMPType of
@@ -872,7 +872,7 @@ begin
         if CheckTCP(AF_INET6,IP6) then
          begin
           {Get Header}
-          TCP:=PTCPHeader(LongWord(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
+          TCP:=PTCPHeader(PtrUInt(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
           
           {Set the Ports to Host order}
           TCP.DestPort:=WordBEtoN(TCP.DestPort);
@@ -936,7 +936,7 @@ begin
         if CheckICMP6(AF_INET6,IP6) then
          begin
           {Get Header}
-          ICMP6:=PICMP6Header(LongWord(IP6) + GetICMP6HeaderOffset(AF_INET6,IP6));
+          ICMP6:=PICMP6Header(PtrUInt(IP6) + GetICMP6HeaderOffset(AF_INET6,IP6));
         
           {Check for a Type that we handle}
 
@@ -992,7 +992,7 @@ begin
     IP:=PIPHeader(APacket);
     
     {Get the TCP}
-    TCP:=PTCPHeader(LongWord(IP) + GetTCPHeaderOffset(AF_INET,IP));
+    TCP:=PTCPHeader(PtrUInt(IP) + GetTCPHeaderOffset(AF_INET,IP));
     
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
@@ -1001,7 +1001,7 @@ begin
     Options:=nil;
     if GetTCPOptionsLength(AF_INET,IP) > 0 then
      begin
-      Options:=Pointer(LongWord(TCP) + TCP_HEADER_SIZE);
+      Options:=Pointer(PtrUInt(TCP) + TCP_HEADER_SIZE);
      end;
     
     {Get the Offset and Length}
@@ -1048,7 +1048,7 @@ begin
          if Options <> nil then HandleTCPOptions(Socket,Options,Flags);
          
          {Receive Data (Cloned Socket in TCP_STATE_CLOSED)}
-         Result:=Socket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(LongWord(IP) + Offset),Length);
+         Result:=Socket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
          
          {Unlock Socket}
          Socket.ReaderUnlock;
@@ -1081,7 +1081,7 @@ begin
        if Options <> nil then HandleTCPOptions(ASocket,Options,Flags);
        
        {Receive Data}
-       Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(LongWord(IP) + Offset),Length);
+       Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
       end;
      TCP_STATE_SYNREC:begin
        {Check Sequence}
@@ -1124,7 +1124,7 @@ begin
        if Options <> nil then HandleTCPOptions(ASocket,Options,Flags);
        
        {Receive Data}
-       Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(LongWord(IP) + Offset),Length);
+       Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
       end;
      TCP_STATE_ESTAB,TCP_STATE_FINWAIT1,TCP_STATE_FINWAIT2,TCP_STATE_CLOSWAIT,
      TCP_STATE_CLOSING,TCP_STATE_LASTACK,TCP_STATE_TIMEWAIT:begin
@@ -1171,7 +1171,7 @@ begin
        if Options <> nil then HandleTCPOptions(ASocket,Options,Flags);
        
        {Receive Data}
-       Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(LongWord(IP) + Offset),Length);
+       Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
       end;
      //To Do //TCP_STATE_TIMEWAIT:begin
              //As above (ESTABLISHED etc) but check FIN after ACK and send ACK if set
@@ -1189,7 +1189,7 @@ begin
     IP6:=PIP6Header(APacket);
     
     {Get the TCP}
-    TCP:=PTCPHeader(LongWord(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
+    TCP:=PTCPHeader(PtrUInt(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
     
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
@@ -1198,7 +1198,7 @@ begin
     Options:=nil;
     if GetTCPOptionsLength(AF_INET6,IP6) > 0 then
      begin
-      Options:=Pointer(LongWord(TCP) + TCP_HEADER_SIZE);
+      Options:=Pointer(PtrUInt(TCP) + TCP_HEADER_SIZE);
      end;
     
     {Get the Offset and Length}
@@ -1254,7 +1254,7 @@ begin
     IP:=PIPHeader(APacket);
     
     {Get the TCP}
-    TCP:=PTCPHeader(LongWord(IP) + GetTCPHeaderOffset(AF_INET,IP));
+    TCP:=PTCPHeader(PtrUInt(IP) + GetTCPHeaderOffset(AF_INET,IP));
     
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
@@ -1294,7 +1294,7 @@ begin
     IP6:=PIP6Header(APacket);
     
     {Get the TCP}
-    TCP:=PTCPHeader(LongWord(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
+    TCP:=PTCPHeader(PtrUInt(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
     
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
@@ -1547,10 +1547,10 @@ begin
  while Offset < TCP_OPTIONS_SIZE do
   begin
    {Check for End Option}
-   if PByte(LongWord(AOptions) + Offset)^ = TCPOPT_EOL then Break;
+   if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_EOL then Break;
    
    {Check for Noop Option}
-   if PByte(LongWord(AOptions) + Offset)^ = TCPOPT_NOP then
+   if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_NOP then
     begin
      {Move to Next Option}
      Inc(Offset,1);
@@ -1561,7 +1561,7 @@ begin
      if (Offset + 1) > (TCP_OPTIONS_SIZE - 1) then Break;
      
      {Get the Length}
-     Size:=PByte(LongWord(AOptions) + Offset + 1)^;
+     Size:=PByte(PtrUInt(AOptions) + Offset + 1)^;
      
      {Move to Next Option}
      Inc(Offset,Size); {Size includes Option and Size bytes}
@@ -1686,7 +1686,7 @@ begin
  while Offset < TCP_OPTIONS_SIZE do
   begin
    {Check for Noop Option}
-   if PByte(LongWord(AOptions) + Offset)^ = TCPOPT_NOP then
+   if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_NOP then
     begin
      {Move to Next Option}
      Inc(Offset,1);
@@ -1697,10 +1697,10 @@ begin
      if (Offset + 1) > (TCP_OPTIONS_SIZE - 1) then Exit;
      
      {Get the Length}
-     Size:=PByte(LongWord(AOptions) + Offset + 1)^;
+     Size:=PByte(PtrUInt(AOptions) + Offset + 1)^;
      
      {Check for End Option}
-     if PByte(LongWord(AOptions) + Offset)^ = TCPOPT_EOL then
+     if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_EOL then
       begin
        {Check the Option type}
        case AOption of
@@ -1710,13 +1710,13 @@ begin
           if (Offset + 4) > (TCP_OPTIONS_SIZE - 1) then Exit;
           
           {Set the Option}
-          PByte(LongWord(AOptions) + Offset)^:=AOption;
+          PByte(PtrUInt(AOptions) + Offset)^:=AOption;
           
           {Set the Length}
-          PByte(LongWord(AOptions) + Offset + 1)^:=4;
+          PByte(PtrUInt(AOptions) + Offset + 1)^:=4;
           
           {Set the Value}
-          PWord(LongWord(AOptions) + Offset + 2)^:=WordNtoBE(TTCPOptions(ASocket.ProtocolOptions).MaxSeg);
+          PWord(PtrUInt(AOptions) + Offset + 2)^:=WordNtoBE(TTCPOptions(ASocket.ProtocolOptions).MaxSeg);
           
           Inc(Offset,4);
          end;
@@ -1727,13 +1727,13 @@ begin
           if (Offset + 3) > (TCP_OPTIONS_SIZE - 1) then Exit;
           
           {Set the Option}
-          PByte(LongWord(AOptions) + Offset)^:=AOption;
+          PByte(PtrUInt(AOptions) + Offset)^:=AOption;
           
           {Set the Length}
-          PByte(LongWord(AOptions) + Offset + 1)^:=3;
+          PByte(PtrUInt(AOptions) + Offset + 1)^:=3;
           
           {Set the Value}
-          PByte(LongWord(AOptions) + Offset + 2)^:=TTCPOptions(ASocket.ProtocolOptions).WindowScale;
+          PByte(PtrUInt(AOptions) + Offset + 2)^:=TTCPOptions(ASocket.ProtocolOptions).WindowScale;
           
           Inc(Offset,3);
          end;
@@ -1745,10 +1745,10 @@ begin
             if (Offset + 2) > (TCP_OPTIONS_SIZE - 1) then Exit;
             
             {Set the Option}
-            PByte(LongWord(AOptions) + Offset)^:=AOption;
+            PByte(PtrUInt(AOptions) + Offset)^:=AOption;
             
             {Set the Length}
-            PByte(LongWord(AOptions) + Offset + 1)^:=2;
+            PByte(PtrUInt(AOptions) + Offset + 1)^:=2;
             
             Inc(Offset,2);
            end;
@@ -1772,7 +1772,7 @@ begin
        end;
        
        {Set the End Option}
-       PByte(LongWord(AOptions) + Offset)^:=TCPOPT_EOL;
+       PByte(PtrUInt(AOptions) + Offset)^:=TCPOPT_EOL;
        
        Result:=True;
        Exit;
@@ -1812,10 +1812,10 @@ begin
  while Offset < TCP_OPTIONS_SIZE do
   begin
    {Check for End Option}
-   if PByte(LongWord(AOptions) + Offset)^ = TCPOPT_EOL then Exit;
+   if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_EOL then Exit;
    
    {Check for Noop Option}
-   if PByte(LongWord(AOptions) + Offset)^ = TCPOPT_NOP then
+   if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_NOP then
     begin
      {Move to Next Option}
      Inc(Offset,1);
@@ -1826,10 +1826,10 @@ begin
      if (Offset + 1) > (TCP_OPTIONS_SIZE - 1) then Exit;
      
      {Get the Length}
-     Size:=PByte(LongWord(AOptions) + Offset + 1)^;
+     Size:=PByte(PtrUInt(AOptions) + Offset + 1)^;
      
      {Check for Option}
-     if PByte(LongWord(AOptions) + Offset)^ = AOption then
+     if PByte(PtrUInt(AOptions) + Offset)^ = AOption then
       begin
        {$IFDEF TCP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: ExtractTCPOption - Found Option');
@@ -1843,13 +1843,12 @@ begin
         TCPOPT_MAXSEG:begin
           {Max Seg - Size = 2 + 2}
           {Get the Value}
-          {ASocket.SendData.MaxSeg:=WordBEtoN(PWord(LongWord(AOptions) + Offset + 2)^);}
-          ASocket.SendData.MaxSeg:=Min(WordBEtoN(PWord(LongWord(AOptions) + Offset + 2)^),TCP_MAX_MSS - TCP_OPTIONS_SIZE);
+          ASocket.SendData.MaxSeg:=Min(WordBEtoN(PWord(PtrUInt(AOptions) + Offset + 2)^),TCP_MAX_MSS - TCP_OPTIONS_SIZE);
          end;
         TCPOPT_WINDOW:begin
           {Window Scale - Size = 2 + 1}
           {Get the Value}
-          ASocket.SendData.WindowScale:=PByte(LongWord(AOptions) + Offset + 2)^;
+          ASocket.SendData.WindowScale:=PByte(PtrUInt(AOptions) + Offset + 2)^;
          end;
         TCPOPT_SACKOK:begin
           {Selective Ack Ok - Size = 2}
@@ -6063,6 +6062,7 @@ begin
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
+       
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
        
@@ -6082,7 +6082,7 @@ begin
        
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
@@ -6934,7 +6934,7 @@ begin
   
   {Update Segment}
   Result.Size:=ASize;
-  Result.Data:=Pointer(LongWord(Result) + SizeOf(TTCPSegment)); {TCP_SEGMENT_SIZE}
+  Result.Data:=Pointer(PtrUInt(Result) + SizeOf(TTCPSegment)); {TCP_SEGMENT_SIZE}
   Result.FirstSequence:=ASequence;
   Result.LastSequence:=ASequence + ASize;
   Result.Control:=AFlags;
@@ -7322,7 +7322,7 @@ begin
         if (FLast.Count = 0) and ((FLast.Size + WriteSize) <= MaxSeg) then
          begin
           Segment:=FLast;
-          WriteNext:=Pointer(LongWord(Segment.Data) + Segment.Size);
+          WriteNext:=Pointer(PtrUInt(Segment.Data) + Segment.Size);
           Inc(Segment.Size,WriteSize);
           Inc(Segment.LastSequence,WriteSize);
           LastSequence:=Segment.LastSequence;  //To Do //Check this - Correct !!
@@ -7349,7 +7349,7 @@ begin
      end;
     
     {Write the Segment Data}
-    System.Move(Pointer(LongWord(@ABuffer) + Offset)^,WriteNext^,WriteSize);
+    System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,WriteNext^,WriteSize);
     
     {Update the Free and Used}
     Dec(FFree,WriteSize);
@@ -8127,7 +8127,7 @@ begin
   
   {Update Segment}
   Result.Size:=ASize;
-  Result.Data:=Pointer(LongWord(Result) + SizeOf(TTCPSegment)); {TCP_SEGMENT_SIZE}
+  Result.Data:=Pointer(PtrUInt(Result) + SizeOf(TTCPSegment)); {TCP_SEGMENT_SIZE}
   Result.FirstSequence:=ASequence;
   Result.LastSequence:=ASequence + ASize;
   Result.Control:=AFlags;
@@ -8520,7 +8520,7 @@ begin
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: ReadData: Read Partial Segment');
             {$ENDIF}
             
-            System.Move(ReadNext^,Pointer(LongWord(@ABuffer) + Offset)^,BufferSize);
+            System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + Offset)^,BufferSize);
             
             {Update the Return Size}
             Inc(ASize,BufferSize);
@@ -8553,7 +8553,7 @@ begin
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: ReadData: Read Full Segment');
             {$ENDIF}
             
-            System.Move(ReadNext^,Pointer(LongWord(@ABuffer) + Offset)^,ReadSize);
+            System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + Offset)^,ReadSize);
             
             {Update the Return Size}
             Inc(ASize,ReadSize);
@@ -8814,7 +8814,7 @@ begin
           {Write the Segment Data}
           if ASize > 0 then
            begin
-            System.Move(Pointer(LongWord(AData) + Offset)^,Segment.Data^,ASize);
+            System.Move(Pointer(PtrUInt(AData) + Offset)^,Segment.Data^,ASize);
            end;
           
           {Stamp the Segment}
@@ -8955,7 +8955,7 @@ begin
           {Write the Segment Data}
           if ASize > 0 then
            begin
-            System.Move(Pointer(LongWord(AData) + Offset)^,Segment.Data^,ASize);
+            System.Move(Pointer(PtrUInt(AData) + Offset)^,Segment.Data^,ASize);
            end;
           
           {Stamp the Segment}
@@ -9184,7 +9184,7 @@ begin
     IP:=PIPHeader(ABuffer);
     
     {Get Header}
-    TCP:=PTCPHeader(LongWord(IP) + GetIPHeaderLength(ABuffer));
+    TCP:=PTCPHeader(PtrUInt(IP) + GetIPHeaderLength(ABuffer));
     
     {Check Length}
     Length:=GetIPDataLength(ABuffer);
@@ -9214,7 +9214,7 @@ begin
     IP6:=PIP6Header(ABuffer);
     
     {Get Header}
-    TCP:=PTCPHeader(LongWord(IP6) + GetIP6HeaderLength(ABuffer));
+    TCP:=PTCPHeader(PtrUInt(IP6) + GetIP6HeaderLength(ABuffer));
     
     //To do
     
@@ -9262,7 +9262,7 @@ begin
     
     {Return TCP Header Length field divided by 4 (shr 2) (Including Options)}
     {Same Result as ((HeaderLength shr 4) * 4)}
-    Result:=(PTCPHeader(LongWord(ABuffer) + Offset).HeaderLength and $F0) shr 2;
+    Result:=(PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2;
    end;
   AF_INET6:begin
     
@@ -9290,7 +9290,7 @@ begin
     
     {Return TCP Header Length field divided by 4 (shr 2) (minus TCP_HEADER_SIZE}
     {Same Result as ((HeaderLength shr 4) * 4)}
-    Result:=((PTCPHeader(LongWord(ABuffer) + Offset).HeaderLength and $F0) shr 2) - TCP_HEADER_SIZE;
+    Result:=((PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2) - TCP_HEADER_SIZE;
    end;
   AF_INET6:begin
     
@@ -9318,7 +9318,7 @@ begin
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
     
     {Get TCP Header Length field divided by 4 (shr 2) (Including Options)}
-    Length:=(PTCPHeader(LongWord(ABuffer) + Offset).HeaderLength and $F0) shr 2;
+    Length:=(PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2;
     
     {Return Start of TCP Data (IP Header + TCP Header}
     Result:=Offset + Length;
@@ -9349,7 +9349,7 @@ begin
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
     
     {Get TCP Header Length field divided by 4 (shr 2)}
-    Length:=(PTCPHeader(LongWord(ABuffer) + Offset).HeaderLength and $F0) shr 2;
+    Length:=(PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2;
     
     {Return Size of TCP Data (IP Total Length - IP Header - TCP Header)}
     Result:=(WordBEtoN(PIPHeader(ABuffer).TotalLength) - Offset) - Length;
@@ -9377,7 +9377,7 @@ begin
  case AFamily of
   AF_INET:begin
     {Get Header}
-    TCP:=PTCPHeader(LongWord(ABuffer) + AOffset);
+    TCP:=PTCPHeader(PtrUInt(ABuffer) + AOffset);
     
     {Save Checksum}
     Original:=TCP.Checksum;

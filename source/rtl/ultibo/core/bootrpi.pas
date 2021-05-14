@@ -1,7 +1,7 @@
 {
 Ultibo Initialization code for Raspberry Pi.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -377,16 +377,22 @@ asm
   
  {$IFDEF CONSOLE_EARLY_INIT}
  //Initialize the Ultibo Locking primitives
- bl LocksInit;
+ bl LocksInit
   
  //Initialize the Ultibo Device manager
- bl DevicesInit;
+ bl DevicesInit
   
+ //Initialize the Peripheral settings
+ bl PeripheralInit
+ 
  //Initialize the Framebuffer device
- bl FramebufferInit;
+ bl FramebufferInit
   
  //Initialize the Console device
- bl ConsoleInit;
+ bl ConsoleInit
+ 
+ //Start the Boot Console device
+ bl BootConsoleStart
  {$ENDIF}
   
  //Initialize the Ultibo Threading which will create the IRQ, FIQ and Idle Threads

@@ -1,7 +1,7 @@
 {
 Ultibo TFT Framebuffer driver library unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -79,7 +79,7 @@ type
  TTFTFramebufferGetDefaults = function(Framebuffer:PTFTFramebuffer;Properties,Defaults:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTFTFramebufferSetWriteAddress = function(Framebuffer:PTFTFramebuffer;X1,Y1,X2,Y2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TTFTFramebufferWriteMemory = function(Framebuffer:PTFTFramebuffer;Address,Size:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTFTFramebufferWriteMemory = function(Framebuffer:PTFTFramebuffer;Address:PtrUInt;Size:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {TFTFramebuffer Device}
  TTFTFramebuffer = record
@@ -122,7 +122,7 @@ function TFTFramebufferAllocate(Framebuffer:PFramebufferDevice;Properties:PFrame
 function TFTFramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 
 function TFTFramebufferMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
-function TFTFramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function TFTFramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function TFTFramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 
@@ -222,7 +222,7 @@ begin
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
-      CleanDataCacheRange(LongWord(Buffer),Defaults.Size);
+      CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
     
     {Initialize Framebuffer}
@@ -233,7 +233,7 @@ begin
      end; 
     
     {Update Framebuffer}
-    Framebuffer.Address:=LongWord(Buffer);
+    Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
     Framebuffer.Pitch:=Defaults.Pitch;
     Framebuffer.Depth:=Defaults.Depth;
@@ -449,7 +449,7 @@ end;
 
 {==============================================================================}
 
-function TFTFramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function TFTFramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 {Implementation of FramebufferDeviceCommit API for TFT Framebuffer}
 {Note: Not intended to be called directly by applications, use FramebufferDeviceCommit instead}
 begin
@@ -461,7 +461,7 @@ begin
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF FRAMEBUFFER_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Commit (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Commit (Address=' + AddrToHex(Address) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Check Flags}
@@ -523,7 +523,7 @@ procedure TFTFramebufferUpdateDisplay(Framebuffer:PTFTFramebuffer);
 var
  Size:LongWord;
  Unlock:Boolean;
- Address:LongWord;
+ Address:PtrUInt;
  DirtyY1:LongWord;
  DirtyY2:LongWord;
 begin

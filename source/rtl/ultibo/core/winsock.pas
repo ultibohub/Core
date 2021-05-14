@@ -1,7 +1,7 @@
 {
 Ultibo Winsock interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2914,7 +2914,7 @@ begin
           {Get Next IpAdapterInfo}
           if Adapter <> nil then
            begin
-            WSAIpAdapterInfo.Next:=Pointer(LongWord(WSAIpAdapterInfo) + SizeOf(TWSAIpAdapterInfo));
+            WSAIpAdapterInfo.Next:=Pointer(PtrUInt(WSAIpAdapterInfo) + SizeOf(TWSAIpAdapterInfo));
             WSAIpAdapterInfo:=WSAIpAdapterInfo.Next;
            end;
          end;*)

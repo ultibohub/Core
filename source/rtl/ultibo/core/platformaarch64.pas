@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for AARCH64 (ARM64).
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -12,6 +12,10 @@ Boards
 ======
 
  Raspberry Pi 3 - Model B/B+/A+
+ Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
  QEMU VersatilePB
  
 Licence
@@ -76,6 +80,7 @@ const
  ARM_MACHINE_BCM2708      = $00000C42;
  ARM_MACHINE_BCM2709      = $00000C42; {BCM2709 uses the same Machine Type as BCM2708}
  ARM_MACHINE_BCM2710      = $00000C42; {BCM2710 uses the same Machine Type as BCM2708}
+ ARM_MACHINE_BCM2711      = $00000C42; {BCM2711 uses the same Machine Type as BCM2708}
  
 {==============================================================================}
 type
@@ -203,10 +208,11 @@ var
  {AARCH64 specific variables}
  AARCH64Initialized:Boolean;
  
- AARCH64BootMode:LongWord = 0;              {The ARM Mode that the processor was in at boot time (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
- AARCH64BootVectors:LongWord = 0;           {The Vector Base Address that was current at boot time (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
- ARMTagsAddress:LongWord = ARMTAGS_INITIAL; {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
- ARMMachineType:LongWord = 0;               {ARM Machine Type provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
+ AARCH64BootMode:LongWord = 0;                 {The ARM Mode that the processor was in at boot time (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
+ AARCH64BootVectors:LongWord = 0;              {The Vector Base Address that was current at boot time (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
+ AARCH64TagsAddress:PtrUInt = ARMTAGS_INITIAL; {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
+ AARCH64MachineType:LongWord = 0;              {ARM Machine Type provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
+ AARCH64SecureBoot:LongWord = 1;               {If 1 then startup will attempt to switch back to secure world during boot process (If supported by the AARCH64 boot stub)} 
  
 var
  {ARM Tags Variables}
@@ -226,7 +232,7 @@ var
  TagMemorySize:LongWord;    {Size of the last block reported by ARM Tags}
  TagMemoryStart:LongWord;   {Start of the last block reported by ARM Tags}
  TagMemoryLength:LongWord;  {Adjusted Size of the last block reported by ARM Tags}
- TagMemoryAddress:LongWord; {Adjusted Address of the last block reported by ARM Tags}
+ TagMemoryAddress:PtrUInt; {Adjusted Address of the last block reported by ARM Tags}
 
  {Tag Video Text Variables}
  TagVideoTextCount:LongWord;{Number of ARM VIDEOTEXT Tags found during parse}
@@ -385,14 +391,11 @@ var
  CommandLength:LongWord;
  
  BlockSize:LongWord;
- BlockAddress:LongWord;
- StartAddress:LongWord;
+ BlockAddress:PtrUInt;
+ StartAddress:PtrUInt;
 begin
  {}
- {Check Tag Address}
- if ARMTagsAddress = ARMTAGS_INITIAL then Exit;
-
- {Check Count}
+ {Check Tags Count}
  if ARMTagsCount = 0 then
   begin
    {Initialize Counts}
@@ -407,147 +410,191 @@ begin
    TagRevisionCount:=0;
    TagVideoFBCount:=0;
    TagCmdCount:=0;
- 
-   {Get First Tag}
-   ARMTag:=PARMTag(ARMTagsAddress);
-   while (ARMTag.Header.Size >= 2) and (ARMTag.Header.Tag <> ATAG_NONE) do
+   
+   {Check for default Tag Address value and for Device Tree Blob signature}
+   if (ARMTagsAddress = ARMTAGS_INITIAL) or (LongWordBEtoN(PLongWord(ARMTagsAddress)^) = DTB_SIGNATURE) then
     begin
-     Inc(ARMTagsCount);
-     {Check Tag Type}
-     case ARMTag.Header.Tag of
-      ATAG_NONE:begin
-        {NONE}
-        Inc(TagNoneCount);
-        {Must be last in the list, will have a size of 0}
-       end;    
-      ATAG_CORE:begin
-        {CORE}
-        Inc(TagCoreCount);
-        {Must be the first in the list, size may be 2 to indicate no data}
-        if ARMTag.Header.Size > 2 then
-         begin
-          TagCoreFlags:=ARMTag.Core.Flags;
-          TagCorePageSize:=ARMTag.Core.PageSize;
-          TagCoreRootDevice:=ARMTag.Core.RootDev;
-         end;
-       end;    
-      ATAG_MEM:begin      
-        {MEM}
-        Inc(TagMemoryCount);
-        if ARMTag.Header.Size > 2 then
-         begin
-          BlockAddress:=ARMTag.Memory.Start;
-          BlockSize:=ARMTag.Memory.Size;
-          TagMemorySize:=BlockSize;
-          TagMemoryStart:=BlockAddress;
-          if BlockSize > 0 then
+     {Device Tree Blob supplied or ARM tags not present}
+     {Check Memory Size}
+     if CPU_MEMORY_SIZE > 0 then
+      begin
+       {Registry Memory}
+       Inc(ARMTagsCount);
+       Inc(TagMemoryCount);
+        
+       BlockAddress:=CPU_MEMORY_BASE;
+       BlockSize:=CPU_MEMORY_SIZE;
+       TagMemorySize:=BlockSize;
+       TagMemoryStart:=BlockAddress;
+       
+       if BlockSize > 0 then
+        begin
+         StartAddress:=BlockAddress;
+         if BlockAddress < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) then
+          begin
+           StartAddress:=INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE;
+           if (StartAddress - BlockAddress) < BlockSize then
+            begin
+             BlockSize:=BlockSize - (StartAddress - BlockAddress);
+            end
+           else
+            begin
+             BlockSize:=0; 
+            end;
+          end;
+         TagMemoryAddress:=StartAddress;
+         TagMemoryLength:=BlockSize;
+         if BlockSize > 0 then
+          begin
+           RegisterHeapBlock(Pointer(StartAddress),BlockSize);
+          end;           
+        end;
+      end;
+    end
+   else
+    begin
+     {ARM Tags address supplied}
+     {Get First Tag}
+     ARMTag:=PARMTag(ARMTagsAddress);
+     while (ARMTag.Header.Size >= 2) and (ARMTag.Header.Tag <> ATAG_NONE) do
+      begin
+       Inc(ARMTagsCount);
+       {Check Tag Type}
+       case ARMTag.Header.Tag of
+        ATAG_NONE:begin
+          {NONE}
+          Inc(TagNoneCount);
+          {Must be last in the list, will have a size of 0}
+         end;    
+        ATAG_CORE:begin
+          {CORE}
+          Inc(TagCoreCount);
+          {Must be the first in the list, size may be 2 to indicate no data}
+          if ARMTag.Header.Size > 2 then
            begin
-            StartAddress:=BlockAddress;
-            if BlockAddress < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) then
+            TagCoreFlags:=ARMTag.Core.Flags;
+            TagCorePageSize:=ARMTag.Core.PageSize;
+            TagCoreRootDevice:=ARMTag.Core.RootDev;
+           end;
+         end;    
+        ATAG_MEM:begin      
+          {MEM}
+          Inc(TagMemoryCount);
+          if ARMTag.Header.Size > 2 then
+           begin
+            BlockAddress:=ARMTag.Memory.Start;
+            BlockSize:=ARMTag.Memory.Size;
+            TagMemorySize:=BlockSize;
+            TagMemoryStart:=BlockAddress;
+            if BlockSize > 0 then
              begin
-              StartAddress:=INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE;
-              if (StartAddress - BlockAddress) < BlockSize then
+              StartAddress:=BlockAddress;
+              if BlockAddress < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) then
                begin
-                BlockSize:=BlockSize - (StartAddress - BlockAddress);
+                StartAddress:=INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE;
+                if (StartAddress - BlockAddress) < BlockSize then
+                 begin
+                  BlockSize:=BlockSize - (StartAddress - BlockAddress);
+                 end
+                else
+                 begin
+                  BlockSize:=0; 
+                 end;
+               end;
+              TagMemoryAddress:=StartAddress;
+              TagMemoryLength:=BlockSize;
+              if BlockSize > 0 then
+               begin
+                RegisterHeapBlock(Pointer(StartAddress),BlockSize);
+               end;           
+             end;
+           end;
+         end;    
+        ATAG_VIDEOTEXT:begin
+          {VIDEOTEXT}
+          Inc(TagVideoTextCount);
+          if ARMTag.Header.Size > 2 then
+           begin
+            {Not relevant to Ultibo}
+           end;
+         end;    
+        ATAG_RAMDISK:begin 
+          {RAMDISK}
+          Inc(TagRamdiskCount);
+          {Not relevant to Ultibo}
+         end;    
+        ATAG_INITRD2:begin
+          {INITRD2}
+          Inc(TagInitRd2Count);
+          {Not relevant to Ultibo}
+         end;    
+        ATAG_SERIAL:begin   
+          {SERIAL}
+          Inc(TagSerialCount);
+          if ARMTag.Header.Size > 2 then
+           begin
+            TagSerialNoLow:=ARMTag.Serial.Low;
+            TagSerialNoHigh:=ARMTag.Serial.High;
+           end;
+         end;    
+        ATAG_REVISION:begin
+          {REVISION}
+          Inc(TagRevisionCount);
+          if ARMTag.Header.Size > 2 then
+           begin
+            TagRevisionNo:=ARMTag.Revision.Revision;
+           end;
+         end;    
+        ATAG_VIDEOLFB:begin
+          {VIDEOLFB}
+          Inc(TagVideoFBCount);
+          if ARMTag.Header.Size > 2 then
+           begin
+            {Not relevant to Ultibo}
+           end;
+         end;    
+        ATAG_CMDLINE:begin
+          {CMDLINE}
+          Inc(TagCmdCount);
+          if ARMTag.Header.Size > 2 then
+           begin
+            TagCommandAddress:=@ARMTag.Command.Cmdline[0];
+            {Count the command line parameters}
+            TagCommandSize:=SizeOf(Char); {Must be at least the null terminator}
+            TagCommandCount:=0;
+            CommandOffset:=TagCommandAddress;
+            CommandLength:=0;
+            while CommandOffset^ <> #0 do
+             begin
+              if CommandOffset^ = #32 then
+               begin
+                if CommandLength > 0 then
+                 begin
+                  Inc(TagCommandCount);
+                 end;
+                 
+                CommandLength:=0;
                end
               else
                begin
-                BlockSize:=0; 
-               end;
+                Inc(CommandLength);
+               end;             
+              Inc(TagCommandSize,SizeOf(Char));
+              Inc(CommandOffset,SizeOf(Char)); 
+             end; 
+            
+            {Check last paramter}
+            if CommandLength > 0 then
+             begin
+              Inc(TagCommandCount);
              end;
-            TagMemoryAddress:=StartAddress;
-            TagMemoryLength:=BlockSize;
-            if BlockSize > 0 then
-             begin
-              RegisterHeapBlock(Pointer(StartAddress),BlockSize);
-             end;           
            end;
-         end;
-       end;    
-      ATAG_VIDEOTEXT:begin
-        {VIDEOTEXT}
-        Inc(TagVideoTextCount);
-        if ARMTag.Header.Size > 2 then
-         begin
-          {Not relevant to Ultibo}
-         end;
-       end;    
-      ATAG_RAMDISK:begin 
-        {RAMDISK}
-        Inc(TagRamdiskCount);
-        {Not relevant to Ultibo}
-       end;    
-      ATAG_INITRD2:begin
-        {INITRD2}
-        Inc(TagInitRd2Count);
-        {Not relevant to Ultibo}
-       end;    
-      ATAG_SERIAL:begin   
-        {SERIAL}
-        Inc(TagSerialCount);
-        if ARMTag.Header.Size > 2 then
-         begin
-          TagSerialNoLow:=ARMTag.Serial.Low;
-          TagSerialNoHigh:=ARMTag.Serial.High;
-         end;
-       end;    
-      ATAG_REVISION:begin
-        {REVISION}
-        Inc(TagRevisionCount);
-        if ARMTag.Header.Size > 2 then
-         begin
-          TagRevisionNo:=ARMTag.Revision.Revision;
-         end;
-       end;    
-      ATAG_VIDEOLFB:begin
-        {VIDEOLFB}
-        Inc(TagVideoFBCount);
-        if ARMTag.Header.Size > 2 then
-         begin
-          {Not relevant to Ultibo}
-         end;
-       end;    
-      ATAG_CMDLINE:begin
-        {CMDLINE}
-        Inc(TagCmdCount);
-        if ARMTag.Header.Size > 2 then
-         begin
-          TagCommandAddress:=@ARMTag.Command.Cmdline[0];
-          {Count the command line parameters}
-          TagCommandSize:=SizeOf(Char); {Must be at least the null terminator}
-          TagCommandCount:=0;
-          CommandOffset:=TagCommandAddress;
-          CommandLength:=0;
-          while CommandOffset^ <> #0 do
-           begin
-            if CommandOffset^ = #32 then
-             begin
-              if CommandLength > 0 then
-               begin
-                Inc(TagCommandCount);
-               end;
-               
-              CommandLength:=0;
-             end
-            else
-             begin
-              Inc(CommandLength);
-             end;             
-            Inc(TagCommandSize,SizeOf(Char));
-            Inc(CommandOffset,SizeOf(Char)); 
-           end; 
-          
-          {Check last paramter}
-          if CommandLength > 0 then
-           begin
-            Inc(TagCommandCount);
-           end;
-         end;
-       end;    
-     end;
-     
-     {Get Next Tag}
-     ARMTag:=PARMTag(PtrUInt(ARMTag) + (ARMTag.Header.Size * SizeOf(LongWord)));
+         end;    
+       end;
+       
+       {Get Next Tag}
+       ARMTag:=PARMTag(PtrUInt(ARMTag) + (ARMTag.Header.Size * SizeOf(LongWord)));
+      end;
     end;
   end;
 end;

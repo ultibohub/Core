@@ -1,7 +1,7 @@
 {
 Ultibo Network interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -405,6 +405,7 @@ const
  CTL1000_ENABLE_MASTER = $1000;
 
  {1000BASE-T Status register}
+ LPA_1000MSFAIL    = $8000; {Master/Slave resolution failure}
  LPA_1000LOCALRXOK = $2000; {Link partner local receiver status}
  LPA_1000REMRXOK   = $1000; {Link partner remote receiver status}
  LPA_1000FULL      = $0800; {Link partner 1000BASE-T full duplex}
@@ -420,6 +421,51 @@ const
  MII_MMD_CTRL_NOINCR     = $4000; {no post increment}
  MII_MMD_CTRL_INCR_RDWT  = $8000; {post increment on reads & writes}
  MII_MMD_CTRL_INCR_ON_WT = $C000; {post increment on writes only}
+ 
+ {PHY Link State}
+ PHY_LINK_DOWN = 0;
+ PHY_LINK_UP = 1;
+ 
+ PHY_LINK_UNKNOWN = -1;
+ 
+ {PHY Interface Modes}
+ PHY_INTERFACE_MODE_NONE = 0;
+ PHY_INTERFACE_MODE_INTERNAL = 1;
+ PHY_INTERFACE_MODE_MII = 2;
+ PHY_INTERFACE_MODE_GMII = 3;
+ PHY_INTERFACE_MODE_SGMII = 4;
+ PHY_INTERFACE_MODE_TBI = 5;
+ PHY_INTERFACE_MODE_REVMII = 6;
+ PHY_INTERFACE_MODE_RMII = 7;
+ PHY_INTERFACE_MODE_RGMII = 8;
+ PHY_INTERFACE_MODE_RGMII_ID = 9;
+ PHY_INTERFACE_MODE_RGMII_RXID = 10;
+ PHY_INTERFACE_MODE_RGMII_TXID = 11;
+ PHY_INTERFACE_MODE_RTBI = 12;
+ PHY_INTERFACE_MODE_SMII = 13;
+ PHY_INTERFACE_MODE_XGMII = 14;
+ PHY_INTERFACE_MODE_MOCA = 15;
+ PHY_INTERFACE_MODE_QSGMII = 16;
+ PHY_INTERFACE_MODE_TRGMII = 17;
+ PHY_INTERFACE_MODE_1000BASEX = 18;
+ PHY_INTERFACE_MODE_2500BASEX = 19;
+ PHY_INTERFACE_MODE_RXAUI = 20;
+ PHY_INTERFACE_MODE_XAUI = 21;
+ PHY_INTERFACE_MODE_10GKR = 22; {10GBASE-KR, XFI, SFI - single lane 10G Serdes}
+ PHY_INTERFACE_MODE_USXGMII = 23;
+ 
+ {PHY Link Speeds}
+ PHY_SPEED_10   = 10;
+ PHY_SPEED_100  = 100;
+ PHY_SPEED_1000 = 1000;
+ 
+ PHY_SPEED_UNKNOWN = -1;
+ 
+ {PHY Duplex Modes}
+ PHY_DUPLEX_HALF = 0;
+ PHY_DUPLEX_FULL = 1;
+
+ PHY_DUPLEX_UNKNOWN = -1;
  
  {Service Sets}
  SERVICE_SET_UNKNOWN = 0;
@@ -1040,6 +1086,11 @@ type
    function StartAdapter:Boolean; override;
    function StopAdapter:Boolean; override;
    function ProcessAdapter:Boolean; override;
+   
+   function CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
+   function CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
+   function CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
+   function CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
  end;
  
  TNetworkSetting = class(TListObject)
@@ -1296,6 +1347,12 @@ function ConfigCommandToString(ACommand:Word):String;
 
 function AuthTypeToString(AType:Word):String;
 function AuthCommandToString(ACommand:Word):String;
+
+function PhyInterfaceModeToString(AMode:Word):String;
+function PhyLinkSpeedToString(ASpeed:Word):String;
+function PhyDuplexModeToString(AMode:Word):String;
+
+function MatchStringToPhyInterfaceMode(const AMode: String):Word;
 
 {==============================================================================}
 {==============================================================================}
@@ -3203,7 +3260,7 @@ begin
  except
   on E: Exception do
    begin
-    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'AdapterThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'AdapterThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;
@@ -3218,7 +3275,7 @@ begin
  Result:=False;
  
  FillChar(Message,SizeOf(TMessage),0);
- Message.Msg:=LongWord(AHandle);
+ Message.Msg:=PtrUInt(AHandle);
  if ThreadSendMessage(FThreadID,Message) = ERROR_SUCCESS then
   begin
    Result:=True;
@@ -3511,6 +3568,8 @@ begin
  {$IFDEF NETWORK_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(PacketType));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(Size));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Source = ' + HardwareAddressToString(Source^));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Dest = ' + HardwareAddressToString(Dest^));
  {$ENDIF}
   
  {Get Transport}
@@ -3811,6 +3870,12 @@ begin
         Ethernet.DestAddress:=PHardwareAddress(ADest)^;
         Ethernet.SourceAddress:=FHardwareAddress;
         Ethernet.TypeLength:=WordNtoBE(Transport.PacketType);
+
+        {$IFDEF NETWORK_DEBUG}
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(Transport.PacketType));
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Source = ' + HardwareAddressToString(Ethernet.SourceAddress));
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Dest = ' + HardwareAddressToString(Ethernet.DestAddress));
+        {$ENDIF}
 
         Size:=ETHERNET_HEADER_SIZE;
        end;
@@ -4412,6 +4477,44 @@ begin
     FreeMem(Buffer);
    end; 
   end; 
+end;
+
+{==============================================================================}
+
+function TWiredAdapter.CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=CompareAddress(AAddress,FDefaultAddress);
+end;
+
+{==============================================================================}
+
+function TWiredAdapter.CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=CompareAddress(AAddress,FHardwareAddress);
+end;
+
+{==============================================================================}
+
+function TWiredAdapter.CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+begin
+ {}
+ Result:=CompareAddress(AAddress,FBroadcastAddress);
+end;
+
+{==============================================================================}
+
+function TWiredAdapter.CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+var
+ Count:Integer;
+begin
+ {}
+ for Count:=0 to MAX_MULTICAST_ADDRESS - 1 do
+  begin
+   Result:=CompareAddress(AAddress,FMulticastAddresses[Count]);
+   if Result then Exit;
+  end;
 end;
 
 {==============================================================================}
@@ -7265,6 +7368,89 @@ begin
   AUTH_COMMAND_AUTHENTICATE:Result:='AUTH_COMMAND_AUTHENTICATE';
   AUTH_COMMAND_UNAUTHENTICATE:Result:='AUTH_COMMAND_UNAUTHENTICATE';
  end; 
+end;
+  
+{==============================================================================}
+
+function PhyInterfaceModeToString(AMode:Word):String;
+begin
+ {}
+ Result:='';
+ 
+ {Check Mode}
+ case AMode of
+  PHY_INTERFACE_MODE_INTERNAL:Result:='internal';
+  PHY_INTERFACE_MODE_MII:Result:='mii';
+  PHY_INTERFACE_MODE_GMII:Result:='gmii';
+  PHY_INTERFACE_MODE_SGMII:Result:='sgmii';
+  PHY_INTERFACE_MODE_TBI:Result:='tbi';
+  PHY_INTERFACE_MODE_REVMII:Result:='rev-mii';
+  PHY_INTERFACE_MODE_RMII:Result:='rmii';
+  PHY_INTERFACE_MODE_RGMII:Result:='rgmii';
+  PHY_INTERFACE_MODE_RGMII_ID:Result:='rgmii-id';
+  PHY_INTERFACE_MODE_RGMII_RXID:Result:='rgmii-rxid';
+  PHY_INTERFACE_MODE_RGMII_TXID:Result:='rgmii-txid';
+  PHY_INTERFACE_MODE_RTBI:Result:='rtbi';
+  PHY_INTERFACE_MODE_SMII:Result:='smii';
+  PHY_INTERFACE_MODE_XGMII:Result:='xgmii';
+  PHY_INTERFACE_MODE_MOCA:Result:='moca';
+  PHY_INTERFACE_MODE_QSGMII:Result:='qsgmii';
+  PHY_INTERFACE_MODE_TRGMII:Result:='trgmii';
+  PHY_INTERFACE_MODE_1000BASEX:Result:='1000base-x';
+  PHY_INTERFACE_MODE_2500BASEX:Result:='2500base-x';
+  PHY_INTERFACE_MODE_RXAUI:Result:='rxaui';
+  PHY_INTERFACE_MODE_XAUI:Result:='xaui';
+  PHY_INTERFACE_MODE_10GKR:Result:='10gbase-kr';
+  PHY_INTERFACE_MODE_USXGMII:Result:='usxgmii';
+ end; 
+end;
+
+{==============================================================================}
+
+function PhyLinkSpeedToString(ASpeed:Word):String;
+begin
+ {}
+ Result:='';
+ 
+ {Check Speed}
+ case ASpeed of
+  PHY_SPEED_10:Result:='10';
+  PHY_SPEED_100:Result:='100';
+  PHY_SPEED_1000:Result:='1000';
+ end; 
+end;
+
+{==============================================================================}
+
+function PhyDuplexModeToString(AMode:Word):String;
+begin
+ {}
+ Result:='';
+ 
+ {Check Mode}
+ case AMode of
+  PHY_DUPLEX_HALF:Result:='half';
+  PHY_DUPLEX_FULL:Result:='full';
+ end; 
+end;
+  
+{==============================================================================}
+  
+function MatchStringToPhyInterfaceMode(const AMode: String):Word;
+var
+ Count:LongWord;
+begin
+ {}
+ Result:=PHY_INTERFACE_MODE_NONE;
+ 
+ for Count:=PHY_INTERFACE_MODE_INTERNAL to PHY_INTERFACE_MODE_USXGMII do
+  begin
+   if Lowercase(AMode) = Lowercase(PhyInterfaceModeToString(Count)) then
+    begin
+     Result:=Count;
+     Exit;
+    end;
+  end;
 end;
   
 {==============================================================================}

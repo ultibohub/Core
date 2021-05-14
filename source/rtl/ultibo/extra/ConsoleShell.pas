@@ -1,7 +1,7 @@
 {
 Ultibo Console Shell unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1592,7 +1592,7 @@ begin
  except
   on E: Exception do
    begin
-    if SHELL_LOG_ENABLED then ShellLogError('ConsoleShellThread: Exception: ' + E.Message + ' at ' + IntToHex(LongWord(ExceptAddr),8));
+    if SHELL_LOG_ENABLED then ShellLogError('ConsoleShellThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
  end; 
 end;

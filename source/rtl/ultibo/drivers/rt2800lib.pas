@@ -1,7 +1,7 @@
 {
 Ralink RT2800 Wireless Driver library.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5248,7 +5248,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Check firmware (Data=' + IntToHex(LongWord(Data),8) + ' Size=' + IntToStr(Size) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Check firmware (Data=' + PtrToHex(Data) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Check Firmware}
@@ -5311,7 +5311,7 @@ begin
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Load firmware (Data=' + IntToHex(LongWord(Data),8) + ' Size=' + IntToStr(Size) + ')');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(PNetworkDevice(@RT2X00.WiFi.Network),'RT2800: Load firmware (Data=' + PtrToHex(Data) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
  
  {Check Firmware}

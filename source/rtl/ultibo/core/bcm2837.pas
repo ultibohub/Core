@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the Broadcom 2837 System on chip.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -69,7 +69,7 @@ const
  BCM2837_VCBUS_0_ALIAS = $00000000; {0 Alias - L1 and L2 cached}
  BCM2837_VCBUS_4_ALIAS = $40000000; {4 Alias - L2 cache coherent (non allocating)}
  BCM2837_VCBUS_8_ALIAS = $80000000; {8 Alias - L2 cached (only)}
- BCM2837_VCBUS_C_ALIAS = $C0000000; {C Alias - Direct uncached} {Suitable for RPi 2 Model B}
+ BCM2837_VCBUS_C_ALIAS = $C0000000; {C Alias - Direct uncached} {Suitable for RPi 2/3 Model A/B/A+/B+}
  
  {Physical memory addresses of BCM2837 peripherals  (See: BCM2835-ARM-Peripherals.pdf)}
  BCM2837_PERIPHERALS_BASE = $3F000000;  {Mapped to VC address 7E000000}
@@ -867,6 +867,18 @@ const
  {PL011 UART Test Data register bits (See 13.4)}
 
 const
+ {ARM Interrupt Controller registers (See 7.5)}
+ BCM2837_ARM_INTERRUPT_BASIC_PENDING = $00000000; {IRQ basic pending}
+ BCM2837_ARM_INTERRUPT_IRQ_PENDING1  = $00000004; {IRQ pending 1} 
+ BCM2837_ARM_INTERRUPT_IRQ_PENDING2  = $00000008; {IRQ pending 2} 
+ BCM2837_ARM_INTERRUPT_FIQ_CONTROL   = $0000000C; {FIQ control} 
+ BCM2837_ARM_INTERRUPT_IRQ_ENABLE1   = $00000010; {Enable IRQs 1} 
+ BCM2837_ARM_INTERRUPT_IRQ_ENABLE2   = $00000014; {Enable IRQs 2} 
+ BCM2837_ARM_INTERRUPT_BASIC_ENABLE  = $00000018; {Enable Basic IRQs} 
+ BCM2837_ARM_INTERRUPT_IRQ_DISABLE1  = $0000001C; {Disable IRQs 1} 
+ BCM2837_ARM_INTERRUPT_IRQ_DISABLE2  = $00000020; {Disable IRQs 2} 
+ BCM2837_ARM_INTERRUPT_BASIC_DISABLE = $00000024; {Disable Basic IRQs} 
+ 
  {ARM Interrupt Controller register bits (See 7.5)}
  BCM2837_ARM_INTERRUPT_FIQ_ENABLE = (1 shl 7);   {FIQ enable (Set this bit to 1 to enable FIQ generation. If set to 0 bits 6:0 are don't care)}
  BCM2837_ARM_INTERRUPT_FIQ_SOURCE = ($7F shl 0); {Select FIQ Source (0..127)}
@@ -1206,10 +1218,6 @@ const
  BCM2837_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
  BCM2837_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
  
- BCM2837_MBOX_TAG_GET_NUM_DISPLAYS     = $00040012;
- BCM2837_MBOX_TAG_GET_DISPLAY_SETTINGS = $00040013;
- BCM2837_MBOX_TAG_SET_DISPLAY_NUM      = $00048012;
- 
  BCM2837_MBOX_TAG_GET_LAYER         = $0004000c;
  BCM2837_MBOX_TAG_TST_LAYER         = $0004400c;
  BCM2837_MBOX_TAG_SET_LAYER         = $0004800c;
@@ -1222,6 +1230,17 @@ const
  BCM2837_MBOX_TAG_SET_VSYNC         = $0004800e;
  
  BCM2837_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
+ 
+ BCM2837_MBOX_TAG_GET_DISPLAY_ID       = $00040016;
+ BCM2837_MBOX_TAG_SET_DISPLAY_NUM      = $00048013;
+ BCM2837_MBOX_TAG_GET_NUM_DISPLAYS     = $00040013;
+ BCM2837_MBOX_TAG_GET_DISPLAY_SETTINGS = $00040014;
+ 
+ BCM2837_MBOX_TAG_SET_PLANE          = $00048015;
+ BCM2837_MBOX_TAG_GET_DISPLAY_TIMING = $00040017;
+ BCM2837_MBOX_TAG_SET_TIMING         = $00048017;
+ BCM2837_MBOX_TAG_GET_DISPLAY_CFG    = $00040018;
+ BCM2837_MBOX_TAG_SET_DISPLAY_POWER  = $00048019;
  
  BCM2837_MBOX_TAG_SET_CURSOR_INFO   = $00008010; {00008011} {These were reversed in the documentation, see Linux \include\soc\bcm2835\raspberrypi-firmware.h}
  BCM2837_MBOX_TAG_SET_CURSOR_STATE  = $00008011; {00008010}
@@ -1267,12 +1286,14 @@ const
  BCM2837_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W (Cannot occur on BCM2837)}
  BCM2837_BOARD_REVISION_MODEL_3BPLUS         = (13 shl 4);  {Model 3B+}
  BCM2837_BOARD_REVISION_MODEL_3APLUS         = (14 shl 4);  {Model 3A+}
- BCM2837_BOARD_REVISION_MODEL_COMPUTE3PlUS   = (16 shl 4);  {Compute Module 3+}
+ BCM2837_BOARD_REVISION_MODEL_COMPUTE3PLUS   = (16 shl 4);  {Compute Module 3+}
+ BCM2837_BOARD_REVISION_MODEL_4B             = (17 shl 4);  {Model 4B (Cannot occur on BCM2837)}
                                              
  BCM2837_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2837_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835 (Cannot occur on BCM2837)}
  BCM2837_BOARD_REVISION_PROCESSOR_BCM2836    = (1 shl 12);  {BCM2836}
  BCM2837_BOARD_REVISION_PROCESSOR_BCM2837    = (2 shl 12);  {BCM2837}
+ BCM2837_BOARD_REVISION_PROCESSOR_BCM2838    = (3 shl 12);  {BCM2838 (Cannot occur on BCM2837)}
  
  BCM2837_BOARD_REVISION_MANUFACTURER_MASK       = ($F shl 16); {Manufacturer}
  BCM2837_BOARD_REVISION_MANUFACTURER_SONY       = (0 shl 16);  {Sony}
@@ -1280,12 +1301,16 @@ const
  BCM2837_BOARD_REVISION_MANUFACTURER_EMBEST     = (2 shl 16);  {Embest}
  BCM2837_BOARD_REVISION_MANUFACTURER_SONY_JAPAN = (3 shl 16);  {Sony (Japan)} 
  BCM2837_BOARD_REVISION_MANUFACTURER_EMBEST2    = (4 shl 16);  {Embest}
+ BCM2837_BOARD_REVISION_MANUFACTURER_STADIUM    = (5 shl 16);  {Stadium}
  
  BCM2837_BOARD_REVISION_MEMORY_MASK          = ($7 shl 20); {Memory Size}
  BCM2837_BOARD_REVISION_MEMORY_256M          = (0 shl 20);  {256M}
  BCM2837_BOARD_REVISION_MEMORY_512M          = (1 shl 20);  {512M}
  BCM2837_BOARD_REVISION_MEMORY_1024M         = (2 shl 20);  {1024M}
-                                             
+ BCM2837_BOARD_REVISION_MEMORY_2048M         = (3 shl 20);  {2048M}
+ BCM2837_BOARD_REVISION_MEMORY_4096M         = (4 shl 20);  {4096M}
+ BCM2837_BOARD_REVISION_MEMORY_8192M         = (5 shl 20);  {8192M}
+
  BCM2837_BOARD_REVISION_ENCODED_FLAG         = (1 shl 23);  {Encoded Flag, if set then revision uses this encoding}
                                              
  BCM2837_BOARD_REVISION_MASK                 = $00FFFFFF;   {Mask off the warranty bits}
@@ -1353,6 +1378,17 @@ const
  
  {BCM2837 mailbox tag Temperature ids}
  BCM2837_MBOX_TEMP_ID_SOC = 0;
+ 
+ {BCM2837 mailbox Display ids (These are compatible with the DISPMANX_ID_* values)}
+ BCM2837_MBOX_DISPLAY_ID_MAIN_LCD    = 0;
+ BCM2837_MBOX_DISPLAY_ID_AUX_LCD     = 1;
+ BCM2837_MBOX_DISPLAY_ID_HDMI0       = 2;
+ BCM2837_MBOX_DISPLAY_ID_SDTV        = 3;
+ BCM2837_MBOX_DISPLAY_ID_FORCE_LCD   = 4;
+ BCM2837_MBOX_DISPLAY_ID_FORCE_TV    = 5;
+ BCM2837_MBOX_DISPLAY_ID_FORCE_OTHER = 6; {Non-default display}
+ BCM2837_MBOX_DISPLAY_ID_HDMI1       = 7; {Not applicable on BCM2837}
+ BCM2837_MBOX_DISPLAY_ID_FORCE_TV2   = 8; {Not applicable on BCM2837}
  
  {BCM2837 mailbox tag Memory flags}
  BCM2837_MBOX_MEM_FLAG_DISCARDABLE      = (1 shl 0); {Can be resized to 0 at any time. Use for cached data}
@@ -1532,13 +1568,13 @@ const
  BCM2837_IRQ_LOCAL_ARM_CNTPSIRQ     = 96;   {ARM Local IRQ 0}
  BCM2837_IRQ_LOCAL_ARM_CNTPNSIRQ    = 97;   {ARM Local IRQ 1}
  BCM2837_IRQ_LOCAL_ARM_CNTHPIRQ     = 98;   {ARM Local IRQ 2}
- BCM2837_IRQ_LOCAL_ARM_CNTVIRQ      = 99;   {ARM Local IRQ 3} 
+ BCM2837_IRQ_LOCAL_ARM_CNTVIRQ      = 99;   {ARM Local IRQ 3}
  
  {ARM Malboxes0-3}
- BCM2837_IRQ_LOCAL_ARM_MAILBOX0     = 100;  {ARM Local IRQ 4} 
- BCM2837_IRQ_LOCAL_ARM_MAILBOX1     = 101;  {ARM Local IRQ 5} 
- BCM2837_IRQ_LOCAL_ARM_MAILBOX2     = 102;  {ARM Local IRQ 6} 
- BCM2837_IRQ_LOCAL_ARM_MAILBOX3     = 103;  {ARM Local IRQ 7} 
+ BCM2837_IRQ_LOCAL_ARM_MAILBOX0     = 100;  {ARM Local IRQ 4}
+ BCM2837_IRQ_LOCAL_ARM_MAILBOX1     = 101;  {ARM Local IRQ 5}
+ BCM2837_IRQ_LOCAL_ARM_MAILBOX2     = 102;  {ARM Local IRQ 6}
+ BCM2837_IRQ_LOCAL_ARM_MAILBOX3     = 103;  {ARM Local IRQ 7}
  
  {GPU Int Routing}
  BCM2837_IRQ_LOCAL_ARM_GPU          = 104;  {ARM Local IRQ 8}
@@ -3158,64 +3194,6 @@ type
   1:(Response:TBCM2876MailboxTagSetVirtualGPIOResponse);
  end;
  
- {Get Display Count}
- TBCM2837MailboxTagGetDisplayCountRequest = record
-  Dummy:LongWord;
- end;
- 
- TBCM2837MailboxTagGetDisplayCountResponse = record
-  DisplayCount:LongWord;
- end;
- 
- PBCM2837MailboxTagGetDisplayCount = ^TBCM2837MailboxTagGetDisplayCount;
- TBCM2837MailboxTagGetDisplayCount = record
-  Header:TBCM2837MailboxTagHeader;
-  case Integer of
-  0:(Request:TBCM2837MailboxTagGetDisplayCountRequest);
-  1:(Response:TBCM2837MailboxTagGetDisplayCountResponse);
- end;
- 
- {Get Display Settings}
- TBCM2837MailboxTagGetDisplaySettingsRequest = record
-  DisplayNumber:LongWord;
-  Width:LongWord;
-  Height:LongWord;
-  Pitch:LongWord;
-  Depth:LongWord;
-  VirtualWidth:LongWord;
-  VirtualHeight:LongWord;
-  VirtualOffsetX:LongWord;
-  VirtualOffsetY:LongWord;
-  Address:LongWord; {Framebuffer Bus Address}
- end;
- 
- TBCM2837MailboxTagGetDisplaySettingsResponse = TBCM2837MailboxTagGetDisplaySettingsRequest;
- 
- PBCM2837MailboxTagGetDisplaySettings = ^TBCM2837MailboxTagGetDisplaySettings;
- TBCM2837MailboxTagGetDisplaySettings = record
-  Header:TBCM2837MailboxTagHeader;
-  case Integer of
-  0:(Request:TBCM2837MailboxTagGetDisplaySettingsRequest);
-  1:(Response:TBCM2837MailboxTagGetDisplaySettingsResponse);
- end;
- 
- {Set Display Number}
- TBCM2837MailboxTagSetDisplayNumberRequest = record
-  DisplayNumber:LongWord;
- end;
- 
- TBCM2837MailboxTagSetDisplayNumberResponse = record
-  Dummy:LongWord;
- end;
- 
- PBCM2837MailboxTagSetDisplayNumber = ^TBCM2837MailboxTagSetDisplayNumber;
- TBCM2837MailboxTagSetDisplayNumber = record
-  Header:TBCM2837MailboxTagHeader;
-  case Integer of
-  0:(Request:TBCM2837MailboxTagSetDisplayNumberRequest);
-  1:(Response:TBCM2837MailboxTagSetDisplayNumberResponse);
- end;
- 
  {Test Vsync}
  PBCM2837MailboxTagTestVsync = ^TBCM2837MailboxTagTestVsync;
  TBCM2837MailboxTagTestVsync = record
@@ -3249,6 +3227,92 @@ type
   case Integer of
   0:(Request:TBCM2837MailboxTagSetBacklightRequest);
   1:(Response:TBCM2837MailboxTagSetBacklightResponse);
+ end;
+ 
+ {Get Display Id}
+ TBCM2837MailboxTagGetDisplayIdRequest = record
+  DisplayNum:LongWord;
+ end;
+
+ TBCM2837MailboxTagGetDisplayIdResponse = record
+  DisplayId:LongWord; 
+ end;
+
+ PBCM2837MailboxTagGetDisplayId = ^TBCM2837MailboxTagGetDisplayId;
+ TBCM2837MailboxTagGetDisplayId = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagGetDisplayIdRequest);
+  1:(Response:TBCM2837MailboxTagGetDisplayIdResponse);
+ end;
+ 
+ {Set Display Num}
+ TBCM2837MailboxTagSetDisplayNumRequest = record
+  DisplayNum:LongWord;
+ end;
+ 
+ TBCM2837MailboxTagSetDisplayNumResponse = record
+  DisplayNum:LongWord; 
+ end;
+
+ PBCM2837MailboxTagSetDisplayNum = ^TBCM2837MailboxTagSetDisplayNum;
+ TBCM2837MailboxTagSetDisplayNum = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagSetDisplayNumRequest);
+  1:(Response:TBCM2837MailboxTagSetDisplayNumResponse);
+ end;
+ 
+ {Get Num Displays}
+ TBCM2837MailboxTagGetNumDisplaysRequest = record
+  NumDisplays:LongWord;
+ end;
+ 
+ TBCM2837MailboxTagGetNumDisplaysResponse = record
+  NumDisplays:LongWord; 
+ end;
+
+ PBCM2837MailboxTagGetNumDisplays = ^TBCM2837MailboxTagGetNumDisplays;
+ TBCM2837MailboxTagGetNumDisplays = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagGetNumDisplaysRequest);
+  1:(Response:TBCM2837MailboxTagGetNumDisplaysResponse);
+ end;
+
+ {Get Display Settings}
+ TBCM2837MailboxTagGetDisplaySettingsRequest = record
+  DisplayNum:LongWord; 
+  Width:LongWord; 
+  Height:LongWord; 
+  Depth:LongWord; 
+  Pitch:LongWord; 
+  VirtualWidth:LongWord; 
+  VirtualHeight:LongWord; 
+  VirtualWidthOffset:LongWord; 
+  VirtualHeightOffset:LongWord;
+  BusAddress:LongWord;
+ end;
+
+ TBCM2837MailboxTagGetDisplaySettingsResponse = record
+  DisplayNum:LongWord; 
+  Width:LongWord; 
+  Height:LongWord; 
+  Depth:LongWord; 
+  Pitch:LongWord; 
+  VirtualWidth:LongWord; 
+  VirtualHeight:LongWord; 
+  VirtualWidthOffset:LongWord; 
+  VirtualHeightOffset:LongWord; 
+  BusAddress:LongWord;
+ end;
+ 
+ PBCM2837MailboxTagGetDisplaySettings = ^TBCM2837MailboxTagGetDisplaySettings;
+ TBCM2837MailboxTagGetDisplaySettings = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagGetDisplaySettingsRequest);
+  1:(Response:TBCM2837MailboxTagGetDisplaySettingsResponse);
  end;
  
  {Set Cursor Info}
@@ -3407,7 +3471,7 @@ type
  PBCM2837VirtualGPIOBuffer = ^TBCM2837VirtualGPIOBuffer;
  TBCM2837VirtualGPIOBuffer = record
   Buffer:Pointer;
-  Address:LongWord;
+  Address:PtrUInt;
   CachedBuffer:LongBool;
   EnableDisable:array[0..BCM2837_VIRTUAL_GPIO_PIN_COUNT - 1] of LongWord; {Two packed 16-bit counts of enabled and disabled / Allows host to detect a brief enable that was missed}
  end;

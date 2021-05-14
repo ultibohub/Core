@@ -1,7 +1,7 @@
 {
 Himax HX8357D TFT LCD Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -161,7 +161,7 @@ function HX8357DTFTFramebufferGetDefaults(Framebuffer:PTFTFramebuffer;Properties
 
 function HX8357DTFTFramebufferSetWriteAddress(Framebuffer:PTFTFramebuffer;X1,Y1,X2,Y2:LongWord):LongWord;
 
-function HX8357DTFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address,Size:LongWord):LongWord;
+function HX8357DTFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address:PtrUInt;Size:LongWord):LongWord;
 
 {==============================================================================}
 {HX8357D Helper Functions}
@@ -781,7 +781,7 @@ end;
 
 {==============================================================================}
 
-function HX8357DTFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address,Size:LongWord):LongWord;
+function HX8357DTFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address:PtrUInt;Size:LongWord):LongWord;
 {Implementation of TFTFramebufferWriteMemory API for HX8357D}
 {Note: Not intended to be called directly by applications}
 var
@@ -796,7 +796,7 @@ begin
  if Framebuffer = nil then Exit;
 
  {$IF DEFINED(HX8357D_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'HX8357D: Write Memory (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'HX8357D: Write Memory (Address=' + AddrToHex(Address) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
 
  {Check Size}

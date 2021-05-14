@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL050 PS2 Keyboard/Mouse Interface Driver.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -186,11 +186,11 @@ type
  
 {==============================================================================}
 {PL050 Functions}
-function PL050KeyboardCreate(Address:LongWord;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;
+function PL050KeyboardCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;
 
 function PL050KeyboardDestroy(Keyboard:PKeyboardDevice):LongWord;
 
-function PL050MouseCreate(Address:LongWord;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;
+function PL050MouseCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;
 
 function PL050MouseDestroy(Mouse:PMouseDevice):LongWord;
  
@@ -255,7 +255,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL050 Functions}
-function PL050KeyboardCreate(Address:LongWord;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;
+function PL050KeyboardCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;
 {Create, register and attach a new PL050 Keyboard device which can be accessed using the keyboard API}
 {Address: The address of the PL050 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -271,7 +271,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL050_DEBUG) or DEFINED(KEYBOARD_DEBUG)}
- if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(nil,'PL050: Keyboard Create (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
+ if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(nil,'PL050: Keyboard Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
  {$ENDIF}
 
  {Check Address}
@@ -443,7 +443,7 @@ end;
 
 {==============================================================================}
 
-function PL050MouseCreate(Address:LongWord;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;
+function PL050MouseCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;
 {Create, register and attach a new PL050 Mouse device which can be accessed using the mouse API}
 {Address: The address of the PL050 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -459,7 +459,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PL050_DEBUG) or DEFINED(MOUSE_DEBUG)}
- if MOUSE_LOG_ENABLED then MouseLogDebug(nil,'PL050: Mouse Create (Address=' + IntToHex(Address,8) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
+ if MOUSE_LOG_ENABLED then MouseLogDebug(nil,'PL050: Mouse Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ')');
  {$ENDIF}
 
  {Check Address}

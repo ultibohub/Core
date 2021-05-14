@@ -236,6 +236,22 @@ type
  
 {==============================================================================}
 type
+ {Display Settings type (Generic)}
+ TDisplaySettings = record
+  DisplayNumber:LongWord; 
+  Width:LongWord; 
+  Height:LongWord; 
+  Depth:LongWord; 
+  Pitch:LongWord; 
+  VirtualWidth:LongWord; 
+  VirtualHeight:LongWord; 
+  VirtualWidthOffset:LongWord; 
+  VirtualHeightOffset:LongWord; 
+  FramebufferAddress:PtrUInt; 
+ end;
+ 
+{==============================================================================}
+type
  {Compatibility types} 
  {Boolean types}
  BOOL = ByteBool; {LongBool;} {Compatible with built in GCC _Bool type}

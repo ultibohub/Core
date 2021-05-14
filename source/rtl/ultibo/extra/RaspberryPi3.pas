@@ -1,7 +1,7 @@
 {
 Ultibo Raspberry Pi 3 unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2020 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -63,6 +63,7 @@ uses GlobalConfig,
      DWCOTG,
      SMSC95XX,
      LAN78XX,
+     RPiGPIOExpander,
      Framebuffer,
      Console,
      Keyboard,

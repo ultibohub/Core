@@ -1,7 +1,7 @@
 {
 Ultibo Global Define Defaults.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -80,9 +80,10 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {System statistics definitions}
-{--$DEFINE IRQ_STATISTICS}        {Enable statistics collection for IRQ handling (Default: Off)}
-{--$DEFINE FIQ_STATISTICS}        {Enable statistics collection for FIQ handling (Default: Off)}
+{$DEFINE IRQ_STATISTICS}        {Enable statistics collection for IRQ handling (Default: On)}
+{$DEFINE FIQ_STATISTICS}        {Enable statistics collection for FIQ handling (Default: On)}
 {--$DEFINE SWI_STATISTICS}        {Enable statistics collection for SWI handling (Default: Off)}
+{--$DEFINE IPI_STATISTICS}        {Enable statistics collection for IPI handling (Default: Off)}
 
 {--$DEFINE HEAP_STATISTICS}       {Enable statistics collection for heap manager internals (Default: Off)}
 {--$DEFINE LOCK_STATISTICS}       {Enable statistics collection for lock primitive internals (Default: Off)}
@@ -113,6 +114,7 @@ Global Defines
 {--$DEFINE DEVICE_DEBUG}          {Enable debug output/counters for device management (Default: Off)}
 {--$DEFINE DMA_DEBUG}             {Enable debug output/counters for DMA devices/hosts (Default: Off)}
 {--$DEFINE USB_DEBUG}             {Enable debug output/counters for USB devices/drivers/hosts (Default: Off) (Do not enable when network or file logging is active)}
+{--$DEFINE PCI_DEBUG}             {Enable debug output/counters for PCI devices/drivers/hosts (Default: Off) (Do not enable when network or file logging is active)}
 {--$DEFINE MMC_DEBUG}             {Enable debug output/counters for MMC/SD devices/hosts (Default: Off)}
 {--$DEFINE SPI_DEBUG}             {Enable debug output/counters for SPI devices (Default: Off)}
 {--$DEFINE I2C_DEBUG}             {Enable debug output/counters for I2C devices (Default: Off)}
@@ -209,6 +211,7 @@ Global Defines
 {--$DEFINE BCM2708_DEBUG}         {Enable debug output/counters for BCM2708 drivers (Default: Off)}
 {--$DEFINE BCM2709_DEBUG}         {Enable debug output/counters for BCM2709 drivers (Default: Off)}
 {--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
+{--$DEFINE BCM2711_DEBUG}         {Enable debug output/counters for BCM2711 drivers (Default: Off)}
 
 {DMA}
 {--$DEFINE PL08X_DEBUG}           {Enable debug output/counters for PL08X driver (Default: Off)}
@@ -217,6 +220,8 @@ Global Defines
 {--$DEFINE SMSC95XX_DEBUG}        {Enable debug output/counters for SMSC95XX driver (Default: Off)}
 {--$DEFINE SMC91X_DEBUG}          {Enable debug output/counters for SMC91X driver (Default: Off)}
 {--$DEFINE LAN78XX_DEBUG}         {Enable debug output/counters for SMSC95XX driver (Default: Off)}
+{--$DEFINE AX88XXX_DEBUG}         {Enable debug output/counters for AX88XXX driver (Default: Off)}
+{--$DEFINE GENET_DEBUG}           {Enable debug output/counters for GENET driver (Default: Off)}
 
 {WiFi}
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
@@ -238,6 +243,7 @@ Global Defines
 {--$DEFINE STMPE_DEBUG}           {Enable debug output/counters for STMPE driver (Default: Off)}
 {--$DEFINE RPIGPIOEXP_DEBUG}      {Enable debug output/counters for RPiGPIO Expander driver (Default: Off)}
 {--$DEFINE REMOTEGPIO_DEBUG}      {Enable debug output/counters for RemoteGPIO driver (Default: Off)}
+{--$DEFINE PCF857X_DEBUG}         {Enable debug output/counters for PCF857X driver (Default: Off)}
 
 {Framebuffer/Console}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
@@ -333,6 +339,8 @@ Global Defines
                                      {Note: Not currently supported by Newlib, need to modify \newlib\configure.host to enable stdio64 support for arm-none-eabi or aarch64-none-elf}
 {$DEFINE SYSCALLS_EXPORT_SOCKETS}    {Enable export of POSIX standard socket functions by the Syscalls unit (Default: On)}
                                      {Note: Must be disabled in order to enable export of the Winsock or Winsock2 API below}
+{$DEFINE SYSCALLS_USE_LONG_TIME_T}   {Define time_t as a long (32-bit) instead of int64_t (64-bit) for compatibility with older GCC and NewLib (Default: On)}                                  
+
 {==============================================================================}
 {==============================================================================}
 {API definitions}
@@ -344,6 +352,7 @@ Global Defines
 {$DEFINE API_EXPORT_CONSOLE}         {Enable the library API unit to export symbols for the Console unit (Default: On)}
 {$DEFINE API_EXPORT_LOGGING}         {Enable the library API unit to export symbols for the Logging unit (Default: On)}
 {$DEFINE API_EXPORT_DMA}             {Enable the library API unit to export symbols for the DMA unit (Default: On)}
+{$DEFINE API_EXPORT_PCI}             {Enable the library API unit to export symbols for the PCI unit (Default: On)}
 {$DEFINE API_EXPORT_USB}             {Enable the library API unit to export symbols for the USB unit (Default: On)}
 {$DEFINE API_EXPORT_MMC}             {Enable the library API unit to export symbols for the MMC unit (Default: On)}
 {$DEFINE API_EXPORT_SPI}             {Enable the library API unit to export symbols for the SPI unit (Default: On)}
@@ -380,6 +389,23 @@ Global Defines
 
 {==============================================================================}
 {==============================================================================}
+{Architecture definitions}
+{--$DEFINE ARMV6_IRQ_SAVE_VFP}        {Enable save and restore of VFP registers during IRQ processing on ARMv6 (Default: Off)}
+{--$DEFINE ARMV6_FIQ_SAVE_VFP}        {Enable save and restore of VFP registers during FIQ processing on ARMv6 (Default: Off)}
+{--$DEFINE ARMV6_SWI_SAVE_VFP}        {Enable save and restore of VFP registers during SWI processing on ARMv6 (Default: Off)}
+
+{--$DEFINE ARMV7_IRQ_SAVE_VFP}        {Enable save and restore of VFP registers during IRQ processing on ARMv7 (Default: Off)}
+{--$DEFINE ARMV7_FIQ_SAVE_VFP}        {Enable save and restore of VFP registers during FIQ processing on ARMv7 (Default: Off)}
+{--$DEFINE ARMV7_SWI_SAVE_VFP}        {Enable save and restore of VFP registers during SWI processing on ARMv7 (Default: Off)}
+{--$DEFINE ARMV7_CONTEXT_SWITCH_NEON} {Enable save and restore of the full NEON register set (D0-D31) during context switch on ARMv7 (Default: Off)}
+
+{--$DEFINE ARMV8_IRQ_SAVE_VFP}        {Enable save and restore of VFP registers during IRQ processing on ARMv8 (Default: Off)}
+{--$DEFINE ARMV8_FIQ_SAVE_VFP}        {Enable save and restore of VFP registers during FIQ processing on ARMv8 (Default: Off)}
+{--$DEFINE ARMV8_SWI_SAVE_VFP}        {Enable save and restore of VFP registers during SWI processing on ARMv8 (Default: Off)}
+{--$DEFINE ARMV8_CONTEXT_SWITCH_NEON} {Enable save and restore of the full NEON register set (D0-D31) during context switch on ARMv8 (Default: Off)}
+
+{==============================================================================}
+{==============================================================================}
 {Device and Platform definitions}
 {--$DEFINE USB_LEGACY_DEVICE_INIT}  {Enable old style USB device initialization (Default: Off)}
 
@@ -387,12 +413,17 @@ Global Defines
 {$DEFINE BCM2708_UART0_RX_BUFFER}   {Enable receive buffering for BCM2708 UART0 (Default: On)}
 {$DEFINE BCM2709_UART0_RX_BUFFER}   {Enable receive buffering for BCM2709 UART0 (Default: On)}
 {$DEFINE BCM2710_UART0_RX_BUFFER}   {Enable receive buffering for BCM2710 UART0 (Default: On)}
+{$DEFINE BCM2711_UART0_RX_BUFFER}   {Enable receive buffering for BCM2711 UART0 (Default: On)}
 
 {--$DEFINE RPI2_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi2 (Default: Off)}
 {--$DEFINE RPI3_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi3 (Default: Off)}
+{--$DEFINE RPI4_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi4 (Default: Off)}
 
 {--$DEFINE RPI2_MAX_CLOCK_RATE}     {Enable use of the maximum clock rate (19.2MHz) instead of the default rate (1MHz) on the RPi2 (Default: Off)}
 {--$DEFINE RPI3_MAX_CLOCK_RATE}     {Enable use of the maximum clock rate (19.2MHz) instead of the default rate (1MHz) on the RPi3 (Default: Off)}
+{$DEFINE RPI4_MAX_CLOCK_RATE}       {Enable use of the maximum clock rate (54MHz) instead of the default rate (1MHz) on the RPi4 (Default: On)}
+
+{$DEFINE RPI4_ENABLE_LPAE}          {Enable use of LPAE (Large Physical Address Extensions) on the RPi4 to access memory above 4GB (Default: On)}
 
 {==============================================================================}
 {==============================================================================}

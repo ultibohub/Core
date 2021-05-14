@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV VCHIQ driver unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2019 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,7 +17,10 @@ Boards
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3
+ Raspberry Pi CM3/CM3+
+ Raspberry Pi 4 - Model B
+ Raspberry Pi 400
+ Raspberry Pi CM4
  
 Licence
 =======
@@ -30,7 +33,8 @@ Credits
  Information for this unit was obtained from:
 
   Linux - \drivers\staging\vc04_services\interface\vchiq_arm\* - Copyright (c) 2010-2012 Broadcom
-
+          (Initial port from kernel rpi-4.9.y)
+          
   Linux - \drivers\char\broadcom\vc_sm\* - Copyright 2011-2012 Broadcom Corporation
 
   Linux - \drivers\char\broadcom\vc_mem.c - Copyright 2010 - 2011 Broadcom Corporation
@@ -300,8 +304,8 @@ const
  VCHIQ_INIT_RETRIES = 10;
  
  {VCHIQ Pagelist Constants (From vchiq_pagelist.h)}
- VCHIQ_PAGE_SIZE = 4096;
- VCHIQ_CACHE_LINE_SIZE = 32; {This seems to be hardcoded throughout the Linux driver, even though on later CPUs it should be 64}
+ {VCHIQ_PAGE_SIZE = 4096;} {Not used}
+ {VCHIQ_CACHE_LINE_SIZE = 32;} {Not used}
  VCHIQ_PAGELIST_WRITE = 0;
  VCHIQ_PAGELIST_READ = 1;
  VCHIQ_PAGELIST_READ_WITH_FRAGMENTS = 2;
@@ -337,6 +341,7 @@ type
   State:PVCHIQ_STATE_T;                           {State information for the VCHIQ driver}
   //To Do //Instances ?
   Registers:PtrUInt;
+  Use36BitAddress:LongBool;
   CacheLineSize:LongWord;
   FragmentsSize:LongWord;
   FragmentsBase:Pointer;
@@ -957,11 +962,11 @@ type
  PVCHIQ_PAGELIST_PAGES = ^VCHIQ_PAGELIST_PAGES;
  VCHIQ_PAGELIST_PAGES = array[0..0] of PtrUInt; {Not part of original driver}
  
- PVCHIQ_FRAGMENTS_T = ^VCHIQ_FRAGMENTS_T;
+ {PVCHIQ_FRAGMENTS_T = ^VCHIQ_FRAGMENTS_T;
  VCHIQ_FRAGMENTS_T = record
   headbuf: array[0..VCHIQ_CACHE_LINE_SIZE - 1] of Byte;
   tailbuf: array[0..VCHIQ_CACHE_LINE_SIZE - 1] of Byte;
- end;
+ end;} {Not used}
  
  {$PACKRECORDS DEFAULT}
  
@@ -1606,7 +1611,24 @@ begin
  {Setup Properties}
  Result:=ERROR_OPERATION_FAILED;
  VCHIQ.Registers:=PERIPHERALS_BASE + VCHIQ_DOORBELL_REGS_BASE;
- VCHIQ.CacheLineSize:=32; //Max(L1DataCacheGetLineSize,L2CacheGetLineSize); //To Do //Linux (and Windows) seems to use only 32 for this (either from device tree or hardcoded) but ARMv7 is 64 bytes
+ VCHIQ.Use36BitAddress:=False;
+ VCHIQ.CacheLineSize:=32;
+ case BoardGetType of
+  BOARD_TYPE_RPI2B,
+  BOARD_TYPE_RPI3B,
+  BOARD_TYPE_RPI_COMPUTE3,
+  BOARD_TYPE_RPI3B_PLUS,
+  BOARD_TYPE_RPI3A_PLUS,
+  BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+    VCHIQ.CacheLineSize:=64;
+   end;
+  BOARD_TYPE_RPI4B,
+  BOARD_TYPE_RPI400,
+  BOARD_TYPE_RPI_COMPUTE4:begin
+    VCHIQ.Use36BitAddress:=True;
+    VCHIQ.CacheLineSize:=64;
+   end; 
+ end;
  VCHIQ.FragmentsSize:=2 * VCHIQ.CacheLineSize;
  VCHIQ.FragmentsMutex:=INVALID_HANDLE_VALUE;
  VCHIQ.FragmentsSemaphore:=INVALID_HANDLE_VALUE;
@@ -10186,43 +10208,86 @@ begin
   end;  
  
  {Group the pages into runs of contiguous physical pages}
- BaseAddress:=Pointer(PhysicalToBusAddress(Pointer(Pages[0])));
- NextAddress:=BaseAddress + MEMORY_PAGE_SIZE;
- RunLength:=0;
- AddressIndex:=0;
- 
- {$IFDEF VC4VCHIQ_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VCHIQ: Create Pagelist (BaseAddress=' + IntToHex(PtrUInt(BaseAddress),8) + ' NextAddress=' + IntToHex(PtrUInt(NextAddress),8) + ')');
- {$ENDIF}
- 
- for PageCount:=1 to NumPages - 1 do
+ if VCHIQDevice.Use36BitAddress then
   begin
-   {Get Physical Address}
-   PageAddress:=Pointer(PhysicalToBusAddress(Pointer(Pages[PageCount])));
+   BaseAddress:=Pointer(Pages[0]);
+   NextAddress:=BaseAddress + MEMORY_PAGE_SIZE;
+   RunLength:=0;
+   AddressIndex:=0;
    
-   {Check Address and Length (Must be less than 16MB)}
-   if (PageAddress = NextAddress) and (RunLength < (MEMORY_PAGE_SIZE - 1)) then
+   {$IFDEF VC4VCHIQ_DEBUG}
+   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VCHIQ: Create Pagelist (BaseAddress=' + IntToHex(PtrUInt(BaseAddress),8) + ' NextAddress=' + IntToHex(PtrUInt(NextAddress),8) + ')');
+   {$ENDIF}
+   
+   for PageCount:=1 to NumPages - 1 do
     begin
-     {Update Next and Length}
-     Inc(NextAddress,MEMORY_PAGE_SIZE);
-     Inc(RunLength);
-    end
-   else
-    begin
-     {Update Page}
-     Addresses[AddressIndex]:=LongWord(BaseAddress + RunLength);
-     Inc(AddressIndex);
-     
-     {Get Next Page}
-     BaseAddress:=PageAddress;
-     NextAddress:=BaseAddress + MEMORY_PAGE_SIZE;
-     RunLength:=0;
+     {Get Physical Address}
+     PageAddress:=Pointer(Pages[PageCount]);
+   
+     {Check Address and Length (Must be less than 1MB)}
+     if (PageAddress = NextAddress) and (RunLength < ($FF)) then
+      begin
+       {Update Next and Length}
+       Inc(NextAddress,MEMORY_PAGE_SIZE);
+       Inc(RunLength);
+      end
+     else
+      begin
+       {Update Page}
+       Addresses[AddressIndex]:=LongWord((PtrUInt(BaseAddress) shr 4) + RunLength);
+       Inc(AddressIndex);
+       
+       {Get Next Page}
+       BaseAddress:=PageAddress;
+       NextAddress:=BaseAddress + MEMORY_PAGE_SIZE;
+       RunLength:=0;
+      end;
     end;
-  end;
   
- {Update Last Page} 
- Addresses[AddressIndex]:=LongWord(BaseAddress + RunLength);
- {Inc(AddressIndex);} {Not Used}
+   {Update Last Page} 
+   Addresses[AddressIndex]:=LongWord((PtrUInt(BaseAddress) shr 4) + RunLength);
+   {Inc(AddressIndex);} {Not Used}
+  end
+ else
+  begin 
+   BaseAddress:=Pointer(PhysicalToBusAddress(Pointer(Pages[0])));
+   NextAddress:=BaseAddress + MEMORY_PAGE_SIZE;
+   RunLength:=0;
+   AddressIndex:=0;
+ 
+   {$IFDEF VC4VCHIQ_DEBUG}
+   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VCHIQ: Create Pagelist (BaseAddress=' + IntToHex(PtrUInt(BaseAddress),8) + ' NextAddress=' + IntToHex(PtrUInt(NextAddress),8) + ')');
+   {$ENDIF}
+ 
+   for PageCount:=1 to NumPages - 1 do
+    begin
+     {Get Physical Address}
+     PageAddress:=Pointer(PhysicalToBusAddress(Pointer(Pages[PageCount])));
+   
+     {Check Address and Length (Must be less than 16MB)}
+     if (PageAddress = NextAddress) and (RunLength < (MEMORY_PAGE_SIZE - 1)) then
+      begin
+       {Update Next and Length}
+       Inc(NextAddress,MEMORY_PAGE_SIZE);
+       Inc(RunLength);
+      end
+     else
+      begin
+       {Update Page}
+       Addresses[AddressIndex]:=LongWord(BaseAddress + RunLength);
+       Inc(AddressIndex);
+       
+       {Get Next Page}
+       BaseAddress:=PageAddress;
+       NextAddress:=BaseAddress + MEMORY_PAGE_SIZE;
+       RunLength:=0;
+      end;
+    end;
+  
+   {Update Last Page} 
+   Addresses[AddressIndex]:=LongWord(BaseAddress + RunLength);
+   {Inc(AddressIndex);} {Not Used}
+  end;
  
  {$IFDEF VC4VCHIQ_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VCHIQ: Create Pagelist (AddressIndex=' + IntToStr(AddressIndex) + ' RunLength=' + IntToStr(RunLength) + ')');
@@ -10232,9 +10297,7 @@ begin
  {Partial cache lines (fragments) require special measures}
  if (PageType = VCHIQ_PAGELIST_READ) and (((Pagelist.offset and (VCHIQDevice.CacheLineSize - 1)) <> 0) or (((Pagelist.offset + Pagelist.length) and (VCHIQDevice.CacheLineSize - 1)) <> 0)) then
   begin
-
-   //To Do //Continuing //Resolve cache line size difference between ARMv6 and ARMv7
-   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQCreatePagelist - Fragments'); //To Do //Temp
+   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQCreatePagelist - Fragments'); //To Do //Testing, should now be resolved
    
    {Wait Free Fragments}
    if SemaphoreWait(VCHIQDevice.FragmentsSemaphore) <> ERROR_SUCCESS then
@@ -10358,9 +10421,7 @@ begin
  {Deal with any partial cache lines (fragments)}
  if Pagelist.pagetype >= VCHIQ_PAGELIST_READ_WITH_FRAGMENTS then
   begin
-  
-   //To Do //Continuing //Resolve cache line size difference between ARMv6 and ARMv7
-   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQFreePagelist - Fragments'); //To Do //Temp
+   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQFreePagelist - Fragments'); //To Do //Testing, should now be resolved
    
    {Get Fragments}
    Fragments:=VCHIQDevice.FragmentsBase + ((Pagelist.pagetype - VCHIQ_PAGELIST_READ_WITH_FRAGMENTS) * VCHIQDevice.FragmentsSize);

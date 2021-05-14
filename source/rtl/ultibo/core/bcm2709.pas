@@ -1,7 +1,7 @@
 {
 Ultibo BCM2709 interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -248,6 +248,19 @@ BCM2709 SDHCI Device
  The Card Detect pin is not connected.
 
  The Write Protect pin is not connected.
+
+ The device can be routed to GPIO pins 22 to 27 (ALT3) or 48 to 53 (ALT3), it can also be
+ routed to GPIO pins 34 to 39 (ALT3) to provide an SDIO controller for the on board WiFi.
+
+
+BCM2709 SDHOST Device
+=============================
+
+ The SDHOST controller on the BCM2709 is a non SDHCI-compliant device which requires a specific
+ driver. 
+ 
+ It can be routed to GPIO pins 22 to 27 (ALT0) or 48 to 53 (ALT0) in order to control the SD card
+ slot when the SDHCI device is being used for the on board WiFi.
 
 
 BCM2709 Clock (System Timer) Device
@@ -508,7 +521,7 @@ const
  BCM2709_EMMC_DESCRIPTION = 'BCM2836 Arasan SD Host';
  
  BCM2709_EMMC_MIN_FREQ = 400000;    {Default minimum of 400KHz}
- BCM2709_EMMC_MAX_FREQ = 250000000; //To Do //Get the current frequency from the command line or mailbox instead ? //Peripheral init could get from Mailbox like SMSC95XX ?
+ BCM2709_EMMC_MAX_FREQ = 250000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
  
  {BCM2709 Clock (System Timer) constants}
  BCM2709_SYS_CLOCK_DESCRIPTION = 'BCM2836 System Timer Clock';
@@ -732,7 +745,7 @@ type
   {SDHCI Properties}
   SDHCI:TSDHCIHost;
   {BCM2709 Properties}
-  //Lock:TSpinHandle; //To Do //Not Needed ? //See: DWCOTG etc
+  SDIO:LongBool;
   WriteDelay:LongWord;
   LastWrite:LongWord;
   ShadowRegister:LongWord;
@@ -811,7 +824,9 @@ type
   {Framebuffer Properties}
   Framebuffer:TFramebufferDevice;
   {BCM2709 Properties}
-   {Nothing}
+  MultiDisplay:LongBool;
+  DisplayNum:LongWord;
+  DisplaySettings:TDisplaySettings;
  end; 
  
 {==============================================================================}
@@ -1033,7 +1048,7 @@ function BCM2709FramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 
 function BCM2709FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
-function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function BCM2709FramebufferWaitSync(Framebuffer:PFramebufferDevice):LongWord;
  
@@ -1072,6 +1087,11 @@ procedure BCM2709Init;
 var
  Status:LongWord;
  
+ DisplayId:LongWord;
+ DisplayNum:LongWord;
+ DisplayCount:LongWord;
+ MultiDisplay:Boolean;
+ 
  BCM2709DMAHost:PBCM2709DMAHost;
  BCM2709SDHCIHost:PBCM2709SDHCIHost; 
 
@@ -1105,6 +1125,9 @@ begin
  {Initialize BCM2709ARM_TIMER_FIQ_ENABLED/BCM2709LOCAL_TIMER_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2709ARM_TIMER_FIQ_ENABLED:=False;
  if not(FIQ_ENABLED) then BCM2709LOCAL_TIMER_FIQ_ENABLED:=False;
+ 
+ {Initialize BCM2709SDHCI}
+ if BCM2709_REGISTER_SDIO then BCM2709_REGISTER_SDHCI:=False;
  
  {Initialize IRQ Data}
  FillChar(BCM2709BSCI2CIRQData,SizeOf(TBCM2709BSCI2CIRQData),0);
@@ -1167,6 +1190,12 @@ begin
  FramebufferSetVsyncHandler:=RPi2FramebufferSetVsync;
 
  FramebufferSetBacklightHandler:=RPi2FramebufferSetBacklight;
+ 
+ FramebufferGetNumDisplaysHandler:=RPi2FramebufferGetNumDisplays;
+ FramebufferGetDisplayIdHandler:=RPi2FramebufferGetDisplayId;
+ FramebufferSetDisplayNumHandler:=RPi2FramebufferSetDisplayNum;
+ FramebufferGetDisplaySettingsHandler:=RPi2FramebufferGetDisplaySettings;
+ FramebufferDisplayIdToNameHandler:=RPi2FramebufferDisplayIdToName;
  
  {Register Platform Touch Handlers}
  TouchGetBufferHandler:=RPi2TouchGetBuffer;
@@ -1635,6 +1664,17 @@ begin
     end;
   end;
  
+ {Create SPI1/2}
+ if BCM2709_REGISTER_SPI1 then
+  begin
+   //To Do
+  end;
+
+ if BCM2709_REGISTER_SPI2 then
+  begin
+   //To Do
+  end;
+ 
  {Create UART1}
  if BCM2709_REGISTER_UART1 then
   begin
@@ -1642,7 +1682,7 @@ begin
   end;
   
  {Create SDHCI}
- if BCM2709_REGISTER_SDHCI then
+ if BCM2709_REGISTER_SDHCI or BCM2709_REGISTER_SDIO then
   begin
    BCM2709SDHCIHost:=PBCM2709SDHCIHost(SDHCIHostCreateEx(SizeOf(TBCM2709SDHCIHost)));
    if BCM2709SDHCIHost <> nil then
@@ -1674,6 +1714,8 @@ begin
      BCM2709SDHCIHost.SDHCI.DeviceSetIOS:=nil;
      {Driver}
      BCM2709SDHCIHost.SDHCI.Address:=Pointer(BCM2836_SDHCI_REGS_BASE);
+     {BCM2709}
+     BCM2709SDHCIHost.SDIO:=BCM2709_REGISTER_SDIO;
    
      {Register SDHCI}
      Status:=SDHCIHostRegister(@BCM2709SDHCIHost.SDHCI);
@@ -1686,6 +1728,12 @@ begin
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2709: Failed to create new SDHCI host');
     end;
+  end;
+
+ {Create SDHOST}
+ if BCM2709_REGISTER_SDHOST then
+  begin
+   //To Do
   end;
 
  {Create System Clock}
@@ -1912,62 +1960,85 @@ begin
     end;
   end;
  
- {$IFNDEF CONSOLE_EARLY_INIT}
  {Create Framebuffer}
  if BCM2709_REGISTER_FRAMEBUFFER then
   begin
-   BCM2709Framebuffer:=PBCM2709Framebuffer(FramebufferDeviceCreateEx(SizeOf(TBCM2709Framebuffer)));
-   if BCM2709Framebuffer <> nil then
+   {Get Display Count and Check Multi-Display support}
+   if FramebufferGetNumDisplays(DisplayCount) = ERROR_SUCCESS then
     begin
-     {Device}
-     BCM2709Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-     BCM2709Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
-     BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC or FRAMEBUFFER_FLAG_CURSOR;
-     BCM2709Framebuffer.Framebuffer.Device.DeviceData:=nil;
-     BCM2709Framebuffer.Framebuffer.Device.DeviceDescription:=BCM2709_FRAMEBUFFER_DESCRIPTION;
-     {Framebuffer}
-     BCM2709Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
-     BCM2709Framebuffer.Framebuffer.DeviceAllocate:=BCM2709FramebufferAllocate;
-     BCM2709Framebuffer.Framebuffer.DeviceRelease:=BCM2709FramebufferRelease;
-     BCM2709Framebuffer.Framebuffer.DeviceBlank:=BCM2709FramebufferBlank;
-     BCM2709Framebuffer.Framebuffer.DeviceCommit:=BCM2709FramebufferCommit;
-     BCM2709Framebuffer.Framebuffer.DeviceWaitSync:=BCM2709FramebufferWaitSync;
-     BCM2709Framebuffer.Framebuffer.DeviceSetOffset:=BCM2709FramebufferSetOffset;
-     BCM2709Framebuffer.Framebuffer.DeviceGetPalette:=BCM2709FramebufferGetPalette;
-     BCM2709Framebuffer.Framebuffer.DeviceSetPalette:=BCM2709FramebufferSetPalette;
-     BCM2709Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2709FramebufferSetBacklight;
-     BCM2709Framebuffer.Framebuffer.DeviceSetCursor:=BCM2709FramebufferSetCursor;
-     BCM2709Framebuffer.Framebuffer.DeviceUpdateCursor:=BCM2709FramebufferUpdateCursor;
-     BCM2709Framebuffer.Framebuffer.DeviceSetProperties:=BCM2709FramebufferSetProperties;
-     {Driver}
-     
-     {Setup Flags}
-     if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
-     if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-     {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
-     
-     {Register Framebuffer}
-     Status:=FramebufferDeviceRegister(@BCM2709Framebuffer.Framebuffer);
-     if Status = ERROR_SUCCESS then
-      begin
-       {Allocate Framebuffer}
-       Status:=FramebufferDeviceAllocate(@BCM2709Framebuffer.Framebuffer,nil);
-       if Status <> ERROR_SUCCESS then
-        begin
-         if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
-        end;
-      end
-     else
-      begin     
-       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to register new framebuffer device: ' + ErrorToString(Status));
-      end;
+     MultiDisplay:=(DisplayCount > 0);
     end
-   else 
+   else
     begin
-     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to create new framebuffer device');
+     MultiDisplay:=False;
+     DisplayCount:=1;
+    end;
+   
+   {Create Framebuffer for each Display}
+   if DisplayCount > {$IFNDEF CONSOLE_EARLY_INIT}0{$ELSE}1{$ENDIF} then
+    begin
+     for DisplayNum:={$IFNDEF CONSOLE_EARLY_INIT}0{$ELSE}1{$ENDIF} to DisplayCount - 1 do
+      begin
+       {Get Display Id}
+       DisplayId:=FramebufferGetDisplayId(DisplayNum);
+       
+       {Create Framebuffer}
+       BCM2709Framebuffer:=PBCM2709Framebuffer(FramebufferDeviceCreateEx(SizeOf(TBCM2709Framebuffer)));
+       if BCM2709Framebuffer <> nil then
+        begin
+         {Device}
+         BCM2709Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+         BCM2709Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
+         BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC or FRAMEBUFFER_FLAG_CURSOR;
+         BCM2709Framebuffer.Framebuffer.Device.DeviceData:=nil;
+         BCM2709Framebuffer.Framebuffer.Device.DeviceDescription:=BCM2709_FRAMEBUFFER_DESCRIPTION + ' (' + FramebufferDisplayIdToName(DisplayId) + ')';
+         {Framebuffer}
+         BCM2709Framebuffer.Framebuffer.FramebufferState:=FRAMEBUFFER_STATE_DISABLED;
+         BCM2709Framebuffer.Framebuffer.DeviceAllocate:=BCM2709FramebufferAllocate;
+         BCM2709Framebuffer.Framebuffer.DeviceRelease:=BCM2709FramebufferRelease;
+         BCM2709Framebuffer.Framebuffer.DeviceBlank:=BCM2709FramebufferBlank;
+         BCM2709Framebuffer.Framebuffer.DeviceCommit:=BCM2709FramebufferCommit;
+         BCM2709Framebuffer.Framebuffer.DeviceWaitSync:=BCM2709FramebufferWaitSync;
+         BCM2709Framebuffer.Framebuffer.DeviceSetOffset:=BCM2709FramebufferSetOffset;
+         BCM2709Framebuffer.Framebuffer.DeviceGetPalette:=BCM2709FramebufferGetPalette;
+         BCM2709Framebuffer.Framebuffer.DeviceSetPalette:=BCM2709FramebufferSetPalette;
+         BCM2709Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2709FramebufferSetBacklight;
+         BCM2709Framebuffer.Framebuffer.DeviceSetCursor:=BCM2709FramebufferSetCursor;
+         BCM2709Framebuffer.Framebuffer.DeviceUpdateCursor:=BCM2709FramebufferUpdateCursor;
+         BCM2709Framebuffer.Framebuffer.DeviceSetProperties:=BCM2709FramebufferSetProperties;
+         {Driver}
+         BCM2709Framebuffer.MultiDisplay:=MultiDisplay;
+         BCM2709Framebuffer.DisplayNum:=DisplayNum;
+         FramebufferGetDisplaySettings(DisplayNum,BCM2709Framebuffer.DisplaySettings);
+         
+         {Setup Flags}
+         if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
+         if BCM2709FRAMEBUFFER_CACHED then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
+         {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then BCM2709Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2709Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+         
+         {Register Framebuffer}
+         Status:=FramebufferDeviceRegister(@BCM2709Framebuffer.Framebuffer);
+         if Status = ERROR_SUCCESS then
+          begin
+           {Allocate Framebuffer}
+           Status:=FramebufferDeviceAllocate(@BCM2709Framebuffer.Framebuffer,nil);
+           if Status <> ERROR_SUCCESS then
+            begin
+             if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+            end;
+          end
+         else
+          begin     
+           if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to register new framebuffer device: ' + ErrorToString(Status));
+          end;
+        end
+       else 
+        begin
+         if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2709: Failed to create new framebuffer device');
+        end;
+      end;  
     end;
   end;
- {$ENDIF}
  
  BCM2709Initialized:=True;
 end;
@@ -2225,7 +2296,7 @@ begin
      if not(DMA_CACHE_COHERENT) and (Dest <> nil) then
       begin
        {Clean Cache (Dest)}
-       CleanDataCacheRange(LongWord(Dest),Size);
+       CleanDataCacheRange(PtrUInt(Dest),Size);
       end;
      
      {$IFDEF BCM2709_SPI0_DMA_CS_DLEN}
@@ -4078,7 +4149,7 @@ begin
  if Request.Host <> DMA then Exit;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
- if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Submitting request (Request=' + IntToHex(LongWord(Request),8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Submitting request (Request=' + PtrToHex(Request) + ')');
  {$ENDIF}
  
  {Get Data Count}
@@ -4144,7 +4215,7 @@ begin
     BCM2709DMADataToControlBlock(Request,Data,Block,Bulk,Lite);
     
     {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
-    if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Data block (Source=' + IntToHex(LongWord(Data.Source),8) + ' Dest=' + IntToHex(LongWord(Data.Dest),8) + ' Size=' + IntToStr(Data.Size) + ')');
+    if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Data block (Source=' + PtrToHex(Data.Source) + ' Dest=' + PtrToHex(Data.Dest) + ' Size=' + IntToStr(Data.Size) + ')');
     if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Control block (SourceAddress=' + IntToHex(Block.SourceAddress,8) + ' DestinationAddress=' + IntToHex(Block.DestinationAddress,8) + ' TransferLength=' + IntToHex(Block.TransferLength,8) + ')');
     {$ENDIF}
     
@@ -4153,14 +4224,14 @@ begin
     if Data <> nil then
      begin
       {Get Next Block}
-      Block:=PBCM2836DMAControlBlock(LongWord(Block) + SizeOf(TBCM2836DMAControlBlock));
+      Block:=PBCM2836DMAControlBlock(PtrUInt(Block) + SizeOf(TBCM2836DMAControlBlock));
      end;
    end; 
  
   {Flush Control Blocks}
   if not(BCM2709DMA_CACHE_COHERENT) then
    begin
-    CleanDataCacheRange(LongWord(Request.ControlBlocks),Count * SizeOf(TBCM2836DMAControlBlock));
+    CleanDataCacheRange(PtrUInt(Request.ControlBlocks),Count * SizeOf(TBCM2836DMAControlBlock));
    end;
   
   {Wait for Channel}
@@ -4218,7 +4289,7 @@ begin
         end
        else
         begin
-         PBCM2709DMAHost(DMA).Channels[Channel].Registers.CONBLK_AD:=LongWord(Request.ControlBlocks);
+         PBCM2709DMAHost(DMA).Channels[Channel].Registers.CONBLK_AD:=PtrUInt(Request.ControlBlocks);
         end; 
        
        {Note: Broadcom documentation states that BCM2836_DMA_CS_ERROR bit should be cleared by writing
@@ -4285,7 +4356,7 @@ begin
  if Request.Host <> DMA then Exit;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
- if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Cancelling request (Request=' + IntToHex(LongWord(Request),8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(DMA,'BCM2709: Cancelling request (Request=' + PtrToHex(Request) + ')');
  {$ENDIF}
  
  {Acquire the Lock}
@@ -4477,7 +4548,7 @@ begin
  if DMA = nil then Exit;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(DMA_DEBUG)}
- if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709: Request completed (Request=' + IntToHex(LongWord(Channel.Request),8) + ')');
+ if DMA_LOG_ENABLED then DMALogDebug(@DMA.DMA,'BCM2709: Request completed (Request=' + PtrToHex(Channel.Request) + ')');
  {$ENDIF}
 
  {Get Status}
@@ -4578,14 +4649,14 @@ begin
            begin
             if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.DestStride = 0) then
              begin
-              InvalidateDataCacheRange(LongWord(Data.Dest),Data.Size);
+              InvalidateDataCacheRange(PtrUInt(Data.Dest),Data.Size);
              end
             else
              begin
               Offset:=0;
               while Offset < Data.Size do
                begin
-                InvalidateDataCacheRange(LongWord(Data.Dest + Offset),Data.StrideLength);
+                InvalidateDataCacheRange(PtrUInt(Data.Dest + Offset),Data.StrideLength);
                 
                 Inc(Offset,Data.DestStride);
                end;
@@ -4645,8 +4716,8 @@ begin
   begin
    case Request.Direction of
     DMA_DIR_NONE:begin
-      Block.SourceAddress:=LongWord(Data.Source);
-      Block.DestinationAddress:=LongWord(Data.Dest);
+      Block.SourceAddress:=PtrUInt(Data.Source);
+      Block.DestinationAddress:=PtrUInt(Data.Dest);
      end;
     DMA_DIR_MEM_TO_MEM:begin
       Block.SourceAddress:=PhysicalToBusAddress(Data.Source);
@@ -4668,8 +4739,8 @@ begin
   end
  else
   begin
-   Block.SourceAddress:=LongWord(Data.Source);
-   Block.DestinationAddress:=LongWord(Data.Dest);
+   Block.SourceAddress:=PtrUInt(Data.Source);
+   Block.DestinationAddress:=PtrUInt(Data.Dest);
   end;  
    
  {Setup Transfer Length and Stride}
@@ -4765,11 +4836,11 @@ begin
    {Set Next Block}
    if BCM2709DMA_BUS_ADDRESSES then
     begin
-     Block.NextControlBlockAddress:=PhysicalToBusAddress(Pointer(LongWord(Block) + SizeOf(TBCM2836DMAControlBlock)));
+     Block.NextControlBlockAddress:=PhysicalToBusAddress(Pointer(PtrUInt(Block) + SizeOf(TBCM2836DMAControlBlock)));
     end
    else
     begin
-     Block.NextControlBlockAddress:=LongWord(Block) + SizeOf(TBCM2836DMAControlBlock);
+     Block.NextControlBlockAddress:=PtrUInt(Block) + SizeOf(TBCM2836DMAControlBlock);
     end;
   end
  else
@@ -4790,14 +4861,14 @@ begin
        begin
         if ((Data.Flags and DMA_DATA_FLAG_STRIDE) = 0) or (Data.SourceStride = 0) then
          begin
-          CleanDataCacheRange(LongWord(Data.Source),Data.Size);
+          CleanDataCacheRange(PtrUInt(Data.Source),Data.Size);
          end
         else
          begin
           Offset:=0;
           while Offset < Data.Size do
            begin
-            CleanDataCacheRange(LongWord(Data.Source + Offset),Data.StrideLength);
+            CleanDataCacheRange(PtrUInt(Data.Source + Offset),Data.StrideLength);
             
             Inc(Offset,Data.SourceStride);
            end; 
@@ -7005,7 +7076,7 @@ begin
  if GPIO = nil then Exit;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(GPIO_DEBUG)}
- if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Event Timeout (Pin=' + GPIOPinToString(Pin.Pin) + ' Event=' + IntToHex(LongWord(Event),8) + ')');
+ if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'BCM2709: GPIO Event Timeout (Pin=' + GPIOPinToString(Pin.Pin) + ' Event=' + PtrToHex(Event) + ')');
  {$ENDIF}
  
  {Acquire the Lock}
@@ -8186,6 +8257,7 @@ end;
 {BCM2709 SDHCI Functions}
 function BCM2709SDHCIHostStart(SDHCI:PSDHCIHost):LongWord;
 var
+ Count:LongWord;
  Status:LongWord;
 begin
  {}
@@ -8194,16 +8266,78 @@ begin
  {Check SDHCI}
  if SDHCI = nil then Exit;
  
- if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2709 Powering on Arasan SD Host Controller');
+ if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2709 Powering on SD host controller (' + SDHCI.Device.DeviceDescription + ')');
 
  {Power On SD}
  Status:=PowerOn(POWER_ID_MMC0);
  if Status <> ERROR_SUCCESS then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI BCM2709 Failed to power on Arasan SD Host Controller');
+   if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI BCM2709 Failed to power on SD host controller (' + SDHCI.Device.DeviceDescription + ')');
    
    Result:=Status;
    Exit;
+  end;
+ 
+ {Setup GPIO}
+ if PBCM2709SDHCIHost(SDHCI).SDIO then
+  begin
+   {Setup SDIO}
+   {Check SDHOST Enabled}
+   if BCM2709_REGISTER_SDHOST then
+    begin
+     {Connect GPIO 48 to 53 to SDHOST (ALT0)}     
+     for Count:=GPIO_PIN_48 to GPIO_PIN_53 do
+      begin
+       GPIOFunctionSelect(Count,GPIO_FUNCTION_ALT0);
+      end;
+    end
+   else 
+    begin
+     {Disconnect GPIO 48 to 53 from SD/MMC (Input)}     
+     for Count:=GPIO_PIN_48 to GPIO_PIN_53 do
+      begin
+       GPIOFunctionSelect(Count,GPIO_FUNCTION_IN);
+      end;
+    end;
+
+   {Connect GPIO 34 to 39 to SDIO (ALT3)}
+   for Count:=GPIO_PIN_34 to GPIO_PIN_39 do
+    begin
+      GPIOFunctionSelect(Count,GPIO_FUNCTION_ALT3); 
+      
+      if Count = GPIO_PIN_34 then
+       begin
+        GPIOPullSelect(Count,GPIO_PULL_NONE);
+       end
+      else
+       begin
+        GPIOPullSelect(Count,GPIO_PULL_UP);
+       end;
+    end;
+  end
+ else
+  begin
+   {Setup SD/MMC}
+   {Disconnect GPIO 34 to 39 from SDIO (Input)}
+   for Count:=GPIO_PIN_34 to GPIO_PIN_39 do
+    begin
+     GPIOFunctionSelect(Count,GPIO_FUNCTION_IN); 
+    end;
+   
+   {Connect GPIO 48 to 53 to SD/MMC (ALT3)}
+   for Count:=GPIO_PIN_48 to GPIO_PIN_53 do
+    begin
+     GPIOFunctionSelect(Count,GPIO_FUNCTION_ALT3); 
+       
+     if Count = GPIO_PIN_48 then
+      begin
+       GPIOPullSelect(Count,GPIO_PULL_NONE);
+      end
+     else
+      begin
+       GPIOPullSelect(Count,GPIO_PULL_UP);
+      end;
+    end;
   end;
  
  {Update SDHCI}
@@ -8217,24 +8351,27 @@ begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
   end;  
  SDHCI.Version:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_VERSION);
- SDHCI.Quirks:=SDHCI_QUIRK_NO_HISPD_BIT or SDHCI_QUIRK_MISSING_CAPS;  //To Do //More ?
+ SDHCI.Quirks:=SDHCI_QUIRK_NO_HISPD_BIT or SDHCI_QUIRK_MISSING_CAPS;
  SDHCI.Quirks2:=SDHCI_QUIRK2_BROKEN_R1B or SDHCI_QUIRK2_WAIT_SEND_CMD;
  {Configuration Properties}
  SDHCI.PresetVoltages:=MMC_VDD_32_33 or MMC_VDD_33_34 or MMC_VDD_165_195;
- SDHCI.PresetCapabilities:=0;   //To Do //See: Linux ?
+ SDHCI.PresetCapabilities:=0;   //To Do //See: sdhci-iproc.c
  SDHCI.ClockMinimum:=BCM2709_EMMC_MIN_FREQ;
- SDHCI.ClockMaximum:=BCM2709_EMMC_MAX_FREQ; //To Do //Get from somewhere //See above
+ SDHCI.ClockMaximum:=ClockGetRate(CLOCK_ID_MMC0);
+ if SDHCI.ClockMaximum = 0 then SDHCI.ClockMaximum:=BCM2709_EMMC_MAX_FREQ;
+ 
+ if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2709 Maximum clock rate = ' + IntToStr(SDHCI.ClockMaximum));
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2709 host version = ' + IntToHex(SDHCIGetVersion(SDHCI),4));
  {$ENDIF}
  
  {Update BCM2709}
- PBCM2709SDHCIHost(SDHCI).WriteDelay:=((2 * 1000000) div BCM2709_EMMC_MIN_FREQ) + 1;  //To Do //Get sdhci-BCM2709.emmc_clock_freq from command line (or get from Mailbox Properties ?) //No, probably command line is best. Platform startup can get from Mailbox and place in command line //see above
+ PBCM2709SDHCIHost(SDHCI).WriteDelay:=((2 * 1000000) div BCM2709_EMMC_MIN_FREQ) + 1;
  PBCM2709SDHCIHost(SDHCI).LastWrite:=0;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2709 host write delay =  ' + IntToStr(PBCM2709SDHCIHost(SDHCI).WriteDelay));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2709 host write delay = ' + IntToStr(PBCM2709SDHCIHost(SDHCI).WriteDelay));
  {$ENDIF}
  
  {Reset Host}
@@ -8287,13 +8424,13 @@ begin
  SemaphoreDestroy(SDHCI.Wait);
  SDHCI.Wait:=INVALID_HANDLE_VALUE;
  
- if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2709 Powering off Arasan SD Host Controller');
+ if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2709 Powering off SD host controller (' + SDHCI.Device.DeviceDescription + ')');
 
  {Power Off SD}
  Status:=PowerOff(POWER_ID_MMC0);
  if Status <> ERROR_SUCCESS then
   begin
-   if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI BCM2709 Failed to power off Arasan SD Host Controller');
+   if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI BCM2709 Failed to power off SD host controller (' + SDHCI.Device.DeviceDescription + ')');
    
    Result:=Status;
    Exit;
@@ -8558,7 +8695,7 @@ begin
      
      {There is a observation on i.mx esdhc. INSERT bit will be immediately set again when it gets cleared, if a card is inserted.
       We have to mask the irq to prevent interrupt storm which will freeze the system. And the REMOVE gets the same situation.
-	
+ 
       More testing are needed here to ensure it works for other platforms though}
       
      {Get Card Present}
@@ -8572,8 +8709,8 @@ begin
      if not(Present) then SDHCI.Interrupts:=SDHCI.Interrupts or SDHCI_INT_CARD_INSERT;
      
      {Update interrupts}
-	 SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
-	 SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
+  SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
+  SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
      
      {Acknowledge interrupts}
      SDHCIHostWriteLong(SDHCI,SDHCI_INT_STATUS,InterruptMask and (SDHCI_INT_CARD_INSERT or SDHCI_INT_CARD_REMOVE));
@@ -10041,6 +10178,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Properties}
     if Properties = nil then
@@ -10305,6 +10447,12 @@ begin
     end;
     
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -10335,6 +10483,11 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Calculate Size}
     Size:=SizeOf(TBCM2836MailboxHeader) + SizeOf(TBCM2836MailboxTagReleaseBuffer) + SizeOf(TBCM2836MailboxFooter);
@@ -10399,6 +10552,12 @@ begin
      FreeMem(Header);
     end;
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -10421,20 +10580,33 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
- {Check Blank}
- if Blank then
+ {Set Current Display}
+ if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
   begin
-   Result:=FramebufferSetState(0);
-  end
- else
-  begin
-   Result:=FramebufferSetState(1);
+   FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
   end;
+ try
+  {Check Blank}
+  if Blank then
+   begin
+    Result:=FramebufferSetState(0);
+   end
+  else
+   begin
+    Result:=FramebufferSetState(1);
+   end;
+ finally
+  {Set Default Display}
+  if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+   begin
+    FramebufferSetDisplayNum(0);
+   end;
+ end; 
 end;
 
 {==============================================================================}
 
-function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address,Size,Flags:LongWord):LongWord;
+function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 {Implementation of FramebufferDeviceCommit API for BCM2709 Framebuffer}
 {Note: Not intended to be called directly by applications, use FramebufferDeviceCommit instead}
 begin
@@ -10446,7 +10618,7 @@ begin
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {Check Flags}
- if ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0) and BCM2709FRAMEBUFFER_CACHED then
+ if (not(BCM2709DMA_CACHE_COHERENT) or ((Flags and FRAMEBUFFER_TRANSFER_DMA) = 0)) and BCM2709FRAMEBUFFER_CACHED then
   begin
    {Clean Cache}
    CleanAndInvalidateDataCacheRange(Address,Size);
@@ -10468,8 +10640,21 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
- {Wait Sync}
- Result:=FramebufferSetVSync;
+ {Set Current Display}
+ if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+  begin
+   FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+  end;
+ try
+  {Wait Sync}
+  Result:=FramebufferSetVSync;
+ finally
+  {Set Default Display}
+  if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+   begin
+    FramebufferSetDisplayNum(0);
+   end;
+ end; 
 end;
  
 {==============================================================================}
@@ -10487,6 +10672,11 @@ begin
 
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Offset}
     if X > (Framebuffer.VirtualWidth - Framebuffer.PhysicalWidth) then Exit;
@@ -10503,6 +10693,12 @@ begin
       Framebuffer.OffsetY:=Y;
      end; 
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -10527,6 +10723,11 @@ begin
 
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Palette}
     if Palette = nil then Exit;
@@ -10539,6 +10740,12 @@ begin
     Palette.Start:=0;
     Palette.Count:=256;
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -10563,6 +10770,11 @@ begin
 
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Palette}
     if Palette = nil then Exit;
@@ -10572,6 +10784,12 @@ begin
     {Set Palette}
     Result:=FramebufferSetPalette(Palette.Start,Palette.Count,@Palette.Entries,SizeOf(Palette.Entries));
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -10594,8 +10812,21 @@ begin
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
- {Set Backlight}
- Result:=FramebufferSetBacklight(Brightness);
+ {Set Current Display}
+ if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+  begin
+   FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+  end;
+ try 
+  {Set Backlight}
+  Result:=FramebufferSetBacklight(Brightness);
+ finally
+  {Set Default Display}
+  if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+   begin
+    FramebufferSetDisplayNum(0);
+   end;
+ end; 
 end; 
  
 {==============================================================================}
@@ -10616,6 +10847,11 @@ begin
 
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Image}
     if Image = nil then
@@ -10660,6 +10896,12 @@ begin
       FreeMem(Cursor);
      end; 
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -10684,6 +10926,11 @@ begin
 
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     {Check Properties}
     (*if Enabled and ((Framebuffer.CursorWidth = 0) or (Framebuffer.CursorHeight = 0)) then
@@ -10714,6 +10961,12 @@ begin
     {Update Cursor}
     Result:=CursorSetState(Enabled,X,Y,Relative);
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
@@ -10741,11 +10994,22 @@ begin
  
  if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
   begin
+   {Set Current Display}
+   if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+    begin
+     FramebufferSetDisplayNum(PBCM2709Framebuffer(Framebuffer).DisplayNum);
+    end;
    try
     
     //To Do //Check Properties against current, modify if possible, otherwise reallocate ? (and Notify Resize)
     
    finally
+    {Set Default Display}
+    if PBCM2709Framebuffer(Framebuffer).MultiDisplay then
+     begin
+      FramebufferSetDisplayNum(0);
+     end;
+     
     MutexUnlock(Framebuffer.Lock);
    end; 
   end
