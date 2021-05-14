@@ -75,6 +75,11 @@ const
  
 {==============================================================================}
 const
+ {Definitions of Device Tree Blob}  
+ DTB_SIGNATURE = $d00dfeed; {See: https://www.kernel.org/doc/Documentation/arm/Booting}
+ 
+{==============================================================================}
+const
  {Definitions of ARM Machine Types}
  ARM_MACHINE_VERSATILE_PB = $00000183;
  ARM_MACHINE_BCM2708      = $00000C42;
@@ -412,7 +417,7 @@ begin
    TagCmdCount:=0;
    
    {Check for default Tag Address value and for Device Tree Blob signature}
-   if (ARMTagsAddress = ARMTAGS_INITIAL) or (LongWordBEtoN(PLongWord(ARMTagsAddress)^) = DTB_SIGNATURE) then
+   if (AARCH64TagsAddress = ARMTAGS_INITIAL) or (LongWordBEtoN(PLongWord(AARCH64TagsAddress)^) = DTB_SIGNATURE) then
     begin
      {Device Tree Blob supplied or ARM tags not present}
      {Check Memory Size}
@@ -455,7 +460,7 @@ begin
     begin
      {ARM Tags address supplied}
      {Get First Tag}
-     ARMTag:=PARMTag(ARMTagsAddress);
+     ARMTag:=PARMTag(AARCH64TagsAddress);
      while (ARMTag.Header.Size >= 2) and (ARMTag.Header.Tag <> ATAG_NONE) do
       begin
        Inc(ARMTagsCount);

@@ -6232,7 +6232,7 @@ begin
  {Register writes to GISB bus can take couple hundred nanoseconds
   and are done for each packet, save these expensive writes unless
   the platform is explicitly configured for 64-bits/LPAE}
- if (Network.Flags and GENET_HAS_40BITS) then
+ if (Network.Flags and GENET_HAS_40BITS) <> 0 then
   begin
    {Write DMA address (High 32 bits)}
    PLongWord(Descriptor + DMA_DESC_ADDRESS_HI)^:=Int64Rec(Address).Hi;
@@ -6288,7 +6288,7 @@ begin
  {Register writes to GISB bus can take couple hundred nanoseconds
   and are done for each packet, save these expensive writes unless
   the platform is explicitly configured for 64-bits/LPAE}
- if (Network.Flags and GENET_HAS_40BITS) then
+ if (Network.Flags and GENET_HAS_40BITS) <> 0 then
   begin
    {Read DMA address (High 32 bits)}
    Int64Rec(Result).Hi:=PLongWord(Descriptor + DMA_DESC_ADDRESS_HI)^;

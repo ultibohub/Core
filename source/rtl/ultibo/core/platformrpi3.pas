@@ -560,7 +560,12 @@ begin
  
  {Setup MACHINE_TYPE} 
  MACHINE_TYPE:=MACHINE_TYPE_UNKNOWN;
- case ARMMachineType of 
+ {$IFDEF CPUARM}
+ case ARMMachineType of
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
+ case AARCH64MachineType of
+ {$ENDIF CPUAARCH64}
   ARM_MACHINE_BCM2710:MACHINE_TYPE:=MACHINE_TYPE_BCM2710;
  end;
  
@@ -7711,7 +7716,7 @@ function RPi3VirtualGPIOAllocate:Boolean;
 {Allocate the Virtual GPIO buffer either from memory or from the firmware}
 var
  Size:LongWord;
- Address:LongWord;
+ Address:PtrUInt;
 begin
  {}
  {Check Address}
