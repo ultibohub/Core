@@ -578,6 +578,11 @@ const
  BCM2708_EMMC_MIN_FREQ = 400000;    {Default minimum of 400KHz}
  BCM2708_EMMC_MAX_FREQ = 250000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
  
+ {BCM2708 SDHOST constants}
+ BCM2708_SDHOST_DESCRIPTION = 'BCM2835 SDHOST';
+ 
+ //To Do
+ 
  {BCM2708 Clock (System Timer) constants}
  BCM2708_SYS_CLOCK_DESCRIPTION = 'BCM2835 System Timer Clock';
 

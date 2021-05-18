@@ -1,5 +1,5 @@
 #
-# Raspberry Pi 4B specific config file
+# Raspberry Pi 4B/400 specific config file
 #
 #IFDEF CPUARM
 -CfVFPV3

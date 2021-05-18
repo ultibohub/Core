@@ -2932,8 +2932,11 @@ begin
   begin
    if QEMUVPBInterruptCompareHandlers(Entry,Current^) then
     begin
-     Result:=Current;
-     Exit;
+     if Entry.Parameter = Current.Parameter then
+      begin
+       Result:=Current;
+       Exit;
+      end; 
     end;
     
    {Get Next}

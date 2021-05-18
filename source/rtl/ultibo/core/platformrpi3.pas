@@ -10132,8 +10132,11 @@ begin
   begin
    if RPi3InterruptCompareHandlers(Entry,Current^) then
     begin
-     Result:=Current;
-     Exit;
+     if Entry.Parameter = Current.Parameter then
+      begin
+       Result:=Current;
+       Exit;
+      end; 
     end;
     
    {Get Next}

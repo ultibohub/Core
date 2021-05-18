@@ -9487,6 +9487,7 @@ var
  Count:LongWord;
  Value:LongWord;
  Status:LongWord;
+ ClockMax:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -9521,6 +9522,14 @@ begin
    Exit;
   end;
 
+ {Set SD Clock}
+ ClockMax:=ClockGetMaxRate(PBCM2711EMMC0Host(SDHCI).ClockId);
+ if ClockMax > 0 then
+  begin
+   {Set CPU Clock}
+   ClockSetRate(PBCM2711EMMC0Host(SDHCI).ClockId,ClockMax,True);
+  end;
+ 
  {Setup GPIO}
  if PBCM2711EMMC0Host(SDHCI).Id = 0 then
   begin

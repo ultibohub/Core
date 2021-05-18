@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '14 May 2021';
+ ULTIBO_RELEASE_DATE             = '18 May 2021';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.1.005';
+ ULTIBO_RELEASE_VERSION          = '2.1.009';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 1;
- ULTIBO_RELEASE_VERSION_REVISION = 003;
+ ULTIBO_RELEASE_VERSION_REVISION = 009;
  
 {==============================================================================}
 const
@@ -1459,14 +1459,14 @@ const
 {==============================================================================}
 const
  {Virtual GPIO Pin constants}
- VIRTUAL_GPIO_PIN_0  =  0;
- VIRTUAL_GPIO_PIN_1  =  1;
- VIRTUAL_GPIO_PIN_2  =  2;
- VIRTUAL_GPIO_PIN_3  =  3;
- VIRTUAL_GPIO_PIN_4  =  4;
- VIRTUAL_GPIO_PIN_5  =  5;
- VIRTUAL_GPIO_PIN_6  =  6;
- VIRTUAL_GPIO_PIN_7  =  7;
+ VIRTUAL_GPIO_PIN_0  =  GPIO_PIN_0;
+ VIRTUAL_GPIO_PIN_1  =  GPIO_PIN_1;
+ VIRTUAL_GPIO_PIN_2  =  GPIO_PIN_2;
+ VIRTUAL_GPIO_PIN_3  =  GPIO_PIN_3;
+ VIRTUAL_GPIO_PIN_4  =  GPIO_PIN_4;
+ VIRTUAL_GPIO_PIN_5  =  GPIO_PIN_5;
+ VIRTUAL_GPIO_PIN_6  =  GPIO_PIN_6;
+ VIRTUAL_GPIO_PIN_7  =  GPIO_PIN_7;
  
 const
  {Virtual GPIO Function constants}
