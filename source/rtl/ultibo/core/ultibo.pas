@@ -2478,11 +2478,11 @@ begin
  {}
  if CLOCK_CYCLES_PER_MILLISECOND > 0 then
   begin
-   Result:=ClockGetCount div CLOCK_CYCLES_PER_MILLISECOND;
+   Result:=ClockGetTotal div CLOCK_CYCLES_PER_MILLISECOND;
   end
  else
   begin
-   Result:=ClockGetCount;
+   Result:=ClockGetTotal;
   end;  
 end;
 
