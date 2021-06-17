@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL180/181 Multimedia Card Interface Driver.
 
-Copyright (C) 2017 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -639,7 +639,7 @@ begin
    {Device}
    PL18XSDHCI.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
    PL18XSDHCI.SDHCI.Device.DeviceType:=SDHCI_TYPE_MMCI;
-   PL18XSDHCI.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NON_STANDARD or SDHCI_FLAG_AUTO_CMD12;
+   PL18XSDHCI.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NON_STANDARD or SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_EXTERNAL_DMA;
    PL18XSDHCI.SDHCI.Device.DeviceData:=nil;
    if Length(Name) <> 0 then PL18XSDHCI.SDHCI.Device.DeviceDescription:=Name else PL18XSDHCI.SDHCI.Device.DeviceDescription:=PL180_MMCI_DESCRIPTION;
    {SDHCI}
@@ -652,6 +652,10 @@ begin
    PL18XSDHCI.SDHCI.HostWriteByte:=PL18XSDHCIHostWriteByte;
    PL18XSDHCI.SDHCI.HostWriteWord:=PL18XSDHCIHostWriteWord;
    PL18XSDHCI.SDHCI.HostWriteLong:=PL18XSDHCIHostWriteLong;
+   PL18XSDHCI.SDHCI.HostReset:=nil;
+   PL18XSDHCI.SDHCI.HostHardwareReset:=nil;
+   PL18XSDHCI.SDHCI.HostSetPower:=nil;
+   PL18XSDHCI.SDHCI.HostSetClock:=nil;
    PL18XSDHCI.SDHCI.HostSetClockDivider:=nil;
    PL18XSDHCI.SDHCI.HostSetControlRegister:=nil;
    PL18XSDHCI.SDHCI.DeviceInitialize:=PL18XMMCDeviceInitialize;
@@ -668,6 +672,7 @@ begin
    {Pl18X}
    PL18XSDHCI.IRQ0:=IRQ0;
    PL18XSDHCI.IRQ1:=IRQ1;
+   PL18XSDHCI.Lock:=INVALID_HANDLE_VALUE;
    PL18XSDHCI.SingleIRQ:=False;
    PL18XSDHCI.Registers:=PPL18XMMCIRegisters(Address);
    PL18XSDHCI.Version:=PL18XGetVersionData(PL18XSDHCI);
@@ -731,7 +736,7 @@ begin
    {Device}
    PL18XSDHCI.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
    PL18XSDHCI.SDHCI.Device.DeviceType:=SDHCI_TYPE_MMCI;
-   PL18XSDHCI.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NON_STANDARD or SDHCI_FLAG_AUTO_CMD12;
+   PL18XSDHCI.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NON_STANDARD or SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_EXTERNAL_DMA;
    PL18XSDHCI.SDHCI.Device.DeviceData:=nil;
    if Length(Name) <> 0 then PL18XSDHCI.SDHCI.Device.DeviceDescription:=Name else PL18XSDHCI.SDHCI.Device.DeviceDescription:=PL181_MMCI_DESCRIPTION;
    {SDHCI}
@@ -760,6 +765,7 @@ begin
    {Pl18X}
    PL18XSDHCI.IRQ0:=IRQ0;
    PL18XSDHCI.IRQ1:=IRQ1;
+   PL18XSDHCI.Lock:=INVALID_HANDLE_VALUE;
    PL18XSDHCI.SingleIRQ:=False;
    PL18XSDHCI.Registers:=PPL18XMMCIRegisters(Address);
    PL18XSDHCI.Version:=PL18XGetVersionData(PL18XSDHCI);
@@ -1046,7 +1052,7 @@ begin
     end;
    
    {Switch to 4 bit bus if supported}
-   if ((SDHCI.Capabilities and MMC_MODE_4BIT) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
+   if ((SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
     begin
      Result:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
      if Result <> MMC_STATUS_SUCCESS then
@@ -1190,7 +1196,6 @@ function PL18XMMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 {Implementation of MMCDeviceGetCardDetect API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use MMCDeviceGetCardDetect instead}
 var
- Mask:LongWord;
  SDHCI:PSDHCIHost;
 begin
  {}
@@ -1482,14 +1487,14 @@ begin
          if Status = ERROR_WAIT_TIMEOUT then
           begin
            if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Command Response Timeout');
+           
            Command.Status:=MMC_STATUS_TIMEOUT;
-           Exit; 
           end
          else
           begin
            if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Command Response Failure');
+
            Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-           Exit;
           end;          
         end;
       end
@@ -1502,14 +1507,14 @@ begin
          if Status = ERROR_WAIT_TIMEOUT then
           begin
            if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Data Response Timeout');
+           
            Command.Status:=MMC_STATUS_TIMEOUT;
-           Exit; 
           end
          else
           begin
            if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Data Response Failure');
+           
            Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-           Exit; 
           end;          
         end;
       end;
@@ -1546,7 +1551,7 @@ begin
 
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Device Set IOS');
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Set IOS (Clock=' + IntToStr(MMC.Clock) + ')');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Set IOS (Clock=' + IntToStr(MMC.Clock) + ' BusWidth=' + MMCBusWidthToString(MMC.BusWidth) + ')');
  {$ENDIF}
  
  {Get SDHCI}
@@ -1562,6 +1567,10 @@ begin
 
  {Delay}
  PL18XRegisterDelay(PPL18XSDHCIHost(SDHCI));
+ 
+ {Update Clock and Bus Width}
+ SDHCI.Clock:=MMC.Clock;
+ SDHCI.BusWidth:=MMC.BusWidth;
  
  Result:=MMC_STATUS_SUCCESS;
 end;
@@ -1585,6 +1594,8 @@ begin
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Host Start');
  {$ENDIF}
+ 
+ if MMC_LOG_ENABLED then MMCLogInfo(nil,'PL18X Starting SD host controller (' + SDHCI.Device.DeviceDescription + ')');
  
  {Update SDHCI}
  {Driver Properties}
@@ -1658,7 +1669,7 @@ begin
  SDHCI.Voltages:=SDHCI.PresetVoltages;
  
  {Get Capabilities}
- SDHCI.Capabilities:=0; //MMC_MODE_HS or MMC_MODE_HS_52MHz or MMC_MODE_4BIT; //To Do //Not supported in QEMU ?
+ SDHCI.Capabilities:=0; //MMC_CAP_SD_HIGHSPEED or MMC_CAP_MMC_HIGHSPEED or MMC_CAP_4_BIT_DATA; //To Do //Not supported in QEMU ?
  
  {Determine Request Size}
  PPL18XSDHCIHost(SDHCI).MaximumRequestSize:=(1 shl PPL18XSDHCIHost(SDHCI).Version.DataLengthBits) - 1;
@@ -1744,6 +1755,7 @@ begin
  if MMC.Storage = nil then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to create new Storage device');
+   
    MMCDeviceDestroy(MMC);
    Exit;
   end;
@@ -1766,6 +1778,7 @@ begin
  if (Status <> MMC_STATUS_SUCCESS) and (Status <> MMC_STATUS_NO_MEDIA) then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to initialize new MMC device');
+   
    StorageDeviceDestroy(MMC.Storage);
    MMCDeviceDestroy(MMC);
    Exit;
@@ -1783,6 +1796,7 @@ begin
  if MMCDeviceRegister(MMC) <> MMC_STATUS_SUCCESS then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to register new MMC device');
+   
    StorageDeviceDestroy(MMC.Storage);
    MMCDeviceDestroy(MMC);
    Exit;
@@ -1923,6 +1937,7 @@ begin
  if PPL18XSDHCIHost(SDHCI).Lock <> INVALID_HANDLE_VALUE then
   begin
    SpinDestroy(PPL18XSDHCIHost(SDHCI).Lock);
+   
    PPL18XSDHCIHost(SDHCI).Lock:=INVALID_HANDLE_VALUE
   end; 
  
@@ -1930,8 +1945,11 @@ begin
  if SDHCI.Wait <> INVALID_HANDLE_VALUE then
   begin
    SemaphoreDestroy(SDHCI.Wait);
+   
    SDHCI.Wait:=INVALID_HANDLE_VALUE;
   end; 
+ 
+ if MMC_LOG_ENABLED then MMCLogInfo(nil,'PL18X Stopped SD host controller (' + SDHCI.Device.DeviceDescription + ')');
  
  Result:=ERROR_SUCCESS;
 end;

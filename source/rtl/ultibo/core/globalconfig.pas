@@ -753,6 +753,12 @@ var
  DWCOTG_FS_LS_LOW_POWER_CLOCK:LongBool;     {Enable Low Power Clock Select for Full Speed / Low Speed devices if True}
  DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ:LongBool; {Enable 6MHz Low Power PHY Clock for Low Speed devices if True}
  
+ {BCMSDHOST}
+ BCMSDHOST_DELAY_AFTER_STOP:LongWord;       {Minimum time between stop and subsequent data transfer (in Microseconds)}
+ BCMSDHOST_OVERCLOCK_50:LongWord;           {User's preferred frequency to use when 50MHz is requested (in MHz)}
+ BCMSDHOST_PIO_LIMIT:LongWord = 1;          {Maximum block count for PIO (0 = always DMA / 0x7FFFFFF = always PIO)}
+ BCMSDHOST_FORCE_PIO:LongBool;              {Force SDHOST driver to use PIO instead of DMA}
+ 
  {LAN78XX (Microchip LAN78XX USB Gigabit Ethernet)}
  LAN78XX_MAC_ADDRESS:String;                {The preconfigured MAC address for a LAN78XX device}
  
@@ -772,6 +778,9 @@ var
  
  BCM2708I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2708 I2C driver can do combined Write/Read transactions}
  
+ BCM2708FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2708 Framebuffer device}
+ BCM2708FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2708 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
+ 
  {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
  BCM2708GPIO_FIQ_ENABLED:LongBool;          {The BCM2708 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2708GPIO_FIQ_BANK_NO:LongWord;          {The BCM2708 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
@@ -781,14 +790,12 @@ var
 
  BCM2708ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2708 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  
- BCM2708FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2708 Framebuffer device}
- BCM2708FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2708 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
- 
  BCM2708_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2708 SPI0 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2708 SPI1 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2708 SPI2 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2708 I2C0 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2708 I2C1 device during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_I2C2:LongBool = False;    {If True then register the BCM2708 I2C2 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_DMA:LongBool = True;      {If True then register the BCM2708 DMA host during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PWM:LongBool = True;      {If True then register the BCM2708 PWM device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PCM:LongBool = True;      {If True then register the BCM2708 PCM device during boot (Only if BCM2708 unit included)}
@@ -820,6 +827,9 @@ var
 
  BCM2709I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2709 I2C driver can do combined Write/Read transactions}
  
+ BCM2709FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2709 Framebuffer device}
+ BCM2709FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2709 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
+ 
  {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
  BCM2709GPIO_FIQ_ENABLED:LongBool;          {The BCM2709 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2709GPIO_FIQ_BANK_NO:LongWord;          {The BCM2709 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
@@ -830,14 +840,12 @@ var
  BCM2709ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2709 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2709LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2709 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  
- BCM2709FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2709 Framebuffer device}
- BCM2709FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2709 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
- 
  BCM2709_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2709 SPI0 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2709 SPI1 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2709 SPI2 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2709 I2C0 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2709 I2C1 device during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_I2C2:LongBool = False;    {If True then register the BCM2709 I2C2 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_DMA:LongBool = True;      {If True then register the BCM2709 DMA host during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PWM:LongBool = True;      {If True then register the BCM2709 PWM device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PCM:LongBool = True;      {If True then register the BCM2709 PCM device during boot (Only if BCM2709 unit included)}
@@ -871,6 +879,9 @@ var
 
  BCM2710I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2710 I2C driver can do combined Write/Read transactions}
  
+ BCM2710FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2710 Framebuffer device}
+ BCM2710FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2710 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
+ 
  {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
  BCM2710GPIO_FIQ_ENABLED:LongBool;          {The BCM2710 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2710GPIO_FIQ_BANK_NO:LongWord;          {The BCM2710 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
@@ -881,14 +892,12 @@ var
  BCM2710ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2710 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2710LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2710 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  
- BCM2710FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2710 Framebuffer device}
- BCM2710FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2710 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
- 
  BCM2710_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2710 SPI0 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2710 SPI1 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPI2:LongBool = True;     {If True then register the BCM2710 SPI2 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2710 I2C0 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2710 I2C1 device during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_I2C2:LongBool = False;    {If True then register the BCM2710 I2C2 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_DMA:LongBool = True;      {If True then register the BCM2710 DMA host during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PWM:LongBool = True;      {If True then register the BCM2710 PWM device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PCM:LongBool = True;      {If True then register the BCM2710 PCM device during boot (Only if BCM2710 unit included)}
@@ -922,7 +931,9 @@ var
 
  BCM2711I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2711 I2C driver can do combined Write/Read transactions}
  
- {Note: Only one device can be enabled for FIQ at once, ensure you do not attempt to enable multiple}
+ BCM2711FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2711 Framebuffer device}
+ BCM2711FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2711 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
+ 
  BCM2711GPIO_FIQ_ENABLED:LongBool;          {The BCM2711 GPIO device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2711GPIO_FIQ_BANK_NO:LongWord;          {The BCM2711 GPIO bank number for Fast Interrupt Requests (FIQ) (0 or 1) (Only if Enabled)}
  
@@ -932,9 +943,6 @@ var
 
  BCM2711ARM_TIMER_FIQ_ENABLED:LongBool;     {The BCM2711 ARM Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
  BCM2711LOCAL_TIMER_FIQ_ENABLED:LongBool;   {The BCM2711 Local Timer device uses Fast Interrupt Requests (FIQ) instead of IRQ}
- 
- BCM2711FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2711 Framebuffer device}
- BCM2711FRAMEBUFFER_CACHED:LongBool;        {If True then the BCM2711 Framebuffer device is in cached memory (Requires CleanCacheRange on write)}
  
  BCM2711_REGISTER_SPI0:LongBool = True;     {If True then register the BCM2711 SPI0 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_SPI1:LongBool = True;     {If True then register the BCM2711 SPI1 device during boot (Only if BCM2711 unit included)}
@@ -946,10 +954,12 @@ var
 
  BCM2711_REGISTER_I2C0:LongBool = False;    {If True then register the BCM2711 I2C0 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C1:LongBool = True;     {If True then register the BCM2711 I2C1 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C2:LongBool = False;    {If True then register the BCM2711 I2C2 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C3:LongBool = True;     {If True then register the BCM2711 I2C3 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C4:LongBool = True;     {If True then register the BCM2711 I2C4 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C5:LongBool = True;     {If True then register the BCM2711 I2C5 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_I2C6:LongBool = True;     {If True then register the BCM2711 I2C6 device during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_I2C7:LongBool = False;    {If True then register the BCM2711 I2C7 device during boot (Only if BCM2711 unit included)}
 
  BCM2711_REGISTER_PWM0:LongBool = True;     {If True then register the BCM2711 PWM0 device during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_PWM1:LongBool = True;     {If True then register the BCM2711 PWM1 device during boot (Only if BCM2711 unit included)}
@@ -1298,6 +1308,14 @@ function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 function IsPowerOf2(Value:LongWord):Boolean;
 
 function BIT(Number:LongWord):LongWord; inline;
+function BIT_ULL(Number:LongWord):Int64; inline;
+function BIT_MASK(Number:LongWord):LongWord; inline;
+function BIT_WORD(Number:LongWord):LongWord; inline;
+function BIT_ULL_MASK(Number:LongWord):Int64; inline;
+function BIT_ULL_WORD(Number:LongWord):Int64; inline;
+
+function GENMASK(High,Low:LongWord):LongWord; inline;
+function GENMASK_ULL(High,Low:LongWord):Int64; inline;
 
 function HIWORD(L:LongInt):Word; inline;
 function LOWORD(L:LongInt):Word; inline;
@@ -1510,8 +1528,73 @@ end;
 {==============================================================================}
 
 function BIT(Number:LongWord):LongWord; inline;
+{Implementation of the BIT() macro}
 begin
+ {}
  Result:=1 shl Number;
+end;
+
+{==============================================================================}
+
+function BIT_ULL(Number:LongWord):Int64; inline;
+{Implementation of the BIT_ULL() macro}
+begin
+ {}
+ Result:=1 shl Number;
+end;
+
+{==============================================================================}
+
+function BIT_MASK(Number:LongWord):LongWord; inline;
+{Implementation of the BIT_MASK() macro}
+begin
+ {}
+ Result:=1 shl (Number mod BITS_PER_LONG);
+end;
+
+{==============================================================================}
+
+function BIT_WORD(Number:LongWord):LongWord; inline;
+{Implementation of the BIT_WORD() macro}
+begin
+ {}
+ Result:=Number div BITS_PER_LONG;
+end;
+
+{==============================================================================}
+
+function BIT_ULL_MASK(Number:LongWord):Int64; inline;
+{Implementation of the BIT_ULL_MASK() macro}
+begin
+ {}
+ Result:=1 shl (Number mod BITS_PER_LONG_LONG);
+end;
+
+{==============================================================================}
+
+function BIT_ULL_WORD(Number:LongWord):Int64; inline;
+{Implementation of the BIT_ULL_WORD() macro}
+begin
+ {}
+ Result:=Number div BITS_PER_LONG_LONG;
+end;
+
+{==============================================================================}
+
+function GENMASK(High,Low:LongWord):LongWord; inline;
+{Implementation of the GENMASK() macro}
+begin
+ {}
+ Result:=(not(LongWord(0)) shl Low) and (not(LongWord(0) shr (BITS_PER_LONG - 1 - High)));
+end;
+
+{==============================================================================}
+
+function GENMASK_ULL(High,Low:LongWord):Int64; inline;
+{Implementation of the GENMASK_ULL() macro}
+begin
+ {}
+ Result:=(not(Int64(0)) shl Low) and (not(Int64(0) shr (BITS_PER_LONG - 1 - High)));
 end;
 
 {==============================================================================}

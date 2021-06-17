@@ -295,7 +295,7 @@ const
  
  DWC_HCFG_ENABLE_32KHZ                = (1 shl 7);   {Enable 32-KHz Suspend Mode}
  
- DWC_HCFG_RESUME_VALID_MASK           = ($FF shl 8); {Resume Validation Periiod}
+ DWC_HCFG_RESUME_VALID_MASK           = ($FF shl 8); {Resume Validation Period}
  DWC_HCFG_RESUME_VALID_SHIFT          = 8; 
  
  DWC_HCFG_DESC_DMA                    = (1 shl 23);  {Enable Scatter/gather DMA in Host mode}

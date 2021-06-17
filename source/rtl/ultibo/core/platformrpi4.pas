@@ -316,6 +316,8 @@ function RPi4MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;T
 function RPi4MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
 function RPi4MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord;
 
+function RPi4MailboxPropertyTag(Tag:LongWord;Data:Pointer;Size:LongWord):LongWord;
+
 function RPi4RequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 function RPi4ReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 
@@ -831,6 +833,7 @@ begin
  MailboxCallExHandler:=RPi4MailboxCallEx;
  MailboxPropertyCallHandler:=RPi4MailboxPropertyCall;
  MailboxPropertyCallExHandler:=RPi4MailboxPropertyCallEx;
+ MailboxPropertyTagHandler:=RPi4MailboxPropertyTag;
 
  {Register Platform IRQ Handlers}
  RequestExIRQHandler:=RPi4RequestExIRQ;
@@ -3443,6 +3446,83 @@ begin
  
    Result:=ERROR_SUCCESS;
   end; 
+end;
+
+{==============================================================================}
+
+function RPi4MailboxPropertyTag(Tag:LongWord;Data:Pointer;Size:LongWord):LongWord;
+{Request a property tag (Get/Set) from the mailbox property channel}
+{Note: Data does not need to include mailbox property channel header or footer}
+{Note: Data pointer does not need any specific alignment or caching attributes}
+{Note: Size must be a multiple of 4 bytes}
+{Note: Size must include the size of the request and response which use the same buffer}
+var
+ Total:LongWord;
+ Response:LongWord;
+ Header:PBCM2838MailboxHeader;
+ Footer:PBCM2838MailboxFooter;
+ TagHeader:PBCM2838MailboxTagHeader;
+ TagBuffer:Pointer;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Tag}
+ if Tag = 0 then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Check Size}
+ if Size = 0 then Exit;
+ 
+ {Check Size is a multiple of 4}
+ if (Size and 3) <> 0 then Exit;
+ 
+ {Calculate Total Size}
+ Total:=SizeOf(TBCM2838MailboxHeader) + SizeOf(TBCM2838MailboxTagHeader) + Size + SizeOf(TBCM2838MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Total,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Total,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Total,0);
+ 
+  {Setup Header}
+  Header.Size:=Total;
+  Header.Code:=BCM2838_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  TagHeader:=PBCM2838MailboxTagHeader(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2838MailboxHeader)));
+  TagHeader.Tag:=Tag;
+  TagHeader.Size:=Size;
+  TagHeader.Length:=Size;
+
+  {Copy Request}
+  TagBuffer:=Pointer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2838MailboxHeader)) + PtrUInt(SizeOf(TBCM2838MailboxTagHeader)));
+  System.Move(Data^,TagBuffer^,Size);
+  
+  {Setup Footer}
+  Footer:=PBCM2838MailboxFooter(PtrUInt(TagHeader) + PtrUInt(SizeOf(TBCM2838MailboxTagHeader)) + Size);
+  Footer.Tag:=BCM2838_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2838_MAILBOX_0,BCM2838_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('MailboxPropertyTag - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Copy Response}
+  System.Move(TagBuffer^,Data^,Size);
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
 end;
 
 {==============================================================================}
@@ -10107,6 +10187,7 @@ begin
   POWER_ID_I2C4:Result:=BCM2838_MBOX_POWER_DEVID_I2C0;
   POWER_ID_I2C5:Result:=BCM2838_MBOX_POWER_DEVID_I2C0;
   POWER_ID_I2C6:Result:=BCM2838_MBOX_POWER_DEVID_I2C0;
+  POWER_ID_I2C7:Result:=BCM2838_MBOX_POWER_DEVID_I2C0;
   POWER_ID_SPI3:Result:=BCM2838_MBOX_POWER_DEVID_SPI;
   POWER_ID_SPI4:Result:=BCM2838_MBOX_POWER_DEVID_SPI;
   POWER_ID_SPI5:Result:=BCM2838_MBOX_POWER_DEVID_SPI;
@@ -10152,6 +10233,7 @@ begin
  
  case ClockId of 
   CLOCK_ID_MMC0:Result:=BCM2838_MBOX_CLOCK_ID_EMMC;
+  CLOCK_ID_MMC1:Result:=BCM2838_MBOX_CLOCK_ID_CORE; {MMC1 runs from core clock}
   CLOCK_ID_MMC2:Result:=BCM2838_MBOX_CLOCK_ID_EMMC2;
   CLOCK_ID_UART0:Result:=BCM2838_MBOX_CLOCK_ID_UART;
   CLOCK_ID_UART1:Result:=BCM2838_MBOX_CLOCK_ID_CORE; {UART1 runs from core clock}
@@ -10180,6 +10262,7 @@ begin
   CLOCK_ID_I2C4:Result:=BCM2838_MBOX_CLOCK_ID_CORE;
   CLOCK_ID_I2C5:Result:=BCM2838_MBOX_CLOCK_ID_CORE;
   CLOCK_ID_I2C6:Result:=BCM2838_MBOX_CLOCK_ID_CORE;
+  CLOCK_ID_I2C7:Result:=BCM2838_MBOX_CLOCK_ID_CORE;
   CLOCK_ID_SPI3:Result:=BCM2838_MBOX_CLOCK_ID_CORE;
   CLOCK_ID_SPI4:Result:=BCM2838_MBOX_CLOCK_ID_CORE;
   CLOCK_ID_SPI5:Result:=BCM2838_MBOX_CLOCK_ID_CORE;

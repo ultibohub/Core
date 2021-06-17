@@ -1,7 +1,7 @@
 {
 Ultibo PCI/PCIe interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -23,32 +23,32 @@ Credits
 
  Information for this unit was obtained from:
  
- //To Do ?????
+ //To Do
  
 References
 ==========
 
- //To Do ?????
+ //To Do
  
 PCI
 ===
  
- //To Do ?????
+ //To Do
  
 PCI Device
 ==========
 
- //To Do ?????
+ //To Do
 
 PCI Driver
 ==========
 
- //To Do ?????
+ //To Do
 
 PCI Host
 ========
 
- //To Do ?????
+ //To Do
  
 }
 
@@ -82,19 +82,49 @@ const
  PCI_TYPE_NAMES:array[PCI_TYPE_NONE..PCI_TYPE_MAX] of String = (
   'PCI_TYPE_NONE');
  
- //To Do ?????
+ {PCI Device States}
+ PCI_STATE_DETACHED  = 0;
+ PCI_STATE_DETACHING = 1;
+ PCI_STATE_ATTACHING = 2;
+ PCI_STATE_ATTACHED  = 3;
+
+ PCI_STATE_MAX       = 3;
+ 
+ {PCI Device State Names}
+ PCI_STATE_NAMES:array[PCI_STATE_DETACHED..PCI_STATE_MAX] of String = (
+  'PCI_STATE_DETACHED',
+  'PCI_STATE_DETACHING',
+  'PCI_STATE_ATTACHING',
+  'PCI_STATE_ATTACHED');
+ 
+ {PCI Device Status}
+ PCI_STATUS_UNBOUND   = 0; 
+ PCI_STATUS_BOUND     = 1;
+ 
+ PCI_STATUS_MAX       = 1;
+ 
+ {PCI Device Status Names}
+ PCI_STATUS_NAMES:array[PCI_STATUS_UNBOUND..PCI_STATUS_MAX] of String = (
+  'PCI_STATUS_UNBOUND',
+  'PCI_STATUS_BOUND');
  
  {PCI Device Flags}
  PCI_FLAG_NONE       = $00000000;
  
  {PCI Host Types}
  PCIHOST_TYPE_NONE   = 0;
+ PCIHOST_TYPE_PCI    = 1;
+ PCIHOST_TYPE_PCIX   = 2;
+ PCIHOST_TYPE_PCIE   = 3;
  
- PCIHOST_TYPE_MAX    = 0;
+ PCIHOST_TYPE_MAX    = 3;
  
  {PCI Host Type Names}
  PCIHOST_TYPE_NAMES:array[PCIHOST_TYPE_NONE..PCIHOST_TYPE_MAX] of String = (
-  'PCIHOST_TYPE_NONE');
+  'PCIHOST_TYPE_NONE',
+  'PCIHOST_TYPE_PCI',
+  'PCIHOST_TYPE_PCIX',
+  'PCIHOST_TYPE_PCIE');
  
  {PCI Host States}
  PCIHOST_STATE_DISABLED = 0;
@@ -115,7 +145,7 @@ const
  {PCI Status Codes}
  PCI_STATUS_SUCCESS                   = 0;  {Function successful}
  
- //To Do ?????
+ //To Do 
  
  {PCI logging}
  PCI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {PCI debugging messages}
@@ -156,12 +186,14 @@ type
   Device:TDevice;                            {The Device entry for this PCI device}
   {PCI Properties}                           
   PCIId:LongWord;                            {Unique Id of this PCI in the PCI device table}
-  //To Do ?????
+  PCIState:LongWord;                         {PCI device state (eg PCI_STATE_ATTACHED)}
+  PCIStatus:LongWord;                        {PCI device status (eg PCI_STATUS_BOUND)}
   Host:PPCIHost;                             {Host controller this PCI device is connected to (Set by PCI core)}
+  Parent:PPCIDevice;                         {Parent this PCI device is connected to, if any (Set by PCI core)}
   Driver:PPCIDriver;                         {Driver this PCI device is bound to, if any (Set by PCI core)} 
   {Driver Properties}                        
   Lock:TMutexHandle;                         {PCI device lock}
-  //To Do ?????
+  //To Do 
   {Internal Properties}                                                                               
   Prev:PPCIDevice;                           {Previous entry in PCI device table}
   Next:PPCIDevice;                           {Next entry in PCI device table}
@@ -201,21 +233,21 @@ type
  TPCIHostStart = function(Host:PPCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TPCIHostStop = function(Host:PPCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TPCIHostReset = function(Host:PPCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- //To Do ?????
+ //To Do
  
  TPCIHost = record
   {Device Properties}
   Device:TDevice;              {The Device entry for this PCI Host}
   {PCI Properties}
   HostId:LongWord;             {Unique Id of this Host in the Host table}
-  //To Do ?????
+  HostState:LongWord;          {Host state (eg PCIHOST_STATE_ENABLED)}
   HostStart:TPCIHostStart;     {A Host specific HostStart method implementing the standard PCI host interface}
   HostStop:TPCIHostStop;       {A Host specific HostStop method implementing the standard PCI host interface}
   HostReset:TPCIHostReset;     {A Host specific HostReset method implementing the standard PCI host interface}
-  //To Do ?????
+  //To Do
   {Driver Properties}
   Lock:TMutexHandle;           {Host lock}
-  //To Do ?????
+  //To Do
   {Internal Properties}                                                                        
   Prev:PPCIHost;               {Previous entry in Host table}
   Next:PPCIHost;               {Next entry in Host table}
@@ -241,7 +273,7 @@ procedure PCIAsyncStart(Host:PPCIHost);
 {==============================================================================}
 {PCI Device, Driver and Host Functions}
 //Device Methods
-//To Do ?????
+//To Do
  
 function PCIDeviceAllocate(Host:PPCIHost):PPCIDevice;
 function PCIDeviceRelease(Device:PPCIDevice):LongWord;
@@ -267,7 +299,7 @@ function PCIDriverFindByName(const Name:String):PPCIDriver; inline;
 function PCIDriverEnumerate(Callback:TPCIDriverEnumerate;Data:Pointer):LongWord;
 
 //Host Methods
-//To Do ?????
+//To Do
 
 function PCIHostCreate:PPCIHost;
 function PCIHostCreateEx(Size:LongWord):PPCIHost;
@@ -298,6 +330,18 @@ function PCIHostGetCount:LongWord; inline;
 function PCIHostCheck(Host:PPCIHost):PPCIHost;
 
 function PCIStatusToString(Status:LongWord):String;
+
+function PCIDeviceTypeToString(PCIType:LongWord):String;
+function PCIDeviceStateToString(PCIState:LongWord):String;
+function PCIDeviceStatusToString(PCIStatus:LongWord):String;
+
+function PCIDeviceStateToNotification(State:LongWord):LongWord;
+function PCIDeviceStatusToNotification(Status:LongWord):LongWord;
+
+function PCIHostTypeToString(HostType:LongWord):String;
+function PCIHostStateToString(HostState:LongWord):String;
+
+function PCIHostStateToNotification(State:LongWord):LongWord;
 
 procedure PCILog(Level:LongWord;Device:PPCIDevice;const AText:String);
 procedure PCILogInfo(Device:PPCIDevice;const AText:String); inline;
@@ -396,7 +440,7 @@ begin
  
  Result:=ERROR_INVALID_PARAMETER;
 
- //To Do ?????
+ //To Do
  
  if PCI_LOG_ENABLED then PCILogInfo(nil,'Successfully initialized PCI subsystem'); 
  
@@ -418,7 +462,7 @@ begin
 
  Result:=ERROR_INVALID_PARAMETER;
 
- //To Do ?????
+ //To Do
 
  {Set Started}
  PCIStarted:=False;    
@@ -457,7 +501,7 @@ begin
     begin
      try
       {Start Host}
-      //To Do ?????
+      //To Do
  
      finally
       {Release the Lock}
@@ -496,7 +540,7 @@ begin
  
  {Update PCI Device}
  Device.PCIId:=DEVICE_ID_ANY;
- //To Do ?????
+ //To Do
  
  {Create Lock}
  Device.Lock:=MutexCreate;
@@ -700,7 +744,7 @@ begin
       if Device.Device.DeviceState = DEVICE_STATE_REGISTERED then
        begin
         {Check Vendor and Product Id}
-        //To Do ?????
+        //To Do
        end;
        
       {Get Next}
@@ -796,7 +840,7 @@ end;
 {==============================================================================}
 
 function PCIDriverCreate:PPCIDriver;
-{Create a new Driver entry}
+{Create a new PCI Driver entry}
 {Return: Pointer to new Driver entry or nil if driver could not be created}
 begin
  {}
@@ -806,7 +850,7 @@ end;
 {==============================================================================}
 
 function PCIDriverCreateEx(Size:LongWord):PPCIDriver;
-{Create a new Driver entry}
+{Create a new PCI Driver entry}
 {Size: Size in bytes to allocate for new driver (Including the driver entry)}
 {Return: Pointer to new Driver entry or nil if driver could not be created}
 begin
@@ -839,7 +883,7 @@ end;
 {==============================================================================}
 
 function PCIDriverDestroy(Driver:PPCIDriver):LongWord;
-{Destroy an existing Driver entry}
+{Destroy an existing PCI Driver entry}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -868,7 +912,7 @@ end;
 {==============================================================================}
 
 function PCIDriverRegister(Driver:PPCIDriver):LongWord;
-{Register a new Driver in the Driver table}
+{Register a new Driver in the PCI Driver table}
 var
  Host:PPCIHost;
 begin
@@ -941,7 +985,8 @@ begin
        Host:=PCIHostTable;
        while Host <> nil do
         begin
-         //To Do ?????
+         
+         //To Do
          
          {Get Next}
          Host:=Host.Next;
@@ -971,7 +1016,7 @@ end;
 {==============================================================================}
 
 function PCIDriverDeregister(Driver:PPCIDriver):LongWord;
-{Deregister a Driver from the Driver table}
+{Deregister a Driver from the PCI Driver table}
 var
  Host:PPCIHost;
  Prev:PPCIDriver;
@@ -1004,7 +1049,8 @@ begin
        Host:=PCIHostTable;
        while Host <> nil do
         begin
-         //To Do ?????
+        
+         //To Do
     
          {Get Next}
          Host:=Host.Next;
@@ -1064,6 +1110,7 @@ end;
 {==============================================================================}
 
 function PCIDriverFind(DriverId:LongWord):PPCIDriver;
+{Find a driver by Id in the PCI Driver table}
 var
  Driver:PPCIDriver;
 begin
@@ -1105,6 +1152,7 @@ end;
 {==============================================================================}
 
 function PCIDriverFindByName(const Name:String):PPCIDriver; inline;
+{Find a driver by name in the Driver table}
 begin
  {}
  Result:=PPCIDriver(DriverFindByName(Name));
@@ -1113,6 +1161,7 @@ end;
 {==============================================================================}
 
 function PCIDriverEnumerate(Callback:TPCIDriverEnumerate;Data:Pointer):LongWord;
+{Enumerate all drivers in the PCI Driver table}
 var
  Driver:PPCIDriver;
 begin
@@ -1188,9 +1237,13 @@ begin
 
  {Update Host}
  Result.HostId:=DEVICE_ID_ANY;
- //To Do ?????
+ Result.HostState:=PCIHOST_STATE_DISABLED;
+ Result.HostStart:=nil;
+ Result.HostStop:=nil;
+ Result.HostReset:=nil;
+ //To Do
  Result.Lock:=INVALID_HANDLE_VALUE;
- //To Do ?????
+ //To Do
  
  {Create Lock}
  Result.Lock:=MutexCreate;
@@ -1264,7 +1317,7 @@ begin
   end;
 
  {Check Submit}
- //To Do ?????
+ //To Do
  //if not(Assigned(Host.HostSubmit)) then
  // begin
  //  if PCI_LOG_ENABLED then PCILogError(nil,'Cannot register host, Submit function must be implemented');
@@ -1272,7 +1325,7 @@ begin
  // end;
   
  {Check Cancel}
- //To Do ?????
+ //To Do
  //if not(Assigned(Host.HostCancel)) then
  // begin
  //  if PCI_LOG_ENABLED then PCILogError(nil,'Cannot register host, Cancel function must be implemented');
@@ -1340,7 +1393,7 @@ begin
          begin
           if PCI_LOG_ENABLED then PCILogInfo(nil,'Successfully started PCI host ' + DeviceGetName(@Host.Device));
           
-          //To Do ?????
+          //To Do
           
          end
         else
@@ -1399,7 +1452,7 @@ begin
  if CriticalSectionLock(PCIHostTableLock) = ERROR_SUCCESS then
   begin
    try
-    //To Do ?????
+    //To Do
     
     //To Do //Stop host if started etc
     
@@ -1618,7 +1671,7 @@ end;
 {==============================================================================}
 
 function PCIDriverGetCount:LongWord; inline;
-{Get the current driver count}
+{Get the current PCI driver count}
 begin
  {}
  Result:=PCIDriverTableCount;
@@ -1627,7 +1680,7 @@ end;
 {==============================================================================}
 
 function PCIDriverCheck(Driver:PPCIDriver):PPCIDriver;
-{Check if the supplied Driver is in the driver table}
+{Check if the supplied PCI Driver is in the driver table}
 var
  Current:PPCIDriver;
 begin
@@ -1721,7 +1774,119 @@ begin
  
  case Status of
   PCI_STATUS_SUCCESS:Result:='PCI_STATUS_SUCCESS';
-  //To Do ?????
+  //To Do
+ end;
+end;
+
+{==============================================================================}
+
+function PCIDeviceTypeToString(PCIType:LongWord):String;
+begin
+ {}
+ Result:='PCI_TYPE_UNKNOWN';
+ 
+ if PCIType <= PCI_TYPE_MAX then
+  begin
+   Result:=PCI_TYPE_NAMES[PCIType];
+  end;
+end;
+
+{==============================================================================}
+
+function PCIDeviceStateToString(PCIState:LongWord):String;
+begin
+ {}
+ Result:='PCI_STATE_UNKNOWN';
+ 
+ if PCIState <= PCI_STATE_MAX then
+  begin
+   Result:=PCI_STATE_NAMES[PCIState];
+  end;
+end;
+
+{==============================================================================}
+
+function PCIDeviceStatusToString(PCIStatus:LongWord):String;
+begin
+ {}
+ Result:='PCI_STATUS_UNKNOWN';
+ 
+ if PCIStatus <= PCI_STATUS_MAX then
+  begin
+   Result:=PCI_STATUS_NAMES[PCIStatus];
+  end;
+end;
+
+{==============================================================================}
+
+function PCIDeviceStateToNotification(State:LongWord):LongWord;
+{Convert a Device state value into the notification code for device notifications}
+begin
+ {}
+ Result:=DEVICE_NOTIFICATION_NONE;
+ 
+ {Check State}
+ case State of
+  PCI_STATE_DETACHED:Result:=DEVICE_NOTIFICATION_DETACH;
+  PCI_STATE_DETACHING:Result:=DEVICE_NOTIFICATION_DETACHING;
+  PCI_STATE_ATTACHING:Result:=DEVICE_NOTIFICATION_ATTACHING;
+  PCI_STATE_ATTACHED:Result:=DEVICE_NOTIFICATION_ATTACH;
+ end;
+end;
+
+{==============================================================================}
+
+function PCIDeviceStatusToNotification(Status:LongWord):LongWord;
+{Convert a Device status value into the notification code for device notifications}
+begin
+ {}
+ Result:=DEVICE_NOTIFICATION_NONE;
+ 
+ {Check Status}
+ case Status of
+  PCI_STATUS_UNBOUND:Result:=DEVICE_NOTIFICATION_UNBIND;
+  PCI_STATUS_BOUND:Result:=DEVICE_NOTIFICATION_BIND;
+ end;
+end;
+
+{==============================================================================}
+
+function PCIHostTypeToString(HostType:LongWord):String;
+begin
+ {}
+ Result:='PCIHOST_TYPE_UNKNOWN';
+ 
+ if HostType <= PCIHOST_TYPE_MAX then
+  begin
+   Result:=PCIHOST_TYPE_NAMES[HostType];
+  end;
+end;
+
+{==============================================================================}
+
+function PCIHostStateToString(HostState:LongWord):String;
+begin
+ {}
+ Result:='PCIHOST_STATE_UNKNOWN';
+ 
+ if HostState <= PCIHOST_STATE_MAX then
+  begin
+   Result:=PCIHOST_STATE_NAMES[HostState];
+  end;
+end;
+
+{==============================================================================}
+
+function PCIHostStateToNotification(State:LongWord):LongWord;
+{Convert a Host state value into the notification code for device notifications}
+begin
+ {}
+ Result:=DEVICE_NOTIFICATION_NONE;
+ 
+ {Check State}
+ case State of
+  PCIHOST_STATE_DISABLED:Result:=DEVICE_NOTIFICATION_DISABLE;
+  PCIHOST_STATE_ENABLED:Result:=DEVICE_NOTIFICATION_ENABLE;
  end;
 end;
 
@@ -1756,7 +1921,7 @@ begin
  {Check Device}
  if Device <> nil then
   begin
-   //To Do ?????
+   //To Do
    //WorkBuffer:=WorkBuffer + 'Device' + IntToStr(Device.Address) + ': ';
   end;
 

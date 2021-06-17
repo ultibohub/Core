@@ -1,7 +1,7 @@
 {
 Ultibo Real Time Clock device interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -55,9 +55,22 @@ const
  {RTC Device Types}
  RTC_TYPE_NONE      = 0;
  
+ RTC_TYPE_MAX       = 0;
+ 
+ {RTC Type Names}
+ RTC_TYPE_NAMES:array[RTC_TYPE_NONE..RTC_TYPE_MAX] of String = (
+  'RTC_TYPE_NONE');
+ 
  {RTC Device States}
  RTC_STATE_DISABLED = 0;
  RTC_STATE_ENABLED  = 1;
+ 
+ RTC_STATE_MAX      = 1;
+ 
+ {RTC State Names}
+ RTC_STATE_NAMES:array[RTC_STATE_DISABLED..RTC_STATE_MAX] of String = (
+  'RTC_STATE_DISABLED',
+  'RTC_STATE_ENABLED');
  
  {RTC Device Flags}
  RTC_FLAG_NONE          = $00000000;
@@ -175,6 +188,9 @@ function RTCDeviceGetDefault:PRTCDevice; inline;
 function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord; 
 
 function RTCDeviceCheck(RTC:PRTCDevice):PRTCDevice;
+
+function RTCDeviceTypeToString(RTCType:LongWord):String;
+function RTCDeviceStateToString(RTCState:LongWord):String;
 
 function RTCTimeIsValid(const Time:TSystemTime):Boolean;
 
@@ -937,6 +953,32 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(RTCDeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function RTCDeviceTypeToString(RTCType:LongWord):String;
+begin
+ {}
+ Result:='RTC_TYPE_UNKNOWN';
+ 
+ if RTCType <= RTC_TYPE_MAX then
+  begin
+   Result:=RTC_TYPE_NAMES[RTCType];
+  end;
+end;
+
+{==============================================================================}
+
+function RTCDeviceStateToString(RTCState:LongWord):String;
+begin
+ {}
+ Result:='RTC_STATE_UNKNOWN';
+ 
+ if RTCState <= RTC_STATE_MAX then
+  begin
+   Result:=RTC_STATE_NAMES[RTCState];
   end;
 end;
 

@@ -265,6 +265,7 @@ Global Defines
 
 {MMC/SDHCI}
 {--$DEFINE PL18X_DEBUG}           {Enable debug output/counters for PL18X driver (Default: Off)}
+{--$DEFINE BCMSDHOST_DEBUG}       {Enable debug output/counters for PL18X driver (Default: Off)}
 
 {GPU}
 {--$DEFINE VC4_DEBUG}             {Enable debug output/counters for VC4 interface (Default: Off)}

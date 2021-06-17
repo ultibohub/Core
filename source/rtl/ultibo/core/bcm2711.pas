@@ -27,9 +27,10 @@ Credits
 
    Linux - \drivers\char\hw_random\iproc-rng200.c
    
-   Linux - \drivers\mmc\host\sdhci-iproc.c (EMMC0 and EMMC2)
+   Linux - \drivers\mmc\host\bcm2835-mmc.c (EMMC0) - Copyright 2014 Gellert Weisz
+   Linux - \drivers\mmc\host\sdhci-iproc.c (EMMC0 and EMMC2) - Copyright (C) 2014 Broadcom Corporation
    
-   Linux - \drivers\mmc\host\bcm2835.c (EMMC1)
+   Linux - \drivers\mmc\host\bcm2835-sdhost.c (EMMC1) - Copyright (C) 2015-2016 Raspberry Pi (Trading) Ltd.
    
 References
 ==========
@@ -52,10 +53,12 @@ BCM2711 Devices
   SPI6
   I2C0
   I2C1
+  I2C2
   I2C3
   I2C4
   I2C5
   I2C6
+  I2C7
   I2C Slave
   SPI Slave
   DMA
@@ -133,13 +136,14 @@ BCM2711 SPI0/3/4/5/6 Device
             SCLK      GPIO_PIN_21  GPIO_FUNCTION_ALT3
 
 
-BCM2711 I2C0/1/3/4/5/6 Device
-=============================
+BCM2711 I2C0/1/2/3/4/5/6/7 Device
+=================================
 
  The BCM2711 has 8 Broadcom Serial Controller (BSC) devices which are fast mode (400Kz) I2C masters numbered BSC0 to BSC7 (I2C0 to I2C7).
  
- Devices BSC2 and BSC7 is dedicated to the HDMI interfaces and are not availale for use by the ARM processor. All BSC
- devices contain a 16 byte FIFO, support 7 bit and 10 bit addressing and have software configurable clock timing.
+ Devices BSC2 and BSC7 are dedicated to the HDMI interfaces but can be accessed by the ARM processor for controlling some
+ HDMI functionality. All BSC devices contain a 16 byte FIFO, support 7 bit and 10 bit addressing and have software
+ configurable clock timing.
  
  The GPIO pins and functions for each device are shown below, not all of these combinations are accessible via the 40 pin header.
  
@@ -160,8 +164,8 @@ BCM2711 I2C0/1/3/4/5/6 Device
             SDA1      GPIO_PIN_44  GPIO_FUNCTION_ALT2
             SCL1      GPIO_PIN_45  GPIO_FUNCTION_ALT2
             
- I2C2       SDA2                                       Not Available
-            SCL2                                       Not Available
+ I2C2       SDA2                                       Not Applicable
+            SCL2                                       Not Applicable
             
  I2C3       SDA3      GPIO_PIN_2   GPIO_FUNCTION_ALT5
             SCL3      GPIO_PIN_3   GPIO_FUNCTION_ALT5
@@ -187,8 +191,8 @@ BCM2711 I2C0/1/3/4/5/6 Device
             SDA6      GPIO_PIN_22  GPIO_FUNCTION_ALT5
             SCL6      GPIO_PIN_23  GPIO_FUNCTION_ALT5
             
- I2C7       SDA7                                       Not Available
-            SCL7                                       Not Available
+ I2C7       SDA7                                       Not Applicable
+            SCL7                                       Not Applicable
  
  Note: On the Raspberry Pi 4B the ID EEPROM pins on the 40 pin header are actually connected to GPIO 0 and 1 (I2C0)
  
@@ -427,6 +431,8 @@ BCM2711 EMMC1 (SDHOST) Device
  
  It can be routed to GPIO pins 22 to 27 (ALT0) or 48 to 53 (ALT0) however only 22 to 27 are accessible
  to use.
+
+ Note: The actual driver is implemented in the BCMSDHOST unit
  
 
 BCM2711 EMMC2 (SDHCI) Device
@@ -542,7 +548,7 @@ const
  BCM2711_SPI0_MODE_DMA = 1;
  BCM2711_SPI0_MODE_PIO = 2;
  
- {BCM2711 I2C0/1/3/4/5/6 constants}
+ {BCM2711 I2C0/1/2/3/4/5/6/7 constants}
  BCM2711_I2C0_DESCRIPTION = 'BCM2838 Master I2C';
 
  BCM2711_I2C0_MAX_SIZE = $FFFF;
@@ -707,7 +713,10 @@ const
  {BCM2711 EMMC1 (SDHOST) constants}
  BCM2711_EMMC1_DESCRIPTION = 'BCM2838 SDHOST';
  
- //To Do
+ BCM2711_EMMC1_MIN_FREQ = 400000;    {Default minimum of 400KHz}
+ BCM2711_EMMC1_MAX_FREQ = 200000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
+
+ {See: BCMSDHOST for the driver implementation}
 
  {BCM2711 EMMC2 (SDHCI) constants}
  BCM2711_EMMC2_DESCRIPTION = 'BCM2838 SDHCI';
@@ -804,7 +813,7 @@ type
   InterruptCount:LongWord;         {Number of interrupt requests received by the device}
  end;
 
- {BCM2711 I2C0/1/3/4/5/6 types}
+ {BCM2711 I2C0/1/2/3/4/5/6/7 types}
  PBCM2711I2C0Device = ^TBCM2711I2C0Device;
  TBCM2711I2C0Device = record
   {I2C Properties}
@@ -979,13 +988,7 @@ type
  end;
  
  {BCM2711 EMMC1 (SDHOST) types}
- PBCM2711EMMC1Host = ^TBCM2711EMMC1Host;
- TBCM2711EMMC1Host = record
-  {SDHCI Properties}
-  SDHCI:TSDHCIHost;
-  {BCM2711 Properties}
-  //To Do 
- end;
+ {See: BCMSDHOST for the driver implementation}
 
  {BCM2711 System Clock types}
  PBCM2711SystemClock = ^TBCM2711SystemClock;
@@ -1092,13 +1095,13 @@ function BCM2711SPI0SetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolar
 procedure BCM2711SPI0ReadFIFO(SPI:PBCM2711SPI0Device);
 procedure BCM2711SPI0WriteFIFO(SPI:PBCM2711SPI0Device);
 
-function BCM2711SPI0SharedInterruptHandler(Number,CPUID,Flags:LongWord;SPI:PBCM2711SPI0Device):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+function BCM2711SPI0SharedInterruptHandler(Number,CPUID,Flags:LongWord;SPI:PBCM2711SPI0Device):LongWord;
 procedure BCM2711SPI0DMARequestCompleted(Request:PDMARequest); 
 
 procedure BCM2711SPI0GetGPIOConfig(SPI:PBCM2711SPI0Device);
 
 {==============================================================================}
-{BCM2711 I2C0/1/3/4/5/6 Functions}
+{BCM2711 I2C0/1/2/3/4/5/6/7 Functions}
 function BCM2711I2C0Start(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function BCM2711I2C0Stop(I2C:PI2CDevice):LongWord;
  
@@ -1114,7 +1117,7 @@ function BCM2711I2C0SetAddress(I2C:PI2CDevice;Address:Word):LongWord;
 procedure BCM2711I2C0FillFIFO(I2C:PBCM2711I2C0Device);
 procedure BCM2711I2C0DrainFIFO(I2C:PBCM2711I2C0Device);
 
-function BCM2711I2C0SharedInterruptHandler(Number,CPUID,Flags:LongWord;I2C:PBCM2711I2C0Device):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+function BCM2711I2C0SharedInterruptHandler(Number,CPUID,Flags:LongWord;I2C:PBCM2711I2C0Device):LongWord;
 
 procedure BCM2711I2C0GetGPIOConfig(I2C:PBCM2711I2C0Device);
 
@@ -1134,9 +1137,9 @@ function BCM2711DMAHostStop(DMA:PDMAHost):LongWord;
 function BCM2711DMAHostSubmit(DMA:PDMAHost;Request:PDMARequest):LongWord;
 function BCM2711DMAHostCancel(DMA:PDMAHost;Request:PDMARequest):LongWord;
 
-procedure BCM2711DMAInterruptHandler(Channel:PBCM2711DMAChannel);{$IFDEF i386} stdcall;{$ENDIF}
-procedure BCM2711DMA40InterruptHandler(Channel:PBCM2711DMAChannel);{$IFDEF i386} stdcall;{$ENDIF}
-procedure BCM2711DMASharedInterruptHandler(DMA:PBCM2711DMAHost);{$IFDEF i386} stdcall;{$ENDIF}
+procedure BCM2711DMAInterruptHandler(Channel:PBCM2711DMAChannel);
+procedure BCM2711DMA40InterruptHandler(Channel:PBCM2711DMAChannel);
+procedure BCM2711DMASharedInterruptHandler(DMA:PBCM2711DMAHost);
 
 procedure BCM2711DMARequestComplete(Channel:PBCM2711DMAChannel);
 
@@ -1189,7 +1192,7 @@ function BCM2711GPIOPullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 function BCM2711GPIOFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function BCM2711GPIOFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 
-procedure BCM2711GPIOInterruptHandler(Bank:PBCM2711GPIOBank);{$IFDEF i386} stdcall;{$ENDIF}
+procedure BCM2711GPIOInterruptHandler(Bank:PBCM2711GPIOBank);
 
 procedure BCM2711GPIOEventTrigger(Pin:PGPIOPin);
 procedure BCM2711GPIOEventTimeout(Event:PGPIOEvent);
@@ -1205,7 +1208,7 @@ function BCM2711UART0Write(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;v
 function BCM2711UART0GetStatus(UART:PUARTDevice):LongWord;
 function BCM2711UART0SetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
 
-function BCM2711UART0SharedInterruptHandler(Number,CPUID,Flags:LongWord;UART:PUARTDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+function BCM2711UART0SharedInterruptHandler(Number,CPUID,Flags:LongWord;UART:PUARTDevice):LongWord;
 
 procedure BCM2711UART0Receive(UART:PUARTDevice);
 procedure BCM2711UART0Transmit(UART:PUARTDevice);
@@ -1231,14 +1234,14 @@ procedure BCM2711EMMC0HostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte);
 procedure BCM2711EMMC0HostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word); 
 procedure BCM2711EMMC0HostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord); 
  
-function BCM2711EMMC0SharedInterruptHandler(Number,CPUID,Flags:LongWord;SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+function BCM2711EMMC0SharedInterruptHandler(Number,CPUID,Flags:LongWord;SDHCI:PSDHCIHost):LongWord;
 function BCM2711EMMC0SetupInterrupts(SDHCI:PSDHCIHost):LongWord;
 
 function BCM2711EMMC0DeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 
 {==============================================================================}
 {BCM2711 EMMC1 (SDHOST) Functions}
-//To Do 
+{See: BCMSDHOST for the driver implementation}
 
 {==============================================================================}
 {BCM2711 EMMC2 (SDHCI) Functions}
@@ -1270,7 +1273,7 @@ function BCM2711ARMTimerCancel(Timer:PTimerDevice):LongWord;
 function BCM2711ARMTimerSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
 function BCM2711ARMTimerSetInterval(Timer:PTimerDevice;Interval:LongWord):LongWord;
 
-procedure BCM2711ARMTimerInterruptHandler(Timer:PTimerDevice);{$IFDEF i386} stdcall;{$ENDIF}
+procedure BCM2711ARMTimerInterruptHandler(Timer:PTimerDevice);
 
 procedure BCM2711ARMTimerEventTrigger(Timer:PTimerDevice);
 
@@ -1322,10 +1325,10 @@ function BCM2711FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properti
 
 {==============================================================================}
 {BCM2711 Helper Functions}
-function BCM2711GetSPIDescription(Id:LongWord):String;
-function BCM2711GetI2CDescription(Id:LongWord):String;
-function BCM2711GetPWMDescription(Id,Channel:LongWord):String;
-function BCM2711GetUARTDescription(Id:LongWord):String;
+function BCM2711SPIGetDescription(Id:LongWord):String;
+function BCM2711I2CGetDescription(Id:LongWord):String;
+function BCM2711PWMGetDescription(Id,Channel:LongWord):String;
+function BCM2711UARTGetDescription(Id:LongWord):String;
   
 {==============================================================================}
 {==============================================================================}
@@ -1665,6 +1668,12 @@ begin
  if BCM2711_REGISTER_SDIO then BCM2711_REGISTER_EMMC0:=False;
  if BCM2711_REGISTER_EMMC0 then BCM2711_REGISTER_EMMC2:=False;
 
+ {Register Platform Handlers}
+ SPIGetDescriptionHandler:=BCM2711SPIGetDescription;
+ I2CGetDescriptionHandler:=BCM2711I2CGetDescription;
+ PWMGetDescriptionHandler:=BCM2711PWMGetDescription;
+ UARTGetDescriptionHandler:=BCM2711UARTGetDescription;
+
  {$IFNDEF CONSOLE_EARLY_INIT}
  {Register Platform GPU Memory Handlers}
  GPUMemoryAllocateHandler:=RPi4GPUMemoryAllocate;
@@ -1897,7 +1906,7 @@ begin
    BCM2711RegisterSPI0(6);
   end; 
 
- {Create I2C0/1/3/4/5/6}
+ {Create I2C0/1/2/3/4/5/6/7}
  if BCM2711_REGISTER_I2C0 then
   begin
    BCM2711RegisterI2C0(0);
@@ -1906,6 +1915,11 @@ begin
  if BCM2711_REGISTER_I2C1 then
   begin
    BCM2711RegisterI2C0(1);
+  end; 
+
+ if BCM2711_REGISTER_I2C2 then
+  begin
+   BCM2711RegisterI2C0(2);
   end; 
 
  if BCM2711_REGISTER_I2C3 then
@@ -1926,6 +1940,11 @@ begin
  if BCM2711_REGISTER_I2C6 then
   begin
    BCM2711RegisterI2C0(6);
+  end; 
+
+ if BCM2711_REGISTER_I2C7 then
+  begin
+   BCM2711RegisterI2C0(7);
   end; 
 
  {Create PWM0/1}
@@ -1992,7 +2011,7 @@ begin
      {Device}
      BCM2711EMMC0Host.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2711EMMC0Host.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
-     BCM2711EMMC0Host.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23;
+     BCM2711EMMC0Host.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23 or SDHCI_FLAG_EXTERNAL_DMA;
      BCM2711EMMC0Host.SDHCI.Device.DeviceData:=nil;
      BCM2711EMMC0Host.SDHCI.Device.DeviceDescription:=BCM2711_EMMC0_DESCRIPTION;
      {SDHCI}
@@ -2005,6 +2024,10 @@ begin
      BCM2711EMMC0Host.SDHCI.HostWriteByte:=BCM2711EMMC0HostWriteByte;
      BCM2711EMMC0Host.SDHCI.HostWriteWord:=BCM2711EMMC0HostWriteWord;
      BCM2711EMMC0Host.SDHCI.HostWriteLong:=BCM2711EMMC0HostWriteLong;
+     BCM2711EMMC0Host.SDHCI.HostReset:=nil;
+     BCM2711EMMC0Host.SDHCI.HostHardwareReset:=nil;
+     BCM2711EMMC0Host.SDHCI.HostSetPower:=nil;
+     BCM2711EMMC0Host.SDHCI.HostSetClock:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetControlRegister:=nil;
      BCM2711EMMC0Host.SDHCI.DeviceInitialize:=nil;
@@ -2027,20 +2050,17 @@ begin
      Status:=SDHCIHostRegister(@BCM2711EMMC0Host.SDHCI);
      if Status <> ERROR_SUCCESS then
       begin
-       if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to register new SDHCI host: ' + ErrorToString(Status));
+       if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to register SDHCI controller: ' + ErrorToString(Status));
       end;
     end
    else 
     begin
-     if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to create new SDHCI host');
+     if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to create SDHCI controller');
     end;
   end;
   
  {Create EMMC1}
- if BCM2711_REGISTER_EMMC1 then
-  begin
-   //To Do
-  end;
+ {See: BCMSDHOST for the driver implementation}
 
  {Create EMMC2}
  if BCM2711_REGISTER_EMMC2 then
@@ -2052,7 +2072,7 @@ begin
      {Device}
      BCM2711EMMC2Host.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2711EMMC2Host.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
-     BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23;
+     BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23; {EMMC2 controller supports ADMA2}
      BCM2711EMMC2Host.SDHCI.Device.DeviceData:=nil;
      BCM2711EMMC2Host.SDHCI.Device.DeviceDescription:=BCM2711_EMMC2_DESCRIPTION;
      {SDHCI}
@@ -2065,6 +2085,10 @@ begin
      BCM2711EMMC2Host.SDHCI.HostWriteByte:=BCM2711EMMC0HostWriteByte;
      BCM2711EMMC2Host.SDHCI.HostWriteWord:=BCM2711EMMC0HostWriteWord;
      BCM2711EMMC2Host.SDHCI.HostWriteLong:=BCM2711EMMC0HostWriteLong;
+     BCM2711EMMC2Host.SDHCI.HostReset:=nil;
+     BCM2711EMMC2Host.SDHCI.HostHardwareReset:=nil;
+     BCM2711EMMC2Host.SDHCI.HostSetPower:=nil;
+     BCM2711EMMC2Host.SDHCI.HostSetClock:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetControlRegister:=nil;
      BCM2711EMMC2Host.SDHCI.DeviceInitialize:=nil;
@@ -2087,12 +2111,12 @@ begin
      Status:=SDHCIHostRegister(@BCM2711EMMC2Host.SDHCI);
      if Status <> ERROR_SUCCESS then
       begin
-       if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to register new SDHCI host: ' + ErrorToString(Status));
+       if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to register SDHCI controller: ' + ErrorToString(Status));
       end;
     end
    else 
     begin
-     if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to create new SDHCI host');
+     if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to create SDHCI controller');
     end;
   end;
  
@@ -3479,7 +3503,7 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{BCM2711 I2C0/1/3/4/5/6 Functions}
+{BCM2711 I2C0/1/2/3/4/5/6/7 Functions}
 function BCM2711I2C0Start(I2C:PI2CDevice;Rate:LongWord):LongWord;
 var
  Slave:LongWord;
@@ -4323,6 +4347,15 @@ begin
      I2C.SDAFunction:=GPIO_FUNCTION_ALT0;
      I2C.SCLFunction:=GPIO_FUNCTION_ALT0;
    end;  
+  2:begin
+     {I2C2 is connected to HDMI0, no GPIO config}
+     {Setup Pins}
+     I2C.SDAPin:=GPIO_PIN_UNKNOWN;
+     I2C.SCLPin:=GPIO_PIN_UNKNOWN;
+     {Setup Functions}
+     I2C.SDAFunction:=GPIO_FUNCTION_UNKNOWN;
+     I2C.SCLFunction:=GPIO_FUNCTION_UNKNOWN;
+   end;
   3:begin
      {Setup Pins}
      I2C.SDAPin:=GPIO_PIN_4;
@@ -4355,6 +4388,15 @@ begin
      I2C.SDAFunction:=GPIO_FUNCTION_ALT5;
      I2C.SCLFunction:=GPIO_FUNCTION_ALT5;
    end;  
+  7:begin
+     {I2C7 is connected to HDMI1, no GPIO config}
+     {Setup Pins}
+     I2C.SDAPin:=GPIO_PIN_UNKNOWN;
+     I2C.SCLPin:=GPIO_PIN_UNKNOWN;
+     {Setup Functions}
+     I2C.SDAFunction:=GPIO_FUNCTION_UNKNOWN;
+     I2C.SCLFunction:=GPIO_FUNCTION_UNKNOWN;
+   end;
   else
    begin
      {Setup Pins}
@@ -5264,7 +5306,7 @@ begin
  Channel.Registers.CS:=BCM2838_DMA_CS_INT;
  
  {Send Completion}
- WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2711DMARequestComplete),Channel,nil);
+ WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(BCM2711DMARequestComplete),Channel,nil);
 end; 
 
 {==============================================================================}
@@ -5285,7 +5327,7 @@ begin
  Channel.Registers40.CS:=BCM2838_DMA4_CS_INT;
  
  {Send Completion}
- WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2711DMARequestComplete),Channel,nil);
+ WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(BCM2711DMARequestComplete),Channel,nil);
 end; 
 
 {==============================================================================}
@@ -5318,7 +5360,7 @@ begin
      DMA.Channels[Channel].Registers.CS:=BCM2838_DMA_CS_INT;
      
      {Send Completion}
-     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2711DMARequestComplete),@DMA.Channels[Channel],nil);
+     WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(BCM2711DMARequestComplete),@DMA.Channels[Channel],nil);
     end;
    
    {Clear the Interrupt}
@@ -9526,7 +9568,7 @@ begin
  ClockMax:=ClockGetMaxRate(PBCM2711EMMC0Host(SDHCI).ClockId);
  if ClockMax > 0 then
   begin
-   {Set CPU Clock}
+   {Set SD Clock}
    ClockSetRate(PBCM2711EMMC0Host(SDHCI).ClockId,ClockMax,True);
   end;
  
@@ -9569,8 +9611,6 @@ begin
           GPIOPullSelect(Count,GPIO_PULL_UP);
          end;
       end;
-     
-     //To Do //Does the supply need to be set to 1.8V for the SDIO ?
     end
    else
     begin   
@@ -9636,8 +9676,9 @@ begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
   end;  
  SDHCI.Version:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_VERSION);
- SDHCI.Quirks:=SDHCI_QUIRK_NO_HISPD_BIT or SDHCI_QUIRK_MISSING_CAPS;  //To Do //Different for EMMC2 ?
- SDHCI.Quirks2:=SDHCI_QUIRK2_BROKEN_R1B or SDHCI_QUIRK2_WAIT_SEND_CMD;
+ //To Do //Different for EMMC2
+ SDHCI.Quirks:=SDHCI_QUIRK_BROKEN_CARD_DETECTION or SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK or SDHCI_QUIRK_MISSING_CAPS or SDHCI_QUIRK_NO_HISPD_BIT;
+ SDHCI.Quirks2:=SDHCI_QUIRK2_PRESET_VALUE_BROKEN;
  {Configuration Properties}
  SDHCI.PresetVoltages:=MMC_VDD_32_33 or MMC_VDD_33_34 or MMC_VDD_165_195;
  SDHCI.PresetCapabilities:=0;   //To Do //See: sdhci-iproc.c
@@ -9706,8 +9747,12 @@ begin
 
  {Update SDHCI}
  {Driver Properties}
- SemaphoreDestroy(SDHCI.Wait);
- SDHCI.Wait:=INVALID_HANDLE_VALUE;
+ if SDHCI.Wait <> INVALID_HANDLE_VALUE then
+  begin
+   SemaphoreDestroy(SDHCI.Wait);
+   
+   SDHCI.Wait:=INVALID_HANDLE_VALUE;
+  end; 
  
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2711 Powering off SD host controller (' + SDHCI.Device.DeviceDescription + ')');
 
@@ -12336,10 +12381,12 @@ end;
 {==============================================================================}
 {==============================================================================}
 {BCM2711 Helper Functions}
-function BCM2711GetSPIDescription(Id:LongWord):String;
-{Return the device description of an SPI device}
-{Id: The Id number of the SPI device as shown in the offical documentation}
+function BCM2711SPIGetDescription(Id:LongWord):String;
+{Get the device description of an SPI device}
+{Id: The Id number of the SPI device (0 to 6}
 {Return: The correct device description suitable for passing to SPIDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
 begin
   {}
   case Id of
@@ -12353,14 +12400,16 @@ end;
 
 {==============================================================================}
 
-function BCM2711GetI2CDescription(Id:LongWord):String;
-{Return the device description of an I2C device}
-{Id: The Id number of the I2C device as shown in the offical documentation}
+function BCM2711I2CGetDescription(Id:LongWord):String;
+{Get the device description of an I2C device}
+{Id: The Id number of the I2C device (0 to 7)}
 {Return: The correct device description suitable for passing to I2CDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
 begin
   {}
   case Id of
-   0,1,3,4,5,6:Result:=BCM2711_I2C0_DESCRIPTION + IntToStr(Id);
+   0,1,2,3,4,5,6,7:Result:=BCM2711_I2C0_DESCRIPTION + IntToStr(Id);
   else
    Result:='';
   end;  
@@ -12368,11 +12417,13 @@ end;
 
 {==============================================================================}
 
-function BCM2711GetPWMDescription(Id,Channel:LongWord):String;
-{Return the device description of an PWM device}
-{Id: The Id number of the PWM device as shown in the offical documentation}
+function BCM2711PWMGetDescription(Id,Channel:LongWord):String;
+{Get the device description of an PWM device}
+{Id: The Id number of the PWM device (0 or 1)}
 {Channel: The channel number of the PWM device (0 or 1)}
 {Return: The correct device description suitable for passing to PWMDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
 begin
   {}
   case Id of
@@ -12390,10 +12441,12 @@ end;
 
 {==============================================================================}
 
-function BCM2711GetUARTDescription(Id:LongWord):String;
-{Return the device description of a UART device}
-{Id: The Id number of the UART device as shown in the offical documentation}
+function BCM2711UARTGetDescription(Id:LongWord):String;
+{Get the device description of a UART device}
+{Id: The Id number of the UART device (0 to 5)}
 {Return: The correct device description suitable for passing to UARTDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
 begin
   {}
   case Id of

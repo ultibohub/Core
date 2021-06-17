@@ -985,9 +985,9 @@ const
  BCM2838_DMA_DREQ_BSCSPITX     = 8;  {BSC/SPI Slave}
  BCM2838_DMA_DREQ_BSCSPIRX     = 9;  {BSC/SPI Slave}
  BCM2838_DMA_DREQ_HDMI0        = 10;
- BCM2838_DMA_DREQ_EMMC0        = 11; {eMMC}
+ BCM2838_DMA_DREQ_EMMC0        = 11; {SDHCI}
  BCM2838_DMA_DREQ_UART0TX      = 12;
- BCM2838_DMA_DREQ_EMMC1        = 13; {SD HOST}
+ BCM2838_DMA_DREQ_EMMC1        = 13; {SDHOST}
  BCM2838_DMA_DREQ_UART0RX      = 14;
  BCM2838_DMA_DREQ_DSI1         = 15;
  BCM2838_DMA_DREQ_SPI1TX       = 16;
@@ -1430,7 +1430,7 @@ const
  BCM2838_PM_RSTS_HADDRF_SET        = $00000002;
  BCM2838_PM_RSTS_HADDRQ_SET        = $00000001;
  
- BCM2838_PM_RSTS_RASPBERRYPI_HALT  = $00000555; {Special value to tell the Raspberry Pi firmware not to reboot}
+ BCM2838_PM_RSTS_RASPBERRYPI_HALT  = $00000555; {Special value to tell the Raspberry Pi firmware not to reboot, sets Boot Partition to 63 (0x3f)}
  
  BCM2838_PM_WDOG_RESET	     	   = $00000000;
  BCM2838_PM_WDOG_TIME_MASK		   = $000FFFFF;

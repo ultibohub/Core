@@ -59,6 +59,7 @@ uses GlobalConfig,
      Threads,
      MMC,
      BCM2710,
+     BCMSDHOST,
      USB,
      DWCOTG,
      SMSC95XX,
@@ -81,7 +82,9 @@ uses GlobalConfig,
      SysUtils;
 
 {==============================================================================}
-{Nothing}
+{Initialization Functions}
+procedure RaspberryPi3Init;
+
 {==============================================================================}
 {==============================================================================}
 
@@ -89,6 +92,63 @@ implementation
 
 {==============================================================================}
 {==============================================================================}
+var
+ {RaspberryPi3 specific variables}
+ RaspberryPi3Initialized:Boolean;
+
+{==============================================================================}
+{==============================================================================}
+{Initialization Functions}
+procedure RaspberryPi3Init;
+{Initialize the RaspberryPi3 unit and parameters}
+
+{Note: Called only during system startup}
+var
+ GPIOFirst:LongWord;
+ GPIOLast:LongWord;
+ ClockMaximum:LongWord;
+begin
+ {}
+ {Check Initialized}
+ if RaspberryPi3Initialized then Exit;
+
+ {Check SDHOST}
+ if BCM2710_REGISTER_SDHOST then
+  begin
+   {Set Parameters}
+   {Check SDHCI Enabled}
+   if BCM2710_REGISTER_SDHCI then
+    begin
+     {Use GPIO 22 to 27}
+     GPIOFirst:=GPIO_PIN_22; 
+     GPIOLast:=GPIO_PIN_27;
+    end
+   else
+    begin
+     {Use GPIO 48 to 53}
+     GPIOFirst:=GPIO_PIN_48; 
+     GPIOLast:=GPIO_PIN_53;
+    end;
+   {Get Clock Maximum}
+   ClockMaximum:=ClockGetRate(CLOCK_ID_MMC1);
+   if ClockMaximum = 0 then ClockMaximum:=BCM2710_SDHOST_MAX_FREQ;
+   
+   {Create Device}
+   BCMSDHOSTCreate(BCM2837_SDHOST_REGS_BASE,BCM2710_SDHOST_DESCRIPTION,BCM2837_IRQ_SDHOST,DMA_DREQ_ID_SDHOST,BCM2710_SDHOST_MIN_FREQ,ClockMaximum,GPIOFirst,GPIOLast,GPIO_FUNCTION_ALT0,BCM2710SDHOST_FIQ_ENABLED);
+  end;
+
+ RaspberryPi3Initialized:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+ 
+initialization
+ RaspberryPi3Init;
+ 
+{==============================================================================}
+ 
+{finalization}
+ {Nothing}
  
 end.
-

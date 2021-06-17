@@ -2928,7 +2928,7 @@ begin
      {Schedule Worker}
      if RXRing.Worker = INVALID_HANDLE_VALUE then
       begin
-       RXRing.Worker:=WorkerScheduleIRQEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(GENETReceiveWorker),RXRing,nil);
+       RXRing.Worker:=WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(GENETReceiveWorker),RXRing,nil);
       end;
 
      {Release Spin Lock}
@@ -2951,7 +2951,7 @@ begin
      {Schedule Worker}
      if TXRing.Worker = INVALID_HANDLE_VALUE then
       begin
-       TXRing.Worker:=WorkerScheduleIRQEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(GENETTransmitWorker),TXRing,nil);
+       TXRing.Worker:=WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(GENETTransmitWorker),TXRing,nil);
       end;
 
      {Release Spin Lock}
@@ -2982,7 +2982,7 @@ begin
      Network.IRQStatus:=Network.IRQStatus or Status;
 
      {Schedule Worker}
-     WorkerScheduleIRQEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(GENETInterruptWorker),Network,nil);
+     WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(GENETInterruptWorker),Network,nil);
 
      {Release Spin Lock}
      SpinUnlockIRQ(Network.Lock);
@@ -3046,7 +3046,7 @@ begin
          {Schedule Worker}
          if RXRing.Worker = INVALID_HANDLE_VALUE then
           begin
-           RXRing.Worker:=WorkerScheduleIRQEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(GENETReceiveWorker),RXRing,nil);
+           RXRing.Worker:=WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(GENETReceiveWorker),RXRing,nil);
           end;
 
          {Release Spin Lock}
@@ -3075,7 +3075,7 @@ begin
          {Schedule Worker}
          if TXRing.Worker = INVALID_HANDLE_VALUE then
           begin
-           TXRing.Worker:=WorkerScheduleIRQEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(GENETTransmitWorker),TXRing,nil);
+           TXRing.Worker:=WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(GENETTransmitWorker),TXRing,nil);
           end;
 
          {Release Spin Lock}

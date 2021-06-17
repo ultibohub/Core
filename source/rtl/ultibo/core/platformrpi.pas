@@ -249,6 +249,8 @@ function RPiMailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Ti
 function RPiMailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
 function RPiMailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord;
 
+function RPiMailboxPropertyTag(Tag:LongWord;Data:Pointer;Size:LongWord):LongWord;
+
 function RPiRequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 function RPiReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 
@@ -677,6 +679,7 @@ begin
  MailboxCallExHandler:=RPiMailboxCallEx;
  MailboxPropertyCallHandler:=RPiMailboxPropertyCall;
  MailboxPropertyCallExHandler:=RPiMailboxPropertyCallEx;
+ MailboxPropertyTagHandler:=RPiMailboxPropertyTag;
 
  {Register Platform IRQ Handlers}
  RequestExIRQHandler:=RPiRequestExIRQ;
@@ -2333,6 +2336,83 @@ begin
  
    Result:=ERROR_SUCCESS;
   end; 
+end;
+
+{==============================================================================}
+
+function RPiMailboxPropertyTag(Tag:LongWord;Data:Pointer;Size:LongWord):LongWord;
+{Request a property tag (Get/Set) from the mailbox property channel}
+{Note: Data does not need to include mailbox property channel header or footer}
+{Note: Data pointer does not need any specific alignment or caching attributes}
+{Note: Size must be a multiple of 4 bytes}
+{Note: Size must include the size of the request and response which use the same buffer}
+var
+ Total:LongWord;
+ Response:LongWord;
+ Header:PBCM2835MailboxHeader;
+ Footer:PBCM2835MailboxFooter;
+ TagHeader:PBCM2835MailboxTagHeader;
+ TagBuffer:Pointer;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Tag}
+ if Tag = 0 then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Check Size}
+ if Size = 0 then Exit;
+ 
+ {Check Size is a multiple of 4}
+ if (Size and 3) <> 0 then Exit;
+ 
+ {Calculate Total Size}
+ Total:=SizeOf(TBCM2835MailboxHeader) + SizeOf(TBCM2835MailboxTagHeader) + Size + SizeOf(TBCM2835MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetSharedAlignedMem(Total,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Total,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Total,0);
+ 
+  {Setup Header}
+  Header.Size:=Total;
+  Header.Code:=BCM2835_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  TagHeader:=PBCM2835MailboxTagHeader(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2835MailboxHeader)));
+  TagHeader.Tag:=Tag;
+  TagHeader.Size:=Size;
+  TagHeader.Length:=Size;
+
+  {Copy Request}
+  TagBuffer:=Pointer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2835MailboxHeader)) + PtrUInt(SizeOf(TBCM2835MailboxTagHeader)));
+  System.Move(Data^,TagBuffer^,Size);
+  
+  {Setup Footer}
+  Footer:=PBCM2835MailboxFooter(PtrUInt(TagHeader) + PtrUInt(SizeOf(TBCM2835MailboxTagHeader)) + Size);
+  Footer.Tag:=BCM2835_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2835_MAILBOX_0,BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('MailboxPropertyTag - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Copy Response}
+  System.Move(TagBuffer^,Data^,Size);
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
 end;
 
 {==============================================================================}
@@ -8184,6 +8264,7 @@ begin
  
  case ClockId of 
   CLOCK_ID_MMC0:Result:=BCM2835_MBOX_CLOCK_ID_EMMC;
+  CLOCK_ID_MMC1:Result:=BCM2835_MBOX_CLOCK_ID_CORE; {MMC1 runs from core clock}
   CLOCK_ID_UART0:Result:=BCM2835_MBOX_CLOCK_ID_UART;
   CLOCK_ID_UART1:Result:=BCM2835_MBOX_CLOCK_ID_CORE; {UART1 runs from core clock}
   CLOCK_ID_CPU:Result:=BCM2835_MBOX_CLOCK_ID_ARM;

@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -559,6 +559,8 @@ type
  TMailboxCallEx = function(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord;
  TMailboxPropertyCall = function(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord;
  TMailboxPropertyCallEx = function(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord;
+ 
+ TMailboxPropertyTag = function(Tag:LongWord;Data:Pointer;Size:LongWord):LongWord;
 
 type
  {Prototypes for Random Handlers}
@@ -899,6 +901,8 @@ type
  TSPIGetSelectPolarity = function(ChipSelect:Word):LongWord;
  TSPISetSelectPolarity = function(ChipSelect:Word;SelectPolarity:LongWord):LongWord;
  
+ TSPIGetDescription = function(Id:LongWord):String;
+ 
 type
  {Prototypes for I2C Handlers}
  TI2CAvailable = function:Boolean;
@@ -917,6 +921,8 @@ type
  TI2CGetAddress = function:Word;
  TI2CSetAddress = function(Address:Word):LongWord;
  
+ TI2CGetDescription = function(Id:LongWord):String;
+ 
 type
  {Prototypes for PWM Handlers}
  TPWMAvailable = function:Boolean;
@@ -932,12 +938,18 @@ type
  
  TPWMConfigure = function(DutyNS,PeriodNS:LongWord):LongWord;
  
+ TPWMGetDescription = function(Id,Channel:LongWord):String;
+ 
 type
  {Prototypes for RTC Handlers}
  TRTCAvailable = function:Boolean;
  
  TRTCGetTime = function:Int64;
  TRTCSetTime = function(const Time:Int64):Int64;
+
+type
+ {Prototypes for UART Handlers}
+ TUARTGetDescription = function(Id:LongWord):String; 
  
 type
  {Prototypes for Serial Handlers}
@@ -1331,6 +1343,8 @@ var
  MailboxPropertyCallHandler:TMailboxPropertyCall;
  MailboxPropertyCallExHandler:TMailboxPropertyCallEx;
  
+ MailboxPropertyTagHandler:TMailboxPropertyTag;
+ 
 var
  {Random Handlers}
  RandomAvailableHandler:TRandomAvailable;
@@ -1670,6 +1684,8 @@ var
  SPIGetSelectPolarityHandler:TSPIGetSelectPolarity;
  SPISetSelectPolarityHandler:TSPISetSelectPolarity;
 
+ SPIGetDescriptionHandler:TSPIGetDescription;
+
 var
  {I2C Handlers}
  I2CAvailableHandler:TI2CAvailable;
@@ -1688,6 +1704,8 @@ var
  I2CGetAddressHandler:TI2CGetAddress;
  I2CSetAddressHandler:TI2CSetAddress;
  
+ I2CGetDescriptionHandler:TI2CGetDescription;
+ 
 var
  {PWM Handlers}
  PWMAvailableHandler:TPWMAvailable;
@@ -1703,11 +1721,17 @@ var
  
  PWMConfigureHandler:TPWMConfigure;
  
+ PWMGetDescriptionHandler:TPWMGetDescription;
+ 
 var
  {RTC Handlers} 
  RTCAvailableHandler:TRTCAvailable;
  RTCGetTimeHandler:TRTCGetTime;
  RTCSetTimeHandler:TRTCSetTime;
+
+var
+ {UART Handlers}
+ UARTGetDescriptionHandler:TUARTGetDescription;
 
 var
  {Serial Handlers}
@@ -1995,6 +2019,8 @@ function MailboxCall(Mailbox,Channel,Data:LongWord;var Response:LongWord):LongWo
 function MailboxCallEx(Mailbox,Channel,Data:LongWord;var Response:LongWord;Timeout:LongWord):LongWord; inline;
 function MailboxPropertyCall(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord):LongWord; inline;
 function MailboxPropertyCallEx(Mailbox,Channel:LongWord;Data:Pointer;var Response:LongWord;Timeout:LongWord):LongWord; inline;
+
+function MailboxPropertyTag(Tag:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
 
 {==============================================================================}
 {Random Number Functions}
@@ -2379,6 +2405,8 @@ function SPISetClockPolarity(ClockPolarity:LongWord):LongWord; inline;
 function SPIGetSelectPolarity(ChipSelect:Word):LongWord; inline;
 function SPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWord; inline;
 
+function SPIGetDescription(Id:LongWord):String; inline;
+
 {==============================================================================}
 {I2C Functions}
 function I2CAvailable:Boolean; inline;
@@ -2397,6 +2425,8 @@ function I2CSetRate(Rate:LongWord):LongWord; inline;
 function I2CGetAddress:Word; inline;
 function I2CSetAddress(Address:Word):LongWord; inline;
 
+function I2CGetDescription(Id:LongWord):String; inline;
+
 {==============================================================================}
 {PWM Functions}
 function PWMAvailable:Boolean; inline;
@@ -2412,12 +2442,18 @@ function PWMSetFrequency(Frequency:LongWord):LongWord; inline;
  
 function PWMConfigure(DutyNS,PeriodNS:LongWord):LongWord; inline;
 
+function PWMGetDescription(Id,Channel:LongWord):String; inline;
+
 {==============================================================================}
 {RTC Functions}
 function RTCAvailable:Boolean; inline;
 
 function RTCGetTime:Int64; inline;
 function RTCSetTime(const Time:Int64):Int64; inline;
+
+{==============================================================================}
+{UART Functions}
+function UARTGetDescription(Id:LongWord):String; inline; 
 
 {==============================================================================}
 {Serial Functions}
@@ -3591,7 +3627,7 @@ end;
 {==============================================================================}
 
 procedure BootConsoleWriteEx(const Value:String;X,Y:LongWord); inline;
-{Output text to the boot time console display at the specifited X and Y position (Where Applicable)}
+{Output text to the boot time console display at the specified X and Y position (Where Applicable)}
 {Note: Intended for startup diagnostics when bootstrapping a new board}
 begin
  {}
@@ -3980,6 +4016,22 @@ begin
 end;
 
 {==============================================================================}
+
+function MailboxPropertyTag(Tag:LongWord;Data:Pointer;Size:LongWord):LongWord; inline;
+{Request a property tag (Get/Set) from the mailbox property channel}
+begin
+ {}
+ if Assigned(MailboxPropertyTagHandler) then
+  begin
+   Result:=MailboxPropertyTagHandler(Tag,Data,Size);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {Random Number Functions}
 function RandomAvailable:Boolean; inline;
@@ -4349,9 +4401,9 @@ end;
 {Interrupt Register/Deregister Functions}
 function RegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord; inline;
 {Request registration of the supplied handler to the specified interrupt number (Where Applicable)}
-{Number: The interrupt number to register the hanlder for}
+{Number: The interrupt number to register the handler for}
 {Mask: The mask of CPUs to register the handler for (eg CPU_MASK_0, CPU_MASK_1) (Where Applicable)}
-{Priority: The priroty level of the interrupt to be registered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
+{Priority: The priority level of the interrupt to be registered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
 {Flags: The flags to control the registration of the interrupt (eg INTERRUPT_FLAG_SHARED) (Where Applicable)}
 {Handler: The shared interrupt handler to be called when the interrupt occurs}
 {Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
@@ -8495,6 +8547,26 @@ begin
 end;
  
 {==============================================================================}
+
+function SPIGetDescription(Id:LongWord):String; inline;
+{Return the device description of an SPI device}
+{Id: The Id number of the SPI device as shown in the offical documentation}
+{Return: The correct device description suitable for passing to SPIDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+ {}
+ if Assigned(SPIGetDescriptionHandler) then
+  begin
+   Result:=SPIGetDescriptionHandler(Id);
+  end
+ else
+  begin
+   Result:='';
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {I2C Functions}
 function I2CAvailable:Boolean; inline;
@@ -8716,6 +8788,26 @@ begin
 end;
 
 {==============================================================================}
+
+function I2CGetDescription(Id:LongWord):String; inline;
+{Get the device description of an I2C device}
+{Id: The Id number of the I2C device as shown in the offical documentation}
+{Return: The correct device description suitable for passing to I2CDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+ {}
+ if Assigned(I2CGetDescriptionHandler) then
+  begin
+   Result:=I2CGetDescriptionHandler(Id);
+  end
+ else
+  begin
+   Result:='';
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {PWM Functions}
 function PWMAvailable:Boolean; inline;
@@ -8866,6 +8958,27 @@ begin
 end;
 
 {==============================================================================}
+
+function PWMGetDescription(Id,Channel:LongWord):String; inline;
+{Get the device description of an PWM device}
+{Id: The Id number of the PWM device as shown in the offical documentation}
+{Channel: The channel number of the PWM device as shown in the offical documentation}
+{Return: The correct device description suitable for passing to PWMDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+ {}
+ if Assigned(PWMGetDescriptionHandler) then
+  begin
+   Result:=PWMGetDescriptionHandler(Id,Channel);
+  end
+ else
+  begin
+   Result:='';
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {RTC Functions}
 function RTCAvailable:Boolean; inline;
@@ -8917,6 +9030,27 @@ begin
  else
   begin
    Result:=0;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{UART Functions}
+function UARTGetDescription(Id:LongWord):String; inline; 
+{Get the device description of a UART device}
+{Id: The Id number of the UART device as shown in the offical documentation}
+{Return: The correct device description suitable for passing to UARTDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+ {}
+ if Assigned(UARTGetDescriptionHandler) then
+  begin
+   Result:=UARTGetDescriptionHandler(Id);
+  end
+ else
+  begin
+   Result:='';
   end;
 end;
 
@@ -11050,6 +11184,8 @@ var
  Delay:LongWord;
 begin
  {}
+ if Nanoseconds = 0 then Exit;
+ 
  {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
  
@@ -11063,6 +11199,9 @@ begin
   begin
    Delay:=CLOCK_CYCLES_PER_NANOSECOND * Nanoseconds;
   end;
+ 
+ {Wait at least 1 clock tick}
+ if CLOCK_CYCLES_PER_NANOSECOND = 0 then Inc(Delay); 
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -11088,6 +11227,8 @@ var
  Delay:LongWord;
 begin
  {}
+ if Microseconds = 0 then Exit;
+ 
  {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
  
@@ -11101,6 +11242,9 @@ begin
   begin
    Delay:=CLOCK_CYCLES_PER_MICROSECOND * Microseconds;
   end;
+ 
+ {Wait at least 1 clock tick}
+ if CLOCK_CYCLES_PER_MICROSECOND = 0 then Inc(Delay); 
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -11126,6 +11270,8 @@ var
  Delay:LongWord;
 begin
  {}
+ if Milliseconds = 0 then Exit;
+ 
  {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
  
@@ -11158,6 +11304,8 @@ var
  Delay:LongWord;
 begin
  {}
+ if Nanoseconds = 0 then Exit;
+ 
  {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
  
@@ -11172,6 +11320,9 @@ begin
    Delay:=CLOCK_CYCLES_PER_NANOSECOND * Nanoseconds;
   end;
  
+ {Wait at least 1 clock tick}
+ if CLOCK_CYCLES_PER_NANOSECOND = 0 then Inc(Delay); 
+
  {Get Ending Clock Count}
  Target:=Start + Delay;
  
@@ -11201,6 +11352,8 @@ var
  Delay:LongWord;
 begin
  {}
+ if Microseconds = 0 then Exit;
+ 
  {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
  
@@ -11214,6 +11367,9 @@ begin
   begin
    Delay:=CLOCK_CYCLES_PER_MICROSECOND * Microseconds;
   end;
+ 
+ {Wait at least 1 clock tick}
+ if CLOCK_CYCLES_PER_MICROSECOND = 0 then Inc(Delay); 
  
  {Get Ending Clock Count}
  Target:=Start + Delay;
@@ -11244,6 +11400,8 @@ var
  Delay:LongWord;
 begin
  {}
+ if Milliseconds = 0 then Exit;
+ 
  {Get Starting Clock Count (First so calculation is included in timing)}
  Start:=ClockGetTotal;
  

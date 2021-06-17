@@ -303,6 +303,9 @@ function UARTSerialDeviceSetStatus(Serial:PSerialDevice;Status:LongWord):LongWor
 function UARTSerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
  
 {==============================================================================}
+{RTL UART Functions}
+
+{==============================================================================}
 {UART Helper Functions}
 function UARTGetCount:LongWord; inline;
 function UARTDeviceGetDefault:PUARTDevice; inline;

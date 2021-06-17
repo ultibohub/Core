@@ -140,6 +140,7 @@ const
 
  {MMCI0}
  BCM2836_MMCI0_REGS_BASE        = BCM2836_PERIPHERALS_BASE + $202000;
+ BCM2836_SDHOST_REGS_BASE       = BCM2836_MMCI0_REGS_BASE;
  
  {PCM / I2S Audio (See Section 8)}
  BCM2836_PCM_REGS_BASE          = BCM2836_PERIPHERALS_BASE + $203000;
@@ -330,8 +331,8 @@ const
  {I2S PCM sound} 
  BCM2836_IRQ_I2SPCM         = 55; {Also available as IRQ 81 in the IRQ_basic_pending register} 
 
- {SDIO}
- BCM2836_IRQ_SDIO           = 56; {Also available as IRQ 82 in the IRQ_basic_pending register} 
+ {SDHOST}
+ BCM2836_IRQ_SDHOST         = 56; {Also available as IRQ 82 in the IRQ_basic_pending register} 
  
  {PL011 UART} 
  BCM2836_IRQ_PL011          = 57; {Also available as IRQ 83 in the IRQ_basic_pending register} 
@@ -399,8 +400,8 @@ const
  {ARM I2SPCM}
  BCM2836_IRQ_ARM_I2SPCM       = 81;  {ARM IRQ 17}
  
- {ARM SDIO}
- BCM2836_IRQ_ARM_SDIO         = 82;  {ARM IRQ 18}
+ {ARM SDHOST}
+ BCM2836_IRQ_ARM_SDHOST       = 82;  {ARM IRQ 18}
  
  {ARM PL011 UART}
  BCM2836_IRQ_ARM_PL011        = 83;  {ARM IRQ 19}
@@ -923,7 +924,7 @@ const
  BCM2836_PM_RSTS_HADDRF_SET        = $00000002;
  BCM2836_PM_RSTS_HADDRQ_SET        = $00000001;
  
- BCM2836_PM_RSTS_RASPBERRYPI_HALT  = $00000555; {Special value to tell the Raspberry Pi firmware not to reboot}
+ BCM2836_PM_RSTS_RASPBERRYPI_HALT  = $00000555; {Special value to tell the Raspberry Pi firmware not to reboot, sets Boot Partition to 63 (0x3f)}
  
  BCM2836_PM_WDOG_RESET	     	   = $00000000;
  BCM2836_PM_WDOG_TIME_MASK		   = $000FFFFF;

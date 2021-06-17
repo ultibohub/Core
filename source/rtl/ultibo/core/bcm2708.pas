@@ -26,6 +26,10 @@ Credits
 
    Linux - MMC/SDHCI drivers
    U-Boot - MMC/SDHCI drivers
+
+   Linux - \drivers\mmc\host\bcm2835-mmc.c (SDHCI) - Copyright 2014 Gellert Weisz
+   Linux - \drivers\mmc\host\sdhci-iproc.c (SDHCI) - Copyright (C) 2014 Broadcom Corporation
+   Linux - \drivers\mmc\host\bcm2835-sdhost.c (SDHOST) - Copyright (C) 2015-2016 Raspberry Pi (Trading) Ltd.
  
    Linux - \drivers\video\bcm2708_fb.c
    U-Boot - \drivers\video\bcm2835.c 
@@ -79,6 +83,7 @@ BCM2708 Devices
   SPI0
   I2C0
   I2C1
+  I2C2
   SPI1
   SPI2
   I2C Slave
@@ -115,13 +120,13 @@ BCM2708 SPI0 Device
  By default SPI0 can appear on GPIO pins 7 to 11 (CS1, CS0, MISO, MOSI, SCLK) using alternate function 0 or on GPIO pins 35
  to 39 (CS1, CS0, MISO, MOSI, SCLK) using alternate function 0, only pins 7 to 11 are available on the header.
 
-BCM2708 I2C0/1 Device
-=====================
+BCM2708 I2C0/1/2 Device
+=======================
 
  The BCM2708 has 3 Broadcom Serial Controller (BSC) devices which are fast mode (400Kz) masters numbered BSC0, BSC1 and BSC2.
  
- Device BSC2 is dedicated to the HDMI interface and is not availale for use by the ARM processor. All BSC devices contain a
- 16 byte FIFO, support 7 bit and 10 bit addressing and have software configurable clock timing.
+ Device BSC2 is dedicated to the HDMI interface but can be accessed by the ARM processor for controlling some HDMI functionality.
+ All BSC devices contain a 16 byte FIFO, support 7 bit and 10 bit addressing and have software configurable clock timing.
  
  By default BSC0 can appear on GPIO pins 0 and 1 (Alternate function 0), 28 and 29 (Alternate function 0) or 44 and 45 (Alternate
  function 1). Unfortunately on all except the Revision 1 models none of these pins are available on the 26 or 40 pin header.
@@ -249,7 +254,7 @@ BCM2708 SDHCI Device
 
 
 BCM2708 SDHOST Device
-=============================
+=====================
 
  The SDHOST controller on the BCM2708 is a non SDHCI-compliant device which requires a specific
  driver. 
@@ -257,6 +262,8 @@ BCM2708 SDHOST Device
  It can be routed to GPIO pins 22 to 27 (ALT0) or 48 to 53 (ALT0) in order to control the SD card
  slot when the SDHCI device is being used for the on board WiFi.
 
+ Note: The actual driver is implemented in the BCMSDHOST unit
+ 
 
 BCM2708 Clock (System Timer) Device
 ===================================
@@ -440,7 +447,10 @@ const
  
  {BCM2708 I2C1 (BSC1) constants}
  BCM2708_I2C1_DESCRIPTION = 'BCM2835 BSC1 Master I2C';
- 
+
+ {BCM2708 I2C2 (BSC2) constants}
+ BCM2708_I2C2_DESCRIPTION = 'BCM2835 BSC2 Master I2C';
+
  {BCM2708 SPI AUX (SPI1/2) constants}
  //To Do //Continuing
  
@@ -576,12 +586,15 @@ const
  BCM2708_EMMC_DESCRIPTION = 'BCM2835 Arasan SD Host';
  
  BCM2708_EMMC_MIN_FREQ = 400000;    {Default minimum of 400KHz}
- BCM2708_EMMC_MAX_FREQ = 250000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2708_EMMC_MAX_FREQ = 200000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
  
  {BCM2708 SDHOST constants}
  BCM2708_SDHOST_DESCRIPTION = 'BCM2835 SDHOST';
  
- //To Do
+ BCM2708_SDHOST_MIN_FREQ = 400000;    {Default minimum of 400KHz}
+ BCM2708_SDHOST_MAX_FREQ = 250000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
+ 
+ {See: BCMSDHOST for the driver implementation}
  
  {BCM2708 Clock (System Timer) constants}
  BCM2708_SYS_CLOCK_DESCRIPTION = 'BCM2835 System Timer Clock';
@@ -652,7 +665,7 @@ type
   InterruptCount:LongWord;         {Number of interrupt requests received by the device}
  end;
  
- {BCM2708 BSCI2C (I2C0/1) types}
+ {BCM2708 BSCI2C (I2C0/1/2) types}
  PBCM2708BSCI2CDevice = ^TBCM2708BSCI2CDevice;
  TBCM2708BSCI2CDevice = record
   {I2C Properties}
@@ -805,6 +818,9 @@ type
   ShadowRegister:LongWord;
  end;
  
+ {BCM2708 SDHOST types}
+ {See: BCMSDHOST for the driver implementation}
+ 
  {BCM2708 System Clock types}
  PBCM2708SystemClock = ^TBCM2708SystemClock;
  TBCM2708SystemClock = record
@@ -903,7 +919,7 @@ procedure BCM2708SPI0InterruptHandler(SPI:PBCM2708SPI0Device);
 procedure BCM2708SPI0DMARequestCompleted(Request:PDMARequest); 
 
 {==============================================================================}
-{BCM2708 BSCI2C (I2C0/1) Functions}
+{BCM2708 BSCI2C (I2C0/1/2) Functions}
 function BCM2708BSCI2CStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function BCM2708BSCI2CStop(I2C:PI2CDevice):LongWord;
  
@@ -1031,6 +1047,10 @@ function BCM2708SDHCISetupInterrupts(SDHCI:PSDHCIHost):LongWord;
 
 function BCM2708MMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
  
+ {==============================================================================}
+{BCM2708 SDHOST Functions}
+{See: BCMSDHOST for the driver implementation}
+
 {==============================================================================}
 {BCM2708 System Clock Functions}
 function BCM2708SystemClockRead(Clock:PClockDevice):LongWord;
@@ -1105,6 +1125,10 @@ function BCM2708FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properti
 
 {==============================================================================}
 {BCM2708 Helper Functions}
+function BCM2708SPIGetDescription(Id:LongWord):String;
+function BCM2708I2CGetDescription(Id:LongWord):String;
+function BCM2708PWMGetDescription(Id,Channel:LongWord):String;
+function BCM2708UARTGetDescription(Id:LongWord):String;
  
 {==============================================================================}
 {==============================================================================}
@@ -1138,6 +1162,7 @@ var
  BCM2708SPI0:PBCM2708SPI0Device;
  BCM2708I2C0:PBCM2708BSCI2CDevice;
  BCM2708I2C1:PBCM2708BSCI2CDevice;
+ BCM2708I2C2:PBCM2708BSCI2CDevice;
  BCM2708PWM0:PBCM2708PWMDevice;
  BCM2708PWM1:PBCM2708PWMDevice;
  BCM2708UART0:PBCM2708UART0Device;
@@ -1169,6 +1194,12 @@ begin
  {Initialize IRQ Data}
  FillChar(BCM2708BSCI2CIRQData,SizeOf(TBCM2708BSCI2CIRQData),0);
  BCM2708BSCI2CIRQData.Lock:=SpinCreate;
+ 
+ {Register Platform Handlers}
+ SPIGetDescriptionHandler:=BCM2708SPIGetDescription;
+ I2CGetDescriptionHandler:=BCM2708I2CGetDescription;
+ PWMGetDescriptionHandler:=BCM2708PWMGetDescription;
+ UARTGetDescriptionHandler:=BCM2708UARTGetDescription;
  
  {$IFNDEF CONSOLE_EARLY_INIT}
  {Register Platform GPU Memory Handlers}
@@ -1532,6 +1563,59 @@ begin
     end; 
   end;
  
+ {Create I2C2}
+ if BCM2708_REGISTER_I2C2 then
+  begin
+   BCM2708I2C2:=PBCM2708BSCI2CDevice(I2CDeviceCreateEx(SizeOf(TBCM2708BSCI2CDevice)));
+   if BCM2708I2C2 <> nil then
+    begin
+     {Update I2C2}
+     {Device}
+     BCM2708I2C2.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
+     BCM2708I2C2.I2C.Device.DeviceType:=I2C_TYPE_NONE;
+     BCM2708I2C2.I2C.Device.DeviceFlags:=I2C_FLAG_10BIT;
+     BCM2708I2C2.I2C.Device.DeviceData:=nil;
+     BCM2708I2C2.I2C.Device.DeviceDescription:=BCM2708_I2C2_DESCRIPTION;
+     {I2C}
+     BCM2708I2C2.I2C.I2CState:=I2C_STATE_DISABLED;
+     BCM2708I2C2.I2C.DeviceStart:=BCM2708BSCI2CStart;
+     BCM2708I2C2.I2C.DeviceStop:=BCM2708BSCI2CStop;
+     BCM2708I2C2.I2C.DeviceRead:=BCM2708BSCI2CRead;
+     BCM2708I2C2.I2C.DeviceWrite:=BCM2708BSCI2CWrite;
+     BCM2708I2C2.I2C.DeviceWriteRead:=BCM2708BSCI2CWriteRead;
+     BCM2708I2C2.I2C.DeviceWriteWrite:=BCM2708BSCI2CWriteWrite;
+     BCM2708I2C2.I2C.DeviceSetRate:=BCM2708BSCI2CSetRate;
+     BCM2708I2C2.I2C.DeviceSetAddress:=BCM2708BSCI2CSetAddress;
+     {Driver}
+     BCM2708I2C2.I2C.Properties.Flags:=BCM2708I2C2.I2C.Device.DeviceFlags;
+     BCM2708I2C2.I2C.Properties.MaxSize:=BCM2708_BSCI2C_MAX_SIZE;
+     BCM2708I2C2.I2C.Properties.MinClock:=BCM2708_BSCI2C_MIN_CLOCK;
+     BCM2708I2C2.I2C.Properties.MaxClock:=BCM2708_BSCI2C_MAX_CLOCK;
+     BCM2708I2C2.I2C.Properties.ClockRate:=0;
+     BCM2708I2C2.I2C.Properties.SlaveAddress:=I2C_ADDRESS_INVALID;
+     {BCM2708}
+     BCM2708I2C2.Address:=Pointer(BCM2835_BSC2_REGS_BASE);
+     BCM2708I2C2.CoreClock:=BCM2708_BSCI2C_CORE_CLOCK;
+     BCM2708I2C2.SDAPin:=GPIO_PIN_UNKNOWN; {I2C2 is connected to the HDMI, no GPIO config}
+     BCM2708I2C2.SCLPin:=GPIO_PIN_UNKNOWN;
+     BCM2708I2C2.SDAFunction:=GPIO_FUNCTION_UNKNOWN;
+     BCM2708I2C2.SCLFunction:=GPIO_FUNCTION_UNKNOWN;
+     {Transfer}
+     BCM2708I2C2.Index:=2; {BSC2}
+     
+     {Register I2C2}
+     Status:=I2CDeviceRegister(@BCM2708I2C2.I2C);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2708: Failed to register new I2C2 device: ' + ErrorToString(Status));
+      end;
+    end
+   else 
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2708: Failed to create new I2C2 device');
+    end; 
+  end;
+ 
  {Create PWM0}
  if BCM2708_REGISTER_PWM then
   begin
@@ -1728,7 +1812,7 @@ begin
      {Device}
      BCM2708SDHCIHost.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2708SDHCIHost.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
-     BCM2708SDHCIHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23;
+     BCM2708SDHCIHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23 or SDHCI_FLAG_EXTERNAL_DMA;
      BCM2708SDHCIHost.SDHCI.Device.DeviceData:=nil;
      BCM2708SDHCIHost.SDHCI.Device.DeviceDescription:=BCM2708_EMMC_DESCRIPTION;
      {SDHCI}
@@ -1741,6 +1825,10 @@ begin
      BCM2708SDHCIHost.SDHCI.HostWriteByte:=BCM2708SDHCIHostWriteByte;
      BCM2708SDHCIHost.SDHCI.HostWriteWord:=BCM2708SDHCIHostWriteWord;
      BCM2708SDHCIHost.SDHCI.HostWriteLong:=BCM2708SDHCIHostWriteLong;
+     BCM2708SDHCIHost.SDHCI.HostReset:=nil;
+     BCM2708SDHCIHost.SDHCI.HostHardwareReset:=nil;
+     BCM2708SDHCIHost.SDHCI.HostSetPower:=nil;
+     BCM2708SDHCIHost.SDHCI.HostSetClock:=nil;
      BCM2708SDHCIHost.SDHCI.HostSetClockDivider:=nil;
      BCM2708SDHCIHost.SDHCI.HostSetControlRegister:=nil;
      BCM2708SDHCIHost.SDHCI.DeviceInitialize:=nil;
@@ -1758,20 +1846,17 @@ begin
      Status:=SDHCIHostRegister(@BCM2708SDHCIHost.SDHCI);
      if Status <> ERROR_SUCCESS then
       begin
-       if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2708: Failed to register new SDHCI host: ' + ErrorToString(Status));
+       if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2708: Failed to register SDHCI controller: ' + ErrorToString(Status));
       end;
     end
    else 
     begin
-     if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2708: Failed to create new SDHCI host');
+     if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2708: Failed to create SDHCI controller');
     end;
   end;
 
  {Create SDHOST}
- if BCM2708_REGISTER_SDHOST then
-  begin
-   //To Do
-  end;
+ {See: BCMSDHOST for the driver implementation}
 
  {Create System Clock}
  if BCM2708_REGISTER_SYS_CLOCK then
@@ -3032,7 +3117,7 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{BCM2708 BSCI2C (I2C0/1) Functions}
+{BCM2708 BSCI2C (I2C0/1/2) Functions}
 function BCM2708BSCI2CStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 var
  Slave:LongWord;
@@ -4515,7 +4600,7 @@ begin
  Channel.Registers.CS:=BCM2835_DMA_CS_INT;
  
  {Send Completion}
- WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2708DMARequestComplete),Channel,nil);
+ WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(BCM2708DMARequestComplete),Channel,nil);
 end; 
 
 {==============================================================================}
@@ -4548,7 +4633,7 @@ begin
      DMA.Channels[Channel].Registers.CS:=BCM2835_DMA_CS_INT;
      
      {Send Completion}
-     WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(BCM2708DMARequestComplete),@DMA.Channels[Channel],nil);
+     WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(BCM2708DMARequestComplete),@DMA.Channels[Channel],nil);
     end;
    
    {Clear the Interrupt}
@@ -8290,6 +8375,7 @@ function BCM2708SDHCIHostStart(SDHCI:PSDHCIHost):LongWord;
 var
  Count:LongWord;
  Status:LongWord;
+ ClockMax:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -8307,6 +8393,14 @@ begin
    
    Result:=Status;
    Exit;
+  end;
+ 
+ {Set SD Clock}
+ ClockMax:=ClockGetMaxRate(CLOCK_ID_MMC0);
+ if ClockMax > 0 then
+  begin
+   {Set SD Clock}
+   ClockSetRate(CLOCK_ID_MMC0,ClockMax,True);
   end;
  
  {Setup GPIO}
@@ -8382,8 +8476,8 @@ begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
   end;  
  SDHCI.Version:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_VERSION);
- SDHCI.Quirks:=SDHCI_QUIRK_NO_HISPD_BIT or SDHCI_QUIRK_MISSING_CAPS;
- SDHCI.Quirks2:=SDHCI_QUIRK2_BROKEN_R1B or SDHCI_QUIRK2_WAIT_SEND_CMD;
+ SDHCI.Quirks:=SDHCI_QUIRK_BROKEN_CARD_DETECTION or SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK or SDHCI_QUIRK_MISSING_CAPS or SDHCI_QUIRK_NO_HISPD_BIT;
+ SDHCI.Quirks2:=SDHCI_QUIRK2_PRESET_VALUE_BROKEN;
  {Configuration Properties}
  SDHCI.PresetVoltages:=MMC_VDD_32_33 or MMC_VDD_33_34 or MMC_VDD_165_195;
  SDHCI.PresetCapabilities:=0;   //To Do //See: sdhci-iproc.c
@@ -8452,8 +8546,12 @@ begin
  
  {Update SDHCI}
  {Driver Properties}
- SemaphoreDestroy(SDHCI.Wait);
- SDHCI.Wait:=INVALID_HANDLE_VALUE;
+ if SDHCI.Wait <> INVALID_HANDLE_VALUE then
+  begin
+   SemaphoreDestroy(SDHCI.Wait);
+   
+   SDHCI.Wait:=INVALID_HANDLE_VALUE;
+  end; 
  
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2708 Powering off SD host controller (' + SDHCI.Device.DeviceDescription + ')');
 
@@ -8740,8 +8838,8 @@ begin
      if not(Present) then SDHCI.Interrupts:=SDHCI.Interrupts or SDHCI_INT_CARD_INSERT;
      
      {Update interrupts}
-  SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
-  SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
+     SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
+     SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
      
      {Acknowledge interrupts}
      SDHCIHostWriteLong(SDHCI,SDHCI_INT_STATUS,InterruptMask and (SDHCI_INT_CARD_INSERT or SDHCI_INT_CARD_REMOVE));
@@ -11049,6 +11147,78 @@ end;
 {==============================================================================}
 {==============================================================================}
 {BCM2708 Helper Functions}
+function BCM2708SPIGetDescription(Id:LongWord):String;
+{Get the device description of an SPI device}
+{Id: The Id number of the SPI device (0 to 2)}
+{Return: The correct device description suitable for passing to SPIDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+  {}
+  case Id of
+   0:Result:=BCM2708_SPI0_DESCRIPTION;
+   1:Result:=BCM2708_SPI1_DESCRIPTION;
+   2:Result:=BCM2708_SPI2_DESCRIPTION;
+  else
+   Result:='';
+  end;  
+end;
+
+{==============================================================================}
+
+function BCM2708I2CGetDescription(Id:LongWord):String;
+{Get the device description of an I2C device}
+{Id: The Id number of the I2C device (0 to 2)}
+{Return: The correct device description suitable for passing to I2CDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+  {}
+  case Id of
+   0:Result:=BCM2708_I2C0_DESCRIPTION;
+   1:Result:=BCM2708_I2C1_DESCRIPTION;
+   2:Result:=BCM2708_I2C2_DESCRIPTION;
+  else
+   Result:='';
+  end;  
+end;
+
+{==============================================================================}
+
+function BCM2708PWMGetDescription(Id,Channel:LongWord):String;
+{Get the device description of an PWM device}
+{Id: The Id number of the PWM device (0 or 1)}
+{Channel: The channel number of the PWM device (0 or 1)}
+{Return: The correct device description suitable for passing to PWMDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+  {}
+  case Id of
+   0:Result:=BCM2708_PWM0_DESCRIPTION;
+   1:Result:=BCM2708_PWM1_DESCRIPTION;
+  else
+   Result:='';
+  end;  
+end;
+
+{==============================================================================}
+
+function BCM2708UARTGetDescription(Id:LongWord):String;
+{Get the device description of a UART device}
+{Id: The Id number of the UART device (0 or 1)}
+{Return: The correct device description suitable for passing to UARTDeviceFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+  {}
+  case Id of
+   0:Result:=BCM2708_UART0_DESCRIPTION;
+   1:Result:=BCM2708_UART1_DESCRIPTION;
+  else
+   Result:='';
+  end;  
+end;
 
 {==============================================================================}
 {==============================================================================}

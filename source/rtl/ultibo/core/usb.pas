@@ -5044,7 +5044,7 @@ end;
 {==============================================================================}
 
 function USBDriverCreate:PUSBDriver;
-{Create a new Driver entry}
+{Create a new USB Driver entry}
 {Return: Pointer to new Driver entry or nil if driver could not be created}
 begin
  {}
@@ -5054,7 +5054,7 @@ end;
 {==============================================================================}
 
 function USBDriverCreateEx(Size:LongWord):PUSBDriver;
-{Create a new Driver entry}
+{Create a new USB Driver entry}
 {Size: Size in bytes to allocate for new driver (Including the driver entry)}
 {Return: Pointer to new Driver entry or nil if driver could not be created}
 begin
@@ -5087,7 +5087,7 @@ end;
 {==============================================================================}
 
 function USBDriverDestroy(Driver:PUSBDriver):LongWord;
-{Destroy an existing Driver entry}
+{Destroy an existing USB Driver entry}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -5116,7 +5116,7 @@ end;
 {==============================================================================}
 
 function USBDriverRegister(Driver:PUSBDriver):LongWord;
-{Register a new Driver in the Driver table}
+{Register a new Driver in the USB Driver table}
 var
  Host:PUSBHost;
 begin
@@ -5224,7 +5224,7 @@ end;
 {==============================================================================}
 
 function USBDriverDeregister(Driver:PUSBDriver):LongWord;
-{Deregister a Driver from the Driver table}
+{Deregister a Driver from the USB Driver table}
 var
  Host:PUSBHost;
  Prev:PUSBDriver;
@@ -5322,6 +5322,7 @@ end;
 {==============================================================================}
 
 function USBDriverFind(DriverId:LongWord):PUSBDriver;
+{Find a driver by Id in the USB Driver table}
 var
  Driver:PUSBDriver;
 begin
@@ -5363,6 +5364,7 @@ end;
 {==============================================================================}
 
 function USBDriverFindByName(const Name:String):PUSBDriver; inline;
+{Find a driver by name in the Driver table}
 begin
  {}
  Result:=PUSBDriver(DriverFindByName(Name));
@@ -5371,6 +5373,7 @@ end;
 {==============================================================================}
 
 function USBDriverEnumerate(Callback:TUSBDriverEnumerate;Data:Pointer):LongWord;
+{Enumerate all drivers in the USB Driver table}
 var
  Driver:PUSBDriver;
 begin
@@ -9198,7 +9201,7 @@ end;
 {==============================================================================}
 
 function USBDriverGetCount:LongWord; inline;
-{Get the current driver count}
+{Get the current USB driver count}
 begin
  {}
  Result:=USBDriverTableCount;
@@ -9207,7 +9210,7 @@ end;
 {==============================================================================}
 
 function USBDriverCheck(Driver:PUSBDriver):PUSBDriver;
-{Check if the supplied Driver is in the driver table}
+{Check if the supplied USB Driver is in the driver table}
 var
  Current:PUSBDriver;
 begin

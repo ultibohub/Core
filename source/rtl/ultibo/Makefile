@@ -511,6 +511,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    pitft35 \
 		    smc91x \
 		    pl18x \
+		    bcmsdhost \
 		    smsc95xx \
 		    lan78xx \
 		    genet \

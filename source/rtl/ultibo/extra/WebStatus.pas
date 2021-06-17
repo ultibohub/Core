@@ -43,8 +43,8 @@ unit WebStatus;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
-     HeapManager,Devices,USB,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,Timezone,Locale,
-     Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA;
+     HeapManager,Devices,USB,PCI,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,Timezone,Locale,
+     Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC;
 
 //To Do //Look for:
 
@@ -456,10 +456,20 @@ type
   {Internal Variables}
   
   {Internal Methods}
+  function MMCFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function SDHCIFlagsToFlagNames(AFlags:LongWord):TStringList;
+
+  function USBFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function USBHostFlagsToFlagNames(AFlags:LongWord):TStringList;
+
+  function PCIFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function PCIHostFlagsToFlagNames(AFlags:LongWord):TStringList;
+
   function DMAFlagsToFlagNames(AFlags:LongWord):TStringList;
   function I2CFlagsToFlagNames(AFlags:LongWord):TStringList;
   function SPIFlagsToFlagNames(AFlags:LongWord):TStringList;
   function PWMFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function RTCFlagsToFlagNames(AFlags:LongWord):TStringList;
   function GPIOFlagsToFlagNames(AFlags:LongWord):TStringList;
   function UARTFlagsToFlagNames(AFlags:LongWord):TStringList;
   function ClockFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -558,13 +568,45 @@ type
   
  end;
 
+ TWebStatusPCI = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  function PCIFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function PCIHostFlagsToFlagNames(AFlags:LongWord):TStringList;
+  
+ protected
+  {Internal Variables}
+  
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
+
  TWebStatusMMC = class(TWebStatusSub)
  public
   {}
   constructor Create(AMain:TWebStatusMain);
  private
   {Internal Variables}
+  function MMCFlagsToFlagNames(AFlags:LongWord):TStringList;
+  function SDHCIFlagsToFlagNames(AFlags:LongWord):TStringList;
   
+  function MMCVoltagesToNames(AVoltages:LongWord):TStringList;
+  function MMCCapabilitiesToNames(ACapabilities:LongWord):TStringList;
+
+  function SDHCIQuirksToNames(AQuirks:LongWord):TStringList;
+  function SDHCIQuirks2ToNames(AQuirks2:LongWord):TStringList;
+  function SDHCIInterruptsToNames(AInterrupts:LongWord):TStringList;
+  function SDHCIVoltagesToNames(AVoltages:LongWord):TStringList;
+  function SDHCICapabilitiesToNames(ACapabilities:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -960,8 +1002,12 @@ function WebStatusUSBDriverEnumerate(Driver:PUSBDriver;Data:Pointer):LongWord;
 procedure WebStatusUSBLogOutput(const AText:String;Data:Pointer); 
 function WebStatusUSBLogDeviceCallback(Device:PUSBDevice;Data:Pointer):LongWord;
 function WebStatusUSBLogTreeCallback(Device:PUSBDevice;Data:Pointer):LongWord;
+function WebStatusPCIDeviceEnumerate(Device:PPCIDevice;Data:Pointer):LongWord;
+function WebStatusPCIHostEnumerate(Host:PPCIHost;Data:Pointer):LongWord;
+function WebStatusPCIDriverEnumerate(Driver:PPCIDriver;Data:Pointer):LongWord;
 function WebStatusMMCEnumerate(MMC:PMMCDevice;Data:Pointer):LongWord;
 function WebStatusSDHCIEnumerate(SDHCI:PSDHCIHost;Data:Pointer):LongWord;
+function WebStatusSDIODriverEnumerate(Driver:PSDIODriver;Data:Pointer):LongWord;
 function WebStatusNetworkEnumerate(Network:PNetworkDevice;Data:Pointer):LongWord;
 function WebStatusStorageEnumerate(Storage:PStorageDevice;Data:Pointer):LongWord;
 function WebStatusMouseEnumerate(Mouse:PMouseDevice;Data:Pointer):LongWord;
@@ -996,6 +1042,7 @@ var
  WebStatusDrivers:TWebStatusDrivers;
  WebStatusHandles:TWebStatusHandles;
  WebStatusUSB:TWebStatusUSB;
+ WebStatusPCI:TWebStatusPCI;
  WebStatusMMC:TWebStatusMMC;
  WebStatusNetwork:TWebStatusNetwork;
  WebStatusStorage:TWebStatusStorage;
@@ -2214,6 +2261,8 @@ function TWebStatusPlatform.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AR
 var
  Count:LongWord;
  Address:PtrUInt;
+ MaxClock:LongWord;
+ MaxPower:LongWord;
 begin
  {}
  Result:=False;
@@ -2267,10 +2316,20 @@ begin
  AddItem(AResponse,'Section Size:',IntToStr(MemoryGetSectionSize));
  if MemoryGetLargeSectionSize > 0 then AddItem(AResponse,'Large Section Size:',IntToStr(MemoryGetLargeSectionSize));
 
+ {Check Board Type}
+ MaxClock:=CLOCK_ID_SPI3;
+ MaxPower:=POWER_ID_CCP2TX;
+ case BoardGetType of
+  BOARD_TYPE_RPI4B,BOARD_TYPE_RPI400,BOARD_TYPE_RPI_COMPUTE4:begin
+    MaxClock:=CLOCK_ID_SPI9;
+    MaxPower:=POWER_ID_SPI9;
+   end; 
+ end;
+
  {Add Power States}
  AddBlank(AResponse);
  AddItem(AResponse,'Power State','');
- for Count:=POWER_ID_MMC0 to POWER_ID_CCP2TX do
+ for Count:=POWER_ID_MMC0 to MaxPower do
   begin
    AddItemEx(AResponse,PowerIDToString(Count) + ':',PowerStateToString(PowerGetState(Count)),3);
   end; 
@@ -2278,7 +2337,7 @@ begin
  {Add Clock Rates}
  AddBlank(AResponse);
  AddItem(AResponse,'Clock Rate','');
- for Count:=CLOCK_ID_MMC0 to CLOCK_ID_SPI3 do
+ for Count:=CLOCK_ID_MMC0 to MaxClock do
   begin
    AddItemEx(AResponse,ClockIDToString(Count) + ':',IntToStr(ClockGetRate(Count)),3);
   end; 
@@ -2286,7 +2345,7 @@ begin
  {Add Clock States}
  AddBlank(AResponse);
  AddItem(AResponse,'Clock State','');
- for Count:=CLOCK_ID_MMC0 to CLOCK_ID_SPI3 do
+ for Count:=CLOCK_ID_MMC0 to MaxClock do
   begin
    AddItemEx(AResponse,ClockIDToString(Count) + ':',ClockStateToString(ClockGetState(Count)),3);
   end; 
@@ -2294,7 +2353,7 @@ begin
  {Add Clock Min/Max}
  AddBlank(AResponse);
  AddItem(AResponse,'Clock Min/Max Rate','');
- for Count:=CLOCK_ID_MMC0 to CLOCK_ID_SPI3 do
+ for Count:=CLOCK_ID_MMC0 to MaxClock do
   begin
    AddItemEx(AResponse,ClockIDToString(Count) + ':',IntToStr(ClockGetMinRate(Count)) + ' / ' + IntToStr(ClockGetMaxRate(Count)),3);
   end; 
@@ -3012,7 +3071,11 @@ begin
  AddItem(AResponse,'CPU Memory:','Address: ' + '0x' + AddrToHex(Address));
  AddItem(AResponse,'','Size: ' + IntToStr(Length));
  
+ {Add CPU Clock Speed}
+ AddItem(AResponse,'CPU Clock Speed:',IntToStr(ClockGetRate(CLOCK_ID_CPU)) + ' Hz');
+ 
  {Add CPU Utilization}
+ AddBlank(AResponse);
  for Count:=0 to CPUGetCount - 1 do
   begin
    if Count = CPU_ID_0 then
@@ -3140,6 +3203,9 @@ begin
  GPUGetMemory(Address,Length);
  AddItem(AResponse,'GPU Memory :','Address: ' + '0x' + AddrToHex(Address));
  AddItem(AResponse,'','Size: ' + IntToStr(Length));
+ 
+ {Add GPU Clock Speed}
+ AddItem(AResponse,'GPU Clock Speed:',IntToStr(ClockGetRate(CLOCK_ID_GPU)) + ' Hz');
  
  {Add Footer}
  AddFooter(AResponse); 
@@ -4253,6 +4319,196 @@ end;
 
 {==============================================================================}
 
+function TWebStatusDevices.MMCFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and MMC_FLAG_CARD_PRESENT) = MMC_FLAG_CARD_PRESENT then
+  begin
+   Result.Add('MMC_FLAG_CARD_PRESENT');
+  end;
+ if (AFlags and MMC_FLAG_WRITE_PROTECT) = MMC_FLAG_WRITE_PROTECT then
+  begin
+   Result.Add('MMC_FLAG_WRITE_PROTECT');
+  end;
+ if (AFlags and MMC_FLAG_HIGH_CAPACITY) = MMC_FLAG_HIGH_CAPACITY then
+  begin
+   Result.Add('MMC_FLAG_HIGH_CAPACITY');
+  end;
+ if (AFlags and MMC_FLAG_EXT_CAPACITY) = MMC_FLAG_EXT_CAPACITY then
+  begin
+   Result.Add('MMC_FLAG_EXT_CAPACITY');
+  end;
+ if (AFlags and MMC_FLAG_UHS_I) = MMC_FLAG_UHS_I then
+  begin
+   Result.Add('MMC_FLAG_UHS_I');
+  end;
+ if (AFlags and MMC_FLAG_UHS_II) = MMC_FLAG_UHS_II then
+  begin
+   Result.Add('MMC_FLAG_UHS_II');
+  end;
+ if (AFlags and MMC_FLAG_BLOCK_ADDRESSED) = MMC_FLAG_BLOCK_ADDRESSED then
+  begin
+   Result.Add('MMC_FLAG_BLOCK_ADDRESSED');
+  end;
+ if (AFlags and MMC_FLAG_AUTO_BLOCK_COUNT) = MMC_FLAG_AUTO_BLOCK_COUNT then
+  begin
+   Result.Add('MMC_FLAG_AUTO_BLOCK_COUNT');
+  end;
+ if (AFlags and MMC_FLAG_AUTO_COMMAND_STOP) = MMC_FLAG_AUTO_COMMAND_STOP then
+  begin
+   Result.Add('MMC_FLAG_AUTO_COMMAND_STOP');
+  end;
+ if (AFlags and MMC_FLAG_DDR_MODE) = MMC_FLAG_DDR_MODE then
+  begin
+   Result.Add('MMC_FLAG_DDR_MODE');
+  end;
+ if (AFlags and MMC_FLAG_NON_REMOVABLE) = MMC_FLAG_NON_REMOVABLE then
+  begin
+   Result.Add('MMC_FLAG_NON_REMOVABLE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('MMC_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.SDHCIFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and SDHCI_FLAG_SDMA) = SDHCI_FLAG_SDMA then
+  begin
+   Result.Add('SDHCI_FLAG_SDMA');
+  end;
+ if (AFlags and SDHCI_FLAG_ADMA) = SDHCI_FLAG_ADMA then
+  begin
+   Result.Add('SDHCI_FLAG_ADMA');
+  end;
+ if (AFlags and SDHCI_FLAG_SPI) = SDHCI_FLAG_SPI then
+  begin
+   Result.Add('SDHCI_FLAG_SPI');
+  end;
+ if (AFlags and SDHCI_FLAG_CRC_ENABLE) = SDHCI_FLAG_CRC_ENABLE then
+  begin
+   Result.Add('SDHCI_FLAG_CRC_ENABLE');
+  end;
+ if (AFlags and SDHCI_FLAG_NON_STANDARD) = SDHCI_FLAG_NON_STANDARD then
+  begin
+   Result.Add('SDHCI_FLAG_NON_STANDARD');
+  end;
+ if (AFlags and SDHCI_FLAG_AUTO_CMD12) = SDHCI_FLAG_AUTO_CMD12 then
+  begin
+   Result.Add('SDHCI_FLAG_AUTO_CMD12');
+  end;
+ if (AFlags and SDHCI_FLAG_AUTO_CMD23) = SDHCI_FLAG_AUTO_CMD23 then
+  begin
+   Result.Add('SDHCI_FLAG_AUTO_CMD23');
+  end;
+ if (AFlags and SDHCI_FLAG_EXTERNAL_DMA) = SDHCI_FLAG_EXTERNAL_DMA then
+  begin
+   Result.Add('SDHCI_FLAG_EXTERNAL_DMA');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SDHCI_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.USBFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('USB_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.USBHostFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and USBHOST_FLAG_SHARED) = USBHOST_FLAG_SHARED then
+  begin
+   Result.Add('USBHOST_FLAG_SHARED');
+  end;
+ if (AFlags and USBHOST_FLAG_NOCACHE) = USBHOST_FLAG_NOCACHE then
+  begin
+   Result.Add('USBHOST_FLAG_NOCACHE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('USBHOST_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.PCIFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('PCI_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.PCIHostFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and PCIHOST_FLAG_SHARED) = PCIHOST_FLAG_SHARED then
+  begin
+   Result.Add('PCIHOST_FLAG_SHARED');
+  end;
+ if (AFlags and PCIHOST_FLAG_NOCACHE) = PCIHOST_FLAG_NOCACHE then
+  begin
+   Result.Add('PCIHOST_FLAG_NOCACHE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('PCIHOST_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusDevices.DMAFlagsToFlagNames(AFlags:LongWord):TStringList;
 begin
  {}
@@ -4428,6 +4684,30 @@ begin
  if Result.Count = 0 then
   begin
    Result.Add('PWM_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusDevices.RTCFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and RTC_FLAG_ALARM) = RTC_FLAG_ALARM then
+  begin
+   Result.Add('RTC_FLAG_ALARM');
+  end;
+ if (AFlags and RTC_FLAG_WATCHDOG) = RTC_FLAG_WATCHDOG then
+  begin
+   Result.Add('RTC_FLAG_WATCHDOG');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('RTC_FLAG_NONE');
   end; 
 end;
 
@@ -5310,9 +5590,16 @@ var
  StatusNames:TStringList;
  
  DMAHost:PDMAHost;
+ USBHost:PUSBHost;
+ PCIHost:PPCIHost;
+ SDHCIHost:PSDHCIHost;
+ MMCDevice:PMMCDevice;
+ USBDevice:PUSBDevice;
+ PCIDevice:PPCIDevice;
  I2CDevice:PI2CDevice;
  SPIDevice:PSPIDevice;
  PWMDevice:PPWMDevice;
+ RTCDevice:PRTCDevice;
  GPIODevice:PGPIODevice;
  UARTDevice:PUARTDevice;
  ClockDevice:PClockDevice;
@@ -6279,6 +6566,288 @@ begin
         
         FlagNames.Free;
        end;
+      DEVICE_CLASS_RTC:begin
+        {Get Flags Names}
+        FlagNames:=RTCFlagsToFlagNames(Device.DeviceFlags);
+        
+        {Get RTC}
+        RTCDevice:=PRTCDevice(Device);
+       
+        AddBold(AResponse,'RTC','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',RTCDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(RTCDevice.RTCId));
+        AddItem(AResponse,'State:',RTCDeviceStateToString(RTCDevice.RTCState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Min Time:',DateTimeToStr(SystemFileTimeToDateTime(TFileTime(RTCDevice.Properties.MinTime))));
+        AddItem(AResponse,'Max Time:',DateTimeToStr(SystemFileTimeToDateTime(TFileTime(RTCDevice.Properties.MaxTime))));
+        AddItem(AResponse,'Alarm Count:',IntToStr(RTCDevice.Properties.AlarmCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Get Count:',IntToStr(RTCDevice.GetCount));
+        AddItem(AResponse,'Set Count:',IntToStr(RTCDevice.SetCount));
+        AddBlank(AResponse);
+        
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_MMC,DEVICE_CLASS_SD:begin
+        {Get Flags Names}
+        FlagNames:=MMCFlagsToFlagNames(Device.DeviceFlags);
+      
+        {Get MMC}
+        MMCDevice:=PMMCDevice(Device);
+       
+        AddBold(AResponse,'MMC','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',MMCDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+        
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(MMCDevice.MMCId));
+        AddItem(AResponse,'State:',MMCDeviceStateToString(MMCDevice.MMCState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Version:',MMCVersionToString(MMCDevice.Version));
+        AddItem(AResponse,'Clock:',IntToStr(MMCDevice.Clock));
+        AddItem(AResponse,'Timing:',MMCTimingToString(MMCDevice.Timing));
+        WorkBuffer:=MMCBusWidthToString(MMCDevice.BusWidth);
+        if MMCIsSD(MMCDevice) then WorkBuffer:=SDBusWidthToString(MMCDevice.BusWidth);
+        AddItem(AResponse,'Bus Width:',WorkBuffer);
+        AddBlank(AResponse);
+     
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_SDHCI:begin
+        {Get Flags Names}
+        FlagNames:=SDHCIFlagsToFlagNames(Device.DeviceFlags);
+      
+        {Get SDHCI}
+        SDHCIHost:=PSDHCIHost(Device);
+       
+        AddBold(AResponse,'SDHCI','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',SDHCIHostTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(SDHCIHost.SDHCIId));
+        AddItem(AResponse,'State:',SDHCIHostStateToString(SDHCIHost.SDHCIState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Version:',SDHCIVersionToString(SDHCIGetVersion(SDHCIHost)));
+        AddItem(AResponse,'Clock:',IntToStr(SDHCIHost.Clock));
+        AddItem(AResponse,'Bus Width:',MMCBusWidthToString(SDHCIHost.BusWidth));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Clock Minimum:',IntToStr(SDHCIHost.ClockMinimum));
+        AddItem(AResponse,'Clock Maximum:',IntToStr(SDHCIHost.ClockMaximum));
+        AddItem(AResponse,'Minimum Frequency:',IntToStr(SDHCIHost.MinimumFrequency));
+        AddItem(AResponse,'Maximum Frequency:',IntToStr(SDHCIHost.MaximumFrequency));
+        AddItem(AResponse,'Maximum Block Count:',IntToStr(SDHCIHost.MaximumBlockCount));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Interrupt Count:',IntToStr(SDHCIHost.InterruptCount));
+        AddBlank(AResponse);
+      
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_USB:begin
+        {Get Flags Names}
+        FlagNames:=USBFlagsToFlagNames(Device.DeviceFlags);
+      
+        {Get USB}
+        USBDevice:=PUSBDevice(Device);
+       
+        AddBold(AResponse,'USB','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',USBDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(USBDevice.USBId));
+        AddItem(AResponse,'State:',USBDeviceStateToString(USBDevice.USBState));
+        AddItem(AResponse,'Status:',USBDeviceStatusToString(USBDevice.USBStatus));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Address:',IntToStr(USBDevice.Address));
+        AddItem(AResponse,'Speed:',USBSpeedToStringAlt(USBDevice.Speed));
+        AddItem(AResponse,'Depth:',IntToStr(USBDevice.Depth));
+        AddItem(AResponse,'Port Number:',IntToStr(USBDevice.PortNumber));
+        AddItem(AResponse,'Configuration Value:',IntToStr(USBDevice.ConfigurationValue));
+        AddBlank(AResponse);
+        
+        WorkBuffer:='';
+        if USBDevice.Parent <> nil then WorkBuffer:=DeviceGetName(@USBDevice.Parent.Device);
+        AddItem(AResponse,'Parent:',WorkBuffer);
+        
+        WorkBuffer:='';
+        if USBDevice.Driver <> nil then WorkBuffer:=DriverGetName(@USBDevice.Driver.Driver);
+        
+        AddItem(AResponse,'Driver:',WorkBuffer);
+        AddBlank(AResponse);
+        AddItem(AResponse,'Product:',USBDevice.Product);
+        AddItem(AResponse,'Manufacturer:',USBDevice.Manufacturer);
+        AddItem(AResponse,'SerialNumber:',USBDevice.SerialNumber);
+        AddBlank(AResponse);
+        AddItem(AResponse,'Request Count:',IntToStr(USBDevice.RequestCount));
+        AddItem(AResponse,'Request Errors:',IntToStr(USBDevice.RequestErrors));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Class:',USBClassCodeToString(USBDevice.Descriptor.bDeviceClass));
+        AddItem(AResponse,'VID/PID:',IntToHex(USBDevice.Descriptor.idVendor,4) + ':' + IntToHex(USBDevice.Descriptor.idProduct,4));
+        AddBlank(AResponse);
+     
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_USBHUB:begin
+        
+        //To Do //
+        
+       end;
+      DEVICE_CLASS_USBHOST:begin
+        {Get Flags Names}
+        FlagNames:=USBHostFlagsToFlagNames(Device.DeviceFlags);
+      
+        {Get USBHost}
+        USBHost:=PUSBHost(Device);
+       
+        AddBold(AResponse,'USB Host','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',USBHostTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(USBHost.HostId));
+        AddItem(AResponse,'State:',USBHostStateToString(USBHost.HostState));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Alignment:',IntToStr(USBHost.Alignment));
+        AddItem(AResponse,'Multiplier:',IntToStr(USBHost.Multiplier));
+        AddItem(AResponse,'Max Transfer:',IntToStr(USBHost.MaxTransfer));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Request Count:',IntToStr(USBHost.RequestCount));
+        AddItem(AResponse,'Request Errors:',IntToStr(USBHost.RequestErrors));
+        AddBlank(AResponse);
+      
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_PCI:begin
+        {Get Flags Names}
+        FlagNames:=PCIFlagsToFlagNames(Device.DeviceFlags);
+      
+        {Get PCI}
+        PCIDevice:=PPCIDevice(Device);
+       
+        AddBold(AResponse,'PCI','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',PCIDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(PCIDevice.PCIId));
+        AddItem(AResponse,'State:',PCIDeviceStateToString(PCIDevice.PCIState));
+        AddItem(AResponse,'Status:',PCIDeviceStatusToString(PCIDevice.PCIStatus));
+        AddBlank(AResponse);
+        
+        //To Do //TestingPCI
+        
+        WorkBuffer:='';
+        if PCIDevice.Parent <> nil then WorkBuffer:=DeviceGetName(@PCIDevice.Parent.Device);
+        AddItem(AResponse,'Parent:',WorkBuffer);
+   
+        WorkBuffer:='';
+        if PCIDevice.Driver <> nil then WorkBuffer:=DriverGetName(@PCIDevice.Driver.Driver);
+        AddItem(AResponse,'Driver:',WorkBuffer);
+   
+        //To Do //TestingPCI
+      
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_PCIHOST:begin
+        {Get Flags Names}
+        FlagNames:=PCIHostFlagsToFlagNames(Device.DeviceFlags);
+      
+        {Get PCIHost}
+        PCIHost:=PPCIHost(Device);
+       
+        AddBold(AResponse,'PCI Host','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',PCIHostTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+       
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(PCIHost.HostId));
+        AddItem(AResponse,'State:',PCIHostStateToString(PCIHost.HostState));
+
+        //To Do //TestingPCI
+       
+        FlagNames.Free;
+       end;
      end;
     end
    else
@@ -6753,22 +7322,71 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{TWebStatusMMC}
-constructor TWebStatusMMC.Create(AMain:TWebStatusMain);
+{TWebStatusPCI}
+constructor TWebStatusPCI.Create(AMain:TWebStatusMain);
 begin
  {}
- FCaption:='MMC / SD'; {Must be before create for register}
+ FCaption:='PCI'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/mmc';
+ Name:='/pci';
  
  if FMain <> nil then Name:=FMain.Name + Name;
 end; 
 
 {==============================================================================}
 
-function TWebStatusMMC.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+function TWebStatusPCI.PCIFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('PCI_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusPCI.PCIHostFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and PCIHOST_FLAG_SHARED) = PCIHOST_FLAG_SHARED then
+  begin
+   Result.Add('PCIHOST_FLAG_SHARED');
+  end;
+ if (AFlags and PCIHOST_FLAG_NOCACHE) = PCIHOST_FLAG_NOCACHE then
+  begin
+   Result.Add('PCIHOST_FLAG_NOCACHE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('PCIHOST_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusPCI.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
+ Id:LongWord;
+ Action:String;
+ Count:LongWord;
+ WorkBuffer:String;
  Data:TWebStatusData;
+ FlagNames:TStringList;
+ 
+ PCIHost:PPCIHost;
+ PCIDevice:PPCIDevice;
 begin
  {}
  Result:=False;
@@ -6782,44 +7400,1176 @@ begin
  {Check Response}
  if AResponse = nil then Exit;
 
- {Add Header (4 column)}
- AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
 
- {Add MMC List} 
- AddBold4Column(AResponse,'Devices','','','');
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'MMC Id','Name','State','Type');
- AddBlankEx(AResponse,4);
+ {Get Id}
+ WorkBuffer:=Uppercase(ARequest.GetParam('ID'));
  
- {Setup Data}
- Data.Document:=Self;
- Data.Host:=AHost;
- Data.Request:=ARequest;
- Data.Response:=AResponse;
- Data.Data:=nil;
- 
- {Enumerate MMCs}
- MMCDeviceEnumerate(WebStatusMMCEnumerate,@Data);
+ if (Action = 'PCIDEVICE') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'PCI Device Information',Self,2);
 
- {Add SDHCI List} 
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'Hosts','','','');
- AddBlankEx(AResponse,4);
- AddBold4Column(AResponse,'SDHCI Id','Name','State','Type');
- AddBlankEx(AResponse,4);
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
  
- {Setup Data}
- Data.Document:=Self;
- Data.Host:=AHost;
- Data.Request:=ARequest;
- Data.Response:=AResponse;
- Data.Data:=nil;
+   {Get PCI Device}
+   PCIDevice:=PCIDeviceFind(Id);
+   if PCIDevice <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=PCIFlagsToFlagNames(PCIDevice.Device.DeviceFlags);
+     
+     AddBold(AResponse,'Device','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@PCIDevice.Device));
+     AddItem(AResponse,'Type:',PCIDeviceTypeToString(PCIDevice.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(PCIDevice.PCIId));
+     AddItem(AResponse,'State:',PCIDeviceStateToString(PCIDevice.PCIState));
+     AddItem(AResponse,'Status:',PCIDeviceStatusToString(PCIDevice.PCIStatus));
+     AddBlank(AResponse);
+     
+     //To Do //TestingPCI
+     
+     WorkBuffer:='';
+     if PCIDevice.Parent <> nil then WorkBuffer:=DeviceGetName(@PCIDevice.Parent.Device);
+     AddItem(AResponse,'Parent:',WorkBuffer);
+
+     WorkBuffer:='';
+     if PCIDevice.Driver <> nil then WorkBuffer:=DriverGetName(@PCIDevice.Driver.Driver);
+     AddItem(AResponse,'Driver:',WorkBuffer);
+
+     //To Do //TestingPCI
+     
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+   
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else if (Action = 'PCIHOST') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'PCI Host Information',Self,2);
+  
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
  
- {Enumerate SDHCIs}
- SDHCIHostEnumerate(WebStatusSDHCIEnumerate,@Data);
+   {Get PCI Host}
+   PCIHost:=PCIHostFind(Id);
+   if PCIHost <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=PCIHostFlagsToFlagNames(PCIHost.Device.DeviceFlags);
+     
+     AddBold(AResponse,'Host','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@PCIHost.Device));
+     AddItem(AResponse,'Type:',PCIHostTypeToString(PCIHost.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+      
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(PCIHost.HostId));
+     AddItem(AResponse,'State:',PCIHostStateToString(PCIHost.HostState));
+     
+     //To Do //TestingPCI
+
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+   
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else
+  begin 
+   {Add Header (4 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+  
+   {Add PCI Device List} 
+   AddBold4Column(AResponse,'Devices','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'PCI Id','Name','Class','Status');
+   AddBlankEx(AResponse,4);
+  
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate PCI Devices}
+   PCIDeviceEnumerate(WebStatusPCIDeviceEnumerate,@Data);
+   
+   {Add PCI Host List} 
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Hosts','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Host Id','Name','State','Type');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate PCI Hosts}
+   PCIHostEnumerate(WebStatusPCIHostEnumerate,@Data);
+  
+   {Add PCI Driver List} 
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Drivers','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Driver Id','Name','State','');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate PCI Drivers}
+   PCIDriverEnumerate(WebStatusPCIDriverEnumerate,@Data);
+   
+   {Add Footer (4 column)}
+   AddFooterEx(AResponse,4); 
+  end; 
  
- {Add Footer (4 column)}
- AddFooterEx(AResponse,4); 
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusMMC}
+constructor TWebStatusMMC.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='MMC / SD / SDIO'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/mmc';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusMMC.MMCFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and MMC_FLAG_CARD_PRESENT) = MMC_FLAG_CARD_PRESENT then
+  begin
+   Result.Add('MMC_FLAG_CARD_PRESENT');
+  end;
+ if (AFlags and MMC_FLAG_WRITE_PROTECT) = MMC_FLAG_WRITE_PROTECT then
+  begin
+   Result.Add('MMC_FLAG_WRITE_PROTECT');
+  end;
+ if (AFlags and MMC_FLAG_HIGH_CAPACITY) = MMC_FLAG_HIGH_CAPACITY then
+  begin
+   Result.Add('MMC_FLAG_HIGH_CAPACITY');
+  end;
+ if (AFlags and MMC_FLAG_EXT_CAPACITY) = MMC_FLAG_EXT_CAPACITY then
+  begin
+   Result.Add('MMC_FLAG_EXT_CAPACITY');
+  end;
+ if (AFlags and MMC_FLAG_UHS_I) = MMC_FLAG_UHS_I then
+  begin
+   Result.Add('MMC_FLAG_UHS_I');
+  end;
+ if (AFlags and MMC_FLAG_UHS_II) = MMC_FLAG_UHS_II then
+  begin
+   Result.Add('MMC_FLAG_UHS_II');
+  end;
+ if (AFlags and MMC_FLAG_BLOCK_ADDRESSED) = MMC_FLAG_BLOCK_ADDRESSED then
+  begin
+   Result.Add('MMC_FLAG_BLOCK_ADDRESSED');
+  end;
+ if (AFlags and MMC_FLAG_AUTO_BLOCK_COUNT) = MMC_FLAG_AUTO_BLOCK_COUNT then
+  begin
+   Result.Add('MMC_FLAG_AUTO_BLOCK_COUNT');
+  end;
+ if (AFlags and MMC_FLAG_AUTO_COMMAND_STOP) = MMC_FLAG_AUTO_COMMAND_STOP then
+  begin
+   Result.Add('MMC_FLAG_AUTO_COMMAND_STOP');
+  end;
+ if (AFlags and MMC_FLAG_DDR_MODE) = MMC_FLAG_DDR_MODE then
+  begin
+   Result.Add('MMC_FLAG_DDR_MODE');
+  end;
+ if (AFlags and MMC_FLAG_NON_REMOVABLE) = MMC_FLAG_NON_REMOVABLE then
+  begin
+   Result.Add('MMC_FLAG_NON_REMOVABLE');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('MMC_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.SDHCIFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and SDHCI_FLAG_SDMA) = SDHCI_FLAG_SDMA then
+  begin
+   Result.Add('SDHCI_FLAG_SDMA');
+  end;
+ if (AFlags and SDHCI_FLAG_ADMA) = SDHCI_FLAG_ADMA then
+  begin
+   Result.Add('SDHCI_FLAG_ADMA');
+  end;
+ if (AFlags and SDHCI_FLAG_SPI) = SDHCI_FLAG_SPI then
+  begin
+   Result.Add('SDHCI_FLAG_SPI');
+  end;
+ if (AFlags and SDHCI_FLAG_CRC_ENABLE) = SDHCI_FLAG_CRC_ENABLE then
+  begin
+   Result.Add('SDHCI_FLAG_CRC_ENABLE');
+  end;
+ if (AFlags and SDHCI_FLAG_NON_STANDARD) = SDHCI_FLAG_NON_STANDARD then
+  begin
+   Result.Add('SDHCI_FLAG_NON_STANDARD');
+  end;
+ if (AFlags and SDHCI_FLAG_AUTO_CMD12) = SDHCI_FLAG_AUTO_CMD12 then
+  begin
+   Result.Add('SDHCI_FLAG_AUTO_CMD12');
+  end;
+ if (AFlags and SDHCI_FLAG_AUTO_CMD23) = SDHCI_FLAG_AUTO_CMD23 then
+  begin
+   Result.Add('SDHCI_FLAG_AUTO_CMD23');
+  end;
+ if (AFlags and SDHCI_FLAG_EXTERNAL_DMA) = SDHCI_FLAG_EXTERNAL_DMA then
+  begin
+   Result.Add('SDHCI_FLAG_EXTERNAL_DMA');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SDHCI_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.MMCVoltagesToNames(AVoltages:LongWord):TStringList;
+begin
+ Result:=TStringList.Create;
+
+ {Check Voltages}
+ if (AVoltages and MMC_VDD_165_195) = MMC_VDD_165_195 then
+  begin
+   Result.Add('MMC_VDD_165_195');
+  end;
+ if (AVoltages and MMC_VDD_20_21) = MMC_VDD_20_21 then
+  begin
+   Result.Add('MMC_VDD_20_21');
+  end;
+ if (AVoltages and MMC_VDD_21_22) = MMC_VDD_21_22 then
+  begin
+   Result.Add('MMC_VDD_21_22');
+  end;
+ if (AVoltages and MMC_VDD_22_23) = MMC_VDD_22_23 then
+  begin
+   Result.Add('MMC_VDD_22_23');
+  end;
+ if (AVoltages and MMC_VDD_23_24) = MMC_VDD_23_24 then
+  begin
+   Result.Add('MMC_VDD_23_24');
+  end;
+ if (AVoltages and MMC_VDD_24_25) = MMC_VDD_24_25 then
+  begin
+   Result.Add('MMC_VDD_24_25');
+  end;
+ if (AVoltages and MMC_VDD_25_26) = MMC_VDD_25_26 then
+  begin
+   Result.Add('MMC_VDD_25_26');
+  end;
+ if (AVoltages and MMC_VDD_26_27) = MMC_VDD_26_27 then
+  begin
+   Result.Add('MMC_VDD_26_27');
+  end;
+ if (AVoltages and MMC_VDD_27_28) = MMC_VDD_27_28 then
+  begin
+   Result.Add('MMC_VDD_27_28');
+  end;
+ if (AVoltages and MMC_VDD_28_29) = MMC_VDD_28_29 then
+  begin
+   Result.Add('MMC_VDD_28_29');
+  end;
+ if (AVoltages and MMC_VDD_29_30) = MMC_VDD_29_30 then
+  begin
+   Result.Add('MMC_VDD_29_30');
+  end;
+ if (AVoltages and MMC_VDD_30_31) = MMC_VDD_30_31 then
+  begin
+   Result.Add('MMC_VDD_30_31');
+  end;
+ if (AVoltages and MMC_VDD_31_32) = MMC_VDD_31_32 then
+  begin
+   Result.Add('MMC_VDD_31_32');
+  end;
+ if (AVoltages and MMC_VDD_32_33) = MMC_VDD_32_33 then
+  begin
+   Result.Add('MMC_VDD_32_33');
+  end;
+ if (AVoltages and MMC_VDD_33_34) = MMC_VDD_33_34 then
+  begin
+   Result.Add('MMC_VDD_33_34');
+  end;
+ if (AVoltages and MMC_VDD_34_35) = MMC_VDD_34_35 then
+  begin
+   Result.Add('MMC_VDD_34_35');
+  end;
+ if (AVoltages and MMC_VDD_35_36) = MMC_VDD_35_36 then
+  begin
+   Result.Add('MMC_VDD_35_36');
+  end;
+
+ {Check Voltages}
+ if Result.Count = 0 then
+  begin
+   Result.Add('MMC_VDD_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.MMCCapabilitiesToNames(ACapabilities:LongWord):TStringList;
+begin
+ Result:=TStringList.Create;
+
+ {Check Capabilities}
+ if (ACapabilities and MMC_CAP_4_BIT_DATA) = MMC_CAP_4_BIT_DATA then
+  begin
+   Result.Add('MMC_CAP_4_BIT_DATA');
+  end;
+ if (ACapabilities and MMC_CAP_MMC_HIGHSPEED) = MMC_CAP_MMC_HIGHSPEED then
+  begin
+   Result.Add('MMC_CAP_MMC_HIGHSPEED');
+  end;
+ if (ACapabilities and MMC_CAP_SD_HIGHSPEED) = MMC_CAP_SD_HIGHSPEED then
+  begin
+   Result.Add('MMC_CAP_SD_HIGHSPEED');
+  end;
+ if (ACapabilities and MMC_CAP_SDIO_IRQ) = MMC_CAP_SDIO_IRQ then
+  begin
+   Result.Add('MMC_CAP_SDIO_IRQ');
+  end;
+ if (ACapabilities and MMC_CAP_SPI) = MMC_CAP_SPI then
+  begin
+   Result.Add('MMC_CAP_SPI');
+  end;
+ if (ACapabilities and MMC_CAP_NEEDS_POLL) = MMC_CAP_NEEDS_POLL then
+  begin
+   Result.Add('MMC_CAP_NEEDS_POLL');
+  end;
+ if (ACapabilities and MMC_CAP_8_BIT_DATA) = MMC_CAP_8_BIT_DATA then
+  begin
+   Result.Add('MMC_CAP_8_BIT_DATA');
+  end;
+ if (ACapabilities and MMC_CAP_AGGRESSIVE_PM) = MMC_CAP_AGGRESSIVE_PM then
+  begin
+   Result.Add('MMC_CAP_AGGRESSIVE_PM');
+  end;
+ if (ACapabilities and MMC_CAP_NONREMOVABLE) = MMC_CAP_NONREMOVABLE then
+  begin
+   Result.Add('MMC_CAP_NONREMOVABLE');
+  end;
+ if (ACapabilities and MMC_CAP_WAIT_WHILE_BUSY) = MMC_CAP_WAIT_WHILE_BUSY then
+  begin
+   Result.Add('MMC_CAP_WAIT_WHILE_BUSY');
+  end;
+ if (ACapabilities and MMC_CAP_3_3V_DDR) = MMC_CAP_3_3V_DDR then
+  begin
+   Result.Add('MMC_CAP_3_3V_DDR');
+  end;
+ if (ACapabilities and MMC_CAP_1_8V_DDR) = MMC_CAP_1_8V_DDR then
+  begin
+   Result.Add('MMC_CAP_1_8V_DDR');
+  end;
+ if (ACapabilities and MMC_CAP_1_2V_DDR) = MMC_CAP_1_2V_DDR then
+  begin
+   Result.Add('MMC_CAP_1_2V_DDR');
+  end;
+ if (ACapabilities and MMC_CAP_POWER_OFF_CARD) = MMC_CAP_POWER_OFF_CARD then
+  begin
+   Result.Add('MMC_CAP_POWER_OFF_CARD');
+  end;
+ if (ACapabilities and MMC_CAP_BUS_WIDTH_TEST) = MMC_CAP_BUS_WIDTH_TEST then
+  begin
+   Result.Add('MMC_CAP_BUS_WIDTH_TEST');
+  end;
+ if (ACapabilities and MMC_CAP_UHS_SDR12) = MMC_CAP_UHS_SDR12 then
+  begin
+   Result.Add('MMC_CAP_UHS_SDR12');
+  end;
+ if (ACapabilities and MMC_CAP_UHS_SDR25) = MMC_CAP_UHS_SDR25 then
+  begin
+   Result.Add('MMC_CAP_UHS_SDR25');
+  end;
+ if (ACapabilities and MMC_CAP_UHS_SDR50) = MMC_CAP_UHS_SDR50 then
+  begin
+   Result.Add('MMC_CAP_UHS_SDR50');
+  end;
+ if (ACapabilities and MMC_CAP_UHS_SDR104) = MMC_CAP_UHS_SDR104 then
+  begin
+   Result.Add('MMC_CAP_UHS_SDR104');
+  end;
+ if (ACapabilities and MMC_CAP_UHS_DDR50) = MMC_CAP_UHS_DDR50 then
+  begin
+   Result.Add('MMC_CAP_UHS_DDR50');
+  end;
+ if (ACapabilities and MMC_CAP_SYNC_RUNTIME_PM) = MMC_CAP_SYNC_RUNTIME_PM then
+  begin
+   Result.Add('MMC_CAP_SYNC_RUNTIME_PM');
+  end;
+ if (ACapabilities and MMC_CAP_NEED_RSP_BUSY) = MMC_CAP_NEED_RSP_BUSY then
+  begin
+   Result.Add('MMC_CAP_NEED_RSP_BUSY');
+  end;
+ if (ACapabilities and MMC_CAP_DRIVER_TYPE_A) = MMC_CAP_DRIVER_TYPE_A then
+  begin
+   Result.Add('MMC_CAP_DRIVER_TYPE_A');
+  end;
+ if (ACapabilities and MMC_CAP_DRIVER_TYPE_C) = MMC_CAP_DRIVER_TYPE_C then
+  begin
+   Result.Add('MMC_CAP_DRIVER_TYPE_C');
+  end;
+ if (ACapabilities and MMC_CAP_DRIVER_TYPE_D) = MMC_CAP_DRIVER_TYPE_D then
+  begin
+   Result.Add('MMC_CAP_DRIVER_TYPE_D');
+  end;
+ if (ACapabilities and MMC_CAP_DONE_COMPLETE) = MMC_CAP_DONE_COMPLETE then
+  begin
+   Result.Add('MMC_CAP_DONE_COMPLETE');
+  end;
+ if (ACapabilities and MMC_CAP_CD_WAKE) = MMC_CAP_CD_WAKE then
+  begin
+   Result.Add('MMC_CAP_CD_WAKE');
+  end;
+ if (ACapabilities and MMC_CAP_CMD_DURING_TFR) = MMC_CAP_CMD_DURING_TFR then
+  begin
+   Result.Add('MMC_CAP_CMD_DURING_TFR');
+  end;
+ if (ACapabilities and MMC_CAP_CMD23) = MMC_CAP_CMD23 then
+  begin
+   Result.Add('MMC_CAP_CMD23');
+  end;
+ if (ACapabilities and MMC_CAP_HW_RESET) = MMC_CAP_HW_RESET then
+  begin
+   Result.Add('MMC_CAP_HW_RESET');
+  end;
+ 
+ {Check Capabilities}
+ if Result.Count = 0 then
+  begin
+   Result.Add('MMC_CAP_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.SDHCIQuirksToNames(AQuirks:LongWord):TStringList;
+begin
+ Result:=TStringList.Create;
+
+ {Check Quirks}
+ if (AQuirks and SDHCI_QUIRK_CLOCK_BEFORE_RESET) = SDHCI_QUIRK_CLOCK_BEFORE_RESET then
+  begin
+   Result.Add('SDHCI_QUIRK_CLOCK_BEFORE_RESET');
+  end;
+ if (AQuirks and SDHCI_QUIRK_FORCE_DMA) = SDHCI_QUIRK_FORCE_DMA then
+  begin
+   Result.Add('SDHCI_QUIRK_FORCE_DMA');
+  end;
+ if (AQuirks and SDHCI_QUIRK_NO_CARD_NO_RESET) = SDHCI_QUIRK_NO_CARD_NO_RESET then
+  begin
+   Result.Add('SDHCI_QUIRK_NO_CARD_NO_RESET');
+  end;
+ if (AQuirks and SDHCI_QUIRK_SINGLE_POWER_WRITE) = SDHCI_QUIRK_SINGLE_POWER_WRITE then
+  begin
+   Result.Add('SDHCI_QUIRK_SINGLE_POWER_WRITE');
+  end;
+ if (AQuirks and SDHCI_QUIRK_RESET_CMD_DATA_ON_IOS) = SDHCI_QUIRK_RESET_CMD_DATA_ON_IOS then
+  begin
+   Result.Add('SDHCI_QUIRK_RESET_CMD_DATA_ON_IOS');
+  end;
+ if (AQuirks and SDHCI_QUIRK_BROKEN_DMA) = SDHCI_QUIRK_BROKEN_DMA then
+  begin
+   Result.Add('SDHCI_QUIRK_BROKEN_DMA');
+  end;
+ if (AQuirks and SDHCI_QUIRK_BROKEN_ADMA) = SDHCI_QUIRK_BROKEN_ADMA then
+  begin
+   Result.Add('SDHCI_QUIRK_BROKEN_ADMA');
+  end;
+ if (AQuirks and SDHCI_QUIRK_32BIT_DMA_ADDR) = SDHCI_QUIRK_32BIT_DMA_ADDR then
+  begin
+   Result.Add('SDHCI_QUIRK_32BIT_DMA_ADDR');
+  end;
+ if (AQuirks and SDHCI_QUIRK_32BIT_DMA_SIZE) = SDHCI_QUIRK_32BIT_DMA_SIZE then
+  begin
+   Result.Add('SDHCI_QUIRK_32BIT_DMA_SIZE');
+  end;
+ if (AQuirks and SDHCI_QUIRK_32BIT_ADMA_SIZE) = SDHCI_QUIRK_32BIT_ADMA_SIZE then
+  begin
+   Result.Add('SDHCI_QUIRK_32BIT_ADMA_SIZE');
+  end;
+ if (AQuirks and SDHCI_QUIRK_RESET_AFTER_REQUEST) = SDHCI_QUIRK_RESET_AFTER_REQUEST then
+  begin
+   Result.Add('SDHCI_QUIRK_RESET_AFTER_REQUEST');
+  end;
+ if (AQuirks and SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER) = SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER then
+  begin
+   Result.Add('SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER');
+  end;
+ if (AQuirks and SDHCI_QUIRK_BROKEN_TIMEOUT_VAL) = SDHCI_QUIRK_BROKEN_TIMEOUT_VAL then
+  begin
+   Result.Add('SDHCI_QUIRK_BROKEN_TIMEOUT_VAL');
+  end;
+ if (AQuirks and SDHCI_QUIRK_BROKEN_SMALL_PIO) = SDHCI_QUIRK_BROKEN_SMALL_PIO then
+  begin
+   Result.Add('SDHCI_QUIRK_BROKEN_SMALL_PIO');
+  end;
+ if (AQuirks and SDHCI_QUIRK_NO_BUSY_IRQ) = SDHCI_QUIRK_NO_BUSY_IRQ then
+  begin
+   Result.Add('SDHCI_QUIRK_NO_BUSY_IRQ');
+  end;
+ if (AQuirks and SDHCI_QUIRK_BROKEN_CARD_DETECTION) = SDHCI_QUIRK_BROKEN_CARD_DETECTION then
+  begin
+   Result.Add('SDHCI_QUIRK_BROKEN_CARD_DETECTION');
+  end;
+ if (AQuirks and SDHCI_QUIRK_INVERTED_WRITE_PROTECT) = SDHCI_QUIRK_INVERTED_WRITE_PROTECT then
+  begin
+   Result.Add('SDHCI_QUIRK_INVERTED_WRITE_PROTECT');
+  end;
+ if (AQuirks and SDHCI_QUIRK_PIO_NEEDS_DELAY) = SDHCI_QUIRK_PIO_NEEDS_DELAY then
+  begin
+   Result.Add('SDHCI_QUIRK_PIO_NEEDS_DELAY');
+  end;
+ if (AQuirks and SDHCI_QUIRK_FORCE_BLK_SZ_2048) = SDHCI_QUIRK_FORCE_BLK_SZ_2048 then
+  begin
+   Result.Add('SDHCI_QUIRK_FORCE_BLK_SZ_2048');
+  end;
+ if (AQuirks and SDHCI_QUIRK_NO_MULTIBLOCK) = SDHCI_QUIRK_NO_MULTIBLOCK then
+  begin
+   Result.Add('SDHCI_QUIRK_NO_MULTIBLOCK');
+  end;
+ if (AQuirks and SDHCI_QUIRK_FORCE_1_BIT_DATA) = SDHCI_QUIRK_FORCE_1_BIT_DATA then
+  begin
+   Result.Add('SDHCI_QUIRK_FORCE_1_BIT_DATA');
+  end;
+ if (AQuirks and SDHCI_QUIRK_DELAY_AFTER_POWER) = SDHCI_QUIRK_DELAY_AFTER_POWER then
+  begin
+   Result.Add('SDHCI_QUIRK_DELAY_AFTER_POWER');
+  end;
+ if (AQuirks and SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK) = SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK then
+  begin
+   Result.Add('SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK');
+  end;
+ if (AQuirks and SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN) = SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN then
+  begin
+   Result.Add('SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN');
+  end;
+ if (AQuirks and SDHCI_QUIRK_NO_ENDATTR_IN_NOPDESC) = SDHCI_QUIRK_NO_ENDATTR_IN_NOPDESC then
+  begin
+   Result.Add('SDHCI_QUIRK_NO_ENDATTR_IN_NOPDESC');
+  end;
+ if (AQuirks and SDHCI_QUIRK_MISSING_CAPS) = SDHCI_QUIRK_MISSING_CAPS then
+  begin
+   Result.Add('SDHCI_QUIRK_MISSING_CAPS');
+  end;
+ if (AQuirks and SDHCI_QUIRK_MULTIBLOCK_READ_ACMD12) = SDHCI_QUIRK_MULTIBLOCK_READ_ACMD12 then
+  begin
+   Result.Add('SDHCI_QUIRK_MULTIBLOCK_READ_ACMD12');
+  end;
+ if (AQuirks and SDHCI_QUIRK_NO_HISPD_BIT) = SDHCI_QUIRK_NO_HISPD_BIT then
+  begin
+   Result.Add('SDHCI_QUIRK_NO_HISPD_BIT');
+  end;
+ if (AQuirks and SDHCI_QUIRK_BROKEN_ADMA_ZEROLEN_DESC) = SDHCI_QUIRK_BROKEN_ADMA_ZEROLEN_DESC then
+  begin
+   Result.Add('SDHCI_QUIRK_BROKEN_ADMA_ZEROLEN_DESC');
+  end;
+ if (AQuirks and SDHCI_QUIRK_UNSTABLE_RO_DETECT) = SDHCI_QUIRK_UNSTABLE_RO_DETECT then
+  begin
+   Result.Add('SDHCI_QUIRK_UNSTABLE_RO_DETECT');
+  end;
+ 
+ {Check Quirks}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SDHCI_QUIRK_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.SDHCIQuirks2ToNames(AQuirks2:LongWord):TStringList;
+begin
+ Result:=TStringList.Create;
+
+ {Check AQuirks2}
+ if (AQuirks2 and SDHCI_QUIRK2_HOST_OFF_CARD_ON) = SDHCI_QUIRK2_HOST_OFF_CARD_ON then
+  begin
+   Result.Add('SDHCI_QUIRK2_HOST_OFF_CARD_ON');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_HOST_NO_CMD23) = SDHCI_QUIRK2_HOST_NO_CMD23 then
+  begin
+   Result.Add('SDHCI_QUIRK2_HOST_NO_CMD23');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_NO_1_8_V) = SDHCI_QUIRK2_NO_1_8_V then
+  begin
+   Result.Add('SDHCI_QUIRK2_NO_1_8_V');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_PRESET_VALUE_BROKEN) = SDHCI_QUIRK2_PRESET_VALUE_BROKEN then
+  begin
+   Result.Add('SDHCI_QUIRK2_PRESET_VALUE_BROKEN');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON) = SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON then
+  begin
+   Result.Add('SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_BROKEN_HOST_CONTROL) = SDHCI_QUIRK2_BROKEN_HOST_CONTROL then
+  begin
+   Result.Add('SDHCI_QUIRK2_BROKEN_HOST_CONTROL');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_BROKEN_HS200) = SDHCI_QUIRK2_BROKEN_HS200 then
+  begin
+   Result.Add('SDHCI_QUIRK2_BROKEN_HS200');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_BROKEN_DDR50) = SDHCI_QUIRK2_BROKEN_DDR50 then
+  begin
+   Result.Add('SDHCI_QUIRK2_BROKEN_DDR50');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_STOP_WITH_TC) = SDHCI_QUIRK2_STOP_WITH_TC then
+  begin
+   Result.Add('SDHCI_QUIRK2_STOP_WITH_TC');
+  end;
+ 
+ //To Do //Possibly more, to be resolved, see SDHCI_QUIRK2_* //TestingEMMC
+ 
+ {Check Quirks2}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SDHCI_QUIRK2_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.SDHCIInterruptsToNames(AInterrupts:LongWord):TStringList;
+begin
+ Result:=TStringList.Create;
+
+ {Check Interrupts}
+ if (AInterrupts and SDHCI_INT_RESPONSE) = SDHCI_INT_RESPONSE then
+  begin
+   Result.Add('SDHCI_INT_RESPONSE');
+  end;
+ if (AInterrupts and SDHCI_INT_DATA_END) = SDHCI_INT_DATA_END then
+  begin
+   Result.Add('SDHCI_INT_DATA_END');
+  end;
+ if (AInterrupts and SDHCI_INT_BLK_GAP) = SDHCI_INT_BLK_GAP then
+  begin
+   Result.Add('SDHCI_INT_BLK_GAP');
+  end;
+ if (AInterrupts and SDHCI_INT_DMA_END) = SDHCI_INT_DMA_END then
+  begin
+   Result.Add('SDHCI_INT_DMA_END');
+  end;
+ if (AInterrupts and SDHCI_INT_SPACE_AVAIL) = SDHCI_INT_SPACE_AVAIL then
+  begin
+   Result.Add('SDHCI_INT_SPACE_AVAIL');
+  end;
+ if (AInterrupts and SDHCI_INT_DATA_AVAIL) = SDHCI_INT_DATA_AVAIL then
+  begin
+   Result.Add('SDHCI_INT_DATA_AVAIL');
+  end;
+ if (AInterrupts and SDHCI_INT_CARD_INSERT) = SDHCI_INT_CARD_INSERT then
+  begin
+   Result.Add('SDHCI_INT_CARD_INSERT');
+  end;
+ if (AInterrupts and SDHCI_INT_CARD_REMOVE) = SDHCI_INT_CARD_REMOVE then
+  begin
+   Result.Add('SDHCI_INT_CARD_REMOVE');
+  end;
+ if (AInterrupts and SDHCI_INT_CARD_INT) = SDHCI_INT_CARD_INT then
+  begin
+   Result.Add('SDHCI_INT_CARD_INT');
+  end;
+ if (AInterrupts and SDHCI_INT_ERROR) = SDHCI_INT_ERROR then
+  begin
+   Result.Add('SDHCI_INT_ERROR');
+  end;
+ if (AInterrupts and SDHCI_INT_TIMEOUT) = SDHCI_INT_TIMEOUT then
+  begin
+   Result.Add('SDHCI_INT_TIMEOUT');
+  end;
+ if (AInterrupts and SDHCI_INT_CRC) = SDHCI_INT_CRC then
+  begin
+   Result.Add('SDHCI_INT_CRC');
+  end;
+ if (AInterrupts and SDHCI_INT_END_BIT) = SDHCI_INT_END_BIT then
+  begin
+   Result.Add('SDHCI_INT_END_BIT');
+  end;
+ if (AInterrupts and SDHCI_INT_INDEX) = SDHCI_INT_INDEX then
+  begin
+   Result.Add('SDHCI_INT_INDEX');
+  end;
+ if (AInterrupts and SDHCI_INT_DATA_TIMEOUT) = SDHCI_INT_DATA_TIMEOUT then
+  begin
+   Result.Add('SDHCI_INT_DATA_TIMEOUT');
+  end;
+ if (AInterrupts and SDHCI_INT_DATA_CRC) = SDHCI_INT_DATA_CRC then
+  begin
+   Result.Add('SDHCI_INT_DATA_CRC');
+  end;
+ if (AInterrupts and SDHCI_INT_DATA_END_BIT) = SDHCI_INT_DATA_END_BIT then
+  begin
+   Result.Add('SDHCI_INT_DATA_END_BIT');
+  end;
+ if (AInterrupts and SDHCI_INT_BUS_POWER) = SDHCI_INT_BUS_POWER then
+  begin
+   Result.Add('SDHCI_INT_BUS_POWER');
+  end;
+ if (AInterrupts and SDHCI_INT_ACMD12ERR) = SDHCI_INT_ACMD12ERR then
+  begin
+   Result.Add('SDHCI_INT_ACMD12ERR');
+  end;
+ if (AInterrupts and SDHCI_INT_ADMA_ERROR) = SDHCI_INT_ADMA_ERROR then
+  begin
+   Result.Add('SDHCI_INT_ADMA_ERROR');
+  end;
+ 
+ {Check Interrupts}
+ if Result.Count = 0 then
+  begin
+   Result.Add('SDHCI_INT_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.SDHCIVoltagesToNames(AVoltages:LongWord):TStringList;
+begin
+ {}
+ Result:=MMCVoltagesToNames(AVoltages);
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.SDHCICapabilitiesToNames(ACapabilities:LongWord):TStringList;
+begin
+ {}
+ Result:=MMCCapabilitiesToNames(ACapabilities);
+end;
+
+{==============================================================================}
+
+function TWebStatusMMC.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Id:LongWord;
+ Action:String;
+ Count:LongWord;
+ WorkBuffer:String;
+ Data:TWebStatusData;
+ Names:TStringList;
+ FlagNames:TStringList;
+ 
+ MMCDevice:PMMCDevice;
+ SDHCIHost:PSDHCIHost;
+ SDIODevice:PSDIODevice;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
+
+ {Get Id}
+ WorkBuffer:=Uppercase(ARequest.GetParam('ID'));
+
+ if (Action = 'MMCDEVICE') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'MMC Device Information',Self,2);
+
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
+   
+   {Get MMC Device}
+   MMCDevice:=MMCDeviceFind(Id);
+   if MMCDevice <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=MMCFlagsToFlagNames(MMCDevice.Device.DeviceFlags);
+     
+     AddBold(AResponse,'Device','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@MMCDevice.Device));
+     AddItem(AResponse,'Type:',MMCDeviceTypeToString(MMCDevice.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(MMCDevice.MMCId));
+     AddItem(AResponse,'State:',MMCDeviceStateToString(MMCDevice.MMCState));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Version:',MMCVersionToString(MMCDevice.Version));
+     AddItem(AResponse,'Clock:',IntToStr(MMCDevice.Clock));
+     AddItem(AResponse,'Timing:',MMCTimingToString(MMCDevice.Timing));
+     WorkBuffer:=MMCBusWidthToString(MMCDevice.BusWidth);
+     if MMCIsSD(MMCDevice) then WorkBuffer:=SDBusWidthToString(MMCDevice.BusWidth);
+     AddItem(AResponse,'Bus Width:',WorkBuffer);
+     
+     {Get Voltage Names}
+     Names:=MMCVoltagesToNames(MMCDevice.Voltages);
+     AddItem(AResponse,'Voltages:',Names.Strings[0]);
+     {Check Voltage Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Voltage Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+     
+     {Get Capability Names}
+     Names:=MMCCapabilitiesToNames(MMCDevice.Capabilities);
+     AddItem(AResponse,'Capabilities:',Names.Strings[0]);
+     {Check Capability Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Capability Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+
+     AddBlank(AResponse);
+
+     case MMCDevice.Device.DeviceType of
+      MMC_TYPE_SDIO,MMC_TYPE_SD_COMBO:begin
+        SDIODevice:=PSDIODevice(MMCDevice);
+        AddItem(AResponse,'State:',SDIODeviceStateToString(SDIODevice.SDIOState));
+        AddItem(AResponse,'Status:',SDIODeviceStatusToString(SDIODevice.SDIOStatus));
+        //To Do //TestingSDIO
+        AddBlank(AResponse);
+        
+        WorkBuffer:='';
+        if SDIODevice.Host <> nil then WorkBuffer:=DeviceGetName(@SDIODevice.Host);
+        AddItem(AResponse,'Host:',WorkBuffer);
+
+        WorkBuffer:='';
+        if SDIODevice.Driver <> nil then WorkBuffer:=DriverGetName(@SDIODevice.Driver.Driver);
+        AddItem(AResponse,'Driver:',WorkBuffer);
+        AddBlank(AResponse);
+       end;
+     end;  
+     
+     WorkBuffer:='';
+     if MMCDevice.Storage <> nil then WorkBuffer:=DeviceGetName(@MMCDevice.Storage.Device);
+     AddItem(AResponse,'Storage:',WorkBuffer);
+     
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+ 
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else if (Action = 'SDHCIHOST') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'SDHCI Host Information',Self,2);
+  
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
+ 
+   {Get SDHCI Host}
+   SDHCIHost:=SDHCIHostFind(Id);
+   if SDHCIHost <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=SDHCIFlagsToFlagNames(SDHCIHost.Device.DeviceFlags);
+     
+     AddBold(AResponse,'Host','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@SDHCIHost.Device));
+     AddItem(AResponse,'Type:',SDHCIHostTypeToString(SDHCIHost.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(SDHCIHost.SDHCIId));
+     AddItem(AResponse,'State:',SDHCIHostStateToString(SDHCIHost.SDHCIState));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Address:','0x' + PtrToHex(SDHCIHost.Address));
+     AddItem(AResponse,'Version:',SDHCIVersionToString(SDHCIGetVersion(SDHCIHost)));
+     
+     {Get Quirk Names}
+     Names:=SDHCIQuirksToNames(SDHCIHost.Quirks);
+     AddItem(AResponse,'Quirks:',Names.Strings[0]);
+     {Check Quirk Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Quirk Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+     
+     {Get Quirk2 Names}
+     Names:=SDHCIQuirks2ToNames(SDHCIHost.Quirks2);
+     AddItem(AResponse,'Quirks 2:',Names.Strings[0]);
+     {Check Quirk2 Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Quirk2 Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+
+     AddItem(AResponse,'Clock:',IntToStr(SDHCIHost.Clock));
+     AddItem(AResponse,'Bus Width:',MMCBusWidthToString(SDHCIHost.BusWidth));
+     
+     {Get Interrupt Names}
+     Names:=SDHCIInterruptsToNames(SDHCIHost.Interrupts);
+     AddItem(AResponse,'Interrupts:',Names.Strings[0]);
+     {Check Interrupt Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Interrupt Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+     
+     {Get Voltage Names}
+     Names:=SDHCIVoltagesToNames(SDHCIHost.Voltages);
+     AddItem(AResponse,'Voltages:',Names.Strings[0]);
+     {Check Voltage Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Voltage Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+     
+     {Get Capability Names}
+     Names:=SDHCICapabilitiesToNames(SDHCIHost.Capabilities);
+     AddItem(AResponse,'Capabilities:',Names.Strings[0]);
+     {Check Capability Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Capability Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+     
+     AddItem(AResponse,'Minimum Frequency:',IntToStr(SDHCIHost.MinimumFrequency));
+     AddItem(AResponse,'Maximum Frequency:',IntToStr(SDHCIHost.MaximumFrequency));
+     AddItem(AResponse,'Maximum Block Count:',IntToStr(SDHCIHost.MaximumBlockCount));
+     AddBlank(AResponse);
+     
+     {Get Preset Voltage Names}
+     Names:=MMCVoltagesToNames(SDHCIHost.PresetVoltages);
+     AddItem(AResponse,'Preset Voltages:',Names.Strings[0]);
+     {Check Preset Voltage Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Preset Voltage Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+     
+     {Get Preset Capability Names}
+     Names:=MMCCapabilitiesToNames(SDHCIHost.PresetCapabilities);
+     AddItem(AResponse,'Preset Capabilities:',Names.Strings[0]);
+     {Check Preset Capability Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Preset Capability Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+     
+     AddItem(AResponse,'Clock Minimum:',IntToStr(SDHCIHost.ClockMinimum));
+     AddItem(AResponse,'Clock Maximum:',IntToStr(SDHCIHost.ClockMaximum));
+     AddItem(AResponse,'Driver Stage Register:',IntToStr(SDHCIHost.DriverStageRegister));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Interrupt Count:',IntToStr(SDHCIHost.InterruptCount));
+
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+ 
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else
+  begin 
+   {Add Header (4 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+  
+   {Add MMC List} 
+   AddBold4Column(AResponse,'Devices','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'MMC Id','Name','State','Type');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate MMCs}
+   MMCDeviceEnumerate(WebStatusMMCEnumerate,@Data);
+  
+   {Add SDHCI List} 
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Hosts','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'SDHCI Id','Name','State','Type');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate SDHCIs}
+   SDHCIHostEnumerate(WebStatusSDHCIEnumerate,@Data);
+   
+   {Add SDIO Driver List} 
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'SDIO Drivers','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Driver Id','Name','State','');
+   AddBlankEx(AResponse,4);
+     
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+     
+   {Enumerate SDIO Drivers}
+   SDIODriverEnumerate(WebStatusSDIODriverEnumerate,@Data);
+   
+   {Add Footer (4 column)}
+   AddFooterEx(AResponse,4); 
+  end; 
  
  {Return Result}
  Result:=True;
@@ -9928,6 +11678,10 @@ begin
  WebStatusUSB:=TWebStatusUSB.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusUSB);
 
+ {Register PCI Page}
+ WebStatusPCI:=TWebStatusPCI.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusPCI);
+
  {Register MMC Page}
  WebStatusMMC:=TWebStatusMMC.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusMMC);
@@ -10099,6 +11853,10 @@ begin
  {Deregister USB Page}
  AListener.DeregisterDocument(AHost,WebStatusUSB);
  WebStatusUSB.Free;
+
+ {Deregister PCI Page}
+ AListener.DeregisterDocument(AHost,WebStatusPCI);
+ WebStatusPCI.Free;
 
  {Deregister Drivers Page}
  AListener.DeregisterDocument(AHost,WebStatusDrivers);
@@ -10458,6 +12216,96 @@ end;
 
 {==============================================================================}
 
+function WebStatusPCIDeviceEnumerate(Device:PPCIDevice;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Add Device}
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Device.PCIId),Document.Name + '?action=pcidevice&id=' + IntToStr(Device.PCIId)),DeviceGetName(@Device.Device),'',PCIDeviceStatusToString(Device.PCIStatus));
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function WebStatusPCIHostEnumerate(Host:PPCIHost;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Host}
+ if Host = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Add Host}
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Host.HostId),Document.Name + '?action=pcihost&id=' + IntToStr(Host.HostId)),DeviceGetName(@Host.Device),PCIHostStateToString(Host.HostState),PCIHostTypeToString(Host.Device.DeviceType));
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function WebStatusPCIDriverEnumerate(Driver:PPCIDriver;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Driver}
+ if Driver = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Add Driver}
+ Document.AddItem4Column(Response,IntToStr(Driver.Driver.DriverId),DriverGetName(@Driver.Driver),DriverStateToString(Driver.Driver.DriverState),'');
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
 function WebStatusMMCEnumerate(MMC:PMMCDevice;Data:Pointer):LongWord;
 var
  Document:TWebStatusSub;
@@ -10481,7 +12329,7 @@ begin
  if Response = nil then Exit;
  
  {Add MMC}
- Document.AddItem4Column(Response,IntToStr(MMC.MMCId),DeviceGetName(@MMC.Device),MMCDeviceStateToString(MMC.MMCState),MMCDeviceTypeToString(MMC.Device.DeviceType));
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(MMC.MMCId),Document.Name + '?action=mmcdevice&id=' + IntToStr(MMC.MMCId)),DeviceGetName(@MMC.Device),MMCDeviceStateToString(MMC.MMCState),MMCDeviceTypeToString(MMC.Device.DeviceType));
  
  Result:=ERROR_SUCCESS;
 end;
@@ -10511,7 +12359,37 @@ begin
  if Response = nil then Exit;
  
  {Add SDHCI}
- Document.AddItem4Column(Response,IntToStr(SDHCI.SDHCIId),DeviceGetName(@SDHCI.Device),SDHCIDeviceStateToString(SDHCI.SDHCIState),SDHCIDeviceTypeToString(SDHCI.Device.DeviceType));
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(SDHCI.SDHCIId),Document.Name + '?action=sdhcihost&id=' + IntToStr(SDHCI.SDHCIId)),DeviceGetName(@SDHCI.Device),SDHCIDeviceStateToString(SDHCI.SDHCIState),SDHCIDeviceTypeToString(SDHCI.Device.DeviceType));
+  
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function WebStatusSDIODriverEnumerate(Driver:PSDIODriver;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Driver}
+ if Driver = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Add Driver}
+ Document.AddItem4Column(Response,IntToStr(Driver.Driver.DriverId),DriverGetName(@Driver.Driver),DriverStateToString(Driver.Driver.DriverState),'');
  
  Result:=ERROR_SUCCESS;
 end;

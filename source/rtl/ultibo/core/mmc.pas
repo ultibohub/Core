@@ -202,6 +202,7 @@ const
  MMC_FLAG_AUTO_BLOCK_COUNT  = $00000080;  {Auto CMD23 (Set Block Count)}
  MMC_FLAG_AUTO_COMMAND_STOP = $00000100;  {Auto CMD12 (Stop Transmission)}
  MMC_FLAG_DDR_MODE          = $00000200;  //To Do //Should this go in MMC.Capabilities ? //Maybe not
+ MMC_FLAG_NON_REMOVABLE     = $00000400;  {Device is non removable, only check for presence once}
  //To Do //More
 
  {MMC/SD Status Codes} 
@@ -238,21 +239,41 @@ const
  MMC_VERSION_5_0     = (MMC_VERSION_MMC or $0500);
  MMC_VERSION_UNKNOWN = (MMC_VERSION_MMC);
  
- {MMC/SD Modes} //To Do //These are really the capabilities flags for MMC/SDHCI.Capabilities/PresetCapabilities  MMC_CAP_
- MMC_MODE_HS		= (1 shl 0);
- MMC_MODE_HS_52MHz	= (1 shl 1);
- MMC_MODE_4BIT		= (1 shl 2);
- MMC_MODE_8BIT		= (1 shl 3);
- MMC_MODE_SPI		= (1 shl 4);
- MMC_MODE_HC		= (1 shl 5);
- MMC_MODE_DDR_52MHz	= (1 shl 6);
- //To Do //More
- 
  {MMC/SD Capabilities (From: /include/linux/mmc/host.h)}
- //To Do //More
- MMC_CAP_CMD23		= (1 shl 30);	{CMD23 supported}
+ MMC_CAP_4_BIT_DATA      = (1 shl 0); {Can the host do 4 bit transfers}
+ MMC_CAP_MMC_HIGHSPEED   = (1 shl 1); {Can do MMC high-speed timing}
+ MMC_CAP_SD_HIGHSPEED    = (1 shl 2); {Can do SD high-speed timing}
+ MMC_CAP_SDIO_IRQ        = (1 shl 3); {Can signal pending SDIO IRQs}
+ MMC_CAP_SPI             = (1 shl 4); {Talks only SPI protocols}
+ MMC_CAP_NEEDS_POLL      = (1 shl 5); {Needs polling for card-detection}
+ MMC_CAP_8_BIT_DATA      = (1 shl 6); {Can the host do 8 bit transfers}
+ MMC_CAP_AGGRESSIVE_PM   = (1 shl 7); {Suspend = (e)MMC/SD at idle}
+ MMC_CAP_NONREMOVABLE    = (1 shl 8); {Nonremovable eg. eMMC}
+ MMC_CAP_WAIT_WHILE_BUSY = (1 shl 9); {Waits while card is busy}
+ MMC_CAP_3_3V_DDR        = (1 shl 11); {Host supports eMMC DDR 3.3V}
+ MMC_CAP_1_8V_DDR        = (1 shl 12); {Host supports eMMC DDR 1.8V}
+ MMC_CAP_1_2V_DDR        = (1 shl 13); {Host supports eMMC DDR 1.2V}
+ MMC_CAP_DDR             = (MMC_CAP_3_3V_DDR or MMC_CAP_1_8V_DDR or MMC_CAP_1_2V_DDR);
+ MMC_CAP_POWER_OFF_CARD  = (1 shl 14); {Can power off after boot}
+ MMC_CAP_BUS_WIDTH_TEST  = (1 shl 15); {CMD14/CMD19 bus width ok}
+ MMC_CAP_UHS_SDR12       = (1 shl 16); {Host supports UHS SDR12 mode}
+ MMC_CAP_UHS_SDR25       = (1 shl 17); {Host supports UHS SDR25 mode}
+ MMC_CAP_UHS_SDR50       = (1 shl 18); {Host supports UHS SDR50 mode}
+ MMC_CAP_UHS_SDR104      = (1 shl 19); {Host supports UHS SDR104 mode}
+ MMC_CAP_UHS_DDR50       = (1 shl 20); {Host supports UHS DDR50 mode}
+ MMC_CAP_UHS             = (MMC_CAP_UHS_SDR12 or MMC_CAP_UHS_SDR25 or MMC_CAP_UHS_SDR50 or MMC_CAP_UHS_SDR104 or MMC_CAP_UHS_DDR50);
+ MMC_CAP_SYNC_RUNTIME_PM = (1 shl 21); {Synced runtime PM suspends}
+ MMC_CAP_NEED_RSP_BUSY   = (1 shl 22); {Commands with R1B can't use R1}
+ MMC_CAP_DRIVER_TYPE_A   = (1 shl 23); {Host supports Driver Type A}
+ MMC_CAP_DRIVER_TYPE_C   = (1 shl 24); {Host supports Driver Type C}
+ MMC_CAP_DRIVER_TYPE_D   = (1 shl 25); {Host supports Driver Type D}
+ MMC_CAP_DONE_COMPLETE   = (1 shl 27); {RW reqs can be completed within mmc_request_done()}
+ MMC_CAP_CD_WAKE         = (1 shl 28); {Enable card detect wake}
+ MMC_CAP_CMD_DURING_TFR  = (1 shl 29); {Commands during data transfer}
+ MMC_CAP_CMD23           = (1 shl 30); {CMD23 supported}
+ MMC_CAP_HW_RESET        = (1 shl 31); {Reset the eMMC card via RST_n}
  
- {MMC/SD Directions} //To Do //??
+ {MMC/SD Directions}
  MMC_DATA_READ		= 1;
  MMC_DATA_WRITE		= 2;  
  
@@ -1100,6 +1121,31 @@ const
 {==============================================================================}
 const
  {SDIO specific constants}
+ {SDIO Device States}
+ SDIO_STATE_DETACHED  = 0;
+ SDIO_STATE_DETACHING = 1;
+ SDIO_STATE_ATTACHING = 2;
+ SDIO_STATE_ATTACHED  = 3;
+
+ SDIO_STATE_MAX       = 3;
+ 
+ {SDIO Device State Names}
+ SDIO_STATE_NAMES:array[SDIO_STATE_DETACHED..SDIO_STATE_MAX] of String = (
+  'SDIO_STATE_DETACHED',
+  'SDIO_STATE_DETACHING',
+  'SDIO_STATE_ATTACHING',
+  'SDIO_STATE_ATTACHED');
+ 
+ {SDIO Device Status}
+ SDIO_STATUS_UNBOUND   = 0; 
+ SDIO_STATUS_BOUND     = 1;
+ 
+ SDIO_STATUS_MAX       = 1;
+ 
+ {SDIO Device Status Names}
+ SDIO_STATUS_NAMES:array[SDIO_STATUS_UNBOUND..SDIO_STATUS_MAX] of String = (
+  'SDIO_STATUS_UNBOUND',
+  'SDIO_STATUS_BOUND');
  
  {SDIO Commands (From: /include/linux/mmc/sdio.h)}
  SDIO_CMD_SEND_OP_COND       =   5;
@@ -1294,14 +1340,15 @@ const
  
  {SDHCI Host Flags}
  SDHCI_FLAG_NONE          = $00000000;
- SDHCI_FLAG_SDMA          = $00000001;
- SDHCI_FLAG_ADMA          = $00000002;
- SDHCI_FLAG_SPI           = $00000004;
+ SDHCI_FLAG_SDMA          = $00000001; {Host Controller supports SDMA specification}
+ SDHCI_FLAG_ADMA          = $00000002; {Host Controller supports ADMA specification}
+ SDHCI_FLAG_SPI           = $00000004; {Host Controller uses SPI interface}
  SDHCI_FLAG_CRC_ENABLE    = $00000008;
  SDHCI_FLAG_NON_STANDARD  = $00000010; {Host Controller uses a non standard interface (not supporting SDHCI register layout)}
  SDHCI_FLAG_AUTO_CMD12    = $00000020; {Host Controller supports Auto CMD12 (Stop Transmission)}
  SDHCI_FLAG_AUTO_CMD23    = $00000040; {Host Controller supports Auto CMD23 (Set Block Count)}
- //To Do //More //DMA shared, DMA align etc
+ SDHCI_FLAG_64_BIT_DMA    = $00000080; {Host Controller supports 64-bit ADMA}
+ SDHCI_FLAG_EXTERNAL_DMA  = $00000100; {Host Controller requires external DMA engine to perform transfers}
  
  {SDHCI Controller Registers}
  SDHCI_DMA_ADDRESS	     = $00;
@@ -1457,6 +1504,7 @@ const
  SDHCI_CAN_VDD_330	         = $01000000;
  SDHCI_CAN_VDD_300	         = $02000000;
  SDHCI_CAN_VDD_180	         = $04000000;
+ SDHCI_CAN_64BIT_V4          = $08000000;
  SDHCI_CAN_64BIT	         = $10000000;
  
  {SDHCI Host Version Values}
@@ -1467,9 +1515,10 @@ const
  SDHCI_SPEC_100	        = 0;
  SDHCI_SPEC_200	        = 1;
  SDHCI_SPEC_300	        = 2;
+ SDHCI_SPEC_400	        = 3;
+ SDHCI_SPEC_410	        = 4;
+ SDHCI_SPEC_420	        = 5;
 
- //SDHCI_GET_VERSION(x) (x->version and SDHCI_SPEC_VER_MASK);
- 
  {SDHCI Clock Dividers}
  SDHCI_MAX_CLOCK_DIV_SPEC_200	 = 256;
  SDHCI_MAX_CLOCK_DIV_SPEC_300	 = 2046;
@@ -1478,7 +1527,7 @@ const
  {From Linux /include/linux/mmc/sdhci.h}
  SDHCI_QUIRK_CLOCK_BEFORE_RESET			= (1 shl 0); {Controller doesn't honor resets unless we touch the clock register}
  SDHCI_QUIRK_FORCE_DMA				    = (1 shl 1); {Controller has bad caps bits, but really supports DMA}
- SDHCI_QUIRK_NO_CARD_NO_RESET			= (1 shl 2); {Controller doesn't like to be reset when there is no card inserted.}
+ SDHCI_QUIRK_NO_CARD_NO_RESET			= (1 shl 2); {Controller doesn't like to be reset when there is no card inserted}
  SDHCI_QUIRK_SINGLE_POWER_WRITE			= (1 shl 3); {Controller doesn't like clearing the power reg before a change}
  SDHCI_QUIRK_RESET_CMD_DATA_ON_IOS		= (1 shl 4); {Controller has flaky internal state so reset it on each ios change}
  SDHCI_QUIRK_BROKEN_DMA				    = (1 shl 5); {Controller has an unusable DMA engine}
@@ -1509,25 +1558,30 @@ const
  
  {SDHCI More Quirks/Bugs} 
  {From Linux /include/linux/mmc/sdhci.h}
- SDHCI_QUIRK2_HOST_OFF_CARD_ON			= (1 shl 0);
- SDHCI_QUIRK2_HOST_NO_CMD23			    = (1 shl 1);
- SDHCI_QUIRK2_NO_1_8_V				    = (1 shl 2); {The system physically doesn't support 1.8v, even if the host does}
- SDHCI_QUIRK2_PRESET_VALUE_BROKEN		= (1 shl 3);
- SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON		= (1 shl 4);
- SDHCI_QUIRK2_BROKEN_HOST_CONTROL		= (1 shl 5); {Controller has a non-standard host control register}
- SDHCI_QUIRK2_BROKEN_HS200			    = (1 shl 6); {Controller does not support HS200}
- SDHCI_QUIRK2_BROKEN_DDR50			    = (1 shl 7); {Controller does not support DDR50}
- SDHCI_QUIRK2_STOP_WITH_TC			    = (1 shl 8); {Stop command(CMD12) can set Transfer Complete when not using MMC_RSP_BUSY}
- 
- {Additions from U-Boot}
- SDHCI_QUIRK2_REG32_RW                  = (1 shl 28); {Controller requires all register reads and writes as 32bit}
- SDHCI_QUIRK2_BROKEN_R1B                = (1 shl 29); {Response type R1B is broken}                               
- SDHCI_QUIRK2_WAIT_SEND_CMD             = (1 shl 30); {Controller requires a delay between each command write}    
- SDHCI_QUIRK2_USE_WIDE8                 = (1 shl 31); {????????}
+ SDHCI_QUIRK2_HOST_OFF_CARD_ON                  = (1 shl 0);
+ SDHCI_QUIRK2_HOST_NO_CMD23                     = (1 shl 1);
+ SDHCI_QUIRK2_NO_1_8_V                          = (1 shl 2); {The system physically doesn't support 1.8v, even if the host does}
+ SDHCI_QUIRK2_PRESET_VALUE_BROKEN               = (1 shl 3);
+ SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON              = (1 shl 4);
+ SDHCI_QUIRK2_BROKEN_HOST_CONTROL               = (1 shl 5); {Controller has a non-standard host control register}
+ SDHCI_QUIRK2_BROKEN_HS200                      = (1 shl 6); {Controller does not support HS200}
+ SDHCI_QUIRK2_BROKEN_DDR50                      = (1 shl 7); {Controller does not support DDR50}
+ SDHCI_QUIRK2_STOP_WITH_TC                      = (1 shl 8); {Stop command(CMD12) can set Transfer Complete when not using MMC_RSP_BUSY}
+ SDHCI_QUIRK2_BROKEN_64_BIT_DMA                 = (1 shl 9); {Controller does not support 64-bit DMA}
+ SDHCI_QUIRK2_CLEAR_TRANSFERMODE_REG_BEFORE_CMD = (1 shl 10); {Need clear transfer mode register before send cmd}
+ SDHCI_QUIRK2_CAPS_BIT63_FOR_HS400              = (1 shl 11); {Capability register bit-63 indicates HS400 support}
+ SDHCI_QUIRK2_TUNING_WORK_AROUND                = (1 shl 12); {Forced tuned clock}
+ SDHCI_QUIRK2_SUPPORT_SINGLE                    = (1 shl 13); {Disable the block count for single block transactions}
+ SDHCI_QUIRK2_ACMD23_BROKEN                     = (1 shl 14); {Controller broken with using ACMD23}
+ SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN             = (1 shl 15); {Broken Clock divider zero in controller}
+ SDHCI_QUIRK2_RSP_136_HAS_CRC                   = (1 shl 16); {Controller has CRC in 136 bit Command Response}
+ SDHCI_QUIRK2_DISABLE_HW_TIMEOUT                = (1 shl 17); {Disable HW timeout if the requested timeout is more than the maximum obtainable timeout}
+ SDHCI_QUIRK2_USE_32BIT_BLK_CNT                 = (1 shl 18); {32-bit block count may not support eMMC where upper bits of CMD23 are used for other purposes} 
+                                                              {Support 16-bit block count by default otherwise, SDHCI_QUIRK2_USE_32BIT_BLK_CNT can be selected to use 32-bit block count}
  
  {SDHCI Host SDMA buffer boundary (Valid values from 4K to 512K in powers of 2)}
  SDHCI_DEFAULT_BOUNDARY_SIZE  = (512 * 1024);
- SDHCI_DEFAULT_BOUNDARY_ARG	  = (7);
+ SDHCI_DEFAULT_BOUNDARY_ARG   = (7);
 
  {SDHCI Timeout Value}
  SDHCI_TIMEOUT_VALUE  = $0E;
@@ -1907,8 +1961,58 @@ type
  {SD specific types}
  
 {==============================================================================}
-{type}
+type
  {SDIO specific types}
+ PSDIODriver = ^TSDIODriver;               {Forward declared to satisfy SDIODevice}
+ PSDIODevice = ^TSDIODevice;
+ 
+ {SDIO Device Bind Callback}
+ TSDIODeviceBind = function(Device:PSDIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ {SDIO Device Unbind Callback}
+ TSDIODeviceUnbind = function(Device:PSDIODevice;Driver:PSDIODriver):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ {SDIO Device Enumeration Callback}
+ TSDIODeviceEnumerate = function(Device:PSDIODevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ {SDIO Device Notification Callback}
+ TSDIODeviceNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+
+ {SDIO Device Methods}
+  {None}
+ 
+ TSDIODevice = record 
+  {MMC Properties}
+  MMC:TMMCDevice;                            {The MMC device entry for this SDIO device}
+  {SDIO Properties}                           
+  SDIOState:LongWord;                        {SDIO device state (eg SDIO_STATE_ATTACHED)}
+  SDIOStatus:LongWord;                       {SDIO device status (eg SDIO_STATUS_BOUND)}
+  //To Do
+  Host:PDevice;                              {Host controller this SDIO device is connected to}
+  Driver:PSDIODriver;                        {Driver this SDIO device is bound to, if any} 
+  {Driver Properties}                        
+  //To Do
+ end;
+ 
+ {SDIO Driver}
+ {PSDIODriver = ^TSDIODriver;} {Declared above for SDIODevice}
+ 
+ {SDIO Driver Enumeration Callback}
+ TSDIODriverEnumerate = function(Driver:PSDIODriver;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ 
+ {SDIO Driver Methods}
+ TSDIODriverBind = function(Device:PSDIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDIODriverUnbind = function(Device:PSDIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ 
+ TSDIODriver = record
+  {Driver Properties}
+  Driver:TDriver;                 {The Driver entry for this SDIO Driver}
+  {SDIO Properties}
+  DriverBind:TSDIODriverBind;     {A Driver specific DriverBind method implementing the standard SDIO driver interface}
+  DriverUnbind:TSDIODriverUnbind; {A Driver specific DriverUnbind method implementing the standard SDIO driver interface}
+  {Interface Properties}
+  Lock:TMutexHandle;              {Driver lock}
+  {Internal Properties}                                                                        
+  Prev:PSDIODriver;               {Previous entry in Driver table}
+  Next:PSDIODriver;               {Next entry in Driver table}
+ end;
  
 {==============================================================================}
 type
@@ -1930,6 +2034,10 @@ type
  TSDHCIHostWriteByte = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte);{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostWriteWord = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word);{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostWriteLong = procedure(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord);{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostReset = function(SDHCI:PSDHCIHost;Mask:Byte):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostHardwareReset = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSetPower = function(SDHCI:PSDHCIHost;Power:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSetClock = function(SDHCI:PSDHCIHost;Clock:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetClockDivider = function(SDHCI:PSDHCIHost;Index:Integer;Divider:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetControlRegister = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
@@ -1947,6 +2055,10 @@ type
   HostWriteByte:TSDHCIHostWriteByte;   {A Host specific HostWriteByte method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostWriteWord:TSDHCIHostWriteWord;   {A Host specific HostWriteWord method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostWriteLong:TSDHCIHostWriteLong;   {A Host specific HostWriteLong method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostReset:TSDHCIHostReset;                       {A Host specific HostReset method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostHardwareReset:TSDHCIHostHardwareReset;       {A Host specific HostHardwareReset method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostSetPower:TSDHCIHostSetPower;                 {A Host specific HostSetPower method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostSetClock:TSDHCIHostSetClock;                 {A Host specific HostSetClock method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostSetClockDivider:TSDHCIHostSetClockDivider;
   HostSetControlRegister:TSDHCIHostSetControlRegister;
   DeviceInitialize:TMMCDeviceInitialize;           {A Device specific DeviceInitialize method implementing a standard MMC device interface (Or nil if the default method is suitable)}
@@ -2134,6 +2246,7 @@ function SDDeviceSendApplicationCommand(MMC:PMMCDevice;Command:PMMCCommand):Long
 
 {==============================================================================}
 {SDIO Functions}
+//Device Methods
 function SDIODeviceReset(MMC:PMMCDevice):LongWord;
 
 function SDIODeviceSendOperationCondition(MMC:PMMCDevice;Probe:Boolean):LongWord; 
@@ -2141,9 +2254,23 @@ function SDIODeviceSendOperationCondition(MMC:PMMCDevice;Probe:Boolean):LongWord
 function SDIODeviceReadWriteDirect(MMC:PMMCDevice;Write:Boolean;Operation,Address:LongWord;Input:Byte;Output:PByte):LongWord; 
 function SDIODeviceReadWriteExtended(MMC:PMMCDevice;Write:Boolean;Operation,Address:LongWord;Increment:Boolean;Buffer:Pointer;BlockCount,BlockSize:LongWord):LongWord; 
 
+//Driver Methods
+function SDIODriverCreate:PSDIODriver;
+function SDIODriverCreateEx(Size:LongWord):PSDIODriver;
+function SDIODriverDestroy(Driver:PSDIODriver):LongWord;
+
+function SDIODriverRegister(Driver:PSDIODriver):LongWord;
+function SDIODriverDeregister(Driver:PSDIODriver):LongWord;
+
+function SDIODriverFind(DriverId:LongWord):PSDIODriver;
+function SDIODriverFindByName(const Name:String):PSDIODriver; inline;
+function SDIODriverEnumerate(Callback:TSDIODriverEnumerate;Data:Pointer):LongWord;
+
 {==============================================================================}
 {SDHCI Functions}
 function SDHCIHostReset(SDHCI:PSDHCIHost;Mask:Byte):LongWord;
+function SDHCIHostHardwareReset(SDHCI:PSDHCIHost):LongWord;
+
 function SDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 function SDHCIHostSetClock(SDHCI:PSDHCIHost;Clock:LongWord):LongWord;
 
@@ -2200,8 +2327,14 @@ function MMCIsMultiCommand(Command:Word):Boolean;
 
 function MMCStatusToString(Status:LongWord):String;
 
+function MMCVersionToString(Version:LongWord):String;
+function MMCTimingToString(Timing:LongWord):String;
+function MMCBusWidthToString(BusWidth:LongWord):String;
+
 function MMCDeviceTypeToString(MMCType:LongWord):String;
 function MMCDeviceStateToString(MMCState:LongWord):String;
+
+function MMCDeviceStateToNotification(State:LongWord):LongWord;
 
 procedure MMCLog(Level:LongWord;MMC:PMMCDevice;const AText:String);
 procedure MMCLogInfo(MMC:PMMCDevice;const AText:String); inline;
@@ -2219,8 +2352,20 @@ function SDGetSCRValue(MMC:PMMCDevice;Value:LongWord):LongWord;
 function SDGetSSRValue(MMC:PMMCDevice;Value:LongWord):LongWord;
 function SDGetSwitchValue(MMC:PMMCDevice;Value:LongWord):LongWord;
 
+function SDVersionToString(Version:LongWord):String;
+function SDBusWidthToString(BusWidth:LongWord):String;
+
 {==============================================================================}
 {SDIO Helper Functions}
+function SDIODriverGetCount:LongWord; inline;
+
+function SDIODriverCheck(Driver:PSDIODriver):PSDIODriver;
+
+function SDIODeviceStateToString(SDIOState:LongWord):String;
+function SDIODeviceStatusToString(SDIOStatus:LongWord):String;
+
+function SDIODeviceStateToNotification(State:LongWord):LongWord;
+function SDIODeviceStatusToNotification(Status:LongWord):LongWord;
 
 {==============================================================================}
 {SDHCI Helper Functions}
@@ -2236,8 +2381,14 @@ function SDHCIGetCommand(Command:Word):Word;
 function SDHCIMakeCommand(Command,Flags:Word):Word;
 function SDHCIMakeBlockSize(DMA,BlockSize:Word):Word;
 
-function SDHCIDeviceTypeToString(SDHCIType:LongWord):String;
-function SDHCIDeviceStateToString(SDHCIState:LongWord):String;
+function SDHCIVersionToString(Version:LongWord):String;
+
+function SDHCIDeviceTypeToString(SDHCIType:LongWord):String; inline;
+function SDHCIHostTypeToString(SDHCIType:LongWord):String;
+function SDHCIDeviceStateToString(SDHCIState:LongWord):String; inline;
+function SDHCIHostStateToString(SDHCIState:LongWord):String;
+
+function SDHCIHostStateToNotification(State:LongWord):LongWord;
 
 {==============================================================================}
 {MMC Storage Functions}
@@ -2269,8 +2420,11 @@ var
  
 {==============================================================================}
 {==============================================================================}
-{var}
+var
  {SDIO specific variables}
+ SDIODriverTable:PSDIODriver;
+ SDIODriverTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
+ SDIODriverTableCount:LongWord;
  
 {==============================================================================}
 {==============================================================================}
@@ -2284,6 +2438,8 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure MMCInit;
+{Performs basic initialization of the MMC/SD core, after this devices, hosts
+ and drivers can be registered however nothing will work until MMCStart is called}
 begin
  {}
  {Check Initialized}
@@ -2299,6 +2455,15 @@ begin
  if MMCDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'Failed to create MMC device table lock');
+  end;
+ 
+ {Initialize SDIO Driver Table}
+ SDIODriverTable:=nil;
+ SDIODriverTableLock:=CriticalSectionCreate; 
+ SDIODriverTableCount:=0;
+ if SDIODriverTableLock = INVALID_HANDLE_VALUE then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'Failed to create SDIO driver table lock');
   end;
  
  {Initialize SDHCI Host Table}
@@ -2557,9 +2722,15 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Erase Blocks (Start=' + IntToStr(Start) + ' Count=' + IntToStr(Count) + ')');
  {$ENDIF}
  
+ {Setup Command}
+ FillChar(Command,SizeOf(TMMCCommand),0);
  //To Do
- 
+
  //To Do //See also: \linux-rpi-3.18.y\drivers\mmc\card\block.c
+
+ {Setup Data}
+ FillChar(Data,SizeOf(TMMCData),0);
+ //To Do
  
  //See: mmc_erase_t in U-Boot mmc_write.c
 end;
@@ -2660,7 +2831,7 @@ begin
  if MMC = nil then Exit;
  
  {$IFDEF MMC_DEBUG}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set Bus Width (Width=' + IntToStr(Width) + ')');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set Bus Width (Width=' + MMCBusWidthToString(Width) + ')');
  {$ENDIF}
  
  {Set Bus Width}
@@ -3986,6 +4157,7 @@ begin
 
      {Update Storage}
      MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
+     
      //To Do
      
      Result:=MMC_STATUS_SUCCESS;
@@ -4145,7 +4317,7 @@ begin
       end;
      
      {Switch to 4 bit bus if supported}
-     if ((SDHCI.Capabilities and MMC_MODE_4BIT) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
+     if ((SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
       begin
        Result:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
        if Result <> MMC_STATUS_SUCCESS then
@@ -4310,11 +4482,11 @@ begin
      {Set Erase Size}
      if (MMC.ExtendedCardSpecificData.EraseGroupDef and $01) <> 0 then
       begin
-       //MMC.EraseSize:=MMC.ExtendedCardSpecificData.HCEraseSize; //To Do//mmc.c 
+       //MMC.EraseSize:=MMC.ExtendedCardSpecificData.HCEraseSize; //To Do //mmc.c 
       end
      else
       begin
-       //MMC.EraseSize:=MMC.CardSpecificData.EraseSize; //To Do//mmc.c 
+       //MMC.EraseSize:=MMC.CardSpecificData.EraseSize; //To Do //mmc.c 
       end;
      
      {Enable ERASE_GRP_DEF}
@@ -4642,6 +4814,7 @@ begin
          if Timeout = 0 then
           begin
            if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Inhibit Timeout');
+           
            Command.Status:=MMC_STATUS_TIMEOUT;
            Exit;
           end;
@@ -4728,6 +4901,7 @@ begin
          {Setup Data}
          Command.Data.BlockOffset:=0;
          Command.Data.BlocksRemaining:=Command.Data.BlockCount;
+         Command.Data.BytesRemaining:=Command.Data.BlockSize * Command.Data.BlockCount;
          Command.Data.BytesTransfered:=0;
          
          {Setup Transfer Mode}
@@ -4805,14 +4979,14 @@ begin
             if Status = ERROR_WAIT_TIMEOUT then
              begin
               if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Response Timeout');
+
               Command.Status:=MMC_STATUS_TIMEOUT;
-              Exit;
              end
             else
              begin
               if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Command Response Failure');
+
               Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-              Exit;
              end;          
            end;
          end
@@ -4825,14 +4999,14 @@ begin
             if Status = ERROR_WAIT_TIMEOUT then
              begin
               if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Data Response Timeout');
+
               Command.Status:=MMC_STATUS_TIMEOUT;
-              Exit;
              end
             else
              begin
               if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Send Data Response Failure');
+
               Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-              Exit;
              end;          
            end;
          end;
@@ -4881,7 +5055,7 @@ begin
  if MMC = nil then Exit;
  
  {$IFDEF MMC_DEBUG}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set IOS');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set IOS (Clock=' + IntToStr(MMC.Clock) + ' BusWidth=' + MMCBusWidthToString(MMC.BusWidth) + ')');
  {$ENDIF}
  
  {Check Set IOS}
@@ -4902,7 +5076,10 @@ begin
    {Check Clock}
    if MMC.Clock <> SDHCI.Clock then
     begin
+     {Set Clock}
      SDHCIHostSetClock(SDHCI,MMC.Clock);
+     
+     {Update Clock}
      SDHCI.Clock:=MMC.Clock;
     end;
    
@@ -4914,7 +5091,7 @@ begin
    if MMC.BusWidth = MMC_BUS_WIDTH_8 then
     begin
      Value:=Value and not(SDHCI_CTRL_4BITBUS);
-     if (SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300) or ((SDHCI.Quirks2 and SDHCI_QUIRK2_USE_WIDE8) <> 0) then
+     if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
       begin
        Value:=Value or SDHCI_CTRL_8BITBUS;
       end;
@@ -4934,7 +5111,10 @@ begin
        Value:=Value and not(SDHCI_CTRL_4BITBUS);
       end;      
     end;
-    
+   
+   {Update Bus Width}  
+   SDHCI.BusWidth:=MMC.BusWidth;
+   
    {Check Clock}
    if MMC.Clock > 26000000 then
     begin
@@ -4949,7 +5129,7 @@ begin
      Value:=Value and not(SDHCI_CTRL_HISPD);
     end;
    //To Do //More here (Reset SD Clock Enable / Re-enable SD Clock) //See: bcm2835_mmc_set_ios in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
-                 //Even more quirks                                       //See: sdhci_do_set_ios in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
+           //Even more quirks                                       //See: sdhci_do_set_ios in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
    SDHCIHostWriteByte(SDHCI,SDHCI_HOST_CONTROL,Value);
    
    Result:=MMC_STATUS_SUCCESS;
@@ -5471,7 +5651,7 @@ begin
   end;
  
  {Check Host Capability}
- if (SDHCI.Capabilities and MMC_MODE_HS) = 0 then
+ if (SDHCI.Capabilities and MMC_CAP_SD_HIGHSPEED) = 0 then
   begin
    if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Switch Highspeed host does not support Highspeed');
    Result:=MMC_STATUS_SUCCESS;
@@ -6899,6 +7079,370 @@ begin
 end;
  
 {==============================================================================}
+ 
+function SDIODriverCreate:PSDIODriver;
+{Create a new SDIO Driver entry}
+{Return: Pointer to new Driver entry or nil if driver could not be created}
+begin
+ {}
+ Result:=SDIODriverCreateEx(SizeOf(TSDIODriver));
+end;
+
+{==============================================================================}
+
+function SDIODriverCreateEx(Size:LongWord):PSDIODriver;
+{Create a new SDIO Driver entry}
+{Size: Size in bytes to allocate for new driver (Including the driver entry)}
+{Return: Pointer to new Driver entry or nil if driver could not be created}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Size}
+ if Size < SizeOf(TSDIODriver) then Exit;
+ 
+ {Create Driver}
+ Result:=PSDIODriver(DriverCreateEx(Size));
+ if Result = nil then Exit;
+ 
+ {Update Driver}
+ Result.DriverBind:=nil;
+ Result.DriverUnbind:=nil;
+ Result.Lock:=INVALID_HANDLE_VALUE;
+ 
+ {Create Lock}
+ Result.Lock:=MutexCreate;
+ if Result.Lock = INVALID_HANDLE_VALUE then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'Failed to create lock for SDIO driver');
+   SDIODriverDestroy(Result);
+   Result:=nil;
+   Exit;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIODriverDestroy(Driver:PSDIODriver):LongWord;
+{Destroy an existing SDIO Driver entry}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Driver}
+ if Driver = nil then Exit;
+ if Driver.Driver.Signature <> DRIVER_SIGNATURE then Exit;
+ 
+ {Check Driver}
+ Result:=ERROR_IN_USE;
+ if SDIODriverCheck(Driver) = Driver then Exit;
+
+ {Check State}
+ if Driver.Driver.DriverState <> DRIVER_STATE_UNREGISTERED then Exit;
+ 
+ {Destroy Lock}
+ if Driver.Lock <> INVALID_HANDLE_VALUE then
+  begin
+   MutexDestroy(Driver.Lock);
+  end;
+ 
+ {Destroy Driver} 
+ Result:=DriverDestroy(@Driver.Driver);
+end;
+
+{==============================================================================}
+
+function SDIODriverRegister(Driver:PSDIODriver):LongWord;
+{Register a new Driver in the SDIO Driver table}
+var
+ Host:PSDHCIHost;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Driver}
+ if Driver = nil then Exit;
+ if Driver.Driver.DriverId <> DRIVER_ID_ANY then Exit;
+ if Driver.Driver.Signature <> DRIVER_SIGNATURE then Exit;
+ 
+ {Check Bind}
+ if not(Assigned(Driver.DriverBind)) then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'Cannot register driver, Bind function must be implemented');
+   Exit;
+  end;
+ 
+ {Check Unbind}
+ if not(Assigned(Driver.DriverUnbind)) then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'Cannot register driver, Unbind function must be implemented');
+   Exit;
+  end;
+  
+ {Check Driver}
+ Result:=ERROR_ALREADY_EXISTS;
+ if SDIODriverCheck(Driver) = Driver then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'Cannot register driver, already registered');
+   Exit;
+  end; 
+ 
+ {Check State}
+ if Driver.Driver.DriverState <> DRIVER_STATE_UNREGISTERED then Exit;
+ 
+ {Insert Driver}
+ if CriticalSectionLock(SDIODriverTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Update Driver}
+    Driver.Driver.DriverClass:=DRIVER_CLASS_SDIO;
+    
+    {Register Driver}
+    Result:=DriverRegister(@Driver.Driver);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Link Driver}
+    if SDIODriverTable = nil then
+     begin
+      SDIODriverTable:=Driver;
+     end
+    else
+     begin
+      Driver.Next:=SDIODriverTable;
+      SDIODriverTable.Prev:=Driver;
+      SDIODriverTable:=Driver;
+     end;
+ 
+    {Increment Count}
+    Inc(SDIODriverTableCount);
+    
+    if MMC_LOG_ENABLED then MMCLogInfo(nil,'Registered ' + DriverGetName(@Driver.Driver) + ' (Id=' + IntToStr(Driver.Driver.DriverId) + ')');
+    
+    {Acquire the Lock}
+    if CriticalSectionLock(SDHCIHostTableLock) = ERROR_SUCCESS then
+     begin
+      try
+       {Get Host}
+       Host:=SDHCIHostTable;
+       while Host <> nil do
+        begin
+         
+         //To Do //Bind to SDIO device(s)
+         
+         {Get Next}
+         Host:=Host.Next;
+        end;
+        
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      finally
+       {Release the Lock}
+       CriticalSectionUnlock(SDHCIHostTableLock);
+      end;
+     end
+    else
+     begin
+      Result:=ERROR_CAN_NOT_COMPLETE;
+     end;     
+   finally
+    CriticalSectionUnlock(SDIODriverTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
+
+function SDIODriverDeregister(Driver:PSDIODriver):LongWord;
+{Deregister a Driver from the SDIO Driver table}
+var
+ Host:PSDHCIHost;
+ Prev:PSDIODriver;
+ Next:PSDIODriver;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Driver}
+ if Driver = nil then Exit;
+ if Driver.Driver.DriverId = DRIVER_ID_ANY then Exit;
+ if Driver.Driver.Signature <> DRIVER_SIGNATURE then Exit;
+ 
+ {Check Driver}
+ Result:=ERROR_NOT_FOUND;
+ if SDIODriverCheck(Driver) <> Driver then Exit;
+ 
+ {Check State}
+ if Driver.Driver.DriverState <> DRIVER_STATE_REGISTERED then Exit;
+ 
+ {Remove Driver}
+ if CriticalSectionLock(SDIODriverTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Acquire the Lock}
+    if CriticalSectionLock(SDHCIHostTableLock) = ERROR_SUCCESS then
+     begin
+      try
+       {Get Host}
+       Host:=SDHCIHostTable;
+       while Host <> nil do
+        begin
+         
+         //To Do // Unbind from SDIO device(s)
+    
+         {Get Next}
+         Host:=Host.Next;
+        end;
+      finally
+       {Release the Lock}
+       CriticalSectionUnlock(SDHCIHostTableLock);
+      end;
+     end
+    else
+     begin
+      Result:=ERROR_CAN_NOT_COMPLETE;
+      Exit;
+     end;     
+    
+    {Deregister Driver}
+    Result:=DriverDeregister(@Driver.Driver);
+    if Result <> ERROR_SUCCESS then Exit;
+    
+    {Unlink Driver}
+    Prev:=Driver.Prev;
+    Next:=Driver.Next;
+    if Prev = nil then
+     begin
+      SDIODriverTable:=Next;
+      if Next <> nil then
+       begin
+        Next.Prev:=nil;
+       end;       
+     end
+    else
+     begin
+      Prev.Next:=Next;
+      if Next <> nil then
+       begin
+        Next.Prev:=Prev;
+       end;       
+     end;     
+ 
+    {Decrement Count}
+    Dec(SDIODriverTableCount);
+ 
+    if MMC_LOG_ENABLED then MMCLogInfo(nil,'Deregistered ' + DriverGetName(@Driver.Driver));
+    
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    CriticalSectionUnlock(SDIODriverTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
+
+function SDIODriverFind(DriverId:LongWord):PSDIODriver;
+{Find a driver by Id in the SDIO Driver table}
+var
+ Driver:PSDIODriver;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Id}
+ if DriverId = DRIVER_ID_ANY then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(SDIODriverTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Driver}
+    Driver:=SDIODriverTable;
+    while Driver <> nil do
+     begin
+      {Check State}
+      if Driver.Driver.DriverState = DRIVER_STATE_REGISTERED then
+       begin
+        {Check Id}
+        if Driver.Driver.DriverId = DriverId then
+         begin
+          Result:=Driver;
+          Exit;
+         end;
+       end;
+       
+      {Get Next}
+      Driver:=Driver.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SDIODriverTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIODriverFindByName(const Name:String):PSDIODriver; inline;
+{Find a driver by name in the Driver table}
+begin
+ {}
+ Result:=PSDIODriver(DriverFindByName(Name));
+end;
+
+{==============================================================================}
+
+function SDIODriverEnumerate(Callback:TSDIODriverEnumerate;Data:Pointer):LongWord;
+var
+ Driver:PSDIODriver;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(SDIODriverTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Driver}
+    Driver:=SDIODriverTable;
+    while Driver <> nil do
+     begin
+      {Check State}
+      if Driver.Driver.DriverState = DRIVER_STATE_REGISTERED then
+       begin
+        if Callback(Driver,Data) <> ERROR_SUCCESS then Exit;
+       end;
+       
+      {Get Next}
+      Driver:=Driver.Next;
+     end;
+     
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SDIODriverTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
 {==============================================================================}
 {SDHCI Functions}
 function SDHCIHostReset(SDHCI:PSDHCIHost;Mask:Byte):LongWord;
@@ -6916,48 +7460,88 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Reset (Mask=' + IntToHex(Mask,2) + ')');
  {$ENDIF}
  
- {Setup Timeout (100ms)}
- Timeout:=100;
- 
- {Send Reset}
- SDHCIHostWriteByte(SDHCI,SDHCI_SOFTWARE_RESET,Mask);
-
- {Reset Clock}
- if (Mask and SDHCI_RESET_ALL) <> 0 then
+ {Check Host Reset}
+ if Assigned(SDHCI.HostReset) then
   begin
-   SDHCI.Clock:=0;
-  end;
- 
- {Wait for Completion}
- while (SDHCIHostReadByte(SDHCI,SDHCI_SOFTWARE_RESET) and Mask) <> 0 do
+   Result:=SDHCI.HostReset(SDHCI,Mask);
+  end
+ else
   begin
-   if Timeout = 0 then
+   {Default Method}
+   {Setup Timeout (100ms)}
+   Timeout:=100;
+   
+   {Send Reset}
+   SDHCIHostWriteByte(SDHCI,SDHCI_SOFTWARE_RESET,Mask);
+  
+   {Reset Clock}
+   if (Mask and SDHCI_RESET_ALL) <> 0 then
     begin
-     if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Reset timeout (Mask=' + IntToHex(Mask,8) + ')');
-     Exit;
+     SDHCI.Clock:=0;
     end;
-   Dec(Timeout);
-   MicrosecondDelay(1000);   
-  end;
- 
- {Reset Interrupts}
- if (Mask and SDHCI_RESET_ALL) <> 0 then
-  begin
-   SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
-   SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts); 
+   
+   {Wait for Completion}
+   while (SDHCIHostReadByte(SDHCI,SDHCI_SOFTWARE_RESET) and Mask) <> 0 do
+    begin
+     if Timeout = 0 then
+      begin
+       if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Reset timeout (Mask=' + IntToHex(Mask,8) + ')');
+       Exit;
+      end;
+     Dec(Timeout);
+     MicrosecondDelay(1000);   
+    end;
+   
+   {Reset Interrupts}
+   if (Mask and SDHCI_RESET_ALL) <> 0 then
+    begin
+     SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
+     SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts); 
+    end;
+    
+   Result:=MMC_STATUS_SUCCESS;
   end;
   
- Result:=MMC_STATUS_SUCCESS;
- 
  //See: sdhci_reset in sdhci.c
+ //     sdhci_host->reset in sdhci.h
+end;
+
+{==============================================================================}
+
+function SDHCIHostHardwareReset(SDHCI:PSDHCIHost):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Hardware Reset');
+ {$ENDIF}
+
+ {Check Host Hardware Reset}
+ if Assigned(SDHCI.HostHardwareReset) then
+  begin
+   Result:=SDHCI.HostHardwareReset(SDHCI);
+  end
+ else
+  begin
+   {Default Method}
+   Result:=MMC_STATUS_SUCCESS;
+  end;  
+  
+ //See: sdhci_hw_reset in sdhci.c
+ //     sdhci_host->hw_reset in sdhci.h
 end;
 
 {==============================================================================}
 
 function SDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 {Reference: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
-//To Do //Caller needs to pass result of fls (Find Last Set) as Power
-        //FirstBitSet in Platform should provide the correct behaviour ? (- 1 to produce $FFFF on nothing ?)
+{Power: A shift value to indicate the first available value in the Voltages mask}
+{       Caller can use FirstBitSet(SDHCI.Voltages) - 1 to obtain the value of Power}
+{       If there are no values set then Power will be -1 ($FFFF) to indicate nothing or unknown}
 var
  Value:Byte;
 begin
@@ -6971,37 +7555,47 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Set Power (Power=' + IntToStr(Power) + ')');
  {$ENDIF}
  
- Value:=0;
- if Power <> $FFFF then
+ {Check Set Power}
+ if Assigned(SDHCI.HostSetPower) then
   begin
-   case (1 shl Power) of
-    MMC_VDD_165_195:Value:=SDHCI_POWER_180;
-    MMC_VDD_29_30,MMC_VDD_30_31:Value:=SDHCI_POWER_300;
-    MMC_VDD_32_33,MMC_VDD_33_34:Value:=SDHCI_POWER_330;
-   end;
-  end;
- 
- if Value = 0 then
-  begin
-   {Power Off}
-   SDHCIHostWriteByte(SDHCI,SDHCI_POWER_CONTROL,0);
+   Result:=SDHCI.HostSetPower(SDHCI,Power);
   end
  else
   begin
-   {Power On}
-   if (SDHCI.Quirks and SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER) <> 0 then
+   {Default Method}
+   Value:=0;
+   if Power <> $FFFF then
     begin
-     SDHCIHostWriteByte(SDHCI,SDHCI_POWER_CONTROL,Value);
+     case (1 shl Power) of
+      MMC_VDD_165_195:Value:=SDHCI_POWER_180;
+      MMC_VDD_29_30,MMC_VDD_30_31:Value:=SDHCI_POWER_300;
+      MMC_VDD_32_33,MMC_VDD_33_34:Value:=SDHCI_POWER_330;
+     end;
     end;
-   Value:=Value or SDHCI_POWER_ON;
-   SDHCIHostWriteByte(SDHCI,SDHCI_POWER_CONTROL,Value);
    
-   //To Do //More quirks, see: sdhci_set_power in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
-  end;
- 
- Result:=MMC_STATUS_SUCCESS;
+   if Value = 0 then
+    begin
+     {Power Off}
+     SDHCIHostWriteByte(SDHCI,SDHCI_POWER_CONTROL,0);
+    end
+   else
+    begin
+     {Power On}
+     if (SDHCI.Quirks and SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER) <> 0 then
+      begin
+       SDHCIHostWriteByte(SDHCI,SDHCI_POWER_CONTROL,Value);
+      end;
+     Value:=Value or SDHCI_POWER_ON;
+     SDHCIHostWriteByte(SDHCI,SDHCI_POWER_CONTROL,Value);
+     
+     //To Do //More quirks, see: sdhci_set_power in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
+    end;
+   
+   Result:=MMC_STATUS_SUCCESS;
+  end; 
  
  //See: sdhci_set_power in sdhci.c
+ //     sdhci_host->set_power in sdhci.h
 end;
 
 {==============================================================================}
@@ -7023,74 +7617,84 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Set Clock (Clock=' + IntToStr(Clock) + ')');
  {$ENDIF}
  
- {Clock Off}
- SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,0);
- 
- {Check Clock}
- Result:=MMC_STATUS_SUCCESS;
- if Clock = 0 then Exit;
- 
- {Check Version}
- if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
+ {Check Set Clock}
+ if Assigned(SDHCI.HostSetClock) then
   begin
-   {Version 3.00 divisors must be a multiple of 2}
-   if SDHCI.MaximumFrequency <= Clock then
-    begin
-     Divider:=1;
-    end
-   else
-    begin
-     Divider:=2;
-     while Divider < SDHCI_MAX_CLOCK_DIV_SPEC_300 do
-      begin
-       if (SDHCI.MaximumFrequency div Divider) <= Clock then Break;
-       Divider:=Divider + 2;
-      end;
-    end;    
+   Result:=SDHCI.HostSetClock(SDHCI,Clock);
   end
  else
   begin
-   {Version 2.00 divisors must be a power of 2}
-   Divider:=1;
-   while Divider < SDHCI_MAX_CLOCK_DIV_SPEC_200 do
+   {Default Method}
+   {Clock Off}
+   SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,0);
+   
+   {Check Clock}
+   Result:=MMC_STATUS_SUCCESS;
+   if Clock = 0 then Exit;
+   
+   {Check Version}
+   if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
     begin
-     if (SDHCI.MaximumFrequency div Divider) <= Clock then Break;
-     Divider:=Divider * 2;
-    end;
-  end;  
- Divider:=Divider shr 1;
- 
- {Set Clock Divider}
- SDHCIHostSetClockDivider(SDHCI,0,Divider);  //To Do Index ? //What is this function for ?
- 
- {Set Clock}
- Value:=(Divider and SDHCI_DIV_MASK) shl SDHCI_DIVIDER_SHIFT;
- Value:=Value or (((Divider and SDHCI_DIV_HI_MASK) shr SDHCI_DIV_MASK_LEN) shl SDHCI_DIVIDER_HI_SHIFT);
- Value:=Value or SDHCI_CLOCK_INT_EN;
- SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,Value);
- 
- {Wait 20ms for Clock Stable}
- Timeout:=20;
- Value:=SDHCIHostReadWord(SDHCI,SDHCI_CLOCK_CONTROL);
- while (Value and SDHCI_CLOCK_INT_STABLE) = 0 do
-  begin
-   if Timeout = 0 then
+     {Version 3.00 divisors must be a multiple of 2}
+     if SDHCI.MaximumFrequency <= Clock then
+      begin
+       Divider:=1;
+      end
+     else
+      begin
+       Divider:=2;
+       while Divider < SDHCI_MAX_CLOCK_DIV_SPEC_300 do
+        begin
+         if (SDHCI.MaximumFrequency div Divider) <= Clock then Break;
+         Divider:=Divider + 2;
+        end;
+      end;    
+    end
+   else
     begin
-     if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Clock stable timeout');
-     Exit;
-    end;
-   Dec(Timeout);
-   MicrosecondDelay(1000);   
+     {Version 2.00 divisors must be a power of 2}
+     Divider:=1;
+     while Divider < SDHCI_MAX_CLOCK_DIV_SPEC_200 do
+      begin
+       if (SDHCI.MaximumFrequency div Divider) <= Clock then Break;
+       Divider:=Divider * 2;
+      end;
+    end;  
+   Divider:=Divider shr 1;
+   
+   {Set Clock Divider}
+   SDHCIHostSetClockDivider(SDHCI,0,Divider);
+   
+   {Set Clock}
+   Value:=(Divider and SDHCI_DIV_MASK) shl SDHCI_DIVIDER_SHIFT;
+   Value:=Value or (((Divider and SDHCI_DIV_HI_MASK) shr SDHCI_DIV_MASK_LEN) shl SDHCI_DIVIDER_HI_SHIFT);
+   Value:=Value or SDHCI_CLOCK_INT_EN;
+   SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,Value);
+   
+   {Wait 20ms for Clock Stable}
+   Timeout:=20;
    Value:=SDHCIHostReadWord(SDHCI,SDHCI_CLOCK_CONTROL);
+   while (Value and SDHCI_CLOCK_INT_STABLE) = 0 do
+    begin
+     if Timeout = 0 then
+      begin
+       if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Clock stable timeout');
+       Exit;
+      end;
+     Dec(Timeout);
+     MicrosecondDelay(1000);   
+     Value:=SDHCIHostReadWord(SDHCI,SDHCI_CLOCK_CONTROL);
+    end;
+  
+   {Clock On}
+   Value:=Value or SDHCI_CLOCK_CARD_EN;
+   SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,Value);
+   
+   Result:=MMC_STATUS_SUCCESS;
   end;
-
- {Clock On}
- Value:=Value or SDHCI_CLOCK_CARD_EN;
- SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,Value);
- 
- Result:=MMC_STATUS_SUCCESS;
- 
+  
  //See: sdhci_set_clock in sdhci.c
+ //     sdhci_host->set_clock in sdhci.h
  //See also: \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
 end;
 
@@ -7215,6 +7819,7 @@ begin
   
    Inc(SDHCI.Command.Data.BlockOffset,SDHCI.Command.Data.BlockSize);
    Dec(SDHCI.Command.Data.BlocksRemaining);
+   Dec(SDHCI.Command.Data.BytesRemaining,SDHCI.Command.Data.BlockSize);
    if SDHCI.Command.Data.BlocksRemaining = 0 then Break;
   end;
  
@@ -7662,19 +8267,56 @@ begin
    {Call Host Start}
    if SDHCI.HostStart(SDHCI) <> ERROR_SUCCESS then Exit;
   
+   {Check Version}
+   if SDHCI.Version > SDHCI_SPEC_420 then
+    begin
+     if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Unknown host controller version');
+    end;
+    
    {Get Capabilities}
    Capabilities:=SDHCIHostReadLong(SDHCI,SDHCI_CAPABILITIES);
    {$IFDEF MMC_DEBUG}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Capabilities = ' + IntToHex(Capabilities,8));
    {$ENDIF}
                            
-   {Check DMA Support}
-   if ((Capabilities and SDHCI_CAN_DO_SDMA) = 0) and ((SDHCI.Quirks and SDHCI_QUIRK_MISSING_CAPS) = 0) then
+   {Check SDMA Support}
+   if (SDHCI.Quirks and SDHCI_QUIRK_FORCE_DMA) <> 0 then
     begin
-     if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Host does not support SDMA');
-     SDHCI.HostStop(SDHCI);
-     Exit;
+     SDHCI.Device.DeviceFlags:=SDHCI.Device.DeviceFlags or SDHCI_FLAG_SDMA;
+    end
+   else if (Capabilities and SDHCI_CAN_DO_SDMA) = 0 then
+    begin
+     if (SDHCI.Quirks and SDHCI_QUIRK_MISSING_CAPS) = 0 then
+      begin
+       if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Host does not support SDMA');
+      end; 
+    end
+   else
+    begin
+     SDHCI.Device.DeviceFlags:=SDHCI.Device.DeviceFlags or SDHCI_FLAG_SDMA;
+    end;    
+   
+   if ((SDHCI.Quirks and SDHCI_QUIRK_BROKEN_DMA) <> 0) and ((SDHCI.Device.DeviceFlags and SDHCI_FLAG_SDMA) <> 0) then
+    begin
+     if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Disabling broken DMA support');
+     
+     SDHCI.Device.DeviceFlags:=SDHCI.Device.DeviceFlags and not(SDHCI_FLAG_SDMA);
     end;
+   
+   {Check ADMA Support}
+   if (SDHCI.Version >= SDHCI_SPEC_200) and ((Capabilities and SDHCI_CAN_DO_ADMA2) <> 0) then
+    begin
+     SDHCI.Device.DeviceFlags:=SDHCI.Device.DeviceFlags or SDHCI_FLAG_ADMA;
+    end;
+   
+   if ((SDHCI.Quirks and SDHCI_QUIRK_BROKEN_ADMA) <> 0) and ((SDHCI.Device.DeviceFlags and SDHCI_FLAG_ADMA) <> 0) then
+    begin
+     if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Disabling broken ADMA support');
+     
+     SDHCI.Device.DeviceFlags:=SDHCI.Device.DeviceFlags and not(SDHCI_FLAG_ADMA);
+    end;
+   
+   //To Do //sdhci_setup_host / sdhci_can_64bit_dma
    
    {Check Clock Maximum}
    if SDHCI.ClockMaximum <> 0 then
@@ -7696,6 +8338,7 @@ begin
    if SDHCI.MaximumFrequency = 0 then
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Host does not specify a maximum clock frequency');
+     
      SDHCI.HostStop(SDHCI);
      Exit;
     end;
@@ -7747,12 +8390,12 @@ begin
    {$ENDIF}
     
    {Determine Capabilities}
-   SDHCI.Capabilities:=MMC_MODE_HS or MMC_MODE_HS_52MHz or MMC_MODE_4BIT;
+   SDHCI.Capabilities:=MMC_CAP_SD_HIGHSPEED or MMC_CAP_MMC_HIGHSPEED or MMC_CAP_4_BIT_DATA;
    if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
     begin
      if (Capabilities and SDHCI_CAN_DO_8BIT) <> 0 then
       begin
-       SDHCI.Capabilities:=SDHCI.Capabilities or MMC_MODE_8BIT;
+       SDHCI.Capabilities:=SDHCI.Capabilities or MMC_CAP_8_BIT_DATA;
       end;
     end;
    {Check Presets}
@@ -7777,6 +8420,7 @@ begin
    if MMC = nil then
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Failed to create new MMC device');
+     
      SDHCI.HostStop(SDHCI);
      Exit;
     end;
@@ -7802,6 +8446,7 @@ begin
    if MMC.Storage = nil then
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Failed to create new Storage device');
+     
      MMCDeviceDestroy(MMC);
      SDHCI.HostStop(SDHCI);
      Exit;
@@ -7826,6 +8471,7 @@ begin
    if (Status <> MMC_STATUS_SUCCESS) and (Status <> MMC_STATUS_NO_MEDIA) then
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Failed to initialize new MMC device');
+     
      StorageDeviceDestroy(MMC.Storage);
      MMCDeviceDestroy(MMC);
      SDHCI.HostStop(SDHCI);
@@ -7844,6 +8490,7 @@ begin
    if MMCDeviceRegister(MMC) <> MMC_STATUS_SUCCESS then
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'SDHCI Failed to register new MMC device');
+     
      StorageDeviceDestroy(MMC.Storage);
      MMCDeviceDestroy(MMC);
      SDHCI.HostStop(SDHCI);
@@ -7887,6 +8534,8 @@ end;
 {==============================================================================}
 
 function SDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
+var
+ MMC:PMMCDevice;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7914,7 +8563,26 @@ begin
   end
  else
   begin
-   //To Do //
+   {Get MMC}
+   MMC:=MMCDeviceFindByDevice(@SDHCI.Device);
+   if MMC <> nil then
+    begin 
+     {Check Storage}
+     if MMC.Storage <> nil then
+      begin
+       {Stop Storage Status Checking}
+       StorageDeviceStopStatus(MMC.Storage);
+       
+       {Set Storage State to Inserted}
+       StorageDeviceSetState(MMC.Storage,STORAGE_STATE_EJECTED);
+      end; 
+    
+     {Eject MMC}
+     MMC.MMCState:=MMC_STATE_EJECTED;
+     
+     {Notify Eject MMC}
+     NotifierNotify(@MMC.Device,DEVICE_NOTIFICATION_EJECT);
+    end;  
    
    {Call Host Stop}
    if SDHCI.HostStop(SDHCI) <> ERROR_SUCCESS then Exit;
@@ -7925,7 +8593,22 @@ begin
    {Notify Disable}
    NotifierNotify(@SDHCI.Device,DEVICE_NOTIFICATION_DISABLE);
    
-   //To Do //Eject/Deregister/Destroy (MMC/Storage) etc //See: Storage/Mouse etc
+   {Check MMC}
+   if MMC <> nil then
+    begin 
+     {Dergister MMC}
+     MMCDeviceDeregister(MMC);
+     
+     {Check Storage}
+     if MMC.Storage <> nil then
+      begin
+       {Destroy Storage}
+       StorageDeviceDestroy(MMC.Storage);
+      end;
+     
+     {Destroy MMC}
+     MMCDeviceDestroy(MMC);   
+    end;
    
    Result:=ERROR_SUCCESS;
   end; 
@@ -8109,6 +8792,10 @@ begin
  Result.HostWriteByte:=nil;
  Result.HostWriteWord:=nil;
  Result.HostWriteLong:=nil;
+ Result.HostReset:=nil;
+ Result.HostHardwareReset:=nil;
+ Result.HostSetPower:=nil;
+ Result.HostSetClock:=nil;
  Result.HostSetClockDivider:=nil;
  Result.HostSetControlRegister:=nil;
  Result.DeviceInitialize:=nil;
@@ -8704,16 +9391,84 @@ begin
  Result:='unknown error';
  
  case Status of
-  MMC_STATUS_SUCCESS:Result:='success';
-  MMC_STATUS_TIMEOUT:Result:='request timed out';
-  MMC_STATUS_NO_MEDIA:Result:='no media present';
-  MMC_STATUS_HARDWARE_ERROR:Result:='hardware error';
-  MMC_STATUS_INVALID_DATA:Result:='invalid data';
-  MMC_STATUS_INVALID_PARAMETER:Result:='invalid parameter';
-  MMC_STATUS_INVALID_SEQUENCE:Result:='invalid sequence';
-  MMC_STATUS_OUT_OF_MEMORY:Result:='out of memory';
-  MMC_STATUS_UNSUPPORTED_REQUEST:Result:='unsupported request';
-  MMC_STATUS_NOT_PROCESSED:Result:='request not processed yet';
+  MMC_STATUS_SUCCESS:Result:='MMC_STATUS_SUCCESS'; {success}
+  MMC_STATUS_TIMEOUT:Result:='MMC_STATUS_TIMEOUT'; {request timed out}
+  MMC_STATUS_NO_MEDIA:Result:='MMC_STATUS_NO_MEDIA'; {no media present}
+  MMC_STATUS_HARDWARE_ERROR:Result:='MMC_STATUS_HARDWARE_ERROR'; {hardware error}
+  MMC_STATUS_INVALID_DATA:Result:='MMC_STATUS_INVALID_DATA'; {invalid data}
+  MMC_STATUS_INVALID_PARAMETER:Result:='MMC_STATUS_INVALID_PARAMETER'; {invalid parameter}
+  MMC_STATUS_INVALID_SEQUENCE:Result:='MMC_STATUS_INVALID_SEQUENCE'; {invalid sequence}
+  MMC_STATUS_OUT_OF_MEMORY:Result:='MMC_STATUS_OUT_OF_MEMORY'; {out of memory}
+  MMC_STATUS_UNSUPPORTED_REQUEST:Result:='MMC_STATUS_UNSUPPORTED_REQUEST'; {unsupported request}
+  MMC_STATUS_NOT_PROCESSED:Result:='MMC_STATUS_NOT_PROCESSED'; {request not processed yet}
+ end;
+end;
+
+{==============================================================================}
+
+function MMCVersionToString(Version:LongWord):String;
+{Translates an MMC version into a string}
+begin
+ {}
+ Result:='MMC_VERSION_UNKNOWN';
+
+ case Version of
+  {SD Version}
+  SD_VERSION_1_0:Result:='SD_VERSION_1_0';
+  SD_VERSION_1_10:Result:='SD_VERSION_1_10';
+  SD_VERSION_2:Result:='SD_VERSION_2';
+  SD_VERSION_3:Result:='SD_VERSION_3';
+  SD_VERSION_4:Result:='SD_VERSION_4';
+  {MMC Version}
+  MMC_VERSION_1_2:Result:='MMC_VERSION_1_2';
+  MMC_VERSION_1_4:Result:='MMC_VERSION_1_4';
+  MMC_VERSION_2_2:Result:='MMC_VERSION_2_2';
+  MMC_VERSION_3:Result:='MMC_VERSION_3';
+  MMC_VERSION_4:Result:='MMC_VERSION_4';
+  MMC_VERSION_4_1:Result:='MMC_VERSION_4_1';
+  MMC_VERSION_4_2:Result:='MMC_VERSION_4_2';
+  MMC_VERSION_4_3:Result:='MMC_VERSION_4_3';
+  MMC_VERSION_4_41:Result:='MMC_VERSION_4_41';
+  MMC_VERSION_4_5:Result:='MMC_VERSION_4_5';
+  MMC_VERSION_5_0:Result:='MMC_VERSION_5_0';
+ end;
+end;
+
+{==============================================================================}
+
+function MMCTimingToString(Timing:LongWord):String;
+{Translates an MMC timing into a string}
+begin
+ {}
+ Result:='MMC_TIMING_UNKNOWN';
+
+ case Timing of
+  MMC_TIMING_LEGACY:Result:='MMC_TIMING_LEGACY';
+  MMC_TIMING_MMC_HS:Result:='MMC_TIMING_MMC_HS';
+  MMC_TIMING_SD_HS:Result:='MMC_TIMING_SD_HS';
+  MMC_TIMING_UHS_SDR12:Result:='MMC_TIMING_UHS_SDR12';
+  MMC_TIMING_UHS_SDR25:Result:='MMC_TIMING_UHS_SDR25';
+  MMC_TIMING_UHS_SDR50:Result:='MMC_TIMING_UHS_SDR50';
+  MMC_TIMING_UHS_SDR104:Result:='MMC_TIMING_UHS_SDR104';
+  MMC_TIMING_UHS_DDR50:Result:='MMC_TIMING_UHS_DDR50';
+  MMC_TIMING_MMC_DDR52:Result:='MMC_TIMING_MMC_DDR52';
+  MMC_TIMING_MMC_HS200:Result:='MMC_TIMING_MMC_HS200';
+  MMC_TIMING_MMC_HS400:Result:='MMC_TIMING_MMC_HS400';
+ end;
+end;
+
+{==============================================================================}
+
+function MMCBusWidthToString(BusWidth:LongWord):String;
+{Translates an MMC bus width into a string}
+begin
+ {}
+ Result:='MMC_BUS_WIDTH_UNKNOWN';
+
+ case BusWidth of
+  MMC_BUS_WIDTH_1:Result:='MMC_BUS_WIDTH_1';
+  MMC_BUS_WIDTH_4:Result:='MMC_BUS_WIDTH_4';
+  MMC_BUS_WIDTH_8:Result:='MMC_BUS_WIDTH_8';
  end;
 end;
 
@@ -8741,6 +9496,21 @@ begin
   begin
    Result:=MMC_STATE_NAMES[MMCState];
   end;
+end;
+
+{==============================================================================}
+
+function MMCDeviceStateToNotification(State:LongWord):LongWord;
+{Convert a Device state value into the notification code for device notifications}
+begin
+ {}
+ Result:=DEVICE_NOTIFICATION_NONE;
+ 
+ {Check State}
+ case State of
+  MMC_STATE_EJECTED:Result:=DEVICE_NOTIFICATION_INSERT;
+  MMC_STATE_INSERTED:Result:=DEVICE_NOTIFICATION_EJECT;
+ end;
 end;
 
 {==============================================================================}
@@ -9061,9 +9831,143 @@ begin
 end;
 
 {==============================================================================}
+
+function SDVersionToString(Version:LongWord):String;
+{Translates an SD version into a string}
+begin
+ {}
+ Result:='SD_VERSION_UNKNOWN';
+
+ case Version of
+  SD_VERSION_1_0:Result:='SD_VERSION_1_0';
+  SD_VERSION_1_10:Result:='SD_VERSION_1_10';
+  SD_VERSION_2:Result:='SD_VERSION_2';
+  SD_VERSION_3:Result:='SD_VERSION_3';
+  SD_VERSION_4:Result:='SD_VERSION_4';
+ end;
+end;
+
+{==============================================================================}
+
+function SDBusWidthToString(BusWidth:LongWord):String;
+{Translates an SD bus width into a string}
+begin
+ {}
+ Result:='SD_BUS_WIDTH_UNKNOWN';
+
+ case BusWidth of
+  SD_BUS_WIDTH_1:Result:='SD_BUS_WIDTH_1';
+  SD_BUS_WIDTH_4:Result:='SD_BUS_WIDTH_4';
+ end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {SDIO Helper Functions}
+function SDIODriverGetCount:LongWord; inline;
+{Get the current SDIO driver count}
+begin
+ {}
+ Result:=SDIODriverTableCount;
+end;
+
+{==============================================================================}
+
+function SDIODriverCheck(Driver:PSDIODriver):PSDIODriver;
+{Check if the supplied SDIO Driver is in the driver table}
+var
+ Current:PSDIODriver;
+begin
+ {}
+ Result:=nil;
  
+ {Check Driver}
+ if Driver = nil then Exit;
+ if Driver.Driver.Signature <> DRIVER_SIGNATURE then Exit;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(SDIODriverTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Driver}
+    Current:=SDIODriverTable;
+    while Current <> nil do
+     begin
+      {Check Driver}
+      if Current = Driver then
+       begin
+        Result:=Driver;
+        Exit;
+       end;
+      
+      {Get Next}
+      Current:=Current.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SDIODriverTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIODeviceStateToString(SDIOState:LongWord):String;
+begin
+ {}
+ Result:='SDIO_STATE_UNKNOWN';
+ 
+ if SDIOState <= SDIO_STATE_MAX then
+  begin
+   Result:=SDIO_STATE_NAMES[SDIOState];
+  end;
+end;
+
+{==============================================================================}
+
+function SDIODeviceStatusToString(SDIOStatus:LongWord):String;
+begin
+ {}
+ Result:='SDIO_STATUS_UNKNOWN';
+ 
+ if SDIOStatus <= SDIO_STATUS_MAX then
+  begin
+   Result:=SDIO_STATUS_NAMES[SDIOStatus];
+  end;
+end;
+
+{==============================================================================}
+
+function SDIODeviceStateToNotification(State:LongWord):LongWord;
+{Convert a Device state value into the notification code for device notifications}
+begin
+ {}
+ Result:=DEVICE_NOTIFICATION_NONE;
+ 
+ {Check State}
+ case State of
+  SDIO_STATE_DETACHED:Result:=DEVICE_NOTIFICATION_DETACH;
+  SDIO_STATE_DETACHING:Result:=DEVICE_NOTIFICATION_DETACHING;
+  SDIO_STATE_ATTACHING:Result:=DEVICE_NOTIFICATION_ATTACHING;
+  SDIO_STATE_ATTACHED:Result:=DEVICE_NOTIFICATION_ATTACH;
+ end;
+end;
+
+{==============================================================================}
+
+function SDIODeviceStatusToNotification(Status:LongWord):LongWord;
+{Convert a Device status value into the notification code for device notifications}
+begin
+ {}
+ Result:=DEVICE_NOTIFICATION_NONE;
+ 
+ {Check Status}
+ case Status of
+  SDIO_STATUS_UNBOUND:Result:=DEVICE_NOTIFICATION_UNBIND;
+  SDIO_STATUS_BOUND:Result:=DEVICE_NOTIFICATION_BIND;
+ end;
+end;
+
 {==============================================================================}
 {==============================================================================}
 {SDHCI Helper Functions}
@@ -9123,7 +10027,7 @@ begin
  {Check SDHCI}
  if SDHCI = nil then Exit;
 
- Result:=(SDHCI.Capabilities and MMC_MODE_SPI) <> 0; 
+ Result:=(SDHCI.Capabilities and MMC_CAP_SPI) <> 0; 
 end;
 
 {==============================================================================}
@@ -9165,7 +10069,33 @@ end;
 
 {==============================================================================}
 
-function SDHCIDeviceTypeToString(SDHCIType:LongWord):String;
+function SDHCIVersionToString(Version:LongWord):String;
+{Translates an SDHCI version into a string}
+begin
+ {}
+ Result:='SDHCI_SPEC_UNKNOWN';
+
+ case Version of
+  SDHCI_SPEC_100:Result:='SDHCI_SPEC_100';
+  SDHCI_SPEC_200:Result:='SDHCI_SPEC_200';
+  SDHCI_SPEC_300:Result:='SDHCI_SPEC_300';
+  SDHCI_SPEC_400:Result:='SDHCI_SPEC_400';
+  SDHCI_SPEC_410:Result:='SDHCI_SPEC_410';
+  SDHCI_SPEC_420:Result:='SDHCI_SPEC_420';
+ end;
+end;
+
+{==============================================================================}
+
+function SDHCIDeviceTypeToString(SDHCIType:LongWord):String; inline;
+begin
+ {}
+ Result:=SDHCIHostTypeToString(SDHCIType);
+end;
+
+{==============================================================================}
+
+function SDHCIHostTypeToString(SDHCIType:LongWord):String;
 begin
  {}
  Result:='SDHCI_TYPE_UNKNOWN';
@@ -9178,8 +10108,16 @@ end;
 
 {==============================================================================}
 
-function SDHCIDeviceStateToString(SDHCIState:LongWord):String;
- begin
+function SDHCIDeviceStateToString(SDHCIState:LongWord):String; inline;
+begin
+ {}
+ Result:=SDHCIHostStateToString(SDHCIState);
+end;
+
+{==============================================================================}
+
+function SDHCIHostStateToString(SDHCIState:LongWord):String;
+begin
  {}
  Result:='SDHCI_STATE_UNKNOWN';
  
@@ -9187,6 +10125,21 @@ function SDHCIDeviceStateToString(SDHCIState:LongWord):String;
   begin
    Result:=SDHCI_STATE_NAMES[SDHCIState];
   end;
+end;
+
+{==============================================================================}
+
+function SDHCIHostStateToNotification(State:LongWord):LongWord;
+{Convert a Host state value into the notification code for device notifications}
+begin
+ {}
+ Result:=DEVICE_NOTIFICATION_NONE;
+ 
+ {Check State}
+ case State of
+  SDHCI_STATE_DISABLED:Result:=DEVICE_NOTIFICATION_DISABLE;
+  SDHCI_STATE_ENABLED:Result:=DEVICE_NOTIFICATION_ENABLE;
+ end;
 end;
 
 {==============================================================================}
