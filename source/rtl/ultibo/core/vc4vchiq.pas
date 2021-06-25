@@ -1620,13 +1620,13 @@ begin
   BOARD_TYPE_RPI3B_PLUS,
   BOARD_TYPE_RPI3A_PLUS,
   BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
-    VCHIQ.CacheLineSize:=64;
+    if DEVICE_TREE_VALID then VCHIQ.CacheLineSize:=64;
    end;
   BOARD_TYPE_RPI4B,
   BOARD_TYPE_RPI400,
   BOARD_TYPE_RPI_COMPUTE4:begin
     VCHIQ.Use36BitAddress:=True;
-    VCHIQ.CacheLineSize:=64;
+    if DEVICE_TREE_VALID then VCHIQ.CacheLineSize:=64;
    end; 
  end;
  VCHIQ.FragmentsSize:=2 * VCHIQ.CacheLineSize;

@@ -477,6 +477,12 @@ var
  TIME_TICKS_PER_SCHEDULER_INTERRUPT:LongWord;       {How many 100 nanosecond time ticks per scheduler interrupt}
  
 {==============================================================================}
+{Device tree configuration} 
+var
+ DEVICE_TREE_BASE:PtrUInt;       {The base address of the device tree information (If Applicable)}
+ DEVICE_TREE_VALID:LongBool;     {True if the device tree information has a valid signature (If Applicable)}
+ 
+{==============================================================================}
 {Peripheral configuration (Set by PeripheralInit)}
 var
  {Peripheral addresses}
@@ -1585,7 +1591,7 @@ function GENMASK(High,Low:LongWord):LongWord; inline;
 {Implementation of the GENMASK() macro}
 begin
  {}
- Result:=(not(LongWord(0)) shl Low) and (not(LongWord(0) shr (BITS_PER_LONG - 1 - High)));
+ Result:=(not(LongWord(0)) - (1 shl Low) + 1) and (not(LongWord(0)) shr (BITS_PER_LONG - 1 - High));
 end;
 
 {==============================================================================}
@@ -1594,7 +1600,7 @@ function GENMASK_ULL(High,Low:LongWord):Int64; inline;
 {Implementation of the GENMASK_ULL() macro}
 begin
  {}
- Result:=(not(Int64(0)) shl Low) and (not(Int64(0) shr (BITS_PER_LONG - 1 - High)));
+ Result:=(not(Int64(0)) - (1 shl Low) + 1) and (not(Int64(0)) shr (BITS_PER_LONG_LONG - 1 - High));
 end;
 
 {==============================================================================}

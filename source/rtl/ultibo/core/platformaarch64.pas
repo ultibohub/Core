@@ -420,6 +420,13 @@ begin
    if (AARCH64TagsAddress = ARMTAGS_INITIAL) or (LongWordBEtoN(PLongWord(AARCH64TagsAddress)^) = DTB_SIGNATURE) then
     begin
      {Device Tree Blob supplied or ARM tags not present}
+     {Check Device Tree}
+     if LongWordBEtoN(PLongWord(AARCH64TagsAddress)^) = DTB_SIGNATURE then
+      begin
+       DEVICE_TREE_BASE:=AARCH64TagsAddress;
+       DEVICE_TREE_VALID:=True;
+      end;
+
      {Check Memory Size}
      if CPU_MEMORY_SIZE > 0 then
       begin
