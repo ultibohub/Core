@@ -39,14 +39,14 @@ References
 GENET
 =====
 
-This drivers supports members of the Broadcom family of Gigabit Ethernet devices including
+This driver supports members of the Broadcom family of Gigabit Ethernet devices including
 the BCM54213PE contained in the Raspberry Pi 4B.
 
 These devices support speeds of 10BASE-T, 100BASE-TX and 1000BASE-T and include a range of
 features including WOL and EEE.
 
 The device included in the Raspberry Pi 4B uses a memory mapped interface which supports
-mutliple TX and RX queues with priority queueing, hardware filtering and DMA bus master
+multiple TX and RX queues with priority queueing, hardware filtering and DMA bus master
 transfers.
 
 }

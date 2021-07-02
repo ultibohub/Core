@@ -1314,14 +1314,14 @@ function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 function IsPowerOf2(Value:LongWord):Boolean;
 
 function BIT(Number:LongWord):LongWord; inline;
-function BIT_ULL(Number:LongWord):Int64; inline;
+function BIT_ULL(Number:LongWord):UInt64; inline;
 function BIT_MASK(Number:LongWord):LongWord; inline;
 function BIT_WORD(Number:LongWord):LongWord; inline;
-function BIT_ULL_MASK(Number:LongWord):Int64; inline;
-function BIT_ULL_WORD(Number:LongWord):Int64; inline;
+function BIT_ULL_MASK(Number:LongWord):UInt64; inline;
+function BIT_ULL_WORD(Number:LongWord):UInt64; inline;
 
 function GENMASK(High,Low:LongWord):LongWord; inline;
-function GENMASK_ULL(High,Low:LongWord):Int64; inline;
+function GENMASK_ULL(High,Low:LongWord):UInt64; inline;
 
 function HIWORD(L:LongInt):Word; inline;
 function LOWORD(L:LongInt):Word; inline;
@@ -1542,7 +1542,7 @@ end;
 
 {==============================================================================}
 
-function BIT_ULL(Number:LongWord):Int64; inline;
+function BIT_ULL(Number:LongWord):UInt64; inline;
 {Implementation of the BIT_ULL() macro}
 begin
  {}
@@ -1569,7 +1569,7 @@ end;
 
 {==============================================================================}
 
-function BIT_ULL_MASK(Number:LongWord):Int64; inline;
+function BIT_ULL_MASK(Number:LongWord):UInt64; inline;
 {Implementation of the BIT_ULL_MASK() macro}
 begin
  {}
@@ -1578,7 +1578,7 @@ end;
 
 {==============================================================================}
 
-function BIT_ULL_WORD(Number:LongWord):Int64; inline;
+function BIT_ULL_WORD(Number:LongWord):UInt64; inline;
 {Implementation of the BIT_ULL_WORD() macro}
 begin
  {}
@@ -1596,7 +1596,7 @@ end;
 
 {==============================================================================}
 
-function GENMASK_ULL(High,Low:LongWord):Int64; inline;
+function GENMASK_ULL(High,Low:LongWord):UInt64; inline;
 {Implementation of the GENMASK_ULL() macro}
 begin
  {}

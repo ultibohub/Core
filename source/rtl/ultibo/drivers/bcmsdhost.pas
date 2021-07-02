@@ -183,7 +183,6 @@ type
   SDHCI:TSDHCIHost;
   {BCMSDHOST Properties}
   IRQ:LongWord;                               {The IRQ number for this device}
-  DREQ:LongWord;                              {The DMA DREQ ID for this device}
   Lock:TSpinHandle;                           {Host lock (Differs from lock in Host portion) (Spin lock due to use by interrupt handler)}
   EnableFIQ:LongBool;                         {Use FIQ instead of IRQ}
   GPIOFirst:LongWord;                         {The starting pin number for GPIO assignments (or GPIO_PIN_UNKNOWN if externally configured)}
@@ -194,13 +193,13 @@ type
   FirmwareSetsClockDivider:LongBool;          {True if the firmware controls the clock divider}
   CommandQuickPollRetries:LongWord;
   NanosecondsPerFifoWord:LongWord;
-  AllowDMA:LongBool;
+  AllowDMA:LongBool;                          {Allow DMA to be used for data transfers}
   ResetClock:LongBool;                        {Reset the clock for the next request}
   MaxDelay:LongWord;                          {Maximum length of time spent waiting (in Milliseconds)}
   StopTime:Int64;                             {When the last stop was issued (in Clock Ticks)}
   DrainWords:LongWord;                        {Last words of FIFO to drain on DMA read}
   DrainOffset:LongWord;                       {Offset for data during FIFO drain on DMA read}
-  UseDMA:LongBool;                            {Use DMA for the current data transfer}
+  UseSBC:LongBool;                            {Use CMD23 (Set Block Count) for the current transfer}
   UseBusy:LongBool;                           {Wait for busy interrupt on current command}
   DelayAfterStop:LongWord;                    {Minimum time between stop and subsequent data transfer (in Microseconds)}
   DelayAfterThisStop:LongWord;                {Minimum time between this stop and subsequent data transfer (in Microseconds)}
@@ -209,9 +208,6 @@ type
   Overclock:LongWord;                         {Current frequency if overclocked, else zero (in Hz)}
   PIOLimit:LongWord;                          {Maximum block count for PIO (0 = always DMA / 0x7FFFFFF = always PIO)}
   PIOTimeout:LongWord;                        {PIO Read or Write block timeout (in milliseconds)}
-  DMAData:TDMAData;                           {DMA data descriptor for current request (If applicable)}
-  DMADirection:LongWord;                      {DMA data direction for current request (If applicable)}
-  DMABuffer:Pointer;                          {DMA bounce buffer for the current request (If applicable)}
  end;
 
 {==============================================================================}
@@ -372,8 +368,6 @@ begin
    BCMSDHOSTHost.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO;
    BCMSDHOSTHost.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
    BCMSDHOSTHost.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NON_STANDARD or SDHCI_FLAG_EXTERNAL_DMA;
-   if BCMSDHOST_USE_CMD23_FLAGS = 0 then BCMSDHOSTHost.SDHCI.Device.DeviceFlags:=BCMSDHOSTHost.SDHCI.Device.DeviceFlags or SDHCI_FLAG_AUTO_CMD23;
-   if BCMSDHOST_USE_CMD23_FLAGS <> 0 then BCMSDHOSTHost.SDHCI.Device.DeviceFlags:=BCMSDHOSTHost.SDHCI.Device.DeviceFlags or SDHCI_FLAG_AUTO_CMD12;
    BCMSDHOSTHost.SDHCI.Device.DeviceData:=nil;
    if Length(Name) <> 0 then BCMSDHOSTHost.SDHCI.Device.DeviceDescription:=Name else BCMSDHOSTHost.SDHCI.Device.DeviceDescription:=BCMSDHOST_DESCRIPTION;
    {SDHCI}
@@ -392,6 +386,9 @@ begin
    BCMSDHOSTHost.SDHCI.HostSetClock:=BCMSDHOSTSetClock;
    BCMSDHOSTHost.SDHCI.HostSetClockDivider:=nil;
    BCMSDHOSTHost.SDHCI.HostSetControlRegister:=nil;
+   BCMSDHOSTHost.SDHCI.HostPrepareDMA:=nil;
+   BCMSDHOSTHost.SDHCI.HostStartDMA:=nil;
+   BCMSDHOSTHost.SDHCI.HostStopDMA:=nil;
    BCMSDHOSTHost.SDHCI.DeviceInitialize:=nil;
    BCMSDHOSTHost.SDHCI.DeviceDeinitialize:=nil;
    BCMSDHOSTHost.SDHCI.DeviceGetCardDetect:=BCMSDHOSTGetCardDetect;
@@ -400,12 +397,13 @@ begin
    BCMSDHOSTHost.SDHCI.DeviceSetIOS:=BCMSDHOSTSetIOS;
    {Driver}
    BCMSDHOSTHost.SDHCI.Address:=Pointer(Address);
+   BCMSDHOSTHost.SDHCI.MaximumPIOBlocks:=BCMSDHOST_PIO_LIMIT;
+   BCMSDHOSTHost.SDHCI.DMASlave:=DREQ;
    {Configuration}
    BCMSDHOSTHost.SDHCI.ClockMinimum:=ClockMinimum;
    BCMSDHOSTHost.SDHCI.ClockMaximum:=ClockMaximum;
    {BCMSDHOST}
    BCMSDHOSTHost.IRQ:=IRQ;
-   BCMSDHOSTHost.DREQ:=DREQ;
    BCMSDHOSTHost.Lock:=INVALID_HANDLE_VALUE;
    BCMSDHOSTHost.EnableFIQ:=EnableFIQ;
    BCMSDHOSTHost.GPIOFirst:=GPIOFirst;
@@ -687,7 +685,6 @@ function BCMSDHOSTPrepareDMA(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;
 {Note: Not intended to be called directly by applications}
 var
  DrainLen:LongWord;
- DMAData:PDMAData;
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
@@ -705,70 +702,69 @@ begin
  {Check Data}
  if Command.Data = nil then Exit;
  
- {Check DMA Buffer}
- if PBCMSDHOSTHost(SDHCI).DMABuffer <> nil then
+ {Free DMA Buffer}
+ if SDHCI.DMABuffer <> nil then
   begin
-   DMABufferRelease(PBCMSDHOSTHost(SDHCI).DMABuffer);
+   DMABufferRelease(SDHCI.DMABuffer);
    
-   PBCMSDHOSTHost(SDHCI).DMABuffer:=nil;
+   SDHCI.DMABuffer:=nil;
   end;  
  
- {Check Data Buffer}
+ {Validate Data Buffer}
  if DMABufferValidate(DMAHostGetDefault,Command.Data.Data,Command.Data.BlockCount * Command.Data.BlockSize) = ERROR_NOT_COMPATIBLE then
   begin
-   PBCMSDHOSTHost(SDHCI).DMABuffer:=DMABufferAllocate(DMAHostGetDefault,Command.Data.BlockCount * Command.Data.BlockSize);
+   SDHCI.DMABuffer:=DMABufferAllocate(DMAHostGetDefault,Command.Data.BlockCount * Command.Data.BlockSize);
   end;
  
  {Clear DMA Data}
- FillChar(PBCMSDHOSTHost(SDHCI).DMAData,SizeOf(TDMAData),0);
- DMAData:=@PBCMSDHOSTHost(SDHCI).DMAData;
+ FillChar(SDHCI.DMAData,SizeOf(TDMAData),0);
 
  {Check Direction}
  if (Command.Data.Flags and MMC_DATA_READ) <> 0 then
   begin
    {Device to Memory}
-   PBCMSDHOSTHost(SDHCI).DMADirection:=DMA_DIR_DEV_TO_MEM;
+   SDHCI.DMADirection:=DMA_DIR_DEV_TO_MEM;
 
    {Setup DMA Data}
-   DMAData.Source:=Pointer(PtrUInt(SDHCI.Address) + PtrUInt(BCMSDHOST_SDDATA));
-   DMAData.Dest:=Command.Data.Data;
-   DMAData.Flags:=DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_DREQ or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
-   DMAData.StrideLength:=0;
-   DMAData.SourceStride:=0;
-   DMAData.DestStride:=0;
-   DMAData.Size:=Command.Data.BlockCount * Command.Data.BlockSize;
+   SDHCI.DMAData.Source:=Pointer(PtrUInt(SDHCI.Address) + PtrUInt(BCMSDHOST_SDDATA));
+   SDHCI.DMAData.Dest:=Command.Data.Data;
+   SDHCI.DMAData.Flags:=DMA_DATA_FLAG_SOURCE_NOINCREMENT or DMA_DATA_FLAG_SOURCE_DREQ or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN;
+   SDHCI.DMAData.StrideLength:=0;
+   SDHCI.DMAData.SourceStride:=0;
+   SDHCI.DMAData.DestStride:=0;
+   SDHCI.DMAData.Size:=Command.Data.BlockCount * Command.Data.BlockSize;
    
    {Check DMA Buffer}
-   if PBCMSDHOSTHost(SDHCI).DMABuffer <> nil then
+   if SDHCI.DMABuffer <> nil then
     begin
      if MMC_LOG_ENABLED then MMCLogWarn(nil,'BCMSDHOST: Using DMA bounce buffer for read data destination');
 
      {Use DMA Buffer}
-     DMAData.Dest:=PBCMSDHOSTHost(SDHCI).DMABuffer;
+     SDHCI.DMAData.Dest:=SDHCI.DMABuffer;
     end; 
   end
  else
   begin
    {Memory to Device}
-   PBCMSDHOSTHost(SDHCI).DMADirection:=DMA_DIR_MEM_TO_DEV;
+   SDHCI.DMADirection:=DMA_DIR_MEM_TO_DEV;
    
    {Setup DMA Data}
-   DMAData.Source:=Command.Data.Data;
-   DMAData.Dest:=Pointer(PtrUInt(SDHCI.Address) + PtrUInt(BCMSDHOST_SDDATA));
-   DMAData.Flags:=DMA_DATA_FLAG_DEST_NOINCREMENT or DMA_DATA_FLAG_DEST_DREQ or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
-   DMAData.StrideLength:=0;
-   DMAData.SourceStride:=0;
-   DMAData.DestStride:=0;
-   DMAData.Size:=Command.Data.BlockCount * Command.Data.BlockSize;
+   SDHCI.DMAData.Source:=Command.Data.Data;
+   SDHCI.DMAData.Dest:=Pointer(PtrUInt(SDHCI.Address) + PtrUInt(BCMSDHOST_SDDATA));
+   SDHCI.DMAData.Flags:=DMA_DATA_FLAG_DEST_NOINCREMENT or DMA_DATA_FLAG_DEST_DREQ or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
+   SDHCI.DMAData.StrideLength:=0;
+   SDHCI.DMAData.SourceStride:=0;
+   SDHCI.DMAData.DestStride:=0;
+   SDHCI.DMAData.Size:=Command.Data.BlockCount * Command.Data.BlockSize;
    
    {Check DMA Buffer}
-   if PBCMSDHOSTHost(SDHCI).DMABuffer <> nil then
+   if SDHCI.DMABuffer <> nil then
     begin
      if MMC_LOG_ENABLED then MMCLogWarn(nil,'BCMSDHOST: Copying data to DMA bounce buffer from write data source');
 
      {Copy Data to DMA Buffer}
-     DMAData.Source:=PBCMSDHOSTHost(SDHCI).DMABuffer;
-     System.Move(Command.Data.Data^,DMAData.Source^,DMAData.Size);
+     SDHCI.DMAData.Source:=SDHCI.DMABuffer;
+     System.Move(Command.Data.Data^,SDHCI.DMAData.Source^,SDHCI.DMAData.Size);
     end; 
   end;
 
@@ -780,11 +776,11 @@ begin
    DrainLen:=Min((BCMSDHOST_FIFO_READ_THRESHOLD - 1) * 4,Command.Data.BlockCount * Command.Data.BlockSize);
    
    {Trim DMA Size}
-   Dec(DMAData.Size,DrainLen);
+   Dec(SDHCI.DMAData.Size,DrainLen);
    
    {Get Drain Words and Offset}
    PBCMSDHOSTHost(SDHCI).DrainWords:=DrainLen div 4;
-   PBCMSDHOSTHost(SDHCI).DrainOffset:=DMAData.Size;
+   PBCMSDHOSTHost(SDHCI).DrainOffset:=SDHCI.DMAData.Size;
    
    {$IF DEFINED(BCMSDHOST_DEBUG) or DEFINED(MMC_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: DMA FIFO Drain (Words = ' + IntToStr(PBCMSDHOSTHost(SDHCI).DrainWords) + ' Offset = ' + AddrToHex(PBCMSDHOSTHost(SDHCI).DrainOffset) + ')');
@@ -1175,8 +1171,38 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Transfer Complete');
  {$ENDIF}
 
- BCMSDHOSTWaitTransferComplete(SDHCI);
- 
+ {Check Command}
+ if SDHCI.Command = nil then
+  begin
+   {$IFDEF INTERRUPT_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Wait transfer complete when no current command');
+   {$ENDIF}
+   Exit; 
+  end; 
+
+ {Check Data}
+ if SDHCI.Command.Data = nil then
+  begin
+   {$IFDEF INTERRUPT_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Wait transfer complete when no current data');
+   {$ENDIF}
+   Exit; 
+  end; 
+
+ {Check for CMD12}
+ {Need to send CMD12 if a) open-ended multiblock transfer (no CMD23) or b) error in multiblock transfer}
+ if (MMCIsMultiCommand(SDHCI.Command.Command) or (SDHCI.Command.Data.BlockCount > 1)) and not(PBCMSDHOSTHost(SDHCI).UseSBC) then
+  begin
+   {Not required, handled by BCMSDHOSTSendCommand and caller}
+   
+   {Don't wait for transfer complete, stop command needs to be sent first}
+  end
+ else
+  begin 
+   {Wait for transfer completion}
+   BCMSDHOSTWaitTransferComplete(SDHCI);
+  end; 
+
  SemaphoreSignal(SDHCI.Wait);
  
  Result:=MMC_STATUS_SUCCESS; 
@@ -1602,6 +1628,9 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Busy Interrupt (InterruptMask=' + IntToHex(InterruptMask,8) + ')');
  {$ENDIF}
 
+ {Update Statistics}
+ Inc(SDHCI.CommandInterruptCount);
+
  {Check Command}
  if SDHCI.Command = nil then
   begin
@@ -1678,6 +1707,9 @@ begin
  {$IF (DEFINED(BCMSDHOST_DEBUG) or DEFINED(MMC_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Data Interrupt (InterruptMask=' + IntToHex(InterruptMask,8) + ')');
  {$ENDIF}
+
+ {Update Statistics}
+ Inc(SDHCI.DataInterruptCount);
 
  {There are no dedicated data/space available interrupt status bits, so it is
   necessary to use the single shared data/space available FIFO status bits. It
@@ -1764,6 +1796,9 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Block Interrupt (InterruptMask=' + IntToHex(InterruptMask,8) + ')');
  {$ENDIF}
 
+ {Update Statistics}
+ Inc(SDHCI.DataInterruptCount);
+
  {Check Command}
  if SDHCI.Command = nil then
   begin
@@ -1803,7 +1838,7 @@ begin
     end;
   end;  
   
- if not PBCMSDHOSTHost(SDHCI).UseDMA then
+ if not SDHCI.UseDMA then
   begin
    if SDHCI.Command.Data.BlocksRemaining = 0 then
     begin
@@ -1885,6 +1920,9 @@ begin
     {Setup Status}
     Command.Status:=MMC_STATUS_NOT_PROCESSED;
     try
+     {Update Statistics}
+     Inc(SDHCI.RequestCount); 
+     
      {Check Reset Clock}
      if PBCMSDHOSTHost(SDHCI).ResetClock then
       begin
@@ -1897,19 +1935,23 @@ begin
      {Acquire the Lock}
      if BCMSDHOSTLock(SDHCI) <> ERROR_SUCCESS then Exit;
      try
-      {Read Debug Mode Register} 
-      Debug:=BCMSDHOSTRead(SDHCI,BCMSDHOST_SDEDM);
-     
-      {Get FSM State}
-      State:=Debug and BCMSDHOST_SDEDM_FSM_MASK;
-      if (State <> BCMSDHOST_SDEDM_FSM_IDENTMODE) and (State <> BCMSDHOST_SDEDM_FSM_DATAMODE) then
+      {Check for Stop}
+      if Command.Command <> MMC_CMD_STOP_TRANSMISSION then
        begin
-        {$IFDEF INTERRUPT_DEBUG}
-        if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Previous command not complete');
-        {$ENDIF}
-        
-        Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-        Exit;
+        {Read Debug Mode Register} 
+        Debug:=BCMSDHOSTRead(SDHCI,BCMSDHOST_SDEDM);
+       
+        {Get FSM State}
+        State:=Debug and BCMSDHOST_SDEDM_FSM_MASK;
+        if (State <> BCMSDHOST_SDEDM_FSM_IDENTMODE) and (State <> BCMSDHOST_SDEDM_FSM_DATAMODE) then
+         begin
+          {$IFDEF INTERRUPT_DEBUG}
+          if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Previous command not complete');
+          {$ENDIF}
+          
+          Command.Status:=MMC_STATUS_HARDWARE_ERROR;
+          Exit;
+         end;
        end;
 
       {Wait max 100 ms}
@@ -1978,7 +2020,8 @@ begin
      if Command.Data = nil then
       begin
        {Setup Command}
-       PBCMSDHOSTHost(SDHCI).UseDMA:=False;
+       SDHCI.UseDMA:=False;
+       PBCMSDHOSTHost(SDHCI).UseSBC:=False;
       end
      else 
       begin
@@ -1989,8 +2032,8 @@ begin
        Command.Data.BytesTransfered:=0;
 
        {Check DMA}
-       PBCMSDHOSTHost(SDHCI).UseDMA:=PBCMSDHOSTHost(SDHCI).AllowDMA and (Command.Data.BlockCount > PBCMSDHOSTHost(SDHCI).PIOLimit); 
-       if PBCMSDHOSTHost(SDHCI).UseDMA then
+       SDHCI.UseDMA:=PBCMSDHOSTHost(SDHCI).AllowDMA and (Command.Data.BlockCount > PBCMSDHOSTHost(SDHCI).PIOLimit); 
+       if SDHCI.UseDMA then
         begin
          {Prepare DMA}
          Status:=BCMSDHOSTPrepareDMA(SDHCI,Command);
@@ -2001,6 +2044,9 @@ begin
           end;
         end;
 
+       {Check SBC}
+       PBCMSDHOSTHost(SDHCI).UseSBC:=(BCMSDHOST_USE_CMD23_FLAGS <> 0) and MMCHasSetBlockCount(MMC);
+       
        {$IF DEFINED(BCMSDHOST_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: MMC Send Command (BlockSize=' + IntToStr(Command.Data.BlockSize) + ')');
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: MMC Send Command (BlockCount=' + IntToStr(Command.Data.BlockCount) + ')');
@@ -2011,7 +2057,7 @@ begin
        
        {Setup Transfer Interrupts}
        Interrupts:=BCMSDHOST_SDHCFG_DATA_IRPT_EN or BCMSDHOST_SDHCFG_BLOCK_IRPT_EN or BCMSDHOST_SDHCFG_BUSY_IRPT_EN;
-       if PBCMSDHOSTHost(SDHCI).UseDMA then
+       if SDHCI.UseDMA then
         begin
          PBCMSDHOSTHost(SDHCI).HostConfiguration:=(PBCMSDHOSTHost(SDHCI).HostConfiguration and not(Interrupts)) or BCMSDHOST_SDHCFG_BUSY_IRPT_EN; 
         end
@@ -2042,7 +2088,7 @@ begin
        PBCMSDHOSTHost(SDHCI).DelayAfterThisStop:=PBCMSDHOSTHost(SDHCI).DelayAfterStop;
        
        {Check Hazardous Blocks}
-       if ((Command.Data.Flags and MMC_DATA_READ) <> 0) and (BCMSDHOST_USE_CMD23_FLAGS = 0) then
+       if (MMCIsMultiCommand(Command.Command) or (Command.Data.BlockCount > 1)) and ((Command.Data.Flags and MMC_DATA_READ) <> 0) and not(PBCMSDHOSTHost(SDHCI).UseSBC) then
         begin
          if (MMC.Storage <> nil) and (MMC.Storage.BlockCount > 0) then
           begin
@@ -2099,6 +2145,9 @@ begin
       {Wait for Completion}
       if Command.Data = nil then
        begin
+        {Update Statistics}
+        Inc(SDHCI.CommandRequestCount); 
+        
         {Check Use Busy}
         if not PBCMSDHOSTHost(SDHCI).UseBusy then
          begin
@@ -2132,11 +2181,22 @@ begin
        end
       else
        begin
+        {Update Statistics}
+        Inc(SDHCI.DataRequestCount); 
+
         {Check DMA}
-        if PBCMSDHOSTHost(SDHCI).UseDMA then
+        if SDHCI.UseDMA then
          begin
           {Start DMA}
-          if DMATransferRequestEx(DMAHostGetDefault,@PBCMSDHOSTHost(SDHCI).DMAData,BCMSDHOSTDMARequestCompleted,SDHCI,PBCMSDHOSTHost(SDHCI).DMADirection,PBCMSDHOSTHost(SDHCI).DREQ,DMA_REQUEST_FLAG_NONE) <> ERROR_SUCCESS then Exit;
+          if DMATransferRequestEx(DMAHostGetDefault,@SDHCI.DMAData,BCMSDHOSTDMARequestCompleted,SDHCI,SDHCI.DMADirection,SDHCI.DMASlave,DMA_REQUEST_FLAG_NONE) <> ERROR_SUCCESS then Exit;
+          
+          {Update Statistics}
+          Inc(SDHCI.DMADataTransferCount); 
+         end
+        else
+         begin
+          {Update Statistics}
+          Inc(SDHCI.PIODataTransferCount); 
          end;
         
         {Check Use Busy}
@@ -2207,6 +2267,12 @@ begin
          Dec(PBCMSDHOSTHost(SDHCI).Overclock50);
          PBCMSDHOSTHost(SDHCI).ResetClock:=True;
         end;
+
+       {Update Statistics}
+       Inc(SDHCI.RequestErrors); 
+       
+       {Return Result}
+       Result:=Command.Status;
       end;
     end;
        
@@ -2490,6 +2556,15 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Host capabilities = ' + IntToHex(SDHCI.Capabilities,8));
  {$ENDIF}
 
+ {Set Maximum Request Size}
+ SDHCI.MaximumRequestSize:=SIZE_512K;
+
+ {Determine Maximum Block Size}
+ SDHCI.MaximumBlockSize:=MMC_MAX_BLOCK_LEN;
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Host maximum block size = ' + IntToStr(SDHCI.MaximumBlockSize));
+ {$ENDIF}
+
  {Determine Maximum Blocks}
  SDHCI.MaximumBlockCount:=MMC_MAX_BLOCK_COUNT;
  {$IF DEFINED(BCMSDHOST_DEBUG) or DEFINED(MMC_DEBUG)}
@@ -2541,7 +2616,10 @@ begin
  MMC.DeviceGetWriteProtect:=SDHCI.DeviceGetWriteProtect;
  MMC.DeviceSendCommand:=SDHCI.DeviceSendCommand;
  MMC.DeviceSetIOS:=SDHCI.DeviceSetIOS;
-
+ {Driver}
+ MMC.Voltages:=SDHCI.Voltages;
+ MMC.Capabilities:=SDHCI.Capabilities;
+ 
  {Create Storage}
  MMC.Storage:=StorageDeviceCreate;
  if MMC.Storage = nil then
@@ -2714,6 +2792,14 @@ begin
 
    PBCMSDHOSTHost(SDHCI).Lock:=INVALID_HANDLE_VALUE
   end;
+
+ {Free DMA Buffer}
+ if SDHCI.DMABuffer <> nil then
+  begin
+   DMABufferRelease(SDHCI.DMABuffer);
+   
+   SDHCI.DMABuffer:=nil;
+  end;  
 
  {Destroy the Semaphore}
  if SDHCI.Wait <> INVALID_HANDLE_VALUE then
@@ -3020,13 +3106,16 @@ begin
  {Check Command}
  if SDHCI.Command = nil then Exit;
 
+ {Check Data}
+ if SDHCI.Command.Data = nil then Exit;
+
  {Check DMA Buffer}
- if (PBCMSDHOSTHost(SDHCI).DMABuffer <> nil) and ((SDHCI.Command.Data.Flags and MMC_DATA_READ) <> 0) then
+ if (SDHCI.DMABuffer <> nil) and ((SDHCI.Command.Data.Flags and MMC_DATA_READ) <> 0) then
   begin
    if MMC_LOG_ENABLED then MMCLogWarn(nil,'BCMSDHOST: Copying data from DMA bounce buffer to read data destination');
    
    {Copy Data from DMA Buffer}
-   System.Move(PBCMSDHOSTHost(SDHCI).DMABuffer^,SDHCI.Command.Data.Data^,SDHCI.Command.Data.BlockCount * SDHCI.Command.Data.BlockSize);
+   System.Move(SDHCI.DMABuffer^,SDHCI.Command.Data.Data^,SDHCI.Command.Data.BlockCount * SDHCI.Command.Data.BlockSize);
   end;
  
  {Acquire the Lock}

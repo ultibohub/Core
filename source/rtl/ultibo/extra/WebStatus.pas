@@ -2291,6 +2291,10 @@ begin
  {Add Board Revision}
  AddItem(AResponse,'Board Revision:','0x' + IntToHex(BoardGetRevision,8));
 
+ {Add Chip Revision}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Chip Revision:','0x' + IntToHex(ChipGetRevision,8));
+
  {Add Firmware Revision}
  AddBlank(AResponse);
  AddItem(AResponse,'Firmware Revision:','0x' + IntToHex(FirmwareGetRevision,8) + ' (' + IntToStr(FirmwareGetRevision) + ')');
@@ -4369,6 +4373,10 @@ begin
   begin
    Result.Add('MMC_FLAG_NON_REMOVABLE');
   end;
+ if (AFlags and MMC_FLAG_SET_BLOCK_COUNT) = MMC_FLAG_SET_BLOCK_COUNT then
+  begin
+   Result.Add('MMC_FLAG_SET_BLOCK_COUNT');
+  end;
 
  {Check Flags}
  if Result.Count = 0 then
@@ -4416,6 +4424,10 @@ begin
  if (AFlags and SDHCI_FLAG_EXTERNAL_DMA) = SDHCI_FLAG_EXTERNAL_DMA then
   begin
    Result.Add('SDHCI_FLAG_EXTERNAL_DMA');
+  end;
+ if (AFlags and SDHCI_FLAG_BUS_ADDRESSES) = SDHCI_FLAG_BUS_ADDRESSES then
+  begin
+   Result.Add('SDHCI_FLAG_BUS_ADDRESSES');
   end;
 
  {Check Flags}
@@ -6659,23 +6671,44 @@ begin
             AddItem(AResponse,'',FlagNames.Strings[Count]);
            end;
          end;
-       
+        
         AddBlank(AResponse);
         AddItem(AResponse,'Id:',IntToStr(SDHCIHost.SDHCIId));
         AddItem(AResponse,'State:',SDHCIHostStateToString(SDHCIHost.SDHCIState));
         AddBlank(AResponse);
         AddItem(AResponse,'Version:',SDHCIVersionToString(SDHCIGetVersion(SDHCIHost)));
         AddItem(AResponse,'Clock:',IntToStr(SDHCIHost.Clock));
+        AddItem(AResponse,'Power:',SDHCIPowerToString(SDHCIHost.Power));
         AddItem(AResponse,'Bus Width:',MMCBusWidthToString(SDHCIHost.BusWidth));
         AddBlank(AResponse);
         AddItem(AResponse,'Clock Minimum:',IntToStr(SDHCIHost.ClockMinimum));
         AddItem(AResponse,'Clock Maximum:',IntToStr(SDHCIHost.ClockMaximum));
         AddItem(AResponse,'Minimum Frequency:',IntToStr(SDHCIHost.MinimumFrequency));
         AddItem(AResponse,'Maximum Frequency:',IntToStr(SDHCIHost.MaximumFrequency));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Maximum Block Size:',IntToStr(SDHCIHost.MaximumBlockSize));
         AddItem(AResponse,'Maximum Block Count:',IntToStr(SDHCIHost.MaximumBlockCount));
+        AddItem(AResponse,'Maximum Request Size:',IntToStr(SDHCIHost.MaximumRequestSize));
+        AddItem(AResponse,'Minimum DMA Size:',IntToStr(SDHCIHost.MinimumDMASize));
+        AddItem(AResponse,'Maximum PIO Blocks:',IntToStr(SDHCIHost.MaximumPIOBlocks));
+        AddBlank(AResponse);
+        AddItem(AResponse,'DMA Slave:',IntToStr(SDHCIHost.DMASlave));
+        AddItem(AResponse,'SDMA Boundary:',IntToStr(SDHCIHost.SDMABoundary));
+        AddItem(AResponse,'ADMA Table Size:',IntToStr(SDHCIHost.ADMATableSize));
+        AddItem(AResponse,'ADMA Table Count:',IntToStr(SDHCIHost.ADMATableCount));
+        AddItem(AResponse,'ADMA Buffer Size:',IntToStr(SDHCIHost.ADMABufferSize));
+        AddItem(AResponse,'ADMA Descriptor Size:',IntToStr(SDHCIHost.ADMADescriptorSize));
+        AddBlank(AResponse);
+        AddItem(AResponse,'Request Count:',IntToStr(SDHCIHost.RequestCount));
+        AddItem(AResponse,'Request Errors:',IntToStr(SDHCIHost.RequestErrors));
+        AddItem(AResponse,'Data Request Count:',IntToStr(SDHCIHost.DataRequestCount));
+        AddItem(AResponse,'Command Request Count:',IntToStr(SDHCIHost.CommandRequestCount));
+        AddItem(AResponse,'PIO Data Transfer Count:',IntToStr(SDHCIHost.PIODataTransferCount));
+        AddItem(AResponse,'DMA Data Transfer Count:',IntToStr(SDHCIHost.DMADataTransferCount));
         AddBlank(AResponse);
         AddItem(AResponse,'Interrupt Count:',IntToStr(SDHCIHost.InterruptCount));
-        AddBlank(AResponse);
+        AddItem(AResponse,'Data Interrupt Count:',IntToStr(SDHCIHost.DataInterruptCount));
+        AddItem(AResponse,'Command Interrupt Count:',IntToStr(SDHCIHost.CommandInterruptCount));
       
         FlagNames.Free;
        end;
@@ -7136,6 +7169,7 @@ begin
         end;
       end;
 
+     AddItem(AResponse,'Description:',USBDevice.Device.DeviceDescription);
      AddBlank(AResponse);
      AddItem(AResponse,'Id:',IntToStr(USBDevice.USBId));
      AddItem(AResponse,'State:',USBDeviceStateToString(USBDevice.USBState));
@@ -7222,6 +7256,7 @@ begin
         end;
       end;
 
+     AddItem(AResponse,'Description:',USBHost.Device.DeviceDescription);
      AddBlank(AResponse);
      AddItem(AResponse,'Id:',IntToStr(USBHost.HostId));
      AddItem(AResponse,'State:',USBHostStateToString(USBHost.HostState));
@@ -7437,6 +7472,7 @@ begin
         end;
       end;
 
+     AddItem(AResponse,'Description:',PCIDevice.Device.DeviceDescription);
      AddBlank(AResponse);
      AddItem(AResponse,'Id:',IntToStr(PCIDevice.PCIId));
      AddItem(AResponse,'State:',PCIDeviceStateToString(PCIDevice.PCIState));
@@ -7496,6 +7532,7 @@ begin
         end;
       end;
 
+     AddItem(AResponse,'Description:',PCIHost.Device.DeviceDescription);
      AddBlank(AResponse);
      AddItem(AResponse,'Id:',IntToStr(PCIHost.HostId));
      AddItem(AResponse,'State:',PCIHostStateToString(PCIHost.HostState));
@@ -7640,6 +7677,10 @@ begin
   begin
    Result.Add('MMC_FLAG_NON_REMOVABLE');
   end;
+ if (AFlags and MMC_FLAG_SET_BLOCK_COUNT) = MMC_FLAG_SET_BLOCK_COUNT then
+  begin
+   Result.Add('MMC_FLAG_SET_BLOCK_COUNT');
+  end;
 
  {Check Flags}
  if Result.Count = 0 then
@@ -7687,6 +7728,10 @@ begin
  if (AFlags and SDHCI_FLAG_EXTERNAL_DMA) = SDHCI_FLAG_EXTERNAL_DMA then
   begin
    Result.Add('SDHCI_FLAG_EXTERNAL_DMA');
+  end;
+ if (AFlags and SDHCI_FLAG_BUS_ADDRESSES) = SDHCI_FLAG_BUS_ADDRESSES then
+  begin
+   Result.Add('SDHCI_FLAG_BUS_ADDRESSES');
   end;
 
  {Check Flags}
@@ -8145,6 +8190,14 @@ begin
   begin
    Result.Add('SDHCI_INT_CARD_INT');
   end;
+ if (AInterrupts and SDHCI_INT_RETUNE) = SDHCI_INT_RETUNE then
+  begin
+   Result.Add('SDHCI_INT_RETUNE');
+  end;
+ if (AInterrupts and SDHCI_INT_CQE) = SDHCI_INT_CQE then
+  begin
+   Result.Add('SDHCI_INT_CQE');
+  end;
  if (AInterrupts and SDHCI_INT_ERROR) = SDHCI_INT_ERROR then
   begin
    Result.Add('SDHCI_INT_ERROR');
@@ -8181,9 +8234,9 @@ begin
   begin
    Result.Add('SDHCI_INT_BUS_POWER');
   end;
- if (AInterrupts and SDHCI_INT_ACMD12ERR) = SDHCI_INT_ACMD12ERR then
+ if (AInterrupts and SDHCI_INT_AUTO_CMD_ERR) = SDHCI_INT_AUTO_CMD_ERR then
   begin
-   Result.Add('SDHCI_INT_ACMD12ERR');
+   Result.Add('SDHCI_INT_AUTO_CMD_ERR');
   end;
  if (AInterrupts and SDHCI_INT_ADMA_ERROR) = SDHCI_INT_ADMA_ERROR then
   begin
@@ -8278,6 +8331,7 @@ begin
         end;
       end;
 
+     AddItem(AResponse,'Description:',MMCDevice.Device.DeviceDescription);
      AddBlank(AResponse);
      AddItem(AResponse,'Id:',IntToStr(MMCDevice.MMCId));
      AddItem(AResponse,'State:',MMCDeviceStateToString(MMCDevice.MMCState));
@@ -8288,6 +8342,7 @@ begin
      WorkBuffer:=MMCBusWidthToString(MMCDevice.BusWidth);
      if MMCIsSD(MMCDevice) then WorkBuffer:=SDBusWidthToString(MMCDevice.BusWidth);
      AddItem(AResponse,'Bus Width:',WorkBuffer);
+     AddBlank(AResponse);
      
      {Get Voltage Names}
      Names:=MMCVoltagesToNames(MMCDevice.Voltages);
@@ -8302,6 +8357,8 @@ begin
         end;
       end;
      Names.Free;
+     
+     AddBlank(AResponse);
      
      {Get Capability Names}
      Names:=MMCCapabilitiesToNames(MMCDevice.Capabilities);
@@ -8383,12 +8440,14 @@ begin
         end;
       end;
 
+     AddItem(AResponse,'Description:',SDHCIHost.Device.DeviceDescription);
      AddBlank(AResponse);
      AddItem(AResponse,'Id:',IntToStr(SDHCIHost.SDHCIId));
      AddItem(AResponse,'State:',SDHCIHostStateToString(SDHCIHost.SDHCIState));
      AddBlank(AResponse);
      AddItem(AResponse,'Address:','0x' + PtrToHex(SDHCIHost.Address));
      AddItem(AResponse,'Version:',SDHCIVersionToString(SDHCIGetVersion(SDHCIHost)));
+     AddBlank(AResponse);
      
      {Get Quirk Names}
      Names:=SDHCIQuirksToNames(SDHCIHost.Quirks);
@@ -8418,8 +8477,11 @@ begin
       end;
      Names.Free;
 
+     AddBlank(AResponse);
      AddItem(AResponse,'Clock:',IntToStr(SDHCIHost.Clock));
+     AddItem(AResponse,'Power:',SDHCIPowerToString(SDHCIHost.Power));
      AddItem(AResponse,'Bus Width:',MMCBusWidthToString(SDHCIHost.BusWidth));
+     AddBlank(AResponse);
      
      {Get Interrupt Names}
      Names:=SDHCIInterruptsToNames(SDHCIHost.Interrupts);
@@ -8435,6 +8497,8 @@ begin
       end;
      Names.Free;
      
+     AddBlank(AResponse);
+     
      {Get Voltage Names}
      Names:=SDHCIVoltagesToNames(SDHCIHost.Voltages);
      AddItem(AResponse,'Voltages:',Names.Strings[0]);
@@ -8448,6 +8512,8 @@ begin
         end;
       end;
      Names.Free;
+
+     AddBlank(AResponse);
      
      {Get Capability Names}
      Names:=SDHCICapabilitiesToNames(SDHCIHost.Capabilities);
@@ -8463,9 +8529,22 @@ begin
       end;
      Names.Free;
      
+     AddBlank(AResponse);
      AddItem(AResponse,'Minimum Frequency:',IntToStr(SDHCIHost.MinimumFrequency));
      AddItem(AResponse,'Maximum Frequency:',IntToStr(SDHCIHost.MaximumFrequency));
+     AddBlank(AResponse);
+     AddItem(AResponse,'Maximum Block Size:',IntToStr(SDHCIHost.MaximumBlockSize));
      AddItem(AResponse,'Maximum Block Count:',IntToStr(SDHCIHost.MaximumBlockCount));
+     AddItem(AResponse,'Maximum Request Size:',IntToStr(SDHCIHost.MaximumRequestSize));
+     AddItem(AResponse,'Minimum DMA Size:',IntToStr(SDHCIHost.MinimumDMASize));
+     AddItem(AResponse,'Maximum PIO Blocks:',IntToStr(SDHCIHost.MaximumPIOBlocks));
+     AddBlank(AResponse);
+     AddItem(AResponse,'DMA Slave:',IntToStr(SDHCIHost.DMASlave));
+     AddItem(AResponse,'SDMA Boundary:',IntToStr(SDHCIHost.SDMABoundary));
+     AddItem(AResponse,'ADMA Table Size:',IntToStr(SDHCIHost.ADMATableSize));
+     AddItem(AResponse,'ADMA Table Count:',IntToStr(SDHCIHost.ADMATableCount));
+     AddItem(AResponse,'ADMA Buffer Size:',IntToStr(SDHCIHost.ADMABufferSize));
+     AddItem(AResponse,'ADMA Descriptor Size:',IntToStr(SDHCIHost.ADMADescriptorSize));
      AddBlank(AResponse);
      
      {Get Preset Voltage Names}
@@ -8481,6 +8560,8 @@ begin
         end;
       end;
      Names.Free;
+
+     AddBlank(AResponse);
      
      {Get Preset Capability Names}
      Names:=MMCCapabilitiesToNames(SDHCIHost.PresetCapabilities);
@@ -8496,12 +8577,22 @@ begin
       end;
      Names.Free;
      
+     AddBlank(AResponse);
      AddItem(AResponse,'Clock Minimum:',IntToStr(SDHCIHost.ClockMinimum));
      AddItem(AResponse,'Clock Maximum:',IntToStr(SDHCIHost.ClockMaximum));
      AddItem(AResponse,'Driver Stage Register:',IntToStr(SDHCIHost.DriverStageRegister));
      AddBlank(AResponse);
+     AddItem(AResponse,'Request Count:',IntToStr(SDHCIHost.RequestCount));
+     AddItem(AResponse,'Request Errors:',IntToStr(SDHCIHost.RequestErrors));
+     AddItem(AResponse,'Data Request Count:',IntToStr(SDHCIHost.DataRequestCount));
+     AddItem(AResponse,'Command Request Count:',IntToStr(SDHCIHost.CommandRequestCount));
+     AddItem(AResponse,'PIO Data Transfer Count:',IntToStr(SDHCIHost.PIODataTransferCount));
+     AddItem(AResponse,'DMA Data Transfer Count:',IntToStr(SDHCIHost.DMADataTransferCount));
+     AddBlank(AResponse);
      AddItem(AResponse,'Interrupt Count:',IntToStr(SDHCIHost.InterruptCount));
-
+     AddItem(AResponse,'Data Interrupt Count:',IntToStr(SDHCIHost.DataInterruptCount));
+     AddItem(AResponse,'Command Interrupt Count:',IntToStr(SDHCIHost.CommandInterruptCount));
+    
      FlagNames.Free;
     end
    else
@@ -9975,6 +10066,12 @@ begin
   end;
  AddBlank(AResponse);
  
+ AddBold(AResponse,'Device Tree','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'Device Tree Base:','0x' + AddrToHex(DEVICE_TREE_BASE),2);
+ AddItemEx(AResponse,'Device Tree Valid:',BooleanToString(DEVICE_TREE_VALID),2);
+ AddBlank(AResponse);
+
  {$IFDEF CPUARM}
  AddBold(AResponse,'ARM Specific','');
  AddBlank(AResponse);

@@ -1432,6 +1432,7 @@ function PCIHostDeregister(Host:PPCIHost):LongWord;
 var
  Prev:PPCIHost;
  Next:PPCIHost;
+ Status:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1452,9 +1453,22 @@ begin
  if CriticalSectionLock(PCIHostTableLock) = ERROR_SUCCESS then
   begin
    try
-    //To Do
+    {Check Started}
+    if PCIStarted then
+     begin
+      
+      //To Do
     
-    //To Do //Stop host if started etc
+      {Stop Host}
+      Status:=Host.HostStop(Host);
+      if Status <> PCI_STATUS_SUCCESS then
+       begin
+        if PCI_LOG_ENABLED then PCILogError(nil,'Failed to stop PCI host ' + DeviceGetName(@Host.Device) + ' (Status=' + PCIStatusToString(Status) + ')');
+        
+        Result:=ERROR_OPERATION_FAILED;
+        Exit;
+       end;
+     end; 
     
     {Deregister Device}
     Result:=DeviceDeregister(@Host.Device);

@@ -146,7 +146,7 @@ const
  ARM_GICD_SGIR_NSATT_SHIFT     = 15;
  ARM_GICD_SGIR_INTID_SHIFT     = 0;
  
- ARM_GICD_SGIR_CPUFILTER_LIST = $0; {Forward the interrupt to the CPU interfaces specified in the CPUTargetList fielda}
+ ARM_GICD_SGIR_CPUFILTER_LIST = $0; {Forward the interrupt to the CPU interfaces specified in the CPUTargetList field}
  ARM_GICD_SGIR_CPUFILTER_ALL  = $1; {Forward the interrupt to all CPU interfaces except that of the processor that requested the interrupt}
  ARM_GICD_SGIR_CPUFILTER_SELF = $2; {Forward the interrupt only to the CPU interface of the processor that requested the interrupt}
  

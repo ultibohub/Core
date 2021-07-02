@@ -57,7 +57,7 @@ VideoCore IV
  The VideoCore IV (VC4) is the graphics processor (GPU) contained in the Broadcom BCM2835, 2836 and 2837
  SoC used in the Raspberry Pi A/B/A+/B+/CM/2B/3B/3A+/3B+/CM3/CM3+. The Broadcom BCM2838 SoC used in the
  Raspberry Pi 4B/400 uses a new VideoCore VI (VC6) graphics processor however some of the core functionality
- of this unit such as VCHIQ and DispmanX is still compatible and the functionality provided here for thoses
+ of this unit such as VCHIQ and DispmanX is still compatible and the functionality provided here for those
  subsystems still works.
  
  The VC4 is made up of many subsystems that perform functions ranging from 2D and 3D graphics acceleration

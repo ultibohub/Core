@@ -695,6 +695,10 @@ type
  TBoardGetMACAddress = function:String;
  
 type
+ {Prototypes for Chip Handlers}
+ TChipGetRevision = function:LongWord;
+ 
+type
  {Prototypes for Firmware Handlers}
  TFirmwareGetRevision = function:LongWord;
  TFirmwareGetThrottled = function:LongWord;
@@ -1478,6 +1482,10 @@ var
  BoardGetMACAddressHandler:TBoardGetMACAddress;
  
 var
+ {Chip Handlers}
+ ChipGetRevisionHandler:TChipGetRevision;
+ 
+var
  {Firmware Handlers}
  FirmwareGetRevisionHandler:TFirmwareGetRevision;
  FirmwareGetThrottledHandler:TFirmwareGetThrottled;
@@ -2166,6 +2174,10 @@ function BoardGetModel:LongWord; inline;
 function BoardGetSerial:Int64; inline;
 function BoardGetRevision:LongWord; inline;
 function BoardGetMACAddress:String; inline;
+
+{==============================================================================}
+{Chip Functions}
+function ChipGetRevision:LongWord; inline;
 
 {==============================================================================}
 {Firmware Functions}
@@ -5522,6 +5534,23 @@ begin
  else
   begin
    Result:='';
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Chip Functions}
+function ChipGetRevision:LongWord; inline;
+{Get the current Chip revision number}
+begin
+ {}
+ if Assigned(ChipGetRevisionHandler) then
+  begin
+   Result:=ChipGetRevisionHandler;
+  end
+ else
+  begin
+   Result:=0;
   end;
 end;
 

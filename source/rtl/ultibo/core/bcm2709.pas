@@ -30,6 +30,7 @@ Credits
  
    Linux - \drivers\mmc\host\bcm2835-mmc.c (SDHCI) - Copyright 2014 Gellert Weisz
    Linux - \drivers\mmc\host\sdhci-iproc.c (SDHCI) - Copyright (C) 2014 Broadcom Corporation
+   
    Linux - \drivers\mmc\host\bcm2835-sdhost.c (SDHOST) - Copyright (C) 2015-2016 Raspberry Pi (Trading) Ltd.
  
    Linux - \drivers\video\bcm2708_fb.c
@@ -215,7 +216,7 @@ BCM2709 UART0 Device
 
  The UART0 device is an ARM PL011 UART which supports programmable baud rates, start, stop and parity bits and hardware
  flow control and many others. The UART0 is similar to the industry standard 16C650 but with a number of differences, the
- PL011 has a some optional features such as IrDA, Serial InfraRed and DMA which are not supported by the Broadcom implementation.
+ PL011 has some optional features such as IrDA, Serial InfraRed and DMA which are not supported by the Broadcom implementation.
 
  In the standard configuration the UART0 TX and RX lines are connected to GPIO pins 14 and 15 respectively (Alternate function
  0) but they can be remapped via GPIO function selects to a number of other locations. On the Raspberry Pi (all models) none of
@@ -765,7 +766,7 @@ type
   {BCM2709 Properties}
   SDIO:LongBool;
   WriteDelay:LongWord;
-  LastWrite:LongWord;
+  DelayClock:LongWord;
   ShadowRegister:LongWord;
  end;
  
@@ -1799,6 +1800,9 @@ begin
      BCM2709SDHCIHost.SDHCI.HostSetClock:=nil;
      BCM2709SDHCIHost.SDHCI.HostSetClockDivider:=nil;
      BCM2709SDHCIHost.SDHCI.HostSetControlRegister:=nil;
+     BCM2709SDHCIHost.SDHCI.HostPrepareDMA:=nil;
+     BCM2709SDHCIHost.SDHCI.HostStartDMA:=nil;
+     BCM2709SDHCIHost.SDHCI.HostStopDMA:=nil;
      BCM2709SDHCIHost.SDHCI.DeviceInitialize:=nil;
      BCM2709SDHCIHost.SDHCI.DeviceDeinitialize:=nil;
      BCM2709SDHCIHost.SDHCI.DeviceGetCardDetect:=BCM2709MMCDeviceGetCardDetect;
@@ -1807,6 +1811,7 @@ begin
      BCM2709SDHCIHost.SDHCI.DeviceSetIOS:=nil;
      {Driver}
      BCM2709SDHCIHost.SDHCI.Address:=Pointer(BCM2836_SDHCI_REGS_BASE);
+     BCM2709SDHCIHost.SDHCI.DMASlave:=DMA_DREQ_ID_MMC;
      {BCM2709}
      BCM2709SDHCIHost.SDIO:=BCM2709_REGISTER_SDIO;
    
@@ -8346,6 +8351,8 @@ end;
 {==============================================================================}
 {BCM2709 SDHCI Functions}
 function BCM2709SDHCIHostStart(SDHCI:PSDHCIHost):LongWord;
+{Implementation of SDHCIHostStart API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostStart instead}
 var
  Count:LongWord;
  Status:LongWord;
@@ -8449,12 +8456,13 @@ begin
   begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
   end;  
+ SDHCI.DMAWait:=SemaphoreCreate(0);
  SDHCI.Version:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_VERSION);
  SDHCI.Quirks:=SDHCI_QUIRK_BROKEN_CARD_DETECTION or SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK or SDHCI_QUIRK_MISSING_CAPS or SDHCI_QUIRK_NO_HISPD_BIT;
  SDHCI.Quirks2:=SDHCI_QUIRK2_PRESET_VALUE_BROKEN;
  {Configuration Properties}
  SDHCI.PresetVoltages:=MMC_VDD_32_33 or MMC_VDD_33_34 or MMC_VDD_165_195;
- SDHCI.PresetCapabilities:=0;   //To Do //See: sdhci-iproc.c
+ SDHCI.PresetCapabilities:=MMC_CAP_CMD23 or MMC_CAP_NEEDS_POLL or MMC_CAP_SDIO_IRQ or MMC_CAP_SD_HIGHSPEED or MMC_CAP_MMC_HIGHSPEED;
  SDHCI.ClockMinimum:=BCM2709_EMMC_MIN_FREQ;
  SDHCI.ClockMaximum:=ClockGetRate(CLOCK_ID_MMC0);
  if SDHCI.ClockMaximum = 0 then SDHCI.ClockMaximum:=BCM2709_EMMC_MAX_FREQ;
@@ -8462,12 +8470,12 @@ begin
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2709 Maximum clock rate = ' + IntToStr(SDHCI.ClockMaximum));
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2709 host version = ' + IntToHex(SDHCIGetVersion(SDHCI),4));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2709 host version = ' + SDHCIVersionToString(SDHCIGetVersion(SDHCI)));
  {$ENDIF}
  
  {Update BCM2709}
  PBCM2709SDHCIHost(SDHCI).WriteDelay:=((2 * 1000000) div BCM2709_EMMC_MIN_FREQ) + 1;
- PBCM2709SDHCIHost(SDHCI).LastWrite:=0;
+ PBCM2709SDHCIHost(SDHCI).DelayClock:=BCM2709_EMMC_MIN_FREQ;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2709 host write delay = ' + IntToStr(PBCM2709SDHCIHost(SDHCI).WriteDelay));
@@ -8489,6 +8497,8 @@ end;
 {==============================================================================}
 
 function BCM2709SDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
+{Implementation of SDHCIHostStop API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostStop instead}
 var
  Status:LongWord;
 begin
@@ -8518,6 +8528,9 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2709 host reset completed');
  {$ENDIF}
 
+ {Power Off Host}
+ SDHCIHostSetPower(SDHCI,$FFFF);
+
  {Update SDHCI}
  {Driver Properties}
  if SDHCI.Wait <> INVALID_HANDLE_VALUE then
@@ -8525,6 +8538,13 @@ begin
    SemaphoreDestroy(SDHCI.Wait);
    
    SDHCI.Wait:=INVALID_HANDLE_VALUE;
+  end; 
+
+ if SDHCI.DMAWait <> INVALID_HANDLE_VALUE then
+  begin
+   SemaphoreDestroy(SDHCI.DMAWait);
+   
+   SDHCI.DMAWait:=INVALID_HANDLE_VALUE;
   end; 
  
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2709 Powering off SD host controller (' + SDHCI.Device.DeviceDescription + ')');
@@ -8545,6 +8565,9 @@ end;
 {==============================================================================}
 
 function BCM2709SDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
+{Implementation of SDHCIHostReadByte API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostReadByte instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -8577,6 +8600,9 @@ end;
 {==============================================================================}
 
 function BCM2709SDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; 
+{Implementation of SDHCIHostReadWord API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostReadWord instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -8609,6 +8635,8 @@ end;
 {==============================================================================}
 
 function BCM2709SDHCIHostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord; 
+{Implementation of SDHCIHostReadLong API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostReadLong instead}
 begin
  {}
  {Read LongWord}
@@ -8624,6 +8652,9 @@ end;
 {==============================================================================}
 
 procedure BCM2709SDHCIHostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte); 
+{Implementation of SDHCIHostWriteByte API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostWriteByte instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -8662,6 +8693,9 @@ end;
 {==============================================================================}
 
 procedure BCM2709SDHCIHostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word); 
+{Implementation of SDHCIHostWriteWord API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostWriteWord instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -8703,6 +8737,9 @@ begin
  {Check Register}
  if Reg = SDHCI_TRANSFER_MODE then
   begin
+   {Remove the SDHCI_TRNS_DMA flag as the controller fails to perform DMA requests when it is set}
+   NewValue:=NewValue and not(SDHCI_TRNS_DMA);
+   
    {Save LongWord}
    PBCM2709SDHCIHost(SDHCI).ShadowRegister:=NewValue;
   end
@@ -8718,6 +8755,9 @@ end;
 {==============================================================================}
 
 procedure BCM2709SDHCIHostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord); 
+{Implementation of SDHCIHostWriteLong API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostWriteLong instead}
+
 {Note: The source code of U-Boot and Linux kernel drivers have this comment
 
  The Arasan has a bugette whereby it may lose the content of
@@ -8736,12 +8776,17 @@ begin
  {Write LongWord}
  PLongWord(PtrUInt(SDHCI.Address) + PtrUInt(Reg))^:=Value;
  
- {Wait Delay}
- MicrosecondDelay(PBCM2709SDHCIHost(SDHCI).WriteDelay);
+ {Check Clock}
+ if SDHCI.Clock <> PBCM2709SDHCIHost(SDHCI).DelayClock then
+  begin
+   {Recalculate Delay}
+   PBCM2709SDHCIHost(SDHCI).WriteDelay:=((2 * 1000000) div Max(SDHCI.Clock,BCM2709_EMMC_MIN_FREQ)) + 1;
+   PBCM2709SDHCIHost(SDHCI).DelayClock:=SDHCI.Clock;
+  end;
  
- //To Do //Need GetTimerMicroseconds() in Platform (with a Since value as a Parameter ?) //Then use the LastWrite value in SDHCI
-         //Also add GetTimerMilliseconds() in Platform as well
-               
+ {Wait Delay}
+ if Reg <> SDHCI_BUFFER then MicrosecondDelay(PBCM2709SDHCIHost(SDHCI).WriteDelay);
+              
  //See: bcm2835_sdhci_raw_writel in bcm2835_sdhci.c
  //     bcm2835_sdhci_writel in bcm2835_sdhci.c
 end;
@@ -8749,6 +8794,8 @@ end;
 {==============================================================================}
 
 procedure BCM2709SDHCIInterruptHandler(SDHCI:PSDHCIHost);
+{Interrupt handler for the BCM2709 SDHCI host controller}
+{Note: Not intended to be called directly by applications}
 var
  Count:Integer;
  Present:Boolean;
@@ -8897,6 +8944,8 @@ end;
 {==============================================================================}
 
 function BCM2709SDHCISetupInterrupts(SDHCI:PSDHCIHost):LongWord;
+{Configure and enable interrupt handling for the BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -8934,6 +8983,7 @@ end;
 function BCM2709MMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 {Implementation of MMC GetCardDetect for the BCM2709 which does not update the
  bits in the SDHCI_PRESENT_STATE register to reflect card insertion or removal}
+{Note: Not intended to be called directly by applications, use MMCDeviceGetCardDetect instead}
 var
  SDHCI:PSDHCIHost;
 begin

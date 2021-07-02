@@ -89,7 +89,7 @@ BCM2711 Devices
 BCM2711 SPI0/3/4/5/6 Device
 ===========================
 
- The BCM2711 has a 5 master mode SPI controllers that support 3 wire, 2 wire and LoSSI modes of operation. It also has
+ The BCM2711 has 5 master mode SPI controllers that support 3 wire, 2 wire and LoSSI modes of operation. It also has
  2 auxiliary SPI masters which do not support DMA mode (see SPI1/2 below).
  
  The main SPI0/3/4/5/6 controllers support polled, interrupt and DMA modes and include 3 chip selects although only CS0
@@ -231,9 +231,9 @@ BCM2711 SPI/I2C Slave Device
 ============================
 
  The slave device can be used as either an I2C or an SPI interface, the I2C slave supports 400KHz fast mode
- operation. Only 7 bit addressing is supported, DMA is not support and neither is clock stretching.
+ operation. Only 7 bit addressing is supported, DMA is not supported and neither is clock stretching.
  
- Unlike earlier models where the SPI slave device was apparently faulty on the Raspberry Pi 4 is reported to work.
+ Unlike earlier models where the SPI slave device was apparently faulty on the Raspberry Pi 4 it is reported to work.
 
  The GPIO pins and functions for each device are shown below, not all of these combinations are accessible via the 40 pin header.
  
@@ -326,7 +326,7 @@ BCM2711 UART0/2/3/4/5 Device
 
  The UART0/2/3/4/5 device is an ARM PL011 UART which supports programmable baud rates, start, stop and parity bits and hardware
  flow control and many others. The UART0 is similar to the industry standard 16C650 but with a number of differences, the
- PL011 has a some optional features such as IrDA, Serial InfraRed and DMA which are not supported by the Broadcom implementation.
+ PL011 has some optional features such as IrDA, Serial InfraRed and DMA which are not supported by the Broadcom implementation.
 
  In the standard configuration the UART0 TX and RX lines are connected to GPIO pins 14 and 15 respectively (Alternate function
  0) but they can be remapped via GPIO function selects to a number of other locations. On the Raspberry Pi 4B none of these 
@@ -983,7 +983,7 @@ type
   PowerId:LongWord;
   ClockId:LongWord;
   WriteDelay:LongWord;
-  LastWrite:LongWord;
+  DelayClock:LongWord;
   ShadowRegister:LongWord;
  end;
  
@@ -2030,6 +2030,9 @@ begin
      BCM2711EMMC0Host.SDHCI.HostSetClock:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetControlRegister:=nil;
+     BCM2711EMMC0Host.SDHCI.HostPrepareDMA:=nil;
+     BCM2711EMMC0Host.SDHCI.HostStartDMA:=nil;
+     BCM2711EMMC0Host.SDHCI.HostStopDMA:=nil;
      BCM2711EMMC0Host.SDHCI.DeviceInitialize:=nil;
      BCM2711EMMC0Host.SDHCI.DeviceDeinitialize:=nil;
      BCM2711EMMC0Host.SDHCI.DeviceGetCardDetect:=BCM2711EMMC0DeviceGetCardDetect;
@@ -2038,6 +2041,7 @@ begin
      BCM2711EMMC0Host.SDHCI.DeviceSetIOS:=nil;
      {Driver}
      BCM2711EMMC0Host.SDHCI.Address:=Pointer(BCM2838_EMMC0_REGS_BASE);
+     BCM2711EMMC0Host.SDHCI.DMASlave:=DMA_DREQ_ID_EMMC0;
      {BCM2711}
      BCM2711EMMC0Host.Id:=0;
      BCM2711EMMC0Host.IRQ:=BCM2838_IRQ_EMMC0;
@@ -2072,7 +2076,8 @@ begin
      {Device}
      BCM2711EMMC2Host.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2711EMMC2Host.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
-     BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23; {EMMC2 controller supports ADMA2}
+     BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23; {EMMC2 controller supports SDMA/ADMA2}
+     if ((ChipGetRevision and $FF) < $20) or not(DEVICE_TREE_VALID) then BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=BCM2711EMMC2Host.SDHCI.Device.DeviceFlags or SDHCI_FLAG_BUS_ADDRESSES;
      BCM2711EMMC2Host.SDHCI.Device.DeviceData:=nil;
      BCM2711EMMC2Host.SDHCI.Device.DeviceDescription:=BCM2711_EMMC2_DESCRIPTION;
      {SDHCI}
@@ -2091,6 +2096,9 @@ begin
      BCM2711EMMC2Host.SDHCI.HostSetClock:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetControlRegister:=nil;
+     BCM2711EMMC2Host.SDHCI.HostPrepareDMA:=nil;
+     BCM2711EMMC2Host.SDHCI.HostStartDMA:=nil;
+     BCM2711EMMC2Host.SDHCI.HostStopDMA:=nil;
      BCM2711EMMC2Host.SDHCI.DeviceInitialize:=nil;
      BCM2711EMMC2Host.SDHCI.DeviceDeinitialize:=nil;
      BCM2711EMMC2Host.SDHCI.DeviceGetCardDetect:=BCM2711EMMC0DeviceGetCardDetect;
@@ -2099,6 +2107,7 @@ begin
      BCM2711EMMC2Host.SDHCI.DeviceSetIOS:=nil;
      {Driver}
      BCM2711EMMC2Host.SDHCI.Address:=Pointer(BCM2838_EMMC2_REGS_BASE);
+     BCM2711EMMC0Host.SDHCI.DMASlave:=DMA_DREQ_ID_NONE; {EMMC2 controller supports ADMA2}
      {BCM2711}
      BCM2711EMMC2Host.Id:=2;
      BCM2711EMMC2Host.IRQ:=BCM2838_IRQ_EMMC2;
@@ -9525,6 +9534,8 @@ end;
 {==============================================================================}
 {BCM2711 EMMC0 (SDHCI) Functions}
 function BCM2711EMMC0HostStart(SDHCI:PSDHCIHost):LongWord;
+{Implementation of SDHCIHostStart API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostStart instead}
 var
  Count:LongWord;
  Value:LongWord;
@@ -9676,12 +9687,26 @@ begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
   end;  
  SDHCI.Version:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_VERSION);
- //To Do //Different for EMMC2
- SDHCI.Quirks:=SDHCI_QUIRK_BROKEN_CARD_DETECTION or SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK or SDHCI_QUIRK_MISSING_CAPS or SDHCI_QUIRK_NO_HISPD_BIT;
- SDHCI.Quirks2:=SDHCI_QUIRK2_PRESET_VALUE_BROKEN;
- {Configuration Properties}
- SDHCI.PresetVoltages:=MMC_VDD_32_33 or MMC_VDD_33_34 or MMC_VDD_165_195;
- SDHCI.PresetCapabilities:=0;   //To Do //See: sdhci-iproc.c
+ if PBCM2711EMMC0Host(SDHCI).Id = 0 then
+  begin
+   {EMMC0}
+   SDHCI.DMAWait:=SemaphoreCreate(0);
+   SDHCI.Quirks:=SDHCI_QUIRK_BROKEN_CARD_DETECTION or SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK or SDHCI_QUIRK_MISSING_CAPS or SDHCI_QUIRK_NO_HISPD_BIT;
+   SDHCI.Quirks2:=SDHCI_QUIRK2_PRESET_VALUE_BROKEN;
+   {Configuration Properties}
+   SDHCI.PresetVoltages:=MMC_VDD_32_33 or MMC_VDD_33_34 or MMC_VDD_165_195;
+   SDHCI.PresetCapabilities:=MMC_CAP_CMD23 or MMC_CAP_NEEDS_POLL or MMC_CAP_SDIO_IRQ or MMC_CAP_SD_HIGHSPEED or MMC_CAP_MMC_HIGHSPEED;
+  end
+ else if PBCM2711EMMC0Host(SDHCI).Id = 2 then 
+  begin
+   {EMMC2}
+   SDHCI.DMAWait:=INVALID_HANDLE_VALUE;
+   SDHCI.Quirks:=SDHCI_QUIRK_MULTIBLOCK_READ_ACMD12;
+   SDHCI.Quirks2:=0;
+   {Configuration Properties}
+   SDHCI.PresetVoltages:=0;
+   SDHCI.PresetCapabilities:=MMC_CAP_CMD23 or MMC_CAP_3_3V_DDR;
+  end;
  SDHCI.ClockMinimum:=BCM2711_EMMC0_MIN_FREQ;
  SDHCI.ClockMaximum:=ClockGetRate(PBCM2711EMMC0Host(SDHCI).ClockId);
  if SDHCI.ClockMaximum = 0 then SDHCI.ClockMaximum:=BCM2711_EMMC0_MAX_FREQ;
@@ -9689,12 +9714,12 @@ begin
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2711 Maximum clock rate = ' + IntToStr(SDHCI.ClockMaximum));
  
  {$IF DEFINED(BCM2711_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2711 host version = ' + IntToHex(SDHCIGetVersion(SDHCI),4));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2711 host version = ' + SDHCIVersionToString(SDHCIGetVersion(SDHCI)));
  {$ENDIF}
  
  {Update BCM2711}
  PBCM2711EMMC0Host(SDHCI).WriteDelay:=((2 * 1000000) div BCM2711_EMMC0_MIN_FREQ) + 1;
- PBCM2711EMMC0Host(SDHCI).LastWrite:=0;
+ PBCM2711EMMC0Host(SDHCI).DelayClock:=BCM2711_EMMC0_MIN_FREQ;
  
  {$IF DEFINED(BCM2711_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2711 host write delay = ' + IntToStr(PBCM2711EMMC0Host(SDHCI).WriteDelay));
@@ -9716,6 +9741,8 @@ end;
 {==============================================================================}
 
 function BCM2711EMMC0HostStop(SDHCI:PSDHCIHost):LongWord;
+{Implementation of SDHCIHostStop API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostStop instead}
 var
  Status:LongWord;
 begin
@@ -9745,6 +9772,9 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2711 host reset completed');
  {$ENDIF}
 
+ {Power Off Host}
+ SDHCIHostSetPower(SDHCI,$FFFF);
+ 
  {Update SDHCI}
  {Driver Properties}
  if SDHCI.Wait <> INVALID_HANDLE_VALUE then
@@ -9753,6 +9783,17 @@ begin
    
    SDHCI.Wait:=INVALID_HANDLE_VALUE;
   end; 
+ 
+ {Check for EMMC0}
+ if PBCM2711EMMC0Host(SDHCI).Id = 0 then
+  begin
+   if SDHCI.DMAWait <> INVALID_HANDLE_VALUE then
+    begin
+     SemaphoreDestroy(SDHCI.DMAWait);
+     
+     SDHCI.DMAWait:=INVALID_HANDLE_VALUE;
+    end; 
+  end;
  
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2711 Powering off SD host controller (' + SDHCI.Device.DeviceDescription + ')');
 
@@ -9772,6 +9813,9 @@ end;
 {==============================================================================}
 
 function BCM2711EMMC0HostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
+{Implementation of SDHCIHostReadByte API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostReadByte instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -9804,6 +9848,9 @@ end;
 {==============================================================================}
 
 function BCM2711EMMC0HostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; 
+{Implementation of SDHCIHostReadWord API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostReadWord instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -9836,6 +9883,8 @@ end;
 {==============================================================================}
 
 function BCM2711EMMC0HostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord; 
+{Implementation of SDHCIHostReadLong API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostReadLong instead}
 begin
  {}
  {Read LongWord}
@@ -9851,6 +9900,9 @@ end;
 {==============================================================================}
 
 procedure BCM2711EMMC0HostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte); 
+{Implementation of SDHCIHostWriteByte API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostWriteByte instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -9889,6 +9941,9 @@ end;
 {==============================================================================}
 
 procedure BCM2711EMMC0HostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word); 
+{Implementation of SDHCIHostWriteWord API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostWriteWord instead}
+
 {Note: The Broadcom document BCM2835-ARM-Peripherals page 66 states the following:
 
  Contrary to Arasans documentation the EMMC module registers can only be accessed as
@@ -9930,6 +9985,13 @@ begin
  {Check Register}
  if Reg = SDHCI_TRANSFER_MODE then
   begin
+   {Check for EMMC0}
+   if PBCM2711EMMC0Host(SDHCI).Id = 0 then
+    begin
+     {Remove the SDHCI_TRNS_DMA flag as the controller fails to perform DMA requests when it is set}
+     NewValue:=NewValue and not(SDHCI_TRNS_DMA);
+    end; 
+
    {Save LongWord}
    PBCM2711EMMC0Host(SDHCI).ShadowRegister:=NewValue;
   end
@@ -9945,6 +10007,9 @@ end;
 {==============================================================================}
 
 procedure BCM2711EMMC0HostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord); 
+{Implementation of SDHCIHostWriteLong API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostWriteLong instead}
+
 {Note: The source code of U-Boot and Linux kernel drivers have this comment
 
  The Arasan has a bugette whereby it may lose the content of
@@ -9963,12 +10028,17 @@ begin
  {Write LongWord}
  PLongWord(PtrUInt(SDHCI.Address) + PtrUInt(Reg))^:=Value;
  
- {Wait Delay}
- MicrosecondDelay(PBCM2711EMMC0Host(SDHCI).WriteDelay);
+ {Check Clock}
+ if SDHCI.Clock <> PBCM2711EMMC0Host(SDHCI).DelayClock then
+  begin
+   {Recalculate Delay}
+   PBCM2711EMMC0Host(SDHCI).WriteDelay:=((2 * 1000000) div Max(SDHCI.Clock,BCM2711_EMMC0_MIN_FREQ)) + 1;
+   PBCM2711EMMC0Host(SDHCI).DelayClock:=SDHCI.Clock;
+  end;
  
- //To Do //Need GetTimerMicroseconds() in Platform (with a Since value as a Parameter ?) //Then use the LastWrite value in SDHCI
-         //Also add GetTimerMilliseconds() in Platform as well
-               
+ {Wait Delay}
+ if Reg <> SDHCI_BUFFER then MicrosecondDelay(PBCM2711EMMC0Host(SDHCI).WriteDelay);
+              
  //See: bcm2835_sdhci_raw_writel in bcm2835_sdhci.c
  //     bcm2835_sdhci_writel in bcm2835_sdhci.c
 end;
@@ -9976,7 +10046,7 @@ end;
 {==============================================================================}
 
 function BCM2711EMMC0SharedInterruptHandler(Number,CPUID,Flags:LongWord;SDHCI:PSDHCIHost):LongWord;
-{Interrupt handler for the EMMC0 (SDHCI) host controller}
+{Interrupt handler for the BCM2711 SDHCI host controller}
 {Note: Not intended to be called directly by applications}
 var
  Count:Integer;
@@ -10130,6 +10200,8 @@ end;
 {==============================================================================}
 
 function BCM2711EMMC0SetupInterrupts(SDHCI:PSDHCIHost):LongWord;
+{Configure and enable interrupt handling for the BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -10167,6 +10239,7 @@ end;
 function BCM2711EMMC0DeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 {Implementation of MMC GetCardDetect for the BCM2711 which does not update the
  bits in the SDHCI_PRESENT_STATE register to reflect card insertion or removal}
+{Note: Not intended to be called directly by applications, use MMCDeviceGetCardDetect instead}
 var
  SDHCI:PSDHCIHost;
 begin

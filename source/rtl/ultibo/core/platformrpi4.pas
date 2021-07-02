@@ -80,7 +80,7 @@ Platform RPi4
  node. Even then that doesn't account for booting from USB, network or some other source and
  all of that would have to happen very early in the boot sequence to be usable.
   
- To make matters worse their doesn't appear to be a documented way to detect which interrupt
+ To make matters worse there doesn't appear to be a documented way to detect which interrupt
  controller is enabled by reading a register value, the GIC even behaves as though it is working
  when the legacy controller is enabled but no interrupts are received.
  
@@ -351,6 +351,8 @@ function RPi4BoardGetModel:LongWord;
 function RPi4BoardGetSerial:Int64;
 function RPi4BoardGetRevision:LongWord;
 function RPi4BoardGetMACAddress:String;
+
+function RPi4ChipGetRevision:LongWord;
 
 function RPi4FirmwareGetRevision:LongWord;
 function RPi4FirmwareGetThrottled:LongWord;
@@ -884,6 +886,9 @@ begin
  BoardGetSerialHandler:=RPi4BoardGetSerial;
  BoardGetRevisionHandler:=RPi4BoardGetRevision;
  BoardGetMACAddressHandler:=RPi4BoardGetMACAddress;
+
+ {Register Platform Chip Handlers}
+ ChipGetRevisionHandler:=RPi4ChipGetRevision;
 
  {Register Platform Firmware Handlers}
  FirmwareGetRevisionHandler:=RPi4FirmwareGetRevision;
@@ -4604,6 +4609,15 @@ begin
  finally
   FreeMem(Header);
  end;
+end;
+
+{==============================================================================}
+
+function RPi4ChipGetRevision:LongWord;
+{Get the Chip Revision from the revision register}
+begin
+ {}
+ Result:=PLongWord(BCM2838_CHIP_REVISION_BASE)^;
 end;
 
 {==============================================================================}

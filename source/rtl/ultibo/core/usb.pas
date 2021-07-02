@@ -5729,6 +5729,7 @@ function USBHostDeregister(Host:PUSBHost):LongWord;
 var
  Prev:PUSBHost;
  Next:PUSBHost;
+ Status:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -5749,9 +5750,48 @@ begin
  if CriticalSectionLock(USBHostTableLock) = ERROR_SUCCESS then
   begin
    try
-    //To Do //Get Root hub, unbind/detach/destroy devices
+    {Check Started}
+    if USBStarted then
+     begin
+      {Check Root Hub}
+      if Host.RootHub <> nil then
+       begin
+        {Unbind Root Hub}
+        Status:=USBDeviceUnbind(Host.RootHub,nil);
+        if (Status <> USB_STATUS_SUCCESS) and (Status <> USB_STATUS_NOT_BOUND) then
+         begin
+          if USB_LOG_ENABLED then USBLogError(nil,'Failed to unbind root hub from host ' + DeviceGetName(@Host.Device) + ' (Status=' + USBStatusToString(Status) + ')');
+          {Do not exit}
+         end;
+         
+        {Detach Root Hub}
+        Status:=USBDeviceDetach(Host.RootHub);
+        if Status <> USB_STATUS_SUCCESS then
+         begin
+          if USB_LOG_ENABLED then USBLogError(nil,'Failed to detach root hub from host ' + DeviceGetName(@Host.Device) + ' (Status=' + USBStatusToString(Status) + ')');
+          {Do not exit}
+         end;
+        
+        {Release Root Hub}
+        USBDeviceRelease(Host.RootHub);
+        
+        {Update Host}
+        Host.RootHub:=nil;
+              
+        {Set State to Enabled}
+        USBHostSetState(Host,USBHOST_STATE_DISABLED);
+       end;  
     
-    //To Do //Stop host if started etc
+      {Stop Host}
+      Status:=Host.HostStop(Host);
+      if Status <> USB_STATUS_SUCCESS then
+       begin
+        if USB_LOG_ENABLED then USBLogError(nil,'Failed to stop USB host ' + DeviceGetName(@Host.Device) + ' (Status=' + USBStatusToString(Status) + ')');
+        
+        Result:=ERROR_OPERATION_FAILED;
+        Exit;
+       end;
+     end; 
     
     {Deregister Device}
     Result:=DeviceDeregister(@Host.Device);

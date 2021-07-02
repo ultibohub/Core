@@ -36,7 +36,7 @@ NXP PCF857X
  The NXP PCF8574 is an 8 bit I/O expander that provides GPIO pin control functions over an
  I2C connection.
  
- The device can be represented in Ultibo as a standard GPIO device which is accessable via the
+ The device can be represented in Ultibo as a standard GPIO device which is accessible via the
  GPIO unit functions. Because the PCF857X is a chip that can be used and configured in multiple
  different scenarios this unit does not autocreate a GPIO device, instead you need to call the
  function PCF8574GPIOCreate and pass an I2C device and address. The function will create and
@@ -91,7 +91,7 @@ const
  
  PCF857X_I2C_MAX_SIZE = 2;  {Maximum number of bytes to read/write all pin values}
 
- {Not: The PCF857X is a single register device and does not have any direction, pull or configuration registers} 
+ {Note: The PCF857X is a single register device and does not have any direction, pull or configuration registers} 
 
 {==============================================================================}
 type
@@ -261,7 +261,7 @@ end;
 {==============================================================================}
  
 function PCF857XGPIODestroy(GPIO:PGPIODevice):LongWord;
-{Stop, deregister and destroy an PCF857X GPIO device created by this driver}
+{Stop, deregister and destroy a PCF857X GPIO device created by this driver}
 {GPIO: The GPIO device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
