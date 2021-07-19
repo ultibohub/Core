@@ -1798,6 +1798,7 @@ begin
      BCM2709SDHCIHost.SDHCI.HostHardwareReset:=nil;
      BCM2709SDHCIHost.SDHCI.HostSetPower:=nil;
      BCM2709SDHCIHost.SDHCI.HostSetClock:=nil;
+     BCM2709SDHCIHost.SDHCI.HostSetTiming:=nil;
      BCM2709SDHCIHost.SDHCI.HostSetClockDivider:=nil;
      BCM2709SDHCIHost.SDHCI.HostSetControlRegister:=nil;
      BCM2709SDHCIHost.SDHCI.HostPrepareDMA:=nil;
@@ -8674,7 +8675,7 @@ begin
  OldValue:=PLongWord(PtrUInt(SDHCI.Address) + PtrUInt(Reg and not(3)))^;
  
  {Memory Barrier}
- DataMemoryBarrier;{After the Last Read} 
+ DataMemoryBarrier; {After the Last Read} 
  
  {Get Byte, Shift and Mask}
  ByteNo:=(Reg and 3);
@@ -9000,6 +9001,15 @@ begin
  {Get SDHCI}
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
+ 
+ {Check Non Removable}
+ if MMCIsNonRemovable(MMC) then
+  begin
+   MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
  
  {$IF DEFINED(BCM2709_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC BCM2709 Get Card Detect (SDHCI_PRESENT_STATE=' + IntToHex(SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE),8) + ')');

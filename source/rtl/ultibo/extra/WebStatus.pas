@@ -601,12 +601,14 @@ type
   
   function MMCVoltagesToNames(AVoltages:LongWord):TStringList;
   function MMCCapabilitiesToNames(ACapabilities:LongWord):TStringList;
+  function MMCCapabilities2ToNames(ACapabilities2:LongWord):TStringList;
 
   function SDHCIQuirksToNames(AQuirks:LongWord):TStringList;
   function SDHCIQuirks2ToNames(AQuirks2:LongWord):TStringList;
   function SDHCIInterruptsToNames(AInterrupts:LongWord):TStringList;
   function SDHCIVoltagesToNames(AVoltages:LongWord):TStringList;
   function SDHCICapabilitiesToNames(ACapabilities:LongWord):TStringList;
+  function SDHCICapabilities2ToNames(ACapabilities2:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -6679,6 +6681,7 @@ begin
         AddItem(AResponse,'Version:',SDHCIVersionToString(SDHCIGetVersion(SDHCIHost)));
         AddItem(AResponse,'Clock:',IntToStr(SDHCIHost.Clock));
         AddItem(AResponse,'Power:',SDHCIPowerToString(SDHCIHost.Power));
+        AddItem(AResponse,'Timing:',MMCTimingToString(SDHCIHost.Timing));
         AddItem(AResponse,'Bus Width:',MMCBusWidthToString(SDHCIHost.BusWidth));
         AddBlank(AResponse);
         AddItem(AResponse,'Clock Minimum:',IntToStr(SDHCIHost.ClockMinimum));
@@ -7961,6 +7964,101 @@ end;
 
 {==============================================================================}
 
+function TWebStatusMMC.MMCCapabilities2ToNames(ACapabilities2:LongWord):TStringList;
+begin
+ Result:=TStringList.Create;
+
+ {Check Capabilities2}
+ if (ACapabilities2 and MMC_CAP2_BOOTPART_NOACC) = MMC_CAP2_BOOTPART_NOACC then
+  begin
+   Result.Add('MMC_CAP2_BOOTPART_NOACC');
+  end;
+ if (ACapabilities2 and MMC_CAP2_FULL_PWR_CYCLE) = MMC_CAP2_FULL_PWR_CYCLE then
+  begin
+   Result.Add('MMC_CAP2_FULL_PWR_CYCLE');
+  end;
+ if (ACapabilities2 and MMC_CAP2_FULL_PWR_CYCLE_IN_SUSPEND) = MMC_CAP2_FULL_PWR_CYCLE_IN_SUSPEND then
+  begin
+   Result.Add('MMC_CAP2_FULL_PWR_CYCLE_IN_SUSPEND');
+  end;
+ if (ACapabilities2 and MMC_CAP2_HS200_1_8V_SDR) = MMC_CAP2_HS200_1_8V_SDR then
+  begin
+   Result.Add('MMC_CAP2_HS200_1_8V_SDR');
+  end;
+ if (ACapabilities2 and MMC_CAP2_HS200_1_2V_SDR) = MMC_CAP2_HS200_1_2V_SDR then
+  begin
+   Result.Add('MMC_CAP2_HS200_1_2V_SDR');
+  end;
+ if (ACapabilities2 and MMC_CAP2_CD_ACTIVE_HIGH) = MMC_CAP2_CD_ACTIVE_HIGH then
+  begin
+   Result.Add('MMC_CAP2_CD_ACTIVE_HIGH');
+  end;
+ if (ACapabilities2 and MMC_CAP2_RO_ACTIVE_HIGH) = MMC_CAP2_RO_ACTIVE_HIGH then
+  begin
+   Result.Add('MMC_CAP2_RO_ACTIVE_HIGH');
+  end;
+ if (ACapabilities2 and MMC_CAP2_NO_PRESCAN_POWERUP) = MMC_CAP2_NO_PRESCAN_POWERUP then
+  begin
+   Result.Add('MMC_CAP2_NO_PRESCAN_POWERUP');
+  end;
+ if (ACapabilities2 and MMC_CAP2_HS400_1_8V) = MMC_CAP2_HS400_1_8V then
+  begin
+   Result.Add('MMC_CAP2_HS400_1_8V');
+  end;
+ if (ACapabilities2 and MMC_CAP2_HS400_1_2V) = MMC_CAP2_HS400_1_2V then
+  begin
+   Result.Add('MMC_CAP2_HS400_1_2V');
+  end;
+ if (ACapabilities2 and MMC_CAP2_SDIO_IRQ_NOTHREAD) = MMC_CAP2_SDIO_IRQ_NOTHREAD then
+  begin
+   Result.Add('MMC_CAP2_SDIO_IRQ_NOTHREAD');
+  end;
+ if (ACapabilities2 and MMC_CAP2_NO_WRITE_PROTECT) = MMC_CAP2_NO_WRITE_PROTECT then
+  begin
+   Result.Add('MMC_CAP2_NO_WRITE_PROTECT');
+  end;
+ if (ACapabilities2 and MMC_CAP2_NO_SDIO) = MMC_CAP2_NO_SDIO then
+  begin
+   Result.Add('MMC_CAP2_NO_SDIO');
+  end;
+ if (ACapabilities2 and MMC_CAP2_HS400_ES) = MMC_CAP2_HS400_ES then
+  begin
+   Result.Add('MMC_CAP2_HS400_ES');
+  end;
+ if (ACapabilities2 and MMC_CAP2_NO_SD) = MMC_CAP2_NO_SD then
+  begin
+   Result.Add('MMC_CAP2_NO_SD');
+  end;
+ if (ACapabilities2 and MMC_CAP2_NO_MMC) = MMC_CAP2_NO_MMC then
+  begin
+   Result.Add('MMC_CAP2_NO_MMC');
+  end;
+ if (ACapabilities2 and MMC_CAP2_CQE) = MMC_CAP2_CQE then
+  begin
+   Result.Add('MMC_CAP2_CQE');
+  end;
+ if (ACapabilities2 and MMC_CAP2_CQE_DCMD) = MMC_CAP2_CQE_DCMD then
+  begin
+   Result.Add('MMC_CAP2_CQE_DCMD');
+  end;
+ if (ACapabilities2 and MMC_CAP2_AVOID_3_3V) = MMC_CAP2_AVOID_3_3V then
+  begin
+   Result.Add('MMC_CAP2_AVOID_3_3V');
+  end;
+ if (ACapabilities2 and MMC_CAP2_MERGE_CAPABLE) = MMC_CAP2_MERGE_CAPABLE then
+  begin
+   Result.Add('MMC_CAP2_MERGE_CAPABLE');
+  end;
+
+ {Check Capabilities2}
+ if Result.Count = 0 then
+  begin
+   Result.Add('MMC_CAP2_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusMMC.SDHCIQuirksToNames(AQuirks:LongWord):TStringList;
 begin
  Result:=TStringList.Create;
@@ -8137,8 +8235,46 @@ begin
   begin
    Result.Add('SDHCI_QUIRK2_STOP_WITH_TC');
   end;
- 
- //To Do //Possibly more, to be resolved, see SDHCI_QUIRK2_* //TestingEMMC
+ if (AQuirks2 and SDHCI_QUIRK2_BROKEN_64_BIT_DMA) = SDHCI_QUIRK2_BROKEN_64_BIT_DMA then
+  begin
+   Result.Add('SDHCI_QUIRK2_BROKEN_64_BIT_DMA');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_CLEAR_TRANSFERMODE_REG_BEFORE_CMD) = SDHCI_QUIRK2_CLEAR_TRANSFERMODE_REG_BEFORE_CMD then
+  begin
+   Result.Add('SDHCI_QUIRK2_CLEAR_TRANSFERMODE_REG_BEFORE_CMD');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_CAPS_BIT63_FOR_HS400) = SDHCI_QUIRK2_CAPS_BIT63_FOR_HS400 then
+  begin
+   Result.Add('SDHCI_QUIRK2_CAPS_BIT63_FOR_HS400');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_TUNING_WORK_AROUND) = SDHCI_QUIRK2_TUNING_WORK_AROUND then
+  begin
+   Result.Add('SDHCI_QUIRK2_TUNING_WORK_AROUND');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_SUPPORT_SINGLE) = SDHCI_QUIRK2_SUPPORT_SINGLE then
+  begin
+   Result.Add('SDHCI_QUIRK2_SUPPORT_SINGLE');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_ACMD23_BROKEN) = SDHCI_QUIRK2_ACMD23_BROKEN then
+  begin
+   Result.Add('SDHCI_QUIRK2_ACMD23_BROKEN');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN) = SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN then
+  begin
+   Result.Add('SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_RSP_136_HAS_CRC) = SDHCI_QUIRK2_RSP_136_HAS_CRC then
+  begin
+   Result.Add('SDHCI_QUIRK2_RSP_136_HAS_CRC');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_DISABLE_HW_TIMEOUT) = SDHCI_QUIRK2_DISABLE_HW_TIMEOUT then
+  begin
+   Result.Add('SDHCI_QUIRK2_DISABLE_HW_TIMEOUT');
+  end;
+ if (AQuirks2 and SDHCI_QUIRK2_USE_32BIT_BLK_CNT) = SDHCI_QUIRK2_USE_32BIT_BLK_CNT then
+  begin
+   Result.Add('SDHCI_QUIRK2_USE_32BIT_BLK_CNT');
+  end;
  
  {Check Quirks2}
  if Result.Count = 0 then
@@ -8268,6 +8404,14 @@ end;
 
 {==============================================================================}
 
+function TWebStatusMMC.SDHCICapabilities2ToNames(ACapabilities2:LongWord):TStringList;
+begin
+ {}
+ Result:=MMCCapabilities2ToNames(ACapabilities2);
+end;
+
+{==============================================================================}
+
 function TWebStatusMMC.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
  Id:LongWord;
@@ -8342,6 +8486,8 @@ begin
      WorkBuffer:=MMCBusWidthToString(MMCDevice.BusWidth);
      if MMCIsSD(MMCDevice) then WorkBuffer:=SDBusWidthToString(MMCDevice.BusWidth);
      AddItem(AResponse,'Bus Width:',WorkBuffer);
+     AddItem(AResponse,'Driver Type:',MMCDriverTypeToString(MMCDevice.DriverType));
+     AddItem(AResponse,'Signal Voltage:',MMCSignalVoltageToString(MMCDevice.SignalVoltage)); 
      AddBlank(AResponse);
      
      {Get Voltage Names}
@@ -8374,6 +8520,29 @@ begin
       end;
      Names.Free;
 
+     AddBlank(AResponse);
+
+     {Get Capability2 Names}
+     Names:=MMCCapabilities2ToNames(MMCDevice.Capabilities2);
+     AddItem(AResponse,'Capabilities 2:',Names.Strings[0]);
+     {Check Capability2 Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Capability2 Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+
+     AddBlank(AResponse);
+     
+     AddItem(AResponse,'EraseSize:',IntToStr(MMCDevice.EraseSize));
+     AddItem(AResponse,'EraseShift:',IntToStr(MMCDevice.EraseShift));
+     AddItem(AResponse,'EraseArgument:',IntToHex(MMCDevice.EraseArgument,8));
+     AddItem(AResponse,'PreferredEraseSize:',IntToStr(MMCDevice.PreferredEraseSize));
+     AddItem(AResponse,'EnhancedStrobe:',BooleanToString(MMCDevice.EnhancedStrobe));
      AddBlank(AResponse);
 
      case MMCDevice.Device.DeviceType of
@@ -8480,6 +8649,7 @@ begin
      AddBlank(AResponse);
      AddItem(AResponse,'Clock:',IntToStr(SDHCIHost.Clock));
      AddItem(AResponse,'Power:',SDHCIPowerToString(SDHCIHost.Power));
+     AddItem(AResponse,'Timing:',MMCTimingToString(SDHCIHost.Timing));
      AddItem(AResponse,'Bus Width:',MMCBusWidthToString(SDHCIHost.BusWidth));
      AddBlank(AResponse);
      
@@ -8528,6 +8698,22 @@ begin
         end;
       end;
      Names.Free;
+
+     AddBlank(AResponse);
+     
+     {Get Capability2 Names}
+     Names:=SDHCICapabilities2ToNames(SDHCIHost.Capabilities2);
+     AddItem(AResponse,'Capabilities 2:',Names.Strings[0]);
+     {Check Capability2 Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Capability2 Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
      
      AddBlank(AResponse);
      AddItem(AResponse,'Minimum Frequency:',IntToStr(SDHCIHost.MinimumFrequency));
@@ -8572,6 +8758,22 @@ begin
        for Count:=1 to Names.Count - 1 do
         begin
          {Add Preset Capability Name}
+         AddItem(AResponse,'',Names.Strings[Count]);
+        end;
+      end;
+     Names.Free;
+
+     AddBlank(AResponse);
+     
+     {Get Preset Capability2 Names}
+     Names:=MMCCapabilities2ToNames(SDHCIHost.PresetCapabilities2);
+     AddItem(AResponse,'Preset Capabilities 2:',Names.Strings[0]);
+     {Check Preset Capability2 Count}
+     if Names.Count > 1 then
+      begin
+       for Count:=1 to Names.Count - 1 do
+        begin
+         {Add Preset Capability2 Name}
          AddItem(AResponse,'',Names.Strings[Count]);
         end;
       end;
@@ -10925,6 +11127,48 @@ begin
  AddItemEx(AResponse,'DMA_CACHE_COHERENT:',BooleanToString(DMA_CACHE_COHERENT),2);
  AddBlank(AResponse);
  
+ {Add GPIO configuration}
+ AddBold(AResponse,'GPIO configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'GPIO_PIN_COUNT:',IntToStr(GPIO_PIN_COUNT),2);
+ AddBlank(AResponse);
+ 
+ {Add Virtual GPIO configuration}
+ AddBold(AResponse,'Virtual GPIO configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'VIRTUAL_GPIO_PIN_COUNT:',IntToStr(VIRTUAL_GPIO_PIN_COUNT),2);
+ AddBlank(AResponse);
+ 
+ {Add Keyboard configuration}
+ AddBold(AResponse,'Keyboard configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'KEYBOARD_NUM_LOCK_DEFAULT:',BooleanToString(KEYBOARD_NUM_LOCK_DEFAULT),2);
+ AddItemEx(AResponse,'KEYBOARD_CAPS_LOCK_DEFAULT:',BooleanToString(KEYBOARD_CAPS_LOCK_DEFAULT),2);
+ AddItemEx(AResponse,'KEYBOARD_SCROLL_LOCK_DEFAULT:',BooleanToString(KEYBOARD_SCROLL_LOCK_DEFAULT),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'KEYBOARD_CTRL_ALT_IS_ALTGR:',BooleanToString(KEYBOARD_CTRL_ALT_IS_ALTGR),2);
+ AddItemEx(AResponse,'KEYBOARD_SHIFT_IS_CAPS_LOCK_OFF:',BooleanToString(KEYBOARD_SHIFT_IS_CAPS_LOCK_OFF),2);
+ AddBlank(AResponse);
+ 
+ {Add Mouse configuration}
+ AddBold(AResponse,'Mouse configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'MOUSE_SWAP_BUTTONS_DEFAULT:',BooleanToString(MOUSE_SWAP_BUTTONS_DEFAULT),2);
+ AddBlank(AResponse);
+
+ {Add Touch configuration}
+ AddBold(AResponse,'Touch configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'TOUCH_MOUSE_DATA_DEFAULT:',BooleanToString(TOUCH_MOUSE_DATA_DEFAULT),2);
+ AddBlank(AResponse);
+ 
+ {Add PCI configuration}
+ AddBold(AResponse,'PCI configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'PCI_AUTOSTART:',BooleanToString(PCI_AUTOSTART),2);
+ AddItemEx(AResponse,'PCI_ASYNCSTART:',BooleanToString(PCI_ASYNCSTART),2);
+ AddBlank(AResponse);
+ 
  {Add USB configuration}
  AddBold(AResponse,'USB configuration','');
  AddBlank(AResponse);
@@ -10937,6 +11181,18 @@ begin
  AddItemEx(AResponse,'USB_DMA_NOCACHE_MEMORY:',BooleanToString(USB_DMA_NOCACHE_MEMORY),2);
  AddItemEx(AResponse,'USB_DMA_BUS_ADDRESSES:',BooleanToString(USB_DMA_BUS_ADDRESSES),2);
  AddItemEx(AResponse,'USB_DMA_CACHE_COHERENT:',BooleanToString(USB_DMA_CACHE_COHERENT),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'USB_HUB_MESSAGESLOT_MAXIMUM:',IntToStr(USB_HUB_MESSAGESLOT_MAXIMUM),2);
+ AddItemEx(AResponse,'USB_HUB_REGISTER_DRIVER:',BooleanToString(USB_HUB_REGISTER_DRIVER),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'USB_KEYBOARD_POLLING_INTERVAL:',IntToStr(USB_KEYBOARD_POLLING_INTERVAL),2);
+ AddItemEx(AResponse,'USB_KEYBOARD_REGISTER_DRIVER:',BooleanToString(USB_KEYBOARD_REGISTER_DRIVER),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'USB_MOUSE_POLLING_INTERVAL:',IntToStr(USB_MOUSE_POLLING_INTERVAL),2);
+ AddItemEx(AResponse,'USB_MOUSE_REGISTER_DRIVER:',BooleanToString(USB_MOUSE_REGISTER_DRIVER),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'USB_STORAGE_FORCE_REMOVABLE:',BooleanToString(USB_STORAGE_FORCE_REMOVABLE),2);
+ AddItemEx(AResponse,'USB_STORAGE_REGISTER_DRIVER:',BooleanToString(USB_STORAGE_REGISTER_DRIVER),2);
  AddBlank(AResponse);
 
  {Add MMC configuration}
@@ -10956,6 +11212,8 @@ begin
  {Add DWCOTG configuration}
  AddBold(AResponse,'DWCOTG configuration','');
  AddBlank(AResponse);
+ AddItemEx(AResponse,'DWCOTG_REGISTER_HOST:',BooleanToString(DWCOTG_REGISTER_HOST),2);
+ AddBlank(AResponse);
  AddItemEx(AResponse,'DWCOTG_IRQ:',IntToStr(DWCOTG_IRQ),2);
  AddItemEx(AResponse,'DWCOTG_POWER_ID:',IntToStr(DWCOTG_POWER_ID),2);
  AddItemEx(AResponse,'DWCOTG_REGS_BASE:','0x' + AddrToHex(DWCOTG_REGS_BASE),2);
@@ -10967,6 +11225,33 @@ begin
  AddItemEx(AResponse,'DWCOTG_DMA_BUS_ADDRESSES:',BooleanToString(DWCOTG_DMA_BUS_ADDRESSES),2);
  AddItemEx(AResponse,'DWCOTG_DMA_CACHE_COHERENT:',BooleanToString(DWCOTG_DMA_CACHE_COHERENT),2);
  AddItemEx(AResponse,'DWCOTG_HOST_FRAME_INTERVAL:',BooleanToString(DWCOTG_HOST_FRAME_INTERVAL),2);
+ AddBlank(AResponse);
+
+ {Add BCMSDHOST configuration}
+ AddBold(AResponse,'BCMSDHOST configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'BCMSDHOST_DELAY_AFTER_STOP:',IntToStr(BCMSDHOST_DELAY_AFTER_STOP),2);
+ AddItemEx(AResponse,'BCMSDHOST_OVERCLOCK_50:',IntToStr(BCMSDHOST_OVERCLOCK_50),2);
+ AddItemEx(AResponse,'BCMSDHOST_PIO_LIMIT:',IntToStr(BCMSDHOST_PIO_LIMIT),2);
+ AddItemEx(AResponse,'BCMSDHOST_FORCE_PIO:',BooleanToString(BCMSDHOST_FORCE_PIO),2);
+ AddBlank(AResponse);
+
+ {Add LAN78XX configuration}
+ AddBold(AResponse,'LAN78XX configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'LAN78XX_MAC_ADDRESS:',LAN78XX_MAC_ADDRESS,2);
+ AddBlank(AResponse);
+
+ {Add SMSC95XX configuration}
+ AddBold(AResponse,'SMSC95XX configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'SMSC95XX_MAC_ADDRESS:',SMSC95XX_MAC_ADDRESS,2);
+ AddBlank(AResponse);
+
+ {Add GENET configuration}
+ AddBold(AResponse,'GENET configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'GENET_MAC_ADDRESS:',GENET_MAC_ADDRESS,2);
  AddBlank(AResponse);
 
  case MachineGetType of

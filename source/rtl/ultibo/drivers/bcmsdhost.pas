@@ -384,6 +384,7 @@ begin
    BCMSDHOSTHost.SDHCI.HostHardwareReset:=BCMSDHOSTHardwareReset;
    BCMSDHOSTHost.SDHCI.HostSetPower:=BCMSDHOSTSetPower;
    BCMSDHOSTHost.SDHCI.HostSetClock:=BCMSDHOSTSetClock;
+   BCMSDHOSTHost.SDHCI.HostSetTiming:=nil;
    BCMSDHOSTHost.SDHCI.HostSetClockDivider:=nil;
    BCMSDHOSTHost.SDHCI.HostSetControlRegister:=nil;
    BCMSDHOSTHost.SDHCI.HostPrepareDMA:=nil;
@@ -2342,6 +2343,9 @@ begin
   {Update Bus Width}
   SDHCI.BusWidth:=MMC.BusWidth;
   
+  {Update Timing}
+  SDHCI.Timing:=MMC.Timing;
+  
   Result:=MMC_STATUS_SUCCESS;
  finally
   {Release the Lock}
@@ -2378,6 +2382,15 @@ begin
  {Get SDHCI}
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
+
+ {Check Non Removable}
+ if MMCIsNonRemovable(MMC) then
+  begin
+   MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
 
  {Check MMC State}
  if MMC.MMCState = MMC_STATE_INSERTED then
@@ -2552,8 +2565,13 @@ begin
   begin
    SDHCI.Capabilities:=SDHCI.Capabilities or SDHCI.PresetCapabilities;
   end;
+ if SDHCI.PresetCapabilities2 <> 0 then
+  begin
+   SDHCI.Capabilities2:=SDHCI.Capabilities2 or SDHCI.PresetCapabilities2;
+  end;
  {$IF DEFINED(BCMSDHOST_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Host capabilities = ' + IntToHex(SDHCI.Capabilities,8));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: Host additional capabilities = ' + IntToHex(SDHCI.Capabilities2,8));
  {$ENDIF}
 
  {Set Maximum Request Size}
@@ -2619,6 +2637,7 @@ begin
  {Driver}
  MMC.Voltages:=SDHCI.Voltages;
  MMC.Capabilities:=SDHCI.Capabilities;
+ MMC.Capabilities2:=SDHCI.Capabilities2;
  
  {Create Storage}
  MMC.Storage:=StorageDeviceCreate;
@@ -2675,6 +2694,9 @@ begin
    SDHCI.HostStop(SDHCI);
    Exit;
   end;
+
+ {Check Non Removeable}
+ if StrToIntDef(SysUtils.GetEnvironmentVariable(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
 
  {Enable Host}
  SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;

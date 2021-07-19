@@ -744,6 +744,7 @@ var
  {AHCI}
  
  {DWCOTG (Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller)}
+ DWCOTG_REGISTER_HOST:LongBool = True;      {If True then register the DWCOTG USB Host during boot (Only if DWCOTG unit included)}
  DWCOTG_IRQ:LongWord;                       {The IRQ number of the DWCOTG device}
  DWCOTG_POWER_ID:LongWord;                  {The power id of the DWCOTG device}
  DWCOTG_REGS_BASE:PtrUInt;                  {The base address of the DWCOTG registers}

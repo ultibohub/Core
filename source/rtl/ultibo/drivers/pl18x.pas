@@ -654,6 +654,7 @@ begin
    PL18XSDHCI.SDHCI.HostHardwareReset:=nil;
    PL18XSDHCI.SDHCI.HostSetPower:=nil;
    PL18XSDHCI.SDHCI.HostSetClock:=nil;
+   PL18XSDHCI.SDHCI.HostSetTiming:=nil;
    PL18XSDHCI.SDHCI.HostSetClockDivider:=nil;
    PL18XSDHCI.SDHCI.HostSetControlRegister:=nil;
    PL18XSDHCI.SDHCI.HostPrepareDMA:=nil;
@@ -754,6 +755,7 @@ begin
    PL18XSDHCI.SDHCI.HostHardwareReset:=nil;
    PL18XSDHCI.SDHCI.HostSetPower:=nil;
    PL18XSDHCI.SDHCI.HostSetClock:=nil;
+   PL18XSDHCI.SDHCI.HostSetTiming:=nil;
    PL18XSDHCI.SDHCI.HostSetClockDivider:=nil;
    PL18XSDHCI.SDHCI.HostSetControlRegister:=nil;
    PL18XSDHCI.SDHCI.HostPrepareDMA:=nil;
@@ -881,7 +883,7 @@ begin
  if (SDHCI.Capabilities and MMC_CAP_NONREMOVABLE) <> 0 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
  
  {Set Initial Power}
- PL18XSetPowerRegister(PPL18XSDHCIHost(SDHCI),FirstBitSet(SDHCI.Voltages) - 1);
+ PL18XSetPowerRegister(PPL18XSDHCIHost(SDHCI),FirstBitSet(SDHCI.Voltages));
  
  {Set Initial Bus Width}
  Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_1);
@@ -1230,6 +1232,15 @@ begin
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
  
+ {Check Non Removable}
+ if MMCIsNonRemovable(MMC) then
+  begin
+   MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+ 
  {Check MMC State}
  if MMC.MMCState = MMC_STATE_INSERTED then
   begin
@@ -1349,7 +1360,7 @@ begin
         end;
       end;
       
-     //if Command.Command = MMC_CMD_ADTC then //To Do
+     //if (Command.ResponseType and MMC_CMD_MASK) = MMC_CMD_ADTC then //To Do
      // begin
      //  Value:=Value or PPL18XSDHCIHost(SDHCI).Version.DataCommandEnable;
      // end;
@@ -1613,9 +1624,10 @@ begin
  {Delay}
  PL18XRegisterDelay(PPL18XSDHCIHost(SDHCI));
  
- {Update Clock and Bus Width}
+ {Update Clock, Bus Width and Timing}
  SDHCI.Clock:=MMC.Clock;
  SDHCI.BusWidth:=MMC.BusWidth;
+ SDHCI.Timing:=MMC.Timing;
  
  Result:=MMC_STATUS_SUCCESS;
 end;
@@ -1788,6 +1800,7 @@ begin
  {Driver}
  MMC.Voltages:=SDHCI.Voltages;
  MMC.Capabilities:=SDHCI.Capabilities or MMC_CAP_CMD23;
+ MMC.Capabilities2:=SDHCI.Capabilities2;
  if PPL18XSDHCIHost(SDHCI).Version.BusyDetect then 
   begin
     //MMC.DeviceCardBusy:=PL18XMMCDeviceCardBusy; //To Do //mmci_card_busy
@@ -1847,6 +1860,9 @@ begin
    MMCDeviceDestroy(MMC);
    Exit;
   end;
+
+ {Check Non Removeable}
+ if StrToIntDef(SysUtils.GetEnvironmentVariable(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
 
  {Enable Host}
  SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;

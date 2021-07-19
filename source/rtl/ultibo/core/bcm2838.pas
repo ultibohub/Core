@@ -232,7 +232,7 @@ const
   BCM2838_SPI5_REGS_BASE,  {SPI5}
   BCM2838_SPI6_REGS_BASE); {SPI6}
   
- {Periperhal Control (PACTL_CS)}
+ {Peripheral Control (PACTL_CS)}
  BCM2838_PACTL_CS_REGS_BASE     = BCM2838_PERIPHERALS_BASE + $204E00;
  
  {BSC0 (I2C0) (Broadcom Serial Controller)}
@@ -1121,7 +1121,7 @@ const
  BCM2838_PWM_CTL_USEF2 = (1 shl 13); {Channel 2 Use Fifo (0: Data register is transmitted / 1: Fifo is used for transmission)}
  BCM2838_PWM_CTL_POLA2 = (1 shl 12); {Channel 2 Polarity (0 : 0=low 1=high / 1: 1=low 0=high)}
  BCM2838_PWM_CTL_SBIT2 = (1 shl 11); {Channel 2 Silence Bit (Defines the state of the output when no transmission takes place)}
- BCM2838_PWM_CTL_RPTL2 = (1 shl 10); {Channel 2 Repeat Last Data (0: Transmission interrupts when FIFO is empty / 1: Last data in FIFO is transmitted repetedly until FIFO is not empty)}
+ BCM2838_PWM_CTL_RPTL2 = (1 shl 10); {Channel 2 Repeat Last Data (0: Transmission interrupts when FIFO is empty / 1: Last data in FIFO is transmitted repeatedly until FIFO is not empty)}
  BCM2838_PWM_CTL_MODE2 = (1 shl 9);  {Channel 2 Mode (0: PWM mode / 1: Serialiser mode)}
  BCM2838_PWM_CTL_PWEN2 = (1 shl 8);  {Channel 2 Enable (0: Channel is disabled / 1: Channel is enabled)}
  BCM2838_PWM_CTL_MSEN1 = (1 shl 7);  {Channel 1 M/S Enable (0: PWM algorithm is used / 1: M/S transmission is used)}
@@ -1129,7 +1129,7 @@ const
  BCM2838_PWM_CTL_USEF1 = (1 shl 5);  {Channel 1 Use Fifo (0: Data register is transmitted / 1: Fifo is used for transmission)}
  BCM2838_PWM_CTL_POLA1 = (1 shl 4);  {Channel 1 Polarity (0 : 0=low 1=high / 1: 1=low 0=high)}
  BCM2838_PWM_CTL_SBIT1 = (1 shl 3);  {Channel 1 Silence Bit (Defines the state of the output when no transmission takes place)}
- BCM2838_PWM_CTL_RPTL1 = (1 shl 2);  {Channel 1 Repeat Last Data (0: Transmission interrupts when FIFO is empty / 1: Last data in FIFO is transmitted repetedly until FIFO is not empty)}
+ BCM2838_PWM_CTL_RPTL1 = (1 shl 2);  {Channel 1 Repeat Last Data (0: Transmission interrupts when FIFO is empty / 1: Last data in FIFO is transmitted repeatedly until FIFO is not empty)}
  BCM2838_PWM_CTL_MODE1 = (1 shl 1);  {Channel 1 Mode (0: PWM mode / 1: Serialiser mode)}
  BCM2838_PWM_CTL_PWEN1 = (1 shl 0);  {Channel 1 Enable (0: Channel is disabled / 1: Channel is enabled)}
  
@@ -2096,7 +2096,7 @@ const
  BCM2838_GPPUD_UP   = 1;
  BCM2838_GPPUD_DOWN = 2;
  
- {Pin Mux Valus}
+ {Pin Mux Values}
  BCM2838_GPPINMUX_RGMII_PHY_GPIO = 1; {If set enables the RGMII PHY signals onto GPIOs 46+}
  BCM2838_GPPINMUX_LEGACY_EMMC    = 2; {If set legacy EMMC controller (Arasan SD) is connected to the SD card socket}
  
@@ -2174,7 +2174,7 @@ const
  {ARM local Core Timer Prescaler register bits} 
   {Nothing}
   
- {ARM local Core Interrupt Routing register bits (Set Table 104 CORE_IRQ_CONTROL Register)} 
+ {ARM local Core Interrupt Routing register bits (See Table 104 CORE_IRQ_CONTROL Register)} 
  BCM2838_ARM_LOCAL_AXI_ERR_INT_ROUTING_IRQ0 = (0 shl 4); {AXI_ERR IRQ goes to IRQ input of core 0}
  BCM2838_ARM_LOCAL_AXI_ERR_INT_ROUTING_IRQ1 = (1 shl 4); {AXI_ERR IRQ goes to IRQ input of core 1}
  BCM2838_ARM_LOCAL_AXI_ERR_INT_ROUTING_IRQ2 = (2 shl 4); {AXI_ERR IRQ goes to IRQ input of core 2}
@@ -2203,7 +2203,7 @@ const
  {ARM local Core Timer High register bits}
   {Nothing}
   
- {ARM local Peripheral Interrupt Routing register bits (Set Table Table 107 PERI_IRQ_ROUTE0 Register)} 
+ {ARM local Peripheral Interrupt Routing register bits (See Table 107 PERI_IRQ_ROUTE0 Register)} 
  BCM2838_ARM_LOCAL_PERIPHERAL_WRITE_MASKS = ($01 shl 24); {This field must be written with 0x01, otherwise changes to LOCAL_TIMER_IRQ will be ignored} 
  
  BCM2838_ARM_LOCAL_TIMER_INT_ROUTING_IRQ0 = (0 shl 0); {Local timer interrupt goes to Core 0 IRQ}

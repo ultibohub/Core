@@ -28,44 +28,46 @@ Credits
  
    U-Boot
    
-    \u-boot-HEAD-5745f8c\drivers\mmc\bcm2835_sdhci.c
-    \u-boot-HEAD-5745f8c\drivers\mmc\sdhci.c
-    \u-boot-HEAD-5745f8c\drivers\mmc\mmc.c
-    \u-boot-HEAD-5745f8c\drivers\mmc\mmc_spi.c
-    \u-boot-HEAD-5745f8c\drivers\mmc\mmc_write.c
-    \u-boot-HEAD-5745f8c\include\mmc.h
-    \u-boot-HEAD-5745f8c\include\sdhci.h
-       
+    \drivers\mmc\bcm2835_sdhci.c
+    \drivers\mmc\sdhci.c
+    \drivers\mmc\mmc.c
+    \drivers\mmc\mmc_spi.c
+    \drivers\mmc\mmc_write.c
+    \include\mmc.h
+    \include\sdhci.h
+     
+   Linux     
+   
    General
    
-    \linux-rpi-3.18.y\drivers\mmc\core\core.c
-    \linux-rpi-3.18.y\drivers\mmc\core\host.c
-    \linux-rpi-3.18.y\drivers\mmc\card\block.c
+    \drivers\mmc\core\core.c
+    \drivers\mmc\core\host.c
+    \drivers\mmc\card\block.c
     
    
    SDHCI
    
-    \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
-    \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
+    \drivers\mmc\host\bcm2835-mmc.c
+    \drivers\mmc\host\sdhci.c
     
    MMC
    
-    \linux-rpi-3.18.y\drivers\mmc\core\mmc.c
-    \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+    \drivers\mmc\core\mmc.c
+    \drivers\mmc\core\mmc_ops.c
     
    SD
    
-    \linux-rpi-3.18.y\drivers\mmc\core\sd.c
-    \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+    \drivers\mmc\core\sd.c
+    \drivers\mmc\core\sd_ops.c
     
    SDIO
    
-    \linux-rpi-3.18.y\drivers\mmc\core\sdio.c
-    \linux-rpi-3.18.y\drivers\mmc\core\sdio_ops.c
+    \drivers\mmc\core\sdio.c
+    \drivers\mmc\core\sdio_ops.c
     
    Include
 
-    \linux-rpi-3.18.y\include\linux\mmc
+    \include\linux\mmc
     
    
 References
@@ -86,11 +88,15 @@ References
  SD Physical Layer Simplified Specification V4.10.pdf
  
    https://www.sdcard.org/downloads/pls/simplified_specs/part1_410.pdf
+ 
+ Embedded Multi-Media Card (e•MMC) Electrical Standard (5.1)
    
+   https://www.jedec.org/standards-documents/docs/jesd84-b51
+ 
  Others
    
    http://elm-chan.org/docs/mmc/mmc_e.html
- 
+   
 
 SD/MMC Devices
 ==============
@@ -98,6 +104,10 @@ SD/MMC Devices
 This unit implements the standards based part of the SD/MMC specification including the standard SDHCI interfaces.
 
 For each platform a SDHCI module needs to be provided that implements the platform specific parts of the SDHCI interface.
+
+A fully standards compliant SDHCI host controller needs only a procedure to register it with the SD/MMC core and it
+can operate using the standard functions provided in this unit, any deviations from the standard will require custom
+functions to be provided to override the standard functionality.
 
 This is similar in model to USB and other interfaces in Ultibo, where the generic interface unit requires a platform specific
 module to register with it in order to communicate with platform specific devices.
@@ -118,38 +128,28 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,SysUtils;
             
-//To Do //For SPI based MMC/SDHCI see: \u-boot-HEAD-5745f8c\drivers\mmc\mmc_spi.c
-
-              //For RPMB (Replay Protected Memory Block)
-              //See: \u-boot-HEAD-5745f8c\drivers\mmc\rpmb.c
-              
-//To Do //See also: \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
- 
-//To Do //Need to add DataMemoryBarriers in appropriate places here
-              //See: mmiowb() in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
-              
-//To Do //Note: May need to expand this interface to allow SDIO support
-              //See SDIO drivers (PSDIODriver) can register with this interface  and be called when an SDIO device (PSDIODevice) is
-              //found to see if they support it. (eg BCM4330 WiFi / Bluetooth). Similar in concept to USB.
+//To Do //For SPI based MMC/SDHCI see: \drivers\mmc\mmc_spi.c
+        //For RPMB (Replay Protected Memory Block) see: \drivers\mmc\rpmb.c
+             
+        //mmc_select_hwpart / mmc_switch_part
+        
+        // Boot //mmc_boot_partition_size_change / mmc_set_boot_bus_width / mmc_set_part_conf / mmc_set_rst_n_function
+        // RPMB //mmc_rpmb_set_key /  mmc_rpmb_get_counter / mmc_rpmb_read / mmc_rpmb_write
+             
+//To Do //Note: Need to expand this interface to allow SDIO support
+        //      SDIO drivers (PSDIODriver) can register with this interface and be called when an SDIO device (PSDIODevice) is
+        //      found to see if they support it. (eg BCM4330 WiFi / Bluetooth). Similar in concept to USB.
                        
- //To Do
-              //Locks *****
-              //MMC Detect/Initialize
-              //SDIO Detect/Initialize
+ //To Do      //SDIO Detect/Initialize
               //UHS-I and II Initialize  (Tuning etc)
               //Host/Device Flags (Decode OCR/CID/CSD/SCR/SSR etc)
               //Host/Device Capabilities (specifically Device) (Decode OCR/CID/CSD/SCR/SSR etc)
+           
               //Device Voltages (Decode OCR)
               
-//To Do //Look for:
-
-//Testing
-            
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-
-//{$DEFINE MMC_DEBUG} //To Do //TestingEMMC
 
 {==============================================================================}
 const
@@ -239,6 +239,7 @@ const
  MMC_VERSION_4_41    = (MMC_VERSION_MMC or $0429);
  MMC_VERSION_4_5     = (MMC_VERSION_MMC or $0405);
  MMC_VERSION_5_0     = (MMC_VERSION_MMC or $0500);
+ MMC_VERSION_5_1     = (MMC_VERSION_MMC or $0501);
  MMC_VERSION_UNKNOWN = (MMC_VERSION_MMC);
  
  {MMC/SD Capabilities (From: /include/linux/mmc/host.h)}
@@ -275,6 +276,32 @@ const
  MMC_CAP_CMD23           = (1 shl 30); {CMD23 supported}
  MMC_CAP_HW_RESET        = (1 shl 31); {Reset the eMMC card via RST_n}
  
+ {MMC/SD Capabilities2 (From: /include/linux/mmc/host.h)}
+ MMC_CAP2_BOOTPART_NOACC            = (1 shl 0); {Boot partition no access}
+ MMC_CAP2_FULL_PWR_CYCLE            = (1 shl 2); {Can do full power cycle}
+ MMC_CAP2_FULL_PWR_CYCLE_IN_SUSPEND = (1 shl 3); {Can do full power cycle in suspend}
+ MMC_CAP2_HS200_1_8V_SDR            = (1 shl 5); {Can support HS200 1.8V}
+ MMC_CAP2_HS200_1_2V_SDR            = (1 shl 6); {Can support HS200 1.2V}
+ MMC_CAP2_HS200                     = (MMC_CAP2_HS200_1_8V_SDR or MMC_CAP2_HS200_1_2V_SDR);
+ MMC_CAP2_CD_ACTIVE_HIGH            = (1 shl 10); {Card-detect signal active high}
+ MMC_CAP2_RO_ACTIVE_HIGH            = (1 shl 11); {Write-protect signal active high}
+ MMC_CAP2_NO_PRESCAN_POWERUP        = (1 shl 14); {Don't power up before scan}
+ MMC_CAP2_HS400_1_8V                = (1 shl 15); {Can support HS400 1.8V}
+ MMC_CAP2_HS400_1_2V                = (1 shl 16); {Can support HS400 1.2V}
+ MMC_CAP2_HS400                     = (MMC_CAP2_HS400_1_8V or MMC_CAP2_HS400_1_2V);
+ MMC_CAP2_HSX00_1_8V                = (MMC_CAP2_HS200_1_8V_SDR or MMC_CAP2_HS400_1_8V);
+ MMC_CAP2_HSX00_1_2V                = (MMC_CAP2_HS200_1_2V_SDR or MMC_CAP2_HS400_1_2V);
+ MMC_CAP2_SDIO_IRQ_NOTHREAD         = (1 shl 17);
+ MMC_CAP2_NO_WRITE_PROTECT          = (1 shl 18); {No physical write protect pin, assume that card is always read-write}
+ MMC_CAP2_NO_SDIO                   = (1 shl 19); {Do not send SDIO commands during initialization}
+ MMC_CAP2_HS400_ES                  = (1 shl 20); {Host supports enhanced strobe}
+ MMC_CAP2_NO_SD                     = (1 shl 21); {Do not send SD commands during initialization}
+ MMC_CAP2_NO_MMC                    = (1 shl 22); {Do not send = (e)MMC commands during initialization}
+ MMC_CAP2_CQE                       = (1 shl 23); {Has eMMC command queue engine}
+ MMC_CAP2_CQE_DCMD                  = (1 shl 24); {CQE can issue a direct command}
+ MMC_CAP2_AVOID_3_3V                = (1 shl 25); {Host must negotiate down from 3.3V}
+ MMC_CAP2_MERGE_CAPABLE             = (1 shl 26); {Host can merge a segment over the segment size}
+ 
  {MMC/SD Directions}
  MMC_DATA_READ		= 1;
  MMC_DATA_WRITE		= 2;  
@@ -303,6 +330,17 @@ const
  MMC_TIMING_MMC_DDR52	= 8;
  MMC_TIMING_MMC_HS200	= 9;
  MMC_TIMING_MMC_HS400	= 10; 
+
+ {MMC/SD Signal Voltage (From: /include/linux/mmc/host.h)}
+ MMC_SIGNAL_VOLTAGE_330 = 0;
+ MMC_SIGNAL_VOLTAGE_180 = 1;
+ MMC_SIGNAL_VOLTAGE_120 = 2;
+
+ {MMC/SD Driver Type (From: /include/linux/mmc/host.h)}
+ MMC_SET_DRIVER_TYPE_B = 0;
+ MMC_SET_DRIVER_TYPE_A = 1;
+ MMC_SET_DRIVER_TYPE_C = 2;
+ MMC_SET_DRIVER_TYPE_D = 3;
 
  {MMC Commands (From: /include/linux/mmc/mmc.h)}
  {Class 1}
@@ -376,7 +414,7 @@ const
  MMC_RSP_BUSY	 = (1 shl 3); {Card may send busy}
  MMC_RSP_OPCODE	 = (1 shl 4); {Response contains opcode}
 
- {These are the native response types, and correspond to valid bit patterns of the above flags. One additional valid pattern is all zeros, which means we don't expect a respons}
+ {These are the native response types, and correspond to valid bit patterns of the above flags. One additional valid pattern is all zeros, which means we don't expect a response}
  MMC_RSP_NONE	= (0);
  MMC_RSP_R1	    = (MMC_RSP_PRESENT or MMC_RSP_CRC or MMC_RSP_OPCODE);
  MMC_RSP_R1B    = (MMC_RSP_PRESENT or MMC_RSP_CRC or MMC_RSP_OPCODE or MMC_RSP_BUSY);
@@ -386,6 +424,13 @@ const
  MMC_RSP_R5	    = (MMC_RSP_PRESENT or MMC_RSP_CRC or MMC_RSP_OPCODE);
  MMC_RSP_R6	    = (MMC_RSP_PRESENT or MMC_RSP_CRC or MMC_RSP_OPCODE);
  MMC_RSP_R7	    = (MMC_RSP_PRESENT or MMC_RSP_CRC or MMC_RSP_OPCODE);
+ 
+ {Non-SPI Command Type Flags}
+ MMC_CMD_MASK = (3 shl 5);
+ MMC_CMD_AC   = (0 shl 5); {Addressed Command, no Data}
+ MMC_CMD_ADTC = (1 shl 5); {Addressed Data Transfer Command}
+ MMC_CMD_BC   = (2 shl 5); {Broadcast Command, no Response}
+ MMC_CMD_BCR  = (3 shl 5); {Broadcast Command with Response}
  
  {SPI}
  MMC_RSP_SPI_S1	  = (1 shl 7);		{One status byte}
@@ -507,7 +552,7 @@ const
  MMC_CSD_TAAC_VALUE           = 4;
  MMC_CSD_NSAC                 = 5;
  MMC_CSD_TRAN_SPEED_UNIT      = 6;
- MMC_CSD_TRAN_SPEED_VALUE     = 37; //To Do
+ MMC_CSD_TRAN_SPEED_VALUE     = 37;
  MMC_CSD_CCC                  = 7;
  MMC_CSD_READ_BL_LEN          = 8;
  MMC_CSD_READ_BL_PARTIAL      = 9;
@@ -733,7 +778,18 @@ const
  EXT_CSD_HPI_FEATURES = 503; {RO}
  
  {MMC EXT_CSD field definitions}
+ EXT_CSD_PARTITION_ATTRIBUTE_ENH_4   = $10;
+ EXT_CSD_PARTITION_ATTRIBUTE_ENH_3   = $08;
+ EXT_CSD_PARTITION_ATTRIBUTE_ENH_2   = $04;
+ EXT_CSD_PARTITION_ATTRIBUTE_ENH_1   = $02;
+ EXT_CSD_PARTITION_ATTRIBUTE_ENH_USR = $01;
+ 
+ EXT_CSD_PARTITION_EXT_ATTRIBUTE_EN = $04;
+ EXT_CSD_PARTITION_ENH_ATTRIBUTE_EN = $02;
+ EXT_CSD_PARTITION_PARTITIONING_EN  = $01;
+ 
  EXT_CSD_WR_REL_PARAM_EN = (1 shl 2);
+ EXT_CSD_WR_REL_PARAM_EN_RPMB_REL_WR = (1 shl 4);
 
  EXT_CSD_BOOT_WP_B_PWR_WP_DIS = $40;
  EXT_CSD_BOOT_WP_B_PERM_WP_DIS = $10;
@@ -842,10 +898,36 @@ const
  {Maximum block count for MMC}
  MMC_MAX_BLOCK_COUNT = 65535;
  
- {The number of MMC physical partitions.  These consist of: boot partitions (2), general purpose partitions (4) in MMC v4.4.}
+ {The number of MMC physical partitions.  These consist of: boot partitions (2), general purpose partitions (4) and RPMB partition (1) in MMC v4.4}
  MMC_NUM_BOOT_PARTITION	= 2;
- MMC_PART_RPMB          = 3; {RPMB partition number}
+ MMC_NUM_GP_PARTITION   = 4;
+ MMC_NUM_PHY_PARTITION  = 7;
  
+ {Timeouts}
+ MMC_DEFAULT_CMD6_TIMEOUT_MS = 500;
+ MMC_MIN_CACHE_EN_TIMEOUT_MS = 1600;
+ 
+ {Sizes}
+ MMC_FIRMWARE_VERSION_LEN = 8;
+ 
+ {Version specific features}
+ MMC_DISCARD_FEATURE = $01;
+ 
+ {Busy Poll Commands}
+ MMC_BUSY_CMD6  = 0;
+ MMC_BUSY_ERASE = 1;
+ MMC_BUSY_HPI   = 2;
+ 
+ {Erase/Trim/Discard Arguments}
+ MMC_ERASE_ARG        = $00000000;
+ MMC_SECURE_ERASE_ARG = $80000000;
+ MMC_TRIM_ARG         = $00000001;
+ MMC_DISCARD_ARG      = $00000003;
+ MMC_SECURE_TRIM1_ARG = $80000001;
+ MMC_SECURE_TRIM2_ARG = $80008000;
+ MMC_SECURE_ARGS      = $80000000;
+ MMC_TRIM_ARGS        = $00008001;
+
  {MMC logging}
  MMC_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {MMC debugging messages}
  MMC_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {MMC informational messages, such as a device being attached or detached}
@@ -1262,7 +1344,7 @@ const
  SDIO_POWER_EMPC	= $02;	{Enable Master Power Control}
  
  {SDIO CCCR SPEED Register values} 
- SDIO_SPEED_SHS		= $01;	{Supports High-Speed mode}
+ SDIO_SPEED_SHS		    = $01;	{Supports High-Speed mode}
  SDIO_SPEED_BSS_SHIFT	= 1;
  SDIO_SPEED_BSS_MASK	= (7 shl SDIO_SPEED_BSS_SHIFT);
  SDIO_SPEED_SDR12	    = (0 shl SDIO_SPEED_BSS_SHIFT);
@@ -1270,15 +1352,15 @@ const
  SDIO_SPEED_SDR50	    = (2 shl SDIO_SPEED_BSS_SHIFT);
  SDIO_SPEED_SDR104	    = (3 shl SDIO_SPEED_BSS_SHIFT);
  SDIO_SPEED_DDR50	    = (4 shl SDIO_SPEED_BSS_SHIFT);
- SDIO_SPEED_EHS		= SDIO_SPEED_SDR25;	{Enable High-Speed}
+ SDIO_SPEED_EHS		    = SDIO_SPEED_SDR25;	{Enable High-Speed}
  
  {SDIO CCCR UHS Register values} 
- SDIO_UHS_SDR50	= $01;
- SDIO_UHS_SDR104	= $02;
- SDIO_UHS_DDR50	= $04;
+ SDIO_UHS_SDR50	 = $01;
+ SDIO_UHS_SDR104 = $02;
+ SDIO_UHS_DDR50	 = $04;
  
  {SDIO CCCR DRIVE STRENGTH Register values} 
- SDIO_SDTx_MASK		= $07;
+ SDIO_SDTx_MASK		    = $07;
  SDIO_DRIVE_SDTA	    = (1 shl 0);
  SDIO_DRIVE_SDTC	    = (1 shl 1);
  SDIO_DRIVE_SDTD	    = (1 shl 2);
@@ -1307,7 +1389,122 @@ const
  SDIO_FBR_POWER_SPS	= $01;	{Supports Power Selection}
  SDIO_FBR_POWER_EPS	= $02;	{Enable (low) Power Selection}
  
- //To Do
+ {SDIO Function Classes}
+ SDIO_CLASS_NONE   = $00; {Not a SDIO standard interface}
+ SDIO_CLASS_UART   = $01; {standard UART interface}
+ SDIO_CLASS_BT_A   = $02; {Type-A BlueTooth std interface}
+ SDIO_CLASS_BT_B   = $03; {Type-B BlueTooth std interface}
+ SDIO_CLASS_GPS    = $04; {GPS standard interface}
+ SDIO_CLASS_CAMERA = $05; {Camera standard interface}
+ SDIO_CLASS_PHS    = $06; {PHS standard interface}
+ SDIO_CLASS_WLAN   = $07; {WLAN interface}
+ SDIO_CLASS_ATA    = $08; {Embedded SDIO-ATA std interface}
+ SDIO_CLASS_BT_AMP = $09; {Type-A Bluetooth AMP interface}
+ 
+ {SDIO Vendors}
+ SDIO_VENDOR_ID_STE            = $0020;
+ SDIO_VENDOR_ID_INTEL          = $0089;
+ SDIO_VENDOR_ID_CGUYS          = $0092;
+ SDIO_VENDOR_ID_TI             = $0097;
+ SDIO_VENDOR_ID_ATHEROS        = $0271;
+ SDIO_VENDOR_ID_BROADCOM       = $02d0;
+ SDIO_VENDOR_ID_MARVELL        = $02df;
+ SDIO_VENDOR_ID_MEDIATEK       = $037a;
+ SDIO_VENDOR_ID_MICROCHIP_WILC = $0296;
+ SDIO_VENDOR_ID_SIANO          = $039a;
+ SDIO_VENDOR_ID_RSI            = $041b;
+ SDIO_VENDOR_ID_TI_WL1251      = $104c;
+ 
+ {SDIO Devices}
+ SDIO_DEVICE_ID_STE_CW1200              = $2280;
+ 
+ SDIO_DEVICE_ID_INTEL_IWMC3200WIMAX     = $1402;
+ SDIO_DEVICE_ID_INTEL_IWMC3200WIFI      = $1403;
+ SDIO_DEVICE_ID_INTEL_IWMC3200TOP       = $1404;
+ SDIO_DEVICE_ID_INTEL_IWMC3200GPS       = $1405;
+ SDIO_DEVICE_ID_INTEL_IWMC3200BT        = $1406;
+ SDIO_DEVICE_ID_INTEL_IWMC3200WIMAX_2G5 = $1407;
+ 
+ SDIO_DEVICE_ID_CGUYS_EW_CG1102GC       = $0004;
+ 
+ SDIO_DEVICE_ID_TI_WL1271               = $4076;
+                                        
+ SDIO_DEVICE_ID_ATHEROS_AR6003_00       = $0300;
+ SDIO_DEVICE_ID_ATHEROS_AR6003_01       = $0301;
+ SDIO_DEVICE_ID_ATHEROS_AR6004_00       = $0400;
+ SDIO_DEVICE_ID_ATHEROS_AR6004_01       = $0401;
+ SDIO_DEVICE_ID_ATHEROS_AR6004_02       = $0402;
+ SDIO_DEVICE_ID_ATHEROS_AR6004_18       = $0418;
+ SDIO_DEVICE_ID_ATHEROS_AR6004_19       = $0419;
+ SDIO_DEVICE_ID_ATHEROS_AR6005          = $050A;
+ SDIO_DEVICE_ID_ATHEROS_QCA9377         = $0701;
+                                        
+ SDIO_DEVICE_ID_BROADCOM_NINTENDO_WII   = $044b;
+ SDIO_DEVICE_ID_BROADCOM_43241          = $4324;
+ SDIO_DEVICE_ID_BROADCOM_4329           = $4329;
+ SDIO_DEVICE_ID_BROADCOM_4330           = $4330;
+ SDIO_DEVICE_ID_BROADCOM_4334           = $4334;
+ SDIO_DEVICE_ID_BROADCOM_4335_4339      = $4335;
+ SDIO_DEVICE_ID_BROADCOM_4339           = $4339;
+ SDIO_DEVICE_ID_BROADCOM_4345           = $4345;
+ SDIO_DEVICE_ID_BROADCOM_4354           = $4354;
+ SDIO_DEVICE_ID_BROADCOM_CYPRESS_89359  = $4355;
+ SDIO_DEVICE_ID_BROADCOM_4356           = $4356;
+ SDIO_DEVICE_ID_BROADCOM_4359           = $4359;
+ SDIO_DEVICE_ID_BROADCOM_CYPRESS_4373   = $4373;
+ SDIO_DEVICE_ID_BROADCOM_CYPRESS_43012  = $a804;
+ SDIO_DEVICE_ID_BROADCOM_43143          = $a887;
+ SDIO_DEVICE_ID_BROADCOM_43340          = $a94c;
+ SDIO_DEVICE_ID_BROADCOM_43341          = $a94d;
+ SDIO_DEVICE_ID_BROADCOM_43362          = $a962;
+ SDIO_DEVICE_ID_BROADCOM_43364          = $a9a4;
+ SDIO_DEVICE_ID_BROADCOM_43430          = $a9a6;
+ SDIO_DEVICE_ID_BROADCOM_43455          = $a9bf;
+ 
+ SDIO_DEVICE_ID_MARVELL_LIBERTAS        = $9103;
+ SDIO_DEVICE_ID_MARVELL_8688_WLAN       = $9104;
+ SDIO_DEVICE_ID_MARVELL_8688_BT         = $9105;
+ SDIO_DEVICE_ID_MARVELL_8786_WLAN       = $9116;
+ SDIO_DEVICE_ID_MARVELL_8787_WLAN       = $9119;
+ SDIO_DEVICE_ID_MARVELL_8787_BT         = $911a;
+ SDIO_DEVICE_ID_MARVELL_8787_BT_AMP     = $911b;
+ SDIO_DEVICE_ID_MARVELL_8797_F0         = $9128;
+ SDIO_DEVICE_ID_MARVELL_8797_WLAN       = $9129;
+ SDIO_DEVICE_ID_MARVELL_8797_BT         = $912a;
+ SDIO_DEVICE_ID_MARVELL_8897_WLAN       = $912d;
+ SDIO_DEVICE_ID_MARVELL_8897_BT         = $912e;
+ SDIO_DEVICE_ID_MARVELL_8887_F0         = $9134;
+ SDIO_DEVICE_ID_MARVELL_8887_WLAN       = $9135;
+ SDIO_DEVICE_ID_MARVELL_8887_BT         = $9136;
+ SDIO_DEVICE_ID_MARVELL_8801_WLAN       = $9139;
+ SDIO_DEVICE_ID_MARVELL_8997_F0         = $9140;
+ SDIO_DEVICE_ID_MARVELL_8997_WLAN       = $9141;
+ SDIO_DEVICE_ID_MARVELL_8997_BT         = $9142;
+ SDIO_DEVICE_ID_MARVELL_8977_WLAN       = $9145;
+ SDIO_DEVICE_ID_MARVELL_8977_BT         = $9146;
+ SDIO_DEVICE_ID_MARVELL_8987_WLAN       = $9149;
+ SDIO_DEVICE_ID_MARVELL_8987_BT         = $914a;
+ 
+ SDIO_DEVICE_ID_MEDIATEK_MT7663         = $7663;
+ SDIO_DEVICE_ID_MEDIATEK_MT7668         = $7668;
+                                        
+ SDIO_DEVICE_ID_MICROCHIP_WILC1000      = $5347;
+ 
+ SDIO_DEVICE_ID_SIANO_NOVA_B0           = $0201;
+ SDIO_DEVICE_ID_SIANO_NICE              = $0202;
+ SDIO_DEVICE_ID_SIANO_VEGA_A0           = $0300;
+ SDIO_DEVICE_ID_SIANO_VENICE            = $0301;
+ SDIO_DEVICE_ID_SIANO_MING              = $0302;
+ SDIO_DEVICE_ID_SIANO_PELE              = $0500;
+ SDIO_DEVICE_ID_SIANO_RIO               = $0600;
+ SDIO_DEVICE_ID_SIANO_DENVER_2160       = $0700;
+ SDIO_DEVICE_ID_SIANO_DENVER_1530       = $0800;
+ SDIO_DEVICE_ID_SIANO_NOVA_A0           = $1100;
+ SDIO_DEVICE_ID_SIANO_STELLAR           = $5347;
+ 
+ SDIO_DEVICE_ID_TI_WL1251               = $9066;
+ 
+ SDIO_MAX_FUNCTIONS = 7;
  
 {==============================================================================}
 const
@@ -1583,6 +1780,7 @@ const
  
  {SDHCI Preset Values}
  SDHCI_PRESET_DRV_MASK        = $0000C000; {GENMASK(15,14)}
+ SDHCI_PRESET_DRV_SHIFT       = 14;
  SDHCI_PRESET_CLKGEN_SEL      = 1 shl 10; {BIT(10)}
  SDHCI_PRESET_SDCLK_FREQ_MASK = $000003FF; {GENMASK(9,0)}
  
@@ -1710,6 +1908,7 @@ type
   Status:LongWord;
   Data:PMMCData;
   {Host Properties}
+  Timeout:LongWord; {Milliseconds}
   DataCompleted:Boolean;
   BusyCompleted:Boolean;
   TuningCompleted:Boolean;
@@ -1819,15 +2018,24 @@ type
   {Card Values}
   Revision:Byte; {Extended CSD revision (192)}
   
+  CacheControl:Byte; {Control to turn the Cache ON/OFF (33)}
+  PowerOffNotification:Byte; {Power Off Notification (34)}
+  
   PartitionSupport:Byte; {Partitioning Support (160)}
+  HardwareResetFunction:Byte; {H/W reset function (162])}
+  WriteReliabilityParameter:Byte; {Write reliability parameter register (166])}
+  
+  RPMBSizeMult:Byte; {RPMB Size Multiplier (168)}
   EraseGroupDef:Byte; {High-density erase group definition (175)}
   PartConfig:Byte; {Partition configuration (179)}
+  ErasedMemoryContent:Byte; {Erased memory content (181)}
   StrobeSupport:Byte; {Strobe Support (184)}
   CSDStructure:Byte; {CSD STRUCTURE (194)}
   CardType:Byte; {Device type (196)}
   DriverStrength:Byte; {I/O Driver Strength (197)}
+  OutOfInterruptTime:Byte; {Out-of-interrupt busy timing (198)}
   
-  SectorCount:array[0..3] of Byte; {Sector Count (212 - 4 bytes)}
+  SectorCount:array[0..3] of Byte; {Sector Count (212)(4 bytes)}
   SATimeout:Byte; {Sleep/awake timeout (217)}
   HCEraseGapSize:Byte; {High-capacity write protect group size (221)}
   ReliableSectors:Byte; {Reliable write sector count (222)}
@@ -1837,104 +2045,64 @@ type
   SecEraseMult:Byte; {Secure Erase Multiplier (230)}
   SecFeatureSupport:Byte; {Secure Feature support (231)}
   TRIMMult:Byte; {TRIM Multiplier (232)}
+
+  PowerClass52MHz195:Byte; {Power class for 52 MHz at 1.95 V (200)}
+  PowerClass26MHz195:Byte; {Power class for 26 MHz at 1.95 V (201)}
+  PowerClass52MHz360:Byte; {Power class for 52 MHz at 3.6 V (202)}
+  PowerClass26MHz360:Byte; {Power class for 26 MHz at 3.6 V (203)}
+  PowerClass200MHz195:Byte; {Power class for 200MHz, at VCCQ = 1.3V, VCC = 3.6V (236)}
+  PowerClass200MHz360:Byte; {Power class for 200MHz at VCCQ = 1.95V, VCC = 3.6V (237)}
+  PowerClassDDR52MHz195:Byte; {Power class for 52MHz, DDR at VCC = 1.95V (238)}
+  PowerClassDDR52MHz360:Byte; {Power class for 52MHz, DDR at VCC = 3.6V (239)}
+  PowerClassDDR200MHz360:Byte; {Power class for 200MHz, DDR at VCC = 3.6V (253)}
   
+  BKOPSStatus:Byte; {Background operations status (246)}
+
+  FirmwareVersion:array[0..MMC_FIRMWARE_VERSION_LEN - 1] of Byte; {(254) (8 bytes)}
   
+  PreEndOfLifeInfo:Byte; {Pre EOL information (267)}
+  DeviceLifetimeEstimateA:Byte; {Device life time estimation type A (268)}
+  DeviceLifetimeEstimateB:Byte; {Device life time estimation type B (269)}
   
-  
-  //To Do //Continuing
-  
+  MaxPackedWrites:Byte; {Max packed write commands (500)}
+  MaxPackedReads:Byte; {Max packed read commands (501])}
+ 
+
   {Calculated Values}
   Sectors:LongWord;
-  SleepAwakeTime:LongWord; {100ns}
+  SleepAwakeTime:LongWord; {100ns units}
   PartitionSwitchTime:LongWord; {ms}
-  HCEraseSize:LongWord;  {Sectors}
+  GenericCMD6Time:LongWord; {10ms units}
+  PowerOffLongTime:LongWord; {ms}
+  HCEraseSize:LongWord; {Sectors}
   HCEraseTimeout:LongWord; {Milliseconds}
   DataSectorSize:LongWord; {512 bytes or 4KB}
-  
-  //To Do //Continuing
-  
- (*u8   rev;
- 
- u8   sec_feature_support;
- u8   rel_sectors;
- u8   rel_param;
- u8   part_config;
- u8   cache_ctrl;
- u8   rst_n_function;
- u8   max_packed_writes;
- u8   max_packed_reads;
- u8   packed_event_en;
- unsigned int  part_time;  /* Units: ms */
- unsigned int  sa_timeout;  /* Units: 100ns */
- unsigned int  generic_cmd6_time; /* Units: 10ms */
- unsigned int            power_off_longtime;     /* Units: ms */
- u8   power_off_notification; /* state */
- unsigned int  hs_max_dtr;
- unsigned int  hs200_max_dtr;
-    
- unsigned int  sectors;
- unsigned int  hc_erase_size;  /* In sectors */
- unsigned int  hc_erase_timeout; /* In milliseconds */
- unsigned int  sec_trim_mult; /* Secure trim multiplier  */
- unsigned int  sec_erase_mult; /* Secure erase multiplier */
- unsigned int  trim_timeout;  /* In milliseconds */
- bool   partition_setting_completed; /* enable bit */
- unsigned long long enhanced_area_offset; /* Units: Byte */
- unsigned int  enhanced_area_size; /* Units: KB */
- unsigned int  cache_size;  /* Units: KB */
- bool   hpi_en;   /* HPI enablebit */
- bool   hpi;   /* HPI support bit */
- unsigned int  hpi_cmd;  /* cmd used as HPI */
- bool   bkops;  /* background support bit */
- bool   man_bkops_en; /* manual bkops enable bit */
- bool   auto_bkops_en; /* auto bkops enable bit */
- unsigned int            data_sector_size;       /* 512 bytes or 4KB */
- unsigned int            data_tag_unit_size;     /* DATA TAG UNIT size */
- unsigned int  boot_ro_lock;  /* ro lock support */
- bool   boot_ro_lockable;
- bool   ffu_capable; /* Firmware upgrade support */
- bool   cmdq_en; /* Command Queue enabled */
- bool   cmdq_support; /* Command Queue supported */
- unsigned int  cmdq_depth; /* Command Queue depth */
-    
- u8   fwrev[MMC_FIRMWARE_LEN];  /* FW version */
- u8   raw_exception_status; /* 54 */
- u8   raw_partition_support; /* 160 */
- u8   raw_rpmb_size_mult; /* 168 */
- u8   raw_erased_mem_count; /* 181 */
- u8   strobe_support;  /* 184 */
- u8   raw_ext_csd_structure; /* 194 */
- u8   raw_card_type;  /* 196 */
- u8   raw_driver_strength; /* 197 */
- u8   out_of_int_time; /* 198 */
- u8   raw_pwr_cl_52_195; /* 200 */
- u8   raw_pwr_cl_26_195; /* 201 */
- u8   raw_pwr_cl_52_360; /* 202 */
- u8   raw_pwr_cl_26_360; /* 203 */
- u8   raw_s_a_timeout; /* 217 */
- u8   raw_hc_erase_gap_size; /* 221 */
- u8   raw_erase_timeout_mult; /* 223 */
- u8   raw_hc_erase_grp_size; /* 224 */
- u8   raw_sec_trim_mult; /* 229 */
- u8   raw_sec_erase_mult; /* 230 */
- u8   raw_sec_feature_support;/* 231 */
- u8   raw_trim_mult;  /* 232 */
- u8   raw_pwr_cl_200_195; /* 236 */
- u8   raw_pwr_cl_200_360; /* 237 */
- u8   raw_pwr_cl_ddr_52_195; /* 238 */
- u8   raw_pwr_cl_ddr_52_360; /* 239 */
- u8   raw_pwr_cl_ddr_200_360; /* 253 */
- u8   raw_bkops_status; /* 246 */
- u8   raw_sectors[4];  /* 212 - 4 bytes */
- u8   pre_eol_info;  /* 267 */
- u8   device_life_time_est_typ_a; /* 268 */
- u8   device_life_time_est_typ_b; /* 269 */
-
- unsigned int            feature_support;
-    
-    *)
- 
-  //To Do //Continuing
+  DataTagUnitSize:LongWord;
+  HSMaxRate:LongWord; {Hz}
+  HS200MaxRate:LongWord; {Hz}
+  AvailableTypes:LongWord;
+  BootPartitionSize:UInt64; {Bytes}
+  EnhancedAreaOffset:UInt64; {Bytes}
+  EnhancedAreaSize:UInt64; {KB}
+  CacheSize:LongWord; {KB}
+  PartitionSettingCompleted:Boolean; {Enable Bit} 
+  TRIMTimeout:LongWord; {Milliseconds}
+  PartitionSizes:array[0..MMC_NUM_GP_PARTITION - 1] of UInt64; {Bytes}
+  BootReadOnlySupport:LongWord; {Read Only Lock Support}
+  BootReadOnlyLockable:Boolean;
+  FieldFirmwareUpdate:Boolean; {Firmware upgrade support}
+  CommandQueueSupport:Boolean; {Command Queue supported}
+  CommandQueueDepth:LongWord; {Command Queue depth}
+  BackgroundOperations:Boolean; {BKOPS Supported}
+  ManualBKOPSEnable:Boolean; {Manual BKOPS Supported}
+  AutoBKOPSEnable:Boolean; {Auto BKOPS Supported}
+  HPI:Boolean; {HPI (High Priority Interrupt) Supported}
+  HPIEnable:Boolean; {HPI Enabled}
+  HPICommand:LongWord; {CMD used as HPI}
+  RPMBSize:UInt64; {Bytes}
+  EnhancedRPMBSupport:Boolean;
+  ErasedByte:Byte; {Value after Erase}
+  FeatureSupport:LongWord; {Version specific features (eg MMC_DISCARD_FEATURE)}
  end;
  
  {SD Status Data (SSR)} {See: Section 4.10.2 of SD Physical Layer Simplified Specification Version 4.10} {Defined here for MMC Device}
@@ -2036,8 +2204,16 @@ type
   Clock:LongWord;
   Timing:LongWord;
   BusWidth:LongWord;
+  DriverType:LongWord;
+  SignalVoltage:LongWord;
   Voltages:LongWord;
   Capabilities:LongWord;
+  Capabilities2:LongWord;
+  EraseSize:LongWord;                              {Erase Size in Sectors}
+  EraseShift:LongWord;
+  EraseArgument:LongWord;
+  PreferredEraseSize:LongWord;                     {Preferred Erase Size in Sectors}
+  EnhancedStrobe:LongBool;
   {Register Properties}                            {See: Table 3-2: SD Memory Card Registers of SD Physical Layer Simplified Specification Version 4.10}
   InterfaceCondition:LongWord;                     {Interface Condition Result}
   OperationCondition:LongWord;                     {Operation Condition Register (OCR)} {See: Section 5.1 of SD Physical Layer Simplified Specification Version 4.10} 
@@ -2071,7 +2247,9 @@ type
 {==============================================================================}
 type
  {SDIO specific types}
+ {SDIO Device}
  PSDIODriver = ^TSDIODriver;               {Forward declared to satisfy SDIODevice}
+ FSDIOFunction = ^TSDIOFunction;           {Forward declared to satisfy SDIODevice}
  PSDIODevice = ^TSDIODevice;
  
  {SDIO Device Bind Callback}
@@ -2095,7 +2273,19 @@ type
   //To Do
   Host:PDevice;                              {Host controller this SDIO device is connected to}
   Driver:PSDIODriver;                        {Driver this SDIO device is bound to, if any} 
+  
   {Driver Properties}                        
+  //To Do
+ end;
+ 
+ {SDIO Function}
+ {FSDIOFunction = ^TSDIOFunction;} {Declared above for SDIODevice}
+ TSDIOFunction = record 
+  {Function Properties}
+  Number:LongWord;                {The function number}
+  ClassId:Byte;                   {Standard class Id}
+  VendorId:Word;                  {Vendor Id}
+  DeviceId:Word;                  {Device Id}
   //To Do
  end;
  
@@ -2173,6 +2363,7 @@ type
  TSDHCIHostHardwareReset = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetPower = function(SDHCI:PSDHCIHost;Power:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetClock = function(SDHCI:PSDHCIHost;Clock:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSetTiming = function(SDHCI:PSDHCIHost;Timing:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetClockDivider = function(SDHCI:PSDHCIHost;Index:Integer;Divider:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetControlRegister = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostPrepareDMA = function(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -2197,6 +2388,7 @@ type
   HostHardwareReset:TSDHCIHostHardwareReset;       {A Host specific HostHardwareReset method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostSetPower:TSDHCIHostSetPower;                 {A Host specific HostSetPower method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostSetClock:TSDHCIHostSetClock;                 {A Host specific HostSetClock method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostSetTiming:TSDHCIHostSetTiming;               {A Host specific HostSetTiming method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostSetClockDivider:TSDHCIHostSetClockDivider;
   HostSetControlRegister:TSDHCIHostSetControlRegister;
   HostPrepareDMA:TSDHCIHostPrepareDMA;             {A Host specific HostPrepareDMA method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
@@ -2216,20 +2408,22 @@ type
   Quirks2:LongWord;                    {Host additional quirks/bugs flags}
   Clock:LongWord;                      {Host current clock}
   Power:LongWord;                      {Host current power}
+  Timing:LongWord;                     {Host current timing}
   BusWidth:LongWord;                   {Host current bus width}
   Interrupts:LongWord;                 {Host interrupts to be handled}
   Voltages:LongWord;                   {Host configured voltage flags}
   Capabilities:LongWord;               {Host configured capabilities flags}
-  MinimumFrequency:LongWord;           {Host configured minimum frequency}
-  MaximumFrequency:LongWord;           {Host configured maximum frequency}
+  Capabilities2:LongWord;              {Host configured additional capabilities flags}
+  TimeoutFrequency:LongWord;           {Host configured timeout clock frequency (KHz)}
+  MinimumFrequency:LongWord;           {Host configured minimum frequency (Hz)}
+  MaximumFrequency:LongWord;           {Host configured maximum frequency (Hz)}
   MaximumBlockSize:LongWord;           {Host configured maximum block size}
   MaximumBlockCount:LongWord;          {Host configured maximum block count}
   MaximumRequestSize:LongWord;         {Host configured maximum request size}
+  MaximumBusyTimeout:LongWord;         {Host configured maximum busy timeout (Milliseconds)}
   MinimumDMASize:LongWord;             {Minimum size for DMA read or write (Use PIO if less)}
   MaximumPIOBlocks:LongWord;           {Maximum blocks for PIO read or write (Use DMA if greater)}
-  //To Do
-  //PowerGPIO 
-  //CardDetectGPIO 
+  PresetEnabled:LongBool;              {Version 3.00 Preset Values Enabled (If applicable)}
   Command:PMMCCommand;                 {Currently processing command}
   Wait:TSemaphoreHandle;               {Command completed semaphore}
   UseDMA:LongBool;                     {Use DMA for the current data transfer}
@@ -2248,11 +2442,10 @@ type
   {Configuration Properties}
   PresetVoltages:LongWord;             {Host predefined voltage flags}
   PresetCapabilities:LongWord;         {Host predefined capabilities flags}
+  PresetCapabilities2:LongWord;        {Host predefined additional capabilities flags}
   ClockMinimum:LongWord;               {Host predefined minimum clock frequency}
   ClockMaximum:LongWord;               {Host predefined maximum clock frequency}
   DriverStageRegister:LongWord;        {Host predefined driver stage register (DSR)}
-  //To Do
-  //PartitionType
   EnableV4Mode:LongBool;               {Enable SDHCI version 4 protocol support}
   {Statistics Properties}                                        
   RequestCount:LongWord;               {Number of requests that have been submitted to this host}
@@ -2303,7 +2496,9 @@ function MMCDeviceEraseBlocks(MMC:PMMCDevice;const Start,Count:Int64):LongWord;
 function MMCDeviceGoIdle(MMC:PMMCDevice):LongWord;
 
 function MMCDeviceSetClock(MMC:PMMCDevice;Clock:LongWord):LongWord;
+function MMCDeviceSetTiming(MMC:PMMCDevice;Timing:LongWord):LongWord;
 function MMCDeviceSetBusWidth(MMC:PMMCDevice;Width:LongWord):LongWord;
+
 function MMCDeviceSetBlockLength(MMC:PMMCDevice;Length:LongWord):LongWord;
 function MMCDeviceSetBlockCount(MMC:PMMCDevice;Count:LongWord;Relative:Boolean):LongWord;
 function MMCDeviceSetDriverStage(MMC:PMMCDevice;DriverStage:LongWord):LongWord;
@@ -2313,15 +2508,15 @@ function MMCDeviceStopTransmission(MMC:PMMCDevice):LongWord;
 function MMCDeviceSelectCard(MMC:PMMCDevice):LongWord;
 function MMCDeviceDeselectCard(MMC:PMMCDevice):LongWord;
 
-//function MMCDeviceSetCapacity  //mmc_set_capacity (Block Device)
-//function MMCDeviceChangeFrequency //mmc_change_freq
+function MMCDeviceSwitch(MMC:PMMCDevice;Setting,Index,Value:Byte;Timeout:LongWord):LongWord;
+function MMCDeviceSwitchEx(MMC:PMMCDevice;Setting,Index,Value:Byte;Timeout,Timing:LongWord;SendStatus,RetryCRCError:Boolean):LongWord;
 
-function MMCDeviceSwitch(MMC:PMMCDevice;Setting,Index,Value:Byte):LongWord;
+function MMCDevicePollForBusy(MMC:PMMCDevice;Timeout,Command:LongWord):LongWord;
+function MMCDevicePollForBusyEx(MMC:PMMCDevice;Timeout,Command:LongWord;SendStatus,RetryCRCError:Boolean):LongWord;
 
 function MMCDeviceSendCardStatus(MMC:PMMCDevice):LongWord;
 
 function MMCDeviceSendOperationCondition(MMC:PMMCDevice;Probe:Boolean):LongWord;
-//function MMCDeviceDecodeOperationCondition //To Do
 
 function MMCDeviceSendCardSpecific(MMC:PMMCDevice):LongWord;
 function MMCDeviceDecodeCardSpecific(MMC:PMMCDevice):LongWord;
@@ -2338,18 +2533,6 @@ function MMCDeviceSetRelativeAddress(MMC:PMMCDevice):LongWord;
 
 function MMCDeviceSPISetCRC(MMC:PMMCDevice;Enable:Boolean):LongWord;
 function MMCDeviceSPIReadOperationCondition(MMC:PMMCDevice;HighCapacity:Boolean):LongWord;
-
-
-//To Do //
-              //mmc_select_hwpart / mmc_switch_part / *mmc_set_clock / *mmc_set_bus_width
-              //mmc_set_bus_mode
-              
-              //mmc_startup / mmc_start_init / mmc_complete_init / mmc_init
-
-//    Boot    //mmc_boot_partition_size_change / mmc_set_boot_bus_width / mmc_set_part_conf / mmc_set_rst_n_function
-             
-//    RPMB    //mmc_rpmb_set_key /  mmc_rpmb_get_counter / mmc_rpmb_read / mmc_rpmb_write
-           
 
 function MMCDeviceInsert(MMC:PMMCDevice):LongWord;
 function MMCDeviceRemove(MMC:PMMCDevice):LongWord;
@@ -2383,14 +2566,11 @@ function SDDeviceSwitch(MMC:PMMCDevice;Mode,Group:Integer;Value:Byte;Buffer:Poin
 
 function SDDeviceSwitchHighspeed(MMC:PMMCDevice):LongWord;
 
-function SDDeviceSetBusSpeed(MMC:PMMCDevice;Speed:LongWord):LongWord;
 function SDDeviceSetBusWidth(MMC:PMMCDevice;Width:LongWord):LongWord;
 
 function SDDeviceSendInterfaceCondition(MMC:PMMCDevice):LongWord;
-//function SDDeviceDecodeInterfaceCondition //To Do
 
 function SDDeviceSendOperationCondition(MMC:PMMCDevice;Probe:Boolean):LongWord; 
-//function SDDeviceDecodeOperationCondition //To Do
 
 function SDDeviceGetCardSpecific(MMC:PMMCDevice):LongWord;
 function SDDeviceDecodeCardSpecific(MMC:PMMCDevice):LongWord;
@@ -2440,6 +2620,7 @@ function SDHCIHostHardwareReset(SDHCI:PSDHCIHost):LongWord;
 
 function SDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 function SDHCIHostSetClock(SDHCI:PSDHCIHost;Clock:LongWord):LongWord;
+function SDHCIHostSetTiming(SDHCI:PSDHCIHost;Timing:LongWord):LongWord;
 
 function SDHCIHostPrepareDMA(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord; 
 function SDHCIHostStartDMA(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;
@@ -2497,7 +2678,6 @@ function MMCIsSD(MMC:PMMCDevice):Boolean;
 
 function MMCGetCIDValue(MMC:PMMCDevice;Version,Value:LongWord):LongWord;
 function MMCGetCSDValue(MMC:PMMCDevice;Value:LongWord):LongWord;
-function MMCGetExtendedCSDValue(MMC:PMMCDevice;Value:LongWord):LongWord;
 
 function MMCExtractBits(Buffer:Pointer;Start,Size:LongWord):LongWord;
 function MMCExtractBitsEx(Buffer:Pointer;Length,Start,Size:LongWord):LongWord;
@@ -2505,6 +2685,7 @@ function MMCExtractBitsEx(Buffer:Pointer;Length,Start,Size:LongWord):LongWord;
 function MMCIsMultiCommand(Command:Word):Boolean; inline;
 
 function MMCIsNonRemovable(MMC:PMMCDevice):Boolean; inline;
+function MMCHasExtendedCSD(MMC:PMMCDevice):Boolean; inline;
 function MMCHasSetBlockCount(MMC:PMMCDevice):Boolean; inline;
 function MMCHasAutoBlockCount(MMC:PMMCDevice):Boolean; inline;
 function MMCHasAutoCommandStop(MMC:PMMCDevice):Boolean; inline;
@@ -2514,7 +2695,9 @@ function MMCStatusToString(Status:LongWord):String;
 function MMCVersionToString(Version:LongWord):String;
 function MMCTimingToString(Timing:LongWord):String;
 function MMCBusWidthToString(BusWidth:LongWord):String;
-
+function MMCDriverTypeToString(DriverType:LongWord):String;
+function MMCSignalVoltageToString(SignalVoltage:LongWord):String;
+  
 function MMCDeviceTypeToString(MMCType:LongWord):String;
 function MMCDeviceStateToString(MMCState:LongWord):String;
 
@@ -2623,6 +2806,39 @@ var
  SDHCIHostTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  SDHCIHostTableCount:LongWord;
  
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+//MMC
+function MMCDeviceSetBusSpeed(MMC:PMMCDevice):LongWord; forward;
+function MMCDeviceSetEraseSize(MMC:PMMCDevice):LongWord; forward;
+
+function MMCDeviceSelectHS(MMC:PMMCDevice):LongWord; forward;
+function MMCDeviceSelectHSDDR(MMC:PMMCDevice):LongWord; forward;
+
+function MMCDeviceSelectTiming(MMC:PMMCDevice):LongWord; forward;
+function MMCDeviceSelectBusWidth(MMC:PMMCDevice):LongWord; forward;
+function MMCDeviceSelectDriverType(MMC:PMMCDevice):LongWord; forward;
+function MMCDeviceSelectPowerClass(MMC:PMMCDevice):LongWord; forward;
+
+function MMCDeviceTestBusWidth(MMC:PMMCDevice;BusWidth:LongWord):LongWord; forward;
+
+function MMCDeviceInitializeSDIO(MMC:PMMCDevice):LongWord; forward;
+function MMCDeviceInitializeSD(MMC:PMMCDevice):LongWord; forward;
+function MMCDeviceInitializeMMC(MMC:PMMCDevice):LongWord; forward;
+ 
+//SD
+function SDDeviceSetBusSpeed(MMC:PMMCDevice):LongWord; forward;
+
+function SDDeviceSelectBusSpeed(MMC:PMMCDevice):LongWord; forward;
+function SDDeviceSelectDriverType(MMC:PMMCDevice):LongWord; forward;
+ 
+//SDIO
+
+//SDHCI
+function SDHCIHostGetPresetValue(SDHCI:PSDHCIHost):Word; forward;
+function SDHCIHostEnablePresetValue(SDHCI:PSDHCIHost;Enable:Boolean):LongWord; forward;
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -2796,6 +3012,684 @@ end;
    
 {==============================================================================}
 {==============================================================================}
+{Internal Functions}
+function MMCDeviceSetBusSpeed(MMC:PMMCDevice):LongWord;
+var
+  MaximumRate:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set Bus Speed');
+ {$ENDIF}
+
+ {Determine Maximum Rate}
+ MaximumRate:=LongWord(-1);
+ 
+ if ((MMC.Timing = MMC_TIMING_MMC_HS200) or (MMC.Timing = MMC_TIMING_MMC_HS400)) and (MaximumRate > MMC.ExtendedCardSpecificData.HS200MaxRate) then
+  begin
+   MaximumRate:=MMC.ExtendedCardSpecificData.HS200MaxRate;
+  end
+ else if ((MMC.Timing = MMC_TIMING_SD_HS) or (MMC.Timing = MMC_TIMING_MMC_HS)) and (MaximumRate > MMC.ExtendedCardSpecificData.HSMaxRate) then
+  begin
+   MaximumRate:=MMC.ExtendedCardSpecificData.HSMaxRate;
+  end
+ else if MaximumRate > MMC.CardSpecificData.DataTransferRate then
+  begin
+   MaximumRate:=MMC.CardSpecificData.DataTransferRate;
+  end;
+ 
+ {Set Clock}
+ Result:=MMCDeviceSetClock(MMC,MaximumRate);
+
+ //See: mmc_set_bus_speed in \drivers\mmc\core\mmc.c
+end;
+ 
+{==============================================================================}
+ 
+function MMCDeviceSetEraseSize(MMC:PMMCDevice):LongWord;
+var
+ Size:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set Erase Size');
+ {$ENDIF}
+
+ if not MMCIsSD(MMC) then
+  begin
+   if (MMC.ExtendedCardSpecificData.EraseGroupDef and $01) <> 0 then
+    begin
+     MMC.EraseSize:=MMC.ExtendedCardSpecificData.HCEraseSize;
+    end
+   else
+    begin
+     MMC.EraseSize:=MMC.CardSpecificData.EraseSize;
+    end;
+  end;
+  
+ if IsPowerOf2(MMC.EraseSize) then
+  begin
+   MMC.EraseShift:=FirstBitSet(MMC.EraseSize);
+  end
+ else
+  begin
+   MMC.EraseShift:=0;
+  end;
+ 
+ {Calculate Preferred Erase Size}
+ if MMCIsSD(MMC) and (MMC.SDStatusData.AllocationUnitSize > 0) then
+  begin
+   MMC.PreferredEraseSize:=MMC.SDStatusData.AllocationUnitSize;
+   MMC.EraseShift:=FirstBitSet(MMC.SDStatusData.AllocationUnitSize);
+  end
+ else if MMC.EraseSize > 0 then
+  begin
+   Size:=(MMC.CardSpecificData.BlockCount shl (MMC.CardSpecificData.BlockShift - 9)) shr 11;
+   if Size < 128 then 
+    begin
+     MMC.PreferredEraseSize:=SIZE_512K div 512;
+    end
+   else if Size < 512 then
+    begin
+     MMC.PreferredEraseSize:=SIZE_1M div 512;
+    end
+   else if Size < 1024 then
+    begin
+     MMC.PreferredEraseSize:=SIZE_2M div 512; 
+    end
+   else
+    begin
+     MMC.PreferredEraseSize:=SIZE_4M div 512; 
+    end;
+    
+   if MMC.PreferredEraseSize < MMC.EraseSize then
+    begin
+     MMC.PreferredEraseSize:=MMC.EraseSize;
+    end
+   else
+    begin
+     Size:=MMC.PreferredEraseSize mod MMC.EraseSize;
+     if Size > 0 then MMC.PreferredEraseSize:=MMC.PreferredEraseSize + MMC.EraseSize - Size;
+    end;
+  end
+ else
+  begin
+   MMC.PreferredEraseSize:=0;
+  end;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC EraseSize = ' + IntToStr(MMC.EraseSize));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC EraseShift = ' + IntToStr(MMC.EraseShift));
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC PreferredEraseSize = ' + IntToStr(MMC.PreferredEraseSize));
+ {$ENDIF}
+
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: mmc_set_erase_size in \drivers\mmc\core\mmc.c
+ //     mmc_init_erase in \drivers\mmc\core\core.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceSelectHS(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Select HS');
+ {$ENDIF}
+
+ Result:=MMCDeviceSwitchEx(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_HS_TIMING,EXT_CSD_TIMING_HS,MMC.ExtendedCardSpecificData.GenericCMD6Time,MMC_TIMING_MMC_HS,True,True);
+ if Result <> MMC_STATUS_SUCCESS then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'MMC device switch to Highspeed failed');
+  end;
+
+ //See: mmc_select_hs in \drivers\mmc\core\mmc.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceSelectHSDDR(MMC:PMMCDevice):LongWord;
+var
+ SDHCI:PSDHCIHost;
+ BusWidth:LongWord;
+ ExtCSDBusWidth:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Select HS DDR');
+ {$ENDIF}
+
+ {Check Available Type}
+ if (MMC.ExtendedCardSpecificData.AvailableTypes and EXT_CSD_CARD_TYPE_DDR_52) = 0 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {Check Bus Width} 
+ BusWidth:=MMC.BusWidth;
+ if BusWidth = MMC_BUS_WIDTH_1 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+ if BusWidth = MMC_BUS_WIDTH_8 then ExtCSDBusWidth:=EXT_CSD_DDR_BUS_WIDTH_8 else ExtCSDBusWidth:=EXT_CSD_DDR_BUS_WIDTH_4;
+ 
+ Result:=MMCDeviceSwitchEx(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_BUS_WIDTH,ExtCSDBusWidth,MMC.ExtendedCardSpecificData.GenericCMD6Time,MMC_TIMING_MMC_DDR52,True,True);
+ if Result <> MMC_STATUS_SUCCESS then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'MMC device switch to DDR Bus Width failed');
+   Exit;
+  end;
+ 
+ {Check for 1.2v DDR}
+ if (MMC.ExtendedCardSpecificData.AvailableTypes and EXT_CSD_CARD_TYPE_DDR_1_2V) <> 0 then
+  begin
+   //To Do //mmc_set_signal_voltage
+  end; 
+ 
+ {Check for 1.8v DDR}
+ if ((MMC.ExtendedCardSpecificData.AvailableTypes and EXT_CSD_CARD_TYPE_DDR_1_8V) <> 0) and ((SDHCI.Capabilities and MMC_CAP_1_8V_DDR) <> 0) then
+  begin
+   //To Do //mmc_set_signal_voltage
+  end; 
+ 
+ {Revert to 3.3v DDR on failure}
+ if Result <> MMC_STATUS_SUCCESS then
+  begin
+   //To Do //mmc_set_signal_voltage
+  end;
+  
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: mmc_select_hs_ddr in \drivers\mmc\core\mmc.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceSelectTiming(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Select Timing');
+ {$ENDIF}
+
+ {Check Extended CSD}
+ if MMCHasExtendedCSD(MMC) then
+  begin
+   {if (MMC.ExtendedCardSpecificData.AvailableTypes and EXT_CSD_CARD_TYPE_HS400ES) <> 0 then
+    begin
+     Result:=MMCDeviceSelectHS400ES(MMC);
+    end} {Not currently supported}
+   {else if (MMC.ExtendedCardSpecificData.AvailableTypes and EXT_CSD_CARD_TYPE_HS200) <> 0 then
+    begin
+     Result:=MMCDeviceSelectHS200(MMC);
+    end} {Not currently supported}
+   if (MMC.ExtendedCardSpecificData.AvailableTypes and EXT_CSD_CARD_TYPE_HS) <> 0 then
+    begin
+     Result:=MMCDeviceSelectHS(MMC);
+    end
+   else
+    begin
+     Result:=MMC_STATUS_SUCCESS;
+    end;
+    
+   if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+  end;
+
+ {Set the Bus Speed}
+ Result:=MMCDeviceSetBusSpeed(MMC);
+ 
+ //See: mmc_select_timing in \drivers\mmc\core\mmc.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceSelectBusWidth(MMC:PMMCDevice):LongWord;
+const
+ BUS_WIDTHS:array[0..1] of LongWord = (MMC_BUS_WIDTH_8,MMC_BUS_WIDTH_4);
+ EXT_CSD_BUS_WIDTHS:array[0..1] of LongWord = (EXT_CSD_BUS_WIDTH_8,EXT_CSD_BUS_WIDTH_4);
+
+var
+ Index:LongWord;
+ Status:LongWord;
+ BusWidth:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Select Bus Width');
+ {$ENDIF}
+
+ {Check Extended CSD}
+ if not MMCHasExtendedCSD(MMC) then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {Check Supported Bus Widths}
+ if (SDHCI.Capabilities and (MMC_CAP_4_BIT_DATA or MMC_CAP_8_BIT_DATA)) = 0 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+ 
+ {Check for 8 bit support}
+ if (SDHCI.Capabilities and MMC_CAP_8_BIT_DATA) <> 0 then Index:=0 else Index:=1;
+ 
+ {MMC cards dont have a configuration register to notify supported bus width}
+ {So a bus test should be performed to identify the supported bus width}
+ BusWidth:=MMC_BUS_WIDTH_1;
+ Status:=MMC_STATUS_SUCCESS;
+ while Index <= High(BUS_WIDTHS) do
+  begin
+   {Try to switch to new bus width, if the switch fails try the next width}
+   Status:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_BUS_WIDTH,EXT_CSD_BUS_WIDTHS[Index],MMC.ExtendedCardSpecificData.GenericCMD6Time);
+   if Status = MMC_STATUS_SUCCESS then
+    begin
+     {Set Bus Width}
+     BusWidth:=BUS_WIDTHS[Index];
+     MMCDeviceSetBusWidth(MMC,BusWidth);
+     
+     {Test Bus Width}
+     Status:=MMCDeviceTestBusWidth(MMC,BusWidth);
+     if Status = MMC_STATUS_SUCCESS then Break;
+     
+     if MMC_LOG_ENABLED then MMCLogError(nil,'MMC device failed bus width test (Width=' + MMCBusWidthToString(BusWidth) + ')');
+    end;
+    
+   Inc(Index);
+  end;
+  
+ Result:=Status;
+ 
+ //See: mmc_select_bus_width in \drivers\mmc\core\mmc.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceSelectDriverType(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Select Driver Type');
+ {$ENDIF}
+ 
+ //To Do //Driver Types
+
+ //See: mmc_select_driver_type in \drivers\mmc\core\mmc.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceSelectPowerClass(MMC:PMMCDevice):LongWord;
+var
+ BusWidth:LongWord;
+ ExtCSDBusWidth:LongWord;
+ PowerClassValue:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Select Power Class');
+ {$ENDIF}
+
+ {Check Bus Width} 
+ BusWidth:=MMC.BusWidth;
+ if BusWidth = MMC_BUS_WIDTH_1 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+
+ {Check Extended CSD}
+ if MMCHasExtendedCSD(MMC) then
+  begin
+   {Check DDR}
+   if (MMC.ExtendedCardSpecificData.AvailableTypes and EXT_CSD_CARD_TYPE_DDR_52) <> 0 then
+    begin
+     if BusWidth = MMC_BUS_WIDTH_8 then ExtCSDBusWidth:=EXT_CSD_DDR_BUS_WIDTH_8 else ExtCSDBusWidth:=EXT_CSD_DDR_BUS_WIDTH_4;
+    end
+   else
+    begin
+     if BusWidth = MMC_BUS_WIDTH_8 then ExtCSDBusWidth:=EXT_CSD_BUS_WIDTH_8 else ExtCSDBusWidth:=EXT_CSD_BUS_WIDTH_4;
+    end;
+   
+   {Select Power Class Value}
+   PowerClassValue:=0;
+   //To Do //__mmc_select_powerclass
+   
+   {Check Bus Width}
+   if (ExtCSDBusWidth and (EXT_CSD_BUS_WIDTH_8 or EXT_CSD_DDR_BUS_WIDTH_8)) <> 0 then
+    begin
+     {8 bit bus}
+     PowerClassValue:=(PowerClassValue and EXT_CSD_PWR_CL_8BIT_MASK) shr EXT_CSD_PWR_CL_8BIT_SHIFT;
+    end
+   else
+    begin
+     {4 bit bus}
+     PowerClassValue:=(PowerClassValue and EXT_CSD_PWR_CL_4BIT_MASK) shr EXT_CSD_PWR_CL_4BIT_SHIFT;
+    end;
+    
+   {Set the Power Class Value}
+   if PowerClassValue > 0 then
+    begin
+     Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_POWER_CLASS,PowerClassValue,MMC.ExtendedCardSpecificData.GenericCMD6Time);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+  end;
+  
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: mmc_select_powerclass in \drivers\mmc\core\mmc.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceTestBusWidth(MMC:PMMCDevice;BusWidth:LongWord):LongWord; 
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Test Bus Width (Width=' + MMCBusWidthToString(BusWidth) + ')');
+ {$ENDIF}
+
+ {Check Bus Width}
+ if BusWidth = MMC_BUS_WIDTH_1 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+  
+ {Check Extended CSD}
+ if MMCHasExtendedCSD(MMC) then
+  begin
+   
+   //To Do //mmc_compare_ext_csds
+   
+   Result:=MMC_STATUS_SUCCESS;
+  end; 
+
+ //See: mmc_compare_ext_csds in \drivers\mmc\core\mmc.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceInitializeSDIO(MMC:PMMCDevice):LongWord; 
+var
+ Size:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize SDIO');
+ {$ENDIF}
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ //To Do //mmc_sdio_init_card
+ 
+ //See: mmc_sdio_init_card in \drivers\mmc\core\sdio.c
+ //     mmc_attach_sdio in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceInitializeSD(MMC:PMMCDevice):LongWord; 
+var
+ Size:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize SD');
+ {$ENDIF}
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ //To Do //mmc_sd_init_card
+ 
+ //See: mmc_sd_init_card in \drivers\mmc\core\sd.c
+ //     mmc_attach_sd in \drivers\mmc\core\sd.c
+ //     mmc_sd_setup_card in \drivers\mmc\core\sd.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceInitializeMMC(MMC:PMMCDevice):LongWord; 
+var
+ Size:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize MMC');
+ {$ENDIF}
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ //To Do //mmc_init_card
+ 
+ //See: mmc_init_card in \drivers\mmc\core\mmc.c
+ //     mmc_attach_mmc in \drivers\mmc\core\mmc.c
+end;
+   
+{==============================================================================}
+
+function SDDeviceSetBusSpeed(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SD Set Bus Speed');
+ {$ENDIF}
+ 
+ //To Do //UHS-I and UHS-II Bus Speeds
+ 
+ //See: sd_set_bus_speed_mode in \drivers\mmc\core\sd.c
+end;
+   
+{==============================================================================}
+   
+function SDDeviceSelectBusSpeed(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SD Select Bus Speed');
+ {$ENDIF}
+ 
+ //To Do //UHS-I and UHS-II Bus Speeds
+ 
+ //See: sd_update_bus_speed_mode in \drivers\mmc\core\sd.c
+end;
+
+{==============================================================================}
+
+function SDDeviceSelectDriverType(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SD Select Bus Speed');
+ {$ENDIF}
+ 
+ //To Do //Driver Types
+ 
+ //See: sd_select_driver_type in \drivers\mmc\core\sd.c
+end;
+   
+{==============================================================================}
+   
+function SDHCIHostGetPresetValue(SDHCI:PSDHCIHost):Word;
+var
+ Preset:Word;
+begin
+ {}
+ Result:=0;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Get Preset Value');
+ {$ENDIF}
+ 
+ Preset:=0;
+ 
+ {Get Preset}
+ case SDHCI.Timing of
+  MMC_TIMING_UHS_SDR12:Preset:=SDHCIHostReadWord(SDHCI,SDHCI_PRESET_FOR_SDR12);
+  MMC_TIMING_UHS_SDR25:Preset:=SDHCIHostReadWord(SDHCI,SDHCI_PRESET_FOR_SDR25);
+  MMC_TIMING_UHS_SDR50:Preset:=SDHCIHostReadWord(SDHCI,SDHCI_PRESET_FOR_SDR50);
+  MMC_TIMING_UHS_SDR104,
+  MMC_TIMING_MMC_HS200:Preset:=SDHCIHostReadWord(SDHCI,SDHCI_PRESET_FOR_SDR104);
+  MMC_TIMING_UHS_DDR50,
+  MMC_TIMING_MMC_DDR52:Preset:=SDHCIHostReadWord(SDHCI,SDHCI_PRESET_FOR_DDR50);
+  MMC_TIMING_MMC_HS400:Preset:=SDHCIHostReadWord(SDHCI,SDHCI_PRESET_FOR_HS400);
+ else
+  begin
+   if MMC_LOG_ENABLED then MMCLogWarn(nil,'MMC has invalid UHS-I timing, defaulting preset to SDR12');
+   
+   Preset:=SDHCIHostReadWord(SDHCI,SDHCI_PRESET_FOR_SDR12);
+  end;  
+ end;
+ 
+ Result:=Preset;
+ 
+ //See: sdhci_get_preset_value in sdhci.c
+end;
+
+{==============================================================================}
+
+function SDHCIHostEnablePresetValue(SDHCI:PSDHCIHost;Enable:Boolean):LongWord;
+var
+ Control2:Word;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Enable Preset Value (Enable=' + BoolToStr(Enable,True) + ')');
+ {$ENDIF}
+
+ {Only valid for Host Controller v3.00 or above}
+ if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
+  begin
+   if SDHCI.PresetEnabled <> Enable then
+    begin
+     {Enable or Disable preset value}
+     Control2:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_CONTROL2);
+     
+     if Enable then
+      begin
+       Control2:=Control2 or SDHCI_CTRL_PRESET_VAL_ENABLE;
+      end
+     else
+      begin
+       Control2:=Control2 and not(SDHCI_CTRL_PRESET_VAL_ENABLE);
+      end;
+     
+     SDHCIHostWriteWord(SDHCI,SDHCI_HOST_CONTROL2,Control2);     
+    end;
+  end;
+ 
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: sdhci_enable_preset_value in sdhci.c
+end;
+   
+{==============================================================================}
+{==============================================================================}
 {MMC Functions}
 function MMCDeviceReadBlocks(MMC:PMMCDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
 var
@@ -2821,8 +3715,6 @@ begin
  if (MMC.Device.DeviceFlags and MMC_FLAG_BLOCK_ADDRESSED) = 0 then Command.Argument:=(Command.Argument shl MMC.Storage.BlockShift);
  Command.ResponseType:=MMC_RSP_SPI_R1 or MMC_RSP_R1;
  Command.Data:=@Data;
- 
- //To Do //See also: \linux-rpi-3.18.y\drivers\mmc\card\block.c
  
  {Setup Data}
  FillChar(Data,SizeOf(TMMCData),0);
@@ -2871,8 +3763,6 @@ begin
  Command.ResponseType:=MMC_RSP_SPI_R1 or MMC_RSP_R1;
  Command.Data:=@Data;
  
- //To Do //See also: \linux-rpi-3.18.y\drivers\mmc\card\block.c
- 
  {Setup Data}
  FillChar(Data,SizeOf(TMMCData),0);
  Data.Data:=Buffer;
@@ -2914,8 +3804,6 @@ begin
  {Setup Command}
  FillChar(Command,SizeOf(TMMCCommand),0);
  //To Do
-
- //To Do //See also: \linux-rpi-3.18.y\drivers\mmc\card\block.c
 
  {Setup Data}
  FillChar(Data,SizeOf(TMMCData),0);
@@ -2965,7 +3853,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_go_idle in U-Boot mmc.c
- //     mmc_go_idle in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //     mmc_go_idle in \drivers\mmc\core\mmc_ops.c
 end;
 
 {==============================================================================}
@@ -3005,7 +3893,30 @@ begin
  Result:=MMCDeviceSetIOS(MMC);
  
  //See: mmc_set_clock in U-Boot mmc.c 
- //See: 
+ //See: mmc_set_clock in \drivers\mmc\core\core.c
+end;
+
+{==============================================================================}
+
+function MMCDeviceSetTiming(MMC:PMMCDevice;Timing:LongWord):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set Timing (Timing=' + MMCTimingToString(Timing) + ')');
+ {$ENDIF}
+ 
+ {Set Timing}
+ MMC.Timing:=Timing;
+ 
+ {Set IOS}
+ Result:=MMCDeviceSetIOS(MMC);
+ 
+ //See: mmc_set_timing in \drivers\mmc\core\core.c
 end;
 
 {==============================================================================}
@@ -3030,7 +3941,7 @@ begin
  Result:=MMCDeviceSetIOS(MMC);
  
  //See: mmc_set_bus_width in U-Boot mmc.c 
- //See: 
+ //See: mmc_set_bus_width in \drivers\mmc\core\core.c
 end;
 
 {==============================================================================}
@@ -3074,7 +3985,7 @@ begin
  Result:=MMCDeviceSendCommand(MMC,@Command);
  
  //See: mmc_set_blocklen in U-Boot mmc.c  
- //See: mmc_set_blocklen in \linux-rpi-3.18.y\drivers\mmc\core\core.c
+ //See: mmc_set_blocklen in \drivers\mmc\core\core.c
 end;
 
 {==============================================================================}
@@ -3104,7 +4015,7 @@ begin
  {Send Command}
  Result:=MMCDeviceSendCommand(MMC,@Command);
  
- //See: mmc_set_blockcount in \linux-rpi-3.18.y\drivers\mmc\core\core.c
+ //See: mmc_set_blockcount in \drivers\mmc\core\core.c
 end;
 
 {==============================================================================}
@@ -3133,7 +4044,7 @@ begin
  {Send Command}
  Result:=MMCDeviceSendCommand(MMC,@Command);
  
- //See: mmc_set_dsr in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: mmc_set_dsr in \drivers\mmc\core\mmc_ops.c
 end;
 
 {==============================================================================}
@@ -3189,7 +4100,7 @@ begin
  {Send Command}
  Result:=MMCDeviceSendCommand(MMC,@Command);
  
- //See: _mmc_select_card in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: _mmc_select_card in \drivers\mmc\core\mmc_ops.c
 end; 
  
 {==============================================================================}
@@ -3218,14 +4129,40 @@ begin
  {Send Command}
  Result:=MMCDeviceSendCommand(MMC,@Command);
  
- //See: _mmc_select_card in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: _mmc_select_card in \drivers\mmc\core\mmc_ops.c
 end; 
 
 {==============================================================================}
 
-function MMCDeviceSwitch(MMC:PMMCDevice;Setting,Index,Value:Byte):LongWord; 
+function MMCDeviceSwitch(MMC:PMMCDevice;Setting,Index,Value:Byte;Timeout:LongWord):LongWord;
+{Modifies an Extended CSD register for the specificed MMC device}
+{MMC: The MMC Device to modify}
+{Setting: The Extended CSD command set (eg EXT_CSD_CMD_SET_NORMAL)}
+{Index: The index of the Extended CSD register to be set}
+{Value: The value to be set in the Extended CSD register}
+{Timeout: Command timeout in milliseconds}
+begin
+ {}
+ Result:=MMCDeviceSwitchEx(MMC,Setting,Index,Value,Timeout,MMC_TIMING_LEGACY,True,False);
+end;
+
+{==============================================================================}
+
+function MMCDeviceSwitchEx(MMC:PMMCDevice;Setting,Index,Value:Byte;Timeout,Timing:LongWord;SendStatus,RetryCRCError:Boolean):LongWord;
+{Modifies an Extended CSD register for the specificed MMC device}
+{MMC: The MMC Device to modify}
+{Setting: The Extended CSD command set (eg EXT_CSD_CMD_SET_NORMAL)}
+{Index: The index of the Extended CSD register to be set}
+{Value: The value to be set in the Extended CSD register}
+{Timeout: Command timeout in milliseconds}
+{Timing: New timing to enable after change (eg MMC_TIMING_MMC_HS)}
+{SendStatus: Use the MMC_CMD_SEND_STATUS command to poll for busy}
+{RetryCRCError: Retry if CRC error occurs when polling for busy}
 var
  Status:LongWord;
+ UseBusy:Boolean;
+ OldTiming:LongWord;
+ SDHCI:PSDHCIHost;
  Command:TMMCCommand;
 begin
  {}
@@ -3238,12 +4175,34 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Switch');
  {$ENDIF}
 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+
+ {Check Timeout}
+ if Timeout = 0 then Timeout:=MMC.ExtendedCardSpecificData.GenericCMD6Time;
+  
+ {Check Busy}
+ UseBusy:=True;
+ if ((SDHCI.Capabilities and MMC_CAP_NEED_RSP_BUSY) = 0) and (SDHCI.MaximumBusyTimeout > 0) and (Timeout > SDHCI.MaximumBusyTimeout) then
+  begin
+   UseBusy:=False;
+  end;
+ 
  {Setup Command}
  FillChar(Command,SizeOf(TMMCCommand),0);
  Command.Command:=MMC_CMD_SWITCH;
  Command.Argument:=(MMC_SWITCH_MODE_WRITE_BYTE shl 24) or (Index shl 16) or (Value shl 8) or Setting;
- Command.ResponseType:=MMC_RSP_SPI_R1B or MMC_RSP_R1B;
  Command.Data:=nil;
+ if UseBusy then
+  begin
+   Command.ResponseType:=MMC_RSP_SPI_R1B or MMC_RSP_R1B;
+   Command.Timeout:=Timeout;
+  end
+ else
+  begin
+   Command.ResponseType:=MMC_RSP_SPI_R1 or MMC_RSP_R1;
+  end;
  
  {Send Command}
  Status:=MMCDeviceSendCommand(MMC,@Command);
@@ -3253,12 +4212,177 @@ begin
    Exit;
   end;
  
- //To Do 
+ {Check for Polling}
+ if not(SDHCIIsSPI(SDHCI)) and (((SDHCI.Capabilities and MMC_CAP_WAIT_WHILE_BUSY) = 0) or not(UseBusy)) then
+  begin
+   {Poll for command completion}
+   Status:=MMCDevicePollForBusyEx(MMC,Timeout,MMC_BUSY_CMD6,SendStatus,RetryCRCError);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end;
+  end;
  
- //Result:=MMC_STATUS_SUCCESS;
+ {Check Timing}
+ OldTiming:=MMC.Timing;
+ if Timing > MMC_TIMING_LEGACY then MMCDeviceSetTiming(MMC,Timing);
+ 
+ {Check Send Status}
+ if SendStatus then
+  begin
+   Status:=MMCDeviceSendCardStatus(MMC);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     if Timing > MMC_TIMING_LEGACY then MMCDeviceSetTiming(MMC,OldTiming);
+     
+     Result:=Status;
+     Exit;
+    end;
+  end;
+ 
+ Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_switch in U-Boot mmc.c
- //See: __mmc_switch in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: __mmc_switch in \drivers\mmc\core\mmc_ops.c
+end;
+
+{==============================================================================}
+
+function MMCDevicePollForBusy(MMC:PMMCDevice;Timeout,Command:LongWord):LongWord;
+{Poll the specified MMC device for command completion using busy status}
+begin
+ {}
+ Result:=MMCDevicePollForBusyEx(MMC,Timeout,Command,True,False);
+end;
+
+{==============================================================================}
+
+function MMCDevicePollForBusyEx(MMC:PMMCDevice;Timeout,Command:LongWord;SendStatus,RetryCRCError:Boolean):LongWord;
+{Poll the specified MMC device for command completion using busy status}
+const
+ R1_STATUS = $FFF9A000;
+ R1_CURRENT_STATE = $00001E00;
+ R1_READY_FOR_DATA = (1 shl 8);
+ 
+ R1_STATE_TRAN = 4;
+ 
+var
+ Wait:Int64;
+ Busy:Boolean;
+ Expired:Boolean;
+ Status:LongWord;
+ Delay:LongWord;
+ MaxDelay:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Poll Busy');
+ {$ENDIF}
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {If polling for busy is not supported or use of send status is not requested then simply wait for the specified timeout}
+ if not(SendStatus) then
+  begin
+   MillisecondDelay(Timeout);
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+ 
+ {Calculate Timeout}
+ Wait:=ClockGetTotal + (Timeout * CLOCK_CYCLES_PER_MILLISECOND);
+ 
+ {Wait for not busy}
+ Busy:=False;
+ Delay:=32;
+ MaxDelay:=32768;
+ repeat
+  {Check for timeout expired}
+  Expired:=(ClockGetTotal > Wait);
+
+  {Get Card Status}
+  Status:=MMCDeviceSendCardStatus(MMC);
+  if RetryCRCError and (Status = MMC_STATUS_INVALID_SEQUENCE) then
+   begin
+    Busy:=True;
+   end
+  else if Status <> MMC_STATUS_SUCCESS then
+   begin
+    Result:=Status;
+    Exit;
+   end
+  else 
+   begin  
+    case Command of
+     MMC_BUSY_CMD6:begin
+       if SDHCIIsSPI(SDHCI) then
+        begin
+         if (MMC.CardStatus and MMC_RSP_R1_SPI_ILLEGAL_COMMAND) <> 0 then
+          begin
+           Result:=MMC_STATUS_INVALID_DATA;
+           Exit;
+          end;
+        end
+       else
+        begin
+         if (MMC.CardStatus and MMC_RSP_R1_SWITCH_ERROR) <> 0 then
+          begin
+           Result:=MMC_STATUS_INVALID_DATA;
+           Exit;
+          end;
+        end;
+      end;
+     MMC_BUSY_ERASE:begin
+       if (MMC.CardStatus and R1_STATUS) <> 0 then
+        begin
+         Result:=MMC_STATUS_HARDWARE_ERROR;
+         Exit;
+        end; 
+      end;
+     MMC_BUSY_HPI:begin
+       {Nothing}
+      end;
+     else
+      begin
+       Result:=MMC_STATUS_INVALID_PARAMETER;
+       Exit;
+      end;
+    end;
+   
+    {Check Card Status}
+    Busy:=not(((MMC.CardStatus and R1_READY_FOR_DATA) <> 0) and (((MMC.CardStatus and R1_CURRENT_STATE) shr 9) = R1_STATE_TRAN));
+   end; 
+  
+  {Timeout if the device is still busy} 
+  if Expired and Busy then
+   begin
+    Result:=MMC_STATUS_TIMEOUT;
+    Exit;
+   end;
+ 
+  {Throttle the polling rate}
+  if Busy then
+   begin
+    MicrosecondDelay(Delay);
+    if Delay < MaxDelay then Delay:=Delay * 2;
+   end;
+   
+ until not(Busy);
+ 
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: __mmc_poll_for_busy in \drivers\mmc\core\mmc_ops.c  
+ //     mmc_busy_status in \drivers\mmc\core\mmc_ops.c  
 end;
 
 {==============================================================================}
@@ -3299,7 +4423,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_send_status in U-Boot mmc.c 
- //See: __mmc_send_status in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: __mmc_send_status in \drivers\mmc\core\mmc_ops.c
 end;
 
 {==============================================================================}
@@ -3400,7 +4524,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_send_op_cond in U-Boot mmc.c  
- //See: mmc_send_op_cond in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: mmc_send_op_cond in \drivers\mmc\core\mmc_ops.c
 end;
 
 {==============================================================================}
@@ -3464,10 +4588,10 @@ begin
    {Send Command}
    //To Do //This is a Data Command in SPI
    
-   //See: mmc_send_cxd_data in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+   //See: mmc_send_cxd_data in \drivers\mmc\core\mmc_ops.c
   end;  
  
- //See: mmc_send_csd in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c 
+ //See: mmc_send_csd in \drivers\mmc\core\mmc_ops.c 
 end;
 
 {==============================================================================}
@@ -3545,6 +4669,32 @@ begin
     MMC.CardSpecificData.ECC:=MMCGetCSDValue(MMC,MMC_CSD_ECC);
     MMC.CardSpecificData.CRC:=MMCGetCSDValue(MMC,MMC_CSD_CRC);
    
+    {Get Version}
+    if MMC.CardSpecificData.CSDStructure <> MMC_CSD_STRUCT_EXT_CSD then
+     begin
+      if MMC.CardSpecificData.SpecVersion = MMC_CSD_SPEC_VER_0 then
+       begin
+        MMC.Version:=MMC_VERSION_1_2;
+       end
+      else if MMC.CardSpecificData.SpecVersion = MMC_CSD_SPEC_VER_1 then
+       begin
+        MMC.Version:=MMC_VERSION_1_4;
+       end
+      else if MMC.CardSpecificData.SpecVersion = MMC_CSD_SPEC_VER_2 then
+       begin
+        MMC.Version:=MMC_VERSION_2_2;
+       end
+      else if MMC.CardSpecificData.SpecVersion = MMC_CSD_SPEC_VER_3 then
+       begin
+        MMC.Version:=MMC_VERSION_3;
+       end
+      else if MMC.CardSpecificData.SpecVersion = MMC_CSD_SPEC_VER_4 then
+       begin
+        MMC.Version:=MMC_VERSION_4;
+       end
+      {Higher versions are encoded in the Extended CSD}
+     end;
+     
     {Check CMD23 Support}
     if MMC.CardSpecificData.SpecVersion >= MMC_CSD_SPEC_VER_3 then
      begin
@@ -3617,12 +4767,13 @@ begin
      MMCLogDebug(nil,'  BlockSize = ' + IntToStr(MMC.CardSpecificData.BlockSize));
      MMCLogDebug(nil,'  BlockCount = ' + IntToStr(MMC.CardSpecificData.BlockCount));
      MMCLogDebug(nil,'  BlockShift = ' + IntToStr(MMC.CardSpecificData.BlockShift));
+     MMCLogDebug(nil,'  Version = ' + MMCVersionToString(MMC.Version));
      MMCLogDebug(nil,'  CMD23Support = ' + BoolToStr((MMC.Device.DeviceFlags and MMC_FLAG_SET_BLOCK_COUNT) <> 0,True));
     end; 
   end; 
  {$ENDIF}
  
- //See: mmc_decode_csd in \linux-rpi-3.18.y\drivers\mmc\core\mmc.c
+ //See: mmc_decode_csd in \drivers\mmc\core\mmc.c
 end;
 
 {==============================================================================}
@@ -3631,6 +4782,7 @@ function MMCDeviceSendCardIdentification(MMC:PMMCDevice):LongWord;
 var
  Status:LongWord;
  SDHCI:PSDHCIHost;
+ Data:TMMCData;
  Command:TMMCCommand;
 begin
  {}
@@ -3676,14 +4828,20 @@ begin
    {SPI Mode}
    {Setup Command}
    FillChar(Command,SizeOf(TMMCCommand),0);
+   //To Do
 
+   {Setup Data}
+   FillChar(Data,SizeOf(TMMCCommand),0);
+   //To Do
+
+   {Send Command}
    //To Do //This is a Data Command in SPI
    
-   //See: mmc_send_cxd_data in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+   //See: mmc_send_cxd_data in \drivers\mmc\core\mmc_ops.c
   end;  
  
  //See: mmc_startup in U-Boot mmc.c
- //See: mmc_send_cid in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c 
+ //See: mmc_send_cid in \drivers\mmc\core\mmc_ops.c 
 end;
 
 {==============================================================================}
@@ -3729,7 +4887,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_startup in U-Boot mmc.c
- //See: mmc_all_send_cid in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c 
+ //See: mmc_all_send_cid in \drivers\mmc\core\mmc_ops.c 
 end;
 
 {==============================================================================}
@@ -3816,7 +4974,7 @@ begin
   end; 
  {$ENDIF}
  
- //See: mmc_decode_cid in \linux-rpi-3.18.y\drivers\mmc\core\mmc.c
+ //See: mmc_decode_cid in \drivers\mmc\core\mmc.c
 end;
 
 {==============================================================================}
@@ -3832,20 +4990,23 @@ begin
  {$IFDEF MMC_DEBUG}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Extended Card Specific');
  {$ENDIF}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Get Extended Card Specific'); //TestingEMMC
  
- {Get Extended Card Specific}
- Result:=MMCDeviceSendExtendedCardSpecific(MMC);
- if Result <> MMC_STATUS_SUCCESS then
+ {Check Extended CSD}
+ if MMCHasExtendedCSD(MMC) then
   begin
-   Exit;
-  end;
- 
- {Decode Extended Card Specific}
- Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
- if Result <> MMC_STATUS_SUCCESS then
-  begin
-   Exit;
+   {Get Extended Card Specific}
+   Result:=MMCDeviceSendExtendedCardSpecific(MMC);
+   if Result <> MMC_STATUS_SUCCESS then
+    begin
+     Exit;
+    end;
+   
+   {Decode Extended Card Specific}
+   Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
+   if Result <> MMC_STATUS_SUCCESS then
+    begin
+     Exit;
+    end;
   end;
  
  Result:=MMC_STATUS_SUCCESS;
@@ -3856,7 +5017,11 @@ end;
 {==============================================================================}
 
 function MMCDeviceSendExtendedCardSpecific(MMC:PMMCDevice):LongWord;
+const
+ EXTENDED_CSD_SIZE = 512;
+ 
 var
+ SDHCI:PSDHCIHost;
  Status:LongWord;
  Data:TMMCData;
  Command:TMMCCommand;
@@ -3870,12 +5035,37 @@ begin
  {$IFDEF MMC_DEBUG}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Extended Card Specific');
  {$ENDIF}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Send Extended Card Specific'); //TestingEMMC
 
+ {Check Extended CSD}
+ if not MMCHasExtendedCSD(MMC) then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+  
  {Allocate Extended Card Specific}
  if MMC.ExtendedCardSpecific = nil then
   begin
-   MMC.ExtendedCardSpecific:=AllocMem(512);
+   {Get SDHCI}
+   SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+   if SDHCI = nil then Exit;
+   
+   if SDHCIHasDMA(SDHCI) then
+    begin
+     MMC.ExtendedCardSpecific:=DMABufferAllocate(DMAHostGetDefault,EXTENDED_CSD_SIZE);
+     
+     {Check Cache}
+     if not(DMA_CACHE_COHERENT) and (MMC.ExtendedCardSpecific <> nil) then
+      begin
+       {Clean Cache (Dest)}
+       CleanDataCacheRange(PtrUInt(MMC.ExtendedCardSpecific),EXTENDED_CSD_SIZE);
+      end;
+    end
+   else
+    begin
+     MMC.ExtendedCardSpecific:=AllocMem(EXTENDED_CSD_SIZE);
+    end;
+    
    if MMC.ExtendedCardSpecific = nil then
     begin
      Result:=MMC_STATUS_OUT_OF_MEMORY;
@@ -3894,7 +5084,7 @@ begin
  FillChar(Data,SizeOf(TMMCData),0);
  Data.Data:=MMC.ExtendedCardSpecific;
  Data.Flags:=MMC_DATA_READ;
- Data.BlockSize:=512;
+ Data.BlockSize:=EXTENDED_CSD_SIZE;
  Data.BlockCount:=1;
  
  {Send Command}
@@ -3912,7 +5102,67 @@ end;
 
 {==============================================================================}
 
+procedure MMCDeviceSelectCardType(MMC:PMMCDevice);
+begin
+ {}
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ if ((MMC.Capabilities and MMC_CAP_MMC_HIGHSPEED) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_HS_26) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HSMaxRate:=MMC_HIGH_26_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_HS_26;
+  end;
+ if ((MMC.Capabilities and MMC_CAP_MMC_HIGHSPEED) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_HS_52) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HSMaxRate:=MMC_HIGH_52_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_HS_52;
+  end;
+ if ((MMC.Capabilities and (MMC_CAP_1_8V_DDR or MMC_CAP_3_3V_DDR)) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_DDR_1_8V) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HSMaxRate:=MMC_HIGH_DDR_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_DDR_1_8V;
+  end;
+ if ((MMC.Capabilities and MMC_CAP_1_2V_DDR) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_DDR_1_2V) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HSMaxRate:=MMC_HIGH_DDR_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_DDR_1_2V;
+  end;
+  
+ if ((MMC.Capabilities2 and MMC_CAP2_HS200_1_8V_SDR) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_HS200_1_8V) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HS200MaxRate:=MMC_HS200_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_HS200_1_8V;
+  end;
+ if ((MMC.Capabilities2 and MMC_CAP2_HS200_1_2V_SDR) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_HS200_1_2V) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HS200MaxRate:=MMC_HS200_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_HS200_1_2V;
+  end;
+ if ((MMC.Capabilities2 and MMC_CAP2_HS400_1_8V) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_HS400_1_8V) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HS200MaxRate:=MMC_HS200_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_HS400_1_8V;
+  end;
+ if ((MMC.Capabilities2 and MMC_CAP2_HS400_1_2V) <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_HS400_1_2V) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.HS200MaxRate:=MMC_HS200_MAX_DTR;
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_HS400_1_2V;
+  end;
+ if ((MMC.Capabilities2 and MMC_CAP2_HS400_ES) <> 0) and (MMC.ExtendedCardSpecificData.StrobeSupport <> 0) and ((MMC.ExtendedCardSpecificData.CardType and EXT_CSD_CARD_TYPE_HS400) <> 0) then
+  begin
+   MMC.ExtendedCardSpecificData.AvailableTypes:=MMC.ExtendedCardSpecificData.AvailableTypes or EXT_CSD_CARD_TYPE_HS400ES;
+  end;
+end;
+
+
+{==============================================================================}
+
 function MMCDeviceDecodeExtendedCardSpecific(MMC:PMMCDevice):LongWord;
+var
+ Index:LongWord;
+ HCEraseGroupSize:Byte;
+ HCWriteProtectGroupSize:Byte;
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
@@ -3923,7 +5173,13 @@ begin
  {$IFDEF MMC_DEBUG}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Decode Extended Card Specific');
  {$ENDIF}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Decode Extended Card Specific'); //TestingEMMC
+
+ {Check Extended CSD}
+ if not MMCHasExtendedCSD(MMC) then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
 
  {Check Extended Card Specific}
  if MMC.ExtendedCardSpecific = nil then Exit;
@@ -3935,6 +5191,7 @@ begin
  case MMC.ExtendedCardSpecificData.CSDStructure of
   MMC_CSD_STRUCT_VER_1_0:begin
     {Not Supported}
+    if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Extended CSD structure version not supported');
    end;
   MMC_CSD_STRUCT_VER_1_1,MMC_CSD_STRUCT_VER_1_2:begin
     {Get Card Data}
@@ -3966,8 +5223,7 @@ begin
     MMC.ExtendedCardSpecificData.StrobeSupport:=MMC.ExtendedCardSpecific[EXT_CSD_STROBE_SUPPORT];
     MMC.ExtendedCardSpecificData.CardType:=MMC.ExtendedCardSpecific[EXT_CSD_CARD_TYPE];
     
-    //mmc_select_card_type(card); //https://elixir.bootlin.com/linux/latest/source/drivers/mmc/core/mmc.c#L188
-    //EXT_CSD_CARD_TYPE_HS_52 etc
+    MMCDeviceSelectCardType(MMC);
     
     MMC.ExtendedCardSpecificData.SATimeout:=MMC.ExtendedCardSpecific[EXT_CSD_S_A_TIMEOUT];
     MMC.ExtendedCardSpecificData.EraseTimeoutMult:=MMC.ExtendedCardSpecific[EXT_CSD_ERASE_TIMEOUT_MULT];
@@ -3996,10 +5252,10 @@ begin
       MMC.ExtendedCardSpecificData.HCEraseSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_ERASE_GRP_SIZE] shl 10;
       MMC.ExtendedCardSpecificData.ReliableSectors:=MMC.ExtendedCardSpecific[EXT_CSD_REL_WR_SEC_C];
 
-      {Boot Partitions}
-      if MMC.ExtendedCardSpecific[EXT_CSD_BOOT_SIZE_MULT] > 0 then
+      {Boot Partitions (There are two boot regions of equal size, defined in multiples of 128K)}
+      if (MMC.ExtendedCardSpecific[EXT_CSD_BOOT_SIZE_MULT] > 0) and ((MMC.Capabilities2 and MMC_CAP2_BOOTPART_NOACC) = 0) then
        begin
-        //To Do //Boot Partitions 
+        MMC.ExtendedCardSpecificData.BootPartitionSize:=MMC.ExtendedCardSpecific[EXT_CSD_BOOT_SIZE_MULT] shl 17;
        end; 
      end;
      
@@ -4013,43 +5269,243 @@ begin
     
     if MMC.ExtendedCardSpecificData.Revision >= 4 then
      begin
-      //To Do
-      //To Do
-      //mmc.c 475
+      MMC.ExtendedCardSpecificData.PartitionSettingCompleted:=False;
+      if (MMC.ExtendedCardSpecific[EXT_CSD_PARTITION_SETTING_COMPLETED] and EXT_CSD_PART_SETTING_COMPLETED) <> 0 then
+       begin
+        MMC.ExtendedCardSpecificData.PartitionSettingCompleted:=True;
+       end;
       
+      {Enhanced area feature support - check whether the eMMC card has the Enhanced area enabled}
+      if (MMC.ExtendedCardSpecificData.PartitionSupport and EXT_CSD_PARTITION_ENH_ATTRIBUTE_EN) <> 0 then
+       begin
+        if (MMC.ExtendedCardSpecific[EXT_CSD_PARTITION_ATTRIBUTE] and EXT_CSD_PARTITION_ATTRIBUTE_ENH_USR) <> 0 then
+         begin
+          if MMC.ExtendedCardSpecificData.PartitionSettingCompleted then
+           begin
+            HCEraseGroupSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_ERASE_GRP_SIZE];
+            HCWriteProtectGroupSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_WP_GRP_SIZE];
+           
+            {Calculate the enhanced data area offset, in bytes}
+            MMC.ExtendedCardSpecificData.EnhancedAreaOffset:=MMC.ExtendedCardSpecific[EXT_CSD_ENH_START_ADDR + 3] shl 24
+                                                          or MMC.ExtendedCardSpecific[EXT_CSD_ENH_START_ADDR + 2] shl 16
+                                                          or MMC.ExtendedCardSpecific[EXT_CSD_ENH_START_ADDR + 1] shl 8
+                                                          or MMC.ExtendedCardSpecific[EXT_CSD_ENH_START_ADDR];
+            
+            if (MMC.Device.DeviceFlags and MMC_FLAG_BLOCK_ADDRESSED) <> 0 then
+             begin
+              MMC.ExtendedCardSpecificData.EnhancedAreaOffset:=MMC.ExtendedCardSpecificData.EnhancedAreaOffset shl 9;
+             end;
+            
+            {Calculate the enhanced data area size, in kilobytes}
+            MMC.ExtendedCardSpecificData.EnhancedAreaSize:=MMC.ExtendedCardSpecific[EXT_CSD_ENH_SIZE_MULT + 2] shl 16
+                                                        or MMC.ExtendedCardSpecific[EXT_CSD_ENH_SIZE_MULT + 1] shl 8
+                                                        or MMC.ExtendedCardSpecific[EXT_CSD_ENH_SIZE_MULT];
+            MMC.ExtendedCardSpecificData.EnhancedAreaSize:=MMC.ExtendedCardSpecificData.EnhancedAreaSize * (HCEraseGroupSize * HCWriteProtectGroupSize);
+            MMC.ExtendedCardSpecificData.EnhancedAreaSize:=MMC.ExtendedCardSpecificData.EnhancedAreaSize shl 9;
+           end
+          else
+           begin
+            if MMC_LOG_ENABLED then MMCLogWarn(nil,'MMC defines enhanced area without partition setting complete');
+           end;
+         end;
+       end;
+      
+      {General purpose partition feature support - check if Extended CSD has the size of general purpose partitions}
+      if (MMC.ExtendedCardSpecificData.PartitionSupport and EXT_CSD_PARTITION_PARTITIONING_EN) <> 0 then
+       begin
+        HCEraseGroupSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_ERASE_GRP_SIZE];
+        HCWriteProtectGroupSize:=MMC.ExtendedCardSpecific[EXT_CSD_HC_WP_GRP_SIZE];
+        
+        for Index:=0 to MMC_NUM_GP_PARTITION - 1 do
+         begin
+          if (MMC.ExtendedCardSpecific[EXT_CSD_GP_SIZE_MULT + Index * 3] <> 0)
+           and (MMC.ExtendedCardSpecific[EXT_CSD_GP_SIZE_MULT + Index * 3 + 1] <> 0)
+           and (MMC.ExtendedCardSpecific[EXT_CSD_GP_SIZE_MULT + Index * 3 + 2] <> 0) then
+           begin
+            if not MMC.ExtendedCardSpecificData.PartitionSettingCompleted then
+             begin
+              if MMC_LOG_ENABLED then MMCLogWarn(nil,'MMC has partition size defined without partition complete');
+              Break;
+             end;
+           
+           
+            MMC.ExtendedCardSpecificData.PartitionSizes[Index]:=MMC.ExtendedCardSpecific[EXT_CSD_GP_SIZE_MULT + Index * 3 + 2] shl 16
+                                                             or MMC.ExtendedCardSpecific[EXT_CSD_GP_SIZE_MULT + Index * 3 + 1] shl 8
+                                                             or MMC.ExtendedCardSpecific[EXT_CSD_GP_SIZE_MULT + Index * 3];
+            MMC.ExtendedCardSpecificData.PartitionSizes[Index]:=MMC.ExtendedCardSpecificData.PartitionSizes[Index] * (HCEraseGroupSize * HCWriteProtectGroupSize);
+            MMC.ExtendedCardSpecificData.PartitionSizes[Index]:=MMC.ExtendedCardSpecificData.PartitionSizes[Index] shl 19;
+           end;
+         end;
+       end;
+      
+      MMC.ExtendedCardSpecificData.TRIMTimeout:=300 * MMC.ExtendedCardSpecific[EXT_CSD_TRIM_MULT];
+      MMC.ExtendedCardSpecificData.BootReadOnlySupport:=MMC.ExtendedCardSpecific[EXT_CSD_BOOT_WP];
+      MMC.ExtendedCardSpecificData.BootReadOnlyLockable:=True;
+      
+      {Save power class values}
+      MMC.ExtendedCardSpecificData.PowerClass52MHz195:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_52_195];
+      MMC.ExtendedCardSpecificData.PowerClass26MHz195:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_26_195];
+      MMC.ExtendedCardSpecificData.PowerClass52MHz360:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_52_360];
+      MMC.ExtendedCardSpecificData.PowerClass26MHz360:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_26_360];
+      MMC.ExtendedCardSpecificData.PowerClass200MHz195:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_200_195];
+      MMC.ExtendedCardSpecificData.PowerClass200MHz360:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_200_360];
+      MMC.ExtendedCardSpecificData.PowerClassDDR52MHz195:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_DDR_52_195];
+      MMC.ExtendedCardSpecificData.PowerClassDDR52MHz360:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_DDR_52_360];
+      MMC.ExtendedCardSpecificData.PowerClassDDR200MHz360:=MMC.ExtendedCardSpecific[EXT_CSD_PWR_CL_DDR_200_360];
      end;
      
     if MMC.ExtendedCardSpecificData.Revision >= 5 then
      begin
-      //To Do
+      {Adjust production date as per JEDEC JESD84-B451}
+      if MMC.CardIdentificationData.ManufacturingYear < 2010 then MMC.CardIdentificationData.ManufacturingYear:=MMC.CardIdentificationData.ManufacturingYear + 16;
+      
+      {Check whether the eMMC card supports BKOPS}
+      if (MMC.ExtendedCardSpecific[EXT_CSD_BKOPS_SUPPORT] and $01) <> 0 then
+       begin
+        MMC.ExtendedCardSpecificData.BackgroundOperations:=True;
+        MMC.ExtendedCardSpecificData.ManualBKOPSEnable:=(MMC.ExtendedCardSpecific[EXT_CSD_BKOPS_EN] and EXT_CSD_MANUAL_BKOPS_MASK) <> 0;
+        MMC.ExtendedCardSpecificData.BKOPSStatus:=MMC.ExtendedCardSpecific[EXT_CSD_BKOPS_STATUS];
+        MMC.ExtendedCardSpecificData.AutoBKOPSEnable:=(MMC.ExtendedCardSpecific[EXT_CSD_BKOPS_EN] and EXT_CSD_AUTO_BKOPS_MASK) <> 0;
+       end;
+      
+      {Check whether the eMMC card supports HPI}
+      if (MMC.ExtendedCardSpecific[EXT_CSD_HPI_FEATURES] and $01) <> 0 then
+       begin
+        MMC.ExtendedCardSpecificData.HPI:=True;
+        if (MMC.ExtendedCardSpecific[EXT_CSD_HPI_FEATURES] and $02) <> 0 then
+         begin
+          MMC.ExtendedCardSpecificData.HPICommand:=MMC_CMD_STOP_TRANSMISSION;
+         end
+        else
+         begin
+          MMC.ExtendedCardSpecificData.HPICommand:=MMC_CMD_SEND_STATUS;
+         end;
+        
+        {Indicate the maximum timeout to close a command interrupted by HPI}
+        MMC.ExtendedCardSpecificData.OutOfInterruptTime:=MMC.ExtendedCardSpecific[EXT_CSD_OUT_OF_INTERRUPT_TIME] * 10;
+       end;
+      
+      MMC.ExtendedCardSpecificData.WriteReliabilityParameter:=MMC.ExtendedCardSpecific[EXT_CSD_WR_REL_PARAM];
+      MMC.ExtendedCardSpecificData.HardwareResetFunction:=MMC.ExtendedCardSpecific[EXT_CSD_RST_N_FUNCTION];
+      
+      {RPMB regions are defined in multiples of 128K}
+      MMC.ExtendedCardSpecificData.RPMBSizeMult:=MMC.ExtendedCardSpecific[EXT_CSD_RPMB_MULT];
+      if MMC.ExtendedCardSpecificData.RPMBSizeMult > 0 then
+       begin
+        MMC.ExtendedCardSpecificData.RPMBSize:=MMC.ExtendedCardSpecific[EXT_CSD_RPMB_MULT] shl 17;
+       end;
      end;
      
-    //To Do
+     
+    MMC.ExtendedCardSpecificData.ErasedMemoryContent:=MMC.ExtendedCardSpecific[EXT_CSD_ERASED_MEM_CONT];
+    if MMC.ExtendedCardSpecificData.ErasedMemoryContent > 0 then
+     begin
+      MMC.ExtendedCardSpecificData.ErasedByte:=$FF;
+     end
+    else
+     begin
+      MMC.ExtendedCardSpecificData.ErasedByte:=$00;
+     end;
     
     {eMMC v4.5 or later}
+    MMC.ExtendedCardSpecificData.GenericCMD6Time:=MMC_DEFAULT_CMD6_TIMEOUT_MS;
     if MMC.ExtendedCardSpecificData.Revision >= 6 then
      begin
-      //To Do
+      MMC.ExtendedCardSpecificData.FeatureSupport:=MMC.ExtendedCardSpecificData.FeatureSupport or MMC_DISCARD_FEATURE;
+      
+      MMC.ExtendedCardSpecificData.GenericCMD6Time:=10 * MMC.ExtendedCardSpecific[EXT_CSD_GENERIC_CMD6_TIME];
+      MMC.ExtendedCardSpecificData.PowerOffLongTime:=10 * MMC.ExtendedCardSpecific[EXT_CSD_POWER_OFF_LONG_TIME];
+      
+      MMC.ExtendedCardSpecificData.CacheSize:=MMC.ExtendedCardSpecific[EXT_CSD_CACHE_SIZE + 0]
+                                           or MMC.ExtendedCardSpecific[EXT_CSD_CACHE_SIZE + 1] shl 8
+                                           or MMC.ExtendedCardSpecific[EXT_CSD_CACHE_SIZE + 2] shl 16
+                                           or MMC.ExtendedCardSpecific[EXT_CSD_CACHE_SIZE + 3] shl 24;
+                                           
+      if MMC.ExtendedCardSpecific[EXT_CSD_DATA_SECTOR_SIZE] = 1 then
+       begin
+        MMC.ExtendedCardSpecificData.DataSectorSize:=4096;
+       end
+      else
+       begin
+        MMC.ExtendedCardSpecificData.DataSectorSize:=512;
+       end;
+      
+      MMC.ExtendedCardSpecificData.MaxPackedWrites:=MMC.ExtendedCardSpecific[EXT_CSD_MAX_PACKED_WRITES];
+      MMC.ExtendedCardSpecificData.MaxPackedReads:=MMC.ExtendedCardSpecific[EXT_CSD_MAX_PACKED_READS];
+
+      if ((MMC.ExtendedCardSpecific[EXT_CSD_DATA_TAG_SUPPORT] and $01) <> 0) and (MMC.ExtendedCardSpecific[EXT_CSD_TAG_UNIT_SIZE] <= 8) then
+       begin
+        MMC.ExtendedCardSpecificData.DataTagUnitSize:=(1 shl MMC.ExtendedCardSpecific[EXT_CSD_TAG_UNIT_SIZE]) * MMC.ExtendedCardSpecificData.DataSectorSize;
+       end
+      else
+       begin
+        MMC.ExtendedCardSpecificData.DataTagUnitSize:=0;
+       end;
      end
     else
      begin
       MMC.ExtendedCardSpecificData.DataSectorSize:=512;
      end;
      
+    {The GENERIC_CMD6_TIME is to be used "unless a specific timeout is defined when
+     accessing a specific field", so use it here if there is no PARTITION_SWITCH_TIME}
+    if MMC.ExtendedCardSpecificData.PartitionSwitchTime = 0 then
+     begin
+      MMC.ExtendedCardSpecificData.PartitionSwitchTime:=MMC.ExtendedCardSpecificData.GenericCMD6Time;
+     end; 
+    {Some eMMC set the value too low so set a minimum} 
+    if MMC.ExtendedCardSpecificData.PartitionSwitchTime < MMC_MIN_PART_SWITCH_TIME then
+     begin
+      MMC.ExtendedCardSpecificData.PartitionSwitchTime:=MMC_MIN_PART_SWITCH_TIME;
+     end;
+     
     {eMMC v5 or later}
     if MMC.ExtendedCardSpecificData.Revision >= 7 then
      begin
-      //To Do
+      System.Move(MMC.ExtendedCardSpecific[EXT_CSD_FIRMWARE_VERSION],MMC.ExtendedCardSpecificData.FirmwareVersion[0],MMC_FIRMWARE_VERSION_LEN);
+      
+      MMC.ExtendedCardSpecificData.FieldFirmwareUpdate:=((MMC.ExtendedCardSpecific[EXT_CSD_SUPPORTED_MODE] and $01) <> 0) and ((MMC.ExtendedCardSpecific[EXT_CSD_FW_CONFIG] and $01) <> 0);
+      
+      MMC.ExtendedCardSpecificData.PreEndOfLifeInfo:=MMC.ExtendedCardSpecific[EXT_CSD_PRE_EOL_INFO];
+      MMC.ExtendedCardSpecificData.DeviceLifetimeEstimateA:=MMC.ExtendedCardSpecific[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A];
+      MMC.ExtendedCardSpecificData.DeviceLifetimeEstimateB:=MMC.ExtendedCardSpecific[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B];
      end;
     
     {eMMC v5.1 or later}
     if MMC.ExtendedCardSpecificData.Revision >= 8 then
      begin
-      //To Do
+      MMC.ExtendedCardSpecificData.CommandQueueSupport:=(MMC.ExtendedCardSpecific[EXT_CSD_CMDQ_SUPPORT] and EXT_CSD_CMDQ_SUPPORTED) <> 0;
+      MMC.ExtendedCardSpecificData.CommandQueueDepth:=(MMC.ExtendedCardSpecific[EXT_CSD_CMDQ_DEPTH] and EXT_CSD_CMDQ_DEPTH_MASK) + 1;
+      
+      {Exclude inefficiently small queue depths}
+      if MMC.ExtendedCardSpecificData.CommandQueueDepth <= 2 then
+       begin
+        MMC.ExtendedCardSpecificData.CommandQueueSupport:=False;
+        MMC.ExtendedCardSpecificData.CommandQueueDepth:=0;
+       end;
+      
+      MMC.ExtendedCardSpecificData.EnhancedRPMBSupport:=(MMC.ExtendedCardSpecificData.WriteReliabilityParameter and EXT_CSD_WR_REL_PARAM_EN_RPMB_REL_WR) <> 0;
      end;
+    
+    {Get Version}
+    case MMC.ExtendedCardSpecificData.Revision of
+     0:MMC.Version:=MMC_VERSION_4;
+     1:MMC.Version:=MMC_VERSION_4_1;
+     2:MMC.Version:=MMC_VERSION_4_2;
+     3:MMC.Version:=MMC_VERSION_4_3;
+     5:MMC.Version:=MMC_VERSION_4_41;
+     6:MMC.Version:=MMC_VERSION_4_5;
+     7:MMC.Version:=MMC_VERSION_5_0;
+     8:MMC.Version:=MMC_VERSION_5_1;
+    end;
     
     Result:=MMC_STATUS_SUCCESS;
    end;
+  else
+   begin
+    {Version Unknown}
+    if MMC_LOG_ENABLED then MMCLogError(nil,'MMC Extended CSD structure version unknown');
+   end;   
  end;  
  
  {Log Extended Card Specific}
@@ -4062,14 +5518,97 @@ begin
     begin
      {Card Data}
      MMCLogDebug(nil,'  Revision = ' + IntToStr(MMC.ExtendedCardSpecificData.Revision));
-
-     //To Do
      
+     MMCLogDebug(nil,'  CacheControl = ' + IntToStr(MMC.ExtendedCardSpecificData.CacheControl));
+     MMCLogDebug(nil,'  PowerOffNotification = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerOffNotification));
+
+     MMCLogDebug(nil,'  PartitionSupport = ' + IntToHex(MMC.ExtendedCardSpecificData.PartitionSupport,2));
+     MMCLogDebug(nil,'  HardwareResetFunction = ' + IntToHex(MMC.ExtendedCardSpecificData.HardwareResetFunction,2));
+     MMCLogDebug(nil,'  WriteReliabilityParameter = ' + IntToHex(MMC.ExtendedCardSpecificData.WriteReliabilityParameter,2));
+  
+     MMCLogDebug(nil,'  RPMBSizeMult = ' + IntToStr(MMC.ExtendedCardSpecificData.RPMBSizeMult));
+     MMCLogDebug(nil,'  EraseGroupDef = ' + IntToHex(MMC.ExtendedCardSpecificData.EraseGroupDef,2));
+     MMCLogDebug(nil,'  PartConfig = ' + IntToHex(MMC.ExtendedCardSpecificData.PartConfig,2));
+     MMCLogDebug(nil,'  ErasedMemoryContent = ' + IntToStr(MMC.ExtendedCardSpecificData.ErasedMemoryContent));
+     MMCLogDebug(nil,'  StrobeSupport = ' + IntToHex(MMC.ExtendedCardSpecificData.StrobeSupport,2));
+     MMCLogDebug(nil,'  CardType = ' + IntToHex(MMC.ExtendedCardSpecificData.CardType,2));
+     MMCLogDebug(nil,'  DriverStrength = ' + IntToHex(MMC.ExtendedCardSpecificData.DriverStrength,2));
+     MMCLogDebug(nil,'  OutOfInterruptTime = ' + IntToStr(MMC.ExtendedCardSpecificData.OutOfInterruptTime));
+
+     {MMCLogDebug(nil,'  SectorCount = ' + IntToStr(MMC.ExtendedCardSpecificData.SectorCount));}
+     MMCLogDebug(nil,'  SATimeout = ' + IntToHex(MMC.ExtendedCardSpecificData.SATimeout,2));
+     MMCLogDebug(nil,'  HCEraseGapSize = ' + IntToStr(MMC.ExtendedCardSpecificData.HCEraseGapSize));
+     MMCLogDebug(nil,'  ReliableSectors = ' + IntToStr(MMC.ExtendedCardSpecificData.ReliableSectors));
+     MMCLogDebug(nil,'  EraseTimeoutMult = ' + IntToStr(MMC.ExtendedCardSpecificData.EraseTimeoutMult));
+     MMCLogDebug(nil,'  HCEraseGrpSize = ' + IntToStr(MMC.ExtendedCardSpecificData.HCEraseGrpSize));
+     MMCLogDebug(nil,'  SecTRIMMult = ' + IntToStr(MMC.ExtendedCardSpecificData.SecTRIMMult));
+     MMCLogDebug(nil,'  SecEraseMult = ' + IntToStr(MMC.ExtendedCardSpecificData.SecEraseMult));
+     MMCLogDebug(nil,'  SecFeatureSupport = ' + IntToHex(MMC.ExtendedCardSpecificData.SecFeatureSupport,2));
+     MMCLogDebug(nil,'  TRIMMult = ' + IntToStr(MMC.ExtendedCardSpecificData.TRIMMult));
+
+     MMCLogDebug(nil,'  PowerClass52MHz195 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClass52MHz195));
+     MMCLogDebug(nil,'  PowerClass26MHz195 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClass26MHz195));
+     MMCLogDebug(nil,'  PowerClass52MHz360 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClass52MHz360));
+     MMCLogDebug(nil,'  PowerClass26MHz360 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClass26MHz360));
+     MMCLogDebug(nil,'  PowerClass200MHz195 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClass200MHz195));
+     MMCLogDebug(nil,'  PowerClass200MHz360 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClass200MHz360));
+     MMCLogDebug(nil,'  PowerClassDDR52MHz195 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClassDDR52MHz195));
+     MMCLogDebug(nil,'  PowerClassDDR52MHz360 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClassDDR52MHz360));
+     MMCLogDebug(nil,'  PowerClassDDR200MHz360 = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerClassDDR200MHz360));
+
+     MMCLogDebug(nil,'  BKOPSStatus = ' + IntToHex(MMC.ExtendedCardSpecificData.BKOPSStatus,2));
+  
+     {MMCLogDebug(nil,'  FirmwareVersion = ' + IntToStr(MMC.ExtendedCardSpecificData.FirmwareVersion));}
+
+     MMCLogDebug(nil,'  PreEndOfLifeInfo = ' + IntToHex(MMC.ExtendedCardSpecificData.PreEndOfLifeInfo,2));
+     MMCLogDebug(nil,'  DeviceLifetimeEstimateA = ' + IntToHex(MMC.ExtendedCardSpecificData.DeviceLifetimeEstimateA,2));
+     MMCLogDebug(nil,'  DeviceLifetimeEstimateB = ' + IntToHex(MMC.ExtendedCardSpecificData.DeviceLifetimeEstimateB,2));
+
+     MMCLogDebug(nil,'  MaxPackedWrites = ' + IntToStr(MMC.ExtendedCardSpecificData.MaxPackedWrites));
+     MMCLogDebug(nil,'  MaxPackedReads = ' + IntToStr(MMC.ExtendedCardSpecificData.MaxPackedReads));
+  
      {Calculated Values}
      MMCLogDebug(nil,'  Sectors = ' + IntToStr(MMC.ExtendedCardSpecificData.Sectors));
-
-     //To Do
- 
+     MMCLogDebug(nil,'  SleepAwakeTime = ' + IntToStr(MMC.ExtendedCardSpecificData.SleepAwakeTime));
+     MMCLogDebug(nil,'  PartitionSwitchTime = ' + IntToStr(MMC.ExtendedCardSpecificData.PartitionSwitchTime));
+     MMCLogDebug(nil,'  GenericCMD6Time = ' + IntToStr(MMC.ExtendedCardSpecificData.GenericCMD6Time));
+     MMCLogDebug(nil,'  PowerOffLongTime = ' + IntToStr(MMC.ExtendedCardSpecificData.PowerOffLongTime));
+     MMCLogDebug(nil,'  HCEraseSize = ' + IntToStr(MMC.ExtendedCardSpecificData.HCEraseSize));
+     MMCLogDebug(nil,'  HCEraseTimeout = ' + IntToStr(MMC.ExtendedCardSpecificData.HCEraseTimeout));
+     MMCLogDebug(nil,'  DataSectorSize = ' + IntToStr(MMC.ExtendedCardSpecificData.DataSectorSize));
+     MMCLogDebug(nil,'  DataTagUnitSize = ' + IntToStr(MMC.ExtendedCardSpecificData.DataTagUnitSize));
+     MMCLogDebug(nil,'  HSMaxRate = ' + IntToStr(MMC.ExtendedCardSpecificData.HSMaxRate));
+     MMCLogDebug(nil,'  HS200MaxRate = ' + IntToStr(MMC.ExtendedCardSpecificData.HS200MaxRate));
+     MMCLogDebug(nil,'  AvailableTypes = ' + IntToHex(MMC.ExtendedCardSpecificData.AvailableTypes,8));
+     MMCLogDebug(nil,'  BootPartitionSize = ' + IntToStr(MMC.ExtendedCardSpecificData.BootPartitionSize));
+     MMCLogDebug(nil,'  EnhancedAreaOffset = ' + IntToStr(MMC.ExtendedCardSpecificData.EnhancedAreaOffset));
+     MMCLogDebug(nil,'  EnhancedAreaSize = ' + IntToStr(MMC.ExtendedCardSpecificData.EnhancedAreaSize));
+     MMCLogDebug(nil,'  CacheSize = ' + IntToStr(MMC.ExtendedCardSpecificData.CacheSize));
+     MMCLogDebug(nil,'  PartitionSettingCompleted = ' + BoolToStr(MMC.ExtendedCardSpecificData.PartitionSettingCompleted,True));
+     MMCLogDebug(nil,'  TRIMTimeout = ' + IntToStr(MMC.ExtendedCardSpecificData.TRIMTimeout));
+     for Index:=0 to MMC_NUM_GP_PARTITION - 1 do
+      begin
+       if MMC.ExtendedCardSpecificData.PartitionSizes[Index] > 0 then
+        begin
+         MMCLogDebug(nil,'  PartitionSize[' + IntToStr(Index) + '] = ' + IntToStr(MMC.ExtendedCardSpecificData.PartitionSizes[Index]));
+        end; 
+      end; 
+     MMCLogDebug(nil,'  BootReadOnlySupport = ' + IntToHex(MMC.ExtendedCardSpecificData.BootReadOnlySupport,2));
+     MMCLogDebug(nil,'  BootReadOnlyLockable = ' + BoolToStr(MMC.ExtendedCardSpecificData.BootReadOnlyLockable,True));
+     MMCLogDebug(nil,'  FieldFirmwareUpdate = ' + BoolToStr(MMC.ExtendedCardSpecificData.FieldFirmwareUpdate,True));
+     MMCLogDebug(nil,'  CommandQueueSupport = ' + BoolToStr(MMC.ExtendedCardSpecificData.CommandQueueSupport,True));
+     MMCLogDebug(nil,'  CommandQueueDepth = ' + IntToStr(MMC.ExtendedCardSpecificData.CommandQueueDepth));
+     MMCLogDebug(nil,'  BackgroundOperations = ' + BoolToStr(MMC.ExtendedCardSpecificData.BackgroundOperations,True));
+     MMCLogDebug(nil,'  ManualBKOPSEnable = ' + BoolToStr(MMC.ExtendedCardSpecificData.ManualBKOPSEnable,True));
+     MMCLogDebug(nil,'  AutoBKOPSEnable = ' + BoolToStr(MMC.ExtendedCardSpecificData.AutoBKOPSEnable,True));
+     MMCLogDebug(nil,'  HPI = ' + BoolToStr(MMC.ExtendedCardSpecificData.HPI,True));
+     MMCLogDebug(nil,'  HPIEnable = ' + BoolToStr(MMC.ExtendedCardSpecificData.HPIEnable,True));
+     MMCLogDebug(nil,'  HPICommand = ' + IntToStr(MMC.ExtendedCardSpecificData.HPICommand));
+     MMCLogDebug(nil,'  RPMBSize = ' + IntToStr(MMC.ExtendedCardSpecificData.RPMBSize));
+     MMCLogDebug(nil,'  EnhancedRPMBSupport = ' + BoolToStr(MMC.ExtendedCardSpecificData.EnhancedRPMBSupport,True));
+     MMCLogDebug(nil,'  ErasedByte = ' + IntToHex(MMC.ExtendedCardSpecificData.ErasedByte,8));
+     MMCLogDebug(nil,'  FeatureSupport = ' + IntToHex(MMC.ExtendedCardSpecificData.FeatureSupport,8));
+     MMCLogDebug(nil,'  Version = ' + MMCVersionToString(MMC.Version));
     end; 
   end; 
  {$ENDIF}
@@ -4116,7 +5655,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_set_relative_addr in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c 
+ //See: mmc_set_relative_addr in \drivers\mmc\core\mmc_ops.c 
 end;
 
 {==============================================================================}
@@ -4170,7 +5709,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_startup in U-Boot mmc.c
- //See: mmc_spi_set_crc in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: mmc_spi_set_crc in \drivers\mmc\core\mmc_ops.c
 end;
  
 {==============================================================================}
@@ -4217,7 +5756,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: sd_send_op_cond or mmc_complete_op_cond in U-Boot mmc.c
- //See: mmc_spi_read_ocr in \linux-rpi-3.18.y\drivers\mmc\core\mmc_ops.c
+ //See: mmc_spi_read_ocr in \drivers\mmc\core\mmc_ops.c
 end;
 
 {==============================================================================}
@@ -4279,10 +5818,7 @@ begin
    
    {Get Card Detect}
    Result:=MMCDeviceGetCardDetect(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Check Card Detect}
    if (MMC.Device.DeviceFlags and MMC_FLAG_CARD_PRESENT) = 0 then
@@ -4297,35 +5833,22 @@ begin
    if (SDHCI.Capabilities and MMC_CAP_NONREMOVABLE) <> 0 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
    
    {Set Initial Power}
-   Result:=SDHCIHostSetPower(SDHCI,FirstBitSet(SDHCI.Voltages) - 1);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   Result:=SDHCIHostSetPower(SDHCI,FirstBitSet(SDHCI.Voltages));
+   if Result <> MMC_STATUS_SUCCESS then Exit;
 
    {Set Initial Bus Width}
    Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_1);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
  
    {Set Initial Clock}
    Result:=MMCDeviceSetClock(MMC,MMC_BUS_SPEED_DEFAULT);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
  
    {Perform an SDIO Reset}
    SDIODeviceReset(MMC);
  
    {Set the Card to Idle State}
-   Result:=MMCDeviceGoIdle(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   MMCDeviceGoIdle(MMC);
  
    {Get the Interface Condition}
    SDDeviceSendInterfaceCondition(MMC);
@@ -4346,12 +5869,9 @@ begin
    
      {Get the Operation Condition}
      Result:=SDIODeviceSendOperationCondition(MMC,False);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
-     //To Do
+     //To Do //TestingSDIO
 
      {Update Device}
      if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
@@ -4359,7 +5879,7 @@ begin
      {Update Storage}
      MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
      
-     //To Do
+     //To Do //TestingSDIO
      
      Result:=MMC_STATUS_SUCCESS;
      Exit;
@@ -4386,43 +5906,28 @@ begin
        
        {Read the Operation Condition}
        Result:=MMCDeviceSPIReadOperationCondition(MMC,False);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end;
 
      {Get Card Identification}
      Result:=SDDeviceGetCardIdentification(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;      
+     if Result <> MMC_STATUS_SUCCESS then Exit;
       
      {Check for SPI}
      if not(SDHCIIsSPI(SDHCI)) then
       begin
        {Get Relative Address}
        Result:=SDDeviceSendRelativeAddress(MMC);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end;  
      
      {Get Card Specific}
      Result:=SDDeviceGetCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Decode Card Identification}
      Result:=SDDeviceDecodeCardIdentification(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Set Driver Stage}
      if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
@@ -4435,101 +5940,70 @@ begin
       begin
        {Select Card}
        Result:=MMCDeviceSelectCard(MMC);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end; 
      
      {Get SD Configuration}
      Result:=SDDeviceSendSDConfiguration(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Decode SD Configuration}
      Result:=SDDeviceDecodeSDConfiguration(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Get SD Status}
      Result:=SDDeviceSendSDStatus(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
-     
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+
      {Decode SD Status}
      Result:=SDDeviceDecodeSDStatus(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+     
+     {Set Erase Size}
+     MMCDeviceSetEraseSize(MMC);
      
      {Get Switch}
      Result:=SDDeviceSendSDSwitch(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
     
      {Decode Switch}
      Result:=SDDeviceDecodeSDSwitch(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Check for SPI}
      if SDHCIIsSPI(SDHCI) then
       begin
        {Enable SPI CRC} {Located AFTER the reading of the card registers because some SDHC cards are not able to provide valid CRCs for non-512-byte blocks}
        Result:=MMCDeviceSPISetCRC(MMC,True);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end;
      
      {Check Write Protect}
      Result:=MMCDeviceGetWriteProtect(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
   
-     //To Do //Check for UHS-I and do UHS-I init
+     //To Do //Check for UHS-I and do UHS-I init //mmc_sd_init_uhs_card etc
      
      {Switch to High Speed if supported}
      Result:=SDDeviceSwitchHighspeed(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+     
+     {Set Timing}
+     Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Set Clock}
      Result:=MMCDeviceSetClock(MMC,SDGetMaxClock(MMC));
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Switch to 4 bit bus if supported}
      if ((SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
       begin
        Result:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
+
        Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end;
     
      {Update Device}
@@ -4572,10 +6046,7 @@ begin
        
        {Read the Operation Condition}
        Result:=MMCDeviceSPIReadOperationCondition(MMC,False);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end;
      
      {Set the Card to Idle State}
@@ -4586,65 +6057,41 @@ begin
      
      {Get the Operation Condition}
      Result:=MMCDeviceSendOperationCondition(MMC,False);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Check for SPI}
      if SDHCIIsSPI(SDHCI) then
       begin
        {Enable SPI CRC}
        Result:=MMCDeviceSPISetCRC(MMC,True);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
         
        {Get Card Identification}
        Result:=MMCDeviceSendCardIdentification(MMC);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end
      else
       begin
        {Get Card Identification}
        Result:=MMCDeviceSendAllCardIdentification(MMC);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
 
        {Set Relative Address}
        Result:=MMCDeviceSetRelativeAddress(MMC);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end;      
      
      {Get Card Specific}
      Result:=MMCDeviceSendCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Decode Card Specific (Must be before CID)}
      Result:=MMCDeviceDecodeCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Decode Card Identification}
      Result:=MMCDeviceDecodeCardIdentification(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Set Driver Stage}
      if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
@@ -4657,25 +6104,16 @@ begin
       begin
        {Select Card}
        Result:=MMCDeviceSelectCard(MMC);
-       if Result <> MMC_STATUS_SUCCESS then
-        begin
-         Exit;
-        end;
+       if Result <> MMC_STATUS_SUCCESS then Exit;
       end; 
      
      {Get Extended Card Specific}
      Result:=MMCDeviceSendExtendedCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
 
      {Decode Extended Card Specific}
      Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
      {Check for Block Addressing}
      if (MMC.OperationCondition and MMC_OCR_HCS) <> 0 then
@@ -4684,43 +6122,102 @@ begin
       end;
      
      {Set Erase Size}
-     if (MMC.ExtendedCardSpecificData.EraseGroupDef and $01) <> 0 then
-      begin
-       //MMC.EraseSize:=MMC.ExtendedCardSpecificData.HCEraseSize; //To Do //mmc.c 
-      end
-     else
-      begin
-       //MMC.EraseSize:=MMC.CardSpecificData.EraseSize; //To Do //mmc.c 
-      end;
-     
+     MMCDeviceSetEraseSize(MMC);
+   
      {Enable ERASE_GRP_DEF}
      if MMC.ExtendedCardSpecificData.Revision >= 3 then
       begin
-       //To Do //mmc.c 1685
+       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_ERASE_GROUP_DEF,1,MMC.ExtendedCardSpecificData.GenericCMD6Time);
+       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+       
+       if Result = MMC_STATUS_INVALID_DATA then
+        begin
+         Result:=MMC_STATUS_SUCCESS;
+        
+         {Disable Enhanced Area Offset and Size}
+         MMC.ExtendedCardSpecificData.EnhancedAreaOffset:=0;
+         MMC.ExtendedCardSpecificData.EnhancedAreaSize:=0;
+        end
+       else
+        begin
+         MMC.ExtendedCardSpecificData.EraseGroupDef:=$01;
+         
+         {Recalculate Erase Size}
+         MMCDeviceSetEraseSize(MMC);
+        end;
       end;
       
      {Ensure eMMC user default partition is enabled} 
      if (MMC.ExtendedCardSpecificData.PartConfig and EXT_CSD_PART_CONFIG_ACC_MASK) <> 0 then
       begin
-       //To Do //mmc.c 1715
+       MMC.ExtendedCardSpecificData.PartConfig:=MMC.ExtendedCardSpecificData.PartConfig and not(EXT_CSD_PART_CONFIG_ACC_MASK);
+       
+       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_PART_CONFIG,MMC.ExtendedCardSpecificData.PartConfig,MMC.ExtendedCardSpecificData.PartitionSwitchTime);
+       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
       end;
      
      {Enable power_off_notification byte}
      if MMC.ExtendedCardSpecificData.Revision >= 6 then
       begin
-       //To Do //mmc.c 1728
+       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_POWER_OFF_NOTIFICATION,EXT_CSD_POWER_ON,MMC.ExtendedCardSpecificData.GenericCMD6Time);
+       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+       
+       if Result = MMC_STATUS_SUCCESS then MMC.ExtendedCardSpecificData.PowerOffNotification:=EXT_CSD_POWER_ON;
+      end;
+     
+     {Set Erase Argument}
+     if (MMC.ExtendedCardSpecificData.FeatureSupport and MMC_DISCARD_FEATURE) <> 0 then
+      begin
+       MMC.EraseArgument:=MMC_DISCARD_ARG;
+      end
+     else if (MMC.ExtendedCardSpecificData.SecFeatureSupport and EXT_CSD_SEC_GB_CL_EN) <> 0 then
+      begin
+       MMC.EraseArgument:=MMC_TRIM_ARG;
+      end
+     else
+      begin
+       MMC.EraseArgument:=MMC_ERASE_ARG;
+      end;
+     
+     {Select Timing}
+     Result:=MMCDeviceSelectTiming(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+     
+     if MMC.Timing = MMC_TIMING_MMC_HS200 then
+      begin
+       {Not currently supported}
+      end
+     else if not(MMC.EnhancedStrobe) then
+      begin
+       {Select the Bus Width}
+       Result:=MMCDeviceSelectBusWidth(MMC);
+       if Result <> MMC_STATUS_SUCCESS then Exit;
+       
+       if (MMC.BusWidth > MMC_BUS_WIDTH_1) and ((MMC.Timing = MMC_TIMING_SD_HS) or (MMC.Timing = MMC_TIMING_MMC_HS)) then
+        begin
+         Result:=MMCDeviceSelectHSDDR(MMC);
+         if Result <> MMC_STATUS_SUCCESS then Exit;
+        end;
       end;
       
-     {Select timing interface}
-     //To Do //mmc_select_timing
-     //To Do //mmc.c 1746
+     {Select Power Class}
+     Result:=MMCDeviceSelectPowerClass(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
      
-     //To Do //mmc_set_bus_speed
+     {Enable HPI Feature}
+     {Not currently supported}
      
-     //To Do //See: mmc_init_card etc
-
-     //SetClock/SetBusWidth etc
-     Exit;
+     {Enable Cache if present}
+     if MMC.ExtendedCardSpecificData.CacheSize > 0 then
+      begin
+       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_CACHE_CTRL,1,Max(MMC.ExtendedCardSpecificData.GenericCMD6Time,MMC_MIN_CACHE_EN_TIMEOUT_MS));
+       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+       
+       if Result = MMC_STATUS_SUCCESS then MMC.ExtendedCardSpecificData.CacheControl:=1 else MMC.ExtendedCardSpecificData.CacheControl:=0;
+      end;
+      
+     {Enable Command Queue} 
+     {Not currently supported}
      
      {Update Device}
      if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
@@ -4732,9 +6229,18 @@ begin
      {Storage}
      {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
      {Driver}
-     MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
-     MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
-     MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
+     if MMCHasExtendedCSD(MMC) then
+      begin
+       MMC.Storage.BlockSize:=MMC.ExtendedCardSpecificData.DataSectorSize;
+       MMC.Storage.BlockCount:=MMC.ExtendedCardSpecificData.Sectors;
+       MMC.Storage.BlockShift:=FirstBitSet(MMC.ExtendedCardSpecificData.DataSectorSize);
+      end
+     else
+      begin
+       MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
+       MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
+       MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
+      end; 
      
      Result:=MMC_STATUS_SUCCESS;
      Exit;
@@ -4747,15 +6253,15 @@ begin
  //See: U-Boot mmc_start_init / mmc_complete_init / mmc_init / mmc_startup in mmc.c
  //     U-Boot sdhci_init in sdhci.c
  
- //See: mmc_init_card in \linux-rpi-3.18.y\drivers\mmc\core\mmc.c
- //     mmc_attach_mmc in \linux-rpi-3.18.y\drivers\mmc\core\mmc.c
+ //See: mmc_init_card in \drivers\mmc\core\mmc.c
+ //     mmc_attach_mmc in \drivers\mmc\core\mmc.c
  
- //     mmc_sd_init_card in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
- //     mmc_attach_sd in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
- //     mmc_sd_setup_card in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //     mmc_sd_init_card in \drivers\mmc\core\sd.c
+ //     mmc_attach_sd in \drivers\mmc\core\sd.c
+ //     mmc_sd_setup_card in \drivers\mmc\core\sd.c
  
- //     mmc_sdio_init_card in \linux-rpi-3.18.y\drivers\mmc\core\sdio.c
- //     mmc_attach_sdio in \linux-rpi-3.18.y\drivers\mmc\core\sdio.c
+ //     mmc_sdio_init_card in \drivers\mmc\core\sdio.c
+ //     mmc_attach_sdio in \drivers\mmc\core\sdio.c
 end;
 
 {==============================================================================}
@@ -4798,14 +6304,27 @@ begin
    MMC.Clock:=0;
    MMC.Timing:=MMC_TIMING_LEGACY;
    MMC.BusWidth:=MMC_BUS_WIDTH_1;
+   MMC.DriverType:=MMC_SET_DRIVER_TYPE_B;
+   MMC.SignalVoltage:=MMC_SIGNAL_VOLTAGE_330;
    {MMC.Voltages:=0;} {Not reset}
    {MMC.Capabilities:=0;} {Not reset}
+   {MMC.Capabilities2:=0;} {Not reset}
+   MMC.EraseSize:=0;
+   MMC.EraseShift:=0;
+   MMC.EraseArgument:=0;
+   MMC.PreferredEraseSize:=0;
+   MMC.EnhancedStrobe:=False;
    {Register}
    MMC.InterfaceCondition:=0;
    MMC.OperationCondition:=0;
    MMC.RelativeCardAddress:=0;
    FillChar(MMC.CardSpecific,SizeOf(MMC.CardSpecific),0);
    FillChar(MMC.CardIdentification,SizeOf(MMC.CardIdentification),0);
+   if MMC.ExtendedCardSpecific <> nil then
+    begin
+     if SDHCIHasDMA(SDHCI) then DMABufferRelease(MMC.ExtendedCardSpecific) else FreeMem(MMC.ExtendedCardSpecific);
+    end; 
+   MMC.ExtendedCardSpecific:=nil;
    MMC.CardStatus:=0;
    MMC.DriverStage:=0;
    FillChar(MMC.SDStatus,SizeOf(MMC.SDStatus),0);
@@ -4814,6 +6333,7 @@ begin
    {Configuration}
    FillChar(MMC.CardSpecificData,SizeOf(TMMCCardSpecificData),0);
    FillChar(MMC.CardIdentificationData,SizeOf(TMMCCardIdentificationData),0);
+   FillChar(MMC.ExtendedCardSpecificData,SizeOf(TMMCExtendedCardSpecificData),0);
    FillChar(MMC.SDStatusData,SizeOf(TSDStatusData),0);
    FillChar(MMC.SDSwitchData,SizeOf(TSDSwitchData),0);
    FillChar(MMC.SDConfigurationData,SizeOf(TSDConfigurationData),0);
@@ -5279,9 +6799,13 @@ begin
          begin
           {Update Statistics}
           Inc(SDHCI.CommandRequestCount);
+
+          {Get Command Timeout (Default 100ms)}
+          Timeout:=100;
+          if Command.Timeout > Timeout then Timeout:=Command.Timeout;
           
-          {Wait for Signal with Timeout (100ms)}
-          Status:=SemaphoreWaitEx(SDHCI.Wait,100);
+          {Wait for Signal with Timeout}
+          Status:=SemaphoreWaitEx(SDHCI.Wait,Timeout);
           if Status <> ERROR_SUCCESS then
            begin
             if Status = ERROR_WAIT_TIMEOUT then
@@ -5318,8 +6842,12 @@ begin
             Inc(SDHCI.PIODataTransferCount);
            end;
            
-          {Wait for Signal with Timeout (5000ms)}
-          Status:=SemaphoreWaitEx(SDHCI.Wait,5000);
+          {Get Data Timeout (Default 5000ms)}
+          Timeout:=5000;
+          if Command.Timeout > Timeout then Timeout:=Command.Timeout;
+           
+          {Wait for Signal with Timeout}
+          Status:=SemaphoreWaitEx(SDHCI.Wait,Timeout);
           if Status <> ERROR_SUCCESS then
            begin
             if Status = ERROR_WAIT_TIMEOUT then
@@ -5383,15 +6911,18 @@ begin
   
  //See: mmc_send_cmd in mmc.c 
  //     sdhci_send_command in sdhci.c
- //See: bcm2835_mmc_send_command in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
- //     sdhci_send_command in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
+ //See: bcm2835_mmc_send_command in \drivers\mmc\host\bcm2835-mmc.c
+ //     sdhci_send_command in \drivers\mmc\host\sdhci.c
 end;
 
 {==============================================================================}
 
 function MMCDeviceSetIOS(MMC:PMMCDevice):LongWord;
 var
- Value:Byte;
+ Clock:Word;
+ Preset:Word;
+ Control:Byte;
+ Control2:Word;
  SDHCI:PSDHCIHost;
 begin
  {}
@@ -5401,7 +6932,7 @@ begin
  if MMC = nil then Exit;
  
  {$IFDEF MMC_DEBUG}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set IOS (Clock=' + IntToStr(MMC.Clock) + ' BusWidth=' + MMCBusWidthToString(MMC.BusWidth) + ')');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Set IOS (Clock=' + IntToStr(MMC.Clock) + ' BusWidth=' + MMCBusWidthToString(MMC.BusWidth) + ' Timing=' + MMCBusWidthToString(MMC.Timing) + ')');
  {$ENDIF}
  
  {Check Set IOS}
@@ -5416,6 +6947,15 @@ begin
    SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
    if SDHCI = nil then Exit;
    
+   if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
+    begin
+     if (SDHCI.Quirks2 and SDHCI_QUIRK2_PRESET_VALUE_BROKEN) = 0 then
+      begin
+       {Disable Preset Value}
+       {SDHCIHostEnablePresetValue(SDHCI,False);} {Not currently supported}
+      end;
+    end;
+    
    {Set Control Register}
    SDHCIHostSetControlRegister(SDHCI);
    
@@ -5429,56 +6969,151 @@ begin
      SDHCI.Clock:=MMC.Clock;
     end;
    
-   {Set Power}   
-   SDHCIHostSetPower(SDHCI,FirstBitSet(SDHCI.Voltages) - 1);
+   {Set Power}
+   SDHCIHostSetPower(SDHCI,FirstBitSet(SDHCI.Voltages));
             
    {Set Bus Width}  
-   Value:=SDHCIHostReadByte(SDHCI,SDHCI_HOST_CONTROL);
+   Control:=SDHCIHostReadByte(SDHCI,SDHCI_HOST_CONTROL);
    if MMC.BusWidth = MMC_BUS_WIDTH_8 then
     begin
-     Value:=Value and not(SDHCI_CTRL_4BITBUS);
+     Control:=Control and not(SDHCI_CTRL_4BITBUS);
      if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
       begin
-       Value:=Value or SDHCI_CTRL_8BITBUS;
+       Control:=Control or SDHCI_CTRL_8BITBUS;
       end;
     end
    else
     begin
      if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
       begin
-       Value:=Value and not(SDHCI_CTRL_8BITBUS);
+       Control:=Control and not(SDHCI_CTRL_8BITBUS);
       end;
      if MMC.BusWidth = MMC_BUS_WIDTH_4 then 
       begin
-       Value:=Value or SDHCI_CTRL_4BITBUS;
+       Control:=Control or SDHCI_CTRL_4BITBUS;
       end
      else
       begin
-       Value:=Value and not(SDHCI_CTRL_4BITBUS);
+       Control:=Control and not(SDHCI_CTRL_4BITBUS);
       end;      
     end;
    
    {Update Bus Width}  
    SDHCI.BusWidth:=MMC.BusWidth;
    
-   {Check Clock}
-   if MMC.Clock > 26000000 then
+   {Check High Speed Timing}
+   if (MMC.Timing = MMC_TIMING_SD_HS) or
+      (MMC.Timing = MMC_TIMING_MMC_HS) or
+      (MMC.Timing = MMC_TIMING_MMC_HS400) or
+      (MMC.Timing = MMC_TIMING_MMC_HS200) or
+      (MMC.Timing = MMC_TIMING_MMC_DDR52) or
+      (MMC.Timing = MMC_TIMING_UHS_SDR50) or
+      (MMC.Timing = MMC_TIMING_UHS_SDR104) or
+      (MMC.Timing = MMC_TIMING_UHS_DDR50) or
+      (MMC.Timing = MMC_TIMING_UHS_SDR25) then
     begin
-     Value:=Value or SDHCI_CTRL_HISPD;
+     Control:=Control or SDHCI_CTRL_HISPD;
     end
    else
     begin
-     Value:=Value and not(SDHCI_CTRL_HISPD);
+     Control:=Control and not(SDHCI_CTRL_HISPD);
     end;
    if (SDHCI.Quirks and SDHCI_QUIRK_NO_HISPD_BIT) <> 0 then
     begin
-     Value:=Value and not(SDHCI_CTRL_HISPD);
+     Control:=Control and not(SDHCI_CTRL_HISPD);
     end;
    
-   //To Do //More here (Reset SD Clock Enable / Re-enable SD Clock) //See: bcm2835_mmc_set_ios in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
-           //Even more quirks                                       //See: sdhci_do_set_ios in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
-           
-   SDHCIHostWriteByte(SDHCI,SDHCI_HOST_CONTROL,Value);
+   if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
+    begin
+     if not SDHCI.PresetEnabled then
+      begin
+       {Set Control}
+       SDHCIHostWriteByte(SDHCI,SDHCI_HOST_CONTROL,Control);
+      
+       {Set Driver Strength if the preset value enable is not set}
+       Control2:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_CONTROL2);
+       Control2:=Control2 and not(SDHCI_CTRL_DRV_TYPE_MASK);
+       if MMC.DriverType = MMC_SET_DRIVER_TYPE_A then
+        begin
+         Control2:=Control2 or SDHCI_CTRL_DRV_TYPE_A;
+        end
+       else if MMC.DriverType = MMC_SET_DRIVER_TYPE_B then
+        begin
+         Control2:=Control2 or SDHCI_CTRL_DRV_TYPE_B;
+        end
+       else if MMC.DriverType = MMC_SET_DRIVER_TYPE_C then
+        begin
+         Control2:=Control2 or SDHCI_CTRL_DRV_TYPE_C;
+        end
+       else if MMC.DriverType = MMC_SET_DRIVER_TYPE_D then
+        begin
+         Control2:=Control2 or SDHCI_CTRL_DRV_TYPE_D;
+        end
+       else
+        begin
+         if MMC_LOG_ENABLED then MMCLogWarn(nil,'MMC invalid driver type, defaulting to MMC_SET_DRIVER_TYPE_B');
+         
+         Control2:=Control2 or SDHCI_CTRL_DRV_TYPE_B;
+        end;
+       
+       {Set Control2}
+       SDHCIHostWriteWord(SDHCI,SDHCI_HOST_CONTROL2,Control2);
+      end
+     else
+      begin
+       {According to SDHC Spec v3.00, if the Preset Value Enable in the Host Control 2 register is set, we
+        need to reset SD Clock Enable before changing High Speed Enable to avoid generating clock gliches}
+       
+       {Reset SD Clock Enable}
+       Clock:=SDHCIHostReadWord(SDHCI,SDHCI_CLOCK_CONTROL);
+       Clock:=Clock and not(SDHCI_CLOCK_CARD_EN);
+       SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,Clock);
+       
+       {Set Control}
+       SDHCIHostWriteByte(SDHCI,SDHCI_HOST_CONTROL,Control);
+       
+       {Enable SD Clock}
+       SDHCIHostSetClock(SDHCI,SDHCI.Clock);
+      end;
+     
+     {Reset SD Clock Enable}
+     Clock:=SDHCIHostReadWord(SDHCI,SDHCI_CLOCK_CONTROL);
+     Clock:=Clock and not(SDHCI_CLOCK_CARD_EN);
+     SDHCIHostWriteWord(SDHCI,SDHCI_CLOCK_CONTROL,Clock);
+     
+     {Set Timing}
+     SDHCIHostSetTiming(SDHCI,MMC.Timing);
+     
+     {Update Timing}
+     SDHCI.Timing:=MMC.Timing;
+     
+     if (SDHCI.Quirks2 and SDHCI_QUIRK2_PRESET_VALUE_BROKEN) = 0 then
+      begin
+       {Check Timing}
+       if (MMC.Timing = MMC_TIMING_UHS_SDR12) or
+          (MMC.Timing = MMC_TIMING_UHS_SDR25) or
+          (MMC.Timing = MMC_TIMING_UHS_SDR50) or
+          (MMC.Timing = MMC_TIMING_UHS_SDR104) or
+          (MMC.Timing = MMC_TIMING_UHS_DDR50) or
+          (MMC.Timing = MMC_TIMING_MMC_DDR52) then
+        begin
+         {Enable Preset Value}
+         {SDHCIHostEnablePresetValue(SDHCI,True);} {Not currently supported}
+         
+         {Get Driver Type}
+         {Preset:=SDHCIHostGetPresetValue(SDHCI);
+         MMC.DriverType:=(Preset and SDHCI_PRESET_DRV_MASK) shr SDHCI_PRESET_DRV_SHIFT;} {Not currently supported}
+        end;
+      end;
+      
+     {Enable SD Clock}
+     SDHCIHostSetClock(SDHCI,SDHCI.Clock);
+    end
+   else
+    begin
+     {Set Control}
+     SDHCIHostWriteByte(SDHCI,SDHCI_HOST_CONTROL,Control);
+    end;
    
    if (SDHCI.Quirks and SDHCI_QUIRK_RESET_CMD_DATA_ON_IOS) <> 0 then
     begin
@@ -5490,8 +7125,8 @@ begin
   
  //See: mmc_set_ios in mmc.c 
  //     sdhci_set_ios in sdhci.c 
- //See: bcm2835_mmc_set_ios in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
- //     sdhci_do_set_ios in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
+ //See: bcm2835_mmc_set_ios in \drivers\mmc\host\bcm2835-mmc.c
+ //     sdhci_do_set_ios in \drivers\mmc\host\sdhci.c
 end;
 
 {==============================================================================}
@@ -5554,6 +7189,8 @@ end;
 
 function MMCDeviceDestroy(MMC:PMMCDevice):LongWord;
 {Destroy an existing MMC entry}
+var
+ SDHCI:PSDHCIHost;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -5578,7 +7215,18 @@ begin
  {Free Extended Card Specific}
  if MMC.ExtendedCardSpecific <> nil then
   begin
-   FreeMem(MMC.ExtendedCardSpecific);
+   {Get SDHCI}
+   SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+   if SDHCI = nil then Exit;
+   
+   if SDHCIHasDMA(SDHCI) then
+    begin
+     DMABufferRelease(MMC.ExtendedCardSpecific);
+    end
+   else
+    begin   
+     FreeMem(MMC.ExtendedCardSpecific);
+    end; 
   end;
   
  {Destroy MMC} 
@@ -5964,7 +7612,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: sd_switch in U-Boot  mmc.c
- //See: mmc_sd_switch in \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+ //See: mmc_sd_switch in \drivers\mmc\core\sd_ops.c
 end;
 
 {==============================================================================}
@@ -6056,26 +7704,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_sd_switch_hs in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
-end;
-
-{==============================================================================}
-
-function SDDeviceSetBusSpeed(MMC:PMMCDevice;Speed:LongWord):LongWord;
-begin
- {}
- Result:=MMC_STATUS_INVALID_PARAMETER;
- 
- {Check MMC}
- if MMC = nil then Exit;
- 
- {$IFDEF MMC_DEBUG}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'SD Set Bus Speed (Speed=' + IntToStr(Speed) + ')');
- {$ENDIF}
- 
- //To Do //UHS-I and UHS-II Bus Speeds
- 
- //See: sd_set_bus_speed_mode in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_sd_switch_hs in \drivers\mmc\core\sd.c
 end;
 
 {==============================================================================}
@@ -6121,7 +7750,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_app_set_bus_width in \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+ //See: mmc_app_set_bus_width in \drivers\mmc\core\sd_ops.c
 end;
 
 {==============================================================================}
@@ -6202,7 +7831,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_send_if_cond in U-Boot mmc.c  
- //See: mmc_send_if_cond in \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+ //See: mmc_send_if_cond in \drivers\mmc\core\sd_ops.c
 end;
 
 {==============================================================================}
@@ -6315,7 +7944,7 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: sd_send_op_cond in U-Boot mmc.c  
- //See: mmc_send_app_op_cond in \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+ //See: mmc_send_app_op_cond in \drivers\mmc\core\sd_ops.c
 end;
 
 {==============================================================================}
@@ -6348,7 +7977,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_sd_get_csd in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_sd_get_csd in \drivers\mmc\core\sd.c
 end;
  
 {==============================================================================}
@@ -6563,7 +8192,7 @@ begin
   end; 
  {$ENDIF}
  
- //See: mmc_decode_csd in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_decode_csd in \drivers\mmc\core\sd.c
 end;
  
 {==============================================================================}
@@ -6645,7 +8274,7 @@ begin
    
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_sd_get_cid in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_sd_get_cid in \drivers\mmc\core\sd.c
 end;
  
 {==============================================================================}
@@ -6700,7 +8329,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_decode_cid in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_decode_cid in \drivers\mmc\core\sd.c
 end;
 
 {==============================================================================}
@@ -6752,7 +8381,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_read_ssr in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_read_ssr in \drivers\mmc\core\sd.c
 end;
 
 {==============================================================================}
@@ -6817,7 +8446,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_read_ssr in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_read_ssr in \drivers\mmc\core\sd.c
 end;
 
 {==============================================================================}
@@ -6869,7 +8498,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_read_switch in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_read_switch in \drivers\mmc\core\sd.c
 end;
 
 {==============================================================================}
@@ -6994,7 +8623,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_app_send_scr in \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+ //See: mmc_app_send_scr in \drivers\mmc\core\sd_ops.c
 end;
 
 {==============================================================================}
@@ -7089,12 +8718,13 @@ begin
      MMCLogDebug(nil,'  CommandSupport = ' + IntToHex(MMC.SDConfigurationData.CommandSupport,8));
      {Calculated Values}
      MMCLogDebug(nil,'  ErasedByte = ' + IntToHex(MMC.SDConfigurationData.ErasedByte,2));
+     MMCLogDebug(nil,'  Version = ' + SDVersionToString(MMC.Version));
      MMCLogDebug(nil,'  CMD23Support = ' + BoolToStr((MMC.Device.DeviceFlags and MMC_FLAG_SET_BLOCK_COUNT) <> 0,True));
     end; 
   end; 
  {$ENDIF}
  
- //See: mmc_decode_scr in \linux-rpi-3.18.y\drivers\mmc\core\sd.c
+ //See: mmc_decode_scr in \drivers\mmc\core\sd.c
 end;
 
 {==============================================================================}
@@ -7142,7 +8772,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_send_relative_addr in \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+ //See: mmc_send_relative_addr in \drivers\mmc\core\sd_ops.c
 end;
 
 {==============================================================================}
@@ -7214,7 +8844,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_wait_for_app_cmd in \linux-rpi-3.18.y\drivers\mmc\core\sd_ops.c
+ //See: mmc_wait_for_app_cmd in \drivers\mmc\core\sd_ops.c
 end;
  
 {==============================================================================}
@@ -7250,8 +8880,7 @@ begin
  {Set Abort Value}
  Result:=SDIODeviceReadWriteDirect(MMC,True,0,SDIO_CCCR_ABORT,Abort,nil);
  
- //See: sdio_reset in \linux-rpi-3.18.y\drivers\mmc\core\sdio_ops.c
- //
+ //See: sdio_reset in \drivers\mmc\core\sdio_ops.c
 end;
 
 {==============================================================================}
@@ -7348,7 +8977,7 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_send_io_op_cond in \linux-rpi-3.18.y\drivers\mmc\core\sdio_ops.c
+ //See: mmc_send_io_op_cond in \drivers\mmc\core\sdio_ops.c
 end;
 
 {==============================================================================}
@@ -7428,7 +9057,7 @@ begin
 
  Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_io_rw_direct_host in \linux-rpi-3.18.y\drivers\mmc\core\sdio_ops.c
+ //See: mmc_io_rw_direct_host in \drivers\mmc\core\sdio_ops.c
  //
 end;
 
@@ -7465,11 +9094,11 @@ begin
          
  {Setup Command}
  FillChar(Command,SizeOf(TMMCCommand),0);
- //To Do
+ //To Do //TestingSDIO
 
  //Result:=MMC_STATUS_SUCCESS;
  
- //See: mmc_io_rw_extended in \linux-rpi-3.18.y\drivers\mmc\core\sdio_ops.c
+ //See: mmc_io_rw_extended in \drivers\mmc\core\sdio_ops.c
  //
 end;
  
@@ -7962,7 +9591,7 @@ function SDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 {Default set power function for SDHCI host controllers}
 
 {Power: A shift value to indicate the first available value in the Voltages mask}
-{       Caller can use FirstBitSet(SDHCI.Voltages) - 1 to obtain the value of Power}
+{       Caller can use FirstBitSet(SDHCI.Voltages) to obtain the value of Power}
 {       If there are no values set then Power will be -1 ($FFFF) to indicate nothing or unknown}
 
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
@@ -8145,7 +9774,73 @@ begin
   
  //See: sdhci_set_clock in sdhci.c
  //     sdhci_host->set_clock in sdhci.h
- //See also: \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
+ //See also: \drivers\mmc\host\bcm2835-mmc.c
+end;
+
+{==============================================================================}
+
+function SDHCIHostSetTiming(SDHCI:PSDHCIHost;Timing:LongWord):LongWord;
+{Default set timing function for SDHCI host controllers}
+
+{Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
+var
+ Control2:Word;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Set Timing (Timing=' + MMCTimingToString(Timing) + ')');
+ {$ENDIF}
+ 
+ {Check Set Timing}
+ if Assigned(SDHCI.HostSetTiming) then
+  begin
+   {Host Set Timing Method}
+   Result:=SDHCI.HostSetTiming(SDHCI,Timing);
+  end
+ else
+  begin
+   {Default Set Timing Method}
+   Control2:=SDHCIHostReadWord(SDHCI,SDHCI_HOST_CONTROL2);
+   Control2:=Control2 and not(SDHCI_CTRL_UHS_MASK);
+   
+   {Select Bus Speed Mode for host}
+   if (Timing = MMC_TIMING_MMC_HS200) or (Timing = MMC_TIMING_UHS_SDR104) then
+    begin
+     Control2:=Control2 or SDHCI_CTRL_UHS_SDR104;
+    end
+   else if Timing = MMC_TIMING_UHS_SDR12 then
+    begin
+     Control2:=Control2 or SDHCI_CTRL_UHS_SDR12;
+    end
+   else if Timing = MMC_TIMING_UHS_SDR25 then
+    begin
+     Control2:=Control2 or SDHCI_CTRL_UHS_SDR25;
+    end
+   else if Timing = MMC_TIMING_UHS_SDR50 then
+    begin
+     Control2:=Control2 or SDHCI_CTRL_UHS_SDR50;
+    end
+   else if (Timing = MMC_TIMING_UHS_DDR50) or (Timing = MMC_TIMING_MMC_DDR52) then
+    begin
+     Control2:=Control2 or SDHCI_CTRL_UHS_DDR50;
+    end
+   else if Timing = MMC_TIMING_MMC_HS400 then
+    begin
+     Control2:=Control2 or SDHCI_CTRL_HS400; {Non-standard}
+    end;
+   
+   SDHCIHostWriteWord(SDHCI,SDHCI_HOST_CONTROL2,Control2);
+   
+   Result:=MMC_STATUS_SUCCESS;
+  end;
+  
+ //See: sdhci_set_uhs_signaling in sdhci.c
+ //     sdhci_host->set_uhs_signaling in sdhci.h
 end;
 
 {==============================================================================}
@@ -8235,6 +9930,13 @@ begin
       
            {Use DMA Buffer}
            SDHCI.DMAData.Dest:=SDHCI.DMABuffer;
+           
+           {Check Cache}
+           if not(DMA_CACHE_COHERENT) then
+            begin
+             {Clean Cache (Dest)}
+             CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
+            end;
           end;
         end
        else
@@ -8376,19 +10078,23 @@ begin
                SDHCIHostWriteADMADescriptor(SDHCI,DescriptorBuffer,SDHCI_ADMA2_DESC_NOP_END_VALID,0,0);
               end;
 
-             {Clean Cache (Table)}
-             CleanDataCacheRange(PtrUInt(SDHCI.ADMATable),SDHCI.ADMATableSize);
-             
-             {Check Direction}
-             if (Command.Data.Flags and MMC_DATA_WRITE) <> 0 then
+             {Check Cache}
+             if not(DMA_CACHE_COHERENT) then
               begin
-               {Clean Cache (Data)}
-               CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
-              
-               {Clean Cache (Align Buffer)}
-               if Offset > 0 then CleanDataCacheRange(PtrUInt(SDHCI.ADMABuffer),SDHCI.ADMABufferSize);
+               {Clean Cache (Table)}
+               CleanDataCacheRange(PtrUInt(SDHCI.ADMATable),SDHCI.ADMATableSize);
+               
+               {Check Direction}
+               if (Command.Data.Flags and MMC_DATA_WRITE) <> 0 then
+                begin
+                 {Clean Cache (Data)}
+                 CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+                
+                 {Clean Cache (Align Buffer)}
+                 if Offset > 0 then CleanDataCacheRange(PtrUInt(SDHCI.ADMABuffer),SDHCI.ADMABufferSize);
+                end;
               end;
-            
+              
              {Set ADMA Address}  
              SDHCIHostSetADMAAddress(SDHCI,SDHCIHostGetADMAAddress(SDHCI));
              {$IFDEF MMC_DEBUG}
@@ -8419,6 +10125,13 @@ begin
                if SDHCI.DMABuffer <> nil then
                 begin
                  if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Using DMA bounce buffer for read data destination');
+                 
+                 {Check Cache}
+                 if not(DMA_CACHE_COHERENT) then
+                  begin
+                   {Clean Cache (Dest)}
+                   CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
+                  end;
                 end; 
               end
              else
@@ -8431,13 +10144,21 @@ begin
                  {Copy Data to DMA Buffer}
                  System.Move(Command.Data.Data^,SDHCI.DMABuffer^,Command.Data.BlockCount * Command.Data.BlockSize);
                  
-                 {Clean Cache}
-                 CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
+                 {Check Cache}
+                 if not(DMA_CACHE_COHERENT) then
+                  begin
+                   {Clean Cache}
+                   CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
+                  end; 
                 end
                else
                 begin
-                 {Clean Cache}
-                 CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+                 {Check Cache}
+                 if not(DMA_CACHE_COHERENT) then
+                  begin
+                   {Clean Cache}
+                   CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+                  end; 
                 end;
               end;
              
@@ -8637,13 +10358,21 @@ begin
            {Check Data Direction}
            if (Command.Data.Flags and MMC_DATA_READ) <> 0 then
             begin
-             {Invalidate Cache (Data)}
-             InvalidateDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+             {Check Cache}
+             if not(DMA_CACHE_COHERENT) then
+              begin
+               {Invalidate Cache (Data)}
+               InvalidateDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+              end; 
              
              if (PtrUInt(Command.Data.Data) and SDHCI_ADMA2_MASK) <> 0 then
               begin
-               {Invalidate Cache (Align Buffer)}
-               InvalidateDataCacheRange(PtrUInt(SDHCI.ADMABuffer),SDHCI.ADMABufferSize);
+               {Check Cache}
+               if not(DMA_CACHE_COHERENT) then
+                begin
+                 {Invalidate Cache (Align Buffer)}
+                 InvalidateDataCacheRange(PtrUInt(SDHCI.ADMABuffer),SDHCI.ADMABufferSize);
+                end; 
               
                {Determine unaligned data size}
                AlignBuffer:=SDHCI.ADMABuffer;
@@ -8673,16 +10402,24 @@ begin
               begin
                if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data from DMA bounce buffer to read data destination');
                
-               {Invalidate Cache}
-               InvalidateDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
+               {Check Cache}
+               if not(DMA_CACHE_COHERENT) then
+                begin
+                 {Invalidate Cache}
+                 InvalidateDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
+                end; 
                
                {Copy Data from DMA Buffer}
                System.Move(SDHCI.DMABuffer^,Command.Data.Data^,Command.Data.BlockCount * Command.Data.BlockSize);
               end
              else
               begin
-               {Invalidate Cache}
-               InvalidateDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+               {Check Cache}
+               if not(DMA_CACHE_COHERENT) then
+                begin
+                 {Invalidate Cache}
+                 InvalidateDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+                end; 
               end;
             end;
           end;
@@ -9018,8 +10755,8 @@ begin
  
  Result:=MMC_STATUS_SUCCESS; 
  
- //See: sdhci_finish_command in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
- //     bcm2835_mmc_finish_command in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
+ //See: sdhci_finish_command in \drivers\mmc\host\sdhci.c
+ //     bcm2835_mmc_finish_command in \drivers\mmc\host\bcm2835-mmc.c
 end;
 
 {==============================================================================}
@@ -9094,8 +10831,8 @@ begin
  
  Result:=MMC_STATUS_SUCCESS; 
  
- //See: sdhci_finish_data in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
- //     bcm2835_mmc_finish_data in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
+ //See: sdhci_finish_data in \drivers\mmc\host\sdhci.c
+ //     bcm2835_mmc_finish_data in \drivers\mmc\host\bcm2835-mmc.c
 end;
 
 {==============================================================================}
@@ -9183,8 +10920,8 @@ begin
  
  Result:=MMC_STATUS_SUCCESS;
  
- //See: sdhci_cmd_irq in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
- //     bcm2835_mmc_cmd_irq in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
+ //See: sdhci_cmd_irq in \drivers\mmc\host\sdhci.c
+ //     bcm2835_mmc_cmd_irq in \drivers\mmc\host\bcm2835-mmc.c
 end;
 
 {==============================================================================}
@@ -9328,8 +11065,8 @@ begin
 
  Result:=MMC_STATUS_SUCCESS; 
  
- //See: sdhci_data_irq in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
- //     bcm2835_mmc_data_irq in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c 
+ //See: sdhci_data_irq in \drivers\mmc\host\sdhci.c
+ //     bcm2835_mmc_data_irq in \drivers\mmc\host\bcm2835-mmc.c 
 end;
 
 {==============================================================================}
@@ -9522,7 +11259,9 @@ begin
     begin
      if (Capabilities and SDHCI_CAN_DO_8BIT) <> 0 then
       begin
-       SDHCI.Capabilities:=SDHCI.Capabilities or MMC_CAP_8_BIT_DATA;
+       {Don't report 8 bit data unless the host explicitly adds it to the presets}
+       {Some host may be 8 bit capable but only have 4 data lines connected}
+       {SDHCI.Capabilities:=SDHCI.Capabilities or MMC_CAP_8_BIT_DATA;}
       end;
     end;
    {Check Presets}
@@ -9538,8 +11277,13 @@ begin
     begin
      SDHCI.Capabilities:=SDHCI.Capabilities and not(MMC_CAP_CMD23);
     end;
+   if SDHCI.PresetCapabilities2 <> 0 then
+    begin
+     SDHCI.Capabilities2:=SDHCI.Capabilities2 or SDHCI.PresetCapabilities2;
+    end;
    {$IFDEF MMC_DEBUG}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Host capabilities = ' + IntToHex(SDHCI.Capabilities,8));
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Host additional capabilities = ' + IntToHex(SDHCI.Capabilities2,8));
    {$ENDIF}
    
    {Set Maximum Request Size (Limited by SDMA boundary of 512KB)}
@@ -9645,6 +11389,16 @@ begin
            
            SDHCI.ADMABuffer:=nil;
           end; 
+        end
+       else
+        begin
+         {Check Cache}
+         if not(DMA_CACHE_COHERENT) then
+          begin
+           {Clean Cache (Dest)}
+           CleanDataCacheRange(PtrUInt(SDHCI.ADMATable),SDHCI.ADMATableSize);
+           CleanDataCacheRange(PtrUInt(SDHCI.ADMABuffer),SDHCI.ADMABufferSize);
+          end;
         end;
       end;
     end; 
@@ -9694,6 +11448,7 @@ begin
    {Driver}
    MMC.Voltages:=SDHCI.Voltages;
    MMC.Capabilities:=SDHCI.Capabilities;
+   MMC.Capabilities2:=SDHCI.Capabilities2;
    
    {Create Storage}
    MMC.Storage:=StorageDeviceCreate;
@@ -9751,6 +11506,9 @@ begin
      Exit;
     end;
   
+   {Check Non Removeable}
+   if StrToIntDef(SysUtils.GetEnvironmentVariable(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
+   
    {Enable Host}
    SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;
    
@@ -10312,6 +12070,7 @@ begin
  Result.HostHardwareReset:=nil;
  Result.HostSetPower:=nil;
  Result.HostSetClock:=nil;
+ Result.HostSetTiming:=nil;
  Result.HostSetClockDivider:=nil;
  Result.HostSetControlRegister:=nil;
  Result.HostPrepareDMA:=nil;
@@ -10826,20 +12585,6 @@ end;
 
 {==============================================================================}
 
-function MMCGetExtendedCSDValue(MMC:PMMCDevice;Value:LongWord):LongWord;
-{Extract an Extended CSD field value from the 512 byte Extended Card Specific register}
-begin
- {}
- Result:=0;
-
- {Check MMC}
- if MMC = nil then Exit;
-
- //To Do 
-end;
-
-{==============================================================================}
-
 function MMCExtractBits(Buffer:Pointer;Start,Size:LongWord):LongWord;
 {Start is the starting bit to extract, Size is the number of bits to extract}
 {Start is the LSB so to extract 8 bits from 127 to 120 then Start would be 120 and Size would be 8}
@@ -10920,6 +12665,19 @@ begin
  if MMC = nil then Exit;
  
  Result:=(MMC.Device.DeviceFlags and MMC_FLAG_NON_REMOVABLE) <> 0;
+end;
+
+{==============================================================================}
+
+function MMCHasExtendedCSD(MMC:PMMCDevice):Boolean; inline;
+begin
+ {}
+ Result:=False;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ Result:=MMC.CardSpecificData.SpecVersion > MMC_CSD_SPEC_VER_3;
 end;
 
 {==============================================================================}
@@ -11010,6 +12768,7 @@ begin
   MMC_VERSION_4_41:Result:='MMC_VERSION_4_41';
   MMC_VERSION_4_5:Result:='MMC_VERSION_4_5';
   MMC_VERSION_5_0:Result:='MMC_VERSION_5_0';
+  MMC_VERSION_5_1:Result:='MMC_VERSION_5_1';
  end;
 end;
 
@@ -11048,6 +12807,37 @@ begin
   MMC_BUS_WIDTH_1:Result:='MMC_BUS_WIDTH_1';
   MMC_BUS_WIDTH_4:Result:='MMC_BUS_WIDTH_4';
   MMC_BUS_WIDTH_8:Result:='MMC_BUS_WIDTH_8';
+ end;
+end;
+
+{==============================================================================}
+
+function MMCDriverTypeToString(DriverType:LongWord):String;
+{Translates an MMC driver type into a string}
+begin
+ {}
+ Result:='MMC_SET_DRIVER_TYPE_UNKNOWN';
+
+ case DriverType of
+  MMC_SET_DRIVER_TYPE_B:Result:='MMC_SET_DRIVER_TYPE_B';
+  MMC_SET_DRIVER_TYPE_A:Result:='MMC_SET_DRIVER_TYPE_A';
+  MMC_SET_DRIVER_TYPE_C:Result:='MMC_SET_DRIVER_TYPE_C';
+  MMC_SET_DRIVER_TYPE_D:Result:='MMC_SET_DRIVER_TYPE_D';
+ end;
+end;
+
+{==============================================================================}
+
+function MMCSignalVoltageToString(SignalVoltage:LongWord):String;
+{Translates an MMC signal voltage into a string}
+begin
+ {}
+ Result:='MMC_SIGNAL_VOLTAGE_UNKNOWN';
+
+ case SignalVoltage of
+  MMC_SIGNAL_VOLTAGE_330:Result:='MMC_SIGNAL_VOLTAGE_330';
+  MMC_SIGNAL_VOLTAGE_180:Result:='MMC_SIGNAL_VOLTAGE_180';
+  MMC_SIGNAL_VOLTAGE_120:Result:='MMC_SIGNAL_VOLTAGE_120';
  end;
 end;
 

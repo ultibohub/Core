@@ -940,152 +940,155 @@ begin
  if WorkInt <> 0 then DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ:=True;
   
  {Create USB Host}
- DWCHost:=PDWCUSBHost(USBHostCreateEx(SizeOf(TDWCUSBHost))); 
- if DWCHost <> nil then
+ if DWCOTG_REGISTER_HOST then
   begin
-   {Update USB Host}
-   {Device}
-   DWCHost.Host.Device.DeviceBus:=DEVICE_BUS_MMIO; 
-   DWCHost.Host.Device.DeviceType:=USBHOST_TYPE_DWCOTG;
-   DWCHost.Host.Device.DeviceFlags:=USBHOST_FLAG_NONE;
-   DWCHost.Host.Device.DeviceData:=nil;
-   if DWCOTG_DMA_SHARED_MEMORY then DWCHost.Host.Device.DeviceFlags:=DWCHost.Host.Device.DeviceFlags or USBHOST_FLAG_SHARED;
-   if DWCOTG_DMA_NOCACHE_MEMORY then DWCHost.Host.Device.DeviceFlags:=DWCHost.Host.Device.DeviceFlags or USBHOST_FLAG_NOCACHE;
-   {USB}
-   DWCHost.Host.HostStart:=DWCHostStart;
-   DWCHost.Host.HostStop:=DWCHostStop;
-   DWCHost.Host.HostReset:=DWCHostReset;
-   DWCHost.Host.HostSubmit:=DWCHostSubmit;
-   DWCHost.Host.HostCancel:=DWCHostCancel;
-   DWCHost.Host.Alignment:=DWCOTG_DMA_ALIGNMENT;
-   DWCHost.Host.Multiplier:=DWCOTG_DMA_MULTIPLIER;
-   DWCHost.Host.MaxTransfer:=DWC_HOST_CHANNEL_TRANSFER_SIZE and not(3);
-   {DWCOTG}
-   DWCHost.Lock:=INVALID_HANDLE_VALUE;
-   DWCHost.Registers:=nil;
-   DWCHost.SchedulerThread:=INVALID_HANDLE_VALUE;
-   DWCHost.CompletionThread:=INVALID_HANDLE_VALUE;
-   DWCHost.SchedulerMailslot:=INVALID_HANDLE_VALUE;
-   {Channel}
-   DWCHost.ChannelFreeLock:=INVALID_HANDLE_VALUE;
-   DWCHost.ChannelFreeWait:=INVALID_HANDLE_VALUE;
-   DWCHost.StartOfFrameLock:=INVALID_HANDLE_VALUE;
-   {Root Hub (Hub Status)}
-   DWCHost.HubStatus:=GetMem(SizeOf(TUSBHubStatus));
-   DWCHost.HubStatus.wHubStatus:=USB_HUB_STATUS_LOCAL_POWER;
-   DWCHost.HubStatus.wHubChange:=0;
-   {Root Hub (Port Status)}
-   DWCHost.PortStatus:=GetMem(SizeOf(TUSBPortStatus));
-   DWCHost.PortStatus.wPortStatus:=0;
-   DWCHost.PortStatus.wPortChange:=0;
-   {Root Hub (Device Status)}   
-   DWCHost.DeviceStatus:=GetMem(SizeOf(TUSBDeviceStatus));
-   DWCHost.DeviceStatus.wStatus:=USB_DEVICE_STATUS_SELF_POWERED;
-   {Root Hub (Hub Descriptor)}
-   DWCHost.HubDescriptor:=GetMem(SizeOf(TUSBHubDescriptor) + (1 * SizeOf(Byte))); {Allow for Data} {1 because TUSBHubDescriptor already includes 1 element in varData}
-   DWCHost.HubDescriptor.bDescLength:=SizeOf(TUSBHubDescriptor) + (1 * SizeOf(Byte)); {bDescLength is the base size plus the length of the varData}
-   DWCHost.HubDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_HUB;
-   DWCHost.HubDescriptor.bNbrPorts:=1;
-   DWCHost.HubDescriptor.wHubCharacteristics:=0;
-   DWCHost.HubDescriptor.bPwrOn2PwrGood:=0;
-   DWCHost.HubDescriptor.bHubContrCurrent:=0;
-   PUSBHubDescriptorData(@DWCHost.HubDescriptor.varData)^[0]:=$00;  {DeviceRemovable}
-   PUSBHubDescriptorData(@DWCHost.HubDescriptor.varData)^[1]:=$FF;  {PortPwrCtrlMask}
-   {Root Hub (Device Descriptor)}
-   DWCHost.DeviceDescriptor:=GetMem(SizeOf(TUSBDeviceDescriptor));
-   DWCHost.DeviceDescriptor.bLength:=SizeOf(TUSBDeviceDescriptor);
-   DWCHost.DeviceDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_DEVICE;
-   DWCHost.DeviceDescriptor.bcdUSB:=$200;                           {USB version 2.0 (binary coded decimal)}
-   DWCHost.DeviceDescriptor.bDeviceClass:=USB_CLASS_CODE_HUB;
-   DWCHost.DeviceDescriptor.bDeviceSubClass:=0;
-   DWCHost.DeviceDescriptor.bDeviceProtocol:=0;
-   DWCHost.DeviceDescriptor.bMaxPacketSize0:=64;
-   DWCHost.DeviceDescriptor.idVendor:=0;
-   DWCHost.DeviceDescriptor.idProduct:=0;
-   DWCHost.DeviceDescriptor.bcdDevice:=0;
-   DWCHost.DeviceDescriptor.iManufacturer:=2;
-   DWCHost.DeviceDescriptor.iProduct:=1;
-   DWCHost.DeviceDescriptor.iSerialNumber:=0;
-   DWCHost.DeviceDescriptor.bNumConfigurations:=1;
-   {Root Hub (Configuration Descriptor)}
-   DWCHost.HubConfiguration:=GetMem(SizeOf(TDWCRootHubConfiguration));
-   DWCHost.HubConfiguration.ConfigurationDescriptor.bLength:=SizeOf(TUSBConfigurationDescriptor);
-   DWCHost.HubConfiguration.ConfigurationDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_CONFIGURATION;
-   DWCHost.HubConfiguration.ConfigurationDescriptor.wTotalLength:=SizeOf(TDWCRootHubConfiguration);
-   DWCHost.HubConfiguration.ConfigurationDescriptor.bNumInterfaces:=1;
-   DWCHost.HubConfiguration.ConfigurationDescriptor.bConfigurationValue:=1;
-   DWCHost.HubConfiguration.ConfigurationDescriptor.iConfiguration:=0;
-   DWCHost.HubConfiguration.ConfigurationDescriptor.bmAttributes:=USB_CONFIGURATION_ATTRIBUTE_RESERVED_HIGH or USB_CONFIGURATION_ATTRIBUTE_SELF_POWERED;
-   DWCHost.HubConfiguration.ConfigurationDescriptor.bMaxPower:=0;
-   {Root Hub (Interface Descriptor)}
-   DWCHost.HubConfiguration.InterfaceDescriptor.bLength:=SizeOf(TUSBInterfaceDescriptor);
-   DWCHost.HubConfiguration.InterfaceDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_INTERFACE;
-   DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceNumber:=0;
-   DWCHost.HubConfiguration.InterfaceDescriptor.bAlternateSetting:=0;
-   DWCHost.HubConfiguration.InterfaceDescriptor.bNumEndpoints:=1;
-   DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceClass:=USB_CLASS_CODE_HUB;
-   DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceSubClass:=0;
-   DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceProtocol:=0;
-   DWCHost.HubConfiguration.InterfaceDescriptor.iInterface:=0;
-   {Root Hub (Endpoint Descriptor)}
-   DWCHost.HubConfiguration.EndpointDescriptor.bLength:=SizeOf(TUSBEndpointDescriptor);
-   DWCHost.HubConfiguration.EndpointDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_ENDPOINT;
-   DWCHost.HubConfiguration.EndpointDescriptor.bEndpointAddress:=1 or (USB_DIRECTION_IN shl 7);
-   DWCHost.HubConfiguration.EndpointDescriptor.bmAttributes:=USB_TRANSFER_TYPE_INTERRUPT;
-   DWCHost.HubConfiguration.EndpointDescriptor.wMaxPacketSize:=64;
-   DWCHost.HubConfiguration.EndpointDescriptor.bInterval:=$FF;
-   {Root Hub (Product String)}
-   DWCHost.HubProductString:=GetMem(SizeOf(TUSBStringDescriptor) + (15 * SizeOf(Word))); {Allow for Product Identifier} {15 because TUSBStringDescriptor already includes 1 element in bString}
-   DWCHost.HubProductString.bLength:=SizeOf(TUSBStringDescriptor) + (15 * SizeOf(Word));
-   DWCHost.HubProductString.bDescriptorType:=USB_DESCRIPTOR_TYPE_STRING;
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[0]:=Ord('U');          {UTF-16LE string}
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[1]:=Ord('S');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[2]:=Ord('B');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[3]:=Ord(' ');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[4]:=Ord('2');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[5]:=Ord('.');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[6]:=Ord('0');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[7]:=Ord(' ');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[8]:=Ord('R');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[9]:=Ord('o');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[10]:=Ord('o');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[11]:=Ord('t');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[12]:=Ord(' ');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[13]:=Ord('H');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[14]:=Ord('u');
-   PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[15]:=Ord('b');
-   {Root Hub (Language String)}
-   DWCHost.HubLanguageString:=GetMem(SizeOf(TUSBStringDescriptor) + (0 * SizeOf(Word))); {Allow for 16 bit Language Identifier} {0 because TUSBStringDescriptor already includes 1 element in bString}
-   DWCHost.HubLanguageString.bLength:=SizeOf(TUSBStringDescriptor) + (0 * SizeOf(Word));
-   DWCHost.HubLanguageString.bDescriptorType:=USB_DESCRIPTOR_TYPE_STRING;
-   PWord(@DWCHost.HubLanguageString.bString)^:=USB_LANGID_US_ENGLISH;
-   {Root Hub (Manufacturer String)}
-   DWCHost.HubManufacturerString:=GetMem(SizeOf(TUSBStringDescriptor) + (5 * SizeOf(Word))); {Allow for Manufacturer Identifier} {5 because TUSBStringDescriptor already includes 1 element in bString}
-   DWCHost.HubManufacturerString.bLength:=SizeOf(TUSBStringDescriptor) + (5 * SizeOf(Word));
-   DWCHost.HubManufacturerString.bDescriptorType:=USB_DESCRIPTOR_TYPE_STRING;
-   PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[0]:=Ord('U');          {UTF-16LE string}
-   PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[1]:=Ord('l');
-   PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[2]:=Ord('t');
-   PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[3]:=Ord('i');
-   PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[4]:=Ord('b');
-   PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[5]:=Ord('o');
-   {Root Hub (String Table)}
-   DWCHost.HubStringTable[0]:=DWCHost.HubLanguageString;
-   DWCHost.HubStringTable[1]:=DWCHost.HubProductString;
-   DWCHost.HubStringTable[2]:=DWCHost.HubManufacturerString;
-   
-   {Register USB Host}
-   Status:=USBHostRegister(@DWCHost.Host); 
-   if Status <> ERROR_SUCCESS then
+   DWCHost:=PDWCUSBHost(USBHostCreateEx(SizeOf(TDWCUSBHost))); 
+   if DWCHost <> nil then
     begin
-     if USB_LOG_ENABLED then USBLogError(nil,'DWCOTG: Failed to register new USB host: ' + ErrorToString(Status));
+     {Update USB Host}
+     {Device}
+     DWCHost.Host.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+     DWCHost.Host.Device.DeviceType:=USBHOST_TYPE_DWCOTG;
+     DWCHost.Host.Device.DeviceFlags:=USBHOST_FLAG_NONE;
+     DWCHost.Host.Device.DeviceData:=nil;
+     if DWCOTG_DMA_SHARED_MEMORY then DWCHost.Host.Device.DeviceFlags:=DWCHost.Host.Device.DeviceFlags or USBHOST_FLAG_SHARED;
+     if DWCOTG_DMA_NOCACHE_MEMORY then DWCHost.Host.Device.DeviceFlags:=DWCHost.Host.Device.DeviceFlags or USBHOST_FLAG_NOCACHE;
+     {USB}
+     DWCHost.Host.HostStart:=DWCHostStart;
+     DWCHost.Host.HostStop:=DWCHostStop;
+     DWCHost.Host.HostReset:=DWCHostReset;
+     DWCHost.Host.HostSubmit:=DWCHostSubmit;
+     DWCHost.Host.HostCancel:=DWCHostCancel;
+     DWCHost.Host.Alignment:=DWCOTG_DMA_ALIGNMENT;
+     DWCHost.Host.Multiplier:=DWCOTG_DMA_MULTIPLIER;
+     DWCHost.Host.MaxTransfer:=DWC_HOST_CHANNEL_TRANSFER_SIZE and not(3);
+     {DWCOTG}
+     DWCHost.Lock:=INVALID_HANDLE_VALUE;
+     DWCHost.Registers:=nil;
+     DWCHost.SchedulerThread:=INVALID_HANDLE_VALUE;
+     DWCHost.CompletionThread:=INVALID_HANDLE_VALUE;
+     DWCHost.SchedulerMailslot:=INVALID_HANDLE_VALUE;
+     {Channel}
+     DWCHost.ChannelFreeLock:=INVALID_HANDLE_VALUE;
+     DWCHost.ChannelFreeWait:=INVALID_HANDLE_VALUE;
+     DWCHost.StartOfFrameLock:=INVALID_HANDLE_VALUE;
+     {Root Hub (Hub Status)}
+     DWCHost.HubStatus:=GetMem(SizeOf(TUSBHubStatus));
+     DWCHost.HubStatus.wHubStatus:=USB_HUB_STATUS_LOCAL_POWER;
+     DWCHost.HubStatus.wHubChange:=0;
+     {Root Hub (Port Status)}
+     DWCHost.PortStatus:=GetMem(SizeOf(TUSBPortStatus));
+     DWCHost.PortStatus.wPortStatus:=0;
+     DWCHost.PortStatus.wPortChange:=0;
+     {Root Hub (Device Status)}   
+     DWCHost.DeviceStatus:=GetMem(SizeOf(TUSBDeviceStatus));
+     DWCHost.DeviceStatus.wStatus:=USB_DEVICE_STATUS_SELF_POWERED;
+     {Root Hub (Hub Descriptor)}
+     DWCHost.HubDescriptor:=GetMem(SizeOf(TUSBHubDescriptor) + (1 * SizeOf(Byte))); {Allow for Data} {1 because TUSBHubDescriptor already includes 1 element in varData}
+     DWCHost.HubDescriptor.bDescLength:=SizeOf(TUSBHubDescriptor) + (1 * SizeOf(Byte)); {bDescLength is the base size plus the length of the varData}
+     DWCHost.HubDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_HUB;
+     DWCHost.HubDescriptor.bNbrPorts:=1;
+     DWCHost.HubDescriptor.wHubCharacteristics:=0;
+     DWCHost.HubDescriptor.bPwrOn2PwrGood:=0;
+     DWCHost.HubDescriptor.bHubContrCurrent:=0;
+     PUSBHubDescriptorData(@DWCHost.HubDescriptor.varData)^[0]:=$00;  {DeviceRemovable}
+     PUSBHubDescriptorData(@DWCHost.HubDescriptor.varData)^[1]:=$FF;  {PortPwrCtrlMask}
+     {Root Hub (Device Descriptor)}
+     DWCHost.DeviceDescriptor:=GetMem(SizeOf(TUSBDeviceDescriptor));
+     DWCHost.DeviceDescriptor.bLength:=SizeOf(TUSBDeviceDescriptor);
+     DWCHost.DeviceDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_DEVICE;
+     DWCHost.DeviceDescriptor.bcdUSB:=$200;                           {USB version 2.0 (binary coded decimal)}
+     DWCHost.DeviceDescriptor.bDeviceClass:=USB_CLASS_CODE_HUB;
+     DWCHost.DeviceDescriptor.bDeviceSubClass:=0;
+     DWCHost.DeviceDescriptor.bDeviceProtocol:=0;
+     DWCHost.DeviceDescriptor.bMaxPacketSize0:=64;
+     DWCHost.DeviceDescriptor.idVendor:=0;
+     DWCHost.DeviceDescriptor.idProduct:=0;
+     DWCHost.DeviceDescriptor.bcdDevice:=0;
+     DWCHost.DeviceDescriptor.iManufacturer:=2;
+     DWCHost.DeviceDescriptor.iProduct:=1;
+     DWCHost.DeviceDescriptor.iSerialNumber:=0;
+     DWCHost.DeviceDescriptor.bNumConfigurations:=1;
+     {Root Hub (Configuration Descriptor)}
+     DWCHost.HubConfiguration:=GetMem(SizeOf(TDWCRootHubConfiguration));
+     DWCHost.HubConfiguration.ConfigurationDescriptor.bLength:=SizeOf(TUSBConfigurationDescriptor);
+     DWCHost.HubConfiguration.ConfigurationDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_CONFIGURATION;
+     DWCHost.HubConfiguration.ConfigurationDescriptor.wTotalLength:=SizeOf(TDWCRootHubConfiguration);
+     DWCHost.HubConfiguration.ConfigurationDescriptor.bNumInterfaces:=1;
+     DWCHost.HubConfiguration.ConfigurationDescriptor.bConfigurationValue:=1;
+     DWCHost.HubConfiguration.ConfigurationDescriptor.iConfiguration:=0;
+     DWCHost.HubConfiguration.ConfigurationDescriptor.bmAttributes:=USB_CONFIGURATION_ATTRIBUTE_RESERVED_HIGH or USB_CONFIGURATION_ATTRIBUTE_SELF_POWERED;
+     DWCHost.HubConfiguration.ConfigurationDescriptor.bMaxPower:=0;
+     {Root Hub (Interface Descriptor)}
+     DWCHost.HubConfiguration.InterfaceDescriptor.bLength:=SizeOf(TUSBInterfaceDescriptor);
+     DWCHost.HubConfiguration.InterfaceDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_INTERFACE;
+     DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceNumber:=0;
+     DWCHost.HubConfiguration.InterfaceDescriptor.bAlternateSetting:=0;
+     DWCHost.HubConfiguration.InterfaceDescriptor.bNumEndpoints:=1;
+     DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceClass:=USB_CLASS_CODE_HUB;
+     DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceSubClass:=0;
+     DWCHost.HubConfiguration.InterfaceDescriptor.bInterfaceProtocol:=0;
+     DWCHost.HubConfiguration.InterfaceDescriptor.iInterface:=0;
+     {Root Hub (Endpoint Descriptor)}
+     DWCHost.HubConfiguration.EndpointDescriptor.bLength:=SizeOf(TUSBEndpointDescriptor);
+     DWCHost.HubConfiguration.EndpointDescriptor.bDescriptorType:=USB_DESCRIPTOR_TYPE_ENDPOINT;
+     DWCHost.HubConfiguration.EndpointDescriptor.bEndpointAddress:=1 or (USB_DIRECTION_IN shl 7);
+     DWCHost.HubConfiguration.EndpointDescriptor.bmAttributes:=USB_TRANSFER_TYPE_INTERRUPT;
+     DWCHost.HubConfiguration.EndpointDescriptor.wMaxPacketSize:=64;
+     DWCHost.HubConfiguration.EndpointDescriptor.bInterval:=$FF;
+     {Root Hub (Product String)}
+     DWCHost.HubProductString:=GetMem(SizeOf(TUSBStringDescriptor) + (15 * SizeOf(Word))); {Allow for Product Identifier} {15 because TUSBStringDescriptor already includes 1 element in bString}
+     DWCHost.HubProductString.bLength:=SizeOf(TUSBStringDescriptor) + (15 * SizeOf(Word));
+     DWCHost.HubProductString.bDescriptorType:=USB_DESCRIPTOR_TYPE_STRING;
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[0]:=Ord('U');          {UTF-16LE string}
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[1]:=Ord('S');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[2]:=Ord('B');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[3]:=Ord(' ');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[4]:=Ord('2');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[5]:=Ord('.');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[6]:=Ord('0');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[7]:=Ord(' ');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[8]:=Ord('R');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[9]:=Ord('o');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[10]:=Ord('o');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[11]:=Ord('t');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[12]:=Ord(' ');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[13]:=Ord('H');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[14]:=Ord('u');
+     PUSBStringDescriptorString(@DWCHost.HubProductString.bString)^[15]:=Ord('b');
+     {Root Hub (Language String)}
+     DWCHost.HubLanguageString:=GetMem(SizeOf(TUSBStringDescriptor) + (0 * SizeOf(Word))); {Allow for 16 bit Language Identifier} {0 because TUSBStringDescriptor already includes 1 element in bString}
+     DWCHost.HubLanguageString.bLength:=SizeOf(TUSBStringDescriptor) + (0 * SizeOf(Word));
+     DWCHost.HubLanguageString.bDescriptorType:=USB_DESCRIPTOR_TYPE_STRING;
+     PWord(@DWCHost.HubLanguageString.bString)^:=USB_LANGID_US_ENGLISH;
+     {Root Hub (Manufacturer String)}
+     DWCHost.HubManufacturerString:=GetMem(SizeOf(TUSBStringDescriptor) + (5 * SizeOf(Word))); {Allow for Manufacturer Identifier} {5 because TUSBStringDescriptor already includes 1 element in bString}
+     DWCHost.HubManufacturerString.bLength:=SizeOf(TUSBStringDescriptor) + (5 * SizeOf(Word));
+     DWCHost.HubManufacturerString.bDescriptorType:=USB_DESCRIPTOR_TYPE_STRING;
+     PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[0]:=Ord('U');          {UTF-16LE string}
+     PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[1]:=Ord('l');
+     PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[2]:=Ord('t');
+     PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[3]:=Ord('i');
+     PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[4]:=Ord('b');
+     PUSBStringDescriptorString(@DWCHost.HubManufacturerString.bString)^[5]:=Ord('o');
+     {Root Hub (String Table)}
+     DWCHost.HubStringTable[0]:=DWCHost.HubLanguageString;
+     DWCHost.HubStringTable[1]:=DWCHost.HubProductString;
+     DWCHost.HubStringTable[2]:=DWCHost.HubManufacturerString;
+     
+     {Register USB Host}
+     Status:=USBHostRegister(@DWCHost.Host); 
+     if Status <> ERROR_SUCCESS then
+      begin
+       if USB_LOG_ENABLED then USBLogError(nil,'DWCOTG: Failed to register new USB host: ' + ErrorToString(Status));
+      end;
+    end
+   else
+    begin
+     if USB_LOG_ENABLED then USBLogError(nil,'DWCOTG: Failed to create new USB host');
     end;
-  end
- else
-  begin
-   if USB_LOG_ENABLED then USBLogError(nil,'DWCOTG: Failed to create new USB host');
   end;
- 
+  
  DWCInitialized:=True;
 end;
 

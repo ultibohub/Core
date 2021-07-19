@@ -2028,6 +2028,7 @@ begin
      BCM2711EMMC0Host.SDHCI.HostHardwareReset:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetPower:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetClock:=nil;
+     BCM2711EMMC0Host.SDHCI.HostSetTiming:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetControlRegister:=nil;
      BCM2711EMMC0Host.SDHCI.HostPrepareDMA:=nil;
@@ -2094,6 +2095,7 @@ begin
      BCM2711EMMC2Host.SDHCI.HostHardwareReset:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetPower:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetClock:=nil;
+     BCM2711EMMC2Host.SDHCI.HostSetTiming:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetControlRegister:=nil;
      BCM2711EMMC2Host.SDHCI.HostPrepareDMA:=nil;
@@ -9922,7 +9924,7 @@ begin
  OldValue:=PLongWord(PtrUInt(SDHCI.Address) + PtrUInt(Reg and not(3)))^;
  
  {Memory Barrier}
- DataMemoryBarrier;{After the Last Read} 
+ DataMemoryBarrier; {After the Last Read} 
  
  {Get Byte, Shift and Mask}
  ByteNo:=(Reg and 3);
@@ -10256,6 +10258,15 @@ begin
  {Get SDHCI}
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
+ 
+ {Check Non Removable}
+ if MMCIsNonRemovable(MMC) then
+  begin
+   MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
  
  {$IF DEFINED(BCM2711_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC BCM2711 Get Card Detect (SDHCI_PRESENT_STATE=' + IntToHex(SDHCIHostReadLong(SDHCI,SDHCI_PRESENT_STATE),8) + ')');
