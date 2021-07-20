@@ -2029,6 +2029,7 @@ begin
      BCM2711EMMC0Host.SDHCI.HostSetPower:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetClock:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetTiming:=nil;
+     BCM2711EMMC0Host.SDHCI.HostSetBusWidth:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC0Host.SDHCI.HostSetControlRegister:=nil;
      BCM2711EMMC0Host.SDHCI.HostPrepareDMA:=nil;
@@ -2096,6 +2097,7 @@ begin
      BCM2711EMMC2Host.SDHCI.HostSetPower:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetClock:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetTiming:=nil;
+     BCM2711EMMC2Host.SDHCI.HostSetBusWidth:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetClockDivider:=nil;
      BCM2711EMMC2Host.SDHCI.HostSetControlRegister:=nil;
      BCM2711EMMC2Host.SDHCI.HostPrepareDMA:=nil;
@@ -2109,7 +2111,7 @@ begin
      BCM2711EMMC2Host.SDHCI.DeviceSetIOS:=nil;
      {Driver}
      BCM2711EMMC2Host.SDHCI.Address:=Pointer(BCM2838_EMMC2_REGS_BASE);
-     BCM2711EMMC0Host.SDHCI.DMASlave:=DMA_DREQ_ID_NONE; {EMMC2 controller supports ADMA2}
+     BCM2711EMMC2Host.SDHCI.DMASlave:=DMA_DREQ_ID_NONE; {EMMC2 controller supports ADMA2}
      {BCM2711}
      BCM2711EMMC2Host.Id:=2;
      BCM2711EMMC2Host.IRQ:=BCM2838_IRQ_EMMC2;

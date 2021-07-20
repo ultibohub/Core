@@ -2364,6 +2364,7 @@ type
  TSDHCIHostSetPower = function(SDHCI:PSDHCIHost;Power:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetClock = function(SDHCI:PSDHCIHost;Clock:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetTiming = function(SDHCI:PSDHCIHost;Timing:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSetBusWidth = function(SDHCI:PSDHCIHost;BusWidth:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetClockDivider = function(SDHCI:PSDHCIHost;Index:Integer;Divider:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostSetControlRegister = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostPrepareDMA = function(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -2389,6 +2390,7 @@ type
   HostSetPower:TSDHCIHostSetPower;                 {A Host specific HostSetPower method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostSetClock:TSDHCIHostSetClock;                 {A Host specific HostSetClock method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostSetTiming:TSDHCIHostSetTiming;               {A Host specific HostSetTiming method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostSetBusWidth:TSDHCIHostSetBusWidth;           {A Host specific HostSetBusWidth method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostSetClockDivider:TSDHCIHostSetClockDivider;
   HostSetControlRegister:TSDHCIHostSetControlRegister;
   HostPrepareDMA:TSDHCIHostPrepareDMA;             {A Host specific HostPrepareDMA method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
@@ -2621,6 +2623,7 @@ function SDHCIHostHardwareReset(SDHCI:PSDHCIHost):LongWord;
 function SDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 function SDHCIHostSetClock(SDHCI:PSDHCIHost;Clock:LongWord):LongWord;
 function SDHCIHostSetTiming(SDHCI:PSDHCIHost;Timing:LongWord):LongWord;
+function SDHCIHostSetBusWidth(SDHCI:PSDHCIHost;BusWidth:LongWord):LongWord;
 
 function SDHCIHostPrepareDMA(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord; 
 function SDHCIHostStartDMA(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;
@@ -5986,11 +5989,16 @@ begin
      
      {Switch to High Speed if supported}
      Result:=SDDeviceSwitchHighspeed(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Set Timing}
-     Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
+     if Result = MMC_STATUS_SUCCESS then
+      begin
+       {Set Timing}
+       Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
+       if Result <> MMC_STATUS_SUCCESS then Exit;
+      end
+     else if Result <> MMC_STATUS_UNSUPPORTED_REQUEST then
+      begin
+       Exit;
+      end; 
      
      {Set Clock}
      Result:=MMCDeviceSetClock(MMC,SDGetMaxClock(MMC));
@@ -6972,34 +6980,14 @@ begin
    {Set Power}
    SDHCIHostSetPower(SDHCI,FirstBitSet(SDHCI.Voltages));
             
-   {Set Bus Width}  
-   Control:=SDHCIHostReadByte(SDHCI,SDHCI_HOST_CONTROL);
-   if MMC.BusWidth = MMC_BUS_WIDTH_8 then
-    begin
-     Control:=Control and not(SDHCI_CTRL_4BITBUS);
-     if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
-      begin
-       Control:=Control or SDHCI_CTRL_8BITBUS;
-      end;
-    end
-   else
-    begin
-     if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
-      begin
-       Control:=Control and not(SDHCI_CTRL_8BITBUS);
-      end;
-     if MMC.BusWidth = MMC_BUS_WIDTH_4 then 
-      begin
-       Control:=Control or SDHCI_CTRL_4BITBUS;
-      end
-     else
-      begin
-       Control:=Control and not(SDHCI_CTRL_4BITBUS);
-      end;      
-    end;
+   {Set Bus Width}
+   SDHCIHostSetBusWidth(SDHCI,MMC.BusWidth);
    
    {Update Bus Width}  
    SDHCI.BusWidth:=MMC.BusWidth;
+   
+   {Get Control}
+   Control:=SDHCIHostReadByte(SDHCI,SDHCI_HOST_CONTROL);
    
    {Check High Speed Timing}
    if (MMC.Timing = MMC_TIMING_SD_HS) or
@@ -7640,7 +7628,7 @@ begin
  {Check Spec Version}
  if MMC.SDConfigurationData.SpecVersion < SD_SCR_SPEC_VER_1 then
   begin
-   Result:=MMC_STATUS_SUCCESS;
+   Result:=MMC_STATUS_UNSUPPORTED_REQUEST;
    Exit;
   end;
  
@@ -7649,7 +7637,7 @@ begin
   begin
    if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Switch Highspeed card does not support Switch Class');
    
-   Result:=MMC_STATUS_SUCCESS;
+   Result:=MMC_STATUS_UNSUPPORTED_REQUEST;
    Exit;
   end;
  
@@ -7658,7 +7646,7 @@ begin
   begin
    if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Switch Highspeed host does not support Highspeed');
    
-   Result:=MMC_STATUS_SUCCESS;
+   Result:=MMC_STATUS_UNSUPPORTED_REQUEST;
    Exit;
   end;
   
@@ -7667,7 +7655,7 @@ begin
   begin
    if MMC_LOG_ENABLED then MMCLogWarn(nil,'SD Switch Highspeed card does not support Highspeed');
    
-   Result:=MMC_STATUS_SUCCESS;
+   Result:=MMC_STATUS_UNSUPPORTED_REQUEST;
    Exit;
   end;
  
@@ -9841,6 +9829,68 @@ begin
   
  //See: sdhci_set_uhs_signaling in sdhci.c
  //     sdhci_host->set_uhs_signaling in sdhci.h
+end;
+
+{==============================================================================}
+
+function SDHCIHostSetBusWidth(SDHCI:PSDHCIHost;BusWidth:LongWord):LongWord;
+{Default set bus width function for SDHCI host controllers}
+
+{Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
+var
+ Control:Byte;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Set Bus Width (BusWidth=' + MMCBusWidthToString(BusWidth) + ')');
+ {$ENDIF}
+ 
+ {Check Set Bus Width}
+ if Assigned(SDHCI.HostSetBusWidth) then
+  begin
+   {Host Set Bus Width Method}
+   Result:=SDHCI.HostSetBusWidth(SDHCI,BusWidth);
+  end
+ else
+  begin
+   {Default Set Bus Width Method}
+   Control:=SDHCIHostReadByte(SDHCI,SDHCI_HOST_CONTROL);
+   if BusWidth = MMC_BUS_WIDTH_8 then
+    begin
+     Control:=Control and not(SDHCI_CTRL_4BITBUS);
+     if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
+      begin
+       Control:=Control or SDHCI_CTRL_8BITBUS;
+      end;
+    end
+   else
+    begin
+     if SDHCIGetVersion(SDHCI) >= SDHCI_SPEC_300 then
+      begin
+       Control:=Control and not(SDHCI_CTRL_8BITBUS);
+      end;
+     if BusWidth = MMC_BUS_WIDTH_4 then 
+      begin
+       Control:=Control or SDHCI_CTRL_4BITBUS;
+      end
+     else
+      begin
+       Control:=Control and not(SDHCI_CTRL_4BITBUS);
+      end;      
+    end;
+
+   {Set Control}
+   SDHCIHostWriteByte(SDHCI,SDHCI_HOST_CONTROL,Control);
+   
+   Result:=MMC_STATUS_SUCCESS;
+  end;
+  
+ //See: sdhci_set_bus_width in sdhci.c
 end;
 
 {==============================================================================}
@@ -12071,6 +12121,7 @@ begin
  Result.HostSetPower:=nil;
  Result.HostSetClock:=nil;
  Result.HostSetTiming:=nil;
+ Result.HostSetBusWidth:=nil;
  Result.HostSetClockDivider:=nil;
  Result.HostSetControlRegister:=nil;
  Result.HostPrepareDMA:=nil;

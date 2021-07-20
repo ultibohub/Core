@@ -655,6 +655,7 @@ begin
    PL18XSDHCI.SDHCI.HostSetPower:=nil;
    PL18XSDHCI.SDHCI.HostSetClock:=nil;
    PL18XSDHCI.SDHCI.HostSetTiming:=nil;
+   PL18XSDHCI.SDHCI.HostSetBusWidth:=nil;
    PL18XSDHCI.SDHCI.HostSetClockDivider:=nil;
    PL18XSDHCI.SDHCI.HostSetControlRegister:=nil;
    PL18XSDHCI.SDHCI.HostPrepareDMA:=nil;
@@ -756,6 +757,7 @@ begin
    PL18XSDHCI.SDHCI.HostSetPower:=nil;
    PL18XSDHCI.SDHCI.HostSetClock:=nil;
    PL18XSDHCI.SDHCI.HostSetTiming:=nil;
+   PL18XSDHCI.SDHCI.HostSetBusWidth:=nil;
    PL18XSDHCI.SDHCI.HostSetClockDivider:=nil;
    PL18XSDHCI.SDHCI.HostSetControlRegister:=nil;
    PL18XSDHCI.SDHCI.HostPrepareDMA:=nil;
@@ -865,10 +867,7 @@ begin
  
  {Get Card Detect}
  Result:=MMCDeviceGetCardDetect(MMC);
- if Result <> MMC_STATUS_SUCCESS then
-  begin
-   Exit;
-  end;
+ if Result <> MMC_STATUS_SUCCESS then Exit;
  
  {Check Card Detect}
  if (MMC.Device.DeviceFlags and MMC_FLAG_CARD_PRESENT) = 0 then
@@ -887,27 +886,17 @@ begin
  
  {Set Initial Bus Width}
  Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_1);
- if Result <> MMC_STATUS_SUCCESS then
-  begin
-   Exit;
-  end;
+ if Result <> MMC_STATUS_SUCCESS then Exit;
  
  {Set Initial Clock}
  Result:=MMCDeviceSetClock(MMC,MMC_BUS_SPEED_DEFAULT);
- if Result <> MMC_STATUS_SUCCESS then
-  begin
-   Exit;
-  end;
+ if Result <> MMC_STATUS_SUCCESS then Exit;
  
  {Perform an SDIO Reset}
  SDIODeviceReset(MMC);
  
  {Set the Card to Idle State}
- Result:=MMCDeviceGoIdle(MMC);
- if Result <> MMC_STATUS_SUCCESS then
-  begin
-   Exit;
-  end;
+ MMCDeviceGoIdle(MMC);
  
  {Get the Interface Condition}
  SDDeviceSendInterfaceCondition(MMC);
@@ -928,10 +917,7 @@ begin
  
    {Get the Operation Condition}
    Result:=SDIODeviceSendOperationCondition(MMC,False);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    //To Do //See MMC
 
@@ -961,31 +947,19 @@ begin
 
    {Get Card Identification}
    Result:=SDDeviceGetCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;      
+   if Result <> MMC_STATUS_SUCCESS then Exit;
     
    {Get Relative Address}
    Result:=SDDeviceSendRelativeAddress(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Get Card Specific}
    Result:=SDDeviceGetCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Decode Card Identification}
    Result:=SDDeviceDecodeCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Set Driver Stage}
    if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
@@ -995,89 +969,63 @@ begin
    
    {Select Card}
    Result:=MMCDeviceSelectCard(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Get SD Configuration}
    Result:=SDDeviceSendSDConfiguration(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Decode SD Configuration}
    Result:=SDDeviceDecodeSDConfiguration(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
     
    {Get SD Status}
    Result:=SDDeviceSendSDStatus(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Decode SD Status}
    Result:=SDDeviceDecodeSDStatus(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Get Switch}
    Result:=SDDeviceSendSDSwitch(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
   
    {Decode Switch}
    Result:=SDDeviceDecodeSDSwitch(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Check Write Protect}
    Result:=MMCDeviceGetWriteProtect(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
 
    //To Do //Check for UHS-I and do UHS-I init //See MMC
    
    {Switch to High Speed if supported}
    Result:=SDDeviceSwitchHighspeed(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
+   if Result = MMC_STATUS_SUCCESS then
+    begin
+     {Set Timing}
+     Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end
+   else if Result <> MMC_STATUS_UNSUPPORTED_REQUEST then
     begin
      Exit;
-    end;
+    end; 
    
    {Set Clock}
    Result:=MMCDeviceSetClock(MMC,SDGetMaxClock(MMC));
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Switch to 4 bit bus if supported}
    if ((SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
     begin
      Result:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+
      Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-     if Result <> MMC_STATUS_SUCCESS then
-      begin
-       Exit;
-      end;
+     if Result <> MMC_STATUS_SUCCESS then Exit;
     end;
   
    {Update Device}
@@ -1120,45 +1068,27 @@ begin
    
    {Get the Operation Condition}
    Result:=MMCDeviceSendOperationCondition(MMC,False);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Get Card Identification}
    Result:=MMCDeviceSendAllCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
 
    {Set Relative Address}
    Result:=MMCDeviceSetRelativeAddress(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Get Card Specific}
    Result:=MMCDeviceSendCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Decode Card Specific (Must be before CID)}
    Result:=MMCDeviceDecodeCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Decode Card Identification}
    Result:=MMCDeviceDecodeCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Set Driver Stage}
    if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
@@ -1168,24 +1098,15 @@ begin
    
    {Select Card}
    Result:=MMCDeviceSelectCard(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    {Get Extended Card Specific}
    Result:=MMCDeviceGetExtendedCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
 
    {Decode Extended Card Specific}
    Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then
-    begin
-     Exit;
-    end;
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
    //Setup Byte/Sector(Block) addressing
    

@@ -1831,6 +1831,7 @@ begin
      BCM2708SDHCIHost.SDHCI.HostSetPower:=nil;
      BCM2708SDHCIHost.SDHCI.HostSetClock:=nil;
      BCM2708SDHCIHost.SDHCI.HostSetTiming:=nil;
+     BCM2708SDHCIHost.SDHCI.HostSetBusWidth:=nil;
      BCM2708SDHCIHost.SDHCI.HostSetClockDivider:=nil;
      BCM2708SDHCIHost.SDHCI.HostSetControlRegister:=nil;
      BCM2708SDHCIHost.SDHCI.HostPrepareDMA:=nil;

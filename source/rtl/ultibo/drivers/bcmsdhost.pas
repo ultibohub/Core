@@ -385,6 +385,7 @@ begin
    BCMSDHOSTHost.SDHCI.HostSetPower:=BCMSDHOSTSetPower;
    BCMSDHOSTHost.SDHCI.HostSetClock:=BCMSDHOSTSetClock;
    BCMSDHOSTHost.SDHCI.HostSetTiming:=nil;
+   BCMSDHOSTHost.SDHCI.HostSetBusWidth:=nil;
    BCMSDHOSTHost.SDHCI.HostSetClockDivider:=nil;
    BCMSDHOSTHost.SDHCI.HostSetControlRegister:=nil;
    BCMSDHOSTHost.SDHCI.HostPrepareDMA:=nil;
