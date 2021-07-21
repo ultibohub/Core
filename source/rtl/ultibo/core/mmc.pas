@@ -3473,7 +3473,6 @@ end;
 
 function MMCDeviceInitializeSDIO(MMC:PMMCDevice):LongWord; 
 var
- Size:LongWord;
  SDHCI:PSDHCIHost;
 begin
  {}
@@ -3490,7 +3489,37 @@ begin
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
  
- //To Do //mmc_sdio_init_card
+ {Check for an SDIO Card}
+ if SDIODeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
+  begin
+   {SDIO Card}
+   MMC.MMCState:=MMC_STATE_INSERTED;
+   MMC.Device.DeviceBus:=DEVICE_BUS_SD;
+   MMC.Device.DeviceType:=MMC_TYPE_SDIO;
+   if (MMC.OperationCondition and SDIO_RSP_R4_MEMORY_PRESENT) <> 0 then MMC.Device.DeviceType:=MMC_TYPE_SD_COMBO;
+   MMC.RelativeCardAddress:=0;
+   
+   {$IFDEF MMC_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize Card Type is SDIO');
+   {$ENDIF}
+ 
+   {Get the Operation Condition}
+   Result:=SDIODeviceSendOperationCondition(MMC,False);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   //To Do //TestingSDIO //mmc_sdio_init_card
+
+   {Update Device}
+   if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
+   
+   {Update Storage}
+   MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
+   
+   //To Do //TestingSDIO //mmc_sdio_init_card
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
  
  //See: mmc_sdio_init_card in \drivers\mmc\core\sdio.c
  //     mmc_attach_sdio in \drivers\mmc\core\sdio.c
@@ -3500,7 +3529,6 @@ end;
 
 function MMCDeviceInitializeSD(MMC:PMMCDevice):LongWord; 
 var
- Size:LongWord;
  SDHCI:PSDHCIHost;
 begin
  {}
@@ -3517,7 +3545,150 @@ begin
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
  
- //To Do //mmc_sd_init_card
+ {Check for an SD Card}
+ if SDDeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
+  begin
+   {SD Card}
+   MMC.MMCState:=MMC_STATE_INSERTED;
+   MMC.Device.DeviceBus:=DEVICE_BUS_SD;
+   MMC.Device.DeviceType:=MMC_TYPE_SD;
+   MMC.RelativeCardAddress:=0;
+   
+   {$IFDEF MMC_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize Card Type is SD');
+   {$ENDIF}
+ 
+   {Check for SPI}
+   if SDHCIIsSPI(SDHCI) then
+    begin
+     {Set the Card to Idle State}
+     MMCDeviceGoIdle(MMC);
+     
+     {Read the Operation Condition}
+     Result:=MMCDeviceSPIReadOperationCondition(MMC,False);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+
+   {Get Card Identification}
+   Result:=SDDeviceGetCardIdentification(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+    
+   {Check for SPI}
+   if not(SDHCIIsSPI(SDHCI)) then
+    begin
+     {Get Relative Address}
+     Result:=SDDeviceSendRelativeAddress(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;  
+   
+   {Get Card Specific}
+   Result:=SDDeviceGetCardSpecific(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Decode Card Identification}
+   Result:=SDDeviceDecodeCardIdentification(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Set Driver Stage}
+   if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
+    begin
+     MMCDeviceSetDriverStage(MMC,SDHCI.DriverStageRegister);
+    end;
+   
+   {Check for SPI}
+   if not(SDHCIIsSPI(SDHCI)) then
+    begin
+     {Select Card}
+     Result:=MMCDeviceSelectCard(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end; 
+   
+   {Get SD Configuration}
+   Result:=SDDeviceSendSDConfiguration(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Decode SD Configuration}
+   Result:=SDDeviceDecodeSDConfiguration(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Get SD Status}
+   Result:=SDDeviceSendSDStatus(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+
+   {Decode SD Status}
+   Result:=SDDeviceDecodeSDStatus(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Set Erase Size}
+   MMCDeviceSetEraseSize(MMC);
+   
+   {Get Switch}
+   Result:=SDDeviceSendSDSwitch(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+  
+   {Decode Switch}
+   Result:=SDDeviceDecodeSDSwitch(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Check for SPI}
+   if SDHCIIsSPI(SDHCI) then
+    begin
+     {Enable SPI CRC} {Located AFTER the reading of the card registers because some SDHC cards are not able to provide valid CRCs for non-512-byte blocks}
+     Result:=MMCDeviceSPISetCRC(MMC,True);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+   
+   {Check Write Protect}
+   Result:=MMCDeviceGetWriteProtect(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+
+   //To Do //Check for UHS-I and do UHS-I init //mmc_sd_init_uhs_card etc
+   
+   {Switch to High Speed if supported}
+   Result:=SDDeviceSwitchHighspeed(MMC);
+   if Result = MMC_STATUS_SUCCESS then
+    begin
+     {Set Timing}
+     Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end
+   else if Result <> MMC_STATUS_UNSUPPORTED_REQUEST then
+    begin
+     Exit;
+    end; 
+   
+   {Set Clock}
+   Result:=MMCDeviceSetClock(MMC,SDGetMaxClock(MMC));
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Switch to 4 bit bus if supported}
+   if ((SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
+    begin
+     Result:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+
+     Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+  
+   {Update Device}
+   if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
+
+   {Update Storage}
+   {Device}
+   MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
+   MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags and not(STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA);
+   if (MMC.Device.DeviceFlags and MMC_FLAG_WRITE_PROTECT) <> 0 then MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags or STORAGE_FLAG_READ_ONLY;
+   {Storage}
+   {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
+   {Driver}
+   MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
+   MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
+   MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
  
  //See: mmc_sd_init_card in \drivers\mmc\core\sd.c
  //     mmc_attach_sd in \drivers\mmc\core\sd.c
@@ -3528,7 +3699,6 @@ end;
 
 function MMCDeviceInitializeMMC(MMC:PMMCDevice):LongWord; 
 var
- Size:LongWord;
  SDHCI:PSDHCIHost;
 begin
  {}
@@ -3545,7 +3715,226 @@ begin
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
  
- //To Do //mmc_init_card
+ {Check for an MMC Card}
+ if MMCDeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
+  begin
+   {MMC Card}
+   MMC.MMCState:=MMC_STATE_INSERTED;
+   MMC.Device.DeviceBus:=DEVICE_BUS_MMC;
+   MMC.Device.DeviceType:=MMC_TYPE_MMC;
+   MMC.RelativeCardAddress:=1;
+   
+   {$IFDEF MMC_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize Card Type is MMC');
+   {$ENDIF}
+ 
+   {Check for SPI}
+   if SDHCIIsSPI(SDHCI) then
+    begin
+     {Set the Card to Idle State}
+     MMCDeviceGoIdle(MMC);
+     
+     {Read the Operation Condition}
+     Result:=MMCDeviceSPIReadOperationCondition(MMC,False);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+   
+   {Set the Card to Idle State}
+   MMCDeviceGoIdle(MMC);
+   
+   {Set the High Capacity bit in the Operation Conditions}
+   MMC.OperationCondition:=MMC.OperationCondition or MMC_OCR_HCS;
+   
+   {Get the Operation Condition}
+   Result:=MMCDeviceSendOperationCondition(MMC,False);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Check for SPI}
+   if SDHCIIsSPI(SDHCI) then
+    begin
+     {Enable SPI CRC}
+     Result:=MMCDeviceSPISetCRC(MMC,True);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+      
+     {Get Card Identification}
+     Result:=MMCDeviceSendCardIdentification(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end
+   else
+    begin
+     {Get Card Identification}
+     Result:=MMCDeviceSendAllCardIdentification(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+
+     {Set Relative Address}
+     Result:=MMCDeviceSetRelativeAddress(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;      
+   
+   {Get Card Specific}
+   Result:=MMCDeviceSendCardSpecific(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Decode Card Specific (Must be before CID)}
+   Result:=MMCDeviceDecodeCardSpecific(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Decode Card Identification}
+   Result:=MMCDeviceDecodeCardIdentification(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Set Driver Stage}
+   if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
+    begin
+     MMCDeviceSetDriverStage(MMC,SDHCI.DriverStageRegister);
+    end;
+   
+   {Check for SPI}
+   if not(SDHCIIsSPI(SDHCI)) then
+    begin
+     {Select Card}
+     Result:=MMCDeviceSelectCard(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end; 
+   
+   {Get Extended Card Specific}
+   Result:=MMCDeviceSendExtendedCardSpecific(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+
+   {Decode Extended Card Specific}
+   Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Check for Block Addressing}
+   if (MMC.OperationCondition and MMC_OCR_HCS) <> 0 then
+    begin
+     MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_BLOCK_ADDRESSED);
+    end;
+   
+   {Set Erase Size}
+   MMCDeviceSetEraseSize(MMC);
+ 
+   {Enable ERASE_GRP_DEF}
+   if MMC.ExtendedCardSpecificData.Revision >= 3 then
+    begin
+     Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_ERASE_GROUP_DEF,1,MMC.ExtendedCardSpecificData.GenericCMD6Time);
+     if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+     
+     if Result = MMC_STATUS_INVALID_DATA then
+      begin
+       Result:=MMC_STATUS_SUCCESS;
+      
+       {Disable Enhanced Area Offset and Size}
+       MMC.ExtendedCardSpecificData.EnhancedAreaOffset:=0;
+       MMC.ExtendedCardSpecificData.EnhancedAreaSize:=0;
+      end
+     else
+      begin
+       MMC.ExtendedCardSpecificData.EraseGroupDef:=$01;
+       
+       {Recalculate Erase Size}
+       MMCDeviceSetEraseSize(MMC);
+      end;
+    end;
+    
+   {Ensure eMMC user default partition is enabled} 
+   if (MMC.ExtendedCardSpecificData.PartConfig and EXT_CSD_PART_CONFIG_ACC_MASK) <> 0 then
+    begin
+     MMC.ExtendedCardSpecificData.PartConfig:=MMC.ExtendedCardSpecificData.PartConfig and not(EXT_CSD_PART_CONFIG_ACC_MASK);
+     
+     Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_PART_CONFIG,MMC.ExtendedCardSpecificData.PartConfig,MMC.ExtendedCardSpecificData.PartitionSwitchTime);
+     if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+    end;
+   
+   {Enable power_off_notification byte}
+   if MMC.ExtendedCardSpecificData.Revision >= 6 then
+    begin
+     Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_POWER_OFF_NOTIFICATION,EXT_CSD_POWER_ON,MMC.ExtendedCardSpecificData.GenericCMD6Time);
+     if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+     
+     if Result = MMC_STATUS_SUCCESS then MMC.ExtendedCardSpecificData.PowerOffNotification:=EXT_CSD_POWER_ON;
+    end;
+   
+   {Set Erase Argument}
+   if (MMC.ExtendedCardSpecificData.FeatureSupport and MMC_DISCARD_FEATURE) <> 0 then
+    begin
+     MMC.EraseArgument:=MMC_DISCARD_ARG;
+    end
+   else if (MMC.ExtendedCardSpecificData.SecFeatureSupport and EXT_CSD_SEC_GB_CL_EN) <> 0 then
+    begin
+     MMC.EraseArgument:=MMC_TRIM_ARG;
+    end
+   else
+    begin
+     MMC.EraseArgument:=MMC_ERASE_ARG;
+    end;
+   
+   {Select Timing}
+   Result:=MMCDeviceSelectTiming(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   if MMC.Timing = MMC_TIMING_MMC_HS200 then
+    begin
+     {Not currently supported}
+    end
+   else if not(MMC.EnhancedStrobe) then
+    begin
+     {Select the Bus Width}
+     Result:=MMCDeviceSelectBusWidth(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+     
+     if (MMC.BusWidth > MMC_BUS_WIDTH_1) and ((MMC.Timing = MMC_TIMING_SD_HS) or (MMC.Timing = MMC_TIMING_MMC_HS)) then
+      begin
+       Result:=MMCDeviceSelectHSDDR(MMC);
+       if Result <> MMC_STATUS_SUCCESS then Exit;
+      end;
+    end;
+    
+   {Select Power Class}
+   Result:=MMCDeviceSelectPowerClass(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Enable HPI Feature}
+   {Not currently supported}
+   
+   {Enable Cache if present}
+   if MMC.ExtendedCardSpecificData.CacheSize > 0 then
+    begin
+     Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_CACHE_CTRL,1,Max(MMC.ExtendedCardSpecificData.GenericCMD6Time,MMC_MIN_CACHE_EN_TIMEOUT_MS));
+     if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
+     
+     if Result = MMC_STATUS_SUCCESS then MMC.ExtendedCardSpecificData.CacheControl:=1 else MMC.ExtendedCardSpecificData.CacheControl:=0;
+    end;
+    
+   {Enable Command Queue} 
+   {Not currently supported}
+   
+   {Update Device}
+   if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
+
+   {Update Storage}
+   MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
+   MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags and not(STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA);
+   if (MMC.Device.DeviceFlags and MMC_FLAG_WRITE_PROTECT) <> 0 then MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags or STORAGE_FLAG_READ_ONLY;
+   {Storage}
+   {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
+   {Driver}
+   if MMCHasExtendedCSD(MMC) then
+    begin
+     MMC.Storage.BlockSize:=MMC.ExtendedCardSpecificData.DataSectorSize;
+     MMC.Storage.BlockCount:=MMC.ExtendedCardSpecificData.Sectors;
+     MMC.Storage.BlockShift:=FirstBitSet(MMC.ExtendedCardSpecificData.DataSectorSize);
+    end
+   else
+    begin
+     MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
+     MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
+     MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
+    end; 
+   
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
  
  //See: mmc_init_card in \drivers\mmc\core\mmc.c
  //     mmc_attach_mmc in \drivers\mmc\core\mmc.c
@@ -5857,402 +6246,16 @@ begin
    SDDeviceSendInterfaceCondition(MMC);
  
    {Check for an SDIO Card}
-   if SDIODeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
-    begin
-     {SDIO Card}
-     MMC.MMCState:=MMC_STATE_INSERTED;
-     MMC.Device.DeviceBus:=DEVICE_BUS_SD;
-     MMC.Device.DeviceType:=MMC_TYPE_SDIO;
-     if (MMC.OperationCondition and SDIO_RSP_R4_MEMORY_PRESENT) <> 0 then MMC.Device.DeviceType:=MMC_TYPE_SD_COMBO;
-     MMC.RelativeCardAddress:=0;
-     
-     {$IFDEF MMC_DEBUG}
-     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize Card Type is SDIO');
-     {$ENDIF}
-   
-     {Get the Operation Condition}
-     Result:=SDIODeviceSendOperationCondition(MMC,False);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     //To Do //TestingSDIO
-
-     {Update Device}
-     if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
-     
-     {Update Storage}
-     MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
-     
-     //To Do //TestingSDIO
-     
-     Result:=MMC_STATUS_SUCCESS;
-     Exit;
-    end;
+   Result:=MMCDeviceInitializeSDIO(MMC);
+   if Result = MMC_STATUS_SUCCESS then Exit;
    
    {Check for an SD Card}
-   if SDDeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
-    begin
-     {SD Card}
-     MMC.MMCState:=MMC_STATE_INSERTED;
-     MMC.Device.DeviceBus:=DEVICE_BUS_SD;
-     MMC.Device.DeviceType:=MMC_TYPE_SD;
-     MMC.RelativeCardAddress:=0;
-     
-     {$IFDEF MMC_DEBUG}
-     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize Card Type is SD');
-     {$ENDIF}
-   
-     {Check for SPI}
-     if SDHCIIsSPI(SDHCI) then
-      begin
-       {Set the Card to Idle State}
-       MMCDeviceGoIdle(MMC);
-       
-       {Read the Operation Condition}
-       Result:=MMCDeviceSPIReadOperationCondition(MMC,False);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end;
-
-     {Get Card Identification}
-     Result:=SDDeviceGetCardIdentification(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-      
-     {Check for SPI}
-     if not(SDHCIIsSPI(SDHCI)) then
-      begin
-       {Get Relative Address}
-       Result:=SDDeviceSendRelativeAddress(MMC);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end;  
-     
-     {Get Card Specific}
-     Result:=SDDeviceGetCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Decode Card Identification}
-     Result:=SDDeviceDecodeCardIdentification(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Set Driver Stage}
-     if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
-      begin
-       MMCDeviceSetDriverStage(MMC,SDHCI.DriverStageRegister);
-      end;
-     
-     {Check for SPI}
-     if not(SDHCIIsSPI(SDHCI)) then
-      begin
-       {Select Card}
-       Result:=MMCDeviceSelectCard(MMC);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end; 
-     
-     {Get SD Configuration}
-     Result:=SDDeviceSendSDConfiguration(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Decode SD Configuration}
-     Result:=SDDeviceDecodeSDConfiguration(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Get SD Status}
-     Result:=SDDeviceSendSDStatus(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-
-     {Decode SD Status}
-     Result:=SDDeviceDecodeSDStatus(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Set Erase Size}
-     MMCDeviceSetEraseSize(MMC);
-     
-     {Get Switch}
-     Result:=SDDeviceSendSDSwitch(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-    
-     {Decode Switch}
-     Result:=SDDeviceDecodeSDSwitch(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Check for SPI}
-     if SDHCIIsSPI(SDHCI) then
-      begin
-       {Enable SPI CRC} {Located AFTER the reading of the card registers because some SDHC cards are not able to provide valid CRCs for non-512-byte blocks}
-       Result:=MMCDeviceSPISetCRC(MMC,True);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end;
-     
-     {Check Write Protect}
-     Result:=MMCDeviceGetWriteProtect(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-  
-     //To Do //Check for UHS-I and do UHS-I init //mmc_sd_init_uhs_card etc
-     
-     {Switch to High Speed if supported}
-     Result:=SDDeviceSwitchHighspeed(MMC);
-     if Result = MMC_STATUS_SUCCESS then
-      begin
-       {Set Timing}
-       Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end
-     else if Result <> MMC_STATUS_UNSUPPORTED_REQUEST then
-      begin
-       Exit;
-      end; 
-     
-     {Set Clock}
-     Result:=MMCDeviceSetClock(MMC,SDGetMaxClock(MMC));
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Switch to 4 bit bus if supported}
-     if ((SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
-      begin
-       Result:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-
-       Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end;
-    
-     {Update Device}
-     if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
-
-     {Update Storage}
-     {Device}
-     MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
-     MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags and not(STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA);
-     if (MMC.Device.DeviceFlags and MMC_FLAG_WRITE_PROTECT) <> 0 then MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags or STORAGE_FLAG_READ_ONLY;
-     {Storage}
-     {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
-     {Driver}
-     MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
-     MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
-     MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
-     
-     Result:=MMC_STATUS_SUCCESS;
-     Exit;
-    end;
+   Result:=MMCDeviceInitializeSD(MMC);
+   if Result = MMC_STATUS_SUCCESS then Exit;
     
    {Check for an MMC Card}
-   if MMCDeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
-    begin
-     {MMC Card}
-     MMC.MMCState:=MMC_STATE_INSERTED;
-     MMC.Device.DeviceBus:=DEVICE_BUS_MMC;
-     MMC.Device.DeviceType:=MMC_TYPE_MMC;
-     MMC.RelativeCardAddress:=1;
-     
-     {$IFDEF MMC_DEBUG}
-     if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize Card Type is MMC');
-     {$ENDIF}
-   
-     {Check for SPI}
-     if SDHCIIsSPI(SDHCI) then
-      begin
-       {Set the Card to Idle State}
-       MMCDeviceGoIdle(MMC);
-       
-       {Read the Operation Condition}
-       Result:=MMCDeviceSPIReadOperationCondition(MMC,False);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end;
-     
-     {Set the Card to Idle State}
-     MMCDeviceGoIdle(MMC);
-     
-     {Set the High Capacity bit in the Operation Conditions}
-     MMC.OperationCondition:=MMC.OperationCondition or MMC_OCR_HCS;
-     
-     {Get the Operation Condition}
-     Result:=MMCDeviceSendOperationCondition(MMC,False);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Check for SPI}
-     if SDHCIIsSPI(SDHCI) then
-      begin
-       {Enable SPI CRC}
-       Result:=MMCDeviceSPISetCRC(MMC,True);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-        
-       {Get Card Identification}
-       Result:=MMCDeviceSendCardIdentification(MMC);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end
-     else
-      begin
-       {Get Card Identification}
-       Result:=MMCDeviceSendAllCardIdentification(MMC);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-
-       {Set Relative Address}
-       Result:=MMCDeviceSetRelativeAddress(MMC);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end;      
-     
-     {Get Card Specific}
-     Result:=MMCDeviceSendCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Decode Card Specific (Must be before CID)}
-     Result:=MMCDeviceDecodeCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Decode Card Identification}
-     Result:=MMCDeviceDecodeCardIdentification(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Set Driver Stage}
-     if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
-      begin
-       MMCDeviceSetDriverStage(MMC,SDHCI.DriverStageRegister);
-      end;
-     
-     {Check for SPI}
-     if not(SDHCIIsSPI(SDHCI)) then
-      begin
-       {Select Card}
-       Result:=MMCDeviceSelectCard(MMC);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-      end; 
-     
-     {Get Extended Card Specific}
-     Result:=MMCDeviceSendExtendedCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-
-     {Decode Extended Card Specific}
-     Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Check for Block Addressing}
-     if (MMC.OperationCondition and MMC_OCR_HCS) <> 0 then
-      begin
-       MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_BLOCK_ADDRESSED);
-      end;
-     
-     {Set Erase Size}
-     MMCDeviceSetEraseSize(MMC);
-   
-     {Enable ERASE_GRP_DEF}
-     if MMC.ExtendedCardSpecificData.Revision >= 3 then
-      begin
-       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_ERASE_GROUP_DEF,1,MMC.ExtendedCardSpecificData.GenericCMD6Time);
-       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
-       
-       if Result = MMC_STATUS_INVALID_DATA then
-        begin
-         Result:=MMC_STATUS_SUCCESS;
-        
-         {Disable Enhanced Area Offset and Size}
-         MMC.ExtendedCardSpecificData.EnhancedAreaOffset:=0;
-         MMC.ExtendedCardSpecificData.EnhancedAreaSize:=0;
-        end
-       else
-        begin
-         MMC.ExtendedCardSpecificData.EraseGroupDef:=$01;
-         
-         {Recalculate Erase Size}
-         MMCDeviceSetEraseSize(MMC);
-        end;
-      end;
-      
-     {Ensure eMMC user default partition is enabled} 
-     if (MMC.ExtendedCardSpecificData.PartConfig and EXT_CSD_PART_CONFIG_ACC_MASK) <> 0 then
-      begin
-       MMC.ExtendedCardSpecificData.PartConfig:=MMC.ExtendedCardSpecificData.PartConfig and not(EXT_CSD_PART_CONFIG_ACC_MASK);
-       
-       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_PART_CONFIG,MMC.ExtendedCardSpecificData.PartConfig,MMC.ExtendedCardSpecificData.PartitionSwitchTime);
-       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
-      end;
-     
-     {Enable power_off_notification byte}
-     if MMC.ExtendedCardSpecificData.Revision >= 6 then
-      begin
-       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_POWER_OFF_NOTIFICATION,EXT_CSD_POWER_ON,MMC.ExtendedCardSpecificData.GenericCMD6Time);
-       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
-       
-       if Result = MMC_STATUS_SUCCESS then MMC.ExtendedCardSpecificData.PowerOffNotification:=EXT_CSD_POWER_ON;
-      end;
-     
-     {Set Erase Argument}
-     if (MMC.ExtendedCardSpecificData.FeatureSupport and MMC_DISCARD_FEATURE) <> 0 then
-      begin
-       MMC.EraseArgument:=MMC_DISCARD_ARG;
-      end
-     else if (MMC.ExtendedCardSpecificData.SecFeatureSupport and EXT_CSD_SEC_GB_CL_EN) <> 0 then
-      begin
-       MMC.EraseArgument:=MMC_TRIM_ARG;
-      end
-     else
-      begin
-       MMC.EraseArgument:=MMC_ERASE_ARG;
-      end;
-     
-     {Select Timing}
-     Result:=MMCDeviceSelectTiming(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     if MMC.Timing = MMC_TIMING_MMC_HS200 then
-      begin
-       {Not currently supported}
-      end
-     else if not(MMC.EnhancedStrobe) then
-      begin
-       {Select the Bus Width}
-       Result:=MMCDeviceSelectBusWidth(MMC);
-       if Result <> MMC_STATUS_SUCCESS then Exit;
-       
-       if (MMC.BusWidth > MMC_BUS_WIDTH_1) and ((MMC.Timing = MMC_TIMING_SD_HS) or (MMC.Timing = MMC_TIMING_MMC_HS)) then
-        begin
-         Result:=MMCDeviceSelectHSDDR(MMC);
-         if Result <> MMC_STATUS_SUCCESS then Exit;
-        end;
-      end;
-      
-     {Select Power Class}
-     Result:=MMCDeviceSelectPowerClass(MMC);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-     
-     {Enable HPI Feature}
-     {Not currently supported}
-     
-     {Enable Cache if present}
-     if MMC.ExtendedCardSpecificData.CacheSize > 0 then
-      begin
-       Result:=MMCDeviceSwitch(MMC,EXT_CSD_CMD_SET_NORMAL,EXT_CSD_CACHE_CTRL,1,Max(MMC.ExtendedCardSpecificData.GenericCMD6Time,MMC_MIN_CACHE_EN_TIMEOUT_MS));
-       if (Result <> MMC_STATUS_SUCCESS) and (Result <> MMC_STATUS_INVALID_DATA) then Exit;
-       
-       if Result = MMC_STATUS_SUCCESS then MMC.ExtendedCardSpecificData.CacheControl:=1 else MMC.ExtendedCardSpecificData.CacheControl:=0;
-      end;
-      
-     {Enable Command Queue} 
-     {Not currently supported}
-     
-     {Update Device}
-     if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
-
-     {Update Storage}
-     MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
-     MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags and not(STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA);
-     if (MMC.Device.DeviceFlags and MMC_FLAG_WRITE_PROTECT) <> 0 then MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags or STORAGE_FLAG_READ_ONLY;
-     {Storage}
-     {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
-     {Driver}
-     if MMCHasExtendedCSD(MMC) then
-      begin
-       MMC.Storage.BlockSize:=MMC.ExtendedCardSpecificData.DataSectorSize;
-       MMC.Storage.BlockCount:=MMC.ExtendedCardSpecificData.Sectors;
-       MMC.Storage.BlockShift:=FirstBitSet(MMC.ExtendedCardSpecificData.DataSectorSize);
-      end
-     else
-      begin
-       MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
-       MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
-       MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
-      end; 
-     
-     Result:=MMC_STATUS_SUCCESS;
-     Exit;
-    end;
+   Result:=MMCDeviceInitializeMMC(MMC);
+   if Result = MMC_STATUS_SUCCESS then Exit;
     
    {Return Result}
    Result:=MMC_STATUS_NO_MEDIA;

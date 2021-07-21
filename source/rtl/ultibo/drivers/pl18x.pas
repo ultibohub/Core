@@ -387,8 +387,6 @@ function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;
 
 {==============================================================================}
 {PL18X MMC Functions}
-function PL18XMMCDeviceInitialize(MMC:PMMCDevice):LongWord;
-
 function PL18XMMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 function PL18XMMCDeviceGetWriteProtect(MMC:PMMCDevice):LongWord;
 function PL18XMMCDeviceSendCommand(MMC:PMMCDevice;Command:PMMCCommand):LongWord; 
@@ -405,6 +403,8 @@ function PL18XSDHCIHostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord;
 procedure PL18XSDHCIHostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte); 
 procedure PL18XSDHCIHostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word); 
 procedure PL18XSDHCIHostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord); 
+
+function PL18XSDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 
 procedure PL18XSDHCIInterruptHandler(SDHCI:PPL18XSDHCIHost);
 
@@ -652,7 +652,7 @@ begin
    PL18XSDHCI.SDHCI.HostWriteLong:=PL18XSDHCIHostWriteLong;
    PL18XSDHCI.SDHCI.HostReset:=nil;
    PL18XSDHCI.SDHCI.HostHardwareReset:=nil;
-   PL18XSDHCI.SDHCI.HostSetPower:=nil;
+   PL18XSDHCI.SDHCI.HostSetPower:=PL18XSDHCIHostSetPower;
    PL18XSDHCI.SDHCI.HostSetClock:=nil;
    PL18XSDHCI.SDHCI.HostSetTiming:=nil;
    PL18XSDHCI.SDHCI.HostSetBusWidth:=nil;
@@ -661,7 +661,7 @@ begin
    PL18XSDHCI.SDHCI.HostPrepareDMA:=nil;
    PL18XSDHCI.SDHCI.HostStartDMA:=nil;
    PL18XSDHCI.SDHCI.HostStopDMA:=nil;
-   PL18XSDHCI.SDHCI.DeviceInitialize:=PL18XMMCDeviceInitialize;
+   PL18XSDHCI.SDHCI.DeviceInitialize:=nil;
    PL18XSDHCI.SDHCI.DeviceDeinitialize:=nil;
    if Assigned(CardDetect) then PL18XSDHCI.SDHCI.DeviceGetCardDetect:=CardDetect else PL18XSDHCI.SDHCI.DeviceGetCardDetect:=PL18XMMCDeviceGetCardDetect;
    if Assigned(WriteProtect) then PL18XSDHCI.SDHCI.DeviceGetWriteProtect:=WriteProtect else PL18XSDHCI.SDHCI.DeviceGetWriteProtect:=PL18XMMCDeviceGetWriteProtect;
@@ -754,7 +754,7 @@ begin
    PL18XSDHCI.SDHCI.HostWriteLong:=PL18XSDHCIHostWriteLong;
    PL18XSDHCI.SDHCI.HostReset:=nil;
    PL18XSDHCI.SDHCI.HostHardwareReset:=nil;
-   PL18XSDHCI.SDHCI.HostSetPower:=nil;
+   PL18XSDHCI.SDHCI.HostSetPower:=PL18XSDHCIHostSetPower;
    PL18XSDHCI.SDHCI.HostSetClock:=nil;
    PL18XSDHCI.SDHCI.HostSetTiming:=nil;
    PL18XSDHCI.SDHCI.HostSetBusWidth:=nil;
@@ -763,7 +763,7 @@ begin
    PL18XSDHCI.SDHCI.HostPrepareDMA:=nil;
    PL18XSDHCI.SDHCI.HostStartDMA:=nil;
    PL18XSDHCI.SDHCI.HostStopDMA:=nil;
-   PL18XSDHCI.SDHCI.DeviceInitialize:=PL18XMMCDeviceInitialize;
+   PL18XSDHCI.SDHCI.DeviceInitialize:=nil;
    PL18XSDHCI.SDHCI.DeviceDeinitialize:=nil;
    if Assigned(CardDetect) then PL18XSDHCI.SDHCI.DeviceGetCardDetect:=CardDetect else PL18XSDHCI.SDHCI.DeviceGetCardDetect:=PL18XMMCDeviceGetCardDetect;
    if Assigned(WriteProtect) then PL18XSDHCI.SDHCI.DeviceGetWriteProtect:=WriteProtect else PL18XSDHCI.SDHCI.DeviceGetWriteProtect:=PL18XMMCDeviceGetWriteProtect;
@@ -845,294 +845,6 @@ end;
 {==============================================================================}
 {==============================================================================}
 {PL18X MMC Functions}
-function PL18XMMCDeviceInitialize(MMC:PMMCDevice):LongWord;
-{Implementation of MMCDeviceInitialize API for PL18X SDHCI}
-{Note: Not intended to be called directly by applications, use MMCDeviceInitialize instead}
-var
- SDHCI:PSDHCIHost;
-begin
- {}
- Result:=MMC_STATUS_INVALID_PARAMETER;
- 
- {Check MMC}
- if MMC = nil then Exit;
-
- {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Device Initialize');
- {$ENDIF}
- 
- {Get SDHCI}
- SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
- if SDHCI = nil then Exit;
- 
- {Get Card Detect}
- Result:=MMCDeviceGetCardDetect(MMC);
- if Result <> MMC_STATUS_SUCCESS then Exit;
- 
- {Check Card Detect}
- if (MMC.Device.DeviceFlags and MMC_FLAG_CARD_PRESENT) = 0 then
-  begin
-   Result:=MMC_STATUS_NO_MEDIA;
-   Exit;
-  end; 
- 
- {Update Device}
- if (SDHCI.Device.DeviceFlags and SDHCI_FLAG_AUTO_CMD23) <> 0 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_AUTO_BLOCK_COUNT;
- if (SDHCI.Device.DeviceFlags and SDHCI_FLAG_AUTO_CMD12) <> 0 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_AUTO_COMMAND_STOP;
- if (SDHCI.Capabilities and MMC_CAP_NONREMOVABLE) <> 0 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
- 
- {Set Initial Power}
- PL18XSetPowerRegister(PPL18XSDHCIHost(SDHCI),FirstBitSet(SDHCI.Voltages));
- 
- {Set Initial Bus Width}
- Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_1);
- if Result <> MMC_STATUS_SUCCESS then Exit;
- 
- {Set Initial Clock}
- Result:=MMCDeviceSetClock(MMC,MMC_BUS_SPEED_DEFAULT);
- if Result <> MMC_STATUS_SUCCESS then Exit;
- 
- {Perform an SDIO Reset}
- SDIODeviceReset(MMC);
- 
- {Set the Card to Idle State}
- MMCDeviceGoIdle(MMC);
- 
- {Get the Interface Condition}
- SDDeviceSendInterfaceCondition(MMC);
- 
- {Check for an SDIO Card}
- if SDIODeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
-  begin
-   {SDIO Card}
-   MMC.MMCState:=MMC_STATE_INSERTED;
-   MMC.Device.DeviceBus:=DEVICE_BUS_SD;
-   MMC.Device.DeviceType:=MMC_TYPE_SDIO;
-   if (MMC.OperationCondition and SDIO_RSP_R4_MEMORY_PRESENT) <> 0 then MMC.Device.DeviceType:=MMC_TYPE_SD_COMBO;
-   MMC.RelativeCardAddress:=0;
-   
-   {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
-   if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Initialize Card Type is SDIO');
-   {$ENDIF}
- 
-   {Get the Operation Condition}
-   Result:=SDIODeviceSendOperationCondition(MMC,False);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   //To Do //See MMC
-
-   {Update Device}
-   if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
-
-   {Update Storage}
-   MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
-   //To Do //See MMC
-   
-   Result:=MMC_STATUS_SUCCESS;
-   Exit;
-  end;
- 
- {Check for an SD Card}
- if SDDeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
-  begin
-   {SD Card}
-   MMC.MMCState:=MMC_STATE_INSERTED;
-   MMC.Device.DeviceBus:=DEVICE_BUS_SD;
-   MMC.Device.DeviceType:=MMC_TYPE_SD;
-   MMC.RelativeCardAddress:=0;
-   
-   {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
-   if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Initialize Card Type is SD');
-   {$ENDIF}
-
-   {Get Card Identification}
-   Result:=SDDeviceGetCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-    
-   {Get Relative Address}
-   Result:=SDDeviceSendRelativeAddress(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Get Card Specific}
-   Result:=SDDeviceGetCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Decode Card Identification}
-   Result:=SDDeviceDecodeCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Set Driver Stage}
-   if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
-    begin
-     MMCDeviceSetDriverStage(MMC,SDHCI.DriverStageRegister);
-    end;
-   
-   {Select Card}
-   Result:=MMCDeviceSelectCard(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Get SD Configuration}
-   Result:=SDDeviceSendSDConfiguration(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Decode SD Configuration}
-   Result:=SDDeviceDecodeSDConfiguration(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-    
-   {Get SD Status}
-   Result:=SDDeviceSendSDStatus(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Decode SD Status}
-   Result:=SDDeviceDecodeSDStatus(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Get Switch}
-   Result:=SDDeviceSendSDSwitch(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-  
-   {Decode Switch}
-   Result:=SDDeviceDecodeSDSwitch(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Check Write Protect}
-   Result:=MMCDeviceGetWriteProtect(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-
-   //To Do //Check for UHS-I and do UHS-I init //See MMC
-   
-   {Switch to High Speed if supported}
-   Result:=SDDeviceSwitchHighspeed(MMC);
-   if Result = MMC_STATUS_SUCCESS then
-    begin
-     {Set Timing}
-     Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-    end
-   else if Result <> MMC_STATUS_UNSUPPORTED_REQUEST then
-    begin
-     Exit;
-    end; 
-   
-   {Set Clock}
-   Result:=MMCDeviceSetClock(MMC,SDGetMaxClock(MMC));
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Switch to 4 bit bus if supported}
-   if ((SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) <> 0) and ((MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0) then
-    begin
-     Result:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-
-     Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
-     if Result <> MMC_STATUS_SUCCESS then Exit;
-    end;
-  
-   {Update Device}
-   if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
-  
-   {Update Storage}
-   {Device}
-   MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
-   MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags and not(STORAGE_FLAG_NOT_READY or STORAGE_FLAG_NO_MEDIA);
-   if (MMC.Device.DeviceFlags and MMC_FLAG_WRITE_PROTECT) <> 0 then MMC.Storage.Device.DeviceFlags:=MMC.Storage.Device.DeviceFlags or STORAGE_FLAG_READ_ONLY;
-   {Storage}
-   {MMC.Storage.StorageState:=STORAGE_STATE_INSERTED;} {Handled by caller during notification}
-   {Driver}
-   MMC.Storage.BlockSize:=MMC.CardSpecificData.BlockSize;
-   MMC.Storage.BlockCount:=MMC.CardSpecificData.BlockCount;
-   MMC.Storage.BlockShift:=MMC.CardSpecificData.BlockShift;
-   
-   Result:=MMC_STATUS_SUCCESS;
-   Exit;
-  end;
-  
- {Check for an MMC Card}
- if MMCDeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
-  begin
-   {MMC Card}
-   MMC.MMCState:=MMC_STATE_INSERTED;
-   MMC.Device.DeviceBus:=DEVICE_BUS_MMC;
-   MMC.Device.DeviceType:=MMC_TYPE_MMC;
-   MMC.RelativeCardAddress:=1;
-   
-   {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
-   if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Initialize Card Type is MMC');
-   {$ENDIF}
-   
-   {Set the Card to Idle State}
-   MMCDeviceGoIdle(MMC);
-   
-   {Set the High Capacity bit in the Operation Conditions}
-   MMC.OperationCondition:=MMC.OperationCondition or MMC_OCR_HCS;
-   
-   {Get the Operation Condition}
-   Result:=MMCDeviceSendOperationCondition(MMC,False);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Get Card Identification}
-   Result:=MMCDeviceSendAllCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-
-   {Set Relative Address}
-   Result:=MMCDeviceSetRelativeAddress(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Get Card Specific}
-   Result:=MMCDeviceSendCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Decode Card Specific (Must be before CID)}
-   Result:=MMCDeviceDecodeCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Decode Card Identification}
-   Result:=MMCDeviceDecodeCardIdentification(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Set Driver Stage}
-   if MMC.CardSpecificData.DSRImplemented and (SDHCI.DriverStageRegister <> 0) then
-    begin
-     MMCDeviceSetDriverStage(MMC,SDHCI.DriverStageRegister);
-    end;
-   
-   {Select Card}
-   Result:=MMCDeviceSelectCard(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   {Get Extended Card Specific}
-   Result:=MMCDeviceGetExtendedCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-
-   {Decode Extended Card Specific}
-   Result:=MMCDeviceDecodeExtendedCardSpecific(MMC);
-   if Result <> MMC_STATUS_SUCCESS then Exit;
-   
-   //Setup Byte/Sector(Block) addressing
-   
-   //Setup Erase Size
-   
-   //To Do //See: mmc_init_card etc //See MMC
-
-   //SetClock/SetBusWidth etc
-   
-   {Update Device}
-   if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
-   
-   {Update Storage}
-   MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
-   //To Do //See MMC
-   
-   Result:=MMC_STATUS_SUCCESS;
-   Exit;
-  end;
-  
- {Return Result}
- Result:=MMC_STATUS_NO_MEDIA;
-end;
-
-{==============================================================================}
-
 function PL18XMMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 {Implementation of MMCDeviceGetCardDetect API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use MMCDeviceGetCardDetect instead}
@@ -2013,6 +1725,28 @@ begin
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Host Write Long');
  {$ENDIF}
+end;
+
+{==============================================================================}
+
+function PL18XSDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
+{Implementation of SDHCISetPower API for PL18X SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCISetPower instead}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+
+ {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Set Power (Power=' + IntToStr(Power) + ')');
+ {$ENDIF}
+
+ {Set Power Register}
+ PL18XSetPowerRegister(PPL18XSDHCIHost(SDHCI),Power);
+
+ Result:=MMC_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
