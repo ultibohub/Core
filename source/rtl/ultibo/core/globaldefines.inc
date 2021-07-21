@@ -408,6 +408,8 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {Device and Platform definitions}
+{$DEFINE DEVICE_NOTIFIER_RETRY}     {Enable asynchronous retry of device notifications (Default: On)}
+
 {--$DEFINE USB_LEGACY_DEVICE_INIT}  {Enable old style USB device initialization (Default: Off)}
 
 {$DEFINE PL011_UART_RX_BUFFER}      {Enable receive buffering for PL011 UART (Default: On)}

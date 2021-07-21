@@ -1,7 +1,7 @@
 {
 Ultibo Device interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -667,6 +667,13 @@ type
   Next:PNotifierTask;
  end;
  
+ {Notifier Retry}
+ PNotifierRetry = ^TNotifierRetry;
+ TNotifierRetry = record
+  Device:PDevice;
+  Notification:LongWord;
+ end; 
+ 
 {==============================================================================}
 type
  {Driver specific types}
@@ -1048,6 +1055,7 @@ function NotifierRelease(Notifier:PNotifier):LongWord;
 function NotifierFind(Device:PDevice;DeviceClass:LongWord;Callback:TDeviceNotification;Data:Pointer):PNotifier;
 function NotifierNotify(Device:PDevice;Notification:LongWord):LongWord;
 
+procedure NotifierRetry(Retry:PNotifierRetry);
 procedure NotifierWorker(Task:PNotifierTask);
 
 {==============================================================================}
@@ -1352,6 +1360,8 @@ var
  DeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  DeviceTableCount:LongWord;
  
+ DeviceNameLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
+ 
  NotifierTable:PNotifier;
  NotifierTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  NotifierTableCount:LongWord;
@@ -1362,6 +1372,8 @@ var
  DriverTable:PDriver;
  DriverTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  DriverTableCount:LongWord;
+ 
+ DriverNameLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  
 {==============================================================================}
 var
@@ -1427,9 +1439,10 @@ begin
  DeviceTable:=nil;
  DeviceTableLock:=CriticalSectionCreate; 
  DeviceTableCount:=0;
- if DeviceTableLock = INVALID_HANDLE_VALUE then
+ DeviceNameLock:=CriticalSectionCreate; 
+ if (DeviceTableLock = INVALID_HANDLE_VALUE) or (DeviceNameLock = INVALID_HANDLE_VALUE) then
   begin
-   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create device table lock');
+   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create device table locks');
   end;
  
  {Initialize Notifier Table}
@@ -1440,14 +1453,15 @@ begin
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create notifier table lock');
   end;
-
+  
  {Initialize Driver Table}
  DriverTable:=nil;
  DriverTableLock:=CriticalSectionCreate; 
  DriverTableCount:=0;
- if DriverTableLock = INVALID_HANDLE_VALUE then
+ DriverNameLock:=CriticalSectionCreate; 
+ if (DriverTableLock = INVALID_HANDLE_VALUE) or (DriverNameLock = INVALID_HANDLE_VALUE) then
   begin
-   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create driver table lock');
+   if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create driver table locks');
   end;
  
  {Initialize Clock Device Table}
@@ -1624,18 +1638,25 @@ begin
  {Check State}
  if Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
  
- {Invalidate Device}
- Device.Signature:=0;
+ {Acquire Lock}
+ if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
+  begin
+   {Invalidate Device}
+   Device.Signature:=0;
  
- {Free the Description}
- SetLength(Device.DeviceDescription,0);
+   {Free the Description}
+   SetLength(Device.DeviceDescription,0);
+
+   {Free the Name}
+   SetLength(Device.DeviceName,0);
  
- {Free the Name}
- SetLength(Device.DeviceName,0);
+   {Free Device}
+   FreeMem(Device);
  
- {Free Device}
- FreeMem(Device);
- 
+   {Release Lock}
+   CriticalSectionUnlock(DeviceNameLock);
+  end;
+  
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed device (Handle=' + PtrToHex(Device) + ')');
  {$ENDIF}
@@ -1656,12 +1677,14 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- if Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {Acquire Lock}
- if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+ if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
    try
+    {Check Signature}
+    if Device.Signature <> DEVICE_SIGNATURE then Exit;
+    
     {Get Name}
     Result:=Device.DeviceName;
     
@@ -1669,7 +1692,7 @@ begin
     UniqueString(Result);
    finally
     {Release Lock}
-    CriticalSectionUnlock(DeviceTableLock);
+    CriticalSectionUnlock(DeviceNameLock);
    end;
   end;
 end;
@@ -1690,12 +1713,14 @@ begin
  
  {Check Device}
  if Device = nil then Exit;
- if Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {Acquire Lock}
- if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+ if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
    try
+    {Check Signature}
+    if Device.Signature <> DEVICE_SIGNATURE then Exit;
+    
     {Set Name}
     Device.DeviceName:=Name;
     UniqueString(Device.DeviceName);
@@ -1704,7 +1729,7 @@ begin
     Result:=ERROR_SUCCESS;
    finally
     {Release Lock}
-    CriticalSectionUnlock(DeviceTableLock);
+    CriticalSectionUnlock(DeviceNameLock);
    end;
   end;
 end;
@@ -1721,12 +1746,14 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- if Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {Acquire Lock}
- if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+ if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
    try
+    {Check Signature}
+    if Device.Signature <> DEVICE_SIGNATURE then Exit;
+    
     {Get Description}
     Result:=Device.DeviceDescription;
     
@@ -1734,7 +1761,7 @@ begin
     UniqueString(Result);
    finally
     {Release Lock}
-    CriticalSectionUnlock(DeviceTableLock);
+    CriticalSectionUnlock(DeviceNameLock);
    end;
   end;
 end;
@@ -1755,12 +1782,14 @@ begin
  
  {Check Device}
  if Device = nil then Exit;
- if Device.Signature <> DEVICE_SIGNATURE then Exit;
  
  {Acquire Lock}
- if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
+ if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
    try
+    {Check Signature}
+    if Device.Signature <> DEVICE_SIGNATURE then Exit;
+    
     {Set Description}
     Device.DeviceDescription:=Description;
     UniqueString(Device.DeviceDescription);
@@ -1769,7 +1798,7 @@ begin
     Result:=ERROR_SUCCESS;
    finally
     {Release Lock}
-    CriticalSectionUnlock(DeviceTableLock);
+    CriticalSectionUnlock(DeviceNameLock);
    end;
   end;
 end;
@@ -2442,12 +2471,43 @@ end;
 {==============================================================================}
 
 function NotifierNotify(Device:PDevice;Notification:LongWord):LongWord;
+{$IFDEF DEVICE_NOTIFIER_RETRY}
+ function IsRetryable(Notification:LongWord):Boolean;
+ begin
+  {}
+  Result:=False;
+  
+  case Notification of
+   DEVICE_NOTIFICATION_REGISTER,
+   DEVICE_NOTIFICATION_OPEN,
+   DEVICE_NOTIFICATION_UP,
+   DEVICE_NOTIFICATION_INSERT,
+   DEVICE_NOTIFICATION_ATTACH,
+   DEVICE_NOTIFICATION_ENABLE,
+   DEVICE_NOTIFICATION_BIND,
+   DEVICE_NOTIFICATION_ATTACHING,
+   DEVICE_NOTIFICATION_INSERTING,
+   DEVICE_NOTIFICATION_OPENING,
+   DEVICE_NOTIFICATION_RESIZE,
+   DEVICE_NOTIFICATION_RESIZING:Result:=True;
+  end;
+ end;
+ 
+const
+ NOTIFIER_RETRY_TIMEOUT = 1000;
+ NOTIFIER_RETRY_INTERVAL = 100;
+{$ENDIF DEVICE_NOTIFIER_RETRY}
+
 var
  Status:LongWord;
+ {$IFDEF DEVICE_NOTIFIER_RETRY}
+ Timeout:LongWord;
+ {$ENDIF DEVICE_NOTIFIER_RETRY}
  Notifier:PNotifier;
  Task:PNotifierTask;
  List:PNotifierTask;
  Next:PNotifierTask;
+ Retry:PNotifierRetry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2460,8 +2520,40 @@ begin
  {Setup Defaults}
  List:=nil;
  
+ {$IFDEF DEVICE_NOTIFIER_RETRY}
+ {Get Timeout}
+ Timeout:=INFINITE;
+ if IsRetryable(Notification) then Timeout:=NOTIFIER_RETRY_TIMEOUT;
+ 
+ {Acquire the Lock (with retry to prevent deadlocks)}
+ Status:=CriticalSectionLockEx(NotifierTableLock,Timeout);
+ if Status = ERROR_WAIT_TIMEOUT then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   
+   {Create Retry}
+   Retry:=AllocMem(SizeOf(TNotifierRetry));
+   if Retry <> nil then
+    begin
+     {Setup Retry}
+     Retry.Device:=Device;
+     Retry.Notification:=Notification;
+     
+     {Schedule Worker}
+     if WorkerSchedule(NOTIFIER_RETRY_INTERVAL,TWorkerTask(NotifierRetry),Retry,nil) <> ERROR_SUCCESS then
+      begin
+       FreeMem(Retry);
+       Exit;
+      end;
+     
+     Result:=ERROR_SUCCESS;
+    end; 
+  end
+ else if Status = ERROR_SUCCESS then
+ {$ELSE DEVICE_NOTIFIER_RETRY}
  {Acquire the Lock}
  if CriticalSectionLock(NotifierTableLock) = ERROR_SUCCESS then
+ {$ENDIF DEVICE_NOTIFIER_RETRY}
   begin
    try
     Result:=ERROR_SUCCESS;
@@ -2618,6 +2710,27 @@ end;
 
 {==============================================================================}
 
+procedure NotifierRetry(Retry:PNotifierRetry);
+begin
+ {}
+ {Check Retry}
+ if Retry = nil then Exit;
+ 
+ {Check Device}
+ if Retry.Device = nil then Exit;
+ if Retry.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'Retrying device notification (Name=' + DeviceGetName(Retry.Device) + ' Class=' + DeviceClassToString(Retry.Device.DeviceClass) + ' Notification=' + NotificationToString(Retry.Notification) + ')');
+ 
+ {Retry Notification}
+ NotifierNotify(Retry.Device,Retry.Notification);
+ 
+ {Destroy Retry}
+ FreeMem(Retry); 
+end;
+
+{==============================================================================}
+
 procedure NotifierWorker(Task:PNotifierTask);
 begin
  {}
@@ -2708,14 +2821,21 @@ begin
  {Check State}
  if Driver.DriverState <> DRIVER_STATE_UNREGISTERED then Exit;
  
- {Invalidate Driver}
- Driver.Signature:=0;
+ {Acquire Lock}
+ if CriticalSectionLock(DriverNameLock) = ERROR_SUCCESS then
+  begin
+   {Invalidate Driver}
+   Driver.Signature:=0;
  
- {Free the Name}
- SetLength(Driver.DriverName,0);
+   {Free the Name}
+   SetLength(Driver.DriverName,0);
  
- {Free Driver}
- FreeMem(Driver);
+   {Free Driver}
+   FreeMem(Driver);
+  
+   {Release Lock}
+   CriticalSectionUnlock(DriverNameLock);
+  end;  
  
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed driver (Driver=' + PtrToHex(Driver) + ')');
@@ -2737,12 +2857,14 @@ begin
 
  {Check Driver}
  if Driver = nil then Exit;
- if Driver.Signature <> DRIVER_SIGNATURE then Exit;
  
  {Acquire Lock}
- if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
+ if CriticalSectionLock(DriverNameLock) = ERROR_SUCCESS then
   begin
    try
+    {Check Signature}
+    if Driver.Signature <> DRIVER_SIGNATURE then Exit;
+
     {Get Name}
     Result:=Driver.DriverName;
     
@@ -2750,7 +2872,7 @@ begin
     UniqueString(Result);
    finally
     {Release Lock}
-    CriticalSectionUnlock(DriverTableLock);
+    CriticalSectionUnlock(DriverNameLock);
    end;
   end;
 end;
@@ -2771,12 +2893,14 @@ begin
  
  {Check Driver}
  if Driver = nil then Exit;
- if Driver.Signature <> DRIVER_SIGNATURE then Exit;
  
  {Acquire Lock}
- if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
+ if CriticalSectionLock(DriverNameLock) = ERROR_SUCCESS then
   begin
    try
+    {Check Signature}
+    if Driver.Signature <> DRIVER_SIGNATURE then Exit;
+    
     {Set Name}
     Driver.DriverName:=Name;
     UniqueString(Driver.DriverName);
@@ -2785,7 +2909,7 @@ begin
     Result:=ERROR_SUCCESS;
    finally
     {Release Lock}
-    CriticalSectionUnlock(DriverTableLock);
+    CriticalSectionUnlock(DriverNameLock);
    end;
   end;
 end;
