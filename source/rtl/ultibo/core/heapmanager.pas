@@ -1,7 +1,7 @@
 {
 Ultibo Heap Manager interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -177,6 +177,8 @@ type
   FlagsFIQCount:LongWord;   
   {Register}
   RegisterCount:LongWord;
+  {Reserve}
+  ReserveCount:LongWord;
   {Request}
   RequestCount:LongWord;
   RequestSharedCount:LongWord;
@@ -215,7 +217,7 @@ type
   GetAlignedOrphanCount:LongWord;
   GetAlignedOrphanBytes:LongWord;
   GetAlignedReleaseCount:LongWord;
-  GetAlignedReleaseBytes:LongWord; 
+  GetAlignedReleaseBytes:LongWord;
   {Free Internal}
   FreeInvalidCount:LongWord;
   FreeAddFailCount:LongWord; 
@@ -228,6 +230,12 @@ type
   {Register Internal}
   RegisterInvalidCount:LongWord;
   RegisterAddFailCount:LongWord;
+  {Reserve Internal}
+  ReserveInvalidCount:LongWord;
+  ReserveAddFailCount:LongWord;
+  ReserveSplitFailCount:LongWord;
+  ReserveRemoveFailCount:LongWord;
+  ReserveUnavailableCount:LongWord;
   {Request Internal}
   RequestInvalidCount:LongWord;
   RequestAddFailCount:LongWord;
@@ -271,6 +279,7 @@ type
 procedure RegisterMemoryManager;
 
 procedure RegisterHeapBlock(Address:Pointer;Size:PtrUInt);
+function ReserveHeapBlock(Address:Pointer;Size:PtrUInt):Pointer;
 function RequestHeapBlock(Hint:Pointer;Size:PtrUInt;Flags,Affinity:LongWord):Pointer;
 
 function RequestSharedHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
@@ -647,6 +656,191 @@ end;
 
 {==============================================================================}
 
+function ReserveHeapBlock(Address:Pointer;Size:PtrUInt):Pointer;
+{Request the Heap Block specified by address and size be reserved from allocation.
+
+ Address is the starting address for the reservation but the memory manager may
+ reserve a block that starts prior to the supplied address for alignment purposes.
+ 
+ Size is the total size in byte to be reserved, the memory manager may increase 
+ the amount reserved to cater for alignment or to prevent orphan blocks. 
+ Size must be greater than 0.
+
+ The return is a pointer to the actual reserved memory which may differ from the
+ supplied starting address due to alignment. The reservation can be cancelled by
+ passing the returned pointer to FreeMem.}
+var
+ Block:PHeapBlock;
+ Split:PHeapBlock;
+ 
+ Offset:PtrUInt;
+ BlockSize:PtrUInt;
+ BlockAddress:Pointer;
+begin
+ {}
+ Result:=nil;
+ 
+ AcquireHeapLock;
+ try
+  {$IFDEF HEAP_STATISTICS}
+  {Update Heap Statistics}
+  Inc(HeapStatistics.ReserveCount);
+  {$ENDIF}
+
+  {Check Size}
+  if Size < (HEAP_MIN_BLOCK - SizeOf(THeapBlock)) then
+   begin
+    {$IFDEF HEAP_STATISTICS}
+    {Update Heap Statistics}
+    Inc(HeapStatistics.ReserveInvalidCount);
+    {$ENDIF}
+    Exit;
+   end;
+
+  {Determine Size}
+  BlockSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
+  
+  {Determine Address}
+  BlockAddress:=Align(Address,HEAP_MIN_ALIGNMENT) - SizeOf(THeapBlock);
+
+  {Find Block}
+  Block:=FindHeapBlock(BlockAddress,BlockSize);
+  if Block <> nil then
+   begin
+    {Check State}
+    if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_FREE) then
+     begin
+      {Remove Free Block}
+      if not RemoveFreeBlock(Block) then
+       begin
+        {$IFDEF HEAP_STATISTICS}
+        {Update Heap Statistics}
+        Inc(HeapStatistics.ReserveRemoveFailCount);
+        {$ENDIF}
+        Exit;
+       end;
+       
+      {Find Start}
+      Offset:=(PtrUInt(BlockAddress) - PtrUInt(Block));
+      if Offset > 0 then
+       begin
+        if Offset >= HEAP_MIN_BLOCK then
+         begin
+          {Split Block}
+          Split:=SplitHeapBlock(Block,Offset);
+          if Split = nil then
+           begin
+            {$IFDEF HEAP_STATISTICS}
+            {Update Heap Statistics}
+            Inc(HeapStatistics.ReserveSplitFailCount);
+            {$ENDIF}
+            Exit;
+           end;
+          
+          {Add Free Block}
+          if not AddFreeBlock(Block) then
+           begin
+            {$IFDEF HEAP_STATISTICS}
+            {Update Heap Statistics}
+            Inc(HeapStatistics.ReserveAddFailCount);
+            {$ENDIF}
+            Exit;
+           end;
+          
+          {Use Split Block}
+          Block:=Split;
+         end
+        else
+         begin
+          Inc(BlockSize,Offset);
+         end;
+       end; 
+      
+      {Find End}
+      Offset:=(Block^.Size - BlockSize);
+      if Offset > 0 then
+       begin
+        if Offset >= HEAP_MIN_BLOCK then
+         begin
+          {Split Block}
+          Split:=SplitHeapBlock(Block,BlockSize);
+          if Split = nil then
+           begin
+            {$IFDEF HEAP_STATISTICS}
+            {Update Heap Statistics}
+            Inc(HeapStatistics.ReserveSplitFailCount);
+            {$ENDIF}
+            Exit;
+           end;
+          
+          {Add Free Block}
+          if not AddFreeBlock(Split) then
+           begin
+            {$IFDEF HEAP_STATISTICS}
+            {Update Heap Statistics}
+            Inc(HeapStatistics.ReserveAddFailCount);
+            {$ENDIF}
+            Exit;
+           end;
+         end
+        else
+         begin
+          BlockSize:=Block^.Size;
+         end;
+       end;
+       
+      {Add Used Block}
+      if not AddUsedBlock(Block) then
+       begin
+        {$IFDEF HEAP_STATISTICS}
+        {Update Heap Statistics}
+        Inc(HeapStatistics.ReserveAddFailCount);
+        {$ENDIF}
+        Exit;
+       end;
+       
+      {Update Heap Status}
+      {Free}
+      Dec(HeapStatus.TotalUncommitted,BlockSize);
+      Dec(HeapStatus.TotalFree,BlockSize);
+      Dec(HeapStatus.Unused,BlockSize);
+      {Used}  
+      Inc(HeapStatus.TotalCommitted,BlockSize);
+      Inc(HeapStatus.TotalAllocated,BlockSize);
+       
+      {Update FPC Heap Status}
+      {Free}
+      Dec(FPCHeapStatus.CurrHeapFree,BlockSize);
+      {Used}
+      Inc(FPCHeapStatus.CurrHeapUsed,BlockSize);
+      {Max}
+      if FPCHeapStatus.CurrHeapUsed > FPCHeapStatus.MaxHeapUsed then FPCHeapStatus.MaxHeapUsed:=FPCHeapStatus.CurrHeapUsed;
+      
+      {Return Result}
+      Result:=Pointer(PtrUInt(Block) + SizeOf(THeapBlock));
+     end
+    else
+     begin
+      {$IFDEF HEAP_STATISTICS}
+      {Update Heap Statistics}
+      Inc(HeapStatistics.ReserveUnavailableCount);
+      {$ENDIF}
+     end; 
+   end
+  else
+   begin
+    {$IFDEF HEAP_STATISTICS}
+    {Update Heap Statistics}
+    Inc(HeapStatistics.ReserveUnavailableCount);
+    {$ENDIF}
+   end;
+ finally
+  ReleaseHeapLock;
+ end; 
+end;
+
+{==============================================================================}
+
 function RequestHeapBlock(Hint:Pointer;Size:PtrUInt;Flags,Affinity:LongWord):Pointer;
 {Request registration a Heap Block with specified flags and affinity within an existing block.
 
@@ -666,13 +860,11 @@ function RequestHeapBlock(Hint:Pointer;Size:PtrUInt;Flags,Affinity:LongWord):Poi
 {Note: The return value points directly to the heap block, to access the memory referenced
        by the heap block you must add SizeOf(THeapBlock) to this value}
 var
- Count:Integer;
  Offset:PtrUInt;
  Block:PHeapBlock;
  Split:PHeapBlock;
  
  Mask:PtrUInt;
- Value:PtrUInt;
  Aligned:PtrUInt;
 begin
  {}
@@ -708,15 +900,8 @@ begin
     Exit;
    end;
 
-  {Check Size}
-  Count:=0; 
-  while Count < 32 do
-   begin
-    Value:=1 shl Count;
-    if Value = Size then Break;
-    Inc(Count);
-   end;   
-  if Value <> Size then
+  {Check Power Of 2}
+  if (Size and (Size - 1)) <> 0 then
    begin
     {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
@@ -2623,7 +2808,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
  
   {Check Block}
-  {if GetIRQBlock(Block) <> Block then}
   if not CheckIRQBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -2705,7 +2889,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
  
   {Check Block}
-  {if GetFIQBlock(Block) <> Block then}
   if not CheckFIQBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -4413,7 +4596,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
   
   {Check Block}
-  {if GetIRQBlock(Block) <> Block then}
   if not CheckIRQBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -4454,7 +4636,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
   
   {Check Block}
-  {if GetFIQBlock(Block) <> Block then}
   if not CheckFIQBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -4495,7 +4676,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
   
   {Check Block}
-  {if GetUsedBlock(Block) <> Block then}
   if not CheckUsedBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -4536,7 +4716,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
   
   {Check Block}
-  {if GetIRQBlock(Block) <> Block then}
   if not CheckIRQBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -4577,7 +4756,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
   
   {Check Block}
-  {if GetFIQBlock(Block) <> Block then}
   if not CheckFIQBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -6795,7 +6973,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
 
   {Check Block}
-  {if GetUsedBlock(Block) <> Block then}
   if not CheckUsedBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -7080,7 +7257,6 @@ begin
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
   
   {Check Block}
-  {if GetUsedBlock(Block) <> Block then}
   if not CheckUsedBlock(Block) then
    begin
     {$IFDEF HEAP_STATISTICS}

@@ -104,9 +104,9 @@ const
  PAGE_TABLE_FLAG_WRITEBACK     = $00000200; {Page Table Entry is Writeback Cacheable memory}
  PAGE_TABLE_FLAG_WRITETHROUGH  = $00000400; {Page Table Entry is Writethrough Cacheable memory}
  PAGE_TABLE_FLAG_WRITEALLOCATE = $00000800; {Page Table Entry is Writeallocate Cacheable memory}
- {$IFDEF CPUARM}
+ {$IFDEF CPU32}
  PAGE_TABLE_FLAG_LARGEADDRESS  = $00001000; {Page Table Entry is mapped to Large Physical Address range}
- {$ENDIF CPUARM}
+ {$ENDIF CPU32}
  
  {Interrupt Entry Flags}
  INTERRUPT_FLAG_NONE     = $00000000;
@@ -237,13 +237,13 @@ type
  TDMAData = record
   {Data Properties}
   Source:Pointer;         {Source address for DMA (May need to be allocated in accordance with DMA host configuration)}
-  {$IFDEF CPUARM}
+  {$IFDEF CPU32}
   SourceRange:LongWord;   {Source address range for DMA (Only applicable when performing a 40-bit transfer)}
-  {$ENDIF CPUARM}
+  {$ENDIF CPU32}
   Dest:Pointer;           {Dest address for DMA (May need to be allocated in accordance with DMA host configuration)}
-  {$IFDEF CPUARM}
+  {$IFDEF CPU32}
   DestRange:LongWord;     {Dest address range for DMA (Only applicable when performing a 40-bit transfer)}
-  {$ENDIF CPUARM}
+  {$ENDIF CPU32}
   Size:LongWord;          {Size for DMA transfer (For 2D stride the length of a row multiplied by the count of rows)}
   Flags:LongWord;         {Flags for DMA transfer (See DMA_DATA_FLAG_* above)}
   {Stride Properties}
@@ -407,23 +407,23 @@ type
  TPageTableEntry = record
  private
   {Page Table Properties}
-  {$IFDEF CPUARM}
+  {$IFDEF CPU32}
   function GetLargePhysicalAddress:UInt64;
   procedure SetLargePhysicalAddress(Address:UInt64);
-  {$ENDIF CPUARM}
+  {$ENDIF CPU32}
  public
   {Page Table Properties}
   VirtualAddress:PtrUInt;
-  {$IFDEF CPUARM}
+  {$IFDEF CPU32}
   PhysicalRange:LongWord;   {Physical Address Range referenced by entry when using Large Physical Address Extensions (LPAE)}
-  {$ENDIF CPUARM}
+  {$ENDIF CPU32}
   PhysicalAddress:PtrUInt; 
   Size:LongWord;
   Flags:LongWord;
   
-  {$IFDEF CPUARM}
+  {$IFDEF CPU32}
   property LargePhysicalAddress:UInt64 read GetLargePhysicalAddress write SetLargePhysicalAddress;
-  {$ENDIF CPUARM}
+  {$ENDIF CPU32}
  end;
 
 type
@@ -469,6 +469,17 @@ type
  
  TOptionsInit = procedure;
 
+type
+ {Prototypes for Device Tree Handlers}
+ TDeviceTreeValid = function:Boolean;
+ TDeviceTreeGetBase = function:PtrUInt;
+ TDeviceTreeGetSize = function:LongWord;
+ 
+ TDeviceTreeRead = function(const Path,Name:String;Buffer:Pointer;var Size:LongWord):LongWord;
+ TDeviceTreeRead32 = function(const Path,Name:String;var Value:LongWord):LongWord;
+ TDeviceTreeRead64 = function(const Path,Name:String;var Value:UInt64):LongWord;
+ TDeviceTreeReadString = function(const Path,Name:String;var Value:String):LongWord;
+ 
 {type}
  {Prototypes for Interrupt (IRQ/FIQ) Handlers} 
  {Moved to TInterruptEntry above}
@@ -1090,9 +1101,9 @@ type
 
  TPageTableGetPageSize = function(Address:PtrUInt):LongWord;
  TPageTableGetPageFlags = function(Address:PtrUInt):LongWord;
- {$IFDEF CPUARM}
+ {$IFDEF CPU32}
  TPageTableGetPageRange = function(Address:PtrUInt):LongWord;
- {$ENDIF CPUARM}
+ {$ENDIF CPU32}
  TPageTableGetPagePhysical = function(Address:PtrUInt):PtrUInt;
  
  type
@@ -1300,6 +1311,17 @@ var
  ParseEnvironmentHandler:TParseEnvironment;
  
  OptionsInitHandler:TOptionsInit;
+
+var
+ {Device Tree Handlers}
+ DeviceTreeValidHandler:TDeviceTreeValid;
+ DeviceTreeGetBaseHandler:TDeviceTreeGetBase;
+ DeviceTreeGetSizeHandler:TDeviceTreeGetSize;
+
+ DeviceTreeReadHandler:TDeviceTreeRead;
+ DeviceTreeRead32Handler:TDeviceTreeRead32;
+ DeviceTreeRead64Handler:TDeviceTreeRead64;
+ DeviceTreeReadStringHandler:TDeviceTreeReadString;
 
 var
  {Blink/Output Handlers}
@@ -1876,9 +1898,9 @@ var
  
  PageTableGetPageSizeHandler:TPageTableGetPageSize;
  PageTableGetPageFlagsHandler:TPageTableGetPageFlags;
- {$IFDEF CPUARM}
+ {$IFDEF CPU32}
  PageTableGetPageRangeHandler:TPageTableGetPageRange;
- {$ENDIF CPUARM}
+ {$ENDIF CPU32}
  PageTableGetPagePhysicalHandler:TPageTableGetPagePhysical;
  
 var
@@ -1981,6 +2003,17 @@ procedure ParseCommandLine;
 procedure ParseEnvironment;
 
 procedure OptionsInit;
+
+{==============================================================================}
+{Device Tree Functions}
+function DeviceTreeValid:Boolean; inline;
+function DeviceTreeGetBase:PtrUInt; inline;
+function DeviceTreeGetSize:LongWord; inline;
+
+function DeviceTreeRead(const Path,Name:String;Buffer:Pointer;var Size:LongWord):LongWord; inline;
+function DeviceTreeRead32(const Path,Name:String;var Value:LongWord):LongWord; inline;
+function DeviceTreeRead64(const Path,Name:String;var Value:UInt64):LongWord; inline;
+function DeviceTreeReadString(const Path,Name:String;var Value:String):LongWord; inline;
 
 {==============================================================================}
 {Boot Functions}
@@ -2580,9 +2613,9 @@ function PageTableSetEntry(const Entry:TPageTableEntry):LongWord; inline;
 
 function PageTableGetPageSize(Address:PtrUInt):LongWord; inline;
 function PageTableGetPageFlags(Address:PtrUInt):LongWord; inline;
-{$IFDEF CPUARM}
+{$IFDEF CPU32}
 function PageTableGetPageRange(Address:PtrUInt):LongWord; inline;
-{$ENDIF CPUARM}
+{$ENDIF CPU32}
 function PageTableGetPagePhysical(Address:PtrUInt):PtrUInt; inline;
 
 function PageTablesGetAddress:PtrUInt; inline;
@@ -3557,7 +3590,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TPageTableEntry}
-{$IFDEF CPUARM}
+{$IFDEF CPU32}
 function TPageTableEntry.GetLargePhysicalAddress:UInt64;
 begin
  {}
@@ -3573,7 +3606,7 @@ begin
  PhysicalRange:=Int64Rec(Address).Hi;
  PhysicalAddress:=Int64Rec(Address).Lo;
 end;
-{$ENDIF CPUARM}
+{$ENDIF CPU32}
 {==============================================================================}
 {==============================================================================}
 {EHardwareException}
@@ -3581,6 +3614,136 @@ procedure EHardwareException.FreeInstance;
 begin
  {}
  if AllowFree then inherited FreeInstance;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Device Tree Functions}
+function DeviceTreeValid:Boolean; inline;
+{Check if valid Device Tree information was provided by the firmware/bootloader}
+begin
+ {}
+ if Assigned(DeviceTreeValidHandler) then
+  begin
+   Result:=DeviceTreeValidHandler;
+  end
+ else
+  begin
+   Result:=DEVICE_TREE_VALID;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceTreeGetBase:PtrUInt; inline;
+{Get the base address of the Device Tree Blob (Where Applicable)}
+begin
+ {}
+ if Assigned(DeviceTreeGetBaseHandler) then
+  begin
+   Result:=DeviceTreeGetBaseHandler;
+  end
+ else
+  begin
+   Result:=DEVICE_TREE_BASE;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceTreeGetSize:LongWord; inline;
+{Get the total size of the Device Tree Blob (Where Applicable)}
+begin
+ {}
+ if Assigned(DeviceTreeGetSizeHandler) then
+  begin
+   Result:=DeviceTreeGetSizeHandler;
+  end
+ else
+  begin
+   Result:=DEVICE_TREE_SIZE;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceTreeRead(const Path,Name:String;Buffer:Pointer;var Size:LongWord):LongWord; inline;
+{Read the raw value of a Device Tree property (Where Applicable)}
+{Path: The path of the requested property}
+{Name: The name of the requested property}
+{Buffer: A pointer to a buffer to receive the raw value}
+{Size: The size in byte of the buffer, updated on return with the actual size of the value}
+{Return: ERROR_SUCCESS if the property value was read or another error code on failure}
+begin
+ {}
+ if Assigned(DeviceTreeReadHandler) then
+  begin
+   Result:=DeviceTreeReadHandler(Path,Name,Buffer,Size);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceTreeRead32(const Path,Name:String;var Value:LongWord):LongWord; inline;
+{Read a 32-bit value from a Device Tree property (Where Applicable)}
+{Path: The path of the requested property}
+{Name: The name of the requested property}
+{Value: The returned value of the property}
+{Return: ERROR_SUCCESS if the property value was read or another error code on failure}
+begin
+ {}
+ if Assigned(DeviceTreeRead32Handler) then
+  begin
+   Result:=DeviceTreeRead32Handler(Path,Name,Value);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceTreeRead64(const Path,Name:String;var Value:UInt64):LongWord; inline;
+{Read a 64-bit value from a Device Tree property (Where Applicable)}
+{Path: The path of the requested property}
+{Name: The name of the requested property}
+{Value: The returned value of the property}
+{Return: ERROR_SUCCESS if the property value was read or another error code on failure}
+begin
+ {}
+ if Assigned(DeviceTreeRead64Handler) then
+  begin
+   Result:=DeviceTreeRead64Handler(Path,Name,Value);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function DeviceTreeReadString(const Path,Name:String;var Value:String):LongWord; inline;
+{Read a string value from a Device Tree property (Where Applicable)}
+{Path: The path of the requested property}
+{Name: The name of the requested property}
+{Value: The returned value of the property}
+{Return: ERROR_SUCCESS if the property value was read or another error code on failure}
+begin
+ {}
+ if Assigned(DeviceTreeReadStringHandler) then
+  begin
+   Result:=DeviceTreeReadStringHandler(Path,Name,Value);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
 end;
 
 {==============================================================================}
@@ -10252,7 +10415,7 @@ begin
 end;
 
 {==============================================================================}
-{$IFDEF CPUARM}
+{$IFDEF CPU32}
 function PageTableGetPageRange(Address:PtrUInt):LongWord; inline;
 {Get the Physical Range from the Page Table page that corresponds to the supplied virtual address}
 var
@@ -10272,7 +10435,7 @@ begin
    Result:=Entry.PhysicalRange;
   end;  
 end;
-{$ENDIF CPUARM}
+{$ENDIF CPU32}
 {==============================================================================}
 
 function PageTableGetPagePhysical(Address:PtrUInt):PtrUInt; inline;

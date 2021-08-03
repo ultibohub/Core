@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for AARCH64 (ARM64).
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -46,11 +46,11 @@ unit PlatformAARCH64;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,SysUtils; 
-
 {==============================================================================}
-{Global definitions}
+{Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
+
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads{$IFDEF DEVICE_TREE_ENABLE},DeviceTree{$ENDIF DEVICE_TREE_ENABLE},SysUtils; 
 
 {==============================================================================}
 //const
@@ -65,7 +65,8 @@ const
  ATAG_MEM        = $54410002;
  ATAG_VIDEOTEXT  = $54410003;
  ATAG_RAMDISK    = $54410004;
- ATAG_INITRD2    = $54410005;
+ ATAG_INITRD     = $54410005; {Deprecated}
+ ATAG_INITRD2    = $54420005;
  ATAG_SERIAL     = $54410006;
  ATAG_REVISION   = $54410007;
  ATAG_VIDEOLFB   = $54410008;
@@ -76,7 +77,7 @@ const
 {==============================================================================}
 const
  {Definitions of Device Tree Blob}  
- DTB_SIGNATURE = $d00dfeed; {See: https://www.kernel.org/doc/Documentation/arm/Booting}
+ DTB_SIGNATURE = $d00dfeed; {See: https://github.com/devicetree-org/devicetree-specification/releases/download/v0.3/devicetree-specification-v0.3.pdf}
  
 {==============================================================================}
 const
@@ -197,6 +198,24 @@ type
    8:(Command:TARMTagCommand)
  end; 
  
+{$IFNDEF DEVICE_TREE_ENABLE} 
+type
+ {Device Tree Blob header}
+ PDTBHeader = ^TDTBHeader;
+ TDTBHeader = packed record
+  Magic:LongWord;               {The value 0xd00dfeed (big-endian)}
+  TotalSize:LongWord;           {The total size in bytes of the devicetree data structure (big-endian)}
+  StructureOffset:LongWord;     {The offset in bytes of the structure block from the beginning of the header (big-endian)}
+  StringsOffset:LongWord;       {The offset in bytes of the strings block from the beginning of the header (big-endian)}
+  ReservationOffset:LongWord;   {The offset in bytes of the memory reservation block from the beginning of the header (big-endian)}
+  Version:LongWord;             {The version of the devicetree data structure (big-endian)}
+  CompatibleVersion:LongWord;   {The lowest version of the devicetree data structure with which the version used is backwards compatible (big-endian)}
+  BootCPUID:LongWord;           {The physical ID of the system’s boot CPU (big-endian)}
+  StringsSize:LongWord;         {The length in bytes of the strings block section of the devicetree blob (big-endian)}
+  StructureSize:LongWord;       {The length in bytes of the structure block section of the devicetree blob (big-endian)}
+ end;
+{$ENDIF DEVICE_TREE_ENABLE}
+ 
 type 
  {Prototypes for Wait Handlers}
  TAARCH64Wait = procedure;
@@ -235,9 +254,9 @@ var
  {Tag Memory Variables}
  TagMemoryCount:LongWord;   {Number of ARM MEM Tags found during parse}
  TagMemorySize:LongWord;    {Size of the last block reported by ARM Tags}
- TagMemoryStart:LongWord;   {Start of the last block reported by ARM Tags}
+ TagMemoryStart:PtrUInt;    {Start of the last block reported by ARM Tags}
  TagMemoryLength:LongWord;  {Adjusted Size of the last block reported by ARM Tags}
- TagMemoryAddress:PtrUInt; {Adjusted Address of the last block reported by ARM Tags}
+ TagMemoryAddress:PtrUInt;  {Adjusted Address of the last block reported by ARM Tags}
 
  {Tag Video Text Variables}
  TagVideoTextCount:LongWord;{Number of ARM VIDEOTEXT Tags found during parse}
@@ -245,8 +264,13 @@ var
  {Tag Ramdisk Variables}
  TagRamdiskCount:LongWord;  {Number of ARM RAMDISK Tags found during parse}
  
+ {Tag Init RD Variables}
+ TagInitRdCount:LongWord;   {Number of ARM INITRD Tags found during parse (Deprecated)}
+ 
  {Tag Init RD2 Variables}
  TagInitRd2Count:LongWord;  {Number of ARM INITRD2 Tags found during parse}
+ TagInitRd2Start:LongWord;
+ TagInitRd2Size:LongWord;
  
  {Tag Serial Variables}
  TagSerialCount:LongWord;   {Number of ARM SERIAL Tags found during parse}
@@ -389,15 +413,126 @@ end;
 procedure AARCH64ParseBootTags;
 {Extract some information from the ARM boot tag list and use it to load the
  memory manager, some other information is stored in variables for future use}
+ 
+ function ExtractCommandLine(Value:PChar):Boolean;
+ var
+  CommandOffset:PChar;
+  CommandLength:LongWord;
+ begin
+  {}
+  Result:=False;
+  
+  if Value = nil then Exit;
+  
+  {Save Address}
+  TagCommandAddress:=Value;
+  
+  {Count the command line parameters}
+  TagCommandSize:=SizeOf(Char); {Must be at least the null terminator}
+  TagCommandCount:=0;
+  CommandOffset:=TagCommandAddress;
+  CommandLength:=0;
+  while CommandOffset^ <> #0 do
+   begin
+    if CommandOffset^ = #32 then
+     begin
+      if CommandLength > 0 then
+       begin
+        Inc(TagCommandCount);
+       end;
+       
+      CommandLength:=0;
+     end
+    else
+     begin
+      Inc(CommandLength);
+     end;             
+    Inc(TagCommandSize,SizeOf(Char));
+    Inc(CommandOffset,SizeOf(Char)); 
+   end; 
+  
+  {Check last paramter}
+  if CommandLength > 0 then
+   begin
+    Inc(TagCommandCount);
+   end;
+   
+  Result:=True; 
+ end;
+ 
+ function ExtractMemoryBlock(Address,Size:LongWord):Boolean;
+ var
+  BlockSize:LongWord;
+  BlockAddress:PtrUInt;
+  StartAddress:PtrUInt;
+ begin
+  {}
+  Result:=False;
+  
+  if Size = 0 then Exit;
+
+  BlockAddress:=Address;
+  BlockSize:=Size;
+  
+  {Save Size and Start}
+  TagMemorySize:=BlockSize;
+  TagMemoryStart:=BlockAddress;
+  if BlockSize > 0 then
+   begin
+    StartAddress:=BlockAddress;
+    if BlockAddress < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) then
+     begin
+      StartAddress:=INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE;
+      if (StartAddress - BlockAddress) < BlockSize then
+       begin
+        BlockSize:=BlockSize - (StartAddress - BlockAddress);
+       end
+      else
+       begin
+        BlockSize:=0; 
+       end;
+     end;
+    
+    {Save Address and Length}
+    TagMemoryAddress:=StartAddress;
+    TagMemoryLength:=BlockSize;
+    if BlockSize > 0 then
+     begin
+      {Register Block}
+      RegisterHeapBlock(Pointer(StartAddress),BlockSize);
+     end;           
+   end;
+  
+  Result:=True; 
+ end;
+ 
+ function ExtractInitialRamdisk(Address,Size:LongWord):Boolean;
+ begin
+  {}
+  Result:=False;
+  
+  if (Address = 0) or (Size = 0) then Exit;
+  
+  {Save Address and Size}
+  TagInitRd2Start:=Address;
+  TagInitRd2Size:=Size;
+  
+  {Reserve Ramdisk memory}
+  if ReserveHeapBlock(Pointer(TagInitRd2Start),TagInitRd2Size) <> nil then
+   begin
+    {Update Configuration}
+    INITIAL_RAMDISK_BASE:=Address;
+    INITIAL_RAMDISK_SIZE:=Size;
+   end; 
+  
+  Result:=True; 
+ end;
+ 
 var
  ARMTag:PARMTag;
 
- CommandOffset:PChar;
- CommandLength:LongWord;
- 
- BlockSize:LongWord;
- BlockAddress:PtrUInt;
- StartAddress:PtrUInt;
+ Size:UInt64;
+ Address:PtrUInt;
 begin
  {}
  {Check Tags Count}
@@ -410,12 +545,72 @@ begin
    TagMemoryCount:=0;
    TagVideoTextCount:=0;
    TagRamdiskCount:=0;
+   TagInitRdCount:=0;
    TagInitRd2Count:=0;
    TagSerialCount:=0;
    TagRevisionCount:=0;
    TagVideoFBCount:=0;
    TagCmdCount:=0;
    
+   {$IFDEF DEVICE_TREE_ENABLE}
+   {Check for valid Device Tree Blob}
+   if (AARCH64TagsAddress <> ARMTAGS_INITIAL) then
+    begin
+     DEVICE_TREE_VALID:=DeviceTreeValidate(AARCH64TagsAddress,DEVICE_TREE_SIZE);
+     if DEVICE_TREE_VALID then DEVICE_TREE_BASE:=AARCH64TagsAddress;
+    end;
+    
+   {Check for default Tag Address value or for Device Tree Blob available}
+   if (AARCH64TagsAddress = ARMTAGS_INITIAL) or DEVICE_TREE_VALID then
+    begin
+     {Device Tree Blob supplied or ARM tags not present}
+     {Check Device Tree}
+     if DEVICE_TREE_VALID then
+      begin
+       {Get Memory Block (First)}
+       if not DeviceTreeGetMemory(0,Address,Size) then
+        begin
+         {Get Default Block}
+         Address:=CPU_MEMORY_BASE;
+         Size:=CPU_MEMORY_SIZE;
+        end;
+       if ExtractMemoryBlock(Address,Size) then
+        begin
+         Inc(ARMTagsCount);
+         Inc(TagMemoryCount);
+        end;
+       
+       {Get Command Line}
+       if ExtractCommandLine(DeviceTreeGetBootArgs) then
+        begin
+         Inc(ARMTagsCount);
+         Inc(TagCmdCount);
+        end;
+       
+       {Get Ramdisk}
+       if DeviceTreeGetRamdisk(Address,Size) then
+        begin
+         if ExtractInitialRamdisk(Address,Size) then
+          begin
+           Inc(ARMTagsCount);
+           Inc(TagInitRd2Count);
+          end;
+        end;
+
+       {Reserve Device Tree memory}
+       ReserveHeapBlock(Pointer(DEVICE_TREE_BASE),DEVICE_TREE_SIZE);
+      end
+     else
+      begin
+       {Get Memory Block}
+       if ExtractMemoryBlock(CPU_MEMORY_BASE,CPU_MEMORY_SIZE) then
+        begin
+         Inc(ARMTagsCount);
+         Inc(TagMemoryCount);
+        end;
+      end;  
+    end
+   {$ELSE DEVICE_TREE_ENABLE}
    {Check for default Tag Address value and for Device Tree Blob signature}
    if (AARCH64TagsAddress = ARMTAGS_INITIAL) or (LongWordBEtoN(PLongWord(AARCH64TagsAddress)^) = DTB_SIGNATURE) then
     begin
@@ -423,46 +618,19 @@ begin
      {Check Device Tree}
      if LongWordBEtoN(PLongWord(AARCH64TagsAddress)^) = DTB_SIGNATURE then
       begin
-       DEVICE_TREE_BASE:=AARCH64TagsAddress;
        DEVICE_TREE_VALID:=True;
+       DEVICE_TREE_BASE:=AARCH64TagsAddress;
+       DEVICE_TREE_SIZE:=LongWordBEtoN(PDTBHeader(AARCH64TagsAddress).TotalSize);
       end;
 
-     {Check Memory Size}
-     if CPU_MEMORY_SIZE > 0 then
+     {Get Memory Block}
+     if ExtractMemoryBlock(CPU_MEMORY_BASE,CPU_MEMORY_SIZE) then
       begin
-       {Registry Memory}
        Inc(ARMTagsCount);
        Inc(TagMemoryCount);
-        
-       BlockAddress:=CPU_MEMORY_BASE;
-       BlockSize:=CPU_MEMORY_SIZE;
-       TagMemorySize:=BlockSize;
-       TagMemoryStart:=BlockAddress;
-       
-       if BlockSize > 0 then
-        begin
-         StartAddress:=BlockAddress;
-         if BlockAddress < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) then
-          begin
-           StartAddress:=INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE;
-           if (StartAddress - BlockAddress) < BlockSize then
-            begin
-             BlockSize:=BlockSize - (StartAddress - BlockAddress);
-            end
-           else
-            begin
-             BlockSize:=0; 
-            end;
-          end;
-         TagMemoryAddress:=StartAddress;
-         TagMemoryLength:=BlockSize;
-         if BlockSize > 0 then
-          begin
-           RegisterHeapBlock(Pointer(StartAddress),BlockSize);
-          end;           
-        end;
       end;
     end
+   {$ENDIF DEVICE_TREE_ENABLE}
    else
     begin
      {ARM Tags address supplied}
@@ -494,33 +662,8 @@ begin
           Inc(TagMemoryCount);
           if ARMTag.Header.Size > 2 then
            begin
-            BlockAddress:=ARMTag.Memory.Start;
-            BlockSize:=ARMTag.Memory.Size;
-            TagMemorySize:=BlockSize;
-            TagMemoryStart:=BlockAddress;
-            if BlockSize > 0 then
-             begin
-              StartAddress:=BlockAddress;
-              if BlockAddress < (INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE) then
-               begin
-                StartAddress:=INITIAL_HEAP_BASE + INITIAL_HEAP_SIZE;
-                if (StartAddress - BlockAddress) < BlockSize then
-                 begin
-                  BlockSize:=BlockSize - (StartAddress - BlockAddress);
-                 end
-                else
-                 begin
-                  BlockSize:=0; 
-                 end;
-               end;
-              TagMemoryAddress:=StartAddress;
-              TagMemoryLength:=BlockSize;
-              if BlockSize > 0 then
-               begin
-                RegisterHeapBlock(Pointer(StartAddress),BlockSize);
-               end;           
-             end;
-           end;
+            ExtractMemoryBlock(ARMTag.Memory.Start,ARMTag.Memory.Size);
+           end; 
          end;    
         ATAG_VIDEOTEXT:begin
           {VIDEOTEXT}
@@ -535,10 +678,18 @@ begin
           Inc(TagRamdiskCount);
           {Not relevant to Ultibo}
          end;    
+        ATAG_INITRD:begin
+          {INITRD}
+          Inc(TagInitRdCount);
+          {Not relevant to Ultibo (Deprecated)}
+         end;    
         ATAG_INITRD2:begin
           {INITRD2}
           Inc(TagInitRd2Count);
-          {Not relevant to Ultibo}
+          if ARMTag.Header.Size > 2 then
+           begin
+            ExtractInitialRamdisk(ARMTag.InitRd2.Start,ARMTag.InitRd2.Size);
+           end;
          end;    
         ATAG_SERIAL:begin   
           {SERIAL}
@@ -570,36 +721,7 @@ begin
           Inc(TagCmdCount);
           if ARMTag.Header.Size > 2 then
            begin
-            TagCommandAddress:=@ARMTag.Command.Cmdline[0];
-            {Count the command line parameters}
-            TagCommandSize:=SizeOf(Char); {Must be at least the null terminator}
-            TagCommandCount:=0;
-            CommandOffset:=TagCommandAddress;
-            CommandLength:=0;
-            while CommandOffset^ <> #0 do
-             begin
-              if CommandOffset^ = #32 then
-               begin
-                if CommandLength > 0 then
-                 begin
-                  Inc(TagCommandCount);
-                 end;
-                 
-                CommandLength:=0;
-               end
-              else
-               begin
-                Inc(CommandLength);
-               end;             
-              Inc(TagCommandSize,SizeOf(Char));
-              Inc(CommandOffset,SizeOf(Char)); 
-             end; 
-            
-            {Check last paramter}
-            if CommandLength > 0 then
-             begin
-              Inc(TagCommandCount);
-             end;
+            ExtractCommandLine(@ARMTag.Command.Cmdline[0]);
            end;
          end;    
        end;

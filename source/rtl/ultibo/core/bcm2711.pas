@@ -2079,7 +2079,7 @@ begin
      BCM2711EMMC2Host.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
      BCM2711EMMC2Host.SDHCI.Device.DeviceType:=SDHCI_TYPE_SD;
      BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_AUTO_CMD12 or SDHCI_FLAG_AUTO_CMD23; {EMMC2 controller supports SDMA/ADMA2}
-     if ((ChipGetRevision and $FF) < $20) or not(DEVICE_TREE_VALID) then BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=BCM2711EMMC2Host.SDHCI.Device.DeviceFlags or SDHCI_FLAG_BUS_ADDRESSES;
+     if ((ChipGetRevision and $FF) < $20) or not(DeviceTreeValid) then BCM2711EMMC2Host.SDHCI.Device.DeviceFlags:=BCM2711EMMC2Host.SDHCI.Device.DeviceFlags or SDHCI_FLAG_BUS_ADDRESSES;
      BCM2711EMMC2Host.SDHCI.Device.DeviceData:=nil;
      BCM2711EMMC2Host.SDHCI.Device.DeviceDescription:=BCM2711_EMMC2_DESCRIPTION;
      {SDHCI}
@@ -12469,7 +12469,7 @@ end;
 {BCM2711 Helper Functions}
 function BCM2711SPIGetDescription(Id:LongWord):String;
 {Get the device description of an SPI device}
-{Id: The Id number of the SPI device (0 to 6}
+{Id: The Id number of the SPI device (0 to 6)}
 {Return: The correct device description suitable for passing to SPIDeviceFindByDescription}
 
 {Note: The Id number supplied to this function may differ from the Ultibo device id value}
@@ -12504,7 +12504,7 @@ end;
 {==============================================================================}
 
 function BCM2711PWMGetDescription(Id,Channel:LongWord):String;
-{Get the device description of an PWM device}
+{Get the device description of a PWM device}
 {Id: The Id number of the PWM device (0 or 1)}
 {Channel: The channel number of the PWM device (0 or 1)}
 {Return: The correct device description suitable for passing to PWMDeviceFindByDescription}

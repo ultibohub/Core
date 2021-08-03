@@ -1,7 +1,7 @@
 {
 Ultibo Framebuffer interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -693,10 +693,10 @@ begin
 
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
-      {$IFDEF CPUARM}
+      {$IFDEF CPU32}
       Data.SourceRange:=0;
       Data.DestRange:=0;
-      {$ENDIF CPUARM}
+      {$ENDIF CPU32}
       Data.Source:=Pointer(Address);
       Data.Dest:=Buffer;
       Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_BULK;
@@ -822,10 +822,10 @@ begin
      begin
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
-      {$IFDEF CPUARM}
+      {$IFDEF CPU32}
       Data.SourceRange:=0;
       Data.DestRange:=0;
-      {$ENDIF CPUARM}
+      {$ENDIF CPU32}
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
       Data.Flags:=DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1061,10 +1061,10 @@ begin
 
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
-      {$IFDEF CPUARM}
+      {$IFDEF CPU32}
       Data.SourceRange:=0;
       Data.DestRange:=0;
-      {$ENDIF CPUARM}
+      {$ENDIF CPU32}
       Data.Source:=Pointer(Address);
       Data.Dest:=Buffer;
       Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_BULK;
@@ -1209,10 +1209,10 @@ begin
      begin
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
-      {$IFDEF CPUARM}
+      {$IFDEF CPU32}
       Data.SourceRange:=0;
       Data.DestRange:=0;
-      {$ENDIF CPUARM}
+      {$ENDIF CPU32}
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
       Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1424,10 +1424,10 @@ begin
           
           {Create Data (To Buffer)}
           {FillChar(Next^,SizeOf(TDMAData),0);} {Not required}
-          {$IFDEF CPUARM}
+          {$IFDEF CPU32}
           Next.SourceRange:=0;
           Next.DestRange:=0;
-          {$ENDIF CPUARM}
+          {$ENDIF CPU32}
           Next.Source:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Count) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X1) * (Framebuffer.Depth shr 3)));
           Next.Dest:=Buffer;
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1442,10 +1442,10 @@ begin
           
           {Create Data (From Buffer)}
           {FillChar(Next^,SizeOf(TDMAData),0);} {Not required}
-          {$IFDEF CPUARM}
+          {$IFDEF CPU32}
           Next.SourceRange:=0;
           Next.DestRange:=0;
-          {$ENDIF CPUARM}
+          {$ENDIF CPU32}
           Next.Source:=Buffer;
           Next.Dest:=Pointer(Framebuffer.Address + ((Framebuffer.OffsetY + Count) * Framebuffer.Pitch) + ((Framebuffer.OffsetX + X2) * (Framebuffer.Depth shr 3)));
           Next.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1521,10 +1521,10 @@ begin
          begin
           {Create Data}
           {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
-          {$IFDEF CPUARM}
+          {$IFDEF CPU32}
           Data.SourceRange:=0;
           Data.DestRange:=0;
-          {$ENDIF CPUARM}
+          {$ENDIF CPU32}
           Data.Source:=Pointer(Source);
           Data.Dest:=Pointer(Address);
           Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1579,10 +1579,10 @@ begin
          begin
           {Create Data}
           {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
-          {$IFDEF CPUARM}
+          {$IFDEF CPU32}
           Data.SourceRange:=0;
           Data.DestRange:=0;
-          {$ENDIF CPUARM}
+          {$ENDIF CPU32}
           Data.Source:=Pointer(Source);
           Data.Dest:=Pointer(Address);
           Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;
@@ -1812,10 +1812,10 @@ begin
       
       {Create Data}
       {FillChar(Data,SizeOf(TDMAData),0);} {Not required}
-      {$IFDEF CPUARM}
+      {$IFDEF CPU32}
       Data.SourceRange:=0;
       Data.DestRange:=0;
-      {$ENDIF CPUARM}
+      {$ENDIF CPU32}
       Data.Source:=Buffer;
       Data.Dest:=Pointer(Address);
       Data.Flags:=DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE or DMA_DATA_FLAG_NOCLEAN or DMA_DATA_FLAG_NOINVALIDATE or DMA_DATA_FLAG_BULK;

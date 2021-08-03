@@ -1,7 +1,7 @@
 {
 Ultibo Virtual Disk interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -54,7 +54,7 @@ const
  VIRTUAL_DEVICE_DESCRIPTION = 'Virtual Disk Device'; 
  VIRTUAL_CONTROLLER_DESCRIPTION = 'Virtual Disk Controller';
 
- {Virtual Contants}
+ {Virtual Constants}
   {Image/Extent Flags}  //To Do //Convert these //VIRTUAL_DEVICE_DESCRIPTION etc
  virtualFlagNone    = $00000000;
  virtualFlagFixed   = $00000001;
@@ -63,6 +63,9 @@ const
  virtualFlagDelta   = $00000008;
  virtualFlagDevice  = $00000010;
  virtualFlagSplit   = $00000020;
+
+ {Initramfs Constants}
+ memoryInitramfsName = 'INITRAMFS';
 
  {VMware Constants}
   {General}
@@ -654,6 +657,7 @@ type
 
    {Image Methods}
    function CreateImage(AMediaType:TMediaType;AFloppyType:TFloppyType;AAttributes:LongWord;ASectorSize:Word;const ASectorCount:Int64;ACylinders,AHeads,ASectors:LongWord;APartitionId:Byte):Integer; override;
+   function OpenImage(AMediaType:TMediaType;AFloppyType:TFloppyType;AAttributes:LongWord;ASectorSize:Word;const ASectorCount:Int64;ACylinders,AHeads,ASectors:LongWord;APartitionId:Byte):Integer; override;
    function CloseImage:Boolean; override;
  end;
 
@@ -3602,7 +3606,6 @@ end;
 {==============================================================================}
 
 function TVirtualDiskMemoryImage.CreateImage(AMediaType:TMediaType;AFloppyType:TFloppyType;AAttributes:LongWord;ASectorSize:Word;const ASectorCount:Int64;ACylinders,AHeads,ASectors:LongWord;APartitionId:Byte):Integer;
-{Note: Create only on Memory Image, Cannot Open}
 var
  Size:Int64;
 begin
@@ -3642,6 +3645,56 @@ begin
   FData:=GetMem(Size);
   if FData = nil then Exit;
 
+  Result:=FImageNo;
+ finally  
+  WriterUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TVirtualDiskMemoryImage.OpenImage(AMediaType:TMediaType;AFloppyType:TFloppyType;AAttributes:LongWord;ASectorSize:Word;const ASectorCount:Int64;ACylinders,AHeads,ASectors:LongWord;APartitionId:Byte):Integer;
+begin
+ {}
+ Result:=0;
+ 
+ if not WriterLock then Exit;
+ try
+  if FDriver = nil then Exit;
+  if FController = nil then Exit;
+  if Length(FName) = 0 then Exit;
+
+  {$IFDEF VIRTUAL_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TVirtualDiskMemoryImage.OpenImage - Name = ' + FName);
+  {$ENDIF}
+ 
+  {Check Open}
+  if FData <> nil then Exit;
+ 
+  {Setup Parameters}
+  if (AMediaType <> mtUNKNOWN) and (AMediaType <> mtINVALID) then FMediaType:=AMediaType;
+  if (AFloppyType <> ftUNKNOWN) and (AFloppyType <> ftINVALID) then FFloppyType:=AFloppyType;
+  if AAttributes <> iaNone then FAttributes:=AAttributes;
+  if ASectorSize > 0 then FSectorSize:=ASectorSize;
+  {if ASectorCount > 0 then FSectorCount:=ASectorCount;}
+  {if ACylinders > 0 then FCylinders:=ACylinders;}
+  {if AHeads > 0 then FHeads:=AHeads;}
+  {if ASectors > 0 then FSectors:=ASectors;}
+  {if APartitionId <> pidUnused then FPartitionId:=APartitionId;}
+  
+  {Check Name}
+  if Uppercase(FName) <> memoryInitramfsName then Exit;
+  
+  {Check Parameters}
+  if FSectorSize = 0 then FSectorSize:=MIN_SECTOR_SIZE;
+  if (FSectorCount * FSectorSize) > INITIAL_RAMDISK_SIZE then FSectorCount:=0;
+  if FSectorCount = 0 then FSectorCount:=INITIAL_RAMDISK_SIZE div FSectorSize;
+  FSectorShiftCount:=GetSectorShiftCount;
+  
+  {Assign Memory}
+  FData:=Pointer(INITIAL_RAMDISK_BASE);
+  if FData = nil then Exit;
+ 
   Result:=FImageNo;
  finally  
   WriterUnlock;
@@ -9638,10 +9691,21 @@ begin
         end
        else if AImageType = itMEMORY then
         begin
-         {Create Image (Cannot Open Memory}
-         if ASectorCount = 0 then Exit;
+         if Uppercase(AName) = memoryInitramfsName then
+          begin
+           if INITIAL_RAMDISK_BASE = 0 then Exit;
+           if INITIAL_RAMDISK_SIZE = 0 then Exit;
+           
+           {Open Image}
+           Result:=True;
+          end
+         else
+          begin
+           {Create Image}
+           if ASectorCount = 0 then Exit;
          
-         Result:=True;
+           Result:=True;
+          end; 
         end
        else
         begin

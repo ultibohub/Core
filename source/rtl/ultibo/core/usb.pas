@@ -10282,8 +10282,8 @@ end;
 procedure USBLogOutput(const AText:String;Data:Pointer); 
 {Default log output procedure for USBLogDevices etc}
 begin
-  {}
-  LoggingOutput(AText);
+ {}
+ LoggingOutput(AText);
 end;
 
 {==============================================================================}

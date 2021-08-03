@@ -106,6 +106,7 @@ Global Defines
 {--$DEFINE THREAD_DEBUG}          {Enable debug output/counters for thread internals (Default: Off)}
 {--$DEFINE PLATFORM_DEBUG}        {Enable debug output/counters for platform internals (Default: Off)}
 {--$DEFINE SYSCALLS_DEBUG}        {Enable debug output/counters for C library syscalls (Default: Off)}
+{--$DEFINE DEVICE_TREE_DEBUG}     {Enable debug output/counters for device tree internals (Default: Off)}
 {$DEFINE API_DEBUG}             {Enable debug output/counters for library API internals (Default: Off)}
 {$DEFINE LOADER_DEBUG}          {Enable debug output/counters for dynamic loader internals (Default: Off)}
 {--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off) (Do not enable when console logging is active)}
@@ -349,6 +350,7 @@ Global Defines
 {$DEFINE API_EXPORT_THREADS}         {Enable the library API unit to export symbols for the Threads unit (Default: On)}
 {$DEFINE API_EXPORT_HEAP}            {Enable the library API unit to export symbols for the HeapManager unit (Default: On)}
 
+{$DEFINE API_EXPORT_DEVICE_TREE}     {Enable the library API unit to export symbols for the DeviceTree unit (Default: On)}
 {$DEFINE API_EXPORT_DEVICES}         {Enable the library API unit to export symbols for the Devices unit (Default: On)}
 {$DEFINE API_EXPORT_CONSOLE}         {Enable the library API unit to export symbols for the Console unit (Default: On)}
 {$DEFINE API_EXPORT_LOGGING}         {Enable the library API unit to export symbols for the Logging unit (Default: On)}
@@ -386,7 +388,13 @@ Global Defines
 {$DEFINE API_EXPORT_ULTIBO}          {Enable the library API unit to export symbols for the Ultibo unit (Default: On)}
 
 {API dependencies}
-//To Do 
+{$IFDEF API_EXPORT_CONSOLE}
+ {$DEFINE API_EXPORT_DEVICES}
+{$ENDIF}
+
+{$IFDEF API_EXPORT_THREADS}
+ {$DEFINE API_EXPORT_PLATFORM}
+{$ENDIF}
 
 {==============================================================================}
 {==============================================================================}
@@ -408,6 +416,9 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {Device and Platform definitions}
+{$DEFINE DEVICE_TREE_ENABLE}        {Enable use of device tree for configuration during boot (Default: On)}
+{$DEFINE DEVICE_TREE_ENUMERATION}   {Enable support for device tree enumeration (Output to text) (Default: On)}
+
 {$DEFINE DEVICE_NOTIFIER_RETRY}     {Enable asynchronous retry of device notifications (Default: On)}
 
 {--$DEFINE USB_LEGACY_DEVICE_INIT}  {Enable old style USB device initialization (Default: Off)}

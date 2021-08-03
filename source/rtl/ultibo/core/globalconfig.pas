@@ -480,6 +480,7 @@ var
 {Device tree configuration} 
 var
  DEVICE_TREE_BASE:PtrUInt;       {The base address of the device tree information (If Applicable)}
+ DEVICE_TREE_SIZE:LongWord;      {The total size of the device tree information (If Applicable)}
  DEVICE_TREE_VALID:LongBool;     {True if the device tree information has a valid signature (If Applicable)}
  
 {==============================================================================}
@@ -594,6 +595,10 @@ var
  
  {Environment}
  ENVIRONMENT_STRING_COUNT:LongWord = SIZE_64; {How many strings are allocated in the environment block (for Get/SetEnvironmentVariable)}
+ 
+ {Initial Ramdisk}
+ INITIAL_RAMDISK_BASE:PtrUInt;                {The starting address of the initial ramdisk passed from the bootloader (If applicable)}
+ INITIAL_RAMDISK_SIZE:UInt64;                 {The size in bytes of the initial ramdisk passed from the bootloader (If applicable)}
  
 {==============================================================================}
 {Timezone configuration}

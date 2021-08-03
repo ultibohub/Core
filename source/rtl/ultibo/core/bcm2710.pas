@@ -11218,7 +11218,7 @@ end;
 {==============================================================================}
 
 function BCM2710PWMGetDescription(Id,Channel:LongWord):String;
-{Get the device description of an PWM device}
+{Get the device description of a PWM device}
 {Id: The Id number of the PWM device (0 or 1)}
 {Channel: The channel number of the PWM device (0 or 1)}
 {Return: The correct device description suitable for passing to PWMDeviceFindByDescription}

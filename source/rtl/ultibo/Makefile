@@ -362,6 +362,7 @@ ULTIBO_UNITS=globalconfig \
 	     locale \
 	     unicode \
 	     threads \
+	     devicetree \
 	     devices \
 	     framebuffer \
 	     dma \

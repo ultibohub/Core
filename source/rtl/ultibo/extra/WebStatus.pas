@@ -42,9 +42,9 @@ unit WebStatus;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
-     HeapManager,Devices,USB,PCI,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,Timezone,Locale,
-     Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
+     HeapManager,DeviceTree,Devices,USB,PCI,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,
+     Timezone,Locale,Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC;
 
 //To Do //Look for:
 
@@ -58,6 +58,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$
 const
  {Web Status specific constants}
  RtlMaxUnits = 1024; {See maxunits in system.inc}
+ 
+ DeviceTreeMaxColumns = 140;
+ DeviceTreeColumnOffset = 20;
  
 {==============================================================================}
 type
@@ -913,7 +916,27 @@ type
   {Public Methods}
   
  end;
+
+ TWebStatusDeviceTree = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  
+ protected
+  {Internal Variables}
  
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
+
 {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG) or DEFINED(EXCEPTION_DEBUG)}
  TWebStatusDebug = class(TWebStatusSub)
  public
@@ -995,6 +1018,7 @@ function WebStatusDeregister(AListener:THTTPListener;const AHost:String):Boolean
 
 {==============================================================================}
 {Web Status Helper Functions}
+procedure WebStatusDeviceTreeLogOutput(const AText:String;Data:Pointer);
 function WebStatusDeviceEnumerate(Device:PDevice;Data:Pointer):LongWord;
 function WebStatusDriverEnumerate(Driver:PDriver;Data:Pointer):LongWord;
 function WebStatusHandleEnumerate(Handle:PHandleEntry;Data:Pointer):LongWord;
@@ -1060,6 +1084,7 @@ var
  WebStatusIRQFIQSWI:TWebStatusIRQFIQSWI;
  WebStatusGPIO:TWebStatusGPIO;
  WebStatusConfiguration:TWebStatusConfiguration;
+ WebStatusDeviceTree:TWebStatusDeviceTree;
  {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG) or DEFINED(EXCEPTION_DEBUG)}
  WebStatusDebug:TWebStatusDebug;
  {$ENDIF}
@@ -2722,6 +2747,9 @@ begin
  {Register}
  AddBlank(AResponse);
  AddItemEx(AResponse,'RegisterCount:',IntToStr(Statistics.RegisterCount),3);
+ {Reserve}
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'ReserveCount:',IntToStr(Statistics.ReserveCount),3);
  {Request}
  AddBlank(AResponse);
  AddItemEx(AResponse,'RequestCount:',IntToStr(Statistics.RequestCount),3);
@@ -2781,6 +2809,13 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'RegisterInvalidCount:',IntToStr(Statistics.RegisterInvalidCount),3);
  AddItemEx(AResponse,'RegisterAddFailCount:',IntToStr(Statistics.RegisterAddFailCount),3);
+ {Reserve Internal}
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'ReserveInvalidCount:',IntToStr(Statistics.ReserveInvalidCount),3);
+ AddItemEx(AResponse,'ReserveAddFailCount:',IntToStr(Statistics.ReserveAddFailCount),3);
+ AddItemEx(AResponse,'ReserveSplitFailCount:',IntToStr(Statistics.ReserveSplitFailCount),3);
+ AddItemEx(AResponse,'ReserveRemoveFailCount:',IntToStr(Statistics.ReserveRemoveFailCount),3);
+ AddItemEx(AResponse,'ReserveUnavailableCount:',IntToStr(Statistics.ReserveUnavailableCount),3);
  {Request Internal}
  AddBlank(AResponse);
  AddItemEx(AResponse,'RequestInvalidCount:',IntToStr(Statistics.RequestInvalidCount),3);
@@ -3698,6 +3733,15 @@ begin
  {Add Tasker Count}
  AddItemEx(AResponse,'Tasker Count:',IntToStr(TaskerGetCount),2);
  
+ {Add Thread Stack}
+ AddBlank(AResponse);
+ AddBold(AResponse,'Thread Stack','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'THREAD_STACK_DEFAULT_SIZE:',IntToStr(THREAD_STACK_DEFAULT_SIZE),2);
+ AddItemEx(AResponse,'THREAD_STACK_MINIMUM_SIZE:',IntToStr(THREAD_STACK_MINIMUM_SIZE),2);
+ AddItemEx(AResponse,'THREAD_STACK_MAXIMUM_SIZE:',IntToStr(THREAD_STACK_MAXIMUM_SIZE),2);
+ AddItemEx(AResponse,'THREAD_STACK_GUARD_ENABLED:',BooleanToString(THREAD_STACK_GUARD_ENABLED),2);
+ 
  {Add Initial Thread}
  AddBlank(AResponse);
  AddBold(AResponse,'Initial Thread','');
@@ -3706,7 +3750,7 @@ begin
  AddItemEx(AResponse,'INITIAL_STACK_SIZE',IntToStr(INITIAL_STACK_SIZE),3);
  AddItemEx(AResponse,'INITIAL_STACK_BASE','0x' + AddrToHex(INITIAL_STACK_BASE),3);
  
- {Add Boot Stack}
+ {Add Boot Thread}
  AddBlank(AResponse);
  AddBold(AResponse,'Boot Thread','');
  AddBlank(AResponse);
@@ -10268,13 +10312,23 @@ begin
   end;
  AddBlank(AResponse);
  
+ {Add Device Tree}
  AddBold(AResponse,'Device Tree','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'Device Tree Base:','0x' + AddrToHex(DEVICE_TREE_BASE),2);
- AddItemEx(AResponse,'Device Tree Valid:',BooleanToString(DEVICE_TREE_VALID),2);
+ AddItemEx(AResponse,'Device Tree Base:','0x' + AddrToHex(DeviceTreeGetBase),2);
+ AddItemEx(AResponse,'Device Tree Size:',IntToStr(DeviceTreeGetSize),2);
+ AddItemEx(AResponse,'Device Tree Valid:',BooleanToString(DeviceTreeValid),2);
  AddBlank(AResponse);
 
+ {Add Initial Ramdisk}
+ AddBold(AResponse,'Initial Ramdisk','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'Initial Ramdisk Base:','0x' + AddrToHex(INITIAL_RAMDISK_BASE),2);
+ AddItemEx(AResponse,'Initial Ramdisk Size:',IntToStr(INITIAL_RAMDISK_SIZE),2);
+ AddBlank(AResponse);
+ 
  {$IFDEF CPUARM}
+ {Add ARM Specific}
  AddBold(AResponse,'ARM Specific','');
  AddBlank(AResponse);
  
@@ -10296,6 +10350,7 @@ begin
  AddBold(AResponse,'ARM Boot Tags','');
  AddBlank(AResponse);
  AddItemEx(AResponse,'Tags Address:','0x' + AddrToHex(ARMTagsAddress),2);
+ AddItemEx(AResponse,'Tags Count:',IntToStr(ARMTagsCount),2);
  AddBlank(AResponse);
  
  AddItemEx(AResponse,'Tag None Count:',IntToStr(TagNoneCount),2);
@@ -10320,12 +10375,17 @@ begin
  AddItemEx(AResponse,'Tag Ramdisk Count:',IntToStr(TagRamdiskCount),2);
  AddBlank(AResponse);
  
+ AddItemEx(AResponse,'Tag Init RD Count:',IntToStr(TagInitRdCount),2);
+ AddBlank(AResponse);
+
  AddItemEx(AResponse,'Tag Init RD2 Count:',IntToStr(TagInitRd2Count),2);
+ AddItemEx(AResponse,'Ramdisk Start:','0x' + IntToHex(TagInitRd2Start,8),4);
+ AddItemEx(AResponse,'Ramdisk Size:',IntToStr(TagInitRd2Size),4);
  AddBlank(AResponse);
  
  AddItemEx(AResponse,'Tag Serial Count:',IntToStr(TagSerialCount),2);
  AddItemEx(AResponse,'Serial No Low:','0x' + IntToHex(TagSerialNoLow,8),4);
- AddItemEx(AResponse,'Serial No Hight:','0x' + IntToHex(TagSerialNoHigh,8),4);
+ AddItemEx(AResponse,'Serial No High:','0x' + IntToHex(TagSerialNoHigh,8),4);
  AddBlank(AResponse);
  
  AddItemEx(AResponse,'Tag Revision Count:',IntToStr(TagRevisionCount),2);
@@ -10340,6 +10400,15 @@ begin
  AddItemEx(AResponse,'Command Count:',IntToStr(TagCommandCount),4);
  AddItemEx(AResponse,'Command Address:','0x' + PtrToHex(TagCommandAddress),4);
  AddBlank(AResponse);
+ {$ENDIF}
+ 
+ {$IFDEF CPUAARCH64}
+ {Add AARCH64 Specific}
+ AddBold(AResponse,'AARCH64 Specific','');
+ AddBlank(AResponse);
+
+ //To Do
+ 
  {$ENDIF}
  
  {Add Footer}
@@ -10459,7 +10528,7 @@ begin
  PageTableGetEntry(Address,NextEntry);
  while NextEntry.Size > 0 do
   begin
-   if (NextEntry.Size <> CurrentEntry.Size) or (NextEntry.Flags <> CurrentEntry.Flags){$IFDEF CPUARM} or (NextEntry.PhysicalRange <> CurrentEntry.PhysicalRange){$ENDIF CPUARM} then
+   if (NextEntry.Size <> CurrentEntry.Size) or (NextEntry.Flags <> CurrentEntry.Flags){$IFDEF CPU32} or (NextEntry.PhysicalRange <> CurrentEntry.PhysicalRange){$ENDIF CPU32} then
     begin
      {Check Repeat}
      if (Address <> $00000000) and ((CurrentEntry.VirtualAddress + CurrentEntry.Size) < NextEntry.VirtualAddress) then
@@ -10476,7 +10545,7 @@ begin
      FlagNames:=FlagsToFlagNames(NextEntry.Flags);
      
      {Add Item}
-     AddItem4Column(AResponse,'0x' + AddrToHex(NextEntry.VirtualAddress),'0x' + {$IFDEF CPUARM}IntToHex(NextEntry.PhysicalRange,8) + ':' + {$ENDIF CPUARM}AddrToHex(NextEntry.PhysicalAddress),'0x' + IntToHex(NextEntry.Size,8),FlagNames.Strings[0]);
+     AddItem4Column(AResponse,'0x' + AddrToHex(NextEntry.VirtualAddress),'0x' + {$IFDEF CPU32}IntToHex(NextEntry.PhysicalRange,8) + ':' + {$ENDIF CPU32}AddrToHex(NextEntry.PhysicalAddress),'0x' + IntToHex(NextEntry.Size,8),FlagNames.Strings[0]);
      
      {Check Flag Count}
      if FlagNames.Count > 1 then
@@ -11054,6 +11123,23 @@ begin
  AddItemEx(AResponse,'RtlInitFinalTable:','0x' + PtrToHex(@RtlInitFinalTable),2);
  AddBlank(AResponse);
  
+ {Add Heap, Stack and Alignment}
+ AddBold(AResponse,'Heap, Stack and Alignment','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'HEAP_MIN_ALIGNMENT:',IntToStr(HEAP_MIN_ALIGNMENT),2);
+ AddItemEx(AResponse,'HEAP_REQUEST_ALIGNMENT:',IntToStr(HEAP_REQUEST_ALIGNMENT),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'STACK_MIN_ALIGNMENT:',IntToStr(STACK_MIN_ALIGNMENT),2);
+ AddItemEx(AResponse,'THREADVAR_MIN_ALIGNMENT:',IntToStr(THREADVAR_MIN_ALIGNMENT),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'INITIAL_HEAP_SIZE:',IntToStr(INITIAL_HEAP_SIZE),2);
+ AddItemEx(AResponse,'INITIAL_HEAP_BASE:','0x' + AddrToHex(INITIAL_HEAP_BASE),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'INITIAL_TLS_SIZE:',IntToStr(INITIAL_TLS_SIZE),2);
+ AddItemEx(AResponse,'INITIAL_STACK_SIZE:',IntToStr(INITIAL_STACK_SIZE),2);
+ AddItemEx(AResponse,'INITIAL_STACK_BASE:','0x' + AddrToHex(INITIAL_STACK_BASE),2);
+ AddBlank(AResponse);
+ 
  {Add Interrupt and Exception Handling}
  AddBold(AResponse,'Interrupt and Exception Handling','');
  AddBlank(AResponse);
@@ -11334,6 +11420,125 @@ begin
  //To Do
  AddBlank(AResponse);
  
+ {Add Footer}
+ AddFooter(AResponse); 
+ 
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusDeviceTree}
+constructor TWebStatusDeviceTree.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='Device Tree'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/devicetree';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusDeviceTree.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Index:LongWord;
+ Size:UInt64;
+ {$IFDEF CPU32}
+ Range:LongWord;
+ {$ENDIF CPU32}
+ Address:PtrUInt;
+ Header:PDTBHeader;
+ Data:TWebStatusData; 
+begin
+ {}
+ Result:=False;
+ 
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Add Header}
+ AddHeader(AResponse,GetTitle,Self); 
+
+ {Add Information}
+ AddBold(AResponse,'DTB Information','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'Data Valid:',BooleanToString(DeviceTreeValid),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'Base Address:','0x' + AddrToHex(DeviceTreeGetBase),2);
+ AddItemEx(AResponse,'Total Size:',IntToStr(DeviceTreeGetSize),2);
+ AddBlank(AResponse);
+
+ {Check Valid}
+ if DeviceTreeValid then
+  begin
+   {Get Header}
+   Header:=PDTBHeader(DeviceTreeGetBase);
+   
+   {Add Header}
+   AddBold(AResponse,'DTB Header','');
+   AddBlank(AResponse);
+   AddItemEx(AResponse,'Magic:','0x' + IntToHex(LongWordBEtoN(Header.Magic),8),2);
+   AddItemEx(AResponse,'Total Size:',IntToStr(LongWordBEtoN(Header.TotalSize)),2);
+   AddItemEx(AResponse,'Structure Offset:',IntToStr(LongWordBEtoN(Header.StructureOffset)),2);
+   AddItemEx(AResponse,'Strings Offset:',IntToStr(LongWordBEtoN(Header.StringsOffset)),2);
+   AddItemEx(AResponse,'Reservation Offset:',IntToStr(LongWordBEtoN(Header.ReservationOffset)),2);
+   AddItemEx(AResponse,'Version:',IntToStr(LongWordBEtoN(Header.Version)),2);
+   AddItemEx(AResponse,'Compatible Version:',IntToStr(LongWordBEtoN(Header.CompatibleVersion)),2);
+   AddItemEx(AResponse,'Boot CPUID:',IntToStr(LongWordBEtoN(Header.BootCPUID)),2);
+   AddItemEx(AResponse,'Strings Size:',IntToStr(LongWordBEtoN(Header.StringsSize)),2);
+   AddItemEx(AResponse,'Structure Size:',IntToStr(LongWordBEtoN(Header.StructureSize)),2);
+   AddBlank(AResponse);
+  
+   {Add Memory}
+   AddBold(AResponse,'DTB Memory','');
+   AddBlank(AResponse);
+   Index:=0;
+   while DeviceTreeGetMemory(Index,{$IFDEF CPU32}Range,{$ENDIF CPU32}Address,Size) do
+    begin
+     AddItemEx(AResponse,IntToStr(Index) + ' - Address: 0x' + {$IFDEF CPU32}IntToHex(Range,8) + ':' + {$ENDIF CPU32}AddrToHex(Address),'Size: ' + IntToStr(Size),2);
+     
+     Inc(Index);
+    end;
+   AddBlank(AResponse);
+
+   {Add Reservations}
+   AddBold(AResponse,'DTB Reservations','');
+   AddBlank(AResponse);
+   Index:=0;
+   while DeviceTreeGetReservation(Index,Address,Size) do
+    begin
+     AddItemEx(AResponse,IntToStr(Index) + ': Address: 0x' + AddrToHex(Address),'Size: ' + IntToStr(Size),2);
+    end;
+   AddBlank(AResponse);
+  
+   {$IFDEF DEVICE_TREE_ENUMERATION}
+   {Add Tree}
+   AddBold(AResponse,'DTB Tree','');
+   AddBlank(AResponse);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Display Tree}
+   DeviceTreeLogTreeEx(INVALID_HANDLE_VALUE,WebStatusDeviceTreeLogOutput,nil,@Data);
+   
+   AddBlank(AResponse);
+   {$ENDIF DEVICE_TREE_ENUMERATION}
+  end;
+  
  {Add Footer}
  AddFooter(AResponse); 
  
@@ -12124,6 +12329,10 @@ begin
  WebStatusConfiguration:=TWebStatusConfiguration.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusConfiguration);
 
+ {Register DeviceTree Page}
+ WebStatusDeviceTree:=TWebStatusDeviceTree.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusDeviceTree);
+
  {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG)}
  {Register Debug Page}
  WebStatusDebug:=TWebStatusDebug.Create(WebStatusMain);
@@ -12175,6 +12384,10 @@ begin
  AListener.DeregisterDocument(AHost,WebStatusDebug);
  WebStatusDebug.Free;
  {$ENDIF}
+
+ {Deregister DeviceTree Page}
+ AListener.DeregisterDocument(AHost,WebStatusDeviceTree);
+ WebStatusDeviceTree.Free;
  
  {Deregister Configuration Page}
  AListener.DeregisterDocument(AHost,WebStatusConfiguration);
@@ -12307,6 +12520,78 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Web Status Helper Functions}
+procedure WebStatusDeviceTreeLogOutput(const AText:String;Data:Pointer);
+var
+ Value:String;
+ Offset:LongWord;
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ {Check Data}
+ if Data = nil then Exit;
+
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+
+ {Check Length}
+ if Length(AText) <= DeviceTreeMaxColumns then
+  begin
+   {Add Output}
+   Document.AddItemSpan(Response,'<pre>' + AText + '</pre>',2,False);
+  end
+ else
+  begin
+   {Split Output}
+   Value:=AText;
+   
+   {Output Sections}
+   while Length(Value) > DeviceTreeMaxColumns do
+    begin
+     {Start at Max Columns}
+     Offset:=DeviceTreeMaxColumns;
+     
+     {Step Backward}
+     while Value[Offset] <> ' ' do
+      begin
+       Dec(Offset);
+       
+       if Offset <= (DeviceTreeMaxColumns - DeviceTreeColumnOffset)  then Break;
+      end;
+      
+     {Step Forward}
+     while Value[Offset] <> ' ' do
+      begin
+       Inc(Offset);
+       
+       if Offset >= (DeviceTreeMaxColumns + DeviceTreeColumnOffset) then Break;
+      end;
+     
+     {Default to Max Columns}
+     if Value[Offset] <> ' ' then Offset:=DeviceTreeMaxColumns;
+     
+     {Output Text}
+     Document.AddItemSpan(Response,'<pre>' + Copy(Value,1,Offset) + '</pre>',2,False); 
+     
+     {Split Text}
+     Delete(Value,1,Offset);
+    end;
+   
+   {Output Last}
+   if Length(Value) > 0 then
+    begin
+     Document.AddItemSpan(Response,'<pre>' + Value + '</pre>',2,False);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
 function WebStatusDeviceEnumerate(Device:PDevice;Data:Pointer):LongWord;
 var
  Document:TWebStatusSub;

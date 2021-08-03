@@ -3287,12 +3287,12 @@ begin
  Network.RXDMARegOffset:=Network.RXDMAOffset + (GENET_TOTAL_DESC * Network.DMADescriptorSize);
  Network.TXDMARegOffset:=Network.TXDMAOffset + (GENET_TOTAL_DESC * Network.DMADescriptorSize);
 
- {$IFDEF CPUAARCH64}
+ {$IFDEF CPU64}
  if (Network.Flags and GENET_HAS_40BITS) = 0 then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogWarn(@Network.Network,'GENET: Hardware does not support 40-bits PA');
   end;
- {$ENDIF CPUAARCH64}
+ {$ENDIF CPU64}
 
  {DMA Registers}
  case Network.Version of

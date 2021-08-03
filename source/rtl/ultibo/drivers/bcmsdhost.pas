@@ -164,7 +164,7 @@ const
 
  BCMSDHOST_USE_CMD23_FLAGS = (BCMSDHOST_ALLOW_CMD23_READ * MMC_DATA_READ) or (BCMSDHOST_ALLOW_CMD23_WRITE * MMC_DATA_WRITE);
 
- {Mxilbox constants}
+ {Mailbox constants}
  BCMSDHOST_MBOX_TAG_SET_SDHOST_CLOCK  = $00038042; {Tell the firmware the SD Host clock setting so it will be adjusted for changes in core frequency}
 
 {==============================================================================}
@@ -287,7 +287,7 @@ function BCMSDHOSTBlockInterrupt(SDHCI:PSDHCIHost;InterruptMask:LongWord):LongWo
 {==============================================================================}
 {Initialization Functions}
 procedure BCMSDHOSTInit;
-{Initialize the BCMSDHOST unit and version table}
+{Initialize the BCMSDHOST unit and parameters}
 
 {Note: Called only during system startup}
 var

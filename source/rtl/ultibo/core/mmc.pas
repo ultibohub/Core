@@ -1548,7 +1548,7 @@ const
  SDHCI_FLAG_AUTO_CMD23    = $00000040; {Host Controller supports Auto CMD23 (Set Block Count)}
  SDHCI_FLAG_64_BIT_DMA    = $00000080; {Host Controller supports 64-bit ADMA}
  SDHCI_FLAG_EXTERNAL_DMA  = $00000100; {Host Controller requires external DMA engine to perform transfers}
- SDHCI_FLAG_BUS_ADDRESSES = $00000200; {Host Controller requires use of bus addresses for SDMA/ADMA tranfers}
+ SDHCI_FLAG_BUS_ADDRESSES = $00000200; {Host Controller requires use of bus addresses for SDMA/ADMA transfers}
  
  {SDHCI Controller Registers}
  SDHCI_DMA_ADDRESS	     = $00;
@@ -2315,7 +2315,7 @@ type
 {==============================================================================}
 type
  {SDHCI specific types}
- {ADMA2 32-bit descriptor (See ADMA2 Descriptor Format - SD Host Controller Simlified Specification Version 4.20)}
+ {ADMA2 32-bit descriptor (See ADMA2 Descriptor Format - SD Host Controller Simplified Specification Version 4.20)}
  PSDHCIADMA2Descriptor32 = ^TSDHCIADMA2Descriptor32;
  TSDHCIADMA2Descriptor32 = packed record
   Command:Word;
@@ -2323,7 +2323,7 @@ type
   Address:LongWord;
  end;
  
- {ADMA2 64-bit descriptors (See ADMA2 Descriptor Format - SD Host Controller Simlified Specification Version 4.20)}
+ {ADMA2 64-bit descriptors (See ADMA2 Descriptor Format - SD Host Controller Simplified Specification Version 4.20)}
  {Note 12-byte descriptor can't always be 8-byte aligned}
  PSDHCIADMA2Descriptor64 = ^TSDHCIADMA2Descriptor64;
  TSDHCIADMA2Descriptor64 = packed record
@@ -9468,7 +9468,7 @@ function SDHCIHostReset(SDHCI:PSDHCIHost;Mask:Byte):LongWord;
 {Default software reset function for SDHCI host controllers}
 
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
-{Reference: Section ?.? of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{Reference: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 var 
  MMC:PMMCDevice;
  Timeout:LongWord;
