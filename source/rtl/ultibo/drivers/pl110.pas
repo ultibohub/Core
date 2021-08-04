@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL110 Color LCD Controller Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -141,7 +141,7 @@ const
  PL110_CLCD_CONTROL_LCDTFT          = (1 shl 5);  {LCD is TFT (0 = LCD is an STN display, use gray scaler / 1 = LCD is TFT, do not use gray scaler)}
  PL110_CLCD_CONTROL_LCDMONO8        = (1 shl 6);  {Monochrome LCD has an 8-bit interface (0 = mono LCD uses 4-bit interface / 1 = mono LCD uses 8-bit interface)}
  PL110_CLCD_CONTROL_LCDDUAL         = (1 shl 7);  {LCD interface is dual panel STN (0 = single panel LCD is in use / 1 = dual panel LCD is in use)}
- PL110_CLCD_CONTROL_BGR             = (1 shl 8);  {RGB of BGR format selection (0 = RGB normal output / 1 = BGR red and blue swapped.)}
+ PL110_CLCD_CONTROL_BGR             = (1 shl 8);  {RGB or BGR format selection (0 = RGB normal output / 1 = BGR red and blue swapped.)}
  PL110_CLCD_CONTROL_BEBO            = (1 shl 9);  {Big-endian byte order (0 = little-endian byte order / 1 = big-endian byte order)}
  PL110_CLCD_CONTROL_BEPO            = (1 shl 10); {Big-endian pixel ordering within a byte (0 = little-endian pixel ordering within a byte / 1= big-endian pixel ordering within a byte)}
  PL110_CLCD_CONTROL_LCDPWR          = (1 shl 11); {LCD power enable}
@@ -630,8 +630,8 @@ begin
       {Adjust Depth}
       if (Properties.Depth = FRAMEBUFFER_DEPTH_16) or (Properties.Depth = FRAMEBUFFER_DEPTH_32) then Defaults.Depth:=Properties.Depth;
       
-      {Adjust Order} {Do not allow}
-      {if Properties.Order <= FRAMEBUFFER_ORDER_RGB then Defaults.Order:=Properties.Order;}
+      {Adjust Order}
+      if Properties.Order <= FRAMEBUFFER_ORDER_RGB then Defaults.Order:=Properties.Order;
       
       {Adjust Rotation}
       if Properties.Rotation <= FRAMEBUFFER_ROTATION_270 then Defaults.Rotation:=Properties.Rotation;
@@ -665,10 +665,24 @@ begin
     {Get Format}  
     case Defaults.Depth of
      FRAMEBUFFER_DEPTH_16:begin
-       Defaults.Format:=COLOR_FORMAT_RGB16;
+       if Defaults.Order = FRAMEBUFFER_ORDER_RGB then
+        begin
+         Defaults.Format:=COLOR_FORMAT_RGB16;
+        end
+       else
+        begin
+         Defaults.Format:=COLOR_FORMAT_BGR16;
+        end;
       end;
      FRAMEBUFFER_DEPTH_32:begin
-       Defaults.Format:=COLOR_FORMAT_UBGR32; {Note: This is reversed in the hardware}
+       if Defaults.Order = FRAMEBUFFER_ORDER_RGB then
+        begin
+         Defaults.Format:=COLOR_FORMAT_URGB32;
+        end
+       else
+        begin
+         Defaults.Format:=COLOR_FORMAT_UBGR32;
+        end;
       end;
     end;
  
@@ -741,7 +755,7 @@ begin
     Value:=PPL110Framebuffer(Framebuffer).Control;
     if Framebuffer.Depth = FRAMEBUFFER_DEPTH_16 then Value:=Value or PL110_CLCD_CONTROL_LCDBPP16;
     if Framebuffer.Depth = FRAMEBUFFER_DEPTH_32 then Value:=Value or PL110_CLCD_CONTROL_LCDBPP24;
-    if Framebuffer.Order = FRAMEBUFFER_ORDER_BGR then Value:=Value or PL110_CLCD_CONTROL_BGR;
+    if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then Value:=Value or PL110_CLCD_CONTROL_BGR; {Note: This appears reversed from the description of the register bits}
     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     PPL110Framebuffer(Framebuffer).Registers.TIMING0:=(PPL110Framebuffer(Framebuffer).Timing0 and not(PL110_CLCD_TIMING0_PPL)) or (((Framebuffer.PhysicalWidth - 1) div 16) shl 2);
     PPL110Framebuffer(Framebuffer).Registers.TIMING1:=(PPL110Framebuffer(Framebuffer).Timing1 and not(PL110_CLCD_TIMING1_LPP)) or (Framebuffer.PhysicalHeight - 1);
