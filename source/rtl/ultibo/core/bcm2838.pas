@@ -1984,6 +1984,8 @@ const
  {BCM2838 GPIO constants}
  BCM2838_GPIO_PIN_COUNT = 58;
  BCM2838_GPIO_BANK_COUNT = 2;
+ 
+ BCM2838_GPIO_SIGNATURE = $6770696F; {The ASCII value 'GPIO' returned when reading from a write only register}
 
  {BCM2838 Virtual GPIO constants}
  BCM2838_VIRTUAL_GPIO_PIN_COUNT = 2;  {Raspberry Pi 4B only}

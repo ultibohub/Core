@@ -3451,7 +3451,7 @@ initialization
    else
     begin
      {Schedule Worker}
-     WorkerSchedule(250,TWorkerTask(SocketsAsyncStart),nil,nil); {Delay start to allow device initialization}
+     WorkerSchedule(SOCKETS_STARTDELAY,TWorkerTask(SocketsAsyncStart),nil,nil); {Delay start to allow device initialization}
     end;
   end; 
  

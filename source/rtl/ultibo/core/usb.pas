@@ -508,6 +508,7 @@ const
  USB_CLASS_CODE_INTERFACE_SPECIFIC             = $00; {Use class code info from Interface Descriptors }
  USB_CLASS_CODE_AUDIO                          = $01; {Audio device}
  USB_CLASS_CODE_COMMUNICATIONS_AND_CDC_CONTROL = $02; {Communication device class}
+ USB_CLASS_CODE_COMMS                          = USB_CLASS_CODE_COMMUNICATIONS_AND_CDC_CONTROL;
  USB_CLASS_CODE_HID                            = $03; {HID device class}
  USB_CLASS_CODE_PHYSICAL                       = $05; {Physical device class}
  USB_CLASS_CODE_IMAGE                          = $06; {Still Imaging device}
@@ -2341,12 +2342,18 @@ begin
    if Result <> USB_STATUS_SUCCESS then Exit;
  
    {Default Configuraton}
-   if Count = 0 then
+   if Device.Configurations[Count].Descriptor.bConfigurationValue = 1 then
     begin
      Device.Configuration:=Device.Configurations[Count];
-    end; 
+    end;
   end;
  
+ {Check Default Configuration}
+ if Device.Configuration = nil then
+  begin
+   Device.Configuration:=Device.Configurations[0];
+  end;
+  
  {Return Result} 
  Result:=USB_STATUS_SUCCESS;
 end;
@@ -2583,11 +2590,12 @@ begin
            Result:=USB_STATUS_INVALID_DATA;
            Exit;
           end
-         else //if (InterfaceIndex >= 0) and (AlternateSetting > 0)
+         else if (InterfaceIndex >= 0) and (AlternateSetting > 0) and ((EndpointIndex + 1) <> Device.Configurations[Index].Interfaces[InterfaceIndex].Alternates[AlternateSetting - 1].Descriptor.bNumEndpoints) then
           begin
-
-           //To Do
+           if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (Number of alternate setting endpoints incorrect)');
            
+           Result:=USB_STATUS_INVALID_DATA;
+           Exit;
           end;          
           
          {Check Alternate Setting}
@@ -10469,7 +10477,7 @@ initialization
    else
     begin
      {Schedule Worker}
-     WorkerSchedule(0,TWorkerTask(USBAsyncStart),nil,nil);
+     WorkerSchedule(USB_STARTDELAY,TWorkerTask(USBAsyncStart),nil,nil);
     end;
   end; 
 

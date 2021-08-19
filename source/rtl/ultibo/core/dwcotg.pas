@@ -815,6 +815,9 @@ type
   StartSplitCount:LongWord;                                      {Number of start split transactions}
   CompleteSplitCount:LongWord;                                   {Number of complete split transactions}
   CompleteSplitRestartCount:LongWord;                            {Number of times a complete split transaction has been restarted at start split due to errors}
+
+  TransferRestartCount:LongWord;                                 {Number of times a transfer is restarted to continue or retry the transfer}
+  TransactionRestartCount:LongWord;                              {Number of times a transaction is restarted to continue or complete the transfer}
   
   NoChannelCompletedCount:LongWord;                              {Number of times the channel completed interrupt bit was not set when a request completed}
   NoPacketsTransferredCount:LongWord;                            {Number of times no packets were transferred but no error occured when a channel halted}
@@ -4642,6 +4645,12 @@ begin
  {Get Channel Interrupts}
  Interrupts:=HostChannel.Interrupts;
  
+ {Check for Emulator (QEMU fails to clear the NAK response when a transfer completes successfully)}
+ if EMULATOR_MODE and ((Interrupts and DWC_HOST_CHANNEL_INTERRUPTS_TRANSFER_COMPLETED) <> 0) then
+  begin
+   Interrupts:=Interrupts and not(DWC_HOST_CHANNEL_INTERRUPTS_NAK_RESPONSE_RECEIVED);
+  end;
+ 
  {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
  if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Handling channel ' + IntToStr(Channel) + ' halted interrupt');
  if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG:   (Interrupts=' + IntToHex(Interrupts,8) + ', Characteristics=' + IntToHex(HostChannel.Characteristics,8) + ', Transfer=' + IntToHex(HostChannel.Transfer,8) + ')');
@@ -4882,6 +4891,9 @@ begin
       Inc(Host.StartOfFrameCount);
      end;
      
+    {Update Statistics}
+    Inc(Host.TransferRestartCount);
+    
     DWCChannelStartTransfer(Host,Channel,Request);
     Exit;
    end;
@@ -4894,6 +4906,9 @@ begin
       {Update Statistics}
       Inc(Host.StartOfFrameCount);
      end;
+  
+    {Update Statistics}
+    Inc(Host.TransactionRestartCount);
   
     DWCChannelStartTransaction(Host,Channel,Request);
     Exit;
@@ -4968,6 +4983,13 @@ begin
  PacketsRemaining:=((HostChannel.Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19);
  PacketsTransferred:=(Request.AttemptedPacketsRemaining - PacketsRemaining);
  
+ {Check for Emulator (QEMU misreports the packets remaining on a 0 byte request)}
+ if EMULATOR_MODE and (PacketsTransferred = 0) and (Request.AttemptedSize = 0) then
+  begin
+   PacketsRemaining:=0;
+   PacketsTransferred:=(Request.AttemptedPacketsRemaining - PacketsRemaining);
+  end;
+ 
  {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
  if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: ' + IntToStr(PacketsTransferred) + ' packets transferred on channel ' + IntToStr(Channel));
  {$ENDIF}
@@ -4994,6 +5016,12 @@ begin
     begin
      {The transfer.size field seems to be updated sanely for IN transfers.  (Good thing too, since otherwise it would be impossible to determine the length of short packets...)}
      BytesTransferred:=(Request.AttemptedBytesRemaining - ((HostChannel.Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0));
+     
+     {Check for Emulator (QEMU fails to increment the packet count on max packet size transfers)}
+     if EMULATOR_MODE and ((BytesTransferred mod MaxPacketSize) = 0) then
+      begin
+       Inc(PacketsTransferred);
+      end;
      
      {Check the DMA compatibility}
      if (Request.Flags and USB_REQUEST_FLAG_COMPATIBLE) = USB_REQUEST_FLAG_COMPATIBLE then
@@ -5152,7 +5180,7 @@ begin
      {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
      if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Continuing transfer (Not Complete) (CompleteSplit=' + BooleanToString(Request.CompleteSplit) + ')');
      {$ENDIF}
-     
+    
      Result:=DWC_STATUS_TRANSACTION_RESTART;
      Exit;
     end;    

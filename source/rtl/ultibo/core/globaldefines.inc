@@ -223,6 +223,7 @@ Global Defines
 {--$DEFINE LAN78XX_DEBUG}         {Enable debug output/counters for SMSC95XX driver (Default: Off)}
 {--$DEFINE AX88XXX_DEBUG}         {Enable debug output/counters for AX88XXX driver (Default: Off)}
 {--$DEFINE GENET_DEBUG}           {Enable debug output/counters for GENET driver (Default: Off)}
+{--$DEFINE CDCETHERNET_DEBUG}     {Enable debug output/counters for CDCEthernet driver (Default: Off)}
 
 {WiFi}
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}

@@ -14223,7 +14223,7 @@ initialization
    else
     begin
      {Schedule Worker}
-     WorkerSchedule(0,TWorkerTask(MMCAsyncStart),nil,nil);
+     WorkerSchedule(MMC_STARTDELAY,TWorkerTask(MMCAsyncStart),nil,nil);
     end;
   end; 
  

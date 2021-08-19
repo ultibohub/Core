@@ -55833,7 +55833,7 @@ initialization
    else
     begin
      {Schedule Worker}
-     WorkerSchedule(750,TWorkerTask(FileSysAsyncStart),nil,nil); {Delay start to allow device initialization}
+     WorkerSchedule(FILESYS_STARTDELAY,TWorkerTask(FileSysAsyncStart),nil,nil); {Delay start to allow device initialization}
     end;
   end; 
 

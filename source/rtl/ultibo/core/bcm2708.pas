@@ -2113,6 +2113,7 @@ begin
          BCM2708Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
          BCM2708Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
          BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_BACKLIGHT or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY or FRAMEBUFFER_FLAG_SYNC or FRAMEBUFFER_FLAG_CURSOR;
+         if EMULATOR_MODE then BCM2708Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2708Framebuffer.Framebuffer.Device.DeviceFlags and not(FRAMEBUFFER_FLAG_CURSOR); {QEMU does not support hardware cursor}
          BCM2708Framebuffer.Framebuffer.Device.DeviceData:=nil;
          BCM2708Framebuffer.Framebuffer.Device.DeviceDescription:=BCM2708_FRAMEBUFFER_DESCRIPTION + ' (' + FramebufferDisplayIdToName(DisplayId) + ')';
          {Framebuffer}
@@ -2126,8 +2127,8 @@ begin
          BCM2708Framebuffer.Framebuffer.DeviceGetPalette:=BCM2708FramebufferGetPalette;
          BCM2708Framebuffer.Framebuffer.DeviceSetPalette:=BCM2708FramebufferSetPalette;
          BCM2708Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2708FramebufferSetBacklight;
-         BCM2708Framebuffer.Framebuffer.DeviceSetCursor:=BCM2708FramebufferSetCursor;
-         BCM2708Framebuffer.Framebuffer.DeviceUpdateCursor:=BCM2708FramebufferUpdateCursor;
+         if not EMULATOR_MODE then BCM2708Framebuffer.Framebuffer.DeviceSetCursor:=BCM2708FramebufferSetCursor;
+         if not EMULATOR_MODE then BCM2708Framebuffer.Framebuffer.DeviceUpdateCursor:=BCM2708FramebufferUpdateCursor;
          BCM2708Framebuffer.Framebuffer.DeviceSetProperties:=BCM2708FramebufferSetProperties;
          {Driver}
          BCM2708Framebuffer.MultiDisplay:=MultiDisplay;
@@ -4292,6 +4293,9 @@ begin
  if (Flags and DMA_DATA_FLAG_BULK) <> 0 then
   begin
    Bulk:=True;
+
+   {Check for Emulator (QEMU does not support Bulk channels)}
+   if EMULATOR_MODE then Bulk:=False;
   end
  {Check for "Lite" channel request}
  else if (Flags and DMA_DATA_FLAG_LITE) <> 0 then
@@ -4300,6 +4304,9 @@ begin
    if (Flags and (DMA_DATA_FLAG_STRIDE or DMA_DATA_FLAG_NOREAD or DMA_DATA_FLAG_NOWRITE) = 0) and (Maximum <= BCM2708_DMA_MAX_LITE_TRANSFER) then
     begin
      Lite:=True;
+
+     {Check for Emulator (QEMU does not support Lite channels)}
+     if EMULATOR_MODE then Lite:=False;
     end;
   end;  
  

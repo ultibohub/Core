@@ -1,7 +1,7 @@
 {
 Ultibo Enhanced Host Controller Interface (EHCI) (USB) interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -42,7 +42,7 @@ unit EHCI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,PCI,USB;
 
 //To Do //See: \u-boot-HEAD-5745f8c\drivers\usb\host
 

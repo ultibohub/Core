@@ -13356,7 +13356,7 @@ initialization
    else
     begin
      {Schedule Worker}
-     WorkerSchedule(250,TWorkerTask(WS2AsyncStart),nil,nil); {Delay start to allow device initialization}
+     WorkerSchedule(WINSOCK2_STARTDELAY,TWorkerTask(WS2AsyncStart),nil,nil); {Delay start to allow device initialization}
     end;
   end; 
   

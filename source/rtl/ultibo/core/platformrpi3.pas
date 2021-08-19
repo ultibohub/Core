@@ -460,6 +460,7 @@ procedure RPi3FastBlink;
 
 procedure RPi3BootBlink;
 
+procedure RPi3BootOutput(Value:LongWord);
 {$IFDEF CONSOLE_EARLY_INIT}
 procedure RPi3BootConsoleStart;
 procedure RPi3BootConsoleWrite(const Value:String);
@@ -467,7 +468,6 @@ procedure RPi3BootConsoleWriteEx(const Value:String;X,Y:LongWord);
 function RPi3BootConsoleGetX:LongWord;
 function RPi3BootConsoleGetY:LongWord;
 {$ENDIF}
-
 function RPi3ConvertPowerIdRequest(PowerId:LongWord):LongWord;
 function RPi3ConvertPowerStateRequest(PowerState:LongWord):LongWord;
 function RPi3ConvertPowerStateResponse(PowerState:LongWord):LongWord;
@@ -520,9 +520,21 @@ function RPi3HandleInterrupt(Number,Source,CPUID:LongWord;Thread:TThreadHandle):
 {==============================================================================}
 {Initialization Functions}
 procedure RPi3Init;
+var
+ SchedulerFrequency:LongWord;
 begin
  {}
  if RPi3Initialized then Exit;
+
+ {Check for Emulator}
+ {$IFDEF CPUARM}
+ if PLongWord(BCM2837_GPIO_REGS_BASE + BCM2837_GPSET0)^ <> BCM2837_GPIO_SIGNATURE then ARMEmulatorMode:=1;
+ {if PBCM2837ARMLocalRegisters(BCM2837_ARM_LOCAL_REGS_BASE).CoreTimerPrescaler = 0 then ARMEmulatorMode:=1;} {Alternate detection option for RPi3}
+ {$ENDIF CPUARM}
+ {$IFDEF CPUAARCH64}
+ if PLongWord(BCM2837_GPIO_REGS_BASE + BCM2837_GPSET0)^ <> BCM2837_GPIO_SIGNATURE then AARCH64EmulatorMode:=1;
+ {if PBCM2837ARMLocalRegisters(BCM2837_ARM_LOCAL_REGS_BASE).CoreTimerPrescaler = 0 then AARCH64EmulatorMode:=1;} {Alternate detection option for RPi3}
+ {$ENDIF CPUAARCH64}
 
  {Setup IO_BASE/IO_ALIAS}
  IO_BASE:=BCM2837_PERIPHERALS_BASE;
@@ -533,6 +545,9 @@ begin
  
  {Setup SECURE_BOOT}
  SECURE_BOOT:={$IFDEF CPUARM}(ARMSecureBoot <> 0){$ENDIF CPUARM}{$IFDEF CPUAARCH64}(AARCH64SecureBoot <> 0){$ENDIF CPUAARCH64};
+ 
+ {Setup EMULATOR_MODE}
+ EMULATOR_MODE:={$IFDEF CPUARM}(ARMEmulatorMode <> 0){$ENDIF CPUARM}{$IFDEF CPUAARCH64}(AARCH64EmulatorMode <> 0){$ENDIF CPUAARCH64};
  
  {Setup STARTUP_ADDRESS}
  STARTUP_ADDRESS:=PtrUInt(@_text_start); {RPI3_STARTUP_ADDRESS} {Obtain from linker}
@@ -632,7 +647,12 @@ begin
  UNDEFINED_STACK_ENABLED:=True;
  
  {Setup CLOCK_FREQUENCY/TICKS/CYCLES}
- CLOCK_FREQUENCY:={$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}RPI3_GENERIC_TIMER_FREQUENCY{$ELSE}BCM2837_SYSTEM_TIMER_FREQUENCY{$ENDIF};
+ {$IFNDEF RPI3_CLOCK_SYSTEM_TIMER}
+ CLOCK_FREQUENCY:=RPI3_GENERIC_TIMER_FREQUENCY;
+ if EMULATOR_MODE then CLOCK_FREQUENCY:={$IFDEF CPUARM}ARMv7GetTimerFrequency{$ENDIF CPUARM}{$IFDEF CPUAARCH64}ARMv8GetTimerFrequency{$ENDIF CPUAARCH64};
+ {$ELSE}
+ CLOCK_FREQUENCY:=BCM2837_SYSTEM_TIMER_FREQUENCY;
+ {$ENDIF}
  CLOCK_TICKS_PER_SECOND:=1000;
  CLOCK_TICKS_PER_MILLISECOND:=1;
  CLOCK_CYCLES_PER_TICK:=CLOCK_FREQUENCY div CLOCK_TICKS_PER_SECOND;
@@ -648,7 +668,14 @@ begin
  {Setup SCHEDULER_INTERRUPTS/CLOCKS}
  SCHEDULER_INTERRUPTS_PER_SECOND:=2000;
  SCHEDULER_INTERRUPTS_PER_MILLISECOND:=2;
- SCHEDULER_CLOCKS_PER_INTERRUPT:=RPI3_GENERIC_TIMER_FREQUENCY div SCHEDULER_INTERRUPTS_PER_SECOND;
+ SchedulerFrequency:=RPI3_GENERIC_TIMER_FREQUENCY;
+ if EMULATOR_MODE then
+  begin
+   SCHEDULER_INTERRUPTS_PER_SECOND:=1000;   {Note: QEMU uses the timeGetDevCaps() function on Windows which returns wPeriodMin as 1 millisecond}
+   SCHEDULER_INTERRUPTS_PER_MILLISECOND:=1; {      That means that any timer interval less then 1ms will not be honoured, the result will be 1ms}
+   SchedulerFrequency:={$IFDEF CPUARM}ARMv7GetTimerFrequency{$ENDIF CPUARM}{$IFDEF CPUAARCH64}ARMv8GetTimerFrequency{$ENDIF CPUAARCH64};
+  end; 
+ SCHEDULER_CLOCKS_PER_INTERRUPT:=SchedulerFrequency div SCHEDULER_INTERRUPTS_PER_SECOND;
  SCHEDULER_CLOCKS_TOLERANCE:=SCHEDULER_CLOCKS_PER_INTERRUPT div 10;
  TIME_TICKS_PER_SCHEDULER_INTERRUPT:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * TIME_TICKS_PER_MILLISECOND;
  
@@ -665,7 +692,17 @@ begin
 
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2837_GPIO_REGS_BASE;
- 
+
+ {Check for Emulator (QEMU DMA device is very slow)}
+ if EMULATOR_MODE then
+  begin
+   CONSOLE_DMA_BOX:=False; 
+   CONSOLE_DMA_LINE:=False; 
+   CONSOLE_DMA_FILL:=False;
+   CONSOLE_DMA_CLEAR:=False; 
+   CONSOLE_DMA_SCROLL:=False; 
+  end; 
+
  {Register Platform SMPInit Handler}
  SMPInitHandler:=RPi3SMPInit;
  
@@ -705,7 +742,8 @@ begin
 
  {Register Platform Boot Blink Handlers}
  BootBlinkHandler:=RPi3BootBlink;
- 
+ BootOutputHandler:=RPi3BootOutput;
+
  {Register Platform Boot Console Handlers}
  {$IFDEF CONSOLE_EARLY_INIT}
  BootConsoleStartHandler:=RPi3BootConsoleStart;
@@ -7134,6 +7172,9 @@ begin
   NumDisplays:=Tag.Response.NumDisplays;
   
   Result:=ERROR_SUCCESS;
+
+  {Check for Emulator (Assume error if no displays)}
+  if EMULATOR_MODE and (NumDisplays = 0) then Result:=ERROR_NOT_SUPPORTED;
  finally
   FreeMem(Header);
  end;
@@ -9184,6 +9225,44 @@ asm
  //To Do
 end;
 {$ENDIF CPUAARCH64}
+{==============================================================================}
+
+procedure RPi3BootOutput(Value:LongWord);
+{Output characters to UART0 without dependency on any other RTL setup}
+{Based on hexstrings() function by dwelch67 (https://github.com/dwelch67)}
+
+{Note: This function is primarily intended for testing QEMU boot because
+       it doesn't initialize the UART and won't work on real hardware}
+var
+ Bits:LongWord;
+ Character:LongWord;
+begin
+ {}
+ Bits:=32;
+ while True do
+  begin
+   Dec(Bits,4);
+   
+   Character:=(Value shr Bits) and $0F;
+   if Character > 9 then
+    begin
+     Character:=Character + $37;
+    end
+   else
+    begin
+     Character:=Character + $30;
+    end;
+    
+   PLongWord(BCM2837_PL011_REGS_BASE)^:=Character;
+   
+   if Bits = 0 then Break;
+  end;
+ 
+ {Line End}
+ PLongWord(BCM2837_PL011_REGS_BASE)^:=$0D;
+ PLongWord(BCM2837_PL011_REGS_BASE)^:=$0A;
+end;
+
 {==============================================================================}
 {$IFDEF CONSOLE_EARLY_INIT}
 procedure RPi3BootConsoleStart;

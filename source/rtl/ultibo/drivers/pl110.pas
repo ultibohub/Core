@@ -665,14 +665,7 @@ begin
     {Get Format}  
     case Defaults.Depth of
      FRAMEBUFFER_DEPTH_16:begin
-       if Defaults.Order = FRAMEBUFFER_ORDER_RGB then
-        begin
-         Defaults.Format:=COLOR_FORMAT_RGB16;
-        end
-       else
-        begin
-         Defaults.Format:=COLOR_FORMAT_BGR16;
-        end;
+       Defaults.Format:=COLOR_FORMAT_RGB16;
       end;
      FRAMEBUFFER_DEPTH_32:begin
        if Defaults.Order = FRAMEBUFFER_ORDER_RGB then
@@ -753,9 +746,16 @@ begin
     
     {Setup PL110}
     Value:=PPL110Framebuffer(Framebuffer).Control;
-    if Framebuffer.Depth = FRAMEBUFFER_DEPTH_16 then Value:=Value or PL110_CLCD_CONTROL_LCDBPP16;
-    if Framebuffer.Depth = FRAMEBUFFER_DEPTH_32 then Value:=Value or PL110_CLCD_CONTROL_LCDBPP24;
-    if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then Value:=Value or PL110_CLCD_CONTROL_BGR; {Note: This appears reversed from the description of the register bits}
+    if Framebuffer.Depth = FRAMEBUFFER_DEPTH_16 then
+     begin
+      Value:=Value or PL110_CLCD_CONTROL_LCDBPP16;
+      Framebuffer.Order:=FRAMEBUFFER_ORDER_RGB; {RGB/BGR bit has no function in 16bpp depth}
+     end
+    else if Framebuffer.Depth = FRAMEBUFFER_DEPTH_32 then
+     begin
+      Value:=Value or PL110_CLCD_CONTROL_LCDBPP24;
+      if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then Value:=Value or PL110_CLCD_CONTROL_BGR; {Note: This appears reversed from the description of the register bits}
+     end;  
     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     PPL110Framebuffer(Framebuffer).Registers.TIMING0:=(PPL110Framebuffer(Framebuffer).Timing0 and not(PL110_CLCD_TIMING0_PPL)) or (((Framebuffer.PhysicalWidth - 1) div 16) shl 2);
     PPL110Framebuffer(Framebuffer).Registers.TIMING1:=(PPL110Framebuffer(Framebuffer).Timing1 and not(PL110_CLCD_TIMING1_LPP)) or (Framebuffer.PhysicalHeight - 1);

@@ -109,6 +109,11 @@ var
 var
  {Secure Boot}
  SECURE_BOOT:LongBool;             {True if the boot process occurs in secure mode (Where Applicable)}
+
+{==============================================================================}
+var
+ {Emulator Mode}
+ EMULATOR_MODE:LongBool;           {True if the boot process determines the machine is emulated (Where Applicable)}
  
 {==============================================================================}
 var
@@ -698,10 +703,12 @@ var
  {PCI}
  PCI_AUTOSTART:LongBool = True;        {If True then auto start the PCI subsystem on boot (Only if PCI unit included)}
  PCI_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
+ PCI_STARTDELAY:LongWord = 0;          {Number of milliseconds to delay starting the PCI subsystem on boot (Only if PCI_ASYNCSTART is True)}
  
  {USB}
  USB_AUTOSTART:LongBool = True;        {If True then auto start the USB subsystem on boot (Only if USB unit included)}
  USB_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
+ USB_STARTDELAY:LongWord = 0;          {Number of milliseconds to delay starting the USB subsystem on boot (Only if USB_ASYNCSTART is True)}
  
  USB_DMA_ALIGNMENT:LongWord;           {The default alignment for USB DMA memory allocations}  
  USB_DMA_MULTIPLIER:LongWord;          {The default multiplier for USB DMA memory allocations}  
@@ -713,6 +720,7 @@ var
  {MMC}
  MMC_AUTOSTART:LongBool = True;        {If True then auto start the MMC/SD subsystem on boot (Only if MMC unit included)}
  MMC_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
+ MMC_STARTDELAY:LongWord = 0;          {Number of milliseconds to delay starting the MMC/SD subsystem on boot (Only if MMC_ASYNCSTART is True)}
 
  MMC_DMA_ALIGNMENT:LongWord;           {The default alignment for MMC DMA memory allocations}  
  MMC_DMA_MULTIPLIER:LongWord;          {The default multiplier for MMC DMA memory allocations}  
@@ -1047,6 +1055,7 @@ var
  {Filesystem configuration}
  FILESYS_AUTOSTART:LongBool = True;              {If True then auto start the filesystem on boot (Only if FileSystem unit included)}
  FILESYS_ASYNCSTART:LongBool = True;             {If True then auto start asynchronously using a worker thread instead of the main thread}
+ FILESYS_STARTDELAY:LongWord = 0;                {Number of milliseconds to delay starting the filesystem on boot (Only if FILESYS_ASYNCSTART is True)}
  
  FILESYS_REGISTER_LOGGING:LongBool = True;       {If True then register filesystem as a Logging device on boot (Only if FileSystem unit included)}
  FILESYS_LOGGING_DEFAULT:LongBool = False;       {If True then filesystem can be the default Logging device (Only if FileSystem unit included)}
@@ -1135,6 +1144,7 @@ var
  
  WINSOCK_AUTOSTART:LongBool = True;       {If True then auto start the Winsock layer on boot (Only if Winsock unit included)} 
  WINSOCK_ASYNCSTART:LongBool = True;      {If True then auto start asynchronously using a worker thread instead of the main thread}
+ WINSOCK_STARTDELAY:LongWord = 0;         {Number of milliseconds to delay starting the Winsock layer on boot (Only if WINSOCK_ASYNCSTART is True)}
  
  {Winsock2 configuration} 
  WINSOCK2_NAME:String = 'Ultibo Winsock Version 2.2';
@@ -1147,10 +1157,12 @@ var
  
  WINSOCK2_AUTOSTART:LongBool = True;      {If True then auto start the Winsock2 layer on boot (Only if Winsock2 unit included)} 
  WINSOCK2_ASYNCSTART:LongBool = True;     {If True then auto start asynchronously using a worker thread instead of the main thread}
+ WINSOCK2_STARTDELAY:LongWord = 0;        {Number of milliseconds to delay starting the Winsock2 layer on boot (Only if WINSOCK2_ASYNCSTART is True)}
  
  {Sockets configuration}
  SOCKETS_AUTOSTART:LongBool = True;       {If True then auto start the sockets layer on boot (Only if Sockets unit included)} 
  SOCKETS_ASYNCSTART:LongBool = True;      {If True then auto start asynchronously using a worker thread instead of the main thread}
+ SOCKETS_STARTDELAY:LongWord = 0;         {Number of milliseconds to delay starting the sockets layer on boot (Only if SOCKETS_ASYNCSTART is True)}
  
  {Client configuration}
  DNS_CLIENT_ENABLED:LongBool = True;            {DNS client is enabled if True}

@@ -1,7 +1,7 @@
 {
 Ultibo Extensible Host Controller Interface (XHCI) (USB 3.0) interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -42,7 +42,7 @@ unit XHCI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,PCI,USB;
 
 //To Do //See: \u-boot-HEAD-5745f8c\drivers\usb\host
 //To Do //Pi4

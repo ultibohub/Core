@@ -3211,7 +3211,7 @@ initialization
    else
     begin
      {Schedule Worker}
-     WorkerSchedule(250,TWorkerTask(WSAsyncStart),nil,nil); {Delay start to allow device initialization}
+     WorkerSchedule(WINSOCK_STARTDELAY,TWorkerTask(WSAsyncStart),nil,nil); {Delay start to allow device initialization}
     end;
   end; 
 

@@ -1999,7 +1999,7 @@ initialization
    else
     begin
      {Schedule Worker}
-     WorkerSchedule(0,TWorkerTask(PCIAsyncStart),nil,nil);
+     WorkerSchedule(PCI_STARTDELAY,TWorkerTask(PCIAsyncStart),nil,nil);
     end;
   end; 
 

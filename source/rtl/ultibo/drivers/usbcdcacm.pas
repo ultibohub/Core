@@ -1033,8 +1033,9 @@ begin
    if CDCACMCheckDevice(Device,Quirks) <> USB_STATUS_SUCCESS then
     begin
      {$IFDEF CDCACM_DEBUG}
-      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Device not found in supported device list');
+     if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Device not found in supported device list');
      {$ENDIF}
+     
      {Return Result}
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
@@ -1049,8 +1050,9 @@ begin
      if CDCACMCheckDeviceAndInterface(Device,Interrface) <> USB_STATUS_SUCCESS then 
       begin
        {$IFDEF CDCACM_DEBUG}
-        if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Device not found in supported interface list');
+       if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Device not found in supported interface list');
        {$ENDIF}
+       
        {Return Result}
        Result:=USB_STATUS_DEVICE_UNSUPPORTED;
        Exit;
@@ -1062,8 +1064,9 @@ begin
  if (Quirks and CDCACM_QUIRK_IGNORE_DEVICE) <> 0 then 
   begin
    {$IFDEF CDCACM_DEBUG}
-    if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Ignoring device due to CDCACM_QUIRK_IGNORE_DEVICE flag');
+   if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Ignoring device due to CDCACM_QUIRK_IGNORE_DEVICE flag');
    {$ENDIF}
+   
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
@@ -1109,6 +1112,7 @@ begin
      {$IFDEF CDCACM_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Device does not have required interfaces available');
      {$ENDIF}
+
      {Return Result}
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
@@ -1127,6 +1131,7 @@ begin
      {$IFDEF CDCACM_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Combined interface must have 3 endpoints');
      {$ENDIF}
+
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
@@ -1145,6 +1150,7 @@ begin
      {$IFDEF CDCACM_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Device does not have required endpoints available');
      {$ENDIF}
+
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end; 
@@ -1169,6 +1175,7 @@ begin
        {$IFDEF CDCACM_DEBUG}
        if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Device has invalid interface classes');
        {$ENDIF}
+
        Result:=USB_STATUS_DEVICE_UNSUPPORTED;
        Exit;
       end;      
@@ -1180,6 +1187,7 @@ begin
      {$IFDEF CDCACM_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Binding only supported on the control interface');
      {$ENDIF}
+
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
@@ -1190,6 +1198,7 @@ begin
      {$IFDEF CDCACM_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Data interface already bound to another driver');
      {$ENDIF}
+
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
@@ -1200,6 +1209,7 @@ begin
      {$IFDEF CDCACM_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Data interface must have at least 2 endpoints');
      {$ENDIF}
+
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
@@ -1210,6 +1220,7 @@ begin
      {$IFDEF CDCACM_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Control interface must have at least 1 endpoint');
      {$ENDIF}
+
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
@@ -2107,7 +2118,7 @@ begin
  {Check Interface IDs}
  for Count:=0 to CDCACM_INTERFACE_ID_COUNT - 1 do
   begin
-   if (CDCACM_INTERFACE_ID[Count].bInterfaceClass = Interrface.Descriptor.bInterfaceClass) and (CDCACM_INTERFACE_ID[Count].bInterfaceSubClass = Interrface.Descriptor.bInterfaceSubClass) and  (CDCACM_INTERFACE_ID[Count].bInterfaceProtocol = Interrface.Descriptor.bInterfaceProtocol) then
+   if (CDCACM_INTERFACE_ID[Count].bInterfaceClass = Interrface.Descriptor.bInterfaceClass) and (CDCACM_INTERFACE_ID[Count].bInterfaceSubClass = Interrface.Descriptor.bInterfaceSubClass) and (CDCACM_INTERFACE_ID[Count].bInterfaceProtocol = Interrface.Descriptor.bInterfaceProtocol) then
     begin
      Result:=USB_STATUS_SUCCESS;
      Exit;
@@ -2141,7 +2152,7 @@ begin
   begin
    if (CDCACM_DEVICE_INTERFACE_ID[Count].idVendor = Device.Descriptor.idVendor) and (CDCACM_DEVICE_INTERFACE_ID[Count].idProduct = Device.Descriptor.idProduct) then
     begin
-     if (CDCACM_DEVICE_INTERFACE_ID[Count].bInterfaceClass = Interrface.Descriptor.bInterfaceClass) and (CDCACM_DEVICE_INTERFACE_ID[Count].bInterfaceSubClass = Interrface.Descriptor.bInterfaceSubClass) and  (CDCACM_DEVICE_INTERFACE_ID[Count].bInterfaceProtocol = Interrface.Descriptor.bInterfaceProtocol) then
+     if (CDCACM_DEVICE_INTERFACE_ID[Count].bInterfaceClass = Interrface.Descriptor.bInterfaceClass) and (CDCACM_DEVICE_INTERFACE_ID[Count].bInterfaceSubClass = Interrface.Descriptor.bInterfaceSubClass) and (CDCACM_DEVICE_INTERFACE_ID[Count].bInterfaceProtocol = Interrface.Descriptor.bInterfaceProtocol) then
       begin
        Result:=USB_STATUS_SUCCESS;
        Exit;

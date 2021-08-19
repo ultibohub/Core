@@ -1453,6 +1453,8 @@ const
  BCM2835_GPIO_PIN_COUNT = 54;
  BCM2835_GPIO_BANK_COUNT = 2;
  
+ BCM2835_GPIO_SIGNATURE = $6770696F; {The ASCII value 'GPIO' returned when reading from a write only register}
+ 
  {Function Select Registers}
  BCM2835_GPFSEL0 = $00000000; {GPIO Function Select 0}
  BCM2835_GPFSEL1 = $00000004; {GPIO Function Select 1}

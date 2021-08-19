@@ -2443,7 +2443,11 @@ begin
  {Add Secure Boot}
  AddBlank(AResponse);
  AddItem(AResponse,'Secure Boot:',BooleanToString(SECURE_BOOT));
- 
+
+ {Add Emulator Mode}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Emulator Mode:',BooleanToString(EMULATOR_MODE));
+
  {Add Startup Address}
  AddBlank(AResponse);
  AddItem(AResponse,'Startup Address:','0x' + AddrToHex(STARTUP_ADDRESS));
@@ -10345,7 +10349,11 @@ begin
  {Add ARM Secure Boot}
  AddItemEx(AResponse,'ARM Secure Boot:',IntToStr(ARMSecureBoot),2);
  AddBlank(AResponse);
- 
+
+ {Add ARM Emulator Mode}
+ AddItemEx(AResponse,'ARM Emulator Mode:',IntToStr(ARMEmulatorMode),2);
+ AddBlank(AResponse);
+
  {Add ARM Boot Tags}
  AddBold(AResponse,'ARM Boot Tags','');
  AddBlank(AResponse);
@@ -11195,13 +11203,7 @@ begin
  AddItemEx(AResponse,'MEMORY_NOCACHE_SIZE:',IntToStr(MEMORY_NOCACHE_SIZE),2);
  AddItemEx(AResponse,'MEMORY_NONSHARED_SIZE:',IntToStr(MEMORY_NONSHARED_SIZE),2);
  AddBlank(AResponse);
- 
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
- 
+
  {Add DMA configuration}
  AddBold(AResponse,'DMA configuration','');
  AddBlank(AResponse);
@@ -11223,6 +11225,172 @@ begin
  AddBold(AResponse,'Virtual GPIO configuration','');
  AddBlank(AResponse);
  AddItemEx(AResponse,'VIRTUAL_GPIO_PIN_COUNT:',IntToStr(VIRTUAL_GPIO_PIN_COUNT),2);
+ AddBlank(AResponse);
+
+ {Add Disk, Controller, Filesystem and Cache configuration}
+ AddBold(AResponse,'Filesystem configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_AUTOSTART:',BooleanToString(FILESYS_AUTOSTART),2);
+ AddItemEx(AResponse,'FILESYS_ASYNCSTART:',BooleanToString(FILESYS_ASYNCSTART),2);
+ AddItemEx(AResponse,'FILESYS_STARTDELAY:',IntToStr(FILESYS_STARTDELAY),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_REGISTER_LOGGING:',BooleanToString(FILESYS_REGISTER_LOGGING),2);
+ AddItemEx(AResponse,'FILESYS_LOGGING_DEFAULT:',BooleanToString(FILESYS_LOGGING_DEFAULT),2);
+ AddItemEx(AResponse,'FILESYS_LOGGING_FILE:',FILESYS_LOGGING_FILE,2);
+ AddItemEx(AResponse,'FILESYS_LOGGING_MAXSIZE:',IntToStr(FILESYS_LOGGING_MAXSIZE),2);
+ AddItemEx(AResponse,'FILESYS_LOGGING_MAXCOPIES:',IntToStr(FILESYS_LOGGING_MAXCOPIES),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_FLOPPY_ENABLED:',BooleanToString(FILESYS_FLOPPY_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_DRIVES_ENABLED:',BooleanToString(FILESYS_DRIVES_ENABLED),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_ATA_ENABLED:',BooleanToString(FILESYS_ATA_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_ATAPI_ENABLED:',BooleanToString(FILESYS_ATAPI_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_SCSI_ENABLED:',BooleanToString(FILESYS_SCSI_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_USB_ENABLED:',BooleanToString(FILESYS_USB_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_MMC_ENABLED:',BooleanToString(FILESYS_MMC_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_VIRTUAL_ENABLED:',BooleanToString(FILESYS_VIRTUAL_ENABLED),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_FAT_ENABLED:',BooleanToString(FILESYS_FAT_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_NTFS_ENABLED:',BooleanToString(FILESYS_NTFS_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_EXTFS_ENABLED:',BooleanToString(FILESYS_EXTFS_ENABLED),2);
+ AddItemEx(AResponse,'FILESYS_CDFS_ENABLED:',BooleanToString(FILESYS_CDFS_ENABLED),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_CASE_FLAGS:',BooleanToString(FILESYS_CASE_FLAGS),2);
+ AddItemEx(AResponse,'FILESYS_LONG_NAMES:',BooleanToString(FILESYS_LONG_NAMES),2);
+ AddItemEx(AResponse,'FILESYS_OEM_CONVERT:',BooleanToString(FILESYS_OEM_CONVERT),2);
+ AddItemEx(AResponse,'FILESYS_NUMERIC_TAIL:',BooleanToString(FILESYS_NUMERIC_TAIL),2);
+ AddItemEx(AResponse,'FILESYS_DIRTY_CHECK:',BooleanToString(FILESYS_DIRTY_CHECK),2);
+ AddItemEx(AResponse,'FILESYS_QUICK_CHECK:',BooleanToString(FILESYS_QUICK_CHECK),2);
+ AddItemEx(AResponse,'FILESYS_UPDATE_ACCESSTIME:',BooleanToString(FILESYS_UPDATE_ACCESSTIME),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_GLOBAL_CURRENTDIR:',BooleanToString(FILESYS_GLOBAL_CURRENTDIR),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Cache configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FILESYS_CACHE_SIZE:',IntToStr(FILESYS_CACHE_SIZE),2);
+ AddItemEx(AResponse,'FILESYS_CACHE_PAGE:',IntToStr(FILESYS_CACHE_PAGE),2);
+ AddItemEx(AResponse,'FILESYS_CACHE_KEYS:',IntToStr(FILESYS_CACHE_KEYS),2);
+ case FILESYS_CACHE_MODE of
+  FILESYS_CACHE_MODE_NONE:AddItemEx(AResponse,'FILESYS_CACHE_MODE:','FILESYS_CACHE_MODE_NONE',2);
+  FILESYS_CACHE_MODE_READONLY:AddItemEx(AResponse,'FILESYS_CACHE_MODE:','FILESYS_CACHE_MODE_READONLY',2);
+  FILESYS_CACHE_MODE_READWRITE:AddItemEx(AResponse,'FILESYS_CACHE_MODE:','FILESYS_CACHE_MODE_READWRITE',2);
+ end;
+ AddBlank(AResponse);
+ AddBold(AResponse,'FAT configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'FAT_DEFAULT:',BooleanToString(FAT_DEFAULT),2);
+ AddItemEx(AResponse,'FAT_CASE_FLAGS:',BooleanToString(FAT_CASE_FLAGS),2);
+ AddItemEx(AResponse,'FAT_LONG_NAMES:',BooleanToString(FAT_LONG_NAMES),2);
+ AddItemEx(AResponse,'FAT_OEM_CONVERT:',BooleanToString(FAT_OEM_CONVERT),2);
+ AddItemEx(AResponse,'FAT_NUMERIC_TAIL:',BooleanToString(FAT_NUMERIC_TAIL),2);
+ AddItemEx(AResponse,'FAT_DIRTY_CHECK:',BooleanToString(FAT_DIRTY_CHECK),2);
+ AddItemEx(AResponse,'FAT_QUICK_CHECK:',BooleanToString(FAT_QUICK_CHECK),2);
+ AddItemEx(AResponse,'FAT_INFO_SECTOR_ENABLE:',BooleanToString(FAT_INFO_SECTOR_ENABLE),2);
+ AddItemEx(AResponse,'FAT_INFO_IMMEDIATE_UPDATE:',BooleanToString(FAT_INFO_IMMEDIATE_UPDATE),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'NTFS configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'NTFS_DEFAULT:',BooleanToString(NTFS_DEFAULT),2);
+ AddItemEx(AResponse,'NTFS_RESET_LOG:',BooleanToString(NTFS_RESET_LOG),2);
+ AddItemEx(AResponse,'NTFS_FIXED_ZONE:',BooleanToString(NTFS_FIXED_ZONE),2);
+ AddItemEx(AResponse,'NTFS_ALT_LAYOUT:',BooleanToString(NTFS_ALT_LAYOUT),2);
+ AddItemEx(AResponse,'NTFS_LENIENT:',BooleanToString(NTFS_LENIENT),2);
+ AddItemEx(AResponse,'NTFS_DEFENSIVE:',BooleanToString(NTFS_DEFENSIVE),2);
+ AddItemEx(AResponse,'NTFS_AGGRESSIVE:',BooleanToString(NTFS_AGGRESSIVE),2);
+ AddItemEx(AResponse,'NTFS_NO_SHORT_NAMES:',BooleanToString(NTFS_NO_SHORT_NAMES),2);
+ AddItemEx(AResponse,'NTFS_NULL_SECURITY:',BooleanToString(NTFS_NULL_SECURITY),2);
+ AddItemEx(AResponse,'NTFS_DEFAULT_SECURITY:',BooleanToString(NTFS_DEFAULT_SECURITY),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'EXTFS configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'EXTFS_DEFAULT:',BooleanToString(EXTFS_DEFAULT),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'CDFS configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'CDFS_DEFAULT:',BooleanToString(CDFS_DEFAULT),2);
+ AddItemEx(AResponse,'CDFS_LONG_NAMES:',BooleanToString(CDFS_LONG_NAMES),2);
+ AddItemEx(AResponse,'CDFS_SWAP_SERIAL:',BooleanToString(CDFS_SWAP_SERIAL),2);
+ AddBlank(AResponse);
+ 
+ {Add Network, Transport, Protocol and Sockets configuration}
+ AddBold(AResponse,'Host configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'HOST_NAME:',HOST_NAME,2);
+ AddItemEx(AResponse,'HOST_DOMAIN:',HOST_DOMAIN,2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Winsock configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'WINSOCK_NAME:',WINSOCK_NAME,2);
+ AddItemEx(AResponse,'WINSOCK_LOW_VERSION:','0x' + IntToHex(WINSOCK_LOW_VERSION,4),2);
+ AddItemEx(AResponse,'WINSOCK_HIGH_VERSION:','0x' + IntToHex(WINSOCK_HIGH_VERSION,4),2);
+ AddItemEx(AResponse,'WINSOCK_BUILD_VERSION:',WINSOCK_BUILD_VERSION,2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'WINSOCK_MAX_SOCKETS:',IntToStr(WINSOCK_MAX_SOCKETS),2);
+ AddItemEx(AResponse,'WINSOCK_MAX_UDP:',IntToStr(WINSOCK_MAX_UDP),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'WINSOCK_AUTOSTART:',BooleanToString(WINSOCK_AUTOSTART),2);
+ AddItemEx(AResponse,'WINSOCK_ASYNCSTART:',BooleanToString(WINSOCK_ASYNCSTART),2);
+ AddItemEx(AResponse,'WINSOCK_STARTDELAY:',IntToStr(WINSOCK_STARTDELAY),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Winsock2 configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'WINSOCK2_NAME:',WINSOCK2_NAME,2);
+ AddItemEx(AResponse,'WINSOCK2_LOW_VERSION:','0x' + IntToHex(WINSOCK2_LOW_VERSION,4),2);
+ AddItemEx(AResponse,'WINSOCK2_HIGH_VERSION:','0x' + IntToHex(WINSOCK2_HIGH_VERSION,4),2);
+ AddItemEx(AResponse,'WINSOCK2_BUILD_VERSION:',WINSOCK2_BUILD_VERSION,2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'WINSOCK2_MAX_SOCKETS:',IntToStr(WINSOCK2_MAX_SOCKETS),2);
+ AddItemEx(AResponse,'WINSOCK2_MAX_UDP:',IntToStr(WINSOCK2_MAX_UDP),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'WINSOCK2_AUTOSTART:',BooleanToString(WINSOCK2_AUTOSTART),2);
+ AddItemEx(AResponse,'WINSOCK2_ASYNCSTART:',BooleanToString(WINSOCK2_ASYNCSTART),2);
+ AddItemEx(AResponse,'WINSOCK2_STARTDELAY:',IntToStr(WINSOCK2_STARTDELAY),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Sockets configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'SOCKETS_AUTOSTART:',BooleanToString(SOCKETS_AUTOSTART),2);
+ AddItemEx(AResponse,'SOCKETS_ASYNCSTART:',BooleanToString(SOCKETS_ASYNCSTART),2);
+ AddItemEx(AResponse,'SOCKETS_STARTDELAY:',IntToStr(SOCKETS_STARTDELAY),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Client configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'DNS_CLIENT_ENABLED:',BooleanToString(DNS_CLIENT_ENABLED),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Protocol configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'RAW_PROTOCOL_ENABLED:',BooleanToString(RAW_PROTOCOL_ENABLED),2);
+ AddItemEx(AResponse,'UDP_PROTOCOL_ENABLED:',BooleanToString(UDP_PROTOCOL_ENABLED),2);
+ AddItemEx(AResponse,'TCP_PROTOCOL_ENABLED:',BooleanToString(TCP_PROTOCOL_ENABLED),2);
+ AddItemEx(AResponse,'ICMP_PROTOCOL_ENABLED:',BooleanToString(ICMP_PROTOCOL_ENABLED),2);
+ AddItemEx(AResponse,'ICMP6_PROTOCOL_ENABLED:',BooleanToString(ICMP6_PROTOCOL_ENABLED),2);
+ AddItemEx(AResponse,'IGMP_PROTOCOL_ENABLED:',BooleanToString(IGMP_PROTOCOL_ENABLED),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'TCP_MIN_BACKLOG:',IntToStr(TCP_MIN_BACKLOG),2);
+ AddItemEx(AResponse,'TCP_MAX_BACKLOG:',IntToStr(TCP_MAX_BACKLOG),2);
+ AddItemEx(AResponse,'TCP_RECEIVE_BACKLOG:',IntToStr(TCP_RECEIVE_BACKLOG),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'ARP_CONFIG_ENABLED:',BooleanToString(ARP_CONFIG_ENABLED),2);
+ AddItemEx(AResponse,'RARP_CONFIG_ENABLED:',BooleanToString(RARP_CONFIG_ENABLED),2);
+ AddItemEx(AResponse,'BOOTP_CONFIG_ENABLED:',BooleanToString(BOOTP_CONFIG_ENABLED),2);
+ AddItemEx(AResponse,'DHCP_CONFIG_ENABLED:',BooleanToString(DHCP_CONFIG_ENABLED),2);
+ AddItemEx(AResponse,'STATIC_CONFIG_ENABLED:',BooleanToString(STATIC_CONFIG_ENABLED),2);
+ AddItemEx(AResponse,'LOOPBACK_CONFIG_ENABLED:',BooleanToString(LOOPBACK_CONFIG_ENABLED),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Transport configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'IP_TRANSPORT_ENABLED:',BooleanToString(IP_TRANSPORT_ENABLED),2);
+ AddItemEx(AResponse,'IP6_TRANSPORT_ENABLED:',BooleanToString(IP6_TRANSPORT_ENABLED),2);
+ AddItemEx(AResponse,'ARP_TRANSPORT_ENABLED:',BooleanToString(ARP_TRANSPORT_ENABLED),2);
+ AddItemEx(AResponse,'RARP_TRANSPORT_ENABLED:',BooleanToString(RARP_TRANSPORT_ENABLED),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'RSN_TRANSPORT_ENABLED:',BooleanToString(RSN_TRANSPORT_ENABLED),2);
+ AddItemEx(AResponse,'EAPOL_TRANSPORT_ENABLED:',BooleanToString(EAPOL_TRANSPORT_ENABLED),2);
+ AddBlank(AResponse);
+ AddBold(AResponse,'Network configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'WIRED_NETWORK_ENABLED:',BooleanToString(WIRED_NETWORK_ENABLED),2);
+ AddItemEx(AResponse,'LOOPBACK_NETWORK_ENABLED:',BooleanToString(LOOPBACK_NETWORK_ENABLED),2);
+ AddItemEx(AResponse,'WIRELESS_NETWORK_ENABLED:',BooleanToString(WIRELESS_NETWORK_ENABLED),2);
  AddBlank(AResponse);
  
  {Add Keyboard configuration}
@@ -11253,6 +11421,7 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'PCI_AUTOSTART:',BooleanToString(PCI_AUTOSTART),2);
  AddItemEx(AResponse,'PCI_ASYNCSTART:',BooleanToString(PCI_ASYNCSTART),2);
+ AddItemEx(AResponse,'PCI_STARTDELAY:',IntToStr(PCI_STARTDELAY),2);
  AddBlank(AResponse);
  
  {Add USB configuration}
@@ -11260,6 +11429,7 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'USB_AUTOSTART:',BooleanToString(USB_AUTOSTART),2);
  AddItemEx(AResponse,'USB_ASYNCSTART:',BooleanToString(USB_ASYNCSTART),2);
+ AddItemEx(AResponse,'USB_STARTDELAY:',IntToStr(USB_STARTDELAY),2);
  AddBlank(AResponse);
  AddItemEx(AResponse,'USB_DMA_ALIGNMENT:',IntToStr(USB_DMA_ALIGNMENT),2);
  AddItemEx(AResponse,'USB_DMA_MULTIPLIER:',IntToStr(USB_DMA_MULTIPLIER),2);
@@ -11286,6 +11456,7 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'MMC_AUTOSTART:',BooleanToString(MMC_AUTOSTART),2);
  AddItemEx(AResponse,'MMC_ASYNCSTART:',BooleanToString(MMC_ASYNCSTART),2);
+ AddItemEx(AResponse,'MMC_STARTDELAY:',IntToStr(MMC_STARTDELAY),2);
  AddBlank(AResponse);
  AddItemEx(AResponse,'MMC_DMA_ALIGNMENT:',IntToStr(MMC_DMA_ALIGNMENT),2);
  AddItemEx(AResponse,'MMC_DMA_MULTIPLIER:',IntToStr(MMC_DMA_MULTIPLIER),2);
@@ -11395,13 +11566,7 @@ begin
     //To Do
    end; 
  end;
- 
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
- AddBlank(AResponse);
- 
+
  {Add Country, CodePage, Locale and Language}
  AddBold(AResponse,'Country, CodePage, Locale and Language','');
  AddBlank(AResponse);
@@ -11412,12 +11577,6 @@ begin
  AddItemEx(AResponse,'CODEPAGE_CONSOLE_OUTPUT:',IntToStr(CODEPAGE_CONSOLE_OUTPUT),2);
  AddItemEx(AResponse,'LOCALE_DEFAULT:',IntToStr(LOCALE_DEFAULT),2);
  AddItemEx(AResponse,'KEYMAP_DEFAULT:',KEYMAP_DEFAULT,2);
- AddBlank(AResponse);
- 
- {Add }
- AddBold(AResponse,'','');
- AddBlank(AResponse);
- //To Do
  AddBlank(AResponse);
  
  {Add Footer}

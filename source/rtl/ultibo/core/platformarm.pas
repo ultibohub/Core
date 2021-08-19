@@ -262,12 +262,13 @@ var
  {ARM specific variables}
  ARMInitialized:Boolean;
  
- ARMBootMode:LongWord = 0;                  {The ARM Mode that the processor was in at boot time (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
- ARMBootVectors:LongWord = 0;               {The Vector Base Address that was current at boot time (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
- ARMTagsAddress:PtrUInt = ARMTAGS_INITIAL;  {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
- ARMMachineType:LongWord = 0;               {ARM Machine Type provided by the bootloader at startup (Set by Startup)} {Must be initialized to remain in .data or else rewritten to zero with .bss}
+ ARMBootMode:LongWord = 0;                  {The ARM Mode that the processor was in at boot time (Set by Startup)}
+ ARMBootVectors:LongWord = 0;               {The Vector Base Address that was current at boot time (Set by Startup)}
+ ARMTagsAddress:PtrUInt = ARMTAGS_INITIAL;  {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)}
+ ARMMachineType:LongWord = 0;               {ARM Machine Type provided by the bootloader at startup (Set by Startup)}
  ARMSecureBoot:LongWord = 1;                {If 1 then startup will attempt to switch back to secure world during boot process (If supported by the ARM boot stub)}
- 
+ ARMEmulatorMode:LongWord = 0;              {If 1 then startup detected that the machine is running in an emulator (If applicable)}
+                                            {Note: These variables must be initialized to remain in .data or else they are rewritten to zero with .bss}
 var
  {ARM Tags Variables}
  ARMTagsCount:LongWord;     {Number of ARM Tags found during parse}

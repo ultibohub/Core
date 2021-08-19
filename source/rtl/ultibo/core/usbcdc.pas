@@ -1,7 +1,7 @@
 {
 Ultibo USB CDC interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -134,6 +134,13 @@ const
  {Set Control Line State wValue (See: Section 6.3.12 of USB Communications Class Subclass Specification for PSTN Devices 1.2)}
  USB_CDC_ACM_CTRL_DTR = $01; {Indicates to DCE if DTE is present or not. This signal corresponds to V.24 signal 108/2 and RS-232 signal DTR}
  USB_CDC_ACM_CTRL_RTS = $02; {Carrier control for half duplex modems. This signal corresponds to V.24 signal 105 and RS-232 signal RTS}
+ 
+ {Set Ethernet Packet Filter wValue (See: Section 6.2.4 of USB Communications Class Subclass Specification for Ethernet Control Model Devices 1.2)}
+ USB_CDC_PACKET_TYPE_PROMISCUOUS   = (1 shl 0);
+ USB_CDC_PACKET_TYPE_ALL_MULTICAST = (1 shl 1); {No filter}
+ USB_CDC_PACKET_TYPE_DIRECTED      = (1 shl 2);
+ USB_CDC_PACKET_TYPE_BROADCAST     = (1 shl 3);
+ USB_CDC_PACKET_TYPE_MULTICAST     = (1 shl 4); {Filtered}
  
  {Class Specific Notifications (See: Section 6.3 of USB Class Definitions for Communications Devices 1.2)}
  USB_CDC_NOTIFY_NETWORK_CONNECTION = $00;
@@ -351,6 +358,26 @@ type
   ULBitRate:LongWord;  {LE32} {Contains the uplink bit rate, in bits per second, as sent on the OUT pipe}
  end; 
  
+ {Combined Headers}
+ PUSBCDCHeaders = ^TUSBCDCHeaders;
+ TUSBCDCHeaders = record
+  UnionDescriptor:PUSBCDCUnionDescriptor;                     {Union Functional Descriptor}
+  HeaderDescriptor:PUSBCDCHeaderDescriptor;                   {Header Functional Descriptor}
+  
+  CallManagementDescriptor:PUSBCDCCallManagementDescriptor;   {Call Management Descriptor}
+  ACMDescriptor:PUSBCDCACMDescriptor;                         {Abstract Control Management Descriptor}
+  CountryDescriptor:PUSBCDCCountryDescriptor;                 {Country Selection Functional Descriptor}
+  NetworkTerminalDescriptor:PUSBCDCNetworkTerminalDescriptor; {Network Channel Terminal Functional Descriptor}
+  EthernetDescriptor:PUSBCDCEthernetDescriptor;               {Ethernet Networking Functional Descriptor}
+  TCMDescriptor:PUSBCDCTCMDescriptor;                         {Telephone Control Model Functional Descriptor}
+  MDLMDescriptor:PUSBCDCMDLMDescriptor;                       {MDLM Functional Descriptor}
+  MDLMDetailDescriptor:PUSBCDCMDLMDetailDescriptor;           {MDLM Detail Functional Descriptor}
+  OBEXDescriptor:PUSBCDCOBEXDescriptor;                       {OBEX Control Model Functional Descriptor}
+  NCMDescriptor:PUSBCDCNCMDescriptor;                         {NCM Control Model Functional Descriptor}
+  MBIMDescriptor:PUSBCDCMBIMDescriptor;                       {MBIM Control Model Functional Descriptor}
+  MBIMExtendedDescriptor:PUSBCDCMBIMExtendedDescriptor;       {MBIM Extended Functional Descriptor}
+ end;
+ 
 {==============================================================================}
 {var}
  {CDC specific variables}
@@ -363,7 +390,8 @@ type
   
 {==============================================================================}
 {CDC Helper Functions}
-  
+function USBCDCParseHeaders(Device:PUSBDevice;Headers:PUSBCDCHeaders;Data:Pointer;Size:LongWord):LongWord;
+
 {==============================================================================}
 {==============================================================================}
 
@@ -385,7 +413,238 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {CDC Helper Functions}
-  
+function USBCDCParseHeaders(Device:PUSBDevice;Headers:PUSBCDCHeaders;Data:Pointer;Size:LongWord):LongWord;
+{Parse the extra data contained in a CDC interface and return pointers to the available headers}
+{Device: The USB device the headers belong to}
+{Headers: A pointer to the headers structure to be returned}
+{Data: A pointer to the extra data from a CDC interface}
+{Size: The size of the buffer pointed to by Data}
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+var
+ Len:Byte;
+ Buffer:PByte;
+
+ Descriptor:PUSBCDCDescriptor;
+ UnionDescriptor:PUSBCDCUnionDescriptor;
+ HeaderDescriptor:PUSBCDCHeaderDescriptor;
+ EthernetDescriptor:PUSBCDCEthernetDescriptor;
+ MDLMDescriptor:PUSBCDCMDLMDescriptor;
+ MDLMDetailDescriptor:PUSBCDCMDLMDetailDescriptor;
+begin
+ {}
+ Result:=USB_STATUS_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Data and Size}
+ if (Data = nil) or (Size = 0) then Exit;
+ 
+ {Clear Headers}
+ FillChar(Headers^,SizeOf(TUSBCDCHeaders),0);
+ 
+ {Get Buffer}
+ Buffer:=Data;
+ 
+ {Setup Headers}
+ UnionDescriptor:=nil;
+ HeaderDescriptor:=nil;
+ EthernetDescriptor:=nil;
+ MDLMDescriptor:=nil;
+ MDLMDetailDescriptor:=nil;
+ 
+ {Look for CDC descriptors}
+ while Size > 0 do
+  begin
+   {Get Header}
+   Descriptor:=PUSBCDCDescriptor(Buffer);
+       
+   {Get Length}
+   Len:=Descriptor.bFunctionLength;
+   if Len > 0 then
+    begin
+     {Check Type}
+     if Descriptor.bDescriptorType = USB_DESCRIPTOR_TYPE_CLASS_INTERFACE then
+      begin
+       {Check Sub Type}
+       case Descriptor.bDescriptorSubType of
+        USB_CDC_UNION_TYPE:begin
+          {Union}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found union type descriptor');
+          {$ENDIF}
+          
+          if Len >= SizeOf(TUSBCDCUnionDescriptor) then
+           begin
+            {Ignore multiple Union descriptors}
+            if UnionDescriptor = nil then 
+             begin
+              UnionDescriptor:=PUSBCDCUnionDescriptor(Buffer);
+             end;
+           end;
+         end;
+        USB_CDC_COUNTRY_TYPE:begin
+          {Country}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found country type descriptor');
+          {$ENDIF}
+          
+          if Len >= SizeOf(TUSBCDCCountryDescriptor) then
+           begin
+            Headers.CountryDescriptor:=PUSBCDCCountryDescriptor(Buffer);
+           end;
+         end;
+        USB_CDC_HEADER_TYPE:begin
+          {Header}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found header type descriptor');
+          {$ENDIF}
+          
+          if Len >= SizeOf(TUSBCDCHeaderDescriptor) then
+           begin
+            {Only allow one Header descriptor}
+            if HeaderDescriptor <> nil then Exit;
+          
+            HeaderDescriptor:=PUSBCDCHeaderDescriptor(Buffer);
+           end;
+         end;
+        USB_CDC_ACM_TYPE:begin
+          {ACM}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found ACM type descriptor');
+          {$ENDIF}
+        
+          if Len >= SizeOf(TUSBCDCACMDescriptor) then
+           begin
+            Headers.ACMDescriptor:=PUSBCDCACMDescriptor(Buffer);
+           end;
+         end;
+        USB_CDC_ETHERNET_TYPE:begin
+          {Ethernet}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found ethernet type descriptor');
+          {$ENDIF}
+          
+          if Len >= SizeOf(TUSBCDCEthernetDescriptor) then
+           begin
+            {Only allow one Ethernet descriptor}
+            if EthernetDescriptor <> nil then Exit;
+
+            EthernetDescriptor:=PUSBCDCEthernetDescriptor(Buffer);
+           end; 
+         end;
+        USB_CDC_CALL_MANAGEMENT_TYPE:begin
+          {Call Management}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found call management type descriptor');
+          {$ENDIF}
+
+          if Len >= SizeOf(TUSBCDCCallManagementDescriptor) then
+           begin
+            Headers.CallManagementDescriptor:=PUSBCDCCallManagementDescriptor(Buffer);
+           end; 
+         end;
+        USB_CDC_DMM_TYPE:begin
+          {DMM (Telephone Control Model)}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found DMM type descriptor');
+          {$ENDIF}
+
+          if Len >= SizeOf(TUSBCDCTCMDescriptor) then
+           begin
+            Headers.TCMDescriptor:=PUSBCDCTCMDescriptor(Buffer);
+           end; 
+         end;
+        USB_CDC_MDLM_TYPE:begin
+          {MDLM}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found MDLM type descriptor');
+          {$ENDIF}
+
+          if Len >= SizeOf(TUSBCDCMDLMDescriptor) then
+           begin
+            {Only allow one MDLM descriptor}
+            if MDLMDescriptor <> nil then Exit;
+
+            MDLMDescriptor:=PUSBCDCMDLMDescriptor(Buffer);
+           end; 
+         end;
+        USB_CDC_MDLM_DETAIL_TYPE:begin
+          {MDLM Detail}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found MDLM Detail type descriptor');
+          {$ENDIF}
+
+          if Len >= SizeOf(TUSBCDCMDLMDetailDescriptor) then
+           begin
+            {Only allow one MDLM Detail descriptor}
+            if MDLMDetailDescriptor <> nil then Exit;
+
+            MDLMDetailDescriptor:=PUSBCDCMDLMDetailDescriptor(Buffer);
+           end; 
+         end;
+        USB_CDC_NCM_TYPE:begin
+          {NCM}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found NCM type descriptor');
+          {$ENDIF}
+          
+          if Len >= SizeOf(TUSBCDCNCMDescriptor) then
+           begin
+            Headers.NCMDescriptor:=PUSBCDCNCMDescriptor(Buffer);
+           end; 
+         end;
+        USB_CDC_MBIM_TYPE:begin
+          {MBIM}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found MBIM type descriptor');
+          {$ENDIF}
+
+          if Len >= SizeOf(TUSBCDCMBIMDescriptor) then
+           begin
+            Headers.MBIMDescriptor:=PUSBCDCMBIMDescriptor(Buffer);
+           end; 
+         end;
+        USB_CDC_MBIM_EXTENDED_TYPE:begin
+          {MBIM Extended}
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Found MBIM Extended type descriptor');
+          {$ENDIF}
+
+          if Len >= SizeOf(TUSBCDCMBIMExtendedDescriptor) then
+           begin
+            Headers.MBIMExtendedDescriptor:=PUSBCDCMBIMExtendedDescriptor(Buffer);
+           end; 
+         end;
+        else
+         begin
+          {$IF DEFINED(CDCACM_DEBUG) or DEFINED(CDCETHERNET_DEBUG)}
+          if USB_LOG_ENABLED then USBLogDebug(Device,'CDC ACM: Ignoring CDC descriptor type 0x' + IntToHex(Descriptor.bDescriptorSubType,2));
+          {$ENDIF}
+         end;
+       end;
+      end;
+    end
+   else
+    begin
+     {Skip zero values}
+     Len:=1;
+    end;
+   
+   Dec(Size,Len);
+   Inc(Buffer,Len);
+  end; 
+ 
+ {Update Headers}
+ Headers.UnionDescriptor:=UnionDescriptor;
+ Headers.HeaderDescriptor:=HeaderDescriptor;
+ Headers.EthernetDescriptor:=EthernetDescriptor;
+ Headers.MDLMDescriptor:=MDLMDescriptor;
+ Headers.MDLMDetailDescriptor:=MDLMDetailDescriptor;
+
+ Result:=USB_STATUS_SUCCESS;
+end;
+
 {==============================================================================}
 {==============================================================================}
   

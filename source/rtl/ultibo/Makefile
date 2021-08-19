@@ -494,6 +494,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    pl2303 \
 		    ftdiserial \
 		    usbcdcacm \
+		    usbcdcethernet \
 		    pl011 \
 		    ds1307 \
 		    pl031 \
