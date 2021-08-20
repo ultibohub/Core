@@ -962,6 +962,10 @@ begin
    try
     {Setup Status}
     Command.Status:=MMC_STATUS_NOT_PROCESSED;
+    Command.DataCompleted:=False;
+    Command.BusyCompleted:=False;
+    Command.TuningCompleted:=False;
+    Command.CommandCompleted:=False;
     try
      {Update Statistics}
      Inc(SDHCI.RequestCount); 
@@ -1148,8 +1152,12 @@ begin
         {Update Statistics}
         Inc(SDHCI.CommandRequestCount); 
 
-        {Wait for Signal with Timeout (100ms)}
-        Status:=SemaphoreWaitEx(SDHCI.Wait,100);
+        {Get Command Timeout (Default 100ms)}
+        Timeout:=100;
+        if Command.Timeout > Timeout then Timeout:=Command.Timeout;
+
+        {Wait for Signal with Timeout}
+        Status:=SemaphoreWaitEx(SDHCI.Wait,Timeout);
         if Status <> ERROR_SUCCESS then
          begin
           if Status = ERROR_WAIT_TIMEOUT then
@@ -1178,8 +1186,12 @@ begin
         {Update Statistics}
         Inc(SDHCI.PIODataTransferCount); 
 
-        {Wait for Signal with Timeout (5000ms)}
-        Status:=SemaphoreWaitEx(SDHCI.Wait,5000);
+        {Get Data Timeout (Default 5000ms)}
+        Timeout:=5000;
+        if Command.Timeout > Timeout then Timeout:=Command.Timeout;
+
+        {Wait for Signal with Timeout}
+        Status:=SemaphoreWaitEx(SDHCI.Wait,Timeout);
         if Status <> ERROR_SUCCESS then
          begin
           if Status = ERROR_WAIT_TIMEOUT then

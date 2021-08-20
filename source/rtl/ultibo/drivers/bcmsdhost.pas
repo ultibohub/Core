@@ -1348,6 +1348,15 @@ begin
    Exit; 
   end; 
 
+ {Check Completed}
+ if SDHCI.Command.CommandCompleted then
+  begin
+   {$IFDEF INTERRUPT_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Finish command when command already completed');
+   {$ENDIF}
+   Exit;
+  end;
+  
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
 
@@ -1571,6 +1580,15 @@ begin
    {$ENDIF}
    Exit; 
   end; 
+
+ {Check Completed}
+ if SDHCI.Command.DataCompleted then
+  begin
+   {$IFDEF INTERRUPT_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Finish data when data already completed');
+   {$ENDIF}
+   Exit;
+  end;
 
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
@@ -1921,6 +1939,10 @@ begin
 
     {Setup Status}
     Command.Status:=MMC_STATUS_NOT_PROCESSED;
+    Command.DataCompleted:=False;
+    Command.BusyCompleted:=False;
+    Command.TuningCompleted:=False;
+    Command.CommandCompleted:=False;
     try
      {Update Statistics}
      Inc(SDHCI.RequestCount); 
@@ -2156,15 +2178,23 @@ begin
           {Acquire the Lock}
           if BCMSDHOSTLock(SDHCI) <> ERROR_SUCCESS then Exit;
           
-          {Poll for Completion}
-          BCMSDHOSTFinishCommand(SDHCI,True);
+          {Check Completed}
+          if not Command.CommandCompleted then
+           begin
+            {Poll for Completion}
+            BCMSDHOSTFinishCommand(SDHCI,True);
+           end; 
           
           {Release the Lock}
           BCMSDHOSTUnlock(SDHCI);
          end;
 
-        {Wait for Signal with Timeout (100ms)}
-        Status:=SemaphoreWaitEx(SDHCI.Wait,100);
+        {Get Command Timeout (Default 100ms)}
+        Timeout:=100;
+        if Command.Timeout > Timeout then Timeout:=Command.Timeout;
+
+        {Wait for Signal with Timeout}
+        Status:=SemaphoreWaitEx(SDHCI.Wait,Timeout);
         if Status <> ERROR_SUCCESS then
          begin
           if Status = ERROR_WAIT_TIMEOUT then
@@ -2207,15 +2237,23 @@ begin
           {Acquire the Lock}
           if BCMSDHOSTLock(SDHCI) <> ERROR_SUCCESS then Exit;
           
-          {Poll for Completion}
-          BCMSDHOSTFinishCommand(SDHCI,True);
+          {Check Completed}
+          if not Command.CommandCompleted then
+           begin
+            {Poll for Completion}
+            BCMSDHOSTFinishCommand(SDHCI,True);
+           end; 
           
           {Release the Lock}
           BCMSDHOSTUnlock(SDHCI);
          end;
-        
-        {Wait for Signal with Timeout (5000ms)}
-        Status:=SemaphoreWaitEx(SDHCI.Wait,5000);
+
+        {Get Data Timeout (Default 5000ms)}
+        Timeout:=5000;
+        if Command.Timeout > Timeout then Timeout:=Command.Timeout;
+
+        {Wait for Signal with Timeout}
+        Status:=SemaphoreWaitEx(SDHCI.Wait,Timeout);
         if Status <> ERROR_SUCCESS then
          begin
           if Status = ERROR_WAIT_TIMEOUT then
@@ -2991,6 +3029,8 @@ begin
      
      {Release the Lock}
      BCMSDHOSTUnlock(SDHCI);
+
+     Result:=MMC_STATUS_SUCCESS;
      Exit;
     end;
     

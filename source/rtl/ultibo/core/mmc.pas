@@ -1907,8 +1907,8 @@ type
   Response:array[0..3] of LongWord;
   Status:LongWord;
   Data:PMMCData;
-  {Host Properties}
   Timeout:LongWord; {Milliseconds}
+  {Host Properties}
   DataCompleted:Boolean;
   BusyCompleted:Boolean;
   TuningCompleted:Boolean;
@@ -6550,6 +6550,10 @@ begin
      try
       {Setup Status}
       Command.Status:=MMC_STATUS_NOT_PROCESSED;
+      Command.DataCompleted:=False;
+      Command.BusyCompleted:=False;
+      Command.TuningCompleted:=False;
+      Command.CommandCompleted:=False;
       try
        {Update Statistics}
        Inc(SDHCI.RequestCount);

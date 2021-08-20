@@ -1,7 +1,7 @@
 {
 Ultibo USB interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -844,10 +844,6 @@ const
  {USB Vendor IDs} {Not a complete list}
  USB_VENDORID_REALTEK = $0BDA;  {Realtek}
  
- {USB tree output}
- USB_TREE_SPACES_PER_LEVEL = 6;
- USB_TREE_LINES_PER_PORT   = 2;
- 
  {USB logging}
  USB_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {USB debugging messages}
  USB_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {USB informational messages, such as a device being attached or detached}
@@ -857,6 +853,15 @@ const
 
 var 
  USB_DEFAULT_LOG_LEVEL:LongWord = USB_LOG_LEVEL_DEBUG; {Minimum level for USB messages.  Only messages with level greater than or equal to this will be printed}
+
+var
+ {USB log device output}
+ USB_LOG_ALL_CONFIGURATIONS:Boolean = True;
+ USB_LOG_ALTERNATE_SETTINGS:Boolean = True;
+ 
+ {USB log tree output}
+ USB_TREE_SPACES_PER_LEVEL:LongWord = 6;
+ USB_TREE_LINES_PER_PORT:LongWord   = 2;
  
 var 
  {USB logging}
@@ -1467,6 +1472,7 @@ function USBDeviceFindEndpointByTypeEx(Device:PUSBDevice;Interrface:PUSBInterfac
 function USBDeviceCountEndpointsByType(Device:PUSBDevice;Interrface:PUSBInterface;Direction,TransferType:Byte):Byte;
 
 function USBDeviceFindAlternateByIndex(Device:PUSBDevice;Interrface:PUSBInterface;Index:Byte):PUSBAlternate;
+function USBDeviceFindAlternateBySetting(Device:PUSBDevice;Interrface:PUSBInterface;AlternateSetting:Byte):PUSBAlternate;
 
 function USBDeviceFindAlternateEndpointByIndex(Device:PUSBDevice;Interrface:PUSBInterface;Alternate:PUSBAlternate;Index:Byte):PUSBEndpointDescriptor;
 function USBDeviceFindAlternateEndpointByType(Device:PUSBDevice;Interrface:PUSBInterface;Alternate:PUSBAlternate;Direction,TransferType:Byte):PUSBEndpointDescriptor;
@@ -3658,6 +3664,58 @@ begin
     
     {Get Alternate}
     Result:=Interrface.Alternates[Index];
+   finally
+    {Release the Lock}
+    MutexUnlock(Device.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function USBDeviceFindAlternateBySetting(Device:PUSBDevice;Interrface:PUSBInterface;AlternateSetting:Byte):PUSBAlternate;
+{Find the alternate setting with the specified value on the specified interface of the specified device}
+{Device: The USB device to find the alternate setting from}
+{Interrface: The interface to find the alternate setting from}
+{AlternateSetting: The value of the alternate setting to find}
+{Return: The alternate setting for the matching alternate setting of nil if no alternate setting matched}
+var
+ Count:LongWord;
+ Alternate:PUSBAlternate;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Interface}
+ if Interrface = nil then Exit;
+
+ {Acquire the Lock}
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
+  begin
+   try 
+    {Check Alternate Count}
+    if Length(Interrface.Alternates) > 0 then
+     begin
+      {Find Alternate}
+      for Count:=0 to Length(Interrface.Alternates) - 1 do
+       begin
+        {Check Alternate}
+        Alternate:=Interrface.Alternates[Count];
+        if Alternate <> nil then
+         begin
+          {Check Alternate Setting}
+          if Alternate.Descriptor.bAlternateSetting = AlternateSetting then
+           begin
+            Result:=Alternate;
+            Exit;
+           end;
+         end;
+       end;
+     end;  
    finally
     {Release the Lock}
     MutexUnlock(Device.Lock);
@@ -9601,13 +9659,22 @@ begin
   USB_CLASS_CODE_AUDIO:Result:='Audio';
   USB_CLASS_CODE_COMMUNICATIONS_AND_CDC_CONTROL:Result:='Communications and CDC Control';
   USB_CLASS_CODE_HID:Result:='HID (Human Interface Device)';
+  USB_CLASS_CODE_PHYSICAL:Result:='Physical';
   USB_CLASS_CODE_IMAGE:Result:='Image';
   USB_CLASS_CODE_PRINTER:Result:='Printer';
   USB_CLASS_CODE_MASS_STORAGE:Result:='Mass Storage';
   USB_CLASS_CODE_HUB:Result:='Hub';
+  USB_CLASS_CODE_CDC_DATA:Result:='CDC Data';
+  USB_CLASS_CODE_SMART_CARD:Result:='Smart Card';
+  USB_CLASS_CODE_CONTENT_SECURITY:Result:='Content Security';
   USB_CLASS_CODE_VIDEO:Result:='Video';
+  USB_CLASS_CODE_PERSONAL_HEALTHCARE:Result:='Personal Healthcare';
+  USB_CLASS_CODE_AUDIO_VIDEO:Result:='Audio Video';
+  USB_CLASS_CODE_BILLBOARD:Result:='Billboard';
+  USB_CLASS_CODE_DIAGNOSTIC:Result:='Diagnostic';
   USB_CLASS_CODE_WIRELESS_CONTROLLER:Result:='Wireless Controller';
   USB_CLASS_CODE_MISCELLANEOUS:Result:='Miscellaneous';
+  USB_CLASS_CODE_APPLICATION_SPECIFIC:Result:='Application Specific';
   USB_CLASS_CODE_VENDOR_SPECIFIC:Result:='Vendor Specific';
  end;
 end;
@@ -9950,8 +10017,12 @@ end;
 
 procedure USBLogDeviceConfiguration(Device:PUSBDevice;Output:TUSBLogOutput = nil;Data:Pointer = nil);
 var
+ Index:LongWord;
  Count:LongWord;
  Counter:LongWord;
+ Instance:LongWord;
+ Alternate:PUSBAlternate;
+ Configuration:PUSBConfiguration;
 begin
  {}
  {Check Device}
@@ -9963,27 +10034,79 @@ begin
  {Check Output}
  if not Assigned(Output) then Output:=@USBLogOutput;
  
- {Log Configuration Descriptor}
- USBLogConfigurationDescriptor(Device,Device.Configuration.Descriptor,Output,Data);
- 
- {Check Configuration Descriptor}
- if (Device.Configuration.Descriptor <> nil) and (Device.Configuration.Descriptor.bNumInterfaces > 0) then
+ {Log Configurations}
+ for Index:=0 to Device.Descriptor.bNumConfigurations - 1 do
   begin
-   {Log Interface Descriptors}
-   for Count:=0 to Device.Configuration.Descriptor.bNumInterfaces - 1 do
+   {Get Configuration}
+   Configuration:=Device.Configurations[Index];
+   if not USB_LOG_ALL_CONFIGURATIONS then Configuration:=Device.Configuration;
+ 
+   {Log Configuration Descriptor}
+   USBLogConfigurationDescriptor(Device,Configuration.Descriptor,Output,Data);
+   
+   {Check Configuration Descriptor}
+   if (Configuration.Descriptor <> nil) and (Configuration.Descriptor.bNumInterfaces > 0) then
     begin
-     USBLogInterfaceDescriptor(Device,Device.Configuration.Interfaces[Count].Descriptor,Output,Data);
-     
-     {Check Endpoint Descriptor}
-     if (Device.Configuration.Interfaces[Count].Descriptor <> nil) and (Device.Configuration.Interfaces[Count].Descriptor.bNumEndpoints > 0) then
+     {Log Interface Descriptors}
+     for Count:=0 to Configuration.Descriptor.bNumInterfaces - 1 do
       begin
-       {Log Endpoint Descriptors}
-       for Counter:=0 to Device.Configuration.Interfaces[Count].Descriptor.bNumEndpoints - 1 do
+       if not(USB_LOG_ALTERNATE_SETTINGS) and (Configuration.Interfaces[Count].AlternateSetting > 0) then
         begin
-         USBLogEndpointDescriptor(Device,Device.Configuration.Interfaces[Count].Endpoints[Counter],Output,Data);
+         {Alternate Setting Interface}
+         Alternate:=USBDeviceFindAlternateBySetting(Device,Configuration.Interfaces[Count],Configuration.Interfaces[Count].AlternateSetting);
+         if Alternate <> nil then
+          begin
+           USBLogInterfaceDescriptor(Device,Alternate.Descriptor,Output,Data);
+           
+           {Check Endpoint Descriptor}
+           if (Alternate.Descriptor <> nil) and (Alternate.Descriptor.bNumEndpoints > 0) then
+            begin
+             {Log Endpoint Descriptors}
+             for Counter:=0 to Alternate.Descriptor.bNumEndpoints - 1 do
+              begin
+               USBLogEndpointDescriptor(Device,Alternate.Endpoints[Counter],Output,Data);
+              end;
+            end;
+          end;
+        end
+       else
+        begin
+         {Default Interface}
+         USBLogInterfaceDescriptor(Device,Configuration.Interfaces[Count].Descriptor,Output,Data);
+
+         {Check Endpoint Descriptor}
+         if (Configuration.Interfaces[Count].Descriptor <> nil) and (Configuration.Interfaces[Count].Descriptor.bNumEndpoints > 0) then
+          begin
+           {Log Endpoint Descriptors}
+           for Counter:=0 to Configuration.Interfaces[Count].Descriptor.bNumEndpoints - 1 do
+            begin
+             USBLogEndpointDescriptor(Device,Configuration.Interfaces[Count].Endpoints[Counter],Output,Data);
+            end;
+          end;
         end;
-      end;  
+
+       {Log Alternate Setting}
+       if USB_LOG_ALTERNATE_SETTINGS and (Configuration.Interfaces[Count].AlternateCount > 0) then
+        begin
+         for Instance:=0 to Configuration.Interfaces[Count].AlternateCount - 1 do
+          begin
+           USBLogInterfaceDescriptor(Device,Configuration.Interfaces[Count].Alternates[Instance].Descriptor,Output,Data);
+          
+           {Check Endpoint Descriptor}
+           if (Configuration.Interfaces[Count].Alternates[Instance].Descriptor <> nil) and (Configuration.Interfaces[Count].Alternates[Instance].Descriptor.bNumEndpoints > 0) then
+            begin
+             {Log Endpoint Descriptors}
+             for Counter:=0 to Configuration.Interfaces[Count].Alternates[Instance].Descriptor.bNumEndpoints - 1 do
+              begin
+               USBLogEndpointDescriptor(Device,Configuration.Interfaces[Count].Alternates[Instance].Endpoints[Counter],Output,Data);
+              end;
+            end;  
+          end;
+        end;
+      end;
     end;
+  
+   if not USB_LOG_ALL_CONFIGURATIONS then Break;
   end;
 end;
 

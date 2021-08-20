@@ -7300,6 +7300,7 @@ begin
  Result:=0;
  
  //To Do //Create a Handle list in Platform with reference count
+ //See also: RegisterWaitForSingleObject/UnregisterWait/UnregisterWaitEx
 end;
 
 {==============================================================================}
