@@ -693,14 +693,19 @@ begin
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2837_GPIO_REGS_BASE;
 
- {Check for Emulator (QEMU DMA device is very slow)}
+ {Check for Emulator}
  if EMULATOR_MODE then
   begin
+   {QEMU DMA device is very slow}
    CONSOLE_DMA_BOX:=False; 
    CONSOLE_DMA_LINE:=False; 
    CONSOLE_DMA_FILL:=False;
    CONSOLE_DMA_CLEAR:=False; 
    CONSOLE_DMA_SCROLL:=False; 
+   
+   {Framebuffer has no default settings}
+   FRAMEBUFFER_DEFAULT_WIDTH:=800;
+   FRAMEBUFFER_DEFAULT_HEIGHT:=600;
   end; 
 
  {Register Platform SMPInit Handler}

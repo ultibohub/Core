@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -124,7 +124,7 @@ const
  {FileSystem specific constants}
  FILESYS_LOGGING_DESCRIPTION = 'Filesystem Logging';
  
- FILESYS_STORAGE_TIMER_INTERVAL = 500;
+ FILESYS_STORAGE_TIMER_INTERVAL = 100; {Timer interval for device additions or insertions}
 
  {FileSystem Lock States}
  FILESYS_LOCK_NONE  = 0;
@@ -51812,7 +51812,11 @@ begin
  {FILESYS_LOGGING_MAXCOPIES}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_MAXCOPIES'),0);
  if WorkInt > 0 then FILESYS_LOGGING_MAXCOPIES:=WorkInt;
- 
+
+ {FILESYS_LOGGING_RESET}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_RESET'),0);
+ if WorkInt <> 0 then FILESYS_LOGGING_RESET:=True;
+
  {Create Logging}
  if FILESYS_REGISTER_LOGGING then
   begin
@@ -54623,12 +54627,29 @@ begin
           {Open File}
           Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
           {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
+
+          if Logging.Handle <> INVALID_HANDLE_VALUE then
+           begin
+            {Check Reset}
+            if FILESYS_LOGGING_RESET then
+             begin
+              {Reset File}
+              FSFileSeekEx(Logging.Handle,0,soFromBeginning);
+              FSFileTruncate(Logging.Handle);
+             end
+            else
+             begin
+              {Continue File}
+              FSFileSeekEx(Logging.Handle,0,soFromEnd);
+             end;
+           end;
          end
         else
          begin
           {Create File}
           Logging.Handle:=FSFileCreate(Logging.Target);
           {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
+
           if Logging.Handle <> INVALID_HANDLE_VALUE then
            begin
             {Close File}
@@ -54699,6 +54720,7 @@ function FileSysLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord
 {Implementation of LoggingDeviceOutput API for FileSystem Logging}
 {Note: Not intended to be called directly by applications, use LoggingDeviceOutput instead}
 var
+ Count:LongWord;
  WorkBuffer:String;
 begin
  {}
@@ -54728,6 +54750,19 @@ begin
         {Open File}
         Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
         if Logging.Handle = INVALID_HANDLE_VALUE then Exit;
+
+        {Check Reset}
+        if FILESYS_LOGGING_RESET then
+         begin
+          {Reset File}
+          FSFileSeekEx(Logging.Handle,0,soFromBeginning);
+          FSFileTruncate(Logging.Handle);
+         end
+        else
+         begin
+          {Continue File}
+          FSFileSeekEx(Logging.Handle,0,soFromEnd);
+         end;
        end
       else
        begin
@@ -54755,15 +54790,42 @@ begin
        begin
         if FILESYS_LOGGING_MAXCOPIES = 0 then
          begin
-          
-          //To Do //Log rollover
-          
+          {Reset File}
+          FSFileSeekEx(Logging.Handle,0,soFromBeginning);
+          FSFileTruncate(Logging.Handle);
          end
         else
          begin
-         
-          //To Do //Log rollover
+          {Check Oldest}
+          WorkBuffer:=Logging.Target + IntToStr(FILESYS_LOGGING_MAXCOPIES);
+          if FSFileExists(WorkBuffer) then
+           begin
+            {Delete File}
+            FSFileSetAttr(WorkBuffer,faArchive);
+            if not FSDeleteFile(WorkBuffer) then Exit;
+           end;
+           
+          {Check Copies}
+          if FILESYS_LOGGING_MAXCOPIES > 1 then
+           begin
+            for Count:=FILESYS_LOGGING_MAXCOPIES - 1 downto 1 do
+             begin
+              WorkBuffer:=Logging.Target + IntToStr(Count);
+              if FSFileExists(WorkBuffer) then
+               begin
+                {Rename File}
+                FSFileSetAttr(WorkBuffer,faArchive);
+                if not FSRenameFile(WorkBuffer,Logging.Target + IntToStr(Count + 1)) then Exit;
+               end;
+             end;
+           end;
+           
+          {Close File}
+          FSFileClose(Logging.Handle);
+          Logging.Handle:=INVALID_HANDLE_VALUE;
           
+          {Rename File}
+          if not FSRenameFile(Logging.Target,Logging.Target + IntToStr(1)) then Exit;
          end;
        end; 
      end; 
@@ -54825,12 +54887,29 @@ begin
         {Open File}
         Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
         {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail set target}
+
+        if Logging.Handle <> INVALID_HANDLE_VALUE then
+         begin
+          {Check Reset}
+          if FILESYS_LOGGING_RESET then
+           begin
+            {Reset File}
+            FSFileSeekEx(Logging.Handle,0,soFromBeginning);
+            FSFileTruncate(Logging.Handle);
+           end
+          else
+           begin
+            {Continue File}
+            FSFileSeekEx(Logging.Handle,0,soFromEnd);
+           end;
+         end;
        end
       else
        begin
         {Create File}
         Logging.Handle:=FSFileCreate(Logging.Target);
         {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail set target}
+
         if Logging.Handle <> INVALID_HANDLE_VALUE then
          begin
           {Close File}

@@ -1290,7 +1290,7 @@ const
 {==============================================================================}
 const
  {WiFi specific constants}
- WIFI_DEVICE_TIMER_INTERVAL = 500; {Timer interval for new device additions}
+ WIFI_DEVICE_TIMER_INTERVAL = 100; {Timer interval for new device additions}
  
  EAPOL_TRANSPORT_NAME = 'EAPOL';
  RSN_TRANSPORT_NAME = 'RSN';

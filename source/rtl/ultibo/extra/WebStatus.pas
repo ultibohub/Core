@@ -6122,8 +6122,9 @@ begin
         AddBlank(AResponse);
         AddItem(AResponse,'Output Count:',IntToStr(LoggingDevice.OutputCount));
         AddBlank(AResponse);
-        AddItem(AResponse,'Target:',LoggingDevice.Target);
-        AddItem(AResponse,'Default:',BooleanToString(LoggingDevice.Default));
+        AddItem(AResponse,'Output Target:',LoggingDevice.Target);
+        AddItem(AResponse,'Preferred Default:',BooleanToString(LoggingDevice.Default));
+        AddItem(AResponse,'Current Default:',BooleanToString(LoggingDeviceGetDefault = LoggingDevice));
         
         FlagNames.Free;
        end;
@@ -11239,6 +11240,7 @@ begin
  AddItemEx(AResponse,'FILESYS_LOGGING_FILE:',FILESYS_LOGGING_FILE,2);
  AddItemEx(AResponse,'FILESYS_LOGGING_MAXSIZE:',IntToStr(FILESYS_LOGGING_MAXSIZE),2);
  AddItemEx(AResponse,'FILESYS_LOGGING_MAXCOPIES:',IntToStr(FILESYS_LOGGING_MAXCOPIES),2);
+ AddItemEx(AResponse,'FILESYS_LOGGING_RESET:',BooleanToString(FILESYS_LOGGING_RESET),2);
  AddBlank(AResponse);
  AddItemEx(AResponse,'FILESYS_FLOPPY_ENABLED:',BooleanToString(FILESYS_FLOPPY_ENABLED),2);
  AddItemEx(AResponse,'FILESYS_DRIVES_ENABLED:',BooleanToString(FILESYS_DRIVES_ENABLED),2);

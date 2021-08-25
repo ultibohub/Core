@@ -65,7 +65,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,Sy
 {==============================================================================}
 const
  {Sockets specific constants}
- SOCKETS_DEVICE_TIMER_INTERVAL    = 500;
+ SOCKETS_DEVICE_TIMER_INTERVAL    = 100; {Timer interval for new device additions}
 
  SOCKETS_CONFIG_TIMER_INTERVAL    = 1000;
  SOCKETS_FILTER_TIMER_INTERVAL    = 1000;

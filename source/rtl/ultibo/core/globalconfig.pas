@@ -1062,6 +1062,7 @@ var
  FILESYS_LOGGING_FILE:String;                    {The name of the file to log messages to}
  FILESYS_LOGGING_MAXSIZE:LongWord;               {The maximum size of the logging file before rollover (0 for no maximum)}
  FILESYS_LOGGING_MAXCOPIES:LongWord;             {The number of old logging files to keep on rollover (0 for no copies)}
+ FILESYS_LOGGING_RESET:LongBool = False;         {If True then reset the log file to empty on startup if it already exists}
  
  {Cache configuration} 
  FILESYS_CACHE_SIZE:LongWord = SIZE_16M;                     {The default filesystem cache size}

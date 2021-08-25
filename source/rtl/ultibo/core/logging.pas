@@ -1,7 +1,7 @@
 {
 Ultibo Logging interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -632,6 +632,7 @@ end;
 
 function LoggingDeviceCreate(Default:Boolean):PLoggingDevice;
 {Create a new Logging device entry}
+{Default: If true allow the new device the default logging device if there is no current default}
 {Return: Pointer to new Logging device entry or nil if Logging device could not be created}
 begin
  {}
@@ -643,6 +644,7 @@ end;
 function LoggingDeviceCreateEx(Size:LongWord;Default:Boolean):PLoggingDevice;
 {Create a new Logging device entry}
 {Size: Size in bytes to allocate for new Logging (Including the Logging entry)}
+{Default: If true allow the new device the default logging device if there is no current default}
 {Return: Pointer to new Logging device entry or nil if Logging device could not be created}
 begin
  {}
