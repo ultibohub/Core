@@ -1,7 +1,7 @@
 {
 Ultibo Initialization code for QEMU VersatilePB.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -159,6 +159,12 @@ asm
  mrc p15, #0, r0, cr12, cr0, #0
  str r0, [r3] 
  
+ //Disable Secure Boot 
+ //Versatile PB does not support PL3 (TrustZone)
+ ldr r3, .LARMSecureBoot
+ mov r0, #0
+ str r0, [r3] 
+ 
  //Continue execution at the StartupHandler
  b StartupHandler
   
@@ -170,6 +176,8 @@ asm
   .long ARMTagsAddress  
 .LARMMachineType:
   .long ARMMachineType
+.LARMSecureBoot:
+  .long ARMSecureBoot
 end;
 {$ENDIF CPUARM}
 {$IFDEF CPUAARCH64}
