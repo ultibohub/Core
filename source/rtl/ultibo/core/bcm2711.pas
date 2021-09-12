@@ -683,7 +683,7 @@ const
  BCM2711_UART0_DESCRIPTION = 'BCM2838 PL011 UART';
  
  BCM2711_UART0_MIN_BAUD = 300;      {Default minimum of 300 baud}
- BCM2711_UART0_MAX_BAUD = 187500;   {Default maximum based on the default settings from the firmware (Recalculated during open)}
+ BCM2711_UART0_MAX_BAUD = 3000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
  
  BCM2711_UART0_MIN_DATABITS = SERIAL_DATA_5BIT;
  BCM2711_UART0_MAX_DATABITS = SERIAL_DATA_8BIT;
@@ -695,7 +695,7 @@ const
  
  BCM2711_UART0_MAX_FLOW = SERIAL_FLOW_RTS_CTS;
  
- BCM2711_UART0_CLOCK_RATE = 3000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
+ BCM2711_UART0_CLOCK_RATE = 48000000; {3000000} {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
  {$IFDEF BCM2711_UART0_RX_BUFFER}
  BCM2711_UART0_RX_POLL_LIMIT = 256; {Number of times interrupt handler may poll the read FIFO}
  BCM2711_UART0_RX_BUFFER_SIZE = 1024;
@@ -714,7 +714,7 @@ const
  BCM2711_EMMC1_DESCRIPTION = 'BCM2838 SDHOST';
  
  BCM2711_EMMC1_MIN_FREQ = 400000;    {Default minimum of 400KHz}
- BCM2711_EMMC1_MAX_FREQ = 200000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2711_EMMC1_MAX_FREQ = 500000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
 
  {See: BCMSDHOST for the driver implementation}
 
@@ -722,7 +722,7 @@ const
  BCM2711_EMMC2_DESCRIPTION = 'BCM2838 SDHCI';
  
  BCM2711_EMMC2_MIN_FREQ = 400000;    {Default minimum of 400KHz}
- BCM2711_EMMC2_MAX_FREQ = 250000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2711_EMMC2_MAX_FREQ = 500000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
 
  {BCM2711 Clock (System Timer) constants}
  BCM2711_SYS_CLOCK_DESCRIPTION = 'BCM2838 System Timer Clock';
@@ -730,15 +730,15 @@ const
  {BCM2711 Clock (ARM Timer) constants}
  BCM2711_ARM_CLOCK_DESCRIPTION = 'BCM2838 ARM Timer Clock';
 
- BCM2711_ARM_CLOCK_MIN_RATE = 976562;      {Default minimum (Divider 255) based on the default settings from the firmware (Recalculated during start)}
- BCM2711_ARM_CLOCK_MAX_RATE = 250000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
- BCM2711_ARM_CLOCK_DEFAULT_RATE = 3968253; {Default rate (Divider 62) based on the default settings from the firmware (Recalculated during start)}
+ BCM2711_ARM_CLOCK_MIN_RATE = 1953125;     {Default minimum (Divider 255) based on the default settings from the firmware (Recalculated during start)}
+ BCM2711_ARM_CLOCK_MAX_RATE = 500000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
+ BCM2711_ARM_CLOCK_DEFAULT_RATE = 7936507; {Default rate (Divider 62) based on the default settings from the firmware (Recalculated during start)}
   
  BCM2711_ARM_CLOCK_MIN_DIVIDER = 0;
  BCM2711_ARM_CLOCK_MAX_DIVIDER = 255;
  BCM2711_ARM_CLOCK_DEFAULT_DIVIDER = 62;
  
- BCM2711_ARM_CLOCK_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2711_ARM_CLOCK_CORE_CLOCK = 500000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
  
  {BCM2711 Clock (Local Timer) constants}
  BCM2711_LOCAL_CLOCK_DESCRIPTION = 'BCM2838 Local Timer Clock';
@@ -746,9 +746,9 @@ const
  {BCM2711 ARM Timer constants}
  BCM2711_ARM_TIMER_DESCRIPTION = 'BCM2838 ARM Timer';
 
- BCM2711_ARM_TIMER_MIN_RATE = 244140;      {Default minimum (Divider 1023) based on the default settings from the firmware (Recalculated during start)}
- BCM2711_ARM_TIMER_MAX_RATE = 250000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
- BCM2711_ARM_TIMER_DEFAULT_RATE = 1000000; {Default rate (Divider 249) based on the default settings from the firmware (Recalculated during start)}
+ BCM2711_ARM_TIMER_MIN_RATE = 488281;      {Default minimum (Divider 1023) based on the default settings from the firmware (Recalculated during start)}
+ BCM2711_ARM_TIMER_MAX_RATE = 500000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
+ BCM2711_ARM_TIMER_DEFAULT_RATE = 2000000; {Default rate (Divider 249) based on the default settings from the firmware (Recalculated during start)}
  
  BCM2711_ARM_TIMER_MIN_INTERVAL = 1;
  BCM2711_ARM_TIMER_MAX_INTERVAL = $FFFFFFFF;
@@ -757,7 +757,7 @@ const
  BCM2711_ARM_TIMER_MAX_DIVIDER = 1023;
  BCM2711_ARM_TIMER_DEFAULT_DIVIDER = 249;
  
- BCM2711_ARM_TIMER_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2711_ARM_TIMER_CORE_CLOCK = 500000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
 
  {BCM2711 Local Timer constants}
  BCM2711_LOCAL_TIMER_DESCRIPTION = 'BCM2838 Local Timer';
@@ -8403,6 +8403,7 @@ begin
  
  {Update Clock Rate}
  PBCM2711UART0Device(UART).ClockRate:=ClockGetRate(CLOCK_ID_UART0);
+ if PBCM2711UART0Device(UART).ClockRate = 0 then ClockSetRate(CLOCK_ID_UART0,BCM2711_UART0_CLOCK_RATE,True);
  if PBCM2711UART0Device(UART).ClockRate = 0 then PBCM2711UART0Device(UART).ClockRate:=BCM2711_UART0_CLOCK_RATE; 
  
  {Update Properties}

@@ -36,7 +36,7 @@ USB CDC
 
  The USB Communications Device Class (CDC) standard defines the protocol for communicating
  with a range of network adapters, modems and ISDN devices. This unit provides common
- defintions and structures used in conjunction with CDC devices.
+ definitions and structures used in conjunction with CDC devices.
  
 }
 

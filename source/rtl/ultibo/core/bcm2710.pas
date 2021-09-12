@@ -354,13 +354,13 @@ const
  
  BCM2710_SPI0_MAX_SIZE = $FFFF;
 
- BCM2710_SPI0_MIN_CLOCK = 3814;       {Default minimum based on the default settings from the firmware (Recalculated during open)}
- BCM2710_SPI0_MAX_CLOCK = 125000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
+ BCM2710_SPI0_MIN_CLOCK = 6103;       {Default minimum based on the default settings from the firmware (Recalculated during open)}
+ BCM2710_SPI0_MAX_CLOCK = 200000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
 
  BCM2710_SPI0_MIN_DIVIDER = 2;        {Divider is always rounded down to an even number and a value of 0 sets the divider to 65536}
  BCM2710_SPI0_MAX_DIVIDER = $FFFE;    {Divider is always rounded down to an even number}
 
- BCM2710_SPI0_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2710_SPI0_CORE_CLOCK = 400000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
  
  BCM2710_SPI0_MODE_IRQ = 0;
  BCM2710_SPI0_MODE_DMA = 1;
@@ -369,14 +369,14 @@ const
  {BCM2710 BSCI2C (BSC0/1/2) constants}
  BCM2710_BSCI2C_MAX_SIZE = $FFFF;
  
- BCM2710_BSCI2C_MIN_CLOCK = 3814;       {Default minimum based on the default settings from the firmware (Recalculated during open)}
- BCM2710_BSCI2C_MAX_CLOCK = 125000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
+ BCM2710_BSCI2C_MIN_CLOCK = 6103;       {Default minimum based on the default settings from the firmware (Recalculated during open)}
+ BCM2710_BSCI2C_MAX_CLOCK = 200000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
  BCM2710_BSCI2C_DEFAULT_CLOCK = 100000; 
  
  BCM2710_BSCI2C_MIN_DIVIDER = 2;        {Divider is always rounded down to an even number and a value of 0 sets the divider to 32768}
  BCM2710_BSCI2C_MAX_DIVIDER = $FFFE;    {Divider is always rounded down to an even number}
  
- BCM2710_BSCI2C_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2710_BSCI2C_CORE_CLOCK = 400000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
  
  BCM2710_BSCI2C_MODE_WRITE = 0;
  BCM2710_BSCI2C_MODE_READ  = 1;
@@ -500,7 +500,7 @@ const
  BCM2710_UART0_DESCRIPTION = 'BCM2837 PL011 UART';
  
  BCM2710_UART0_MIN_BAUD = 300;      {Default minimum of 300 baud}
- BCM2710_UART0_MAX_BAUD = 187500;   {Default maximum based on the default settings from the firmware (Recalculated during open)}
+ BCM2710_UART0_MAX_BAUD = 3000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
  
  BCM2710_UART0_MIN_DATABITS = SERIAL_DATA_5BIT;
  BCM2710_UART0_MAX_DATABITS = SERIAL_DATA_8BIT;
@@ -512,7 +512,7 @@ const
  
  BCM2710_UART0_MAX_FLOW = SERIAL_FLOW_RTS_CTS;
  
- BCM2710_UART0_CLOCK_RATE = 3000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
+ BCM2710_UART0_CLOCK_RATE = 48000000; {3000000} {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
  {$IFDEF BCM2710_UART0_RX_BUFFER}
  BCM2710_UART0_RX_POLL_LIMIT = 256; {Number of times interrupt handler may poll the read FIFO}
  BCM2710_UART0_RX_BUFFER_SIZE = 1024;
@@ -531,7 +531,7 @@ const
  BCM2710_SDHOST_DESCRIPTION = 'BCM2837 SDHOST';
  
  BCM2710_SDHOST_MIN_FREQ = 400000;    {Default minimum of 400KHz}
- BCM2710_SDHOST_MAX_FREQ = 250000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2710_SDHOST_MAX_FREQ = 400000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during start)}
  
  {See: BCMSDHOST for the driver implementation}
  
@@ -541,15 +541,15 @@ const
  {BCM2710 Clock (ARM Timer) constants}
  BCM2710_ARM_CLOCK_DESCRIPTION = 'BCM2837 ARM Timer Clock';
 
- BCM2710_ARM_CLOCK_MIN_RATE = 976562;      {Default minimum (Divider 255) based on the default settings from the firmware (Recalculated during start)}
- BCM2710_ARM_CLOCK_MAX_RATE = 250000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
- BCM2710_ARM_CLOCK_DEFAULT_RATE = 3968253; {Default rate (Divider 62) based on the default settings from the firmware (Recalculated during start)}
+ BCM2710_ARM_CLOCK_MIN_RATE = 1562500;     {Default minimum (Divider 255) based on the default settings from the firmware (Recalculated during start)}
+ BCM2710_ARM_CLOCK_MAX_RATE = 400000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
+ BCM2710_ARM_CLOCK_DEFAULT_RATE = 6349206; {Default rate (Divider 62) based on the default settings from the firmware (Recalculated during start)}
   
  BCM2710_ARM_CLOCK_MIN_DIVIDER = 0;
  BCM2710_ARM_CLOCK_MAX_DIVIDER = 255;
  BCM2710_ARM_CLOCK_DEFAULT_DIVIDER = 62;
  
- BCM2710_ARM_CLOCK_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2710_ARM_CLOCK_CORE_CLOCK = 400000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
  
  {BCM2710 Clock (Local Timer) constants}
  BCM2710_LOCAL_CLOCK_DESCRIPTION = 'BCM2837 Local Timer Clock';
@@ -557,9 +557,9 @@ const
  {BCM2710 ARM Timer constants}
  BCM2710_ARM_TIMER_DESCRIPTION = 'BCM2837 ARM Timer';
 
- BCM2710_ARM_TIMER_MIN_RATE = 244140;      {Default minimum (Divider 1023) based on the default settings from the firmware (Recalculated during start)}
- BCM2710_ARM_TIMER_MAX_RATE = 250000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
- BCM2710_ARM_TIMER_DEFAULT_RATE = 1000000; {Default rate (Divider 249) based on the default settings from the firmware (Recalculated during start)}
+ BCM2710_ARM_TIMER_MIN_RATE = 390625;      {Default minimum (Divider 1023) based on the default settings from the firmware (Recalculated during start)}
+ BCM2710_ARM_TIMER_MAX_RATE = 400000000;   {Default maximum (Divider 0) based on the default settings from the firmware (Recalculated during start)}
+ BCM2710_ARM_TIMER_DEFAULT_RATE = 1600000; {Default rate (Divider 249) based on the default settings from the firmware (Recalculated during start)}
  
  BCM2710_ARM_TIMER_MIN_INTERVAL = 1;
  BCM2710_ARM_TIMER_MAX_INTERVAL = $FFFFFFFF;
@@ -568,7 +568,7 @@ const
  BCM2710_ARM_TIMER_MAX_DIVIDER = 1023;
  BCM2710_ARM_TIMER_DEFAULT_DIVIDER = 249;
  
- BCM2710_ARM_TIMER_CORE_CLOCK = 250000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
+ BCM2710_ARM_TIMER_CORE_CLOCK = 400000000; {Default core clock based on the default settings from the firmware (Requested from firmware during start)}
  
  {BCM2710 Local Timer constants}
  BCM2710_LOCAL_TIMER_DESCRIPTION = 'BCM2837 Local Timer';
@@ -7296,6 +7296,7 @@ begin
  
  {Update Clock Rate}
  PBCM2710UART0Device(UART).ClockRate:=ClockGetRate(CLOCK_ID_UART0);
+ if PBCM2710UART0Device(UART).ClockRate = 0 then ClockSetRate(CLOCK_ID_UART0,BCM2710_UART0_CLOCK_RATE,True);
  if PBCM2710UART0Device(UART).ClockRate = 0 then PBCM2710UART0Device(UART).ClockRate:=BCM2710_UART0_CLOCK_RATE; 
  
  {Update Properties}

@@ -2276,7 +2276,7 @@ end;
 
 function CDCEthernetGetMacAddress(Device:PUSBDevice;Index:LongWord;Address:PHardwareAddress):LongWord;
 {Get the MAC address of a CDC Ethernet device}
-{Device: USB device read from}
+{Device: USB device to read from}
 {Index: The string descriptor index containing the MAC address}
 {Address: Value to read the MAC address into}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}

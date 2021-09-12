@@ -507,7 +507,7 @@ const
  BCM2709_UART0_DESCRIPTION = 'BCM2836 PL011 UART';
  
  BCM2709_UART0_MIN_BAUD = 300;      {Default minimum of 300 baud}
- BCM2709_UART0_MAX_BAUD = 187500;   {Default maximum based on the default settings from the firmware (Recalculated during open)}
+ BCM2709_UART0_MAX_BAUD = 3000000;  {Default maximum based on the default settings from the firmware (Recalculated during open)}
  
  BCM2709_UART0_MIN_DATABITS = SERIAL_DATA_5BIT;
  BCM2709_UART0_MAX_DATABITS = SERIAL_DATA_8BIT;
@@ -519,7 +519,7 @@ const
  
  BCM2709_UART0_MAX_FLOW = SERIAL_FLOW_RTS_CTS;
  
- BCM2709_UART0_CLOCK_RATE = 3000000; {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
+ BCM2709_UART0_CLOCK_RATE = 48000000; {3000000} {Default clock rate based on the default settings from the firmware (Requested from firmware during open)}
  {$IFDEF BCM2709_UART0_RX_BUFFER}
  BCM2709_UART0_RX_POLL_LIMIT = 256; {Number of times interrupt handler may poll the read FIFO}
  BCM2709_UART0_RX_BUFFER_SIZE = 1024;
@@ -7303,6 +7303,7 @@ begin
  
  {Update Clock Rate}
  PBCM2709UART0Device(UART).ClockRate:=ClockGetRate(CLOCK_ID_UART0);
+ if PBCM2709UART0Device(UART).ClockRate = 0 then ClockSetRate(CLOCK_ID_UART0,BCM2709_UART0_CLOCK_RATE,True);
  if PBCM2709UART0Device(UART).ClockRate = 0 then PBCM2709UART0Device(UART).ClockRate:=BCM2709_UART0_CLOCK_RATE; 
  
  {Update Properties}
