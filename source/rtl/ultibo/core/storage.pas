@@ -272,12 +272,12 @@ type
   Revision:PChar;                      {Firmware Revision}
   StatusTimer:TTimerHandle;            {Timer for status change detection}
   {Statistics Properties}
-  ReadCount:LongWord;
-  ReadErrors:LongWord;
-  WriteCount:LongWord;
-  WriteErrors:LongWord;
-  EraseCount:LongWord;
-  EraseErrors:LongWord;
+  ReadCount:UInt64;
+  ReadErrors:UInt64;
+  WriteCount:UInt64;
+  WriteErrors:UInt64;
+  EraseCount:UInt64;
+  EraseErrors:UInt64;
   {Internal Properties}                                                                        
   Prev:PStorageDevice;                 {Previous entry in Storage table}
   Next:PStorageDevice;                 {Next entry in Storage table}
