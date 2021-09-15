@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the Broadcom 2837 System on chip.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1167,9 +1167,23 @@ const
  BCM2837_MBOX_TAG_SET_GPIO_CONFIG   = $00038043; {Set the current configuration of a GPIO expander pin}
 
  BCM2837_MBOX_TAG_GET_THROTTLED     = $00030046;
+ 
+ BCM2837_MBOX_TAG_GET_CLOCK_MEASURED = $00030047;
 
  BCM2837_MBOX_TAG_GET_PERIPH_REG    = $00030045;
  BCM2837_MBOX_TAG_SET_PERIPH_REG    = $00038045;
+
+ BCM2837_MBOX_TAG_GET_POE_HAT_VAL   = $00030049;
+ BCM2837_MBOX_TAG_SET_POE_HAT_VAL   = $00038049;
+
+ BCM2837_MBOX_TAG_NOTIFY_REBOOT     = $00030048;
+ BCM2837_MBOX_TAG_NOTIFY_XHCI_RESET = $00030058;
+ 
+ BCM2837_MBOX_TAG_GET_REBOOT_FLAGS  = $00030064;
+ BCM2837_MBOX_TAG_SET_REBOOT_FLAGS  = $00038064;
+ 
+ BCM2837_MBOX_TAG_NOTIFY_DISPLAY_DONE = $00030066;
+
  {Frame Buffer}
  BCM2837_MBOX_TAG_ALLOCATE_BUFFER	= $00040001; {If the requested alignment is unsupported then the current base and size (which may be 0 if not allocated) is returned and no change occurs}
  BCM2837_MBOX_TAG_RELEASE_BUFFER	= $00048001; {Releases and disables the frame buffer}
@@ -2419,6 +2433,15 @@ type
   case Integer of
   0:(Request:TBCM2837MailboxTagGetClockMaxRateRequest);
   1:(Response:TBCM2837MailboxTagGetClockMaxRateResponse);
+ end;
+ 
+ {Get Clock Measured Rate}
+ PBCM2837MailboxTagGetClockMeasuredRate = ^TBCM2837MailboxTagGetClockMeasuredRate;
+ TBCM2837MailboxTagGetClockMeasuredRate = record
+  Header:TBCM2837MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2837MailboxTagGetClockRateRequest);
+  1:(Response:TBCM2837MailboxTagClockRateResponse);
  end;
  
  {Get Turbo}

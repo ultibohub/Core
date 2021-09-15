@@ -2389,6 +2389,14 @@ begin
    AddItemEx(AResponse,ClockIDToString(Count) + ':',IntToStr(ClockGetMinRate(Count)) + ' / ' + IntToStr(ClockGetMaxRate(Count)),3);
   end; 
  
+  {Add Clock Measured Rates}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Clock Measured Rate','');
+ for Count:=CLOCK_ID_MMC0 to MaxClock do
+  begin
+   AddItemEx(AResponse,ClockIDToString(Count) + ':',IntToStr(ClockGetMeasuredRate(Count)),3);
+  end; 
+
  {Add Turbo State}
  AddBlank(AResponse);
  AddItem(AResponse,'Turbo State','');
@@ -11178,6 +11186,12 @@ begin
  AddBold(AResponse,'Secure Boot','');
  AddBlank(AResponse);
  AddItemEx(AResponse,'SECURE_BOOT:',BooleanToString(SECURE_BOOT),2);
+ AddBlank(AResponse);
+
+ {Add Emulator Mode}
+ AddBold(AResponse,'Emulator Mode','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'EMULATOR_MODE:',BooleanToString(EMULATOR_MODE),2);
  AddBlank(AResponse);
 
  {Add Startup Handler Address}

@@ -1,7 +1,7 @@
 {
 USB Host Controller Driver for the Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -127,6 +127,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,U
 {==============================================================================}
 const
  {DWCOTG specific constants}
+ DWCOTG_USBHOST_DESCRIPTION = 'DWCOTG USB Host';            {Description of DWCOTG host}
+ 
  DWC_NUM_CHANNELS = 8;                                      {Number of DWC host channels} //To Do //Move to GlobalConfig ? //Read from Registers ? //See max channels value in Linux driver
  
  DWC_SCHEDULER_THREAD_STACK_SIZE = SIZE_32K;                {Stack size of USB request scheduler thread}
@@ -954,6 +956,7 @@ begin
      DWCHost.Host.Device.DeviceType:=USBHOST_TYPE_DWCOTG;
      DWCHost.Host.Device.DeviceFlags:=USBHOST_FLAG_NONE;
      DWCHost.Host.Device.DeviceData:=nil;
+     DWCHost.Host.Device.DeviceDescription:=DWCOTG_USBHOST_DESCRIPTION;
      if DWCOTG_DMA_SHARED_MEMORY then DWCHost.Host.Device.DeviceFlags:=DWCHost.Host.Device.DeviceFlags or USBHOST_FLAG_SHARED;
      if DWCOTG_DMA_NOCACHE_MEMORY then DWCHost.Host.Device.DeviceFlags:=DWCHost.Host.Device.DeviceFlags or USBHOST_FLAG_NOCACHE;
      {USB}

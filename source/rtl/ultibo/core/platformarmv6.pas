@@ -810,12 +810,6 @@ begin
  VectorTableGetEntryHandler:=ARMv6VectorTableGetEntry;
  VectorTableSetEntryHandler:=ARMv6VectorTableSetEntry;
  
- {Register Platform FirstBitSet Handler}
- FirstBitSetHandler:=ARMv6FirstBitSet;
-
- {Register Platform CountLeadingZeros Handler}
- CountLeadingZerosHandler:=ARMv6CountLeadingZeros;
- 
  {Register Threads PrimaryInit Handler}
  PrimaryInitHandler:=ARMv6PrimaryInit;
  
@@ -849,6 +843,10 @@ begin
 
  {Register Threads ThreadSetupStack Handler}
  ThreadSetupStackHandler:=ARMv6ThreadSetupStack;
+
+ {Register Global Handlers}
+ FirstBitSetHandler:=ARMv6FirstBitSet;
+ CountLeadingZerosHandler:=ARMv6CountLeadingZeros;
 
  ARMv6Initialized:=True;
 end;

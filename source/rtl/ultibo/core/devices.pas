@@ -145,8 +145,10 @@ const
  DEVICE_BUS_MMIO             = 15; {Memory Mapped IO device (No Bus)}
  DEVICE_BUS_PCIE             = 16;
  DEVICE_BUS_I2C              = 17; {I2C connected device}
+ DEVICE_BUS_VIRTIO           = 18; {Virtual devices}
+ DEVICE_BUS_BLUETOOTH        = 19; {Bluetooth connected devices}
  
- DEVICE_BUS_MAX              = 17;
+ DEVICE_BUS_MAX              = 19;
  
  {Device Bus Names}
  DEVICE_BUS_NAMES:array[DEVICE_BUS_NONE..DEVICE_BUS_MAX] of String = (
@@ -167,7 +169,9 @@ const
   'DEVICE_BUS_SPI',
   'DEVICE_BUS_MMIO',
   'DEVICE_BUS_PCIE',
-  'DEVICE_BUS_I2C');
+  'DEVICE_BUS_I2C',
+  'DEVICE_BUS_VIRTIO',
+  'DEVICE_BUS_BLUETOOTH');
  
  {Device States}
  DEVICE_STATE_UNREGISTERED   = 0;
@@ -186,7 +190,7 @@ const
  {Device Classes}
  DEVICE_CLASS_NONE            = 0;  {No Device} 
  DEVICE_CLASS_USBHOST         = 1;  {A USB Host Controller (eg XHCI/EHCI/UHCI/OHCI or DWCOTG etc) (Implementing a standard USB host interface)}
- DEVICE_CLASS_PCIHOST         = 2;  {A PCI Host Controller (eg AHCI etc) (Implementing a standard PCI host interface)}
+ DEVICE_CLASS_PCIHOST         = 2;  {A PCI Host Controller (Implementing a standard PCI host interface)}
  DEVICE_CLASS_USB             = 3;  {A USB Device (eg Hub/Keyboard/Mouse/Mass Storage/Vendor Specific etc) (Implementing a standard USB device interface)}
  DEVICE_CLASS_PCI             = 4;  {A PCI Device (eg Graphics/Controller etc) (Implementing a standard PCI device interface)}
  DEVICE_CLASS_NETWORK         = 5;  {A Network Device (Implementing a standard Network device interface). May also be a USB or PCI device}
@@ -197,7 +201,7 @@ const
  DEVICE_CLASS_TRANSPORT       = DEVICE_CLASS_PROTOCOL;
  DEVICE_CLASS_KEYBOARD        = 9;  {A Keyboard Device (Implementing a standard Keyboard device interface)}
  DEVICE_CLASS_MOUSE           = 10; {A Mouse Device (Implementing a standard Mouse device interface)}
- DEVICE_CLASS_BLUETOOTH       = 11; {A Bluetooth Device (Implementing a standard Bluetooth device interface)}
+ DEVICE_CLASS_BLUETOOTH       = 11; {A Bluetooth Device (eg Keyboard/Mouse/Audio/Serial) (Implementing a standard Bluetooth device interface)}
  DEVICE_CLASS_SERIAL          = 12; {A Serial Device (Implementing a standard Serial device interface)}
  DEVICE_CLASS_AUDIO           = 13; {An Audio Device (Implementing a standard Audio device interface)}
  DEVICE_CLASS_VIDEO           = 14; {A Video Device (Implementing a standard Video device interface)}
@@ -249,8 +253,10 @@ const
  DEVICE_CLASS_TOUCH           = 54; {A Touch Device}
  DEVICE_CLASS_MEMORY          = 55; {A Memory Device (eg OTP, NVRAM or Flash)}
  DEVICE_CLASS_GENERIC         = 56; {A Generic Device}
+ DEVICE_CLASS_VIRTIO          = 57; {A VIRTIO Device (eg Block/Network/Memory/Console/Input etc) (Implementing a standard VIRTIO device interface)}
+ DEVICE_CLASS_BLUETOOTHHOST   = 58; {A Bluetooth Host Controller (Implementing a standard Bluetooth host interface)}
  
- DEVICE_CLASS_MAX             = 56;
+ DEVICE_CLASS_MAX             = 58;
  
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
  
@@ -312,7 +318,9 @@ const
   'DEVICE_CLASS_CODEC',
   'DEVICE_CLASS_TOUCH',
   'DEVICE_CLASS_MEMORY',
-  'DEVICE_CLASS_GENERIC');
+  'DEVICE_CLASS_GENERIC',
+  'DEVICE_CLASS_VIRTIO',
+  'DEVICE_CLASS_BLUETOOTHHOST');
  
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
@@ -388,13 +396,14 @@ const
  DRIVER_ID_ANY               = $FFFFFFFF; {Any Driver (Pass to DriverFind to match all drivers)}
 
  {Driver Classes}
- DRIVER_CLASS_NONE            = 0;  {No Driver} 
+ DRIVER_CLASS_NONE            = 0;  {No Driver}
  DRIVER_CLASS_USB             = 1;  {A USB Driver (Implementing a standard USB driver interface)}
  DRIVER_CLASS_PCI             = 2;  {A PCI Driver (Implementing a standard PCI driver interface)}
  DRIVER_CLASS_SDIO            = 3;  {An SDIO Driver (Implementing a standard SDIO driver interface)}
  DRIVER_CLASS_BLUETOOTH       = 4;  {A Bluetooth Driver (Implementing a standard Bluetooth driver interface)}
+ DRIVER_CLASS_VIRTIO          = 5;  {A VIRTIO Driver (Implementing a standard VIRTIO driver interface)}
  
- DRIVER_CLASS_MAX             = 4;
+ DRIVER_CLASS_MAX             = 5;
  
  DRIVER_CLASS_ANY             = $FFFFFFFF; {Any Driver (Pass to DriverFind or DriverEnumerate to match all drivers)}
 
@@ -404,7 +413,8 @@ const
   'DRIVER_CLASS_USB',
   'DRIVER_CLASS_PCI',
   'DRIVER_CLASS_SDIO',
-  'DRIVER_CLASS_BLUETOOTH');
+  'DRIVER_CLASS_BLUETOOTH',
+  'DRIVER_CLASS_VIRTIO');
  
 {==============================================================================}
 const

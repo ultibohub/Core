@@ -322,6 +322,8 @@ function RPi3ClockSetState(ClockId,State:LongWord):LongWord;
 function RPi3ClockGetMinRate(ClockId:LongWord):LongWord;
 function RPi3ClockGetMaxRate(ClockId:LongWord):LongWord;
 
+function RPi3ClockGetMeasuredRate(ClockId:LongWord):LongWord;
+
 function RPi3TurboGetState(TurboId:LongWord):LongWord;
 function RPi3TurboSetState(TurboId,State:LongWord):LongWord;
 
@@ -840,6 +842,8 @@ begin
  ClockGetMinRateHandler:=RPi3ClockGetMinRate;
  ClockGetMaxRateHandler:=RPi3ClockGetMaxRate;
 
+ ClockGetMeasuredRateHandler:=RPi3ClockGetMeasuredRate;
+ 
  {Register Platform Turbo Handlers}
  TurboGetStateHandler:=RPi3TurboGetState;
  TurboSetStateHandler:=RPi3TurboSetState;
@@ -4457,6 +4461,60 @@ begin
    end; 
 
   {Get Clock Max Rate}
+  Result:=Tag.Response.Rate;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3ClockGetMeasuredRate(ClockId:LongWord):LongWord;
+{Get the Clock Measured Rate from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetClockMeasuredRate;
+begin
+ {}
+ Result:=0;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetClockMeasuredRate) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagGetClockMeasuredRate(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_CLOCK_MEASURED;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetClockMeasuredRate) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.ClockId:=RPi3ConvertClockIdRequest(ClockId);
+ 
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetClockMeasuredRate)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  if MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('ClockGetMeasuredRate - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+
+  {Get Clock Measured Rate}
   Result:=Tag.Response.Rate;
  finally
   FreeMem(Header);

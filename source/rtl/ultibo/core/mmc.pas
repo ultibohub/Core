@@ -218,6 +218,10 @@ const
  MMC_STATUS_OUT_OF_MEMORY             = 7;  {No memory available for operation}
  MMC_STATUS_UNSUPPORTED_REQUEST       = 8;  {The request is unsupported}
  MMC_STATUS_NOT_PROCESSED             = 9;  {The MMC transfer has not yet been processed}
+ MMC_STATUS_DEVICE_DETACHED           = 10; {SDIO device was detached}
+ MMC_STATUS_DEVICE_UNSUPPORTED        = 11; {SDIO device is unsupported by the driver}
+ MMC_STATUS_NOT_BOUND                 = 12; {SDIO device is not bound to a driver}
+ MMC_STATUS_ALREADY_BOUND             = 13; {SDIO device is already bound to a driver}
  
  {MMC/SD Versions}
  SD_VERSION_SD       = $00020000;

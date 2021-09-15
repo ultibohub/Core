@@ -748,6 +748,7 @@ type
  TClockSetState = function(ClockId,State:LongWord):LongWord;
  TClockGetMinRate = function(ClockId:LongWord):LongWord;
  TClockGetMaxRate = function(ClockId:LongWord):LongWord;
+ TClockGetMeasuredRate = function(ClockId:LongWord):LongWord; 
  
 type
  {Prototypes for Turbo Handlers}
@@ -1125,14 +1126,6 @@ type
  TVectorTableGetEntry = function(Number:LongWord):PtrUInt;
  TVectorTableSetEntry = function(Number:LongWord;Address:PtrUInt):LongWord;
  
-type
- {Prototype for FirstBitSet Handler} 
- TFirstBitSet = function(Value:LongWord):LongWord; 
- 
-type
- {Prototype for CountLeadingZeros Handler} 
- TCountLeadingZeros = function(Value:LongWord):LongWord;
-
 type
  {Prototypes for Text IO Handlers} 
  TTextIOWriteChar = function(ACh:Char;AUserData:Pointer):Boolean;
@@ -1546,6 +1539,7 @@ var
  ClockSetStateHandler:TClockSetState;
  ClockGetMinRateHandler:TClockGetMinRate;
  ClockGetMaxRateHandler:TClockGetMaxRate;
+ ClockGetMeasuredRateHandler:TClockGetMeasuredRate;
 
 var
  {Turbo Handlers}
@@ -1921,15 +1915,7 @@ var
  VectorTableGetCountHandler:TVectorTableGetCount;
  VectorTableGetEntryHandler:TVectorTableGetEntry;
  VectorTableSetEntryHandler:TVectorTableSetEntry;
- 
-var
- {FirstBitSet Handler} 
- FirstBitSetHandler:TFirstBitSet;
- 
-var
- {CountLeadingZeros Handlers}
- CountLeadingZerosHandler:TCountLeadingZeros;
- 
+
 var 
  {Text IO Handlers}
  TextIOWriteCharHandler:TTextIOWriteChar;
@@ -2267,6 +2253,8 @@ function ClockSetState(ClockId,State:LongWord):LongWord; inline;
 
 function ClockGetMinRate(ClockId:LongWord):LongWord; inline;
 function ClockGetMaxRate(ClockId:LongWord):LongWord; inline;
+
+function ClockGetMeasuredRate(ClockId:LongWord):LongWord; inline;
 
 {==============================================================================}
 {Turbo Functions}
@@ -2698,7 +2686,9 @@ procedure LoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:Strin
 {==============================================================================}
 {Utility Functions}
 function FirstBitSet(Value:LongWord):LongWord; inline;
+function LastBitSet(Value:LongWord):LongWord; inline;
 function CountLeadingZeros(Value:LongWord):LongWord; inline;
+function CountTrailingZeros(Value:LongWord):LongWord; inline;
 
 function PhysicalToIOAddress(Address:Pointer):PtrUInt; inline;
 function IOAddressToPhysical(Address:Pointer):PtrUInt; inline;
@@ -2767,6 +2757,14 @@ var
  DataAbortException:EDataAbort;
  PrefetchAbortException:EPrefetchAbort;
  UndefinedInstructionException:EUndefinedInstruction;
+ 
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+function FirstBitSetDefault(Value:LongWord):LongWord; forward;
+function LastBitSetDefault(Value:LongWord):LongWord; forward;
+function CountLeadingZerosDefault(Value:LongWord):LongWord; forward;
+function CountTrailingZerosDefault(Value:LongWord):LongWord; forward;
  
 {==============================================================================}
 {==============================================================================}
@@ -2870,6 +2868,13 @@ begin
  {Tick Functions}
  SysUtilsGetTickCountHandler:=SysUtilsGetTickCount;
  SysUtilsGetTickCount64Handler:=SysUtilsGetTickCount64;
+ 
+ {Setup Default Handlers}
+ if not Assigned(FirstBitSetHandler) then FirstBitSetHandler:=FirstBitSetDefault;
+ if not Assigned(LastBitSetHandler) then LastBitSetHandler:=LastBitSetDefault;
+
+ if not Assigned(CountLeadingZerosHandler) then CountLeadingZerosHandler:=CountLeadingZerosDefault;
+ if not Assigned(CountTrailingZerosHandler) then CountTrailingZerosHandler:=CountTrailingZerosDefault;
  
  {Initialize CPU}
  CPUInit;
@@ -6309,6 +6314,23 @@ begin
  else
   begin
    Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function ClockGetMeasuredRate(ClockId:LongWord):LongWord; inline;
+{Get the measured or actual clock rate in Hz of the specified Clock}
+begin
+ {}
+ if Assigned(ClockGetMeasuredRateHandler) then
+  begin
+   Result:=ClockGetMeasuredRateHandler(ClockId);
+  end
+ else
+  begin
+   {Default to the ClockGetRate value}
+   Result:=ClockGetRate(ClockId);
   end;
 end;
 
@@ -11300,16 +11322,21 @@ end;
 function FirstBitSet(Value:LongWord):LongWord; inline;
 {Find the first set bit in a nonzero 32 bit value}
 {Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Note: Similar in operation to the fls() macro, equivalent to fls() - 1}
 begin
  {}
- if Assigned(FirstBitSetHandler) then
-  begin
-   Result:=FirstBitSetHandler(Value);
-  end
- else
-  begin
-   Result:=31 - CountLeadingZeros(Value);
-  end;  
+ Result:=GlobalConfig.FirstBitSet(Value);
+end;
+
+{==============================================================================}
+
+function LastBitSet(Value:LongWord):LongWord; inline;
+{Find the last set bit in a nonzero 32 bit value}
+{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Note: Similar in operation to the ffs() builtin, equivalent to ffs() - 1}
+begin
+ {}
+ Result:=GlobalConfig.LastBitSet(Value);
 end;
 
 {==============================================================================}
@@ -11319,14 +11346,82 @@ function CountLeadingZeros(Value:LongWord):LongWord; inline;
 {Returns 32 if no bits are set}
 begin
  {}
- if Assigned(CountLeadingZerosHandler) then
+ Result:=GlobalConfig.CountLeadingZeros(Value);
+end;
+
+{==============================================================================}
+
+function CountTrailingZeros(Value:LongWord):LongWord; inline;
+{Count the number of trailing 0 bits in a nonzero 32 bit value}
+{Returns 32 if no bits are set}
+begin
+ {}
+ Result:=GlobalConfig.CountTrailingZeros(Value);
+end;
+
+{==============================================================================}
+
+function FirstBitSetDefault(Value:LongWord):LongWord;
+{Default version of FirstBitSet function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use FirstBitSet instead}
+begin
+ {}
+ Result:=31 - CountLeadingZeros(Value);
+end;
+
+{==============================================================================}
+
+function LastBitSetDefault(Value:LongWord):LongWord;
+{Default version of LastBitSet function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use LastBitSet instead}
+begin
+ {}
+ if Value = 0 then Result:=$FFFFFFFF else Result:=CountTrailingZeros(Value);
+end;
+
+{==============================================================================}
+
+function CountLeadingZerosDefault(Value:LongWord):LongWord;
+{Default (Inefficient) version of CountLeadingZeros function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use CountLeadingZeros instead}
+var
+ Count:LongWord;
+begin
+ {}
+ if Value = 0 then
   begin
-   Result:=CountLeadingZerosHandler(Value);
+   Result:=32;
   end
  else
   begin
+   Result:=0;
+   
+   Count:=31;
+   while Value and (1 shl Count) = 0 do
+    begin
+     Inc(Result);
+
+     if Count = 0 then Break;
+     Dec(Count);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function CountTrailingZerosDefault(Value:LongWord):LongWord;
+{Default version of CountTrailingZeros function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use CountTrailingZeros instead}
+begin
+ {}
+ if Value = 0 then
+  begin
    Result:=32;
-  end;  
+  end 
+ else
+  begin
+   Result:=32 - (CountLeadingZeros(Value and (not(Value) + 1)) + 1);
+  end; 
 end;
 
 {==============================================================================}

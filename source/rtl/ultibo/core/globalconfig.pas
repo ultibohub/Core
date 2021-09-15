@@ -729,6 +729,11 @@ var
  MMC_DMA_BUS_ADDRESSES:LongBool;       {MMC DMA buffers are referenced by Bus addresses if True}
  MMC_DMA_CACHE_COHERENT:LongBool;      {MMC DMA buffers are considered cache coherent if True}
  
+ {Bluetooth}
+ BLUETOOTH_AUTOSTART:LongBool = True;  {If True then auto start the Bluetooth subsystem on boot (Only if Bluetooth unit included)}
+ BLUETOOTH_ASYNCSTART:LongBool = True; {If True then auto start asynchronously using a worker thread instead of the main thread}
+ BLUETOOTH_STARTDELAY:LongWord = 0;    {Number of milliseconds to delay starting the Bluetooth subsystem on boot (Only if BLUETOOTH_ASYNCSTART is True)}
+ 
  {USB Hub}
  USB_HUB_MESSAGESLOT_MAXIMUM:LongWord = SIZE_512; {Maximum number of messages for the USB hub messageslot}
  USB_HUB_REGISTER_DRIVER:LongBool = True;         {If True then register the USB HUB driver during boot (Only if USB unit included)(Note: USB cannot function correctly without a hub driver)}
@@ -778,6 +783,10 @@ var
  BCMSDHOST_OVERCLOCK_50:LongWord;           {User's preferred frequency to use when 50MHz is requested (in MHz)}
  BCMSDHOST_PIO_LIMIT:LongWord = 1;          {Maximum block count for PIO (0 = always DMA / 0x7FFFFFF = always PIO)}
  BCMSDHOST_FORCE_PIO:LongBool;              {Force SDHOST driver to use PIO instead of DMA}
+ 
+ {BRCMSTB}
+ BRCMSTB_ENABLE_SSC:LongBool = True;        {Enable Spread Spectrum Clocking for the BRCMSTB PCI host}
+ BRCMSTB_ENABLE_L1SS:LongBool;              {Enable L1 Substate control of the CLKREQ signal for the BRCMSTB PCI host}
  
  {LAN78XX (Microchip LAN78XX USB Gigabit Ethernet)}
  LAN78XX_MAC_ADDRESS:String;                {The preconfigured MAC address for a LAN78XX device}
@@ -1314,8 +1323,17 @@ var
 {==============================================================================}
 {Global handlers}
 var
+ {Get/SetLastErrorHandlers}
  GetLastErrorHandler:TGetLastError;
  SetLastErrorHandler:TSetLastError;
+
+ {First/LastBitSet Handlers} 
+ FirstBitSetHandler:TFirstBitSet;
+ LastBitSetHandler:TLastBitSet;
+
+ {CountLeading/TrailingZeros Handlers}
+ CountLeadingZerosHandler:TCountLeadingZeros;
+ CountTrailingZerosHandler:TCountTrailingZeros;
 
 {==============================================================================}
 {Global functions}
@@ -1330,7 +1348,30 @@ function RoundDown(Value,Multiple:LongWord):LongWord;
 function DivRoundUp(Value,Divisor:LongInt):LongWord;
 function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 
+function ILog2(Value:UInt64):LongWord; inline;
+
 function IsPowerOf2(Value:LongWord):Boolean;
+
+function Lower32Bits(Value:UInt64):LongWord; inline;
+function Upper32Bits(Value:UInt64):LongWord; inline;
+
+function EncodeBits32(Value,Field:LongWord):LongWord; inline;
+function EncodeBits64(Value,Field:UInt64):UInt64; inline;
+
+function ReplaceBits32(Old,Value,Field:LongWord):LongWord; inline;
+procedure ReplaceBits32p(var Old:LongWord;Value,Field:LongWord); inline;
+
+function ReplaceBits64(Old,Value,Field:UInt64):UInt64; inline;
+procedure ReplaceBits64p(var Old:UInt64;Value,Field:UInt64); inline;
+
+function GetBits32(Value,Field:LongWord):LongWord; inline;
+function GetBits64(Value,Field:UInt64):UInt64; inline;
+
+function ffs(Value:LongWord):LongWord; inline;
+function fls(Value:LongWord):LongWord; inline;
+
+function ffs64(Value:UInt64):UInt64; inline;
+function fls64(Value:UInt64):UInt64; inline;
 
 function BIT(Number:LongWord):LongWord; inline;
 function BIT_ULL(Number:LongWord):UInt64; inline;
@@ -1341,6 +1382,15 @@ function BIT_ULL_WORD(Number:LongWord):UInt64; inline;
 
 function GENMASK(High,Low:LongWord):LongWord; inline;
 function GENMASK_ULL(High,Low:LongWord):UInt64; inline;
+
+function FIELD_MAX(Mask:LongWord):LongWord; inline;
+function FIELD_FIT(Mask,Value:LongWord):Boolean; inline;
+function FIELD_PREP(Mask,Value:LongWord):LongWord; inline;
+function FIELD_GET(Mask,Value:LongWord):LongWord; inline;
+
+function HWEIGHT16(Value:Word):LongWord;
+function HWEIGHT32(Value:LongWord):LongWord;
+function HWEIGHT64(Value:UInt64):LongWord;
 
 function HIWORD(L:LongInt):Word; inline;
 function LOWORD(L:LongInt):Word; inline;
@@ -1388,6 +1438,16 @@ function StringHash(const Text:String):LongWord;
 function PtrToHex(Value:Pointer):String; inline;
 function AddrToHex(Value:PtrUInt):String; inline;
 function HandleToHex(Value:THandle):String; inline;
+
+function FirstBitSet(Value:LongWord):LongWord; inline;
+function FirstBitSet64(Value:UInt64):LongWord; inline;
+function LastBitSet(Value:LongWord):LongWord; inline;
+function LastBitSet64(Value:UInt64):LongWord; inline;
+
+function CountLeadingZeros(Value:LongWord):LongWord; inline;
+function CountLeadingZeros64(Value:UInt64):LongWord; inline;
+function CountTrailingZeros(Value:LongWord):LongWord; inline;
+function CountTrailingZeros64(Value:UInt64):LongWord; inline;
 
 {==============================================================================}
 {Conversion functions}
@@ -1544,12 +1604,182 @@ end;
 
 {==============================================================================}
 
+function ILog2(Value:UInt64):LongWord; inline;
+{Implementation of the ilog2() macro}
+begin
+ {}
+ Result:=FirstBitSet(Int64Rec(Value).Hi);
+ if Result = $FFFFFFFF then
+  begin
+   Result:=FirstBitSet(Int64Rec(Value).Lo);
+  end
+ else
+  begin
+   Result:=Result + 32;
+  end;
+end;
+
+{==============================================================================}
+
 function IsPowerOf2(Value:LongWord):Boolean;
+{Implementation of the is_power_of_2() macro}
 begin
  {}
  Result:=(Value <> 0) and ((Value and (Value - 1)) = 0);
 end;
 
+{==============================================================================}
+
+function Lower32Bits(Value:UInt64):LongWord; inline;
+{Implementation of the lower_32_bits() macro}
+begin
+ {}
+ Result:=Value and $FFFFFFFF;
+end;
+
+{==============================================================================}
+
+function Upper32Bits(Value:UInt64):LongWord; inline;
+{Implementation of the upper_32_bits() macro}
+begin
+ {}
+ Result:=(Value shr 32) and $FFFFFFFF;
+end; 
+
+{==============================================================================}
+
+function FieldMultiplier(Field:UInt64):UInt64;
+{Implementation of the field_multiplier() macro}
+
+{Note: FPC generates an internal error if this is inlined}
+begin
+ {}
+ Result:=Field and (not(Field) + 1);
+end;
+
+{==============================================================================}
+
+function FieldMask(Field:UInt64):UInt64;
+{Implementation of the field_mask() macro}
+
+{Note: FPC generates an internal error if this is inlined}
+begin
+ {}
+ Result:=Field div (Field and (not(Field) + 1));
+end;
+
+{==============================================================================}
+
+function EncodeBits32(Value,Field:LongWord):LongWord; inline;
+{Implementation of the u32_encode_bits() macro}
+begin
+ {}
+ Result:=(Value and FieldMask(Field)) * FieldMultiplier(Field);
+end;
+
+{==============================================================================}
+
+function EncodeBits64(Value,Field:UInt64):UInt64; inline;
+{Implementation of the u64_encode_bits() macro}
+begin
+ {}
+ Result:=(Value and FieldMask(Field)) * FieldMultiplier(Field);
+end;
+
+{==============================================================================}
+
+function ReplaceBits32(Old,Value,Field:LongWord):LongWord; inline;
+{Implementation of the u32_replace_bits() macro}
+begin
+ {}
+ Result:=(Old and not(Field)) or EncodeBits32(Value,Field);
+end;
+
+{==============================================================================}
+
+procedure ReplaceBits32p(var Old:LongWord;Value,Field:LongWord); inline;
+{Implementation of the u32p_replace_bits() macro}
+begin
+ {}
+ Old:=(Old and not(Field)) or EncodeBits32(Value,Field);
+end;
+
+{==============================================================================}
+
+function ReplaceBits64(Old,Value,Field:UInt64):UInt64; inline;
+{Implementation of the u64_replace_bits() macro}
+begin
+ {}
+ Result:=(Old and not(Field)) or EncodeBits64(Value,Field);
+end;
+
+{==============================================================================}
+
+procedure ReplaceBits64p(var Old:UInt64;Value,Field:UInt64); inline;
+{Implementation of the u64p_replace_bits() macro}
+begin
+ {}
+ Old:=(Old and not(Field)) or EncodeBits64(Value,Field);
+end;
+
+{==============================================================================}
+
+function GetBits32(Value,Field:LongWord):LongWord; inline;
+{Implementation of the u32_get_bits() macro}
+begin
+ {}
+ Result:=(Value and Field) div FieldMultiplier(Field);
+end;
+
+{==============================================================================}
+
+function GetBits64(Value,Field:UInt64):UInt64; inline;
+{Implementation of the u64_get_bits() macro}
+begin
+ {}
+ Result:=(Value and Field) div FieldMultiplier(Field);
+end;
+
+{==============================================================================}
+
+function ffs(Value:LongWord):LongWord; inline;
+{Implementation of the ffs() (Find First Set) builtin}
+{Returns 32 for MSB and 1 for LSB (0 if no bits are set)}
+begin
+ {}
+ Result:=LastBitSet(Value) + 1;
+end;
+
+{==============================================================================}
+
+function fls(Value:LongWord):LongWord; inline;
+{Implementation of the fls() (Find Last Set) macro}
+{Returns 32 for MSB and 1 for LSB (0 if no bits are set)}
+begin
+ {}
+ Result:=FirstBitSet(Value) + 1;
+end;
+
+{==============================================================================}
+
+function ffs64(Value:UInt64):UInt64; inline;
+{Implementation of the ffsll() (Find First Set) builtin}
+{Returns 64 for MSB and 1 for LSB (0 if no bits are set)}
+begin
+ {}
+ Result:=LastBitSet64(Value) + 1;
+end;
+
+{==============================================================================}
+
+function fls64(Value:UInt64):UInt64; inline;
+{Implementation of the fls64() (Find Last Set) macro}
+{Returns 64 for MSB and 1 for LSB (0 if no bits are set)}
+begin
+ {}
+ Result:=FirstBitSet64(Value) + 1;
+end;
+ 
 {==============================================================================}
 
 function BIT(Number:LongWord):LongWord; inline;
@@ -1620,6 +1850,122 @@ function GENMASK_ULL(High,Low:LongWord):UInt64; inline;
 begin
  {}
  Result:=(not(Int64(0)) - (1 shl Low) + 1) and (not(Int64(0)) shr (BITS_PER_LONG_LONG - 1 - High));
+end;
+
+{==============================================================================}
+
+function FIELD_MAX(Mask:LongWord):LongWord; inline;
+{Implementation of the FIELD_MAX() macro}
+{Returns the maximum value that can be held in the field specified by Mask}
+begin
+ {}
+ if Mask = 0 then
+  begin
+   Result:=0;
+  end
+ else
+  begin
+   Result:=Mask shr LastBitSet(Mask);
+  end;
+end;
+
+{==============================================================================}
+
+function FIELD_FIT(Mask,Value:LongWord):Boolean; inline;
+{Implementation of the FIELD_FIT() macro}
+{Returns True if Value can fit inside Mask, False if Value is too big}
+begin
+ {}
+ if Mask = 0 then
+  begin
+   Result:=False;
+  end
+ else
+  begin
+   Result:=((Value shl LastBitSet(Mask)) and not(Mask)) = 0;
+  end;
+end;
+
+{==============================================================================}
+
+function FIELD_PREP(Mask,Value:LongWord):LongWord; inline;
+{Implementation of the FIELD_PREP() macro}
+{Masks and shifts left Value. The result should be combined with other fields of the bitfield using logical OR}
+begin
+ {}
+ if Mask = 0 then
+  begin
+   Result:=0;
+  end
+ else
+  begin
+   Result:=(Value shl LastBitSet(Mask)) and Mask;
+  end;
+end;
+
+{==============================================================================}
+
+function FIELD_GET(Mask,Value:LongWord):LongWord; inline;
+{Implementation of the FIELD_GET() macro}
+{Extracts the field specified by Mask from the bitfield passed in as Value by masking and shifting it right}
+begin
+ {}
+ if Mask = 0 then
+  begin
+   Result:=0;
+  end
+ else
+  begin
+   Result:=(Value and Mask) shr LastBitSet(Mask);
+  end;
+end;
+
+{==============================================================================}
+
+function HWEIGHT16(Value:Word):LongWord;
+{Calculate the Hamming Weight (HWEIGHT) of a 16 bit value}
+{The Hamming Weight of a number is the total number of bits set in it}
+var
+ Weight:LongWord;
+begin
+ {}
+ Weight:=Value - ((Value shr 1) and $5555);
+ Weight:=(Weight and $3333) + ((Weight shr 2) and $3333);
+ Weight:=(Weight + (Weight shr 4)) and $0F0F;
+ Result:=(Weight + (Weight shr 8)) and $00FF; 
+end;
+
+{==============================================================================}
+
+function HWEIGHT32(Value:LongWord):LongWord;
+{Calculate the Hamming Weight (HWEIGHT) of a 32 bit value}
+{The Hamming Weight of a number is the total number of bits set in it}
+var
+ Weight:LongWord;
+begin
+ {}
+ Weight:=Value - ((Value shr 1) and $55555555);
+ Weight:=(Weight and $33333333) + ((Weight shr 2) and $33333333);
+ Weight:=(Weight + (Weight shr 4)) and $0F0F0F0F;
+ Weight:=Weight + (Weight shr 8);
+ Result:=(Weight + (Weight shr 16)) and $000000FF;
+end;
+
+{==============================================================================}
+
+function HWEIGHT64(Value:UInt64):LongWord;
+{Calculate the Hamming Weight (HWEIGHT) of a 64 bit value}
+{The Hamming Weight of a number is the total number of bits set in it}
+var
+ Weight:UInt64;
+begin
+ {}
+ Weight:=Value - ((Value shr 1) and $5555555555555555);
+ Weight:=(Weight and $3333333333333333) + ((Weight shr 2) and $3333333333333333);
+ Weight:=(Weight + (Weight shr 4)) and $0F0F0F0F0F0F0F0F;
+ Weight:=Weight + (Weight shr 8);
+ Weight:=Weight + (Weight shr 16);
+ Result:=(Weight + (Weight shr 32)) and $00000000000000FF;
 end;
 
 {==============================================================================}
@@ -1928,10 +2274,145 @@ end;
 
 {==============================================================================}
 
-function HandleToHex(Value:THandle):String; 
+function HandleToHex(Value:THandle):String; inline; 
 begin
  {}
  Result:=IntToHex(Value,SizeOf(THandle) shl 1);
+end;
+
+{==============================================================================}
+
+function FirstBitSet(Value:LongWord):LongWord; inline;
+{Find the first set bit in a nonzero 32 bit value}
+{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Note: Similar in operation to the fls() macro, equivalent to fls() - 1}
+begin
+ {}
+ if Assigned(FirstBitSetHandler) then
+  begin
+   Result:=FirstBitSetHandler(Value);
+  end
+ else
+  begin
+   Result:=0; {No default behaviour, a default handler must be registered by Platform}
+  end;
+end;
+
+{==============================================================================}
+
+function FirstBitSet64(Value:UInt64):LongWord; inline;
+{Find the first set bit in a nonzero 64 bit value}
+{Returns 63 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Note: Similar in operation to the fls64() macro, equivalent to fls64() - 1}
+begin
+ {}
+ Result:=FirstBitSet(Int64Rec(Value).Hi);
+ if Result = $FFFFFFFF then
+  begin
+   Result:=FirstBitSet(Int64Rec(Value).Lo);
+  end
+ else
+  begin
+   Result:=Result + 32;
+  end;
+end;
+
+{==============================================================================}
+
+function LastBitSet(Value:LongWord):LongWord; inline;
+{Find the last set bit in a nonzero 32 bit value}
+{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Note: Similar in operation to the ffs() builtin, equivalent to ffs() - 1}
+begin
+ {}
+ if Assigned(LastBitSetHandler) then
+  begin
+   Result:=LastBitSetHandler(Value);
+  end
+ else
+  begin
+   Result:=0; {No default behaviour, a default handler must be registered by Platform}
+  end;
+end;
+
+{==============================================================================}
+
+function LastBitSet64(Value:UInt64):LongWord; inline;
+{Find the last set bit in a nonzero 64 bit value}
+{Returns 63 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Note: Similar in operation to the ffs() builtin, equivalent to ffs() - 1}
+begin
+ {}
+ Result:=LastBitSet(Int64Rec(Value).Lo);
+ if Result = $FFFFFFFF then
+  begin
+   Result:=LastBitSet(Int64Rec(Value).Hi);
+   if Result = $FFFFFFFF then Exit;
+   
+   Result:=Result + 32;
+  end;
+end;
+
+{==============================================================================}
+
+function CountLeadingZeros(Value:LongWord):LongWord; inline;
+{Count the number of leading 0 bits in a nonzero 32 bit value}
+{Returns 32 if no bits are set}
+begin
+ {}
+ if Assigned(CountLeadingZerosHandler) then
+  begin
+   Result:=CountLeadingZerosHandler(Value);
+  end
+ else
+  begin
+   Result:=0; {No default behaviour, a default handler must be registered by Platform}
+  end;
+end;
+
+{==============================================================================}
+
+function CountLeadingZeros64(Value:UInt64):LongWord; inline;
+{Count the number of leading 0 bits in a nonzero 64 bit value}
+{Returns 64 if no bits are set}
+begin
+ {}
+ Result:=CountLeadingZeros(Int64Rec(Value).Hi);
+ if Result = 32 then
+  begin
+   Result:=Result + CountLeadingZeros(Int64Rec(Value).Lo);
+  end;
+end;
+
+{==============================================================================}
+
+function CountTrailingZeros(Value:LongWord):LongWord; inline;
+{Count the number of trailing 0 bits in a nonzero 32 bit value}
+{Returns 32 if no bits are set}
+begin
+ {}
+ if Assigned(CountTrailingZerosHandler) then
+  begin
+   Result:=CountTrailingZerosHandler(Value);
+  end
+ else
+  begin
+   Result:=0; {No default behaviour, a default handler must be registered by Platform}
+  end;
+end;
+
+{==============================================================================}
+
+function CountTrailingZeros64(Value:UInt64):LongWord; inline;
+{Count the number of trailing 0 bits in a nonzero 64 bit value}
+{Returns 64 if no bits are set}
+begin
+ {}
+ Result:=CountTrailingZeros(Int64Rec(Value).Lo);
+ if Result = 32 then
+  begin
+   Result:=Result + CountTrailingZeros(Int64Rec(Value).Hi);
+  end;
 end;
 
 {==============================================================================}

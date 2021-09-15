@@ -622,7 +622,7 @@ const
  USB_PROTOCOL_WIRELESS_CONTROLLER_BLUETOOTH_AMP  = $04; {See: http://www.bluetooth.com/}
  USB_PROTOCOL_WIRELESS_CONTROLLER_USB_HOST        = $01; {Host Wire Adapter Control/Data interface.  Definition can be found in the Wireless USB Specification in Chapter 8}
  USB_PROTOCOL_WIRELESS_CONTROLLER_USB_DEVICE      = $02; {Device Wire Adapter Control/Data interface.  Definition can be found in the Wireless USB Specification in Chapter 8}
- USB_PROTOCOL_WIRELESS_CONTROLLER_USB_DEVOCE_ISOC = $03; {Device Wire Adapter Isochronous interface.  Definition can be found in the Wireless USB Specification in Chapter 8}
+ USB_PROTOCOL_WIRELESS_CONTROLLER_USB_DEVICE_ISOC = $03; {Device Wire Adapter Isochronous interface.  Definition can be found in the Wireless USB Specification in Chapter 8}
  {Miscellaneous}
  USB_PROTOCOL_MISCELLANEOUS_ACTIVESYNC            = $01; {Active Sync device}
  USB_PROTOCOL_MISCELLANEOUS_PALMSYNC              = $02; {Palm Sync}
@@ -1754,6 +1754,8 @@ procedure USBLogOutput(const AText:String;Data:Pointer); forward;
 procedure USBInit;
 {Performs basic initialization of the USB core driver, after this devices, hosts
  and drivers can be registered however nothing will work until USBStart is called}
+ 
+{Note: Called only during system startup} 
 var
  Status:LongWord;
 begin

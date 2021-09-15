@@ -1148,12 +1148,6 @@ begin
  VectorTableGetEntryHandler:=ARMv7VectorTableGetEntry;
  VectorTableSetEntryHandler:=ARMv7VectorTableSetEntry;
  
- {Register Platform FirstBitSet Handler}
- FirstBitSetHandler:=ARMv7FirstBitSet;
- 
- {Register Platform CountLeadingZeros Handler}
- CountLeadingZerosHandler:=ARMv7CountLeadingZeros;
- 
  {Register Threads PrimaryInit Handler}
  PrimaryInitHandler:=ARMv7PrimaryInit;
  
@@ -1187,6 +1181,10 @@ begin
 
  {Register Threads ThreadSetupStack Handler}
  ThreadSetupStackHandler:=ARMv7ThreadSetupStack;
+ 
+ {Register Global Handlers}
+ FirstBitSetHandler:=ARMv7FirstBitSet;
+ CountLeadingZerosHandler:=ARMv7CountLeadingZeros;
  
  ARMv7Initialized:=True;
 end;

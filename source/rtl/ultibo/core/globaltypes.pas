@@ -1,7 +1,7 @@
 {
 Ultibo Global Type Definitions.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -94,10 +94,20 @@ type
  PFontHandle = ^TFontHandle;
  PKeymapHandle = ^TKeymapHandle;
 
+{==============================================================================}
 type
  {Method types}
+ {Prototype for Get/SetLastError Handlers}
  TGetLastError = function:LongWord;
  TSetLastError = procedure(LastError:LongWord);
+
+ {Prototype for First/LastBitSet Handlers} 
+ TFirstBitSet = function(Value:LongWord):LongWord; 
+ TLastBitSet = function(Value:LongWord):LongWord; 
+
+ {Prototype for CountLeading/TrailingZeros Handlers} 
+ TCountLeadingZeros = function(Value:LongWord):LongWord;
+ TCountTrailingZeros = function(Value:LongWord):LongWord;
 
 {==============================================================================}
 type
