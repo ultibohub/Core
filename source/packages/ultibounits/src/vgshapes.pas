@@ -4,6 +4,8 @@
 
   From C source available at https://github.com/ajstarks/openvg
   
+  Multiple layer support by Richard Metcalfe <richard@richmet.com>
+  
  Original Copyright:
   
   Copyright (C) 2012 Anthony Starks
@@ -43,6 +45,10 @@ uses GlobalConst,SysUtils,Classes,EGL,DispmanX,OpenVG,VC4,JPEGLib,Jerror,JDataSr
 const
  {Font Information}
  VGSHAPES_MAXFONTPATH = 500;
+ VGSHAPES_MAXLAYERS = 16;
+ 
+ VGSHAPES_NOLAYER = LongInt($80000000);
+ VGSHAPES_NODISPLAY = LongWord(-1);
 
 {==============================================================================}
 type
@@ -62,22 +68,25 @@ type
  TVGShapesColor = array[0..3] of VGfloat;
  
 {==============================================================================}
-var
- {Font Information}
- VGShapesSansTypeface:TVGShapesFontInfo;
- VGShapesSerifTypeface:TVGShapesFontInfo;
- VGShapesMonoTypeface:TVGShapesFontInfo;
- 
-{==============================================================================}
 {Library Functions}
 {Initialization}
+procedure VGShapesInitLayerId(layerid:LongInt);
+procedure VGShapesInitDisplayId(displayid:LongWord);
 procedure VGShapesInitWindowSize(x,y:Integer;w,h:LongWord);
-procedure VGShapesInit(var w,h:Integer);
+
+function VGShapesInit(var w,h:Integer;alphaflags:DISPMANX_FLAGS_ALPHA_T = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;layer:LongInt = VGSHAPES_NOLAYER):Boolean;
 procedure VGShapesFinish;
+
+function VGShapesGetLayer:LongInt;
+procedure VGShapesSetLayer(layer:LongInt);
 
 {Font}
 function VGShapesLoadFont(Points,PointIndices:PInteger;Instructions:PByte;InstructionIndices,InstructionCounts,adv:PInteger;cmap:PSmallInt;ng:Integer):TVGShapesFontInfo;
 procedure VGShapesUnloadFont(glyphs:PVGPath;n:Integer);
+
+function VGShapesSansTypeface:PVGShapesFontInfo;
+function VGShapesSerifTypeface:PVGShapesFontInfo;
+function VGShapesMonoTypeface:PVGShapesFontInfo;
 
 {Image}
 procedure VGShapesMakeImage(x,y:VGfloat;w,h:Integer;data:PVGubyte);
@@ -93,7 +102,7 @@ procedure VGShapesScale(x,y:VGfloat); inline;
 {Style} 
 procedure VGShapesSetFill(const color:TVGShapesColor);
 procedure VGShapesSetStroke(const color:TVGShapesColor);
-procedure VGShapesStrokeWidth(width:VGfloat);
+procedure VGShapesStrokeWidth(width:VGfloat;cap:VGCapStyle = VG_CAP_BUTT;join:VGJoinStyle = VG_JOIN_MITER);
 
 {Color}
 procedure VGShapesRGBA(r,g,b:LongWord;a:VGfloat;var color:TVGShapesColor);
@@ -107,12 +116,12 @@ procedure VGShapesClipRect(x,y,w,h:VGint);
 procedure VGShapesClipEnd; inline;
 
 {Text}
-procedure VGShapesText(x,y:VGfloat;const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer);
-function VGShapesTextWidth(const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer):VGfloat;
-procedure VGShapesTextMid(x,y:VGfloat;const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer);
-procedure VGShapesTextEnd(x,y:VGfloat;const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer);
-function VGShapesTextHeight(const f:TVGShapesFontInfo;pointsize:Integer):VGfloat;
-function VGShapesTextDepth(const f:TVGShapesFontInfo;pointsize:Integer):VGfloat;
+procedure VGShapesText(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
+function VGShapesTextWidth(const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
+procedure VGShapesTextMid(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
+procedure VGShapesTextEnd(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
+function VGShapesTextHeight(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
+function VGShapesTextDepth(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 
 {Shape}
 procedure VGShapesCbezier(sx,sy,cx,cy,px,py,ex,ey:VGfloat);
@@ -127,13 +136,14 @@ procedure VGShapesCircle(x,y,r:VGfloat); inline;
 procedure VGShapesArc(x,y,w,h,sa,aext:VGfloat);
 
 {Rendering}
-procedure VGShapesStart(width,height:Integer);
+procedure VGShapesStart(width,height:Integer;transparent:Boolean = False);
 function VGShapesEnd:Boolean;
 function VGShapesSaveEnd(const filename:String):Boolean;
 procedure VGShapesBackground(r,g,b:LongWord);
 procedure VGShapesBackgroundRGB(r,g,b:LongWord;a:VGfloat);
 procedure VGShapesWindowClear; inline;
 procedure VGShapesAreaClear(x,y,w,h:LongWord); inline;
+procedure VGShapesWindowLayer(layerid:LongInt);
 procedure VGShapesWindowOpacity(a:LongWord);
 procedure VGShapesWindowPosition(x,y:Integer);
 
@@ -157,15 +167,19 @@ type
  {EGL State Type}
  PEGLState = ^TEGLState;
  TEGLState = record
-  {Screen dimentions}
+  {Screen dimensions}
   ScreenWidth:LongWord;
   ScreenHeight:LongWord;
-  {Window dimentions}
+  ScreenPitch:LongWord;
+  {Window dimensions}
   WindowX:LongInt;
   WindowY:LongInt;
   WindowWidth:LongWord;
   WindowHeight:LongWord;
-  {DispmanX window}
+  {Initialization}
+  Initialized:Boolean;
+  {DispmanX data}
+  DisplayHandle:DISPMANX_DISPLAY_HANDLE_T;
   Element:DISPMANX_ELEMENT_HANDLE_T;
   {EGL data}
   Display:EGLDisplay;
@@ -174,21 +188,38 @@ type
   {EGL config}
   Alpha:VC_DISPMANX_ALPHA_T;
   NativeWindow:EGL_DISPMANX_WINDOW_T;
-  AttributeList:array[0..10] of EGLint;
+  AttributeList:array[0..12] of EGLint;
  end;
- 
+
+ {Layer Information}
+ PVGShapesLayer = ^TVGShapesLayer;
+ TVGShapesLayer = record
+  {State data}
+  State:PEGLState;
+  {Window size}
+  InitX:Integer;
+  InitY:Integer;
+  InitW:LongWord;
+  InitH:LongWord;
+  {Layer / Display Id}
+  LayerId:LongInt;
+  DisplayId:LongWord;
+  {Initialization}
+  Initialized:Boolean;
+  {Font information}
+  SansTypeface:PVGShapesFontInfo;
+  SerifTypeface:PVGShapesFontInfo;
+  MonoTypeface:PVGShapesFontInfo;   
+ end;
+
 {==============================================================================}
 {==============================================================================}
 var
  {Global Variables}
- VGShapesState:TEGLState;
+ Initialized:Boolean;
 
- VGShapesInitX:Integer = 0;  {Initial Window Position and Size}
- VGShapesInitY:Integer = 0;
- VGShapesInitW:LongWord = 0;
- VGShapesInitH:LongWord = 0;
- 
- VGShapesInitialized:Boolean;
+ Current:LongInt;
+ Layers:array[0..VGSHAPES_MAXLAYERS - 1] of TVGShapesLayer;
  
 {==============================================================================}
 {Included Fonts}
@@ -199,6 +230,66 @@ var
 {==============================================================================}
 {==============================================================================}
 {Internal Functions}
+procedure InitLayers;
+{Initialize the array of layers, only called during system start}
+var
+ Count:Integer;
+begin
+ {}
+ for Count:=0 to VGSHAPES_MAXLAYERS - 1 do
+  begin
+   Layers[Count].LayerId:=VGSHAPES_NOLAYER;
+   Layers[Count].DisplayId:=DISPMANX_ID_MAIN_LCD;
+  end;
+end;
+
+{==============================================================================}
+
+function CountLayers(DisplayId:LongWord = VGSHAPES_NODISPLAY):LongWord;
+{Count the number of currently initialized layers}
+var
+ Count:Integer;
+begin
+ {}
+ Result:=0;
+ 
+ for Count:=0 to VGSHAPES_MAXLAYERS - 1 do
+  begin
+   if Layers[Count].Initialized then
+    begin
+     if (DisplayId = VGSHAPES_NODISPLAY) or (DisplayId = Layers[Count].DisplayId) then
+      begin
+       Inc(Result);
+      end; 
+    end; 
+  end;
+end;
+
+{==============================================================================}
+
+function FirstLayer(DisplayId:LongWord = VGSHAPES_NODISPLAY):LongInt;
+{Find the layer number of the first initialized layer}
+var
+ Count:Integer;
+begin
+ {}
+ Result:=VGSHAPES_NOLAYER;
+ 
+ for Count:=0 to VGSHAPES_MAXLAYERS - 1 do
+  begin
+   if Layers[Count].Initialized then
+    begin
+     if (DisplayId = VGSHAPES_NODISPLAY) or (DisplayId = Layers[Count].DisplayId) then
+      begin
+       Result:=Count;
+       Exit;
+      end; 
+    end;
+  end;
+end;
+
+{==============================================================================}
+
 procedure SetWindowParams(State:PEGLState;X,Y:Integer;SourceRect,DestRect:PVC_RECT_T);
 {SetWindowParams sets the window's position, adjusting if need be to prevent
  it from going fully off screen. Also sets the dispman rects for displaying}
@@ -291,9 +382,12 @@ end;
 
 {==============================================================================}
 
-function eglInit(State:PEGLState):Boolean;
+function eglInit(State:PEGLState;AlphaFlags:DISPMANX_FLAGS_ALPHA_T;LayerId:LongInt;DisplayId:LongWord):Boolean;
 {eglInit sets the display, context and screen information, state holds the display information}
 var
+ First:LongInt;
+ Previous:PEGLState;
+ 
  Config:EGLConfig;
  ConfigCount:EGLint;
  EGLResult:EGLBoolean;
@@ -319,7 +413,7 @@ begin
  State.Context:=EGL_NO_CONTEXT;
  
  {Setup Alpha}
- State.Alpha.flags:=DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;
+ State.Alpha.flags:=AlphaFlags;
  State.Alpha.opacity:=255;
  State.Alpha.mask:=0;
  
@@ -334,20 +428,36 @@ begin
  State.AttributeList[7]:=8;
  State.AttributeList[8]:=EGL_SURFACE_TYPE;
  State.AttributeList[9]:=EGL_WINDOW_BIT;
- State.AttributeList[10]:=EGL_NONE;
+ State.AttributeList[10]:=EGL_RENDERABLE_TYPE;
+ State.AttributeList[11]:=EGL_OPENVG_BIT;
+ State.AttributeList[12]:=EGL_NONE;
+ 
+ {Get Previous}
+ Previous:=nil;
+ First:=FirstLayer(DisplayId);
+ if First <> VGSHAPES_NOLAYER then Previous:=Layers[First].State;
  
  try
-  {Get an EGL display connection}
-  State.Display:=eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  if State.Display = EGL_NO_DISPLAY then Exit;
+  {Check Previous}
+  if Previous = nil then
+   begin
+    {Get an EGL display connection}
+    State.Display:=eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if State.Display = EGL_NO_DISPLAY then Exit;
   
-  {Initialize the EGL display connection}
-  EGLResult:=eglInitialize(State.Display,nil,nil);
-  if EGLResult = EGL_FALSE then Exit;
+    {Initialize the EGL display connection}
+    EGLResult:=eglInitialize(State.Display,nil,nil);
+    if EGLResult = EGL_FALSE then Exit;
   
-  {Bind OpenVG API}
-  EGLResult:=eglBindAPI(EGL_OPENVG_API);
-  if EGLResult = EGL_FALSE then Exit;
+    {Bind OpenVG API}
+    EGLResult:=eglBindAPI(EGL_OPENVG_API);
+    if EGLResult = EGL_FALSE then Exit;
+   end
+  else
+   begin
+    {Copy Display}
+    State.Display:=Previous.Display;
+   end;
   
   {Get an appropriate EGL framebuffer configuration}
   EGLResult:=eglChooseConfig(State.Display,@State.AttributeList,@Config,1,@ConfigCount);
@@ -357,8 +467,9 @@ begin
   State.Context:=eglCreateContext(State.Display,Config,EGL_NO_CONTEXT,nil);
   if State.Context = EGL_NO_CONTEXT then Exit;
   
-  {Create an EGL window surface}
-  if BCMHostGraphicsGetDisplaySize(DISPMANX_ID_MAIN_LCD,State.ScreenWidth,State.ScreenHeight) < 0 then Exit;
+  {Get the current screen parameters}
+  if BCMHostGraphicsGetDisplaySize(DisplayId,State.ScreenWidth,State.ScreenHeight) < 0 then Exit;
+  State.ScreenPitch:=4 * ((State.WindowWidth + 15) and not(15));
   
   if (State.WindowWidth = 0) or (State.WindowWidth > State.ScreenWidth) then
    begin
@@ -374,7 +485,7 @@ begin
   SetWindowParams(State,State.WindowX,State.WindowY,@SourceRect,@DestRect);
   
   {Open Dispman Display}
-  DispmanDisplay:=vc_dispmanx_display_open(DISPMANX_ID_MAIN_LCD);
+  if Previous = nil then DispmanDisplay:=vc_dispmanx_display_open(DisplayId) else DispmanDisplay:=Previous.DisplayHandle;
   if DispmanDisplay = DISPMANX_NO_HANDLE then Exit;
   
   {Start Dispman Update}
@@ -382,9 +493,10 @@ begin
   if DispmanUpdate = DISPMANX_NO_HANDLE then Exit;
   
   {Add Dispman Element}
-  DispmanElement:=vc_dispmanx_element_add(DispmanUpdate,DispmanDisplay,0 {Layer},@DestRect,0 {Source},@SourceRect,DISPMANX_PROTECTION_NONE,@State.Alpha,nil {Clamp},DISPMANX_NO_ROTATE {Transform});
+  DispmanElement:=vc_dispmanx_element_add(DispmanUpdate,DispmanDisplay,LayerId {Layer},@DestRect,0 {Source},@SourceRect,DISPMANX_PROTECTION_NONE,@State.Alpha,nil {Clamp},DISPMANX_NO_ROTATE {Transform});
   if DispmanElement = DISPMANX_NO_HANDLE then Exit;
   
+  State.DisplayHandle:=DispmanDisplay;
   State.Element:=DispmanElement;
   State.NativeWindow.Element:=DispmanElement;
   State.NativeWindow.Width:=State.WindowWidth;
@@ -409,13 +521,34 @@ begin
  finally
   if not Result then
    begin
-    {Close Dispman Display}
-    if DispmanDisplay <> DISPMANX_NO_HANDLE then vc_dispmanx_display_close(DispmanDisplay);
-    
     if State.Display <> EGL_NO_DISPLAY then
      begin
-      {Terminate EGL}
-      eglMakeCurrent(State.Display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
+      {Check Layers}
+      if CountLayers(DisplayId) > 0 then
+       begin
+        {Change Layer}
+        VGShapesSetLayer(FirstLayer(DisplayId));
+       end
+      else
+       begin
+        {Terminate EGL}
+        eglMakeCurrent(State.Display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
+       end; 
+      
+      {Check Element}
+      if DispmanElement <> DISPMANX_NO_HANDLE then
+       begin
+        {Start Dispman Update}
+        DispmanUpdate:=vc_dispmanx_update_start(0);
+        if DispmanUpdate <> DISPMANX_NO_HANDLE then
+         begin
+          {Remove Dispman Element}
+          vc_dispmanx_element_remove(DispmanUpdate,DispmanElement);
+        
+          {Submit Dispman Update}
+          vc_dispmanx_update_submit_sync(DispmanUpdate);
+         end; 
+       end; 
       
       {Destroy Surface}
       if State.Surface <> EGL_NO_SURFACE then eglDestroySurface(State.Display,State.Surface);
@@ -423,8 +556,15 @@ begin
       {Destroy Context}
       if State.Context <> EGL_NO_CONTEXT then eglDestroyContext(State.Display,State.Context);
 
-      {Terminate Display}
-      eglTerminate(State.Display);
+      {Check Layers}
+      if CountLayers(DisplayId) = 0 then
+       begin
+        {Close Dispman Display}
+        if DispmanDisplay <> DISPMANX_NO_HANDLE then vc_dispmanx_display_close(DispmanDisplay);
+        
+        {Terminate Display}
+        eglTerminate(State.Display);
+       end;       
      end;
    end;
  end; 
@@ -433,8 +573,8 @@ end;
 {==============================================================================}
 
 procedure DispmanXMoveWindow(State:PEGLState;X,Y:Integer); 
-{DispmanXMoveWindow repositions the openVG window to given coords -ve coords are allowed upto (1-width,1-height),
- max (screen_width-1,screen_height-1). i.e. at least one pixel must be on the screen}
+{DispmanXMoveWindow repositions an OpenVG window to given coords. Negative coords are allowed up to 1 - width, 1 - height,
+ Maximum ScreenWidth - 1, ScreenHeight - 1. i.e. at least one pixel must be on the screen}
 var
  DestRect:VC_RECT_T;
  SourceRect:VC_RECT_T;
@@ -453,6 +593,27 @@ begin
  {Change Element}
  vc_dispmanx_element_change_attributes(DispmanUpdate,State.Element,0,0,0,@DestRect,@SourceRect,0,DISPMANX_NO_ROTATE);
 
+ {Submit Update}
+ vc_dispmanx_update_submit_sync(DispmanUpdate);
+end;
+
+{==============================================================================}
+
+procedure DispmanXChangeWindowLayer(State:PEGLState;LayerId:LongInt); 
+{DispmanXChangeWindowLayer changes the layer id of the current window}
+var
+ DispmanUpdate:DISPMANX_UPDATE_HANDLE_T;
+begin
+ {}
+ {Check State}
+ if State = nil then Exit;
+
+ {Start Update}
+ DispmanUpdate:=vc_dispmanx_update_start(0);
+ 
+ {Change Element}
+ vc_dispmanx_element_change_layer(DispmanUpdate,State.Element,LayerId);
+ 
  {Submit Update}
  vc_dispmanx_update_submit_sync(DispmanUpdate);
 end;
@@ -485,116 +646,285 @@ end;
 {==============================================================================}
 {Library Functions}
 {Initialization}
-procedure VGShapesInitWindowSize(x,y:Integer;w,h:LongWord);
-{InitWindowSize requests a specific window size & position, if not called then VGShapesInit() will open a full screen window}
+procedure VGShapesInitLayerId(layerid:LongInt);
+{InitLayerId sets the underlying layer number passed to DispmanX, if not called then the current layer number will be used.
+ This allows setting a layer number outside of the range of 0 to 15 so the layer can appear anywhere in the Z order}
 begin
  {}
- if VGShapesInitialized then Exit;
+ if Layers[Current].Initialized then Exit;
  
- VGShapesInitX:=x;
- VGShapesInitY:=y;
- VGShapesInitW:=w;
- VGShapesInitH:=h;
+ Layers[Current].LayerId:=layerid;
 end;
 
 {==============================================================================}
 
-procedure VGShapesInit(var w,h:Integer);
-{Init sets the system to its initial state}
+procedure VGShapesInitDisplayId(displayid:LongWord);
+{InitDisplayId sets the underlying display id passed to DispmanX, if not called then the default display will be used.
+ This allows setting a layer to appear on a different display where supported}
 begin
  {}
+ if Layers[Current].Initialized then Exit;
+ 
+ Layers[Current].DisplayId:=displayid;
+end;
+
+{==============================================================================}
+
+procedure VGShapesInitWindowSize(x,y:Integer;w,h:LongWord);
+{InitWindowSize requests a specific window size & position, if not called then VGShapesInit() will open a full screen window}
+begin
+ {}
+ if Layers[Current].Initialized then Exit;
+ 
+ Layers[Current].InitX:=x;
+ Layers[Current].InitY:=y;
+ Layers[Current].InitW:=w;
+ Layers[Current].InitH:=h;
+end;
+
+{==============================================================================}
+
+function VGShapesInit(var w,h:Integer;alphaflags:DISPMANX_FLAGS_ALPHA_T = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;layer:LongInt = VGSHAPES_NOLAYER):Boolean;
+{Init performs host initialization and creates the current layer, must be called once for each layer to be created}
+var
+ First:Boolean;
+begin
+ {}
+ Result:=False;
+ 
  {Setup Defaults}
  w:=-1;
  h:=-1;
- 
- if not VGShapesInitialized then
+
+ {Check Layer}
+ if layer <> VGSHAPES_NOLAYER then
   begin
-   {Initialize Host}
-   BCMHostInit;
+   if (layer < 0) or (layer >= VGSHAPES_MAXLAYERS) then Exit;
    
-   {Setup State}
-   FillChar(VGShapesState,SizeOf(TEGLState),0);
-   VGShapesState.WindowX:=VGShapesInitX;
-   VGShapesState.WindowY:=VGShapesInitY;
-   VGShapesState.WindowWidth:=VGShapesInitW;
-   VGShapesState.WindowHeight:=VGShapesInitH;
-   
+   {Set Layer}
+   VGShapesSetLayer(layer);
+  end;
+
+ {Check First Layer}
+ First:=not(Initialized);
+
+ {Initialize Host}
+ if First then BCMHostInit;
+
+ {Check Initialized} 
+ if not Layers[Current].Initialized then
+  begin
+   {Allocate State}
+   Layers[Current].State:=AllocMem(SizeOf(TEGLState));
+   if Layers[Current].State = nil then Exit;
+
+   {Initialize State}
+   Layers[Current].State.WindowX:=Layers[Current].InitX;
+   Layers[Current].State.WindowY:=Layers[Current].InitY;
+   Layers[Current].State.WindowWidth:=Layers[Current].InitW;
+   Layers[Current].State.WindowHeight:=Layers[Current].InitH;
+   if Layers[Current].LayerId = VGSHAPES_NOLAYER then Layers[Current].LayerId:=Current;
+
    {Initialize EGL}
-   if not eglInit(@VGShapesState) then
+   if not eglInit(Layers[Current].State,alphaflags,Layers[Current].LayerId,Layers[Current].DisplayId) then
     begin
-     BCMHostDeinit;
+     if First then BCMHostDeinit;
      Exit;
+    end;
+
+   Layers[Current].Initialized:=True; 
+   
+   {Note: Layer will be made current by eglInit}
+
+   if First then
+    begin
+     {Allocate Sans Font}
+     Layers[Current].SansTypeface:=AllocMem(SizeOf(TVGShapesFontInfo));
+     if Layers[Current].SansTypeface <> nil then
+      begin
+       {Load Sans Font}
+       Layers[Current].SansTypeface^:=VGShapesLoadFont(@DejaVuSans_glyphPoints,
+                                                       @DejaVuSans_glyphPointIndices,
+                                                       @DejaVuSans_glyphInstructions,
+                                                       @DejaVuSans_glyphInstructionIndices,
+                                                       @DejaVuSans_glyphInstructionCounts,
+                                                       @DejaVuSans_glyphAdvances,
+                                                       @DejaVuSans_characterMap,
+                                                       DejaVuSans_glyphCount);
+       Layers[Current].SansTypeface.DescenderHeight:=DejaVuSans_descender_height;
+       Layers[Current].SansTypeface.FontHeight:=DejaVuSans_font_height;
+      end;
+
+     {Allocate Serif Font}
+     Layers[Current].SerifTypeface:=AllocMem(SizeOf(TVGShapesFontInfo));
+     if Layers[Current].SerifTypeface <> nil then
+      begin
+       {Load Serif Font}
+       Layers[Current].SerifTypeface^:=VGShapesLoadFont(@DejaVuSerif_glyphPoints,
+                                                        @DejaVuSerif_glyphPointIndices,
+                                                        @DejaVuSerif_glyphInstructions,
+                                                        @DejaVuSerif_glyphInstructionIndices,
+                                                        @DejaVuSerif_glyphInstructionCounts,
+                                                        @DejaVuSerif_glyphAdvances,
+                                                        @DejaVuSerif_characterMap,
+                                                        DejaVuSerif_glyphCount);
+       Layers[Current].SerifTypeface.DescenderHeight:=DejaVuSerif_descender_height;
+       Layers[Current].SerifTypeface.FontHeight:=DejaVuSerif_font_height;
+      end;
+
+     {Allocate Mono Font}
+     Layers[Current].MonoTypeface:=AllocMem(SizeOf(TVGShapesFontInfo));
+     if Layers[Current].MonoTypeface <> nil then
+      begin
+       {Load Mono Font}
+       Layers[Current].MonoTypeface^:=VGShapesLoadFont(@DejaVuSansMono_glyphPoints,
+                                                       @DejaVuSansMono_glyphPointIndices,
+                                                       @DejaVuSansMono_glyphInstructions,
+                                                       @DejaVuSansMono_glyphInstructionIndices,
+                                                       @DejaVuSansMono_glyphInstructionCounts,
+                                                       @DejaVuSansMono_glyphAdvances,
+                                                       @DejaVuSansMono_characterMap,
+                                                       DejaVuSansMono_glyphCount);
+       Layers[Current].MonoTypeface.DescenderHeight:=DejaVuSansMono_descender_height;
+       Layers[Current].MonoTypeface.FontHeight:=DejaVuSansMono_font_height;
+      end;
+
+     Initialized:=True;
     end; 
-   
-   {Load Sans Font}
-   VGShapesSansTypeface:=VGShapesLoadFont(@DejaVuSans_glyphPoints,
-                                          @DejaVuSans_glyphPointIndices,
-                                          @DejaVuSans_glyphInstructions,
-                                          @DejaVuSans_glyphInstructionIndices,
-                                          @DejaVuSans_glyphInstructionCounts,
-                                          @DejaVuSans_glyphAdvances,
-                                          @DejaVuSans_characterMap,
-                                          DejaVuSans_glyphCount);
-   VGShapesSansTypeface.DescenderHeight:=DejaVuSans_descender_height;
-   VGShapesSansTypeface.FontHeight:=DejaVuSans_font_height;
-   
-   {Load Serif Font}
-   VGShapesSerifTypeface:=VGShapesLoadFont(@DejaVuSerif_glyphPoints,
-                                           @DejaVuSerif_glyphPointIndices,
-                                           @DejaVuSerif_glyphInstructions,
-                                           @DejaVuSerif_glyphInstructionIndices,
-                                           @DejaVuSerif_glyphInstructionCounts,
-                                           @DejaVuSerif_glyphAdvances,
-                                           @DejaVuSerif_characterMap,
-                                           DejaVuSerif_glyphCount);
-   VGShapesSerifTypeface.DescenderHeight:=DejaVuSerif_descender_height;
-   VGShapesSerifTypeface.FontHeight:=DejaVuSerif_font_height;
-   
-   {Load Mono Font}
-   VGShapesMonoTypeface:=VGShapesLoadFont(@DejaVuSansMono_glyphPoints,
-                                          @DejaVuSansMono_glyphPointIndices,
-                                          @DejaVuSansMono_glyphInstructions,
-                                          @DejaVuSansMono_glyphInstructionIndices,
-                                          @DejaVuSansMono_glyphInstructionCounts,
-                                          @DejaVuSansMono_glyphAdvances,
-                                          @DejaVuSansMono_characterMap,
-                                          DejaVuSansMono_glyphCount);
-   VGShapesMonoTypeface.DescenderHeight:=DejaVuSansMono_descender_height;
-   VGShapesMonoTypeface.FontHeight:=DejaVuSansMono_font_height;
-   
-   VGShapesInitialized:=True;
-  end; 
- 
+
+   {Return Result}
+   Result:=True; 
+  end;
+
  {Return Window Size}
- w:=VGShapesState.WindowWidth;
- h:=VGShapesState.WindowHeight;
+ w:=Layers[Current].State.WindowWidth;
+ h:=Layers[Current].State.WindowHeight;
 end;
 
 {==============================================================================}
 
 procedure VGShapesFinish;
-{Finish cleans up}
+{Finish cleans up and removes the current layer}
+var
+ Layer:LongInt;
+ DispmanUpdate:DISPMANX_UPDATE_HANDLE_T;
 begin
  {}
- if not VGShapesInitialized then Exit;
+ if not Layers[Current].Initialized then Exit;
 
+ {Save Layer}
+ Layer:=Current;
+ 
  {Unload Sans Font}
- VGShapesUnloadFont(VGShapesSansTypeface.Glyphs,VGShapesSansTypeface.Count);
- 
+ if Layers[Layer].SansTypeface <> nil then
+  begin
+   VGShapesUnloadFont(Layers[Layer].SansTypeface.Glyphs,Layers[Layer].SansTypeface.Count);
+
+   FreeMem(Layers[Layer].SansTypeface);
+  end;
+
  {Unload Serif Font}
- VGShapesUnloadFont(VGShapesSerifTypeface.Glyphs,VGShapesSerifTypeface.Count);
-   
+ if Layers[Layer].SerifTypeface <> nil then
+  begin
+   VGShapesUnloadFont(Layers[Layer].SerifTypeface.Glyphs,Layers[Layer].SerifTypeface.Count);
+
+   FreeMem(Layers[Layer].SerifTypeface);
+  end;
+
  {Unload Mono Font}
- VGShapesUnloadFont(VGShapesMonoTypeface.Glyphs,VGShapesMonoTypeface.Count);
-    
- {Terminate EGL}    
- eglSwapBuffers(VGShapesState.Display,VGShapesState.Surface);
- eglMakeCurrent(VGShapesState.Display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
- eglDestroySurface(VGShapesState.Display,VGShapesState.Surface);
- eglDestroyContext(VGShapesState.Display,VGShapesState.Context);
- eglTerminate(VGShapesState.Display);
+ if Layers[Layer].MonoTypeface <> nil then
+  begin
+   VGShapesUnloadFont(Layers[Layer].MonoTypeface.Glyphs,Layers[Layer].MonoTypeface.Count);
+
+   FreeMem(Layers[Layer].MonoTypeface);
+  end;
+
+ Layers[Layer].Initialized:=False;
+
+ {Swap Buffers}
+ eglSwapBuffers(Layers[Layer].State.Display,Layers[Layer].State.Surface);
+
+ {Check Layers}
+ if CountLayers(Layers[Layer].DisplayId) > 0 then
+  begin
+   {Change Layer}
+   VGShapesSetLayer(FirstLayer(Layers[Layer].DisplayId));
+  end
+ else
+  begin
+   {Terminate EGL}    
+   eglMakeCurrent(Layers[Layer].State.Display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
+  end;
+
+ {Check Element}
+ if Layers[Layer].State.Element <> DISPMANX_NO_HANDLE then
+  begin
+   {Start Dispman Update}
+   DispmanUpdate:=vc_dispmanx_update_start(0);
+   if DispmanUpdate = DISPMANX_NO_HANDLE then Exit;
+   
+   {Remove Dispman Element}
+   vc_dispmanx_element_remove(DispmanUpdate,Layers[Layer].State.Element);
+   
+   {Submit Dispman Update}
+   vc_dispmanx_update_submit_sync(DispmanUpdate);
+  end; 
+
+ {Destroy Surface}
+ if Layers[Layer].State.Surface <> EGL_NO_SURFACE then eglDestroySurface(Layers[Layer].State.Display,Layers[Layer].State.Surface);
  
- VGShapesInitialized:=False;
+ {Destroy Context}
+ if Layers[Layer].State.Context <> EGL_NO_CONTEXT then eglDestroyContext(Layers[Layer].State.Display,Layers[Layer].State.Context);
+ 
+ {Check Layers}
+ if CountLayers(Layers[Layer].DisplayId) = 0 then
+  begin
+   {Close Dispman Display}
+   if Layers[Layer].State.DisplayHandle <> DISPMANX_NO_HANDLE then vc_dispmanx_display_close(Layers[Layer].State.DisplayHandle);
+   
+   {Terminate Display}
+   eglTerminate(Layers[Layer].State.Display);
+  end; 
+
+ {Free State}
+ FreeMem(Layers[Layer].State);
+
+ {Reset Layer}
+ FillChar(Layers[Layer],SizeOf(TVGShapesLayer),0);
+ Layers[Layer].LayerId:=VGSHAPES_NOLAYER;
+ Layers[Layer].DisplayId:=DISPMANX_ID_MAIN_LCD;
+end;
+
+{==============================================================================}
+
+function VGShapesGetLayer:LongInt;
+{GetLayer returns the layer that is currently selected for VGShapes operations}
+begin
+ {}
+ Result:=Current;
+end;
+
+{==============================================================================}
+
+procedure VGShapesSetLayer(layer:LongInt);
+{SetLayer sets the current layer for all VGShapes operations, drawing can only occur on the currently selected layer}
+var
+ EGLResult:EGLBoolean;
+begin
+ {}
+ {Check Layer}
+ if (layer < 0) or (layer >= VGSHAPES_MAXLAYERS) then Exit;
+
+ {Make the layer current}
+ if (Layers[layer].Initialized) then
+  begin
+   EGLResult:=eglMakeCurrent(Layers[layer].State.Display,Layers[layer].State.Surface,Layers[layer].State.Surface,Layers[layer].State.Context);
+   if EGLResult = EGL_FALSE then Exit;
+  end;
+
+ {Change the current layer even if not initialized, so that you can call
+  VGShapesSetLayer followed by VGShapesInit to initialize a specific layer}
+ Current:=layer;
 end;
 
 {==============================================================================}
@@ -610,6 +940,9 @@ var
 begin
  {}
  FillChar(Result,SizeOf(TVGShapesFontInfo),0);
+
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
 
  {Check Parameters}
  if Points = nil then Exit;
@@ -653,6 +986,9 @@ var
  Count:Integer;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Check Glyphs}
  if glyphs = nil then Exit;
  
@@ -661,6 +997,108 @@ begin
    {Destroy Path}
    vgDestroyPath(glyphs[Count]);
   end;
+end;
+
+{==============================================================================}
+
+function VGShapesSansTypeface:PVGShapesFontInfo;
+{Return a pointer to the Sans Typeface for the current layer}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
+ {Check Sans Font}
+ if Layers[Current].SansTypeface = nil then
+  begin
+   {Allocate Sans Font}
+   Layers[Current].SansTypeface:=AllocMem(SizeOf(TVGShapesFontInfo));
+   if Layers[Current].SansTypeface = nil then Exit;
+
+   {Load Sans Font}
+   Layers[Current].SansTypeface^:=VGShapesLoadFont(@DejaVuSans_glyphPoints,
+                                                   @DejaVuSans_glyphPointIndices,
+                                                   @DejaVuSans_glyphInstructions,
+                                                   @DejaVuSans_glyphInstructionIndices,
+                                                   @DejaVuSans_glyphInstructionCounts,
+                                                   @DejaVuSans_glyphAdvances,
+                                                   @DejaVuSans_characterMap,
+                                                   DejaVuSans_glyphCount);
+   Layers[Current].SansTypeface.DescenderHeight:=DejaVuSans_descender_height;
+   Layers[Current].SansTypeface.FontHeight:=DejaVuSans_font_height;
+  end;
+  
+ Result:=Layers[Current].SansTypeface;
+end;
+
+{==============================================================================}
+
+function VGShapesSerifTypeface:PVGShapesFontInfo;
+{Return a pointer to the Serif Typeface for the current layer}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
+ {Check Sans Font}
+ if Layers[Current].SerifTypeface = nil then
+  begin
+   {Allocate Serif Font}
+   Layers[Current].SerifTypeface:=AllocMem(SizeOf(TVGShapesFontInfo));
+   if Layers[Current].SerifTypeface = nil then Exit;
+
+   {Load Serif Font}
+   Layers[Current].SerifTypeface^:=VGShapesLoadFont(@DejaVuSerif_glyphPoints,
+                                                    @DejaVuSerif_glyphPointIndices,
+                                                    @DejaVuSerif_glyphInstructions,
+                                                    @DejaVuSerif_glyphInstructionIndices,
+                                                    @DejaVuSerif_glyphInstructionCounts,
+                                                    @DejaVuSerif_glyphAdvances,
+                                                    @DejaVuSerif_characterMap,
+                                                    DejaVuSerif_glyphCount);
+   Layers[Current].SerifTypeface.DescenderHeight:=DejaVuSerif_descender_height;
+   Layers[Current].SerifTypeface.FontHeight:=DejaVuSerif_font_height;
+  end;
+  
+ Result:=Layers[Current].SerifTypeface;
+end;
+
+{==============================================================================}
+
+function VGShapesMonoTypeface:PVGShapesFontInfo;
+{Return a pointer to the Mono Typeface for the current layer}
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
+ {Check Sans Font}
+ if Layers[Current].MonoTypeface = nil then
+  begin
+   {Allocate Mono Font}
+   Layers[Current].MonoTypeface:=AllocMem(SizeOf(TVGShapesFontInfo));
+   if Layers[Current].MonoTypeface = nil then Exit;
+   
+   {Load Mono Font}
+   Layers[Current].MonoTypeface^:=VGShapesLoadFont(@DejaVuSansMono_glyphPoints,
+                                                   @DejaVuSansMono_glyphPointIndices,
+                                                   @DejaVuSansMono_glyphInstructions,
+                                                   @DejaVuSansMono_glyphInstructionIndices,
+                                                   @DejaVuSansMono_glyphInstructionCounts,
+                                                   @DejaVuSansMono_glyphAdvances,
+                                                   @DejaVuSansMono_characterMap,
+                                                   DejaVuSansMono_glyphCount);
+   Layers[Current].MonoTypeface.DescenderHeight:=DejaVuSansMono_descender_height;
+   Layers[Current].MonoTypeface.FontHeight:=DejaVuSansMono_font_height;
+  end;
+  
+ Result:=Layers[Current].MonoTypeface;
 end;
 
 {==============================================================================}
@@ -673,6 +1111,9 @@ var
  ImageFormat:VGImageFormat;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Setup Stride}
  Stride:=w * 4;
  
@@ -701,6 +1142,9 @@ var
  Image:VGImage;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Create Image}
  Image:=VGShapesCreateImageFromJpeg(filename);
  if Image = VG_INVALID_HANDLE then Exit;
@@ -744,6 +1188,9 @@ begin
  {}
  Result:=VG_INVALID_HANDLE;
  
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
  {Check for endianness}
  EndianTest:=1;
  if PByte(@EndianTest)[0] = 1 then
@@ -754,7 +1201,10 @@ begin
   begin 
    ImageFormat:=VG_sRGBA_8888;
   end; 
-  
+ 
+ {Check if the file exists}
+ if not FileExists(Filename) then Exit;
+ 
  {Try to open image file}
  FileStream:=TFileStream.Create(Filename,fmOpenRead or fmShareDenyNone);
  try
@@ -844,6 +1294,9 @@ procedure VGShapesTranslate(x,y:VGfloat); inline;
 {Translate the coordinate system to x,y}
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  vgTranslate(x,y);
 end;
 
@@ -853,6 +1306,9 @@ procedure VGShapesRotate(r:VGfloat); inline;
 {Rotate around angle r}
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  vgRotate(r);
 end;
 
@@ -862,6 +1318,9 @@ procedure VGShapesShear(x,y:VGfloat); inline;
 {Shear shears the x coordinate by x degrees, the y coordinate by y degrees}
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  vgShear(x,y);
 end;
 
@@ -871,6 +1330,9 @@ procedure VGShapesScale(x,y:VGfloat); inline;
 {Scale scales by  x, y}
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  vgScale(x,y);
 end;
 
@@ -882,6 +1344,9 @@ var
  fillPaint:VGPaint;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Create Paint}
  fillPaint:=vgCreatePaint;
 
@@ -904,6 +1369,9 @@ var
  strokePaint:VGPaint;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Create Paint}
  strokePaint:=vgCreatePaint;
 
@@ -920,13 +1388,16 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesStrokeWidth(width:VGfloat);
-{StrokeWidth sets the stroke width}
+procedure VGShapesStrokeWidth(width:VGfloat;cap:VGCapStyle = VG_CAP_BUTT;join:VGJoinStyle = VG_JOIN_MITER);
+{StrokeWidth sets the stroke width, cap style and join style}
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  vgSetf(VG_STROKE_LINE_WIDTH,width);
- vgSeti(VG_STROKE_CAP_STYLE,VG_CAP_BUTT);
- vgSeti(VG_STROKE_JOIN_STYLE,VG_JOIN_MITER);
+ vgSeti(VG_STROKE_CAP_STYLE,cap);
+ vgSeti(VG_STROKE_JOIN_STYLE,join);
 end;
 
 {==============================================================================}
@@ -996,6 +1467,9 @@ var
  SpreadMode:VGColorRampSpreadMode;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Set Defaults}
  MultiMode:=VG_FALSE;
  SpreadMode:=VG_COLOR_RAMP_SPREAD_REPEAT;
@@ -1016,6 +1490,9 @@ var
  LinearCoordinates:array[0..3] of VGfloat;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Setup Coordinates}
  LinearCoordinates[0]:=x1;
  LinearCoordinates[1]:=y1;
@@ -1045,6 +1522,9 @@ var
  RadialCoordinates:array[0..4] of VGfloat;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Setup Coordinates}
  RadialCoordinates[0]:=cx;
  RadialCoordinates[1]:=cy;
@@ -1074,6 +1554,9 @@ var
  Coordinates:array[0..3] of VGint;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Setup Coordinates}
  Coordinates[0]:=x;
  Coordinates[1]:=y;
@@ -1091,6 +1574,9 @@ procedure VGShapesClipEnd; inline;
 {ClipEnd stops limiting drawing area to specified rectangle}
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  vgSeti(VG_SCISSORING,VG_FALSE);
 end;
 
@@ -1143,7 +1629,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesText(x,y:VGfloat;const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer);
+procedure VGShapesText(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
 {Text renders a string of text at a specified location, size, using the specified font glyphs derived
  from http://web.archive.org/web/20070808195131/http://developer.hybrid.fi/font2openvg/renderFont.cpp.txt}
 var 
@@ -1156,6 +1642,12 @@ var
  CharMatrix:array[0..8] of VGfloat;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
+ {Check Font}
+ if f = nil then Exit;
+ 
  {Setup Next}
  NextX:=x;
  
@@ -1208,7 +1700,7 @@ end;
 
 {==============================================================================}
 
-function VGShapesTextWidth(const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer):VGfloat;
+function VGShapesTextWidth(const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 {TextWidth returns the width of a text string at the specified font and size}
 var
  Width:VGfloat;
@@ -1219,6 +1711,9 @@ var
 begin
  {}
  Result:=0;
+ 
+ {Check Font}
+ if f = nil then Exit;
  
  {Setup Width}
  Width:=0.0;
@@ -1248,7 +1743,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesTextMid(x,y:VGfloat;const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer);
+procedure VGShapesTextMid(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
 {TextMid draws text, centered on (x,y)}
 var
  Width:VGfloat;
@@ -1263,7 +1758,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesTextEnd(x,y:VGfloat;const s:UTF8String;const f:TVGShapesFontInfo;pointsize:Integer);
+procedure VGShapesTextEnd(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
 {TextEnd draws text, with its end aligned to (x,y)}
 var
  Width:VGfloat;
@@ -1278,19 +1773,29 @@ end;
 
 {==============================================================================}
 
-function VGShapesTextHeight(const f:TVGShapesFontInfo;pointsize:Integer):VGfloat;
+function VGShapesTextHeight(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 {TextHeight reports a font's height}
 begin
  {}
+ Result:=0;
+ 
+ {Check Font}
+ if f = nil then Exit;
+
  Result:=(f.FontHeight * pointsize) / 65536;
 end;
 
 {==============================================================================}
 
-function VGShapesTextDepth(const f:TVGShapesFontInfo;pointsize:Integer):VGfloat;
+function VGShapesTextDepth(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 {TextDepth reports a font's depth (how far under the baseline it goes)}
 begin
  {}
+ Result:=0;
+ 
+ {Check Font}
+ if f = nil then Exit;
+ 
  Result:=(-f.DescenderHeight * pointsize) / 65536;
 end;
 
@@ -1300,6 +1805,11 @@ function VGShapesNewPath:VGPath; inline;
 {Newpath creates path data}
 begin
  {}
+ Result:=VG_INVALID_HANDLE;
+ 
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
  Result:=vgCreatePath(VG_PATH_FORMAT_STANDARD,VG_PATH_DATATYPE_F,1.0,0.0,0,0,VG_PATH_CAPABILITY_APPEND_TO); {Other capabilities not needed}
 end;
 
@@ -1313,6 +1823,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Append Path}
  vgAppendPathData(Path,2,segments,coords);
@@ -1413,6 +1924,7 @@ begin
  
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Interleave Points}
  VGShapesInterleave(x,y,n,@Points[0]);
@@ -1455,6 +1967,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Rect}
  vguRect(Path,x,y,w,h);
@@ -1476,6 +1989,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Line}
  vguLine(Path,x1,y1,x2,y2);
@@ -1497,6 +2011,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Round Rect}
  vguRoundRect(Path,x,y,w,h,rw,rh);
@@ -1518,6 +2033,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Ellipse}
  vguEllipse(Path,x,y,w,h);
@@ -1548,6 +2064,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Arc}
  vguArc(Path,x,y,w,h,sa,aext,VGU_ARC_OPEN);
@@ -1567,6 +2084,9 @@ var
  ScreenBuffer:Pointer;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  {Allocate Buffer}
  ScreenBuffer:=GetMem(w * h * 4);
  
@@ -1582,17 +2102,20 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesStart(width,height:Integer);
+procedure VGShapesStart(width,height:Integer;transparent:Boolean = False);
 {Start begins the picture, clearing a rectangular region with a specified color}
 var
  Color:TVGShapesColor;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
  {Set Color}
  Color[0]:=1;
  Color[1]:=1;
  Color[2]:=1;
- Color[3]:=1;
+ if transparent then Color[3]:=0 else Color[3]:=1;
 
  {Clear} 
  vgSetfv(VG_CLEAR_COLOR,4,@Color);
@@ -1602,6 +2125,7 @@ begin
  Color[0]:=0;
  Color[1]:=0;
  Color[2]:=0;
+ Color[3]:=1;
  
  {Set Fill and Stroke}
  VGShapesSetFill(Color);
@@ -1619,11 +2143,14 @@ begin
  {}
  Result:=False;
  
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
  {Check Errors}
  if vgGetError <> VG_NO_ERROR then Exit;
  
  {Swap Buffers}
- eglSwapBuffers(VGShapesState.Display,VGShapesState.Surface);
+ eglSwapBuffers(Layers[Current].State.Display,Layers[Current].State.Surface);
  
  {Check Errors}
  if eglGetError <> EGL_SUCCESS then Exit;
@@ -1641,6 +2168,9 @@ begin
  {}
  Result:=False;
  
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
  {Check Errors}
  if vgGetError <> VG_NO_ERROR then Exit;
  
@@ -1651,7 +2181,7 @@ begin
    if Handle <> INVALID_HANDLE_VALUE then
     begin
      {Dump Screen}
-     VGShapesDumpscreen(VGShapesState.ScreenWidth,VGShapesState.ScreenHeight,Handle);
+     VGShapesDumpscreen(Layers[Current].State.ScreenWidth,Layers[Current].State.ScreenHeight,Handle);
      
      {Close File}
      FileClose(Handle);
@@ -1659,7 +2189,7 @@ begin
   end;
  
  {Swap Buffers}
- eglSwapBuffers(VGShapesState.Display,VGShapesState.Surface);
+ eglSwapBuffers(Layers[Current].State.Display,Layers[Current].State.Surface);
  
  {Check Errors}
  if eglGetError <> EGL_SUCCESS then Exit;
@@ -1675,9 +2205,12 @@ var
  Color:TVGShapesColor;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
  VGShapesRGB(r,g,b,Color);
  vgSetfv(VG_CLEAR_COLOR,4,@Color);
- vgClear(0,0,VGShapesState.WindowWidth,VGShapesState.WindowHeight);
+ vgClear(0,0,Layers[Current].State.WindowWidth,Layers[Current].State.WindowHeight);
 end;
 
 {==============================================================================}
@@ -1688,9 +2221,12 @@ var
  Color:TVGShapesColor;
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
  VGShapesRGBA(r,g,b,a,Color);
  vgSetfv(VG_CLEAR_COLOR,4,@Color);
- vgClear(0,0,VGShapesState.WindowWidth,VGShapesState.WindowHeight);
+ vgClear(0,0,Layers[Current].State.WindowWidth,Layers[Current].State.WindowHeight);
 end;
 
 {==============================================================================}
@@ -1699,7 +2235,10 @@ procedure VGShapesWindowClear; inline;
 {WindowClear clears the window to previously set background colour}
 begin
  {}
- vgClear(0,0,VGShapesState.WindowWidth,VGShapesState.WindowHeight);
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
+ vgClear(0,0,Layers[Current].State.WindowWidth,Layers[Current].State.WindowHeight);
 end;
 
 {==============================================================================}
@@ -1708,25 +2247,48 @@ procedure VGShapesAreaClear(x,y,w,h:LongWord); inline;
 {AreaClear clears a given rectangle in window coordinates (not affected by transformations)}
 begin
  {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
  vgClear(x,y,w,h);
 end;
 
 {==============================================================================}
 
-procedure VGShapesWindowOpacity(a:LongWord);
-{WindowOpacity sets the  window opacity}
+procedure VGShapesWindowLayer(layerid:LongInt);
+{WindowLayer changes the layer id of the current window}
 begin
  {}
- DispmanXChangeWindowOpacity(@VGShapesState,a);
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+ 
+ DispmanXChangeWindowLayer(Layers[Current].State,layerid);
+ 
+ Layers[Current].LayerId:=layerid;
+end;
+
+{==============================================================================}
+
+procedure VGShapesWindowOpacity(a:LongWord);
+{WindowOpacity changes the opacity of the current window}
+begin
+ {}
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
+ DispmanXChangeWindowOpacity(Layers[Current].State,a);
 end;
 
 {==============================================================================}
 
 procedure VGShapesWindowPosition(x,y:Integer);
-{WindowPosition moves the window to given position}
+{WindowPosition moves the current window to the given position}
 begin
  {}
- DispmanXMoveWindow(@VGShapesState,x,y);
+ {Check Initialized}
+ if not Layers[Current].Initialized then Exit;
+
+ DispmanXMoveWindow(Layers[Current].State,x,y);
 end;
 
 {==============================================================================}
@@ -1791,6 +2353,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Rect}
  vguRect(Path,x,y,w,h);
@@ -1812,6 +2375,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Round Rect}
  vguRoundRect(Path,x,y,w,h,rw,rh);
@@ -1833,6 +2397,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Ellipse}
  vguEllipse(Path,x,y,w,h);
@@ -1863,6 +2428,7 @@ begin
  {}
  {Create Path}
  Path:=VGShapesNewPath;
+ if Path = VG_INVALID_HANDLE then Exit;
  
  {Create Arc}
  vguArc(Path,x,y,w,h,sa,aext,VGU_ARC_OPEN);
@@ -1874,6 +2440,17 @@ begin
  vgDestroyPath(Path);
 end;
 
+{==============================================================================}
+{==============================================================================}
+
+initialization 
+ InitLayers;
+ 
+{==============================================================================}
+ 
+{finalization}
+ {Nothing}
+ 
 {==============================================================================}
 {==============================================================================}
 
