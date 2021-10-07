@@ -1,7 +1,7 @@
 {
 Ultibo Services interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -595,6 +595,7 @@ type
   FRemoteHost:String;
   FRemotePort:Word;
   FOctetCounting:Boolean;
+  FBroadcastEnabled:Boolean;
   
   FUDPClient:TWinsock2UDPClient;
   FTCPClient:TWinsock2TCPClient;
@@ -609,6 +610,7 @@ type
   procedure SetRemoteHost(const ARemoteHost:String);
   procedure SetRemotePort(ARemotePort:Word);
   procedure SetOctetCounting(AOctetCounting:Boolean);
+  procedure SetBroadcastEnabled(ABroadcastEnabled:Boolean);
  protected
   {Protected Variables}
   
@@ -622,6 +624,7 @@ type
   property RemoteHost:String read GetRemoteHost write SetRemoteHost;
   property RemotePort:Word read FRemotePort write SetRemotePort;
   property OctetCounting:Boolean read FOctetCounting write SetOctetCounting;
+  property BroadcastEnabled:Boolean read FBroadcastEnabled write SetBroadcastEnabled;
   
   {Public Methods}
   function SendMessage(AFacility,ASeverity:LongWord;const ATag,AContent:String):LongWord;
@@ -2489,6 +2492,7 @@ begin
  FRemoteHost:=SYSLOG_SERVER_DEFAULT;
  FRemotePort:=SYSLOG_PORT_DEFAULT;
  FOctetCounting:=SYSLOG_OCTET_COUNTING;
+ FBroadcastEnabled:=SYSLOG_BROADCAST_ENABLED;
  
  FUDPClient:=nil;
  FTCPClient:=nil;
@@ -2703,6 +2707,38 @@ end;
 
 {==============================================================================}
 
+procedure TSyslogClient.SetBroadcastEnabled(ABroadcastEnabled:Boolean);
+begin
+ {}
+ if ABroadcastEnabled = FBroadcastEnabled then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol} 
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FBroadcastEnabled:=ABroadcastEnabled;
+     
+     {Disconnect UDP Client}
+     if FUDPClient <> nil then
+      begin
+       FUDPClient.Disconnect;
+       FUDPClient.BroadcastEnabled:=FBroadcastEnabled;
+      end; 
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FBroadcastEnabled:=ABroadcastEnabled;
+     
+     {Broadcast not applicable to TCP}
+    end;
+  end;
+ finally 
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TSyslogClient.GetPriority(AFacility,ASeverity:LongWord):String;
 var
  Facility:LongWord;
@@ -2770,6 +2806,7 @@ begin
        FUDPClient.BoundPort:=FBoundPort;
        FUDPClient.RemoteHost:=FRemoteHost;
        FUDPClient.RemotePort:=FRemotePort;
+       FUDPClient.BroadcastEnabled:=FBroadcastEnabled;
       end;
 
      Result:=ERROR_OPERATION_FAILED;
@@ -2846,6 +2883,7 @@ procedure ServicesInit;
 var
  Status:LongWord;
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
  WSAData:TWSAData;
  NTPClient:TNTPClient;
@@ -2907,6 +2945,10 @@ begin
  {SYSLOG_OCTET_COUNTING}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_OCTET_COUNTING'),0);
  if WorkInt <> 0 then SYSLOG_OCTET_COUNTING:=True;
+ 
+ {SYSLOG_BROADCAST_ENABLED}
+ WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('SYSLOG_BROADCAST_ENABLED'),SYSLOG_BROADCAST_ENABLED);
+ if WorkBool <> SYSLOG_BROADCAST_ENABLED then SYSLOG_BROADCAST_ENABLED:=WorkBool;
  
  {SYSLOG_REGISTER_LOGGING}
  WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_REGISTER_LOGGING'),0);
