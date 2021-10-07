@@ -1250,6 +1250,7 @@ var
  SYSLOG_PORT_DEFAULT:Word = 514;                          {The default SysLog port}
  SYSLOG_PROTOCOL_DEFAULT:LongWord = LOGGING_PROTOCOL_UDP; {The default SysLog protocol}
  SYSLOG_OCTET_COUNTING:LongBool;                {If True use the Octet Counting method of framing the SysLog message (LOGGING_PROTOCOL_TCP only)(See: RFC6587)}
+ SYSLOG_BROADCAST_ENABLED:LongBool = True;      {If True enable use of a broadcast address for the Syslog server}
  
  SYSLOG_AUTOSTART:LongBool = True;              {If True then auto start the SysLog client on boot (Only if Services unit included)}
  

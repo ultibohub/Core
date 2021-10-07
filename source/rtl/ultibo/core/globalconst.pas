@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '20 September 2021';
+ ULTIBO_RELEASE_DATE             = '7 October 2021';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.1.157';
+ ULTIBO_RELEASE_VERSION          = '2.1.175';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 1;
- ULTIBO_RELEASE_VERSION_REVISION = 157;
+ ULTIBO_RELEASE_VERSION_REVISION = 175;
  
 {==============================================================================}
 const
@@ -980,6 +980,14 @@ const
  BITS_PER_WORD      = 16;
  BITS_PER_LONG      = 32;
  BITS_PER_LONG_LONG = 64;
+
+{==============================================================================}
+const
+ {Universal max constants}
+ MAX_BYTE      = Byte(-1);     {0xFF}
+ MAX_WORD      = Word(-1);     {0xFFFF}
+ MAX_LONG      = LongWord(-1); {0xFFFFFFFF}
+ MAX_LONG_LONG = UInt64(-1);   {0xFFFFFFFFFFFFFFFF}
  
 {==============================================================================}
 const
