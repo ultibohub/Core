@@ -1,7 +1,7 @@
 {
 Ralink RT2800 USB Wireless Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1636,6 +1636,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'RT2800USB: Failed to register RT2800USB driver: ' + USBStatusToString(Status));
+
+     {Destroy Driver}
+     USBDriverDestroy(RT2800USBDriver);
     end;
   end
  else

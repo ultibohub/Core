@@ -1,7 +1,7 @@
 {
 Prolific PL2303 USB to Serial Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -493,6 +493,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'PL2303: Failed to register PL2303 driver: ' + USBStatusToString(Status));
+
+     {Destroy Driver}
+     USBDriverDestroy(PL2303Driver);
     end;
   end
  else

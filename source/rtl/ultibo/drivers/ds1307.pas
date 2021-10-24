@@ -285,11 +285,20 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if RTC_LOG_ENABLED then RTCLogError(nil,'DS1307: Failed to start new RTC device: ' + ErrorToString(Status));
+
+       {Deregister RTC}
+       RTCDeviceDeregister(@DS1307RTC.RTC);
+
+       {Destroy RTC}
+       RTCDeviceDestroy(@DS1307RTC.RTC);
       end;
     end
    else
     begin
      if RTC_LOG_ENABLED then RTCLogError(nil,'DS1307: Failed to register new RTC device: ' + ErrorToString(Status));
+
+     {Destroy RTC}
+     RTCDeviceDestroy(@DS1307RTC.RTC);
     end;
   end
  else 

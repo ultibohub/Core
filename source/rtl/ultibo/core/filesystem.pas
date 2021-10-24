@@ -51848,11 +51848,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to start new filesystem logging device: ' + ErrorToString(Status));
+
+         {Deregister Logging}
+         LoggingDeviceDeregister(@Logging.Logging);
+
+         {Destroy Logging}
+         LoggingDeviceDestroy(@Logging.Logging);
         end;
       end
      else 
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to register new filesystem logging device: ' + ErrorToString(Status));
+
+       {Destroy Logging}
+       LoggingDeviceDestroy(@Logging.Logging);
       end;
     end
    else 

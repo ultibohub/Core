@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL011 UART Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -402,6 +402,9 @@ begin
    else
     begin
      if UART_LOG_ENABLED then UARTLogError(nil,'PL011: Failed to register new UART device: ' + ErrorToString(Status));
+     
+     {Destroy UART}
+     UARTDeviceDestroy(@PL011UART.UART);
     end;
   end
  else 

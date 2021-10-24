@@ -1,7 +1,7 @@
 {
 Realtek 8192CU USB Wireless Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -228,6 +228,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'RTL8192CU: Failed to register RTL8192CU driver: ' + USBStatusToString(Status));
+     
+     {Destroy Driver}
+     USBDriverDestroy(RTL8192CUDriver);
     end;
   end
  else

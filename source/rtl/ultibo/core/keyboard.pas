@@ -813,6 +813,9 @@ begin
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(nil,'Keyboard: Failed to register USB keyboard driver: ' + USBStatusToString(Status));
+
+       {Destroy Driver}
+       USBDriverDestroy(USBKeyboardDriver);
       end;
     end
    else

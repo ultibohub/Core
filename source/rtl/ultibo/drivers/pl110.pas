@@ -345,11 +345,20 @@ begin
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+       
+       {Deregister Framebuffer}
+       FramebufferDeviceDeregister(@PL110Framebuffer.Framebuffer);
+       
+       {Destroy Framebuffer}
+       FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
       end;
     end
    else
     begin     
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+     {Destroy Framebuffer}
+     FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
     end;
   end
  else
@@ -450,11 +459,20 @@ begin
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+
+       {Deregister Framebuffer}
+       FramebufferDeviceDeregister(@PL110Framebuffer.Framebuffer);
+       
+       {Destroy Framebuffer}
+       FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
       end;
     end
    else
     begin     
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+     {Destroy Framebuffer}
+     FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
     end;
   end
  else

@@ -1,7 +1,7 @@
 {
 ILITEK ILI9340 TFT LCD Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -316,11 +316,20 @@ begin
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'ILI9340: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+
+       {Deregister Framebuffer}
+       FramebufferDeviceDeregister(@ILI9340Framebuffer.TFT.Framebuffer);
+
+       {Destroy Framebuffer}
+       FramebufferDeviceDestroy(@ILI9340Framebuffer.TFT.Framebuffer);
       end;
     end
    else
     begin     
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'ILI9340: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+     {Destroy Framebuffer}
+     FramebufferDeviceDestroy(@ILI9340Framebuffer.TFT.Framebuffer);
     end;
   end
  else

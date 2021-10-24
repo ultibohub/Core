@@ -1820,6 +1820,9 @@ begin
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(nil,'Failed to register USB hub driver: ' + USBStatusToString(Status));
+
+       {Destroy Driver}
+       USBDriverDestroy(USBHubDriver);
       end;
     end
    else

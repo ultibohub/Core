@@ -1,7 +1,7 @@
 {
 Ultibo QEMU VersatilePB unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -243,11 +243,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to start new clock device: ' + ErrorToString(Status));
+         
+         {Deregister Clock}
+         ClockDeviceDeregister(VersatilePBClock);
+         
+         {Destroy Clock} 
+         ClockDeviceDestroy(VersatilePBClock);
         end;
       end
      else 
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to register new clock device: ' + ErrorToString(Status));
+      
+       {Destroy Clock} 
+       ClockDeviceDestroy(VersatilePBClock);
       end;
     end
    else 

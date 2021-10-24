@@ -1,7 +1,7 @@
 {
 SMSC 91C9x/91C1xx Ethernet Driver.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -582,6 +582,9 @@ begin
    else
     begin
      if NETWORK_LOG_ENABLED then NetworkLogError(nil,'SMC91X: Failed to register new Network device: ' + ErrorToString(Status));
+     
+     {Destroy Network}
+     NetworkDeviceDestroy(@SMC91XNetwork.Network);
     end;
   end
  else 

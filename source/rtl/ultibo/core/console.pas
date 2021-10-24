@@ -12651,11 +12651,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Console: Failed to open new framebuffer console device: ' + ErrorToString(Status));
+
+         {Deregister Console}
+         ConsoleDeviceDeregister(@Console.Console);
+
+         {Destroy Console}
+         ConsoleDeviceDestroy(@Console.Console);
         end;
       end
      else 
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Console: Failed to register new framebuffer console device: ' + ErrorToString(Status));
+
+       {Destroy Console}
+       ConsoleDeviceDestroy(@Console.Console);
       end;
     end
    else

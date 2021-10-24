@@ -1087,6 +1087,9 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(nil,'DWCOTG: Failed to register new USB host: ' + ErrorToString(Status));
+       
+       {Destroy Host}
+       USBHostDestroy(@DWCHost.Host);
       end;
     end
    else

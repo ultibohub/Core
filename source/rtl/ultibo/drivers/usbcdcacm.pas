@@ -1,7 +1,7 @@
 {
 USB CDC ACM Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -368,6 +368,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'CDC ACM: Failed to register CDC ACM driver: ' + USBStatusToString(Status));
+     
+     {Destroy Driver}
+     USBDriverDestroy(CDCACMDriver);
     end;
   end
  else

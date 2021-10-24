@@ -105,6 +105,9 @@ var
  {Physical to Bus Address Mapping}
  BUS_ALIAS:PtrUInt;                {The mask for conversion from a Physical Address to a Bus Address and back (Where Applicable)}
 
+ {IO Base Mapping}
+ IO_LIMIT:UInt64;                  {The maximum range for an IO Address (Where Applicable)}
+
 {==============================================================================}
 var
  {Secure Boot}
@@ -704,6 +707,8 @@ var
  PCI_AUTOSTART:LongBool = True;        {If True then auto start the PCI subsystem on boot (Only if PCI unit included)}
  PCI_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
  PCI_STARTDELAY:LongWord = 0;          {Number of milliseconds to delay starting the PCI subsystem on boot (Only if PCI_ASYNCSTART is True)}
+
+ PCI_SCAN_ALL_PCIE_DEVICES:LongBool;   {If True then PCI device scan will scan all PCIe slots instead of just slot 0}
  
  {USB}
  USB_AUTOSTART:LongBool = True;        {If True then auto start the USB subsystem on boot (Only if USB unit included)}
@@ -758,6 +763,7 @@ var
  {EHCI}
  
  {XHCI}
+ XHCI_REGISTER_DRIVER:LongBool = True;      {If True then register the XHCI PCI driver during boot (Only if XHCI unit included)}
  
  {AHCI}
  

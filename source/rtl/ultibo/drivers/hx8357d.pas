@@ -1,7 +1,7 @@
 {
 Himax HX8357D TFT LCD Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -328,11 +328,20 @@ begin
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'HX8357D: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+
+       {Deregister Framebuffer}
+       FramebufferDeviceDeregister(@HX8357DFramebuffer.TFT.Framebuffer);
+
+       {Destroy Framebuffer}
+       FramebufferDeviceDestroy(@HX8357DFramebuffer.TFT.Framebuffer);
       end;
     end
    else
     begin     
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'HX8357D: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+     {Destroy Framebuffer}
+     FramebufferDeviceDestroy(@HX8357DFramebuffer.TFT.Framebuffer);
     end;
   end
  else

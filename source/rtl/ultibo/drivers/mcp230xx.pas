@@ -1,7 +1,7 @@
 {
 Microchip MCP230XX I/O expander Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====

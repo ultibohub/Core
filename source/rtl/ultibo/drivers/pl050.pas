@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL050 PS2 Keyboard/Mouse Interface Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -387,6 +387,9 @@ begin
    else
     begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'PL050: Failed to register new Keyboard device: ' + ErrorToString(Status));
+    
+     {Destroy Keyboard}
+     KeyboardDeviceDestroy(@PL050Keyboard.Keyboard);
     end;
   end
  else 
@@ -547,6 +550,9 @@ begin
    else
     begin
      if MOUSE_LOG_ENABLED then MouseLogError(nil,'PL050: Failed to register new Mouse device: ' + ErrorToString(Status));
+
+     {Destroy Mouse}
+     MouseDeviceDestroy(@PL050Mouse.Mouse);
     end;
   end
  else 

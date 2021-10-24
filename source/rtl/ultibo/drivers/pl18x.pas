@@ -686,9 +686,17 @@ begin
  
    {Register SDHCI}
    Status:=SDHCIHostRegister(@PL18XSDHCI.SDHCI);
-   if Status <> ERROR_SUCCESS then
+   if Status = ERROR_SUCCESS then
+    begin
+     {Return Result}
+     Result:=PSDHCIHost(PL18XSDHCI);
+    end
+   else 
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'PL180: Failed to register new SDHCI host: ' + ErrorToString(Status));
+
+     {Destroy SDHCI}
+     SDHCIHostDestroy(@PL18XSDHCI.SDHCI);
     end;
   end
  else 
@@ -788,9 +796,17 @@ begin
  
    {Register SDHCI}
    Status:=SDHCIHostRegister(@PL18XSDHCI.SDHCI);
-   if Status <> ERROR_SUCCESS then
+   if Status = ERROR_SUCCESS then
+    begin
+     {Return Result}
+     Result:=PSDHCIHost(PL18XSDHCI);
+    end
+   else 
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'PL181: Failed to register new SDHCI host: ' + ErrorToString(Status));
+
+     {Destroy SDHCI}
+     SDHCIHostDestroy(@PL18XSDHCI.SDHCI);
     end;
   end
  else 

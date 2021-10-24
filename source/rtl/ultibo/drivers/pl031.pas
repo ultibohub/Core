@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL031 Real Time Clock Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -225,6 +225,9 @@ begin
    else
     begin
      if RTC_LOG_ENABLED then RTCLogError(nil,'PL031: Failed to register new RTC device: ' + ErrorToString(Status));
+     
+     {Destroy RTC}
+     RTCDeviceDestroy(@PL031RTC.RTC);
     end;
   end
  else 

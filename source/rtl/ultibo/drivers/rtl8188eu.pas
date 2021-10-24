@@ -1,7 +1,7 @@
 {
 Realtek 8188EU USB Wireless Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -141,6 +141,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'RTL8188EU: Failed to register RTL8188EU driver: ' + USBStatusToString(Status));
+     
+     {Destroy Driver}
+     USBDriverDestroy(RTL8188EUDriver);
     end;
   end
  else

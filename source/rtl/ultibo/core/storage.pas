@@ -541,6 +541,9 @@ begin
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(nil,'Storage: Failed to register USB storage driver: ' + USBStatusToString(Status));
+
+       {Destroy Driver}
+       USBDriverDestroy(USBStorageDriver);
       end;
     end
    else

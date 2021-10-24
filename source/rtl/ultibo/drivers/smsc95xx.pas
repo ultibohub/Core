@@ -1,7 +1,7 @@
 {
 SMSC LAN95xx USB Ethernet Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -581,6 +581,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'SMSC95XX: Failed to register SMSC95XX driver: ' + USBStatusToString(Status));
+
+     {Destroy Driver}
+     USBDriverDestroy(SMSC95XXDriver);
     end;
   end
  else

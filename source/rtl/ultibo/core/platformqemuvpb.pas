@@ -907,11 +907,20 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+
+       {Deregister Framebuffer}
+       FramebufferDeviceDeregister(@PL110Framebuffer.Framebuffer);
+
+       {Destroy Framebuffer}
+       FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
       end;
     end
    else
     begin     
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+     {Destroy Framebuffer}
+     FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
     end;
   end
  else

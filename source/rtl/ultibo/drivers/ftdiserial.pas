@@ -1,7 +1,7 @@
 {
 FTDI USB to Serial Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2445,6 +2445,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'FTDI Serial: Failed to register FTDI Serial driver: ' + USBStatusToString(Status));
+
+     {Destroy Driver}
+     USBDriverDestroy(FTDISerialDriver);
     end;
   end
  else

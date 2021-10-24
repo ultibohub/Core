@@ -474,6 +474,9 @@ begin
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(nil,'Mouse: Failed to register USB mouse driver: ' + USBStatusToString(Status));
+
+       {Destroy Driver}
+       USBDriverDestroy(USBMouseDriver);
       end;
     end
    else

@@ -1505,11 +1505,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+
+         {Deregister Framebuffer}
+         FramebufferDeviceDeregister(@RPiFramebuffer.Framebuffer);
+
+         {Destroy Framebuffer}
+         FramebufferDeviceDestroy(@RPiFramebuffer.Framebuffer);
         end;
       end
      else
       begin     
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Platform: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+       {Destroy Framebuffer}
+       FramebufferDeviceDestroy(@RPiFramebuffer.Framebuffer);
       end;
     end
    else 

@@ -434,9 +434,17 @@ begin
 
    {Register SDHCI}
    Status:=SDHCIHostRegister(@BCMSDHOSTHost.SDHCI);
-   if Status <> ERROR_SUCCESS then
+   if Status = ERROR_SUCCESS then
+    begin
+     {Return Result}
+     Result:=PSDHCIHost(BCMSDHOSTHost);
+    end
+   else 
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Failed to register SD host controller: ' + ErrorToString(Status));
+     
+     {Destroy SDHCI}
+     SDHCIHostDestroy(@BCMSDHOSTHost.SDHCI);
     end;
   end
  else

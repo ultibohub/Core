@@ -1396,6 +1396,9 @@ procedure BCM2711Init;
     if Status <> ERROR_SUCCESS then
      begin
       if SPI_LOG_ENABLED then SPILogError(nil,'BCM2711: Failed to register new SPI0 device: ' + ErrorToString(Status));
+
+      {Destroy SPI0}
+      SPIDeviceDestroy(@BCM2711SPI0.SPI);
      end;
    end
   else 
@@ -1449,6 +1452,9 @@ procedure BCM2711Init;
     if Status <> ERROR_SUCCESS then
      begin
       if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2711: Failed to register new I2C0 device: ' + ErrorToString(Status));
+
+      {Destroy I2C0}
+      I2CDeviceDestroy(@BCM2711I2C0.I2C);
      end;
    end
   else 
@@ -1505,6 +1511,9 @@ procedure BCM2711Init;
     if Status <> ERROR_SUCCESS then
      begin
       if PWM_LOG_ENABLED then PWMLogError(nil,'BCM2711: Failed to register new PWM0_0 device: ' + ErrorToString(Status));
+
+      {Destroy PWM0_0}
+      PWMDeviceDestroy(@BCM2711PWM0_0.PWM);
      end;
    end
   else 
@@ -1554,6 +1563,9 @@ procedure BCM2711Init;
     if Status <> ERROR_SUCCESS then
      begin
       if PWM_LOG_ENABLED then PWMLogError(nil,'BCM2711: Failed to register new PWM0_1 device: ' + ErrorToString(Status));
+
+      {Destroy PWM0_1}
+      PWMDeviceDestroy(@BCM2711PWM0_1.PWM);
      end;
    end
   else 
@@ -1618,6 +1630,9 @@ procedure BCM2711Init;
     if Status <> ERROR_SUCCESS then
      begin
       if UART_LOG_ENABLED then UARTLogError(nil,'BCM2711: Failed to register new UART0 device: ' + ErrorToString(Status));
+
+      {Destroy UART0}
+      UARTDeviceDestroy(@BCM2711UART0.UART);
      end;
    end
   else 
@@ -1799,11 +1814,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DMA_LOG_ENABLED then DMALogError(nil,'BCM2711: Failed to start new DMA host: ' + ErrorToString(Status));
+
+         {Deregister DMA}
+         DMAHostDeregister(@BCM2711DMAHost.DMA);
+
+         {Destroy DMA}
+         DMAHostDestroy(@BCM2711DMAHost.DMA);
         end;
       end
      else
       begin
        if DMA_LOG_ENABLED then DMALogError(nil,'BCM2711: Failed to register new DMA host: ' + ErrorToString(Status));
+
+       {Destroy DMA}
+       DMAHostDestroy(@BCM2711DMAHost.DMA);
       end;
     end
    else 
@@ -1867,11 +1891,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if GPIO_LOG_ENABLED then GPIOLogError(nil,'BCM2711: Failed to start new GPIO device: ' + ErrorToString(Status));
+
+         {Deregister GPIO}
+         GPIODeviceDeregister(@BCM2711GPIO.GPIO);
+
+         {Destroy GPIO}
+         GPIODeviceDestroy(@BCM2711GPIO.GPIO);
         end;
       end
      else
       begin
        if GPIO_LOG_ENABLED then GPIOLogError(nil,'BCM2711: Failed to register new GPIO device: ' + ErrorToString(Status));
+
+       {Destroy GPIO}
+       GPIODeviceDestroy(@BCM2711GPIO.GPIO);
       end;
     end
    else 
@@ -2057,6 +2090,9 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to register SDHCI controller: ' + ErrorToString(Status));
+
+       {Destroy SDHCI}
+       SDHCIHostDestroy(@BCM2711EMMC0Host.SDHCI);
       end;
     end
    else 
@@ -2125,6 +2161,9 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if MMC_LOG_ENABLED then MMCLogError(nil,'BCM2711: Failed to register SDHCI controller: ' + ErrorToString(Status));
+
+       {Destroy SDHCI}
+       SDHCIHostDestroy(@BCM2711EMMC2Host.SDHCI);
       end;
     end
    else 
@@ -2165,11 +2204,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to start new clock device: ' + ErrorToString(Status));
+
+         {Destroy Deregister}
+         ClockDeviceDeregister(@BCM2711SystemClock.Clock);
+
+         {Destroy Clock}
+         ClockDeviceDestroy(@BCM2711SystemClock.Clock);
         end;
       end
      else 
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to register new clock device: ' + ErrorToString(Status));
+
+       {Destroy Clock}
+       ClockDeviceDestroy(@BCM2711SystemClock.Clock);
       end;
     end
    else 
@@ -2211,6 +2259,9 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to register new clock device: ' + ErrorToString(Status));
+
+       {Destroy Clock}
+       ClockDeviceDestroy(@BCM2711ARMClock.Clock);
       end;
     end
    else 
@@ -2260,6 +2311,9 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to register new timer device: ' + ErrorToString(Status));
+
+       {Destroy Timer}
+       TimerDeviceDestroy(@BCM2711ARMTimer.Timer);
       end;
     end
    else 
@@ -2304,11 +2358,20 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to start new random device: ' + ErrorToString(Status));
+
+         {Deregister Random}
+         RandomDeviceDeregister(@BCM2711Random.Random);
+
+         {Destroy Random}
+         RandomDeviceDestroy(@BCM2711Random.Random);
         end;
       end
      else 
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to register new random device: ' + ErrorToString(Status));
+
+       {Destroy Random}
+       RandomDeviceDestroy(@BCM2711Random.Random);
       end;
     end
    else 
@@ -2349,6 +2412,9 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to register new watchdog device: ' + ErrorToString(Status));
+
+       {Destroy Watchdog}
+       WatchdogDeviceDestroy(@BCM2711Watchdog.Watchdog);
       end;
     end
    else 
@@ -2423,11 +2489,20 @@ begin
            if Status <> ERROR_SUCCESS then
             begin
              if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+
+             {Deregister Framebuffer}
+             FramebufferDeviceDeregister(@BCM2711Framebuffer.Framebuffer);
+
+             {Destroy Framebuffer}
+             FramebufferDeviceDestroy(@BCM2711Framebuffer.Framebuffer);
             end;
           end
          else
           begin     
            if DEVICE_LOG_ENABLED then DeviceLogError(nil,'BCM2711: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+           {Destroy Framebuffer}
+           FramebufferDeviceDestroy(@BCM2711Framebuffer.Framebuffer);
           end;
         end
        else 

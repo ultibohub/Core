@@ -1,7 +1,7 @@
 {
 Microchip LAN78xx USB Ethernet Driver.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1324,6 +1324,9 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'LAN78XX: Failed to register LAN78XX driver: ' + USBStatusToString(Status));
+
+     {Destroy Driver}
+     USBDriverDestroy(LAN78XXDriver);
     end;
   end
  else

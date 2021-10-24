@@ -1,7 +1,7 @@
 {
 Raspberry Pi Sense HAT Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -575,11 +575,20 @@ begin
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'RPiSenseHat: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
+       
+       {Deregister Framebuffer}
+       FramebufferDeviceDeregister(@RPiSenseFramebuffer.Framebuffer);
+       
+       {Destroy Framebuffer}
+       FramebufferDeviceDestroy(@RPiSenseFramebuffer.Framebuffer);
       end;
     end
    else
     begin     
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'RPiSenseHat: Failed to register new framebuffer device: ' + ErrorToString(Status));
+
+     {Destroy Framebuffer}
+     FramebufferDeviceDestroy(@RPiSenseFramebuffer.Framebuffer);
     end;
   end
  else
@@ -1587,6 +1596,9 @@ begin
    else
     begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'RPiSenseHat: Failed to register new Joystick device: ' + ErrorToString(Status));
+     
+     {Destroy Keyboard}
+     KeyboardDeviceDestroy(@RPiSenseJoystick.Keyboard);
     end;
   end
  else 

@@ -1230,6 +1230,9 @@ begin
    else
     begin
      if NETWORK_LOG_ENABLED then NetworkLogError(nil,'GENET: Failed to register new Network device: ' + ErrorToString(Status));
+
+     {Destroy Network}
+     NetworkDeviceDestroy(@GENETNetwork.Network);
     end;
   end
  else
