@@ -787,6 +787,8 @@ var
  {BRCMSTB}
  BRCMSTB_ENABLE_SSC:LongBool = True;        {Enable Spread Spectrum Clocking for the BRCMSTB PCI host}
  BRCMSTB_ENABLE_L1SS:LongBool;              {Enable L1 Substate control of the CLKREQ signal for the BRCMSTB PCI host}
+ BRCMSTB_MAX_LINK_SPEED:LongWord;           {Limit the BRCMSTB PCI host to a specific link speed (1, 2, 3 or 4)}
+ BRCMSTB_NOASPM_L0S:LongBool;               {Disable L0s mode for Active State Power Management for the BRCMSTB PCI host}
  
  {LAN78XX (Microchip LAN78XX USB Gigabit Ethernet)}
  LAN78XX_MAC_ADDRESS:String;                {The preconfigured MAC address for a LAN78XX device}

@@ -1192,7 +1192,7 @@ const
  BCM2836_MBOX_TAG_RELEASE_BUFFER	= $00048001; {Releases and disables the frame buffer}
 
  BCM2836_MBOX_TAG_SET_BLANK_SCREEN  = $00040002;
- BCM2836_MBOX_TAG_TST_BLANK_SCREEN  = $00044002;
+ BCM2836_MBOX_TAG_TEST_BLANK_SCREEN = $00044002; {Previously BCM2836_MBOX_TAG_TST_BLANK_SCREEN}
 
  BCM2836_MBOX_TAG_GET_PHYSICAL_W_H	= $00040003; {Note that the "physical (display)" size is the size of the allocated buffer in memory, not the resolution of the video signal sent to the display device}
  BCM2836_MBOX_TAG_TEST_PHYSICAL_W_H	= $00044003;
@@ -1215,7 +1215,7 @@ const
  BCM2836_MBOX_TAG_SET_ALPHA_MODE	= $00048007;
 
  BCM2836_MBOX_TAG_GET_PITCH		    = $00040008;
- BCM2836_MBOX_TAG_TST_PITCH         = $00044008;
+ BCM2836_MBOX_TAG_TEST_PITCH        = $00044008; {Previously BCM2836_MBOX_TAG_TST_PITCH}
  BCM2836_MBOX_TAG_SET_PITCH         = $00048008;
  
  BCM2836_MBOX_TAG_GET_VIRTUAL_OFFSET	= $00040009; {Offset of physical display window within virtual buffer}
@@ -1230,24 +1230,24 @@ const
  BCM2836_MBOX_TAG_TEST_PALETTE		= $0004400b;
  BCM2836_MBOX_TAG_SET_PALETTE		= $0004800b;
 
+ BCM2836_MBOX_TAG_GET_LAYER         = $0004000c;
+ BCM2836_MBOX_TAG_TEST_LAYER        = $0004400c; {Previously BCM2836_MBOX_TAG_TST_LAYER}
+ BCM2836_MBOX_TAG_SET_LAYER         = $0004800c;
+ 
+ BCM2836_MBOX_TAG_GET_TRANSFORM     = $0004000d;
+ BCM2836_MBOX_TAG_TEST_TRANSFORM    = $0004400d; {Previously BCM2836_MBOX_TAG_TST_TRANSFORM}
+ BCM2836_MBOX_TAG_SET_TRANSFORM     = $0004800d;
+ 
+ BCM2836_MBOX_TAG_TEST_VSYNC        = $0004400e; {Previously BCM2836_MBOX_TAG_TST_VSYNC}
+ BCM2836_MBOX_TAG_SET_VSYNC         = $0004800e;
+ 
+ BCM2836_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
+ 
  BCM2836_MBOX_TAG_GET_TOUCHBUF      = $0004000f;
  BCM2836_MBOX_TAG_SET_TOUCHBUF      = $0004801f;
  
  BCM2836_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
  BCM2836_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
- 
- BCM2836_MBOX_TAG_GET_LAYER         = $0004000c;
- BCM2836_MBOX_TAG_TST_LAYER         = $0004400c;
- BCM2836_MBOX_TAG_SET_LAYER         = $0004800c;
- 
- BCM2836_MBOX_TAG_GET_TRANSFORM     = $0004000d;
- BCM2836_MBOX_TAG_TST_TRANSFORM     = $0004400d;
- BCM2836_MBOX_TAG_SET_TRANSFORM     = $0004800d;
- 
- BCM2836_MBOX_TAG_TST_VSYNC         = $0004400e;
- BCM2836_MBOX_TAG_SET_VSYNC         = $0004800e;
- 
- BCM2836_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
  
  BCM2836_MBOX_TAG_GET_DISPLAY_ID       = $00040016;
  BCM2836_MBOX_TAG_SET_DISPLAY_NUM      = $00048013;
@@ -3161,6 +3161,41 @@ type
   case Integer of
   0:(Request:TBCM2836MailboxTagPaletteRequest);
   1:(Response:TBCM2836MailboxTagPaletteResponse);
+ end;
+
+ {Get Layer}
+ TBCM2836MailboxTagLayerRequest = record
+  Layer:LongInt;
+ end;
+
+ TBCM2836MailboxTagLayerResponse = record
+  Layer:LongInt; 
+ end;
+
+ PBCM2836MailboxTagGetLayer = ^TBCM2836MailboxTagGetLayer;
+ TBCM2836MailboxTagGetLayer = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagNoRequest);
+  1:(Response:TBCM2836MailboxTagLayerResponse);
+ end;
+ 
+ {Test Layer}
+ PBCM2836MailboxTagTestLayer = ^TBCM2836MailboxTagTestLayer;
+ TBCM2836MailboxTagTestLayer = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagLayerRequest);
+  1:(Response:TBCM2836MailboxTagLayerResponse);
+ end;
+ 
+ {Set Layer}
+ PBCM2836MailboxTagSetLayer = ^TBCM2836MailboxTagSetLayer;
+ TBCM2836MailboxTagSetLayer = record
+  Header:TBCM2836MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2836MailboxTagLayerRequest);
+  1:(Response:TBCM2836MailboxTagLayerResponse);
  end;
 
  {Get Touch Buffer}

@@ -401,6 +401,7 @@ procedure DeviceTreeSplitNodeName(Handle:THandle;var NodeName,UnitAddress:String
 
 function DeviceTreeGetNodeParent(Handle:THandle):THandle;
 function DeviceTreeGetNodeRegCells(Handle:THandle;var Address,Size:LongWord):Boolean;
+function DeviceTreeGetNodeRangeCells(Handle:THandle;var ParentAddress,NodeAddress,NodeSize:LongWord):Boolean;
 
 function DeviceTreeGetPropertyName(Handle:THandle):String;
 procedure DeviceTreeSplitPropertyName(Handle:THandle;var UniquePrefix,PropertyName:String);
@@ -1322,6 +1323,88 @@ end;
 
 {==============================================================================}
 
+function DeviceTreeGetNodeRangeCells(Handle:THandle;var ParentAddress,NodeAddress,NodeSize:LongWord):Boolean;
+{Get the #address-cells and #size-cells values that apply to range properties of the specified node}
+{Handle: The handle of the node to get the cell sizes for}
+{ParentAddress: The #address-cells value from the parent on return (or the default value if not found)}
+{NodeAddress: The #address-cells value from this node on return (or the default value if not found)}
+{NodeSize: The #size-cells value from this node on return (or the default value if not found)}
+{Return: True if the cell sizes were found or False if the node was not valid}
+
+{Note: Range properties use the address value from the parent node and the address and size values
+       from the node itself to determine the size of each range}
+       
+{Note: Used by early stage boot stage processing which must limit the use of strings
+       and other memory allocations. This function uses a memory compare for names}
+var
+ Name:PChar;
+ SizeFound:Boolean;
+ AddressFound:Boolean;
+ ParentSize:LongWord;
+ NextProperty:THandle;
+ DTBHeader:PDTBHeader;
+ DTBProperty:PDTBPropertyLongWord;
+begin
+ {}
+ Result:=False;
+ 
+ {Set Defaults (As per Device Tree Specification 0.2}
+ ParentAddress:=2;
+ NodeAddress:=2;
+ ParentSize:=1;
+ NodeSize:=1;
+ 
+ {$IF DEFINED(DEVICE_TREE_DEBUG) or DEFINED(PLATFORM_DEBUG)}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('DeviceTree Get Node Range Cells (Handle=' + HandleToHex(Handle) + ')');
+ {$ENDIF}
+ 
+ {Check Handle}
+ if (Handle = 0) or (Handle = INVALID_HANDLE_VALUE) then Exit;
+ 
+ {Get Header}
+ DTBHeader:=PDTBHeader(DEVICE_TREE_BASE);
+ 
+ {Get Start}
+ AddressFound:=False;
+ SizeFound:=False;
+ 
+ {Get First Property}
+ NextProperty:=DeviceTreeNextProperty(Handle,INVALID_HANDLE_VALUE);
+ while NextProperty <> INVALID_HANDLE_VALUE do
+  begin
+   {Get Property}
+   DTBProperty:=PDTBPropertyLongWord(DEVICE_TREE_BASE + PtrUInt(NextProperty));
+     
+   {Get Name}
+   Name:=PChar(DEVICE_TREE_BASE + LongWordBEtoN(DTBHeader.StringsOffset) + LongWordBEtoN(DTBProperty.NameOffset));
+
+   {Compare Name}
+   if CompareMem(Name,@DTB_PROPERTY_ADDRESS_CELLS[1],Length(DTB_PROPERTY_ADDRESS_CELLS)) then
+    begin
+     {Get Node Address Cells}
+     NodeAddress:=LongWordBEtoN(DTBProperty.Value[0]);
+     AddressFound:=True;
+    end
+   else if CompareMem(Name,@DTB_PROPERTY_SIZE_CELLS[1],Length(DTB_PROPERTY_SIZE_CELLS)) then 
+    begin
+     {Get Node Size Cells}
+     NodeSize:=LongWordBEtoN(DTBProperty.Value[0]);
+     SizeFound:=True;
+    end;
+  
+   {Check Results} 
+   if AddressFound and SizeFound then Break;
+  
+   {Get Next Property}
+   NextProperty:=DeviceTreeNextProperty(Handle,NextProperty);
+  end;
+  
+ {Get Parent Address Cells} 
+ Result:=DeviceTreeGetNodeRegCells(Handle,ParentAddress,ParentSize);
+end;
+
+{==============================================================================}
+
 function DeviceTreeGetPropertyName(Handle:THandle):String;
 {Get the name of the specified property}
 {Handle: The handle of the property to get the name of}
@@ -1442,7 +1525,7 @@ var
  DTBProperty:PDTBProperty;
 begin
  {}
- Result:=LongWord(-1);
+ Result:=MAX_LONG;
  
  {$IF DEFINED(DEVICE_TREE_DEBUG) or DEFINED(PLATFORM_DEBUG)}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('DeviceTree Get Property Length (Handle=' + HandleToHex(Handle) + ')');
@@ -1599,7 +1682,7 @@ begin
  
  {Get Property Length}
  Len:=DeviceTreeGetPropertyLength(DTBProperty);
- if Len = LongWord(-1) then Exit;
+ if Len = MAX_LONG then Exit;
  if Len > Size then
   begin
    {Update Size}
@@ -2245,7 +2328,7 @@ begin
  
  {Get Size}
  Size:=DeviceTreeGetPropertyLength(Handle);
- if Size = LongWord(-1) then Exit;
+ if Size = MAX_LONG then Exit;
  if Size > 0 then
   begin
    {Get Value}

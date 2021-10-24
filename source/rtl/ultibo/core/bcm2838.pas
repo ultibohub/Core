@@ -42,17 +42,8 @@ Credits
  //RPI_FIRMWARE_GET_DISPLAY_CFG =                        0x00040018,
  //RPI_FIRMWARE_SET_DISPLAY_POWER =		                 0x00048019,
 
- //RPI_FIRMWARE_FRAMEBUFFER_GET_LAYER =                  0x0004000c,
- //RPI_FIRMWARE_FRAMEBUFFER_GET_TRANSFORM =              0x0004000d,
- //RPI_FIRMWARE_FRAMEBUFFER_GET_VSYNC =                  0x0004000e, 
+ //RPI_FIRMWARE_FRAMEBUFFER_GET_VSYNC =                  0x0004000e, <<---- 
 
- //RPI_FIRMWARE_FRAMEBUFFER_TEST_LAYER =                 0x0004400c,
- //RPI_FIRMWARE_FRAMEBUFFER_TEST_TRANSFORM =             0x0004400d,
-
- //RPI_FIRMWARE_FRAMEBUFFER_SET_LAYER =                  0x0004800c,
- //RPI_FIRMWARE_FRAMEBUFFER_SET_TRANSFORM =              0x0004800d,
- 
- //RPI_FIRMWARE_GET_CLOCK_MEASURED =                     0x00030047, <<----
  //RPI_FIRMWARE_NOTIFY_REBOOT =                          0x00030048, <<----
  
  //RPI_FIRMWARE_GET_STC =                                0x0003000b, <<----
@@ -111,13 +102,15 @@ const
  BCM2838_EXT_PERIPHERALS_BASE = $FC000000;  {Mapped to VC legacy address 7C000000}
  BCM2838_EXT_PERIPHERALS_SIZE = SIZE_32M;
  
- {Physical memory address of BCM2839 PCIe address space}
+ {Physical memory address of BCM2838 PCIe address space}
  BCM2838_PCI_ADDRESS_BASE = $600000000;
- BCM2838_PCI_ADDRESS_SIZE = SIZE_64M;
  
  {Address of PCI outbound address space (Mapped to Physical PCIe address space)}
  BCM2838_PCI_OUTBOUND_BASE = $F8000000;
  BCM2838_PCI_OUTBOUND_SIZE = SIZE_64M;
+
+ {Physical memory address of BCM2838 PCIe DMA range}
+ BCM2838_PCI_DMA_RANGE_BASE = $400000000;
 
  {Address of PCI inbound address space}
  BCM2838_PCI_INBOUND_BASE = $00000000;
@@ -1727,7 +1720,7 @@ const
  BCM2838_MBOX_TAG_RELEASE_BUFFER	= $00048001; {Releases and disables the frame buffer}
 
  BCM2838_MBOX_TAG_SET_BLANK_SCREEN  = $00040002;
- BCM2838_MBOX_TAG_TST_BLANK_SCREEN  = $00044002;
+ BCM2838_MBOX_TAG_TEST_BLANK_SCREEN = $00044002; {Previously BCM2838_MBOX_TAG_TST_BLANK_SCREEN}
 
  BCM2838_MBOX_TAG_GET_PHYSICAL_W_H	= $00040003; {Note that the "physical (display)" size is the size of the allocated buffer in memory, not the resolution of the video signal sent to the display device}
  BCM2838_MBOX_TAG_TEST_PHYSICAL_W_H	= $00044003;
@@ -1750,7 +1743,7 @@ const
  BCM2838_MBOX_TAG_SET_ALPHA_MODE	= $00048007;
 
  BCM2838_MBOX_TAG_GET_PITCH		    = $00040008;
- BCM2838_MBOX_TAG_TST_PITCH         = $00044008;
+ BCM2838_MBOX_TAG_TEST_PITCH        = $00044008; {Previously BCM2838_MBOX_TAG_TST_PITCH}
  BCM2838_MBOX_TAG_SET_PITCH         = $00048008;
  
  BCM2838_MBOX_TAG_GET_VIRTUAL_OFFSET	= $00040009; {Offset of physical display window within virtual buffer}
@@ -1765,24 +1758,24 @@ const
  BCM2838_MBOX_TAG_TEST_PALETTE		= $0004400b;
  BCM2838_MBOX_TAG_SET_PALETTE		= $0004800b;
 
+ BCM2838_MBOX_TAG_GET_LAYER         = $0004000c;
+ BCM2838_MBOX_TAG_TEST_LAYER        = $0004400c; {Previously BCM2838_MBOX_TAG_TST_LAYER}
+ BCM2838_MBOX_TAG_SET_LAYER         = $0004800c;
+ 
+ BCM2838_MBOX_TAG_GET_TRANSFORM     = $0004000d;
+ BCM2838_MBOX_TAG_TEST_TRANSFORM    = $0004400d; {Previously BCM2838_MBOX_TAG_TST_TRANSFORM}
+ BCM2838_MBOX_TAG_SET_TRANSFORM     = $0004800d;
+ 
+ BCM2838_MBOX_TAG_TEST_VSYNC        = $0004400e; {Previously BCM2838_MBOX_TAG_TST_VSYNC}
+ BCM2838_MBOX_TAG_SET_VSYNC         = $0004800e;
+ 
+ BCM2838_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
+ 
  BCM2838_MBOX_TAG_GET_TOUCHBUF      = $0004000f;
  BCM2838_MBOX_TAG_SET_TOUCHBUF      = $0004801f;
  
  BCM2838_MBOX_TAG_GET_GPIOVIRTBUF   = $00040010;
  BCM2838_MBOX_TAG_SET_GPIOVIRTBUF   = $00048020;
- 
- BCM2838_MBOX_TAG_GET_LAYER         = $0004000c;
- BCM2838_MBOX_TAG_TST_LAYER         = $0004400c;
- BCM2838_MBOX_TAG_SET_LAYER         = $0004800c;
- 
- BCM2838_MBOX_TAG_GET_TRANSFORM     = $0004000d;
- BCM2838_MBOX_TAG_TST_TRANSFORM     = $0004400d;
- BCM2838_MBOX_TAG_SET_TRANSFORM     = $0004800d;
- 
- BCM2838_MBOX_TAG_TST_VSYNC         = $0004400e;
- BCM2838_MBOX_TAG_SET_VSYNC         = $0004800e;
- 
- BCM2838_MBOX_TAG_SET_BACKLIGHT     = $0004800f;
  
  BCM2838_MBOX_TAG_GET_DISPLAY_ID       = $00040016;
  BCM2838_MBOX_TAG_SET_DISPLAY_NUM      = $00048013;
@@ -3726,6 +3719,41 @@ type
   case Integer of
   0:(Request:TBCM2838MailboxTagPaletteRequest);
   1:(Response:TBCM2838MailboxTagPaletteResponse);
+ end;
+ 
+ {Get Layer}
+ TBCM2838MailboxTagLayerRequest = record
+  Layer:LongInt;
+ end;
+
+ TBCM2838MailboxTagLayerResponse = record
+  Layer:LongInt; 
+ end;
+
+ PBCM2838MailboxTagGetLayer = ^TBCM2838MailboxTagGetLayer;
+ TBCM2838MailboxTagGetLayer = record
+  Header:TBCM2838MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2838MailboxTagNoRequest);
+  1:(Response:TBCM2838MailboxTagLayerResponse);
+ end;
+ 
+ {Test Layer}
+ PBCM2838MailboxTagTestLayer = ^TBCM2838MailboxTagTestLayer;
+ TBCM2838MailboxTagTestLayer = record
+  Header:TBCM2838MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2838MailboxTagLayerRequest);
+  1:(Response:TBCM2838MailboxTagLayerResponse);
+ end;
+ 
+ {Set Layer}
+ PBCM2838MailboxTagSetLayer = ^TBCM2838MailboxTagSetLayer;
+ TBCM2838MailboxTagSetLayer = record
+  Header:TBCM2838MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2838MailboxTagLayerRequest);
+  1:(Response:TBCM2838MailboxTagLayerResponse);
  end;
  
  {Get Touch Buffer}

@@ -1556,6 +1556,7 @@ begin
  {Get Offset Wheel}
  MouseData.OffsetWheel:=0;
  //To Do //Intellimouse extensions (see http://www.computer-engineering.org/ps2mouse/)
+         //https://stackoverflow.com/questions/60998263/is-the-microsoft-intellimouse-ps-2-packet-format-a-standard-across-all-ps-2-mice
  
  {Maximum X, Y and Wheel}
  MouseData.MaximumX:=0;

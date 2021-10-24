@@ -386,6 +386,10 @@ function RPi3FramebufferGetPalette(Buffer:Pointer;Length:LongWord):LongWord;
 function RPi3FramebufferSetPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 function RPi3FramebufferTestPalette(Start,Count:LongWord;Buffer:Pointer;Length:LongWord):LongWord;
 
+function RPi3FramebufferGetLayer(var Layer:LongInt):LongWord;
+function RPi3FramebufferSetLayer(var Layer:LongInt):LongWord;
+function RPi3FramebufferTestLayer(var Layer:LongInt):LongWord;
+
 function RPi3FramebufferTestVsync:LongWord;
 function RPi3FramebufferSetVsync:LongWord;
 
@@ -909,6 +913,10 @@ begin
  FramebufferGetPaletteHandler:=RPi3FramebufferGetPalette;
  FramebufferSetPaletteHandler:=RPi3FramebufferSetPalette;
  FramebufferTestPaletteHandler:=RPi3FramebufferTestPalette;
+
+ FramebufferGetLayerHandler:=RPi3FramebufferGetLayer;
+ FramebufferSetLayerHandler:=RPi3FramebufferSetLayer;
+ FramebufferTestLayerHandler:=RPi3FramebufferTestLayer;
 
  FramebufferTestVsyncHandler:=RPi3FramebufferTestVsync;
  FramebufferSetVsyncHandler:=RPi3FramebufferSetVsync;
@@ -7021,6 +7029,176 @@ end;
 
 {==============================================================================}
 
+function RPi3FramebufferGetLayer(var Layer:LongInt):LongWord;
+{Get Framebuffer Layer from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagGetLayer;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagGetLayer) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagGetLayer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_GET_LAYER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagGetLayer) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+ 
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagGetLayer)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferGetLayer - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  Layer:=Tag.Response.Layer;
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3FramebufferSetLayer(var Layer:LongInt):LongWord;
+{Set Framebuffer Layer from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagSetLayer;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagSetLayer) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagSetLayer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_SET_LAYER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagSetLayer) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.Layer:=Layer;
+  
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagSetLayer)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferSetLayer - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  Layer:=Tag.Response.Layer;
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
+function RPi3FramebufferTestLayer(var Layer:LongInt):LongWord;
+{Test Framebuffer Layer from the Mailbox property tags channel}
+var
+ Size:LongWord;
+ Response:LongWord;
+ Header:PBCM2837MailboxHeader;
+ Footer:PBCM2837MailboxFooter;
+ Tag:PBCM2837MailboxTagTestLayer;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Calculate Size}
+ Size:=SizeOf(TBCM2837MailboxHeader) + SizeOf(TBCM2837MailboxTagTestLayer) + SizeOf(TBCM2837MailboxFooter);
+ 
+ {Allocate Mailbox Buffer}
+ Header:=GetNoCacheAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Header:=GetAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
+ if Header = nil then Exit;
+ try
+  {Clear Buffer}
+  FillChar(Header^,Size,0);
+ 
+  {Setup Header}
+  Header.Size:=Size;
+  Header.Code:=BCM2837_MBOX_REQUEST_CODE;
+ 
+  {Setup Tag}
+  Tag:=PBCM2837MailboxTagTestLayer(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_LAYER;
+  Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestLayer) - SizeOf(TBCM2837MailboxTagHeader);
+  Tag.Header.Length:=SizeOf(Tag.Request);
+  Tag.Request.Layer:=Layer;
+  
+  {Setup Footer}
+  Footer:=PBCM2837MailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TBCM2837MailboxTagTestLayer)));
+  Footer.Tag:=BCM2837_MBOX_TAG_END;
+  
+  {Call Mailbox}
+  Result:=MailboxPropertyCall(BCM2837_MAILBOX_0,BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
+  if Result <> ERROR_SUCCESS then
+   begin
+    if PLATFORM_LOG_ENABLED then PlatformLogError('FramebufferTestLayer - MailboxPropertyCall Failed');
+    Exit;
+   end; 
+  
+  {Get Result}
+  Layer:=Tag.Response.Layer;
+  
+  Result:=ERROR_SUCCESS;
+ finally
+  FreeMem(Header);
+ end;
+end;
+
+{==============================================================================}
+
 function RPi3FramebufferTestVsync:LongWord;
 {Test Framebuffer Vertical Sync from the Mailbox property tags channel}
 var
@@ -7050,7 +7228,7 @@ begin
  
   {Setup Tag}
   Tag:=PBCM2837MailboxTagTestVsync(PtrUInt(Header) + PtrUInt(SizeOf(TBCM2837MailboxHeader)));
-  Tag.Header.Tag:=BCM2837_MBOX_TAG_TST_VSYNC;
+  Tag.Header.Tag:=BCM2837_MBOX_TAG_TEST_VSYNC;
   Tag.Header.Size:=SizeOf(TBCM2837MailboxTagTestVsync) - SizeOf(TBCM2837MailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   

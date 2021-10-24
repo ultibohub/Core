@@ -3891,7 +3891,7 @@ end;
 function USBDeviceSetState(Device:PUSBDevice;State:LongWord):LongWord;
 {Set the state of the specified device and send a notification}
 {Device: The USB device to set the state for}
-{State: The new state to set and notify}
+{State: The new state to set and notify (eg USB_STATE_ATTACHED)}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
@@ -3941,7 +3941,7 @@ end;
 function USBDeviceSetStatus(Device:PUSBDevice;Status:LongWord):LongWord;
 {Set the status of the specified device and send a notification}
 {Device: The USB device to set the status for}
-{Status: The new status to set and notify}
+{Status: The new status to set and notify (eg USB_STATUS_BOUND)}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
@@ -4797,7 +4797,7 @@ begin
    finally
     CriticalSectionUnlock(USBDeviceTableLock);
    end;
-  end
+  end;
 end;
 
 {==============================================================================}
@@ -5487,7 +5487,7 @@ end;
 function USBHostSetState(Host:PUSBHost;State:LongWord):LongWord;
 {Set the state of the specified host and send a notification}
 {Host: The USB host to set the state for}
-{State: The new state to set and notify}
+{State: The new state to set and notify (eg USBHOST_STATE_ENABLED)}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}

@@ -213,6 +213,7 @@ Global Defines
 {--$DEFINE BCM2709_DEBUG}         {Enable debug output/counters for BCM2709 drivers (Default: Off)}
 {--$DEFINE BCM2710_DEBUG}         {Enable debug output/counters for BCM2710 drivers (Default: Off)}
 {--$DEFINE BCM2711_DEBUG}         {Enable debug output/counters for BCM2711 drivers (Default: Off)}
+{--$DEFINE BRCMSTB_DEBUG}         {Enable debug output/counters for BRCMSTB driver (Default: Off)}
 
 {DMA}
 {--$DEFINE PL08X_DEBUG}           {Enable debug output/counters for PL08X driver (Default: Off)}

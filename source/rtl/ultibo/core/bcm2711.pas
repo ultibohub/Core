@@ -8403,6 +8403,7 @@ begin
  
  {Update Clock Rate}
  PBCM2711UART0Device(UART).ClockRate:=ClockGetRate(CLOCK_ID_UART0);
+ if PBCM2711UART0Device(UART).ClockRate = 0 then PBCM2711UART0Device(UART).ClockRate:=ClockGetMeasuredRate(CLOCK_ID_UART0);
  if PBCM2711UART0Device(UART).ClockRate = 0 then ClockSetRate(CLOCK_ID_UART0,BCM2711_UART0_CLOCK_RATE,True);
  if PBCM2711UART0Device(UART).ClockRate = 0 then PBCM2711UART0Device(UART).ClockRate:=BCM2711_UART0_CLOCK_RATE; 
  
@@ -9721,6 +9722,7 @@ begin
   end;
  SDHCI.ClockMinimum:=BCM2711_EMMC0_MIN_FREQ;
  SDHCI.ClockMaximum:=ClockGetRate(PBCM2711EMMC0Host(SDHCI).ClockId);
+ if SDHCI.ClockMaximum = 0 then SDHCI.ClockMaximum:=ClockGetMeasuredRate(PBCM2711EMMC0Host(SDHCI).ClockId);
  if SDHCI.ClockMaximum = 0 then SDHCI.ClockMaximum:=BCM2711_EMMC0_MAX_FREQ;
  
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'SDHCI BCM2711 Maximum clock rate = ' + IntToStr(SDHCI.ClockMaximum));
