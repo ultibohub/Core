@@ -1,7 +1,7 @@
 {
 Ultibo Raw Socket Protocol unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -44,10 +44,6 @@ unit Raw;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Transport,Protocol,IP,IPv6,Ultibo,UltiboClasses;
-
-//To Do //Look for:
-
-//--
 
 {==============================================================================}
 {Global definitions}
@@ -1241,7 +1237,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end
@@ -1365,7 +1361,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end

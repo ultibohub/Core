@@ -1,7 +1,7 @@
 {
 Ultibo TCP (Transmission Control Protocol) unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -78,21 +78,11 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Tr
 
 //Critical 
 
-//ASocket.SignalChange; - Done
-
-//SignalChange - Done
-
-//WaitChangeEx - Done
-
-//WaitChange - Done
-
-
 //ScheduleSocket
 
 //SendSocket
 
 //ReceiveSocket
-
 
 //WindowSize Testing
 
@@ -3162,11 +3152,11 @@ begin
         NetworkSetLastError(WSAENOBUFS);
         if not TTCPSocket(ASocket).Connect then Exit;
       
-        {Unlock Route} //To Do //Move the finally block ?
+        {Unlock Route}
         Route.ReaderUnlock;
         Route:=nil;
         
-        {Unlock Address} //To Do //Move the finally block ?
+        {Unlock Address}
         Address.ReaderUnlock;
         Address:=nil;
         
@@ -3184,7 +3174,7 @@ begin
               {Wait for Event}
               if not ASocket.WaitChangeEx(ASocket.SocketOptions.ConnTimeout) then
                begin
-                NetworkSetLastError(WSAETIMEDOUT);
+                NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
                end; 
               
@@ -3304,11 +3294,11 @@ begin
         NetworkSetLastError(WSAENOBUFS);
         if not TTCPSocket(ASocket).Connect then Exit;
       
-        {Unlock Route} //To do //Move the finally block ?
+        {Unlock Route}
         Route.ReaderUnlock;
         Route:=nil;
         
-        {Unlock Address} //To do //Move the finally block ?
+        {Unlock Address}
         Address.ReaderUnlock;
         Address:=nil;
       
@@ -3326,7 +3316,7 @@ begin
               {Wait for Event}
               if not ASocket.WaitChangeEx(ASocket.SocketOptions.ConnTimeout) then
                begin
-                NetworkSetLastError(WSAETIMEDOUT);
+                NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
                end; 
               
@@ -3746,7 +3736,7 @@ begin
          {Check for Timeout}
          if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
           begin
-           NetworkSetLastError(WSAECONNABORTED);
+           NetworkSetLastError(WSAETIMEDOUT);
            Exit;
           end;
         end
@@ -3765,6 +3755,7 @@ begin
      if ASocket.SocketState.Closed then
       begin
        NetworkSetLastError(WSAECONNRESET);
+
        {Check for Error}
        if ASocket.SocketError <> ERROR_SUCCESS then
         begin
@@ -3885,7 +3876,7 @@ begin
           {Check for Timeout}
           if GetTickCount64 > (StartTime + ASocket.SocketOptions.SendTimeout) then
            begin
-            NetworkSetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAETIMEDOUT);
             Exit;
            end;
          end
@@ -3950,7 +3941,7 @@ begin
           {Check for Timeout}
           if GetTickCount64 > (StartTime + ASocket.SocketOptions.SendTimeout) then
            begin
-            NetworkSetLastError(WSAECONNABORTED);
+            NetworkSetLastError(WSAETIMEDOUT);
             Exit;
            end;
          end
@@ -7658,6 +7649,13 @@ begin
           {Resent Count exceeded close the Socket}
           if Segment.Count >= TCP_RETRY_COUNT then
            begin
+            {$IFDEF TCP_DEBUG}
+            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Retransmit Count Exceeded'); 
+            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.FirstSequence = ' + IntToStr(Segment.FirstSequence));
+            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
+            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Count = ' + IntToStr(Segment.Count));
+            {$ENDIF}  
+            
             {Connection Timeout}
             FSocket.SocketError:=WSAETIMEDOUT;
             FSocket.SocketState.Closed:=True;
@@ -7669,6 +7667,13 @@ begin
             
             Exit;
            end; 
+
+          {$IFDEF TCP_DEBUG}
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Retransmitting Segment'); 
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.FirstSequence = ' + IntToStr(Segment.FirstSequence));
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Count = ' + IntToStr(Segment.Count));
+          {$ENDIF}  
 
           {Restamp the Segment}
           Inc(Segment.Count);

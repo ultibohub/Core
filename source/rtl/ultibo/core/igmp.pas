@@ -1,7 +1,7 @@
 {
 Ultibo IGMP (Internet Group Management Protocol) unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -49,11 +49,7 @@ unit IGMP;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Network,Transport,Protocol,IP,Ultibo,UltiboClasses;
-
-//To Do //Look for:
-
-//--
-           
+          
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -1146,8 +1142,8 @@ var
 begin
  {}
  {$IFDEF IGMP_DEBUG}
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: FlushGroups');
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  All = ' + BoolToStr(All));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: FlushGroups');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  All = ' + BoolToStr(All));
  {$ENDIF}
 
  {Get Group}
@@ -1193,7 +1189,7 @@ var
 begin
  {}
  {$IFDEF IGMP_DEBUG}
- //--if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: ProcessGroups');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: ProcessGroups');
  {$ENDIF}
 
  Result:=False;
@@ -1991,7 +1987,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end
@@ -2096,7 +2092,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end

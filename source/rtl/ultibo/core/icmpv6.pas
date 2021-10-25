@@ -1,7 +1,7 @@
 {
 Ultibo ICMPv6 (Internet Control Message Protocol version 6) unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -52,10 +52,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Ne
                       //See: https://en.wikipedia.org/wiki/Internet_Group_Management_Protocol
                       //     https://en.wikipedia.org/wiki/Multicast_Listener_Discovery
                       
-                    
-//To Do //Look for:
-       
-//--
 
 {==============================================================================}
 {Global definitions}
@@ -1186,7 +1182,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end
@@ -1291,7 +1287,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end

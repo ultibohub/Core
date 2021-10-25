@@ -1,7 +1,7 @@
 {
 Ultibo Network Protocol interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4090,13 +4090,16 @@ end;
 {==============================================================================}
 
 function TProtocolSocket.WaitChangeEx(ATimeout:LongWord):Boolean;
+var
+ Status:LongWord;
 begin
  {}
  {Check Timeout}
  if ATimeout = 0 then ATimeout:=INFINITE;
  
  {Wait Event}
- Result:=(EventWaitEx(FSocketChange,ATimeout) = ERROR_SUCCESS);
+ Status:=EventWaitEx(FSocketChange,ATimeout);
+ Result:=(Status = ERROR_SUCCESS) or ((ATimeout <> INFINITE) and (Status = ERROR_WAIT_TIMEOUT));
 end;
 
 {==============================================================================}

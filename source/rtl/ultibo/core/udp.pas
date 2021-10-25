@@ -1,7 +1,7 @@
 {
 Ultibo UDP (User Datagram Protocol) unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -44,10 +44,6 @@ unit UDP;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Transport,Protocol,IP,IPv6,ICMP,ICMPv6,Ultibo,UltiboClasses;
-
-//To Do //Look for:
-
-//--
 
 {==============================================================================}
 {Global definitions}
@@ -1953,7 +1949,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end
@@ -1970,7 +1966,7 @@ begin
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
-       Result:=0;
+       NetworkSetLastError(WSAEINTR);
        Exit;
       end;
     end;
@@ -2076,7 +2072,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end

@@ -1,7 +1,7 @@
 {
 Ultibo ICMP (Internet Control Message Protocol) unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2624,7 +2624,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end
@@ -2728,7 +2728,7 @@ begin
        {Check for Timeout}
        if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
-         NetworkSetLastError(WSAECONNABORTED);
+         NetworkSetLastError(WSAETIMEDOUT);
          Exit;
         end;
       end
