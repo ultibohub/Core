@@ -46,9 +46,13 @@ const
  {Font Information}
  VGSHAPES_MAXFONTPATH = 500;
  VGSHAPES_MAXLAYERS = 16;
- 
+
  VGSHAPES_NOLAYER = LongInt($80000000);
  VGSHAPES_NODISPLAY = LongWord(-1);
+
+ VGSHAPES_FONTNAME_SANSSERIF = 'sans';
+ VGSHAPES_FONTNAME_SERIF = 'serif';
+ VGSHAPES_FONTNAME_MONO = 'mono';
 
 {==============================================================================}
 type
@@ -83,6 +87,13 @@ procedure VGShapesSetLayer(layer:LongInt);
 {Font}
 function VGShapesLoadFont(Points,PointIndices:PInteger;Instructions:PByte;InstructionIndices,InstructionCounts,adv:PInteger;cmap:PSmallInt;ng:Integer):TVGShapesFontInfo;
 procedure VGShapesUnloadFont(glyphs:PVGPath;n:Integer);
+function VGShapesLoadAppFont(appfontname:string;
+      Points,PointIndices:PInteger;Instructions:PByte;
+      InstructionIndices,InstructionCounts,adv:PInteger;
+      cmap:PSmallInt;ng:Integer;
+      DescenderHeight:Integer;FontHeight:Integer):PVGShapesFontInfo;
+procedure VGShapesUnloadAppFont(appfontname:string);
+function VGShapesGetAppFontByName(afontname:string;layerid:Longint = VGSHAPES_NOLAYER):PVGShapesFontinfo;
 
 function VGShapesSansTypeface:PVGShapesFontInfo;
 function VGShapesSerifTypeface:PVGShapesFontInfo;
@@ -191,6 +202,16 @@ type
   AttributeList:array[0..12] of EGLint;
  end;
 
+ {Application loaded font definition}
+ TVGShapesAppFont=record
+   Fontname:string;
+   FontInfoP:PVGShapesFontInfo;
+   IsInternal:boolean;
+ end;
+
+ {Application Font list}
+ TVGShapesAppFontList=array of TVGShapesAppFont;
+
  {Layer Information}
  PVGShapesLayer = ^TVGShapesLayer;
  TVGShapesLayer = record
@@ -209,7 +230,10 @@ type
   {Font information}
   SansTypeface:PVGShapesFontInfo;
   SerifTypeface:PVGShapesFontInfo;
-  MonoTypeface:PVGShapesFontInfo;   
+  MonoTypeface:PVGShapesFontInfo;
+  {User loaded fonts list}
+  AppFontList:TVGShapesAppFontList;
+  AppFontListCount:Word;
  end;
 
 {==============================================================================}
@@ -220,7 +244,7 @@ var
 
  Current:LongInt;
  Layers:array[0..VGSHAPES_MAXLAYERS - 1] of TVGShapesLayer;
- 
+
 {==============================================================================}
 {Included Fonts}
 {$INCLUDE .\vgfonts\DejaVuSans.inc}
@@ -240,6 +264,10 @@ begin
   begin
    Layers[Count].LayerId:=VGSHAPES_NOLAYER;
    Layers[Count].DisplayId:=DISPMANX_ID_MAIN_LCD;
+
+   {initialize application font list}
+   SetLength(Layers[Count].AppFontList, 1);
+   Layers[Count].AppFontListCount:=0;
   end;
 end;
 
@@ -684,6 +712,32 @@ end;
 
 {==============================================================================}
 
+procedure VGShapesAddInternalFont(appfontname:string; existingFontP : PVGShapesFontInfo;layerid:Longint = VGSHAPES_NOLAYER);
+var
+ index:word;
+begin
+ {check layer}
+ if (layerid = VGSHAPES_NOLAYER) then
+   layerid := Current;
+
+ {Check Initialized}
+ if not Layers[layerid].Initialized then Exit;
+
+ {Update font count}
+ Inc(Layers[layerid].AppFontListCount);
+
+ {Add space for application font}
+ SetLength(Layers[layerid].AppFontList, Layers[layerid].AppFontListCount);
+
+ {Insert font into application font list}
+ index := Layers[layerid].AppFontListCount-1;
+ Layers[layerid].AppFontList[index].Fontname:=appfontname;
+ Layers[layerid].AppFontList[index].FontInfoP:=existingFontP;
+ Layers[layerid].AppFontList[index].IsInternal:=true;
+end;
+
+{==============================================================================}
+
 function VGShapesInit(var w,h:Integer;alphaflags:DISPMANX_FLAGS_ALPHA_T = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;layer:LongInt = VGSHAPES_NOLAYER):Boolean;
 {Init performs host initialization and creates the current layer, must be called once for each layer to be created}
 var
@@ -753,6 +807,8 @@ begin
                                                        DejaVuSans_glyphCount);
        Layers[Current].SansTypeface.DescenderHeight:=DejaVuSans_descender_height;
        Layers[Current].SansTypeface.FontHeight:=DejaVuSans_font_height;
+
+       VGShapesAddInternalFont(VGSHAPES_FONTNAME_SANSSERIF, Layers[Current].SansTypeface);
       end;
 
      {Allocate Serif Font}
@@ -770,6 +826,8 @@ begin
                                                         DejaVuSerif_glyphCount);
        Layers[Current].SerifTypeface.DescenderHeight:=DejaVuSerif_descender_height;
        Layers[Current].SerifTypeface.FontHeight:=DejaVuSerif_font_height;
+
+       VGShapesAddInternalFont(VGSHAPES_FONTNAME_SERIF, Layers[Current].SerifTypeface);
       end;
 
      {Allocate Mono Font}
@@ -787,10 +845,19 @@ begin
                                                        DejaVuSansMono_glyphCount);
        Layers[Current].MonoTypeface.DescenderHeight:=DejaVuSansMono_descender_height;
        Layers[Current].MonoTypeface.FontHeight:=DejaVuSansMono_font_height;
+
+       VGShapesAddInternalFont(VGSHAPES_FONTNAME_MONO, Layers[Current].MonoTypeface);
       end;
 
      Initialized:=True;
-    end; 
+    end
+    else
+    begin
+     {add internal fonts to list; not created until used}
+     VGShapesAddInternalFont(VGSHAPES_FONTNAME_SANSSERIF, nil);
+     VGShapesAddInternalFont(VGSHAPES_FONTNAME_SERIF, nil);
+     VGShapesAddInternalFont(VGSHAPES_FONTNAME_MONO, nil);
+    end;
 
    {Return Result}
    Result:=True; 
@@ -808,6 +875,7 @@ procedure VGShapesFinish;
 var
  Layer:LongInt;
  DispmanUpdate:DISPMANX_UPDATE_HANDLE_T;
+ index:word;
 begin
  {}
  if not Layers[Current].Initialized then Exit;
@@ -838,6 +906,18 @@ begin
 
    FreeMem(Layers[Layer].MonoTypeface);
   end;
+
+ {Unload any application fonts}
+ for index := 0 to Layers[Layer].AppFontListCount-1 do
+  begin
+   if (Layers[Layer].AppFontList[index].FontInfoP <> nil) then
+   begin
+     VGShapesUnloadFont(Layers[Layer].AppFontList[index].FontInfoP^.Glyphs, Layers[Layer].AppFontList[index].FontInfoP^.Count);
+     FreeMem(Layers[Layer].AppFontList[index].FontInfoP);
+   end;
+  end;
+ SetLength(Layers[Layer].AppFontList, 1);
+ Layers[Layer].AppFontListCount:=0;
 
  Layers[Layer].Initialized:=False;
 
@@ -1097,8 +1177,145 @@ begin
    Layers[Current].MonoTypeface.DescenderHeight:=DejaVuSansMono_descender_height;
    Layers[Current].MonoTypeface.FontHeight:=DejaVuSansMono_font_height;
   end;
-  
+
  Result:=Layers[Current].MonoTypeface;
+end;
+
+{==============================================================================}
+
+function VGShapesLoadAppFont(appfontname:string;
+      Points,PointIndices:PInteger;Instructions:PByte;
+      InstructionIndices,InstructionCounts,adv:PInteger;
+      cmap:PSmallInt;ng:Integer;
+      DescenderHeight:Integer;FontHeight:Integer):PVGShapesFontInfo;
+var
+ appFontInfoP:PVGShapesFontInfo;
+ index:word;
+ layerid:longword;
+begin
+ {}
+ Result:=nil;
+
+ layerid := Current;
+
+ {Check Initialized}
+ if not Layers[layerid].Initialized then Exit;
+
+ {Update font count}
+ Inc(Layers[layerid].AppFontListCount);
+
+ {Add space for application font}
+ SetLength(Layers[layerid].AppFontList, Layers[layerid].AppFontListCount);
+
+ {Allocate memory for font}
+ appfontInfoP := AllocMem(SizeOf(TVGShapesFontInfo));
+
+ {Insert font into application font list}
+ index := Layers[layerid].AppFontListCount-1;
+ Layers[layerid].AppFontList[index].Fontname:=appfontname;
+ Layers[layerid].AppFontList[index].FontInfoP:=appFontInfoP;
+ Layers[layerid].AppFontList[index].IsInternal:=false;
+
+ {load the font}
+ appFontInfoP^ := VGShapesLoadFont(Points,
+                                 PointIndices,
+                                 Instructions,
+                                 InstructionIndices,
+                                 InstructionCounts,
+                                 adv,
+                                 cmap,
+                                 ng);
+ appFontInfoP^.DescenderHeight:=DescenderHeight;
+ appFontInfoP^.FontHeight:=FontHeight;
+
+ {return font}
+ Result := appFontInfoP;
+end;
+
+{==============================================================================}
+
+procedure VGShapesUnloadAppFont(appfontname:string);
+var
+ index:word;
+ found:boolean;
+ layerid:longint;
+begin
+ layerid := Current;
+
+ {Check Initialized}
+ if not Layers[layerid].Initialized then Exit;
+
+ {find index of font}
+ found:=false;
+ for index := 0 to Layers[layerid].AppFontListCount-1 do
+ begin
+  if (Layers[layerid].AppFontList[index].Fontname = appfontname) then
+  begin
+   found:=true;
+   break;
+  end;
+ end;
+
+ if (found) then
+ begin
+  {reduce font count}
+  Dec(Layers[layerid].AppFontListCount);
+
+  {release font from GPU}
+  if (Layers[layerid].AppFontList[index].FontInfoP <> nil) then
+  begin
+   VGShapesUnloadFont(Layers[layerid].AppFontList[index].FontInfoP^.Glyphs, Layers[layerid].AppFontList[index].FontInfoP^.Count);
+   freemem(Layers[layerid].AppFontList[index].FontInfoP);
+  end;
+
+  {remove gap for entry if not the last one}
+  if (index < Layers[layerid].AppFontListCount-1) then
+    move(Layers[layerid].AppFontList[index+1],Layers[layerid].AppFontList[index],Layers[layerid].AppFontListCount*sizeof(TVGShapesAppFont));
+
+  {reduce size of list}
+  SetLength(Layers[layerid].AppFontList,Layers[layerid].AppFontListCount);
+ end;
+
+end;
+
+{==============================================================================}
+
+function VGShapesGetAppFontByName(afontname:string;layerid:Longint = VGSHAPES_NOLAYER):PVGShapesFontinfo;
+var
+ f : word;
+begin
+ {}
+ Result := nil;
+
+ {check layerid}
+ if (layerid = VGSHAPES_NOLAYER) then
+  layerid := Current;
+
+ {Check Initialized}
+ if not Layers[layerid].Initialized then Exit;
+
+ {find font}
+ for f := 0 to Layers[layerid].AppFontListCount-1 do
+ begin
+  if (Layers[layerid].AppFontList[f].Fontname = afontname) then
+   begin
+    {create internal fonts if necessary}
+    if (Layers[layerid].AppFontList[f].IsInternal) and (Layers[layerid].AppFontList[f].FontInfoP=nil) then
+    begin
+     if (afontname = VGSHAPES_FONTNAME_SANSSERIF) then
+      Layers[layerid].AppFontList[f].FontInfoP:=VGShapesSansTypeface
+     else
+     if (afontname = VGSHAPES_FONTNAME_SERIF) then
+      Layers[layerid].AppFontList[f].FontInfoP:=VGShapesSerifTypeface
+     else
+     if (afontname = VGSHAPES_FONTNAME_MONO) then
+      Layers[layerid].AppFontList[f].FontInfoP:=VGShapesMonoTypeface;
+    end;
+
+    Result := Layers[layerid].AppFontList[f].FontInfoP;
+    exit;
+   end;
+ end;
 end;
 
 {==============================================================================}
