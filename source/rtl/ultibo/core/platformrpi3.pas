@@ -13,6 +13,7 @@ Boards
 
  Raspberry Pi 3 - Model B/B+/A+
  Raspberry Pi CM3/CM3+
+ Raspberry Pi - Model Zero2 W
  
 Licence
 =======
@@ -1384,6 +1385,9 @@ begin
     BCM2837_BOARD_REVISION_MODEL_COMPUTE3PLUS:begin
       BOARD_TYPE:=BOARD_TYPE_RPI_COMPUTE3_PLUS;
      end;
+    BCM2837_BOARD_REVISION_MODEL_ZERO2_W:begin
+      BOARD_TYPE:=BOARD_TYPE_RPI_ZERO2_W;
+     end;
    end;
   end
  else
@@ -1500,7 +1504,8 @@ begin
       MEMORY_NOCACHE_SIZE:=SIZE_16M;
       MEMORY_NONSHARED_SIZE:=SIZE_8M;
      end;
-    BCM2837_BOARD_REVISION_MODEL_3APLUS:begin
+    BCM2837_BOARD_REVISION_MODEL_3APLUS,
+    BCM2837_BOARD_REVISION_MODEL_ZERO2_W:begin
       {Get Memory Base/Size}
       MEMORY_BASE:=$00000000;
       MEMORY_SIZE:=SIZE_512M;
@@ -1786,6 +1791,13 @@ begin
     ACTIVITY_LED_PULL:=GPIO_PULL_NONE;
     ACTIVITY_LED_FUNCTION:=GPIO_FUNCTION_OUT;
     ACTIVITY_LED_ACTIVE_LOW:=False;
+   end;
+  BOARD_TYPE_RPI_ZERO2_W:begin
+    {Activity LED}
+    ACTIVITY_LED_PIN:=GPIO_PIN_29;
+    ACTIVITY_LED_PULL:=GPIO_PULL_NONE;
+    ACTIVITY_LED_FUNCTION:=GPIO_FUNCTION_OUT;
+    ACTIVITY_LED_ACTIVE_LOW:=True;
    end;  
  end;
  
@@ -2402,7 +2414,8 @@ begin
    end;
   BOARD_TYPE_RPI3B_PLUS,
   BOARD_TYPE_RPI3A_PLUS,
-  BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+  BOARD_TYPE_RPI_COMPUTE3_PLUS,
+  BOARD_TYPE_RPI_ZERO2_W:begin
     {Setup Pull Up/Down}
     GPIOPullSelect(ACTIVITY_LED_PIN,ACTIVITY_LED_PULL);
     {Enable Function}
@@ -2428,9 +2441,17 @@ begin
    end;
   BOARD_TYPE_RPI3B_PLUS,
   BOARD_TYPE_RPI3A_PLUS,
-  BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+  BOARD_TYPE_RPI_COMPUTE3_PLUS,
+  BOARD_TYPE_RPI_ZERO2_W:begin
     {LED On}
-    GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_HIGH);
+    if ACTIVITY_LED_ACTIVE_LOW then
+     begin
+      GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_LOW);
+     end
+    else
+     begin
+      GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_HIGH);
+     end;
    end;  
  end;
 end;
@@ -2452,9 +2473,17 @@ begin
    end;
   BOARD_TYPE_RPI3B_PLUS,
   BOARD_TYPE_RPI3A_PLUS,
-  BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+  BOARD_TYPE_RPI_COMPUTE3_PLUS,
+  BOARD_TYPE_RPI_ZERO2_W:begin
     {LED Off}
-    GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_LOW);
+    if ACTIVITY_LED_ACTIVE_LOW then
+     begin
+      GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_HIGH);
+     end
+    else
+     begin
+      GPIOOutputSet(ACTIVITY_LED_PIN,GPIO_LEVEL_LOW);
+     end;
    end;  
  end;
 end;

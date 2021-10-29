@@ -1,11 +1,12 @@
 #
-# Raspberry Pi (A/B/A+/B+/Zero) specific config file
+# Raspberry Pi A/B/A+/B+/Zero/ZeroW specific config file
 #
 -CfVFPV2
 -CIARM
 -CaEABIHF
 -OoFASTMATH
 -dRPI
+-dBCM2708
 -Fu%INSTALLDIRECTORY%/units/armv6-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv6-ultibo/packages
 -Fl%INSTALLDIRECTORY%/units/armv6-ultibo/lib

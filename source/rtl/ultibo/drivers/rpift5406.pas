@@ -19,6 +19,7 @@ Boards
  Raspberry Pi 4 - Model B
  Raspberry Pi 400
  Raspberry Pi CM4
+ Raspberry Pi - Model Zero2 W
 
 Licence
 =======
@@ -360,7 +361,8 @@ begin
       BOARD_TYPE_RPI_COMPUTE3_PLUS,
       BOARD_TYPE_RPI4B,
       BOARD_TYPE_RPI400,
-      BOARD_TYPE_RPI_COMPUTE4:begin
+      BOARD_TYPE_RPI_COMPUTE4,
+      BOARD_TYPE_RPI_ZERO2_W:begin
         {Allocate Non Cached}
         Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
        end;

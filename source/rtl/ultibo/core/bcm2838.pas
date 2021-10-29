@@ -1834,6 +1834,7 @@ const
  BCM2838_BOARD_REVISION_MODEL_3APLUS         = (14 shl 4);  {Model 3A+ (Cannot occur on BCM2838)}
  BCM2838_BOARD_REVISION_MODEL_COMPUTE3PLUS   = (16 shl 4);  {Compute Module 3+ (Cannot occur on BCM2838)}
  BCM2838_BOARD_REVISION_MODEL_4B             = (17 shl 4);  {Model 4B}
+ BCM2838_BOARD_REVISION_MODEL_ZERO2_W        = (18 shl 4);  {Model Zero 2 W (Cannot occur on BCM2838)}
  BCM2838_BOARD_REVISION_MODEL_400            = (19 shl 4);  {Pi 400}
  BCM2838_BOARD_REVISION_MODEL_CM4            = (20 shl 4);  {Compute Module 4}
                                              

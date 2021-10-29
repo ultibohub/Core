@@ -1,5 +1,5 @@
 #
-# Raspberry Pi 3B specific config file
+# Raspberry Pi 3B/3B+/3A+/CM3/Zero2W specific config file
 #
 #IFDEF CPUARM
 -CfVFPV3
@@ -7,6 +7,7 @@
 -CaEABIHF
 -OoFASTMATH
 -dRPI3
+-dBCM2710
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/packages
 -Fl%INSTALLDIRECTORY%/units/armv7-ultibo/lib
@@ -16,6 +17,7 @@
 -CfVFP
 -OoFASTMATH
 -dRPI3
+-dBCM2710
 -Fu%INSTALLDIRECTORY%/units/armv8-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv8-ultibo/packages
 -Fl%INSTALLDIRECTORY%/units/armv8-ultibo/lib

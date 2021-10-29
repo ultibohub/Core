@@ -1,5 +1,5 @@
 #
-# Raspberry Pi 4B/400 specific config file
+# Raspberry Pi 4B/400/CM4 specific config file
 #
 #IFDEF CPUARM
 -CfVFPV3
@@ -7,6 +7,7 @@
 -CaEABIHF
 -OoFASTMATH
 -dRPI4
+-dBCM2711
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv7-ultibo/packages
 -Fl%INSTALLDIRECTORY%/units/armv7-ultibo/lib
@@ -16,6 +17,7 @@
 -CfVFP
 -OoFASTMATH
 -dRPI4
+-dBCM2711
 -Fu%INSTALLDIRECTORY%/units/armv8-ultibo/rtl
 -Fu%INSTALLDIRECTORY%/units/armv8-ultibo/packages
 -Fl%INSTALLDIRECTORY%/units/armv8-ultibo/lib

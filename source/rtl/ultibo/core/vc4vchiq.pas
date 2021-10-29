@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV VCHIQ driver unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -21,6 +21,7 @@ Boards
  Raspberry Pi 4 - Model B
  Raspberry Pi 400
  Raspberry Pi CM4
+ Raspberry Pi - Model Zero2 W
  
 Licence
 =======
@@ -1619,7 +1620,8 @@ begin
   BOARD_TYPE_RPI_COMPUTE3,
   BOARD_TYPE_RPI3B_PLUS,
   BOARD_TYPE_RPI3A_PLUS,
-  BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
+  BOARD_TYPE_RPI_COMPUTE3_PLUS,
+  BOARD_TYPE_RPI_ZERO2_W:begin
     if DeviceTreeValid then VCHIQ.CacheLineSize:=64;
    end;
   BOARD_TYPE_RPI4B,
