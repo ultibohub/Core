@@ -46,7 +46,7 @@ Device Tree
  now widely accepted as the standard method of providing platform specific information without
  it needing to be hard coded into the kernel at build time.
  
- While this adoption of device tree by Linux it is becomming increasinly common for the only
+ With this adoption of device tree by Linux it is becoming increasingly common for the only
  source of information about the runtime configuration of specific hardware to be found in
  the blob loaded and configured during startup by the firmware and passed to the kernel at
  the beginning of the boot process.
@@ -1070,7 +1070,7 @@ end;
 function DeviceTreeGetProperty(Node:THandle;const Name:String):THandle;
 {Get the handle of the property matching the specified name}
 {Node: Handle of the node to search in}
-{Name: The name to the node to find (eg compatible)}
+{Name: The name of the node to find (eg compatible)}
 {Return: The handle of the property which matches the name or INVALID_HANDLE_VALUE if no property was found}
 var
  NextProperty:THandle;
@@ -1929,7 +1929,7 @@ end;
 
 function DeviceTreeGetMemory(Index:LongWord;{$IFDEF CPU32}var Range:LongWord;{$ENDIF CPU32}var Address:PtrUInt;var Size:UInt64):Boolean;
 {Return the address and size of a memory block specified in the device tree blob}
-{Index: the index of the memory block to return (The first block is 0)}
+{Index: The index of the memory block to return (The first block is 0)}
 {Range: Used to return the page range value (If applicable)}
 {Address: Used to return the address value}
 {Size: Used to return the size value}
@@ -2062,7 +2062,7 @@ end;
 
 function DeviceTreeGetReservation(Index:LongWord;var Address:PtrUInt;var Size:UInt64):Boolean;
 {Return the address and size of a memory reservation specified in the device tree blob}
-{Index: the index of the memory reservation to return (The first reservation is 0)}
+{Index: The index of the memory reservation to return (The first reservation is 0)}
 {Address: Used to return the address value}
 {Size: Used to return the size value}
 {Return: True if the memory reservation requested was found in the device tree, False if not}
@@ -2128,7 +2128,7 @@ function DeviceTreeLogTreeEx(Node:THandle;Output:TDTBLogOutput;Decode:TDTBDecode
 {Print information about one or all nodes and properties in the device tree with custom value decode callback}
 {Node: The node to print information about (INVALID_HANDLE_VALUE for all nodes)}
 {Output: The log output callback to print information to (nil to use the default output)}
-{Decode: The callback to decode a value into a string (nil to use the default decode}
+{Decode: The callback to decode a value into a string (nil to use the default decode)}
 {Data: A pointer to caller specific data which should be passed to the callbacks (Optional)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin

@@ -76,6 +76,7 @@ type
 {Initialization}
 procedure VGShapesInitLayerId(layerid:LongInt);
 procedure VGShapesInitDisplayId(displayid:LongWord);
+procedure VGShapesInitAlphaMaskSize(aphamasksize:LongInt);
 procedure VGShapesInitWindowSize(x,y:Integer;w,h:LongWord);
 
 function VGShapesInit(var w,h:Integer;alphaflags:DISPMANX_FLAGS_ALPHA_T = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;layer:LongInt = VGSHAPES_NOLAYER):Boolean;
@@ -199,7 +200,7 @@ type
   {EGL config}
   Alpha:VC_DISPMANX_ALPHA_T;
   NativeWindow:EGL_DISPMANX_WINDOW_T;
-  AttributeList:array[0..12] of EGLint;
+  AttributeList:array[0..31] of EGLint;
  end;
 
  {Application loaded font definition}
@@ -222,9 +223,13 @@ type
   InitY:Integer;
   InitW:LongWord;
   InitH:LongWord;
+  {DispmanX Parameters}
   {Layer / Display Id}
   LayerId:LongInt;
   DisplayId:LongWord;
+  {EGL Parameters}
+  {Alpha Masking}
+  AlphaMaskSize:LongInt;
   {Initialization}
   Initialized:Boolean;
   {Font information}
@@ -410,10 +415,11 @@ end;
 
 {==============================================================================}
 
-function eglInit(State:PEGLState;AlphaFlags:DISPMANX_FLAGS_ALPHA_T;LayerId:LongInt;DisplayId:LongWord):Boolean;
+function eglInit(State:PEGLState;AlphaFlags:DISPMANX_FLAGS_ALPHA_T;LayerId:LongInt;DisplayId:LongWord;AlphaMaskSize:LongInt):Boolean;
 {eglInit sets the display, context and screen information, state holds the display information}
 var
  First:LongInt;
+ Offset:LongWord;
  Previous:PEGLState;
  
  Config:EGLConfig;
@@ -454,11 +460,18 @@ begin
  State.AttributeList[5]:=8;
  State.AttributeList[6]:=EGL_ALPHA_SIZE;
  State.AttributeList[7]:=8;
- State.AttributeList[8]:=EGL_SURFACE_TYPE;
- State.AttributeList[9]:=EGL_WINDOW_BIT;
- State.AttributeList[10]:=EGL_RENDERABLE_TYPE;
- State.AttributeList[11]:=EGL_OPENVG_BIT;
- State.AttributeList[12]:=EGL_NONE;
+ Offset:=8;
+ if AlphaMaskSize > 0 then
+  begin
+   State.AttributeList[Offset]:=EGL_ALPHA_MASK_SIZE ;
+   State.AttributeList[Offset + 1]:=AlphaMaskSize;
+   Inc(Offset,2);
+  end;
+ State.AttributeList[Offset]:=EGL_SURFACE_TYPE;
+ State.AttributeList[Offset + 1]:=EGL_WINDOW_BIT;
+ State.AttributeList[Offset + 2]:=EGL_RENDERABLE_TYPE;
+ State.AttributeList[Offset + 3]:=EGL_OPENVG_BIT;
+ State.AttributeList[Offset + 4]:=EGL_NONE;
  
  {Get Previous}
  Previous:=nil;
@@ -698,6 +711,22 @@ end;
 
 {==============================================================================}
 
+procedure VGShapesInitAlphaMaskSize(aphamasksize:LongInt);
+{InitAlphaMaskSize sets the size of the alpha mask passed to EGL for the current layer, if not called then the default
+ value is 0 which will disable the use of masking even if vgSeti is called with the VG_MASKING value set to VG_TRUE}
+{See eglChooseConfig (https://www.khronos.org/registry/EGL/sdk/docs/man/html/eglChooseConfig.xhtml) for more information}
+begin
+ {}
+ if Layers[Current].Initialized then Exit;
+ 
+ {Size must not be negative}
+ if aphamasksize < 0 then Exit;
+ 
+ Layers[Current].AlphaMaskSize:=aphamasksize;
+end;
+
+{==============================================================================}
+
 procedure VGShapesInitWindowSize(x,y:Integer;w,h:LongWord);
 {InitWindowSize requests a specific window size & position, if not called then VGShapesInit() will open a full screen window}
 begin
@@ -772,7 +801,7 @@ begin
    if Layers[Current].LayerId = VGSHAPES_NOLAYER then Layers[Current].LayerId:=Current;
 
    {Initialize EGL}
-   if not eglInit(Layers[Current].State,alphaflags,Layers[Current].LayerId,Layers[Current].DisplayId) then
+   if not eglInit(Layers[Current].State,alphaflags,Layers[Current].LayerId,Layers[Current].DisplayId,Layers[Current].AlphaMaskSize) then
     begin
      if First then BCMHostDeinit;
      Exit;
@@ -875,29 +904,10 @@ begin
  {Save Layer}
  Layer:=Current;
  
- {Unload Sans Font}
- if Layers[Layer].SansTypeface <> nil then
-  begin
-   VGShapesUnloadFont(Layers[Layer].SansTypeface.Glyphs,Layers[Layer].SansTypeface.Count);
-
-   FreeMem(Layers[Layer].SansTypeface);
-  end;
-
- {Unload Serif Font}
- if Layers[Layer].SerifTypeface <> nil then
-  begin
-   VGShapesUnloadFont(Layers[Layer].SerifTypeface.Glyphs,Layers[Layer].SerifTypeface.Count);
-
-   FreeMem(Layers[Layer].SerifTypeface);
-  end;
-
- {Unload Mono Font}
- if Layers[Layer].MonoTypeface <> nil then
-  begin
-   VGShapesUnloadFont(Layers[Layer].MonoTypeface.Glyphs,Layers[Layer].MonoTypeface.Count);
-
-   FreeMem(Layers[Layer].MonoTypeface);
-  end;
+ {Unload internal fonts (Unloaded and freed below)}
+ Layers[Layer].SansTypeface:=nil;
+ Layers[Layer].SerifTypeface:=nil;
+ Layers[Layer].MonoTypeface:=nil;
 
  {Unload any application fonts}
  for Index:=0 to Layers[Layer].AppFontListCount - 1 do
@@ -1256,6 +1266,18 @@ begin
    {Release font from GPU}
    if (Layers[Current].AppFontList[Index].FontInfoP <> nil) then
     begin
+     {Check for internal font}
+     if Layers[Current].AppFontList[Index].IsInternal then
+      begin
+       if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].SansTypeface then
+        Layers[Current].SansTypeface:=nil
+       else if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].SerifTypeface then 
+        Layers[Current].SerifTypeface:=nil
+       else if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].MonoTypeface then 
+        Layers[Current].MonoTypeface:=nil;
+      end;
+     
+     {Unload font}
      VGShapesUnloadFont(Layers[Current].AppFontList[Index].FontInfoP^.Glyphs,Layers[Current].AppFontList[Index].FontInfoP^.Count);
      
      FreeMem(Layers[Current].AppFontList[Index].FontInfoP);

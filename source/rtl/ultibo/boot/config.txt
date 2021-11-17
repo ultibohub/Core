@@ -1,5 +1,5 @@
 #
-# Default config.txt file for Ultibo on Raspberry Pi 2/3/4
+# Default config.txt file for Ultibo on Raspberry Pi 2/3/4/Zero2W
 #
 # This file should be copied to the SD card along with the required firmware
 # files and the appropriate armstub32-rpi?.bin to enable support for secure
@@ -19,10 +19,11 @@
 # [cm4]	Compute Module 4
 # [pi0]		Zero, Zero W, Zero WH
 # [pi0w]	Zero W, Zero WH
+# [pi02]    Zero 2 W
 #
 # For more information on config.txt conditional filters refer to:
 #
-# https://www.raspberrypi.org/documentation/configuration/config-txt/conditional.md
+# https://www.raspberrypi.com/documentation/computers/config_txt.html#conditional-filters
 #
 
 max_framebuffers=2
@@ -31,6 +32,9 @@ max_framebuffers=2
 armstub=armstub32-rpi2.bin
 
 [pi3]
+armstub=armstub32-rpi3.bin
+
+[pi02]
 armstub=armstub32-rpi3.bin
 
 [pi4]
