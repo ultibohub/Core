@@ -518,7 +518,8 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    lan78xx \
 		    genet \
 		    rpigpioexpander \
-		    rpisensehat
+		    rpisensehat \
+		    hyperpixel
 ULTIBO_KEYMAP_UNITS=keymap_us \
 		    keymap_uk \
 		    keymap_de \

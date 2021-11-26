@@ -896,6 +896,7 @@ type
  {Prototypes for Virtual GPIO Handlers}
  TVirtualGPIOInputGet = function(Pin:LongWord):LongWord;
  TVirtualGPIOOutputSet = function(Pin,Level:LongWord):LongWord;
+
  TVirtualGPIOFunctionGet = function(Pin:LongWord):LongWord;
  TVirtualGPIOFunctionSelect = function(Pin,Mode:LongWord):LongWord; 
  
@@ -1691,6 +1692,7 @@ var
  {Virtual GPIO Handlers} 
  VirtualGPIOInputGetHandler:TVirtualGPIOInputGet;
  VirtualGPIOOutputSetHandler:TVirtualGPIOOutputSet;
+
  VirtualGPIOFunctionGetHandler:TVirtualGPIOFunctionGet;
  VirtualGPIOFunctionSelectHandler:TVirtualGPIOFunctionSelect;
  
@@ -2415,6 +2417,9 @@ function GPIOInputEvent(Pin,Trigger,Timeout:LongWord;Callback:TGPIOCallback;Data
  
 function GPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
  
+function GPIOLevelGet(Pin:LongWord):LongWord; inline;
+function GPIOLevelSet(Pin,Level:LongWord):LongWord; inline;
+
 function GPIOPullGet(Pin:LongWord):LongWord; inline;
 function GPIOPullSelect(Pin,Mode:LongWord):LongWord; inline;
 
@@ -2425,6 +2430,10 @@ function GPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 {Virtual GPIO Functions}
 function VirtualGPIOInputGet(Pin:LongWord):LongWord; inline;
 function VirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; inline;
+
+function VirtualGPIOLevelGet(Pin:LongWord):LongWord; inline;
+function VirtualGPIOLevelSet(Pin,Level:LongWord):LongWord; inline;
+
 function VirtualGPIOFunctionGet(Pin:LongWord):LongWord; inline;
 function VirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; inline;
 
@@ -8399,6 +8408,37 @@ end;
 
 {==============================================================================}
 
+function GPIOLevelGet(Pin:LongWord):LongWord; inline;
+{Get the current level (state) of a GPIO pin}
+{Pin: The pin to get the level for (eg GPIO_PIN_1)}
+{Return: The current level (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
+
+{Note: This function is a synonym for GPIOInputGet as in many cases the
+       level can be read from a pin regardless of input or output mode. This
+       may help to make code clearer or easier to understand in some cases}
+begin
+ {}
+ Result:=GPIOInputGet(Pin);
+end;
+
+{==============================================================================}
+
+function GPIOLevelSet(Pin,Level:LongWord):LongWord; inline;
+{Set the level (state) of a GPIO pin}
+{Pin: The pin to set the level for (eg GPIO_PIN_1)}
+{Level: The level to set the pin to (eg GPIO_LEVEL_HIGH)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
+
+{Note: This function is a synonym for GPIOOutputSet as in many cases the
+       level can be set for a pin regardless of input or output mode. This
+       may help to make code clearer or easier to understand in some cases}
+begin
+ {}
+ Result:=GPIOOutputSet(Pin,Level);
+end;
+
+{==============================================================================}
+
 function GPIOPullGet(Pin:LongWord):LongWord; inline;
 {Get the current pull state of a GPIO pin}
 {Pin: The pin to get the pull state for (eg GPIO_PIN_1)}
@@ -8507,6 +8547,37 @@ begin
   begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
+end;
+
+{==============================================================================}
+
+function VirtualGPIOLevelGet(Pin:LongWord):LongWord; inline;
+{Get the current level (state) of a virtual GPIO pin}
+{Pin: The pin to get the level for (eg GPIO_PIN_1)}
+{Return: The current level (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
+
+{Note: This function is a synonym for VirtualGPIOInputGet as in many cases the
+       level can be read from a pin regardless of input or output mode. This
+       may help to make code clearer or easier to understand in some cases}
+begin
+ {}
+ Result:=VirtualGPIOInputGet(Pin);
+end;
+
+{==============================================================================}
+
+function VirtualGPIOLevelSet(Pin,Level:LongWord):LongWord; inline;
+{Set the level (state) of a virtual GPIO pin}
+{Pin: The pin to set the level for (eg GPIO_PIN_1)}
+{Level: The level to set the pin to (eg GPIO_LEVEL_HIGH)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
+
+{Note: This function is a synonym for VirtualGPIOOutputSet as in many cases the
+       level can be set for a pin regardless of input or output mode. This
+       may help to make code clearer or easier to understand in some cases}
+begin
+ {}
+ Result:=VirtualGPIOOutputSet(Pin,Level);
 end;
 
 {==============================================================================}

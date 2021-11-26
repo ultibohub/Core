@@ -1,7 +1,7 @@
 {
 Ultibo GPIO interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -262,6 +262,9 @@ function GPIODeviceInputEvent(GPIO:PGPIODevice;Pin,Trigger,Flags,Timeout:LongWor
 function GPIODeviceInputCancel(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 
 function GPIODeviceOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+
+function GPIODeviceLevelGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+function GPIODeviceLevelSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
 
 function GPIODevicePullGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function GPIODevicePullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
@@ -762,6 +765,39 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;    
+end;
+
+{==============================================================================}
+
+function GPIODeviceLevelGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
+{Get the current level (state) of a pin on the specified GPIO device}
+{GPIO: The GPIO device to get from}
+{Pin: The pin to get the level for (eg GPIO_PIN_1)}
+{Return: The current level (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
+
+{Note: This function is a synonym for GPIODeviceInputGet as in many cases the
+       level can be read from a pin regardless of input or output mode. This
+       may help to make code clearer or easier to understand in some cases}
+begin
+ {}
+ Result:=GPIODeviceInputGet(GPIO,Pin);
+end;
+
+{==============================================================================}
+
+function GPIODeviceLevelSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
+{Set the level (state) of a pin on the specified GPIO device}
+{GPIO: The GPIO device to set for}
+{Pin: The pin to set the level for (eg GPIO_PIN_1)}
+{Level: The level to set the pin to (eg GPIO_LEVEL_HIGH)}
+{Return: ERROR_SUCCESS if completed successfully or another error code on failure}
+
+{Note: This function is a synonym for GPIODeviceOutputSet as in many cases the
+       level can be set for a pin regardless of input or output mode. This
+       may help to make code clearer or easier to understand in some cases}
+begin
+ {}
+ Result:=GPIODeviceOutputSet(GPIO,Pin,Level);
 end;
 
 {==============================================================================}

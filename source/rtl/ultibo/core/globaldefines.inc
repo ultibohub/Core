@@ -247,12 +247,14 @@ Global Defines
 {--$DEFINE RPIGPIOEXP_DEBUG}      {Enable debug output/counters for RPiGPIO Expander driver (Default: Off)}
 {--$DEFINE REMOTEGPIO_DEBUG}      {Enable debug output/counters for RemoteGPIO driver (Default: Off)}
 {--$DEFINE PCF857X_DEBUG}         {Enable debug output/counters for PCF857X driver (Default: Off)}
+{--$DEFINE I2CGPIO_DEBUG}         {Enable debug output/counters for I2CGPIO driver (Default: Off)} 
 
 {Framebuffer/Console}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
 {--$DEFINE ILI9340_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
 {--$DEFINE HX8357D_DEBUG}         {Enable debug output/counters for HX8357D driver (Default: Off)}
 {--$DEFINE PL110_DEBUG}           {Enable debug output/counters for PL110 driver (Default: Off)}
+{--$DEFINE HYPERPIXEL_DEBUG}      {Enable debug output/counters for HyperPixel driver (Default: Off)}
 {--$DEFINE MEMORYFB_DEBUG}        {Enable debug output/counters for Memory Framebuffer driver (Default: Off)}
 {--$DEFINE MIRRORFB_DEBUG}        {Enable debug output/counters for Mirror Framebuffer driver (Default: Off)}
 {--$DEFINE REMOTEFB_DEBUG}        {Enable debug output/counters for Remote Framebuffer driver (Default: Off)}
@@ -265,6 +267,8 @@ Global Defines
 {Keyboard/Mouse/Touch}
 {--$DEFINE PL050_DEBUG}           {Enable debug output/counters for PL050 driver (Default: Off)}
 {--$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
+{--$DEFINE GOODIX_DEBUG}          {Enable debug output/counters for Goodix Touch driver (Default: Off)}
+{--$DEFINE FT5X06_DEBUG}          {Enable debug output/counters for FT54x06 Touch driver (Default: Off)}
 
 {MMC/SDHCI}
 {--$DEFINE PL18X_DEBUG}           {Enable debug output/counters for PL18X driver (Default: Off)}

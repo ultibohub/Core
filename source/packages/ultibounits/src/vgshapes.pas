@@ -463,7 +463,7 @@ begin
  Offset:=8;
  if AlphaMaskSize > 0 then
   begin
-   State.AttributeList[Offset]:=EGL_ALPHA_MASK_SIZE ;
+   State.AttributeList[Offset]:=EGL_ALPHA_MASK_SIZE;
    State.AttributeList[Offset + 1]:=AlphaMaskSize;
    Inc(Offset,2);
   end;
