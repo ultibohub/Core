@@ -45,11 +45,11 @@ HyperPixel
  DSI displays.
 
  The HyperPixel is available in several versions including a 4.0 inch rectangular,
- a 4.0 inch square and 2.1 inch round. Each version requires a slighly different set
+ a 4.0 inch square and 2.1 inch round. Each version requires a slightly different set
  of instructions to initialize it and this unit provides the correct sequence for
  each of these displays.
 
- To use this unit simplay include it in your application and then call the function
+ To use this unit simply include it in your application and then call the function
  HyperPixelInitialize() as early as possible passing the appropriate model as the only
  parameter to the function. Once initialized successfully the HyperPixel display will
  be available via the standard framebuffer functions and also via the VC4 accelerated
@@ -108,7 +108,7 @@ HyperPixel
 
 
  The display can be rotated to the desired position by adding the display_lcd_rotate
- setting to the config.txt file as below, please see the official documenation at
+ setting to the config.txt file as below, please see the official documentation at
  https://www.raspberrypi.com/documentation/computers/config_txt.html for more details.
 
  No Rotation
@@ -157,6 +157,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touc
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
+
+//To Do //How to handle displays without Touch ? Can we detect, is it a parameter to pass to Init ?
 
 {==============================================================================}
 const
@@ -293,7 +295,7 @@ function HyperPixelInit21Round:LongWord; forward;
 {HyperPixel Functions}
 function HyperPixelInitialize(Model:LongWord):LongWord;
 {Initialize an attached HyperPixel display including GPIO pin configuration}
-{Model: The model of display to be initialized (eg HYPERPIXEL40_SQUARE}
+{Model: The model of display to be initialized (eg HYPERPIXEL40_SQUARE)}
 {Return: ERROR_SUCCESS on successful completion or another error code on failure}
 
 {Note: No attempt is made to determine if the model specified matches with the

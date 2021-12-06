@@ -328,75 +328,7 @@ BCM2708 Framebuffer Device
 {$inline on}   {Allow use of Inline procedures}
 
 unit BCM2708;
-                   
-//To Do
 
- //See Also: \u-boot-HEAD-5745f8c\board\raspberrypi\rpi\rpi.c
- //board_mmc_init 
- //   Power on SDHCI
- //   Get EMMC Clock Rate
- 
- //For SDHCI Host Linux driver see: \linux-rpi-3.12.y\drivers\mmc\host\bcm2835-mmc.c
- //                                 \linux-rpi-3.12.y\drivers\mmc\host\sdhci-bcm2708.c
- //                                 \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c   <- This one appears to be the latest 
- //                                 \linux-rpi-3.18.y\drivers\mmc\host\sdhci-bcm2835.c
- //                                 \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c         <- This one for the more universal stuff
-  
- //For SPI Host Linux driver see: \linux-rpi-3.12.y\drivers\spi\spi-bcm2835.c
- //                               \linux-rpi-3.12.y\drivers\spi\spi-bcm2708.c
- 
- //For PCM Host Linux driver see: 
- 
- //For PWM Host Linux driver see: \linux-rpi-3.12.y\drivers\pwm
- 
- //For I2C Host Linux driver see: \linux-rpi-3.12.y\drivers\i2c\busses\i2c-bcm2708.c
- //                               \linux-rpi-3.12.y\drivers\i2c\busses\i2c-bcm2835.c
-                                  
- //For GPIO Host U-Boot driver see: \u-boot-HEAD-5745f8c\drivers\gpio\bcm2835_gpio.c
- //For GPIO Host Linux driver see:  \linux-rpi-3.12.y\drivers\pinctrl\pinctrl-bcm2835.c
-                        //See Also: \u-boot-master\drivers\gpio\bcm2835_gpio.c
-          
- //For Framebuffer Host Linux driver see: \linux-rpi-3.12.y\drivers\video\bcm2708_fb.c
- //For Framebuffer Host U-Boot driver see: \u-boot-HEAD-5745f8c\drivers\video\bcm2835.c
- 
- //For Watchdog Host Linux driver see: \linux-rpi-3.12.y\drivers\watchdog\bcm2708_wdog.c
- //                                    \linux-rpi-3.12.y\drivers\watchdog\bcm2835_wdt.c
- 
- //Watchdog See Also:                  \linux-rpi-3.12.y\arch\arm\mach-bcm2835\bcm2835.c
- //                                    \u-boot-master\arch\arm\include\asm\arch-bcm2835\wdog.h
- //                                    \u-boot-master\arch\arm\cpu\arm1176\bcm2835\reset.c
- 
-               //bcm2835_restart  see: \linux-rpi-3.12.y\arch\arm\mach-bcm2835\bcm2835.c
-               //bcm2835_power_off
- 
- //Other useful references:
- 
- //Clock:    \linux-rpi-3.12.y\drivers\clk\clk-bcm2835.c
- //
- //Random:   \linux-rpi-3.12.y\drivers\char\hw_random\bcm2835-rng.c
- //          \linux-rpi-3.12.y\drivers\char\hw_random\bcm2835-rng.c
- //
- //Hardware Monitor:  \linux-rpi-3.12.y\drivers\hwmon\bcm2835-hwmon.c (Temp/Max Temp)
- //
- //IRQ:      \linux-rpi-3.12.y\drivers\irqchip\irq-bcm2835.c
- //
- //DVB:      \linux-rpi-3.12.y\drivers\media\dvb-core
- //          \linux-rpi-3.12.y\drivers\media\dvb-frontends
- //
- //DAB:      \linux-rpi-3.12.y\drivers\media\tuners
- //
- //VC4:      \linux-rpi-3.12.y\drivers\misc\vc04_services
- //
- //Camera:   \linux-rpi-3.12.y\drivers\media\platform\bcm2835
- //
- //Thermal:   \linux-rpi-3.12.y\drivers\thermal\bcm2835-thermal.c (Temp/Max Temp)
- //
- //Timer:     \linux-rpi-3.18.y\drivers\clocksource\bcm2835_timer.c
- 
- //           \linux-rpi-3.18.y\arch\arm\mach-bcm2708
- //           \linux-rpi-3.18.y\arch\arm\mach-bcm2709
- 
- 
 interface
 
 {==============================================================================}
@@ -684,6 +616,7 @@ type
   Data:Pointer;                    {Pointer to the data for current transfer}
   Count:LongWord;                  {Count of bytes for current transfer}
   Remain:LongWord;                 {Bytes remaining for current transfer}
+  Error:LongBool;                  {True if an error occurred during the transfer}
   {Statistics Properties}          
   InterruptCount:LongWord;         {Number of interrupt requests received by the device}
  end;
@@ -3208,6 +3141,9 @@ function BCM2708BSCI2CStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 var
  Slave:LongWord;
  Divider:LongWord;
+ Timeout:LongWord;
+ RisingDelay:LongWord;
+ FallingDelay:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3242,9 +3178,25 @@ begin
  if Rate = 0 then Rate:=BCM2708_BSCI2C_DEFAULT_CLOCK;
  Divider:=PBCM2708BSCI2CDevice(I2C).CoreClock div Rate;
  if (Divider and 1) <> 0 then Inc(Divider);
-
+ 
+ {Get Timeout (35ms)}
+ if Rate > ((BCM2835_BSC_CLKT_TOUT_MASK * 1000) div 35) then
+  begin
+   Timeout:=BCM2835_BSC_CLKT_TOUT_MASK;
+  end
+ else
+  begin
+   Timeout:=35 * (Rate div 1000);
+  end;
+ 
+ {Get Rising Edge Delay (REDL)}
+ RisingDelay:=Max(Divider div 4,1);
+ 
+ {Get Falling Edge Delay (FEDL)}
+ FallingDelay:=Max(Divider div 16,1);
+ 
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Rate=' + IntToStr(Rate) + ' Divider=' + IntToStr(Divider));
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Rate=' + IntToStr(Rate) + ' Divider=' + IntToStr(Divider) + ' Timeout=' + IntToStr(Timeout) + ' Falling=' + IntToStr(FallingDelay) + ' Rising=' + IntToStr(RisingDelay));
  {$ENDIF}
  
  {Memory Barrier}
@@ -3258,6 +3210,12 @@ begin
  
  {Set Divider}
  PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).CDIV:=(Divider and BCM2835_BSC_CDIV_MASK);
+ 
+ {Set Rising and Falling Delay}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).DEL:=(FallingDelay shl BCM2835_BSC_DEL_FEDL_SHIFT) or (RisingDelay shl BCM2835_BSC_DEL_REDL_SHIFT);
+
+ {Set Timeout}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).CLKT:=(Timeout and BCM2835_BSC_CLKT_TOUT_MASK);
 
  {Get Slave}
  Slave:=(PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).A and BCM2835_BSC_A_MASK);
@@ -3349,6 +3307,7 @@ begin
  PBCM2708BSCI2CDevice(I2C).Data:=nil;
  PBCM2708BSCI2CDevice(I2C).Count:=0;
  PBCM2708BSCI2CDevice(I2C).Remain:=0;
+ PBCM2708BSCI2CDevice(I2C).Error:=False;
  
  {Return Result}
  Result:=ERROR_SUCCESS;
@@ -3387,6 +3346,7 @@ begin
    PBCM2708BSCI2CDevice(I2C).Data:=Buffer;
    PBCM2708BSCI2CDevice(I2C).Count:=0;
    PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+   PBCM2708BSCI2CDevice(I2C).Error:=False;
 
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -3416,8 +3376,12 @@ begin
    {Wait for Completion}
    if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
     begin
-     {Get Count}
-     Count:=PBCM2708BSCI2CDevice(I2C).Count;
+     {Check Error}
+     if not PBCM2708BSCI2CDevice(I2C).Error then
+      begin
+       {Get Count}
+       Count:=PBCM2708BSCI2CDevice(I2C).Count;
+      end; 
      
      {Check Count}
      if Count < Size then
@@ -3439,6 +3403,7 @@ begin
    PBCM2708BSCI2CDevice(I2C).Data:=nil;
    PBCM2708BSCI2CDevice(I2C).Count:=0;
    PBCM2708BSCI2CDevice(I2C).Remain:=0;
+   PBCM2708BSCI2CDevice(I2C).Error:=False;
   end;
   
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -3482,6 +3447,7 @@ begin
    PBCM2708BSCI2CDevice(I2C).Data:=Buffer;
    PBCM2708BSCI2CDevice(I2C).Count:=0;
    PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+   PBCM2708BSCI2CDevice(I2C).Error:=False;
    
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -3517,8 +3483,12 @@ begin
    {Wait for Completion}
    if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
     begin
-     {Get Count}
-     Count:=PBCM2708BSCI2CDevice(I2C).Count;
+     {Check Error}
+     if not PBCM2708BSCI2CDevice(I2C).Error then
+      begin
+       {Get Count}
+       Count:=PBCM2708BSCI2CDevice(I2C).Count;
+      end; 
      
      {Check Count}
      if Count < Size then
@@ -3540,6 +3510,7 @@ begin
    PBCM2708BSCI2CDevice(I2C).Data:=nil;
    PBCM2708BSCI2CDevice(I2C).Count:=0;
    PBCM2708BSCI2CDevice(I2C).Remain:=0;
+   PBCM2708BSCI2CDevice(I2C).Error:=False;
   end;
   
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -3601,6 +3572,7 @@ begin
      PBCM2708BSCI2CDevice(I2C).Data:=Initial;
      PBCM2708BSCI2CDevice(I2C).Count:=0;
      PBCM2708BSCI2CDevice(I2C).Remain:=Len;
+     PBCM2708BSCI2CDevice(I2C).Error:=False;
      
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
@@ -3661,6 +3633,7 @@ begin
        PBCM2708BSCI2CDevice(I2C).Data:=Data;
        PBCM2708BSCI2CDevice(I2C).Count:=0;
        PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+       PBCM2708BSCI2CDevice(I2C).Error:=False;
        
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
@@ -3677,8 +3650,12 @@ begin
        {Wait for Completion}
        if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
         begin
-         {Get Count}
-         Count:=PBCM2708BSCI2CDevice(I2C).Count;
+         {Check Error}
+         if not PBCM2708BSCI2CDevice(I2C).Error then
+          begin
+           {Get Count}
+           Count:=PBCM2708BSCI2CDevice(I2C).Count;
+          end; 
          
          {Check Count}
          if Count < Size then
@@ -3701,9 +3678,9 @@ begin
      PBCM2708BSCI2CDevice(I2C).Data:=nil;
      PBCM2708BSCI2CDevice(I2C).Count:=0;
      PBCM2708BSCI2CDevice(I2C).Remain:=0;
+     PBCM2708BSCI2CDevice(I2C).Error:=False;
     end;
-  
-  
+
    {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
    if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Return Count=' + IntToStr(Count));
    {$ENDIF}
@@ -3745,6 +3722,7 @@ begin
    PBCM2708BSCI2CDevice(I2C).Data:=Data;
    PBCM2708BSCI2CDevice(I2C).Count:=0;
    PBCM2708BSCI2CDevice(I2C).Remain:=Size;
+   PBCM2708BSCI2CDevice(I2C).Error:=False;
    
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -3793,8 +3771,12 @@ begin
    {Wait for Completion}
    if SemaphoreWait(I2C.Wait) = ERROR_SUCCESS then
     begin
-     {Get Count}
-     Count:=PBCM2708BSCI2CDevice(I2C).Count;
+     {Check Error}
+     if not PBCM2708BSCI2CDevice(I2C).Error then
+      begin
+       {Get Count}
+       Count:=PBCM2708BSCI2CDevice(I2C).Count;
+      end; 
      
      {Check Count}
      if Count < Size then
@@ -3816,6 +3798,7 @@ begin
    PBCM2708BSCI2CDevice(I2C).Data:=nil;
    PBCM2708BSCI2CDevice(I2C).Count:=0;
    PBCM2708BSCI2CDevice(I2C).Remain:=0;
+   PBCM2708BSCI2CDevice(I2C).Error:=False;
   end;
   
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -3831,6 +3814,9 @@ end;
 function BCM2708BSCI2CSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
 var
  Divider:LongWord;
+ Timeout:LongWord;
+ RisingDelay:LongWord;
+ FallingDelay:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -3849,8 +3835,24 @@ begin
  Divider:=PBCM2708BSCI2CDevice(I2C).CoreClock div Rate;
  if (Divider and 1) <> 0 then Inc(Divider);
 
+ {Get Timeout (35ms)}
+ if Rate > ((BCM2835_BSC_CLKT_TOUT_MASK * 1000) div 35) then
+  begin
+   Timeout:=BCM2835_BSC_CLKT_TOUT_MASK;
+  end
+ else
+  begin
+   Timeout:=35 * (Rate div 1000);
+  end;
+ 
+ {Get Rising Edge Delay (REDL)}
+ RisingDelay:=Max(Divider div 4,1);
+ 
+ {Get Falling Edge Delay (FEDL)}
+ FallingDelay:=Max(Divider div 16,1);
+
  {$IF DEFINED(BCM2708_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Divider=' + IntToStr(Divider));
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2708:  Divider=' + IntToStr(Divider) + ' Timeout=' + IntToStr(Timeout) + ' Falling=' + IntToStr(FallingDelay) + ' Rising=' + IntToStr(RisingDelay));
  {$ENDIF}
  
  {Memory Barrier}
@@ -3858,6 +3860,12 @@ begin
  
  {Set Divider}
  PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).CDIV:=(Divider and BCM2835_BSC_CDIV_MASK);
+ 
+ {Set Rising and Falling Delay}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).DEL:=(FallingDelay shl BCM2835_BSC_DEL_FEDL_SHIFT) or (RisingDelay shl BCM2835_BSC_DEL_REDL_SHIFT);
+ 
+ {Set Timeout}
+ PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).CLKT:=(Timeout and BCM2835_BSC_CLKT_TOUT_MASK);
  
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
@@ -3988,6 +3996,8 @@ begin
        if (Status and (BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR)) <> 0 then
         begin
          {Error}
+         I2C.Error:=True;
+         
          {Update Statistics}
          Inc(I2C.InterruptCount);
          
@@ -9011,8 +9021,6 @@ begin
      {$IF (DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
      if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2708 Bus Power Interrupt (InterruptMask=' + IntToHex(InterruptMask,8) + ')');
      {$ENDIF}
-     
-     //To Do //Log Error
     end;
  
    {Check for card interrupt}
@@ -9046,15 +9054,13 @@ begin
    {$IF (DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2708 Unexpected Interrupt (UnexpectedMask=' + IntToHex(UnexpectedMask,8) + ')');
    {$ENDIF}
-   
-   //To Do //Log Error
   end;
   
  {$IF (DEFINED(BCM2708_DEBUG) or DEFINED(MMC_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2708 Interrupt Handler completed');
  {$ENDIF}
   
- //See: bcm2835_mmc_irq in \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
+ //See: bcm2835_mmc_irq in \drivers\mmc\host\bcm2835-mmc.c
 end;
 
 {==============================================================================}
@@ -9071,7 +9077,7 @@ begin
  
  {Setup Interrupts}
  SDHCI.Interrupts:=SDHCI_INT_BUS_POWER or SDHCI_INT_DATA_END_BIT or SDHCI_INT_DATA_CRC or SDHCI_INT_DATA_TIMEOUT or SDHCI_INT_INDEX or SDHCI_INT_END_BIT or SDHCI_INT_CRC or SDHCI_INT_TIMEOUT or SDHCI_INT_DATA_END or SDHCI_INT_RESPONSE;
-                   //SDHCI_INT_CARD_INSERT or SDHCI_INT_CARD_REMOVE or //See sdhci_set_card_detection in \linux-rpi-3.18.y\drivers\mmc\host\sdhci.c
+                   //SDHCI_INT_CARD_INSERT or SDHCI_INT_CARD_REMOVE or //See sdhci_set_card_detection in \drivers\mmc\host\sdhci.c
                    //Note: SDHCI_INT_CARD_INSERT seems to hang everything, why? //Because the SDHCI_CARD_PRESENT bit is never updated !
                    
  {Enable Interrupts}
@@ -9091,7 +9097,7 @@ begin
  {Return Result}
  Result:=ERROR_SUCCESS;
  
- //See: \linux-rpi-3.18.y\drivers\mmc\host\bcm2835-mmc.c
+ //See: \drivers\mmc\host\bcm2835-mmc.c
 end;
  
 {==============================================================================}

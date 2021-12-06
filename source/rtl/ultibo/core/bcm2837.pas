@@ -615,7 +615,9 @@ const
  {BSC (I2C0/1/2) Data Delay register bits (See 3.2)} 
  BCM2837_BSC_DEL_FEDL_MASK = ($FFFF shl 16); {FEDL Falling Edge Delay (Number of core clock cycles to wait after the falling edge of SCL before outputting next bit of data)}
  BCM2837_BSC_DEL_REDL_MASK = ($FFFF shl 0);  {REDL Rising Edge Delay (Number of core clock cycles to wait after the rising edge of SCL before reading the next bit of data)}
- 
+ BCM2837_BSC_DEL_FEDL_SHIFT = 16;
+ BCM2837_BSC_DEL_REDL_SHIFT = 0;
+
  {BSC (I2C0/1/2) Clock Stretch Timeout register bits (See 3.2)} 
  BCM2837_BSC_CLKT_TOUT_MASK = $FFFF; {TOUT Clock Stretch Timeout Value (Number of SCL clock cycles to wait after the rising edge of SCL before deciding that the slave is not responding)}
  
@@ -1849,6 +1851,7 @@ type
   FIFO:LongWord; {Data FIFO}
   CDIV:LongWord; {Clock Divider}
   DEL:LongWord;  {Data Delay}
+  CLKT:LongWord; {Clock Stretch Timeout}
  end;
  
 type
