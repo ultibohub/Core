@@ -1,7 +1,7 @@
 {
 Ultibo IP Helper interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2021 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -88,7 +88,20 @@ const
  MIB_IF_TYPE_LOOPBACK               = 24;
  MIB_IF_TYPE_SLIP                   = 28;
  MIB_IF_TYPE_IEEE80211              = 71;
+ 
+ IF_TYPE_OTHER                      = MIB_IF_TYPE_OTHER;
+ IF_TYPE_ETHERNET_CSMACD            = MIB_IF_TYPE_ETHERNET;
+ IF_TYPE_ISO88025_TOKENRING         = MIB_IF_TYPE_TOKENRING;
+ IF_TYPE_FDDI                       = MIB_IF_TYPE_FDDI;
+ IF_TYPE_PPP                        = MIB_IF_TYPE_PPP;
+ IF_TYPE_SOFTWARE_LOOPBACK          = MIB_IF_TYPE_LOOPBACK;
+ IF_TYPE_ATM                        = MIB_IF_TYPE_SLIP;
  IF_TYPE_IEEE80211                  = MIB_IF_TYPE_IEEE80211;
+ IF_TYPE_TUNNEL                     = 131;
+ IF_TYPE_IEEE1394                   = 144;
+ IF_TYPE_IEEE80216_WMAN             = 237;
+ IF_TYPE_WWANPP                     = 243;
+ IF_TYPE_WWANPP2                    = 244;
 
  MIB_IF_ADMIN_STATUS_UP             = 1;
  MIB_IF_ADMIN_STATUS_DOWN           = 2;

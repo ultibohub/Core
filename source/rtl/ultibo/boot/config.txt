@@ -19,7 +19,7 @@
 # [cm4]	Compute Module 4
 # [pi0]		Zero, Zero W, Zero WH
 # [pi0w]	Zero W, Zero WH
-# [pi02]    Zero 2 W
+# [pi02]	Zero 2 W
 #
 # For more information on config.txt conditional filters refer to:
 #

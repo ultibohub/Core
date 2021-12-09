@@ -158,7 +158,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touc
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
-//To Do //How to handle displays without Touch ? Can we detect, is it a parameter to pass to Init ?
+//To Do //How to handle displays without Touch ? Can we detect, is it a parameter to pass to Init or will the I2C just give us an error ?
 
 {==============================================================================}
 const
@@ -205,11 +205,14 @@ const
  HYPERPIXEL_SPI_CLK = GPIO_PIN_27;
  HYPERPIXEL_SPI_MOSI = GPIO_PIN_26;
  HYPERPIXEL_SPI_CS = GPIO_PIN_18;
- HYPERPIXEL_SPI_DELAY = 100; {Clock pulse time in microseconds}
- HYPERPIXEL_SPI_WAIT = 120;  {Wait time in milliseconds before display on}
+ HYPERPIXEL_SPI_DELAY = 100;           {Clock pulse time in microseconds}
+ HYPERPIXEL_SPI_WAIT = 120;            {Wait time in milliseconds before display on}
 
- HYPERPIXEL_SPI_DELAY_ALT = 10;{Clock pulse time in microseconds (Rectangle model)}
- HYPERPIXEL_SPI_WAIT_ALT = 200;  {Wait time in milliseconds before display on (Rectangle model)}
+ HYPERPIXEL_SPI_CLK_ALT = GPIO_PIN_11;  {CLK Pin (Round model)}
+ HYPERPIXEL_SPI_MOSI_ALT = GPIO_PIN_10; {MOSI Pin (Round model)}
+
+ HYPERPIXEL_SPI_DELAY_ALT = 10;         {Clock pulse time in microseconds (Rectangle model)}
+ HYPERPIXEL_SPI_WAIT_ALT = 200;         {Wait time in milliseconds before display on (Rectangle model)}
 
  {HyperPixel Touch I2C pins (All Models)} {Used to create a software I2C device}
  HYPERPIXEL_I2C_SDA = GPIO_PIN_10;
@@ -350,7 +353,9 @@ begin
  Result:=GPIODevicePullSelect(Data.Device,Data.CS,Data.PULL);
  if Result <> ERROR_SUCCESS then Exit;
 
- {Reset CS}
+ {Reset CLK/MOSI/CS}
+ GPIODeviceOutputSet(Data.Device,Data.CLK,GPIO_LEVEL_LOW);
+ GPIODeviceOutputSet(Data.Device,Data.MOSI,GPIO_LEVEL_LOW);
  GPIODeviceOutputSet(Data.Device,Data.CS,GPIO_LEVEL_HIGH);
 
  Result:=ERROR_SUCCESS;
@@ -1105,8 +1110,8 @@ begin
  Data.Device:=GPIODevice;
  Data.FSEL:=HYPERPIXEL_SPI_FUNCTION;
  Data.PULL:=HYPERPIXEL_SPI_PULL;
- Data.CLK:=HYPERPIXEL_SPI_CLK;
- Data.MOSI:=HYPERPIXEL_SPI_MOSI;
+ Data.CLK:=HYPERPIXEL_SPI_CLK_ALT;
+ Data.MOSI:=HYPERPIXEL_SPI_MOSI_ALT;
  Data.CS:=HYPERPIXEL_SPI_CS;
  Data.Wait:=HYPERPIXEL_SPI_WAIT;
  Data.Delay:=HYPERPIXEL_SPI_DELAY;
@@ -1116,7 +1121,7 @@ begin
 
  HyperPixelSPIWriteCommand(@Data,$01);  {Niko added reset}
 
- MicrosecondDelay(240);
+ MillisecondDelay(240);
 
  HyperPixelSPIWriteCommand(@Data,$FF);
  HyperPixelSPIWriteCommand(@Data,$100 or $77);
@@ -1365,10 +1370,10 @@ begin
  HyperPixelSPIWriteCommand(@Data,$100 or $66);
 
  HyperPixelSPIWriteCommand(@Data,$11);
- MicrosecondDelay(120);
+ MillisecondDelay(120);
 
  HyperPixelSPIWriteCommand(@Data,$29);
- MicrosecondDelay(20);
+ MillisecondDelay(20);
 
  {Cleanup Software SPI}
  Result:=HyperPixelSPICleanup(@Data);
