@@ -1321,7 +1321,7 @@ procedure NetworkLogWarn(Network:PNetworkDevice;const AText:String); inline;
 procedure NetworkLogError(Network:PNetworkDevice;const AText:String); inline;
 procedure NetworkLogDebug(Network:PNetworkDevice;const AText:String); inline;
 
-function HardwareAddressToString(const AAddress:THardwareAddress):String;
+function HardwareAddressToString(const AAddress:THardwareAddress;const ASeparator: String = ''):String;
 function StringToHardwareAddress(const AAddress:String):THardwareAddress;
 
 function ValidHardwareAddress(const AAddress:THardwareAddress):Boolean; 
@@ -7059,7 +7059,7 @@ end;
 
 {==============================================================================}
 
-function HardwareAddressToString(const AAddress:THardwareAddress):String;
+function HardwareAddressToString(const AAddress:THardwareAddress;const ASeparator: String = ''):String;
 var
  Count:Integer;
 begin
@@ -7067,6 +7067,8 @@ begin
  Result:='';
  for Count:=0 to HARDWARE_ADDRESS_SIZE - 1 do
   begin
+   if Count > 0 then Result:=Result + ASeparator;
+   
    Result:=Result + IntToHex(AAddress[Count],2);
   end;
 end;

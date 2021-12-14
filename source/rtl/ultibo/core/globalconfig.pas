@@ -525,14 +525,14 @@ var
 {Console and FrameBuffer configuration}
 var
  {Console}
- CONSOLE_DEFAULT_FORECOLOR:LongWord;             {The default foreground color for the console}
- CONSOLE_DEFAULT_BACKCOLOR:LongWord;             {The default background color for the console}
+ CONSOLE_DEFAULT_FORECOLOR:LongWord = COLOR_LIGHTGRAY; {The default foreground color for the console}
+ CONSOLE_DEFAULT_BACKCOLOR:LongWord = COLOR_BLACK;     {The default background color for the console}
  
- CONSOLE_DEFAULT_BORDERWIDTH:LongWord;           {The default border width for the console}
- CONSOLE_DEFAULT_BORDERCOLOR:LongWord;           {The default border color for the console}
+ CONSOLE_DEFAULT_BORDERWIDTH:LongWord = 2;             {The default border width for the console}
+ CONSOLE_DEFAULT_BORDERCOLOR:LongWord = COLOR_WHITE;   {The default border color for the console}
  
- CONSOLE_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE; {The default Font for the console}
- CONSOLE_DEFAULT_FONT_NAME:String;               {The default Font name for the console}
+ CONSOLE_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE;  {The default Font for the console}
+ CONSOLE_DEFAULT_FONT_NAME:String;                     {The default Font name for the console}
 
  CONSOLE_LINE_WRAP:LongBool = True;              {If True then wrap long lines to the next line when writing to the console (Sets CONSOLE_FLAG_LINE_WRAP on device / WINDOW_FLAG_LINE_WRAP on windows)}
  CONSOLE_AUTO_SCROLL:LongBool = True;            {If True then automatically scroll up on reaching the last line of the console (Sets CONSOLE_FLAG_AUTO_SCROLL on device / WINDOW_FLAG_AUTO_SCROLL on windows)}
@@ -546,36 +546,38 @@ var
  CONSOLE_DMA_CLEAR:LongBool = True;              {If True then use DMA (If available) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
  CONSOLE_DMA_SCROLL:LongBool = True;             {If True then use DMA (If available) to scroll console windows (Sets CONSOLE_FLAG_DMA_SCROLL on device)}
  
- CONSOLE_REGISTER_LOGGING:LongBool = False;      {If True then register any Console device as a Logging device (Only if Console unit included)}
- CONSOLE_LOGGING_DEFAULT:LongBool = False;       {If True then a Console device can be the default Logging device}
+ CONSOLE_REGISTER_LOGGING:LongBool = False;                  {If True then register any Console device as a Logging device (Only if Console unit included)}
+ CONSOLE_LOGGING_DEFAULT:LongBool = False;                   {If True then a Console device can be the default Logging device}
  CONSOLE_LOGGING_POSITION:LongWord = CONSOLE_POSITION_RIGHT; {The default Console Window position for the console Logging device}
- CONSOLE_LOGGING_DEVICE:String;                  {The console device Name (or Desription) to create the Logging window on, if blank create on default device}
+ CONSOLE_LOGGING_DEVICE:String;                              {The console device Name (or Desription) to create the Logging window on, if blank create on default device}
  
- CONSOLE_CRT_POSITION:LongWord = CONSOLE_POSITION_FULL; {The default Console Window position for the CRT unit (Only if CRT unit included)}
+ CONSOLE_CRT_POSITION:LongWord = CONSOLE_POSITION_FULL;   {The default Console Window position for the CRT unit (Only if CRT unit included)}
  
  CONSOLE_VIDEO_POSITION:LongWord = CONSOLE_POSITION_FULL; {The default Console Window position for the ConsoleVideo unit (Only if ConsoleVideo unit included)}
- CONSOLE_VIDEO_DEVICE:String;                    {The console device Name (or Description) to create the ConsoleVideo window on, if blank create on default device}
- CONSOLE_VIDEO_WINDOW:THandle = INVALID_HANDLE_VALUE; {The console window used or created by the ConsoleVideo unit}
- CONSOLE_VIDEO_FONT:String;                      {The font name to use for the ConsoleVideo window, if blank use the default font (Default8x16)}
+ CONSOLE_VIDEO_DEVICE:String;                             {The console device Name (or Description) to create the ConsoleVideo window on, if blank create on default device}
+ CONSOLE_VIDEO_WINDOW:THandle = INVALID_HANDLE_VALUE;     {The console window used or created by the ConsoleVideo unit}
+ CONSOLE_VIDEO_FONT:String;                               {The font name to use for the ConsoleVideo window, if blank use the default font (Default8x16)}
  
 var
  {Window}
- WINDOW_DEFAULT_FORECOLOR:LongWord;              {The default foreground color for console windows}
- WINDOW_DEFAULT_BACKCOLOR:LongWord;              {The default background color for console windows}
+ WINDOW_DEFAULT_FORECOLOR:LongWord = COLOR_DARKGRAY;  {The default foreground color for console windows}
+ WINDOW_DEFAULT_BACKCOLOR:LongWord = COLOR_WHITE;     {The default background color for console windows}
  
- WINDOW_DEFAULT_BORDERWIDTH:LongWord;            {The default border width for console windows}
- WINDOW_DEFAULT_BORDERCOLOR:LongWord;            {The default border color for console windows}
- WINDOW_DEFAULT_ACTIVEBORDER:LongWord;           {The default active border color for console windows}
+ WINDOW_DEFAULT_BORDERWIDTH:LongWord = 2;             {The default border width for console windows}
+ WINDOW_DEFAULT_BORDERCOLOR:LongWord = COLOR_MIDGRAY; {The default border color for console windows}
+ WINDOW_DEFAULT_ACTIVEBORDER:LongWord = COLOR_GRAY;   {The default active border color for console windows}
  
- WINDOW_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE; {The default Font for console windows}
- WINDOW_DEFAULT_FONT_NAME:String;                {The default Font name for console windows}
+ WINDOW_DEFAULT_FONT:THandle = INVALID_HANDLE_VALUE;  {The default Font for console windows}
+ WINDOW_DEFAULT_FONT_NAME:String;                     {The default Font name for console windows}
  
 var
  {Framebuffer Console}
- FRAMEBUFFER_CONSOLE_AUTOCREATE:LongBool = True;       {If True then auto create a console on any framebuffer device (Only if Console unit included)}
+ FRAMEBUFFER_CONSOLE_AUTOCREATE:LongBool = True;                   {If True then auto create a console on any framebuffer device (Only if Console unit included)}
  
- FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET:LongWord;   {The default desktop offset for the framebuffer console}
- FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR:LongWord;    {The default desktop color for the framebuffer console}
+ FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET:LongWord = 48;          {The default desktop offset for the framebuffer console}
+ FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR:LongWord = COLOR_ULTIBO; {The default desktop color for the framebuffer console}
+ 
+ FRAMEBUFFER_CONSOLE_MESSAGE:String;                               {The message displayed in the top border of the framebuffer console}
  
 var
  {Framebuffer} 

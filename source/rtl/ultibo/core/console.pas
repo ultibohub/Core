@@ -800,6 +800,7 @@ procedure ConsoleInit;
 
 {Note: Called only during system startup}
 var
+ WorkInt:LongWord;
  WorkBuffer:String;
 begin
  {}
@@ -828,37 +829,64 @@ begin
  ConsoleDeviceDefault:=nil;
  
  {Check Environment Variables}
+ {CONSOLE_DEFAULT_FORECOLOR}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_DEFAULT_FORECOLOR'),CONSOLE_DEFAULT_FORECOLOR);
+ if WorkInt <> CONSOLE_DEFAULT_FORECOLOR then CONSOLE_DEFAULT_FORECOLOR:=WorkInt;
+ 
+ {CONSOLE_DEFAULT_BACKCOLOR}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_DEFAULT_BACKCOLOR'),CONSOLE_DEFAULT_BACKCOLOR);
+ if WorkInt <> CONSOLE_DEFAULT_BACKCOLOR then CONSOLE_DEFAULT_BACKCOLOR:=WorkInt;
+ 
+ {CONSOLE_DEFAULT_BORDERWIDTH}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_DEFAULT_BORDERWIDTH'),CONSOLE_DEFAULT_BORDERWIDTH);
+ if WorkInt <> CONSOLE_DEFAULT_BORDERWIDTH then CONSOLE_DEFAULT_BORDERWIDTH:=WorkInt;
+ 
+ {CONSOLE_DEFAULT_BORDERCOLOR}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_DEFAULT_BORDERCOLOR'),CONSOLE_DEFAULT_BORDERCOLOR);
+ if WorkInt <> CONSOLE_DEFAULT_BORDERCOLOR then CONSOLE_DEFAULT_BORDERCOLOR:=WorkInt;
+ 
  {CONSOLE_DEFAULT_FONT_NAME}
  WorkBuffer:=SysUtils.GetEnvironmentVariable('CONSOLE_DEFAULT_FONT_NAME');
  if Length(WorkBuffer) <> 0 then CONSOLE_DEFAULT_FONT_NAME:=WorkBuffer;
+ 
+ {WINDOW_DEFAULT_FORECOLOR}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WINDOW_DEFAULT_FORECOLOR'),WINDOW_DEFAULT_FORECOLOR);
+ if WorkInt <> WINDOW_DEFAULT_FORECOLOR then WINDOW_DEFAULT_FORECOLOR:=WorkInt;
+ 
+ {WINDOW_DEFAULT_BACKCOLOR}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WINDOW_DEFAULT_BACKCOLOR'),WINDOW_DEFAULT_BACKCOLOR);
+ if WorkInt <> WINDOW_DEFAULT_BACKCOLOR then WINDOW_DEFAULT_BACKCOLOR:=WorkInt;
+ 
+ {WINDOW_DEFAULT_BORDERWIDTH}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WINDOW_DEFAULT_BORDERWIDTH'),WINDOW_DEFAULT_BORDERWIDTH);
+ if WorkInt <> WINDOW_DEFAULT_BORDERWIDTH then WINDOW_DEFAULT_BORDERWIDTH:=WorkInt;
+ 
+ {WINDOW_DEFAULT_BORDERCOLOR}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WINDOW_DEFAULT_BORDERCOLOR'),WINDOW_DEFAULT_BORDERCOLOR);
+ if WorkInt <> WINDOW_DEFAULT_BORDERCOLOR then WINDOW_DEFAULT_BORDERCOLOR:=WorkInt;
+ 
+ {WINDOW_DEFAULT_ACTIVEBORDER}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WINDOW_DEFAULT_ACTIVEBORDER'),WINDOW_DEFAULT_ACTIVEBORDER);
+ if WorkInt <> WINDOW_DEFAULT_ACTIVEBORDER then WINDOW_DEFAULT_ACTIVEBORDER:=WorkInt;
  
  {WINDOW_DEFAULT_FONT_NAME}
  WorkBuffer:=SysUtils.GetEnvironmentVariable('WINDOW_DEFAULT_FONT_NAME');
  if Length(WorkBuffer) <> 0 then WINDOW_DEFAULT_FONT_NAME:=WorkBuffer;
  
- {Setup Console Defaults}
- CONSOLE_DEFAULT_FORECOLOR:=COLOR_LIGHTGRAY;
- CONSOLE_DEFAULT_BACKCOLOR:=COLOR_BLACK;
+ {FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET'),FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET);
+ if WorkInt <> FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET then FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET:=WorkInt;
  
- CONSOLE_DEFAULT_BORDERWIDTH:=2;
- CONSOLE_DEFAULT_BORDERCOLOR:=COLOR_WHITE;
+ {FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR}
+ WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR'),FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR);
+ if WorkInt <> FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR then FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR:=WorkInt;
  
+ {Setup Console Default Font}
  CONSOLE_DEFAULT_FONT:=ConsoleDeviceGetDefaultFont;
  
- {Setup Window Defaults}
- WINDOW_DEFAULT_FORECOLOR:=COLOR_DARKGRAY;
- WINDOW_DEFAULT_BACKCOLOR:=COLOR_WHITE;
- 
- WINDOW_DEFAULT_BORDERWIDTH:=2;
- WINDOW_DEFAULT_BORDERCOLOR:=COLOR_MIDGRAY;
- WINDOW_DEFAULT_ACTIVEBORDER:=COLOR_GRAY;
- 
+ {Setup Window Default Font}
  WINDOW_DEFAULT_FONT:=ConsoleWindowGetDefaultFont;
- 
- {Setup Framebuffer Console}
- FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET:=48; 
- FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR:=COLOR_ULTIBO;
- 
+
  {Enumerate Framebuffers}
  FramebufferDeviceEnumerate(ConsoleFramebufferDeviceEnum,nil);
  
@@ -11107,6 +11135,7 @@ function FramebufferConsoleDrawDesktop(Console:PConsoleDevice):LongWord;
 {Internal function used by FramebufferConsole to draw the console desktop}
 {Note: Not intended to be called directly by applications}
 var
+ Title:String;
  TitleX:LongWord;
  TitleY:LongWord;
  TitleLen:LongWord;
@@ -11138,6 +11167,10 @@ begin
  if MutexLock(Console.Lock) = ERROR_SUCCESS then 
   begin
    try
+    {Get Title}
+    Title:=FRAMEBUFFER_CONSOLE_TITLE;
+    if Length(FRAMEBUFFER_CONSOLE_MESSAGE) > 0 then Title:=FRAMEBUFFER_CONSOLE_MESSAGE;
+     
     {Get Desktop}
     DesktopColor:=PFramebufferConsole(Console).DesktopColor;
     
@@ -11152,7 +11185,7 @@ begin
     {Get Title}
     TitleX:=PFramebufferConsole(Console).DesktopOffset;
     TitleY:=(PFramebufferConsole(Console).DesktopOffset - FontGetHeight(Console.Font)) div 2;
-    TitleLen:=Length(FRAMEBUFFER_CONSOLE_TITLE);
+    TitleLen:=Length(Title);
     TitleFont:=Console.Font;
     TitleOffset:=PFramebufferConsole(Console).DesktopOffset;
     if FontGetHeight(Console.Font) > TitleOffset then TitleOffset:=0;
@@ -11181,7 +11214,7 @@ begin
        end;
 
       {Draw Title}
-      Result:=FramebufferConsoleDrawText(Console,TitleFont,FRAMEBUFFER_CONSOLE_TITLE,TitleX,TitleY,TitleForecolor,TitleBackcolor,TitleLen);
+      Result:=FramebufferConsoleDrawText(Console,TitleFont,Title,TitleX,TitleY,TitleForecolor,TitleBackcolor,TitleLen);
      end; 
    finally
     MutexUnlock(Console.Lock);
