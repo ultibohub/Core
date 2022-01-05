@@ -1,7 +1,7 @@
 {
 Broadcom BCM27XX SDHOST driver
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -273,11 +273,11 @@ function BCMSDHOSTTransferPIO(SDHCI:PSDHCIHost):LongWord; forward;
 function BCMSDHOSTReadBlockPIO(SDHCI:PSDHCIHost):LongWord; forward;
 function BCMSDHOSTWriteBlockPIO(SDHCI:PSDHCIHost):LongWord; forward;
 
-function BCMSDHOSTTransferComplete(SDHCI:PSDHCIHost):LongWord; forward;
-function BCMSDHOSTWaitTransferComplete(SDHCI:PSDHCIHost):LongWord; forward;
+function BCMSDHOSTTransferComplete(SDHCI:PSDHCIHost;AllowWait:Boolean):LongWord; forward;
+function BCMSDHOSTWaitTransferComplete(SDHCI:PSDHCIHost;AllowWait:Boolean):LongWord; forward;
 
 function BCMSDHOSTFinishCommand(SDHCI:PSDHCIHost;AllowWait:Boolean):LongWord; forward;
-function BCMSDHOSTFinishData(SDHCI:PSDHCIHost):LongWord; forward;
+function BCMSDHOSTFinishData(SDHCI:PSDHCIHost;AllowWait:Boolean):LongWord; forward;
 
 function BCMSDHOSTBusyInterrupt(SDHCI:PSDHCIHost;InterruptMask:LongWord):LongWord; forward;
 function BCMSDHOSTDataInterrupt(SDHCI:PSDHCIHost;InterruptMask:LongWord):LongWord; forward;
@@ -1165,7 +1165,7 @@ end;
 
 {==============================================================================}
 
-function BCMSDHOSTTransferComplete(SDHCI:PSDHCIHost):LongWord;
+function BCMSDHOSTTransferComplete(SDHCI:PSDHCIHost;AllowWait:Boolean):LongWord;
 {Transfer complete handler for the BCMSDHOST SDHCI}
 {Note: Not intended to be called directly by applications}
 
@@ -1210,7 +1210,7 @@ begin
  else
   begin 
    {Wait for transfer completion}
-   BCMSDHOSTWaitTransferComplete(SDHCI);
+   BCMSDHOSTWaitTransferComplete(SDHCI,AllowWait);
   end; 
 
  SemaphoreSignal(SDHCI.Wait);
@@ -1222,7 +1222,7 @@ end;
 
 {==============================================================================}
 
-function BCMSDHOSTWaitTransferComplete(SDHCI:PSDHCIHost):LongWord;
+function BCMSDHOSTWaitTransferComplete(SDHCI:PSDHCIHost;AllowWait:Boolean):LongWord;
 {Wait transfer complete handler for the BCMSDHOST SDHCI}
 {Note: Not intended to be called directly by applications}
 
@@ -1231,6 +1231,9 @@ var
  Idle:LongWord;
  Debug:LongWord;
  State:LongWord;
+ Current:Int64;
+ LongWait:Int64;
+ ShortWait:Int64;
  Timeout:LongWord;
 begin
  {}
@@ -1288,21 +1291,44 @@ begin
      
      Break;
     end;
-    
-   {Check Timeout} 
-   Inc(Timeout);
-   if Timeout = 100000 then
+
+   {Check Timeout}
+   if Timeout = 0 then
     begin
-     {$IFDEF INTERRUPT_DEBUG}
-     if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Wait transfer complete still waiting after ' + IntToStr(Timeout) +  ' retries');
-     {$ENDIF}
-     
-     SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
-     
-     {Semaphore signaled by BCMSDHOSTTransferComplete}
-     Exit;
+     {Calculate Timeout (in milliseconds)}
+     Current:=ClockGetTotal;
+     Timeout:=10;
+     ShortWait:=Current + (Timeout * CLOCK_CYCLES_PER_MILLISECOND);
+     LongWait:=ShortWait;
+     if AllowWait then
+      begin
+       Timeout:=100;
+       LongWait:=Current + (Timeout * CLOCK_CYCLES_PER_MILLISECOND);
+      end;
     end;
-    
+
+   {Check Timeout}
+   Current:=ClockGetTotal;
+   if Current >= ShortWait then
+    begin
+     if not(AllowWait) or (Current >= LongWait) then
+      begin
+       {$IFDEF INTERRUPT_DEBUG}
+       if MMC_LOG_ENABLED then MMCLogError(nil,'BCMSDHOST: Wait transfer complete still waiting after ' + IntToStr(Timeout) +  ' milliseconds');
+       {$ENDIF}
+
+       SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
+
+       {Semaphore signaled by BCMSDHOSTTransferComplete}
+       Exit;
+      end
+     else
+      begin
+       {Wait 10 microseconds}
+       MicrosecondDelay(10);
+      end;
+    end;
+
    {Memory Barrier}
    DataMemoryBarrier;
    
@@ -1542,7 +1568,7 @@ begin
   begin
    SDHCI.Command.Status:=MMC_STATUS_SUCCESS;
    
-   BCMSDHOSTTransferComplete(SDHCI);
+   BCMSDHOSTTransferComplete(SDHCI,AllowWait);
   end;
 
  {Memory Barrier}
@@ -1555,7 +1581,7 @@ end;
 
 {==============================================================================}
 
-function BCMSDHOSTFinishData(SDHCI:PSDHCIHost):LongWord;
+function BCMSDHOSTFinishData(SDHCI:PSDHCIHost;AllowWait:Boolean):LongWord;
 {Finish data handler for the BCMSDHOST SDHCI}
 {Note: Not intended to be called directly by applications}
 
@@ -1630,7 +1656,7 @@ begin
   begin
    SDHCI.Command.Status:=MMC_STATUS_SUCCESS;
    
-   BCMSDHOSTTransferComplete(SDHCI);
+   BCMSDHOSTTransferComplete(SDHCI,AllowWait);
   end;  
  
  Result:=MMC_STATUS_SUCCESS; 
@@ -1768,7 +1794,7 @@ begin
     begin
      SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
      
-     BCMSDHOSTFinishData(SDHCI);
+     BCMSDHOSTFinishData(SDHCI,False);
      SemaphoreSignal(SDHCI.Wait);
      Exit;
     end
@@ -1776,7 +1802,7 @@ begin
     begin
      SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
     
-     BCMSDHOSTFinishData(SDHCI);
+     BCMSDHOSTFinishData(SDHCI,False);
      SemaphoreSignal(SDHCI.Wait);
      Exit;
     end;
@@ -1797,7 +1823,7 @@ begin
    
    if SDHCI.Command.Data.BlocksRemaining = 0 then
     begin
-     BCMSDHOSTFinishData(SDHCI);
+     BCMSDHOSTFinishData(SDHCI,False);
     end;
   end;
   
@@ -1852,7 +1878,7 @@ begin
     begin
      SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
      
-     BCMSDHOSTFinishData(SDHCI);
+     BCMSDHOSTFinishData(SDHCI,False);
      SemaphoreSignal(SDHCI.Wait);
      Exit;
     end
@@ -1860,7 +1886,7 @@ begin
     begin
      SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
      
-     BCMSDHOSTFinishData(SDHCI);
+     BCMSDHOSTFinishData(SDHCI,False);
      SemaphoreSignal(SDHCI.Wait);
      Exit;
     end;
@@ -1870,7 +1896,7 @@ begin
   begin
    if SDHCI.Command.Data.BlocksRemaining = 0 then
     begin
-     BCMSDHOSTFinishData(SDHCI);
+     BCMSDHOSTFinishData(SDHCI,False);
     end
    else
     begin
@@ -1879,7 +1905,7 @@ begin
   end
  else if (SDHCI.Command.Data.Flags and MMC_DATA_WRITE) <> 0 then
   begin
-   BCMSDHOSTFinishData(SDHCI);
+   BCMSDHOSTFinishData(SDHCI,False);
   end;
 
  Result:=MMC_STATUS_SUCCESS; 
@@ -3216,7 +3242,7 @@ begin
   end; 
 
  {Finish Data}
- BCMSDHOSTFinishData(SDHCI);
+ BCMSDHOSTFinishData(SDHCI,True);
 
  {Release the Lock}
  BCMSDHOSTUnlock(SDHCI);
