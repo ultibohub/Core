@@ -1,7 +1,7 @@
 {
 Ultibo Initialization code for Raspberry Pi 4.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -245,7 +245,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {Boot Functions}
-procedure Startup; assembler; nostackframe; [public, alias: '_START'];
+procedure Startup; assembler; nostackframe; public name '_START';
 {Entry point of Ultibo on Raspberry Pi 4, this will be the very first byte executed
  and will be loaded by the GPU at address 0x00008000 (or 0x00080000 in 64-bit mode)}
 {$IFDEF CPUARM}

@@ -673,7 +673,7 @@ function RT2X00GetRegister16(Reg,Mask,Shift:Word):Word; inline;
 procedure RT2X00SetRegister16(var Reg:Word;Mask,Shift,Value:Word); inline;
 
 function RT2X00GetRegister32(Reg,Mask,Shift:LongWord):LongWord; inline;
-procedure RT2X00SetRegister32(var Reg:LongWord;Mask,Shift,Value:LongWord); inline;
+procedure RT2X00SetRegister32(var Reg:LongWord;Mask,Shift,Value:LongWord); //inline; //To Do //TestingFPC //Compiler fails in RT2800InitializeRegisters is this is inlined
 
 function RT2X00ReadDescriptor(Descriptor:PLongWord;Index:Byte):LongWord; inline;
 procedure RT2X00WriteDescriptor(Descriptor:PLongWord;Index:Byte;Value:LongWord); inline;
@@ -2138,7 +2138,7 @@ end;
 
 {==============================================================================}
 
-procedure RT2X00SetRegister32(var Reg:LongWord;Mask,Shift,Value:LongWord); inline;
+procedure RT2X00SetRegister32(var Reg:LongWord;Mask,Shift,Value:LongWord); //inline; //To Do //TestingFPC
 {Shift is the number of bits to shift the value left (SHL)}
 begin
  {}

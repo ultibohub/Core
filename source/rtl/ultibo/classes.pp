@@ -1,6 +1,6 @@
 {
     This file is part of the Free Pascal run time library.
-    Copyright (c) 2015 by Free Pascal development team
+    Copyright (c) 2022 by Free Pascal development team
 
     Classes unit for Ultibo target.
 
@@ -24,12 +24,13 @@ interface
 
 uses
   sysutils,
+  rtlconsts,
   types,
+  sortbase,
 {$ifdef FPC_TESTGENERICS}
   fgl,
 {$endif}
-  typinfo,
-  rtlconsts;
+  typinfo;
 
 
 {$i classesh.inc}

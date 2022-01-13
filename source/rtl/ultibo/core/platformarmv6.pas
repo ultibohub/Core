@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv6.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1264,7 +1264,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv6Halt; assembler; nostackframe; public name'_haltproc';
+procedure ARMv6Halt; assembler; nostackframe; public name '_haltproc';
 {The purpose of the Wait For Interrupt operation is to put the processor in to a low power state,
  see Standby mode on page 10-3 of the ARM1176JZF-S Revision: r0p7 Technical Reference Manual}
 asm

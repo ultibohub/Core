@@ -25,6 +25,8 @@ $RECYCLE.BIN/
 # Free Pascal files
 *.o
 *.ppu
+*.fpm
+fpcmade.*
 
 # Lazarus files
 *.lps
@@ -32,6 +34,14 @@ $RECYCLE.BIN/
 *.img
 *.list
 *.compiled
+
+# Project specific folders
+/units/armv6-ultibo/rtl
+/units/armv6-ultibo/packages
+/units/armv7-ultibo/rtl
+/units/armv7-ultibo/packages
+/units/armv8-ultibo/rtl
+/units/armv8-ultibo/packages
 
 # Project specific exclusions
 !__buildrtl.bat

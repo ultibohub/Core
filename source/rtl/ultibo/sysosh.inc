@@ -1,6 +1,6 @@
 {
     This file is part of the Free Pascal run time library.
-    Copyright (c) 2015 by Free Pascal development team
+    Copyright (c) 2022 by Free Pascal development team
 
     This file implements all the base types and limits required
     for a minimal POSIX compliant subset required to port the compiler
@@ -25,6 +25,8 @@ type
   {$endif CPU64}
   { A thread id is the same as a thread handle }
   TThreadID = THandle;
+  
+  TOSTimestamp = {$ifdef INT64_OSTIMESTAMP}Int64{$else}To Do Longint{$endif};
 
   { pthread_mutex_t }
   PRTLCriticalSection = ^TRTLCriticalSection;
