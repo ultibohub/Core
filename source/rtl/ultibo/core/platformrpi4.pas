@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi 4.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3609,7 +3609,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);
@@ -3666,7 +3666,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);
@@ -3717,7 +3717,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);
@@ -3774,7 +3774,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);
@@ -4045,7 +4045,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Acquire Lock}
  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
@@ -4095,7 +4095,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Acquire Lock}
  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
@@ -10903,7 +10903,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);
@@ -10963,7 +10963,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);
@@ -11017,7 +11017,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);
@@ -11077,7 +11077,7 @@ begin
  
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
- if not(Assigned(Handler)) and not(Assigned(HandlerEx)) then Exit;
+ if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
  
  {Get Mask}
  Mask:=CPUIDToMask(CPUID);

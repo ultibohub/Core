@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv8.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2079,7 +2079,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMv8Halt; assembler; nostackframe; public name'_haltproc';
+procedure ARMv8Halt; assembler; nostackframe; public name '_haltproc';
 {The purpose of the Wait For Interrupt operation is to put the processor in to a low power state,
  see Standby mode on page A8-810 of the ARMv7 Architecture Reference Manual}
 {$IFDEF CPUARM}

@@ -106,11 +106,6 @@ begin
   if ResumeThread(FHandle) = 0 then FSuspended := False;
 end;
 
-procedure TThread.Terminate;
-begin
-  FTerminated := True;
-end;
-
 function TThread.WaitFor: Integer;
 begin
   Result:=WaitForThreadTerminate(FHandle,0);   

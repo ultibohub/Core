@@ -1,7 +1,7 @@
 {
 Ultibo Threads interface unit.
            
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2094,6 +2094,7 @@ function SysWaitForThreadTerminate(ThreadHandle:TThreadID;TimeoutMs:LongInt):DWO
 function SysThreadSetPriority(ThreadHandle:TThreadID;Priority:LongInt):Boolean;      {-15..+15, 0=Normal}
 function SysThreadGetPriority(ThreadHandle:TThreadID):LongInt;
 function SysGetCurrentThreadId:TThreadID;
+procedure SysSetThreadDebugNameA(ThreadHandle:TThreadID;const ThreadName:AnsiString);
 
 procedure SysInitCriticalSection(var CriticalSection);
 procedure SysDoneCriticalSection(var CriticalSection);
@@ -2236,6 +2237,7 @@ const
   ThreadSetPriority:@SysThreadSetPriority;
   ThreadGetPriority:@SysThreadGetPriority;
   GetCurrentThreadId:@SysGetCurrentThreadId;
+  SetThreadDebugNameA:@SysSetThreadDebugNameA;
   InitCriticalSection:@SysInitCriticalSection;
   DoneCriticalSection:@SysDoneCriticalSection;
   EnterCriticalSection:@SysEnterCriticalSection;
@@ -2256,10 +2258,10 @@ const
   RTLEventResetEvent:@SysRTLEventResetEvent;
   RTLEventWaitFor:@SysRTLEventWaitFor;
   RTLEventWaitForTimeout:@SysRTLEventWaitForTimeout;
-  SemaphoreInit:@SysSemaphoreInit;
-  SemaphoreDestroy:@SysSemaphoreDestroy;
-  SemaphorePost:@SysSemaphorePost;
-  SemaphoreWait:@SysSemaphoreWait;
+  {SemaphoreInit:@SysSemaphoreInit;} {Removed from FPC RTL}
+  {SemaphoreDestroy:@SysSemaphoreDestroy;} {Removed from FPC RTL}
+  {SemaphorePost:@SysSemaphorePost;} {Removed from FPC RTL}
+  {SemaphoreWait:@SysSemaphoreWait;} {Removed from FPC RTL}
  );
  
 {==============================================================================}
@@ -24031,6 +24033,14 @@ function SysGetCurrentThreadId:TThreadID;
 begin
  {}
  Result:=ThreadGetCurrent;
+end;
+
+{==============================================================================}
+
+procedure SysSetThreadDebugNameA(ThreadHandle:TThreadID;const ThreadName:AnsiString);
+begin
+ {}
+ ThreadSetName(ThreadHandle,ThreadName);
 end;
 
 {==============================================================================}

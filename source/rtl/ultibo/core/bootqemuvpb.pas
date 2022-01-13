@@ -1,7 +1,7 @@
 {
 Ultibo Initialization code for QEMU VersatilePB.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -130,7 +130,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {Boot Functions}
-procedure Startup; assembler; nostackframe; [public, alias: '_START'];
+procedure Startup; assembler; nostackframe; public name '_START';
 {Entry point of Ultibo on QEMU VersatilePB, this will be the very first byte executed
  and will be loaded by QEMU at address 0x00010000}
 {$IFDEF CPUARM} 

@@ -16,13 +16,13 @@ begin
 {$ifdef ALLPACKAGES}
     P.Directory:=ADirectory;
 {$endif ALLPACKAGES}
-    P.Version:='3.1.1';
+    P.Version:='3.3.1';
     P.Dependencies.Add('pasjpeg'); //Add pasjpeg for JPEGLib units
     P.Dependencies.Add('fcl-image'); //Add fcl-image for BMPcomn unit
     
     P.Author := 'Garry Wood';
     P.License := 'LGPL with modification';
-    P.HomepageURL := 'www.freepascal.org';
+    P.HomepageURL := 'ultibo.org';
     P.Email := '';
     P.Description := 'Additional units for Ultibo core';
     P.NeedLibC:= false;

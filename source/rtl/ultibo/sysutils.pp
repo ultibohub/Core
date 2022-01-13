@@ -1,6 +1,6 @@
 {
     This file is part of the Free Pascal run time library.
-    Copyright (c) 2004 by the Free Pascal development team
+    Copyright (c) 2022 by the Free Pascal development team
 
     Sysutils unit for Ultibo target.
 
@@ -201,7 +201,7 @@ begin
   end; 
 end;
 
-function FileGetDate(Handle: THandle) : LongInt;
+function FileGetDate(Handle: THandle) : TOSTimestamp;
 begin
  if Assigned(SysUtilsFileGetDateHandler) then
   begin
@@ -213,7 +213,7 @@ begin
   end;
 end;
 
-function FileSetDate(Handle : THandle;Age : Longint) : Longint;
+function FileSetDate(Handle : THandle;Age : TOSTimestamp) : Longint;
 begin
  if Assigned(SysUtilsFileSetDateHandler) then
   begin
@@ -353,7 +353,7 @@ begin
   end;
 end;
 
-Function FileAge (Const FileName : RawByteString): Longint;
+Function FileAge (Const FileName : RawByteString): TOSTimestamp;
 begin
  if Assigned(SysUtilsFileAgeHandler) then
   begin
@@ -363,6 +363,13 @@ begin
   begin
    Result:=-1;
   end;
+end;
+
+function FileGetSymLinkTarget(const FileName: RawByteString; out SymLinkRec: TRawbyteSymLinkRec): Boolean;
+begin
+  Result := False;
+
+  //To Do //TestingFPC
 end;
 
 Function FileExists (Const FileName : RawByteString) : Boolean;
@@ -375,6 +382,13 @@ Begin
   begin
    Result:=False;
   end;
+end;
+
+Function FileExists (Const FileName : RawByteString; FollowLink : Boolean = True) : Boolean;
+begin
+  Result := False;
+
+  //To Do //TestingFPC
 end;
 
 Function InternalFindFirst (Const Path : RawByteString; Attr : Longint; out Rslt : TAbstractSearchRec; var Name: RawByteString) : Longint;
@@ -427,7 +441,7 @@ begin
   end; 
 end;
 
-Procedure InternalFindClose(var Handle: THandle{$ifdef USEFINDDATA};var FindData: TFindData{$endif});
+Procedure InternalFindClose(var Handle: THandle{$ifdef SEARCHREC_USEFINDDATA};var FindData: TFindData{$endif});
 begin 
  if Assigned(SysUtilsInternalFindCloseHandler) then
   begin
@@ -505,6 +519,13 @@ begin
   end;
 end;
 
+Function DirectoryExists (Const Directory : RawByteString; FollowLink: Boolean = True) : Boolean;
+begin
+  Result := False;
+
+  //To Do //TestingFPC
+end;
+
 {****************************************************************************
                             Thread Functions
 ****************************************************************************}
@@ -549,6 +570,11 @@ end;
                               Misc Functions
 ****************************************************************************}
 
+procedure SysBeep;
+begin
+ {No SysBeep for Ultibo} 
+end;
+
 Function GetLastOSError : Integer;
 begin
   Result:=-1;
@@ -578,6 +604,13 @@ begin
   end;
 end;
 
+function GetUniversalTime(var SystemTime: TSystemTime): Boolean;
+begin
+  Result := False;
+
+  //To Do //TestingFPC
+end;
+
 function GetLocalTimeOffset: Integer;
 begin
  if Assigned(SysUtilsGetLocalTimeOffsetHandler) then
@@ -588,6 +621,13 @@ begin
   begin
    Result:=0;
   end;  
+end;
+
+function GetLocalTimeOffset(const DateTime: TDateTime; const InputIsUTC: Boolean; out Offset: Integer): Boolean;
+begin
+  Result := False;
+
+  //To Do //TestingFPC
 end;
 
 function SysErrorMessage(ErrorCode: Integer): String;
@@ -609,28 +649,35 @@ end;
 
 Function GetEnvironmentVariable(Const EnvVar : String) : String;
 begin
- {}
  Result:=FPCGetEnvVarFromP(envp,EnvVar);
 end;
 
 Function GetEnvironmentVariableCount : Integer;
 begin
- {}
  Result:=FPCCountEnvVar(envp);
 end;
 
 Function GetEnvironmentString(Index : Integer) : {$ifdef FPC_RTL_UNICODE}UnicodeString{$else}AnsiString{$endif};
 begin
- {}
  Result:=FPCGetEnvStrFromP(envp,Index);
 end;
 
-function ExecuteProcess (const Path: AnsiString; const ComLine: AnsiString;Flags:TExecuteFlags=[]): integer;
+function ExecuteProcess (const Path: RawByteString; const ComLine: RawByteString;Flags:TExecuteFlags=[]): integer;
 begin
  Result:=-1;
 end;
 
-function ExecuteProcess (const Path: AnsiString; const ComLine: array of AnsiString;Flags:TExecuteFlags=[]): integer;
+function ExecuteProcess (const Path: RawByteString; const ComLine: array of RawByteString;Flags:TExecuteFlags=[]): integer;
+begin
+ Result:=-1;
+end;
+
+function ExecuteProcess (const Path: UnicodeString; const ComLine: UnicodeString;Flags:TExecuteFlags=[]): integer;
+begin
+ Result:=-1;
+end;
+
+function ExecuteProcess (const Path: UnicodeString; const ComLine: array of UnicodeString;Flags:TExecuteFlags=[]): integer;
 begin
  Result:=-1;
 end;
@@ -641,7 +688,6 @@ end;
 
 procedure SysUtilsInitExceptions;
 begin
- {}
  if SysUtilsExceptionsInitialized then Exit;
  
  InitExceptions;
@@ -655,6 +701,7 @@ end;
 
 Initialization
   SysUtilsInitExceptions;
+  OnBeep:=@SysBeep;
 Finalization
   DoneExceptions;
 end.

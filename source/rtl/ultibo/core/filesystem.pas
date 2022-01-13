@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -16479,6 +16479,7 @@ function TFileSysDriver.FindMatchingFile(ADrive:TDiskDrive;AVolume:TDiskVolume;v
 {Internal Only}
 {Note: Caller must hold the drive and volume lock}
 var
+ DosDateTime:LongInt;
  LocalFileTime:TFileTime;
  FileSearchRec:TFileSearchRec;
 begin
@@ -16521,7 +16522,8 @@ begin
     
    {Update the SearchRec from the FindData record}
    Ultibo.FileTimeToLocalFileTime(ASearchRec.FindData.ftLastWriteTime,LocalFileTime);
-   Ultibo.FileTimeToDosDateTime(LocalFileTime,LongRec(ASearchRec.Time).Hi,LongRec(ASearchRec.Time).Lo);
+   Ultibo.FileTimeToDosDateTime(LocalFileTime,LongRec(DosDateTime).Hi,LongRec(DosDateTime).Lo);
+   ASearchRec.Time:=DosDateTime; {FPC RTL now declares Time as Int64}
    TULargeInteger(ASearchRec.Size).HighPart:=ASearchRec.FindData.nFileSizeHigh;
    TULargeInteger(ASearchRec.Size).LowPart:=ASearchRec.FindData.nFileSizeLow;
    ASearchRec.Attr:=ASearchRec.FindData.dwFileAttributes;
