@@ -8361,7 +8361,7 @@ begin
      end
     else
      begin
-      WorkBuffer:=WorkBuffer + '<li><a href="' + SearchRec.Name + '"> ' + SearchRec.Name + '</a></li>' + HTTP_LINE_END;
+      WorkBuffer:=WorkBuffer + '<li><a href="' + AddTrailingChar(ARequest.URL,HTTP_PATH_SEPARATOR) + SearchRec.Name + '"> ' + SearchRec.Name + '</a></li>' + HTTP_LINE_END;
      end;
    until FindNext(SearchRec) <> 0;
   end;
