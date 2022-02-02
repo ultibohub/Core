@@ -104,7 +104,7 @@ type
  TSysUtilsFileSeek = function(Handle:THandle;FOffset,Origin:LongInt):LongInt;
  TSysUtilsFileTruncate = function(Handle:THandle;Size:Int64):Boolean;
  TSysUtilsFileAge = function(const FileName:RawByteString):LongInt;
- TSysUtilsFileExists = function(const FileName:RawByteString):Boolean;
+ TSysUtilsFileExists = function(const FileName:RawByteString;FollowLink:Boolean):Boolean;
  TSysUtilsFileGetAttr = function(const FileName:RawByteString):LongInt;
  TSysUtilsFileGetDate = function(Handle:THandle):LongInt;
  TSysUtilsFileSetAttr = function(const FileName:RawByteString;Attr:LongInt):LongInt;
@@ -119,7 +119,7 @@ type
  {Disk Functions}
  TSysUtilsDiskFree = function(Drive:Byte):Int64;
  TSysUtilsDiskSize = function(Drive:Byte):Int64;
- TSysUtilsDirectoryExists = function(const Directory:RawByteString):Boolean;
+ TSysUtilsDirectoryExists = function(const Directory:RawByteString;FollowLink:Boolean):Boolean;
  {Thread Functions}
  TSysUtilsSleep = function(Milliseconds:LongWord):LongWord;
  {Tick Functions}
@@ -372,23 +372,16 @@ begin
   //To Do //TestingFPC
 end;
 
-Function FileExists (Const FileName : RawByteString) : Boolean;
+Function FileExists (Const FileName : RawByteString; FollowLink : Boolean = True) : Boolean;
 Begin
  if Assigned(SysUtilsFileExistsHandler) then
   begin
-   Result:=SysUtilsFileExistsHandler(FileName);
+   Result:=SysUtilsFileExistsHandler(FileName,FollowLink);
   end
  else
   begin
    Result:=False;
   end;
-end;
-
-Function FileExists (Const FileName : RawByteString; FollowLink : Boolean = True) : Boolean;
-begin
-  Result := False;
-
-  //To Do //TestingFPC
 end;
 
 Function InternalFindFirst (Const Path : RawByteString; Attr : Longint; out Rslt : TAbstractSearchRec; var Name: RawByteString) : Longint;
@@ -507,23 +500,16 @@ Begin
   end;
 End;
 
-function DirectoryExists(const Directory: RawByteString): Boolean;
+Function DirectoryExists (Const Directory : RawByteString; FollowLink: Boolean = True) : Boolean;
 begin
  if Assigned(SysUtilsDirectoryExistsHandler) then
   begin
-   Result:=SysUtilsDirectoryExistsHandler(Directory);
+   Result:=SysUtilsDirectoryExistsHandler(Directory,FollowLink);
   end
  else
   begin
    Result:=False;
   end;
-end;
-
-Function DirectoryExists (Const Directory : RawByteString; FollowLink: Boolean = True) : Boolean;
-begin
-  Result := False;
-
-  //To Do //TestingFPC
 end;
 
 {****************************************************************************
