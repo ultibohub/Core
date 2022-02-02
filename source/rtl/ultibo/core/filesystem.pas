@@ -5348,7 +5348,7 @@ function SysUtilsRenameFile(const OldName,NewName:RawByteString):Boolean;
 function SysUtilsFileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt;
 function SysUtilsFileTruncate(Handle:THandle;Size:Int64):Boolean;
 function SysUtilsFileAge(const FileName:RawByteString):LongInt;
-function SysUtilsFileExists(const FileName:RawByteString):Boolean;
+function SysUtilsFileExists(const FileName:RawByteString;FollowLink:Boolean):Boolean;
 function SysUtilsFileGetAttr(const FileName:RawByteString):LongInt;
 function SysUtilsFileGetDate(Handle:THandle):LongInt;
 function SysUtilsFileSetAttr(const FileName:RawByteString;Attr:LongInt):LongInt;
@@ -5365,7 +5365,7 @@ procedure SysUtilsInternalFindClose(var Handle:THandle);
 {SysUtils Disk Functions}
 function SysUtilsDiskFree(Drive:Byte):Int64;
 function SysUtilsDiskSize(Drive:Byte):Int64;
-function SysUtilsDirectoryExists(const Directory:RawByteString):Boolean;
+function SysUtilsDirectoryExists(const Directory:RawByteString;FollowLink:Boolean):Boolean;
 
 {==============================================================================}
 {FileSystem Logging Functions}
@@ -54408,7 +54408,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsFileExists(const FileName:RawByteString):Boolean;
+function SysUtilsFileExists(const FileName:RawByteString;FollowLink:Boolean):Boolean;
 begin
  {}
  Result:=False;
@@ -54592,7 +54592,7 @@ end;
 
 {==============================================================================}
 
-function SysUtilsDirectoryExists(const Directory:RawByteString):Boolean;
+function SysUtilsDirectoryExists(const Directory:RawByteString;FollowLink:Boolean):Boolean;
 begin
  {}
  Result:=False;
