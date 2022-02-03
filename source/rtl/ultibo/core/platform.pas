@@ -296,12 +296,15 @@ type
   {Statistics Properties}
  end;
  
+ PHandleEntries = ^THandleEntries;
+ THandleEntries = array[0..HANDLE_TABLE_MASK + 1] of PHandleEntry;
+ 
  {Handle Table}
  PHandleTable = ^THandleTable;
  THandleTable = record
   Next:LongWord;                  {The next handle number}
   Count:LongWord;                 {The current handle count}
-  Handles:array of PHandleEntry;  {Array of handle entries hash buckets}
+  Handles:PHandleEntries;         {Array of handle entries hash buckets}
  end;
  
 type
@@ -2963,11 +2966,14 @@ begin
  {Initialize Handle Table}
  HandleTable.Next:=HANDLE_TABLE_MIN;
  HandleTable.Count:=0;
- SetLength(HandleTable.Handles,HANDLE_TABLE_MASK + 1);
- for Count:=0 to HANDLE_TABLE_MASK do 
+ HandleTable.Handles:=AllocMem(SizeOf(THandleEntries));
+ if HandleTable.Handles <> nil then
   begin
-   HandleTable.Handles[Count]:=nil;
-  end;
+   for Count:=0 to HANDLE_TABLE_MASK do 
+    begin
+     HandleTable.Handles[Count]:=nil;
+    end;
+  end;  
  
  {Initialize Hardware Exceptions}
  DataAbortException:=EDataAbort.Create(STRING_DATA_ABORT);
@@ -3426,6 +3432,10 @@ begin
 
  OptionsInitCompleted:=True; 
 end;
+
+{==============================================================================}
+{==============================================================================}
+{Internal Functions}
 
 {==============================================================================}
 {==============================================================================}
