@@ -1,7 +1,7 @@
 {
 Ultibo HTTP interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1335,6 +1335,9 @@ type
   FAllowListing:Boolean;
   FAllowSubtree:Boolean;
   
+  FHideSubfolders:Boolean;
+  FForceTrailingSlash:Boolean;
+  
   {Internal Methods}
   function GetFolder:String;
   procedure SetFolder(const AFolder:String);
@@ -1343,6 +1346,9 @@ type
   procedure SetAllowCache(AAllowCache:Boolean);
   procedure SetAllowListing(AAllowListing:Boolean);
   procedure SetAllowSubtree(AAllowSubtree:Boolean);
+
+  procedure SetHideSubfolders(AHideSubfolders:Boolean);
+  procedure SetForceTrailingSlash(AForceTrailingSlash:Boolean);
  protected
   {Internal Methods}
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
@@ -1357,6 +1363,9 @@ type
   property AllowCache:Boolean read FAllowCache write SetAllowCache;
   property AllowListing:Boolean read FAllowListing write SetAllowListing;
   property AllowSubtree:Boolean read FAllowSubtree write SetAllowSubtree;
+  
+  property HideSubfolders:Boolean read FHideSubfolders write SetHideSubfolders;             {If not AllowSubtree then don't list sub folders of the configured folder}
+  property ForceTrailingSlash:Boolean read FForceTrailingSlash write SetForceTrailingSlash; {If a folder request doesn't contain a trailing slash then redirect to add it}
  end;
 
  THTTPFile = class(THTTPDocument)
@@ -5655,6 +5664,7 @@ end;
 
 function THTTPHost.MatchDocument(const AName:String;var AAlias:THTTPAlias):THTTPDocument;
 var
+ Dir:String;
  Path:String;
  Hash:LongWord;
  Extension:String;
@@ -5691,6 +5701,10 @@ begin
     Document:=THTTPDocument(FDocuments.First);
     while Document <> nil do
      begin
+      {$IFDEF HTTP_DEBUG}
+      if HTTP_LOG_ENABLED then HTTPLogDebug('Host:  Document = ' + Document.Name);
+      {$ENDIF}
+      
       {Check Default}
       if not Document.IsDefault then
        begin
@@ -5727,15 +5741,24 @@ begin
         else if Document.IsFolder then
          begin
           {Folder Document}
+          {Get Dir}
+          HTTPPathExtractDir(AName,Dir);
+          
           {Get Path}
           HTTPPathExtractPath(AName,Path);
           
           {$IFDEF HTTP_DEBUG}
+          if HTTP_LOG_ENABLED then HTTPLogDebug('Host:  Dir = ' + Dir);
           if HTTP_LOG_ENABLED then HTTPLogDebug('Host:  Path = ' + Path);
           {$ENDIF}
           
-          {Check Name and Path}
+          {Check Name, Dir and Path}
           if Uppercase(Document.Name) = Uppercase(AName) then
+           begin
+            Result:=Document;
+            Exit;
+           end
+          else if Uppercase(Document.Name) = Uppercase(Dir) then
            begin
             Result:=Document;
             Exit;
@@ -7890,6 +7913,9 @@ begin
  FAllowListing:=True;
  FAllowSubtree:=True;
  
+ FHideSubfolders:=True;
+ FForceTrailingSlash:=True;
+ 
  {Set Subtree}
  IsSubtree:=True;
 end;
@@ -8000,6 +8026,30 @@ end;
 
 {==============================================================================}
 
+procedure THTTPFolder.SetHideSubfolders(AHideSubfolders:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FHideSubfolders:=AHideSubfolders;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPFolder.SetForceTrailingSlash(AForceTrailingSlash:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FForceTrailingSlash:=AForceTrailingSlash;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
 function THTTPFolder.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; 
 {Base GET Method for an HTTP Folder}
 var
@@ -8074,46 +8124,72 @@ begin
        if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Folder exists: ' + Base);
        {$ENDIF}
        
-       {$IFDEF HTTP_DEBUG}
-       if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Checking index: ' + AddTrailingChar(Base,DirectorySeparator) + IndexPage);
-       {$ENDIF}
-       
-       {Check Index}
-       if (Length(IndexPage) <> 0) and (FileExists(AddTrailingChar(Base,DirectorySeparator) + IndexPage)) then
+       {Check Force Slash}
+       if ForceTrailingSlash and (Path <> AddTrailingChar(Path,DirectorySeparator)) then
         begin
+         {Get New Path}
+         Path:=AddTrailingChar(ARequest.Path,HTTP_PATH_SEPARATOR);
+
          {$IFDEF HTTP_DEBUG}
-         if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Index exists: ' + AddTrailingChar(Base,DirectorySeparator) + IndexPage);
+         if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Redirecting to force trailing slash: ' + Path);
          {$ENDIF}
          
-         {Get Index}
-         Result:=DoGetFile(AHost,ARequest,AResponse,AddTrailingChar(Base,DirectorySeparator) + IndexPage);
+         {Moved Permanently}
+         AResponse.Version:=HTTP_VERSION;
+         AResponse.Status:=HTTP_STATUS_MOVED_PERMANENT;
+         AResponse.Reason:=HTTP_REASON_301;
+        
+         {Add Location Header}
+         AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Path);
+
+         {Set Content}
+         AResponse.ContentString:='<html><head><title>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ')</title></head><body>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ') to <a href="' + Path + '">' + Path + '</a></body></html>' + HTTP_LINE_END; 
+         
+         Result:=True;
         end
        else
         begin
-         {Check Listing}
-         if AllowListing then
+         {$IFDEF HTTP_DEBUG}
+         if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Checking index: ' + AddTrailingChar(Base,DirectorySeparator) + IndexPage);
+         {$ENDIF}
+         
+         {Check Index}
+         if (Length(IndexPage) <> 0) and (FileExists(AddTrailingChar(Base,DirectorySeparator) + IndexPage)) then
           begin
            {$IFDEF HTTP_DEBUG}
-           if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Listing allowed: ' + Base);
+           if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Index exists: ' + AddTrailingChar(Base,DirectorySeparator) + IndexPage);
            {$ENDIF}
            
-           {Get Listing}
-           Result:=DoGetFolder(AHost,ARequest,AResponse,Base);
+           {Get Index}
+           Result:=DoGetFile(AHost,ARequest,AResponse,AddTrailingChar(Base,DirectorySeparator) + IndexPage);
           end
          else
           begin
-           {$IFDEF HTTP_DEBUG}
-           if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Forbidden: ' + Base);
-           {$ENDIF}
-
-           {Forbidden}
-           AResponse.Version:=HTTP_VERSION;
-           AResponse.Status:=HTTP_STATUS_FORBIDDEN;
-           AResponse.Reason:=HTTP_REASON_403;
-           
-           {Do Error}
-           Result:=AHost.DoError(ARequest,AResponse);
-          end;          
+           {Check Listing}
+           if AllowListing then
+            begin
+             {$IFDEF HTTP_DEBUG}
+             if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Listing allowed: ' + Base);
+             {$ENDIF}
+             
+             {Get Listing}
+             Result:=DoGetFolder(AHost,ARequest,AResponse,Base);
+            end
+           else
+            begin
+             {$IFDEF HTTP_DEBUG}
+             if HTTP_LOG_ENABLED then HTTPLogDebug('Folder: Forbidden: ' + Base);
+             {$ENDIF}
+  
+             {Forbidden}
+             AResponse.Version:=HTTP_VERSION;
+             AResponse.Status:=HTTP_STATUS_FORBIDDEN;
+             AResponse.Reason:=HTTP_REASON_403;
+             
+             {Do Error}
+             Result:=AHost.DoError(ARequest,AResponse);
+            end;          
+          end;
         end;
       end
      else
@@ -8354,10 +8430,13 @@ begin
     
     if (SearchRec.Attr and faDirectory) = faDirectory then
      begin
-      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+      if AllowSubtree or not(HideSubfolders) then
        begin
-        WorkBuffer:=WorkBuffer + '<li><a href="' + AddTrailingChar(SearchRec.Name,HTTP_PATH_SEPARATOR) + '"> ' + SearchRec.Name + '</a></li>' + HTTP_LINE_END;
-       end;
+        if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+         begin
+          WorkBuffer:=WorkBuffer + '<li><a href="' + AddTrailingChar(SearchRec.Name,HTTP_PATH_SEPARATOR) + '"> ' + SearchRec.Name + '</a></li>' + HTTP_LINE_END;
+         end;
+       end;  
      end
     else
      begin
