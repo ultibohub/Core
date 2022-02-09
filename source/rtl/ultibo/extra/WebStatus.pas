@@ -1,7 +1,7 @@
 {
 Ultibo Web Status unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1832,6 +1832,10 @@ begin
 
  {Add Release Date}
  AddItem(AResponse,'Release Date:',ULTIBO_RELEASE_DATE);
+
+ {Add Compiler Version}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Compiler Version:',FPC_COMPILER_VERSION);
 
  {Add Time (Local)}
  AddBlank(AResponse);
