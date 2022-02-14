@@ -51,7 +51,7 @@ type
 //   THREAD_PRIORITY_HIGHEST       = 2;
 //   THREAD_PRIORITY_TIME_CRITICAL = 15;
 //Ultibo //Should we add these here, differs from Threads.pas values ?
-         //See: D:\LANGUAGE\Fpc311.ARM-Embedded\source\rtl\netware\sysosh.inc
+         //See: source\rtl\netware\sysosh.inc
 
 var
  SystemCPUCount:LongWord = 1;

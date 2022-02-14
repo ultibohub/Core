@@ -1707,7 +1707,7 @@ end;
 initialization
  UnicodeInit;
 
- {Call SetUnicodeStringManager again because initialization of the embedded system unit (InitUnicodeStringManager) sets the default manager}
+ {Call SetUnicodeStringManager again because initialization of the system unit (InitUnicodeStringManager) sets the default manager}
  {Get Unicode String Manager}
  GetUnicodeStringManager(UnicodeStringManager);
  

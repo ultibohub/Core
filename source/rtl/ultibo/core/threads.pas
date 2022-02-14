@@ -2095,6 +2095,7 @@ function SysThreadSetPriority(ThreadHandle:TThreadID;Priority:LongInt):Boolean; 
 function SysThreadGetPriority(ThreadHandle:TThreadID):LongInt;
 function SysGetCurrentThreadId:TThreadID;
 procedure SysSetThreadDebugNameA(ThreadHandle:TThreadID;const ThreadName:AnsiString);
+procedure SysSetThreadDebugNameU(ThreadHandle:TThreadID;const ThreadName:UnicodeString);
 
 procedure SysInitCriticalSection(var CriticalSection);
 procedure SysDoneCriticalSection(var CriticalSection);
@@ -2238,6 +2239,7 @@ const
   ThreadGetPriority:@SysThreadGetPriority;
   GetCurrentThreadId:@SysGetCurrentThreadId;
   SetThreadDebugNameA:@SysSetThreadDebugNameA;
+  SetThreadDebugNameU:@SysSetThreadDebugNameU;
   InitCriticalSection:@SysInitCriticalSection;
   DoneCriticalSection:@SysDoneCriticalSection;
   EnterCriticalSection:@SysEnterCriticalSection;
@@ -24045,6 +24047,14 @@ end;
 
 {==============================================================================}
 
+procedure SysSetThreadDebugNameU(ThreadHandle:TThreadID;const ThreadName:UnicodeString);
+begin
+ {}
+ ThreadSetName(ThreadHandle,AnsiString(ThreadName));
+end;
+
+{==============================================================================}
+
 procedure SysInitCriticalSection(var CriticalSection);
 begin
  {}
@@ -25242,9 +25252,9 @@ end;
 {==============================================================================}
 
 initialization
- {Call SetThreadManager again because initialization of the embedded system unit (InitSystemThreads) sets the NoThreadManager}
+ {Call SetThreadManager again because initialization of the system unit (InitSystemThreads) sets the NoThreadManager}
  SetThreadManager(MyThreadManager);
- {Set the Main Thread ID again because initialization of the embedded system unit (InitSystemThreads) sets it to ThreadID(1)}
+ {Set the Main Thread ID again because initialization of the system unit (InitSystemThreads) sets it to ThreadID(1)}
  ThreadID:=ThreadGetCurrent;
  
 {==============================================================================}

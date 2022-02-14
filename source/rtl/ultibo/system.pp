@@ -328,7 +328,7 @@ begin
 {$endif FPC_HAS_FEATURE_THREADING}
 
 {$ifdef FPC_HAS_FEATURE_WIDESTRINGS}
-//  initunicodestringmanager;
+//  initunicodestringmanager; // Handled by Unicode unit initialization
 {$endif FPC_HAS_FEATURE_WIDESTRINGS}
 end.
 
