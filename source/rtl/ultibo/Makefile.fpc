@@ -86,14 +86,22 @@ UNITPREFIX=rtl
 SYSTEMUNIT=system
 STABLEVERSION=3.2.2
 FIXESVERSION=3.2.3
+LEGACYVERSION=3.1.1
 override FPCOPT+=@rtl.cfg
 
 ifeq ($(FPC_VERSION),$(STABLEVERSION))
 override FPCOPT+=-dFPC_STABLE
+COMPATIBILITY_SORTBASE=1
 endif
 
 ifeq ($(FPC_VERSION),$(FIXESVERSION))
 override FPCOPT+=-dFPC_FIXES
+COMPATIBILITY_SORTBASE=1
+endif
+
+ifeq ($(FPC_VERSION),$(LEGACYVERSION))
+override FPCOPT+=-dFPC_LEGACY
+COMPATIBILITY_SORTBASE=1
 endif
 
 ifdef RELEASE
@@ -733,5 +741,10 @@ ctypes$(PPUEXT) :  $(INC)/ctypes.pp $(SYSTEMUNIT)$(PPUEXT)
 #fpcylix$(PPUEXT) : fpcylix.pp cthreads$(PPUEXT) cwstring$(PPUEXT) dynlibs$(PPUEXT) objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 #	$(COMPILER) fpcylix.pp
 
+ifdef COMPATIBILITY_SORTBASE
+sortbase$(PPUEXT) : compatibility/sortbase.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) compatibility/sortbase.pp
+else
 sortbase$(PPUEXT) : $(INC)/sortbase.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $(INC)/sortbase.pp
+endif

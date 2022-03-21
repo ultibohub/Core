@@ -2238,8 +2238,10 @@ const
   ThreadSetPriority:@SysThreadSetPriority;
   ThreadGetPriority:@SysThreadGetPriority;
   GetCurrentThreadId:@SysGetCurrentThreadId;
+  {$IFNDEF FPC_LEGACY}
   SetThreadDebugNameA:@SysSetThreadDebugNameA;
   SetThreadDebugNameU:@SysSetThreadDebugNameU;
+  {$ENDIF}
   InitCriticalSection:@SysInitCriticalSection;
   DoneCriticalSection:@SysDoneCriticalSection;
   EnterCriticalSection:@SysEnterCriticalSection;
@@ -2260,10 +2262,12 @@ const
   RTLEventResetEvent:@SysRTLEventResetEvent;
   RTLEventWaitFor:@SysRTLEventWaitFor;
   RTLEventWaitForTimeout:@SysRTLEventWaitForTimeout;
-  {SemaphoreInit:@SysSemaphoreInit;} {Removed from FPC RTL}
-  {SemaphoreDestroy:@SysSemaphoreDestroy;} {Removed from FPC RTL}
-  {SemaphorePost:@SysSemaphorePost;} {Removed from FPC RTL}
-  {SemaphoreWait:@SysSemaphoreWait;} {Removed from FPC RTL}
+  {$IFDEF FPC_LEGACY}
+  SemaphoreInit:@SysSemaphoreInit; {Removed from current FPC RTL}
+  SemaphoreDestroy:@SysSemaphoreDestroy; {Removed from current FPC RTL}
+  SemaphorePost:@SysSemaphorePost; {Removed from current FPC RTL}
+  SemaphoreWait:@SysSemaphoreWait; {Removed from current FPC RTL}
+  {$ENDIF}
  );
  
 {==============================================================================}
