@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2759,7 +2759,9 @@ function SysUtilsGetTickCount64:QWord;
 {SysUtils Locale Functions}
 procedure SysUtilsGetLocalTime(var SystemTime:TSystemTime);
 procedure SysUtilsSetLocalTime(const SystemTime:TSystemTime);
+function SysUtilsGetUniversalTime(var SystemTime:TSystemTime):Boolean;
 function SysUtilsGetLocalTimeOffset:Integer;
+function SysUtilsGetLocalTimeOffsetEx(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
 
 {==============================================================================}
 {Platform Helper Functions}
@@ -2892,7 +2894,9 @@ begin
  {Locale Functions}
  SysUtilsGetLocalTimeHandler:=SysUtilsGetLocalTime;
  SysUtilsSetLocalTimeHandler:=SysUtilsSetLocalTime;
+ SysUtilsGetUniversalTimeHandler:=SysUtilsGetUniversalTime;
  SysUtilsGetLocalTimeOffsetHandler:=SysUtilsGetLocalTimeOffset;
+ SysUtilsGetLocalTimeOffsetExHandler:=SysUtilsGetLocalTimeOffsetEx;
  {Tick Functions}
  SysUtilsGetTickCountHandler:=SysUtilsGetTickCount;
  SysUtilsGetTickCount64Handler:=SysUtilsGetTickCount64;
@@ -12112,11 +12116,51 @@ end;
 
 {==============================================================================}
 
+function SysUtilsGetUniversalTime(var SystemTime:TSystemTime):Boolean;
+{Get the current UTC time as a SystemTime value}
+var
+ ClockTime:Int64;
+ DateTime:TDateTime;
+begin
+ {}
+ Result:=False;
+ 
+ FillChar(SystemTime,SizeOf(TSystemTime),0);
+ 
+ {Get Clock Time}
+ ClockTime:=ClockGetTime;
+ 
+ {Check Clock Time}
+ if ClockTime < TIME_TICKS_TO_1899 then Exit;
+  
+ {Convert to DateTime}
+ DateTime:=((ClockTime - TIME_TICKS_TO_1899) div TIME_TICKS_PER_DAY) + (((ClockTime - TIME_TICKS_TO_1899) mod TIME_TICKS_PER_DAY) / TIME_TICKS_PER_DAY);
+
+ {Convert to SystemTime}
+ DecodeDate(DateTime,SystemTime.Year,SystemTime.Month,SystemTime.Day);
+ DecodeTime(DateTime,SystemTime.Hour,SystemTime.Minute,SystemTime.Second,SystemTime.MilliSecond);
+  
+ Result:=True;
+end;
+
+{==============================================================================}
+
 function SysUtilsGetLocalTimeOffset:Integer;
 {Get the current local time offset value}
 begin
  {}
  Result:=TIMEZONE_TIME_OFFSET;
+end;
+
+{==============================================================================}
+
+function SysUtilsGetLocalTimeOffsetEx(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
+{Get the current local time offset value at the given data and time}
+begin
+ {}
+ Result:=False;
+
+ {Not currently supported - See: GetLocalTimeOffset in rtl\win\sysutils.pp}
 end;
 
 {==============================================================================}

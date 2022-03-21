@@ -104,6 +104,9 @@ type
  TSysUtilsFileSeek = function(Handle:THandle;FOffset,Origin:LongInt):LongInt;
  TSysUtilsFileTruncate = function(Handle:THandle;Size:Int64):Boolean;
  TSysUtilsFileAge = function(const FileName:RawByteString):LongInt;
+ {$ifndef FPC_LEGACY}
+ TSysUtilsFileGetSymLinkTarget = function(const FileName:RawByteString;out SymLinkRec:TRawbyteSymLinkRec):Boolean;
+ {$endif}
  TSysUtilsFileExists = function(const FileName:RawByteString;FollowLink:Boolean):Boolean;
  TSysUtilsFileGetAttr = function(const FileName:RawByteString):LongInt;
  TSysUtilsFileGetDate = function(Handle:THandle):LongInt;
@@ -130,7 +133,9 @@ type
  {Locale Functions}
  TSysUtilsGetLocalTime = procedure(var SystemTime:TSystemTime);
  TSysUtilsSetLocalTime = procedure(const SystemTime:TSystemTime);
+ TSysUtilsGetUniversalTime = function(var SystemTime:TSystemTime):Boolean;
  TSysUtilsGetLocalTimeOffset = function:Integer;
+ TSysUtilsGetLocalTimeOffsetEx = function(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
  TSysUtilsSysErrorMessage = function(ErrorCode:Integer):String;
  
 var
@@ -143,6 +148,9 @@ var
  SysUtilsFileSeekHandler:TSysUtilsFileSeek;
  SysUtilsFileTruncateHandler:TSysUtilsFileTruncate;
  SysUtilsFileAgeHandler:TSysUtilsFileAge;
+ {$ifndef FPC_LEGACY}
+ SysUtilsFileGetSymLinkTargetHandler:TSysUtilsFileGetSymLinkTarget;
+ {$endif}
  SysUtilsFileExistsHandler:TSysUtilsFileExists;
  SysUtilsFileGetAttrHandler:TSysUtilsFileGetAttr;
  SysUtilsFileGetDateHandler:TSysUtilsFileGetDate;
@@ -169,7 +177,9 @@ var
  {Locale Functions}
  SysUtilsGetLocalTimeHandler:TSysUtilsGetLocalTime;
  SysUtilsSetLocalTimeHandler:TSysUtilsSetLocalTime;
+ SysUtilsGetUniversalTimeHandler:TSysUtilsGetUniversalTime;
  SysUtilsGetLocalTimeOffsetHandler:TSysUtilsGetLocalTimeOffset;
+ SysUtilsGetLocalTimeOffsetExHandler:TSysUtilsGetLocalTimeOffsetEx;
  SysUtilsSysErrorMessageHandler:TSysUtilsSysErrorMessage;
  
  procedure SysUtilsInitExceptions;
@@ -365,18 +375,25 @@ begin
   end;
 end;
 
-function FileGetSymLinkTarget(const FileName: RawByteString; out SymLinkRec: TRawbyteSymLinkRec): Boolean;
+{$ifndef FPC_LEGACY}
+function FileGetSymLinkTarget (const FileName: RawByteString; out SymLinkRec: TRawbyteSymLinkRec): Boolean;
 begin
-  Result := False;
-
-  //To Do //TestingFPC
+ if Assigned(SysUtilsFileGetSymLinkTargetHandler) then
+  begin
+   Result:=SysUtilsFileGetSymLinkTargetHandler(FileName,SymLinkRec);
+  end
+ else
+  begin
+   Result:=False;
+  end;
 end;
+{$endif}
 
-Function FileExists (Const FileName : RawByteString; FollowLink : Boolean = True) : Boolean;
+Function FileExists (Const FileName : RawByteString{$ifndef FPC_LEGACY}; FollowLink : Boolean = True{$endif}) : Boolean;
 Begin
  if Assigned(SysUtilsFileExistsHandler) then
   begin
-   Result:=SysUtilsFileExistsHandler(FileName,FollowLink);
+   Result:=SysUtilsFileExistsHandler(FileName,{$ifdef FPC_LEGACY}True{$else}FollowLink{$endif});
   end
  else
   begin
@@ -434,7 +451,11 @@ begin
   end; 
 end;
 
+{$ifdef FPC_LEGACY}
+Procedure InternalFindClose(var Handle: THandle{$ifdef USEFINDDATA};var FindData: TFindData{$endif});
+{$else}
 Procedure InternalFindClose(var Handle: THandle{$ifdef SEARCHREC_USEFINDDATA};var FindData: TFindData{$endif});
+{$endif}
 begin 
  if Assigned(SysUtilsInternalFindCloseHandler) then
   begin
@@ -500,11 +521,11 @@ Begin
   end;
 End;
 
-Function DirectoryExists (Const Directory : RawByteString; FollowLink: Boolean = True) : Boolean;
+Function DirectoryExists (Const Directory : RawByteString{$ifndef FPC_LEGACY}; FollowLink: Boolean = True{$endif}) : Boolean;
 begin
  if Assigned(SysUtilsDirectoryExistsHandler) then
   begin
-   Result:=SysUtilsDirectoryExistsHandler(Directory,FollowLink);
+   Result:=SysUtilsDirectoryExistsHandler(Directory,{$ifdef FPC_LEGACY}True{$else}FollowLink{$endif});
   end
  else
   begin
@@ -592,9 +613,12 @@ end;
 
 function GetUniversalTime(var SystemTime: TSystemTime): Boolean;
 begin
-  Result := False;
+  Result:=False;
 
-  //To Do //TestingFPC
+ if Assigned(SysUtilsGetUniversalTimeHandler) then
+  begin
+   Result:=SysUtilsGetUniversalTimeHandler(SystemTime);
+  end;
 end;
 
 function GetLocalTimeOffset: Integer;
@@ -611,9 +635,14 @@ end;
 
 function GetLocalTimeOffset(const DateTime: TDateTime; const InputIsUTC: Boolean; out Offset: Integer): Boolean;
 begin
-  Result := False;
-
-  //To Do //TestingFPC
+ if Assigned(SysUtilsGetLocalTimeOffsetExHandler) then
+  begin
+   Result:=SysUtilsGetLocalTimeOffsetExHandler(DateTime,InputIsUTC,Offset);
+  end
+ else
+  begin
+   Result:=False;
+  end;  
 end;
 
 function SysErrorMessage(ErrorCode: Integer): String;
@@ -648,6 +677,17 @@ begin
  Result:=FPCGetEnvStrFromP(envp,Index);
 end;
 
+{$ifdef FPC_LEGACY}
+function ExecuteProcess (const Path: AnsiString; const ComLine: AnsiString;Flags:TExecuteFlags=[]): integer;
+begin
+ Result:=-1;
+end;
+
+function ExecuteProcess (const Path: AnsiString; const ComLine: array of AnsiString;Flags:TExecuteFlags=[]): integer;
+begin
+ Result:=-1;
+end;
+{$else}
 function ExecuteProcess (const Path: RawByteString; const ComLine: RawByteString;Flags:TExecuteFlags=[]): integer;
 begin
  Result:=-1;
@@ -667,6 +707,7 @@ function ExecuteProcess (const Path: UnicodeString; const ComLine: array of Unic
 begin
  Result:=-1;
 end;
+{$endif}
 
 {****************************************************************************
                             Initialization functions

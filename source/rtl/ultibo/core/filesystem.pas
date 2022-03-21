@@ -235,11 +235,11 @@ const
  faMatchMask    = (faFile or faStream or faVolumeID or faDirectory);
 
  {Additional File Attribute Flags for NTFS/EXTFS/NSS}
- faDevice       = $00000040;   {Note: Conflicts with faSymLink in FPC SysUtils (filutilh.inc)}
+ faDevice       = $00000040;
  faNormal       = $00000080;
  faTemporary    = $00000100;
  faSparse       = $00000200;
- faReparse      = $00000400;
+ faReparse      = $00000400; {See also faSymLink in filutilh.inc (SysUtils)}
  faCompressed   = $00000800;
  faOffline      = $00001000;
  faNotIndexed   = $00002000;
@@ -964,6 +964,11 @@ type
   FindHandle: THandle;
   FindData: TWin32FindData;
  end;} {TSearchRec is always defined in SysUtils}
+ 
+ {$IFNDEF FPC_LEGACY}
+ TSymLinkRec = SysUtils.TRawbyteSymLinkRec;
+ {TSymLinkRec is always defined in SysUtils}
+ {$ENDIF}
  
 type
  {Search types}
@@ -5348,6 +5353,9 @@ function SysUtilsRenameFile(const OldName,NewName:RawByteString):Boolean;
 function SysUtilsFileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt;
 function SysUtilsFileTruncate(Handle:THandle;Size:Int64):Boolean;
 function SysUtilsFileAge(const FileName:RawByteString):LongInt;
+{$IFNDEF FPC_LEGACY}
+function SysUtilsFileGetSymLinkTarget(const FileName:RawByteString;out SymLinkRec:TRawbyteSymLinkRec):Boolean;
+{$ENDIF}
 function SysUtilsFileExists(const FileName:RawByteString;FollowLink:Boolean):Boolean;
 function SysUtilsFileGetAttr(const FileName:RawByteString):LongInt;
 function SysUtilsFileGetDate(Handle:THandle):LongInt;
@@ -51692,6 +51700,9 @@ begin
  SysUtilsFileSeekHandler:=SysUtilsFileSeek;
  SysUtilsFileTruncateHandler:=SysUtilsFileTruncate;
  SysUtilsFileAgeHandler:=SysUtilsFileAge;
+ {$IFNDEF FPC_LEGACY}
+ SysUtilsFileGetSymLinkTargetHandler:=SysUtilsFileGetSymLinkTarget;
+ {$ENDIF}
  SysUtilsFileExistsHandler:=SysUtilsFileExists;
  SysUtilsFileGetAttrHandler:=SysUtilsFileGetAttr;
  SysUtilsFileGetDateHandler:=SysUtilsFileGetDate;
@@ -54407,6 +54418,16 @@ begin
 end;
 
 {==============================================================================}
+{$IFNDEF FPC_LEGACY}
+function SysUtilsFileGetSymLinkTarget(const FileName:RawByteString;out SymLinkRec:TRawbyteSymLinkRec):Boolean;
+begin
+ {}
+ Result:=False;
+
+ {Not currently supported - See: FileGetSymLinkTargetInt in rtl\win\sysutils.pp}
+end;
+{$ENDIF}
+{==============================================================================}
 
 function SysUtilsFileExists(const FileName:RawByteString;FollowLink:Boolean):Boolean;
 begin
@@ -54418,6 +54439,8 @@ begin
 
  {File Exists}
  Result:=FileSysDriver.FileExists(FileName);
+
+ {Note: FollowLink not currently supported - See: FileOrDirExists in rtl\win\sysutils.pp}
 end;
 
 {==============================================================================}
@@ -54602,6 +54625,8 @@ begin
 
  {Directory Exists}
  Result:=FileSysDriver.DirectoryExists(Directory);
+
+ {Note: FollowLink not currently supported - See: FileOrDirExists in rtl\win\sysutils.pp}
 end;
 
 {==============================================================================}
