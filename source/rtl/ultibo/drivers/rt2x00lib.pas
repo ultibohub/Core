@@ -2138,7 +2138,7 @@ end;
 
 {==============================================================================}
 
-procedure RT2X00SetRegister32(var Reg:LongWord;Mask,Shift,Value:LongWord); //inline; //To Do //TestingFPC
+procedure RT2X00SetRegister32(var Reg:LongWord;Mask,Shift,Value:LongWord); {inline;} {Don't inline, can cause a compiler fault}
 {Shift is the number of bits to shift the value left (SHL)}
 begin
  {}
