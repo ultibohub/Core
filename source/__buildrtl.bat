@@ -8,7 +8,7 @@ set myfpc=%mypath%\bin\i386-win32
 GOTO CheckPath
 
 :DefaultPath
-set mypath=C:\Ultibo\Core\fpc\3.1.1
+set mypath=C:\Ultibo\Core\fpc\3.2.2
 set myfpc=%mypath%\bin\i386-win32
 
 :CheckPath
