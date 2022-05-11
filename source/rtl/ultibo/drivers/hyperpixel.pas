@@ -1,7 +1,7 @@
 {
 Pimoroni HyperPixel display driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -152,7 +152,7 @@ unit HyperPixel;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touch,SysUtils; //,I2CGPIO,GoodixTouch,FT5x06Touch; //To Do
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touch,I2CGPIO,SysUtils; //,GoodixTouch,FT5x06Touch; //To Do
 
 {==============================================================================}
 {Global definitions}
@@ -845,8 +845,8 @@ begin
  Result:=ERROR_OPERATION_FAILED;
 
  {Create I2CGPIO Device for Touch}
- //I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_DELAY,0,False,False);
- //if I2CDevice = nil then Exit;
+ I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_DELAY,0,False,False);
+ if I2CDevice = nil then Exit;
 
  {Create Goodix Touch Device}
  //To Do //Touch (Address 0x5d / Interrupt GPIO 27)
@@ -956,8 +956,8 @@ begin
  Result:=ERROR_OPERATION_FAILED;
 
  {Create I2CGPIO Device for Touch}
- //I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_DELAY,0,False,False);
- //if I2CDevice = nil then Exit;
+ I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_DELAY,0,False,False);
+ if I2CDevice = nil then Exit;
 
  {Create FT5x06 Touch Device}
  //To Do //Touch (Address 0x48 / Interrupt GPIO 27)
@@ -1067,8 +1067,8 @@ begin
  Result:=ERROR_OPERATION_FAILED;
 
  {Create I2CGPIO Device for Touch}
- //I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_DELAY,0,False,False);
- //if I2CDevice = nil then Exit;
+ I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_DELAY,0,False,False);
+ if I2CDevice = nil then Exit;
 
  {Create FT5x06 Touch Device}
  //To Do //Touch (Address 0x48 / Interrupt GPIO 27)
@@ -1382,8 +1382,8 @@ begin
  Result:=ERROR_OPERATION_FAILED;
 
  {Create I2CGPIO Device for Touch}
- //I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_DELAY,0,False,False);
- //if I2CDevice = nil then Exit;
+ I2CDevice:=I2CGPIOCreate(GPIODevice,HYPERPIXEL_I2C_SDA,HYPERPIXEL_I2C_SCL,HYPERPIXEL_I2C_DELAY,0,False,False);
+ if I2CDevice = nil then Exit;
 
  {Create Internal Touch Device}
  //To Do //Touch (Address 0x15 / Interrupt GPIO 27)

@@ -558,6 +558,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    genet \
 		    rpigpioexpander \
 		    rpisensehat \
+		    i2cgpio \
 		    hyperpixel
 ULTIBO_KEYMAP_UNITS=keymap_us \
 		    keymap_uk \
@@ -2925,6 +2926,9 @@ ifneq ($(filter $(OS_TARGET),dragonfly freebsd openbsd netbsd linux solaris),)
 ifneq ($(filter $(CPU_TARGET),x86_64 mips mipsel mips64 mips64el riscv64 powerpc64),)
 override FPCOPT+=-Cg
 endif
+endif
+ifneq ($(filter $(CPU_TARGET),z80),)
+override FPCOPT+=-CX -XX
 endif
 ifdef LINKSHARED
 endif

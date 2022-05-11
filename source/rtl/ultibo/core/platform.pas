@@ -12155,7 +12155,7 @@ end;
 {==============================================================================}
 
 function SysUtilsGetLocalTimeOffsetEx(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
-{Get the current local time offset value at the given data and time}
+{Get the current local time offset value at the given date and time}
 begin
  {}
  Result:=False;

@@ -282,6 +282,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     genet \
                     rpigpioexpander \
                     rpisensehat \
+                    i2cgpio \
                     hyperpixel
 
 ULTIBO_KEYMAP_UNITS=keymap_us \

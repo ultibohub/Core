@@ -1,7 +1,7 @@
 {
 Ultibo I2C interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -28,6 +28,8 @@ References
 ==========
 
  I2C - https://en.wikipedia.org/wiki/I%C2%B2C
+  
+ I2C Bus - https://www.i2c-bus.org/
 
 I2C Devices
 ===========
@@ -40,7 +42,11 @@ I2C Devices
  
  Each device is assigned a 7bit address which is used by the host (or master) to signal the device
  that a message written to the bus is intended for that device or that the host wants to read data
- from that device.
+ from that device. 
+ 
+ A small number of devices and hosts support 10bit addressing which expands the number of available
+ addresses. The 10bit address format is defined here https://www.i2c-bus.org/addressing/10-bit-addressing/
+ and the reserved addresses are defined on this page https://www.i2c-bus.org/addressing/ 
  
  Speeds range from 10Kbps to 3.4Mbps although the typical speed is either 100Kbps or 400Kbps.
  
@@ -259,6 +265,9 @@ function I2CDeviceCheck(I2C:PI2CDevice):PI2CDevice;
 
 function I2CTypeToString(I2CType:LongWord):String;
 function I2CStateToString(I2CState:LongWord):String;
+
+function I2CIs7BitAddress(Address:Word):Boolean;
+function I2CIs10BitAddress(Address:Word):Boolean;
 
 procedure I2CLog(Level:LongWord;I2C:PI2CDevice;const AText:String);
 procedure I2CLogInfo(I2C:PI2CDevice;const AText:String); inline;
@@ -1581,6 +1590,42 @@ begin
   begin
    Result:=I2C_STATE_NAMES[I2CState];
   end;
+end;
+
+{==============================================================================}
+
+function I2CIs7BitAddress(Address:Word):Boolean;
+{Determine if the supplied address is a 7bit address}
+begin
+ {}
+ Result:=False;
+ 
+ {Check for bits outside of the 7bit range (10bit = 0x3FF / 7bit = 0x7F)}
+ if (Address and $0380) <> 0 then Exit;
+ 
+ {Check for bits in the reserved ranges (1111XXX and 0000XXX)}
+ if (Address and $78) = $78 then Exit;
+ if (Address <= $07) then Exit;
+ 
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function I2CIs10BitAddress(Address:Word):Boolean;
+{Determine if the supplied address is a 10bit address}
+begin
+ {}
+ Result:=True;
+
+ {Check for bits outside of the 7bit range (10bit = 0x3FF / 7bit = 0x7F)}
+ if (Address and $0380) <> 0 then Exit;
+
+ {Check for bits in the reserved ranges (1111XXX and 0000XXX)}
+ if (Address and $78) = $78 then Exit;
+ if (Address <= $07) then Exit;
+
+ Result:=False;
 end;
 
 {==============================================================================}
