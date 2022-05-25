@@ -28,7 +28,7 @@ make rtl OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 BINUTILSPREFIX=arm-none-e
 exitFailure
 echo "!!!Progress14"
 
-make rtl_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/units/armv6-ultibo/rtl
+make rtl_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/lib/fpc/3.2.2/units/armv6-ultibo/rtl
 exitFailure
 echo "!!!Progress21"
 
@@ -46,11 +46,11 @@ make packages_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6
 exitFailure
 echo "!!!Progress35"
 
-make packages OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH -Fu$HOME/ultibo/core/fpc/units/armv6-ultibo/rtl" FPC=$HOME/ultibo/core/fpc/bin/fpc
+make packages OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH -Fu$HOME/ultibo/core/fpc/lib/fpc/3.2.2/units/armv6-ultibo/rtl" FPC=$HOME/ultibo/core/fpc/bin/fpc
 exitFailure
 echo "!!!Progress42"
 
-make packages_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/units/armv6-ultibo/packages
+make packages_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV6 -CfVFPV2 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv6 FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/lib/fpc/3.2.2/units/armv6-ultibo/packages
 exitFailure
 echo "!!!Progress49"
 
@@ -68,7 +68,7 @@ make rtl OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a BINUTILSPREFIX=arm-none-
 exitFailure
 echo "!!!Progress63"
 
-make rtl_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/units/armv7-ultibo/rtl
+make rtl_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/lib/fpc/3.2.2/units/armv7-ultibo/rtl
 exitFailure
 echo "!!!Progress70"
 
@@ -86,11 +86,11 @@ make packages_clean CROSSINSTALL=1 OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7
 exitFailure
 echo "!!!Progress84"
 
-make packages OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH -Fu$HOME/ultibo/core/fpc/units/armv7-ultibo/rtl" FPC=$HOME/ultibo/core/fpc/bin/fpc
+make packages OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH -Fu$HOME/ultibo/core/fpc/lib/fpc/3.2.2/units/armv7-ultibo/rtl" FPC=$HOME/ultibo/core/fpc/bin/fpc
 exitFailure
 echo "!!!Progress91"
 
-make packages_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/units/armv7-ultibo/packages
+make packages_install CROSSINSTALL=1 BINUTILSPREFIX=arm-none-eabi- FPCFPMAKE=$HOME/ultibo/core/fpc/bin/fpc CROSSOPT="-CpARMV7A -CfVFPV3 -CIARM -CaEABIHF -OoFASTMATH" OS_TARGET=ultibo CPU_TARGET=arm SUBARCH=armv7a FPC=$HOME/ultibo/core/fpc/bin/fpc INSTALL_PREFIX=$HOME/ultibo/core/fpc INSTALL_UNITDIR=$HOME/ultibo/core/fpc/lib/fpc/3.2.2/units/armv7-ultibo/packages
 exitFailure
 echo "!!!Progress98"
 

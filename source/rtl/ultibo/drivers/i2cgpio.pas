@@ -75,7 +75,7 @@ I2C GPIO
   // Create an instance of the I2CGPIO device
   I2CDevice:=I2CGPIOCreate(GPIODevice,GPIO_PIN_2,GPIO_PIN_3,4,0,False,False);
  
-  // Pass the returned I2CDevice with the standard I2C API functions
+  // Pass the returned I2CDevice to the standard I2C API functions
   ...
  end;
  
