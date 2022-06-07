@@ -1,7 +1,7 @@
 {
 Ultibo Winsock2 interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3138,6 +3138,7 @@ end;
 
 function TWinsock2Socket.Bind:LongInt;
 var
+ WorkBool:LongBool;
  SockAddr:PSockAddr;
  SockAddrLength:Integer;
 begin
@@ -3149,6 +3150,22 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: Bind');
  {$ENDIF}
+
+ {Set Options}
+ if ReuseAddress then
+  begin
+   WorkBool:=ReuseAddress;
+   if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_REUSEADDR,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
+    begin
+     FLastError:=Winsock2.WSAGetLastError;
+      
+     {$IFDEF WINSOCK2_DEBUG}
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     {$ENDIF}
+      
+     Exit;
+    end;
+  end;
  
  SockAddrLength:=0;
  SockAddr:=AllocateBoundAddress(SockAddrLength);
@@ -7777,33 +7794,33 @@ begin
      Exit;
     end;
   end;
-  if UseKeepalive then
-   begin
-    WorkBool:=UseKeepalive;
-    if Winsock2.setsockopt(AThread.Server.Handle,SOL_SOCKET,SO_KEEPALIVE,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
-     begin
-      FLastError:=Winsock2.WSAGetLastError;
+ if UseKeepalive then
+  begin
+   WorkBool:=UseKeepalive;
+   if Winsock2.setsockopt(AThread.Server.Handle,SOL_SOCKET,SO_KEEPALIVE,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
+    begin
+     FLastError:=Winsock2.WSAGetLastError;
       
-      {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
-      {$ENDIF}
+     {$IFDEF WINSOCK2_DEBUG}
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     {$ENDIF}
       
-      Exit;
-     end;
-   end;
-  if MaxSegmentSize <> 0 then
-   begin
-    if Winsock2.setsockopt(AThread.Server.Handle,IPPROTO_TCP,TCP_MAXSEG,PChar(@MaxSegmentSize),SizeOf(MaxSegmentSize)) = SOCKET_ERROR then
-     begin
-      FLastError:=Winsock2.WSAGetLastError;
+     Exit;
+    end;
+  end;
+ if MaxSegmentSize <> 0 then
+  begin
+   if Winsock2.setsockopt(AThread.Server.Handle,IPPROTO_TCP,TCP_MAXSEG,PChar(@MaxSegmentSize),SizeOf(MaxSegmentSize)) = SOCKET_ERROR then
+    begin
+     FLastError:=Winsock2.WSAGetLastError;
       
-      {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
-      {$ENDIF}
+     {$IFDEF WINSOCK2_DEBUG}
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     {$ENDIF}
       
-      Exit;
-     end;
-   end;
+     Exit;
+    end;
+  end;
  
  if Assigned(FOnConnect) then FOnConnect(AThread);
 end;
@@ -7850,6 +7867,7 @@ begin
  
  if FListener <> nil then
   begin
+   ReuseAddress:=AListener.ReuseAddress;
    Family:=AListener.Family;
    SocketType:=AListener.SocketType;
    Protocol:=AListener.Protocol;
