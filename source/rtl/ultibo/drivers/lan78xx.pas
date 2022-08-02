@@ -1896,7 +1896,7 @@ begin
            {Release USB Request Buffer}
            USBBufferRelease(Entry.Buffer);
           
-           {Initialize Packets}
+           {Deinitialize Packets}
            SetLength(Entry.Packets,0);
            
            Entry:=BufferIterate(Network.ReceiveQueue.Buffer,Entry);

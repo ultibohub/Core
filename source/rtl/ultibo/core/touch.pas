@@ -1,7 +1,7 @@
 {
 Ultibo Touch interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -83,16 +83,27 @@ const
  TOUCH_FLAG_MOUSE_DATA   = $00000004; {If set the device will write a mouse data event for each touch event}
  TOUCH_FLAG_MULTI_POINT  = $00000008; {If set the device supports multi point touch}
  TOUCH_FLAG_PRESSURE     = $00000010; {If set the device supports pressure value on touch points}
+ TOUCH_FLAG_SWAP_XY      = $00000020; {If set swap the X and Y coordinates}
+ TOUCH_FLAG_INVERT_X     = $00000040; {If set invert the X coordinate}
+ TOUCH_FLAG_INVERT_Y     = $00000080; {If set invert the Y coordinate}
+ TOUCH_FLAG_SWAP_MAX_XY  = $00000100; {If set swap the maximum X and Y values}
  
  {Flags supported by TOUCH_CONTROL_GET/SET/CLEAR_FLAG}
- TOUCH_FLAG_MASK = TOUCH_FLAG_NON_BLOCK or TOUCH_FLAG_MOUSE_DATA or TOUCH_FLAG_MULTI_POINT or TOUCH_FLAG_PRESSURE;
+ TOUCH_FLAG_MASK = TOUCH_FLAG_NON_BLOCK or TOUCH_FLAG_MOUSE_DATA or TOUCH_FLAG_MULTI_POINT or TOUCH_FLAG_PRESSURE or TOUCH_FLAG_SWAP_XY or TOUCH_FLAG_INVERT_X or TOUCH_FLAG_INVERT_Y or TOUCH_FLAG_SWAP_MAX_XY;
  
  {Touch Device Control Codes}
  TOUCH_CONTROL_GET_FLAG         = 1;  {Get Flag}
  TOUCH_CONTROL_SET_FLAG         = 2;  {Set Flag}
  TOUCH_CONTROL_CLEAR_FLAG       = 3;  {Clear Flag}
  TOUCH_CONTROL_FLUSH_BUFFER     = 4;  {Flush Buffer}
- //To Do //Calibration/Rotation etc
+ TOUCH_CONTROL_GET_WIDTH        = 5;  {Get Screen Width}
+ TOUCH_CONTROL_GET_HEIGHT       = 6;  {Get Screen Height}
+ TOUCH_CONTROL_GET_MAX_X        = 7;  {Get Maximum X value (Only applies to Absolute X values)}
+ TOUCH_CONTROL_GET_MAX_Y        = 8;  {Get Maximum Y value (Only applies to Absolute Y values)}
+ TOUCH_CONTROL_GET_MAX_Z        = 9;  {Get Maximum Z value (Only applies to Absolute Z values)}
+ TOUCH_CONTROL_GET_MAX_POINTS   = 10; {Get Maximum number of Touch Points}
+ TOUCH_CONTROL_GET_ROTATION     = 11; {Get Rotation value (0, 90, 180, 270)(Only where supported by the driver)}
+ TOUCH_CONTROL_SET_ROTATION     = 12; {Set Rotation value (0, 90, 180, 270)(Only where supported by the driver)}
  
  {Touch Buffer Size}
  TOUCH_BUFFER_SIZE = 1024; 
@@ -183,6 +194,7 @@ type
  TTouchDeviceRead = function(Touch:PTouchDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTouchDeviceWrite = function(Touch:PTouchDevice;Buffer:Pointer;Size,Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTouchDeviceFlush = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+ TTouchDeviceUpdate = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTouchDeviceControl = function(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TTouchDeviceGetProperties = function(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -199,6 +211,7 @@ type
   DeviceRead:TTouchDeviceRead;                    {A Device specific DeviceRead method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   DeviceWrite:TTouchDeviceWrite;                  {A Device specific DeviceWrite method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   DeviceFlush:TTouchDeviceFlush;                  {A Device specific DeviceFlush method implementing a standard Touch device interface (Or nil if the default method is suitable)}
+  DeviceUpdate:TTouchDeviceUpdate;                {A Device specific DeviceUpdate method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   DeviceControl:TTouchDeviceControl;              {A Device specific DeviceControl method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   DeviceGetProperties:TTouchDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   {Driver Properties}
@@ -233,6 +246,7 @@ function TouchDeviceRead(Touch:PTouchDevice;Buffer:Pointer;Size,Flags:LongWord;v
 function TouchDeviceWrite(Touch:PTouchDevice;Buffer:Pointer;Size,Count:LongWord):LongWord; 
 
 function TouchDeviceFlush(Touch:PTouchDevice):LongWord;
+function TouchDeviceUpdate(Touch:PTouchDevice):LongWord;
 
 function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 
@@ -776,6 +790,58 @@ end;
 
 {==============================================================================}
 
+function TouchDeviceUpdate(Touch:PTouchDevice):LongWord;
+{Request the specified touch device to update the current configuration}
+{Touch: The Touch device to update}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+{Note: Items updated can include rotation, maximum X and Y and flags (If supported)}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Touch}
+ if Touch = nil then Exit;
+ if Touch.Device.Signature <> DEVICE_SIGNATURE then Exit;
+ 
+ {$IFDEF TOUCH_DEBUG}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'Touch Device Update');
+ {$ENDIF}
+ 
+ {Check Method}
+ if Assigned(Touch.DeviceUpdate) then
+  begin
+   {Provided Method}
+   Result:=Touch.DeviceUpdate(Touch);
+  end
+ else
+  begin 
+   {Default Method}
+   {Check Touch Enabled}
+   if Touch.TouchState <> TOUCH_STATE_ENABLED then Exit;
+
+   {Acquire the Lock}
+   if MutexLock(Touch.Lock) = ERROR_SUCCESS then
+    begin
+     try
+      {Nothing by default}
+      
+      {Return Result}
+      Result:=ERROR_SUCCESS;
+     finally
+      {Release the Lock}
+      MutexUnlock(Touch.Lock);
+     end;
+    end
+   else
+    begin
+     Result:=ERROR_CAN_NOT_COMPLETE;
+     Exit;
+    end;
+  end; 
+end;
+
+{==============================================================================}
+
 function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
 {Perform a control request on the specified touch device}
 {Touch: The Touch device to control}
@@ -824,9 +890,10 @@ begin
          if (Argument1 and not(TOUCH_FLAG_MASK)) = 0 then
           begin
            Touch.Device.DeviceFlags:=(Touch.Device.DeviceFlags or Argument1);
+           Touch.Properties.Flags:=Touch.Device.DeviceFlags;
          
-           {Return Result}
-           Result:=ERROR_SUCCESS;
+           {Request Update}
+           Result:=TouchDeviceUpdate(Touch);
           end; 
         end;
        TOUCH_CONTROL_CLEAR_FLAG:begin 
@@ -834,9 +901,10 @@ begin
          if (Argument1 and not(TOUCH_FLAG_MASK)) = 0 then
           begin
            Touch.Device.DeviceFlags:=(Touch.Device.DeviceFlags and not(Argument1));
+           Touch.Properties.Flags:=Touch.Device.DeviceFlags;
          
-           {Return Result}
-           Result:=ERROR_SUCCESS;
+           {Request Update}
+           Result:=TouchDeviceUpdate(Touch);
           end; 
         end;
        TOUCH_CONTROL_FLUSH_BUFFER:begin
@@ -862,6 +930,65 @@ begin
          {Return Result} 
          Result:=ERROR_SUCCESS;
         end;       
+       TOUCH_CONTROL_GET_WIDTH:begin
+         {Get Width}
+         Argument2:=Touch.Properties.Width;
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_GET_HEIGHT:begin
+         {Get Height}
+         Argument2:=Touch.Properties.Height;
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_GET_MAX_X:begin
+         {Get Maximum X}
+         Argument2:=Touch.Properties.MaxX;
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_GET_MAX_Y:begin
+         {Get Maximum Y}
+         Argument2:=Touch.Properties.MaxY;
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_GET_MAX_Z:begin
+         {Get Maximum Z}
+         Argument2:=Touch.Properties.MaxZ;
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_GET_MAX_POINTS:begin
+         {Get Maximum Points}
+         Argument2:=Touch.Properties.MaxPoints;
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_GET_ROTATION:begin
+         {Get Rotation}
+         Argument2:=Touch.Properties.Rotation;
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_SET_ROTATION:begin
+         {Set Rotation}
+         if (Argument1 >= TOUCH_ROTATION_0) and (Argument1 <= TOUCH_ROTATION_270) then
+          begin
+           Touch.Properties.Rotation:=Argument1;
+
+           {Request Update}
+           Result:=TouchDeviceUpdate(Touch);
+          end; 
+        end;
       end;
      finally
       {Release the Lock}

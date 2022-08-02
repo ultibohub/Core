@@ -4993,6 +4993,22 @@ begin
   begin
    Result.Add('TOUCH_FLAG_PRESSURE');
   end;
+ if (AFlags and TOUCH_FLAG_SWAP_XY) = TOUCH_FLAG_SWAP_XY then
+  begin
+   Result.Add('TOUCH_FLAG_SWAP_XY');
+  end;
+ if (AFlags and TOUCH_FLAG_INVERT_X) = TOUCH_FLAG_INVERT_X then
+  begin
+   Result.Add('TOUCH_FLAG_INVERT_X');
+  end;
+ if (AFlags and TOUCH_FLAG_INVERT_Y) = TOUCH_FLAG_INVERT_Y then
+  begin
+   Result.Add('TOUCH_FLAG_INVERT_Y');
+  end;
+ if (AFlags and TOUCH_FLAG_SWAP_MAX_XY) = TOUCH_FLAG_SWAP_MAX_XY then
+  begin
+   Result.Add('TOUCH_FLAG_SWAP_MAX_XY');
+  end;
 
  {Check Flags}
  if Result.Count = 0 then

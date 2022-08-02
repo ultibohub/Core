@@ -283,6 +283,8 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     rpigpioexpander \
                     rpisensehat \
                     i2cgpio \
+                    goodixtouch \
+                    ft5x06touch \
                     hyperpixel
 
 ULTIBO_KEYMAP_UNITS=keymap_us \
