@@ -965,7 +965,6 @@ begin
  {$IF DEFINED(GOODIX_DEBUG) or DEFINED(TOUCH_DEBUG)}
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX: Update Config');
  {$ENDIF}
- //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX: Update Config'); //To DO //TestingGoodix
 
  {Check Width and Height}
  if (Touch.MaxX <> (Touch.Width - 1)) or (Touch.MaxY <> (Touch.Height - 1)) then
@@ -1706,7 +1705,6 @@ begin
  {$IF DEFINED(GOODIX_DEBUG) or DEFINED(TOUCH_DEBUG)}
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX: Send Config');
  {$ENDIF}
- //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX: Send Config'); //To Do //TestingGoodix
 
  {Check Config}
  Result:=GOODIXCheckConfig(Touch,Data,Size);

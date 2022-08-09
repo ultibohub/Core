@@ -1,7 +1,7 @@
 {
 Ultibo Services interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -409,6 +409,12 @@ type
   function GetTime:Int64;
   
   procedure IncrementInitialClockCount;
+  
+  function FormatTime(Time:Int64):String;
+  function FormatOffset(Offset:Int64):String;
+  
+  function CalculateClockOffset(T1,T2,T3,T4:Int64):Int64;
+  function CalculateRoundtripDelay(T1,T2,T3,T4:Int64):Int64;
  end;
  
  {Telnet classes}
@@ -699,9 +705,12 @@ function NTPTimestampToNetwork(const Timestamp:TNTPTimestamp):TNTPTimestamp;
 
 function NTPTimestampAdd(const Timestamp1,Timestamp2:TNTPTimestamp):TNTPTimestamp;
 function NTPTimestampSubtract(const Timestamp1,Timestamp2:TNTPTimestamp):TNTPTimestamp;
+function NTPTimestampDivide(const Timestamp:TNTPTimestamp;Divisor:LongWord):TNTPTimestamp;
 
 function ClockTimeToNTPTimestamp(const Time:Int64):TNTPTimestamp;
 function NTPTimestampToClockTime(const Timestamp:TNTPTimestamp):Int64;
+
+function NTPTimestampToString(const Timestamp:TNTPTimestamp):String;
 
 {==============================================================================}
 {Telnet Helper Functions}
@@ -889,8 +898,13 @@ var
  Count:LongWord;
  NTPReply:PNTPPacket;
  NTPRequest:PNTPPacket;
- ClockOffset:TNTPTimestamp;
- RoundtripDelay:TNTPTimestamp;
+ ReceiveTime:Int64;
+ TransmitTime:Int64;
+ ReferenceTime:Int64;
+ OriginateTime:Int64;
+ DestinationTime:Int64;
+ ClockOffset:Int64;
+ RoundtripDelay:Int64;
  DestinationTimestamp:TNTPTimestamp;
 begin
  {}
@@ -943,8 +957,9 @@ begin
       {$ENDIF}
       
       {Setup NTP Request}
+      TransmitTime:=ClockGetTime;
       NTPRequest.LeapVersionMode:=(NTP_LEAP_NONE shl 6) or (NTP_VERSION shl 3) or (NTP_MODE_CLIENT shl 0);
-      NTPRequest.TransmitTimestamp:=ClockTimeToNTPTimestamp(ClockGetTime);
+      NTPRequest.TransmitTimestamp:=ClockTimeToNTPTimestamp(TransmitTime);
       
       {Send NTP Request}
       if SendData(NTPRequest,SizeOf(TNTPPacket)) = SizeOf(TNTPPacket) then
@@ -959,12 +974,13 @@ begin
         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Precision = ' + IntToHex(NTPRequest.Precision,2));
         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Root Delay = ' + IntToHex(NTPRequest.RootDelay,8));
         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Root Dispersion = ' + IntToHex(NTPRequest.RootDispersion,8));
-        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Reference Timestamp = ' + IntToHex(NTPRequest.ReferenceTimestamp.Seconds,8) + ' / ' + IntToHex(NTPRequest.ReferenceTimestamp.Fraction,8));
-        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Originate Timestamp = ' + IntToHex(NTPRequest.OriginateTimestamp.Seconds,8) + ' / ' + IntToHex(NTPRequest.OriginateTimestamp.Fraction,8));
-        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Receive Timestamp = ' + IntToHex(NTPRequest.ReceiveTimestamp.Seconds,8) + ' / ' + IntToHex(NTPRequest.ReceiveTimestamp.Fraction,8));
-        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Transmit Timestamp = ' + IntToHex(NTPRequest.TransmitTimestamp.Seconds,8) + ' / ' + IntToHex(NTPRequest.TransmitTimestamp.Fraction,8));
+        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Reference Timestamp = ' + NTPTimestampToString(NTPRequest.ReferenceTimestamp));
+        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Originate Timestamp = ' + NTPTimestampToString(NTPRequest.OriginateTimestamp));
+        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Receive Timestamp = ' + NTPTimestampToString(NTPRequest.ReceiveTimestamp));
+        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Transmit Timestamp = ' + NTPTimestampToString(NTPRequest.TransmitTimestamp));
+        if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:                       ' + FormatTime(TransmitTime));
         {$ENDIF}
-      
+
         {Create NTP Reply}
         NTPReply:=AllocMem(SizeOf(TNTPPacket));
         if NTPReply = nil then Exit;
@@ -972,22 +988,35 @@ begin
          {$IFDEF NTP_DEBUG}
          if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Receiving Reply');
          {$ENDIF}
-      
+
          {Receive NTP Reply}
          if RecvData(NTPReply,SizeOf(TNTPPacket)) > 0 then
           begin
            {Get Destination Timestamp}
-           DestinationTimestamp:=ClockTimeToNTPTimestamp(ClockGetTime);
-           
+           DestinationTime:=ClockGetTime;
+           DestinationTimestamp:=ClockTimeToNTPTimestamp(DestinationTime);
+
            {Get Leap}
            Leap:=(NTPReply.LeapVersionMode shr 6) and NTP_LEAP_MASK;
-         
+
            {Get Version}
            Version:=(NTPReply.LeapVersionMode shr 3) and NTP_VERSION_MASK;
-         
+
            {Get Mode}
            Mode:=(NTPReply.LeapVersionMode shr 0) and NTP_MODE_MASK;
-         
+
+           {Get Reference Time}
+           ReferenceTime:=NTPTimestampToClockTime(NTPReply.ReferenceTimestamp);
+
+           {Get Originate Time}
+           OriginateTime:=NTPTimestampToClockTime(NTPReply.OriginateTimestamp);
+
+           {Get Receive Time}
+           ReceiveTime:=NTPTimestampToClockTime(NTPReply.ReceiveTimestamp);
+
+           {Get Transmit Time}
+           TransmitTime:=NTPTimestampToClockTime(NTPReply.TransmitTimestamp);
+
            {$IFDEF NTP_DEBUG}
            if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Reply Received');
            if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Leap = ' + IntToHex(Leap,2));
@@ -998,13 +1027,18 @@ begin
            if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Precision = ' + IntToHex(NTPReply.Precision,2));
            if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Root Delay = ' + IntToHex(NTPReply.RootDelay,8));
            if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Root Dispersion = ' + IntToHex(NTPReply.RootDispersion,8));
-           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Reference Timestamp = ' + IntToHex(NTPReply.ReferenceTimestamp.Seconds,8) + ' / ' + IntToHex(NTPReply.ReferenceTimestamp.Fraction,8));
-           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Originate Timestamp = ' + IntToHex(NTPReply.OriginateTimestamp.Seconds,8) + ' / ' + IntToHex(NTPReply.OriginateTimestamp.Fraction,8));
-           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Receive Timestamp = ' + IntToHex(NTPReply.ReceiveTimestamp.Seconds,8) + ' / ' + IntToHex(NTPReply.ReceiveTimestamp.Fraction,8));
-           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Transmit Timestamp = ' + IntToHex(NTPReply.TransmitTimestamp.Seconds,8) + ' / ' + IntToHex(NTPReply.TransmitTimestamp.Fraction,8));
-           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Destination Timestamp = ' + IntToHex(DestinationTimestamp.Seconds,8) + ' / ' + IntToHex(DestinationTimestamp.Fraction,8));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Reference Timestamp = ' + NTPTimestampToString(NTPReply.ReferenceTimestamp));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:                        ' + FormatTime(ReferenceTime));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Originate Timestamp = ' + NTPTimestampToString(NTPReply.OriginateTimestamp));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:                        ' + FormatTime(OriginateTime));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Receive Timestamp = ' + NTPTimestampToString(NTPReply.ReceiveTimestamp));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:                      ' + FormatTime(ReceiveTime));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Transmit Timestamp = ' + NTPTimestampToString(NTPReply.TransmitTimestamp));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:                       ' + FormatTime(TransmitTime));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Destination Timestamp = ' + NTPTimestampToString(DestinationTimestamp));
+           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:                          ' + FormatTime(DestinationTime));
            {$ENDIF}
-         
+
            {Check NTP Reply}
            {Leap}
            if Leap = NTP_LEAP_ALARM then
@@ -1036,40 +1070,56 @@ begin
              if SERVICE_LOG_ENABLED then ServiceLogError('NTP Client: Transmit timestamp not valid in reply');
              Exit;
             end; 
-         
+
            {$IFDEF NTP_DEBUG}
            if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Reply Validated');
            {$ENDIF}
-          
-           {T1 = Originate Timestamp (time request sent by client)
-            T2 = Receive Timestamp (time request received by server)
-            T3 = Transmit Timestamp (time reply sent by server)
-            T4 = Destination Timestamp (time reply received by client)}
-            
-           {Calculate Roudtrip Delay} {RoundtripDelay = (T4 - T1) - (T3 - T2)}
-           RoundtripDelay:=NTPTimestampSubtract(NTPTimestampSubtract(DestinationTimestamp,NTPReply.OriginateTimestamp),NTPTimestampSubtract(NTPReply.TransmitTimestamp,NTPReply.ReceiveTimestamp));
 
-           {$IFDEF NTP_DEBUG}
-           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Roundtrip Delay = ' + IntToHex(RoundtripDelay.Seconds,8) + ' / ' + IntToHex(RoundtripDelay.Fraction,8));
-           {$ENDIF}
-          
-           {Calculate Clock  Offset} {ClockOffset = ((T2 - T1) + (T3 - T4)) / 2}
-           ClockOffset:=NTPTimestampAdd(NTPTimestampSubtract(NTPReply.ReceiveTimestamp,NTPReply.OriginateTimestamp),NTPTimestampSubtract(NTPReply.TransmitTimestamp,DestinationTimestamp));
-           //To Do //div 2; //Use this value to adjust NTPReply.TransmitTimestamp before returning
-          
-           {$IFDEF NTP_DEBUG}
-           if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Clock Offset = ' + IntToHex(ClockOffset.Seconds,8) + ' / ' + IntToHex(ClockOffset.Fraction,8));
-           {$ENDIF}
-           
-           {Get Time}
-           Result:=NTPTimestampToClockTime(NTPReply.TransmitTimestamp);
+           {Check Time and Offset}
+           if (DestinationTime > TIME_TICKS_TO_2001) and NTP_USE_CLOCK_OFFSET then
+            begin
+             {T1 = Originate Timestamp (time request sent by client)
+              T2 = Receive Timestamp (time request received by server)
+              T3 = Transmit Timestamp (time reply sent by server)
+              T4 = Destination Timestamp (time reply received by client)}
+
+             {Calculate Roudtrip Delay} {RoundtripDelay = (T4 - T1) - (T3 - T2)}
+             {RoundtripDelay:=NTPTimestampSubtract(NTPTimestampSubtract(DestinationTimestamp,NTPReply.OriginateTimestamp),NTPTimestampSubtract(NTPReply.TransmitTimestamp,NTPReply.ReceiveTimestamp));}
+             RoundtripDelay:=CalculateRoundtripDelay(OriginateTime,ReceiveTime,TransmitTime,DestinationTime);
+
+             {$IFDEF NTP_DEBUG}
+             if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Roundtrip Delay = ' + FormatOffset(RoundtripDelay));
+             {$ENDIF}
+             if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Roundtrip Delay = ' + FormatOffset(RoundtripDelay)); //To Do //TestingNTP
+
+             {Calculate Clock  Offset} {ClockOffset = ((T2 - T1) + (T3 - T4)) / 2}
+             {ClockOffset:=NTPTimestampDivide(NTPTimestampAdd(NTPTimestampSubtract(NTPReply.ReceiveTimestamp,NTPReply.OriginateTimestamp),NTPTimestampSubtract(NTPReply.TransmitTimestamp,DestinationTimestamp)),2);}
+             ClockOffset:=CalculateClockOffset(OriginateTime,ReceiveTime,TransmitTime,DestinationTime);
+
+             {$IFDEF NTP_DEBUG}
+             if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Clock Offset = ' + FormatOffset(ClockOffset));
+             {$ENDIF}
+             if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Clock Offset = ' + FormatOffset(ClockOffset)); //To Do //TestingNTP
+
+             {Get Time}
+             Result:=DestinationTime + ClockOffset;
+            end
+           else
+            begin
+             {$IFDEF NTP_DEBUG}
+             if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Local time not set or clock offset disabled');
+             {$ENDIF}
+
+             {Get Time}
+             Result:=TransmitTime;
+            end;
            Exit;
           end;          
         finally
          FreeMem(NTPReply);
         end;     
        end;       
-    
+
       Dec(Count);
       Sleep(RetryTimeout);
 
@@ -1099,6 +1149,54 @@ begin
  Inc(FInitialClockCount);
  
  ReleaseLock;
+end;
+
+{==============================================================================}
+
+function TNTPClient.FormatTime(Time:Int64):String;
+begin
+ {}
+ DateTimeToString(Result,'dd-mmm-yyyy hh:nn:ss.zzz',SystemFileTimeToDateTime(TFileTime(Time)));
+end;
+
+{==============================================================================}
+
+function TNTPClient.FormatOffset(Offset:Int64):String;
+var
+ Seconds:Int64;
+ Microseconds:Int64;
+begin
+ {}
+ Seconds:=Offset div TIME_TICKS_PER_SECOND;
+ Microseconds:=(Offset mod TIME_TICKS_PER_SECOND) div TIME_TICKS_PER_MICROSECOND;
+ 
+ Result:=IntToStr(Seconds) + ' seconds ' + IntToStr(Microseconds) + ' microseconds';
+end;
+
+{==============================================================================}
+
+function TNTPClient.CalculateClockOffset(T1,T2,T3,T4:Int64):Int64;
+{T1 = Originate Timestamp (time request sent by client)
+ T2 = Receive Timestamp (time request received by server)
+ T3 = Transmit Timestamp (time reply sent by server)
+ T4 = Destination Timestamp (time reply received by client)}
+{ClockOffset = ((T2 - T1) + (T3 - T4)) / 2} 
+begin
+ {}
+ Result:=((T2 - T1) + (T3 - T4)) div 2;
+end;
+
+{==============================================================================}
+
+function TNTPClient.CalculateRoundtripDelay(T1,T2,T3,T4:Int64):Int64;
+{T1 = Originate Timestamp (time request sent by client)
+ T2 = Receive Timestamp (time request received by server)
+ T3 = Transmit Timestamp (time reply sent by server)
+ T4 = Destination Timestamp (time reply received by client)}
+{RoundtripDelay = (T4 - T1) - (T3 - T2)}
+begin
+ {}
+ Result:=(T4 - T1) - (T3 - T2);
 end;
 
 {==============================================================================}
@@ -3064,7 +3162,29 @@ procedure NTPUpdateTime(Client:TNTPClient);
   {}
   Result:=(Time div TIME_TICKS_PER_SECOND) * TIME_TICKS_PER_SECOND;
  end;
- 
+
+ function MillisecondsDifference(Time1,Time2:Int64):Int64;
+ {Determine how many milliseconds difference between two time values in 100ns intervals}
+ var
+  Milliseconds1:Int64;
+  Milliseconds2:Int64;
+ begin
+  {}
+  {Get Milliseconds}
+  Milliseconds1:=(Time1 div TIME_TICKS_PER_MILLISECOND);
+  Milliseconds2:=(Time2 div TIME_TICKS_PER_MILLISECOND);
+
+  {Return Difference}
+  if Milliseconds1 > Milliseconds2 then
+   begin
+    Result:=Milliseconds1 - Milliseconds2;
+   end
+  else
+   begin
+    Result:=Milliseconds2 - Milliseconds1;
+   end;
+ end;
+
 var
  Current:Int64;
  Previous:Int64;
@@ -3077,23 +3197,31 @@ begin
  if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time');
  {$ENDIF}
  
- {Get Time}
+ {Get Remote Time}
  Current:=Client.GetTime;
  if Current <> 0 then
   begin
    {$IFDEF NTP_DEBUG}
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Get Time success');
-   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Returned time is ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Current))));
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Remote time is ' + Client.FormatTime(Current));
    {$ENDIF}
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Remote time is ' + Client.FormatTime(Current)); //To Do //TestingNTP
 
-   {Check Time}
+   {Get Local Time}
    Previous:=ClockGetTime;
-   if WholeSeconds(Current) <> WholeSeconds(Previous) then
+
+   {$IFDEF NTP_DEBUG}
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Local time is ' + Client.FormatTime(Previous));
+   {$ENDIF}
+   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Local time is ' + Client.FormatTime(Previous)); //To Do //TestingNTP
+
+   {Compare Time}
+   if MillisecondsDifference(Previous,Current) >= NTP_CLOCK_TOLERANCE then
     begin
      {Set Time}
      ClockSetTime(Current,True);
      
-     if SERVICE_LOG_ENABLED then ServiceLogInfo('NTP: Setting time to ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Current))) + ' (from ' + DateTimeToStr(SystemFileTimeToDateTime(TFileTime(Previous))) + ')');
+     if SERVICE_LOG_ENABLED then ServiceLogInfo('NTP: Setting time to ' + Client.FormatTime(Current) + ' (from ' + Client.FormatTime(Previous) + ')');
     end; 
    
    {Set Initial Clock}
@@ -3455,7 +3583,8 @@ end;
 {==============================================================================}
 
 function NTPTimestampAdd(const Timestamp1,Timestamp2:TNTPTimestamp):TNTPTimestamp;
-{Note: Expects Timestamp to be in Host order}
+{Note: Expects Timestamp to be in Network order}
+{Note: Returns Timestamp in Network order}
 begin
  {}
  Result.Seconds:=BEToN(Timestamp1.Seconds) + BEToN(Timestamp2.Seconds);
@@ -3469,7 +3598,8 @@ end;
 {==============================================================================}
 
 function NTPTimestampSubtract(const Timestamp1,Timestamp2:TNTPTimestamp):TNTPTimestamp;
-{Note: Expects Timestamp to be in Host order}
+{Note: Expects Timestamp to be in Network order}
+{Note: Returns Timestamp in Network order}
 begin
  {}
  Result.Seconds:=BEToN(Timestamp1.Seconds) - BEToN(Timestamp2.Seconds);
@@ -3482,8 +3612,31 @@ end;
 
 {==============================================================================}
 
+function NTPTimestampDivide(const Timestamp:TNTPTimestamp;Divisor:LongWord):TNTPTimestamp;
+{Note: Expects Timestamp to be in Network order}
+{Note: Returns Timestamp in Network order}
+begin
+ {}
+ Result.Seconds:=0;
+ Result.Fraction:=0;
+ 
+ {Check Divisor}
+ if Divisor = 0 then Exit;
+ 
+ Result.Seconds:=BEToN(Timestamp.Seconds) div Divisor;
+ Result.Fraction:=BEToN(Timestamp.Fraction) div Divisor;
+ 
+ {Swap Endian}
+ Result.Seconds:=NToBE(Result.Seconds);
+ Result.Fraction:=NToBE(Result.Fraction);
+end;
+ 
+{==============================================================================}
+
 function ClockTimeToNTPTimestamp(const Time:Int64):TNTPTimestamp;
-{Note: Returns Timestamp in Host order}
+{Note: Returns Timestamp in Network order}
+var
+ Microseconds:Int64;
 begin
  {}
  Result.Seconds:=0;
@@ -3492,24 +3645,55 @@ begin
  {Check Time}
  if Time < NTP_TIMESTAMP_START then Exit;
  
- {Calculate Timestamp}
+ {Calculate Timestamp Seconds}
  Result.Seconds:=(Time - NTP_TIMESTAMP_START) div TIME_TICKS_PER_SECOND;
  
- {Swap Endian}
+ {Calculate Timestamp Fraction}
+ Microseconds:=((Time - NTP_TIMESTAMP_START) mod TIME_TICKS_PER_SECOND) div TIME_TICKS_PER_MICROSECOND;
+ Result.Fraction:=(Microseconds shl 32) div MICROSECONDS_PER_SECOND; {Fraction is units of 1/2^32 of a second}
+ 
+ {Change to Network order}
  Result.Seconds:=NToBE(Result.Seconds);
+ Result.Fraction:=NToBE(Result.Fraction);
 end;
 
 {==============================================================================}
 
 function NTPTimestampToClockTime(const Timestamp:TNTPTimestamp):Int64;
-{Note: Expects Timestamp to be in Host order}
+{Note: Expects Timestamp to be in Network order}
+var
+ Seconds:Int64;
+ Microseconds:Int64;
 begin
  {}
- {Swap Endian}
- Result:=BEToN(Timestamp.Seconds); {Avoid 32 bit overflow}
+ {Get Seconds}
+ Seconds:=BEToN(Timestamp.Seconds); {Avoid 32 bit overflow}
+ 
+ {Get Microseconds}
+ Microseconds:=BEToN(Timestamp.Fraction); {Avoid 32 bit overflow}
+ Microseconds:=(Microseconds * MICROSECONDS_PER_SECOND) shr 32; {Fraction is units of 1/2^32 of a second}
  
  {Calculate Time}
- Result:=(Result * TIME_TICKS_PER_SECOND) + NTP_TIMESTAMP_START;
+ Result:=(Seconds * TIME_TICKS_PER_SECOND) + (Microseconds * TIME_TICKS_PER_MICROSECOND) + NTP_TIMESTAMP_START;
+end;
+
+{==============================================================================}
+
+function NTPTimestampToString(const Timestamp:TNTPTimestamp):String;
+{Note: Expects Timestamp to be in Network order}
+var
+ Seconds:Int64;
+ Microseconds:Int64;
+begin
+ {}
+ {Get Seconds}
+ Seconds:=BEToN(Timestamp.Seconds); {Avoid 32 bit overflow}
+ 
+ {Get Microseconds}
+ Microseconds:=BEToN(Timestamp.Fraction); {Avoid 32 bit overflow}
+ Microseconds:=(Microseconds * MICROSECONDS_PER_SECOND) shr 32; {Fraction is units of 1/2^32 of a second}
+ 
+ Result:=IntToHex(BEToN(Timestamp.Seconds),8) + ' / ' + IntToHex(BEToN(Timestamp.Fraction),8) + ' (Seconds = ' + IntToStr(Seconds) + ' / Microseconds = ' + IntToStr(Microseconds) + ')';
 end;
 
 {==============================================================================}

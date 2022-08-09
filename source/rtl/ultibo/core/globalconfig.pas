@@ -1,7 +1,7 @@
 {
 Ultibo Global Configuration Defaults.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1237,6 +1237,8 @@ var
  NTP_POLLING_TIMEOUT:LongWord = 2000;           {The default NTP polling timeout (2000 milliseconds / 2 seconds)}
  NTP_POLLING_RETRIES:LongWord = 3;              {The default NTP polling retry count}
  NTP_RETRY_TIMEOUT:LongWord = 1000;             {The default NTP retry interval (1000 milliseconds / 1 second)}
+ NTP_CLOCK_TOLERANCE:LongWord = 10;             {The default NTP clock tolerance, apply differences equal or larger than this (10 milliseconds)}
+ NTP_USE_CLOCK_OFFSET:LongBool = True;          {If True use the calculated NTP clock offset, otherwise use the server transmit time}
  
  NTP_AUTOSTART:LongBool = True;                 {If True then auto start the NTP client on boot (Only if Services unit included)}
  
