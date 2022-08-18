@@ -373,6 +373,9 @@ type
   
   FRetryTimeout:LongWord;        {How long to wait between poll retries (in milliseconds)}
   
+  FUseClockOffset:Boolean;       {Use the calculated NTP clock offset to update the local time}
+  FClockTolerance:LongWord;      {Milliseconds difference between local and remote to trigger a clock set}
+  
   FInitialClockGet:Boolean;      {Has the time been obtained at least once}
   FInitialClockCount:LongWord;   {How many times have we tried to obtain the initial clock}
   
@@ -387,6 +390,9 @@ type
   procedure SetPollRetries(APollRetries:LongWord);
   
   procedure SetRetryTimeout(ARetryTimeout:LongWord);
+
+  procedure SetUseClockOffset(AUseClockOffset:Boolean);
+  procedure SetClockTolerance(AClockTolerance:LongWord);
   
   procedure SetInitialClockGet(AInitialClockGet:Boolean);
   procedure SetInitialClockCount(AInitialClockCount:LongWord);
@@ -399,7 +405,10 @@ type
   property PollRetries:LongWord read FPollRetries write SetPollRetries;
   
   property RetryTimeout:LongWord read FRetryTimeout write SetRetryTimeout;
-  
+
+  property UseClockOffset:Boolean read FUseClockOffset write SetUseClockOffset;
+  property ClockTolerance:LongWord read FClockTolerance write SetClockTolerance;
+
   property InitialClockGet:Boolean read FInitialClockGet write SetInitialClockGet;
   property InitialClockCount:LongWord read FInitialClockCount write SetInitialClockCount;
   
@@ -761,7 +770,10 @@ begin
  FPollRetries:=NTP_POLLING_RETRIES;
  
  FRetryTimeout:=NTP_RETRY_TIMEOUT;
- 
+
+ FUseClockOffset:=NTP_USE_CLOCK_OFFSET;
+ FClockTolerance:=NTP_CLOCK_TOLERANCE;
+
  FInitialClockGet:=False;
  FInitialClockCount:=0;
  
@@ -849,6 +861,30 @@ begin
  
  FRetryTimeout:=ARetryTimeout;
  
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TNTPClient.SetUseClockOffset(AUseClockOffset:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FUseClockOffset:=AUseClockOffset;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TNTPClient.SetClockTolerance(AClockTolerance:LongWord);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FClockTolerance:=AClockTolerance;
+
  ReleaseLock;
 end;
 
@@ -1076,7 +1112,7 @@ begin
            {$ENDIF}
 
            {Check Time and Offset}
-           if (DestinationTime > TIME_TICKS_TO_2001) and NTP_USE_CLOCK_OFFSET then
+           if (DestinationTime > TIME_TICKS_TO_2001) and UseClockOffset then
             begin
              {T1 = Originate Timestamp (time request sent by client)
               T2 = Receive Timestamp (time request received by server)
@@ -1090,7 +1126,6 @@ begin
              {$IFDEF NTP_DEBUG}
              if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Roundtrip Delay = ' + FormatOffset(RoundtripDelay));
              {$ENDIF}
-             if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Roundtrip Delay = ' + FormatOffset(RoundtripDelay)); //To Do //TestingNTP
 
              {Calculate Clock  Offset} {ClockOffset = ((T2 - T1) + (T3 - T4)) / 2}
              {ClockOffset:=NTPTimestampDivide(NTPTimestampAdd(NTPTimestampSubtract(NTPReply.ReceiveTimestamp,NTPReply.OriginateTimestamp),NTPTimestampSubtract(NTPReply.TransmitTimestamp,DestinationTimestamp)),2);}
@@ -1099,7 +1134,6 @@ begin
              {$IFDEF NTP_DEBUG}
              if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Clock Offset = ' + FormatOffset(ClockOffset));
              {$ENDIF}
-             if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client:  Clock Offset = ' + FormatOffset(ClockOffset)); //To Do //TestingNTP
 
              {Get Time}
              Result:=DestinationTime + ClockOffset;
@@ -3205,7 +3239,6 @@ begin
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Get Time success');
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Remote time is ' + Client.FormatTime(Current));
    {$ENDIF}
-   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Remote time is ' + Client.FormatTime(Current)); //To Do //TestingNTP
 
    {Get Local Time}
    Previous:=ClockGetTime;
@@ -3213,10 +3246,9 @@ begin
    {$IFDEF NTP_DEBUG}
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Local time is ' + Client.FormatTime(Previous));
    {$ENDIF}
-   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time:  Local time is ' + Client.FormatTime(Previous)); //To Do //TestingNTP
 
    {Compare Time}
-   if MillisecondsDifference(Previous,Current) >= NTP_CLOCK_TOLERANCE then
+   if MillisecondsDifference(Previous,Current) >= Client.ClockTolerance then
     begin
      {Set Time}
      ClockSetTime(Current,True);
