@@ -1190,7 +1190,7 @@ end;
 function TNTPClient.FormatTime(Time:Int64):String;
 begin
  {}
- DateTimeToString(Result,'dd-mmm-yyyy hh:nn:ss.zzz',SystemFileTimeToDateTime(TFileTime(Time)));
+ Result:=SystemDateTimeToString(SystemFileTimeToDateTime(TFileTime(Time)));
 end;
 
 {==============================================================================}

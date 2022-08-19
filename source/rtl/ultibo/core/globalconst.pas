@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '18 August 2022';
+ ULTIBO_RELEASE_DATE             = '19 August 2022';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.5.113';
+ ULTIBO_RELEASE_VERSION          = '2.5.115';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 5;
- ULTIBO_RELEASE_VERSION_REVISION = 113;
+ ULTIBO_RELEASE_VERSION_REVISION = 115;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  
@@ -1017,8 +1017,9 @@ const
  
 const
  {Unix/Linux time constants (Seconds since 1/1/1970)}
- UNIX_TIME_SECONDS_PER_DAY =  86400;    {60*60*24;}
- UNIX_TIME_DAYS_TO_1970    =  25569.0;  {Offset between 1899 (FreePascal) and 1970 (Unix/Linux)}
+ UNIX_TIME_MILLISECONDS_PER_DAY   =  86400000; {60*60*24*1000;}
+ UNIX_TIME_SECONDS_PER_DAY        =  86400;    {60*60*24;}
+ UNIX_TIME_DAYS_TO_1970           =  25569.0;  {Offset between 1899 (FreePascal) and 1970 (Unix/Linux)}
  
 const
  {FreePascal time constants (TDateTime starts at 30/12/1899)}
@@ -1857,6 +1858,7 @@ const
  HANDLE_TYPE_PIPE         = 101;
  HANDLE_TYPE_SOCKET       = 102;
  HANDLE_TYPE_DEVICE       = 103;
+ HANDLE_TYPE_FIRMWARE     = 104;
  
  HANDLE_TYPE_USER_BASE    = 1000; {Base value for user or application defined handle types}
  

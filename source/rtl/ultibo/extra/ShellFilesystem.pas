@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem Shell extension unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3032,13 +3032,13 @@ begin
        AShell.DoOutput(ASession,'  Pages Marked Unknown: ' + IntToStr(Statistics.UnknownCount));
        AShell.DoOutput(ASession,'');
        WorkTime:=CachePageTimeToDateTime(Statistics.OldestClean);
-       AShell.DoOutput(ASession,'  Oldest Clean Page: ' + IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+       AShell.DoOutput(ASession,'  Oldest Clean Page: ' + SystemIntervalToString(WorkTime));
        WorkTime:=CachePageTimeToDateTime(Statistics.NewestClean);
-       AShell.DoOutput(ASession,'  Newest Clean Page: ' + IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+       AShell.DoOutput(ASession,'  Newest Clean Page: ' + SystemIntervalToString(WorkTime));
        WorkTime:=CachePageTimeToDateTime(Statistics.OldestDirty);
-       AShell.DoOutput(ASession,'  Oldest Dirty Page: ' + IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+       AShell.DoOutput(ASession,'  Oldest Dirty Page: ' + SystemIntervalToString(WorkTime));
        WorkTime:=CachePageTimeToDateTime(Statistics.NewestDirty);
-       AShell.DoOutput(ASession,'  Newest Dirty Page: ' + IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+       AShell.DoOutput(ASession,'  Newest Dirty Page: ' + SystemIntervalToString(WorkTime));
       end 
      else
       begin
@@ -3288,7 +3288,7 @@ begin
  AltName:=ASearchRec.FindData.cAlternateFileName;
  
  {Display Date and Time}
- AShell.AddOutput(WorkBuffer,1,DateTimeToStr(FileTimeToDateTime(ASearchRec.FindData.ftLastWriteTime)));
+ AShell.AddOutput(WorkBuffer,1,FormatDateTime(ISO_DATE_FORMAT + ' ' + ISO_TIME_FORMAT,FileTimeToDateTime(ASearchRec.FindData.ftLastWriteTime)));
  
  {Display Size}
  if (ASearchRec.FindData.dwFileAttributes and faDirectory) = faNone then

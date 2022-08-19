@@ -1,7 +1,7 @@
 {
 Ultibo Update Shell extension unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -432,7 +432,7 @@ begin
      LocalTime:=FileTimeToDateTime(SearchRec.FindData.ftLastWriteTime);
      
      AShell.DoOutput(ASession,'  Size: ' + IntToStr(LocalSize)); 
-     AShell.DoOutput(ASession,'  Modified: ' + DateTimeToStr(LocalTime)); 
+     AShell.DoOutput(ASession,'  Modified: ' + SystemDateTimeToString(LocalTime)); 
      AShell.DoOutput(ASession,''); 
      
      FSFindCloseEx(SearchRec);
@@ -467,7 +467,7 @@ begin
          RemoteTime:=FileTimeToDateTime(RoundFileTime(HTTPDateToFileTime(HTTPClient.GetResponseHeader(HTTP_ENTITY_HEADER_LAST_MODIFIED))));
 
          AShell.DoOutput(ASession,'  Size: ' + IntToStr(RemoteSize)); 
-         AShell.DoOutput(ASession,'  Modified: ' + DateTimeToStr(RemoteTime)); 
+         AShell.DoOutput(ASession,'  Modified: ' + SystemDateTimeToString(RemoteTime)); 
          AShell.DoOutput(ASession,''); 
         end;
        else

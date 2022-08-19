@@ -2154,6 +2154,11 @@ function SystemGetUptime:Int64; inline;
 function SystemGetCommandLine:String; inline;
 function SystemGetEnvironment:Pointer; inline;
 
+function SystemDateToString(Date:TDateTime):String; inline;
+function SystemTimeToString(Time:TDateTime):String; inline;
+function SystemDateTimeToString(DateTime:TDateTime):String; inline;
+function SystemIntervalToString(Interval:TDateTime):String; inline;
+
 {==============================================================================}
 {CPU Functions}
 function CPUGetArch:LongWord; inline;
@@ -5111,6 +5116,62 @@ begin
 end;
 
 {==============================================================================}
+
+function SystemDateToString(Date:TDateTime):String; inline;
+{Return the supplied date value as a string in the system defined format}
+{Date: The date in Pascal TDateTime format}
+{Return: The date formatted according to the system date format}
+
+{Note: Applications should use FormatDateTime or DateTimeToString directly}
+{      This function is intended to provide a uniform and generic date and}
+{      time output from system functions such as logging and debug output}
+begin
+ {}
+ Result:=FormatDateTime(SYSTEM_DATE_FORMAT,Date);
+end;
+
+{==============================================================================}
+
+function SystemTimeToString(Time:TDateTime):String; inline;
+{Return the supplied time value as a string in the system defined format}
+{Time: The time in Pascal TDateTime format}
+{Return: The time formatted according to the system time format}
+
+{Note: Applications should use FormatDateTime or DateTimeToString directly}
+{      This function is intended to provide a uniform and generic date and}
+{      time output from system functions such as logging and debug output}
+begin
+ {}
+ Result:=FormatDateTime(SYSTEM_TIME_FORMAT,Time);
+end;
+
+{==============================================================================}
+
+function SystemDateTimeToString(DateTime:TDateTime):String; inline;
+{Return the supplied date and time value as a string in the system defined format}
+{DateTime: The date and time in Pascal TDateTime format}
+{Return: The date and time formatted according to the system date and time format}
+
+{Note: Applications should use FormatDateTime or DateTimeToString directly}
+{      This function is intended to provide a uniform and generic date and}
+{      time output from system functions such as logging and debug output}
+begin
+ {}
+ Result:=FormatDateTime(SYSTEM_DATE_FORMAT + ' ' + SYSTEM_TIME_FORMAT,DateTime);
+end;
+
+{==============================================================================}
+
+function SystemIntervalToString(Interval:TDateTime):String; inline;
+{Return the supplied time interval as a string in the system defined format}
+{Interval: The time interval in Pascal TDateTime format}
+{Return: The time interval formatted according to the system time format}
+begin
+ {}
+ Result:=IntToStr(Trunc(Interval)) + ' days ' + FormatDateTime(SYSTEM_TIME_FORMAT,Interval);
+end;
+
+{==============================================================================}
 {==============================================================================}
 {CPU Functions}
 function CPUGetArch:LongWord; inline;
@@ -6118,7 +6179,7 @@ function ClockGetTime:Int64;
 {Note: This is the same time format as Windows FILE_TIME and is intended to allow
        compatibility with file system functions etc.}
 {Note: By default the time returned by this function is considered to be UTC but
- the actual conversion between UTC and local time is handled at a higher level}
+       the actual conversion between UTC and local time is handled at a higher level}
 begin
  {}
  if CLOCK_CYCLES_PER_MICROSECOND > 0 then
@@ -6171,7 +6232,7 @@ function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
 {Note: This is the same time format as Windows FILE_TIME and is intended to allow
        compatibility with file system functions etc.}
 {Note: By default the time passed to this function is considered to be UTC but
- the actual conversion between UTC and local time is handled at a higher level}
+       the actual conversion between UTC and local time is handled at a higher level}
 var
  CurrentTicks:Int64;
 begin
@@ -12196,6 +12257,7 @@ begin
   HANDLE_TYPE_PIPE:Result:='HANDLE_TYPE_PIPE';
   HANDLE_TYPE_SOCKET:Result:='HANDLE_TYPE_SOCKET';
   HANDLE_TYPE_DEVICE:Result:='HANDLE_TYPE_DEVICE';
+  HANDLE_TYPE_FIRMWARE:Result:='HANDLE_TYPE_FIRMWARE';
  else
   begin
    if HandleType > HANDLE_TYPE_USER_BASE then

@@ -97,7 +97,11 @@ type
   procedure SetTitle(const ATitle:String);
   function GetCaption:String;
   
+  function NormalizedDateToStr(const DateTime:TDateTime):String;
+  function NormalizedTimeToStr(const DateTime:TDateTime):String;
   function NormalizedDateTimeToStr(const DateTime:TDateTime):String;
+
+  function NormalizedIntervalToStr(const DateTime:TDateTime):String;
  protected
   {Internal Variables}
 
@@ -157,7 +161,11 @@ type
   function GetTitle:String;
   function GetCaption:String;
   
+  function NormalizedDateToStr(const DateTime:TDateTime):String;
+  function NormalizedTimeToStr(const DateTime:TDateTime):String;
   function NormalizedDateTimeToStr(const DateTime:TDateTime):String;
+
+  function NormalizedIntervalToStr(const DateTime:TDateTime):String;
  protected
   {Internal Variables}
   FCaption:String; //To Do //Hash ?
@@ -1159,6 +1167,29 @@ end;
 
 {==============================================================================}
 
+function TWebStatusMain.NormalizedDateToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ if DateTime = 0 then 
+  begin
+   Result:='N/A';
+  end
+ else
+  begin
+   Result:=SystemDateToString(DateTime);
+  end;  
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.NormalizedTimeToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ Result:=SystemTimeToString(DateTime);
+end;
+
+{==============================================================================}
+
 function TWebStatusMain.NormalizedDateTimeToStr(const DateTime:TDateTime):String;
 begin
  {}
@@ -1168,8 +1199,16 @@ begin
   end
  else
   begin
-   Result:=DateTimeToStr(DateTime);
+   Result:=SystemDateTimeToString(DateTime);
   end;  
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.NormalizedIntervalToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ Result:=SystemIntervalToString(DateTime);
 end;
 
 {==============================================================================}
@@ -1839,10 +1878,10 @@ begin
 
  {Add Time (Local)}
  AddBlank(AResponse);
- AddItem(AResponse,'Time (Local):',DateTimeToStr(Now));
+ AddItem(AResponse,'Time (Local):',NormalizedDateTimeToStr(Now));
  
  {Add Time (UTC)}
- AddItem(AResponse,'Time (UTC):',DateTimeToStr(SystemFileTimeToDateTime(GetCurrentTime)));
+ AddItem(AResponse,'Time (UTC):',NormalizedDateTimeToStr(SystemFileTimeToDateTime(GetCurrentTime)));
  
  {Add Timezone}
  AddBlank(AResponse);
@@ -1866,7 +1905,7 @@ begin
  {Add Uptime}
  WorkTime:=SystemFileTimeToDateTime(Uptime); {No Conversion}
  AddBlank(AResponse);
- AddItem(AResponse,'Uptime:',IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+ AddItem(AResponse,'Uptime:',NormalizedIntervalToStr(WorkTime));
  
  {Add Footer}
  AddFooter(AResponse); 
@@ -1982,6 +2021,30 @@ end;
 
 {==============================================================================}
 
+function TWebStatusSub.NormalizedDateToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ Result:='';
+
+ if FMain = nil then Exit;
+
+ Result:=FMain.NormalizedDateToStr(DateTime);
+end;
+
+{==============================================================================}
+
+function TWebStatusSub.NormalizedTimeToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ Result:='';
+
+ if FMain = nil then Exit;
+
+ Result:=FMain.NormalizedTimeToStr(DateTime);
+end;
+
+{==============================================================================}
+
 function TWebStatusSub.NormalizedDateTimeToStr(const DateTime:TDateTime):String;
 begin
  {}
@@ -1991,7 +2054,19 @@ begin
 
  Result:=FMain.NormalizedDateTimeToStr(DateTime);
 end;
- 
+
+{==============================================================================}
+
+function TWebStatusSub.NormalizedIntervalToStr(const DateTime:TDateTime):String;
+begin
+ {}
+ Result:='';
+
+ if FMain = nil then Exit;
+
+ Result:=FMain.NormalizedIntervalToStr(DateTime);
+end;
+
 {==============================================================================}
 
 function TWebStatusSub.MakeBold(const AName:String):String;
@@ -3587,7 +3662,7 @@ begin
  
  {Add Current Time}
  AddBlank(AResponse);
- AddItem(AResponse,'Current Time (UTC):',DateTimeToStr(SystemFileTimeToDateTime(GetCurrentTime)));
+ AddItem(AResponse,'Current Time (UTC):',NormalizedDateTimeToStr(SystemFileTimeToDateTime(GetCurrentTime)));
  
  {Add Footer}
  AddFooter(AResponse); 
@@ -4136,13 +4211,13 @@ begin
          AddBlank(AResponse);
          
          WorkTime:=SystemFileTimeToDateTime(TFileTime(Current.CreateTime));
-         if WorkTime <> 0 then AddItem(AResponse,'CreateTime:',DateTimeToStr(WorkTime)) else AddItem(AResponse,'CreateTime:','N/A');
+         if WorkTime <> 0 then AddItem(AResponse,'CreateTime:',NormalizedDateTimeToStr(WorkTime)) else AddItem(AResponse,'CreateTime:','N/A');
          
          WorkTime:=SystemFileTimeToDateTime(TFileTime(Current.ExitTime));
-         if WorkTime <> 0 then AddItem(AResponse,'ExitTime:',DateTimeToStr(WorkTime)) else AddItem(AResponse,'ExitTime:','N/A');
+         if WorkTime <> 0 then AddItem(AResponse,'ExitTime:',NormalizedDateTimeToStr(WorkTime)) else AddItem(AResponse,'ExitTime:','N/A');
          
          WorkTime:=SystemFileTimeToDateTime(TFileTime(Current.KernelTime)); {No Conversion}
-         AddItem(AResponse,'KernelTime:',IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+         AddItem(AResponse,'KernelTime:',NormalizedIntervalToStr(WorkTime));
          AddItem(AResponse,'SwitchCount:',IntToStr(Current.SwitchCount));
          
          FlagNames.Free;
@@ -6683,8 +6758,8 @@ begin
         AddItem(AResponse,'Id:',IntToStr(RTCDevice.RTCId));
         AddItem(AResponse,'State:',RTCDeviceStateToString(RTCDevice.RTCState));
         AddBlank(AResponse);
-        AddItem(AResponse,'Min Time:',DateTimeToStr(SystemFileTimeToDateTime(TFileTime(RTCDevice.Properties.MinTime))));
-        AddItem(AResponse,'Max Time:',DateTimeToStr(SystemFileTimeToDateTime(TFileTime(RTCDevice.Properties.MaxTime))));
+        AddItem(AResponse,'Min Time:',NormalizedDateTimeToStr(SystemFileTimeToDateTime(TFileTime(RTCDevice.Properties.MinTime))));
+        AddItem(AResponse,'Max Time:',NormalizedDateTimeToStr(SystemFileTimeToDateTime(TFileTime(RTCDevice.Properties.MaxTime))));
         AddItem(AResponse,'Alarm Count:',IntToStr(RTCDevice.Properties.AlarmCount));
         AddBlank(AResponse);
         AddItem(AResponse,'Get Count:',IntToStr(RTCDevice.GetCount));
@@ -9873,13 +9948,13 @@ begin
      AddItemEx(AResponse,'Pages Marked Unknown:', IntToStr(Statistics.UnknownCount),2);
      AddBlank(AResponse);
      WorkTime:=CachePageTimeToDateTime(Statistics.OldestClean);
-     AddItemEx(AResponse,'Oldest Clean Page:',IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime),2);
+     AddItemEx(AResponse,'Oldest Clean Page:',NormalizedIntervalToStr(WorkTime),2);
      WorkTime:=CachePageTimeToDateTime(Statistics.NewestClean);
-     AddItemEx(AResponse,'Newest Clean Page:',IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime),2);
+     AddItemEx(AResponse,'Newest Clean Page:',NormalizedIntervalToStr(WorkTime),2);
      WorkTime:=CachePageTimeToDateTime(Statistics.OldestDirty);
-     AddItemEx(AResponse,'Oldest Dirty Page:',IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime),2);
+     AddItemEx(AResponse,'Oldest Dirty Page:',NormalizedIntervalToStr(WorkTime),2);
      WorkTime:=CachePageTimeToDateTime(Statistics.NewestDirty);
-     AddItemEx(AResponse,'Newest Dirty Page:',IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime),2);
+     AddItemEx(AResponse,'Newest Dirty Page:',NormalizedIntervalToStr(WorkTime),2);
     end;
   end; 
  

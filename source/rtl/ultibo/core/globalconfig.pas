@@ -609,6 +609,15 @@ var
  {Initial Ramdisk}
  INITIAL_RAMDISK_BASE:PtrUInt;                {The starting address of the initial ramdisk passed from the bootloader (If applicable)}
  INITIAL_RAMDISK_SIZE:UInt64;                 {The size in bytes of the initial ramdisk passed from the bootloader (If applicable)}
+
+{==============================================================================}
+{Date and time configuration}
+var
+ SYSTEM_DATE_FORMAT:String = 'dd-mmm-yyyy';  {Default format for date to string conversion (System functions only)}
+ SYSTEM_TIME_FORMAT:String = 'hh:nn:ss.zzz'; {Default format for time to string conversion (System functions only)}
+ 
+ ISO_DATE_FORMAT:String = 'yyyy-mm-dd';      {Format specified in ISO8601 for date to string conversion}
+ ISO_TIME_FORMAT:String = 'hh:nn:ss';        {Format specified in ISO8601 for time to string conversion}
  
 {==============================================================================}
 {Timezone configuration}
@@ -669,6 +678,8 @@ var
  {Logging defaults}
  LOGGING_DIRECT_ENABLE:LongBool;                 {If True then logging output is written directly and not scheduled via the logging thread}
  LOGGING_INCLUDE_COUNTER:LongBool = True;        {If True then logging output includes an incrementing counter to detect missed entries}
+ LOGGING_INCLUDE_DATE:LongBool;                  {If True then logging output includes the current date for each entry}
+ LOGGING_INCLUDE_TIME:LongBool;                  {If True then logging output includes the current time for each entry}
  LOGGING_INCLUDE_DATETIME:LongBool;              {If True then logging output includes the current date and time for each entry}
  LOGGING_INCLUDE_TICKCOUNT:LongBool;             {If True then logging output includes the 64-bit tick count value for each entry}
  

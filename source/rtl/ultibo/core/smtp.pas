@@ -1,7 +1,7 @@
 {
 Ultibo SMTP interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3163,7 +3163,7 @@ begin
  Request:='';
 
  {Set Default Reply}
- Reply:=SMTP_STRING_TIME_SUCCESS + SMTP_STRING_TIME_OK + DateTimeToStr(Now);
+ Reply:=SMTP_STRING_TIME_SUCCESS + SMTP_STRING_TIME_OK + SystemDateTimeToString(Now);
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);

@@ -1,7 +1,7 @@
 {
 Ultibo Logging interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1320,10 +1320,21 @@ begin
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
     end; 
-   if LOGGING_INCLUDE_DATETIME then
+   if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
-     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
-    end; 
+     WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
+    end
+   else
+    begin
+     if LOGGING_INCLUDE_DATE then
+      begin
+       WorkBuffer:=SystemDateToString(Now) + ' - ' + WorkBuffer;
+      end;
+     if LOGGING_INCLUDE_TIME then
+      begin
+       WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
+      end;
+    end;
    if LOGGING_INCLUDE_COUNTER then
     begin
      WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + WorkBuffer;
@@ -1358,9 +1369,20 @@ begin
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
     end; 
-   if LOGGING_INCLUDE_DATETIME then
+   if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
-     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
+     WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
+    end
+   else
+    begin
+     if LOGGING_INCLUDE_DATE then
+      begin
+       WorkBuffer:=SystemDateToString(Now) + ' - ' + WorkBuffer;
+      end;
+     if LOGGING_INCLUDE_TIME then
+      begin
+       WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
+      end;
     end; 
    
    {Create Logging Entry}
@@ -1408,9 +1430,20 @@ begin
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
     end; 
-   if LOGGING_INCLUDE_DATETIME then
+   if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
-     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
+     WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
+    end
+   else
+    begin
+     if LOGGING_INCLUDE_DATE then
+      begin
+       WorkBuffer:=SystemDateToString(Now) + ' - ' + WorkBuffer;
+      end;
+     if LOGGING_INCLUDE_TIME then
+      begin
+       WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
+      end;
     end; 
    if LOGGING_INCLUDE_COUNTER then
     begin
@@ -1446,9 +1479,20 @@ begin
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
     end; 
-   if LOGGING_INCLUDE_DATETIME then
+   if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
-     WorkBuffer:=DateTimeToStr(Now) + ' - ' + WorkBuffer;
+     WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
+    end
+   else
+    begin
+     if LOGGING_INCLUDE_DATE then
+      begin
+       WorkBuffer:=SystemDateToString(Now) + ' - ' + WorkBuffer;
+      end;
+     if LOGGING_INCLUDE_TIME then
+      begin
+       WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
+      end;
     end; 
    
    {Create Logging Entry}

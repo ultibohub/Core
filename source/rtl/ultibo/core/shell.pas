@@ -1,7 +1,7 @@
 {
 Ultibo Generic Shell unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3766,10 +3766,10 @@ begin
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = 'GET') then
   begin
    {Show Local Time}
-   if not AShell.DoOutput(ASession,'Local time: ' + DateTimeToStr(Now)) then Exit;
+   if not AShell.DoOutput(ASession,'Local time: ' + SystemDateTimeToString(Now)) then Exit;
    
    {Show UTC Time}
-   if not AShell.DoOutput(ASession,'UTC time: ' + DateTimeToStr(SystemFileTimeToDateTime(GetCurrentTime))) then Exit; {No Conversion}
+   if not AShell.DoOutput(ASession,'UTC time: ' + SystemDateTimeToString(SystemFileTimeToDateTime(GetCurrentTime))) then Exit; {No Conversion}
    
    {Show Timezone}
    Result:= AShell.DoOutput(ASession,'Timezone: ' + GetCurrentTimezone);
@@ -4134,7 +4134,7 @@ begin
  
  {Show Uptime}
  WorkTime:=SystemFileTimeToDateTime(Uptime); {No Conversion}
- Result:=AShell.DoOutput(ASession,'Uptime ' + IntToStr(Trunc(WorkTime)) + ' days ' + TimeToStr(WorkTime));
+ Result:=AShell.DoOutput(ASession,'Uptime ' + SystemIntervalToString(WorkTime));
 end;
 
 {==============================================================================}

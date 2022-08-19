@@ -1,7 +1,7 @@
 {
 Ultibo X.509 interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3027,8 +3027,8 @@ begin
  {Get validity (Validity)}
  if not ImportValidity(Next,Last - Next,Next) then Exit;
  {$IFDEF X509_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportTBSCertificate NotBefore = ' + DateTimeToStr(NotBefore));
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportTBSCertificate NotAfter = ' + DateTimeToStr(NotAfter));
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportTBSCertificate NotBefore = ' + SystemDateTimeToString(NotBefore));
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportTBSCertificate NotAfter = ' + SystemDateTimeToString(NotAfter));
  {$ENDIF}
 
  {Get subject (Name)}

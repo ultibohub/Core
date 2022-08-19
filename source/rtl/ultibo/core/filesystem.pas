@@ -55920,17 +55920,10 @@ end;
 {==============================================================================}
 
 function CachePageTimeToDateTime(const APageTime:Int64):TDateTime;
-var
- Seconds:LongWord;
 begin
  {}
- Result:=0;
- 
- {Get Seconds}
- Seconds:=APageTime div MILLISECONDS_PER_SECOND;
- 
  {Get DateTime}
- Result:=(Seconds div UNIX_TIME_SECONDS_PER_DAY) + ((Seconds mod UNIX_TIME_SECONDS_PER_DAY) / UNIX_TIME_SECONDS_PER_DAY);
+ Result:=(APageTime div UNIX_TIME_MILLISECONDS_PER_DAY) + ((APageTime mod UNIX_TIME_MILLISECONDS_PER_DAY) / UNIX_TIME_MILLISECONDS_PER_DAY);
 end;
 
 {==============================================================================}
