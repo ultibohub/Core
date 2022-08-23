@@ -1,7 +1,7 @@
 {
 Ultibo Console interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -248,6 +248,7 @@ type
  TConsoleDeviceAddCaret = function(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceDeleteCaret = function(Console:PConsoleDevice;Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceUpdateCaret = function(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TConsoleDeviceUpdateCaretEx = function(Console:PConsoleDevice;Handle:THandle;X,Y,Forecolor,Backcolor:LongWord;Visible,Blink,Reverse:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  TConsoleDeviceSetCursor = function(Console:PConsoleDevice;Width,Height:LongWord;Chars:PChar):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceUpdateCursor = function(Console:PConsoleDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -288,6 +289,7 @@ type
   DeviceAddCaret:TConsoleDeviceAddCaret;         {A device specific DeviceAddCaret method implementing a standard console device interface (Optional)}
   DeviceDeleteCaret:TConsoleDeviceDeleteCaret;   {A device specific DeviceDeleteCaret method implementing a standard console device interface (Optional)}
   DeviceUpdateCaret:TConsoleDeviceUpdateCaret;   {A device specific DeviceUpdateCaret method implementing a standard console device interface (Optional)}
+  DeviceUpdateCaretEx:TConsoleDeviceUpdateCaretEx; {A device specific DeviceUpdateCaretEx method implementing a standard console device interface (Optional)}
   DeviceSetCursor:TConsoleDeviceSetCursor;       {A device specific DeviceSetCursor method implementing a standard console device interface (Or nil if the default method is suitable)(CONSOLE_MODE_CHARACTER only)}
   DeviceUpdateCursor:TConsoleDeviceUpdateCursor; {A device specific DeviceUpdateCursor method implementing a standard console device interface (Or nil if the default method is suitable)(CONSOLE_MODE_CHARACTER only)}
   DeviceGetPosition:TConsoleDeviceGetPosition;   {A device specific DeviceGetPosition method implementing a standard console device interface (Mandatory)}
@@ -349,6 +351,9 @@ type
   OffsetY:LongWord;                              {Caret Offset Y (Pixels for CONSOLE_MODE_PIXEL / Always 0 for CONSOLE_MODE_CHARACTER)}
   Visible:LongBool;                              {Caret Visible On/Off}
   Blink:LongBool;                                {Caret Blink On/Off}
+  Reverse:LongBool;                              {Caret Color Reverse or Inverse}
+  Forecolor:LongWord;                            {Caret Foreground Color}
+  Backcolor:LongWord;                            {Caret Background Color}
   Console:PConsoleDevice;                        {Console device}
   {Driver Properties}
   Handle:THandle;                                {Device specific handle}
@@ -428,6 +433,9 @@ type
   CursorBlink:LongBool;                          {Cursor Blink On/Off}
   CursorState:TCursorState;                      {Cursor State On/Off}
   CursorShape:TCursorShape;                      {Cursor Shape Line/Bar/Block}
+  CursorReverse:LongBool;                        {Cursor Color Reverse or Inverse (WINDOW_MODE_TEXT only)}
+  CursorForecolor:LongWord;                      {Cursor Foreground Color (WINDOW_MODE_TEXT only)}
+  CursorBackcolor:LongWord;                      {Cursor Background Color (WINDOW_MODE_TEXT only)}
   {Caret Properties}
   CaretX:LongWord;                               {Caret X} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
   CaretY:LongWord;                               {Caret Y} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
@@ -509,7 +517,8 @@ function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsol
 
 function ConsoleDeviceAddCaret(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;
 function ConsoleDeviceDeleteCaret(Console:PConsoleDevice;Handle:THandle):LongWord;
-function ConsoleDeviceUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord;
+function ConsoleDeviceUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord; inline;
+function ConsoleDeviceUpdateCaretEx(Console:PConsoleDevice;Handle:THandle;X,Y,Forecolor,Backcolor:LongWord;Visible,Blink,Reverse:Boolean):LongWord;
 
 function ConsoleDeviceSetCursor(Console:PConsoleDevice;Width,Height:LongWord;Chars:PChar):LongWord;
 function ConsoleDeviceUpdateCursor(Console:PConsoleDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;
@@ -617,6 +626,10 @@ function ConsoleWindowGetCursorState(Handle:TWindowHandle):TCursorState;
 function ConsoleWindowSetCursorState(Handle:TWindowHandle;CursorState:TCursorState):LongWord;
 function ConsoleWindowGetCursorShape(Handle:TWindowHandle):TCursorShape;
 function ConsoleWindowSetCursorShape(Handle:TWindowHandle;CursorShape:TCursorShape):LongWord;
+function ConsoleWindowGetCursorColor(Handle:TWindowHandle):LongWord;
+function ConsoleWindowSetCursorColor(Handle:TWindowHandle;Color:LongWord):LongWord;
+function ConsoleWindowGetCursorReverse(Handle:TWindowHandle):Boolean;
+function ConsoleWindowSetCursorReverse(Handle:TWindowHandle;CursorReverse:Boolean):LongWord;
 
 function ConsoleWindowCursorOn(Handle:TWindowHandle):LongWord;
 function ConsoleWindowCursorOff(Handle:TWindowHandle):LongWord;
@@ -625,6 +638,8 @@ function ConsoleWindowCursorBar(Handle:TWindowHandle):LongWord;
 function ConsoleWindowCursorBlock(Handle:TWindowHandle):LongWord;
 function ConsoleWindowCursorMove(Handle:TWindowHandle;X,Y:LongWord):LongWord;
 function ConsoleWindowCursorBlink(Handle:TWindowHandle;Enabled:Boolean):LongWord;
+function ConsoleWindowCursorColor(Handle:TWindowHandle;Color:LongWord):LongWord;
+function ConsoleWindowCursorReverse(Handle:TWindowHandle;Enabled:Boolean):LongWord;
 
 function ConsoleWindowAddHistory(Handle:TWindowHandle;const Value:String):LongWord;
 function ConsoleWindowClearHistory(Handle:TWindowHandle):LongWord;
@@ -731,7 +746,7 @@ function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TC
 
 function FramebufferConsoleAddCaret(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;
 function FramebufferConsoleDeleteCaret(Console:PConsoleDevice;Handle:THandle):LongWord;
-function FramebufferConsoleUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord;
+function FramebufferConsoleUpdateCaretEx(Console:PConsoleDevice;Handle:THandle;X,Y,Forecolor,Backcolor:LongWord;Visible,Blink,Reverse:Boolean):LongWord;
 
 function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
 
@@ -1951,7 +1966,7 @@ end;
  
 {==============================================================================}
 
-function ConsoleDeviceUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord;
+function ConsoleDeviceUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord; inline;
 {Update an existing carets position, visibility or blink}
 {Console: The console device to update the caret on}
 {Handle: The handle of the caret to update (as returned from ConsoleDeviceAddCaret)}
@@ -1962,20 +1977,45 @@ function ConsoleDeviceUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:Long
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
+ Result:=ConsoleDeviceUpdateCaretEx(Console,Handle,X,Y,COLOR_NONE,COLOR_NONE,Visible,Blink,False);
+end;
+
+{==============================================================================}
+
+function ConsoleDeviceUpdateCaretEx(Console:PConsoleDevice;Handle:THandle;X,Y,Forecolor,Backcolor:LongWord;Visible,Blink,Reverse:Boolean):LongWord;
+{Update an existing carets position, colors, visibility, blink or reverse}
+{Console: The console device to update the caret on}
+{Handle: The handle of the caret to update (as returned from ConsoleDeviceAddCaret)}
+{X: The X position of the caret (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+{Y: The Y position of the caret (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+{Forecolor: The cursor foreground color if set or COLOR_NONE to disable}
+{Backcolor: The cursor background color if set or COLOR_NONE to disable}
+{Visible: If true then show the caret else hide it}
+{Blink: If true then blink the caret at the default blink rate}
+{Reverse: If true then enable reverse color else enable inverse color}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Forecolor and Backcolor must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
+begin
+ {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
 
  {$IFDEF CONSOLE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Update Caret');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Update Caret Ex');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
+ if Assigned(Console.DeviceUpdateCaretEx) then
+  begin
+   Result:=Console.DeviceUpdateCaretEx(Console,Handle,X,Y,Forecolor,Backcolor,Visible,Blink,Reverse);
+  end;
  if Assigned(Console.DeviceUpdateCaret) then
   begin
    Result:=Console.DeviceUpdateCaret(Console,Handle,X,Y,Visible,Blink);
@@ -2335,6 +2375,7 @@ begin
  Result.DeviceAddCaret:=nil;
  Result.DeviceDeleteCaret:=nil;
  Result.DeviceUpdateCaret:=nil;
+ Result.DeviceUpdateCaretEx:=nil;
  Result.DeviceSetCursor:=nil;
  Result.DeviceUpdateCursor:=nil;
  Result.DeviceGetPosition:=nil;
@@ -3155,6 +3196,9 @@ begin
     Window.CursorBlink:=True;
     Window.CursorState:=CURSOR_STATE_OFF;
     Window.CursorShape:=CURSOR_SHAPE_LINE;
+    Window.CursorReverse:=False;
+    Window.CursorForecolor:=COLOR_NONE;
+    Window.CursorBackcolor:=COLOR_NONE;
     {Caret}
     Window.CaretX:=0;
     Window.CaretY:=0;
@@ -3371,7 +3415,7 @@ begin
      if Window.WindowState = WINDOW_STATE_VISIBLE then
       begin
        {Update Caret}
-       ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+       ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
        
        {Set State}
        Window.WindowState:=WINDOW_STATE_INVISIBLE;
@@ -3531,7 +3575,7 @@ begin
     if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
      begin
       {Update Caret}
-      ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+      ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
      end; 
    end;
    
@@ -3576,7 +3620,7 @@ begin
   if Window.WindowState = WINDOW_STATE_VISIBLE then
    begin
     {Update Caret}
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
     
     {Set State}
     Window.WindowState:=WINDOW_STATE_INVISIBLE;
@@ -3655,7 +3699,7 @@ begin
            if (Current.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) <> 0 then
             begin
              {Update Caret}
-             ConsoleDeviceUpdateCaret(Current.Console,Current.CaretHandle,Current.CaretX,Current.CaretY,False,Current.CursorBlink);
+             ConsoleDeviceUpdateCaretEx(Current.Console,Current.CaretHandle,Current.CaretX,Current.CaretY,Current.CursorForecolor,Current.CursorBackcolor,False,Current.CursorBlink,Window.CursorReverse);
             end;
             
            {Draw Current}
@@ -3677,7 +3721,7 @@ begin
        if (Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) <> 0 then
         begin
          {Update Caret}
-         ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+         ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         end; 
       end; 
   
@@ -3753,7 +3797,7 @@ begin
        if (Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) <> 0 then
         begin
          {Update Caret}
-         ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+         ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
         end; 
        
        {Draw Window}
@@ -4291,7 +4335,7 @@ begin
   State:=Window.WindowState;
   try
    {Update Caret}
-   ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+   ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    
    {Hide Window}
    Window.WindowState:=WINDOW_STATE_INVISIBLE;
@@ -4398,7 +4442,7 @@ begin
      if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
       begin
        {Update Caret}
-       ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+       ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
       end; 
     end; 
   end;
@@ -5978,6 +6022,170 @@ end;
 
 {==============================================================================}
 
+function ConsoleWindowGetCursorColor(Handle:TWindowHandle):LongWord;
+{Get the current cursor color of an existing console window}
+{Handle: The handle of the window to get cursor color for}
+{Return: The cursor color of the window (eg COLOR_WHITE)}
+
+{Note: Color will be returned in the default color format (See COLOR_FORMAT_DEFAULT)}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=COLOR_NONE;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit; {Text mode only}
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Get Cursor Backcolor}
+ Result:=Window.CursorBackcolor;
+
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowSetCursorColor(Handle:TWindowHandle;Color:LongWord):LongWord;
+{Set the current cursor color of an existing console window}
+{Handle: The handle of the window to set the cursor color for}
+{Color: The cursor color to set (eg COLOR_WHITE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Color must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {$IFDEF CONSOLE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Cursor Color');
+ {$ENDIF}
+
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit; {Text mode only}
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Check Cursor State}
+ if Window.CursorState = CURSOR_STATE_ON then
+  begin
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+
+   {Cursor Color}
+   Result:=ConsoleWindowCursorColor(Handle,Color);
+  end
+ else
+  begin
+   {Set Cursor Color}
+   Window.CursorBackcolor:=Color;
+   
+   Result:=ERROR_SUCCESS;
+
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+  end;
+end;  
+
+{==============================================================================}
+
+function ConsoleWindowGetCursorReverse(Handle:TWindowHandle):Boolean;
+{Get the current cursor reverse state of an existing console window}
+{Handle: The handle of the window to get reverse state for}
+{Return: True if reverse color is enabled, False if inverse color is enabled}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=False;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit; {Text mode only}
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Get Cursor Reverse}
+ Result:=Window.CursorReverse;
+
+ {Unlock Window}
+ MutexUnlock(Window.Lock);
+end;
+
+{==============================================================================}
+
+function ConsoleWindowSetCursorReverse(Handle:TWindowHandle;CursorReverse:Boolean):LongWord;
+{Set the current cursor reverse state of an existing console window}
+{Handle: The handle of the window to set the reverse state for}
+{CursorReverse: True to enable reverse color, False to enable inverse color}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {$IFDEF CONSOLE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Cursor Reverse');
+ {$ENDIF}
+
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit; {Text mode only}
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Check Cursor Reverse}
+ if Window.CursorReverse then
+  begin
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+
+   {Check Cursor Reverse}
+   if not(CursorReverse) then Result:=ConsoleWindowCursorReverse(Handle,CursorReverse) else Result:=ERROR_SUCCESS;
+  end
+ else
+  begin
+   {Unlock Window}
+   MutexUnlock(Window.Lock);
+
+   {Check Cursor Reverse}
+   if CursorReverse then Result:=ConsoleWindowCursorReverse(Handle,CursorReverse) else Result:=ERROR_SUCCESS;
+  end;
+end;
+
+{==============================================================================}
+
 function ConsoleWindowCursorOn(Handle:TWindowHandle):LongWord;
 {Enable the cursor on an existing console window}
 {Handle: The handle of the window to enable the cursor for}
@@ -6046,7 +6254,7 @@ begin
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
         {Update Caret}
-        Result:=ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end; 
@@ -6101,7 +6309,7 @@ begin
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
       {Update Caret}
-      Result:=ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+      Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
       if Result <> ERROR_SUCCESS then Exit;
      end; 
    end; 
@@ -6169,7 +6377,7 @@ begin
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
         {Update Caret}
-        Result:=ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end; 
@@ -6238,7 +6446,7 @@ begin
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
         {Update Caret}
-        Result:=ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end; 
@@ -6307,7 +6515,7 @@ begin
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
         {Update Caret}
-        Result:=ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end; 
@@ -6374,7 +6582,7 @@ begin
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
         {Update Caret}
-        Result:=ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end;
@@ -6433,7 +6641,7 @@ begin
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
         {Update Caret}
-        Result:=ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end;
@@ -6446,6 +6654,126 @@ begin
   MutexUnlock(Window.Lock);
  end; 
 end;
+
+{==============================================================================}
+
+function ConsoleWindowCursorColor(Handle:TWindowHandle;Color:LongWord):LongWord;
+{Set the color of the cursor on an existing console window}
+{Handle: The handle of the window to set the color for}
+{Color: The cursor color to set (eg COLOR_WHITE)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Color must be specified in the default color format (See COLOR_FORMAT_DEFAULT)}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {$IFDEF CONSOLE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Color');
+ {$ENDIF}
+
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit; {Text mode only}
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ try
+  {Check Console}
+  if Window.Console = nil then Exit;
+
+  {Check Cursor Backcolor}
+  if Window.CursorBackcolor <> Color then
+   begin
+    {Set Cursor Backcolor}
+    Window.CursorBackcolor:=Color;
+
+    {Check Visible}
+    if (Window.CursorState = CURSOR_STATE_ON) and (Window.WindowState = WINDOW_STATE_VISIBLE) then
+     begin
+      {Check Flag}
+      if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
+       begin
+        {Update Caret}
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
+        if Result <> ERROR_SUCCESS then Exit;
+       end;
+     end;
+   end;
+
+  {Return Result}
+  Result:=ERROR_SUCCESS;
+ finally
+  {Unlock Window}
+  MutexUnlock(Window.Lock);
+ end;
+end;
+
+{==============================================================================}
+
+function ConsoleWindowCursorReverse(Handle:TWindowHandle;Enabled:Boolean):LongWord;
+{Set the reverse state of the cursor on an existing console window}
+{Handle: The handle of the window to set the reverse state for}
+{Enabled: True if the cursor shows in reverse colors, False if it shows in inverse colors}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+var
+ Window:PConsoleWindow;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {$IFDEF CONSOLE_DEBUG}
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Reverse');
+ {$ENDIF}
+
+ {Get Window}
+ Window:=PConsoleWindow(Handle);
+ if Window = nil then Exit;
+ if Window.Signature <> WINDOW_SIGNATURE then Exit;
+ if Window.WindowMode <> WINDOW_MODE_TEXT then Exit; {Text mode only}
+
+ {Lock Window}
+ if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
+ try
+  {Check Console}
+  if Window.Console = nil then Exit;
+
+  {Check Cursor Reverse}
+  if Window.CursorReverse <> Enabled then
+   begin
+    {Set Cursor Reverse}
+    Window.CursorReverse:=Enabled;
+
+    {Check Visible}
+    if (Window.CursorState = CURSOR_STATE_ON) and (Window.WindowState = WINDOW_STATE_VISIBLE) then
+     begin
+      {Check Flag}
+      if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
+       begin
+        {Update Caret}
+        Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
+        if Result <> ERROR_SUCCESS then Exit;
+       end;
+     end;
+   end; 
+
+  {Return Result} 
+  Result:=ERROR_SUCCESS;
+ finally
+  {Unlock Window}
+  MutexUnlock(Window.Lock);
+ end; 
+end; 
 
 {==============================================================================}
 
@@ -6931,7 +7259,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Calculate Count}
@@ -6964,7 +7292,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
  finally
   {Unlock Window}
@@ -7030,7 +7358,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Calculate Count}
@@ -7070,7 +7398,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
  finally
   {Unlock Window}
@@ -7146,7 +7474,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Calculate Count}
@@ -7179,7 +7507,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
  finally
   {Unlock Window}
@@ -7255,7 +7583,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Calculate Count}
@@ -7295,7 +7623,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
  finally
   {Unlock Window}
@@ -7348,7 +7676,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Calculate X1,Y1,X2,Y2}
@@ -7443,7 +7771,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Calculate X1,Y1,X2,Y2}
@@ -7479,7 +7807,7 @@ begin
     {Update Caret}
     if Window.CursorState = CURSOR_STATE_ON then
      begin
-      ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+      ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
      end; 
    end;
  finally
@@ -7536,7 +7864,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Get Length}
@@ -7660,7 +7988,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Get Length}
@@ -7713,7 +8041,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
     
   {No Cursor Update}
@@ -7774,7 +8102,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Get Length}
@@ -7914,7 +8242,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Get Length}
@@ -7983,7 +8311,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {No Cursor Update}
@@ -8040,7 +8368,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Check Char}
@@ -8192,7 +8520,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Check Char}
@@ -8276,7 +8604,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {No cursor Update}
@@ -8350,7 +8678,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
    end; 
   
   {Get Width}
@@ -8375,7 +8703,7 @@ begin
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
-    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
+    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
    end; 
  
   {No cursor Update}
@@ -11828,76 +12156,175 @@ procedure FramebufferConsoleShowCaret(Console:PConsoleDevice;Caret:PConsoleCaret
 {Internal function used by FramebufferConsole device}
 {Note: Not intended to be called directly by applications}
 {Note: Caller must hold the console lock}
+
+ function GetReverseColours(Console:PConsoleDevice;Caret:PConsoleCaret;var Color1,Color2:LongWord):Boolean;
+ var
+  Size:LongWord;
+  First:Boolean;
+  Value:LongWord;
+  Offset:LongWord;
+  Framebuffer:PFramebufferDevice;
+ begin
+  {}
+  Result:=True;
+
+  {Set Defaults}
+  Color1:=0;
+  Color2:=0;
+
+  {Get Framebuffer}
+  Framebuffer:=PFramebufferConsole(Console).Framebuffer;
+
+  {Find Colors}
+  Size:=Caret.Width * Caret.Height * ColorFormatToBytes(Console.Format);
+  First:=True;
+  Offset:=0;
+  while Offset < Size do
+   begin
+    {Get Value}
+    case Framebuffer.Depth of
+     FRAMEBUFFER_DEPTH_8:Value:=PByte(Caret.Buffer + Offset)^;
+     FRAMEBUFFER_DEPTH_16:Value:=PWord(Caret.Buffer + Offset)^;
+     FRAMEBUFFER_DEPTH_24:Value:=PWord(Caret.Buffer + Offset)^ or (PByte(Caret.Buffer + Offset + 2)^ shl 16);
+     FRAMEBUFFER_DEPTH_32:Value:=PLongWord(Caret.Buffer + Offset)^;
+     else
+      Break;
+    end;
+
+    {Check Colors}
+    if First then
+     begin
+      Color1:=Value;
+      First:=False;
+     end
+    else if Value <> Color1 then
+     begin
+      Color2:=Value;
+      Exit;
+     end;
+
+    {Update Offset}
+    case Framebuffer.Depth of
+     FRAMEBUFFER_DEPTH_8:Inc(Offset,1);
+     FRAMEBUFFER_DEPTH_16:Inc(Offset,2);
+     FRAMEBUFFER_DEPTH_24:Inc(Offset,3);
+     FRAMEBUFFER_DEPTH_32:Inc(Offset,4);
+     else
+      Break;
+    end;
+   end;
+
+  Result:=False;
+ end;
+
 var
  Size:LongWord;
  Mask:LongWord;
+ Value:LongWord;
  Offset:LongWord;
+ Color:LongWord;
+ Color1:LongWord;
+ Color2:LongWord;
+ Reverse:Boolean;
+ Backcolor:Boolean;
  Framebuffer:PFramebufferDevice;
 begin
  {}
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+
  {Check Caret}
  if Caret = nil then Exit;
  if Caret.Signature <> CARET_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Show Caret (X=' + IntToStr(Caret.X) + ' Y=' + IntToStr(Caret.Y) + ')');
  {$ENDIF}
- 
+
  {Get Framebuffer}
  Framebuffer:=PFramebufferConsole(Console).Framebuffer;
- 
+
  {Get Buffer}
  FramebufferDeviceGetRect(Framebuffer,Caret.X,Caret.Y,Caret.Buffer,Caret.Width,Caret.Height,0,FRAMEBUFFER_TRANSFER_NONE);
 
  {Get Mask}
  Mask:=ColorFormatToMask(Console.Format,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
- 
+
+ {Check Options}
+ Reverse:=False;
+ Backcolor:=False;
+ if Caret.Reverse then
+  begin
+   {Get Colors}
+   Reverse:=GetReverseColours(Console,Caret,Color1,Color2);
+  end;
+ if Caret.Backcolor <> COLOR_NONE then
+  begin
+   {Get Colour}
+   Backcolor:=True;
+   ColorDefaultToFormat(Console.Format,Caret.Backcolor,@Color,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
+  end;
+
  {Create Output}
  Size:=Caret.Width * Caret.Height * ColorFormatToBytes(Console.Format);
  Offset:=0;
- case Framebuffer.Depth of
-  FRAMEBUFFER_DEPTH_8:begin
-    while Offset < Size do
+ while Offset < Size do
+  begin
+    {Get Value}
+    case Framebuffer.Depth of
+     FRAMEBUFFER_DEPTH_8:Value:=PByte(Caret.Buffer + Offset)^;
+     FRAMEBUFFER_DEPTH_16:Value:=PWord(Caret.Buffer + Offset)^;
+     FRAMEBUFFER_DEPTH_24:Value:=PWord(Caret.Buffer + Offset)^ or (PByte(Caret.Buffer + Offset + 2)^ shl 16);
+     FRAMEBUFFER_DEPTH_32:Value:=PLongWord(Caret.Buffer + Offset)^;
+     else
+      Exit;
+    end;
+
+    {Check Mode}
+    if Reverse then
      begin
-      PByte(Caret.Output + Offset)^:=PByte(Caret.Buffer + Offset)^ xor Mask;
-     
-      Inc(Offset,1);
-     end;
-   end;
-  FRAMEBUFFER_DEPTH_16:begin
-    while Offset < Size do
+      {Reverse}
+      if Value = Color1 then Value:=Color2 else Value:=Color1;
+     end
+    else if Backcolor then
      begin
-      PWord(Caret.Output + Offset)^:=PWord(Caret.Buffer + Offset)^ xor Mask;
-     
-      Inc(Offset,2);
-     end;
-   end;
-  FRAMEBUFFER_DEPTH_24:begin
-    while Offset < Size do
+      {Backcolor}
+      if Value <> Color then Value:=Color else Value:=Value xor Mask;
+     end
+    else
      begin
-      PWord(Caret.Output + Offset)^:=PWord(Caret.Buffer + Offset)^ xor Mask;
-      PByte(Caret.Output + Offset + 2)^:=PByte(Caret.Buffer + Offset + 2)^ xor (Mask shr 16);
-     
-      Inc(Offset,3);
+      {Inverse}
+      Value:=Value xor Mask;
      end;
-   end;
-  FRAMEBUFFER_DEPTH_32:begin
-    while Offset < Size do
-     begin
-      PLongWord(Caret.Output + Offset)^:=PLongWord(Caret.Buffer + Offset)^ xor Mask;
-     
-      Inc(Offset,4);
-     end;
-   end;
- end;  
+
+    {Set Value / Update Offset}
+    case Framebuffer.Depth of
+     FRAMEBUFFER_DEPTH_8:begin
+       PByte(Caret.Output + Offset)^:=Value;
+       Inc(Offset,1);
+      end; 
+     FRAMEBUFFER_DEPTH_16:begin
+       PWord(Caret.Output + Offset)^:=Value;
+       Inc(Offset,2);
+      end; 
+     FRAMEBUFFER_DEPTH_24:begin
+       PWord(Caret.Output + Offset)^:=Value;
+       PByte(Caret.Output + Offset + 2)^:=(Value shr 16);
+       Inc(Offset,3);
+      end; 
+     FRAMEBUFFER_DEPTH_32:begin
+       PLongWord(Caret.Output + Offset)^:=Value;
+       Inc(Offset,4);
+      end; 
+     else
+      Exit;
+    end;
+  end;
 
  {Set Active}
  Caret.Active:=True;
-  
+
  {Show Caret}
  FramebufferDevicePutRect(Framebuffer,Caret.X,Caret.Y,Caret.Output,Caret.Width,Caret.Height,0,FRAMEBUFFER_TRANSFER_NONE);
 end;
@@ -11974,6 +12401,9 @@ begin
     Caret.OffsetY:=OffsetY;
     Caret.Visible:=False;
     Caret.Blink:=False;
+    Caret.Reverse:=False;
+    Caret.Forecolor:=COLOR_NONE;
+    Caret.Backcolor:=COLOR_NONE;
     Caret.Console:=Console;
     Caret.Handle:=INVALID_HANDLE_VALUE;
     Caret.Active:=False;
@@ -12173,9 +12603,9 @@ end;
 
 {==============================================================================}
 
-function FramebufferConsoleUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord;
-{Implementation of ConsoleDeviceUpdateCaret API for FramebufferConsole}
-{Note: Not intended to be called directly by applications, use ConsoleDeviceUpdateCaret instead}
+function FramebufferConsoleUpdateCaretEx(Console:PConsoleDevice;Handle:THandle;X,Y,Forecolor,Backcolor:LongWord;Visible,Blink,Reverse:Boolean):LongWord;
+{Implementation of ConsoleDeviceUpdateCaretEx API for FramebufferConsole}
+{Note: Not intended to be called directly by applications, use ConsoleDeviceUpdateCaretEx instead}
 var
  Change:Boolean;
  Caret:PConsoleCaret;
@@ -12193,7 +12623,7 @@ begin
  if Handle = INVALID_HANDLE_VALUE then Exit;
  
  {$IFDEF CONSOLE_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Update Caret (Handle=' + IntToHex(Handle,8) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Color=' + IntToHex(Color,8) + ' Visible=' + BoolToStr(Visible) + ' Blink=' + BoolToStr(Blink) + ')');
+ if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Update Caret (Handle=' + IntToHex(Handle,8) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Forecolor=' + IntToHex(Forecolor,8) + ' Backcolor=' + IntToHex(Backcolor,8) + ' Visible=' + BoolToStr(Visible,True) + ' Blink=' + BoolToStr(Blink,True) + ' Reverse=' + BoolToStr(Reverse,True) + ')');
  {$ENDIF}
  
  {Get Caret}
@@ -12222,10 +12652,19 @@ begin
     {Check Y}
     if not Change then Change:=Y <> Caret.Y;
     
+    {Check Forecolor}
+    if not Change then Change:=Forecolor <> Caret.Forecolor;
+
+    {Check Backcolor}
+    if not Change then Change:=Backcolor <> Caret.Backcolor;
+
     {Check Blink}
     BlinkChange:=Blink <> Caret.Blink;
     if not Change then Change:=BlinkChange;
     
+    {Check Reverse}
+    if not Change then Change:=Reverse <> Caret.Reverse;
+
     {Check Change}
     if Change then
      begin
@@ -12240,7 +12679,10 @@ begin
       Caret.Visible:=Visible;
       Caret.X:=X + Caret.OffsetX;
       Caret.Y:=Y + Caret.OffsetY;
+      Caret.Forecolor:=Forecolor;
+      Caret.Backcolor:=Backcolor;
       Caret.Blink:=Blink;
+      Caret.Reverse:=Reverse;
       
       {Check Visible}
       if Visible then
@@ -12655,7 +13097,7 @@ begin
      Console.Console.DeviceCopyImage:=FramebufferConsoleCopyImage;
      Console.Console.DeviceAddCaret:=FramebufferConsoleAddCaret;
      Console.Console.DeviceDeleteCaret:=FramebufferConsoleDeleteCaret;
-     Console.Console.DeviceUpdateCaret:=FramebufferConsoleUpdateCaret;
+     Console.Console.DeviceUpdateCaretEx:=FramebufferConsoleUpdateCaretEx;
      Console.Console.DeviceGetPosition:=FramebufferConsoleGetPosition;
      Console.Console.FontRatio:=1; {Font ratio 1 for Pixel console}
      {Framebuffer}
