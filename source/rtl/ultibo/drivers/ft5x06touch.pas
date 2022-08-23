@@ -64,8 +64,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touc
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
-{$DEFINE FT5X06_DEBUG} //To Do //TestingFT5X06
-
 {==============================================================================}
 const
  {FT5x06 specific constants}
@@ -227,7 +225,6 @@ var
 {==============================================================================}
 {Forward Declarations}
 function FT5X06ReadWrite(Touch:PFT5X06Touch;WriteLen:Word;WriteData:PByte;ReadLen:Word;ReadData:PByte):LongWord; forward;
-function FT5X06DummyData(Touch:PFT5X06Touch;WriteLen:Word;WriteData:PByte;ReadLen:Word;ReadData:PByte):LongWord; forward;
 
 function FT5X06RegisterWrite(Touch:PFT5X06Touch;Reg,Value:Byte):LongWord; forward;
 function FT5X06RegisterRead(Touch:PFT5X06Touch;Reg:Byte;var Value:Byte):LongWord; forward;
@@ -242,6 +239,8 @@ function FT5X06GetParameters(Touch:PFT5X06Touch):LongWord; forward;
 function FT5X06CheckCRC(Touch:PFT5X06Touch;Data:PByte;Size:LongWord):LongWord; forward;
 
 function FT5X06UpdateConfig(Touch:PFT5X06Touch):LongWord; forward;
+
+function FT5X06ProcessEvents(Touch:PFT5X06Touch;Polling:Boolean):LongWord; forward;
 
 {==============================================================================}
 {==============================================================================}
@@ -321,7 +320,7 @@ begin
  FT5X06Init;
 
  {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
- if GPIO_LOG_ENABLED then GPIOLogDebug(nil,'FT5X06: Touch Create (Address=' + IntToHex(Address,4) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
+ if TOUCH_LOG_ENABLED then TOUCHLogDebug(nil,'FT5X06: Touch Create (Address=' + IntToHex(Address,4) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
 
  {Check I2C}
@@ -511,7 +510,7 @@ begin
  {Update Configuration}
  Result:=FT5X06UpdateConfig(PFT5X06Touch(Touch));
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Check IRQ}
  if (PFT5X06Touch(Touch).IRQ.GPIO <> nil) and (PFT5X06Touch(Touch).IRQ.Pin <> GPIO_PIN_UNKNOWN) then
   begin
@@ -533,16 +532,11 @@ begin
      Result:=ERROR_OPERATION_FAILED;
      Exit;
     end;
-
-   {Create Release Timer} //To Do //Remove if not required for touch release events
-   PFT5X06Touch(Touch).Timer:=TimerCreateEx(50,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(FT5X06TouchTimer),Touch); {Scheduled by GPIO Event Callback}
   end
  else
   begin
    {Create Polling Timer}
-   //PFT5X06Touch(Touch).Timer:=TimerCreateEx(FT5X06_POLL_INTERVAL_MS,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(FT5X06TouchTimer),Touch);
-   //To Do //Setup Polling Timer //Use FT5X06TouchTimer function if not required for touch release events (Doesn't seem to be)
-
+   PFT5X06Touch(Touch).Timer:=TimerCreateEx(FT5X06_POLL_INTERVAL_MS,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(FT5X06TouchTimer),Touch);
   end;
 
  {Return Result}
@@ -570,9 +564,6 @@ begin
   begin
    {Cancel GPIO Event}
    GPIODeviceInputCancel(PFT5X06Touch(Touch).IRQ.GPIO,PFT5X06Touch(Touch).IRQ.Pin);
-
-   {Cancel Release Timer} //To Do //Remove if not required for touch release events
-   TimerDestroy(PFT5X06Touch(Touch).Timer);
   end
  else
   begin
@@ -635,7 +626,14 @@ begin
    if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06: Touch Timer');
    {$ENDIF}
 
-   //To Do //Release, not needed, use for polling ?
+   {Disable Timer}
+   TimerDisable(Touch.Timer);
+
+   {Process Events}
+   FT5X06ProcessEvents(Touch,True);
+
+   {Enable Timer}
+   TimerEnable(Touch.Timer);
 
    {Release Lock}
    MutexUnlock(Touch.Touch.Lock);
@@ -647,26 +645,6 @@ end;
 procedure FT5X06TouchCallback(Touch:PFT5X06Touch;Pin,Trigger:LongWord);
 {Touch device event callback (Interrupt) handler for FT5x06 Touch device}
 {Note: Not intended to be called directly by applications}
-var
- Reg:Byte;
- X:Word;
- Y:Word;
- Id:Byte;
- Temp:Word;
- Event:Byte;
- Count:LongInt;
- Total:LongInt;
- Status:LongWord;
- Offset:LongWord;
- CRCSize:LongWord;
- DataSize:LongWord;
- PointSize:LongWord;
- Buffer:PByte;
- TouchData:PTouchData;
- MouseData:TMouseData;
- Data:array[0..63] of Byte;
- ModifiedPoints:LongWord;
- ReleasedPoints:LongWord;
 begin
  {}
  {Check Touch}
@@ -679,338 +657,17 @@ begin
    if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06: Touch Callback');
    {$ENDIF}
 
-   {Update Statistics}
-   Inc(Touch.Touch.ReceiveCount);
+   {Process Events}
+   FT5X06ProcessEvents(Touch,False);
 
-   {Disable Timer}
-   TimerDisable(Touch.Timer);
-   try
-    {Check Version}
-    case Touch.Version of
-     FT5X06_EDT_M06:begin
-       {Get Parameters}
-       Reg:=$f9;
-       Offset:=5;
-       PointSize:=4;
-       CRCSize:=1;
-      end;
-     FT5X06_EDT_M09,
-     FT5X06_EDT_M12,
-     FT5X06_EV_FT,
-     FT5X06_GENERIC_FT:begin
-       {Get Parameters}
-       Reg:=$00;
-       Offset:=3;
-       PointSize:=6;
-       CRCSize:=0;
-      end;
-     else
-      Exit;
+   {Reregister Event}
+   if GPIODeviceInputEvent(Touch.IRQ.GPIO,Touch.IRQ.Pin,Touch.IRQ.Trigger,GPIO_EVENT_FLAG_NONE,INFINITE,TGPIOCallback(FT5X06TouchCallback),Touch) <> ERROR_SUCCESS then
+    begin
+     if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to re-register touch callback');
     end;
 
-    {Setup Defaults}
-    Total:=0;
-    ModifiedPoints:=0;
-
-    {Read Touch Point Data}
-    FillChar(Data[0],SizeOf(Data),0);
-    DataSize:=(PointSize * Touch.MaxPoints) + Offset + CRCSize;
-
-    Status:=FT5X06ReadWrite(Touch,1,@Reg,DataSize,@Data);
-    if Status <> ERROR_SUCCESS then
-     begin
-      if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to read touch point data');
-
-      Exit;
-     end;
-
-    {M09/M12 does not send header or CRC}
-    if Touch.Version = FT5X06_EDT_M06 then
-     begin
-      {Check Header}
-      if (Data[0] <> $aa) or (Data[1] <> $aa) or (Data[2] <> DataSize) then
-       begin
-        if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Invalid header received');
-
-        Exit;
-       end;
-      {Check CRC}
-      if FT5X06CheckCRC(Touch,@Data,DataSize) <> ERROR_SUCCESS then
-       begin
-        if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: CRC error');
-
-        Exit;
-       end;
-
-      Total:=Touch.MaxPoints;
-     end
-    else
-     begin
-      {Register 2 is TD_STATUS, containing the number of touch points}
-      Total:=Min(Data[2] and $0f,Touch.MaxPoints);
-     end;
-
-    {Process Touches}
-    for Count:=0 to Total - 1 do
-     begin
-      {Get Next Point}
-      Buffer:=@Data[(Count * PointSize) + Offset];
-
-      {Get Event}
-      Event:=Buffer[0] shr 6;
-
-      {Ignore TOUCH_EVENT_RESERVED}
-      if Event = FT5X06_TOUCH_EVENT_RESERVED then Continue;
-
-      {M06 sometimes sends bogus coordinates in TOUCH_EVENT_DOWN}
-      if (Touch.Version = FT5X06_EDT_M06) and (Event = FT5X06_TOUCH_EVENT_DOWN) then Continue;
-
-      {Get X and Y}
-      X:=WordBEToN(PWord(Buffer)^) and $0fff;
-      Y:=WordBEToN(PWord(Buffer + 2)^) and $0fff;
-
-      {The FT5X26 sends the Y coordinate first}
-      if (Touch.Version = FT5X06_EV_FT) then
-       begin
-        {Swap X/Y}
-        Temp:=X;
-        X:=Y;
-        Y:=Temp;
-       end;
-
-      {Get Id}
-      Id:=(Buffer[2] shr 4) and $0f;
-
-      {Check Swap}
-      if Touch.SwapReportXY or ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_XY) <> 0) then
-       begin
-        {Swap X/Y}
-        Temp:=X;
-        X:=Y;
-        Y:=Temp;
-       end;
-
-      {Check Invert}
-      if Touch.InvertReportX or ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_X) <> 0) then
-       begin
-        {Invert X}
-        X:=Touch.MaxX - X;
-       end;
-      if Touch.InvertReportY or ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_Y) <> 0) then
-       begin
-        {Invert Y}
-        Y:=Touch.MaxY - Y;
-       end;
-
-      {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
-      if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Id=' + IntToStr(Id) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Event=' + IntToStr(Event));
-      {$ENDIF}
-      //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Id=' + IntToStr(Id) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Event=' + IntToStr(Event)); //To Do //TestingFT5X06
-
-      {Store Point}
-      ModifiedPoints:=ModifiedPoints or (1 shl Id);
-
-      {Check Event}
-      if (Event = FT5X06_TOUCH_EVENT_DOWN) or (Event = FT5X06_TOUCH_EVENT_ON) then
-       begin
-        {Check Flags}
-        if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
-         begin
-          {For touch report all points}
-          {Check Buffer}
-          if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
-           begin
-            TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
-            if TouchData <> nil then
-             begin
-              {Update Touch Data}
-              TouchData.Info:=TOUCH_FINGER;
-              TouchData.PointID:=Id + 1;
-
-              {Check Rotation}
-              case Touch.Touch.Properties.Rotation of
-               TOUCH_ROTATION_0:begin
-                 {No Change}
-                 TouchData.PositionX:=X;
-                 TouchData.PositionY:=Y;
-                end;
-               TOUCH_ROTATION_90:begin
-                 {Swap X and Y, Invert Y}
-                 TouchData.PositionX:=Y;
-                 TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
-                end;
-               TOUCH_ROTATION_180:begin
-                 {Invert X and Y}
-                 TouchData.PositionX:=Touch.Touch.Properties.MaxX - X;
-                 TouchData.PositionY:=Touch.Touch.Properties.MaxY - Y;
-                end;
-               TOUCH_ROTATION_270:begin
-                 {Swap X and Y, Invert X}
-                 TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
-                 TouchData.PositionY:=X;
-                end;
-              end;
-              TouchData.PositionZ:=0;
-
-              {Update Count}
-              Inc(Touch.Touch.Buffer.Count);
-
-              {Signal Data Received}
-              SemaphoreSignal(Touch.Touch.Buffer.Wait);
-             end;
-           end
-          else
-           begin
-            if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Buffer overflow, packet discarded');
-
-            {Update Statistics}
-            Inc(Touch.Touch.BufferOverruns);
-           end;
-         end
-        else
-         begin
-          {For mouse report the first point}
-          if Id = 0 then
-           begin
-            {Create Mouse Data}
-            MouseData.Buttons:=MOUSE_TOUCH_BUTTON or MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Touch Button, Absolute X and Y}
-
-            {Check Rotation}
-            case Touch.Touch.Properties.Rotation of
-             TOUCH_ROTATION_0:begin
-               {No Change}
-               MouseData.OffsetX:=X;
-               MouseData.OffsetY:=Y;
-              end;
-             TOUCH_ROTATION_90:begin
-               {Swap X and Y, Invert Y}
-               MouseData.OffsetX:=Y;
-               MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
-              end;
-             TOUCH_ROTATION_180:begin
-               {Invert X and Y}
-               MouseData.OffsetX:=Touch.Touch.Properties.MaxX - X;
-               MouseData.OffsetY:=Touch.Touch.Properties.MaxY - Y;
-              end;
-             TOUCH_ROTATION_270:begin
-               {Swap X and Y, Invert X}
-               MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
-               MouseData.OffsetY:=X;
-              end;
-            end;
-            MouseData.OffsetWheel:=0;
-
-            {Maximum X, Y and Wheel}
-            MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
-            MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
-            MouseData.MaximumWheel:=0;
-
-            {Write Mouse Data}
-            if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
-             begin
-              if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to write mouse data, packet discarded');
-
-              {Update Statistics}
-              Inc(Touch.Touch.ReceiveErrors);
-             end;
-           end;
-         end;
-       end;
-     end;
-
-    {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
-    if TOUCH_LOG_ENABLED and (ModifiedPoints > 0) then TouchLogDebug(@Touch.Touch,'FT5X06:  Modified Points=' + IntToHex(ModifiedPoints,8));
-    {$ENDIF}
-
-    {Process Releases}
-    ReleasedPoints:=Touch.LastPoints and not(ModifiedPoints);
-    if ReleasedPoints > 0 then
-     begin
-      for Count:=0 to Touch.Touch.Properties.MaxPoints - 1 do
-       begin
-        if (ReleasedPoints and (1 shl Count)) <> 0 then
-         begin
-          {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
-          if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Released Id=' + IntToStr(Count));
-          {$ENDIF}
-
-          {Check Flags}
-          if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
-           begin
-            {For touch report all points}
-            {Check Buffer}
-            if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
-             begin
-              TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
-              if TouchData <> nil then
-               begin
-                {Update Touch Data}
-                TouchData.Info:=0;
-                TouchData.PointID:=Count + 1;
-                TouchData.PositionX:=TOUCH_X_UNKNOWN;
-                TouchData.PositionY:=TOUCH_Y_UNKNOWN;
-                TouchData.PositionZ:=TOUCH_Z_UNKNOWN;
-
-                {Update Count}
-                Inc(Touch.Touch.Buffer.Count);
-
-                {Signal Data Received}
-                SemaphoreSignal(Touch.Touch.Buffer.Wait);
-               end;
-             end
-            else
-             begin
-              if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Buffer overflow, packet discarded');
-
-              {Update Statistics}
-              Inc(Touch.Touch.BufferOverruns);
-             end;
-           end
-          else
-           begin
-            {For mouse report the first point}
-            if Count = 0 then
-             begin
-              {Create Mouse Data (Release Event)}
-              MouseData.Buttons:=0; {No Buttons}
-              MouseData.OffsetX:=0; {No Offset X, Y or Wheel}
-              MouseData.OffsetY:=0;
-              MouseData.OffsetWheel:=0;
-
-              {Maximum X, Y and Wheel}
-              MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
-              MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
-              MouseData.MaximumWheel:=0;
-
-              {Write Mouse Data}
-              if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
-               begin
-                if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to write mouse data, packet discarded');
-
-                {Update Statistics}
-                Inc(Touch.Touch.ReceiveErrors);
-               end;
-             end;
-           end;
-         end;
-       end;
-     end;
-
-    {Save Last Points}
-    Touch.LastPoints:=ModifiedPoints;
-   finally
-    {Reregister Event}
-    if GPIODeviceInputEvent(Touch.IRQ.GPIO,Touch.IRQ.Pin,Touch.IRQ.Trigger,GPIO_EVENT_FLAG_NONE,INFINITE,TGPIOCallback(FT5X06TouchCallback),Touch) <> ERROR_SUCCESS then
-     begin
-      if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to re-register touch callback');
-     end;
-
-    {Enable Timer}
-    TimerEnable(Touch.Timer);
-
-    {Release Lock}
-    MutexUnlock(Touch.Touch.Lock);
-   end;
+   {Release Lock}
+   MutexUnlock(Touch.Touch.Lock);
   end;
 end;
 
@@ -1026,11 +683,6 @@ var
  Count:LongWord;
 begin
  {}
- //To Do //TestingFT5X06
- //Result:=FT5X06DummyData(Touch,WriteLen,WriteData,ReadLen,ReadData);
- //Exit;
- //To Do //TestingFT5X06
-
  Result:=ERROR_INVALID_PARAMETER;
 
  {Check Touch}
@@ -1062,80 +714,6 @@ begin
   end;
 end;
 
-{==============================================================================}
-//To Do //TestingFT5X06
-function FT5X06DummyData(Touch:PFT5X06Touch;WriteLen:Word;WriteData:PByte;ReadLen:Word;ReadData:PByte):LongWord;
-var
- ModelName:array[0..FT5X06_EDT_NAME_LEN - 1] of Char;
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
-
- {Check Touch}
- if Touch = nil then Exit;
-
- {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
- if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06: Dummy Data (Write Len=' + IntToStr(WriteLen) + ' Read Len=' + IntToStr(ReadLen) + ')');
- {$ENDIF}
-
- Result:=ERROR_OPERATION_FAILED;
-
- // All versions (or no version)
- if (WriteLen = 1) and (WriteData^ = $BB) and (ReadLen = (FT5X06_EDT_NAME_LEN - 1)) then
-  begin
-   //Identify
-   ModelName:='#EP0123*1234567890ABC$';
-   //StrLCopy(PChar(ReadData),PChar(@ModelName[0]),ReadLen); //FT5X06_EDT_M06
-   //StrLCopy(PChar(ReadData),PChar(@ModelName[1]),ReadLen); //FT5X06_EDT_M12
-
-   //To Do //FT5X06_EDT_M09
-   //To Do //FT5X06_GENERIC_FT
-   //To Do //FT5X06_EV_FT
-
-   Result:=ERROR_SUCCESS;
-  end
- else if (WriteLen = 2) and (WriteData^ = $fc) and (ReadLen = 2) then
-  begin
-   //Dummy Read
-   Result:=ERROR_SUCCESS;
-  end;
-
- // To Do // Check version and return different data
-
- //FT5X06_GENERIC_FT
- if (WriteLen = 1) and (WriteData^ = $A6) and (ReadLen = 2) then
-  begin
-   //Firmware ID
-   //To Do
-
-   Result:=ERROR_SUCCESS;
-  end
- else if (WriteLen = 1) and (WriteData^ = $A8) and (ReadLen = 1) then
-  begin
-   //CTPM Vendor ID
-   //To Do
-
-   Result:=ERROR_SUCCESS;
-  end;
-
- //FT5X06_EV_FT
- if (WriteLen = 1) and (WriteData^ = $53) and (ReadLen = 1) then
-  begin
-   //Firmware ID (Evervision)
-   //To Do
-
-   Result:=ERROR_SUCCESS;
-  end;
-
- //To Do //Add the FT5X06_WORK_REGISTER_THRESHOLD etc
- //To Do //Add the FT5X06_M09_REGISTER_THRESHOLD etc
- //To Do //Add the FT5X06_EV_REGISTER_THRESHOLD etc
-
- //To Do //Add the touch data return
-
- //To Do
-end;
-//To Do //TestingFT5X06
 {==============================================================================}
 
 function FT5X06RegisterWrite(Touch:PFT5X06Touch;Reg,Value:Byte):LongWord;
@@ -1379,6 +957,9 @@ begin
     else
      begin
       {Version GENERIC_FT}
+
+      {Get Firmware ID}
+      FirmwareID:='';
 
       {Get Model Name}
       ModelName:='Generic FT5X06 (' + IntToHex(Id,2)  + ')';
@@ -1712,8 +1293,362 @@ begin
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Width: ' + IntToStr(Touch.Touch.Properties.Width) + ' Height: ' + IntToStr(Touch.Touch.Properties.Height));
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Max Points: ' + IntToStr(Touch.Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Touch.Properties.MaxY));
  {$ENDIF}
- //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Width: ' + IntToStr(Touch.Touch.Properties.Width) + ' Height: ' + IntToStr(Touch.Touch.Properties.Height)); //To Do //TestingFT5X06
- //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Max Points: ' + IntToStr(Touch.Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Touch.Properties.MaxY)); //To Do //TestingFT5X06
+
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function FT5X06ProcessEvents(Touch:PFT5X06Touch;Polling:Boolean):LongWord;
+var
+ Reg:Byte;
+ X:Word;
+ Y:Word;
+ Id:Byte;
+ Temp:Word;
+ Event:Byte;
+ Count:LongInt;
+ Total:LongInt;
+ Status:LongWord;
+ Offset:LongWord;
+ CRCSize:LongWord;
+ DataSize:LongWord;
+ PointSize:LongWord;
+ Buffer:PByte;
+ TouchData:PTouchData;
+ MouseData:TMouseData;
+ Data:array[0..63] of Byte;
+ ModifiedPoints:LongWord;
+ ReleasedPoints:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Touch}
+ if Touch = nil then Exit;
+
+ {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06: Process Events');
+ {$ENDIF}
+
+ {Check Version}
+ case Touch.Version of
+  FT5X06_EDT_M06:begin
+    {Get Parameters}
+    Reg:=$f9;
+    Offset:=5;
+    PointSize:=4;
+    CRCSize:=1;
+   end;
+  FT5X06_EDT_M09,
+  FT5X06_EDT_M12,
+  FT5X06_EV_FT,
+  FT5X06_GENERIC_FT:begin
+    {Get Parameters}
+    Reg:=$00;
+    Offset:=3;
+    PointSize:=6;
+    CRCSize:=0;
+   end;
+  else
+   Exit;
+ end;
+
+ {Setup Defaults}
+ Total:=0;
+ ModifiedPoints:=0;
+
+ {Read Touch Point Data}
+ FillChar(Data[0],SizeOf(Data),0);
+ DataSize:=(PointSize * Touch.MaxPoints) + Offset + CRCSize;
+
+ Status:=FT5X06ReadWrite(Touch,1,@Reg,DataSize,@Data);
+ if Status <> ERROR_SUCCESS then
+  begin
+   if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to read touch point data');
+
+   Exit;
+  end;
+
+ {M09/M12 does not send header or CRC}
+ if Touch.Version = FT5X06_EDT_M06 then
+  begin
+   {Check Header}
+   if (Data[0] <> $aa) or (Data[1] <> $aa) or (Data[2] <> DataSize) then
+    begin
+     if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Invalid header received');
+
+     Exit;
+    end;
+   {Check CRC}
+   if FT5X06CheckCRC(Touch,@Data,DataSize) <> ERROR_SUCCESS then
+    begin
+     if TOUCH_LOG_ENABLED and not(Polling) then TouchLogError(@Touch.Touch,'FT5X06: CRC error');
+
+     Exit;
+    end;
+
+   Total:=Touch.MaxPoints;
+  end
+ else
+  begin
+   {Register 2 is TD_STATUS, containing the number of touch points}
+   Total:=Min(Data[2] and $0f,Touch.MaxPoints);
+  end;
+
+ {Process Touches}
+ for Count:=0 to Total - 1 do
+  begin
+   {Get Next Point}
+   Buffer:=@Data[(Count * PointSize) + Offset];
+
+   {Get Event}
+   Event:=Buffer[0] shr 6;
+
+   {Ignore TOUCH_EVENT_RESERVED}
+   if Event = FT5X06_TOUCH_EVENT_RESERVED then Continue;
+
+   {M06 sometimes sends bogus coordinates in TOUCH_EVENT_DOWN}
+   if (Touch.Version = FT5X06_EDT_M06) and (Event = FT5X06_TOUCH_EVENT_DOWN) then Continue;
+
+   {Get X and Y}
+   X:=WordBEToN(PWord(Buffer)^) and $0fff;
+   Y:=WordBEToN(PWord(Buffer + 2)^) and $0fff;
+
+   {The FT5X26 sends the Y coordinate first}
+   if (Touch.Version = FT5X06_EV_FT) then
+    begin
+     {Swap X/Y}
+     Temp:=X;
+     X:=Y;
+     Y:=Temp;
+    end;
+
+   {Get Id}
+   Id:=(Buffer[2] shr 4) and $0f;
+
+   {Check Swap}
+   if Touch.SwapReportXY or ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_XY) <> 0) then
+    begin
+     {Swap X/Y}
+     Temp:=X;
+     X:=Y;
+     Y:=Temp;
+    end;
+
+   {Check Invert}
+   if Touch.InvertReportX or ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_X) <> 0) then
+    begin
+     {Invert X}
+     X:=Touch.MaxX - X;
+    end;
+   if Touch.InvertReportY or ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_Y) <> 0) then
+    begin
+     {Invert Y}
+     Y:=Touch.MaxY - Y;
+    end;
+
+   {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
+   if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Id=' + IntToStr(Id) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Event=' + IntToStr(Event));
+   {$ENDIF}
+
+   {Store Point}
+   ModifiedPoints:=ModifiedPoints or (1 shl Id);
+
+   {Check Event}
+   if (Event = FT5X06_TOUCH_EVENT_DOWN) or (Event = FT5X06_TOUCH_EVENT_ON) then
+    begin
+     {Check Flags}
+     if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
+      begin
+       {For touch report all points}
+       {Update Statistics}
+       Inc(Touch.Touch.ReceiveCount);
+
+       {Check Buffer}
+       if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
+        begin
+         TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
+         if TouchData <> nil then
+          begin
+           {Update Touch Data}
+           TouchData.Info:=TOUCH_FINGER;
+           TouchData.PointID:=Id + 1;
+
+           {Check Rotation}
+           case Touch.Touch.Properties.Rotation of
+            TOUCH_ROTATION_0:begin
+              {No Change}
+              TouchData.PositionX:=X;
+              TouchData.PositionY:=Y;
+             end;
+            TOUCH_ROTATION_90:begin
+              {Swap X and Y, Invert Y}
+              TouchData.PositionX:=Y;
+              TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
+             end;
+            TOUCH_ROTATION_180:begin
+              {Invert X and Y}
+              TouchData.PositionX:=Touch.Touch.Properties.MaxX - X;
+              TouchData.PositionY:=Touch.Touch.Properties.MaxY - Y;
+             end;
+            TOUCH_ROTATION_270:begin
+              {Swap X and Y, Invert X}
+              TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
+              TouchData.PositionY:=X;
+             end;
+           end;
+           TouchData.PositionZ:=0;
+
+           {Update Count}
+           Inc(Touch.Touch.Buffer.Count);
+
+           {Signal Data Received}
+           SemaphoreSignal(Touch.Touch.Buffer.Wait);
+          end;
+        end
+       else
+        begin
+         if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Buffer overflow, packet discarded');
+
+         {Update Statistics}
+         Inc(Touch.Touch.BufferOverruns);
+        end;
+      end
+     else
+      begin
+       {For mouse report the first point}
+       if Id = 0 then
+        begin
+         {Update Statistics}
+         Inc(Touch.Touch.ReceiveCount);
+
+         {Create Mouse Data}
+         MouseData.Buttons:=MOUSE_TOUCH_BUTTON or MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Touch Button, Absolute X and Y}
+
+         {Check Rotation}
+         case Touch.Touch.Properties.Rotation of
+          TOUCH_ROTATION_0:begin
+            {No Change}
+            MouseData.OffsetX:=X;
+            MouseData.OffsetY:=Y;
+           end;
+          TOUCH_ROTATION_90:begin
+            {Swap X and Y, Invert Y}
+            MouseData.OffsetX:=Y;
+            MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
+           end;
+          TOUCH_ROTATION_180:begin
+            {Invert X and Y}
+            MouseData.OffsetX:=Touch.Touch.Properties.MaxX - X;
+            MouseData.OffsetY:=Touch.Touch.Properties.MaxY - Y;
+           end;
+          TOUCH_ROTATION_270:begin
+            {Swap X and Y, Invert X}
+            MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
+            MouseData.OffsetY:=X;
+           end;
+         end;
+         MouseData.OffsetWheel:=0;
+
+         {Maximum X, Y and Wheel}
+         MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
+         MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
+         MouseData.MaximumWheel:=0;
+
+         {Write Mouse Data}
+         if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
+          begin
+           if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to write mouse data, packet discarded');
+
+           {Update Statistics}
+           Inc(Touch.Touch.ReceiveErrors);
+          end;
+        end;
+      end;
+    end;
+  end;
+
+ {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED and (ModifiedPoints > 0) then TouchLogDebug(@Touch.Touch,'FT5X06:  Modified Points=' + IntToHex(ModifiedPoints,8));
+ {$ENDIF}
+
+ {Process Releases}
+ ReleasedPoints:=Touch.LastPoints and not(ModifiedPoints);
+ if ReleasedPoints > 0 then
+  begin
+   for Count:=0 to Touch.Touch.Properties.MaxPoints - 1 do
+    begin
+     if (ReleasedPoints and (1 shl Count)) <> 0 then
+      begin
+       {$IF DEFINED(FT5X06_DEBUG) or DEFINED(TOUCH_DEBUG)}
+       if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'FT5X06:  Released Id=' + IntToStr(Count));
+       {$ENDIF}
+
+       {Check Flags}
+       if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
+        begin
+         {For touch report all points}
+         {Check Buffer}
+         if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
+          begin
+           TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
+           if TouchData <> nil then
+            begin
+             {Update Touch Data}
+             TouchData.Info:=0;
+             TouchData.PointID:=Count + 1;
+             TouchData.PositionX:=TOUCH_X_UNKNOWN;
+             TouchData.PositionY:=TOUCH_Y_UNKNOWN;
+             TouchData.PositionZ:=TOUCH_Z_UNKNOWN;
+
+             {Update Count}
+             Inc(Touch.Touch.Buffer.Count);
+
+             {Signal Data Received}
+             SemaphoreSignal(Touch.Touch.Buffer.Wait);
+            end;
+          end
+         else
+          begin
+           if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Buffer overflow, packet discarded');
+
+           {Update Statistics}
+           Inc(Touch.Touch.BufferOverruns);
+          end;
+        end
+       else
+        begin
+         {For mouse report the first point}
+         if Count = 0 then
+          begin
+           {Create Mouse Data (Release Event)}
+           MouseData.Buttons:=0; {No Buttons}
+           MouseData.OffsetX:=0; {No Offset X, Y or Wheel}
+           MouseData.OffsetY:=0;
+           MouseData.OffsetWheel:=0;
+
+           {Maximum X, Y and Wheel}
+           MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
+           MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
+           MouseData.MaximumWheel:=0;
+
+           {Write Mouse Data}
+           if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
+            begin
+             if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'FT5X06: Failed to write mouse data, packet discarded');
+
+             {Update Statistics}
+             Inc(Touch.Touch.ReceiveErrors);
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+
+ {Save Last Points}
+ Touch.LastPoints:=ModifiedPoints;
 
  Result:=ERROR_SUCCESS;
 end;

@@ -91,7 +91,8 @@ const
  GOODIX_CONFIG_MAX_LENGTH = 240;
 
  {Goodix I2C constants}
- GOODIX_I2C_RATE = 400000; {Default I2C clock rate}
+ GOODIX_I2C_RATE = 400000;     {Default I2C clock rate}
+ GOODIX_CONFIG_TIMEOUT = 3000; {Timeout to wait for firmware ready}
 
  {Goodix register constants}
  GOODIX_REG_COMMAND          = $8040;
@@ -127,12 +128,12 @@ type
   {General Properties}
   IRQ:TGPIOInfo;               {The GPIO information for the IRQ line (Optional)}
   RST:TGPIOInfo;               {The GPIO information for the Reset line (Optional)}
-  Timer:TTimerHandle;          {Handle for touch release timer}
   MaxX:Word;                   {Maximum X value from current configuration}
   MaxY:Word;                   {Maximum Y value from current configuration}
   Width:Word;                  {Screen width value supplied during create}
   Height:Word;                 {Screen height value supplied during create}
   MaxPoints:LongWord;          {Maximum touch points from current configuration}
+  LastKeys:LongWord;           {Keys reported in last input report}
   LastPoints:LongWord;         {Points reported in last input report}
   {Goodix Properties}
   Id:String;                   {ID String for this device}
@@ -180,7 +181,6 @@ function GOODIXTouchStop(Touch:PTouchDevice):LongWord;
 
 function GOODIXTouchUpdate(Touch:PTouchDevice):LongWord;
 
-procedure GOODIXTouchTimer(Touch:PGOODIXTouch);
 procedure GOODIXTouchCallback(Touch:PGOODIXTouch;Pin,Trigger:LongWord);
 
 {==============================================================================}
@@ -342,7 +342,6 @@ begin
    {General}
    if IRQ <> nil then GOODIXTouch.IRQ:=IRQ^ else GOODIXTouch.IRQ:=GPIO_INFO_UNKNOWN;
    if RST <> nil then GOODIXTouch.RST:=RST^ else GOODIXTouch.RST:=GPIO_INFO_UNKNOWN;
-   GOODIXTouch.Timer:=INVALID_HANDLE_VALUE;
    GOODIXTouch.Width:=Width;
    GOODIXTouch.Height:=Height;
    {Goodix}
@@ -439,6 +438,10 @@ function GOODIXTouchStart(Touch:PTouchDevice):LongWord;
 {Implementation of TouchDeviceStart API for Goodix Touch device}
 {Note: Not intended to be called directly by applications, use TouchDeviceStart instead}
 var
+ Handle:THandle;
+ Buffer:Pointer;
+ Size:LongWord;
+ Status:LongWord;
  Properties:TI2CProperties;
 begin
  {}
@@ -477,51 +480,28 @@ begin
  {Check Load Config}
  if PGOODIXTouch(Touch).ConfigFilename <> '' then
   begin
-
-   //To Do //Use new Device Firmware functions to load config
-
-   {Send Configuration}
-   //Result:=GOODIXSendConfig(PGOODIXTouch(Touch),???); //To Do
-   //if Result <> ERROR_SUCCESS then Exit;
-
-   {Configure Device}
-   Result:=GOODIXConfigureDevice(PGOODIXTouch(Touch));
-   if Result <> ERROR_SUCCESS then Exit;
-  end
- else
-  begin
-   {Configure Device}
-   Result:=GOODIXConfigureDevice(PGOODIXTouch(Touch));
-   if Result <> ERROR_SUCCESS then Exit;
+   {Acquire Config File}
+   Status:=DeviceFirmwareAcquire(DEVICE_CLASS_ANY,PGOODIXTouch(Touch).ConfigFilename,GOODIX_CONFIG_TIMEOUT,Handle,Buffer,Size);
+   if Status = ERROR_SUCCESS then
+    begin
+     try
+      {Send Configuration}
+      Result:=GOODIXSendConfig(PGOODIXTouch(Touch),Buffer,Size);
+      if Result <> ERROR_SUCCESS then Exit;
+     finally
+      {Release Config File}
+      DeviceFirmwareRelease(Handle,Buffer,Size);
+     end;
+    end
+   else
+    begin
+     if TOUCH_LOG_ENABLED then TouchLogError(Touch,'GOODIX: Failed to acquire touch configuration file "' + PGOODIXTouch(Touch).ConfigFilename + '": ' + ErrorToString(Status));
+    end;
   end;
 
- //To Do //Should this move to GOODIXConfigureDevice so it could happen after the firmware load completion ?
-
- {Initialize IRQ}
- if (PGOODIXTouch(Touch).IRQ.GPIO <> nil) and (PGOODIXTouch(Touch).IRQ.Pin <> GPIO_PIN_UNKNOWN) then
-  begin
-   {Setup IRQ (GPIO)}
-   if GPIODeviceFunctionSelect(PGOODIXTouch(Touch).IRQ.GPIO,PGOODIXTouch(Touch).IRQ.Pin,PGOODIXTouch(Touch).IRQ.Func) <> ERROR_SUCCESS then
-    begin
-     Result:=ERROR_OPERATION_FAILED;
-     Exit;
-    end;
-   if GPIODevicePullSelect(PGOODIXTouch(Touch).IRQ.GPIO,PGOODIXTouch(Touch).IRQ.Pin,PGOODIXTouch(Touch).IRQ.Pull) <> ERROR_SUCCESS then
-    begin
-     Result:=ERROR_OPERATION_FAILED;
-     Exit;
-    end;
-
-   {Create GPIO Event}
-   if GPIODeviceInputEvent(PGOODIXTouch(Touch).IRQ.GPIO,PGOODIXTouch(Touch).IRQ.Pin,PGOODIXTouch(Touch).IRQ.Trigger,GPIO_EVENT_FLAG_NONE,INFINITE,TGPIOCallback(GOODIXTouchCallback),Touch) <> ERROR_SUCCESS then
-    begin
-     Result:=ERROR_OPERATION_FAILED;
-     Exit;
-    end;
-
-   {Create Release Timer} //To Do //Remove if not required for touch release events
-   PGOODIXTouch(Touch).Timer:=TimerCreateEx(50,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(GOODIXTouchTimer),Touch); {Scheduled by GPIO Event Callback}
-  end;
+ {Configure Device}
+ Result:=GOODIXConfigureDevice(PGOODIXTouch(Touch));
+ if Result <> ERROR_SUCCESS then Exit;
 
  {Return Result}
  Result:=ERROR_SUCCESS;
@@ -545,9 +525,6 @@ begin
 
  {Cancel Event}
  GPIODeviceInputCancel(PGOODIXTouch(Touch).IRQ.GPIO,PGOODIXTouch(Touch).IRQ.Pin);
-
- {Cancel Release Timer} //To Do //Remove if not required for touch release events
- TimerDestroy(PGOODIXTouch(Touch).Timer);
 
  {Return Result}
  Result:=ERROR_SUCCESS;
@@ -589,30 +566,6 @@ end;
 
 {==============================================================================}
 
-procedure GOODIXTouchTimer(Touch:PGOODIXTouch);
-{Touch device timer event handler for Goodix Touch device}
-{Note: Not intended to be called directly by applications}
-begin
- {}
- {Check Touch}
- if Touch = nil then Exit;
-
- {Acquire Lock}
- if MutexLock(Touch.Touch.Lock) = ERROR_SUCCESS then
-  begin
-   {$IF DEFINED(GOODIX_DEBUG) or DEFINED(TOUCH_DEBUG)}
-   if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX: Touch Timer');
-   {$ENDIF}
-
-   //To Do //Touch Release, not needed for Goodix ?
-
-   {Release Lock}
-   MutexUnlock(Touch.Touch.Lock);
-  end;
-end;
-
-{==============================================================================}
-
 procedure GOODIXTouchCallback(Touch:PGOODIXTouch;Pin,Trigger:LongWord);
 {Touch device event callback (Interrupt) handler for Goodix Touch device}
 {Note: Not intended to be called directly by applications}
@@ -628,13 +581,7 @@ begin
    if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX: Touch Callback');
    {$ENDIF}
 
-   {Update Statistics}
-   Inc(Touch.Touch.ReceiveCount);
-
-   {Disable Timer}
-   TimerDisable(Touch.Timer);
-
-   {Process Event}
+   {Process Events}
    GOODIXProcessEvents(Touch);
 
    {End Command}
@@ -648,9 +595,6 @@ begin
     begin
      if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'GOODIX: Failed to re-register touch callback');
     end;
-
-   {Enable Timer}
-   TimerEnable(Touch.Timer);
 
    {Release Lock}
    MutexUnlock(Touch.Touch.Lock);
@@ -947,7 +891,6 @@ begin
  {$IF DEFINED(GOODIX_DEBUG) or DEFINED(TOUCH_DEBUG)}
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Trigger: ' + GPIOTriggerToString(Touch.IRQ.Trigger) + ' Max Points: ' + IntToStr(Touch.MaxPoints) + ' Max X: ' + IntToStr(Touch.MaxX) + ' Max Y: ' + IntToStr(Touch.MaxY));
  {$ENDIF}
- //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Trigger: ' + GPIOTriggerToString(Touch.IRQ.Trigger) + ' Max Points: ' + IntToStr(Touch.MaxPoints) + ' Max X: ' + IntToStr(Touch.MaxX) + ' Max Y: ' + IntToStr(Touch.MaxY)); //To Do //TestingGoodix
 
  Result:=ERROR_SUCCESS;
 end;
@@ -1059,8 +1002,6 @@ begin
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Width: ' + IntToStr(Touch.Touch.Properties.Width) + ' Height: ' + IntToStr(Touch.Touch.Properties.Height));
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Max Points: ' + IntToStr(Touch.Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Touch.Properties.MaxY));
  {$ENDIF}
- //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Width: ' + IntToStr(Touch.Touch.Properties.Width) + ' Height: ' + IntToStr(Touch.Touch.Properties.Height)); //To Do //TestingGoodix
- //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Max Points: ' + IntToStr(Touch.Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Touch.Properties.MaxY)); //To Do //TestingGoodix
 
  Result:=ERROR_SUCCESS;
 end;
@@ -1108,7 +1049,28 @@ begin
  Result:=GOODIXUpdateConfig(Touch);
  if Result <> ERROR_SUCCESS then Exit;
 
- //To Do // Add the IRQ setup from GOODIXTouchStart ?
+ {Initialize IRQ}
+ if (Touch.IRQ.GPIO <> nil) and (Touch.IRQ.Pin <> GPIO_PIN_UNKNOWN) then
+  begin
+   {Setup IRQ (GPIO)}
+   if GPIODeviceFunctionSelect(Touch.IRQ.GPIO,Touch.IRQ.Pin,Touch.IRQ.Func) <> ERROR_SUCCESS then
+    begin
+     Result:=ERROR_OPERATION_FAILED;
+     Exit;
+    end;
+   if GPIODevicePullSelect(Touch.IRQ.GPIO,Touch.IRQ.Pin,Touch.IRQ.Pull) <> ERROR_SUCCESS then
+    begin
+     Result:=ERROR_OPERATION_FAILED;
+     Exit;
+    end;
+
+   {Create GPIO Event}
+   if GPIODeviceInputEvent(Touch.IRQ.GPIO,Touch.IRQ.Pin,Touch.IRQ.Trigger,GPIO_EVENT_FLAG_NONE,INFINITE,TGPIOCallback(GOODIXTouchCallback),Touch) <> ERROR_SUCCESS then
+    begin
+     Result:=ERROR_OPERATION_FAILED;
+     Exit;
+    end;
+  end;
 
  Result:=ERROR_SUCCESS;
 end;
@@ -1123,10 +1085,13 @@ var
  W:Word;
  Id:Byte;
  Temp:Word;
+ Keys:Byte;
  Count:LongInt;
  Total:LongInt;
  TouchData:PTouchData;
  MouseData:TMouseData;
+ ModifiedKeys:LongWord;
+ ReleasedKeys:LongWord;
  Points:TGOODIXPointData;
  ModifiedPoints:LongWord;
  ReleasedPoints:LongWord;
@@ -1150,13 +1115,50 @@ begin
  {$ENDIF}
 
  {Setup Defaults}
+ ModifiedKeys:=0;
  ModifiedPoints:=0;
 
  {Process Keys}
- if (Points[0] and GOODIX_HAVE_KEY) <> 0 then
+ if (Total > 0) and ((Points[0] and GOODIX_HAVE_KEY) <> 0) then
   begin
-   //To Do //Some touchscreens have virtual keys, insert into keyboard buffer using KeyboardPut
-  end; 
+   {Get Keys}
+   Keys:=PByte(Points[1 + (Touch.ContactSize * Total)])^;
+
+   {Check Keys}
+   for Count:=0 to GOODIX_MAX_KEYS - 1 do
+    begin
+     if (Keys and BIT(Count)) <> 0 then
+      begin
+       {Store Key}
+       ModifiedKeys:=ModifiedKeys or BIT(Count);
+
+       {Check Repeat}
+       if (Touch.LastKeys and BIT(Count)) = 0 then
+        begin
+         {Put Key}
+         KeyboardPut(Touch.ScanCodes[Count],Touch.KeyCodes[Count],KEYBOARD_KEYDOWN);
+        end;
+      end;
+    end;
+  end;
+
+ {Process Released Keys}
+ ReleasedKeys:=Touch.LastKeys and not(ModifiedKeys);
+ if ReleasedKeys > 0 then
+  begin
+   {Check Keys}
+   for Count:=0 to GOODIX_MAX_KEYS - 1 do
+    begin
+     if (ReleasedKeys and BIT(Count)) <> 0 then
+      begin
+       {Put Key}
+       KeyboardPut(Touch.ScanCodes[Count],Touch.KeyCodes[Count],KEYBOARD_KEYUP);
+      end;
+    end;
+  end;
+
+ {Save Last Keys}
+ Touch.LastKeys:=ModifiedKeys;
 
  {Process Touches}
  for Count:=0 to Total - 1 do
@@ -1203,7 +1205,6 @@ begin
    {$IF DEFINED(GOODIX_DEBUG) or DEFINED(TOUCH_DEBUG)}
    if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Id=' + IntToStr(Id) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' W=' + IntToStr(W));
    {$ENDIF}
-   //if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'GOODIX:  Id=' + IntToStr(Id) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' W=' + IntToStr(W)); //To Do //TestingGoodix
 
    {Store Point}
    ModifiedPoints:=ModifiedPoints or (1 shl Id);
@@ -1212,6 +1213,9 @@ begin
    if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
     begin
      {For touch report all points}
+     {Update Statistics}
+     Inc(Touch.Touch.ReceiveCount);
+
      {Check Buffer}
      if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
       begin
@@ -1267,6 +1271,9 @@ begin
      {For mouse report the first point}
      if Id = 0 then
       begin
+       {Update Statistics}
+       Inc(Touch.Touch.ReceiveCount);
+
        {Create Mouse Data}
        MouseData.Buttons:=MOUSE_TOUCH_BUTTON or MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Touch Button, Absolute X and Y}
 
@@ -1409,7 +1416,7 @@ begin
 
  {Set Defaults}
  Count:=0;
- 
+
  {Check Touch}
  if Touch = nil then Exit;
 
@@ -1459,14 +1466,15 @@ begin
       if Result <> ERROR_SUCCESS then Exit;
      end;
 
-    Break;
+    Result:=ERROR_SUCCESS;
+    Exit;;
    end;
 
   {Delay between polls}
   MicrosecondDelay(1000);
  until ClockGetTotal > Timeout;
 
- Result:=ERROR_SUCCESS;
+ Result:=ERROR_TIMEOUT;
 end;
 
 {==============================================================================}

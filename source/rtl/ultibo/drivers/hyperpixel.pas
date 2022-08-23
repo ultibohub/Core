@@ -143,17 +143,17 @@ HyperPixel
 
  To match the rotation of the touchscreen to the rotation of the display you must call
  the TouchDeviceControl() API function with the TOUCH_CONTROL_SET_ROTATION request and
- pass the appropriate touch rotation constant in argument1, eg TOUCH_ROTATION_180. 
- 
+ pass the appropriate touch rotation constant in argument1, eg TOUCH_ROTATION_180.
+
  The touch device representing the touchscreen can be found by calling the API function
  TouchDeviceFindByDescription() and passing the appropriate description for your device.
- 
+
  For the HyperPixel 4.0 Rectangular the description will be "Goodix Touch Controller" and
  for the HyperPixel 4.0 Square and HyperPixel 2.1 Round the device can be located using
  the description "EDT FocalTech FT5x06 Touch Controller".
- 
+
  The touchscreen rotation values match with the display rotations as follows:
- 
+
  display_lcd_rotate=0 equals TOUCH_ROTATION_0
  display_lcd_rotate=1 equals TOUCH_ROTATION_90
  display_lcd_rotate=2 equals TOUCH_ROTATION_180
@@ -174,8 +174,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touc
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-
-//To Do //How to handle displays without Touch ? Can we detect, is it a parameter to pass to Init or will the I2C just give us an error ?
 
 {==============================================================================}
 const
@@ -881,8 +879,8 @@ begin
 
  {Create Goodix Touch Device}
  GOODIXTouchCreate(I2CDevice,$5d,480,800,@IRQ,nil);
- 
- //To Do //Backlight //How to provide FramebufferDeviceSetBacklight API ?
+
+ //To Do //Backlight (GPIO 19 PWM) //How to provide FramebufferDeviceSetBacklight API ?
 
  Result:=ERROR_SUCCESS;
 end;
@@ -1000,14 +998,12 @@ begin
  IRQ.Trigger:=HYPERPIXEL_TOUCH_INTERRUPT_TRIGGER;
 
  {Setup Touch Device Parameters}
- //FT5X06_MAX_TOUCH_POINTS:=5;
- //To Do
+ FT5X06_MAX_TOUCH_POINTS:=5;
 
  {Create FT5X06 Touch Device}
- //FT5X06TouchCreate(I2CDevice,$48,720,720,@IRQ,nil);
- //To Do //Touch (Address 0x48 / Interrupt GPIO 27)
- 
- //To Do //Backlight //How to provide FramebufferDeviceSetBacklight API ?
+ FT5X06TouchCreate(I2CDevice,$48,720,720,@IRQ,nil);
+
+ //To Do //Backlight (GPIO 19 PWM) //How to provide FramebufferDeviceSetBacklight API ?
 
  Result:=ERROR_SUCCESS;
 end;
@@ -1125,14 +1121,12 @@ begin
  IRQ.Trigger:=HYPERPIXEL_TOUCH_INTERRUPT_TRIGGER;
 
  {Setup Touch Device Parameters}
- //FT5X06_MAX_TOUCH_POINTS:=5;
- //To Do
+ FT5X06_MAX_TOUCH_POINTS:=5;
 
  {Create FT5X06 Touch Device}
- //FT5X06TouchCreate(I2CDevice,$48,720,720,@IRQ,nil);
- //To Do //Touch (Address 0x48 / Interrupt GPIO 27)
- 
- //To Do //Backlight //How to provide FramebufferDeviceSetBacklight API ?
+ FT5X06TouchCreate(I2CDevice,$48,720,720,@IRQ,nil);
+
+ //To Do //Backlight (GPIO 19 PWM) //How to provide FramebufferDeviceSetBacklight API ?
 
  Result:=ERROR_SUCCESS;
 end;
@@ -1454,14 +1448,12 @@ begin
  IRQ.Trigger:=HYPERPIXEL_TOUCH_INTERRUPT_TRIGGER;
 
  {Setup Touch Device Parameters}
- //FT5X06_MAX_TOUCH_POINTS:=5;
- //To Do
+ FT5X06_MAX_TOUCH_POINTS:=5;
 
- {Create FT5x06 Touch Device}
- //FT5X06TouchCreate(I2CDevice,$15,480,480,@IRQ,nil);
- //To Do //Touch (Address 0x15 / Interrupt GPIO 27)
- 
- //To Do //Backlight //How to provide FramebufferDeviceSetBacklight API ?
+ {Create FT5X06 Touch Device}
+ FT5X06TouchCreate(I2CDevice,$15,480,480,@IRQ,nil);
+
+ //To Do //Backlight (GPIO 19 PWM) //How to provide FramebufferDeviceSetBacklight API ?
 
  Result:=ERROR_SUCCESS;
 end;
