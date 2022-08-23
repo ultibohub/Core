@@ -653,6 +653,8 @@ var
  DEVICE_REGISTER_MAILBOX:LongBool = True;      {If True then register the default mailbox device handlers}
  DEVICE_REGISTER_WATCHDOG:LongBool = True;     {If True then register the default watchdog device handlers} 
  
+ DEVICE_FIRMWARE_PATH:String = 'C:\firmware';  {The default path for loading device specific firmware (If applicable)}
+ 
 {==============================================================================}
 {Driver configuration}
 var
