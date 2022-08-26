@@ -154,7 +154,8 @@ const
  RPI2_KERNEL_NAME = 'kernel7.img';
  RPI2_KERNEL_CONFIG = 'config.txt';
  RPI2_KERNEL_COMMAND = 'cmdline.txt';
- RPI2_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat,armstub32-rpi3.bin';
+ RPI2_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat,armstub32-rpi2.bin,armstub32-rpi3.bin';
+ RPI2_DTB_FILES = 'bcm2709-rpi-2-b.dtb,bcm2709-rpi-cm2.dtb,bcm2710-rpi-2-b.dtb,bcm2710-rpi-3-b.dtb,bcm2710-rpi-3-b-plus.dtb,bcm2710-rpi-cm3.dtb,bcm2710-rpi-zero-2.dtb,bcm2710-rpi-zero-2-w.dtb';
  
 const
  {GPIO Power LED constants (GPIO Pin 35)} 
@@ -715,6 +716,7 @@ begin
  KERNEL_CONFIG:=RPI2_KERNEL_CONFIG;
  KERNEL_COMMAND:=RPI2_KERNEL_COMMAND;
  FIRMWARE_FILES:=RPI2_FIRMWARE_FILES;
+ DTB_FILES:=RPI2_DTB_FILES;
 
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2836_GPIO_REGS_BASE;

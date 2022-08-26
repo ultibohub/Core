@@ -100,6 +100,7 @@ const
  QEMUVPB_KERNEL_CONFIG = '';  {Not available as a file}
  QEMUVPB_KERNEL_COMMAND = ''; {Not available as a file}
  QEMUVPB_FIRMWARE_FILES = ''; {Not available as a file}
+ QEMUVPB_DTB_FILES = '';      {Not available as a file}
  
 {$IFDEF CONSOLE_EARLY_INIT}
 const
@@ -577,6 +578,7 @@ begin
  KERNEL_CONFIG:=QEMUVPB_KERNEL_CONFIG;
  KERNEL_COMMAND:=QEMUVPB_KERNEL_COMMAND;
  FIRMWARE_FILES:=QEMUVPB_FIRMWARE_FILES;
+ DTB_FILES:=QEMUVPB_DTB_FILES;
  
  {Register Platform BoardInit Handler}
  BoardInitHandler:=QEMUVPBBoardInit;

@@ -72,26 +72,28 @@ const
  SHELL_UPDATE_ACTION_SET     = 'SET';
 
  {Shell Update Item constants}
- SHELL_UPDATE_ITEM_ALL            = 'ALL';
- SHELL_UPDATE_ITEM_KERNEL         = 'KERNEL';
- SHELL_UPDATE_ITEM_CONFIG         = 'CONFIG';
- SHELL_UPDATE_ITEM_COMMAND        = 'COMMAND';
- SHELL_UPDATE_ITEM_FIRMWARE       = 'FIRMWARE';
- SHELL_UPDATE_ITEM_FILE           = 'FILE';
- 
- SHELL_UPDATE_ITEM_HTTP_SERVER    = 'SERVER';
- SHELL_UPDATE_ITEM_HTTP_PROXY     = 'PROXY';
- SHELL_UPDATE_ITEM_HTTP_PATH      = 'REMOTE';
- SHELL_UPDATE_ITEM_LOCAL_PATH     = 'LOCAL';
- SHELL_UPDATE_ITEM_KERNEL_IMAGE   = 'IMAGE';
- SHELL_UPDATE_ITEM_KERNEL_CONFIG  = 'CONFIG';
- SHELL_UPDATE_ITEM_KERNEL_COMMAND = 'COMMAND';
- SHELL_UPDATE_ITEM_FIRMWARE_FILES = 'FIRMWARE';
+ SHELL_UPDATE_ITEM_ALL              = 'ALL';
+ SHELL_UPDATE_ITEM_KERNEL           = 'KERNEL';
+ SHELL_UPDATE_ITEM_CONFIG           = 'CONFIG';
+ SHELL_UPDATE_ITEM_COMMAND          = 'COMMAND';
+ SHELL_UPDATE_ITEM_FIRMWARE         = 'FIRMWARE';
+ SHELL_UPDATE_ITEM_FILE             = 'FILE';
+                                    
+ SHELL_UPDATE_ITEM_HTTP_SERVER      = 'SERVER';
+ SHELL_UPDATE_ITEM_HTTP_PROXY       = 'PROXY';
+ SHELL_UPDATE_ITEM_HTTP_PATH        = 'REMOTE';
+ SHELL_UPDATE_ITEM_LOCAL_PATH       = 'LOCAL';
+ SHELL_UPDATE_ITEM_KERNEL_IMAGE     = 'IMAGE';
+ SHELL_UPDATE_ITEM_KERNEL_CONFIG    = 'CONFIG';
+ SHELL_UPDATE_ITEM_KERNEL_COMMAND   = 'COMMAND';
+ SHELL_UPDATE_ITEM_FIRMWARE_FILES   = 'FIRMWARE';
+ SHELL_UPDATE_ITEM_DEVICETREE_FILES = 'DEVICETREE';
  
  {Shell Update Parameter constants}
  SHELL_UPDATE_PARAMETER_REBOOT      = 'R';
  SHELL_UPDATE_PARAMETER_FORCE       = 'F';
  SHELL_UPDATE_PARAMETER_CURRENT     = 'C';
+ SHELL_UPDATE_PARAMETER_DTB         = 'DTB';
 
 {==============================================================================}
 {type}
@@ -109,8 +111,11 @@ type
  
   {Internal Methods}
   function GetList(const ANames:String):TStringList;
+  function AddList(const ANames:String;AList:TStringList):Boolean;
   function GetLocal(const AName:String;ACurrent:Boolean):String;
   function GetRemote(const AName:String):String;
+  
+  function IsParameter(const AValue:String;const AParameter:String = ''):Boolean;
   
   procedure SetProxy(AClient:THTTPClient);
  protected
@@ -142,6 +147,7 @@ var
  SHELL_UPDATE_KERNEL_CONFIG:String;  {Name of the kernel config file for updates (eg config.txt)}
  SHELL_UPDATE_KERNEL_COMMAND:String; {Name of the kernel command file for updates (eg cmdline.txt)}
  SHELL_UPDATE_FIRMWARE_FILES:String; {Name of the firmware files for updates (eg bootcode.bin,start.elf,fixup.dat)}
+ SHELL_UPDATE_DTB_FILES:String;      {Name of the device tree files for updates (eg bcm2708-rpi-b.dtb,bcm2710-rpi-2-b.dtb,bcm2711-rpi-4-b.dtb)}
 
 {==============================================================================}
 {Initialization Functions}
@@ -188,6 +194,35 @@ begin
  
  {Undelimit Names}
  UndelimitString(ANames,Result,',');
+end;
+
+{==============================================================================}
+
+function TShellUpdate.AddList(const ANames:String;AList:TStringList):Boolean;
+var
+ Strings:TStringList;
+begin
+ {}
+ Result:=False;
+
+ {Check Names}
+ if Length(ANames) = 0 then Exit;
+
+ {Check List}
+ if AList = nil then Exit;
+
+ Strings:=TStringList.Create;
+ try
+  {Undelimit Names}
+  UndelimitString(ANames,Strings,',');
+
+  {Add Name}
+  AList.AddStrings(Strings);
+
+  Result:=True;
+ finally
+  Strings.Free;
+ end; 
 end;
 
 {==============================================================================}
@@ -239,6 +274,44 @@ begin
  
  {Get Remote}
  Result:=SHELL_UPDATE_HTTP_PROTOCOL + SHELL_UPDATE_HTTP_SERVER + AddLeadingChar(WorkBuffer,SHELL_UPDATE_HTTP_SEPARATOR) + AName;
+end;
+
+{==============================================================================}
+
+function TShellUpdate.IsParameter(const AValue:String;const AParameter:String = ''):Boolean;
+var
+ WorkBuffer:String;
+begin
+ {}
+ Result:=False;
+ 
+ if Length(AValue) = 0 then Exit;
+
+ Result:=True;
+ 
+ WorkBuffer:=Uppercase(AValue);
+ 
+ if Length(AParameter) > 0 then
+  begin
+   {Check Parameter}
+   if WorkBuffer = Uppercase('/' + AParameter) then Exit;;
+  end
+ else
+  begin 
+   {Check Reboot}
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_REBOOT then Exit;;
+
+   {Check Force}
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_FORCE then Exit;;
+  
+   {Check Current}
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_CURRENT then Exit;;
+
+   {Check DTB}
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_DTB then Exit;;
+  end;
+ 
+ Result:=False;
 end;
 
 {==============================================================================}
@@ -566,6 +639,7 @@ begin
  AShell.DoOutput(ASession,'    /R      - Reboot after successfully updating items');
  AShell.DoOutput(ASession,'    /F      - Force an update even if available items are unchanged');
  AShell.DoOutput(ASession,'    /C      - Update the file in the current directory (FILE item only)');
+ AShell.DoOutput(ASession,'    /DTB    - Update device tree (DTB) files when updating firmware');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'   Examples:');
  AShell.DoOutput(ASession,'    ' + Name + ' GET KERNEL');
@@ -605,11 +679,13 @@ var
  Item:String;
  Action:String;
  Count:Integer;
+ Delay:Integer;
  Force:Boolean;
  Reboot:Boolean;
  Current:Boolean;
  Update:Boolean;
  Updated:Boolean;
+ DeviceTree:Boolean;
  Parameter:String;
  Filenames:TStringList;
 begin
@@ -622,8 +698,12 @@ begin
  {Check Parameters}
  if AParameters = nil then Exit;
  
+ {Set Defaults}
+ Delay:=1000;
+ 
  {Get Action}
  Action:=AShell.ParameterIndex(0,AParameters);
+ if IsParameter(Action) then Action:='';
  
  {Check Action}
  if (Length(Action) = 0) or (Uppercase(Action) = SHELL_UPDATE_ACTION_CHECK) then
@@ -643,14 +723,17 @@ begin
    AShell.DoOutput(ASession,'  Kernel config file:  ' + SHELL_UPDATE_KERNEL_CONFIG);
    AShell.DoOutput(ASession,'  Kernel command file: ' + SHELL_UPDATE_KERNEL_COMMAND);
    AShell.DoOutput(ASession,'  Firmware file(s):    ' + SHELL_UPDATE_FIRMWARE_FILES);
+   AShell.DoOutput(ASession,'  Device tree file(s): ' + SHELL_UPDATE_DTB_FILES);
    AShell.DoOutput(ASession,'');
    
    {Get Item}
    Item:=AShell.ParameterIndex(1,AParameters);
+   if IsParameter(Item) then Item:='';
    
    {Get Options}
    Current:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_CURRENT,AParameters);
    Update:=False;
+   DeviceTree:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_DTB,AParameters);
    
    {Check Item}
    if (Length(Item) = 0) or (Uppercase(Item) = SHELL_UPDATE_ITEM_ALL) then
@@ -670,6 +753,9 @@ begin
      {Split FIRMWARE_FILES}
      Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
      try
+      {Split DTB_FILES}
+      if DeviceTree then AddList(SHELL_UPDATE_DTB_FILES,Filenames);
+
       {Check FIRMWARE_FILES}
       for Count:=0 to Filenames.Count - 1 do
        begin
@@ -714,6 +800,9 @@ begin
      {Split FIRMWARE_FILES}
      Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
      try
+      {Split DTB_FILES}
+      if DeviceTree then AddList(SHELL_UPDATE_DTB_FILES,Filenames);
+
       {Check FIRMWARE_FILES}
       for Count:=0 to Filenames.Count - 1 do
        begin
@@ -764,16 +853,19 @@ begin
    AShell.DoOutput(ASession,'  Kernel config file:  ' + SHELL_UPDATE_KERNEL_CONFIG);
    AShell.DoOutput(ASession,'  Kernel command file: ' + SHELL_UPDATE_KERNEL_COMMAND);
    AShell.DoOutput(ASession,'  Firmware file(s):    ' + SHELL_UPDATE_FIRMWARE_FILES);
+   AShell.DoOutput(ASession,'  Device tree file(s): ' + SHELL_UPDATE_DTB_FILES);
    AShell.DoOutput(ASession,'');
   
    {Get Item}
    Item:=AShell.ParameterIndex(1,AParameters);
+   if IsParameter(Item) then Item:='';
    
    {Get Options}
    Force:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_FORCE,AParameters);
    Reboot:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_REBOOT,AParameters);
    Current:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_CURRENT,AParameters);
    Update:=False;
+   DeviceTree:=AShell.ParameterExists(SHELL_UPDATE_PARAMETER_DTB,AParameters);
    
    {Check Item}
    if Uppercase(Item) = SHELL_UPDATE_ITEM_ALL then
@@ -798,6 +890,9 @@ begin
      {Split FIRMWARE_FILES}
      Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
      try
+      {Split DTB_FILES}
+      if DeviceTree then AddList(SHELL_UPDATE_DTB_FILES,Filenames);
+
       {Get FIRMWARE_FILES}
       for Count:=0 to Filenames.Count - 1 do
        begin
@@ -814,11 +909,11 @@ begin
      {Check Reboot}
      if Result and Updated and Reboot then
       begin
-       {Flush Cache}
-       //To Do
-       
+       AShell.DoOutput(ASession,' Restarting in ' + IntToStr(Delay) + ' milliseconds');
+       AShell.DoOutput(ASession,'');
+
        {Restart System}
-       SystemRestart(1000);
+       SystemRestart(Delay);
       end;
     end
    else if (Length(Item) = 0) or (Uppercase(Item) = SHELL_UPDATE_ITEM_KERNEL) then 
@@ -832,11 +927,11 @@ begin
      {Check Reboot}
      if Result and Update and Reboot then
       begin
-       {Flush Cache}
-       //To Do
-       
+       AShell.DoOutput(ASession,' Restarting in ' + IntToStr(Delay) + ' milliseconds');
+       AShell.DoOutput(ASession,'');
+
        {Restart System}
-       SystemRestart(1000);
+       SystemRestart(Delay);
       end;
     end
    else if Uppercase(Item) = SHELL_UPDATE_ITEM_CONFIG then 
@@ -850,11 +945,11 @@ begin
      {Check Reboot}
      if Result and Update and Reboot then
       begin
-       {Flush Cache}
-       //To Do
-       
+       AShell.DoOutput(ASession,' Restarting in ' + IntToStr(Delay) + ' milliseconds');
+       AShell.DoOutput(ASession,'');
+
        {Restart System}
-       SystemRestart(1000);
+       SystemRestart(Delay);
       end;
     end
    else if Uppercase(Item) = SHELL_UPDATE_ITEM_COMMAND then 
@@ -868,11 +963,11 @@ begin
      {Check Reboot}
      if Result and Update and Reboot then
       begin
-       {Flush Cache}
-       //To Do
-       
+       AShell.DoOutput(ASession,' Restarting in ' + IntToStr(Delay) + ' milliseconds');
+       AShell.DoOutput(ASession,'');
+
        {Restart System}
-       SystemRestart(1000);
+       SystemRestart(Delay);
       end;
     end
    else if Uppercase(Item) = SHELL_UPDATE_ITEM_FIRMWARE then 
@@ -883,6 +978,9 @@ begin
      {Split FIRMWARE_FILES}
      Filenames:=GetList(SHELL_UPDATE_FIRMWARE_FILES);
      try
+      {Split DTB_FILES}
+      if DeviceTree then AddList(SHELL_UPDATE_DTB_FILES,Filenames);
+
       {Get FIRMWARE_FILES}
       for Count:=0 to Filenames.Count - 1 do
        begin
@@ -891,6 +989,16 @@ begin
      finally
       Filenames.Free;
      end;
+
+     {Check Reboot}
+     if Result and Update and Reboot then
+      begin
+       AShell.DoOutput(ASession,' Restarting in ' + IntToStr(Delay) + ' milliseconds');
+       AShell.DoOutput(ASession,'');
+
+       {Restart System}
+       SystemRestart(Delay);
+      end;
     end
    else if Uppercase(Item) = SHELL_UPDATE_ITEM_FILE then 
     begin
@@ -903,6 +1011,16 @@ begin
      
        {Get File}
        Result:=UpdateGet(AShell,ASession,GetLocal(Parameter,Current),GetRemote(Parameter),Force,Update);
+
+       {Check Reboot}
+       if Result and Update and Reboot then
+        begin
+         AShell.DoOutput(ASession,' Restarting in ' + IntToStr(Delay) + ' milliseconds');
+         AShell.DoOutput(ASession,'');
+
+         {Restart System}
+         SystemRestart(Delay);
+        end;
       end
      else
       begin
@@ -1020,6 +1138,19 @@ begin
      {Return Result}
      Result:=True;
     end
+   else if Uppercase(Item) = SHELL_UPDATE_ITEM_DEVICETREE_FILES then 
+    begin
+     {Get Parameter}
+     Parameter:=AShell.ParameterIndex(2,AParameters);
+  
+     {Update DTB_FILES}
+     AShell.DoOutput(ASession,'Setting device tree file(s) name to ' + Parameter);
+     
+     SHELL_UPDATE_DTB_FILES:=Parameter;
+   
+     {Return Result}
+     Result:=True;
+    end
    else
     begin
      {Show Error}
@@ -1056,6 +1187,7 @@ begin
  SHELL_UPDATE_KERNEL_CONFIG:=KERNEL_CONFIG; 
  SHELL_UPDATE_KERNEL_COMMAND:=KERNEL_COMMAND;
  SHELL_UPDATE_FIRMWARE_FILES:=FIRMWARE_FILES;
+ SHELL_UPDATE_DTB_FILES:=DTB_FILES;
  
  {Check Environment Variables}
  {SHELL_UPDATE_HTTP_SERVER}
@@ -1089,7 +1221,11 @@ begin
  {SHELL_UPDATE_FIRMWARE_FILES}
  WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_FIRMWARE_FILES');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_FIRMWARE_FILES:=WorkBuffer;
- 
+
+ {SHELL_UPDATE_DTB_FILES}
+ WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_DTB_FILES');
+ if Length(WorkBuffer) <> 0 then SHELL_UPDATE_DTB_FILES:=WorkBuffer;
+
  ShellUpdateInitialized:=True;
 end;
  

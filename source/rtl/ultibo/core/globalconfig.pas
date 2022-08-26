@@ -602,6 +602,7 @@ var
  KERNEL_CONFIG:PChar;                         {The name of the Kernel configuration file (Where Applicable)}
  KERNEL_COMMAND:PChar;                        {The name of the Kernel command line file (Where Applicable)}
  FIRMWARE_FILES:PChar;                        {The name of the Firmare files (Where Applicable)}
+ DTB_FILES:PChar;                             {The name of the Device Tree (DTB) files (Where Applicable)}
  
  {Environment}
  ENVIRONMENT_STRING_COUNT:LongWord = SIZE_64; {How many strings are allocated in the environment block (for Get/SetEnvironmentVariable)}

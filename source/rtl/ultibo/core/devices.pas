@@ -353,7 +353,7 @@ const
  
  {Firmware Constants}
  FIRMWARE_WAIT_DELAY = 100;     {Delay between retries for firmware while waiting for timeout (Milliseconds)}
- FIRMWARE_MAX_BUFFER = SIZE_4M; {Maximum size buffer able to be allocated for firmware by aquire}
+ FIRMWARE_MAX_BUFFER = SIZE_4M; {Maximum size buffer able to be allocated for firmware by acquire}
  
  {Notifier Signature}
  NOTIFIER_SIGNATURE = $6FA1BEC9;

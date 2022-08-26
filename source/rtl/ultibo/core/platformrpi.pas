@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -113,6 +113,7 @@ const
  RPI_KERNEL_CONFIG = 'config.txt';
  RPI_KERNEL_COMMAND = 'cmdline.txt';
  RPI_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat';
+ RPI_DTB_FILES = 'bcm2708-rpi-b.dtb,bcm2708-rpi-b-plus.dtb,bcm2708-rpi-b-rev1.dtb,bcm2708-rpi-cm.dtb,bcm2708-rpi-zero.dtb,bcm2708-rpi-zero-w.dtb';
  
 const
  {GPIO Power LED constants (GPIO Pin 35 - A+/B+ Only)} 
@@ -638,6 +639,7 @@ begin
  KERNEL_CONFIG:=RPI_KERNEL_CONFIG;
  KERNEL_COMMAND:=RPI_KERNEL_COMMAND;
  FIRMWARE_FILES:=RPI_FIRMWARE_FILES;
+ DTB_FILES:=RPI_DTB_FILES;
  
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2835_GPIO_REGS_BASE;

@@ -157,6 +157,7 @@ const
  RPI3_KERNEL_CONFIG = 'config.txt';
  RPI3_KERNEL_COMMAND = 'cmdline.txt';
  RPI3_FIRMWARE_FILES = 'bootcode.bin,start.elf,fixup.dat'{$IFDEF CPUARM} + ',armstub32-rpi3.bin'{$ENDIF CPUARM}{$IFDEF CPUAARCH64} + ',armstub64-rpi3.bin'{$ENDIF CPUAARCH64};
+ RPI3_DTB_FILES = 'bcm2710-rpi-2-b.dtb,bcm2710-rpi-3-b.dtb,bcm2710-rpi-3-b-plus.dtb,bcm2710-rpi-cm3.dtb,bcm2710-rpi-zero-2.dtb,bcm2710-rpi-zero-2-w.dtb';
  
 const
  {Mailbox constants}
@@ -696,6 +697,7 @@ begin
  KERNEL_CONFIG:=RPI3_KERNEL_CONFIG;
  KERNEL_COMMAND:=RPI3_KERNEL_COMMAND;
  FIRMWARE_FILES:=RPI3_FIRMWARE_FILES;
+ DTB_FILES:=RPI3_DTB_FILES;
 
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2837_GPIO_REGS_BASE;

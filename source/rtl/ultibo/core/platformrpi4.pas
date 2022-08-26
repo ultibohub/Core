@@ -192,6 +192,7 @@ const
  RPI4_KERNEL_CONFIG = 'config.txt';
  RPI4_KERNEL_COMMAND = 'cmdline.txt';
  RPI4_FIRMWARE_FILES = 'start4.elf,fixup4.dat'{$IFDEF CPUARM} + ',armstub32-rpi4.bin'{$ENDIF CPUARM}{$IFDEF CPUAARCH64} + ',armstub64-rpi4.bin'{$ENDIF CPUAARCH64};
+ RPI4_DTB_FILES = 'bcm2711-rpi-4-b.dtb,bcm2711-rpi-400.dtb,bcm2711-rpi-cm4.dtb,bcm2711-rpi-cm4s.dtb';
  
 const 
  {GPIO Activity LED constants (GPIO Pin 42)} 
@@ -802,6 +803,7 @@ begin
  KERNEL_CONFIG:=RPI4_KERNEL_CONFIG;
  KERNEL_COMMAND:=RPI4_KERNEL_COMMAND;
  FIRMWARE_FILES:=RPI4_FIRMWARE_FILES;
+ DTB_FILES:=RPI4_DTB_FILES;
 
  {Setup GPIO (Set early to support activity LED)}
  GPIO_REGS_BASE:=BCM2838_GPIO_REGS_BASE;
