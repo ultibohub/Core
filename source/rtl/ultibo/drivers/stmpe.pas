@@ -1,7 +1,7 @@
 {
 ST Microelectronics STMPE Driver.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -603,6 +603,13 @@ type
  TSTMPETouch = record
   {Touch Properties}
   Touch:TTouchDevice;
+  {General Properties}
+  MaxX:Word;                                      {Maximum X value for this device}
+  MaxY:Word;                                      {Maximum Y value for this device}
+  MaxZ:Word;                                      {Maximum Z value for this device}
+  Width:Word;                                     {Screen width for this device}
+  Height:Word;                                    {Screen height for this device}
+  MaxPoints:LongWord;                             {Maximum touch points for this device}
   {STMPE Properties}
   Control:TSTMPEControl;                          {The control information (Chip, I2C, SPI etc) for this device}
   Offsets:TSTMPEOffsets;                          {The register offsets for this device}
@@ -826,6 +833,8 @@ function STMPEGPIOFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 function STMPETouchStart(Touch:PTouchDevice):LongWord;
 function STMPETouchStop(Touch:PTouchDevice):LongWord;
 
+function STMPETouchUpdate(Touch:PTouchDevice):LongWord;
+
 procedure STMPETouchTimer(Touch:PSTMPETouch);
 procedure STMPETouchCallback(Touch:PSTMPETouch;Pin,Trigger:LongWord);
 
@@ -854,7 +863,12 @@ implementation
 var
  {STMPE specific variables}
  STMPEInitialized:Boolean;
- 
+
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+function STMPETouchUpdateConfig(Touch:PSTMPETouch):LongWord; forward;
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -1678,15 +1692,23 @@ begin
    STMPETouch.Touch.TouchState:=TOUCH_STATE_DISABLED;
    STMPETouch.Touch.DeviceStart:=STMPETouchStart;
    STMPETouch.Touch.DeviceStop:=STMPETouchStop;
+   STMPETouch.Touch.DeviceUpdate:=STMPETouchUpdate;
    {Driver}
    STMPETouch.Touch.Properties.Flags:=STMPETouch.Touch.Device.DeviceFlags;
    STMPETouch.Touch.Properties.Width:=Width;
    STMPETouch.Touch.Properties.Height:=Height;
    STMPETouch.Touch.Properties.Rotation:=TOUCH_ROTATION_0;
-   STMPETouch.Touch.Properties.MaxX:=STMPE610_MAX_X;
-   STMPETouch.Touch.Properties.MaxY:=STMPE610_MAX_Y;
-   STMPETouch.Touch.Properties.MaxZ:=STMPE610_MAX_Z;
-   STMPETouch.Touch.Properties.MaxPoints:=STMPE610_MAX_POINTS;
+   STMPETouch.Touch.Properties.MaxX:=0;
+   STMPETouch.Touch.Properties.MaxY:=0;
+   STMPETouch.Touch.Properties.MaxZ:=0;
+   STMPETouch.Touch.Properties.MaxPoints:=0;
+   {General}
+   STMPETouch.Width:=Width;
+   STMPETouch.Height:=Height;
+   STMPETouch.MaxX:=STMPE610_MAX_X;
+   STMPETouch.MaxY:=STMPE610_MAX_Y;
+   STMPETouch.MaxZ:=STMPE610_MAX_Z;
+   STMPETouch.MaxPoints:=STMPE610_MAX_POINTS;
    {STMPE}
    STMPETouch.Control.Chip:=STMPE_CHIP_STMPE610;
    if IRQ <> nil then STMPETouch.Control.IRQ:=IRQ^ else STMPETouch.Control.IRQ:=GPIO_INFO_UNKNOWN;
@@ -1794,15 +1816,23 @@ begin
    STMPETouch.Touch.TouchState:=TOUCH_STATE_DISABLED;
    STMPETouch.Touch.DeviceStart:=STMPETouchStart;
    STMPETouch.Touch.DeviceStop:=STMPETouchStop;
+   STMPETouch.Touch.DeviceUpdate:=STMPETouchUpdate;
    {Driver}
    STMPETouch.Touch.Properties.Flags:=STMPETouch.Touch.Device.DeviceFlags;
    STMPETouch.Touch.Properties.Width:=Width;
    STMPETouch.Touch.Properties.Height:=Height;
    STMPETouch.Touch.Properties.Rotation:=TOUCH_ROTATION_0;
-   STMPETouch.Touch.Properties.MaxX:=STMPE811_MAX_X;
-   STMPETouch.Touch.Properties.MaxY:=STMPE811_MAX_Y;
-   STMPETouch.Touch.Properties.MaxZ:=STMPE811_MAX_Z;
-   STMPETouch.Touch.Properties.MaxPoints:=STMPE811_MAX_POINTS;
+   STMPETouch.Touch.Properties.MaxX:=0;
+   STMPETouch.Touch.Properties.MaxY:=0;
+   STMPETouch.Touch.Properties.MaxZ:=0;
+   STMPETouch.Touch.Properties.MaxPoints:=0;
+   {General}
+   STMPETouch.Width:=Width;
+   STMPETouch.Height:=Height;
+   STMPETouch.MaxX:=STMPE811_MAX_X;
+   STMPETouch.MaxY:=STMPE811_MAX_Y;
+   STMPETouch.MaxZ:=STMPE811_MAX_Z;
+   STMPETouch.MaxPoints:=STMPE811_MAX_POINTS;
    {STMPE}
    STMPETouch.Control.Chip:=STMPE_CHIP_STMPE811;
    if IRQ <> nil then STMPETouch.Control.IRQ:=IRQ^ else STMPETouch.Control.IRQ:=GPIO_INFO_UNKNOWN;
@@ -3159,6 +3189,13 @@ begin
    Exit;
   end;
  
+ {Update Configuration}
+ if STMPETouchUpdateConfig(PSTMPETouch(Touch)) <> ERROR_SUCCESS then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ 
  {Enable Touchscreen}
  if STMPESetBits(@PSTMPETouch(Touch).Control,PSTMPETouch(Touch).Offsets.TSCCtrl,STMPE811_TSC_CTRL_TSC_EN,STMPE811_TSC_CTRL_TSC_EN) <> ERROR_SUCCESS then
   begin
@@ -3220,6 +3257,40 @@ begin
  
  {Return Result}
  Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function STMPETouchUpdate(Touch:PTouchDevice):LongWord;
+{Implementation of TouchDeviceUpdate API for STMPE}
+{Note: Not intended to be called directly by applications, use TouchDeviceUpdate instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Touch}
+ if Touch = nil then Exit;
+
+ {$IF DEFINED(STMPE_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'STMPE: Touch Update');
+ {$ENDIF}
+
+ {Acquire Lock}
+ if MutexLock(Touch.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Update Configuration}
+    Result:=STMPETouchUpdateConfig(PSTMPETouch(Touch));
+   finally
+    {Release the Lock}
+    MutexUnlock(Touch.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+   Exit;
+  end;
 end;
 
 {==============================================================================}
@@ -3322,6 +3393,7 @@ var
  X:Word;
  Y:Word;
  Z:Word;
+ Temp:Word;
  Count:Byte;
  TouchData:PTouchData;
  MouseData:TMouseData;
@@ -3363,6 +3435,27 @@ begin
      X:=(Values[0] shl 4) or ((Values[1] and $F0) shr 4);
      Y:=((Values[1] and $0F) shl 8) or Values[2];
      Z:=Values[3];
+
+     {Check Swap}
+     if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_XY) <> 0 then
+      begin
+       {Swap X/Y}
+       Temp:=X;
+       X:=Y;
+       Y:=Temp;
+      end;
+  
+     {Check Invert}
+     if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_X) <> 0 then
+      begin
+       {Invert X}
+       X:=Touch.MaxX - X;
+      end;
+     if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_Y) <> 0 then
+      begin
+       {Invert Y}
+       Y:=Touch.MaxY - Y;
+      end;
      
      {$IF DEFINED(STMPE_DEBUG) or DEFINED(TOUCH_DEBUG)}
      if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'STMPE:  X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Z=' + IntToStr(Z));
@@ -3380,6 +3473,7 @@ begin
            {Update Touch Data}
            TouchData.Info:=TOUCH_FINGER;
            TouchData.PointID:=1;
+
            {Check Rotation}
            case Touch.Touch.Properties.Rotation of
             TOUCH_ROTATION_0:begin
@@ -3388,9 +3482,9 @@ begin
               TouchData.PositionY:=Y;
              end;
             TOUCH_ROTATION_90:begin
-              {Swap X and Y}
+              {Swap X and Y, Invert Y}
               TouchData.PositionX:=Y;
-              TouchData.PositionY:=X;
+              TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
              end;
             TOUCH_ROTATION_180:begin
               {Invert X and Y}
@@ -3398,13 +3492,12 @@ begin
               TouchData.PositionY:=Touch.Touch.Properties.MaxY - Y;
              end;
             TOUCH_ROTATION_270:begin
-              {Swap and Invert X and Y}
-              TouchData.PositionX:=Touch.Touch.Properties.MaxY - Y;
-              TouchData.PositionY:=Touch.Touch.Properties.MaxX - X;
+              {Swap X and Y, Invert X}
+              TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
+              TouchData.PositionY:=X;
              end;
            end;
            TouchData.PositionZ:=Z;
-           //To Do //Continuing //Calibration
            
            {Update Count}
            Inc(Touch.Touch.Buffer.Count);
@@ -3425,6 +3518,7 @@ begin
       begin     
        {Create Mouse Data}
        MouseData.Buttons:=MOUSE_TOUCH_BUTTON or MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Touch Button, Absolute X and Y}
+
        {Check Rotation}
        case Touch.Touch.Properties.Rotation of
         TOUCH_ROTATION_0:begin
@@ -3433,9 +3527,9 @@ begin
           MouseData.OffsetY:=Y;
          end;
         TOUCH_ROTATION_90:begin
-          {Swap X and Y}
+          {Swap X and Y, Invert Y}
           MouseData.OffsetX:=Y;
-          MouseData.OffsetY:=X;
+          MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
          end;
         TOUCH_ROTATION_180:begin
           {Invert X and Y}
@@ -3443,13 +3537,12 @@ begin
           MouseData.OffsetY:=Touch.Touch.Properties.MaxY - Y;
          end;
         TOUCH_ROTATION_270:begin
-          {Swap and Invert X and Y}
-          MouseData.OffsetX:=Touch.Touch.Properties.MaxY - Y;
-          MouseData.OffsetY:=Touch.Touch.Properties.MaxX - X;
+          {Swap X and Y, Invert X}
+          MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
+          MouseData.OffsetY:=X;
          end;
        end;
        MouseData.OffsetWheel:=0;
-       //To Do //Continuing //Calibration
        
        {Maximum X, Y and Wheel}
        MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
@@ -3749,6 +3842,70 @@ begin
  
  {Set Bits (Disable FIFO Reset)}
  Result:=STMPESetBits(Control,Reg,STMPE811_FIFO_STA_RESET,0);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{STMPE Internal Functions}
+function STMPETouchUpdateConfig(Touch:PSTMPETouch):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Touch}
+ if Touch = nil then Exit;
+
+ {$IF DEFINED(STMPE_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'STMPE: Update Config');
+ {$ENDIF}
+
+ {Check Rotation}
+ case Touch.Touch.Properties.Rotation of
+  TOUCH_ROTATION_0,TOUCH_ROTATION_180:begin
+    {Update Width and Height}
+    Touch.Touch.Properties.Width:=Touch.Width;
+    Touch.Touch.Properties.Height:=Touch.Height;
+
+    {Update Max X and Y}
+    if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_MAX_XY) = 0 then
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxX;
+      Touch.Touch.Properties.MaxY:=Touch.MaxY;
+     end
+    else
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxY;
+      Touch.Touch.Properties.MaxY:=Touch.MaxX;
+     end;
+   end;
+  TOUCH_ROTATION_90,TOUCH_ROTATION_270:begin
+    {Update Width and Height}
+    Touch.Touch.Properties.Width:=Touch.Height;
+    Touch.Touch.Properties.Height:=Touch.Width;
+
+    {Update Max X and Y}
+    if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_MAX_XY) = 0 then
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxY;
+      Touch.Touch.Properties.MaxY:=Touch.MaxX;
+     end
+    else
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxX;
+      Touch.Touch.Properties.MaxY:=Touch.MaxY;
+     end;
+   end;
+ end;
+
+ {Update Max Points}
+ Touch.Touch.Properties.MaxPoints:=Touch.MaxPoints;
+
+ {$IF DEFINED(STMPE_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'STMPE:  Width: ' + IntToStr(Touch.Touch.Properties.Width) + ' Height: ' + IntToStr(Touch.Touch.Properties.Height));
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'STMPE:  Max Points: ' + IntToStr(Touch.Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Touch.Properties.MaxY));
+ {$ENDIF}
+
+ Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}

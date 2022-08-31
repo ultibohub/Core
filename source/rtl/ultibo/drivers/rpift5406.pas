@@ -1,7 +1,7 @@
 {
 Raspberry Pi FT5406 Touch Driver.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -41,15 +41,59 @@ References
 Raspberry Pi FT5406
 ===================
 
- This is the touchscreen driver for the Official Raspberry Pi 7" Touchscreen. While this device uses a
- FocalTech FT5406 10 point capacitive touchscreen controller it is actually connected to the GPU and not
- directly accessible to the ARM processor.
- 
- In order to make the touchscreen data available the GPU provides a memory based interface that can be
- read by polling an address returned from a mailbox call.
- 
- The Linux driver uses a thread to poll the data approximately 60 times per second so this driver does
- something similar.
+ This is the touchscreen driver for the Official Raspberry Pi 7" Touchscreen. While this
+ device uses a FocalTech FT5406 10 point capacitive touchscreen controller it is actually
+ connected to the GPU and not directly accessible to the ARM processor.
+
+ In order to make the touchscreen data available the GPU provides a memory based interface
+ that can be read by polling an address returned from a mailbox call.
+
+ The Linux driver uses a thread to poll the data approximately 60 times per second so this
+ driver does something similar.
+
+ The display can be rotated to the desired position by adding the display_lcd_rotate
+ setting to the config.txt file as below, please see the official documentation at
+ https://www.raspberrypi.com/documentation/computers/config_txt.html for more details.
+
+ No Rotation (Landscape)
+ ----------------------
+
+ display_lcd_rotate=0
+
+ Rotate 90 degrees clockwise (Portrait)
+ ---------------------------------------
+
+ display_lcd_rotate=1
+
+ Rotate 180 degrees clockwise (Landscape)
+ ---------------------------------------
+
+ display_lcd_rotate=2
+
+ Rotate 270 degrees clockwise (Portrait)
+ ----------------------------------------
+
+ display_lcd_rotate=3
+
+ To match the rotation of the touchscreen to the rotation of the display you must call
+ the TouchDeviceControl() API function with the TOUCH_CONTROL_SET_ROTATION request and
+ pass the appropriate touch rotation constant in argument1, eg TOUCH_ROTATION_180.
+
+ The touch device representing the touchscreen can be found by calling the API function
+ TouchDeviceFindByDescription() with "Raspberry Pi FT5406 Touch Controller" as the value
+ of the description parameter.
+
+ The touchscreen rotation values match with the display rotations as follows:
+
+ display_lcd_rotate=0 equals TOUCH_ROTATION_0
+ display_lcd_rotate=1 equals TOUCH_ROTATION_90
+ display_lcd_rotate=2 equals TOUCH_ROTATION_180
+ display_lcd_rotate=3 equals TOUCH_ROTATION_270
+
+ Note that if you use the alternate lcd_rotate setting instead which uses the inbuilt
+ flip functionality within the LCD then you do not need to set the touchscreen rotation
+ as the LCD/GPU automatically reverse the values reported. The lcd_rotate only allows
+ flipping the screen 180 degrees so only lcd_rotate=0 and lcd_rotate=2 are valid values.
 
 }
 
@@ -111,6 +155,13 @@ type
  TRPiFT5406Touch = record
   {Touch Properties}
   Touch:TTouchDevice;
+  {General Properties}
+  MaxX:Word;                      {Maximum X value for this device}
+  MaxY:Word;                      {Maximum Y value for this device}
+  MaxZ:Word;                      {Maximum Z value for this device}
+  Width:Word;                     {Screen width for this device}
+  Height:Word;                    {Screen height for this device}
+  MaxPoints:LongWord;             {Maximum touch points for this device}
   {RPiFT5406 Properties}
   Thread:TThreadHandle;
   Terminate:Boolean;
@@ -133,6 +184,8 @@ procedure RPiFT5406Init;
 function RPiFT5406TouchStart(Touch:PTouchDevice):LongWord;
 function RPiFT5406TouchStop(Touch:PTouchDevice):LongWord;
 
+function RPiFT5406TouchUpdate(Touch:PTouchDevice):LongWord;
+
 function RPiFT5406TouchExecute(Touch:PRPiFT5406Touch):PtrInt;
 
 {==============================================================================}
@@ -148,7 +201,12 @@ implementation
 var
  {RPiFT5406 specific variables}
  RPiFT5406Initialized:Boolean;
- 
+
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+function RPiFT5406UpdateConfig(Touch:PRPiFT5406Touch):LongWord; forward;
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -180,15 +238,23 @@ begin
    RPiFT5406Touch.Touch.TouchState:=TOUCH_STATE_DISABLED;
    RPiFT5406Touch.Touch.DeviceStart:=RPiFT5406TouchStart;
    RPiFT5406Touch.Touch.DeviceStop:=RPiFT5406TouchStop;
+   RPiFT5406Touch.Touch.DeviceUpdate:=RPiFT5406TouchUpdate;
    {Driver}
    RPiFT5406Touch.Touch.Properties.Flags:=RPiFT5406Touch.Touch.Device.DeviceFlags;
    RPiFT5406Touch.Touch.Properties.Width:=RPIFT5406_SCREEN_WIDTH;
    RPiFT5406Touch.Touch.Properties.Height:=RPIFT5406_SCREEN_HEIGHT;
    RPiFT5406Touch.Touch.Properties.Rotation:=TOUCH_ROTATION_0;
-   RPiFT5406Touch.Touch.Properties.MaxX:=RPIFT5406_MAX_X;
-   RPiFT5406Touch.Touch.Properties.MaxY:=RPIFT5406_MAX_Y;
-   RPiFT5406Touch.Touch.Properties.MaxZ:=RPIFT5406_MAX_Z;
-   RPiFT5406Touch.Touch.Properties.MaxPoints:=RPIFT5406_MAX_POINTS;
+   RPiFT5406Touch.Touch.Properties.MaxX:=0;
+   RPiFT5406Touch.Touch.Properties.MaxY:=0;
+   RPiFT5406Touch.Touch.Properties.MaxZ:=0;
+   RPiFT5406Touch.Touch.Properties.MaxPoints:=0;
+   {General}
+   RPiFT5406Touch.Width:=RPIFT5406_SCREEN_WIDTH;
+   RPiFT5406Touch.Height:=RPIFT5406_SCREEN_HEIGHT;
+   RPiFT5406Touch.MaxX:=RPIFT5406_MAX_X;
+   RPiFT5406Touch.MaxY:=RPIFT5406_MAX_Y;
+   RPiFT5406Touch.MaxZ:=RPIFT5406_MAX_Z;
+   RPiFT5406Touch.MaxPoints:=RPIFT5406_MAX_POINTS;
    {RPiFT5406}
    RPiFT5406Touch.Thread:=INVALID_HANDLE_VALUE;
    RPiFT5406Touch.Terminate:=False;
@@ -248,6 +314,10 @@ begin
  if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'RPiFT5406: Touch Start');
  {$ENDIF}
 
+ {Update Configuration}
+ Result:=RPiFT5406UpdateConfig(PRPiFT5406Touch(Touch));
+ if Result <> ERROR_SUCCESS then Exit;
+
  {Create Thread} 
  PRPiFT5406Touch(Touch).Thread:=BeginThread(TThreadFunc(RPiFT5406TouchExecute),Touch,PRPiFT5406Touch(Touch).Thread,THREAD_STACK_DEFAULT_SIZE);
  if PRPiFT5406Touch(Touch).Thread = INVALID_HANDLE_VALUE then
@@ -295,6 +365,40 @@ end;
 
 {==============================================================================}
 
+function RPiFT5406TouchUpdate(Touch:PTouchDevice):LongWord;
+{Implementation of TouchDeviceUpdate API for RPiFT5406 Touch device}
+{Note: Not intended to be called directly by applications, use TouchDeviceUpdate instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Touch}
+ if Touch = nil then Exit;
+
+ {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'RPiFT5406: Touch Update');
+ {$ENDIF}
+
+ {Acquire Lock}
+ if MutexLock(Touch.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Update Configuration}
+    Result:=RPiFT5406UpdateConfig(PRPiFT5406Touch(Touch));
+   finally
+    {Release the Lock}
+    MutexUnlock(Touch.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+   Exit;
+  end;
+end;
+
+{==============================================================================}
+
 function RPiFT5406TouchExecute(Touch:PRPiFT5406Touch):PtrInt;
 {Thread function for the RPiFT5406 Touch controller driver. The thread polls the
  memory touch buffer approximately 60 times per second for new touch data and
@@ -303,6 +407,7 @@ function RPiFT5406TouchExecute(Touch:PRPiFT5406Touch):PtrInt;
 var
  X:Word;
  Y:Word;
+ Temp:Word;
  TouchID:Word;
  EventType:Word;
  Size:LongWord;
@@ -480,7 +585,28 @@ begin
            Y:=((Registers.Point[Count].yh and $F) shl 8) or Registers.Point[Count].yl;
            TouchID:=(Registers.Point[Count].yh shr 4) and $F;
            EventType:=(Registers.Point[Count].yh shr 6) and $03;
-           
+
+           {Check Swap}
+           if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_XY) <> 0 then
+            begin
+             {Swap X/Y}
+             Temp:=X;
+             X:=Y;
+             Y:=Temp;
+            end;
+        
+           {Check Invert}
+           if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_X) <> 0 then
+            begin
+             {Invert X}
+             X:=Touch.MaxX - X;
+            end;
+           if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_Y) <> 0 then
+            begin
+             {Invert Y}
+             Y:=Touch.MaxY - Y;
+            end;
+
            {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
            if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Modified X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' TouchID=' + IntToStr(TouchID) + ' EventType=' + IntToStr(EventType));
            {$ENDIF}
@@ -495,6 +621,9 @@ begin
              if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
               begin
                {For touch report all points}
+               {Update Statistics}
+               Inc(Touch.Touch.ReceiveCount);
+
                {Check Buffer}
                if (Touch.Touch.Buffer.Count < TOUCH_BUFFER_SIZE) then
                 begin
@@ -504,6 +633,7 @@ begin
                    {Update Touch Data}
                    TouchData.Info:=TOUCH_FINGER;
                    TouchData.PointID:=TouchID + 1;
+
                    {Check Rotation}
                    case Touch.Touch.Properties.Rotation of
                     TOUCH_ROTATION_0:begin
@@ -512,9 +642,9 @@ begin
                       TouchData.PositionY:=Y;
                      end;
                     TOUCH_ROTATION_90:begin
-                      {Swap X and Y}
+                      {Swap X and Y, Invert Y}
                       TouchData.PositionX:=Y;
-                      TouchData.PositionY:=X;
+                      TouchData.PositionY:=Touch.Touch.Properties.MaxY - X;
                      end;
                     TOUCH_ROTATION_180:begin
                       {Invert X and Y}
@@ -522,13 +652,12 @@ begin
                       TouchData.PositionY:=Touch.Touch.Properties.MaxY - Y;
                      end;
                     TOUCH_ROTATION_270:begin
-                      {Swap and Invert X and Y}
-                      TouchData.PositionX:=Touch.Touch.Properties.MaxY - Y;
-                      TouchData.PositionY:=Touch.Touch.Properties.MaxX - X;
+                      {Swap X and Y, Invert X}
+                      TouchData.PositionX:=Touch.Touch.Properties.MaxX - Y;
+                      TouchData.PositionY:=X;
                      end;
                    end;
                    TouchData.PositionZ:=0;
-                   //To Do //Continuing //Calibration
                    
                    {Update Count}
                    Inc(Touch.Touch.Buffer.Count);
@@ -550,8 +679,12 @@ begin
                {For mouse report the first point}
                if TouchID = 0 then
                 begin
+                 {Update Statistics}
+                 Inc(Touch.Touch.ReceiveCount);
+
                  {Create Mouse Data}
                  MouseData.Buttons:=MOUSE_TOUCH_BUTTON or MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Touch Button, Absolute X and Y}
+
                  {Check Rotation}
                  case Touch.Touch.Properties.Rotation of
                   TOUCH_ROTATION_0:begin
@@ -560,9 +693,9 @@ begin
                     MouseData.OffsetY:=Y;
                    end;
                   TOUCH_ROTATION_90:begin
-                    {Swap X and Y}
+                    {Swap X and Y, Invert Y}
                     MouseData.OffsetX:=Y;
-                    MouseData.OffsetY:=X;
+                    MouseData.OffsetY:=Touch.Touch.Properties.MaxY - X;
                    end;
                   TOUCH_ROTATION_180:begin
                     {Invert X and Y}
@@ -570,17 +703,16 @@ begin
                     MouseData.OffsetY:=Touch.Touch.Properties.MaxY - Y;
                    end;
                   TOUCH_ROTATION_270:begin
-                    {Swap and Invert X and Y}
-                    MouseData.OffsetX:=Touch.Touch.Properties.MaxY - Y;
-                    MouseData.OffsetY:=Touch.Touch.Properties.MaxX - X;
+                    {Swap X and Y, Invert X}
+                    MouseData.OffsetX:=Touch.Touch.Properties.MaxX - Y;
+                    MouseData.OffsetY:=X;
                    end;
                  end;
                  MouseData.OffsetWheel:=0;
-                 //To Do //Continuing //Calibration
                  
                  {Maximum X, Y and Wheel}
-                 MouseData.MaximumX:=Touch.Touch.Properties.MaxX; {Touch.Touch.Properties.Width}
-                 MouseData.MaximumY:=Touch.Touch.Properties.MaxY; {Touch.Touch.Properties.Height}
+                 MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
+                 MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
                  MouseData.MaximumWheel:=0;
                  
                  {Write Mouse Data}
@@ -612,8 +744,6 @@ begin
              {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
              if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Released TouchID=' + IntToStr(Count));
              {$ENDIF}
-  
-             //To Do //Do we need to update ModifiedPoints ? //See Linux driver //No ?
              
              {Check Flags}
              if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
@@ -659,8 +789,8 @@ begin
                  MouseData.OffsetWheel:=0;
                  
                  {Maximum X, Y and Wheel}
-                 MouseData.MaximumX:=Touch.Touch.Properties.MaxX; {Touch.Touch.Properties.Width}
-                 MouseData.MaximumY:=Touch.Touch.Properties.MaxY; {Touch.Touch.Properties.Height}
+                 MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
+                 MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
                  MouseData.MaximumWheel:=0;
                  
                  {Write Mouse Data}
@@ -692,6 +822,75 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RPiFT5406 Helper Functions}
+
+{==============================================================================}
+{==============================================================================}
+{RPiFT5406 Internal Functions}
+function RPiFT5406UpdateConfig(Touch:PRPiFT5406Touch):LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Touch}
+ if Touch = nil then Exit;
+
+ {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: Update Config');
+ {$ENDIF}
+
+ {Setup Max X, Y and Z}
+ Touch.MaxX:=Touch.Width - 1;
+ Touch.MaxY:=Touch.Height - 1;
+ Touch.MaxZ:=0;
+
+ {Check Rotation}
+ case Touch.Touch.Properties.Rotation of
+  TOUCH_ROTATION_0,TOUCH_ROTATION_180:begin
+    {Update Width and Height}
+    Touch.Touch.Properties.Width:=Touch.Width;
+    Touch.Touch.Properties.Height:=Touch.Height;
+
+    {Update Max X and Y}
+    if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_MAX_XY) = 0 then
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxX;
+      Touch.Touch.Properties.MaxY:=Touch.MaxY;
+     end
+    else
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxY;
+      Touch.Touch.Properties.MaxY:=Touch.MaxX;
+     end;
+   end;
+  TOUCH_ROTATION_90,TOUCH_ROTATION_270:begin
+    {Update Width and Height}
+    Touch.Touch.Properties.Width:=Touch.Height;
+    Touch.Touch.Properties.Height:=Touch.Width;
+
+    {Update Max X and Y}
+    if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_SWAP_MAX_XY) = 0 then
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxY;
+      Touch.Touch.Properties.MaxY:=Touch.MaxX;
+     end
+    else
+     begin
+      Touch.Touch.Properties.MaxX:=Touch.MaxX;
+      Touch.Touch.Properties.MaxY:=Touch.MaxY;
+     end;
+   end;
+ end;
+
+ {Update Max Points}
+ Touch.Touch.Properties.MaxPoints:=Touch.MaxPoints;
+
+ {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Width: ' + IntToStr(Touch.Touch.Properties.Width) + ' Height: ' + IntToStr(Touch.Touch.Properties.Height));
+ if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Max Points: ' + IntToStr(Touch.Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Touch.Properties.MaxY));
+ {$ENDIF}
+
+ Result:=ERROR_SUCCESS;
+end;
 
 {==============================================================================}
 {==============================================================================}

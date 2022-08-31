@@ -5032,6 +5032,22 @@ begin
   begin
    Result.Add('MOUSE_FLAG_PEEK_BUFFER');
   end;
+ if (AFlags and MOUSE_FLAG_SWAP_XY) = MOUSE_FLAG_SWAP_XY then
+  begin
+   Result.Add('MOUSE_FLAG_SWAP_XY');
+  end;
+ if (AFlags and MOUSE_FLAG_INVERT_X) = MOUSE_FLAG_INVERT_X then
+  begin
+   Result.Add('MOUSE_FLAG_INVERT_X');
+  end;
+ if (AFlags and MOUSE_FLAG_INVERT_Y) = MOUSE_FLAG_INVERT_Y then
+  begin
+   Result.Add('MOUSE_FLAG_INVERT_Y');
+  end;
+ if (AFlags and MOUSE_FLAG_SWAP_MAX_XY) = MOUSE_FLAG_SWAP_MAX_XY then
+  begin
+   Result.Add('MOUSE_FLAG_SWAP_MAX_XY');
+  end;
 
  {Check Flags}
  if Result.Count = 0 then

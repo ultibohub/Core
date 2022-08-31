@@ -1,7 +1,7 @@
 {
 PS2 Keyboard/Mouse Controller Support.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -247,7 +247,7 @@ function PS2KeyboardScancodeToModifiers(KeyboardScancode:PPS2KeyboardScancode;In
 
 function MouseSampleRateToPS2SampleRate(Rate:LongWord;var PS2Rate:Byte):LongWord;
 
-function PS2MousePacketToMouseData(MousePacket:PPS2MousePacket;MouseData:PMouseData;Flags:LongWord):LongWord;
+function PS2MousePacketToMouseData(MousePacket:PPS2MousePacket;MouseData:PMouseData;Flags,Rotation:LongWord):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -1495,14 +1495,18 @@ end;
 
 {==============================================================================}
 
-function PS2MousePacketToMouseData(MousePacket:PPS2MousePacket;MouseData:PMouseData;Flags:LongWord):LongWord;
+function PS2MousePacketToMouseData(MousePacket:PPS2MousePacket;MouseData:PMouseData;Flags,Rotation:LongWord):LongWord;
 {Translate a PS/2 Mouse Packet into a Mouse Data structure}
 {MousePacket: Pointer to the PS/2 Mouse Packet received from the mouse}
 {MouseData: Pointer to the Mouse Data structure to return}
 {Flags: The Mouse device flags (eg MOUSE_FLAG_SWAP_BUTTONS)}
+{Rotation: The Mouse device rotation setting (eg MOUSE_ROTATION_180)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  State:LongWord;
+ OffsetX:SmallInt;
+ OffsetY:SmallInt;
+ OffsetTemp:SmallInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1546,18 +1550,63 @@ begin
  
  {Get State}
  State:=MousePacket.MouseBits;
- 
+
  {Get Offset X}
- MouseData.OffsetX:=MousePacket.MouseX - ((State shl 4) and $100);
+ OffsetX:=MousePacket.MouseX - ((State shl 4) and $100);
 
  {Get Offset Y} 
- MouseData.OffsetY:=-(MousePacket.MouseY - ((State shl 3) and $100)); 
- 
+ OffsetY:=-(MousePacket.MouseY - ((State shl 3) and $100));
+
+ {Check Swap}
+ if (Flags and MOUSE_FLAG_SWAP_XY) <> 0 then
+  begin
+   {Swap Offset X/Y}
+   OffsetTemp:=OffsetX;
+   OffsetX:=OffsetY;
+   OffsetY:=OffsetTemp;
+  end;
+
+ {Check Invert}
+ if (Flags and  MOUSE_FLAG_INVERT_X) <> 0 then
+  begin
+   {Invert Offset X}
+   OffsetX:=-OffsetX;
+  end;
+ if (Flags and  MOUSE_FLAG_INVERT_Y) <> 0 then
+  begin
+   {Invert Offset Y}
+   OffsetY:=-OffsetY;
+  end;
+
+ {Check Rotation}
+ case Rotation of
+  MOUSE_ROTATION_0:begin
+    {Get Offset X and Y}
+    MouseData.OffsetX:=OffsetX;
+    MouseData.OffsetY:=OffsetY;
+   end;
+  MOUSE_ROTATION_90:begin
+    {Swap Offset X and Y, Invert Offset X}
+    MouseData.OffsetX:=-OffsetY;
+    MouseData.OffsetY:=OffsetX;
+   end;
+  MOUSE_ROTATION_180:begin
+    {Invert Offset X and Y}
+    MouseData.OffsetX:=-OffsetX;
+    MouseData.OffsetY:=-OffsetY;
+   end;
+  MOUSE_ROTATION_270:begin
+    {Swap Offset X and Y, Invert Offset Y}
+    MouseData.OffsetX:=OffsetY;
+    MouseData.OffsetY:=-OffsetX;
+   end;
+ end;
+
  {Get Offset Wheel}
  MouseData.OffsetWheel:=0;
  //To Do //Intellimouse extensions (see http://www.computer-engineering.org/ps2mouse/)
          //https://stackoverflow.com/questions/60998263/is-the-microsoft-intellimouse-ps-2-packet-format-a-standard-across-all-ps-2-mice
- 
+
  {Maximum X, Y and Wheel}
  MouseData.MaximumX:=0;
  MouseData.MaximumY:=0;

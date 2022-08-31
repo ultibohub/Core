@@ -281,6 +281,8 @@ function TouchDeviceCheck(Touch:PTouchDevice):PTouchDevice;
 function TouchDeviceTypeToString(TouchType:LongWord):String;
 function TouchDeviceStateToString(TouchState:LongWord):String;
 
+function TouchDeviceResolveRotation(ARotation:LongWord):LongWord;
+
 function TouchInsertData(Touch:PTouchDevice;Data:PTouchData;Signal:Boolean):LongWord;
 
 procedure TouchLog(Level:LongWord;Touch:PTouchDevice;const AText:String);
@@ -305,7 +307,11 @@ var
  TouchDeviceTableCount:LongWord;
 
  TouchDeviceDefault:PTouchDevice;
- 
+
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -981,13 +987,14 @@ begin
         end;
        TOUCH_CONTROL_SET_ROTATION:begin
          {Set Rotation}
-         if (Argument1 >= TOUCH_ROTATION_0) and (Argument1 <= TOUCH_ROTATION_270) then
-          begin
-           Touch.Properties.Rotation:=Argument1;
+         case TouchDeviceResolveRotation(Argument1) of
+          TOUCH_ROTATION_0,TOUCH_ROTATION_90,TOUCH_ROTATION_180,TOUCH_ROTATION_270:begin
+            Touch.Properties.Rotation:=Argument1;
 
-           {Request Update}
-           Result:=TouchDeviceUpdate(Touch);
-          end; 
+            {Request Update}
+            Result:=TouchDeviceUpdate(Touch);
+           end;
+         end;
         end;
       end;
      finally
@@ -1116,6 +1123,16 @@ begin
  
  {Check Defaults}
  if TOUCH_MOUSE_DATA_DEFAULT then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or TOUCH_FLAG_MOUSE_DATA;
+ 
+ {Update Properties}
+ Result.Properties.Flags:=Result.Device.DeviceFlags;
+ Result.Properties.Width:=0;
+ Result.Properties.Height:=0;
+ Result.Properties.Rotation:=TOUCH_ROTATION_0;
+ Result.Properties.MaxX:=0;
+ Result.Properties.MaxY:=0;
+ Result.Properties.MaxZ:=0;
+ Result.Properties.MaxPoints:=0;
  
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
@@ -1577,6 +1594,22 @@ end;
 
 {==============================================================================}
 
+function TouchDeviceResolveRotation(ARotation:LongWord):LongWord;
+{Resolve a value of 0, 90, 180 or 270 to a touch rotation constant (eg TOUCH_ROTATION_180)}
+{Note: Also accepts passing the touch rotation constant values directly}
+begin
+ {}
+ case ARotation of
+  90:Result:=TOUCH_ROTATION_90;  
+  180:Result:=TOUCH_ROTATION_180;  
+  270:Result:=TOUCH_ROTATION_270;  
+  else
+   Result:=ARotation;  
+ end;
+end;
+
+{==============================================================================}
+
 function TouchInsertData(Touch:PTouchDevice;Data:PTouchData;Signal:Boolean):LongWord;
 {Insert a TTouchData entry into the touch device buffer}
 {Touch: The touch device to insert data for}
@@ -1697,6 +1730,10 @@ begin
  {}
  TouchLog(TOUCH_LOG_LEVEL_DEBUG,Touch,AText);
 end;
+
+{==============================================================================}
+{==============================================================================}
+{Touch Internal Functions}
 
 {==============================================================================}
 {==============================================================================}

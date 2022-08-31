@@ -1,7 +1,7 @@
 {
 Adafruit PiTFT 3.5" LCD Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -23,12 +23,12 @@ Credits
 
  Information for this unit was obtained from:
 
-  Linux - \arch\arm\boot\dts\overlays\pitft28-resistive-overlay.dts (Note: This is not the correct overlay for this device)
+  Linux - \arch\arm\boot\dts\overlays\pitft35-resistive-overlay.dts
  
 References
 ==========
 
-  Adafruit PiTFT 3.5" LCD
+ Adafruit PiTFT 3.5" LCD
 
   Raspberry Pi A/B
   
@@ -46,10 +46,10 @@ Adafruit PiTFT 3.5" LCD
 =======================
 
  The Adafruit PiTFT 3.5" LCD is a 480 x 320 pixel TFT with resistive touchscreen using a Himax HX8357
- driver and a STMicroelectronics STMPE811 resistive touchscreen controller.
+ driver and a STMicroelectronics STMPE610 resistive touchscreen controller.
  
  This unit ties together the various components needed to make one of these boards work with Ultibo by finding
- the correct SPI device, creating the STMPE811 Touch device, creating the HX8357D Framebuffer device and registering
+ the correct SPI device, creating the STMPE610 Touch device, creating the HX8357D Framebuffer device and registering
  all of it with the correct parameters for the Adafruit board.
 
  Details:
@@ -146,7 +146,7 @@ function PiTFT35Stop(Handle:THandle):Boolean;
 
 {==============================================================================}
 {PiTFT35 Framebuffer Functions}
-//To Do //Continuing //Backlight PWM control (PITFT35_BL_PWM_ENABLE) (PITFT35_LCD_BL_PWM = GPIO_PIN_18)
+//To Do //Backlight PWM control (PITFT35_BL_PWM_ENABLE) (PITFT35_LCD_BL_PWM = GPIO_PIN_18)
 
 {==============================================================================}
 {PiTFT35 Helper Functions}

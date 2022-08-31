@@ -1339,10 +1339,11 @@ var
  AF16X2LCD_AUTOSTART:LongBool = True;           {If True then auto start the AF16x2LCD device on boot (Only if AF16x2LCD unit included)}
 
  {PiTFT28}
- PiTFT28_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT28 device on boot (Only if PiTFT28 unit included)}
-
+ PITFT28_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT28 device on boot (Only if PiTFT28 unit included)}
+ PITFT28_CAPACITIVE_TOUCH:LongBool;             {If True then configure the capacitive touch version of the PiTFT28 (Only if PiTFT28 unit included)}
+ 
  {PiTFT35}
- PiTFT35_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT35 device on boot (Only if PiTFT35 unit included)}
+ PITFT35_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT35 device on boot (Only if PiTFT35 unit included)}
 
  {RPiSenseHat}
  RPISENSE_AUTOSTART:LongBool = True;            {If True then auto start the RPiSenseHat device on boot (Only if RPiSenseHat unit included)}
