@@ -378,6 +378,7 @@ type
   
   FInitialClockGet:Boolean;      {Has the time been obtained at least once}
   FInitialClockCount:LongWord;   {How many times have we tried to obtain the initial clock}
+  FInitialClockRetry:Boolean;    {Should the client setup a worker thread to retry until the initial clock has been set (Default: True)}
   
   FTimerHandle:TTimerHandle;     {Handle for the NTP update timer}
   
@@ -396,6 +397,7 @@ type
   
   procedure SetInitialClockGet(AInitialClockGet:Boolean);
   procedure SetInitialClockCount(AInitialClockCount:LongWord);
+  procedure SetInitialClockRetry(AInitialClockRetry:Boolean);
   
   procedure SetTimerHandle(ATimerHandle:TTimerHandle);
  public
@@ -411,6 +413,7 @@ type
 
   property InitialClockGet:Boolean read FInitialClockGet write SetInitialClockGet;
   property InitialClockCount:LongWord read FInitialClockCount write SetInitialClockCount;
+  property InitialClockRetry:Boolean read FInitialClockRetry write SetInitialClockRetry;
   
   property TimerHandle:TTimerHandle read FTimerHandle write SetTimerHandle;
   
@@ -776,6 +779,7 @@ begin
 
  FInitialClockGet:=False;
  FInitialClockCount:=0;
+ FInitialClockRetry:=True;
  
  FTimerHandle:=INVALID_HANDLE_VALUE;
  
@@ -908,6 +912,18 @@ begin
  if not AcquireLock then Exit;
  
  FInitialClockCount:=AInitialClockCount;
+ 
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TNTPClient.SetInitialClockRetry(AInitialClockRetry:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+ 
+ FInitialClockRetry:=AInitialClockRetry;
  
  ReleaseLock;
 end;
@@ -3291,8 +3307,12 @@ begin
      {Increment Clock Count}
      Client.IncrementInitialClockCount;
      
-     {Schedule Worker}
-     WorkerSchedule(Client.RetryTimeout * Min(Client.InitialClockCount,10),TWorkerTask(NTPUpdateTime),Client,nil);
+     {Check Retry}
+     if Client.InitialClockRetry then
+      begin
+       {Schedule Worker}
+       WorkerSchedule(Client.RetryTimeout * Min(Client.InitialClockCount,10),TWorkerTask(NTPUpdateTime),Client,nil);
+      end; 
     end;
   end;  
 end; 
