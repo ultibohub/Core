@@ -1,7 +1,7 @@
 {
 Ultibo ICMPv6 (Internet Control Message Protocol version 6) unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -589,7 +589,7 @@ begin
           end;
 
          {Check for Timeout}
-         if GetTickCount64 > (StartTime + ATimeout) then
+         if GetTickCount64 >= (StartTime + ATimeout) then
           begin
            {Return Error}
            Result:=SOCKET_ERROR;
@@ -1180,7 +1180,7 @@ begin
         end; 
 
        {Check for Timeout}
-       if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
+       if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
          NetworkSetLastError(WSAETIMEDOUT);
          Exit;
@@ -1285,7 +1285,7 @@ begin
         end; 
 
        {Check for Timeout}
-       if GetTickCount64 > (StartTime + ASocket.SocketOptions.RecvTimeout) then
+       if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
          NetworkSetLastError(WSAETIMEDOUT);
          Exit;
