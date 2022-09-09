@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the Broadcom 2835 System on chip.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1179,6 +1179,8 @@ const
  
  BCM2835_MBOX_TAG_NOTIFY_REBOOT     = $00030048;
  BCM2835_MBOX_TAG_NOTIFY_XHCI_RESET = $00030058;
+
+ BCM2835_MBOX_TAG_GET_BOOT_MODE     = $0003005b; {Get the boot mode that was used by the firmware to load the kernel (1 = SD, 4 = MSD etc)}
  
  BCM2835_MBOX_TAG_GET_REBOOT_FLAGS  = $00030064;
  BCM2835_MBOX_TAG_SET_REBOOT_FLAGS  = $00038064;
@@ -2617,6 +2619,20 @@ type
   1:(Response:TBCM2835MailboxTagGetThrottledResponse);
  end;
  
+ {Get Boot Mode}
+ TBCM2835MailboxTagGetBootModeResponse = record
+  BootMode:LongWord;
+  SignedBoot:LongWord;
+ end;
+
+ PBCM2835MailboxTagGetBootMode = ^TBCM2835MailboxTagGetBootMode;
+ TBCM2835MailboxTagGetBootMode = record
+  Header:TBCM2835MailboxTagHeader;
+  case Integer of
+  0:(Request:TBCM2835MailboxTagNoRequest);
+  1:(Response:TBCM2835MailboxTagGetBootModeResponse);
+ end;
+
  {Allocate Buffer}
  TBCM2835MailboxTagAllocateBufferRequest = record
   Alignment:LongWord; {Bytes}

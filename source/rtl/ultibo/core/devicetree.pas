@@ -1,7 +1,7 @@
 {
 Ultibo Flattened Device Tree (DTB) interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1577,7 +1577,7 @@ begin
  if LongWordBEtoN(DTBProperty.Token) <> DTB_PROP then Exit;
 
  {Check Null}
- if DTBProperty.Value[LongWordBEtoN(DTBProperty.ValueLength)] <> #0 then Exit;
+ if DTBProperty.Value[LongWordBEtoN(DTBProperty.ValueLength) - 1] <> #0 then Exit;
  
  {Get Value}
  Value:=@DTBProperty.Value[0];

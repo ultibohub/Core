@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '1 September 2022';
+ ULTIBO_RELEASE_DATE             = '9 September 2022';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.5.145';
+ ULTIBO_RELEASE_VERSION          = '2.5.155';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 5;
- ULTIBO_RELEASE_VERSION_REVISION = 145;
+ ULTIBO_RELEASE_VERSION_REVISION = 155;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  
@@ -1816,6 +1816,7 @@ const
  LOGGING_FACILITY_PCI        = 38; {PCI log messages}
  LOGGING_FACILITY_VIRTIO     = 39; {VIRTIO log messages}
  LOGGING_FACILITY_BLUETOOTH  = 40; {Bluetooth log messages}
+ LOGGING_FACILITY_JOYSTICK   = 41; {Joystick log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 

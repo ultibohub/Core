@@ -1116,6 +1116,7 @@ begin
  Result.DeviceRead:=nil;
  Result.DeviceWrite:=nil;
  Result.DeviceFlush:=nil;
+ Result.DeviceUpdate:=nil;
  Result.DeviceControl:=nil;
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
@@ -1458,7 +1459,7 @@ begin
  {Check Touch}
  if Touch = nil then
   begin
-   Result:=DeviceNotification(nil,DEVICE_CLASS_Touch,Callback,Data,Notification,Flags);
+   Result:=DeviceNotification(nil,DEVICE_CLASS_TOUCH,Callback,Data,Notification,Flags);
   end
  else
   begin 

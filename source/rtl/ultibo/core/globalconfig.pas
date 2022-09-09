@@ -759,6 +759,9 @@ var
  USB_HUB_MESSAGESLOT_MAXIMUM:LongWord = SIZE_512; {Maximum number of messages for the USB hub messageslot}
  USB_HUB_REGISTER_DRIVER:LongBool = True;         {If True then register the USB HUB driver during boot (Only if USB unit included)(Note: USB cannot function correctly without a hub driver)}
  
+ {USB HID}
+ USB_HID_REGISTER_DRIVER:LongBool = True;      {If True then register the USB HID driver during boot (Only if USBHID unit included)}
+ 
  {USB Keyboard}
  USB_KEYBOARD_POLLING_INTERVAL:LongWord = 10;  {Override the default polling interval for a USB keyboard (Milliseconds)}
  USB_KEYBOARD_REGISTER_DRIVER:LongBool = True; {If True then register the USB Keyboard driver during boot (Only if Keyboard unit included)}

@@ -249,8 +249,9 @@ const
  DEVICE_CLASS_GENERIC         = 56; {A Generic Device}
  DEVICE_CLASS_VIRTIO          = 57; {A VIRTIO Device (eg Block/Network/Memory/Console/Input etc) (Implementing a standard VIRTIO device interface)}
  DEVICE_CLASS_BLUETOOTHHOST   = 58; {A Bluetooth Host Controller (Implementing a standard Bluetooth host interface)}
+ DEVICE_CLASS_JOYSTICK        = 59; {A Joystick or Gamepad Device}
  
- DEVICE_CLASS_MAX             = 58;
+ DEVICE_CLASS_MAX             = 59;
  
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
  
@@ -314,7 +315,8 @@ const
   'DEVICE_CLASS_MEMORY',
   'DEVICE_CLASS_GENERIC',
   'DEVICE_CLASS_VIRTIO',
-  'DEVICE_CLASS_BLUETOOTHHOST');
+  'DEVICE_CLASS_BLUETOOTHHOST',
+  'DEVICE_CLASS_JOYSTICK');
  
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
