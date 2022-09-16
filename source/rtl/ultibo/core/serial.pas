@@ -331,6 +331,8 @@ function SerialLoggingStop(Logging:PLoggingDevice):LongWord;
 
 function SerialLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
 
+function SerialLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
+
 {==============================================================================}
 {RTL Text IO Functions}
 function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
@@ -1640,6 +1642,70 @@ begin
 end;
 
 {==============================================================================}
+
+function SerialLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
+{Implementation of LoggingDeviceSetTarget API for Serial Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceSetTarget instead}
+var
+ Serial:PSerialDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Logging}
+ if Logging = nil then Exit;
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Logging}
+    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+    {Check Target}
+    if Logging.Target <> Target then
+     begin
+      {Check Name}
+      Serial:=SerialDeviceFindByName(Target);
+      if Serial = nil then
+       begin
+        {Check Description}
+        Serial:=SerialDeviceFindByDescription(Target);
+       end;
+
+      {Check Device}
+      if Serial = nil then Exit;
+
+      {Close Serial}
+      SerialDeviceClose(PSerialLogging(Logging).Serial);
+
+      {Set Target}
+      Logging.Target:=Target;
+      UniqueString(Logging.Target);
+
+      {Update Parameters}
+      PSerialLogging(Logging).Serial:=Serial;
+      PSerialLogging(Logging).FlowControl:=SERIAL_FLOW_NONE;
+      SerialLoggingDeviceParameters(Serial,SERIAL_LOGGING_PARAMETERS,PSerialLogging(Logging).BaudRate,PSerialLogging(Logging).Parity,PSerialLogging(Logging).DataBits,PSerialLogging(Logging).StopBits);
+
+      {Open Serial}
+      Result:=SerialDeviceOpen(PSerialLogging(Logging).Serial,PSerialLogging(Logging).BaudRate,PSerialLogging(Logging).DataBits,PSerialLogging(Logging).StopBits,PSerialLogging(Logging).Parity,PSerialLogging(Logging).FlowControl,0,0);
+      if Result <> ERROR_SUCCESS then Exit;
+     end;
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Logging.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {RTL Text IO Functions}
 function SysTextIOReadChar(var ACh:Char;AUserData:Pointer):Boolean;
@@ -2252,6 +2318,8 @@ begin
        Logging.Logging.DeviceStart:=SerialLoggingStart;
        Logging.Logging.DeviceStop:=SerialLoggingStop;
        Logging.Logging.DeviceOutput:=SerialLoggingOutput;
+       Logging.Logging.DeviceSetTarget:=SerialLoggingSetTarget;
+       Logging.Logging.Target:=DeviceGetName(@Serial.Device);
        {Serial}
        Logging.Serial:=Serial;
        Logging.FlowControl:=SERIAL_FLOW_NONE;

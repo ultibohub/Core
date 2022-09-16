@@ -209,6 +209,8 @@ function ConsoleLoggingStop(Logging:PLoggingDevice):LongWord;
 
 function ConsoleLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
 
+function ConsoleLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
+
 {==============================================================================}
 {RTL Text IO Functions}
 function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
@@ -1084,6 +1086,8 @@ end;
 {==============================================================================}
 {Console Logging Functions}
 function ConsoleLoggingStart(Logging:PLoggingDevice):LongWord;
+{Implementation of LoggingDeviceStart API for Console Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceStart instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1120,6 +1124,8 @@ end;
 {==============================================================================}
 
 function ConsoleLoggingStop(Logging:PLoggingDevice):LongWord;
+{Implementation of LoggingDeviceStop API for Console Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceStop instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1155,6 +1161,8 @@ end;
 {==============================================================================}
 
 function ConsoleLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
+{Implementation of LoggingDeviceOutput API for Console Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceOutput instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1186,6 +1194,74 @@ begin
    finally
     MutexUnlock(Logging.Lock);
    end; 
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
+end;
+
+{==============================================================================}
+
+function ConsoleLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
+{Implementation of LoggingDeviceSetTarget API for Console Logging}
+{Note: Not intended to be called directly by applications, use LoggingDeviceSetTarget instead}
+var
+ Console:PConsoleDevice;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Logging}
+ if Logging = nil then Exit;
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+  begin
+   try
+    {Check Logging}
+    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+    {Check Target}
+    if Logging.Target <> Target then
+     begin
+      {Check Name}
+      Console:=ConsoleDeviceFindByName(Target);
+      if Console = nil then
+       begin
+        {Check Description}
+        Console:=ConsoleDeviceFindByDescription(Target);
+       end;
+
+      {Check Device}
+      if Console = nil then Exit;
+
+      {Check Window}
+      if PConsoleLogging(Logging).Window <> INVALID_HANDLE_VALUE then
+       begin
+        {Destroy Window}
+        ConsoleWindowDestroy(PConsoleLogging(Logging).Window);
+       end;
+
+      {Set Target}
+      Logging.Target:=Target;
+      UniqueString(Logging.Target);
+
+      Result:=ERROR_OPERATION_FAILED;
+
+      {Update Parameters}
+      PConsoleLogging(Logging).Console:=Console;
+
+      {Create Window}
+      PConsoleLogging(Logging).Window:=ConsoleWindowCreate(PConsoleLogging(Logging).Console,CONSOLE_LOGGING_POSITION,False);
+      if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
+     end;
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    MutexUnlock(Logging.Lock);
+   end;
   end
  else
   begin
@@ -1739,6 +1815,8 @@ begin
        Logging.Logging.DeviceStart:=ConsoleLoggingStart;
        Logging.Logging.DeviceStop:=ConsoleLoggingStop;
        Logging.Logging.DeviceOutput:=ConsoleLoggingOutput;
+       Logging.Logging.DeviceSetTarget:=ConsoleLoggingSetTarget;
+       Logging.Logging.Target:=DeviceGetName(@Console.Device);
        {Console}
        Logging.Console:=Console;
        Logging.Window:=INVALID_HANDLE_VALUE;
