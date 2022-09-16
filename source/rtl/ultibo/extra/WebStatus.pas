@@ -4112,7 +4112,7 @@ function TWebStatusThreadList.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;
 var
  Action:String;
  Handle:THandle;
- Count:LongWord;
+ Count:Integer;
  WorkBuffer:String;
  WorkTime:TDateTime;
  FlagNames:TStringList;
@@ -5768,7 +5768,7 @@ var
  Id:LongWord;
  Action:String;
  Device:PDevice;
- Count:LongWord;
+ Count:Integer;
  WorkBuffer:String;
  Data:TWebStatusData;
  FlagNames:TStringList;
@@ -7287,7 +7287,7 @@ function TWebStatusUSB.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
 var
  Id:LongWord;
  Action:String;
- Count:LongWord;
+ Count:Integer;
  WorkBuffer:String;
  Data:TWebStatusData;
  FlagNames:TStringList;
@@ -8588,7 +8588,7 @@ function TWebStatusMMC.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
 var
  Id:LongWord;
  Action:String;
- Count:LongWord;
+ Count:Integer;
  WorkBuffer:String;
  Data:TWebStatusData;
  Names:TStringList;
@@ -8596,7 +8596,7 @@ var
  
  MMCDevice:PMMCDevice;
  SDHCIHost:PSDHCIHost;
- SDIODevice:PSDIODevice;
+ SDIOFunction:PSDIOFunction;
 begin
  {}
  Result:=False;
@@ -8710,35 +8710,53 @@ begin
 
      AddBlank(AResponse);
      
-     AddItem(AResponse,'EraseSize:',IntToStr(MMCDevice.EraseSize));
-     AddItem(AResponse,'EraseShift:',IntToStr(MMCDevice.EraseShift));
-     AddItem(AResponse,'EraseArgument:',IntToHex(MMCDevice.EraseArgument,8));
-     AddItem(AResponse,'PreferredEraseSize:',IntToStr(MMCDevice.PreferredEraseSize));
-     AddItem(AResponse,'EnhancedStrobe:',BooleanToString(MMCDevice.EnhancedStrobe));
+     AddItem(AResponse,'Erase Size:',IntToStr(MMCDevice.EraseSize));
+     AddItem(AResponse,'Erase Shift:',IntToStr(MMCDevice.EraseShift));
+     AddItem(AResponse,'Erase Argument:',IntToHex(MMCDevice.EraseArgument,8));
+     AddItem(AResponse,'Preferred Erase Size:',IntToStr(MMCDevice.PreferredEraseSize));
+     AddItem(AResponse,'Enhanced Strobe:',BooleanToString(MMCDevice.EnhancedStrobe));
      AddBlank(AResponse);
 
-     case MMCDevice.Device.DeviceType of
-      MMC_TYPE_SDIO,MMC_TYPE_SD_COMBO:begin
-        SDIODevice:=PSDIODevice(MMCDevice);
-        AddItem(AResponse,'State:',SDIODeviceStateToString(SDIODevice.SDIOState));
-        AddItem(AResponse,'Status:',SDIODeviceStatusToString(SDIODevice.SDIOStatus));
-        //To Do //TestingSDIO
-        AddBlank(AResponse);
-        
-        WorkBuffer:='';
-        if SDIODevice.Host <> nil then WorkBuffer:=DeviceGetName(@SDIODevice.Host);
-        AddItem(AResponse,'Host:',WorkBuffer);
-
-        WorkBuffer:='';
-        if SDIODevice.Driver <> nil then WorkBuffer:=DriverGetName(@SDIODevice.Driver.Driver);
-        AddItem(AResponse,'Driver:',WorkBuffer);
-        AddBlank(AResponse);
-       end;
-     end;  
-     
      WorkBuffer:='';
      if MMCDevice.Storage <> nil then WorkBuffer:=DeviceGetName(@MMCDevice.Storage.Device);
      AddItem(AResponse,'Storage:',WorkBuffer);
+
+     case MMCDevice.Device.DeviceType of
+      MMC_TYPE_SDIO,MMC_TYPE_SD_COMBO:begin
+        AddBlank(AResponse);
+        AddBold(AResponse,'SDIO Functions','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Count:',IntToStr(MMCDevice.SDIOCount));
+        AddBlank(AResponse);
+        
+        for Count:=1 to SDIO_MAX_FUNCTIONS do
+         begin
+          SDIOFunction:=SDIOFunctionFind(MMCDevice,Count);
+          if SDIOFunction <> nil then
+           begin
+            AddItem(AResponse,'Number:',IntToStr(SDIOFunction.Number));
+            AddItem(AResponse,'State:',SDIOFunctionStateToString(SDIOFunction.SDIOState));
+            AddItem(AResponse,'Status:',SDIOFunctionStatusToString(SDIOFunction.SDIOStatus));
+            AddItem(AResponse,'Class Id:',IntToHex(SDIOFunction.ClassId,2));
+            AddItem(AResponse,'Vendor Id:',IntToHex(SDIOFunction.VendorId,4));
+            AddItem(AResponse,'Device Id:',IntToHex(SDIOFunction.DeviceId,4));
+            AddItem(AResponse,'Block Size:',IntToStr(SDIOFunction.BlockSize));
+            AddItem(AResponse,'Max Block Size:',IntToStr(SDIOFunction.MaxBlockSize));
+            AddItem(AResponse,'Enable Timeout:',IntToStr(SDIOFunction.EnableTimeout));
+            
+            WorkBuffer:='';
+            if SDIOFunction.Driver <> nil then WorkBuffer:=DriverGetName(@SDIOFunction.Driver.Driver);
+            AddItem(AResponse,'Driver:',WorkBuffer);
+            
+            WorkBuffer:='';
+            if Assigned(SDIOFunction.Handler) then WorkBuffer:=PtrToHex(@SDIOFunction.Handler);
+            AddItem(AResponse,'Interrupt Handler:',WorkBuffer);
+
+            AddBlank(AResponse);
+           end;
+         end;
+       end;
+     end;  
      
      FlagNames.Free;
     end
@@ -8966,7 +8984,7 @@ begin
      AddItem(AResponse,'Interrupt Count:',IntToStr(SDHCIHost.InterruptCount));
      AddItem(AResponse,'Data Interrupt Count:',IntToStr(SDHCIHost.DataInterruptCount));
      AddItem(AResponse,'Command Interrupt Count:',IntToStr(SDHCIHost.CommandInterruptCount));
-    
+
      FlagNames.Free;
     end
    else
@@ -9092,7 +9110,7 @@ var
  Id:LongWord;
  Name:String;
  Action:String;
- Count:LongWord;
+ Count:Integer;
  WorkBuffer:String;
  Data:TWebStatusData;
  FlagNames:TStringList;
@@ -9293,7 +9311,7 @@ begin
      else if Transport.Name = 'IP' then
       begin
        {GetNumberOfInterfaces}
-       GetNumberOfInterfaces(Count);
+       GetNumberOfInterfaces(LongWord(Count));
        AddBlank(AResponse);
        AddItem(AResponse,'Number of Interfaces:',IntToStr(Count));
        
@@ -9325,7 +9343,7 @@ begin
         end;
        
        {GetNumberOfInterfaces}
-       GetNumberOfInterfaces(Count);
+       GetNumberOfInterfaces(LongWord(Count));
        
        {GetIpAddrTable}
        if Count > 0 then
@@ -10627,7 +10645,7 @@ end;
 
 function TWebStatusPageTables.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 var
- Count:LongWord;
+ Count:Integer;
  Address:PtrUInt;
  Repeated:LongWord;
  FlagNames:TStringList;
@@ -12944,7 +12962,7 @@ end;
 
 function WebStatusHandleEnumerate(Handle:PHandleEntry;Data:Pointer):LongWord;
 var
- Count:LongWord;
+ Count:Integer;
  FlagNames:TStringList;
  Document:TWebStatusSub;
  Response:THTTPServerResponse;

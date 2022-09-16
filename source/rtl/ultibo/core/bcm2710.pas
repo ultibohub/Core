@@ -1,7 +1,7 @@
 {
 Ultibo BCM2710 interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -993,6 +993,9 @@ procedure BCM2710UART0DisableInterrupt(UART:PBCM2710UART0Device;Interrupt:LongWo
 function BCM2710SDHCIHostStart(SDHCI:PSDHCIHost):LongWord;
 function BCM2710SDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
 
+function BCM2710SDHCIHostLock(SDHCI:PSDHCIHost):LongWord;
+function BCM2710SDHCIHostUnlock(SDHCI:PSDHCIHost):LongWord;
+
 function BCM2710SDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
 function BCM2710SDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; 
 function BCM2710SDHCIHostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord; 
@@ -1822,6 +1825,8 @@ begin
      BCM2710SDHCIHost.SDHCI.SDHCIState:=SDHCI_STATE_DISABLED;
      BCM2710SDHCIHost.SDHCI.HostStart:=BCM2710SDHCIHostStart;
      BCM2710SDHCIHost.SDHCI.HostStop:=BCM2710SDHCIHostStop;
+     BCM2710SDHCIHost.SDHCI.HostLock:=BCM2710SDHCIHostLock;
+     BCM2710SDHCIHost.SDHCI.HostUnlock:=BCM2710SDHCIHostUnlock;
      BCM2710SDHCIHost.SDHCI.HostReadByte:=BCM2710SDHCIHostReadByte;
      BCM2710SDHCIHost.SDHCI.HostReadWord:=BCM2710SDHCIHostReadWord;
      BCM2710SDHCIHost.SDHCI.HostReadLong:=BCM2710SDHCIHostReadLong;
@@ -1839,6 +1844,8 @@ begin
      BCM2710SDHCIHost.SDHCI.HostPrepareDMA:=nil;
      BCM2710SDHCIHost.SDHCI.HostStartDMA:=nil;
      BCM2710SDHCIHost.SDHCI.HostStopDMA:=nil;
+     BCM2710SDHCIHost.SDHCI.HostSetupCardIRQ:=nil;
+     BCM2710SDHCIHost.SDHCI.HostCompleteCardIRQ:=nil;
      BCM2710SDHCIHost.SDHCI.DeviceInitialize:=nil;
      BCM2710SDHCIHost.SDHCI.DeviceDeinitialize:=nil;
      BCM2710SDHCIHost.SDHCI.DeviceGetCardDetect:=BCM2710MMCDeviceGetCardDetect;
@@ -8726,6 +8733,50 @@ end;
 
 {==============================================================================}
 
+function BCM2710SDHCIHostLock(SDHCI:PSDHCIHost):LongWord;
+{Implementation of SDHCIHostLock API for BCM2710 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostLock instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+
+ if BCM2710SDHCI_FIQ_ENABLED then
+  begin
+   Result:=SpinLockIRQFIQ(SDHCI.Spin);
+  end
+ else
+  begin
+   Result:=SpinLockIRQ(SDHCI.Spin);
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2710SDHCIHostUnlock(SDHCI:PSDHCIHost):LongWord;
+{Implementation of SDHCIHostUnlock API for BCM2710 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostUnlock instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+
+ if BCM2710SDHCI_FIQ_ENABLED then
+  begin
+   Result:=SpinUnlockIRQFIQ(SDHCI.Spin);
+  end
+ else
+  begin
+   Result:=SpinUnlockIRQ(SDHCI.Spin);
+  end;
+end;
+
+{==============================================================================}
+
 function BCM2710SDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
 {Implementation of SDHCIHostReadByte API for BCM2710 SDHCI}
 {Note: Not intended to be called directly by applications, use SDHCIHostReadByte instead}
@@ -9066,7 +9117,15 @@ begin
      if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI BCM2710 Card Interrupt (InterruptMask=' + IntToHex(InterruptMask,8) + ')');
      {$ENDIF}
      
-     //To Do //Signal another thread ? //Is this only for SDIO ?
+     {Disable Interrupt}
+     SDHCI.Interrupts:=SDHCI.Interrupts and not(SDHCI_INT_CARD_INT);
+     
+     {Update Interrupts}
+     SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
+     SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
+     
+     {Dispatch Interrupt}
+     SDIOHostDispatchInterrupt(SDHCI,not(BCM2710SDHCI_FIQ_ENABLED),BCM2710SDHCI_FIQ_ENABLED);
     end;
    
    {Check for unexpected interrupts}

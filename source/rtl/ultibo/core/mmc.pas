@@ -1,7 +1,7 @@
 {
 Ultibo MMC/SD interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -113,7 +113,7 @@ This is similar in model to USB and other interfaces in Ultibo, where the generi
 module to register with it in order to communicate with platform specific devices.
 
 The SD/MMC interfaces are normally 2 tier (ie Host and Device) whereas the USB interface is 3 tier (Host, Device and Driver)
-however SDIO support adds a driver model to encapsulate support for devices which can provide a variety of functionality
+however SDIO support adds a driver model to encapsulate support for device functions which can provide a variety of functionality
 including WiFi, Bluetooth, Ethernet and others.
 
 }
@@ -135,18 +135,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,S
         
         // Boot //mmc_boot_partition_size_change / mmc_set_boot_bus_width / mmc_set_part_conf / mmc_set_rst_n_function
         // RPMB //mmc_rpmb_set_key /  mmc_rpmb_get_counter / mmc_rpmb_read / mmc_rpmb_write
-             
-//To Do //Note: Need to expand this interface to allow SDIO support
-        //      SDIO drivers (PSDIODriver) can register with this interface and be called when an SDIO device (PSDIODevice) is
-        //      found to see if they support it. (eg BCM4330 WiFi / Bluetooth). Similar in concept to USB.
-                       
- //To Do      //SDIO Detect/Initialize
-              //UHS-I and II Initialize  (Tuning etc)
-              //Host/Device Flags (Decode OCR/CID/CSD/SCR/SSR etc)
-              //Host/Device Capabilities (specifically Device) (Decode OCR/CID/CSD/SCR/SSR etc)
+                      
+//To Do //UHS-I and II Initialize  (Tuning etc)
+        //Host/Device Flags (Decode OCR/CID/CSD/SCR/SSR etc)
+        //Host/Device Capabilities (specifically Device) (Decode OCR/CID/CSD/SCR/SSR etc)
+        //Device Voltages (Decode OCR)
            
-              //Device Voltages (Decode OCR)
-              
+//To Do //TestingSDIO
+        //Update TPL18XSDHCIHost.Lock in PL18X to use the TSDHCIHost.Spin now it has been added
+        //Update TBCMSDHOSTHost.Lock in BCMSDHOST to use the TSDHCIHost.Spin now it has been added
+        
+//To Do //TestingSDIO
+        //Locks around some SDIOFunction handling (Interrupt etc)
+                       
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -207,7 +208,7 @@ const
  MMC_FLAG_NON_REMOVABLE     = $00000400;  {Device is non removable, only check for presence once}
  MMC_FLAG_SET_BLOCK_COUNT   = $00000800;  {Device supports CMD23 (Set Block Count)}
 
- {MMC/SD Status Codes} 
+ {MMC/SD/SDIO Status Codes} 
  MMC_STATUS_SUCCESS                   = 0;  {Function successful}
  MMC_STATUS_TIMEOUT                   = 1;  {The operation timed out}
  MMC_STATUS_NO_MEDIA                  = 2;  {No media present in device}
@@ -218,12 +219,21 @@ const
  MMC_STATUS_OUT_OF_MEMORY             = 7;  {No memory available for operation}
  MMC_STATUS_UNSUPPORTED_REQUEST       = 8;  {The request is unsupported}
  MMC_STATUS_NOT_PROCESSED             = 9;  {The MMC transfer has not yet been processed}
- MMC_STATUS_DEVICE_DETACHED           = 10; {SDIO device was detached}
- MMC_STATUS_DEVICE_UNSUPPORTED        = 11; {SDIO device is unsupported by the driver}
- MMC_STATUS_NOT_BOUND                 = 12; {SDIO device is not bound to a driver}
- MMC_STATUS_ALREADY_BOUND             = 13; {SDIO device is already bound to a driver}
+ MMC_STATUS_OPERATION_FAILED          = 10; {The operation was not able to be completed}
+ MMC_STATUS_DEVICE_DETACHED           = 11; {SDIO device was detached}
+ MMC_STATUS_DEVICE_UNSUPPORTED        = 12; {SDIO device is unsupported by the driver}
+ MMC_STATUS_NOT_BOUND                 = 13; {SDIO device is not bound to a driver}
+ MMC_STATUS_ALREADY_BOUND             = 14; {SDIO device is already bound to a driver}
+ MMC_STATUS_NOT_READY                 = 15; {The device is not ready yet, retry again later}
  
- {MMC/SD Versions}
+ {MMC/SD/SDIO Versions}
+ SDIO_VERSION_SDIO   = $00040000;
+ SDIO_VERSION_1_00   = (SDIO_VERSION_SDIO or $0100);
+ SDIO_VERSION_1_10   = (SDIO_VERSION_SDIO or $010a);
+ SDIO_VERSION_1_20   = (SDIO_VERSION_SDIO or $0114);
+ SDIO_VERSION_2_00   = (SDIO_VERSION_SDIO or $0200);
+ SDIO_VERSION_3_00   = (SDIO_VERSION_SDIO or $0300);
+ 
  SD_VERSION_SD       = $00020000;
  SD_VERSION_1_0      = (SD_VERSION_SD or $0100);
  SD_VERSION_1_10     = (SD_VERSION_SD or $010a);
@@ -295,7 +305,7 @@ const
  MMC_CAP2_HS400                     = (MMC_CAP2_HS400_1_8V or MMC_CAP2_HS400_1_2V);
  MMC_CAP2_HSX00_1_8V                = (MMC_CAP2_HS200_1_8V_SDR or MMC_CAP2_HS400_1_8V);
  MMC_CAP2_HSX00_1_2V                = (MMC_CAP2_HS200_1_2V_SDR or MMC_CAP2_HS400_1_2V);
- MMC_CAP2_SDIO_IRQ_NOTHREAD         = (1 shl 17);
+ MMC_CAP2_SDIO_IRQ_NOTHREAD         = (1 shl 17); {Don't create a thread to poll for SDIO IRQ}
  MMC_CAP2_NO_WRITE_PROTECT          = (1 shl 18); {No physical write protect pin, assume that card is always read-write}
  MMC_CAP2_NO_SDIO                   = (1 shl 19); {Do not send SDIO commands during initialization}
  MMC_CAP2_HS400_ES                  = (1 shl 20); {Host supports enhanced strobe}
@@ -1209,7 +1219,7 @@ const
 {==============================================================================}
 const
  {SDIO specific constants}
- {SDIO Device States}
+ {SDIO Function States}
  SDIO_STATE_DETACHED  = 0;
  SDIO_STATE_DETACHING = 1;
  SDIO_STATE_ATTACHING = 2;
@@ -1217,20 +1227,20 @@ const
 
  SDIO_STATE_MAX       = 3;
  
- {SDIO Device State Names}
+ {SDIO Function State Names}
  SDIO_STATE_NAMES:array[SDIO_STATE_DETACHED..SDIO_STATE_MAX] of String = (
   'SDIO_STATE_DETACHED',
   'SDIO_STATE_DETACHING',
   'SDIO_STATE_ATTACHING',
   'SDIO_STATE_ATTACHED');
  
- {SDIO Device Status}
+ {SDIO Function Status}
  SDIO_STATUS_UNBOUND   = 0; 
  SDIO_STATUS_BOUND     = 1;
  
  SDIO_STATUS_MAX       = 1;
  
- {SDIO Device Status Names}
+ {SDIO Function Status Names}
  SDIO_STATUS_NAMES:array[SDIO_STATUS_UNBOUND..SDIO_STATUS_MAX] of String = (
   'SDIO_STATUS_UNBOUND',
   'SDIO_STATUS_BOUND');
@@ -1288,10 +1298,10 @@ const
  SDIO_CCCR_IORx		= $03;
  SDIO_CCCR_IENx		= $04;	{Function/Master Interrupt Enable}
  SDIO_CCCR_INTx		= $05;	{Function Interrupt Pending}
- SDIO_CCCR_ABORT	= $06;	{function abort/card reset}
- SDIO_CCCR_IF		= $07;	{bus interface controls}
+ SDIO_CCCR_ABORT	= $06;	{Function abort/card reset}
+ SDIO_CCCR_IF		= $07;	{Bus interface controls}
  SDIO_CCCR_CAPS		= $08;
- SDIO_CCCR_CIS		= $09;	{common CIS pointer (3 bytes)}
+ SDIO_CCCR_CIS		= $09;	{Common CIS pointer (3 bytes)}
  {Following 4 regs are valid only if SBS is set}
  SDIO_CCCR_SUSPEND	= $0c;
  SDIO_CCCR_SELx		= $0d;
@@ -1334,13 +1344,13 @@ const
  SDIO_BUS_CD_DISABLE     = $80;	{disable pull-up on DAT3 (pin 1)}
  
  {SDIO CCCR CAPS Register values} 
- SDIO_CCCR_CAP_SDC	= $01;	{can do CMD52 while data transfer}
- SDIO_CCCR_CAP_SMB	= $02;	{can do multi-block xfers (CMD53)}
- SDIO_CCCR_CAP_SRW	= $04;	{supports read-wait protocol}
- SDIO_CCCR_CAP_SBS	= $08;	{supports suspend/resume}
- SDIO_CCCR_CAP_S4MI	= $10;	{interrupt during 4-bit CMD53}
- SDIO_CCCR_CAP_E4MI	= $20;	{enable ints during 4-bit CMD53}
- SDIO_CCCR_CAP_LSC	= $40;	{low speed card}
+ SDIO_CCCR_CAP_SDC	= $01;	{Can do CMD52 while data transfer}
+ SDIO_CCCR_CAP_SMB	= $02;	{Can do multi-block xfers (CMD53)}
+ SDIO_CCCR_CAP_SRW	= $04;	{Supports read-wait protocol}
+ SDIO_CCCR_CAP_SBS	= $08;	{Supports suspend/resume}
+ SDIO_CCCR_CAP_S4MI	= $10;	{Interrupt during 4-bit CMD53}
+ SDIO_CCCR_CAP_E4MI	= $20;	{Enable ints during 4-bit CMD53}
+ SDIO_CCCR_CAP_LSC	= $40;	{Low speed card}
  SDIO_CCCR_CAP_4BLS	= $80;	{4 bit low speed card}
  
  {SDIO CCCR POWER Register values} 
@@ -1376,18 +1386,18 @@ const
  SDIO_DTSx_SET_TYPE_D	= (3 shl SDIO_DRIVE_DTSx_SHIFT);
  
  {SDIO Function Basic Registers (FBR)}
- //SDIO_FBR_BASE(f)	((f) * $100) {base of function f's FBRs}
+ {SDIO_FBR_BASE(f)	((f) * $100)} {Base of function f's FBRs}
  SDIO_FBR_STD_IF		= $00;
  SDIO_FBR_STD_IF_EXT	= $01;
  SDIO_FBR_POWER		    = $02;
  SDIO_FBR_CIS		    = $09;	{CIS pointer (3 bytes)}
  SDIO_FBR_CSA		    = $0C;	{CSA pointer (3 bytes)}
  SDIO_FBR_CSA_DATA	    = $0F;
- SDIO_FBR_BLKSIZE	    = $10;	{block size (2 bytes)}
+ SDIO_FBR_BLKSIZE	    = $10;	{Block size (2 bytes)}
  
  {SDIO FBR IF Register values}
- SDIO_FBR_SUPPORTS_CSA	= $40;	{supports Code Storage Area}
- SDIO_FBR_ENABLE_CSA	= $80;	{enable Code Storage Area}
+ SDIO_FBR_SUPPORTS_CSA	= $40;	{Supports Code Storage Area}
+ SDIO_FBR_ENABLE_CSA	= $80;	{Enable Code Storage Area}
  
  {SDIO FBR POWER Register values}
  SDIO_FBR_POWER_SPS	= $01;	{Supports Power Selection}
@@ -1395,7 +1405,7 @@ const
  
  {SDIO Function Classes}
  SDIO_CLASS_NONE   = $00; {Not a SDIO standard interface}
- SDIO_CLASS_UART   = $01; {standard UART interface}
+ SDIO_CLASS_UART   = $01; {Standard UART interface}
  SDIO_CLASS_BT_A   = $02; {Type-A BlueTooth std interface}
  SDIO_CLASS_BT_B   = $03; {Type-B BlueTooth std interface}
  SDIO_CLASS_GPS    = $04; {GPS standard interface}
@@ -1507,8 +1517,22 @@ const
  SDIO_DEVICE_ID_SIANO_STELLAR           = $5347;
  
  SDIO_DEVICE_ID_TI_WL1251               = $9066;
+
+ {SDIO CIS Tuple Codes}
+ CISTPL_NULL = $00;
+ CISTPL_CHECKSUM = $10;
+ CISTPL_VERS_1 = $15;
+ CISTPL_ALTSTR = $16;
+ CISTPL_MANFID = $20;
+ CISTPL_FUNCID = $21;
+ CISTPL_FUNCE = $22;
+ CISTPL_SDIO_STD = $91;
+ CISTPL_SDIO_EXT = $92;
+ CISTPL_END = $FF;
  
  SDIO_MAX_FUNCTIONS = 7;
+ 
+ SDIO_READ_CIS_TIMEOUT_MS = (10 * 1000); {10 seconds}
  
 {==============================================================================}
 const
@@ -1847,7 +1871,7 @@ const
  SDHCI_QUIRK2_BROKEN_HOST_CONTROL               = (1 shl 5); {Controller has a non-standard host control register}
  SDHCI_QUIRK2_BROKEN_HS200                      = (1 shl 6); {Controller does not support HS200}
  SDHCI_QUIRK2_BROKEN_DDR50                      = (1 shl 7); {Controller does not support DDR50}
- SDHCI_QUIRK2_STOP_WITH_TC                      = (1 shl 8); {Stop command(CMD12) can set Transfer Complete when not using MMC_RSP_BUSY}
+ SDHCI_QUIRK2_STOP_WITH_TC                      = (1 shl 8); {Stop command (CMD12) can set Transfer Complete when not using MMC_RSP_BUSY}
  SDHCI_QUIRK2_BROKEN_64_BIT_DMA                 = (1 shl 9); {Controller does not support 64-bit DMA}
  SDHCI_QUIRK2_CLEAR_TRANSFERMODE_REG_BEFORE_CMD = (1 shl 10); {Need clear transfer mode register before send cmd}
  SDHCI_QUIRK2_CAPS_BIT63_FOR_HS400              = (1 shl 11); {Capability register bit-63 indicates HS400 support}
@@ -2173,6 +2197,10 @@ type
  
  {MMC Device}
  PMMCDevice = ^TMMCDevice;
+ PSDIOCCCR = ^TSDIOCCCR;         {Forward declared to satisfy MMCDevice}
+ PSDIOCIS = ^TSDIOCIS;           {Forward declared to satisfy MMCDevice}
+ PSDIOTuple = ^TSDIOTuple;       {Forward declared to satisfy MMCDevice}
+ PSDIOFunction = ^TSDIOFunction; {Forward declared to satisfy MMCDevice}
   
  {MMC Enumeration Callback}
  TMMCEnumerate = function(MMC:PMMCDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -2237,6 +2265,13 @@ type
   SDStatusData:TSDStatusData;
   SDSwitchData:TSDSwitchData;
   SDConfigurationData:TSDConfigurationData;
+  {SDIO Properties}
+  CCCR:PSDIOCCCR;                                  {SDIO Common Card Register Information}
+  CIS:PSDIOCIS;                                    {SDIO Common CIS (Card Information Structure) Information}
+  Tuples:PSDIOTuple;                               {SDIO CIS (Card Information Structure) tuples on this MMC}
+  SDIOCount:LongWord;                              {SDIO function count for this MMC (Where Applicable)}
+  SDIOFunctions:array[0..SDIO_MAX_FUNCTIONS - 1] of PSDIOFunction; {SDIO functions on this MMC (Where Applicable)}
+  SDIOInterruptFunction:PSDIOFunction;             {SDIO function for all interrupts (If only one interrupt is registered)}
   {Storage Properties}
   Storage:PStorageDevice;                          {The Storage entry for this MMC (Where Applicable)}
   {Internal Properties}                                                                        
@@ -2249,59 +2284,84 @@ type
  {SD specific types}
  
 {==============================================================================}
-type
+{type}
  {SDIO specific types}
- {SDIO Device}
- PSDIODriver = ^TSDIODriver;               {Forward declared to satisfy SDIODevice}
- FSDIOFunction = ^TSDIOFunction;           {Forward declared to satisfy SDIODevice}
- PSDIODevice = ^TSDIODevice;
- 
- {SDIO Device Bind Callback}
- TSDIODeviceBind = function(Device:PSDIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- {SDIO Device Unbind Callback}
- TSDIODeviceUnbind = function(Device:PSDIODevice;Driver:PSDIODriver):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- {SDIO Device Enumeration Callback}
- TSDIODeviceEnumerate = function(Device:PSDIODevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- {SDIO Device Notification Callback}
- TSDIODeviceNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
-
- {SDIO Device Methods}
-  {None}
- 
- TSDIODevice = record 
-  {MMC Properties}
-  MMC:TMMCDevice;                            {The MMC device entry for this SDIO device}
+ {PSDIOCCCR = ^TSDIOCCCR;} {Declared above for MMCDevice}
+ TSDIOCCCR = record
   {SDIO Properties}                           
-  SDIOState:LongWord;                        {SDIO device state (eg SDIO_STATE_ATTACHED)}
-  SDIOStatus:LongWord;                       {SDIO device status (eg SDIO_STATUS_BOUND)}
-  //To Do
-  Host:PDevice;                              {Host controller this SDIO device is connected to}
-  Driver:PSDIODriver;                        {Driver this SDIO device is bound to, if any} 
-  
+  CCCRVersion:Byte;                          {CCCR (Card Common Control Register) Version (00h)}
+  SDIOVersion:Byte;                          {SDIO Specification Version (00h)}
+  SDVersion:Byte;                            {SD Specification Version (04h)}
+  CCCRCapabilities:Byte;                     {CCCR Capabilities Register (08h)}
+  CCCRPowerControl:Byte;                     {CCCR Power Control Register (12h)}
+  CCCRBusSpeed:Byte;                         {CCCR Bus Speed Select Register (13h)}
+  CCCRUHSSupport:Byte;                       {CCCR UHS-I Support Register (14h)}
+  CCCRDriverStrength:Byte;                   {CCCR Driver Strength Register (15h)}
   {Driver Properties}                        
-  //To Do
+  MultiBlock:Boolean;                        {Card Capability Multi Block Transfer (SMB)}
+  LowSpeed:Boolean;                          {Card Capability Low Speed Card (LSC)}
+  WideBus:Boolean;                           {Card Capability 4-bit Mode for Low Speed Card (4BLS)} 
+  HighPower:Boolean;                         {Support Master Power Control (SMPC)}
+  HighSpeed:Boolean;                         {Support High Speed (SHS)}
  end;
  
+ {Common SDIO CIS tuple}
+ {PSDIOCIS = ^TSDIOCIS;} {Declared above for MMCDevice}
+ TSDIOCIS = record
+  Vendor:Word;
+  Device:Word;
+  BlockSize:Word;
+  MaxClock:LongWord;
+ end;
+ 
+ {SDIO function CIS tuple (Function specific)}
+ {PSDIOTuple = ^TSDIOTuple;} {Declared above for MMCDevice}
+ TSDIOTuple = record
+  Next:PSDIOTuple;
+  Code:Byte;
+  Size:Byte;
+  Data:array[0..0] of Byte;
+ end;
+
  {SDIO Function}
- {FSDIOFunction = ^TSDIOFunction;} {Declared above for SDIODevice}
+ PSDIODriver = ^TSDIODriver;       {Forward declared to satisfy SDIOFunction}
+ 
+ {PSDIOFunction = ^TSDIOFunction;} {Declared above for MMCDevice}
+ 
+ {SDIO Function Interrupt Handler}
+ TSDIOInterruptHandler = procedure(Func:PSDIOFunction);{$IFDEF i386} stdcall;{$ENDIF}
+ 
+ {SDIO Function Enumeration Callback}
+ TSDIOFunctionEnumerate = function(Func:PSDIOFunction;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ 
  TSDIOFunction = record 
   {Function Properties}
-  Number:LongWord;                {The function number}
-  ClassId:Byte;                   {Standard class Id}
-  VendorId:Word;                  {Vendor Id}
-  DeviceId:Word;                  {Device Id}
-  //To Do
+  SDIOState:LongWord;                     {SDIO function state (eg SDIO_STATE_ATTACHED)}
+  SDIOStatus:LongWord;                    {SDIO function status (eg SDIO_STATUS_BOUND)}
+  MMC:PMMCDevice;                         {The MMC device for this function}
+  Number:LongWord;                        {The function number}
+  ClassId:Byte;                           {Standard class Id}
+  VendorId:Word;                          {Vendor Id}
+  DeviceId:Word;                          {Device Id}
+  BlockSize:LongWord;                     {Current block size}
+  MaxBlockSize:LongWord;                  {Maximum block size}
+  EnableTimeout:LongWord;                 {Function enable timeout}
+  Handler:TSDIOInterruptHandler;          {Interrupt handler for this function}
+  DMABuffer:Pointer;                      {DMA compatible buffer for small reads and writes}
+  Tuples:PSDIOTuple;                      {CIS (Card Information Structure) tuples for this function}
+  Driver:PSDIODriver;                     {Driver this function is bound to, if any}
+  DriverData:Pointer;                     {Private data for the driver of this SDIO device}
  end;
  
  {SDIO Driver}
- {PSDIODriver = ^TSDIODriver;} {Declared above for SDIODevice}
+ {PSDIODriver = ^TSDIODriver;} {Declared above for SDIOFunction}
  
  {SDIO Driver Enumeration Callback}
  TSDIODriverEnumerate = function(Driver:PSDIODriver;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  {SDIO Driver Methods}
- TSDIODriverBind = function(Device:PSDIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TSDIODriverUnbind = function(Device:PSDIODevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDIODriverBind = function(MMC:PMMCDevice;Func:PSDIOFunction):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDIODriverUnbind = function(MMC:PMMCDevice;Func:PSDIOFunction):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TSDIODriver = record
   {Driver Properties}
@@ -2317,7 +2377,7 @@ type
  end;
  
 {==============================================================================}
-type
+{type}
  {SDHCI specific types}
  {ADMA2 32-bit descriptor (See ADMA2 Descriptor Format - SD Host Controller Simplified Specification Version 4.20)}
  PSDHCIADMA2Descriptor32 = ^TSDHCIADMA2Descriptor32;
@@ -2357,6 +2417,8 @@ type
  {SDHCI Host Methods}
  TSDHCIHostStart = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostStop = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostLock = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostUnlock = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostReadByte = function(SDHCI:PSDHCIHost;Reg:LongWord):Byte;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostReadWord = function(SDHCI:PSDHCIHost;Reg:LongWord):Word;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostReadLong = function(SDHCI:PSDHCIHost;Reg:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -2374,6 +2436,8 @@ type
  TSDHCIHostPrepareDMA = function(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostStartDMA = function(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostStopDMA = function(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSetupCardIRQ = function(SDHCI:PSDHCIHost;Enable:LongBool):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostCompleteCardIRQ = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TSDHCIHost = record
   {Device Properties}
@@ -2383,6 +2447,8 @@ type
   SDHCIState:LongWord;                 {SDHCI state (eg SDHCI_STATE_ENABLED)}
   HostStart:TSDHCIHostStart;           {A Host specific HostStart method implementing a standard SDHCI host interface}
   HostStop:TSDHCIHostStop;             {A Host specific HostStop method implementing a standard SDHCI host interface}
+  HostLock:TSDHCIHostLock;             {A Host specific HostLock method implementing a standard SDHCI host interface}
+  HostUnlock:TSDHCIHostUnlock;         {A Host specific HostUnlock method implementing a standard SDHCI host interface}
   HostReadByte:TSDHCIHostReadByte;     {A Host specific HostReadByte method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostReadWord:TSDHCIHostReadWord;     {A Host specific HostReadWord method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostReadLong:TSDHCIHostReadLong;     {A Host specific HostReadLong method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
@@ -2400,6 +2466,8 @@ type
   HostPrepareDMA:TSDHCIHostPrepareDMA;             {A Host specific HostPrepareDMA method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostStartDMA:TSDHCIHostStartDMA;                 {A Host specific HostStartDMA method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostStopDMA:TSDHCIHostStopDMA;                   {A Host specific HostStopDMA method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostSetupCardIRQ:TSDHCIHostSetupCardIRQ;         {A Host specific HostSetupCardIRQ method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
+  HostCompleteCardIRQ:TSDHCIHostCompleteCardIRQ;   {A Host specific HostCompleteCardIRQ method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   DeviceInitialize:TMMCDeviceInitialize;           {A Device specific DeviceInitialize method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceDeinitialize:TMMCDeviceDeinitialize;       {A Device specific DeviceDeinitialize method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceGetCardDetect:TMMCDeviceGetCardDetect;     {A Device specific DeviceGetCardDetect method implementing a standard MMC device interface (Or nil if the default method is suitable)}
@@ -2407,7 +2475,8 @@ type
   DeviceSendCommand:TMMCDeviceSendCommand;         {A Device specific DeviceSendCommand method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   DeviceSetIOS:TMMCDeviceSetIOS;                   {A Device specific DeviceSetIOS method implementing a standard MMC device interface (Or nil if the default method is suitable)}
   {Driver Properties}
-  Lock:TMutexHandle;                   {Host lock}
+  Spin:TSpinHandle;                    {Host lock (Spin) for use by interrupt handlers}
+  Lock:TMutexHandle;                   {Host lock (Mutex) for use by other functions}
   Address:Pointer;                     {Host register base address}
   Version:LongWord;                    {Host version information}
   Quirks:LongWord;                     {Host quirks/bugs flags}
@@ -2430,6 +2499,10 @@ type
   MinimumDMASize:LongWord;             {Minimum size for DMA read or write (Use PIO if less)}
   MaximumPIOBlocks:LongWord;           {Maximum blocks for PIO read or write (Use DMA if greater)}
   PresetEnabled:LongBool;              {Version 3.00 Preset Values Enabled (If applicable)}
+  CardIRQEnabled:LongBool;             {SDIO card interrupt is enabled}
+  CardIRQWorker:TWorkerHandle;         {SDIO card interrupt current worker}
+  CardIRQDevice:PMMCDevice;            {SDIO card interrupt device}
+  CardIRQCount:LongWord;               {SDIO card interrupt function registered count}
   Command:PMMCCommand;                 {Currently processing command}
   Wait:TSemaphoreHandle;               {Command completed semaphore}
   UseDMA:LongBool;                     {Use DMA for the current data transfer}
@@ -2602,10 +2675,72 @@ function SDDeviceSendApplicationCommand(MMC:PMMCDevice;Command:PMMCCommand):Long
 //Device Methods
 function SDIODeviceReset(MMC:PMMCDevice):LongWord;
 
-function SDIODeviceSendOperationCondition(MMC:PMMCDevice;Probe:Boolean):LongWord; 
+function SDIODeviceEnableWideBus(MMC:PMMCDevice):LongWord;
+function SDIODeviceDisableWideBus(MMC:PMMCDevice):LongWord;
 
-function SDIODeviceReadWriteDirect(MMC:PMMCDevice;Write:Boolean;Operation,Address:LongWord;Input:Byte;Output:PByte):LongWord; 
-function SDIODeviceReadWriteExtended(MMC:PMMCDevice;Write:Boolean;Operation,Address:LongWord;Increment:Boolean;Buffer:Pointer;BlockCount,BlockSize:LongWord):LongWord; 
+function SDIODeviceEnableHighspeed(MMC:PMMCDevice):LongWord;
+function SDIODeviceSwitchHighspeed(MMC:PMMCDevice;Enable:Boolean):LongWord;
+
+function SDIODeviceSendOperationCondition(MMC:PMMCDevice;Probe:Boolean):LongWord;
+
+function SDIODeviceReadWriteDirect(MMC:PMMCDevice;Write:Boolean;Operation,Address:LongWord;Input:Byte;Output:PByte):LongWord;
+function SDIODeviceReadWriteExtended(MMC:PMMCDevice;Write:Boolean;Operation,Address:LongWord;Increment:Boolean;Buffer:Pointer;BlockCount,BlockSize:LongWord):LongWord;
+
+function SDIODeviceReadByte(MMC:PMMCDevice;Address:LongWord;Output:PByte):LongWord;
+function SDIODeviceWriteByte(MMC:PMMCDevice;Address:LongWord;Input:Byte):LongWord;
+
+function SDIODeviceReadCCCR(MMC:PMMCDevice):LongWord;
+
+function SDIODeviceReadFBR(Func:PSDIOFunction):LongWord;
+
+function SDIODeviceReadCIS(MMC:PMMCDevice;Func:PSDIOFunction):LongWord;
+
+function SDIODeviceReadCommonCIS(MMC:PMMCDevice):LongWord;
+function SDIODeviceReadFunctionCIS(Func:PSDIOFunction):LongWord;
+
+function SDIODeviceProcessInterrupts(MMC:PMMCDevice):LongWord;
+function SDIODeviceRegisterInterrupt(MMC:PMMCDevice;Func:PSDIOFunction;Handler:TSDIOInterruptHandler):LongWord;
+function SDIODeviceDeregisterInterrupt(MMC:PMMCDevice;Func:PSDIOFunction):LongWord;
+
+function SDIODeviceBindFunctions(MMC:PMMCDevice):LongWord;
+function SDIODeviceUnbindFunctions(MMC:PMMCDevice;Driver:PSDIODriver):LongWord;
+
+//Function Methods
+function SDIOFunctionAllocate(MMC:PMMCDevice;Number:LongWord):PSDIOFunction;
+function SDIOFunctionRelease(Func:PSDIOFunction):LongWord;
+
+function SDIOFunctionFind(MMC:PMMCDevice;Number:LongWord):PSDIOFunction;
+function SDIOFunctionFindById(MMC:PMMCDevice;VendorId,DeviceId:Word):PSDIOFunction;
+function SDIOFunctionEnumerate(MMC:PMMCDevice;Callback:TSDIOFunctionEnumerate;Data:Pointer):LongWord;
+
+function SDIOFunctionBind(Func:PSDIOFunction;Driver:PSDIODriver):LongWord;
+function SDIOFunctionUnbind(Func:PSDIOFunction;Driver:PSDIODriver):LongWord;
+
+function SDIOFunctionEnable(Func:PSDIOFunction):LongWord;
+function SDIOFunctionDisable(Func:PSDIOFunction):LongWord;
+
+function SDIOFunctionSetBlockSize(Func:PSDIOFunction;BlockSize:LongWord):LongWord;
+
+function SDIOFunctionReadWriteExtended(Func:PSDIOFunction;Write:Boolean;Address:LongWord;Increment:Boolean;Buffer:Pointer;Size:LongWord):LongWord;
+
+function SDIOFunctionRead(Func:PSDIOFunction;Address:LongWord;Buffer:Pointer;Size:LongWord):LongWord;
+function SDIOFunctionWrite(Func:PSDIOFunction;Address:LongWord;Buffer:Pointer;Size:LongWord):LongWord;
+
+function SDIOFunctionReadByte(Func:PSDIOFunction;Address:LongWord;Output:PByte):LongWord;
+function SDIOFunctionWriteByte(Func:PSDIOFunction;Address:LongWord;Input:Byte):LongWord;
+function SDIOFunctionWriteReadByte(Func:PSDIOFunction;Address:LongWord;Input:Byte;Output:PByte):LongWord;
+
+function SDIOFunctionReadWord(Func:PSDIOFunction;Address:LongWord;Output:PWord):LongWord;
+function SDIOFunctionWriteWord(Func:PSDIOFunction;Address:LongWord;Input:Word):LongWord;
+
+function SDIOFunctionReadLong(Func:PSDIOFunction;Address:LongWord;Output:PLongWord):LongWord;
+function SDIOFunctionWriteLong(Func:PSDIOFunction;Address:LongWord;Input:LongWord):LongWord;
+
+function SDIOFunctionRegisterInterrupt(Func:PSDIOFunction;Handler:TSDIOInterruptHandler):LongWord;
+function SDIOFunctionDeregisterInterrupt(Func:PSDIOFunction):LongWord;
+
+//Host Methods
+function SDIOHostDispatchInterrupt(SDHCI:PSDHCIHost;IRQ,FIQ:Boolean):LongWord;
 
 //Driver Methods
 function SDIODriverCreate:PSDIODriver;
@@ -2634,6 +2769,9 @@ function SDHCIHostStartDMA(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;
 function SDHCIHostStopDMA(SDHCI:PSDHCIHost;Command:PMMCCommand):LongWord;
 procedure SDHCIHostCompleteDMA(Request:PDMARequest);{$IFDEF i386} stdcall;{$ENDIF}
 
+function SDHCIHostSetupCardIRQ(SDHCI:PSDHCIHost;Enable:LongBool):LongWord;
+function SDHCIHostCompleteCardIRQ(SDHCI:PSDHCIHost):LongWord;
+
 function SDHCIHostTransferPIO(SDHCI:PSDHCIHost):LongWord; 
 function SDHCIHostTransferDMA(SDHCI:PSDHCIHost):LongWord; 
 
@@ -2645,6 +2783,9 @@ function SDHCIHostDataInterrupt(SDHCI:PSDHCIHost;InterruptMask:LongWord):LongWor
 
 function SDHCIHostStart(SDHCI:PSDHCIHost):LongWord;
 function SDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
+
+function SDHCIHostLock(SDHCI:PSDHCIHost):LongWord; inline;
+function SDHCIHostUnlock(SDHCI:PSDHCIHost):LongWord; inline;
 
 function SDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; inline;
 function SDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; inline;
@@ -2682,6 +2823,9 @@ function MMCGetCount:LongWord; inline;
 function MMCDeviceCheck(MMC:PMMCDevice):PMMCDevice;
 
 function MMCIsSD(MMC:PMMCDevice):Boolean;
+function MMCIsSDIO(MMC:PMMCDevice):Boolean;
+
+function MMCGetSDHCI(MMC:PMMCDevice):PSDHCIHost; inline;
 
 function MMCGetCIDValue(MMC:PMMCDevice;Version,Value:LongWord):LongWord;
 function MMCGetCSDValue(MMC:PMMCDevice;Value:LongWord):LongWord;
@@ -2735,11 +2879,18 @@ function SDIODriverGetCount:LongWord; inline;
 
 function SDIODriverCheck(Driver:PSDIODriver):PSDIODriver;
 
-function SDIODeviceStateToString(SDIOState:LongWord):String;
-function SDIODeviceStatusToString(SDIOStatus:LongWord):String;
+function SDIODeviceGetMaxClock(MMC:PMMCDevice):LongWord;
 
-function SDIODeviceStateToNotification(State:LongWord):LongWord;
-function SDIODeviceStatusToNotification(Status:LongWord):LongWord;
+function SDIOFunctionGetMMC(Func:PSDIOFunction):PMMCDevice;
+function SDIOFunctionGetSDHCI(Func:PSDIOFunction):PSDHCIHost;
+
+function SDIOVersionToString(Version:LongWord):String;
+
+function SDIOFunctionStateToString(SDIOState:LongWord):String;
+function SDIOFunctionStatusToString(SDIOStatus:LongWord):String;
+
+function SDIOFunctionStateToNotification(State:LongWord):LongWord;
+function SDIOFunctionStatusToNotification(Status:LongWord):LongWord;
 
 {==============================================================================}
 {SDHCI Helper Functions}
@@ -2776,6 +2927,10 @@ function MMCStorageDeviceWrite(Storage:PStorageDevice;const Start,Count:Int64;Bu
 function MMCStorageDeviceErase(Storage:PStorageDevice;const Start,Count:Int64):LongWord;
 function MMCStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
  
+{==============================================================================}
+{SDIO Macro Replacement Functions}
+function SDIO_FBR_BASE(Number:LongWord):LongWord; inline;
+
 {==============================================================================}
 {==============================================================================}
 
@@ -3476,15 +3631,63 @@ end;
 {==============================================================================}
 
 function MMCDeviceInitializeSDIO(MMC:PMMCDevice):LongWord; 
+
+ function SDSetupCardMemory(MMC:PMMCDevice;SDHCI:PSDHCIHost):LongWord;
+ begin
+  {}
+  {Get SD Configuration}
+  Result:=SDDeviceSendSDConfiguration(MMC);
+  if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+  {Decode SD Configuration}
+  Result:=SDDeviceDecodeSDConfiguration(MMC);
+  if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+  {Get SD Status}
+  Result:=SDDeviceSendSDStatus(MMC);
+  if Result <> MMC_STATUS_SUCCESS then Exit;
+
+  {Decode SD Status}
+  Result:=SDDeviceDecodeSDStatus(MMC);
+  if Result <> MMC_STATUS_SUCCESS then Exit;
+  
+  {Set Erase Size}
+  MMCDeviceSetEraseSize(MMC);
+   
+  {Get Switch}
+  Result:=SDDeviceSendSDSwitch(MMC);
+  if Result <> MMC_STATUS_SUCCESS then Exit;
+  
+  {Decode Switch}
+  Result:=SDDeviceDecodeSDSwitch(MMC);
+  if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+  {Check for SPI}
+  if SDHCIIsSPI(SDHCI) then
+   begin
+    {Enable SPI CRC} {Located AFTER the reading of the card registers because some SDHC cards are not able to provide valid CRCs for non-512-byte blocks}
+    Result:=MMCDeviceSPISetCRC(MMC,True);
+    if Result <> MMC_STATUS_SUCCESS then Exit;
+   end;
+   
+  {Check Write Protect}
+  Result:=MMCDeviceGetWriteProtect(MMC);
+  if Result <> MMC_STATUS_SUCCESS then Exit;
+  
+  //See: mmc_sd_setup_card in \drivers\mmc\core\sd.c
+ end;
+ 
 var
+ Funcs:LongWord;
+ Count:LongWord;
  SDHCI:PSDHCIHost;
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
- 
+
  {Check MMC}
  if MMC = nil then Exit;
- 
+
  {$IFDEF MMC_DEBUG}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize SDIO');
  {$ENDIF}
@@ -3492,7 +3695,7 @@ begin
  {Get SDHCI}
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
- 
+
  {Check for an SDIO Card}
  if SDIODeviceSendOperationCondition(MMC,True) = MMC_STATUS_SUCCESS then
   begin
@@ -3502,29 +3705,164 @@ begin
    MMC.Device.DeviceType:=MMC_TYPE_SDIO;
    if (MMC.OperationCondition and SDIO_RSP_R4_MEMORY_PRESENT) <> 0 then MMC.Device.DeviceType:=MMC_TYPE_SD_COMBO;
    MMC.RelativeCardAddress:=0;
-   
+
    {$IFDEF MMC_DEBUG}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'MMC Initialize Card Type is SDIO');
    {$ENDIF}
- 
+
    {Get the Operation Condition}
    Result:=SDIODeviceSendOperationCondition(MMC,False);
    if Result <> MMC_STATUS_SUCCESS then Exit;
+
+   {Check for SPI}
+   if SDHCIIsSPI(SDHCI) then
+    begin
+     {Enable SPI CRC}
+     Result:=MMCDeviceSPISetCRC(MMC,True);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+
+   {Check for Combo}
+   if MMC.Device.DeviceType = MMC_TYPE_SD_COMBO then
+    begin
+     //To Do //TestingSDIO //Preserve MMC.OperationCondition during call to SDDeviceGetCardIdentification
+     
+     {Get Card Identification}
+     Result:=SDDeviceGetCardIdentification(MMC);
+     if Result <> MMC_STATUS_SUCCESS then MMC.Device.DeviceType:=MMC_TYPE_SDIO;
+    end;
+
+   {If UHS-I mode supported switch to 1.8V signaling}
+   if (MMC.OperationCondition and SDIO_RSP_R4_18V_PRESENT) <> 0 then
+    begin
+     //To Do //mmc_set_uhs_voltage
+    end;
+
+   {Check for SPI}
+   if not(SDHCIIsSPI(SDHCI)) then
+    begin
+     {Get Relative Address}
+     Result:=SDDeviceSendRelativeAddress(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+
+   {Check for Combo}
+   if MMC.Device.DeviceType = MMC_TYPE_SD_COMBO then
+    begin
+     {Get Card Specific}
+     Result:=SDDeviceGetCardSpecific(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+
+     {Decode Card Identification}
+     Result:=SDDeviceDecodeCardIdentification(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+
+   {Check for SPI}
+   if not(SDHCIIsSPI(SDHCI)) then
+    begin
+     {Select Card}
+     Result:=MMCDeviceSelectCard(MMC);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end;
+
+   {Read the common registers}
+   Result:=SDIODeviceReadCCCR(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
    
-   //To Do //TestingSDIO //mmc_sdio_init_card
+   {Read the common CIS tuples}
+   Result:=SDIODeviceReadCommonCIS(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Check for Combo}
+   if MMC.Device.DeviceType = MMC_TYPE_SD_COMBO then
+    begin
+     {Setup Card Memory}
+     Result:=SDSetupCardMemory(MMC,SDHCI);
+     if Result <> MMC_STATUS_SUCCESS then
+      begin
+       {Set the Card to Idle State}
+       MMCDeviceGoIdle(MMC);
+       
+       {Check for SPI}
+       if SDHCIIsSPI(SDHCI) then
+        begin
+         {Enable SPI CRC}
+         MMCDeviceSPISetCRC(MMC,True);
+        end;
+       
+       {Revert to SDIO only}
+       MMC.Device.DeviceType:=MMC_TYPE_SDIO; 
+      end;
+    end; 
+   
+   {Disconnect card detection pull-up resistor}
+   //To Do //sdio_disable_cd
+   
+   {Initialize UHS-I if card supports 1.8v and UHS signaling}
+   if (MMC.OperationCondition and SDIO_RSP_R4_18V_PRESENT) <> 0 then
+    begin
+     //To Do //mmc_sdio_init_uhs_card etc
+    end; 
+  
+   {Switch to High Speed if supported}
+   Result:=SDIODeviceEnableHighspeed(MMC);
+   if Result = MMC_STATUS_SUCCESS then
+    begin
+     {Set Timing}
+     Result:=MMCDeviceSetTiming(MMC,MMC_TIMING_SD_HS);
+     if Result <> MMC_STATUS_SUCCESS then Exit;
+    end
+   else if Result <> MMC_STATUS_UNSUPPORTED_REQUEST then
+    begin
+     Exit;
+    end; 
+   
+   {Set Clock}
+   Result:=MMCDeviceSetClock(MMC,SDIODeviceGetMaxClock(MMC));
+   if Result <> MMC_STATUS_SUCCESS then Exit;
+   
+   {Switch to 4 bit bus if supported}
+   Result:=SDIODeviceEnableWideBus(MMC);
+   if Result <> MMC_STATUS_SUCCESS then Exit;
 
    {Update Device}
    if not SDHCIHasCMD23(SDHCI) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags and not(MMC_FLAG_SET_BLOCK_COUNT);
-   
+
    {Update Storage}
    MMC.Storage.Device.DeviceBus:=DEVICE_BUS_SD;
+
+   {Get SDIO Functions}
+   Funcs:=(MMC.OperationCondition and $70000000) shr 28;
    
-   //To Do //TestingSDIO //mmc_sdio_init_card
-   
+   {Create SDIO Functions}
+   for Count:=0 to Funcs - 1 do
+    begin
+     {Update Count}
+     Inc(MMC.SDIOCount);
+     
+     {Allocate Function}
+     MMC.SDIOFunctions[Count]:=SDIOFunctionAllocate(MMC,Count + 1);
+     if MMC.SDIOFunctions[Count] = nil then
+      begin
+       Result:=MMC_STATUS_OPERATION_FAILED;
+       Break;
+      end;
+    end;
+   if Result <> MMC_STATUS_SUCCESS then
+    begin
+     for Count:=0 to SDIO_MAX_FUNCTIONS - 1 do
+      begin
+       SDIOFunctionRelease(MMC.SDIOFunctions[Count]);
+      end;
+     
+     Exit;
+    end;
+
    Result:=MMC_STATUS_SUCCESS;
    Exit;
   end;
- 
+
  //See: mmc_sdio_init_card in \drivers\mmc\core\sdio.c
  //     mmc_attach_sdio in \drivers\mmc\core\sdio.c
 end;
@@ -3993,14 +4331,207 @@ begin
  if MMC = nil then Exit;
  
  {$IFDEF MMC_DEBUG}
- if MMC_LOG_ENABLED then MMCLogDebug(nil,'SD Select Bus Speed');
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SD Select Driver Type');
  {$ENDIF}
  
  //To Do //Driver Types
  
  //See: sd_select_driver_type in \drivers\mmc\core\sd.c
 end;
+
+{==============================================================================}
+
+function SDIOCISParseTupleVERS1(MMC:PMMCDevice;Func:PSDIOFunction;Tuple:PSDIOTuple):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {Check Tuple}
+ if Tuple = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO CIS Parse Tuple CISTPL_VERS_1');
+ {$ENDIF}
+ 
+ {Check Function}
+ if Func = nil then
+  begin
+  
+   //To Do //TestingSDIO
+  
+  end
+ else
+  begin
    
+   //To Do //TestingSDIO
+  
+  end;
+ 
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: cistpl_vers_1 in \drivers\mmc\core\sdio_cis.c
+end;
+
+{==============================================================================}
+
+function SDIOCISParseTupleMANFID(MMC:PMMCDevice;Func:PSDIOFunction;Tuple:PSDIOTuple):LongWord;
+var
+  Vendor:Word;
+  Device:Word;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {Check Tuple}
+ if Tuple = nil then Exit;
+ 
+ {Check Size}
+ if Tuple.Size < 4 then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO CIS Parse Tuple CISTPL_MANFID');
+ {$ENDIF}
+ 
+ {Get Vendor (TPLMID_MANF)}
+ Vendor:=Tuple.Data[0] or (Tuple.Data[1] shl 8);
+
+ {Get Device (TPLMID_CARD)}
+ Device:=Tuple.Data[2] or (Tuple.Data[3] shl 8);
+ 
+ {Check Function}
+ if Func = nil then
+  begin
+   {Common CIS}
+   MMC.CIS.Vendor:=Vendor;
+   MMC.CIS.Device:=Device;
+  end
+ else
+  begin
+   {Function CIS}
+   Func.VendorId:=Vendor;
+   Func.DeviceId:=Device;
+  end;
+ 
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: cistpl_manfid in \drivers\mmc\core\sdio_cis.c
+end;
+
+{==============================================================================}
+
+function SDIOCISParseTupleFUNCE(MMC:PMMCDevice;Func:PSDIOFunction;Tuple:PSDIOTuple):LongWord;
+
+const
+ FUNCE_SPEED_VALUES:array[0..15] of Byte = (0, 10, 12, 13, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80);
+ FUNCE_SPEED_UNITS:array[0..7] of LongWord = (10000, 100000, 1000000, 10000000, 0, 0, 0, 0);
+
+var
+ Version:Byte;
+ MinSize:Byte;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {Check Tuple}
+ if Tuple = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO CIS Parse Tuple CISTPL_FUNCE');
+ {$ENDIF}
+ 
+ {Check First Byte}
+ if Tuple.Data[0] = 0 then
+  begin
+   {Check Function}
+   if Func <> nil then Exit;
+  
+   {Check Size}
+   if Tuple.Size < 4 then Exit;
+  
+   {Get Block Size (TPLFE_FN0_BLK_SIZE)}
+   MMC.CIS.BlockSize:=Tuple.Data[1] or (Tuple.Data[2] shl 8);
+   
+   {Get Max Clock (TPLFE_MAX_TRAN_SPEED)}
+   MMC.CIS.MaxClock:=FUNCE_SPEED_VALUES[(Tuple.Data[3] shr 3) and 15] * FUNCE_SPEED_UNITS[Tuple.Data[3] and 7];
+  end
+ else if Tuple.Data[0] = 1 then
+  begin
+   {Check Function}
+   if Func = nil then Exit;
+  
+   {Check Size (Depends on Version}
+   Version:=MMC.CCCR.SDIOVersion;
+   if Version = SDIO_SDIO_REV_1_00 then MinSize:=28 else MinSize:=42;
+   
+   if (Tuple.Size = 28) and (Version = SDIO_SDIO_REV_1_10) then
+    begin
+     {Force to Version 1.0}
+     Version:=SDIO_SDIO_REV_1_00;
+    end
+   else if Tuple.Size < MinSize then
+    begin
+     Exit;
+    end; 
+   
+   {Get Max Block Size (TPLFE_MAX_BLK_SIZE)}
+   Func.MaxBlockSize:=Tuple.Data[12] or (Tuple.Data[13] shl 8);
+   
+   {Get Enable Timeout (TPLFE_ENABLE_TIMEOUT_VAL)}
+   if Version > SDIO_SDIO_REV_1_00 then
+    begin
+     Func.EnableTimeout:=(Tuple.Data[28] or (Tuple.Data[29] shl 8)) * 10;
+    end
+   else
+    begin
+     {Default to 1 second}
+     Func.EnableTimeout:=1000;
+    end;
+  end;
+
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: cistpl_funce_common in \drivers\mmc\core\sdio_cis.c
+ //     cistpl_funce_func in \drivers\mmc\core\sdio_cis.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionMaxByteSize(Func:PSDIOFunction):LongWord;
+var
+ Value:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=0;
+ 
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(Func.MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+
+ {Get SDHCI Maximum}
+ Value:=SDHCI.MaximumBlockSize;
+ 
+ {Get Function Maximum}
+ Value:=Min(Value,Func.MaxBlockSize);
+ 
+ {Get Maximum}
+ Result:=Min(Value,512);
+ 
+ //See: sdio_max_byte_size in \drivers\mmc\core\sdio_io.c
+end;
+
 {==============================================================================}
    
 function SDHCIHostGetPresetValue(SDHCI:PSDHCIHost):Word;
@@ -4852,15 +5383,13 @@ begin
  Command.Argument:=0;
  if not(Probe) then 
   begin
-   if SDHCIIsSPI(SDHCI) then
-    begin
-     //To Do
-    end
-   else 
+   if not(SDHCIIsSPI(SDHCI)) then
     begin   
      Command.Argument:=MMC.OperationCondition;
      
-     //To Do
+     //To Do //Need to select a voltage that is compatible between the card and the host
+             //Use SDHCI.Volatages to select from MMC.OperationCondition
+             //See: mmc_select_voltage
     end; 
   end;
  Command.ResponseType:=MMC_RSP_SPI_R1 or MMC_RSP_R4;
@@ -7189,7 +7718,10 @@ end;
 function MMCDeviceDestroy(MMC:PMMCDevice):LongWord;
 {Destroy an existing MMC entry}
 var
+ Count:LongWord;
  SDHCI:PSDHCIHost;
+ Tuple:PSDIOTuple;
+ Current:PSDIOTuple;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7227,7 +7759,35 @@ begin
      FreeMem(MMC.ExtendedCardSpecific);
     end; 
   end;
+
+ {Release Functions}
+ for Count:=0 to SDIO_MAX_FUNCTIONS - 1 do
+  begin
+   SDIOFunctionRelease(MMC.SDIOFunctions[Count]);
+  end;
   
+ {Free Tuples}
+ Tuple:=MMC.Tuples;
+ while Tuple <> nil do
+  begin
+   Current:=Tuple;
+   Tuple:=Tuple.Next;
+   
+   FreeMem(Current);
+  end;
+
+ {Free CIS}
+ if MMC.CIS <> nil then
+  begin
+   FreeMem(MMC.CIS);
+  end;
+
+ {Free CCCR}
+ if MMC.CCCR <> nil then
+  begin
+   FreeMem(MMC.CCCR);
+  end;
+
  {Destroy MMC} 
  Result:=DeviceDestroy(@MMC.Device);
 end;
@@ -7512,6 +8072,8 @@ begin
  if CriticalSectionLock(MMCDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
+    Result:=ERROR_OPERATION_FAILED;
+    
     {Get MMC}
     MMC:=MMCDeviceTable;
     while MMC <> nil do
@@ -7865,26 +8427,19 @@ begin
   begin
    if SDHCIIsSPI(SDHCI) then
     begin
-     //To Do
-     
-     //What happens here, just the SD_OCR_CCS bit, is that all ?
-     
+     {SPI only defines one bit}
+     Command.Argument:=(MMC.OperationCondition and SD_OCR_CCS);
     end
    else 
     begin
      Command.Argument:=MMC.OperationCondition;
      
-     //To Do //Is this correct ? Do we need to limit voltages etc ?
-                           //Do we need to use SDHCI.Voltages as a mask ?
+     //To Do //Need to select a voltage that is compatible between the card and the host
+             //Use SDHCI.Volatages to select from MMC.OperationCondition
+             //See: mmc_select_voltage
                            
-     
      {Set the Voltage bits in the OCR if not doing a probe operation}
      //Command.Argument:=(SDHCI.Voltages and SD_SEND_OP_COND_VOLTAGE_MASK);
-     
-     {Set the High Capacity flag in the OCR if version 2}
-     //To Do //Should check for successful SEND IF to confirm //See:
-     //if MMC.Version = SD_VERSION_2 then Command.Argument:=Command.Argument or SD_OCR_CCS;
-     //No //Done by SDDeviceGetCardIdentification
     end;
   end;
  Command.ResponseType:=MMC_RSP_SPI_R1 or MMC_RSP_R3;
@@ -8225,12 +8780,12 @@ begin
   end;
 
  {Check for Host UHS support}
- //To Do
+ //To Do //mmc_host_uhs
   {If the host supports one of UHS-I modes, request the card to switch to 1.8V signaling level. If the card has failed repeatedly to switch however, skip this}
   //MMC.OperationCondition:=MMC.OperationCondition or SD_OCR_S18A;
   
  {Check for Host Max Current}
- //To Do
+ //To Do //sd_get_host_max_current
   {If the host can supply more than 150mA at current voltage, XPC should be set to 1}
   //MMC.OperationCondition:=MMC.OperationCondition or SD_OCR_XPC;
   
@@ -8247,7 +8802,7 @@ begin
    {If CCS and S18A in the response is set, start Signal Voltage Switch procedure. SPI mode doesn't support CMD11}
    if (MMC.OperationCondition and (SD_OCR_CCS or SD_OCR_S18A)) = (SD_OCR_CCS or SD_OCR_S18A) then
     begin
-     //To Do
+     //To Do //mmc_set_uhs_voltage
     end;
   end;
  
@@ -8884,6 +9439,265 @@ end;
 
 {==============================================================================}
 
+function SDIODeviceEnableWideBus(MMC:PMMCDevice):LongWord;
+var
+ Control:Byte;
+ Status:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Enable Wide Bus');
+ {$ENDIF}
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+
+ {Check Supported Bus Width}
+ if (SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) = 0 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+ 
+ {Check Card Common Control Registers (CCCR)}
+ if MMC.CCCR.LowSpeed and not MMC.CCCR.WideBus then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+
+ {Get Interface Controls}
+ Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_IF,0,@Control);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end;
+  
+ {Check Bus Width}
+ if (Control and SDIO_BUS_WIDTH_MASK) = SDIO_BUS_WIDTH_RESERVED then
+  begin
+   if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDIO_CCCR_IF value is invalid');
+  end;
+
+ {Enable 4-bit Bus}
+ Control:=Control and not(SDIO_BUS_WIDTH_MASK);
+ Control:=Control or SDIO_BUS_WIDTH_4BIT;
+ 
+ {Set Interface Controls}
+ Status:=SDIODeviceReadWriteDirect(MMC,True,0,SDIO_CCCR_IF,Control,nil);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end;
+ 
+ {Check for SD Combo}
+ if MMC.Device.DeviceType = MMC_TYPE_SD_COMBO then
+  begin
+   {Check supported Bus Width}
+   if (MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0 then
+    begin
+     {Set SD Bus Width}
+     Status:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
+     if Status <> MMC_STATUS_SUCCESS then
+      begin
+       {Get Interface Controls}
+       if SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_IF,0,@Control) = MMC_STATUS_SUCCESS then
+        begin
+         {Reset Bus Width}
+         Control:=Control and not(SDIO_BUS_WIDTH_4BIT);
+         Control:=Control or SDIO_BUS_ASYNC_INT;
+
+         {Set Interface Controls}
+         SDIODeviceReadWriteDirect(MMC,True,0,SDIO_CCCR_IF,Control,nil);
+        end;
+       
+       Result:=Status;
+       Exit;
+      end;
+    end;
+  end;
+ 
+ {Set MMC Bus Width}
+ Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_4);
+ 
+ //See: sdio_enable_4bit_bus in \drivers\mmc\core\sdio.c
+ //     sdio_enable_wide in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceDisableWideBus(MMC:PMMCDevice):LongWord;
+var
+ Control:Byte;
+ Status:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Disable Wide Bus');
+ {$ENDIF}
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+
+ {Check Supported Bus Width}
+ if (SDHCI.Capabilities and MMC_CAP_4_BIT_DATA) = 0 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+
+ {Check for SD Combo}
+ if MMC.Device.DeviceType = MMC_TYPE_SD_COMBO then
+  begin
+   {Check supported Bus Width}
+   if (MMC.SDConfigurationData.BusWidths and SD_SCR_BUS_WIDTH_4) <> 0 then
+    begin
+     {Set SD Bus Width}
+     Status:=SDDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_1);
+     if Status <> MMC_STATUS_SUCCESS then
+      begin
+       Result:=Status;
+       Exit;
+      end;
+    end;
+  end;
+  
+ {Check Card Common Control Registers (CCCR)}
+ if MMC.CCCR.LowSpeed and not MMC.CCCR.WideBus then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+  
+ {Get Interface Controls}
+ Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_IF,0,@Control);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end;
+  
+ {Check Bus Width}
+ if (Control and SDIO_BUS_WIDTH_4BIT) = 0 then
+  begin
+   Result:=MMC_STATUS_SUCCESS;
+   Exit;
+  end;
+  
+ {Disable 4-bit Bus}
+ Control:=Control and not(SDIO_BUS_WIDTH_4BIT);
+ Control:=Control or SDIO_BUS_ASYNC_INT;
+ 
+ {Set Interface Controls}
+ Status:=SDIODeviceReadWriteDirect(MMC,True,0,SDIO_CCCR_IF,Control,nil);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end;
+  
+ {Set MMC Bus Width}
+ Result:=MMCDeviceSetBusWidth(MMC,MMC_BUS_WIDTH_1);
+ 
+ //See: sdio_disable_4bit_bus in \drivers\mmc\core\sdio.c
+ //     sdio_disable_wide in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceEnableHighspeed(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Enable Highspeed');
+ {$ENDIF}
+
+ Result:=SDIODeviceSwitchHighspeed(MMC,True);
+ if Result <> MMC_STATUS_SUCCESS then Exit;
+ 
+ if MMC.Device.DeviceType = MMC_TYPE_SDIO then Exit;
+ 
+ Result:=SDDeviceSwitchHighspeed(MMC);
+ if Result <> MMC_STATUS_SUCCESS then SDIODeviceSwitchHighspeed(MMC,False);
+ 
+ //See: sdio_enable_hs in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceSwitchHighspeed(MMC:PMMCDevice;Enable:Boolean):LongWord;
+var
+ Speed:Byte;
+ Status:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Switch Highspeed');
+ {$ENDIF}
+
+ {Check Highspeed}
+ Result:=MMC_STATUS_UNSUPPORTED_REQUEST;
+ if (MMC.Capabilities and MMC_CAP_SD_HIGHSPEED) = 0 then Exit;
+ if (MMC.CCCR = nil) or not(MMC.CCCR.HighSpeed) then Exit;
+ 
+ {Get SPEED Register} 
+ Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_SPEED,0,@Speed);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ if Enable then
+  begin
+   Speed:=Speed or SDIO_SPEED_EHS;
+  end
+ else
+  begin
+   Speed:=Speed and not(SDIO_SPEED_EHS);
+  end;
+
+ {Set SPEED Register} 
+ Status:=SDIODeviceReadWriteDirect(MMC,True,0,SDIO_CCCR_SPEED,Speed,nil);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: mmc_sdio_switch_hs in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
 function SDIODeviceSendOperationCondition(MMC:PMMCDevice;Probe:Boolean):LongWord; 
 var
  Status:LongWord;
@@ -8911,16 +9725,11 @@ begin
  Command.Argument:=0;
  if not(Probe) then 
   begin
-   if SDHCIIsSPI(SDHCI) then
-    begin
-     //To Do
-    end
-   else 
-    begin   
-     Command.Argument:=MMC.OperationCondition;
+   Command.Argument:=MMC.OperationCondition;
      
-     //To Do
-    end; 
+   //To Do //Need to select a voltage that is compatible between the card and the host
+           //Use SDHCI.Volatages to select from MMC.OperationCondition
+           //See: mmc_select_voltage
   end;
  Command.ResponseType:=MMC_RSP_SPI_R4 or MMC_RSP_R4;
  Command.Data:=nil;
@@ -9001,7 +9810,7 @@ begin
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
         
- {Check Operation}
+ {Check Operation (SDIO_MAX_FUNCTIONS)}
  if Operation > 7 then Exit;
  
  {Check Address}
@@ -9011,7 +9820,7 @@ begin
  FillChar(Command,SizeOf(TMMCCommand),0);
  Command.Command:=SDIO_CMD_RW_DIRECT;
  Command.Argument:=0;
- Command.ResponseType:=MMC_RSP_R5;
+ Command.ResponseType:=MMC_RSP_SPI_R5 or MMC_RSP_R5;
  Command.Data:=nil;
  
  {Setup Argument}
@@ -9036,9 +9845,21 @@ begin
   end
  else
   begin
-   if (Command.Response[0] and SDIO_RSP_R5_ERROR) <> 0 then Exit;
-   if (Command.Response[0] and SDIO_RSP_R5_FUNCTION_NUMBER) <> 0 then Exit;
-   if (Command.Response[0] and SDIO_RSP_R5_OUT_OF_RANGE) <> 0 then Exit;
+   if (Command.Response[0] and SDIO_RSP_R5_ERROR) <> 0 then
+    begin
+     Result:=MMC_STATUS_HARDWARE_ERROR;
+     Exit;
+    end; 
+   if (Command.Response[0] and SDIO_RSP_R5_FUNCTION_NUMBER) <> 0 then
+    begin
+     Result:=MMC_STATUS_INVALID_PARAMETER;
+     Exit;
+    end; 
+   if (Command.Response[0] and SDIO_RSP_R5_OUT_OF_RANGE) <> 0 then
+    begin
+     Result:=MMC_STATUS_INVALID_DATA;
+     Exit;
+    end; 
   end;  
   
  {Get Output}
@@ -9057,7 +9878,6 @@ begin
  Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_io_rw_direct_host in \drivers\mmc\core\sdio_ops.c
- //
 end;
 
 {==============================================================================}
@@ -9066,6 +9886,7 @@ function SDIODeviceReadWriteExtended(MMC:PMMCDevice;Write:Boolean;Operation,Addr
 var
  Status:LongWord;
  SDHCI:PSDHCIHost;
+ Data:TMMCData;
  Command:TMMCCommand;
 begin
  {}
@@ -9083,9 +9904,9 @@ begin
  if SDHCI = nil then Exit;
 
  {Check Block Size}
- if  BlockSize = 0 then Exit;
+ if BlockSize = 0 then Exit;
  
- {Check Operation}
+ {Check Operation (SDIO_MAX_FUNCTIONS)}
  if Operation > 7 then Exit;
  
  {Check Address}
@@ -9093,14 +9914,1962 @@ begin
          
  {Setup Command}
  FillChar(Command,SizeOf(TMMCCommand),0);
- //To Do //TestingSDIO
-
- //Result:=MMC_STATUS_SUCCESS;
+ Command.Command:=SDIO_CMD_RW_EXTENDED;
+ Command.Argument:=0;
+ Command.ResponseType:=MMC_RSP_SPI_R5 or MMC_RSP_R5;
+ Command.Data:=@Data;
+ 
+ {Setup Argument}
+ if Write then Command.Argument:=$80000000;
+ Command.Argument:=Command.Argument or (Operation shl 28);
+ if Increment then Command.Argument:=Command.Argument or $04000000;
+ Command.Argument:=Command.Argument or (Address shl 9);
+ if BlockCount = 0 then
+  begin
+   {Byte Mode}
+   if (BlockSize < 512) then Command.Argument:=Command.Argument or BlockSize;
+  end
+ else
+  begin
+   {Block Mode}
+   Command.Argument:=Command.Argument or $08000000 or BlockCount;
+  end;
+ 
+ {Setup Data}
+ FillChar(Data,SizeOf(TMMCData),0);
+ Data.Data:=Buffer;
+ if Write then Data.Flags:=MMC_DATA_WRITE else Data.Flags:=MMC_DATA_READ;
+ Data.BlockSize:=BlockSize;
+ if BlockCount = 0 then Data.BlockCount:=1 else Data.BlockCount:=BlockCount;
+ 
+ {Send Command}
+ Status:=MMCDeviceSendCommand(MMC,@Command);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end;
+ 
+ {Check Result}
+ if SDHCIIsSPI(SDHCI) then
+  begin
+   {Host driver already reported errors}
+  end
+ else
+  begin
+   if (Command.Response[0] and SDIO_RSP_R5_ERROR) <> 0 then
+    begin
+     Result:=MMC_STATUS_HARDWARE_ERROR;
+     Exit;
+    end; 
+   if (Command.Response[0] and SDIO_RSP_R5_FUNCTION_NUMBER) <> 0 then
+    begin
+     Result:=MMC_STATUS_INVALID_PARAMETER;
+     Exit;
+    end; 
+   if (Command.Response[0] and SDIO_RSP_R5_OUT_OF_RANGE) <> 0 then
+    begin
+     Result:=MMC_STATUS_INVALID_DATA;
+     Exit;
+    end; 
+  end;  
+ 
+ Result:=MMC_STATUS_SUCCESS;
  
  //See: mmc_io_rw_extended in \drivers\mmc\core\sdio_ops.c
- //
 end;
  
+{==============================================================================}
+
+function SDIODeviceReadByte(MMC:PMMCDevice;Address:LongWord;Output:PByte):LongWord;
+{Wrapper for reading a single byte from Function 0}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {Check Output}
+ if Output = nil then Exit;
+
+ {Read Byte}
+ Result:=SDIODeviceReadWriteDirect(MMC,False,0,Address,0,Output);
+ 
+ //See: sdio_f0_readb in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceWriteByte(MMC:PMMCDevice;Address:LongWord;Input:Byte):LongWord;
+{Wrapper for writing a single byte to Function 0}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {Check Address}
+ if (Address < $0F) or (Address > $FF) then Exit;
+
+ {Write Byte}
+ Result:=SDIODeviceReadWriteDirect(MMC,True,0,Address,Input,nil);
+ 
+ //See: sdio_f0_writeb in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceReadCCCR(MMC:PMMCDevice):LongWord;
+var
+ Status:LongWord;
+ CCCRVersion:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Read CCCR');
+ {$ENDIF}
+ 
+ {Allocate CCCR}
+ if MMC.CCCR = nil then MMC.CCCR:=AllocMem(SizeOf(TSDIOCCCR));
+ if MMC.CCCR = nil then Exit;
+  
+ {Get CCCR Register} 
+ Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_CCCR,0,@MMC.CCCR.CCCRVersion);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ {Get CCCR Version}
+ CCCRVersion:=MMC.CCCR.CCCRVersion and $0f;
+ if CCCRVersion > SDIO_CCCR_REV_3_00 then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'Unknown CCCR structure version received');
+  
+   Result:=MMC_STATUS_INVALID_DATA;
+   Exit;
+  end;
+
+ {Get SDIO Version}
+ MMC.CCCR.SDIOVersion:=(MMC.CCCR.CCCRVersion and $f0) shr 4;
+ MMC.CCCR.CCCRVersion:=CCCRVersion;
+
+ {Get SD Register} 
+ Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_SD,0,@MMC.CCCR.SDVersion);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ {Get CAPS Register} 
+ Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_CAPS,0,@MMC.CCCR.CCCRCapabilities);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ if (MMC.CCCR.CCCRCapabilities and SDIO_CCCR_CAP_SMB) <> 0 then
+  begin
+   MMC.CCCR.MultiBlock:=True;
+  end;
+ if (MMC.CCCR.CCCRCapabilities and SDIO_CCCR_CAP_LSC) <> 0 then
+  begin
+   MMC.CCCR.LowSpeed:=True;
+  end;
+ if (MMC.CCCR.CCCRCapabilities and SDIO_CCCR_CAP_4BLS) <> 0 then
+  begin
+   MMC.CCCR.WideBus:=True;
+  end;
+
+ {Check CCCR Version}
+ if CCCRVersion >= SDIO_CCCR_REV_1_10 then
+  begin
+   {Get POWER Register} 
+   Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_POWER,0,@MMC.CCCR.CCCRPowerControl);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end; 
+
+   if (MMC.CCCR.CCCRPowerControl and SDIO_POWER_SMPC) <> 0 then
+    begin
+     MMC.CCCR.HighPower:=True;
+    end;
+  end;
+
+ {Check CCCR Version}
+ if CCCRVersion >= SDIO_CCCR_REV_1_20 then
+  begin
+   {Get SPEED Register} 
+   Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_SPEED,0,@MMC.CCCR.CCCRBusSpeed);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end; 
+
+   {Setup Defaults}
+   MMC.SDConfigurationData.SpecVersion3:=False;
+   MMC.SDSwitchData.Group1Support:=0;
+   MMC.SDSwitchData.Group3Support:=0;
+
+   {Check CCCR Version}
+   if (CCCRVersion >= SDIO_CCCR_REV_3_00) and ((MMC.OperationCondition and SDIO_RSP_R4_18V_PRESENT) <> 0) then
+    begin
+     MMC.SDConfigurationData.SpecVersion3:=True;
+
+     {Get UHS Register} 
+     Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_UHS,0,@MMC.CCCR.CCCRUHSSupport);
+     if Status <> MMC_STATUS_SUCCESS then
+      begin
+       Result:=Status;
+       Exit;
+      end; 
+
+     {Check UHS Support}
+     //To Do //SDIO_UHS_DDR50/SDIO_UHS_SDR50/SDIO_UHS_SDR104
+
+     {Get DRIVE STRENGTH Register} 
+     Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_DRIVE_STRENGTH,0,@MMC.CCCR.CCCRDriverStrength);
+     if Status <> MMC_STATUS_SUCCESS then
+      begin
+       Result:=Status;
+       Exit;
+      end; 
+
+     if (MMC.CCCR.CCCRDriverStrength and SDIO_DRIVE_SDTA) <> 0 then
+      begin
+       MMC.SDSwitchData.Group3Support:=MMC.SDSwitchData.Group3Support or SD_SWITCH_GROUP3_TYPE_A;
+      end;
+     if (MMC.CCCR.CCCRDriverStrength and SDIO_DRIVE_SDTC) <> 0 then
+      begin
+       MMC.SDSwitchData.Group3Support:=MMC.SDSwitchData.Group3Support or SD_SWITCH_GROUP3_TYPE_C;
+      end;
+     if (MMC.CCCR.CCCRDriverStrength and SDIO_DRIVE_SDTD) <> 0 then
+      begin
+       MMC.SDSwitchData.Group3Support:=MMC.SDSwitchData.Group3Support or SD_SWITCH_GROUP3_TYPE_D;
+      end;
+    end;
+
+   {Check for High Speed}
+   if MMC.SDSwitchData.Group1Support = 0 then
+    begin
+     if (MMC.CCCR.CCCRBusSpeed and SDIO_SPEED_SHS) <> 0 then
+      begin
+       MMC.CCCR.HighSpeed:=True;
+       MMC.SDSwitchData.Group1Support:=MMC.SDSwitchData.Group1Support or SD_SWITCH_GROUP1_HS;
+      end;
+    end;
+  end;
+
+ {Get Version}
+ if MMC.CCCR.SDIOVersion = SDIO_SDIO_REV_1_00 then
+  begin
+   MMC.Version:=SDIO_VERSION_1_00;
+  end
+ else if MMC.CCCR.SDIOVersion = SDIO_SDIO_REV_1_10 then
+  begin
+   MMC.Version:=SDIO_VERSION_1_10;
+  end
+ else if MMC.CCCR.SDIOVersion = SDIO_SDIO_REV_1_20 then
+  begin
+   MMC.Version:=SDIO_VERSION_1_20;
+  end
+ else if MMC.CCCR.SDIOVersion = SDIO_SDIO_REV_2_00 then
+  begin
+   MMC.Version:=SDIO_VERSION_2_00;
+  end
+ else if MMC.CCCR.SDIOVersion = SDIO_SDIO_REV_3_00 then
+  begin
+   MMC.Version:=SDIO_VERSION_3_00;
+  end;
+ 
+ {Log CCCR Configuration}
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then
+  begin
+   MMCLogDebug(nil,' CCCR Configuration:');
+   {CCCR Registers Data}
+   MMCLogDebug(nil,'  CCCRVersion = ' + IntToHex(MMC.CCCR.CCCRVersion,2));
+   MMCLogDebug(nil,'  SDIOVersion = ' + IntToHex(MMC.CCCR.SDIOVersion,2));
+   MMCLogDebug(nil,'  SDVersion = ' + IntToHex(MMC.CCCR.SDVersion,2));
+   MMCLogDebug(nil,'  CCCRCapabilities = ' + IntToHex(MMC.CCCR.CCCRCapabilities,2));
+   MMCLogDebug(nil,'  CCCRPowerControl = ' + IntToHex(MMC.CCCR.CCCRPowerControl,2));
+   MMCLogDebug(nil,'  CCCRBusSpeed = ' + IntToHex(MMC.CCCR.CCCRBusSpeed,2));
+   MMCLogDebug(nil,'  CCCRUHSSupport = ' + IntToHex(MMC.CCCR.CCCRUHSSupport,2));
+   MMCLogDebug(nil,'  CCCRDriverStrength = ' + IntToHex(MMC.CCCR.CCCRDriverStrength,2));
+   {Calculated Values}
+   MMCLogDebug(nil,'  MultiBlock = ' + BoolToStr(MMC.CCCR.MultiBlock,True));
+   MMCLogDebug(nil,'  LowSpeed = ' + BoolToStr(MMC.CCCR.LowSpeed,True));
+   MMCLogDebug(nil,'  WideBus = ' + BoolToStr(MMC.CCCR.WideBus,True));
+   MMCLogDebug(nil,'  HighPower = ' + BoolToStr(MMC.CCCR.HighPower,True));
+   MMCLogDebug(nil,'  HighSpeed = ' + BoolToStr(MMC.CCCR.HighSpeed,True));
+   MMCLogDebug(nil,'  Version = ' + SDIOVersionToString(MMC.Version));
+  end; 
+ {$ENDIF}
+
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: sdio_read_cccr in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceReadFBR(Func:PSDIOFunction):LongWord;
+var
+ Data:Byte;
+ Status:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Read FBR (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+ 
+ {Get STD_IF Register} 
+ Status:=SDIODeviceReadWriteDirect(Func.MMC,False,0,SDIO_FBR_BASE(Func.Number) + SDIO_FBR_STD_IF,0,@Data);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+ 
+ {Get Function Interface Code}
+ Data:=Data and $0F;
+ 
+ {Check for Extended Function Interface Code}
+ if Data = $0F then
+  begin
+   {Get STD_IF_EXT Register} 
+   Status:=SDIODeviceReadWriteDirect(Func.MMC,False,0,SDIO_FBR_BASE(Func.Number) + SDIO_FBR_STD_IF_EXT,0,@Data);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end; 
+  end;
+
+ {Update Class Id}
+ Func.ClassId:=Data;
+ 
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: sdio_read_fbr in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceReadCIS(MMC:PMMCDevice;Func:PSDIOFunction):LongWord;
+var
+ Data:Byte;
+ Code:Byte;
+ Link:Byte;
+ Count:LongWord;
+ Status:LongWord;
+ Number:LongWord;
+ Address:LongWord;
+ Timeout:Int64;
+ Prev:PSDIOTuple;
+ Tuple:PSDIOTuple;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Read CIS');
+ {$ENDIF}
+ 
+ {Get function number}
+ if Func <> nil then Number:=Func.Number else Number:=0;
+ 
+ {Read 3 byte CIS pointer}
+ {Note: Works for both common CIS and function CIS as SDIO_CCCR_CIS and SDIO_FBR_CIS are the same offset}
+ Address:=0;
+ for Count:=0 to 2 do
+  begin
+   {Read Byte}
+   Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_FBR_BASE(Number) + SDIO_FBR_CIS + Count,0,@Data);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end; 
+
+   {Store to Address}
+   Address:=Address or (Data shl (Count * 8));
+  end;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,' CIS Pointer = ' + IntToStr(Address));
+ {$ENDIF}
+ 
+ if Func <> nil then
+  begin
+   {Get Previous}
+   Prev:=Func.Tuples;
+  end
+ else
+  begin
+   {Allocate Common CIS}
+   if MMC.CIS = nil then MMC.CIS:=AllocMem(SizeOf(TSDIOCIS));
+   if MMC.CIS = nil then Exit;
+  
+   {Get Previous}
+   Prev:=MMC.Tuples;
+  end;
+  
+ {Find Last}
+ if Prev <> nil then
+  begin
+   while Prev.Next <> nil do
+    begin
+     Prev:=Prev.Next;
+    end; 
+  end;
+ 
+ {Get Timeout}
+ Timeout:=ClockGetTotal + (SDIO_READ_CIS_TIMEOUT_MS * CLOCK_CYCLES_PER_MILLISECOND);
+
+ {Read Tuples}
+ while True do
+  begin
+   {Read Code}
+   Status:=SDIODeviceReadWriteDirect(MMC,False,0,Address,0,@Code);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end; 
+   
+   Inc(Address);
+   
+   {Check for End}
+   if Code = CISTPL_END then Break;
+   
+   {Check for Null}
+   if Code = CISTPL_NULL then Continue;
+   
+   {Read Link (Offset to Next Tuple)}
+   Status:=SDIODeviceReadWriteDirect(MMC,False,0,Address,0,@Link);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end; 
+
+   Inc(Address);
+   
+   {Check for Link 0xFF (End of Chain)}
+   if Link = $FF then Break;
+   
+   {Allocate Tuple}
+   Tuple:=AllocMem(SizeOf(TSDIOTuple) + Link);
+   if Tuple = nil then
+    begin
+     Result:=MMC_STATUS_OUT_OF_MEMORY;
+     Exit;
+    end; 
+
+   {Read Data}
+   for Count:=0 to Link - 1 do
+    begin
+     Status:=SDIODeviceReadWriteDirect(MMC,False,0,Address + Count,0,@Tuple.Data[Count]);
+     if Status <> MMC_STATUS_SUCCESS then Break;
+    end;
+    
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     {Free Tuple}
+     FreeMem(Tuple);
+     
+     Result:=Status;
+     Exit;
+    end; 
+    
+   {$IFDEF MMC_DEBUG}
+   if MMC_LOG_ENABLED then MMCLogDebug(nil,' CIS Tuple Code = ' + IntToHex(Code,2) + ' Link = ' + IntToHex(Link,2));
+   {$ENDIF}
+
+   {Store the Tuple}
+   Tuple.Code:=Code;
+   Tuple.Size:=Link;
+   if Prev = nil then
+    begin
+     if Func <> nil then
+      begin
+       Func.Tuples:=Tuple;
+      end
+     else
+      begin
+       MMC.Tuples:=Tuple;
+      end;
+    end
+   else
+    begin
+     Prev.Next:=Tuple;
+    end;
+   Prev:=Tuple;
+   
+   {Parse the Tuple}
+   case Code of
+    CISTPL_VERS_1:SDIOCISParseTupleVERS1(MMC,Func,Tuple);
+    CISTPL_MANFID:SDIOCISParseTupleMANFID(MMC,Func,Tuple);
+    {CISTPL_FUNCID} {Nothing}
+    CISTPL_FUNCE:SDIOCISParseTupleFUNCE(MMC,Func,Tuple);
+    {CISTPL_SDIO_STD} {Nothing}
+   end;
+
+   {Check Timeout}
+   if ClockGetTotal > Timeout then
+    begin
+     Result:=MMC_STATUS_TIMEOUT;
+     Exit;
+    end;
+   
+   {Move to Next}
+   Inc(Address,Link);
+  end;
+ 
+ Result:=MMC_STATUS_SUCCESS;
+ 
+ //See: sdio_read_cis in \drivers\mmc\core\sdio_cis.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceReadCommonCIS(MMC:PMMCDevice):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Read Common CIS');
+ {$ENDIF}
+ 
+ {Read CIS}
+ Result:=SDIODeviceReadCIS(MMC,nil);
+ 
+ {Log CIS Configuration}
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then
+  begin
+   MMCLogDebug(nil,' CIS Configuration:');
+   MMCLogDebug(nil,'  Vendor = ' + IntToHex(MMC.CIS.Vendor,4));
+   MMCLogDebug(nil,'  Device = ' + IntToHex(MMC.CIS.Device,4));
+   MMCLogDebug(nil,'  BlockSize = ' + IntToStr(MMC.CIS.BlockSize));
+   MMCLogDebug(nil,'  MaxClock = ' + IntToStr(MMC.CIS.MaxClock));
+  end; 
+ {$ENDIF}
+ 
+ //See: sdio_read_common_cis in \drivers\mmc\core\sdio_cis.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceReadFunctionCIS(Func:PSDIOFunction):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Read Function CIS (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+ 
+ {Read CIS}
+ Result:=SDIODeviceReadCIS(Func.MMC,Func);
+ if Result <> MMC_STATUS_SUCCESS then Exit;
+ 
+ {Vendor and Device id is optional for function CIS}
+ if Func.VendorId = 0 then
+  begin
+   {Copy from common CIS}
+   Func.VendorId:=Func.MMC.CIS.Vendor;
+   Func.DeviceId:=Func.MMC.CIS.Device;
+  end;
+ 
+ //See: sdio_read_func_cis in \drivers\mmc\core\sdio_cis.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceProcessInterrupts(MMC:PMMCDevice):LongWord;
+var
+ Pending:Byte;
+ Count:LongWord;
+ Status:LongWord;
+ SDHCI:PSDHCIHost;
+ Func:PSDIOFunction;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(MMC,'SDIO Process Interrupts');
+ {$ENDIF}
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(SDHCI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get INTx Register} 
+    Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_INTx,0,@Pending);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Result:=Status;
+      Exit;
+     end; 
+   
+    {Set default status}
+    Status:=MMC_STATUS_SUCCESS;
+   
+    {Check Interrupt Function}
+    Func:=MMC.SDIOInterruptFunction;
+    if Func <> nil then
+     begin
+      if not Assigned(Func.Handler) then
+       begin
+        if MMC_LOG_ENABLED then MMCLogWarn(MMC,'Pending IRQ for interrupt function with no handler');
+        
+        Status:=MMC_STATUS_INVALID_PARAMETER;
+       end
+      else
+       begin
+        {Dispatch Interrupt}
+        Func.Handler(Func);
+       end;
+     end
+    else
+     begin 
+      {Check Functions}
+      for Count:=1 to SDIO_MAX_FUNCTIONS do
+       begin
+        if (Pending and (1 shl Count)) <> 0 then
+         begin
+          Func:=MMC.SDIOFunctions[Count - 1];
+          if Func = nil then
+           begin
+            if MMC_LOG_ENABLED then MMCLogWarn(MMC,'Pending IRQ for non-existent function');
+            
+            Status:=MMC_STATUS_INVALID_PARAMETER;
+           end
+          else
+           begin
+            if not Assigned(Func.Handler) then
+             begin
+              if MMC_LOG_ENABLED then MMCLogWarn(MMC,'Pending IRQ for function with no handler');
+              
+              Status:=MMC_STATUS_INVALID_PARAMETER;
+             end
+            else
+             begin
+              {Dispatch Interrupt}
+              Func.Handler(Func);
+             end;
+           end;
+         end;
+       end;
+     end;
+     
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Result:=Status;
+      Exit;
+     end; 
+   
+    {Clear Worker}
+    SDHCI.CardIRQWorker:=INVALID_HANDLE_VALUE;
+    
+    {Complete IRQ}
+    Result:=SDHCIHostCompleteCardIRQ(SDHCI);
+   finally
+    {Release the Lock}
+    MutexUnlock(SDHCI.Lock);
+   end;
+  end;
+ 
+ //See: process_sdio_pending_irqs in \drivers\mmc\core\sdio_irq.c
+ //     sdio_get_pending_irqs in \drivers\mmc\core\sdio_irq.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceRegisterInterrupt(MMC:PMMCDevice;Func:PSDIOFunction;Handler:TSDIOInterruptHandler):LongWord;
+var
+ Reg:Byte;
+ Count:LongWord;
+ Status:LongWord;
+ SDHCI:PSDHCIHost;
+ Next:PSDIOFunction;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Check Handler}
+ if not Assigned(Handler) then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(MMC,'SDIO Register Interrupt (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+ 
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(SDHCI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Existing}
+    if Assigned(Func.Handler) then Exit;
+    if (SDHCI.CardIRQDevice <> nil) and (SDHCI.CardIRQDevice <> MMC) then Exit;
+    
+    {Update Function}
+    Func.Handler:=Handler;
+    
+    {Update Card IRQ Device}
+    SDHCI.CardIRQDevice:=MMC;
+    
+    {Update Card IRQ Count}
+    Inc(SDHCI.CardIRQCount);
+    if SDHCI.CardIRQCount = 1 then
+     begin
+      {Enable Card IRQ}
+      Status:=SDHCIHostSetupCardIRQ(SDHCI,True);
+      if Status <> MMC_STATUS_SUCCESS then
+       begin
+        {Reset Function}
+        Func.Handler:=nil;
+        
+        {Reset Card IRQ Device}
+        SDHCI.CardIRQDevice:=nil;
+        
+        {Reset Card IRQ Count}
+        SDHCI.CardIRQCount:=0;
+        
+        Result:=Status;
+        Exit;
+       end; 
+     end;
+    
+    {Check Card IRQ Count}
+    MMC.SDIOInterruptFunction:=nil;
+    if SDHCI.CardIRQCount = 1 then
+     begin
+      {Check Functions}
+      for Count:=1 to SDIO_MAX_FUNCTIONS do
+       begin
+        Next:=MMC.SDIOFunctions[Count - 1];
+        if (Next <> nil) and Assigned(Next.Handler) then
+         begin
+          MMC.SDIOInterruptFunction:=Next;
+          Break;
+         end;
+       end;
+     end;
+   
+    {Get IENx Register}
+    Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_IENx,0,@Reg);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Result:=Status;
+      Exit;
+     end; 
+     
+    {Enable Function Interrupt}
+    Reg:=Reg or (1 shl Func.Number);
+    
+    {Enable Master Interrupt}
+    Reg:=Reg or 1;
+    
+    {Set IENx Register}
+    Status:=SDIODeviceReadWriteDirect(MMC,True,0,SDIO_CCCR_IENx,Reg,nil);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Result:=Status;
+      Exit;
+     end; 
+    
+    Result:=MMC_STATUS_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(SDHCI.Lock);
+   end;
+  end;
+ 
+ //See: sdio_claim_irq in \drivers\mmc\core\sdio_irq.c
+ //     sdio_card_irq_get in \drivers\mmc\core\sdio_irq.c
+ //     sdio_single_irq_set in \drivers\mmc\core\sdio_irq.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceDeregisterInterrupt(MMC:PMMCDevice;Func:PSDIOFunction):LongWord;
+var
+ Reg:Byte;
+ Count:LongWord;
+ Status:LongWord;
+ SDHCI:PSDHCIHost;
+ Next:PSDIOFunction;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(MMC,'SDIO Deregister Interrupt (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+
+ {Acquire the Lock}
+ if MutexLock(SDHCI.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Existing}
+    if not Assigned(Func.Handler) then Exit;
+    if SDHCI.CardIRQCount < 1 then Exit;
+    if (SDHCI.CardIRQDevice = nil) or (SDHCI.CardIRQDevice <> MMC) then Exit;
+   
+    {Get IENx Register}
+    Status:=SDIODeviceReadWriteDirect(MMC,False,0,SDIO_CCCR_IENx,0,@Reg);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Result:=Status;
+      Exit;
+     end;
+   
+    {Disable Function Interrupt}
+    Reg:=Reg and not(1 shl Func.Number);
+   
+    {Disable Master Interrupt if no more Function Interrupt}
+    if (Reg and $FE) = 0 then Reg:=0;
+   
+    {Set IENx Register}
+    Status:=SDIODeviceReadWriteDirect(MMC,True,0,SDIO_CCCR_IENx,Reg,nil);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      Result:=Status;
+      Exit;
+     end; 
+   
+    {Update Function}
+    Func.Handler:=nil;
+   
+    {Update Card IRQ Count}
+    Dec(SDHCI.CardIRQCount);
+    if SDHCI.CardIRQCount = 0 then
+     begin
+      {Update Card IRQ Device}
+      SDHCI.CardIRQDevice:=nil;
+   
+      {Disable Card IRQ}
+      Status:=SDHCIHostSetupCardIRQ(SDHCI,False);
+      if Status <> MMC_STATUS_SUCCESS then
+       begin
+        Result:=Status;
+        Exit;
+       end; 
+     end;
+   
+    {Check Card IRQ Count}
+    MMC.SDIOInterruptFunction:=nil;
+    if SDHCI.CardIRQCount = 1 then
+     begin
+      {Check Functions}
+      for Count:=1 to SDIO_MAX_FUNCTIONS do
+       begin
+        Next:=MMC.SDIOFunctions[Count - 1];
+        if (Next <> nil) and Assigned(Next.Handler) then
+         begin
+          MMC.SDIOInterruptFunction:=Next;
+          Break;
+         end;
+       end;
+     end;
+   
+    Result:=MMC_STATUS_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(SDHCI.Lock);
+   end;
+  end;
+
+ //See: sdio_card_irq_put in \drivers\mmc\core\sdio_irq.c
+ //     sdio_release_irq in \drivers\mmc\core\sdio_irq.c
+end;
+
+{==============================================================================}
+
+function SDIODeviceBindFunctions(MMC:PMMCDevice):LongWord;
+{Attempt to bind SDIO functions on an MMC device to one of the registered drivers}
+{MMC: The MMC device to attempt to bind a driver to}
+{Return: MMC_STATUS_SUCCESS if completed or another error code on failure}
+var
+ Count:LongWord;
+ Status:LongWord;
+ Func:PSDIOFunction;
+ Driver:PSDIODriver;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(MMC,'SDIO Bind Functions');
+ {$ENDIF}
+
+ {Check MMC}
+ if MMCDeviceCheck(MMC) <> MMC then Exit;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(SDIODriverTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Set Default}
+    Status:=MMC_STATUS_DEVICE_UNSUPPORTED;
+
+    {Check Function Count}
+    if MMC.SDIOCount > 0 then
+     begin
+      {Get Driver}
+      Driver:=SDIODriverTable;
+      while Driver <> nil do
+       begin
+        {Check Functions}
+        for Count:=1 to SDIO_MAX_FUNCTIONS do
+         begin
+          Func:=MMC.SDIOFunctions[Count - 1];
+          if (Func <> nil) and (Func.Driver = nil) then
+           begin
+            {$IFDEF MMC_DEBUG}      
+            if MMC_LOG_ENABLED then MMCLogDebug(MMC,'Attempting to bind ' + DriverGetName(@Driver.Driver) + ' to function ' + IntToStr(Func.Number));
+            {$ENDIF}
+            
+            {Attempt to Bind}
+            Status:=Driver.DriverBind(MMC,Func);
+            if Status <> MMC_STATUS_DEVICE_UNSUPPORTED then
+             begin
+              {Check Status}
+              if Status = MMC_STATUS_SUCCESS then
+               begin
+                if MMC_LOG_ENABLED then MMCLogInfo(nil,'Bound ' + DriverGetName(@Driver.Driver) + ' to ' + DeviceGetName(@MMC.Device) + ' (Function=' + IntToStr(Func.Number) + ')');
+
+                {Check Bind (Driver may call directly)}
+                if Func.Driver = nil then
+                 begin
+                  Status:=SDIOFunctionBind(Func,Driver);
+                  if Status <> MMC_STATUS_SUCCESS then
+                   begin
+                    {Return Error}
+                    Result:=Status;
+                    Exit;
+                   end;
+                 end;
+               end
+              else
+               begin
+                {Return Error}
+                Result:=Status;
+                Exit;
+               end;
+             end;
+           end;
+         end;
+
+        {Get Next}
+        Driver:=Driver.Next;
+       end;
+     end;
+
+    {Return Result}
+    Result:=Status;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(SDIODriverTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIODeviceUnbindFunctions(MMC:PMMCDevice;Driver:PSDIODriver):LongWord;
+{Unbind SDIO functions on an MMC device from a driver}
+{MMC: The MMC device to unbind a driver from}
+{Driver: The driver to unbind the MMC device from (nil to unbind from current driver)}
+{Return: MMC_STATUS_SUCCESS if completed or another error code on failure}
+var
+ Count:LongWord;
+ Status:LongWord;
+ Func:PSDIOFunction;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(MMC,'SDIO Unbind Functions');
+ {$ENDIF}
+
+ {Check MMC}
+ if MMCDeviceCheck(MMC) <> MMC then Exit;
+
+ {Set Default}
+ Status:=MMC_STATUS_NOT_BOUND;
+
+ {Check Function Count}
+ if MMC.SDIOCount > 0 then
+  begin
+   {Check Functions}
+   for Count:=1 to SDIO_MAX_FUNCTIONS do
+    begin
+     Func:=MMC.SDIOFunctions[Count - 1];
+     if Func <> nil then
+      begin
+       {Check Driver}
+       if (Driver = nil) then
+        begin
+         if (Func.Driver <> nil) and Assigned(Func.Driver.DriverUnbind) then
+          begin
+           {$IFDEF MMC_DEBUG}      
+           if MMC_LOG_ENABLED then MMCLogDebug(MMC,'Unbinding ' + DriverGetName(@Func.Driver.Driver) + ' from function ' + IntToStr(Func.Number));
+           {$ENDIF}
+
+           {Unbind Driver}
+           Func.Driver.DriverUnbind(MMC,Func);
+
+           {Check Unbind (Driver may call directly)}
+           if Func.Driver <> nil then
+            begin
+             SDIOFunctionUnbind(Func,Func.Driver);
+            end;
+
+           Status:=MMC_STATUS_SUCCESS;
+          end;
+        end
+       else 
+        begin
+         if (Func.Driver = Driver) and Assigned(Driver.DriverUnbind) then
+          begin
+           {$IFDEF MMC_DEBUG}      
+           if MMC_LOG_ENABLED then MMCLogDebug(MMC,'Unbinding ' + DriverGetName(@Driver.Driver) + ' from function ' + IntToStr(Func.Number));
+           {$ENDIF}
+
+           {Unbind Driver}
+           Driver.DriverUnbind(MMC,Func);
+
+           {Check Unbind (Driver may call directly)}
+           if Func.Driver <> nil then
+            begin
+             SDIOFunctionUnbind(Func,Driver);
+            end;
+
+           Status:=MMC_STATUS_SUCCESS;
+          end;
+        end;
+      end;
+    end;
+  end;
+
+ {Return Result}
+ Result:=Status;
+end;
+
+{==============================================================================}
+
+function SDIOFunctionAllocate(MMC:PMMCDevice;Number:LongWord):PSDIOFunction;
+var
+ Status:LongWord;
+ Func:PSDIOFunction;
+begin
+ {}
+ Result:=nil;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Allocate (Number=' + IntToStr(Number) + ')');
+ {$ENDIF}
+
+ {Check Number}
+ if (Number < 1) or (Number > SDIO_MAX_FUNCTIONS) then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(MMC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Allocate Function}
+    Func:=PSDIOFunction(AllocMem(SizeOf(TSDIOFunction)));
+    if Func = nil then Exit;
+    
+    {Update Function}
+    Func.MMC:=MMC;
+    Func.Number:=Number;
+    Func.SDIOState:=SDIO_STATE_DETACHED;
+    Func.SDIOStatus:=SDIO_STATUS_UNBOUND;
+    
+    {Allocate DMA Buffer}
+    Func.DMABuffer:=DMABufferAllocate(DMAHostGetDefault,SizeOf(LongWord));
+    if Func.DMABuffer = nil then
+     begin
+      {Release Function}
+      SDIOFunctionRelease(Func);
+   
+      Exit;
+     end;
+
+    if not(DMA_CACHE_COHERENT) then
+     begin
+      {Clean Cache (Dest)}
+      CleanDataCacheRange(PtrUInt(Func.DMABuffer),SizeOf(LongWord));
+     end;
+   
+    {Update State}  
+    Func.SDIOState:=SDIO_STATE_ATTACHING;
+   
+    {Read Function Basic Information Register (FBR)} 
+    Status:=SDIODeviceReadFBR(Func);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      {Release Function}
+      SDIOFunctionRelease(Func);
+   
+      Exit;
+     end;
+     
+    {Read Function Card Information Structure (CIS)} 
+    Status:=SDIODeviceReadFunctionCIS(Func);
+    if Status <> MMC_STATUS_SUCCESS then
+     begin
+      {Release Function}
+      SDIOFunctionRelease(Func);
+   
+      Exit;
+     end;
+   
+    {Update State}  
+    Func.SDIOState:=SDIO_STATE_ATTACHED;
+    
+    {Log Function Configuration}
+    {$IFDEF MMC_DEBUG}
+    if MMC_LOG_ENABLED then
+     begin
+      MMCLogDebug(nil,' Function Configuration:');
+      MMCLogDebug(nil,'  Number = ' + IntToStr(Func.Number));
+      MMCLogDebug(nil,'  ClassId = ' + IntToHex(Func.ClassId,2));
+      MMCLogDebug(nil,'  VendorId = ' + IntToHex(Func.VendorId,4));
+      MMCLogDebug(nil,'  DeviceId = ' + IntToHex(Func.DeviceId,4));
+      MMCLogDebug(nil,'  BlockSize = ' + IntToStr(Func.BlockSize));
+      MMCLogDebug(nil,'  MaxBlockSize = ' + IntToStr(Func.MaxBlockSize));
+      MMCLogDebug(nil,'  EnableTimeout = ' + IntToStr(Func.EnableTimeout));
+      MMCLogDebug(nil,'  State = ' + SDIOFunctionStateToString(Func.SDIOState));
+      MMCLogDebug(nil,'  Status = ' + SDIOFunctionStatusToString(Func.SDIOStatus));
+     end; 
+    {$ENDIF}
+   
+    {Return Function}                      
+    Result:=Func;
+   finally
+    {Release the Lock}
+    MutexUnlock(MMC.Lock);
+   end;
+  end;
+ 
+ //See: sdio_alloc_func in \drivers\mmc\core\sdio_bus.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionRelease(Func:PSDIOFunction):LongWord;
+var
+ MMC:PMMCDevice;
+ Tuple:PSDIOTuple;
+ Current:PSDIOTuple;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Release (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+ 
+ {Get MMC}
+ MMC:=Func.MMC;
+ 
+ {Acquire the Lock}
+ if MutexLock(MMC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Update State}  
+    Func.SDIOState:=SDIO_STATE_DETACHING;
+    
+    {Remove Function}
+    Func.MMC.SDIOFunctions[Func.Number - 1]:=nil;
+    
+    {Release DMA Buffer}
+    if Func.DMABuffer <> nil then
+     begin
+      DMABufferRelease(Func.DMABuffer);
+     end;
+    
+    {Free Tuples}
+    Tuple:=Func.Tuples;
+    while Tuple <> nil do
+     begin
+      Current:=Tuple;
+      Tuple:=Tuple.Next;
+      
+      FreeMem(Current);
+     end;
+    Func.Tuples:=nil;
+    
+    {Update State}  
+    Func.SDIOState:=SDIO_STATE_DETACHED;
+    
+    {Release Function}
+    FreeMem(Func);
+    
+    Result:=MMC_STATUS_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(MMC.Lock);
+   end;
+  end;
+
+ //See: sdio_release_func in \drivers\mmc\core\sdio_bus.c
+ //     sdio_free_func_cis in \drivers\mmc\core\sdio_cis.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionFind(MMC:PMMCDevice;Number:LongWord):PSDIOFunction;
+begin
+ {}
+ Result:=nil;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(MMC,'SDIO Function Find (Function=' + IntToStr(Number) + ')');
+ {$ENDIF}
+
+ {Check Number}
+ if (Number < 1) or (Number > SDIO_MAX_FUNCTIONS) then Exit;
+
+ {Acquire the Lock}
+ if MutexLock(MMC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Function}
+    Result:=MMC.SDIOFunctions[Number - 1];
+   finally
+    {Release the Lock}
+    MutexUnlock(MMC.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIOFunctionFindById(MMC:PMMCDevice;VendorId,DeviceId:Word):PSDIOFunction;
+var
+ Count:LongWord;
+ Func:PSDIOFunction;
+begin
+ {}
+ Result:=nil;
+
+ {Check MMC}
+ if MMC = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(MMC,'SDIO Function Find By Id (VendorId=' + IntToHex(VendorId,4) + ' DeviceId=' + IntToHex(DeviceId,4) + ')');
+ {$ENDIF}
+ 
+ {Acquire the Lock}
+ if MutexLock(MMC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Find Function}
+    for Count:=1 to SDIO_MAX_FUNCTIONS do
+     begin
+      Func:=MMC.SDIOFunctions[Count - 1];
+      if Func <> nil then
+       begin
+        if (Func.VendorId = VendorId) and (Func.DeviceId = DeviceId) then
+         begin
+          Result:=Func;
+          Exit;
+         end;
+       end;
+     end;
+   finally
+    {Release the Lock}
+    MutexUnlock(MMC.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIOFunctionEnumerate(MMC:PMMCDevice;Callback:TSDIOFunctionEnumerate;Data:Pointer):LongWord;
+var
+ Count:LongWord;
+ Func:PSDIOFunction;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+ 
+ {Acquire the Lock}
+ if MutexLock(MMC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    Result:=ERROR_OPERATION_FAILED;
+    
+    {Enumerate Functions}
+    for Count:=1 to SDIO_MAX_FUNCTIONS do
+     begin
+      Func:=MMC.SDIOFunctions[Count - 1];
+      if Func <> nil then
+       begin
+        if Callback(Func,Data) <> ERROR_SUCCESS then Exit;
+       end;
+     end;
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(MMC.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;  
+end;
+
+{==============================================================================}
+
+function SDIOFunctionBind(Func:PSDIOFunction;Driver:PSDIODriver):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {Check Driver}
+ if Driver = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Bind (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+
+ {Acquire the Lock}
+ if MutexLock(Func.MMC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check State}
+    Result:=MMC_STATUS_DEVICE_DETACHED;
+    if Func.SDIOState <> SDIO_STATE_ATTACHED then Exit;
+
+    {Check Status}
+    Result:=MMC_STATUS_ALREADY_BOUND;
+    if Func.Driver <> nil then Exit;
+    if Func.SDIOStatus <> SDIO_STATUS_UNBOUND then Exit;
+
+    {Update Status}
+    Func.Driver:=Driver;
+    Func.SDIOStatus:=SDIO_STATUS_BOUND;
+
+    Result:=MMC_STATUS_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(Func.MMC.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIOFunctionUnbind(Func:PSDIOFunction;Driver:PSDIODriver):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {Check Driver}
+ if Driver = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Unbind (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+
+ {Acquire the Lock}
+ if MutexLock(Func.MMC.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check State}
+    Result:=MMC_STATUS_DEVICE_DETACHED;
+    if Func.SDIOState <> SDIO_STATE_ATTACHED then Exit;
+    
+    {Check Status}
+    Result:=MMC_STATUS_NOT_BOUND;
+    if Func.Driver <> Driver then Exit;
+    if Func.SDIOStatus <> SDIO_STATUS_BOUND then Exit;
+
+    {Update Status}
+    Func.Driver:=nil;
+    Func.SDIOStatus:=SDIO_STATUS_UNBOUND;
+
+    Result:=MMC_STATUS_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(Func.MMC.Lock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function SDIOFunctionEnable(Func:PSDIOFunction):LongWord;
+var
+ Reg:Byte;
+ Timeout:Int64;
+ Status:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Enable (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+
+ {Get I/O Enable}
+ Status:=SDIODeviceReadWriteDirect(Func.MMC,False,0,SDIO_CCCR_IOEx,0,@Reg);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+  
+ {Enable Function}
+ Reg:=Reg or (1 shl Func.Number);
+
+ {Set I/O Enable}
+ Status:=SDIODeviceReadWriteDirect(Func.MMC,True,0,SDIO_CCCR_IOEx,Reg,nil);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+  
+ {Get Timeout}
+ Timeout:=ClockGetTotal + (Func.EnableTimeout * CLOCK_CYCLES_PER_MILLISECOND);
+ 
+ {Wait for I/O Ready}
+ while True do
+  begin
+   {Get I/O Ready}
+   Status:=SDIODeviceReadWriteDirect(Func.MMC,False,0,SDIO_CCCR_IORx,0,@Reg);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     if MMC_LOG_ENABLED then MMCLogError(nil,'SDIO Failed to enable device (Function=' + IntToStr(Func.Number) + ')');
+
+     Result:=Status;
+     Exit;
+    end; 
+   
+   {Check I/O Ready}
+   if (Reg and (1 shl Func.Number)) <> 0 then Break;
+   
+   {Check Timeout}
+   if ClockGetTotal > Timeout then
+    begin
+     Result:=MMC_STATUS_TIMEOUT;
+     Exit;
+    end;
+  end;
+ 
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: sdio_enable_func in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionDisable(Func:PSDIOFunction):LongWord;
+var
+ Reg:Byte;
+ Status:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Disable (Function=' + IntToStr(Func.Number) + ')');
+ {$ENDIF}
+
+ {Get I/O Enable}
+ Status:=SDIODeviceReadWriteDirect(Func.MMC,False,0,SDIO_CCCR_IOEx,0,@Reg);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ {Disable Function}
+ Reg:=Reg and not(1 shl Func.Number);
+
+ {Set I/O Enable}
+ Status:=SDIODeviceReadWriteDirect(Func.MMC,True,0,SDIO_CCCR_IOEx,Reg,nil);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: sdio_disable_func in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionSetBlockSize(Func:PSDIOFunction;BlockSize:LongWord):LongWord;
+var
+ Status:LongWord;
+ SDHCI:PSDHCIHost;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Set Block Size (Function=' + IntToStr(Func.Number) + ' Size=' + IntToStr(BlockSize) + ')');
+ {$ENDIF}
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(Func.MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+
+ {Check Block Size}
+ if BlockSize > SDHCI.MaximumBlockSize then Exit;
+
+ {Get Default Size}
+ if BlockSize = 0 then
+  begin
+   BlockSize:=Min(Func.MaxBlockSize,SDHCI.MaximumBlockSize);
+   BlockSize:=Min(BlockSize,512);
+  end;
+  
+ {Set Block Size (Lower)}
+ Status:=SDIODeviceReadWriteDirect(Func.MMC,True,0,SDIO_FBR_BASE(Func.Number) + SDIO_FBR_BLKSIZE,BlockSize and $FF,nil);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+
+ {Set Block Size (Upper)}
+ Status:=SDIODeviceReadWriteDirect(Func.MMC,True,0,SDIO_FBR_BASE(Func.Number) + SDIO_FBR_BLKSIZE + 1,(BlockSize shr 8) and $FF,nil);
+ if Status <> MMC_STATUS_SUCCESS then
+  begin
+   Result:=Status;
+   Exit;
+  end; 
+ 
+ {Update Block Size}
+ Func.BlockSize:=BlockSize;
+ 
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: sdio_set_block_size in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionReadWriteExtended(Func:PSDIOFunction;Write:Boolean;Address:LongWord;Increment:Boolean;Buffer:Pointer;Size:LongWord):LongWord;
+{Perform an SDIO read or write to the specified function at the specified address}
+{Handles splitting any size read or write into multiple IO_RW_EXTENDED requests, accounting for maximum block sizes}
+var
+ SDHCI:PSDHCIHost;
+ Remain:LongWord;
+ Status:LongWord;
+ BlockCount:LongWord;
+ MaxBlockCount:LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDIO Function Read Write Extended (Function=' + IntToStr(Func.Number) + ' Write=' + BoolToStr(Write,True) + ' Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+
+ {Check Block Size}
+ if Func.BlockSize = 0 then Exit;
+
+ {Get SDHCI}
+ SDHCI:=PSDHCIHost(Func.MMC.Device.DeviceData);
+ if SDHCI = nil then Exit;
+
+ {Perform Block Mode Transfer}
+ Remain:=Size;
+ if Func.MMC.CCCR.MultiBlock and (Size > SDIOFunctionMaxByteSize(Func)) then
+  begin
+   {IO_RW_EXTENDED only allows 511 blocks maximum}
+   MaxBlockCount:=Min(SDHCI.MaximumBlockCount,511);
+
+   while Remain > Func.BlockSize do
+    begin
+     {Get Block Count}
+     BlockCount:=Remain div Func.BlockSize;
+     if BlockCount > MaxBlockCount then BlockCount:=MaxBlockCount;
+
+     {Get Transfer Size}
+     Size:=(BlockCount * Func.BlockSize);
+
+     {Perform Transfer}
+     Status:=SDIODeviceReadWriteExtended(Func.MMC,Write,Func.Number,Address,Increment,Buffer,BlockCount,Func.BlockSize);
+     if Status <> MMC_STATUS_SUCCESS then
+      begin
+       Result:=Status;
+       Exit;
+      end;
+
+     {Update Position}
+     Dec(Remain,Size);
+     Inc(Buffer,Size);
+     if Increment then Inc(Address,Size);
+    end;
+  end;
+
+ {Perform Byte Mode Transfer}
+ while Remain > 0 do
+  begin
+   {Get Transfer Size}
+   Size:=Min(Remain,SDIOFunctionMaxByteSize(Func));
+
+   {Perform Transfer (Block Count = 0)}
+   Status:=SDIODeviceReadWriteExtended(Func.MMC,Write,Func.Number,Address,Increment,Buffer,0,Size);
+   if Status <> MMC_STATUS_SUCCESS then
+    begin
+     Result:=Status;
+     Exit;
+    end;
+
+   {Update Position}
+   Dec(Remain,Size);
+   Inc(Buffer,Size);
+   if Increment then Inc(Address,Size);
+  end;
+
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: sdio_io_rw_ext_helper in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionRead(Func:PSDIOFunction;Address:LongWord;Buffer:Pointer;Size:LongWord):LongWord;
+{Wrapper for reading multiple bytes from an SDIO function}
+begin
+ {}
+ Result:=SDIOFunctionReadWriteExtended(Func,False,Address,True,Buffer,Size);
+ 
+ //See: sdio_memcpy_fromio in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionWrite(Func:PSDIOFunction;Address:LongWord;Buffer:Pointer;Size:LongWord):LongWord;
+{Wrapper for writing multiple bytes to an SDIO function}
+begin
+ {}
+ Result:=SDIOFunctionReadWriteExtended(Func,True,Address,True,Buffer,Size);
+ 
+ //See: sdio_memcpy_toio in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionReadByte(Func:PSDIOFunction;Address:LongWord;Output:PByte):LongWord;
+{Wrapper for reading a single byte from an SDIO function}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Check Output}
+ if Output = nil then Exit;
+
+ {Read Byte}
+ Result:=SDIODeviceReadWriteDirect(Func.MMC,False,Func.Number,Address,0,Output);
+ 
+ //See: sdio_readb in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionWriteByte(Func:PSDIOFunction;Address:LongWord;Input:Byte):LongWord;
+{Wrapper for writing a single byte to an SDIO function}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Write Byte}
+ Result:=SDIODeviceReadWriteDirect(Func.MMC,True,Func.Number,Address,Input,nil);
+ 
+ //See: sdio_writeb in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionWriteReadByte(Func:PSDIOFunction;Address:LongWord;Input:Byte;Output:PByte):LongWord;
+{Wrapper for performing a read after write (RAW) operation on an SDIO function}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Check Output}
+ if Output = nil then Exit;
+ 
+ {Write/Read Byte}
+ Result:=SDIODeviceReadWriteDirect(Func.MMC,True,Func.Number,Address,Input,Output);
+ 
+ //See: sdio_writeb_readb in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionReadWord(Func:PSDIOFunction;Address:LongWord;Output:PWord):LongWord;
+{Wrapper for reading a single word from an SDIO function}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Read Word}
+ Result:=SDIOFunctionRead(Func,Address,Func.DMABuffer,SizeOf(Word));
+ 
+ {Copy Buffer}
+ if Result = MMC_STATUS_SUCCESS then Output^:=PWord(Func.DMABuffer)^;
+
+ //See: sdio_readw in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionWriteWord(Func:PSDIOFunction;Address:LongWord;Input:Word):LongWord;
+{Wrapper for writing a single word to an SDIO function}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Copy Value}
+ PWord(Func.DMABuffer)^:=Input;
+ 
+ {Write Word}
+ Result:=SDIOFunctionWrite(Func,Address,Func.DMABuffer,SizeOf(Word));
+
+ //See: sdio_writew in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionReadLong(Func:PSDIOFunction;Address:LongWord;Output:PLongWord):LongWord;
+{Wrapper for reading a single longword from an SDIO function}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Read LongWord}
+ Result:=SDIOFunctionRead(Func,Address,Func.DMABuffer,SizeOf(LongWord));
+ 
+ {Copy Buffer}
+ if Result = MMC_STATUS_SUCCESS then Output^:=PLongWord(Func.DMABuffer)^;
+ 
+ //See: sdio_readl in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionWriteLong(Func:PSDIOFunction;Address:LongWord;Input:LongWord):LongWord;
+{Wrapper for writing a single longword to an SDIO function}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Copy Value}
+ PLongWord(Func.DMABuffer)^:=Input;
+ 
+ {Write LongWord}
+ Result:=SDIOFunctionWrite(Func,Address,Func.DMABuffer,SizeOf(LongWord));
+ 
+ //See: sdio_writel in \drivers\mmc\core\sdio_io.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionRegisterInterrupt(Func:PSDIOFunction;Handler:TSDIOInterruptHandler):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+ 
+ {Register Interrupt}
+ Result:=SDIODeviceRegisterInterrupt(Func.MMC,Func,Handler);
+
+ //See: sdio_claim_irq in \drivers\mmc\core\sdio_irq.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionDeregisterInterrupt(Func:PSDIOFunction):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check Function}
+ if Func = nil then Exit;
+
+ {Deregister Interrupt}
+ Result:=SDIODeviceDeregisterInterrupt(Func.MMC,Func);
+
+ //See: sdio_release_irq in \drivers\mmc\core\sdio_irq.c
+end;
+
+{==============================================================================}
+
+function SDIOHostDispatchInterrupt(SDHCI:PSDHCIHost;IRQ,FIQ:Boolean):LongWord;
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+
+ {Schedule Worker}
+ if (SDHCI.CardIRQWorker = INVALID_HANDLE_VALUE) and (SDHCI.CardIRQDevice <> nil) then
+  begin
+   if FIQ then
+    begin
+     if WorkerScheduleFIQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(SDIODeviceProcessInterrupts),SDHCI.CardIRQDevice,nil) = ERROR_SUCCESS then
+      begin
+       SDHCI.CardIRQWorker:=0; {FIQ worker doesn't return a handle as it doesn't allow interval or repeat}
+      end; 
+    end
+   else if IRQ then
+    begin
+     if WorkerScheduleIRQEx(CPU_AFFINITY_NONE,WORKER_FLAG_PRIORITY,TWorkerTask(SDIODeviceProcessInterrupts),SDHCI.CardIRQDevice,nil) = ERROR_SUCCESS then
+      begin
+       SDHCI.CardIRQWorker:=0; {IRQ worker doesn't return a handle as it doesn't allow interval or repeat}
+      end; 
+    end
+   else
+    begin
+     SDHCI.CardIRQWorker:=WorkerScheduleEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(SDIODeviceProcessInterrupts),SDHCI.CardIRQDevice,nil);
+    end; 
+  end;
+  
+ Result:=MMC_STATUS_SUCCESS;
+
+ //See: sdio_signal_irq in \drivers\mmc\core\sdio_irq.c
+end;
+
 {==============================================================================}
  
 function SDIODriverCreate:PSDIODriver;
@@ -9179,7 +11948,7 @@ end;
 function SDIODriverRegister(Driver:PSDIODriver):LongWord;
 {Register a new Driver in the SDIO Driver table}
 var
- Host:PSDHCIHost;
+ MMC:PMMCDevice;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -9245,34 +12014,46 @@ begin
     
     if MMC_LOG_ENABLED then MMCLogInfo(nil,'Registered ' + DriverGetName(@Driver.Driver) + ' (Id=' + IntToStr(Driver.Driver.DriverId) + ')');
     
+    {Release Driver Table Lock}
+    CriticalSectionUnlock(SDIODriverTableLock);
+    
     {Acquire the Lock}
     if CriticalSectionLock(SDHCIHostTableLock) = ERROR_SUCCESS then
      begin
       try
-       {Get Host}
-       Host:=SDHCIHostTable;
-       while Host <> nil do
+       {Acquire the Lock}
+       if CriticalSectionLock(MMCDeviceTableLock) = ERROR_SUCCESS then
         begin
-         
-         //To Do //Bind to SDIO device(s)
-         
-         {Get Next}
-         Host:=Host.Next;
-        end;
+         try
+          {Get MMC}
+          MMC:=MMCDeviceTable;
+          while MMC <> nil do
+           begin
+            {Check SDIO}
+            if MMC.SDIOCount > 0 then
+             begin
+              {Bind Functions}
+              SDIODeviceBindFunctions(MMC);
+             end;
+
+            {Get Next}
+            MMC:=MMC.Next;
+           end;
         
-       {Return Result}
-       Result:=ERROR_SUCCESS;
+          {Return Result}
+          Result:=ERROR_SUCCESS;
+         finally
+          {Release the Lock}
+          CriticalSectionUnlock(MMCDeviceTableLock);
+         end;
+        end;  
       finally
        {Release the Lock}
        CriticalSectionUnlock(SDHCIHostTableLock);
       end;
-     end
-    else
-     begin
-      Result:=ERROR_CAN_NOT_COMPLETE;
-     end;     
+     end;
    finally
-    CriticalSectionUnlock(SDIODriverTableLock);
+    if Result <> ERROR_SUCCESS then CriticalSectionUnlock(SDIODriverTableLock);
    end;
   end
  else
@@ -9286,7 +12067,7 @@ end;
 function SDIODriverDeregister(Driver:PSDIODriver):LongWord;
 {Deregister a Driver from the SDIO Driver table}
 var
- Host:PSDHCIHost;
+ MMC:PMMCDevice;
  Prev:PSDIODriver;
  Next:PSDIODriver;
 begin
@@ -9313,16 +12094,32 @@ begin
     if CriticalSectionLock(SDHCIHostTableLock) = ERROR_SUCCESS then
      begin
       try
-       {Get Host}
-       Host:=SDHCIHostTable;
-       while Host <> nil do
+       {Acquire the Lock}
+       if CriticalSectionLock(MMCDeviceTableLock) = ERROR_SUCCESS then
         begin
-         
-         //To Do // Unbind from SDIO device(s)
-    
-         {Get Next}
-         Host:=Host.Next;
-        end;
+         try
+          {Get MMC}
+          MMC:=MMCDeviceTable;
+          while MMC <> nil do
+           begin
+            {Check SDIO}
+            if MMC.SDIOCount > 0 then
+             begin
+              {Unbind Functions}
+              SDIODeviceUnbindFunctions(MMC,Driver);
+             end;
+
+            {Get Next}
+            MMC:=MMC.Next;
+           end;
+        
+          {Return Result}
+          Result:=ERROR_SUCCESS;
+         finally
+          {Release the Lock}
+          CriticalSectionUnlock(MMCDeviceTableLock);
+         end;
+        end;  
       finally
        {Release the Lock}
        CriticalSectionUnlock(SDHCIHostTableLock);
@@ -9442,6 +12239,8 @@ begin
  if CriticalSectionLock(SDIODriverTableLock) = ERROR_SUCCESS then
   begin
    try
+    Result:=ERROR_OPERATION_FAILED;
+    
     {Get Driver}
     Driver:=SDIODriverTable;
     while Driver <> nil do
@@ -9987,7 +12786,7 @@ begin
          {Check DMA Buffer}
          if SDHCI.DMABuffer <> nil then
           begin
-           if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Using DMA bounce buffer for read data destination');
+           if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Using DMA bounce buffer for read data destination (' + IntToStr(SDHCI.DMAData.Size) + ' bytes)');
       
            {Use DMA Buffer}
            SDHCI.DMAData.Dest:=SDHCI.DMABuffer;
@@ -9996,7 +12795,7 @@ begin
            if not(DMA_CACHE_COHERENT) then
             begin
              {Clean Cache (Dest)}
-             CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
+             CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),SDHCI.DMAData.Size);
             end;
           end;
         end
@@ -10017,7 +12816,7 @@ begin
          {Check DMA Buffer}
          if SDHCI.DMABuffer <> nil then
           begin
-           if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data to DMA bounce buffer from write data source');
+           if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data to DMA bounce buffer from write data source (' + IntToStr(SDHCI.DMAData.Size) + ' bytes)');
       
            {Copy Data to DMA Buffer}
            SDHCI.DMAData.Source:=SDHCI.DMABuffer;
@@ -10184,7 +12983,7 @@ begin
                {Check DMA Buffer}
                if SDHCI.DMABuffer <> nil then
                 begin
-                 if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Using DMA bounce buffer for read data destination');
+                 if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Using DMA bounce buffer for read data destination (' + IntToStr(Command.Data.BlockCount * Command.Data.BlockSize) + ' bytes)');
                  
                  {Check Cache}
                  if not(DMA_CACHE_COHERENT) then
@@ -10199,7 +12998,7 @@ begin
                {Check DMA Buffer}
                if SDHCI.DMABuffer <> nil then
                 begin
-                 if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data to DMA bounce buffer from write data source');
+                 if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data to DMA bounce buffer from write data source (' + IntToStr(Command.Data.BlockCount * Command.Data.BlockSize) + ' bytes)');
             
                  {Copy Data to DMA Buffer}
                  System.Move(Command.Data.Data^,SDHCI.DMABuffer^,Command.Data.BlockCount * Command.Data.BlockSize);
@@ -10460,7 +13259,7 @@ begin
              {Check DMA Buffer}
              if SDHCI.DMABuffer <> nil then
               begin
-               if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data from DMA bounce buffer to read data destination');
+               if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data from DMA bounce buffer to read data destination (' + IntToStr(Command.Data.BlockCount * Command.Data.BlockSize) + ' bytes)');
                
                {Check Cache}
                if not(DMA_CACHE_COHERENT) then
@@ -10526,7 +13325,7 @@ begin
  {Check DMA Buffer}
  if (SDHCI.DMABuffer <> nil) and ((SDHCI.Command.Data.Flags and MMC_DATA_READ) <> 0) then
   begin
-   if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data from DMA bounce buffer to read data destination');
+   if MMC_LOG_ENABLED then MMCLogWarn(nil,'SDHCI Copying data from DMA bounce buffer to read data destination (' + IntToStr(SDHCI.Command.Data.BlockCount * SDHCI.Command.Data.BlockSize) + ' bytes)');
    
    {Copy Data from DMA Buffer}
    System.Move(SDHCI.DMABuffer^,SDHCI.Command.Data.Data^,SDHCI.Command.Data.BlockCount * SDHCI.Command.Data.BlockSize);
@@ -10536,6 +13335,104 @@ begin
  SemaphoreSignal(SDHCI.DMAWait);
  
  //See: bcm2835_mmc_dma_complete in bcm2835-mmc.c
+end;
+
+{==============================================================================}
+
+function SDHCIHostSetupCardIRQ(SDHCI:PSDHCIHost;Enable:LongBool):LongWord;
+{Default Card IRQ setup function for SDHCI host controllers}
+
+{Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Setup Card IRQ');
+ {$ENDIF}
+ 
+ {Check Setup Card IRQ}
+ if Assigned(SDHCI.HostSetupCardIRQ) then
+  begin
+   {Host Setup Card IRQ Method}
+   Result:=SDHCI.HostSetupCardIRQ(SDHCI,Enable);
+  end
+ else
+  begin
+   {Default Setup Card IRQ Method}
+   {Acquire Spin Lock}
+   if SDHCIHostLock(SDHCI) = ERROR_SUCCESS then
+    begin
+     try
+      {Check Enable}
+      if Enable then
+       begin
+        SDHCI.CardIRQEnabled:=True;
+        SDHCI.Interrupts:=SDHCI.Interrupts or SDHCI_INT_CARD_INT;
+       end
+      else
+       begin
+        SDHCI.CardIRQEnabled:=False;
+        SDHCI.Interrupts:=SDHCI.Interrupts and not(SDHCI_INT_CARD_INT);
+       end;
+      
+      {Update Interrupts}
+      SDHCIHostWriteLong(SDHCI,SDHCI_INT_ENABLE,SDHCI.Interrupts);
+      SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
+
+      Result:=MMC_STATUS_SUCCESS;
+     finally
+      {Release Spin Lock}
+      SDHCIHostUnlock(SDHCI);
+     end;
+    end;
+  end; 
+ 
+ //See: sdhci_enable_sdio_irq in sdhci.c
+ //     bcm2835_mmc_enable_sdio_irq in bcm2835-mmc.c
+end;
+
+{==============================================================================}
+
+function SDHCIHostCompleteCardIRQ(SDHCI:PSDHCIHost):LongWord;
+{Default Card IRQ completion function for SDHCI host controllers}
+
+{Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
+begin
+ {}
+ Result:=MMC_STATUS_INVALID_PARAMETER;
+ 
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+ 
+ {$IFDEF MMC_DEBUG}
+ if MMC_LOG_ENABLED then MMCLogDebug(nil,'SDHCI Complete Card IRQ');
+ {$ENDIF}
+ 
+ {Check Complete Card IRQ}
+ if Assigned(SDHCI.HostCompleteCardIRQ) then
+  begin
+   {Host Complete Card IRQ Method}
+   Result:=SDHCI.HostCompleteCardIRQ(SDHCI);
+  end
+ else
+  begin
+   {Default Complete Card IRQ Method}
+   if SDHCI.CardIRQEnabled then
+    begin
+     Result:=SDHCIHostSetupCardIRQ(SDHCI,True);
+    end
+   else
+    begin
+     Result:=MMC_STATUS_SUCCESS;
+    end;
+  end; 
+ 
+ //See: sdhci_ack_sdio_irq in sdhci.c
+ //     bcm2835_mmc_ack_sdio_irq in bcm2835-mmc.c
 end;
 
 {==============================================================================}
@@ -11597,6 +14494,13 @@ begin
       end;
     end;  
    
+   {Check SDIO}
+   if MMC.SDIOCount > 0 then
+    begin
+     {Bind Functions}
+     SDIODeviceBindFunctions(MMC);
+    end;
+   
    Result:=ERROR_SUCCESS;
   end;  
  
@@ -11644,6 +14548,13 @@ begin
    MMC:=MMCDeviceFindByDevice(@SDHCI.Device);
    if MMC <> nil then
     begin 
+     {Check SDIO}
+     if MMC.SDIOCount > 0 then
+      begin
+       {Unbind Functions}
+       SDIODeviceUnbindFunctions(MMC,nil);
+      end;
+     
      {Check Storage}
      if MMC.Storage <> nil then
       begin
@@ -11713,6 +14624,48 @@ begin
    
    Result:=ERROR_SUCCESS;
   end; 
+end;
+
+{==============================================================================}
+
+function SDHCIHostLock(SDHCI:PSDHCIHost):LongWord; inline;
+{Default host lock function for SDHCI host controllers}
+
+{Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
+begin
+ {}
+ {Check Host Lock}
+ if Assigned(SDHCI.HostLock) then
+  begin
+   {Host Lock Method}
+   Result:=SDHCI.HostLock(SDHCI);
+  end
+ else
+  begin
+   {Default Lock Method}
+   Result:=SpinLockIRQ(SDHCI.Spin);
+  end;  
+end;
+
+{==============================================================================}
+
+function SDHCIHostUnlock(SDHCI:PSDHCIHost):LongWord; inline;
+{Default host unlock function for SDHCI host controllers}
+
+{Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
+begin
+ {}
+ {Check Host Unlock}
+ if Assigned(SDHCI.HostUnlock) then
+  begin
+   {Host Unlock Method}
+   Result:=SDHCI.HostUnlock(SDHCI);
+  end
+ else
+  begin
+   {Default Unlock Method}
+   Result:=SpinUnlockIRQ(SDHCI.Spin);
+  end;  
 end;
 
 {==============================================================================}
@@ -12120,6 +15073,8 @@ begin
  Result.SDHCIState:=SDHCI_STATE_DISABLED;
  Result.HostStart:=nil;
  Result.HostStop:=nil;
+ Result.HostLock:=nil;
+ Result.HostUnlock:=nil;
  Result.HostReadByte:=nil;
  Result.HostReadWord:=nil;
  Result.HostReadLong:=nil;
@@ -12137,17 +15092,32 @@ begin
  Result.HostPrepareDMA:=nil;
  Result.HostStartDMA:=nil;
  Result.HostStopDMA:=nil;
+ Result.HostSetupCardIRQ:=nil;
+ Result.HostCompleteCardIRQ:=nil;
  Result.DeviceInitialize:=nil;
  Result.DeviceDeinitialize:=nil;
  Result.DeviceGetCardDetect:=nil;
  Result.DeviceGetWriteProtect:=nil;
  Result.DeviceSendCommand:=nil;
  Result.DeviceSetIOS:=nil;
+ Result.Spin:=INVALID_HANDLE_VALUE;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Wait:=INVALID_HANDLE_VALUE;
  Result.DMAWait:=INVALID_HANDLE_VALUE;
+ Result.CardIRQWorker:=INVALID_HANDLE_VALUE;
  
- {Create Lock}
+ {Create Spin Lock}
+ Result.Spin:=SpinCreate;
+ if Result.Spin = INVALID_HANDLE_VALUE then
+  begin
+   if MMC_LOG_ENABLED then MMCLogError(nil,'Failed to create spin lock for SDHCI host');
+   
+   SDHCIHostDestroy(Result);
+   Result:=nil;
+   Exit;
+  end;
+ 
+ {Create Mutex Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
@@ -12178,10 +15148,16 @@ begin
  {Check State}
  if SDHCI.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
  
- {Destroy Lock}
+ {Destroy Mutex Lock}
  if SDHCI.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(SDHCI.Lock);
+  end;
+
+ {Destroy Spin Lock}
+ if SDHCI.Spin <> INVALID_HANDLE_VALUE then
+  begin
+   SpinDestroy(SDHCI.Spin);
   end;
  
  {Destroy SDHCI} 
@@ -12419,6 +15395,8 @@ begin
  if CriticalSectionLock(SDHCIHostTableLock) = ERROR_SUCCESS then
   begin
    try
+    Result:=ERROR_OPERATION_FAILED;
+    
     {Get SDHCI}
     SDHCI:=SDHCIHostTable;
     while SDHCI <> nil do
@@ -12527,6 +15505,32 @@ begin
  if MMC = nil then Exit;
  
  Result:=(MMC.Version and SD_VERSION_SD) <> 0;
+end;
+
+{==============================================================================}
+
+function MMCIsSDIO(MMC:PMMCDevice):Boolean;
+begin
+ {}
+ Result:=False;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ Result:=(MMC.Version and SDIO_VERSION_SDIO) <> 0;
+end;
+
+{==============================================================================}
+
+function MMCGetSDHCI(MMC:PMMCDevice):PSDHCIHost; inline;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ Result:=PSDHCIHost(MMC.Device.DeviceData);
 end;
 
 {==============================================================================}
@@ -12799,6 +15803,12 @@ begin
   MMC_STATUS_OUT_OF_MEMORY:Result:='MMC_STATUS_OUT_OF_MEMORY'; {out of memory}
   MMC_STATUS_UNSUPPORTED_REQUEST:Result:='MMC_STATUS_UNSUPPORTED_REQUEST'; {unsupported request}
   MMC_STATUS_NOT_PROCESSED:Result:='MMC_STATUS_NOT_PROCESSED'; {request not processed yet}
+  MMC_STATUS_OPERATION_FAILED:Result:='MMC_STATUS_OPERATION_FAILED'; {operation not completed}
+  MMC_STATUS_DEVICE_DETACHED:Result:='MMC_STATUS_DEVICE_DETACHED'; {device was detached}
+  MMC_STATUS_DEVICE_UNSUPPORTED:Result:='MMC_STATUS_DEVICE_UNSUPPORTED'; {device is unsupported by the driver}
+  MMC_STATUS_NOT_BOUND:Result:='MMC_STATUS_NOT_BOUND'; {device is not bound to a driver}
+  MMC_STATUS_ALREADY_BOUND:Result:='MMC_STATUS_ALREADY_BOUND'; {device is already bound to a driver}
+  MMC_STATUS_NOT_READY:Result:='MMC_STATUS_NOT_READY'; {device is not ready yet, retry again later}
  end;
 end;
 
@@ -12811,6 +15821,12 @@ begin
  Result:='MMC_VERSION_UNKNOWN';
 
  case Version of
+  {SDIO Version}
+  SDIO_VERSION_1_00:Result:='SDIO_VERSION_1_00';
+  SDIO_VERSION_1_10:Result:='SDIO_VERSION_1_10';
+  SDIO_VERSION_1_20:Result:='SDIO_VERSION_1_20';
+  SDIO_VERSION_2_00:Result:='SDIO_VERSION_2_00';
+  SDIO_VERSION_3_00:Result:='SDIO_VERSION_3_00';
   {SD Version}
   SD_VERSION_1_0:Result:='SD_VERSION_1_0';
   SD_VERSION_1_10:Result:='SD_VERSION_1_10';
@@ -13342,7 +16358,82 @@ end;
 
 {==============================================================================}
 
-function SDIODeviceStateToString(SDIOState:LongWord):String;
+function SDIODeviceGetMaxClock(MMC:PMMCDevice):LongWord;
+{Determine the Maximum Clock (DTR) for the current SDIo device}
+var
+ MaxClock:LongWord;
+begin
+ {}
+ Result:=0;
+ 
+ {Check MMC}
+ if MMC = nil then Exit;
+ 
+ if (MMC.Timing = MMC_TIMING_SD_HS) or (MMC.Timing = MMC_TIMING_MMC_HS) then
+  begin
+   MaxClock:=SD_BUS_SPEED_HS;
+  end
+ else
+  begin
+   if MMC.CIS <> nil then MaxClock:=MMC.CIS.MaxClock else MaxClock:=SD_BUS_SPEED_DEFAULT;
+  end;
+  
+ if MMC.Device.DeviceType = MMC_TYPE_SD_COMBO then
+  begin
+   MaxClock:=Min(MaxClock,SDGetMaxClock(MMC));
+  end;
+ 
+ Result:=MaxClock;
+ 
+ //See: mmc_sdio_get_max_clock in \drivers\mmc\core\sdio.c
+end;
+
+{==============================================================================}
+
+function SDIOFunctionGetMMC(Func:PSDIOFunction):PMMCDevice;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Func}
+ if Func = nil then Exit;
+ 
+ Result:=Func.MMC;
+end;
+
+{==============================================================================}
+
+function SDIOFunctionGetSDHCI(Func:PSDIOFunction):PSDHCIHost;
+begin
+ {}
+ Result:=nil;
+ 
+ {Check Func}
+ if Func = nil then Exit;
+ 
+ Result:=MMCGetSDHCI(Func.MMC);
+end;
+
+{==============================================================================}
+
+function SDIOVersionToString(Version:LongWord):String;
+{Translates an SDIO version into a string}
+begin
+ {}
+ Result:='SDIO_VERSION_UNKNOWN';
+
+ case Version of
+  SDIO_VERSION_1_00:Result:='SDIO_VERSION_1_00';
+  SDIO_VERSION_1_10:Result:='SDIO_VERSION_1_10';
+  SDIO_VERSION_1_20:Result:='SDIO_VERSION_1_20';
+  SDIO_VERSION_2_00:Result:='SDIO_VERSION_2_00';
+  SDIO_VERSION_3_00:Result:='SDIO_VERSION_3_00';
+ end;
+end;
+
+{==============================================================================}
+
+function SDIOFunctionStateToString(SDIOState:LongWord):String;
 begin
  {}
  Result:='SDIO_STATE_UNKNOWN';
@@ -13355,7 +16446,7 @@ end;
 
 {==============================================================================}
 
-function SDIODeviceStatusToString(SDIOStatus:LongWord):String;
+function SDIOFunctionStatusToString(SDIOStatus:LongWord):String;
 begin
  {}
  Result:='SDIO_STATUS_UNKNOWN';
@@ -13368,7 +16459,7 @@ end;
 
 {==============================================================================}
 
-function SDIODeviceStateToNotification(State:LongWord):LongWord;
+function SDIOFunctionStateToNotification(State:LongWord):LongWord;
 {Convert a Device state value into the notification code for device notifications}
 begin
  {}
@@ -13385,7 +16476,7 @@ end;
 
 {==============================================================================}
 
-function SDIODeviceStatusToNotification(Status:LongWord):LongWord;
+function SDIOFunctionStatusToNotification(Status:LongWord):LongWord;
 {Convert a Device status value into the notification code for device notifications}
 begin
  {}
@@ -14215,6 +17306,15 @@ begin
   end;  
 end;
  
+{==============================================================================}
+{==============================================================================}
+{SDIO Macro Replacement Functions}
+function SDIO_FBR_BASE(Number:LongWord):LongWord; inline;
+begin
+ {}
+ Result:=(Number * $100);
+end;
+
 {==============================================================================}
 {==============================================================================}
 
