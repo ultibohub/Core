@@ -546,7 +546,7 @@ var
  CONSOLE_DMA_CLEAR:LongBool = True;              {If True then use DMA (If available) to clear console windows (Sets CONSOLE_FLAG_DMA_CLEAR on device)}
  CONSOLE_DMA_SCROLL:LongBool = True;             {If True then use DMA (If available) to scroll console windows (Sets CONSOLE_FLAG_DMA_SCROLL on device)}
  
- CONSOLE_REGISTER_LOGGING:LongBool = False;                  {If True then register any Console device as a Logging device (Only if Console unit included)}
+ CONSOLE_REGISTER_LOGGING:LongBool = False;                  {If True then register a Console device as a Logging device (Only if Console unit included)}
  CONSOLE_LOGGING_DEFAULT:LongBool = False;                   {If True then a Console device can be the default Logging device}
  CONSOLE_LOGGING_POSITION:LongWord = CONSOLE_POSITION_RIGHT; {The default Console Window position for the console Logging device}
  CONSOLE_LOGGING_DEVICE:String;                              {The console device Name (or Desription) to create the Logging window on, if blank create on default device}
@@ -671,9 +671,10 @@ var
 {==============================================================================}
 {Serial configuration}
 var
- SERIAL_REGISTER_LOGGING:LongBool = False;      {If True then register any Serial device as a Logging device (Only if Serial unit included)}
+ SERIAL_REGISTER_LOGGING:LongBool = False;      {If True then register a Serial device as a Logging device (Only if Serial unit included)}
  SERIAL_LOGGING_DEFAULT:LongBool = False;       {If True then a Serial device can be the default Logging device}
  SERIAL_LOGGING_PARAMETERS:String = '0,N,8,1';  {The default serial settings for the serial logging device (BaudRate,Parity,DataBits,StopBits)(BaudRate 0 equals use default rate)}
+ SERIAL_LOGGING_DEVICE:String;                  {The serial device Name (or Desription) to send the Logging output to, if blank send to default device}
  
 {==============================================================================}
 {Logging configuration}

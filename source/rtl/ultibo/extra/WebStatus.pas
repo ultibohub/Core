@@ -4408,6 +4408,10 @@ begin
    AddItemEx(AResponse,ThreadPriorityToString(Count) + ':',IntToStr(SchedulerGetPriorityQuantum(Count)),3);
   end;
  
+ {Add Scheduler Base Quantum}
+ AddBlank(AResponse);
+ AddItem(AResponse,'Scheduler Base Quantum:',IntToStr(SCHEDULER_THREAD_QUANTUM));
+
  {Add Scheduler Termination Quantum}
  AddBlank(AResponse);
  AddItem(AResponse,'Scheduler Termination Quantum:',IntToStr(SCHEDULER_TERMINATION_QUANTUM));
@@ -6350,10 +6354,10 @@ begin
         AddBlank(AResponse);
         AddItem(AResponse,'Receive Count:',IntToStr(SerialDevice.ReceiveCount));
         AddItem(AResponse,'Receive Errors:',IntToStr(SerialDevice.ReceiveErrors));
-        AddItem(AResponse,'ReceiveOverruns:',IntToStr(SerialDevice.ReceiveOverruns));
+        AddItem(AResponse,'Receive Overruns:',IntToStr(SerialDevice.ReceiveOverruns));
         AddItem(AResponse,'Transmit Count:',IntToStr(SerialDevice.TransmitCount));
         AddItem(AResponse,'Transmit Errors:',IntToStr(SerialDevice.TransmitErrors));
-        AddItem(AResponse,'TransmitOverruns:',IntToStr(SerialDevice.TransmitOverruns));
+        AddItem(AResponse,'Transmit Overruns:',IntToStr(SerialDevice.TransmitOverruns));
         AddBlank(AResponse);
       
         {Get Properties}

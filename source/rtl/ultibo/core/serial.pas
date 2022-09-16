@@ -1,7 +1,7 @@
 {
 Ultibo Serial interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2217,9 +2217,26 @@ begin
  {Check Logging}
  if LoggingDeviceFindByDevice(@Serial.Device) = nil then
   begin
-   {Create Logging}
+   {Check Register}
    if SERIAL_REGISTER_LOGGING then
     begin
+     {Check Device}
+     if Length(SERIAL_LOGGING_DEVICE) <> 0 then
+      begin
+       {Check Name}
+       if SerialDeviceFindByName(SERIAL_LOGGING_DEVICE) <> Serial then
+        begin
+         {Check Description}
+         if SerialDeviceFindByDescription(SERIAL_LOGGING_DEVICE) <> Serial then Exit;
+        end;
+      end
+     else
+      begin
+       {Check Default}
+       if SerialDeviceGetDefault <> Serial then Exit;
+      end;
+
+     {Create Logging}
      Logging:=PSerialLogging(LoggingDeviceCreateEx(SizeOf(TSerialLogging),SERIAL_LOGGING_DEFAULT));
      if Logging <> nil then
       begin

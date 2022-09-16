@@ -270,7 +270,7 @@ function PiTFT28Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchS
 {Note: This function will be called during startup if the parameter PITFT28_AUTOSTART is True
        Can be called multiple times to support more than one PiTFT LCD display}
 
-{Note: Replaced by PiTFT28ResistiveStart to accomodate capacitive display option}
+{Note: Replaced by PiTFT28ResistiveStart to accommodate capacitive display option}
 begin
  {}
  Result:=PiTFT28ResistiveStart(Rotation,Device,DisplaySelect,TouchSelect);
@@ -468,6 +468,9 @@ begin
  IRQ.Func:=GPIO_FUNCTION_IN;
  IRQ.Pull:=GPIO_PULL_UP;
  IRQ.Trigger:=GPIO_TRIGGER_FALLING;
+
+ {Setup Touch Device Parameters}
+ FT5X06_MAX_TOUCH_POINTS:=2;
 
  {Create Touch Device}
  Touch:=FT5X06TouchCreate(I2C,TouchAddress,PITFT28_SCREEN_WIDTH,PITFT28_SCREEN_HEIGHT,@IRQ,nil);

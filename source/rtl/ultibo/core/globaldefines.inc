@@ -1,7 +1,7 @@
 {
 Ultibo Global Define Defaults.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -167,9 +167,11 @@ Global Defines
  {$DEFINE DNS_DEBUG} 
 {$ENDIF}
 
+{$DEFINE HID_DEBUG}             {Enable debug output/counters for HID devices (Default: Off)}
 {--$DEFINE KEYBOARD_DEBUG}        {Enable debug output/counters for Keyboard devices (Default: Off)}
 {--$DEFINE MOUSE_DEBUG}           {Enable debug output/counters for Mouse devices (Default: Off)}
 {--$DEFINE TOUCH_DEBUG}           {Enable debug output/counters for Touch devices (Default: Off)}
+{$DEFINE JOYSTICK_DEBUG}        {Enable debug output/counters for Joystick/Gamepad devices (Default: Off)}
 
 {$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
 {--$DEFINE VPN_DEBUG}             {Enable debug output/counters for VPN devices (Default: Off)}
@@ -375,10 +377,12 @@ Global Defines
 {$DEFINE API_EXPORT_FONT}            {Enable the library API unit to export symbols for the Font unit (Default: On)}
 {$DEFINE API_EXPORT_FRAMEBUFFER}     {Enable the library API unit to export symbols for the Framebuffer unit (Default: On)}
 {$DEFINE API_EXPORT_GRAPHICSCONSOLE} {Enable the library API unit to export symbols for the GraphicsConsole unit (Default: On)}
+{$DEFINE API_EXPORT_HID}             {Enable the library API unit to export symbols for the HID unit (Default: On)}
 {$DEFINE API_EXPORT_KEYMAP}          {Enable the library API unit to export symbols for the Keymap unit (Default: On)}
 {$DEFINE API_EXPORT_KEYBOARD}        {Enable the library API unit to export symbols for the Keyboard unit (Default: On)}
 {$DEFINE API_EXPORT_MOUSE}           {Enable the library API unit to export symbols for the Mouse unit (Default: On)}
 {$DEFINE API_EXPORT_TOUCH}           {Enable the library API unit to export symbols for the Touch unit (Default: On)}
+{$DEFINE API_EXPORT_JOYSTICK}        {Enable the library API unit to export symbols for the Joystick unit (Default: On)}
 {$DEFINE API_EXPORT_STORAGE}         {Enable the library API unit to export symbols for the Storage unit (Default: On)}
 {$DEFINE API_EXPORT_NETWORK}         {Enable the library API unit to export symbols for the Network unit (Default: On)}
 {$DEFINE API_EXPORT_TIMEZONE}        {Enable the library API unit to export symbols for the Timezone unit (Default: On)}
