@@ -18,7 +18,7 @@ Ultibo core is much more than just another OS example it is a complete platform 
 
 * USB support with drivers for Hub, Keyboard, Mouse, Storage and Network
 
-* MMC/SD device support including eMMC devices on Raspberry Pi Compute Modules
+* MMC/SD/SDIO device support including eMMC devices on Raspberry Pi Compute Modules
 
 * Support for GPIO, I2C, SPI, PWM, UART and DMA devices
 

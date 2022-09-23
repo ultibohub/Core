@@ -859,9 +859,9 @@ var
  BCM2708_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2708 GPIO device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_UART0:LongBool = True;    {If True then register the BCM2708 UART0 device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_UART1:LongBool = True;    {If True then register the BCM2708 UART1 device during boot (Only if BCM2708 unit included)}
- BCM2708_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
- BCM2708_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2708 SDHOST host during boot (Only if BCM2708 unit included)}
- BCM2708_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2708 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SDHCI:LongBool = False;   {If True then register the BCM2708 SDHCI host during boot (Only if BCM2708 unit included)}
+ BCM2708_REGISTER_SDHOST:LongBool = True;   {If True then register the BCM2708 SDHOST host during boot (Only if BCMSDHOST unit included)}
+ BCM2708_REGISTER_SDIO:LongBool = True;     {If True then use the BCM2708 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2708 unit included)}
  BCM2708_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2708 SPI slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2708 I2C slave device during boot (Only if BCM2708 unit included)}
  BCM2708_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2708 PWM Audio device during boot (Only if BCM2708 unit included)}
@@ -909,9 +909,9 @@ var
  BCM2709_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2709 GPIO device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_UART0:LongBool = True;    {If True then register the BCM2709 UART0 device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_UART1:LongBool = True;    {If True then register the BCM2709 UART1 device during boot (Only if BCM2709 unit included)}
- BCM2709_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
- BCM2709_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2709 SDHOST host during boot (Only if BCM2709 unit included)}
- BCM2709_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2709 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SDHCI:LongBool = False;   {If True then register the BCM2709 SDHCI host during boot (Only if BCM2709 unit included)}
+ BCM2709_REGISTER_SDHOST:LongBool = True;   {If True then register the BCM2709 SDHOST host during boot (Only if BCMSDHOST unit included)}
+ BCM2709_REGISTER_SDIO:LongBool = True;     {If True then use the BCM2709 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2709 unit included)}
  BCM2709_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2709 SPI slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2709 I2C slave device during boot (Only if BCM2709 unit included)}
  BCM2709_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2709 PWM Audio device during boot (Only if BCM2709 unit included)}
@@ -961,9 +961,9 @@ var
  BCM2710_REGISTER_GPIO:LongBool = True;     {If True then register the BCM2710 GPIO device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_UART0:LongBool = True;    {If True then register the BCM2710 UART0 device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_UART1:LongBool = True;    {If True then register the BCM2710 UART1 device during boot (Only if BCM2710 unit included)}
- BCM2710_REGISTER_SDHCI:LongBool = True;    {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
- BCM2710_REGISTER_SDHOST:LongBool = False;  {If True then register the BCM2710 SDHOST host during boot (Only if BCM2710 unit included)}
- BCM2710_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2710 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SDHCI:LongBool = False;   {If True then register the BCM2710 SDHCI host during boot (Only if BCM2710 unit included)}
+ BCM2710_REGISTER_SDHOST:LongBool = True;   {If True then register the BCM2710 SDHOST host during boot (Only if BCMSDHOST unit included)}
+ BCM2710_REGISTER_SDIO:LongBool = True;     {If True then use the BCM2710 SDHCI as an SDIO controller for WiFi support (Disables SDHCI)(Only if BCM2710 unit included)}
  BCM2710_REGISTER_SPISLAVE:LongBool = True; {If True then register the BCM2710 SPI slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_I2CSLAVE:LongBool = True; {If True then register the BCM2710 I2C slave device during boot (Only if BCM2710 unit included)}
  BCM2710_REGISTER_PWMAUDIO:LongBool = True; {If True then register the BCM2710 PWM Audio device during boot (Only if BCM2710 unit included)}
@@ -1029,9 +1029,9 @@ var
  BCM2711_REGISTER_UART5:LongBool = True;    {If True then register the BCM2711 UART5 device during boot (Only if BCM2711 unit included)}
  
  BCM2711_REGISTER_EMMC0:LongBool = False;   {If True then register the BCM2711 EMMC0 (SDHCI) host during boot (Disables EMMC2)(Only if BCM2711 unit included)}
- BCM2711_REGISTER_EMMC1:LongBool = False;   {If True then register the BCM2711 EMMC1 (SDHOST) host during boot (Only if BCM2711 unit included)}
+ BCM2711_REGISTER_EMMC1:LongBool = False;   {If True then register the BCM2711 EMMC1 (SDHOST) host during boot (Only if BCMSDHOST unit included)}
  BCM2711_REGISTER_EMMC2:LongBool = True;    {If True then register the BCM2711 EMMC2 (SDHCI) host during boot (Only if BCM2711 unit included)}
- BCM2711_REGISTER_SDIO:LongBool = False;    {If True then use the BCM2711 EMMC0 (SDHCI) as an SDIO controller for WiFi support (Disables EMMC0)(Only if BCM2711 unit included)}
+ BCM2711_REGISTER_SDIO:LongBool = True;     {If True then use the BCM2711 EMMC0 (SDHCI) as an SDIO controller for WiFi support (Disables EMMC0)(Only if BCM2711 unit included)}
  
  BCM2711_REGISTER_DMA:LongBool = True;      {If True then register the BCM2711 DMA host during boot (Only if BCM2711 unit included)}
  BCM2711_REGISTER_PCM:LongBool = True;      {If True then register the BCM2711 PCM device during boot (Only if BCM2711 unit included)}
