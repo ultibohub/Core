@@ -68,6 +68,10 @@ Filesystems
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IF not(DEFINED(FPC_STABLE)) and not(DEFINED(FPC_FIXES)) and not(DEFINED(FPC_LEGACY))}
+{$openstrings off} {Disable Openstrings which are on by default in Delphi mode (Main only)}
+{$ENDIF}
+
 unit FileSystem;
 
 interface
