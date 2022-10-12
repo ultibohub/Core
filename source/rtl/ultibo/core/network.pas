@@ -1,7 +1,7 @@
 {
 Ultibo Network interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -867,6 +867,7 @@ type
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
+   function WriterOwner:Boolean;
  end;
  
  TAdapterThread = class;
@@ -2154,6 +2155,15 @@ function TNetworkList.WriterConvert:Boolean;
 begin
  {}
  Result:=(SynchronizerWriterConvert(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TNetworkList.WriterOwner:Boolean;
+{Return True if the current thread is the writer owner}
+begin
+ {}
+ Result:=(SynchronizerWriterOwner(FLock) = GetCurrentThreadID);
 end;
 
 {==============================================================================}

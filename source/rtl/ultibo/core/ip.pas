@@ -1,7 +1,7 @@
 {
 Ultibo IP (Internet Protocol) unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -411,6 +411,7 @@ type
    function GetHostByName(const AName:String;ALock:Boolean):TIPHostEntry;
    function GetHostByAddress(const AAddress:TInAddr;ALock:Boolean):TIPHostEntry;
    function GetHostByNext(APrevious:TIPHostEntry;ALock,AUnlock:Boolean):TIPHostEntry;
+   function CheckHost(AHost:TIPHostEntry;ALock:Boolean):Boolean;
    function AddHost(const AAddress:TInAddr;const AName:String;AType:Word;ALock:Boolean):TIPHostEntry;
    function RemoveHost(const AAddress:TInAddr):Boolean;
    procedure FlushHosts(All:Boolean);
@@ -418,12 +419,14 @@ type
    function GetRouteByAddress(const AAddress:TInAddr;ALock:Boolean;AState:LongWord):TIPRouteEntry;
    function GetRouteByNetwork(const ANetwork,AAddress:TInAddr;ALock:Boolean;AState:LongWord):TIPRouteEntry;
    function GetRouteByNext(APrevious:TIPRouteEntry;ALock,AUnlock:Boolean;AState:LongWord):TIPRouteEntry;
+   function CheckRoute(ARoute:TIPRouteEntry;ALock:Boolean;AState:LongWord):Boolean;
    function AddRoute(const ANetwork,ANetmask,AGateway,AAddress:TInAddr;AType:Word;ALock:Boolean;AState:LongWord):TIPRouteEntry;
    function RemoveRoute(const ANetwork,AAddress:TInAddr):Boolean;
    procedure FlushRoutes(All:Boolean);
    
    function GetAddressByAddress(const AAddress:TInAddr;ALock:Boolean;AState:LongWord):TIPAddressEntry;
    function GetAddressByNext(APrevious:TIPAddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TIPAddressEntry;
+   function CheckAddress(AAddress:TIPAddressEntry;ALock:Boolean;AState:LongWord):Boolean;
    function AddAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TIPAddressEntry;
    function RemoveAddress(const AAddress:TInAddr):Boolean;
    procedure FlushAddresses(All:Boolean);
@@ -4442,7 +4445,7 @@ var
  Host:TIPHostEntry;
 begin
  {}
- FHosts.ReaderLock;
+ if not(FHosts.WriterOwner) then FHosts.ReaderLock else FHosts.WriterLock;
  try
   Result:=nil;
   
@@ -4477,7 +4480,53 @@ begin
     if AUnlock then APrevious.ReleaseLock;
    end;   
  finally 
-  FHosts.ReaderUnlock;
+  if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TIPTransport.CheckHost(AHost:TIPHostEntry;ALock:Boolean):Boolean;
+{Check a host entry in the host cache}
+{Host: The host entry to check}
+{Lock: If True then lock the found entry before returning}
+
+{Note: This allows safely obtaining a lock on an existing object in case it has been freed}
+var
+ Host:TIPHostEntry;
+begin
+ {}
+ if not(FHosts.WriterOwner) then FHosts.ReaderLock else FHosts.WriterLock;
+ try
+  Result:=False;
+
+  {Check Host}
+  if AHost = nil then Exit;
+
+  {$IFDEF IP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: CheckHost');
+  {$ENDIF}
+
+  {Get Host}
+  Host:=TIPHostEntry(FHosts.First);
+  while Host <> nil do
+   begin
+    {Check Host}
+    if Host = AHost then
+     begin
+      {Lock Host}
+      if ALock then Host.AcquireLock;
+
+      {Return Result}
+      Result:=True;
+      Exit;
+     end;
+
+    {Get Next} 
+    Host:=TIPHostEntry(Host.Next);
+   end;
+ finally 
+  if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
  end; 
 end;
 
@@ -4556,24 +4605,28 @@ begin
     if CompareAddress(Host.Address,AAddress) then
      begin
       {Lock Host}
-      Host.AcquireLock;
-          
+      {Host.AcquireLock;} {Must be after acquiring writer lock}
+
       {Convert Lock}
       if FHosts.ReaderConvert then
        begin
-        {Remove Host}
-        Result:=FHosts.Remove(Host);
-      
-        {Convert Lock}
-        FHosts.WriterConvert; 
-      
-        {Unlock Host}
-        Host.ReleaseLock;
-           
-        {Free Host}
-        Host.Free;
+        {Lock Host} 
+        if CheckHost(Host,True) then
+         begin
+          {Remove Host}
+          Result:=FHosts.Remove(Host);
+
+          {Convert Lock}
+          FHosts.WriterConvert; 
+
+          {Unlock Host}
+          Host.ReleaseLock;
+
+          {Free Host}
+          Host.Free;
+         end;
        end;
-       
+
       Exit;
      end
     else
@@ -4582,24 +4635,28 @@ begin
       if Host.FindAddress(AAddress) then
        begin
         {Lock Host}
-        Host.AcquireLock;
-          
+        {Host.AcquireLock;} {Must be after acquiring writer lock}
+
         {Convert Lock}
         if FHosts.ReaderConvert then
          begin
-          {Remove Host}
-          Result:=FHosts.Remove(Host);
-    
-          {Convert Lock}
-          FHosts.WriterConvert; 
-          
-          {Unlock Host}
-          Host.ReleaseLock;
-          
-          {Free Host}
-          Host.Free;
+          {Lock Host} 
+          if CheckHost(Host,True) then
+           begin
+            {Remove Host}
+            Result:=FHosts.Remove(Host);
+
+            {Convert Lock}
+            FHosts.WriterConvert; 
+
+            {Unlock Host}
+            Host.ReleaseLock;
+
+            {Free Host}
+            Host.Free;
+           end;
          end;
-         
+
         Exit;
        end;
      end;
@@ -4608,7 +4665,7 @@ begin
     Host:=TIPHostEntry(Host.Next);
    end;
  finally 
-  FHosts.ReaderUnlock; 
+  if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
  end; 
 end;
 
@@ -4632,39 +4689,54 @@ begin
  CurrentTime:=GetTickCount64;
   
  {Get Host}
- Host:=TIPHostEntry(GetHostByNext(nil,True,False));
+ Host:=GetHostByNext(nil,True,False);
  while Host <> nil do
   begin
-   {Get Next}
-   Current:=Host;
-   Host:=TIPHostEntry(GetHostByNext(Current,True,False));
-    
-   {Check Host Type}
-   if (Current.HostType = HOST_TYPE_DYNAMIC) or (All) then
+   {Check Host Type and Expiry}
+   if ((Host.HostType = HOST_TYPE_DYNAMIC) and ((Host.HostTime + MAX_HOST_LIFE) < CurrentTime)) or (All) then
     begin
-     {Check Host Expiry}
-     if ((Current.HostTime + MAX_HOST_LIFE) < CurrentTime) or (All) then
+     {Unlock Host (While waiting for writer lock)}
+     Host.ReleaseLock;
+
+     {Acquire Lock}
+     FHosts.WriterLock;
+
+     {Lock Host}
+     if CheckHost(Host,True) then
       begin
-       {Acquire Lock}
-       FHosts.WriterLock;
-        
+       {Save Host}
+       Current:=Host;
+
+       {Get Next}
+       Host:=GetHostByNext(Current,True,False);
+
        {Remove Host}
        FHosts.Remove(Current);
-        
+
        {Release Lock}
        FHosts.WriterUnlock;
-        
+
        {Unlock Host}
        Current.ReleaseLock;
-        
+
        {Free Host}
        Current.Free;
        Current:=nil;
+      end
+     else
+      begin
+       {Release Lock}
+       FHosts.WriterUnlock;
+
+       {Get Next}
+       if All then Host:=GetHostByNext(nil,True,False);
       end;
+    end
+   else
+    begin
+     {Get Next}
+     Host:=GetHostByNext(Host,True,True);
     end;
-    
-   {Unlock Host}
-   if Current <> nil then Current.ReleaseLock;
   end;
 end;
 
@@ -4768,7 +4840,7 @@ var
  Route:TIPRouteEntry;
 begin
  {}
- FRoutes.ReaderLock;
+ if not(FRoutes.WriterOwner) then FRoutes.ReaderLock else FRoutes.WriterLock;
  try
   Result:=nil;
   
@@ -4803,7 +4875,54 @@ begin
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
    end;   
  finally 
-  FRoutes.ReaderUnlock;
+  if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TIPTransport.CheckRoute(ARoute:TIPRouteEntry;ALock:Boolean;AState:LongWord):Boolean;
+{Check a route entry in the route cache}
+{Route: The route entry to check}
+{Lock: If True then lock the found entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
+
+{Note: This allows safely obtaining a lock on an existing object in case it has been freed}
+var
+ Route:TIPRouteEntry;
+begin
+ {}
+ if not(FRoutes.WriterOwner) then FRoutes.ReaderLock else FRoutes.WriterLock;
+ try
+  Result:=False;
+
+  {Check Route}
+  if ARoute = nil then Exit;
+
+  {$IFDEF IP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: CheckRoute');
+  {$ENDIF}
+
+  {Get Route}
+  Route:=TIPRouteEntry(FRoutes.First);
+  while Route <> nil do
+   begin
+    {Check Route}
+    if Route = ARoute then
+     begin
+      {Lock Route}
+      if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
+
+      {Return Result}
+      Result:=True;
+      Exit;
+     end;
+    
+    {Get Next}    
+    Route:=TIPRouteEntry(Route.Next);
+   end; 
+ finally 
+  if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
  end; 
 end;
 
@@ -4912,29 +5031,28 @@ begin
       if CompareAddress(Route.Address,AAddress) then
        begin
         {Lock Route}
-        Route.WriterLock;
-        
+        {Route.WriterLock;} {Must be after acquiring writer lock}
+
         {Convert Lock}
         if FRoutes.ReaderConvert then
          begin
-          {Remove Route}
-          Result:=FRoutes.Remove(Route);
-        
-          {Convert Lock}
-          FRoutes.WriterConvert; 
-          
-          {Unlock Route}
-          Route.WriterUnlock;
-          
-          {Free Route}
-          Route.Free;
-         end
-        else
-         begin
-          {Unlock Route}
-          Route.WriterUnlock;
-         end;         
-         
+          {Lock Route} 
+          if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
+           begin
+            {Remove Route}
+            Result:=FRoutes.Remove(Route);
+
+            {Convert Lock}
+            FRoutes.WriterConvert; 
+
+            {Unlock Route}
+            Route.WriterUnlock;
+
+            {Free Route}
+            Route.Free;
+           end;
+         end;
+
         Exit;
        end;
      end;
@@ -4943,7 +5061,7 @@ begin
     Route:=TIPRouteEntry(Route.Next);
    end;
  finally 
-  FRoutes.ReaderUnlock;
+  if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
  end; 
 end;
 
@@ -4967,43 +5085,54 @@ begin
  CurrentTime:=GetTickCount64;
   
  {Get Route}
- Route:=TIPRouteEntry(GetRouteByNext(nil,True,False,NETWORK_LOCK_READ));
+ Route:=GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
  while Route <> nil do
   begin
-   {Get Next}
-   Current:=Route;
-   Route:=TIPRouteEntry(GetRouteByNext(Current,True,False,NETWORK_LOCK_READ));
-    
-   {Check Route Type}
-   if (Current.RouteType = ROUTE_TYPE_DYNAMIC) or (All) then
+   {Check Route Type and Expiry}
+   if ((Route.RouteType = ROUTE_TYPE_DYNAMIC) and ((Route.RouteTime + MAX_ROUTE_LIFE) < CurrentTime)) or (All) then
     begin
-     {Check Route Expiry}
-     if ((Current.RouteTime + MAX_ROUTE_LIFE) < CurrentTime) or (All) then
+     {Unlock Route (While waiting for writer lock)}
+     Route.ReaderUnlock;
+     
+     {Acquire Lock}
+     FRoutes.WriterLock;
+     
+     {Lock Route}
+     if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
       begin
-       {Convert Route}
-       if Current.ReaderConvert then
-        begin
-         {Acquire Lock}
-         FRoutes.WriterLock;
+       {Save Route}
+       Current:=Route;
        
-         {Remove Route}
-         FRoutes.Remove(Current);
+       {Get Next}
+       Route:=GetRouteByNext(Current,True,False,NETWORK_LOCK_READ);
+       
+       {Remove Route}
+       FRoutes.Remove(Current);
 
-         {Release Lock}
-         FRoutes.WriterUnlock;
+       {Release Lock}
+       FRoutes.WriterUnlock;
        
-         {Unlock Route}
-         Current.WriterUnlock;
+       {Unlock Route}
+       Current.WriterUnlock;
         
-         {Free Route}
-         Current.Free;
-         Current:=nil;
-        end; 
+       {Free Route}
+       Current.Free;
+       Current:=nil;
+      end
+     else
+      begin
+       {Release Lock}
+       FRoutes.WriterUnlock;
+       
+       {Get Next}
+       if All then Route:=GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
       end;
+    end
+   else
+    begin
+     {Get Next}
+     Route:=GetRouteByNext(Route,True,True,NETWORK_LOCK_READ);
     end;
-    
-   {Unlock Route}
-   if Current <> nil then Current.ReaderUnlock;
   end;
 end;
 
@@ -5059,7 +5188,7 @@ var
  Address:TIPAddressEntry;
 begin
  {}
- FAddresses.ReaderLock;
+ if not(FAddresses.WriterOwner) then FAddresses.ReaderLock else FAddresses.WriterLock;
  try
   Result:=nil;
   
@@ -5094,7 +5223,54 @@ begin
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
    end;   
  finally 
-  FAddresses.ReaderUnlock;
+  if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TIPTransport.CheckAddress(AAddress:TIPAddressEntry;ALock:Boolean;AState:LongWord):Boolean;
+{Check an address entry in the address cache}
+{Address: The address entry to check}
+{Lock: If True then lock the found entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
+
+{Note: This allows safely obtaining a lock on an existing object in case it has been freed}
+var
+ Address:TIPAddressEntry;
+begin
+ {}
+ if not(FAddresses.WriterOwner) then FAddresses.ReaderLock else FAddresses.WriterLock;
+ try
+  Result:=False;
+
+  {Check Address}
+  if AAddress = nil then Exit;
+
+  {$IFDEF IP_DEBUG}
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: CheckAddress');
+  {$ENDIF}
+
+  {Get Address}
+  Address:=TIPAddressEntry(FAddresses.First);
+  while Address <> nil do
+   begin
+    {Check Address}
+    if Address = AAddress then
+     begin
+      {Lock Address}
+      if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
+
+      {Return Result}
+      Result:=True;
+      Exit;
+     end;
+
+    {Get Next}    
+    Address:=TIPAddressEntry(Address.Next);
+   end; 
+ finally 
+  if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
  end; 
 end;
 
@@ -5235,24 +5411,28 @@ begin
       end;
       
       {Lock Address}
-      Address.WriterLock;
-          
+      {Address.WriterLock;} {Must be after acquiring writer lock}
+
       {Convert Lock}
       if FAddresses.ReaderConvert then
        begin
-        {Remove Address}
-        Result:=FAddresses.Remove(Address);
-      
-        {Convert Lock}
-        FAddresses.WriterConvert; 
-      
-        {Unlock Address}
-        Address.WriterUnlock;
-          
-        {Free Address}
-        Address.Free;
+        {Lock Address} 
+        if CheckAddress(Address,True,NETWORK_LOCK_WRITE) then
+         begin
+          {Remove Address}
+          Result:=FAddresses.Remove(Address);
+
+          {Convert Lock}
+          FAddresses.WriterConvert; 
+
+          {Unlock Address}
+          Address.WriterUnlock;
+
+          {Free Address}
+          Address.Free;
+         end;
        end;
-       
+
       Exit;
      end;
     
@@ -5260,7 +5440,7 @@ begin
     Address:=TIPAddressEntry(Address.Next);
    end;
  finally 
-  FAddresses.ReaderUnlock;
+  if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
  end; 
 end;
 
@@ -5280,63 +5460,78 @@ begin
  {$ENDIF}
 
  {Get Address}
- Address:=TIPAddressEntry(GetAddressByNext(nil,True,False,NETWORK_LOCK_READ));
+ Address:=GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
  while Address <> nil do
   begin
-   {Get Next}
-   Current:=Address;
-   Address:=TIPAddressEntry(GetAddressByNext(Current,True,False,NETWORK_LOCK_READ));
-    
    {Check Adapter}
-   if (GetAdapterByAdapter(Current.Adapter,False,NETWORK_LOCK_NONE) = nil) or (All) then {Do not lock}
+   if (GetAdapterByAdapter(Address.Adapter,False,NETWORK_LOCK_NONE) = nil) or (All) then {Do not lock}
     begin
      {Check Type}
-     case Current.AddressType of
+     case Address.AddressType of
       ADDRESS_TYPE_SECONDARY:begin
         {Check ARP Transport}
         if FARP = nil then Exit;
 
         {Check RARP Transport}
         if FRARP = nil then Exit;
-        
+
         {Remove Route}
-        RemoveRoute(Current.Address,IP_LOOPBACK_ADDRESS);
-         
+        RemoveRoute(Address.Address,IP_LOOPBACK_ADDRESS);
+
         {Remove RARP Address}
-        FRARP.UnloadAddress(Current.Adapter,Current.Address);
-         
+        FRARP.UnloadAddress(Address.Adapter,Address.Address);
+
         {Remove ARP Addresses}
-        FARP.UnloadAddress(Current.Adapter,Current.Address);
-         
+        FARP.UnloadAddress(Address.Adapter,Address.Address);
+
         //To Do //See Binding
       end;
       //To Do //Special Checks for SECONDARY to make sure Subnet is still valid
-                    //See Binding
+              //See Binding
      end;
-      
-     {Convert Address}
-     if Current.ReaderConvert then
+
+     {Unlock Address (While waiting for writer lock)}
+     Address.ReaderUnlock;
+
+     {Acquire Lock}
+     FAddresses.WriterLock;
+
+     {Lock Address}
+     if CheckAddress(Address,True,NETWORK_LOCK_WRITE) then
       begin
-       {Acquire Lock}
-       FAddresses.WriterLock;
-        
+       {Save Address}
+       Current:=Address;
+
+       {Get Next}
+       Address:=GetAddressByNext(Current,True,False,NETWORK_LOCK_READ);
+
        {Remove Address}
        FAddresses.Remove(Current);
-        
+
        {Release Lock}
        FAddresses.WriterUnlock;
-        
+
        {Unlock Address}
        Current.WriterUnlock;
-        
+
        {Free Address}
        Current.Free;
        Current:=nil;
+      end
+     else
+      begin
+       {Release Lock}
+       FAddresses.WriterUnlock;
+
+       {Get Next}
+       if All then Address:=GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
       end;
-    end;  
-    
-   {Unlock Address}
-   if Current <> nil then Current.ReaderUnlock;
+    end
+   else
+    begin
+     {Get Next}
+     Address:=GetAddressByNext(Address,True,True,NETWORK_LOCK_READ);
+    end;
   end;
 end;
 
