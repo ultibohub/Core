@@ -1,7 +1,7 @@
 {
 Ultibo Keyboard interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -701,8 +701,6 @@ procedure KeyboardLogDebug(Keyboard:PKeyboardDevice;const AText:String); inline;
 {==============================================================================}
 {USB Helper Functions}
 function USBKeyboardCheckDevice(Device:PUSBDevice):Boolean;
-
-function USBKeyboardInsertData(Keyboard:PUSBKeyboardDevice;Data:PKeyboardData):LongWord;
 
 function USBKeyboardCheckPressed(Keyboard:PUSBKeyboardDevice;ScanCode:Byte):Boolean;
 function USBKeyboardCheckRepeated(Keyboard:PUSBKeyboardDevice;ScanCode:Byte):Boolean;
@@ -4703,110 +4701,6 @@ begin
  else
   Result:=True;
  end;
-end;
-
-{==============================================================================}
-
-function USBKeyboardInsertData(Keyboard:PUSBKeyboardDevice;Data:PKeyboardData):LongWord;
-{Insert a TKeyboardData entry into the keyboard buffer (Direct or Global)}
-{Keyboard: The USB keyboard device to insert data for}
-{Data: The TKeyboardData entry to insert}
-{Return: ERROR_SUCCESS if completed or another error code on failure}
-
-{Note: Caller must hold the keyboard lock}
-var
- Next:PKeyboardData;
- Device:PUSBDevice;
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Keyboard}
- if Keyboard = nil then Exit;
- 
- {Check Data}
- if Data = nil then Exit;
- 
- {Get Device}
- Device:=PUSBDevice(Keyboard.Keyboard.Device.DeviceData);
- if Device = nil then Exit;
- 
- {Check Flags}
- if (Keyboard.Keyboard.Device.DeviceFlags and KEYBOARD_FLAG_DIRECT_READ) = 0 then
-  begin
-   {Global Buffer}
-   {Acquire the Lock}
-   if MutexLock(KeyboardBufferLock) = ERROR_SUCCESS then
-    begin
-     try
-      {Check Buffer}
-      if (KeyboardBuffer.Count < KEYBOARD_BUFFER_SIZE) then
-       begin
-        {Get Next}
-        Next:=@KeyboardBuffer.Buffer[(KeyboardBuffer.Start + KeyboardBuffer.Count) mod KEYBOARD_BUFFER_SIZE];
-        if Next <> nil then
-         begin
-          {Copy Data}
-          Next^:=Data^;
-      
-          {Update Count}
-          Inc(KeyboardBuffer.Count);
-          
-          {Return Result}
-          Result:=ERROR_SUCCESS;
-         end;
-       end
-      else
-       begin
-        if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Buffer overflow, key discarded');
-        
-        {Update Statistics}
-        Inc(Keyboard.Keyboard.BufferOverruns); 
-        
-        Result:=ERROR_INSUFFICIENT_BUFFER;
-       end;            
-     finally
-      {Release the Lock}
-      MutexUnlock(KeyboardBufferLock);
-     end;
-    end
-   else
-    begin
-     if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Failed to acquire lock on buffer');
-     
-     Result:=ERROR_CAN_NOT_COMPLETE;
-    end;
-  end
- else
-  begin              
-   {Direct Buffer}
-   {Check Buffer}
-   if (Keyboard.Keyboard.Buffer.Count < KEYBOARD_BUFFER_SIZE) then
-    begin
-     {Get Next}
-     Next:=@Keyboard.Keyboard.Buffer.Buffer[(Keyboard.Keyboard.Buffer.Start + Keyboard.Keyboard.Buffer.Count) mod KEYBOARD_BUFFER_SIZE];
-     if Next <> nil then
-      begin
-       {Copy Data}
-       Next^:=Data^;
-       
-       {Update Count}
-       Inc(Keyboard.Keyboard.Buffer.Count);
-       
-       {Return Result}
-       Result:=ERROR_SUCCESS;
-      end;
-    end
-   else
-    begin
-     if USB_LOG_ENABLED then USBLogError(Device,'Keyboard: Buffer overflow, key discarded');
-     
-     {Update Statistics}
-     Inc(Keyboard.Keyboard.BufferOverruns); 
-     
-     Result:=ERROR_INSUFFICIENT_BUFFER;
-    end;            
-  end;
 end;
 
 {==============================================================================}

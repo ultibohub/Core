@@ -1,7 +1,7 @@
 {
 Ultibo QEMU VersatilePB unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -83,6 +83,10 @@ uses GlobalConfig,
      Mouse,
      PS2,
      PL050,        {ARM PrimeCell PL050 PS2 Keyboard/Mouse driver}
+     HID,
+     USBHID,
+     HIDKeyboard,
+     HIDMouse,
      Filesystem,
      EXTFS,
      FATFS,

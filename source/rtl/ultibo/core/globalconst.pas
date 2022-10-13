@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '12 October 2022';
+ ULTIBO_RELEASE_DATE             = '13 October 2022';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.5.211';
+ ULTIBO_RELEASE_VERSION          = '2.5.215';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 5;
- ULTIBO_RELEASE_VERSION_REVISION = 211;
+ ULTIBO_RELEASE_VERSION_REVISION = 215;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  
@@ -827,6 +827,7 @@ const
  SCAN_CODE_RIGHT_ALT               = 230; {Keyboard RightAlt}
  SCAN_CODE_RIGHT_GUI               = 231; {Keyboard Right GUI}
  {Codes 232 to 65535 Reserved}
+ SCAN_CODE_RESERVED_255            = 255; {Reserved}
  
  {Alternate names for above}
  SCAN_CODE_EXCLAMATION             = 30;  {Keyboard 1 or !}
@@ -1817,6 +1818,7 @@ const
  LOGGING_FACILITY_VIRTIO     = 39; {VIRTIO log messages}
  LOGGING_FACILITY_BLUETOOTH  = 40; {Bluetooth log messages}
  LOGGING_FACILITY_JOYSTICK   = 41; {Joystick log messages}
+ LOGGING_FACILITY_HID        = 42; {HID log messages}
  
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 

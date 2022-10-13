@@ -167,7 +167,7 @@ Global Defines
  {$DEFINE DNS_DEBUG} 
 {$ENDIF}
 
-{$DEFINE HID_DEBUG}             {Enable debug output/counters for HID devices (Default: Off)}
+{--$DEFINE HID_DEBUG}             {Enable debug output/counters for HID devices (Default: Off)}
 {--$DEFINE KEYBOARD_DEBUG}        {Enable debug output/counters for Keyboard devices (Default: Off)}
 {--$DEFINE MOUSE_DEBUG}           {Enable debug output/counters for Mouse devices (Default: Off)}
 {--$DEFINE TOUCH_DEBUG}           {Enable debug output/counters for Touch devices (Default: Off)}

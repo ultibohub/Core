@@ -419,6 +419,8 @@ ULTIBO_UNITS=globalconfig \
 	     pci \
 	     usb \
 	     usbcdc \
+	     hid \
+	     usbhid \
 	     mmc \
 	     mmcspi \
 	     bluetooth \
@@ -556,6 +558,8 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    smsc95xx \
 		    lan78xx \
 		    genet \
+		    hidmouse \
+		    hidkeyboard \
 		    rpigpioexpander \
 		    rpisensehat \
 		    i2cgpio \

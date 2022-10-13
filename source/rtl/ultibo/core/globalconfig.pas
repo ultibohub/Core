@@ -720,6 +720,13 @@ var
  {Touch}
  TOUCH_MOUSE_DATA_DEFAULT:LongBool = True; {If True then set all touch devices to add mouse data events for compatibility (Default: True)}
  
+ {HID}
+ HID_REGISTER_KEYBOARD:LongBool = True; {If True then register the HID keyboard consumer during boot (Only if HIDKeyboard unit included)}
+ HID_REGISTER_MOUSE:LongBool = True;    {If True then register the HID mouse consumer during boot (Only if HIDMouse unit included)}
+ HID_REGISTER_TOUCH:LongBool = True;    {If True then register the HID touch consumer during boot (Only if HIDTouch unit included)}
+ HID_REGISTER_JOYSTICK:LongBool = True; {If True then register the HID joystick consumer during boot (Only if HIDJoystick unit included)}
+ HID_REGISTER_GAMEPAD:LongBool = True;  {If True then register the HID gamepad consumer during boot (Only if HIDGamepad unit included)}
+ 
  {PCI}
  PCI_AUTOSTART:LongBool = True;        {If True then auto start the PCI subsystem on boot (Only if PCI unit included)}
  PCI_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}
@@ -764,12 +771,12 @@ var
  USB_HID_REGISTER_DRIVER:LongBool = True;      {If True then register the USB HID driver during boot (Only if USBHID unit included)}
  
  {USB Keyboard}
- USB_KEYBOARD_POLLING_INTERVAL:LongWord = 10;  {Override the default polling interval for a USB keyboard (Milliseconds)}
- USB_KEYBOARD_REGISTER_DRIVER:LongBool = True; {If True then register the USB Keyboard driver during boot (Only if Keyboard unit included)}
+ USB_KEYBOARD_POLLING_INTERVAL:LongWord = 10;   {Override the default polling interval for a USB keyboard (Milliseconds)}
+ USB_KEYBOARD_REGISTER_DRIVER:LongBool = False; {If True then register the USB Keyboard driver during boot (Only if Keyboard unit included)(Note: Replaced by USB HID driver)}
  
  {USB Mouse}
- USB_MOUSE_POLLING_INTERVAL:LongWord = 10;  {Override the default polling interval for a USB mouse (Milliseconds)}
- USB_MOUSE_REGISTER_DRIVER:LongBool = True; {If True then register the USB Mouse driver during boot (Only if Mouse unit included)}
+ USB_MOUSE_POLLING_INTERVAL:LongWord = 10;   {Override the default polling interval for a USB mouse (Milliseconds)}
+ USB_MOUSE_REGISTER_DRIVER:LongBool = False; {If True then register the USB Mouse driver during boot (Only if Mouse unit included)(Note: Replaced by USB HID driver)}
  
  {USB Storage}
  USB_STORAGE_FORCE_REMOVABLE:LongBool;        {If True then all USB storage devices will be assumed to be removable}
@@ -1380,6 +1387,9 @@ function RoundDown(Value,Multiple:LongWord):LongWord;
 function DivRoundUp(Value,Divisor:LongInt):LongWord;
 function DivRoundClosest(Value,Divisor:LongInt):LongWord;
 
+function SignExtend32(Value,Bits:LongWord):LongInt;
+function SignExtend64(Value:UInt64;Bits:LongWord):Int64;
+
 function ILog2(Value:UInt64):LongWord; inline;
 
 function IsPowerOf2(Value:LongWord):Boolean;
@@ -1632,6 +1642,46 @@ begin
   begin
    Result:=(Value - (Divisor div 2)) div Divisor;
   end;
+end;
+
+{==============================================================================}
+
+function SignExtend32(Value,Bits:LongWord):LongInt;
+{Sign extend value from the current number of bits to 32 bits}
+begin
+ {}
+ {Check Bits}
+ if (Bits > 0) and (Bits < 32) then
+  begin
+   {Check if the high order bit is set (Negative)}
+   if (Value and (1 shl (Bits - 1))) <> 0 then
+    begin
+     {Combine the value with an all 1s mask (Sign Extend)}
+     Value:=Value or ($FFFFFFFF - ((1 shl Bits) - 1));
+    end;
+  end;
+
+ Result:=Value;
+end;
+
+{==============================================================================}
+
+function SignExtend64(Value:UInt64;Bits:LongWord):Int64;
+{Sign extend value from the current number of bits to 64 bits}
+begin
+ {}
+ {Check Bits}
+ if (Bits > 0) and (Bits < 64) then
+  begin
+   {Check if the high order bit is set (Negative)}
+   if (Value and (1 shl (Bits - 1))) <> 0 then
+    begin
+     {Combine the value with an all 1s mask (Sign Extend)}
+     Value:=Value or ($FFFFFFFFFFFFFFFF - ((1 shl Bits) - 1));
+    end;
+  end;
+
+ Result:=Value;
 end;
 
 {==============================================================================}

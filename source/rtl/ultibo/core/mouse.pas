@@ -2523,7 +2523,7 @@ begin
        end
       else
        begin
-        if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, key discarded');
+        if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, packet discarded');
         
         {Update Statistics}
         Inc(Mouse.BufferOverruns); 
@@ -2567,7 +2567,7 @@ begin
     end
    else
     begin
-     if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, key discarded');
+     if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, packet discarded');
      
      {Update Statistics}
      Inc(Mouse.BufferOverruns); 

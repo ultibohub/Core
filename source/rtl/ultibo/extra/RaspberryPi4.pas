@@ -1,7 +1,7 @@
 {
 Ultibo Raspberry Pi 4 unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -73,6 +73,10 @@ uses GlobalConfig,
      Console,
      Keyboard,
      Mouse,
+     HID,
+     USBHID,
+     HIDKeyboard,
+     HIDMouse,
      Filesystem,
      EXTFS,
      FATFS,
