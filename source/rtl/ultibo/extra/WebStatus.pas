@@ -42,9 +42,11 @@ unit WebStatus;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF}Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,
-     HeapManager,DeviceTree,Devices,USB,PCI,MMC,Network,Transport,Protocol,Storage,FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,
-     Timezone,Locale,Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF}
+     Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,HeapManager,
+     DeviceTree,Devices,USB,PCI,MMC,HID,USBHID,Network,Transport,Protocol,Storage,
+     FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,Timezone,
+     Locale,Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC;
 
 //To Do //Look for:
 
@@ -476,6 +478,8 @@ type
   function PCIFlagsToFlagNames(AFlags:LongWord):TStringList;
   function PCIHostFlagsToFlagNames(AFlags:LongWord):TStringList;
 
+  function HIDFlagsToFlagNames(AFlags:LongWord):TStringList;
+
   function DMAFlagsToFlagNames(AFlags:LongWord):TStringList;
   function I2CFlagsToFlagNames(AFlags:LongWord):TStringList;
   function SPIFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -620,6 +624,26 @@ type
   function SDHCIVoltagesToNames(AVoltages:LongWord):TStringList;
   function SDHCICapabilitiesToNames(ACapabilities:LongWord):TStringList;
   function SDHCICapabilities2ToNames(ACapabilities2:LongWord):TStringList;
+ protected
+  {Internal Variables}
+ 
+  {Internal Methods}
+ 
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+ 
+  {Public Methods}
+  
+ end;
+
+ TWebStatusHID = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+  function HIDFlagsToFlagNames(AFlags:LongWord):TStringList;
  protected
   {Internal Variables}
  
@@ -1042,6 +1066,8 @@ function WebStatusPCIDriverEnumerate(Driver:PPCIDriver;Data:Pointer):LongWord;
 function WebStatusMMCEnumerate(MMC:PMMCDevice;Data:Pointer):LongWord;
 function WebStatusSDHCIEnumerate(SDHCI:PSDHCIHost;Data:Pointer):LongWord;
 function WebStatusSDIODriverEnumerate(Driver:PSDIODriver;Data:Pointer):LongWord;
+function WebStatusHIDDeviceEnumerate(Device:PHIDDevice;Data:Pointer):LongWord;
+function WebStatusHIDConsumerEnumerate(Consumer:PHIDConsumer;Data:Pointer):LongWord;
 function WebStatusNetworkEnumerate(Network:PNetworkDevice;Data:Pointer):LongWord;
 function WebStatusStorageEnumerate(Storage:PStorageDevice;Data:Pointer):LongWord;
 function WebStatusMouseEnumerate(Mouse:PMouseDevice;Data:Pointer):LongWord;
@@ -1078,6 +1104,7 @@ var
  WebStatusUSB:TWebStatusUSB;
  WebStatusPCI:TWebStatusPCI;
  WebStatusMMC:TWebStatusMMC;
+ WebStatusHID:TWebStatusHID;
  WebStatusNetwork:TWebStatusNetwork;
  WebStatusStorage:TWebStatusStorage;
  WebStatusFilesystem:TWebStatusFilesystem;
@@ -4662,6 +4689,23 @@ end;
 
 {==============================================================================}
 
+function TWebStatusDevices.HIDFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('HID_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusDevices.DMAFlagsToFlagNames(AFlags:LongWord):TStringList;
 begin
  {}
@@ -5781,6 +5825,7 @@ var
  MMCDevice:PMMCDevice;
  USBDevice:PUSBDevice;
  PCIDevice:PPCIDevice;
+ HIDDevice:PHIDDevice;
  I2CDevice:PI2CDevice;
  SPIDevice:PSPIDevice;
  PWMDevice:PPWMDevice;
@@ -7056,6 +7101,48 @@ begin
        
         FlagNames.Free;
        end;
+      DEVICE_CLASS_HID:begin
+        {Get Flags Names}
+        FlagNames:=HIDFlagsToFlagNames(Device.DeviceFlags);
+
+        {Get HID}
+        HIDDevice:=PHIDDevice(Device);
+
+        AddBold(AResponse,'HID','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',HIDDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(HIDDevice.HIDId));
+        AddItem(AResponse,'State:',HIDDeviceStateToString(HIDDevice.HIDState));
+        AddBlank(AResponse);
+
+        WorkBuffer:='None (see Collections)';
+        if HIDDevice.Consumer <> nil then WorkBuffer:=DriverGetName(@HIDDevice.Consumer.Driver);
+        AddItem(AResponse,'Consumer:',WorkBuffer);
+        AddBlank(AResponse);
+
+        AddItem(AResponse,'Collection Count:',IntToStr(HIDDevice.CollectionCount));
+        AddItem(AResponse,'Descriptor Size:',IntToStr(HIDDevice.DescriptorSize));
+        AddBlank(AResponse);
+
+        AddItem(AResponse,'Receive Count:',IntToStr(HIDDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(HIDDevice.ReceiveErrors));
+        AddBlank(AResponse);
+
+        FlagNames.Free;
+       end;
      end;
     end
    else
@@ -7590,7 +7677,7 @@ function TWebStatusPCI.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
 var
  Id:LongWord;
  Action:String;
- Count:LongWord;
+ Count:Integer;
  WorkBuffer:String;
  Data:TWebStatusData;
  FlagNames:TStringList;
@@ -9054,6 +9141,401 @@ begin
    AddFooterEx(AResponse,4); 
   end; 
  
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusHID}
+constructor TWebStatusHID.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='HID'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/hid';
+ 
+ if FMain <> nil then Name:=FMain.Name + Name;
+end; 
+
+{==============================================================================}
+
+function TWebStatusHID.HIDFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ {Nothing}
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('HID_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
+function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+
+ function HIDReportFilename(Device:PHIDDevice):String;
+ begin
+  {}
+  Result:='HID_Report_Descriptor.dat';
+
+  {Check Device}
+  if Device = nil then Exit;
+
+  {Check Device Type}
+  if Device.Device.DeviceType = HID_TYPE_USB then
+   begin
+    Result:='HID_Report_'  + IntToHex(PUSBHIDDevice(Device).USBDevice.Descriptor.idVendor,4);
+    Result:=Result + '_' + IntToHex(PUSBHIDDevice(Device).USBDevice.Descriptor.idProduct,4);
+    Result:=Result + '_' + IntToStr(PUSBHIDDevice(Device).USBInterface.Descriptor.bInterfaceNumber) + '.dat';
+   end;
+ end;
+
+ procedure HIDLogOutput(const AText:String); 
+ begin
+  {}
+  AddItemSpan(AResponse,'<pre>' + AText + '</pre>',2,False);
+ end;
+
+ function HIDLogCollection(Collection:PHIDCollection;Level:LongWord):Boolean;
+ var
+  Indent:String;
+  Alias:PHIDUsage;
+  Usage:PHIDUsage;
+  Report:PHIDReport;
+  WorkBuffer:String;
+  AliasIndex:LongWord;
+  UsageIndex:LongWord;
+  ReportIndex:LongWord;
+  CollectionIndex:LongWord;
+ begin
+  {}
+  Result:=False;
+
+  {Check Collection}
+  if Collection = nil then Exit;
+
+  {Get Indent}
+  Indent:=StringOfChar(' ',Level * 2);
+
+  {Log Collection}
+  HIDLogOutput(Indent + '[Collection]');
+  HIDLogOutput(Indent + 'Page:             ' + IntToHex(Collection.Page,4) + ' (' + HIDPageToString(Collection.Page) + ')');
+  HIDLogOutput(Indent + 'Usage:            ' + IntToHex(Collection.Usage,4) + ' (' + HIDUsageToString(Collection.Page,Collection.Usage,1) + ')');
+  HIDLogOutput(Indent + 'Flags:            ' + IntToHex(Collection.Flags,8) + ' (' + HIDCollectionFlagsToString(Collection.Flags) + ')');
+
+  HIDLogOutput(Indent + 'Start:            ' + IntToStr(Collection.Start));
+
+  HIDLogOutput(Indent + 'Report Count:     ' + IntToStr(Collection.ReportCount));
+  HIDLogOutput(Indent + 'Collection Count: ' + IntToStr(Collection.CollectionCount));
+
+  WorkBuffer:='';
+  if Collection.Device <> nil then WorkBuffer:=DeviceGetName(@Collection.Device.Device);
+  HIDLogOutput(Indent + 'Device:           ' + WorkBuffer);
+  WorkBuffer:='None';
+  if Collection.Consumer <> nil then WorkBuffer:=DriverGetName(@Collection.Consumer.Driver);
+  HIDLogOutput(Indent + 'Consumer:         ' + WorkBuffer);
+  HIDLogOutput(Indent);
+
+  {Log Reports}
+  if Collection.ReportCount > 0 then
+   begin
+    for ReportIndex:=0 to Collection.ReportCount - 1 do
+     begin
+      Report:=Collection.Reports[ReportIndex];
+      if Report <> nil then
+       begin
+        {Get Indent}
+        Indent:=StringOfChar(' ',(Level * 2) + 2);
+
+        {Log Report}
+        HIDLogOutput(Indent + '[Report]');
+        HIDLogOutput(Indent + 'Id:          ' + IntToStr(Report.Id));
+        HIDLogOutput(Indent + 'Kind:        ' + IntToStr(Report.Kind) + ' (' + HIDReportKindToString(Report.Kind) + ')');
+        HIDLogOutput(Indent + 'Flags:       ' + IntToHex(Report.Flags,8) + ' (' + HIDReportFlagsToString(Report.Flags) + ')');
+        HIDLogOutput(Indent + 'Size:        ' + IntToStr(Report.Size));
+        HIDLogOutput(Indent + 'Count:       ' + IntToStr(Report.Count));
+        HIDLogOutput(Indent + 'Index:       ' + IntToStr(Report.Index));
+        HIDLogOutput(Indent + 'Usage Count: ' + IntToStr(Report.UsageCount));
+        HIDLogOutput(Indent);
+
+        {Check Usages}
+        if Report.UsageCount > 0 then
+         begin
+          for UsageIndex:=0 to Report.UsageCount - 1 do
+           begin
+            Usage:=Report.Usages[UsageIndex];
+            if Usage <> nil then
+             begin
+              {Get Indent}
+              Indent:=StringOfChar(' ',(Level * 2) + 4);
+
+              {Log Usage}
+              HIDLogOutput(Indent + '[Usage]');
+              HIDLogOutput(Indent + 'Page:             ' + IntToHex(Usage.Page,4) + ' (' + HIDPageToString(Usage.Page) + ')');
+              HIDLogOutput(Indent + 'Usage:            ' + IntToHex(Usage.Usage,4) + ' (' + HIDUsageToString(Usage.Page,Usage.Usage,Usage.Count) + ')');
+              HIDLogOutput(Indent + 'Count:            ' + IntToStr(Usage.Count));
+              HIDLogOutput(Indent + 'Index:            ' + IntToStr(Usage.Index));
+              HIDLogOutput(Indent + 'Logical Minimum:  ' + IntToStr(Usage.LogicalMinimum));
+              HIDLogOutput(Indent + 'Logical Maximum:  ' + IntToStr(Usage.LogicalMaximum));
+              HIDLogOutput(Indent + 'Physical Minimum: ' + IntToStr(Usage.PhysicalMinimum));
+              HIDLogOutput(Indent + 'Physical Maximum: ' + IntToStr(Usage.PhysicalMaximum));
+              HIDLogOutput(Indent + 'Unit Type:        ' + IntToStr(Usage.UnitType) + ' (' + HIDUnitTypeToString(Usage.UnitType) + ')');
+              HIDLogOutput(Indent + 'Unit Exponent:    ' + IntToStr(Usage.UnitExponent));
+              HIDLogOutput(Indent + 'Alias Count:      ' + IntToStr(Usage.AliasCount));
+              HIDLogOutput(Indent);
+
+              {Check Aliases}
+              if Usage.AliasCount > 0 then
+               begin
+                for AliasIndex:=0 to Usage.AliasCount - 1 do
+                 begin
+                  Alias:=Usage.Aliases[AliasIndex];
+                  if Alias <> nil then
+                   begin
+                    {Get Indent}
+                    Indent:=StringOfChar(' ',(Level * 2) + 6);
+
+                    {Log Alias}
+                    HIDLogOutput(Indent + '[Alias]');
+                    HIDLogOutput(Indent + 'Page:             ' + IntToHex(Alias.Page,4) + ' (' + HIDPageToString(Alias.Page) + ')');
+                    HIDLogOutput(Indent + 'Usage:            ' + IntToHex(Alias.Usage,4) + ' (' + HIDUsageToString(Alias.Page,Alias.Usage,Alias.Count) + ')');
+                    HIDLogOutput(Indent + 'Count:            ' + IntToStr(Alias.Count));
+                    HIDLogOutput(Indent + 'Index:            ' + IntToStr(Alias.Index));
+                    HIDLogOutput(Indent + 'Logical Minimum:  ' + IntToStr(Alias.LogicalMinimum));
+                    HIDLogOutput(Indent + 'Logical Maximum:  ' + IntToStr(Alias.LogicalMaximum));
+                    HIDLogOutput(Indent + 'Physical Minimum: ' + IntToStr(Alias.PhysicalMinimum));
+                    HIDLogOutput(Indent + 'Physical Maximum: ' + IntToStr(Alias.PhysicalMaximum));
+                    HIDLogOutput(Indent + 'Unit Type:        ' + IntToStr(Alias.UnitType) + ' (' + HIDUnitTypeToString(Alias.UnitType) + ')');
+                    HIDLogOutput(Indent + 'Unit Exponent:    ' + IntToStr(Alias.UnitExponent));
+                    HIDLogOutput(Indent);
+                   end;
+                 end;
+               end;
+             end;
+           end;
+         end;  
+       end;
+     end;
+   end;
+
+  {Check Collections}
+  if Collection.CollectionCount > 0 then
+   begin
+    for CollectionIndex:=0 to Collection.CollectionCount - 1 do
+     begin
+      if Collection.Collections[CollectionIndex] <> nil then
+       begin
+        {Log Collection}
+        if not HIDLogCollection(Collection.Collections[CollectionIndex],Level + 1) then Exit;
+       end;
+     end;
+   end; 
+
+  Result:=True;
+ end;
+
+var
+ Id:LongWord;
+ Action:String;
+ Count:Integer;
+ WorkBuffer:String;
+ Data:TWebStatusData;
+ FlagNames:TStringList;
+ HIDDevice:PHIDDevice;
+ HIDReport:TMemoryStream;
+begin
+ {}
+ Result:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
+
+ {Get Id}
+ WorkBuffer:=Uppercase(ARequest.GetParam('ID'));
+
+ if (Action = 'HIDDEVICE') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'HID Device Information',Self,2);
+
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
+
+   {Get HID Device}
+   HIDDevice:=HIDDeviceFind(Id);
+   if HIDDevice <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=HIDFlagsToFlagNames(HIDDevice.Device.DeviceFlags);
+
+     AddBold(AResponse,'Device','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@HIDDevice.Device));
+     AddItem(AResponse,'Type:',HIDDeviceTypeToString(HIDDevice.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+
+     AddItem(AResponse,'Description:',HIDDevice.Device.DeviceDescription);
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(HIDDevice.HIDId));
+     AddItem(AResponse,'State:',HIDDeviceStateToString(HIDDevice.HIDState));
+     AddBlank(AResponse);
+
+     WorkBuffer:='None (see Collections)';
+     if HIDDevice.Consumer <> nil then WorkBuffer:=DriverGetName(@HIDDevice.Consumer.Driver);
+     AddItem(AResponse,'Consumer:',WorkBuffer);
+     AddBlank(AResponse);
+
+     AddItem(AResponse,'Collection Count:',IntToStr(HIDDevice.CollectionCount));
+     AddItem(AResponse,'Descriptor Size:',IntToStr(HIDDevice.DescriptorSize));
+     AddBlank(AResponse);
+
+     AddItem(AResponse,'Receive Count:',IntToStr(HIDDevice.ReceiveCount));
+     AddItem(AResponse,'Receive Errors:',IntToStr(HIDDevice.ReceiveErrors));
+     AddBlank(AResponse);
+
+     AddItem(AResponse,'Report Descriptor:','<button type="submit" onclick="window.open(''' + Name + '?action=hidreport&id=' + IntToStr(HIDDevice.HIDId) + ''')" style="width: 30%; height: 100%">Save to File</button>');
+     AddBlank(AResponse);
+
+     AddBold(AResponse,'HID Collections','');
+     AddBlank(AResponse);
+
+     {Check Collections}
+     if HIDDevice.CollectionCount > 0 then
+      begin
+       for Count:=0 to HIDDevice.CollectionCount - 1 do
+        begin
+         if HIDDevice.Collections[Count] <> nil then
+          begin
+           {Log Collection}
+           if not HIDLogCollection(HIDDevice.Collections[Count],0) then Break;
+          end;
+        end;
+      end; 
+
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;    
+
+   {Add Footer}
+   AddFooter(AResponse); 
+  end
+ else if (Action = 'HIDREPORT') and (Length(WorkBuffer) > 0) then
+  begin
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
+
+   {Get HID Device}
+   HIDDevice:=HIDDeviceFind(Id);
+   if (HIDDevice <> nil) and (HIDDevice.Descriptor <> nil) then
+    begin
+     {Create Stream}
+     HIDReport:=TMemoryStream.Create;
+
+     {Copy Descriptor}
+     HIDReport.Size:=HIDDevice.DescriptorSize;
+     HIDReport.Write(HIDDevice.Descriptor^,HIDDevice.DescriptorSize);
+     HIDReport.Position:=0;
+
+     {Success}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_OK;
+     AResponse.Reason:=HTTP_REASON_200;
+
+     {Set File Name}
+     AResponse.SetHeader(HTTP_ENTITY_HEADER_CONTENT_DISPOSITION,'attachment;filename=' + HIDReportFilename(HIDDevice));
+
+     {Set Content Type}
+     AResponse.SetHeader(HTTP_ENTITY_HEADER_CONTENT_TYPE,HTTP_MIME_TYPE_DEFAULT);
+
+     {Set No Cache}
+     AResponse.NoCache:=True;
+
+     {Set Content}
+     AResponse.ContentStream:=HIDReport;
+     
+     {Server will free the stream after send}
+    end
+   else
+    begin
+     {Add Header (2 column with Caption)}
+     AddHeaderEx(AResponse,GetTitle,'HID Report Descriptor',Self,2);
+
+     AddItem(AResponse,'Not Found','');
+
+     {Add Footer}
+     AddFooter(AResponse);
+    end;
+  end
+ else
+  begin 
+   {Add Header (4 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,4); 
+
+   {Add HID Devices List} 
+   AddBold4Column(AResponse,'Devices','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'HID Id','Name','State','Type');
+   AddBlankEx(AResponse,4);
+
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+
+   {Enumerate HID Devices}
+   HIDDeviceEnumerate(WebStatusHIDDeviceEnumerate,@Data);
+
+   {Add HID Consumer List} 
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Consumers','','','');
+   AddBlankEx(AResponse,4);
+   AddBold4Column(AResponse,'Consumer Id','Name','State','');
+   AddBlankEx(AResponse,4);
+   
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.Data:=nil;
+   
+   {Enumerate HID Consumers}
+   HIDConsumerEnumerate(WebStatusHIDConsumerEnumerate,@Data);
+
+   {Add Footer (4 column)}
+   AddFooterEx(AResponse,4); 
+  end; 
+
  {Return Result}
  Result:=True;
 end;
@@ -12581,6 +13063,10 @@ begin
  WebStatusMMC:=TWebStatusMMC.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusMMC);
 
+ {Register HID Page}
+ WebStatusHID:=TWebStatusHID.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusHID);
+
  {Register Network Page}
  WebStatusNetwork:=TWebStatusNetwork.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusNetwork);
@@ -12748,6 +13234,10 @@ begin
  {Deregister Network Page}
  AListener.DeregisterDocument(AHost,WebStatusNetwork);
  WebStatusNetwork.Free;
+
+ {Deregister HID Page}
+ AListener.DeregisterDocument(AHost,WebStatusHID);
+ WebStatusHID.Free;
 
  {Deregister MMC Page}
  AListener.DeregisterDocument(AHost,WebStatusMMC);
@@ -13365,6 +13855,66 @@ begin
  
  {Add Driver}
  Document.AddItem4Column(Response,IntToStr(Driver.Driver.DriverId),DriverGetName(@Driver.Driver),DriverStateToString(Driver.Driver.DriverState),'');
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function WebStatusHIDDeviceEnumerate(Device:PHIDDevice;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Device}
+ if Device = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Add Device}
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Device.HIDId),Document.Name + '?action=hiddevice&id=' + IntToStr(Device.HIDId)),DeviceGetName(@Device.Device),HIDDeviceStateToString(Device.HIDState),HIDDeviceTypeToString(Device.Device.DeviceType));
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function WebStatusHIDConsumerEnumerate(Consumer:PHIDConsumer;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Consumer}
+ if Consumer = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+
+ {Add Consumer}
+ Document.AddItem4Column(Response,IntToStr(Consumer.Driver.DriverId),DriverGetName(@Consumer.Driver),DriverStateToString(Consumer.Driver.DriverState),'');
  
  Result:=ERROR_SUCCESS;
 end;
