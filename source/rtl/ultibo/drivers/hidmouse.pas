@@ -608,6 +608,9 @@ begin
         OffsetY:=0;
         OffsetWheel:=0;
 
+        {Clear Mouse Data}
+        FillChar(MouseData,SizeOf(TMouseData),0);
+
         {Extract Fields}
         Field:=Definition.Fields;
         while Field <> nil do
@@ -685,6 +688,9 @@ begin
         {$IF DEFINED(MOUSE_DEBUG) or DEFINED(HID_DEBUG)}
         if HID_LOG_ENABLED then HIDLogDebug(Collection.Device,'Mouse: Report data (X=' + IntToStr(OffsetX) + ' Y=' + IntToStr(OffsetY) + ' Wheel=' + IntToStr(OffsetWheel) + ' Buttons=' + IntToHex(Buttons,8) + ')');
         {$ENDIF}
+
+        {Get Buttons}
+        MouseData.Buttons:=Buttons;
 
         {Check Swap}
         if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_XY) <> 0 then

@@ -1074,6 +1074,9 @@ begin
         LEDs:=Keyboard.Keyboard.KeyboardLEDs;
         FillChar(Keys,SizeOf(THIDKeyboardKeys),0);
 
+        {Clear Keyboard Data}
+        FillChar(KeyboardData,SizeOf(TKeyboardData),0);
+
         {Extract Fields}
         Field:=Definition.Fields;
         while Field <> nil do

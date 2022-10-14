@@ -1995,7 +1995,7 @@ procedure USBMouseReportWorker(Request:PUSBRequest);
 {Request: The USB request which has completed}
 var
  Buffer:Pointer;
- Data:PMouseData;
+ Data:TMouseData;
  Status:LongWord;
  Message:TMessage;
  OffsetX:SmallInt;
@@ -2039,249 +2039,102 @@ begin
         
         {A report was received from the USB mouse}
         Buffer:=Request.Data;
-     
-        {Check Flags}
-        if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_DIRECT_READ) = 0 then
+
+        {Clear Mouse Data}
+        FillChar(Data,SizeOf(TMouseData),0);
+
+        {Byte 0 is the Mouse buttons}
+        Data.Buttons:=0;
+        if (PByte(Buffer)^ and USB_HID_BOOT_LEFT_BUTTON) <> 0 then
          begin
-          {Global Buffer}
-          {Acquire the Lock}
-          if MutexLock(MouseBufferLock) = ERROR_SUCCESS then
+          {Check Flags}
+          if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
            begin
-            try
-             {Check Buffer}
-             if (MouseBuffer.Count < MOUSE_BUFFER_SIZE) then
-              begin
-               Data:=@MouseBuffer.Buffer[(MouseBuffer.Start + MouseBuffer.Count) mod MOUSE_BUFFER_SIZE];
-               if Data <> nil then
-                begin
-                 {Byte 0 is the Mouse buttons}
-                 Data.Buttons:=0;
-                 if (PByte(Buffer)^ and USB_HID_BOOT_LEFT_BUTTON) <> 0 then
-                  begin
-                   {Check Flags}
-                   if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
-                    begin
-                     Data.Buttons:=Data.Buttons or MOUSE_LEFT_BUTTON;
-                    end
-                   else
-                    begin
-                     Data.Buttons:=Data.Buttons or MOUSE_RIGHT_BUTTON;
-                    end;
-                  end; 
-                 if (PByte(Buffer)^ and USB_HID_BOOT_RIGHT_BUTTON) <> 0 then
-                  begin
-                   {Check Flags}
-                   if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
-                    begin
-                     Data.Buttons:=Data.Buttons or MOUSE_RIGHT_BUTTON;
-                    end
-                   else
-                    begin
-                     Data.Buttons:=Data.Buttons or MOUSE_LEFT_BUTTON;
-                    end;
-                  end; 
-                 if (PByte(Buffer)^ and USB_HID_BOOT_MIDDLE_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_MIDDLE_BUTTON;
-                 if (PByte(Buffer)^ and USB_HID_BOOT_SIDE_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_SIDE_BUTTON;
-                 if (PByte(Buffer)^ and USB_HID_BOOT_EXTRA_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_EXTRA_BUTTON;
-         
-                 {Byte 1 is the Mouse X offset}
-                 OffsetX:=PShortInt(PtrUInt(Buffer) + 1)^;
-         
-                 {Byte 2 is the Mouse Y offset}
-                 OffsetY:=PShortInt(PtrUInt(Buffer) + 2)^;
-       
-                 {Byte 3 is the Mouse Wheel offset}
-                 OffsetWheel:=PShortInt(PtrUInt(Buffer) + 3)^;
-
-                 {Check Swap}
-                 if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_XY) <> 0 then
-                  begin
-                   {Swap Offset X/Y}
-                   OffsetTemp:=OffsetX;
-                   OffsetX:=OffsetY;
-                   OffsetY:=OffsetTemp;
-                  end;
-
-                 {Check Invert}
-                 if (Mouse.Mouse.Device.DeviceFlags and  MOUSE_FLAG_INVERT_X) <> 0 then
-                  begin
-                   {Invert Offset X}
-                   OffsetX:=-OffsetX;
-                  end;
-                 if (Mouse.Mouse.Device.DeviceFlags and  MOUSE_FLAG_INVERT_Y) <> 0 then
-                  begin
-                   {Invert Offset Y}
-                   OffsetY:=-OffsetY;
-                  end;
-
-                 {Check Rotation}
-                 case Mouse.Mouse.Properties.Rotation of
-                  MOUSE_ROTATION_0:begin
-                    {Get Offset X and Y}
-                    Data.OffsetX:=OffsetX;
-                    Data.OffsetY:=OffsetY;
-                   end;
-                  MOUSE_ROTATION_90:begin
-                    {Swap Offset X and Y, Invert Offset X}
-                    Data.OffsetX:=-OffsetY;
-                    Data.OffsetY:=OffsetX;
-                   end;
-                  MOUSE_ROTATION_180:begin
-                    {Invert Offset X and Y}
-                    Data.OffsetX:=-OffsetX;
-                    Data.OffsetY:=-OffsetY;
-                   end;
-                  MOUSE_ROTATION_270:begin
-                    {Swap Offset X and Y, Invert Offset Y}
-                    Data.OffsetX:=OffsetY;
-                    Data.OffsetY:=-OffsetX;
-                   end;
-                 end;
-                 Data.OffsetWheel:=OffsetWheel;
-
-                 {Maximum X, Y and Wheel}
-                 Data.MaximumX:=0;
-                 Data.MaximumY:=0;
-                 Data.MaximumWheel:=0;
-                 
-                 {Update Count}
-                 Inc(MouseBuffer.Count);
-            
-                 {Signal Data Received}
-                 SemaphoreSignal(MouseBuffer.Wait);
-                end;
-              end
-             else
-              begin
-               if USB_LOG_ENABLED then USBLogError(Request.Device,'Mouse: Buffer overflow, report discarded');
-               
-               {Update Statistics}
-               Inc(Mouse.Mouse.BufferOverruns); 
-              end;            
-            finally
-             {Release the Lock}
-             MutexUnlock(MouseBufferLock);
-            end;
+            Data.Buttons:=Data.Buttons or MOUSE_LEFT_BUTTON;
            end
           else
            begin
-            if USB_LOG_ENABLED then USBLogError(Request.Device,'Mouse: Failed to acquire lock on buffer');
+            Data.Buttons:=Data.Buttons or MOUSE_RIGHT_BUTTON;
            end;
-         end
-        else
-         begin              
-          {Direct Buffer}
-          {Check Buffer}
-          if (Mouse.Mouse.Buffer.Count < MOUSE_BUFFER_SIZE) then
+         end; 
+        if (PByte(Buffer)^ and USB_HID_BOOT_RIGHT_BUTTON) <> 0 then
+         begin
+          {Check Flags}
+          if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
            begin
-            Data:=@Mouse.Mouse.Buffer.Buffer[(Mouse.Mouse.Buffer.Start + Mouse.Mouse.Buffer.Count) mod MOUSE_BUFFER_SIZE];
-            if Data <> nil then
-             begin
-              {Byte 0 is the Mouse buttons}
-              Data.Buttons:=0;
-              if (PByte(Buffer)^ and USB_HID_BOOT_LEFT_BUTTON) <> 0 then
-               begin
-                {Check Flags}
-                if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
-                 begin
-                  Data.Buttons:=Data.Buttons or MOUSE_LEFT_BUTTON;
-                 end
-                else
-                 begin
-                  Data.Buttons:=Data.Buttons or MOUSE_RIGHT_BUTTON;
-                 end;
-               end; 
-              if (PByte(Buffer)^ and USB_HID_BOOT_RIGHT_BUTTON) <> 0 then
-               begin
-                {Check Flags}
-                if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
-                 begin
-                  Data.Buttons:=Data.Buttons or MOUSE_RIGHT_BUTTON;
-                 end
-                else
-                 begin
-                  Data.Buttons:=Data.Buttons or MOUSE_LEFT_BUTTON;
-                 end;
-               end; 
-              if (PByte(Buffer)^ and USB_HID_BOOT_MIDDLE_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_MIDDLE_BUTTON;
-              if (PByte(Buffer)^ and USB_HID_BOOT_SIDE_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_SIDE_BUTTON;
-              if (PByte(Buffer)^ and USB_HID_BOOT_EXTRA_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_EXTRA_BUTTON;
-         
-              {Byte 1 is the Mouse X offset}
-              OffsetX:=PShortInt(PtrUInt(Buffer) + 1)^;
-         
-              {Byte 2 is the Mouse Y offset}
-              OffsetY:=PShortInt(PtrUInt(Buffer) + 2)^;
-       
-              {Byte 3 is the Mouse Wheel offset}
-              OffsetWheel:=PShortInt(PtrUInt(Buffer) + 3)^;
-
-              {Check Swap}
-              if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_XY) <> 0 then
-               begin
-                {Swap Offset X/Y}
-                OffsetTemp:=OffsetX;
-                OffsetX:=OffsetY;
-                OffsetY:=OffsetTemp;
-               end;
-
-              {Check Invert}
-              if (Mouse.Mouse.Device.DeviceFlags and  MOUSE_FLAG_INVERT_X) <> 0 then
-               begin
-                {Invert Offset X}
-                OffsetX:=-OffsetX;
-               end;
-              if (Mouse.Mouse.Device.DeviceFlags and  MOUSE_FLAG_INVERT_Y) <> 0 then
-               begin
-                {Invert Offset Y}
-                OffsetY:=-OffsetY;
-               end;
-
-              {Check Rotation}
-              case Mouse.Mouse.Properties.Rotation of
-               MOUSE_ROTATION_0:begin
-                 {Get Offset X and Y}
-                 Data.OffsetX:=OffsetX;
-                 Data.OffsetY:=OffsetY;
-                end;
-               MOUSE_ROTATION_90:begin
-                 {Swap Offset X and Y, Invert Offset X}
-                 Data.OffsetX:=-OffsetY;
-                 Data.OffsetY:=OffsetX;
-                end;
-               MOUSE_ROTATION_180:begin
-                 {Invert Offset X and Y}
-                 Data.OffsetX:=-OffsetX;
-                 Data.OffsetY:=-OffsetY;
-                end;
-               MOUSE_ROTATION_270:begin
-                 {Swap Offset X and Y, Invert Offset Y}
-                 Data.OffsetX:=OffsetY;
-                 Data.OffsetY:=-OffsetX;
-                end;
-              end;
-              Data.OffsetWheel:=OffsetWheel;
-            
-              {Maximum X, Y and Wheel}
-              Data.MaximumX:=0;
-              Data.MaximumY:=0;
-              Data.MaximumWheel:=0;
-            
-              {Update Count}
-              Inc(Mouse.Mouse.Buffer.Count);
-            
-              {Signal Data Received}
-              SemaphoreSignal(Mouse.Mouse.Buffer.Wait);
-             end; 
+            Data.Buttons:=Data.Buttons or MOUSE_RIGHT_BUTTON;
            end
           else
            begin
-            if USB_LOG_ENABLED then USBLogError(Request.Device,'Mouse: Buffer overflow, report discarded'); 
+            Data.Buttons:=Data.Buttons or MOUSE_LEFT_BUTTON;
+           end;
+         end; 
+        if (PByte(Buffer)^ and USB_HID_BOOT_MIDDLE_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_MIDDLE_BUTTON;
+        if (PByte(Buffer)^ and USB_HID_BOOT_SIDE_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_SIDE_BUTTON;
+        if (PByte(Buffer)^ and USB_HID_BOOT_EXTRA_BUTTON) <> 0 then Data.Buttons:=Data.Buttons or MOUSE_EXTRA_BUTTON;
 
-            {Update Statistics}
-            Inc(Mouse.Mouse.BufferOverruns); 
-           end;                           
+        {Byte 1 is the Mouse X offset}
+        OffsetX:=PShortInt(PtrUInt(Buffer) + 1)^;
+
+        {Byte 2 is the Mouse Y offset}
+        OffsetY:=PShortInt(PtrUInt(Buffer) + 2)^;
+
+        {Byte 3 is the Mouse Wheel offset}
+        OffsetWheel:=PShortInt(PtrUInt(Buffer) + 3)^;
+
+        {Check Swap}
+        if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_XY) <> 0 then
+         begin
+          {Swap Offset X/Y}
+          OffsetTemp:=OffsetX;
+          OffsetX:=OffsetY;
+          OffsetY:=OffsetTemp;
          end;
+
+        {Check Invert}
+        if (Mouse.Mouse.Device.DeviceFlags and  MOUSE_FLAG_INVERT_X) <> 0 then
+         begin
+          {Invert Offset X}
+          OffsetX:=-OffsetX;
+         end;
+        if (Mouse.Mouse.Device.DeviceFlags and  MOUSE_FLAG_INVERT_Y) <> 0 then
+         begin
+          {Invert Offset Y}
+          OffsetY:=-OffsetY;
+         end;
+
+        {Check Rotation}
+        case Mouse.Mouse.Properties.Rotation of
+         MOUSE_ROTATION_0:begin
+           {Get Offset X and Y}
+           Data.OffsetX:=OffsetX;
+           Data.OffsetY:=OffsetY;
+          end;
+         MOUSE_ROTATION_90:begin
+           {Swap Offset X and Y, Invert Offset X}
+           Data.OffsetX:=-OffsetY;
+           Data.OffsetY:=OffsetX;
+          end;
+         MOUSE_ROTATION_180:begin
+           {Invert Offset X and Y}
+           Data.OffsetX:=-OffsetX;
+           Data.OffsetY:=-OffsetY;
+          end;
+         MOUSE_ROTATION_270:begin
+           {Swap Offset X and Y, Invert Offset Y}
+           Data.OffsetX:=OffsetY;
+           Data.OffsetY:=-OffsetX;
+          end;
+        end;
+        Data.OffsetWheel:=OffsetWheel;
+
+        {Maximum X, Y and Wheel}
+        Data.MaximumX:=0;
+        Data.MaximumY:=0;
+        Data.MaximumWheel:=0;
+
+        {Insert Data}
+        MouseInsertData(@Mouse.Mouse,@Data,True);
        end
       else
        begin

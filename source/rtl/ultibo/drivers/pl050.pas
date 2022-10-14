@@ -1561,8 +1561,7 @@ procedure PL050MouseWorker(Packet:PPL050MousePacket);
 var
  Status:LongWord;
  Mouse:PPL050Mouse;
- LocalData:PMouseData;
- GlobalData:TMouseData;
+ MouseData:TMouseData;
 begin
  {}
  {Check Packet}
@@ -1587,68 +1586,18 @@ begin
       {Check Packet}
       if Packet.Count >= 3 then
        begin
-        {Check Flags}
-        if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_DIRECT_READ) = 0 then
-         begin
-          {Global Buffer}
-          {Convert Packet}
-          if PS2MousePacketToMouseData(@Packet.Packet,@GlobalData,Mouse.Mouse.Device.DeviceFlags,Mouse.Mouse.Properties.Rotation) = ERROR_SUCCESS then
-           begin
-            {$IF DEFINED(PL050_DEBUG) or DEFINED(MOUSE_DEBUG)}
-            if MOUSE_LOG_ENABLED then MouseLogDebug(@Packet.Mouse.Mouse,'PL050: Mouse Data (Buttons=' + IntToHex(GlobalData.Buttons,8) + ' OffsetX=' + IntToStr(GlobalData.OffsetX) + ' OffsetY=' + IntToStr(GlobalData.OffsetY) + ')');
-            {$ENDIF}
-            
-            Status:=MouseWrite(@GlobalData,SizeOf(TMouseData),1);
-            if Status <> ERROR_SUCCESS then
-             begin
-              if Status = ERROR_INSUFFICIENT_BUFFER then
-               begin
-                if MOUSE_LOG_ENABLED then MouseLogError(@Mouse.Mouse,'Mouse: Buffer overflow, packet discarded'); 
-                
-                {Update Statistics}
-                Inc(Mouse.Mouse.BufferOverruns); 
-               end
-              else
-               begin
-                if MOUSE_LOG_ENABLED then MouseLogError(@Mouse.Mouse,'Mouse: Buffer error, packet discarded'); 
-                
-                {Update Statistics}
-                Inc(Mouse.Mouse.ReceiveErrors); 
-               end;               
-             end;
-           end;
-         end
-        else
-         begin              
-          {Direct Buffer}
-          {Check Buffer}
-          if (Mouse.Mouse.Buffer.Count < MOUSE_BUFFER_SIZE) then
-           begin
-            LocalData:=@Mouse.Mouse.Buffer.Buffer[(Mouse.Mouse.Buffer.Start + Mouse.Mouse.Buffer.Count) mod MOUSE_BUFFER_SIZE];
-            if LocalData <> nil then
-             begin
-              {Convert Packet}
-              if PS2MousePacketToMouseData(@Packet.Packet,LocalData,Mouse.Mouse.Device.DeviceFlags,Mouse.Mouse.Properties.Rotation) = ERROR_SUCCESS then
-               begin
-                {$IF DEFINED(PL050_DEBUG) or DEFINED(MOUSE_DEBUG)}
-                if MOUSE_LOG_ENABLED then MouseLogDebug(@Packet.Mouse.Mouse,'PL050: Mouse Data (Buttons=' + IntToHex(LocalData.Buttons,8) + ' OffsetX=' + IntToStr(LocalData.OffsetX) + ' OffsetY=' + IntToStr(LocalData.OffsetY) + ')');
-                {$ENDIF}
-               
-                {Update Count}
-                Inc(Mouse.Mouse.Buffer.Count);
-            
-                {Signal Data Received}
-                SemaphoreSignal(Mouse.Mouse.Buffer.Wait);
-               end; 
-             end; 
-           end
-          else
-           begin
-            if MOUSE_LOG_ENABLED then MouseLogError(@Mouse.Mouse,'Mouse: Buffer overflow, packet discarded'); 
+        {Clear Mouse Data}
+        FillChar(MouseData,SizeOf(TMouseData),0);
 
-            {Update Statistics}
-            Inc(Mouse.Mouse.BufferOverruns); 
-           end;                           
+        {Convert Packet}
+        if PS2MousePacketToMouseData(@Packet.Packet,@MouseData,Mouse.Mouse.Device.DeviceFlags,Mouse.Mouse.Properties.Rotation) = ERROR_SUCCESS then
+         begin
+          {$IF DEFINED(PL050_DEBUG) or DEFINED(MOUSE_DEBUG)}
+          if MOUSE_LOG_ENABLED then MouseLogDebug(@Packet.Mouse.Mouse,'PL050: Mouse Data (Buttons=' + IntToHex(MouseData.Buttons,8) + ' OffsetX=' + IntToStr(MouseData.OffsetX) + ' OffsetY=' + IntToStr(MouseData.OffsetY) + ')');
+          {$ENDIF}
+
+          {Insert Data}
+          MouseInsertData(@Mouse.Mouse,@MouseData,True);
          end;
        end
       else
