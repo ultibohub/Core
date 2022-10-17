@@ -3434,6 +3434,7 @@ type
    FMaskAttributes:LongWord;
    FMountPointTag:LongWord;
    FSymbolicLinkTag:LongWord;
+   FMinFileTime:TFileTime;
    FSystemName:String;
    FVolumeName:String;
    FVolumeGUID:String;
@@ -3536,6 +3537,7 @@ type
    function LoadMaskAttributes:LongWord; virtual; {Get the File Attributes Mask (used when getting file attributes)}
    function LoadMountPointTag:LongWord; virtual;
    function LoadSymbolicLinkTag:LongWord; virtual;
+   function LoadMinFileTime:TFileTime; virtual;
    function LoadSystemName:String; virtual;
    function LoadVolumeName:String; virtual;
    function LoadVolumeGUID:String; virtual;
@@ -3666,6 +3668,7 @@ type
    property MaskAttributes:LongWord read FMaskAttributes;
    property MountPointTag:LongWord read FMountPointTag;
    property SymbolicLinkTag:LongWord read FSymbolicLinkTag;
+   property MinFileTime:TFileTime read FMinFileTime;
    property SystemName:String read GetSystemName;
    property VolumeName:String read GetVolumeName;
    property VolumeGUID:String read GetVolumeGUID;
@@ -31229,6 +31232,15 @@ end;
 
 {==============================================================================}
 
+function TFileSystem.LoadMinFileTime:TFileTime;
+{Load the Minimum File Time value (WriteTime/CreateTime/AccessTime)}
+begin
+ {Base Implementation}
+ Int64(Result):=0;
+end;
+
+{==============================================================================}
+
 function TFileSystem.LoadSystemName:String;
 begin
  {Virtual Base Method - No Function}
@@ -34948,6 +34960,7 @@ function TFileSystem.FileWrite(Handle:THandle;const Buffer;Count:LongInt):LongIn
 {Position may be beyond the end of the file}
 {A write to beyond the end of the file will succeed and Size will be Position plus Count}
 var
+ FileTime:TFileTime;
  FileHandle:TFileHandle;
 begin
  {Base Implementation}
@@ -34989,7 +35002,9 @@ begin
    if Result = Count then
     begin
      {Set Time and Attributes} {Entry will be updated by FileClose}
-     FileHandle.HandleEntry.WriteTime:=Ultibo.DateTimeToFileTime(Now); {Converted to UTC}
+     FileTime:=Ultibo.DateTimeToFileTime(Now); {Converted to UTC}
+     if Int64(FileTime) < Int64(FMinFileTime) then Int64(FileTime):=Int64(FMinFileTime);
+     FileHandle.HandleEntry.WriteTime:=FileTime;
      FileHandle.HandleEntry.Attributes:=(FileHandle.HandleEntry.Attributes or faArchive);
     
      {Set Position}

@@ -1,7 +1,7 @@
 {
 Ultibo NTFS interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -24686,6 +24686,7 @@ begin
   FMaskAttributes:=LoadMaskAttributes;
   FMountPointTag:=LoadMountPointTag;
   FSymbolicLinkTag:=LoadSymbolicLinkTag;
+  FMinFileTime:=LoadMinFileTime;
 
   {$IFDEF NTFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Defaults Set');

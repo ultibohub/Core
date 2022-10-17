@@ -1,7 +1,7 @@
 {
 Ultibo FAT12/16/32/exFAT interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -592,6 +592,7 @@ type
    function LoadMaxPath:Integer; override;
    function LoadAttributes:LongWord; override;
    function LoadMaxAttributes:LongWord; override;
+   function LoadMinFileTime:TFileTime; override;
    function LoadSystemName:String; override;
    function LoadVolumeName:String; override;
    function LoadVolumeSerial:LongWord; override;
@@ -5054,6 +5055,15 @@ end;
 
 {==============================================================================}
 
+function TFATFileSystem.LoadMinFileTime:TFileTime;
+{Load the Minimum File Time value (WriteTime/CreateTime/AccessTime)}
+begin
+ {}
+ Int64(Result):=TIME_TICKS_TO_1980;
+end;
+
+{==============================================================================}
+
 function TFATFileSystem.LoadSystemName:String;
 {Load System Name from Boot Sector}
 begin
@@ -6182,6 +6192,7 @@ var
  EntryOffset:LongWord;
  EntrySector:LongWord;
  StartCluster:LongWord;
+ FileTime:TFileTime;
  DiskEntry:TFATDiskEntry;
 begin
  {}
@@ -6297,7 +6308,9 @@ begin
   DiskEntry.AltName:=AltName;
   DiskEntry.Size:=0;
   DiskEntry.Attributes:=(AAttributes or Flags);
-  DiskEntry.WriteTime:=Ultibo.DateTimeToFileTime(Now);
+  FileTime:=Ultibo.DateTimeToFileTime(Now);
+  if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980;
+  DiskEntry.WriteTime:=FileTime;
   DiskEntry.CreateTime:=DiskEntry.WriteTime;
   DiskEntry.AccessTime:=DiskEntry.WriteTime;
   DiskEntry.EntriesLoaded:=True;
@@ -7639,6 +7652,7 @@ begin
   FMaskAttributes:=LoadMaskAttributes;
   FMountPointTag:=LoadMountPointTag;
   FSymbolicLinkTag:=LoadSymbolicLinkTag;
+  FMinFileTime:=LoadMinFileTime;
 
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Defaults Set');
