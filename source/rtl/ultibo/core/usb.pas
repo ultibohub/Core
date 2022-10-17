@@ -1,7 +1,7 @@
 {
 Ultibo USB interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -875,11 +875,26 @@ const
  {USB Hub Types}
  USBHUB_TYPE_NONE      = 0;
  
+ USBHUB_TYPE_MAX       = 0;
+
+ {USB Hub Type Names}
+ USBHUB_TYPE_NAMES:array[USBHUB_TYPE_NONE..USBHUB_TYPE_MAX] of String = (
+  'USBHUB_TYPE_NONE');
+ 
  {USB Hub States}
  USBHUB_STATE_DETACHED  = 0;
  USBHUB_STATE_DETACHING = 1;
  USBHUB_STATE_ATTACHING = 2;
  USBHUB_STATE_ATTACHED  = 3;
+ 
+ USBHUB_STATE_MAX       = 3;
+
+ {USB Hub State Names}
+ USBHUB_STATE_NAMES:array[USBHUB_STATE_DETACHED..USBHUB_STATE_MAX] of String = (
+  'USBHUB_STATE_DETACHED',
+  'USBHUB_STATE_DETACHING',
+  'USBHUB_STATE_ATTACHING',
+  'USBHUB_STATE_ATTACHED');
  
  {USB Hub Flags}
  USBHUB_FLAG_NONE              = $00000000;
@@ -1701,6 +1716,9 @@ function USBHubHasPortPowerSwitching(Hub:PUSBHub):Boolean;
 function USBHubHasPortCurrentProtection(Hub:PUSBHub):Boolean;
 
 function USBHubGetTTThinkTime(Hub:PUSBHub):Byte;
+
+function USBHubTypeToString(HubType:LongWord):String;
+function USBHubStateToString(HubState:LongWord):String;
 
 function USBHubStateToNotification(State:LongWord):LongWord;
 
@@ -10571,6 +10589,34 @@ begin
   USB_HUB_CHARACTERISTIC_TTTT_24:Result:=24;
   USB_HUB_CHARACTERISTIC_TTTT_32:Result:=32;
  end;
+end;
+
+{==============================================================================}
+
+function USBHubTypeToString(HubType:LongWord):String;
+{Return a string describing the supplied Hub type value}
+begin
+ {}
+ Result:='USBHUB_TYPE_UNKNOWN';
+
+ if HubType <= USBHUB_TYPE_MAX then
+  begin
+   Result:=USBHUB_TYPE_NAMES[HubType];
+  end;
+end;
+
+{==============================================================================}
+
+function USBHubStateToString(HubState:LongWord):String;
+{Return a string describing the supplied Hub state value}
+begin
+ {}
+ Result:='USBHUB_STATE_UNKNOWN';
+
+ if HubState <= USBHUB_STATE_MAX then
+  begin
+   Result:=USBHUB_STATE_NAMES[HubState];
+  end;
 end;
 
 {==============================================================================}

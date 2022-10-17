@@ -148,9 +148,11 @@ const
  FIRMWARE_THROTTLE_UNDER_VOLTAGE       = (1 shl 0);  {Under voltage is occurring}
  FIRMWARE_THROTTLE_FREQUENCY_LIMIT     = (1 shl 1);  {Frequency limiting is occurring}
  FIRMWARE_THROTTLE_THROTTLED           = (1 shl 2);  {Throttling is occurring}
+ FIRMWARE_THROTTLE_SOFT_TEMP_LIMIT     = (1 shl 3);  {Soft temperature limit is active}
  FIRMWARE_THROTTLE_WAS_UNDER_VOLTAGE   = (1 shl 16); {Under voltage has occurred}
  FIRMWARE_THROTTLE_WAS_FREQUENCY_LIMIT = (1 shl 17); {Frequency limiting has occurred} 
  FIRMWARE_THROTTLE_WAS_THROTTLED       = (1 shl 18); {Throttling has occurred} 
+ FIRMWARE_THROTTLE_WAS_SOFT_TEMP_LIMIT = (1 shl 19); {Soft temperature limit has occurred}
  
  {Platform logging}
  PLATFORM_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Platform debugging messages}

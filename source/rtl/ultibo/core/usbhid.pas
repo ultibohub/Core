@@ -37,7 +37,7 @@ USB HID
 =======
 
  The USB Human Interface Device (HID) class is one of the most widely used
- clases of USB devices. HID devices can appear as keyboard, mice, touch devices,
+ classes of USB devices. HID devices can appear as keyboards, mice, touch devices,
  gamepads, joysticks and many more.
 
  Importantly HID devices can appear as controls within other devices, for example

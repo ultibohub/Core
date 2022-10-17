@@ -281,6 +281,8 @@ function TouchDeviceCheck(Touch:PTouchDevice):PTouchDevice;
 function TouchDeviceTypeToString(TouchType:LongWord):String;
 function TouchDeviceStateToString(TouchState:LongWord):String;
 
+function TouchDeviceRotationToString(Rotation:LongWord):String;
+
 function TouchDeviceResolveRotation(ARotation:LongWord):LongWord;
 
 function TouchInsertData(Touch:PTouchDevice;Data:PTouchData;Signal:Boolean):LongWord;
@@ -1591,6 +1593,22 @@ begin
   begin
    Result:=TOUCH_STATE_NAMES[TouchState];
   end;
+end;
+
+{==============================================================================}
+
+function TouchDeviceRotationToString(Rotation:LongWord):String;
+{Return a string describing the supplied touch rotation value}
+begin
+ {}
+ Result:='TOUCH_ROTATION_UNKNOWN';
+ 
+ case Rotation of
+  TOUCH_ROTATION_0:Result:='TOUCH_ROTATION_0';
+  TOUCH_ROTATION_90:Result:='TOUCH_ROTATION_90';
+  TOUCH_ROTATION_180:Result:='TOUCH_ROTATION_180';
+  TOUCH_ROTATION_270:Result:='TOUCH_ROTATION_270';
+ end;
 end;
 
 {==============================================================================}

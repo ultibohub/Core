@@ -383,6 +383,8 @@ function MouseDeviceCheck(Mouse:PMouseDevice):PMouseDevice;
 function MouseDeviceTypeToString(MouseType:LongWord):String;
 function MouseDeviceStateToString(MouseState:LongWord):String;
 
+function MouseDeviceRotationToString(Rotation:LongWord):String;
+
 function MouseDeviceStateToNotification(State:LongWord):LongWord;
 
 function MouseDeviceResolveRotation(ARotation:LongWord):LongWord;
@@ -2289,6 +2291,22 @@ begin
   begin
    Result:=MOUSE_STATE_NAMES[MouseState];
   end;
+end;
+
+{==============================================================================}
+
+function MouseDeviceRotationToString(Rotation:LongWord):String;
+{Return a string describing the supplied mouse rotation value}
+begin
+ {}
+ Result:='MOUSE_ROTATION_UNKNOWN';
+ 
+ case Rotation of
+  MOUSE_ROTATION_0:Result:='MOUSE_ROTATION_0';
+  MOUSE_ROTATION_90:Result:='MOUSE_ROTATION_90';
+  MOUSE_ROTATION_180:Result:='MOUSE_ROTATION_180';
+  MOUSE_ROTATION_270:Result:='MOUSE_ROTATION_270';
+ end;
 end;
 
 {==============================================================================}
